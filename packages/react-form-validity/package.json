@@ -1,0 +1,20 @@
+{
+	"name": "react-form-validity",
+	"description": "React form validation based on the HTML Constraint validation API",
+	"license": "MIT",
+	"version": "0.0.1",
+	"main": "index.js",
+	"module": "module/index.js",
+	"peerDependencies": {
+		"react": ">=16.8"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/form-validity",
+		"directory": "packages/react-form-validity"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/form-validity/issues"
+	},
+	"sideEffects": false
+}

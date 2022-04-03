@@ -1,0 +1,6 @@
+{
+	"root": true,
+	"ignorePatterns": ["**/*"],
+	"plugins": [],
+	"overrides": []
+}

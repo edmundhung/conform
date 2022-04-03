@@ -1,0 +1,7 @@
+{
+	"references": [
+		{ "path": "packages/remix-form-validity" },
+		{ "path": "packages/react-form-validity" }
+	],
+	"files": []
+}
