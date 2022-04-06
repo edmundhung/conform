@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"target": "ES2020",
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"strict": true,
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"outDir": "../../build/form-validity",
+		"composite": true,
+		"skipLibCheck": true
+	}
+}

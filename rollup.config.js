@@ -4,7 +4,7 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
 
 /** @returns {import("rollup").RollupOptions[]} */
-function configurePackage(name) {
+function configurePackage(name, entry) {
 	let sourceDir = `packages/${name}`;
 	let outputDir = `build/${name}`;
 
@@ -13,7 +13,7 @@ function configurePackage(name) {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.tsx`,
+		input: `${sourceDir}/${entry}`,
 		output: {
 			dir: outputDir,
 			format: 'cjs',
@@ -44,7 +44,7 @@ function configurePackage(name) {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.tsx`,
+		input: `${sourceDir}/${entry}`,
 		output: {
 			dir: `${outputDir}/module`,
 			format: 'esm',
@@ -67,8 +67,9 @@ function configurePackage(name) {
 
 export default function rollup() {
 	let builds = [
-		...configurePackage('react-form-validity'),
-		...configurePackage('remix-form-validity'),
+		...configurePackage('form-validity', 'index.ts'),
+		...configurePackage('react-form-validity', 'index.tsx'),
+		...configurePackage('remix-form-validity', 'index.tsx'),
 	];
 
 	return builds;

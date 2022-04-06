@@ -1,16 +1,13 @@
-import type { FormEventHandler, RefObject, FormHTMLAttributes } from 'react';
-import { useEffect, useState, useRef } from 'react';
+import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { Field } from 'form-validity';
+import { getFieldAttributes, configureCustomValidity } from 'form-validity';
+
+export { f } from 'form-validity';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFormElement(element: any): element is HTMLFormElement {
-	return element != null && element.tagName.toLowerCase() === 'form';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isFormControlsElement(
-	element: any,
-): element is HTMLButtonElement | HTMLInputElement | HTMLTextAreaElement {
-	return isFormElement(element.form);
+	return !!element && element.tagName.toLowerCase() === 'form';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,16 +26,16 @@ export type BaseFormProps = Pick<
 	'noValidate' | 'onChange' | 'onSubmit'
 >;
 
-export interface FormValidityOptions extends BaseFormProps {
+export interface UseFormValidationOptions extends BaseFormProps {
 	reportValidity?: boolean;
 }
 
-export function useFormValidity({
+export function useFormValidation({
 	reportValidity,
 	noValidate,
 	onChange,
 	onSubmit,
-}: FormValidityOptions): BaseFormProps {
+}: UseFormValidationOptions): BaseFormProps {
 	const [noBrowserValidate, setNoBrowserValidate] = useState(
 		noValidate ?? false,
 	);
@@ -83,72 +80,57 @@ export function useFormValidity({
 	};
 }
 
-export function useValidationMessage(
-	input: RefObject<HTMLInputElement>,
-	checkCustomValidity?: (validity: ValidityState) => string,
-): string {
-	const [message, setMessage] = useState('');
+export type Fieldset<T extends string> = Record<T, Field>;
+
+export function useFieldset<T extends string>(fieldset: Fieldset<T>) {
+	const [error, setError] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, ''])));
+	const inputs = useMemo(() => {
+		const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
+			const constraints = field.getConstraints();
+			const checkCustomValidity = configureCustomValidity(constraints);
+			const fieldAttributes: InputHTMLAttributes<HTMLInputElement> = {
+				...getFieldAttributes(constraints),
+				onInput(e) {
+					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
+		
+					if (e.currentTarget.form?.noValidate) {
+						const message = customMessage ?? e.currentTarget.validationMessage;
+
+						setError(error => error[name] === message ? error : { ...error, [name]: message });
+					} else if (typeof customMessage !== 'undefined' && customMessage !== null) {
+						e.currentTarget.setCustomValidity(customMessage);
+					}
+				},
+				onInvalid(e) {
+					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
+		
+					if (e.currentTarget.form?.noValidate) {
+						const message = customMessage ?? e.currentTarget.validationMessage;
+
+						setError(error => error[name] === message ? error : { ...error, [name]: message });
+					} else if (typeof customMessage !== 'undefined' && customMessage !== null) {
+						e.currentTarget.setCustomValidity(customMessage);
+					}
+				},
+			};
+
+			return [name, fieldAttributes] as [string, InputHTMLAttributes<HTMLInputElement>];
+		});
+
+		return Object.fromEntries(entries);
+	}, [fieldset]);
 
 	useEffect(() => {
-		const target = input.current;
+		setError(error => {
+			const newKeys = Object.keys(fieldset).sort();
 
-		if (!target) {
-			return;
-		}
-
-		const handleInvalid = (e: Event): void => {
-			if (!isFormControlsElement(e.currentTarget)) {
-				return;
+			if (newKeys.join('|') === Object.keys(error).sort().join('|')) {
+				return error;
 			}
 
-			const error = checkCustomValidity?.(e.currentTarget.validity);
+			return Object.fromEntries(newKeys.map(name => [name, error[name] ?? '']));
+		});
+	}, [fieldset]);
 
-			if (typeof error !== 'undefined') {
-				e.currentTarget.setCustomValidity(error);
-			}
-
-			if (e.currentTarget.form?.noValidate) {
-				setMessage(error ?? e.currentTarget.validationMessage);
-			}
-		};
-		const handleInput = (e: Event): void => {
-			if (!isFormControlsElement(e.currentTarget)) {
-				return;
-			}
-
-			const error = checkCustomValidity?.(e.currentTarget.validity);
-
-			if (typeof error !== 'undefined') {
-				e.currentTarget.setCustomValidity(error);
-			}
-
-			if (e.currentTarget.form?.noValidate) {
-				setMessage(error ?? e.currentTarget.validationMessage);
-			}
-		};
-
-		target.addEventListener('invalid', handleInvalid);
-
-		if (message !== '') {
-			target.addEventListener('input', handleInput);
-		}
-
-		return () => {
-			target.removeEventListener('invalid', handleInvalid);
-
-			if (message !== '') {
-				target.removeEventListener('input', handleInput);
-			}
-		};
-	}, [input, message, checkCustomValidity]);
-
-	return message;
-}
-
-export function useField() {
-	const ref = useRef<HTMLInputElement>(null);
-
-	return {
-		ref,
-	};
+	return [inputs, error];
 }

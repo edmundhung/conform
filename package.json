@@ -3,8 +3,10 @@
 	"name": "form-validity-monorepo",
 	"license": "MIT",
 	"workspaces": [
+		"packages/form-validity",
 		"packages/react-form-validity",
-		"packages/remix-form-validity"
+		"packages/remix-form-validity",
+		"examples/remix"
 	],
 	"scripts": {
 		"build": "rollup -c && tsc -b"

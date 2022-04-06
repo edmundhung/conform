@@ -1,18 +1,16 @@
 import { Form as RemixForm } from '@remix-run/react';
 import type { ComponentProps } from 'react';
 import { forwardRef } from 'react';
-import type { FormValidityOptions } from 'react-form-validity';
-import {
-	useFormValidity,
-	useField,
-	useValidationMessage,
-} from 'react-form-validity';
+import type { UseFormValidationOptions } from 'react-form-validity';
+import { useFormValidation } from 'react-form-validity';
 
-export type FormProps = FormValidityOptions & ComponentProps<typeof RemixForm>;
+export { useFieldset, f } from 'react-form-validity';
 
-const Form = forwardRef<HTMLFormElement, FormProps>(
+export type FormProps = UseFormValidationOptions & ComponentProps<typeof RemixForm>;
+
+export const Form = forwardRef<HTMLFormElement, FormProps>(
 	({ reportValidity, noValidate, onChange, onSubmit, ...props }, ref) => {
-		const formProps = useFormValidity({
+		const formProps = useFormValidation({
 			reportValidity,
 			noValidate,
 			onChange,
@@ -24,5 +22,3 @@ const Form = forwardRef<HTMLFormElement, FormProps>(
 );
 
 Form.displayName = 'Form';
-
-export { Form, useField, useValidationMessage };
