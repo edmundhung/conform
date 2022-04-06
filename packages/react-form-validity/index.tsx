@@ -1,29 +1,22 @@
-import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes } from 'react';
+import { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes, useRef } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import type { Field } from 'form-validity';
 import { getFieldAttributes, configureCustomValidity } from 'form-validity';
 
 export { f } from 'form-validity';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFormElement(element: any): element is HTMLFormElement {
 	return !!element && element.tagName.toLowerCase() === 'form';
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getFormElement(element: any): HTMLFormElement | null {
-	if (isFormElement(element)) {
-		return element;
-	} else if (isFormElement(element.form)) {
-		return element.form;
-	} else {
-		return null;
-	}
+function isInputElement(element: any): element is HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement {
+	return !!element && ['select', 'input' , 'textarea'].includes(element.tagName.toLowerCase())
 }
 
 export type BaseFormProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
-	'noValidate' | 'onChange' | 'onSubmit'
+	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
 
 export interface UseFormValidationOptions extends BaseFormProps {
@@ -34,38 +27,41 @@ export function useFormValidation({
 	reportValidity,
 	noValidate,
 	onChange,
+	onBlur,
 	onSubmit,
 }: UseFormValidationOptions): BaseFormProps {
+	const ref = useRef<{ submitted: boolean; touched: Record<string, boolean | undefined> }>({ submitted: false, touched: {} });
 	const [noBrowserValidate, setNoBrowserValidate] = useState(
 		noValidate ?? false,
 	);
-	const [submitted, setSubmitted] = useState(false);
+	const handleBlur: FormEventHandler<HTMLFormElement> | undefined = noValidate
+		? onBlur
+		: (event) => {
+			if (isInputElement(event.target)) {
+				ref.current.touched[event.target.name] = true;
+				event.target.checkValidity();
+			}
+		};
 	const handleChange: FormEventHandler<HTMLFormElement> | undefined = noValidate
 		? onChange
 		: (event) => {
-				if (submitted) {
-					event.currentTarget.checkValidity();
-				}
+			if (isInputElement(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
+				event.target.checkValidity();
+			}
 
-				onChange?.(event);
-		  };
+			onChange?.(event);
+		};
 	const handleSubmit: FormEventHandler<HTMLFormElement> | undefined = noValidate
 		? onSubmit
 		: (event) => {
-				setSubmitted(true);
+			ref.current.submitted = true;
 
-				const formElement = getFormElement(event.currentTarget);
-
-				if (!formElement) {
-					return;
-				}
-
-				if (!formElement.checkValidity()) {
-					event.preventDefault();
-				} else {
-					onSubmit?.(event);
-				}
-		  };
+			if (!event.currentTarget.checkValidity()) {
+				event.preventDefault();
+			} else {
+				onSubmit?.(event);
+			}
+		};
 
 	useEffect(() => {
 		if (!reportValidity) {
@@ -74,15 +70,14 @@ export function useFormValidation({
 	}, [reportValidity]);
 
 	return {
+		onBlur: handleBlur,
 		onChange: handleChange,
 		onSubmit: handleSubmit,
 		noValidate: noBrowserValidate,
 	};
 }
 
-export type Fieldset<T extends string> = Record<T, Field>;
-
-export function useFieldset<T extends string>(fieldset: Fieldset<T>) {
+export function useFieldset<T extends string>(fieldset: Record<T, Field>) {
 	const [error, setError] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, ''])));
 	const inputs = useMemo(() => {
 		const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
@@ -90,27 +85,23 @@ export function useFieldset<T extends string>(fieldset: Fieldset<T>) {
 			const checkCustomValidity = configureCustomValidity(constraints);
 			const fieldAttributes: InputHTMLAttributes<HTMLInputElement> = {
 				...getFieldAttributes(constraints),
+				type: field.getType(),
+				name,
 				onInput(e) {
 					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
-		
-					if (e.currentTarget.form?.noValidate) {
-						const message = customMessage ?? e.currentTarget.validationMessage;
+					const message = customMessage ?? e.currentTarget.validationMessage;
 
-						setError(error => error[name] === message ? error : { ...error, [name]: message });
-					} else if (typeof customMessage !== 'undefined' && customMessage !== null) {
-						e.currentTarget.setCustomValidity(customMessage);
+					if (message) {
+						return;
 					}
+
+					setError(error => error[name] === '' ? error : { ...error, [name]: '' });
 				},
 				onInvalid(e) {
 					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
-		
-					if (e.currentTarget.form?.noValidate) {
-						const message = customMessage ?? e.currentTarget.validationMessage;
+					const message = customMessage ?? e.currentTarget.validationMessage;
 
-						setError(error => error[name] === message ? error : { ...error, [name]: message });
-					} else if (typeof customMessage !== 'undefined' && customMessage !== null) {
-						e.currentTarget.setCustomValidity(customMessage);
-					}
+					setError(error => error[name] === message ? error : { ...error, [name]: message });
 				},
 			};
 

@@ -9,10 +9,11 @@ export { useFieldset, f } from 'react-form-validity';
 export type FormProps = UseFormValidationOptions & ComponentProps<typeof RemixForm>;
 
 export const Form = forwardRef<HTMLFormElement, FormProps>(
-	({ reportValidity, noValidate, onChange, onSubmit, ...props }, ref) => {
+	({ reportValidity, noValidate, onBlur, onChange, onSubmit, ...props }, ref) => {
 		const formProps = useFormValidation({
 			reportValidity,
 			noValidate,
+			onBlur,
 			onChange,
 			onSubmit,
 		});
