@@ -1,3 +1,34 @@
+interface Required {
+	required: (message?: string) => this;
+}
+
+interface Min<Value> {
+	min(value: Value | string, message?: string): this;
+}
+
+interface Max<Value> {
+	max(value: Value | string, message?: string): this;
+}
+
+interface MinLength {
+	minLength(number: number, message?: string): this;
+}
+
+interface MaxLength {
+	maxLength(number: number, message?: string): this;
+}
+
+interface Pattern {
+	pattern(regexp: RegExp, message?: string): this;
+}
+
+interface Step {
+	step(number: number | string, message?: string): this;
+}
+
+interface NoConstraint {
+	getConstraints(): Constraint[]
+}
 
 export interface FieldAttributes {
 	required?: boolean,
@@ -5,69 +36,64 @@ export interface FieldAttributes {
 	maxLength?: number,
 	min?: string | number,
 	max?: string | number,
-	step?: string,
+	step?: string | number,
 	pattern?: string,
 }
 
-export type FieldType = 'button'
-	| 'checkbox'
-	| 'color'
-	| 'date'
-	| 'datetime'
-	| 'datetime-local'
-	| 'email'
-	| 'file'
-	| 'hidden'
-	| 'image'
-	| 'month'
-	| 'number'
-	| 'password'
-	| 'radio'
-	| 'range'
-	| 'reset'
-	| 'search'
-	| 'select'
-	| 'submit'
-	| 'tel'
-	| 'text'
-	| 'textarea'
-	| 'time'
-	| 'url'
-	| 'week';
+export interface FieldOption {
+	// 'button': NoConstraint;
+	'checkbox': Required;
+	'color': NoConstraint;
+	'date': Required & Min<Date> & Max<Date> & Step;
+	'datetime': Required & Min<Date> & Max<Date> & Step;
+	'datetime-local': Required & Min<Date> & Max<Date> & Step;
+	'email': Required & MinLength & MaxLength & Pattern;
+	'file': Required;
+	'hidden': NoConstraint;
+	// 'image': NoConstraint;
+	'month': Required & Min<Date> & Max<Date> & Step;
+	'number': Required & Min<number> & Max<number> & Step;
+	'password': Required & MinLength & MaxLength & Pattern;
+	'radio': Required;
+	'range': Min<number> & Max<number> & Step;
+	// 'reset': NoConstraint;
+	'search': Required & MinLength & MaxLength & Pattern;
+	'select': Required;
+	// 'submit': NoConstraint;
+	'tel': Required & MinLength & MaxLength & Pattern;
+	'text': Required & MinLength & MaxLength & Pattern;
+	'textarea': Required & MinLength & MaxLength;
+	'time': Required & Min<Date> & Max<Date> & Step;
+	'url': Required & MinLength & MaxLength & Pattern;
+	'week': Required & Min<Date> & Max<Date> & Step;
+};
 
-/**
- * Supported attributes by input type or element (textarea / select)
- * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
- */
-const supportedAttributesByControlType: Record<FieldType, Array<keyof FieldAttributes>> = {
-  // input elements
-  button: [],
-  checkbox: ['required'],
-  color: [],
-  date: ['min', 'max', 'required', 'step'],
-  datetime: ['min', 'max', 'required', 'step'],
-  'datetime-local': ['min', 'max', 'required', 'step'],
-  email: ['pattern', 'required', 'minLength', 'maxLength'],
-  file: ['required'],
-  hidden: [],
-  image: [],
-  month: ['min', 'max', 'required', 'step'],
-  number: ['min', 'max', 'required', 'step'],
-  password: ['pattern', 'required', 'minLength', 'maxLength'],
-  radio: ['required'],
-  range: ['min', 'max', 'step'],
-  reset: [],
-  search: ['pattern', 'required', 'minLength', 'maxLength'],
-  submit: [],
-  tel: ['pattern', 'required', 'minLength', 'maxLength'],
-  text: ['pattern', 'required', 'minLength', 'maxLength'],
-  time: ['min', 'max', 'required', 'step'],
-  url: ['pattern', 'required', 'minLength', 'maxLength'],
-  week: ['min', 'max', 'required', 'step'],
-
-  // non-input elements
-  textarea: ['required', 'minLength', 'maxLength'],
-  select: ['required'],
+const attributesByType: Record<keyof FieldOption, Array<keyof FieldAttributes>> = {
+	// 'button': [],
+	'checkbox': ['required'],
+	'color': [],
+	'date': ['required', 'minLength', 'maxLength', 'pattern'],
+	'datetime': ['required', 'minLength', 'maxLength', 'pattern'],
+	'datetime-local': ['required', 'minLength', 'maxLength', 'pattern'],
+	'email': ['required', 'minLength', 'maxLength', 'pattern'],
+	'file': ['required'],
+	'hidden': [],
+	// 'image': [],
+	'month': ['required', 'minLength', 'maxLength', 'pattern'],
+	'number': ['required', 'minLength', 'maxLength', 'pattern'],
+	'password': ['required', 'minLength', 'maxLength', 'pattern'],
+	'radio': ['required'],
+	'range': ['min', 'max', 'step'],
+	// 'reset': [],
+	'search': ['required', 'minLength', 'maxLength', 'pattern'],
+	'select': ['required'],
+	// 'submit': [],
+	'tel': ['required', 'minLength', 'maxLength', 'pattern'],
+	'text': ['required', 'minLength', 'maxLength', 'pattern'],
+	'textarea': ['required', 'minLength', 'maxLength'],
+	'time': ['required', 'minLength', 'maxLength', 'pattern'],
+	'url': ['required', 'minLength', 'maxLength', 'pattern'],
+	'week': ['required', 'minLength', 'maxLength', 'pattern'],
 };
 
 export interface Constraint {
@@ -78,71 +104,88 @@ export interface Constraint {
 
 export type Field = ReturnType<typeof createField>;
 
-function createField(type: FieldType) {
-	const supportedAttributes = supportedAttributesByControlType[type];
+function createField<FieldType extends keyof FieldOption>(type: FieldType): FieldOption[FieldType] {
+	const supportedAttributes = attributesByType[type];
 	const constraints: Constraint[] = [];
-  
+	
 	const addConstraint = (attribute: keyof FieldAttributes, message: string | undefined, value?: unknown): void => {
 		if (!supportedAttributes.includes(attribute)) {
 			console.warn(`Unsupported attribute ${attribute} will be ignored on "${type}"`);
 			return;
 		}
-
+		
 		constraints.push({ attribute, value, message });
-	};	
-
-  const field = {
-    required(message?: string) {
+	};
+	
+	const field = {
+		required(message?: string) {
 			addConstraint('required', message);
 			return field;
-    },
-    min(min: number | Date | string, message?: string) {
-			addConstraint('min', message, min);
-      return field;
-    },
-    max(max: number | Date | string, message?: string) {
-			addConstraint('max', message, max);
-      return field;
-    },
-    minLength(minLength: number, message?: string) {
-			addConstraint('minLength', message, minLength);
-      return field;
-    },
-		maxLength(maxLength: number, message?: string) {
-			addConstraint('maxLength', message, maxLength);
+		},
+		min(value: number | Date | string, message?: string) {
+			addConstraint('min', message, value);
 			return field;
 		},
-    pattern(regexp: RegExp, message?: string) {
+		max(value: number | Date | string, message?: string) {
+			addConstraint('max', message, value);
+			return field;
+		},
+		minLength(number: number, message?: string) {
+			addConstraint('minLength', message, number);
+			return field;
+		},
+		maxLength(number: number, message?: string) {
+			addConstraint('maxLength', message, number);
+			return field;
+		},
+		pattern(regexp: RegExp, message?: string) {
 			if (regexp.global || regexp.ignoreCase || regexp.multiline) {
 				console.warn(`global, ignoreCase, and multiline flags are not supported on the pattern attribute`);
 			} else {
 				addConstraint('pattern', message, regexp.source);
 			}
-
-      return field;
-    },
-	getConstraints() {
-		return constraints;
-	},
-  };
-
-  return field;
+			
+			return field;
+		},
+		getConstraints() {
+			return constraints;
+		},
+	};
+	
+	// @ts-ignore
+	return Object.fromEntries(supportedAttributes.map(attribute => [attribute, field[attribute]]));
 }
 
+/**
+* Helpers for constructing the field constraints
+* @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
+*/
 export const f = {
-	text() {
-		return createField('text');
-	},
-	email() {
-		return createField('email');
-	},
-	password() {
-		return createField('password');
-	},
-	checkbox() {
-		return createField('checkbox');
-	},
-
+	// button: () => createField('button'),
+	checkbox: () => createField('checkbox'),
+	color: () => createField('color'),
+	date: () => createField('date'),
+	// datetime: () => createField('datetime'),
+	datetime: () => createField('datetime-local'), // `datetime` is deprecated
+	email: () => createField('email'),
+	file: () => createField('file'),
+	hidden: () => createField('hidden'),
+	// image: () => createField('image'),
+	month: () => createField('month'),
+	number: () => createField('number'),
+	password: () => createField('password'),
+	radio: () => createField('radio'),
+	range: () => createField('range'),
+	// reset: () => createField('reset'),
+	search: () => createField('search'),
+	select: () => createField('select'),
+	// submit: () => createField('submit'),
+	tel: () => createField('tel'),
+	text: () => createField('text'),
+	textarea: () => createField('textarea'),
+	time: () => createField('time'),
+	url: () => createField('url'),
+	week: () => createField('week'),
 };
 
 export function getFieldAttributes(constraints: Constraint[]): FieldAttributes {
@@ -155,29 +198,29 @@ export function getFieldAttributes(constraints: Constraint[]): FieldAttributes {
 		step: undefined,
 		pattern: undefined,
 	};
-
+	
 	for (let constraint of constraints) {
 		switch (constraint.attribute) {
 			case 'required':
-				props.required = true;
-				break;
+			props.required = true;
+			break;
 			case 'min':
 			case 'max':
-				if (constraint.value instanceof Date) {
-					props[constraint.attribute] = constraint.value.toISOString();
-				} else {
-					props[constraint.attribute] = constraint.value as any;
-				}
-				break;
+			if (constraint.value instanceof Date) {
+				props[constraint.attribute] = constraint.value.toISOString();
+			} else {
+				props[constraint.attribute] = constraint.value as any;
+			}
+			break;
 			case 'step':
 			case 'minLength':
 			case 'maxLength':
 			case 'pattern':
-				props[constraint.attribute] = constraint.value as any;
-				break;
+			props[constraint.attribute] = constraint.value as any;
+			break;
 		}
 	}
-
+	
 	return props;
 };
 
@@ -203,6 +246,6 @@ export function configureCustomValidity(constraints: Constraint[]): ((validity: 
 			return '';
 		}
 	}
-
+	
 	return checkCustomValidity;
 }
