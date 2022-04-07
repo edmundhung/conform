@@ -31,6 +31,7 @@ interface NoConstraint {
 }
 
 export interface FieldAttributes {
+	type?: Exclude<keyof FieldOption, 'select' | 'textarea'>;
 	required?: boolean,
 	minLength?: number,
 	maxLength?: number,
@@ -96,67 +97,96 @@ const attributesByType: Record<keyof FieldOption, Array<keyof FieldAttributes>> 
 	'week': ['required', 'minLength', 'maxLength', 'pattern'],
 };
 
-export interface Constraint {
-	attribute: keyof FieldAttributes;
+export type Constraint = {
+	attribute: 'type';
+	value: keyof FieldOption;
 	message: string | undefined;
-	value: unknown;
-}
+} | {
+	attribute: 'required';
+	message: string | undefined;
+} | {
+	attribute: 'minLength';
+	value: number;
+	message: string | undefined;
+} | {
+	attribute: 'maxLength';
+	value: number;
+	message: string | undefined;
+} | {
+	attribute: 'min';
+	value: Date | number | string;
+	message: string | undefined;
+} | {
+	attribute: 'max';
+	value: Date | number | string;
+	message: string | undefined;
+} | {
+	attribute: 'step';
+	value: number | string;
+	message: string | undefined;
+} | {
+	attribute: 'pattern';
+	value: RegExp;
+	message: string | undefined;
+};
 
 export type Field = ReturnType<typeof createField>;
 
-function createField<FieldType extends keyof FieldOption>(type: FieldType): FieldOption[FieldType] {
+function createField<FieldType extends keyof FieldOption>(type: FieldType, message?: string): FieldOption[FieldType] {
 	const supportedAttributes = attributesByType[type];
-	const constraints: Constraint[] = [];
-	
-	const addConstraint = (attribute: keyof FieldAttributes, message: string | undefined, value?: unknown): void => {
-		if (!supportedAttributes.includes(attribute)) {
-			console.warn(`Unsupported attribute ${attribute} will be ignored on "${type}"`);
-			return;
-		}
-		
-		constraints.push({ attribute, value, message });
-	};
+	const constraints: Constraint[] = [
+		{ attribute: 'type', value: type, message: message },
+	];
 	
 	const field = {
 		required(message?: string) {
-			addConstraint('required', message);
+			constraints.push({ attribute: 'required', message });
 			return field;
 		},
 		min(value: number | Date | string, message?: string) {
-			addConstraint('min', message, value);
+			constraints.push({ attribute: 'min', value, message });
 			return field;
 		},
 		max(value: number | Date | string, message?: string) {
-			addConstraint('max', message, value);
+			constraints.push({ attribute: 'max', value, message });
 			return field;
 		},
-		minLength(number: number, message?: string) {
-			addConstraint('minLength', message, number);
+		minLength(value: number, message?: string) {
+			constraints.push({ attribute: 'minLength', value, message });
 			return field;
 		},
-		maxLength(number: number, message?: string) {
-			addConstraint('maxLength', message, number);
+		maxLength(value: number, message?: string) {
+			constraints.push({ attribute: 'maxLength', value, message });
 			return field;
 		},
-		pattern(regexp: RegExp, message?: string) {
-			if (regexp.global || regexp.ignoreCase || regexp.multiline) {
+		pattern(value: RegExp, message?: string) {
+			if (value.global || value.ignoreCase || value.multiline) {
 				console.warn(`global, ignoreCase, and multiline flags are not supported on the pattern attribute`);
 			} else {
-				addConstraint('pattern', message, regexp.source);
+				constraints.push({ attribute: 'pattern', value, message });
 			}
 			
 			return field;
 		},
-		getType() {
-			return !['textarea', 'select'].includes(type) ? type : undefined;
-		},
 		getConstraints() {
-			return constraints;
+			const orders: Array<keyof FieldAttributes> = [
+				'required',
+				'minLength',
+				'maxLength',
+				'min',
+				'max',
+				'type',
+				'step',
+				'pattern'
+			];
+
+			return [...constraints]
+				.sort((prev, next) => orders.indexOf(prev.attribute) - orders.indexOf(next.attribute));
 		},
 	};
 	
 	// @ts-ignore
-	return Object.fromEntries(['getType', 'getConstraints'].concat(supportedAttributes).map(attribute => [attribute, field[attribute]]));
+	return Object.fromEntries(['getConstraints'].concat(supportedAttributes).map(attribute => [attribute, field[attribute]]));
 }
 
 /**
@@ -170,12 +200,12 @@ export const f = {
 	date: () => createField('date'),
 	// datetime: () => createField('datetime'),
 	datetime: () => createField('datetime-local'), // `datetime` is deprecated
-	email: () => createField('email'),
+	email: (message?: string) => createField('email', message),
 	file: () => createField('file'),
 	hidden: () => createField('hidden'),
 	// image: () => createField('image'),
 	month: () => createField('month'),
-	number: () => createField('number'),
+	number: (message?: string) => createField('number', message),
 	password: () => createField('password'),
 	radio: () => createField('radio'),
 	range: () => createField('range'),
@@ -187,12 +217,13 @@ export const f = {
 	text: () => createField('text'),
 	textarea: () => createField('textarea'),
 	time: () => createField('time'),
-	url: () => createField('url'),
+	url: (message?: string) => createField('url', message),
 	week: () => createField('week'),
 };
 
 export function getFieldAttributes(constraints: Constraint[]): FieldAttributes {
 	let props: FieldAttributes = {
+		type: undefined,
 		required: false,
 		minLength: undefined,
 		maxLength: undefined,
@@ -204,23 +235,30 @@ export function getFieldAttributes(constraints: Constraint[]): FieldAttributes {
 	
 	for (let constraint of constraints) {
 		switch (constraint.attribute) {
+			case 'type':
+				props.type = constraint.value !== 'textarea' && constraint.value !== 'select'
+					? constraint.value
+					: undefined;
+				break;
 			case 'required':
-			props.required = true;
-			break;
+				props.required = true;
+				break;
 			case 'min':
 			case 'max':
-			if (constraint.value instanceof Date) {
-				props[constraint.attribute] = constraint.value.toISOString();
-			} else {
-				props[constraint.attribute] = constraint.value as any;
-			}
-			break;
-			case 'step':
+				props[constraint.attribute] = constraint.value instanceof Date
+					? constraint.value.toISOString()
+					: constraint.value;
+				break;
 			case 'minLength':
 			case 'maxLength':
+				props[constraint.attribute] = constraint.value;
+				break;
+			case 'step':
+				props[constraint.attribute] = constraint.value;
+				break;
 			case 'pattern':
-			props[constraint.attribute] = constraint.value as any;
-			break;
+				props[constraint.attribute] = constraint.value.source;
+				break;
 		}
 	}
 	
@@ -243,8 +281,8 @@ export function configureCustomValidity(constraints: Constraint[]): ((validity: 
 			return constraints.find(constraint => constraint.attribute === 'max')?.message ?? null;
 		} else if (validity.patternMismatch) {
 			return constraints.find(constraint => constraint.attribute === 'max')?.message ?? null;
-		} else if (validity.badInput || validity.typeMismatch) {
-			return null;
+		} else if (validity.typeMismatch || validity.badInput) {
+			return constraints.find(constraint => constraint.attribute === 'type')?.message ?? null;
 		} else {
 			return '';
 		}

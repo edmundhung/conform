@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
 import { getFieldAttributes, configureCustomValidity, isDirtyField, isValidationConstraintSupported } from 'form-validity';
 
+export type { Constraint } from 'form-validity';
 export { f } from 'form-validity';
 
 export type BaseFormProps = Pick<
@@ -68,16 +69,26 @@ export function useFormValidation({
 	};
 }
 
-export function useFieldset<T extends string>(fieldset: Record<T, Field>) {
-	const [error, setError] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, ''])));
+interface FieldsetOptions<T extends string> {
+	name?: string;
+	index?: number;
+	form?: string;
+	serverError?: Record<T, string | undefined>,
+}
+
+export function useFieldset<T extends string>(
+	fieldset: Record<T, Field>,
+	{ name, index, form, serverError }: FieldsetOptions<T>,
+) {
+	const [error, setError] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, serverError?.[name as T] ?? ''])));
 	const inputs = useMemo(() => {
-		const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
+		const entries = Object.entries<Field>(fieldset).map(([key, field]) => {
 			const constraints = field.getConstraints();
 			const checkCustomValidity = configureCustomValidity(constraints);
 			const fieldAttributes: InputHTMLAttributes<HTMLInputElement> = {
 				...getFieldAttributes(constraints),
-				type: field.getType(),
-				name,
+				name: typeof index !== 'undefined' ? `${name}[${index}].${key}` : name ? `${name}.${key}` : key,
+				form,
 				onInput(e) {
 					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
 					const message = customMessage ?? e.currentTarget.validationMessage;
@@ -87,21 +98,21 @@ export function useFieldset<T extends string>(fieldset: Record<T, Field>) {
 						return;
 					}
 
-					setError(error => error[name] === '' ? error : { ...error, [name]: '' });
+					setError(error => error[key] === '' ? error : { ...error, [key]: '' });
 				},
 				onInvalid(e) {
 					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
 					const message = customMessage ?? e.currentTarget.validationMessage;
 
-					setError(error => error[name] === message ? error : { ...error, [name]: message });
+					setError(error => error[key] === message ? error : { ...error, [key]: message });
 				},
 			};
 
-			return [name, fieldAttributes] as [string, InputHTMLAttributes<HTMLInputElement>];
+			return [key, fieldAttributes] as [string, InputHTMLAttributes<HTMLInputElement>];
 		});
 
 		return Object.fromEntries(entries);
-	}, [fieldset]);
+	}, [fieldset, name, index, form]);
 
 	useEffect(() => {
 		setError(error => Object.fromEntries(Object.keys(fieldset).map(name => [name, error[name] ?? ''])));
