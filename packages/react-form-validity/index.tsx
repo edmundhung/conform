@@ -1,18 +1,9 @@
-import { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes, useRef } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
-import { getFieldAttributes, configureCustomValidity } from 'form-validity';
+import { getFieldAttributes, configureCustomValidity, isDirtyField, isValidationConstraintSupported } from 'form-validity';
 
 export { f } from 'form-validity';
-
-function isFormElement(element: any): element is HTMLFormElement {
-	return !!element && element.tagName.toLowerCase() === 'form';
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isInputElement(element: any): element is HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement {
-	return !!element && ['select', 'input' , 'textarea'].includes(element.tagName.toLowerCase())
-}
 
 export type BaseFormProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
@@ -37,7 +28,7 @@ export function useFormValidation({
 	const handleBlur: FormEventHandler<HTMLFormElement> | undefined = noValidate
 		? onBlur
 		: (event) => {
-			if (isInputElement(event.target)) {
+			if (isValidationConstraintSupported(event.target) && isDirtyField(event.target)) {
 				ref.current.touched[event.target.name] = true;
 				event.target.checkValidity();
 			}
@@ -45,7 +36,7 @@ export function useFormValidation({
 	const handleChange: FormEventHandler<HTMLFormElement> | undefined = noValidate
 		? onChange
 		: (event) => {
-			if (isInputElement(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
+			if (isValidationConstraintSupported(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
 				event.target.checkValidity();
 			}
 
@@ -92,6 +83,7 @@ export function useFieldset<T extends string>(fieldset: Record<T, Field>) {
 					const message = customMessage ?? e.currentTarget.validationMessage;
 
 					if (message) {
+						// Skip: the input is valid
 						return;
 					}
 
@@ -112,15 +104,7 @@ export function useFieldset<T extends string>(fieldset: Record<T, Field>) {
 	}, [fieldset]);
 
 	useEffect(() => {
-		setError(error => {
-			const newKeys = Object.keys(fieldset).sort();
-
-			if (newKeys.join('|') === Object.keys(error).sort().join('|')) {
-				return error;
-			}
-
-			return Object.fromEntries(newKeys.map(name => [name, error[name] ?? '']));
-		});
+		setError(error => Object.fromEntries(Object.keys(fieldset).map(name => [name, error[name] ?? ''])));
 	}, [fieldset]);
 
 	return [inputs, error];

@@ -147,13 +147,16 @@ function createField<FieldType extends keyof FieldOption>(type: FieldType): Fiel
 			
 			return field;
 		},
+		getType() {
+			return !['textarea', 'select'].includes(type) ? type : undefined;
+		},
 		getConstraints() {
 			return constraints;
 		},
 	};
 	
 	// @ts-ignore
-	return Object.fromEntries(supportedAttributes.map(attribute => [attribute, field[attribute]]));
+	return Object.fromEntries(['getType', 'getConstraints'].concat(supportedAttributes).map(attribute => [attribute, field[attribute]]));
 }
 
 /**
@@ -248,4 +251,39 @@ export function configureCustomValidity(constraints: Constraint[]): ((validity: 
 	}
 	
 	return checkCustomValidity;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isElement<T extends HTMLElement>(element: any, tag: string): element is T {
+	return !!element && element.tagName.toLowerCase() === tag;
+}
+
+export function isInputElement(element: unknown): element is HTMLInputElement {
+	return isElement<HTMLInputElement>(element, 'input');
+}
+
+export function isSelectElement(element: unknown): element is HTMLSelectElement {
+	return isElement<HTMLSelectElement>(element, 'select');
+}
+
+export function isTextareaElement(element: unknown): element is HTMLTextAreaElement {
+	return isElement<HTMLTextAreaElement>(element, 'textarea');
+}
+
+export function isDirtyField(element: HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement): boolean {
+	if (isElement<HTMLInputElement>(element, 'input') || isElement<HTMLTextAreaElement>(element, 'textarea')) {
+		return element.value !== element.defaultValue;
+	} else if (isElement<HTMLSelectElement>(element, 'select')) {
+		return element.value !== Array.from(element.options).find(option => option.defaultSelected)?.value;
+	} else {
+		return false;
+	}
+}
+
+export function isValidationConstraintSupported(element: unknown): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+	if (!isInputElement(element) && !isSelectElement(element) && !isTextareaElement(element)) {
+		return false;
+	}
+
+	return typeof element.checkValidity === 'function';
 }
