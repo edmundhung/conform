@@ -1,65 +1,54 @@
-import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes } from 'react';
+import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes, ClassAttributes, FocusEventHandler } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import type { Field } from 'form-validity';
-import { getFieldAttributes, configureCustomValidity, isDirtyField, isValidationConstraintSupported } from 'form-validity';
+import type { Constraint, Field } from 'form-validity';
+import { getConstraint, shouldSkipValidate, isDirtyField, isValidationConstraintSupported } from 'form-validity';
 
 export type { Constraint } from 'form-validity';
-export { f } from 'form-validity';
+export { f, parse } from 'form-validity';
 
-export type BaseFormProps = Pick<
+export type FormValidationProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
 	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
 
-export interface UseFormValidationOptions extends BaseFormProps {
-	reportValidity?: boolean;
-}
-
 export function useFormValidation({
-	reportValidity,
 	noValidate,
 	onChange,
 	onBlur,
 	onSubmit,
-}: UseFormValidationOptions): BaseFormProps {
+}: FormValidationProps): FormValidationProps {
 	const ref = useRef<{ submitted: boolean; touched: Record<string, boolean | undefined> }>({ submitted: false, touched: {} });
 	const [noBrowserValidate, setNoBrowserValidate] = useState(
 		noValidate ?? false,
 	);
-	const handleBlur: FormEventHandler<HTMLFormElement> | undefined = noValidate
-		? onBlur
-		: (event) => {
-			if (isValidationConstraintSupported(event.target) && isDirtyField(event.target)) {
-				ref.current.touched[event.target.name] = true;
-				event.target.checkValidity();
-			}
-		};
-	const handleChange: FormEventHandler<HTMLFormElement> | undefined = noValidate
-		? onChange
-		: (event) => {
-			if (isValidationConstraintSupported(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
-				event.target.checkValidity();
-			}
+	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
+		if (isValidationConstraintSupported(event.target) && isDirtyField(event.target)) {
+			ref.current.touched[event.target.name] = true;
+			event.target.checkValidity();
+		}
 
-			onChange?.(event);
-		};
-	const handleSubmit: FormEventHandler<HTMLFormElement> | undefined = noValidate
-		? onSubmit
-		: (event) => {
-			ref.current.submitted = true;
+		onBlur?.(event);
+	};
+	const handleChange: FormEventHandler<HTMLFormElement> = (event) => {
+		if (isValidationConstraintSupported(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
+			event.target.checkValidity();
+		}
 
-			if (!event.currentTarget.checkValidity()) {
-				event.preventDefault();
-			} else {
-				onSubmit?.(event);
-			}
-		};
+		onChange?.(event);
+	};
+	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+		ref.current.submitted = true;
+
+		if (!shouldSkipValidate((event.nativeEvent as SubmitEvent).submitter) && !event.currentTarget.checkValidity()) {
+			event.preventDefault();
+		} else {
+			onSubmit?.(event);
+		}
+	};
 
 	useEffect(() => {
-		if (!reportValidity) {
-			setNoBrowserValidate(true);
-		}
-	}, [reportValidity]);
+		setNoBrowserValidate(true);
+	}, []);
 
 	return {
 		onBlur: handleBlur,
@@ -69,54 +58,163 @@ export function useFormValidation({
 	};
 }
 
-interface FieldsetOptions<T extends string> {
+export interface FieldsetOptions<T extends string> {
 	name?: string;
 	index?: number;
 	form?: string;
-	serverError?: Record<T, string | undefined>,
+	value?: Record<T, any>;
+	error?: Record<T, any>;
 }
 
 export function useFieldset<T extends string>(
 	fieldset: Record<T, Field>,
-	{ name, index, form, serverError }: FieldsetOptions<T>,
-) {
-	const [error, setError] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, serverError?.[name as T] ?? ''])));
-	const inputs = useMemo(() => {
-		const entries = Object.entries<Field>(fieldset).map(([key, field]) => {
-			const constraints = field.getConstraints();
-			const checkCustomValidity = configureCustomValidity(constraints);
-			const fieldAttributes: InputHTMLAttributes<HTMLInputElement> = {
-				...getFieldAttributes(constraints),
-				name: typeof index !== 'undefined' ? `${name}[${index}].${key}` : name ? `${name}.${key}` : key,
-				form,
-				onInput(e) {
-					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
-					const message = customMessage ?? e.currentTarget.validationMessage;
+	{ name, index, form, value, error }: FieldsetOptions<T> = {},
+): [
+	Record<T, any>,
+	Record<T, string>
+] {
+	const ref = useRef<Record<string, HTMLInputElement | null>>({});
+	const [errorMessage, setErrorMessage] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, error?.[name as T] ?? ''])) as Record<T, string>);
+	const field = useMemo(() => {
+		const entries = Object
+			.entries<Field>(fieldset)
+			.map<[T, any]>(([key, field]) => {
+				const constraint = getConstraint(field);
+				const props = {
+					name: typeof index !== 'undefined'
+						? `${name}[${index}].${key}`
+						: name
+						? `${name}.${key}`
+						: key,
+					form,
+				};
 
-					if (message) {
-						// Skip: the input is valid
-						return;
+				if (constraint.type.value === 'fieldset') {
+					if (!constraint.multiple) {
+						return [
+							key as T,
+							{
+								...props,
+								value: value?.[key as T],
+								error: error?.[key as T],
+							},
+						];
+					} else {
+						return [
+							key as T,
+							Array(constraint.multiple.value ?? 1)
+								.fill(Date.now())
+								.map<{ key: string; props: FieldsetOptions<T> }>((prefix, index) => ({
+									key: `${prefix}${index}`,
+									props: {
+										...props,
+										index,
+										value: value?.[key as T]?.[index],
+										error: error?.[key as T]?.[index],
+									},
+								})),
+						];
 					}
+				} else {
+					const attributes: InputHTMLAttributes<HTMLInputElement> & ClassAttributes<HTMLInputElement> = {
+						...props,
+						type: constraint.type.value !== 'textarea' && constraint.type.value !== 'select'
+							? constraint.type.value
+							: undefined,
+						required: Boolean(constraint.required),
+						multiple: Boolean(constraint.multiple),
+						minLength: constraint.minLength?.value,
+						maxLength: constraint.maxLength?.value,
+						min: constraint.min
+							? (constraint.min.value instanceof Date ? constraint.min.value.toISOString() : constraint.min.value)
+							: undefined,
+						max: constraint.max
+							? (constraint.max.value instanceof Date ? constraint.max.value.toISOString() : constraint.max.value)
+							: undefined,
+						step: constraint.step?.value,
+						pattern: (constraint as Constraint).pattern?.map(pattern => pattern.value.source).join('|'),
+						defaultValue: value?.[key as T],
+						ref(el) {
+							ref.current[key] = el;
+						},
+						onInput(e) {
+							const customMessage = checkCustomValidity(e.currentTarget, constraint);
+							const message = customMessage ?? e.currentTarget.validationMessage;
+				
+							if (message) {
+								// Skip: the input is valid
+								return;
+							}
+				
+							setErrorMessage(error => error[key as T] === '' ? error : { ...error, [key]: '' });
+						},
+						onInvalid(e) {
+							const customMessage = checkCustomValidity(e.currentTarget, constraint);
+							const message = customMessage ?? e.currentTarget.validationMessage;
+				
+							setErrorMessage(error => error[key as T] === message ? error : { ...error, [key]: message });
+						},
+					};
 
-					setError(error => error[key] === '' ? error : { ...error, [key]: '' });
-				},
-				onInvalid(e) {
-					const customMessage = checkCustomValidity?.(e.currentTarget.validity);
-					const message = customMessage ?? e.currentTarget.validationMessage;
+					return [key as T, attributes];
+				};
+			});
 
-					setError(error => error[key] === message ? error : { ...error, [key]: message });
-				},
-			};
-
-			return [key, fieldAttributes] as [string, InputHTMLAttributes<HTMLInputElement>];
-		});
-
-		return Object.fromEntries(entries);
-	}, [fieldset, name, index, form]);
+		return Object.fromEntries(entries) as Record<T, any>;
+	}, [fieldset, name, index, form, value, error]);
 
 	useEffect(() => {
-		setError(error => Object.fromEntries(Object.keys(fieldset).map(name => [name, error[name] ?? ''])));
+		setErrorMessage(errorMessage => {
+			const entries = Object
+				.entries<Field>(fieldset)
+				.map(([name, field]) => {
+					const element = ref.current[name];
+					let message = errorMessage[name as T];
+
+					if (message && element) {
+						const constraint = getConstraint(field);
+						const customMessage = checkCustomValidity(element, constraint) ?? element.validationMessage;
+
+						message = customMessage;
+					}
+
+					return [name, message];
+				});
+
+			return Object.fromEntries(entries) as Record<T, string>
+		});
 	}, [fieldset]);
 
-	return [inputs, error];
+	return [field, errorMessage];
+}
+
+function checkCustomValidity(
+	element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+	constraint: Constraint,
+): string | null {
+	if (element.validity.valueMissing) {
+		return constraint.required?.message ?? null;
+	} else if (element.validity.tooShort) {
+		return constraint.minLength?.message ?? null;
+	} else if (element.validity.tooLong) {
+		return constraint.maxLength?.message ?? null;
+	} else if (element.validity.stepMismatch) {
+		return constraint.step?.message ?? null;
+	} else if (element.validity.rangeUnderflow) {
+		return constraint.min?.message ?? null;
+	} else if (element.validity.rangeOverflow) {
+		return constraint.max?.message ?? null;
+	} else if (element.validity.typeMismatch || element.validity.badInput) {
+		return constraint.type?.message ?? null;
+	} else if (element.validity.patternMismatch) {
+		if (!constraint.pattern) {
+			return null;
+		} else if (constraint.pattern.length === 1) {
+			return constraint.pattern[0].message ?? null;
+		} else {
+			return constraint.pattern.find(pattern => pattern.value.test(element.value))?.message ?? null;
+		}
+	} else {
+		return '';
+	}
 }
