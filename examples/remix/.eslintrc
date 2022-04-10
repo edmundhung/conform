@@ -1,10 +1,4 @@
 {
-	"extends": [
-		"@remix-run/eslint-config",
-		"@remix-run/eslint-config/node"
-	],
-	"ignorePatterns": [
-		"build/**",
-		"public/build/**"
-	]
+	"extends": ["@remix-run/eslint-config", "@remix-run/eslint-config/node"],
+	"ignorePatterns": ["build/**", "public/build/**"]
 }

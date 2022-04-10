@@ -21,6 +21,9 @@ pids
 /packages/*/LICENSE
 /packages/*/_virtual
 
+# Anything built
+build/
+
 # tsc
 *.tsbuildinfo
 
