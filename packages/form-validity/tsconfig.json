@@ -7,7 +7,6 @@
 		"strict": true,
 		"declaration": true,
 		"emitDeclarationOnly": true,
-		"outDir": "../../build/form-validity",
 		"composite": true,
 		"skipLibCheck": true
 	}

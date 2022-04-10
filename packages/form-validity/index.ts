@@ -201,7 +201,8 @@ function createField<Type extends keyof FieldOption>(
 
 	// @ts-ignore
 	return Object.fromEntries(
-		[symbol].concat(supportedAttributes).map((key) => [key, field[key]]),
+		// @ts-ignore
+		[symbol, ...supportedAttributes].map((key) => [key, field[key]]),
 	);
 }
 

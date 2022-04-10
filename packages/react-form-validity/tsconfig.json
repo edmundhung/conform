@@ -8,7 +8,6 @@
 		"jsx": "react-jsx",
 		"declaration": true,
 		"emitDeclarationOnly": true,
-		"outDir": "../../build/react-form-validity",
 		"composite": true,
 		"skipLibCheck": true
 	}

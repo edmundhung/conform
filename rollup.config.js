@@ -6,7 +6,7 @@ import copy from 'rollup-plugin-copy';
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage(name, entry) {
 	let sourceDir = `packages/${name}`;
-	let outputDir = `build/${name}`;
+	let outputDir = `${sourceDir}`;
 
 	/** @type {import("rollup").RollupOptions} */
 	let CJS = {
@@ -30,11 +30,7 @@ function configurePackage(name, entry) {
 				extensions: ['.ts', '.tsx'],
 			}),
 			copy({
-				targets: [
-					{ src: `LICENSE`, dest: outputDir },
-					{ src: `${sourceDir}/package.json`, dest: outputDir },
-					{ src: `${sourceDir}/README.md`, dest: outputDir },
-				],
+				targets: [{ src: `LICENSE`, dest: sourceDir }],
 			}),
 		],
 	};
