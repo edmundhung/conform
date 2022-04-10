@@ -1,7 +1,18 @@
-import type { FormEventHandler, FormHTMLAttributes, InputHTMLAttributes, ClassAttributes, FocusEventHandler } from 'react';
+import type {
+	FormEventHandler,
+	FormHTMLAttributes,
+	InputHTMLAttributes,
+	ClassAttributes,
+	FocusEventHandler,
+} from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Constraint, Field } from 'form-validity';
-import { getConstraint, shouldSkipValidate, isDirtyField, isValidationConstraintSupported } from 'form-validity';
+import {
+	getConstraint,
+	shouldSkipValidate,
+	isDirtyField,
+	isValidationConstraintSupported,
+} from 'form-validity';
 
 export type { Constraint } from 'form-validity';
 export { f, parse } from 'form-validity';
@@ -17,12 +28,18 @@ export function useFormValidation({
 	onBlur,
 	onSubmit,
 }: FormValidationProps): FormValidationProps {
-	const ref = useRef<{ submitted: boolean; touched: Record<string, boolean | undefined> }>({ submitted: false, touched: {} });
+	const ref = useRef<{
+		submitted: boolean;
+		touched: Record<string, boolean | undefined>;
+	}>({ submitted: false, touched: {} });
 	const [noBrowserValidate, setNoBrowserValidate] = useState(
 		noValidate ?? false,
 	);
 	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
-		if (isValidationConstraintSupported(event.target) && isDirtyField(event.target)) {
+		if (
+			isValidationConstraintSupported(event.target) &&
+			isDirtyField(event.target)
+		) {
 			ref.current.touched[event.target.name] = true;
 			event.target.checkValidity();
 		}
@@ -30,7 +47,10 @@ export function useFormValidation({
 		onBlur?.(event);
 	};
 	const handleChange: FormEventHandler<HTMLFormElement> = (event) => {
-		if (isValidationConstraintSupported(event.target) && (ref.current.submitted || ref.current.touched[event.target.name])) {
+		if (
+			isValidationConstraintSupported(event.target) &&
+			(ref.current.submitted || ref.current.touched[event.target.name])
+		) {
 			event.target.checkValidity();
 		}
 
@@ -39,7 +59,10 @@ export function useFormValidation({
 	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
 		ref.current.submitted = true;
 
-		if (!shouldSkipValidate((event.nativeEvent as SubmitEvent).submitter) && !event.currentTarget.checkValidity()) {
+		if (
+			!shouldSkipValidate((event.nativeEvent as SubmitEvent).submitter) &&
+			!event.currentTarget.checkValidity()
+		) {
 			event.preventDefault();
 		} else {
 			onSubmit?.(event);
@@ -69,23 +92,25 @@ export interface FieldsetOptions<T extends string = string> {
 export function useFieldset<T extends string>(
 	fieldset: Record<T, Field>,
 	{ name, index, form, value, error }: FieldsetOptions<T> = {},
-): [
-	Record<T, any>,
-	Record<T, string>
-] {
+): [Record<T, any>, Record<T, string>] {
 	const ref = useRef<Record<string, HTMLInputElement | null>>({});
-	const [errorMessage, setErrorMessage] = useState(() => Object.fromEntries(Object.keys(fieldset).map(name => [name, error?.[name as T] ?? ''])) as Record<T, string>);
+	const [errorMessage, setErrorMessage] = useState(
+		() =>
+			Object.fromEntries(
+				Object.keys(fieldset).map((name) => [name, error?.[name as T] ?? '']),
+			) as Record<T, string>,
+	);
 	const field = useMemo(() => {
-		const entries = Object
-			.entries<Field>(fieldset)
-			.map<[T, any]>(([key, field]) => {
+		const entries = Object.entries<Field>(fieldset).map<[T, any]>(
+			([key, field]) => {
 				const constraint = getConstraint(field);
 				const props = {
-					name: typeof index !== 'undefined'
-						? `${name}[${index}].${key}`
-						: name
-						? `${name}.${key}`
-						: key,
+					name:
+						typeof index !== 'undefined'
+							? `${name}[${index}].${key}`
+							: name
+							? `${name}.${key}`
+							: key,
 					form,
 				};
 
@@ -104,84 +129,110 @@ export function useFieldset<T extends string>(
 							key as T,
 							Array(constraint.multiple.value ?? 1)
 								.fill(Date.now())
-								.map<{ key: string; props: FieldsetOptions<T> }>((prefix, index) => ({
-									key: `${prefix}${index}`,
-									props: {
-										...props,
-										index,
-										value: value?.[key as T]?.[index],
-										error: error?.[key as T]?.[index],
-									},
-								})),
+								.map<{ key: string; props: FieldsetOptions<T> }>(
+									(prefix, index) => ({
+										key: `${prefix}${index}`,
+										props: {
+											...props,
+											index,
+											value: value?.[key as T]?.[index],
+											error: error?.[key as T]?.[index],
+										},
+									}),
+								),
 						];
 					}
 				} else {
-					const attributes: InputHTMLAttributes<HTMLInputElement> & ClassAttributes<HTMLInputElement> = {
+					const attributes: InputHTMLAttributes<HTMLInputElement> &
+						ClassAttributes<HTMLInputElement> = {
 						...props,
-						type: constraint.type.value !== 'textarea' && constraint.type.value !== 'select'
-							? constraint.type.value
-							: undefined,
+						type:
+							constraint.type.value !== 'textarea' &&
+							constraint.type.value !== 'select'
+								? constraint.type.value
+								: undefined,
 						required: Boolean(constraint.required),
 						multiple: Boolean(constraint.multiple),
 						minLength: constraint.minLength?.value,
 						maxLength: constraint.maxLength?.value,
 						min: constraint.min
-							? (constraint.min.value instanceof Date ? constraint.min.value.toISOString() : constraint.min.value)
+							? constraint.min.value instanceof Date
+								? constraint.min.value.toISOString()
+								: constraint.min.value
 							: undefined,
 						max: constraint.max
-							? (constraint.max.value instanceof Date ? constraint.max.value.toISOString() : constraint.max.value)
+							? constraint.max.value instanceof Date
+								? constraint.max.value.toISOString()
+								: constraint.max.value
 							: undefined,
 						step: constraint.step?.value,
-						pattern: (constraint as Constraint).pattern?.map(pattern => pattern.value.source).join('|'),
+						pattern: (constraint as Constraint).pattern
+							?.map((pattern) => pattern.value.source)
+							.join('|'),
 						defaultValue: value?.[key as T],
 						ref(el) {
 							ref.current[key] = el;
 						},
 						onInput(e) {
-							const customMessage = checkCustomValidity(e.currentTarget, constraint);
-							const message = customMessage ?? e.currentTarget.validationMessage;
-				
+							const customMessage = checkCustomValidity(
+								e.currentTarget,
+								constraint,
+							);
+							const message =
+								customMessage ?? e.currentTarget.validationMessage;
+
 							if (message) {
 								// Skip: the input is valid
 								return;
 							}
-				
-							setErrorMessage(error => error[key as T] === '' ? error : { ...error, [key]: '' });
+
+							setErrorMessage((error) =>
+								error[key as T] === '' ? error : { ...error, [key]: '' },
+							);
 						},
 						onInvalid(e) {
-							const customMessage = checkCustomValidity(e.currentTarget, constraint);
-							const message = customMessage ?? e.currentTarget.validationMessage;
-				
-							setErrorMessage(error => error[key as T] === message ? error : { ...error, [key]: message });
+							const customMessage = checkCustomValidity(
+								e.currentTarget,
+								constraint,
+							);
+							const message =
+								customMessage ?? e.currentTarget.validationMessage;
+
+							setErrorMessage((error) =>
+								error[key as T] === message
+									? error
+									: { ...error, [key]: message },
+							);
 						},
 					};
 
 					return [key as T, attributes];
-				};
-			});
+				}
+			},
+		);
 
 		return Object.fromEntries(entries) as Record<T, any>;
 	}, [fieldset, name, index, form, value, error]);
 
 	useEffect(() => {
-		setErrorMessage(errorMessage => {
-			const entries = Object
-				.entries<Field>(fieldset)
-				.map(([name, field]) => {
-					const element = ref.current[name];
-					let message = errorMessage[name as T];
+		setErrorMessage((errorMessage) => {
+			const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
+				const element = ref.current[name];
+				let message = errorMessage[name as T];
 
-					if (message && element) {
-						const constraint = getConstraint(field);
-						const customMessage = checkCustomValidity(element, constraint) ?? element.validationMessage;
+				if (message && element) {
+					const constraint = getConstraint(field);
+					const customMessage =
+						checkCustomValidity(element, constraint) ??
+						element.validationMessage;
 
-						message = customMessage;
-					}
+					message = customMessage;
+				}
 
-					return [name, message];
-				});
+				return [name, message];
+			});
 
-			return Object.fromEntries(entries) as Record<T, string>
+			return Object.fromEntries(entries) as Record<T, string>;
 		});
 	}, [fieldset]);
 
@@ -212,7 +263,10 @@ function checkCustomValidity(
 		} else if (constraint.pattern.length === 1) {
 			return constraint.pattern[0].message ?? null;
 		} else {
-			return constraint.pattern.find(pattern => pattern.value.test(element.value))?.message ?? null;
+			return (
+				constraint.pattern.find((pattern) => pattern.value.test(element.value))
+					?.message ?? null
+			);
 		}
 	} else {
 		return '';

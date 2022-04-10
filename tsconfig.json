@@ -2,7 +2,7 @@
 	"references": [
 		{ "path": "packages/form-validity" },
 		{ "path": "packages/react-form-validity" },
-		{ "path": "packages/remix-form-validity" },
+		{ "path": "packages/remix-form-validity" }
 	],
 	"files": []
 }
