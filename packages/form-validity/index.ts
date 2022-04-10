@@ -1,70 +1,19 @@
-interface Required {
-	required: (message?: string) => this;
-}
-
-interface Min<Value> {
-	min(value: Value | string, message?: string): this;
-}
-
-interface Max<Value> {
-	max(value: Value | string, message?: string): this;
-}
-
-interface MinLength {
-	minLength(number: number, message?: string): this;
-}
-
-interface MaxLength {
-	maxLength(number: number, message?: string): this;
-}
-
-interface Pattern {
-	pattern(regexp: RegExp, message?: string): this;
-}
-
-interface Step {
-	step(number: number | string, message?: string): this;
-}
-
-interface Multiple<Count = void> {
-	multiple(count: Count): this;
-}
-
-interface NoConstraint {}
-
-export interface FieldAttributes {
-	type?: Exclude<keyof FieldOption, 'select' | 'textarea' | 'fieldset'>;
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	min?: string | number;
-	max?: string | number;
-	step?: string | number;
-	pattern?: string;
-	multiple?: boolean;
-}
-
-export interface FieldOption {
-	// 'button': NoConstraint;
+export interface FieldAttribute {
 	checkbox: Required;
 	color: NoConstraint;
 	date: Required & Min<Date> & Max<Date> & Step;
-	datetime: Required & Min<Date> & Max<Date> & Step;
 	'datetime-local': Required & Min<Date> & Max<Date> & Step;
 	email: Required & MinLength & MaxLength & Pattern;
 	fieldset: Multiple<Number>;
 	file: Required;
 	hidden: NoConstraint;
-	// 'image': NoConstraint;
 	month: Required & Min<Date> & Max<Date> & Step;
 	number: Required & Min<number> & Max<number> & Step;
 	password: Required & MinLength & MaxLength & Pattern;
 	radio: Required;
 	range: Min<number> & Max<number> & Step;
-	// 'reset': NoConstraint;
 	search: Required & MinLength & MaxLength & Pattern;
 	select: Required;
-	// 'submit': NoConstraint;
 	tel: Required & MinLength & MaxLength & Pattern;
 	text: Required & MinLength & MaxLength & Pattern;
 	textarea: Required & MinLength & MaxLength;
@@ -73,41 +22,11 @@ export interface FieldOption {
 	week: Required & Min<Date> & Max<Date> & Step;
 }
 
-const attributesByType: Record<
-	keyof FieldOption,
-	Array<keyof FieldAttributes>
-> = {
-	// 'button': [],
-	checkbox: ['required'],
-	color: [],
-	date: ['required', 'minLength', 'maxLength', 'pattern'],
-	datetime: ['required', 'minLength', 'maxLength', 'pattern'],
-	'datetime-local': ['required', 'minLength', 'maxLength', 'pattern'],
-	email: ['required', 'minLength', 'maxLength', 'pattern'],
-	fieldset: ['multiple'],
-	file: ['required'],
-	hidden: [],
-	// 'image': [],
-	month: ['required', 'minLength', 'maxLength', 'pattern'],
-	number: ['required', 'minLength', 'maxLength', 'pattern'],
-	password: ['required', 'minLength', 'maxLength', 'pattern'],
-	radio: ['required'],
-	range: ['min', 'max', 'step'],
-	// 'reset': [],
-	search: ['required', 'minLength', 'maxLength', 'pattern'],
-	select: ['required'],
-	// 'submit': [],
-	tel: ['required', 'minLength', 'maxLength', 'pattern'],
-	text: ['required', 'minLength', 'maxLength', 'pattern'],
-	textarea: ['required', 'minLength', 'maxLength'],
-	time: ['required', 'minLength', 'maxLength', 'pattern'],
-	url: ['required', 'minLength', 'maxLength', 'pattern'],
-	week: ['required', 'minLength', 'maxLength', 'pattern'],
-};
+export type FieldType = keyof FieldAttribute;
 
 export interface Constraint {
 	type: {
-		value: keyof FieldOption;
+		value: FieldType;
 		message: string | undefined;
 	};
 	required?: {
@@ -145,38 +64,201 @@ export interface Constraint {
 
 const symbol = Symbol('constraints');
 
-export type Field<Type extends keyof FieldOption = keyof FieldOption> =
-	FieldOption[Type] & { [symbol]: () => Constraint };
+export type Field<Type extends FieldType = FieldType> = FieldAttribute[Type] & {
+	[symbol]: () => Constraint;
+};
 
-function createField<Type extends keyof FieldOption>(
+/**
+ * Helpers for constructing the field constraint based on the type
+ * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
+ */
+export const f = {
+	checkbox: () => createField('checkbox'),
+	color: () => createField('color'),
+	date: () => createField('date'),
+	datetime: () => createField('datetime-local'),
+	email: (message?: string) => createField('email', message),
+	fieldset: () => createField('fieldset'),
+	file: () => createField('file'),
+	hidden: () => createField('hidden'),
+	month: () => createField('month'),
+	number: (message?: string) => createField('number', message),
+	password: () => createField('password'),
+	radio: () => createField('radio'),
+	range: () => createField('range'),
+	search: () => createField('search'),
+	select: () => createField('select'),
+	tel: () => createField('tel'),
+	text: () => createField('text'),
+	textarea: () => createField('textarea'),
+	time: () => createField('time'),
+	url: (message?: string) => createField('url', message),
+	week: () => createField('week'),
+};
+
+export function getConstraint<Type extends FieldType>(field: Field<Type>) {
+	return field[symbol]();
+}
+
+export function isElement<T extends HTMLElement>(
+	element: any,
+	tag: string,
+): element is T {
+	return !!element && element.tagName.toLowerCase() === tag;
+}
+
+export function isDirty(element: unknown): boolean {
+	if (isElement<HTMLFormElement>(element, 'form')) {
+		for (let el of element.elements) {
+			if (isDirty(el)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	if (
+		isElement<HTMLInputElement>(element, 'input') ||
+		isElement<HTMLTextAreaElement>(element, 'textarea')
+	) {
+		return element.value !== element.defaultValue;
+	}
+
+	if (isElement<HTMLSelectElement>(element, 'select')) {
+		return (
+			element.value !==
+			Array.from(element.options).find((option) => option.defaultSelected)
+				?.value
+		);
+	}
+
+	return false;
+}
+
+export function isValidationConstraintSupported(
+	element: unknown,
+): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+	if (
+		!isElement<HTMLInputElement>(element, 'input') &&
+		!isElement<HTMLSelectElement>(element, 'select') &&
+		!isElement<HTMLTextAreaElement>(element, 'textarea')
+	) {
+		return false;
+	}
+
+	return typeof element.checkValidity === 'function';
+}
+
+export function shouldSkipValidate(element: unknown) {
+	return isElement<HTMLButtonElement>(element, 'button') ||
+		isElement<HTMLInputElement>(element, 'input')
+		? element.formNoValidate
+		: false;
+}
+
+export function parse<T>(
+	payload: FormData | URLSearchParams | string,
+	fieldsetCreator:
+		| ((value?: Record<string, any>) => Record<string, T>)
+		| Record<string, T>,
+): { value: Record<string, any>; error: Record<string, string> | null } {
+	const valueEntries: Iterable<[string, FormDataEntryValue]> =
+		payload instanceof URLSearchParams || payload instanceof FormData
+			? payload
+			: new URLSearchParams(payload);
+	const value = unflatten(valueEntries);
+	const fieldset =
+		typeof fieldsetCreator === 'function'
+			? fieldsetCreator(value)
+			: fieldsetCreator;
+	const values = Object.fromEntries(valueEntries);
+	const errorEntries: Array<[string, string]> = [];
+
+	for (const [name, field] of flatten<Field>(
+		fieldset,
+		(f) => typeof f[symbol] === 'function',
+	)) {
+		const constraint = getConstraint(field);
+		const value = values[name];
+		const message = validate(value, constraint);
+
+		if (message) {
+			errorEntries.push([name, message]);
+		}
+	}
+
+	return {
+		value,
+		error: errorEntries.length > 0 ? unflatten(errorEntries) : null,
+	};
+}
+
+/**
+ * Helpers
+ */
+
+interface Required {
+	required(message?: string): this;
+}
+
+interface Min<Value> {
+	min(value: Value | string, message?: string): this;
+}
+
+interface Max<Value> {
+	max(value: Value | string, message?: string): this;
+}
+
+interface MinLength {
+	minLength(number: number, message?: string): this;
+}
+
+interface MaxLength {
+	maxLength(number: number, message?: string): this;
+}
+
+interface Pattern {
+	pattern(regexp: RegExp, message?: string): this;
+}
+
+interface Step {
+	step(number: number | string, message?: string): this;
+}
+
+interface Multiple<Count = void> {
+	multiple(count: Count): this;
+}
+
+interface NoConstraint {}
+
+function createField<Type extends FieldType>(
 	type: Type,
 	message?: string,
 ): Field<Type> {
-	const supportedAttributes = attributesByType[type];
 	const constraint: Constraint = {
 		type: { value: type, message: message },
 	};
-
 	const field = {
 		required(message?: string) {
 			constraint.required = { message };
-			return field;
+			return this;
 		},
 		min(value: number | Date, message?: string) {
 			constraint.min = { value, message };
-			return field;
+			return this;
 		},
 		max(value: number | Date, message?: string) {
 			constraint.max = { value, message };
-			return field;
+			return this;
 		},
 		minLength(value: number, message?: string) {
 			constraint.minLength = { value, message };
-			return field;
+			return this;
 		},
 		maxLength(value: number, message?: string) {
 			constraint.maxLength = { value, message };
-			return field;
+			return this;
 		},
 		pattern(value: RegExp, message?: string) {
 			if (value.global || value.ignoreCase || value.multiline) {
@@ -190,128 +272,17 @@ function createField<Type extends keyof FieldOption>(
 				});
 			}
 
-			return field;
+			return this;
 		},
 		multiple(value?: number) {
 			constraint.multiple = { value, message };
-			return field;
+			return this;
 		},
 		[symbol]: () => constraint,
 	};
 
 	// @ts-ignore
-	return Object.fromEntries(
-		// @ts-ignore
-		[symbol, ...supportedAttributes].map((key) => [key, field[key]]),
-	);
-}
-
-/**
- * Helpers for constructing the field constraints
- * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
- */
-export const f = {
-	// button: () => createField('button'),
-	checkbox: () => createField('checkbox'),
-	color: () => createField('color'),
-	date: () => createField('date'),
-	// datetime: () => createField('datetime'),
-	datetime: () => createField('datetime-local'), // `datetime` is deprecated
-	email: (message?: string) => createField('email', message),
-	fieldset: () => createField('fieldset'),
-	file: () => createField('file'),
-	hidden: () => createField('hidden'),
-	// image: () => createField('image'),
-	month: () => createField('month'),
-	number: (message?: string) => createField('number', message),
-	password: () => createField('password'),
-	radio: () => createField('radio'),
-	range: () => createField('range'),
-	// reset: () => createField('reset'),
-	search: () => createField('search'),
-	select: () => createField('select'),
-	// submit: () => createField('submit'),
-	tel: () => createField('tel'),
-	text: () => createField('text'),
-	textarea: () => createField('textarea'),
-	time: () => createField('time'),
-	url: (message?: string) => createField('url', message),
-	week: () => createField('week'),
-};
-
-export function getConstraint<Type extends keyof FieldOption>(
-	field: Field<Type>,
-) {
-	return field[symbol]();
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isElement<T extends HTMLElement>(
-	element: any,
-	tag: string,
-): element is T {
-	return !!element && element.tagName.toLowerCase() === tag;
-}
-
-export function isInputElement(element: unknown): element is HTMLInputElement {
-	return isElement<HTMLInputElement>(element, 'input');
-}
-
-export function isSelectElement(
-	element: unknown,
-): element is HTMLSelectElement {
-	return isElement<HTMLSelectElement>(element, 'select');
-}
-
-export function isTextareaElement(
-	element: unknown,
-): element is HTMLTextAreaElement {
-	return isElement<HTMLTextAreaElement>(element, 'textarea');
-}
-
-export function isButtonElement(
-	element: unknown,
-): element is HTMLButtonElement {
-	return isElement<HTMLButtonElement>(element, 'button');
-}
-
-export function isDirtyField(
-	element: HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement,
-): boolean {
-	if (
-		isElement<HTMLInputElement>(element, 'input') ||
-		isElement<HTMLTextAreaElement>(element, 'textarea')
-	) {
-		return element.value !== element.defaultValue;
-	} else if (isElement<HTMLSelectElement>(element, 'select')) {
-		return (
-			element.value !==
-			Array.from(element.options).find((option) => option.defaultSelected)
-				?.value
-		);
-	} else {
-		return false;
-	}
-}
-
-export function isValidationConstraintSupported(
-	element: unknown,
-): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
-	if (
-		!isInputElement(element) &&
-		!isSelectElement(element) &&
-		!isTextareaElement(element)
-	) {
-		return false;
-	}
-
-	return typeof element.checkValidity === 'function';
-}
-
-export function shouldSkipValidate(element: unknown) {
-	return isButtonElement(element) || isInputElement(element)
-		? element.formNoValidate
-		: false;
+	return field;
 }
 
 function flatten<T>(
@@ -496,41 +467,4 @@ function validate(
 	}
 
 	return null;
-}
-
-export function parse<T>(
-	payload: FormData | URLSearchParams | string,
-	fieldsetCreator:
-		| ((value?: Record<string, any>) => Record<string, T>)
-		| Record<string, T>,
-): { value: Record<string, any>; error: Record<string, string> | null } {
-	const valueEntries: Iterable<[string, FormDataEntryValue]> =
-		payload instanceof URLSearchParams || payload instanceof FormData
-			? payload
-			: new URLSearchParams(payload);
-	const value = unflatten(valueEntries);
-	const fieldset =
-		typeof fieldsetCreator === 'function'
-			? fieldsetCreator(value)
-			: fieldsetCreator;
-	const values = Object.fromEntries(valueEntries);
-	const errorEntries: Array<[string, string]> = [];
-
-	for (const [name, field] of flatten<Field>(
-		fieldset,
-		(f) => typeof f[symbol] === 'function',
-	)) {
-		const constraint = getConstraint(field);
-		const value = values[name];
-		const message = validate(value, constraint);
-
-		if (message) {
-			errorEntries.push([name, message]);
-		}
-	}
-
-	return {
-		value,
-		error: errorEntries.length > 0 ? unflatten(errorEntries) : null,
-	};
 }

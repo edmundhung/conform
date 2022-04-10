@@ -10,7 +10,7 @@ import type { Constraint, Field } from 'form-validity';
 import {
 	getConstraint,
 	shouldSkipValidate,
-	isDirtyField,
+	isDirty,
 	isValidationConstraintSupported,
 } from 'form-validity';
 
@@ -38,7 +38,7 @@ export function useFormValidation({
 	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
 		if (
 			isValidationConstraintSupported(event.target) &&
-			isDirtyField(event.target)
+			isDirty(event.target)
 		) {
 			ref.current.touched[event.target.name] = true;
 			event.target.checkValidity();
