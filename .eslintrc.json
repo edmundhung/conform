@@ -1,6 +1,6 @@
 {
 	"root": true,
-	"ignorePatterns": ["**/*"],
+	"extends": ["@remix-run/eslint-config"],
 	"plugins": [],
 	"overrides": []
 }

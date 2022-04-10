@@ -463,7 +463,7 @@ function validate(
 	if (constraint.type) {
 		switch (constraint.type.value) {
 			case 'email':
-				if (!/^\S+\@\S+$/.test(value ?? '')) {
+				if (!/^\S+@\S+$/.test(value ?? '')) {
 					return constraint.type.message ?? `This field must be a valid email`;
 				}
 				break;
