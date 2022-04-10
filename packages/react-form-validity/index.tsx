@@ -58,7 +58,7 @@ export function useFormValidation({
 	};
 }
 
-export interface FieldsetOptions<T extends string> {
+export interface FieldsetOptions<T extends string = string> {
 	name?: string;
 	index?: number;
 	form?: string;

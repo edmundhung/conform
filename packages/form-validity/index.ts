@@ -334,29 +334,41 @@ function validate(value: FormDataEntryValue | undefined, constraint: Constraint)
 		if (typeof value === 'undefined' || value === '') {
 			return constraint.required.message ?? 'This field is required';
 		}
-	} else if (constraint.minLength) {
+	}
+	
+	if (constraint.minLength) {
 		if (typeof value === 'undefined' || value.length < constraint.minLength.value) {
 			return constraint.minLength.message ?? `This field must be at least ${constraint.minLength.value} characters`;
 		}
-	} else if (constraint.maxLength) {
+	}
+	
+	if (constraint.maxLength) {
 		if (typeof value !== 'undefined' && value.length > constraint.maxLength.value) {
 			return constraint.maxLength.message ?? `This field must be at most ${constraint.maxLength.value} characters`;
 		}
-	} else if (constraint.min) {
+	}
+	
+	if (constraint.min) {
 		if (constraint.min.value instanceof Date && new Date(value ?? '') < constraint.min.value) {
 			return constraint.min.message ?? `This field must be later than ${constraint.min.value.toISOString()}`;
 		} else if (typeof constraint.min.value === 'number' && Number(value ?? '') < constraint.min.value) {
 			return constraint.min.message ?? `This field must be greater than or equal to ${constraint.min.value}`;
 		}
-	} else if (constraint.max) {
+	}
+	
+	if (constraint.max) {
 		if (typeof value !== 'undefined' && constraint.max.value instanceof Date && new Date(value) > constraint.max.value) {
 			return constraint.max.message ?? `This field must be at earlier than ${constraint.max.value.toISOString()}`;
 		} else if (typeof value !== 'undefined' && typeof constraint.max.value === 'number' && Number(value) > constraint.max.value) {
 			return constraint.max.message ?? `This field must be less than or equal to ${constraint.max.value}`;
 		}
-	} else if (constraint.step) {
+	}
+	
+	if (constraint.step) {
 		// TODO
-	} else if (constraint.type) {
+	}
+	
+	if (constraint.type) {
 		switch (constraint.type.value) {
 			case 'email':
 				if (!/^\S+\@\S+$/.test(value ?? '')) {
@@ -377,8 +389,14 @@ function validate(value: FormDataEntryValue | undefined, constraint: Constraint)
 				}
 				break;
 		}
-	} else if (constraint.pattern?.length) {
-		const pattern = constraint.pattern.find(pattern => pattern.value.test(value ?? ''));
+	}
+	
+	if (constraint.pattern?.length) {
+		const pattern = constraint.pattern.find(pattern => {
+			const match = value?.match(pattern.value);
+
+			return !match || value !== match[0];
+		});
 
 		if (pattern) {
 			return pattern.message ?? `This field must be a valid format`;
