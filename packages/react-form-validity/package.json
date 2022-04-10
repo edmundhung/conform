@@ -2,11 +2,11 @@
 	"name": "react-form-validity",
 	"description": "React form validation based on the HTML Constraint validation API",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"main": "index.js",
 	"module": "module/index.js",
 	"dependencies": {
-		"form-validity": "0.0.1"
+		"form-validity": "0.0.2"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"

@@ -2,11 +2,11 @@
 	"name": "remix-form-validity",
 	"description": "HTML form validation built for Remix",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"main": "index.js",
 	"module": "module/index.js",
 	"dependencies": {
-		"react-form-validity": "0.0.1"
+		"react-form-validity": "0.0.2"
 	},
 	"peerDependencies": {
 		"@remix-run/react": "^1.0.0",
