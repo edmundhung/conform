@@ -4,6 +4,7 @@ import type {
 	InputHTMLAttributes,
 	ClassAttributes,
 	FocusEventHandler,
+	MouseEventHandler,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Constraint, Field } from 'form-validity';
@@ -89,57 +90,38 @@ export interface FieldsetOptions<T extends string = string> {
 
 export function useFieldset<T extends string>(
 	fieldset: Record<T, Field>,
-	{ name, value, error }: FieldsetOptions<T> = {},
+	options: FieldsetOptions<T> = {},
 ): [Record<T, any>, Record<T, string>] {
 	const fieldsetRef = useRef(fieldset);
 	const fieldRef = useRef<Record<string, HTMLInputElement | null>>({});
 	const [errorMessage, setErrorMessage] = useState(
 		() =>
 			Object.fromEntries(
-				Object.keys(fieldset).map((name) => [name, error?.[name as T] ?? '']),
+				Object.keys(fieldset).map((name) => [
+					name,
+					options.error?.[name as T] ?? '',
+				]),
 			) as Record<T, string>,
 	);
 	const field = useMemo(() => {
 		const entries = Object.entries<Field>(fieldset).map<[T, any]>(
 			([key, field]) => {
 				const constraint = getConstraint(field);
-				const props = {
-					name: name ? `${name}.${key}` : key,
-					form,
-				};
+				const name = options.name ? `${options.name}.${key}` : key;
 
 				if (constraint.type.value === 'fieldset') {
-					if (!constraint.multiple) {
-						return [
-							key as T,
-							{
-								...props,
-								value: value?.[key as T],
-								error: error?.[key as T],
-							},
-						];
-					} else {
-						return [
-							key as T,
-							Array(constraint.multiple.value ?? 1)
-								.fill(Date.now())
-								.map<{ key: string; props: FieldsetOptions<T> }>(
-									(prefix, index) => ({
-										key: `${prefix}${index}`,
-										props: {
-											...props,
-											name: `${props.name}[${index}]`,
-											value: value?.[key as T]?.[index],
-											error: error?.[key as T]?.[index],
-										},
-									}),
-								),
-						];
-					}
+					return [
+						key as T,
+						{
+							name,
+							value: options.value?.[key as T],
+							error: options.error?.[key as T],
+						},
+					];
 				} else {
 					const attributes: InputHTMLAttributes<HTMLInputElement> &
 						ClassAttributes<HTMLInputElement> = {
-						...props,
+						name,
 						type:
 							constraint.type.value !== 'textarea' &&
 							constraint.type.value !== 'select'
@@ -163,7 +145,7 @@ export function useFieldset<T extends string>(
 						pattern: (constraint as Constraint).pattern
 							?.map((pattern) => pattern.value.source)
 							.join('|'),
-						defaultValue: value?.[key as T],
+						defaultValue: options.value?.[key as T],
 						ref(el) {
 							fieldRef.current[key] = el;
 						},
@@ -206,7 +188,7 @@ export function useFieldset<T extends string>(
 		);
 
 		return Object.fromEntries(entries) as Record<T, any>;
-	}, [fieldset, name, value, error]);
+	}, [fieldset, options.name, options.value, options.error]);
 
 	useEffect(() => {
 		if (fieldsetRef.current === fieldset) {
@@ -237,6 +219,54 @@ export function useFieldset<T extends string>(
 	}, [fieldset]);
 
 	return [field, errorMessage];
+}
+
+export function useMultipleFieldset(
+	options: FieldsetOptions,
+	count: number,
+): [
+	any[],
+	MouseEventHandler<HTMLButtonElement>,
+	MouseEventHandler<HTMLButtonElement>,
+] {
+	const [keys, setKeys] = useState(() => [...Array(count).keys()]);
+	const handleAdd: MouseEventHandler<HTMLButtonElement> = (e) => {
+		setKeys((keys) => keys.concat(Date.now()));
+
+		e.preventDefault();
+	};
+	const handleDelete: MouseEventHandler<HTMLButtonElement> = (e) => {
+		const index = Number(e.currentTarget.value);
+
+		if (!isNaN(index)) {
+			setKeys((keys) => [...keys.slice(0, index), ...keys.slice(index + 1)]);
+			e.preventDefault();
+		}
+	};
+	const result = useMemo(
+		() =>
+			keys.map((key, i) => ({
+				key,
+				options: {
+					name: `${options.name}[${i}]`,
+					value: options.value?.[key],
+					error: options.error?.[key],
+				},
+			})),
+		[keys, options],
+	);
+
+	useEffect(() => {
+		setKeys((keys) => {
+			if (keys.length === count) {
+				return keys;
+			}
+
+			return [...Array(count).keys()];
+		});
+	}, [count]);
+
+	return [result, handleAdd, handleDelete];
 }
 
 function checkCustomValidity(

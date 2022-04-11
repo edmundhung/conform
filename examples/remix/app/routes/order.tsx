@@ -1,19 +1,22 @@
 import type { ActionFunction, LoaderFunction } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
-import { useMemo } from 'react';
 import type { FieldsetOptions } from 'remix-form-validity';
-import { Form, useFieldset, f, parse } from 'remix-form-validity';
+import {
+	Form,
+	useFieldset,
+	useMultipleFieldset,
+	f,
+	parse,
+} from 'remix-form-validity';
 import { cookie } from '~/cookie.server';
 import { styles } from '~/helpers';
 
-function configureFieldset(productCount?: number) {
-	return {
-		products: f.fieldset().multiple(productCount ?? 1),
-		address: f.text().required('Address is required'),
-		remarks: f.textarea(),
-	};
-}
+const fieldset = {
+	products: f.fieldset(),
+	address: f.text().required('Address is required'),
+	remarks: f.textarea(),
+};
 
 export let loader: LoaderFunction = async ({ request }) => {
 	const data = await cookie.parse(request.headers.get('Cookie'));
@@ -28,8 +31,6 @@ export let loader: LoaderFunction = async ({ request }) => {
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
 	const { value, error } = parse(formData, (value) => {
-		const fieldset = configureFieldset();
-
 		return {
 			...fieldset,
 			products: Array(value?.products.length ?? 1).fill(productFieldset),
@@ -72,8 +73,11 @@ export let action: ActionFunction = async ({ request }) => {
 export default function OrderForm() {
 	const { success, value, error } = useLoaderData() ?? {};
 	const count = value?.products?.length;
-	const fieldset = useMemo(() => configureFieldset(count), [count]);
 	const [field, errorMessage] = useFieldset(fieldset, { value, error });
+	const [products, handleAdd, handleDelete] = useMultipleFieldset(
+		field.products,
+		count ?? 1,
+	);
 
 	return (
 		<>
@@ -107,35 +111,35 @@ export default function OrderForm() {
 				</button>
 				<div className="space-y-4">
 					<div className="space-y-2">
-						{field.products.map((product, index) => (
+						{products.map((product, index) => (
 							<div className="flex items-end gap-4" key={product.key}>
 								<div className="flex-1">
-									<ProductFieldset list="products" {...product.props} />
+									<ProductFieldset
+										label={`Product #${index + 1}`}
+										{...product.options}
+									/>
 								</div>
 								<button
 									type="submit"
 									className={styles.buttonWarning}
 									name="remove-item"
 									value={index}
-									disabled={field.products.length === 1}
+									onClick={handleDelete}
+									disabled={products.length === 1}
 									formNoValidate
 								>
 									⨯
 								</button>
 							</div>
 						))}
-						<datalist id="products">
-							<option>Apple</option>
-							<option>Banana</option>
-							<option>Orange</option>
-						</datalist>
 					</div>
 					<button
 						className={styles.buttonSecondary}
 						type="submit"
 						name="add-item"
 						value="1"
-						disabled={field.products.length === 3}
+						onClick={handleAdd}
+						disabled={products.length === 3}
 						formNoValidate
 					>
 						Add Product
@@ -172,23 +176,18 @@ const productFieldset = {
 };
 
 interface ProductFieldsetProps extends FieldsetOptions {
-	list?: string;
+	label: string;
 }
 
-function ProductFieldset({ list, ...options }: ProductFieldsetProps) {
+function ProductFieldset({ label, ...options }: ProductFieldsetProps) {
 	const [field, errorMessage] = useFieldset(productFieldset, options);
 
 	return (
-		<fieldset className="flex gap-4">
+		<fieldset className="flex gap-4" name="product">
 			<label className="block flex-1">
-				<span className={styles.label}>
-					{typeof options.index !== 'undefined'
-						? `Product #${options.index + 1}`
-						: 'Product'}
-				</span>
+				<span className={styles.label}>{label}</span>
 				<input
 					className={errorMessage.item ? styles.inputWithError : styles.input}
-					list={list}
 					{...field.item}
 				/>
 			</label>
