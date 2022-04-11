@@ -83,17 +83,16 @@ export function useFormValidation({
 
 export interface FieldsetOptions<T extends string = string> {
 	name?: string;
-	index?: number;
-	form?: string;
 	value?: Record<T, any>;
 	error?: Record<T, any>;
 }
 
 export function useFieldset<T extends string>(
 	fieldset: Record<T, Field>,
-	{ name, index, form, value, error }: FieldsetOptions<T> = {},
+	{ name, value, error }: FieldsetOptions<T> = {},
 ): [Record<T, any>, Record<T, string>] {
-	const ref = useRef<Record<string, HTMLInputElement | null>>({});
+	const fieldsetRef = useRef(fieldset);
+	const fieldRef = useRef<Record<string, HTMLInputElement | null>>({});
 	const [errorMessage, setErrorMessage] = useState(
 		() =>
 			Object.fromEntries(
@@ -105,12 +104,7 @@ export function useFieldset<T extends string>(
 			([key, field]) => {
 				const constraint = getConstraint(field);
 				const props = {
-					name:
-						typeof index !== 'undefined'
-							? `${name}[${index}].${key}`
-							: name
-							? `${name}.${key}`
-							: key,
+					name: name ? `${name}.${key}` : key,
 					form,
 				};
 
@@ -134,7 +128,7 @@ export function useFieldset<T extends string>(
 										key: `${prefix}${index}`,
 										props: {
 											...props,
-											index,
+											name: `${props.name}[${index}]`,
 											value: value?.[key as T]?.[index],
 											error: error?.[key as T]?.[index],
 										},
@@ -171,7 +165,7 @@ export function useFieldset<T extends string>(
 							.join('|'),
 						defaultValue: value?.[key as T],
 						ref(el) {
-							ref.current[key] = el;
+							fieldRef.current[key] = el;
 						},
 						onInput(e) {
 							const customMessage = checkCustomValidity(
@@ -212,12 +206,18 @@ export function useFieldset<T extends string>(
 		);
 
 		return Object.fromEntries(entries) as Record<T, any>;
-	}, [fieldset, name, index, form, value, error]);
+	}, [fieldset, name, value, error]);
 
 	useEffect(() => {
+		if (fieldsetRef.current === fieldset) {
+			return;
+		}
+
+		fieldsetRef.current = fieldset;
+
 		setErrorMessage((errorMessage) => {
 			const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
-				const element = ref.current[name];
+				const element = fieldRef.current[name];
 				let message = errorMessage[name as T];
 
 				if (message && element) {
