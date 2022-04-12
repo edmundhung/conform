@@ -4,7 +4,7 @@ import type {
 	InputHTMLAttributes,
 	ClassAttributes,
 	FocusEventHandler,
-	MouseEventHandler,
+	ButtonHTMLAttributes,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Constraint, Field } from 'form-validity';
@@ -93,7 +93,22 @@ export function useFieldset<T extends string>(
 	options: FieldsetOptions<T> = {},
 ): [Record<T, any>, Record<T, string>] {
 	const fieldsetRef = useRef(fieldset);
-	const fieldRef = useRef<Record<string, HTMLInputElement | null>>({});
+	const elementRef = useRef<Record<string, HTMLInputElement | null>>({});
+	const [keysByName, setKeysByName] = useState<Record<string, number[]>>(() => {
+		const keysByName = {} as Record<string, number[]>;
+
+		for (let [name, field] of Object.entries<Field>(fieldset)) {
+			const constraint = getConstraint(field);
+
+			if (constraint.type.value !== 'fieldset' || !constraint.multiple) {
+				continue;
+			}
+
+			keysByName[name] = [...Array(constraint.multiple.value ?? 1).keys()];
+		}
+
+		return keysByName;
+	});
 	const [errorMessage, setErrorMessage] = useState(
 		() =>
 			Object.fromEntries(
@@ -147,7 +162,7 @@ export function useFieldset<T extends string>(
 							.join('|'),
 						defaultValue: options.value?.[key as T],
 						ref(el) {
-							fieldRef.current[key] = el;
+							elementRef.current[key] = el;
 						},
 						onInput(e) {
 							const customMessage = checkCustomValidity(
@@ -190,6 +205,69 @@ export function useFieldset<T extends string>(
 		return Object.fromEntries(entries) as Record<T, any>;
 	}, [fieldset, options.name, options.value, options.error]);
 
+	const enhancedField = useMemo(() => {
+		let result = field;
+
+		for (let [name, props] of Object.entries<FieldsetOptions<T>>(field)) {
+			const keys = keysByName[name];
+
+			if (!keys) {
+				continue;
+			}
+
+			const addButton: ButtonHTMLAttributes<HTMLButtonElement> = {
+				type: 'submit',
+				name: 'add-item',
+				onClick(e) {
+					setKeysByName((result) => ({
+						...result,
+						[name]: (result[name] ?? []).concat(Date.now()),
+					}));
+					e.preventDefault();
+				},
+			};
+			const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
+				type: 'submit',
+				name: 'remove-item',
+				onClick(e) {
+					const index = Number(e.currentTarget.value);
+
+					if (!isNaN(index)) {
+						setKeysByName((result) => ({
+							...result,
+							[name]: [
+								...(result[name] ?? []).slice(0, index),
+								...(result[name] ?? []).slice(index + 1),
+							],
+						}));
+						e.preventDefault();
+					}
+				},
+			};
+			const list = keys.map<{ key: number; options: FieldsetOptions<T> }>(
+				(key, i) => ({
+					key,
+					options: {
+						name: `${props.name}[${i}]`,
+						value: props.value?.[key as unknown as T],
+						error: props.error?.[key as unknown as T],
+					},
+				}),
+			);
+
+			result = {
+				...result,
+				[name]: {
+					list,
+					addButton,
+					deleteButton,
+				},
+			};
+		}
+
+		return result;
+	}, [field, keysByName]);
+
 	useEffect(() => {
 		if (fieldsetRef.current === fieldset) {
 			return;
@@ -197,9 +275,33 @@ export function useFieldset<T extends string>(
 
 		fieldsetRef.current = fieldset;
 
+		setKeysByName((keysByName) => {
+			let result = keysByName;
+
+			for (let [name, field] of Object.entries<Field>(fieldset)) {
+				const keys = result[name] ?? [];
+				const constraint = getConstraint(field);
+
+				if (
+					constraint.type.value !== 'fieldset' ||
+					!constraint.multiple ||
+					keys.length !== constraint.multiple.value
+				) {
+					continue;
+				}
+
+				result = {
+					...result,
+					[name]: [...Array(constraint.multiple.value ?? 1).keys()],
+				};
+			}
+
+			return result;
+		});
+
 		setErrorMessage((errorMessage) => {
 			const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
-				const element = fieldRef.current[name];
+				const element = elementRef.current[name];
 				let message = errorMessage[name as T];
 
 				if (message && element) {
@@ -218,55 +320,7 @@ export function useFieldset<T extends string>(
 		});
 	}, [fieldset]);
 
-	return [field, errorMessage];
-}
-
-export function useMultipleFieldset(
-	options: FieldsetOptions,
-	count: number,
-): [
-	any[],
-	MouseEventHandler<HTMLButtonElement>,
-	MouseEventHandler<HTMLButtonElement>,
-] {
-	const [keys, setKeys] = useState(() => [...Array(count).keys()]);
-	const handleAdd: MouseEventHandler<HTMLButtonElement> = (e) => {
-		setKeys((keys) => keys.concat(Date.now()));
-
-		e.preventDefault();
-	};
-	const handleDelete: MouseEventHandler<HTMLButtonElement> = (e) => {
-		const index = Number(e.currentTarget.value);
-
-		if (!isNaN(index)) {
-			setKeys((keys) => [...keys.slice(0, index), ...keys.slice(index + 1)]);
-			e.preventDefault();
-		}
-	};
-	const result = useMemo(
-		() =>
-			keys.map((key, i) => ({
-				key,
-				options: {
-					name: `${options.name}[${i}]`,
-					value: options.value?.[key],
-					error: options.error?.[key],
-				},
-			})),
-		[keys, options],
-	);
-
-	useEffect(() => {
-		setKeys((keys) => {
-			if (keys.length === count) {
-				return keys;
-			}
-
-			return [...Array(count).keys()];
-		});
-	}, [count]);
-
-	return [result, handleAdd, handleDelete];
+	return [enhancedField, errorMessage];
 }
 
 function checkCustomValidity(

@@ -4,12 +4,7 @@ import { forwardRef, createElement } from 'react';
 import type { FormValidationProps } from 'react-form-validity';
 import { useFormValidation } from 'react-form-validity';
 
-export {
-	useFieldset,
-	useMultipleFieldset,
-	parse,
-	f,
-} from 'react-form-validity';
+export { useFieldset, parse, f } from 'react-form-validity';
 export type { FieldsetOptions } from 'react-form-validity';
 
 export type FormProps = FormValidationProps & ComponentProps<typeof RemixForm>;
