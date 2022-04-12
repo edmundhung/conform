@@ -1,6 +1,6 @@
 import { Form as RemixForm } from '@remix-run/react';
 import type { ComponentProps } from 'react';
-import { forwardRef } from 'react';
+import { forwardRef, createElement } from 'react';
 import type { FormValidationProps } from 'react-form-validity';
 import { useFormValidation } from 'react-form-validity';
 
@@ -23,7 +23,11 @@ export const Form = forwardRef<HTMLFormElement, FormProps>(
 			onSubmit,
 		});
 
-		return <RemixForm ref={ref} {...props} {...formProps} />;
+		return createElement(RemixForm, {
+			ref,
+			...props,
+			...formProps,
+		});
 	},
 );
 

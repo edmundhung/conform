@@ -20,7 +20,7 @@
 		"clsx": "^1.1.1",
 		"react": "^17.0.2",
 		"react-dom": "^17.0.2",
-		"zod": "^3.14.4"
+		"remix-form-validity": "0.0.2"
 	},
 	"devDependencies": {
 		"@remix-run/dev": "^1.3.4",
