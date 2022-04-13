@@ -8,10 +8,10 @@ import { Form, useFieldset, f, parse } from 'remix-form-validity';
 function configureFieldset(password: string) {
 	const fieldset = {
 		email: f
-			.email('Your email address is invalid')
+			.input('email', 'Your email address is invalid')
 			.required('Email is required'),
-		password: f.password().required('Password is required'),
-		confirm: f.password().required('Confirm password is required'),
+		password: f.input('password').required('Password is required'),
+		confirm: f.input('password').required('Confirm password is required'),
 	};
 
 	if (password) {

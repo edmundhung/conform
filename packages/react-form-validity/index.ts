@@ -5,6 +5,8 @@ import type {
 	ClassAttributes,
 	FocusEventHandler,
 	ButtonHTMLAttributes,
+	SelectHTMLAttributes,
+	TextareaHTMLAttributes,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Constraint, Field } from 'form-validity';
@@ -83,25 +85,100 @@ export function useFormValidation({
 	};
 }
 
-export interface FieldsetOptions<T extends string = string> {
+export interface FieldsetOptions {
 	name?: string;
-	value?: Record<T, any>;
-	error?: Record<T, any>;
+	value?: Record<string, any>;
+	error?: Record<string, any>;
 }
 
-export function useFieldset<T extends string>(
-	fieldset: Record<T, Field>,
-	options: FieldsetOptions<T> = {},
-): [Record<T, any>, Record<T, string>] {
+export type FieldAttributes<Tag> = Tag extends 'input'
+	? ClassAttributes<HTMLInputElement> &
+			Required<
+				Pick<
+					InputHTMLAttributes<HTMLInputElement>,
+					'name' | 'type' | 'onInput' | 'onInvalid'
+				>
+			> &
+			Pick<
+				InputHTMLAttributes<HTMLInputElement>,
+				| 'required'
+				| 'multiple'
+				| 'minLength'
+				| 'maxLength'
+				| 'min'
+				| 'max'
+				| 'step'
+				| 'pattern'
+				| 'defaultValue'
+			>
+	: Tag extends 'textarea'
+	? ClassAttributes<HTMLTextAreaElement> &
+			Required<
+				Pick<
+					TextareaHTMLAttributes<HTMLTextAreaElement>,
+					'name' | 'onInput' | 'onInvalid'
+				>
+			> &
+			Pick<
+				TextareaHTMLAttributes<HTMLTextAreaElement>,
+				'required' | 'minLength' | 'maxLength' | 'defaultValue'
+			>
+	: Tag extends 'select'
+	? ClassAttributes<HTMLSelectElement> &
+			Required<
+				Pick<
+					SelectHTMLAttributes<HTMLSelectElement>,
+					'name' | 'onInput' | 'onInvalid'
+				>
+			> &
+			Pick<
+				SelectHTMLAttributes<HTMLSelectElement>,
+				'required' | 'multiple' | 'defaultValue'
+			>
+	: Tag extends 'fieldset'
+	? {
+			list: Array<{
+				key: number;
+				options: FieldsetOptions;
+				deleteButton: Required<
+					Pick<
+						ButtonHTMLAttributes<HTMLButtonElement>,
+						'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
+					>
+				>;
+			}>;
+			addButton: Required<
+				Pick<
+					ButtonHTMLAttributes<HTMLButtonElement>,
+					'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
+				>
+			>;
+	  }
+	: {};
+
+type FieldProps<Type> = {
+	[Property in keyof Type]: Type[Property] extends Field<infer FieldTag>
+		? FieldAttributes<FieldTag>
+		: never;
+};
+
+type Error<Type> = {
+	[Property in keyof Type]: string;
+};
+
+export function useFieldset<Fieldset extends Record<string, Field>>(
+	fieldset: Fieldset,
+	options: FieldsetOptions = {},
+): [FieldProps<Fieldset>, Error<Fieldset>] {
 	const fieldsetRef = useRef(fieldset);
 	const elementRef = useRef<Record<string, HTMLInputElement | null>>({});
-	const [keysByName, setKeysByName] = useState<Record<string, number[]>>(() => {
+	const [keysByName, setKeysByName] = useState(() => {
 		const keysByName = {} as Record<string, number[]>;
 
-		for (let [name, field] of Object.entries<Field>(fieldset)) {
+		for (let [name, field] of Object.entries(fieldset)) {
 			const constraint = getConstraint(field);
 
-			if (constraint.type.value !== 'fieldset' || !constraint.multiple) {
+			if (constraint.tag !== 'fieldset' || !constraint.multiple) {
 				continue;
 			}
 
@@ -110,106 +187,91 @@ export function useFieldset<T extends string>(
 
 		return keysByName;
 	});
-	const [errorMessage, setErrorMessage] = useState(
-		() =>
-			Object.fromEntries(
-				Object.keys(fieldset).map((name) => [
-					name,
-					options.error?.[name as T] ?? '',
-				]),
-			) as Record<T, string>,
+	const [errorMessage, setErrorMessage] = useState(() =>
+		Object.fromEntries(
+			Object.keys(fieldset).map((name) => [name, options.error?.[name] ?? '']),
+		),
 	);
 	const field = useMemo(() => {
-		const entries = Object.entries<Field>(fieldset).map<[T, any]>(
-			([key, field]) => {
-				const constraint = getConstraint(field);
-				const name = options.name ? `${options.name}.${key}` : key;
+		const entries = Object.entries(fieldset).map(([key, field]) => {
+			const constraint = getConstraint(field);
+			const name = options.name ? `${options.name}.${key}` : key;
 
-				if (constraint.type.value === 'fieldset') {
-					return [
-						key as T,
-						{
-							name,
-							value: options.value?.[key as T],
-							error: options.error?.[key as T],
-						},
-					];
-				} else {
-					const attributes: InputHTMLAttributes<HTMLInputElement> &
-						ClassAttributes<HTMLInputElement> = {
+			if (constraint.tag === 'fieldset') {
+				return [
+					key,
+					{
 						name,
-						type:
-							constraint.type.value !== 'textarea' &&
-							constraint.type.value !== 'select'
-								? constraint.type.value
-								: undefined,
-						required: Boolean(constraint.required),
-						multiple: Boolean(constraint.multiple),
-						minLength: constraint.minLength?.value,
-						maxLength: constraint.maxLength?.value,
-						min: constraint.min
-							? constraint.min.value instanceof Date
-								? constraint.min.value.toISOString()
-								: constraint.min.value
-							: undefined,
-						max: constraint.max
-							? constraint.max.value instanceof Date
-								? constraint.max.value.toISOString()
-								: constraint.max.value
-							: undefined,
-						step: constraint.step?.value,
-						pattern: (constraint as Constraint).pattern
-							?.map((pattern) => pattern.value.source)
-							.join('|'),
-						defaultValue: options.value?.[key as T],
-						ref(el) {
-							elementRef.current[key] = el;
-						},
-						onInput(e) {
-							const customMessage = checkCustomValidity(
-								e.currentTarget,
-								constraint,
-							);
-							const message =
-								customMessage ?? e.currentTarget.validationMessage;
+						value: options.value?.[key],
+						error: options.error?.[key],
+					},
+				];
+			} else {
+				const attributes: FieldAttributes<'input'> = {
+					name,
+					type: constraint.type?.value as string,
+					required: Boolean(constraint.required),
+					multiple: Boolean(constraint.multiple),
+					minLength: constraint.minLength?.value,
+					maxLength: constraint.maxLength?.value,
+					min: constraint.min
+						? constraint.min.value instanceof Date
+							? constraint.min.value.toISOString()
+							: constraint.min.value
+						: undefined,
+					max: constraint.max
+						? constraint.max.value instanceof Date
+							? constraint.max.value.toISOString()
+							: constraint.max.value
+						: undefined,
+					step: constraint.step?.value,
+					pattern: constraint.pattern
+						?.map((pattern) => pattern.value.source)
+						.join('|'),
+					defaultValue: options.value?.[key],
+					ref(el) {
+						elementRef.current[key] = el;
+					},
+					onInput(e) {
+						const customMessage = checkCustomValidity(
+							e.currentTarget,
+							constraint,
+						);
+						const message = customMessage ?? e.currentTarget.validationMessage;
 
-							if (message) {
-								// Skip: the input is valid
-								return;
-							}
+						if (message) {
+							// Skip: the input is valid
+							return;
+						}
 
-							setErrorMessage((error) =>
-								error[key as T] === '' ? error : { ...error, [key]: '' },
-							);
-						},
-						onInvalid(e) {
-							const customMessage = checkCustomValidity(
-								e.currentTarget,
-								constraint,
-							);
-							const message =
-								customMessage ?? e.currentTarget.validationMessage;
+						setErrorMessage((error) =>
+							error[key] === '' ? error : { ...error, [key]: '' },
+						);
+					},
+					onInvalid(e) {
+						const customMessage = checkCustomValidity(
+							e.currentTarget,
+							constraint,
+						);
+						const message = customMessage ?? e.currentTarget.validationMessage;
 
-							setErrorMessage((error) =>
-								error[key as T] === message
-									? error
-									: { ...error, [key]: message },
-							);
-						},
-					};
+						setErrorMessage((error) =>
+							error[key] === message ? error : { ...error, [key]: message },
+						);
+					},
+				};
 
-					return [key as T, attributes];
-				}
-			},
-		);
+				return [key, attributes];
+			}
+		});
 
-		return Object.fromEntries(entries) as Record<T, any>;
+		return Object.fromEntries(entries);
 	}, [fieldset, options.name, options.value, options.error]);
 
 	const enhancedField = useMemo(() => {
 		let result = field;
 
-		for (let [name, props] of Object.entries<FieldsetOptions<T>>(field)) {
+		for (let [name, props] of Object.entries<FieldsetOptions>(field)) {
 			const keys = keysByName[name];
 
 			if (!keys) {
@@ -229,7 +291,7 @@ export function useFieldset<T extends string>(
 				...draftUpdate(name),
 			};
 
-			const list = keys.map<{ key: number; options: FieldsetOptions<T> }>(
+			const list = keys.map<{ key: number; options: FieldsetOptions }>(
 				(key, index) => {
 					const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
 						...draftUpdate(name, index),
@@ -251,8 +313,8 @@ export function useFieldset<T extends string>(
 						key,
 						options: {
 							name: `${props.name}[${index}]`,
-							value: props.value?.[key as unknown as T],
-							error: props.error?.[key as unknown as T],
+							value: props.value?.[key],
+							error: props.error?.[key],
 						},
 						deleteButton,
 					};
@@ -281,12 +343,12 @@ export function useFieldset<T extends string>(
 		setKeysByName((keysByName) => {
 			let result = keysByName;
 
-			for (let [name, field] of Object.entries<Field>(fieldset)) {
+			for (let [name, field] of Object.entries(fieldset)) {
 				const keys = result[name] ?? [];
 				const constraint = getConstraint(field);
 
 				if (
-					constraint.type.value !== 'fieldset' ||
+					constraint.tag !== 'fieldset' ||
 					!constraint.multiple ||
 					keys.length !== constraint.multiple.value
 				) {
@@ -303,9 +365,9 @@ export function useFieldset<T extends string>(
 		});
 
 		setErrorMessage((errorMessage) => {
-			const entries = Object.entries<Field>(fieldset).map(([name, field]) => {
+			const entries = Object.entries(fieldset).map(([name, field]) => {
 				const element = elementRef.current[name];
-				let message = errorMessage[name as T];
+				let message = errorMessage[name];
 
 				if (message && element) {
 					const constraint = getConstraint(field);
@@ -319,11 +381,15 @@ export function useFieldset<T extends string>(
 				return [name, message];
 			});
 
-			return Object.fromEntries(entries) as Record<T, string>;
+			return Object.fromEntries(entries);
 		});
 	}, [fieldset]);
 
-	return [enhancedField, errorMessage];
+	return [
+		enhancedField,
+		// @ts-expect-error
+		errorMessage,
+	];
 }
 
 function checkCustomValidity(

@@ -3,7 +3,7 @@ import { styles } from '~/helpers';
 import { Form, useFieldset, f } from 'remix-form-validity';
 
 const fieldset = {
-	keyword: f.search().required().minLength(3),
+	keyword: f.input('search').required().minLength(3),
 	category: f.select().required(),
 };
 

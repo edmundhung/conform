@@ -10,7 +10,7 @@ import { styles } from '~/helpers';
 function configureFieldset(productCount?: number) {
 	return {
 		products: f.fieldset().multiple(productCount ?? 1),
-		address: f.text().required('Address is required'),
+		address: f.input('text').required('Address is required'),
 		remarks: f.textarea(),
 	};
 }
@@ -99,7 +99,6 @@ export default function OrderForm() {
 								</div>
 								<button
 									className={styles.buttonWarning}
-									value={index}
 									disabled={field.products.list.length === 1}
 									{...product.deleteButton}
 								>
@@ -110,7 +109,6 @@ export default function OrderForm() {
 					</div>
 					<button
 						className={styles.buttonSecondary}
-						value="1"
 						disabled={field.products.list.length === 3}
 						{...field.products.addButton}
 					>
@@ -143,8 +141,8 @@ export default function OrderForm() {
 }
 
 const productFieldset = {
-	item: f.text().required('Product name is required'),
-	quantity: f.number('Invalid').required('Required').min(1, 'Min. 1'),
+	item: f.input('text').required('Product name is required'),
+	quantity: f.input('number', 'Invalid').required('Required').min(1, 'Min. 1'),
 };
 
 interface ProductFieldsetProps extends FieldsetOptions {

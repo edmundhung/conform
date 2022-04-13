@@ -1,32 +1,61 @@
-export interface FieldAttribute {
-	checkbox: Required;
-	color: NoConstraint;
-	date: Required & Min<Date> & Max<Date> & Step;
-	'datetime-local': Required & Min<Date> & Max<Date> & Step;
-	email: Required & MinLength & MaxLength & Pattern;
-	fieldset: Multiple<Number>;
-	file: Required;
-	hidden: NoConstraint;
-	month: Required & Min<Date> & Max<Date> & Step;
-	number: Required & Min<number> & Max<number> & Step;
-	password: Required & MinLength & MaxLength & Pattern;
-	radio: Required;
-	range: Min<number> & Max<number> & Step;
-	search: Required & MinLength & MaxLength & Pattern;
-	select: Required;
-	tel: Required & MinLength & MaxLength & Pattern;
-	text: Required & MinLength & MaxLength & Pattern;
-	textarea: Required & MinLength & MaxLength;
-	time: Required & Min<Date> & Max<Date> & Step;
-	url: Required & MinLength & MaxLength & Pattern;
-	week: Required & Min<Date> & Max<Date> & Step;
-}
+/**
+ *
+ */
+const symbol = Symbol('constraint');
 
-export type FieldType = keyof FieldAttribute;
+export type FieldTag = 'input' | 'textarea' | 'select' | 'fieldset';
 
-export interface Constraint {
-	type: {
-		value: FieldType;
+export type InputType =
+	| 'checkbox'
+	| 'color'
+	| 'date'
+	| 'date'
+	| 'datetime-local'
+	| 'email'
+	| 'fieldset'
+	| 'file'
+	| 'hidden'
+	| 'month'
+	| 'number'
+	| 'password'
+	| 'radio'
+	| 'range'
+	| 'search'
+	| 'select'
+	| 'tel'
+	| 'text'
+	| 'textarea'
+	| 'time'
+	| 'url'
+	| 'week';
+
+export type Field<
+	Tag extends FieldTag = FieldTag,
+	Type extends InputType | undefined = undefined,
+> = (Tag extends 'input'
+	? Type extends 'checkbox' | 'file' | 'radio'
+		? Required
+		: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
+		? Required & Min<Date> & Max<Date> & Step
+		: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
+		? Required & MinLength & MaxLength & Pattern
+		: Type extends 'number'
+		? Required & Min<number> & Max<number> & Step
+		: Type extends 'range'
+		? Min<number> & Max<number> & Step
+		: {}
+	: Tag extends 'select'
+	? Required
+	: Tag extends 'textarea'
+	? Required & MinLength & MaxLength
+	: Tag extends 'fieldset'
+	? Multiple<number>
+	: unknown) & { [symbol]: Constraint<Tag> };
+
+export type Constraint<Tag extends FieldTag = FieldTag> = {
+	tag: Tag;
+	type?: {
+		value: InputType;
 		message: string | undefined;
 	};
 	required?: {
@@ -60,44 +89,116 @@ export interface Constraint {
 		value: number | undefined;
 		message: string | undefined;
 	};
-}
-
-const symbol = Symbol('constraints');
-
-export type Field<Type extends FieldType = FieldType> = FieldAttribute[Type] & {
-	[symbol]: () => Constraint;
 };
+
+function configureF() {
+	function createField<Tag extends FieldTag>(
+		tag: Tag,
+		type?: InputType,
+		message?: string,
+	) {
+		const constraint: Constraint<Tag> = {
+			tag,
+		};
+
+		if (type) {
+			constraint.type = { value: type, message };
+		}
+
+		return {
+			required(message?: string) {
+				constraint.required = { message };
+				return this;
+			},
+			min(value: number | Date, message?: string) {
+				constraint.min = { value, message };
+				return this;
+			},
+			max(value: number | Date, message?: string) {
+				constraint.max = { value, message };
+				return this;
+			},
+			minLength(value: number, message?: string) {
+				constraint.minLength = { value, message };
+				return this;
+			},
+			maxLength(value: number, message?: string) {
+				constraint.maxLength = { value, message };
+				return this;
+			},
+			pattern(value: RegExp, message?: string) {
+				if (value.global || value.ignoreCase || value.multiline) {
+					console.warn(
+						`global, ignoreCase, and multiline flags are not supported on the pattern attribute`,
+					);
+				} else {
+					constraint.pattern = (constraint.pattern ?? []).concat({
+						value,
+						message,
+					});
+				}
+
+				return this;
+			},
+			multiple(value?: number) {
+				constraint.multiple = { value, message };
+				return this;
+			},
+			[symbol]: constraint,
+		};
+	}
+
+	function input<T extends 'email' | 'number' | 'url'>(
+		type: T,
+		message?: string,
+	): Field<'input', T>;
+	function input<T extends Exclude<InputType, 'email' | 'number' | 'url'>>(
+		type: T,
+	): Field<'input', T>;
+	function input<T extends InputType>(
+		type: T,
+		message?: string,
+	): Field<'input', T> {
+		// @ts-expect-error
+		return createField('input', type, message);
+	}
+
+	function select(): Field<'select'> {
+		return createField('select');
+	}
+
+	function textarea(): Field<'textarea'> {
+		return createField('textarea');
+	}
+
+	function fieldset(): Field<'fieldset'> {
+		return createField('fieldset');
+	}
+
+	return {
+		input,
+		select,
+		textarea,
+		fieldset,
+	};
+}
 
 /**
  * Helpers for constructing the field constraint based on the type
  * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
  */
-export const f = {
-	checkbox: () => createField('checkbox'),
-	color: () => createField('color'),
-	date: () => createField('date'),
-	datetime: () => createField('datetime-local'),
-	email: (message?: string) => createField('email', message),
-	fieldset: () => createField('fieldset'),
-	file: () => createField('file'),
-	hidden: () => createField('hidden'),
-	month: () => createField('month'),
-	number: (message?: string) => createField('number', message),
-	password: () => createField('password'),
-	radio: () => createField('radio'),
-	range: () => createField('range'),
-	search: () => createField('search'),
-	select: () => createField('select'),
-	tel: () => createField('tel'),
-	text: () => createField('text'),
-	textarea: () => createField('textarea'),
-	time: () => createField('time'),
-	url: (message?: string) => createField('url', message),
-	week: () => createField('week'),
-};
+export const f = configureF();
 
-export function getConstraint<Type extends FieldType>(field: Field<Type>) {
-	return field[symbol]?.() ?? null;
+export function getConstraint<Tag extends FieldTag>(
+	field: Field<Tag>,
+): Constraint<Tag> {
+	if (typeof field[symbol] === 'undefined') {
+		throw new Error(
+			'Provided config is not a field; Please ensure only field object is used',
+		);
+	}
+
+	return field[symbol];
 }
 
 export function isElement<T extends HTMLElement>(
@@ -234,7 +335,7 @@ export function parse<T>(
 	if (!update) {
 		for (const [name, field] of flatten<Field>(
 			fieldset,
-			(f) => getConstraint(f) !== null,
+			(f) => typeof f[symbol] !== 'undefined',
 		)) {
 			const constraint = getConstraint(field);
 			const value = valueByName[name];
@@ -287,61 +388,6 @@ interface Step {
 
 interface Multiple<Count = void> {
 	multiple(count: Count): this;
-}
-
-interface NoConstraint {}
-
-function createField<Type extends FieldType>(
-	type: Type,
-	message?: string,
-): Field<Type> {
-	const constraint: Constraint = {
-		type: { value: type, message: message },
-	};
-	const field = {
-		required(message?: string) {
-			constraint.required = { message };
-			return this;
-		},
-		min(value: number | Date, message?: string) {
-			constraint.min = { value, message };
-			return this;
-		},
-		max(value: number | Date, message?: string) {
-			constraint.max = { value, message };
-			return this;
-		},
-		minLength(value: number, message?: string) {
-			constraint.minLength = { value, message };
-			return this;
-		},
-		maxLength(value: number, message?: string) {
-			constraint.maxLength = { value, message };
-			return this;
-		},
-		pattern(value: RegExp, message?: string) {
-			if (value.global || value.ignoreCase || value.multiline) {
-				console.warn(
-					`global, ignoreCase, and multiline flags are not supported on the pattern attribute`,
-				);
-			} else {
-				constraint.pattern = (constraint.pattern ?? []).concat({
-					value,
-					message,
-				});
-			}
-
-			return this;
-		},
-		multiple(value?: number) {
-			constraint.multiple = { value, message };
-			return this;
-		},
-		[symbol]: () => constraint,
-	};
-
-	// @ts-ignore
-	return field;
 }
 
 const pattern = /(\w+)\[(\d+)\]/;
