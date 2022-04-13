@@ -97,7 +97,7 @@ export const f = {
 };
 
 export function getConstraint<Type extends FieldType>(field: Field<Type>) {
-	return field[symbol]();
+	return field[symbol]?.() ?? null;
 }
 
 export function isElement<T extends HTMLElement>(
@@ -157,40 +157,99 @@ export function shouldSkipValidate(element: unknown) {
 		: false;
 }
 
+export function draftUpdate(name: string, index?: number) {
+	return {
+		name: '__form-validity__',
+		value: [name]
+			.concat(typeof index === 'undefined' ? [] : [`${index}`])
+			.join('|'),
+	};
+}
+
+export function getDraft(payload: URLSearchParams | FormData) {
+	const update = payload.get('__form-validity__');
+
+	if (!update) {
+		return null;
+	}
+
+	// We are mutating the payload here
+	payload.delete('__form-validity__');
+
+	if (update instanceof File) {
+		throw new Error('What?');
+	}
+
+	const [name, indexString] = update.split('|');
+	const index = typeof indexString !== 'undefined' ? Number(indexString) : null;
+
+	return {
+		name,
+		index,
+	};
+}
+
 export function parse<T>(
 	payload: FormData | URLSearchParams | string,
 	fieldsetCreator:
 		| ((value?: Record<string, any>) => Record<string, T>)
 		| Record<string, T>,
-): { value: Record<string, any>; error: Record<string, string> | null } {
-	const valueEntries: Iterable<[string, FormDataEntryValue]> =
+): {
+	value: Record<string, any>;
+	error: Record<string, string> | null;
+	isDraft: boolean;
+} {
+	const valueEntries: URLSearchParams | FormData =
 		payload instanceof URLSearchParams || payload instanceof FormData
 			? payload
 			: new URLSearchParams(payload);
+
+	const update = getDraft(valueEntries);
 	const value = unflatten(valueEntries);
+
+	if (update) {
+		const list = getItem(value, update.name);
+
+		if (
+			!Array.isArray(list) ||
+			(update.index !== null && isNaN(update.index))
+		) {
+			throw new Error('Oops');
+		}
+
+		if (update.index !== null) {
+			list.splice(update.index, 1);
+		} else {
+			list.push({});
+		}
+	}
+
 	const fieldset =
 		typeof fieldsetCreator === 'function'
 			? fieldsetCreator(value)
 			: fieldsetCreator;
-	const values = Object.fromEntries(valueEntries);
+	const valueByName = Object.fromEntries(valueEntries);
 	const errorEntries: Array<[string, string]> = [];
 
-	for (const [name, field] of flatten<Field>(
-		fieldset,
-		(f) => typeof f[symbol] === 'function',
-	)) {
-		const constraint = getConstraint(field);
-		const value = values[name];
-		const message = validate(value, constraint);
+	if (!update) {
+		for (const [name, field] of flatten<Field>(
+			fieldset,
+			(f) => getConstraint(f) !== null,
+		)) {
+			const constraint = getConstraint(field);
+			const value = valueByName[name];
+			const message = validate(value, constraint);
 
-		if (message) {
-			errorEntries.push([name, message]);
+			if (message) {
+				errorEntries.push([name, message]);
+			}
 		}
 	}
 
 	return {
 		value,
 		error: errorEntries.length > 0 ? unflatten(errorEntries) : null,
+		isDraft: update !== null,
 	};
 }
 
@@ -285,6 +344,34 @@ function createField<Type extends FieldType>(
 	return field;
 }
 
+const pattern = /(\w+)\[(\d+)\]/;
+
+function getPaths(key: string): Array<string | number> {
+	return key.split('.').flatMap((key) => {
+		const matches = pattern.exec(key);
+
+		if (!matches) {
+			return key;
+		}
+
+		return [matches[1], Number(matches[2])];
+	});
+}
+
+function getItem(obj: any, key: string, defaultValue?: any): any {
+	let target = obj;
+
+	for (let path of getPaths(key)) {
+		if (typeof target[path] === 'undefined') {
+			return defaultValue;
+		}
+
+		target = target[path];
+	}
+
+	return target;
+}
+
 function flatten<T>(
 	item: any,
 	isLeaf: (item: any) => boolean,
@@ -312,19 +399,10 @@ function flatten<T>(
 function unflatten<T>(
 	entries: Array<[string, T]> | Iterable<[string, T]>,
 ): any {
-	const pattern = /(\w+)\[(\d+)\]/;
 	const result: any = {};
 
 	for (let [key, value] of entries) {
-		let paths = key.split('.').flatMap((key) => {
-			const matches = pattern.exec(key);
-
-			if (!matches) {
-				return key;
-			}
-
-			return [matches[1], Number(matches[2])];
-		});
+		let paths = getPaths(key);
 		let length = paths.length;
 		let lastIndex = length - 1;
 		let index = -1;

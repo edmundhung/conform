@@ -27,7 +27,7 @@ export let loader: LoaderFunction = async ({ request }) => {
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const { value, error } = parse(formData, (value) => {
+	const { value, error, isDraft } = parse(formData, (value) => {
 		const fieldset = configureFieldset();
 
 		return {
@@ -36,25 +36,7 @@ export let action: ActionFunction = async ({ request }) => {
 		};
 	});
 
-	if (formData.has('add-item') || formData.has('remove-item')) {
-		const products = [...(value.products ?? [])];
-		const productIndex = formData.get('remove-item');
-
-		if (productIndex) {
-			products.splice(Number(productIndex), 1);
-		} else {
-			products.push({});
-		}
-
-		return redirect('/order', {
-			headers: {
-				'Set-Cookie': await cookie.serialize({
-					value: { ...value, products },
-					error: null,
-				}),
-			},
-		});
-	} else if (error) {
+	if (error || isDraft) {
 		return redirect('/order', {
 			headers: {
 				'Set-Cookie': await cookie.serialize({ value, error }),
@@ -119,7 +101,7 @@ export default function OrderForm() {
 									className={styles.buttonWarning}
 									value={index}
 									disabled={field.products.list.length === 1}
-									{...field.products.deleteButton}
+									{...product.deleteButton}
 								>
 									⨯
 								</button>
@@ -170,23 +152,21 @@ interface ProductFieldsetProps extends FieldsetOptions {
 }
 
 function ProductFieldset({ label, ...options }: ProductFieldsetProps) {
-	const [field, errorMessage] = useFieldset(productFieldset, options);
+	const [field, error] = useFieldset(productFieldset, options);
 
 	return (
 		<fieldset className="flex gap-4">
 			<label className="block flex-1">
 				<span className={styles.label}>{label}</span>
 				<input
-					className={errorMessage.item ? styles.inputWithError : styles.input}
+					className={error.item ? styles.inputWithError : styles.input}
 					{...field.item}
 				/>
 			</label>
 			<label className="block w-16">
 				<span className={styles.label}>Quantity</span>
 				<input
-					className={
-						errorMessage.quantity ? styles.inputWithError : styles.input
-					}
+					className={error.quantity ? styles.inputWithError : styles.input}
 					{...field.quantity}
 				/>
 			</label>

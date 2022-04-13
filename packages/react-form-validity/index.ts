@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Constraint, Field } from 'form-validity';
 import {
 	getConstraint,
+	draftUpdate,
 	shouldSkipValidate,
 	isDirty,
 	isValidationConstraintSupported,
@@ -217,7 +218,7 @@ export function useFieldset<T extends string>(
 
 			const addButton: ButtonHTMLAttributes<HTMLButtonElement> = {
 				type: 'submit',
-				name: 'add-item',
+				formNoValidate: true,
 				onClick(e) {
 					setKeysByName((result) => ({
 						...result,
@@ -225,34 +226,37 @@ export function useFieldset<T extends string>(
 					}));
 					e.preventDefault();
 				},
+				...draftUpdate(name),
 			};
-			const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
-				type: 'submit',
-				name: 'remove-item',
-				onClick(e) {
-					const index = Number(e.currentTarget.value);
 
-					if (!isNaN(index)) {
-						setKeysByName((result) => ({
-							...result,
-							[name]: [
-								...(result[name] ?? []).slice(0, index),
-								...(result[name] ?? []).slice(index + 1),
-							],
-						}));
-						e.preventDefault();
-					}
-				},
-			};
 			const list = keys.map<{ key: number; options: FieldsetOptions<T> }>(
-				(key, i) => ({
-					key,
-					options: {
-						name: `${props.name}[${i}]`,
-						value: props.value?.[key as unknown as T],
-						error: props.error?.[key as unknown as T],
-					},
-				}),
+				(key, index) => {
+					const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
+						...draftUpdate(name, index),
+						type: 'submit',
+						formNoValidate: true,
+						onClick(e) {
+							setKeysByName((result) => ({
+								...result,
+								[name]: [
+									...(result[name] ?? []).slice(0, index),
+									...(result[name] ?? []).slice(index + 1),
+								],
+							}));
+							e.preventDefault();
+						},
+					};
+
+					return {
+						key,
+						options: {
+							name: `${props.name}[${index}]`,
+							value: props.value?.[key as unknown as T],
+							error: props.error?.[key as unknown as T],
+						},
+						deleteButton,
+					};
+				},
 			);
 
 			result = {
@@ -260,7 +264,6 @@ export function useFieldset<T extends string>(
 				[name]: {
 					list,
 					addButton,
-					deleteButton,
 				},
 			};
 		}
