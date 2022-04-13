@@ -9,9 +9,10 @@ import type {
 	TextareaHTMLAttributes,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import type { Constraint, Field } from 'form-validity';
+import type { Field } from 'form-validity';
 import {
 	getConstraint,
+	checkCustomValidity,
 	draftUpdate,
 	shouldSkipValidate,
 	isDirty,
@@ -234,7 +235,8 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					},
 					onInput(e) {
 						const customMessage = checkCustomValidity(
-							e.currentTarget,
+							e.currentTarget.value,
+							e.currentTarget.validity,
 							constraint,
 						);
 						const message = customMessage ?? e.currentTarget.validationMessage;
@@ -250,7 +252,8 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					},
 					onInvalid(e) {
 						const customMessage = checkCustomValidity(
-							e.currentTarget,
+							e.currentTarget.value,
+							e.currentTarget.validity,
 							constraint,
 						);
 						const message = customMessage ?? e.currentTarget.validationMessage;
@@ -372,7 +375,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 				if (message && element) {
 					const constraint = getConstraint(field);
 					const customMessage =
-						checkCustomValidity(element, constraint) ??
+						checkCustomValidity(element.value, element.validity, constraint) ??
 						element.validationMessage;
 
 					message = customMessage;
@@ -390,38 +393,4 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 		// @ts-expect-error
 		errorMessage,
 	];
-}
-
-function checkCustomValidity(
-	element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
-	constraint: Constraint,
-): string | null {
-	if (element.validity.valueMissing) {
-		return constraint.required?.message ?? null;
-	} else if (element.validity.tooShort) {
-		return constraint.minLength?.message ?? null;
-	} else if (element.validity.tooLong) {
-		return constraint.maxLength?.message ?? null;
-	} else if (element.validity.stepMismatch) {
-		return constraint.step?.message ?? null;
-	} else if (element.validity.rangeUnderflow) {
-		return constraint.min?.message ?? null;
-	} else if (element.validity.rangeOverflow) {
-		return constraint.max?.message ?? null;
-	} else if (element.validity.typeMismatch || element.validity.badInput) {
-		return constraint.type?.message ?? null;
-	} else if (element.validity.patternMismatch) {
-		if (!constraint.pattern) {
-			return null;
-		} else if (constraint.pattern.length === 1) {
-			return constraint.pattern[0].message ?? null;
-		} else {
-			return (
-				constraint.pattern.find((pattern) => pattern.value.test(element.value))
-					?.message ?? null
-			);
-		}
-	} else {
-		return '';
-	}
 }

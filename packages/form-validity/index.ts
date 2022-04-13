@@ -339,7 +339,8 @@ export function parse<T>(
 		)) {
 			const constraint = getConstraint(field);
 			const value = valueByName[name];
-			const message = validate(value, constraint);
+			const validity = validate(value, constraint);
+			const message = checkCustomValidity(value, validity, constraint);
 
 			if (message) {
 				errorEntries.push([name, message]);
@@ -474,121 +475,121 @@ function unflatten<T>(
 function validate(
 	value: FormDataEntryValue | undefined,
 	constraint: Constraint,
-): string | null {
+): ValidityState {
+	let badInput = false;
+	let customError = false;
+	let patternMismatch = false;
+	let rangeOverflow = false;
+	let rangeUnderflow = false;
+	let stepMismatch = false;
+	let tooLong = false;
+	let tooShort = false;
+	let typeMismatch = false;
+	let valueMissing = false;
+
 	if (value instanceof File) {
-		return 'File is not supported yet';
+		typeMismatch = constraint.type?.value !== 'file';
+	} else {
+		const isURL = (value: string) => {
+			try {
+				new URL(value);
+				return true;
+			} catch {
+				return false;
+			}
+		};
+
+		patternMismatch =
+			constraint.pattern?.some((pattern) => {
+				const match = value?.match(pattern.value);
+
+				return !match || value !== match[0];
+			}) ?? false;
+		rangeOverflow = constraint.max
+			? (typeof value !== 'undefined' &&
+					constraint.max.value instanceof Date &&
+					new Date(value) > constraint.max.value) ||
+			  (typeof value !== 'undefined' &&
+					typeof constraint.max.value === 'number' &&
+					Number(value) > constraint.max.value)
+			: false;
+		rangeUnderflow = constraint.min
+			? (constraint.min.value instanceof Date &&
+					new Date(value ?? '') < constraint.min.value) ||
+			  (typeof constraint.min.value === 'number' &&
+					Number(value ?? '') < constraint.min.value)
+			: false;
+		tooLong = constraint.maxLength
+			? typeof value !== 'undefined' &&
+			  value.length > constraint.maxLength.value
+			: false;
+		tooShort = constraint.minLength
+			? typeof value === 'undefined' ||
+			  value.length < constraint.minLength.value
+			: false;
+		typeMismatch =
+			(constraint.type?.value === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
+			(constraint.type?.value === 'url' && !isURL(value ?? ''));
+		valueMissing = typeof value === 'undefined' || value === '';
 	}
 
-	if (constraint.required) {
-		if (typeof value === 'undefined' || value === '') {
-			return constraint.required.message ?? 'This field is required';
-		}
-	}
+	return {
+		badInput,
+		customError,
+		patternMismatch,
+		rangeOverflow,
+		rangeUnderflow,
+		stepMismatch,
+		tooLong,
+		tooShort,
+		typeMismatch,
+		valid:
+			!badInput &&
+			!customError &&
+			!patternMismatch &&
+			!rangeOverflow &&
+			!rangeUnderflow &&
+			!stepMismatch &&
+			!tooLong &&
+			!tooShort &&
+			!typeMismatch &&
+			!valueMissing,
+		valueMissing,
+	};
+}
 
-	if (constraint.minLength) {
-		if (
-			typeof value === 'undefined' ||
-			value.length < constraint.minLength.value
-		) {
+export function checkCustomValidity(
+	value: FormDataEntryValue,
+	validity: ValidityState,
+	constraint: Constraint,
+): string | null {
+	if (validity.valueMissing) {
+		return constraint.required?.message ?? null;
+	} else if (validity.tooShort) {
+		return constraint.minLength?.message ?? null;
+	} else if (validity.tooLong) {
+		return constraint.maxLength?.message ?? null;
+	} else if (validity.stepMismatch) {
+		return constraint.step?.message ?? null;
+	} else if (validity.rangeUnderflow) {
+		return constraint.min?.message ?? null;
+	} else if (validity.rangeOverflow) {
+		return constraint.max?.message ?? null;
+	} else if (validity.typeMismatch || validity.badInput) {
+		return constraint.type?.message ?? null;
+	} else if (validity.patternMismatch) {
+		if (!constraint.pattern) {
+			return null;
+		} else if (constraint.pattern.length === 1) {
+			return constraint.pattern[0].message ?? null;
+		} else {
 			return (
-				constraint.minLength.message ??
-				`This field must be at least ${constraint.minLength.value} characters`
+				constraint.pattern.find((pattern) =>
+					pattern.value.test(value as string),
+				)?.message ?? null
 			);
 		}
+	} else {
+		return '';
 	}
-
-	if (constraint.maxLength) {
-		if (
-			typeof value !== 'undefined' &&
-			value.length > constraint.maxLength.value
-		) {
-			return (
-				constraint.maxLength.message ??
-				`This field must be at most ${constraint.maxLength.value} characters`
-			);
-		}
-	}
-
-	if (constraint.min) {
-		if (
-			constraint.min.value instanceof Date &&
-			new Date(value ?? '') < constraint.min.value
-		) {
-			return (
-				constraint.min.message ??
-				`This field must be later than ${constraint.min.value.toISOString()}`
-			);
-		} else if (
-			typeof constraint.min.value === 'number' &&
-			Number(value ?? '') < constraint.min.value
-		) {
-			return (
-				constraint.min.message ??
-				`This field must be greater than or equal to ${constraint.min.value}`
-			);
-		}
-	}
-
-	if (constraint.max) {
-		if (
-			typeof value !== 'undefined' &&
-			constraint.max.value instanceof Date &&
-			new Date(value) > constraint.max.value
-		) {
-			return (
-				constraint.max.message ??
-				`This field must be at earlier than ${constraint.max.value.toISOString()}`
-			);
-		} else if (
-			typeof value !== 'undefined' &&
-			typeof constraint.max.value === 'number' &&
-			Number(value) > constraint.max.value
-		) {
-			return (
-				constraint.max.message ??
-				`This field must be less than or equal to ${constraint.max.value}`
-			);
-		}
-	}
-
-	if (constraint.step) {
-		// TODO
-	}
-
-	if (constraint.type) {
-		switch (constraint.type.value) {
-			case 'email':
-				if (!/^\S+@\S+$/.test(value ?? '')) {
-					return constraint.type.message ?? `This field must be a valid email`;
-				}
-				break;
-			case 'url':
-				const isURL = (value: string) => {
-					try {
-						new URL(value);
-						return true;
-					} catch {
-						return false;
-					}
-				};
-				if (!isURL(value ?? '')) {
-					return constraint.type.message ?? `This field must be a valid URL`;
-				}
-				break;
-		}
-	}
-
-	if (constraint.pattern?.length) {
-		const pattern = constraint.pattern.find((pattern) => {
-			const match = value?.match(pattern.value);
-
-			return !match || value !== match[0];
-		});
-
-		if (pattern) {
-			return pattern.message ?? `This field must be a valid format`;
-		}
-	}
-
-	return null;
 }
