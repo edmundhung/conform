@@ -1,11 +1,11 @@
 /**
- *
+ * form-validity
  */
 const symbol = Symbol('constraint');
 
-export type FieldTag = 'input' | 'textarea' | 'select' | 'fieldset';
+type FieldTag = 'input' | 'textarea' | 'select' | 'fieldset';
 
-export type InputType =
+type InputType =
 	| 'checkbox'
 	| 'color'
 	| 'date'
@@ -29,30 +29,75 @@ export type InputType =
 	| 'url'
 	| 'week';
 
+type ConstraintType =
+	| 'required'
+	| 'length'
+	| 'range:date'
+	| 'range:number'
+	| 'step'
+	| 'pattern'
+	| 'multiple';
+
+interface Required {
+	required(message?: string): this;
+}
+
+interface Range<Value> {
+	min(value: Value | string, message?: string): this;
+	max(value: Value | string, message?: string): this;
+}
+
+interface Length {
+	minLength(number: number, message?: string): this;
+	maxLength(number: number, message?: string): this;
+}
+
+interface Pattern {
+	pattern(regexp: RegExp, message?: string): this;
+}
+
+interface Step {
+	step(number: number | string, message?: string): this;
+}
+
+interface Multiple<Count = void> {
+	multiple(count: Count): this;
+}
+
+type FieldCreator<Type extends ConstraintType> = ('required' extends Type
+	? Required
+	: {}) &
+	('length' extends Type ? Length : {}) &
+	('range:date' extends Type ? Range<Date> : {}) &
+	('range:number' extends Type ? Range<number> : {}) &
+	('step' extends Type ? Step : {}) &
+	('pattern' extends Type ? Pattern : {}) &
+	('multiple' extends Type ? Multiple<number> : {});
+
 export type Field<
 	Tag extends FieldTag = FieldTag,
 	Type extends InputType | undefined = undefined,
 > = (Tag extends 'input'
 	? Type extends 'checkbox' | 'file' | 'radio'
-		? Required
+		? FieldCreator<'required'>
 		: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
-		? Required & Min<Date> & Max<Date> & Step
+		? FieldCreator<'required' | 'range:date' | 'step'>
 		: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
-		? Required & MinLength & MaxLength & Pattern
+		? FieldCreator<'required' | 'length' | 'pattern'>
 		: Type extends 'number'
-		? Required & Min<number> & Max<number> & Step
+		? FieldCreator<'required' | 'range:number' | 'step'>
 		: Type extends 'range'
-		? Min<number> & Max<number> & Step
+		? FieldCreator<'range:number' | 'step'>
 		: {}
 	: Tag extends 'select'
-	? Required
+	? FieldCreator<'required'>
 	: Tag extends 'textarea'
-	? Required & MinLength & MaxLength
+	? FieldCreator<'required' | 'length'>
 	: Tag extends 'fieldset'
-	? Multiple<number>
+	? FieldCreator<'multiple'>
 	: unknown) & { [symbol]: Constraint<Tag> };
 
-export type Constraint<Tag extends FieldTag = FieldTag> = {
+type Constraint<Tag extends FieldTag = FieldTag> = {
 	tag: Tag;
 	type?: {
 		value: InputType;
@@ -358,38 +403,6 @@ export function parse<T>(
 /**
  * Helpers
  */
-
-interface Required {
-	required(message?: string): this;
-}
-
-interface Min<Value> {
-	min(value: Value | string, message?: string): this;
-}
-
-interface Max<Value> {
-	max(value: Value | string, message?: string): this;
-}
-
-interface MinLength {
-	minLength(number: number, message?: string): this;
-}
-
-interface MaxLength {
-	maxLength(number: number, message?: string): this;
-}
-
-interface Pattern {
-	pattern(regexp: RegExp, message?: string): this;
-}
-
-interface Step {
-	step(number: number | string, message?: string): this;
-}
-
-interface Multiple<Count = void> {
-	multiple(count: Count): this;
-}
 
 const pattern = /(\w+)\[(\d+)\]/;
 

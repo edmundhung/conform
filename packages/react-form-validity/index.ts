@@ -19,7 +19,6 @@ import {
 	isValidationConstraintSupported,
 } from 'form-validity';
 
-export type { Constraint } from 'form-validity';
 export { f, parse } from 'form-validity';
 
 export type FormValidationProps = Pick<
@@ -158,8 +157,8 @@ export type FieldAttributes<Tag> = Tag extends 'input'
 	: {};
 
 type FieldProps<Type> = {
-	[Property in keyof Type]: Type[Property] extends Field<infer FieldTag>
-		? FieldAttributes<FieldTag>
+	[Property in keyof Type]: Type[Property] extends Field<infer Tag>
+		? FieldAttributes<Tag>
 		: never;
 };
 
