@@ -26,7 +26,7 @@ export type FormValidationProps = Pick<
 	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
 
-export function useFormValidation({
+export function useFormValidity({
 	noValidate,
 	onChange,
 	onBlur,
