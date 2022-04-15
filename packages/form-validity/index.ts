@@ -60,8 +60,8 @@ interface Step {
 	step(number: number | string, message?: string): this;
 }
 
-interface Multiple<Count = void> {
-	multiple(count: Count): this;
+interface Multiple {
+	multiple(): this;
 }
 
 type FieldCreator<Type extends ConstraintType> = ('required' extends Type
@@ -72,11 +72,11 @@ type FieldCreator<Type extends ConstraintType> = ('required' extends Type
 	('range:number' extends Type ? Range<number> : {}) &
 	('step' extends Type ? Step : {}) &
 	('pattern' extends Type ? Pattern : {}) &
-	('multiple' extends Type ? Multiple<number> : {});
+	('multiple' extends Type ? Multiple : {});
 
 export type Field<
 	Tag extends FieldTag = FieldTag,
-	Type extends InputType | undefined = undefined,
+	Type extends InputType | 'default' | 'array' = 'default',
 > = (Tag extends 'input'
 	? Type extends 'checkbox' | 'file' | 'radio'
 		? FieldCreator<'required'>
@@ -94,7 +94,9 @@ export type Field<
 	: Tag extends 'textarea'
 	? FieldCreator<'required' | 'length'>
 	: Tag extends 'fieldset'
-	? FieldCreator<'multiple'>
+	? Type extends 'array'
+		? FieldCreator<'range:number'>
+		: {}
 	: unknown) & { [symbol]: Constraint<Tag> };
 
 type Constraint<Tag extends FieldTag = FieldTag> = {
@@ -131,63 +133,66 @@ type Constraint<Tag extends FieldTag = FieldTag> = {
 		message: string | undefined;
 	}>;
 	multiple?: {
-		value: number | undefined;
 		message: string | undefined;
 	};
+	count?: number;
 };
 
 function configureF() {
-	function createField<Tag extends FieldTag>(
-		tag: Tag,
-		type?: InputType,
-		message?: string,
-	) {
-		const constraint: Constraint<Tag> = {
-			tag,
-		};
-
-		if (type) {
-			constraint.type = { value: type, message };
-		}
-
+	function createField<Tag extends FieldTag>(constraint: Constraint<Tag>) {
 		return {
 			required(message?: string) {
-				constraint.required = { message };
-				return this;
+				return createField({
+					...constraint,
+					required: { message },
+				});
 			},
 			min(value: number | Date, message?: string) {
-				constraint.min = { value, message };
-				return this;
+				return createField({
+					...constraint,
+					min: { value, message },
+				});
 			},
 			max(value: number | Date, message?: string) {
-				constraint.max = { value, message };
-				return this;
+				return createField({
+					...constraint,
+					max: { value, message },
+				});
 			},
 			minLength(value: number, message?: string) {
-				constraint.minLength = { value, message };
-				return this;
+				return createField({
+					...constraint,
+					minLength: { value, message },
+				});
 			},
 			maxLength(value: number, message?: string) {
-				constraint.maxLength = { value, message };
-				return this;
+				return createField({
+					...constraint,
+					maxLength: { value, message },
+				});
 			},
 			pattern(value: RegExp, message?: string) {
 				if (value.global || value.ignoreCase || value.multiline) {
 					console.warn(
 						`global, ignoreCase, and multiline flags are not supported on the pattern attribute`,
 					);
-				} else {
-					constraint.pattern = (constraint.pattern ?? []).concat({
-						value,
-						message,
-					});
+
+					return createField(constraint);
 				}
 
-				return this;
+				return createField({
+					...constraint,
+					pattern: [...(constraint.pattern ?? [])].concat({
+						value,
+						message,
+					}),
+				});
 			},
-			multiple(value?: number) {
-				constraint.multiple = { value, message };
-				return this;
+			multiple(message?: string) {
+				return createField({
+					...constraint,
+					multiple: { message },
+				});
 			},
 			[symbol]: constraint,
 		};
@@ -205,19 +210,32 @@ function configureF() {
 		message?: string,
 	): Field<'input', T> {
 		// @ts-expect-error
-		return createField('input', type, message);
+		return createField({
+			tag: 'input',
+			type: { value: type, message },
+		});
 	}
 
 	function select(): Field<'select'> {
-		return createField('select');
+		return createField({
+			tag: 'select',
+		});
 	}
 
 	function textarea(): Field<'textarea'> {
-		return createField('textarea');
+		return createField({
+			tag: 'textarea',
+		});
 	}
 
-	function fieldset(): Field<'fieldset'> {
-		return createField('fieldset');
+	function fieldset(): Field<'fieldset'>;
+	// @ts-expect-error
+	function fieldset(count: number): Field<'fieldset', 'array'>;
+	function fieldset(count?: number) {
+		return createField({
+			tag: 'fieldset',
+			count,
+		});
 	}
 
 	return {

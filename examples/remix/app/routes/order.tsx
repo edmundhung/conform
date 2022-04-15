@@ -9,7 +9,7 @@ import { styles } from '~/helpers';
 
 function configureFieldset(productCount?: number) {
 	return {
-		products: f.fieldset().multiple(productCount ?? 1),
+		products: f.fieldset(productCount ?? 1),
 		address: f.input('text').required('Address is required'),
 		remarks: f.textarea(),
 	};
@@ -145,7 +145,7 @@ const productFieldset = {
 	quantity: f.input('number', 'Invalid').required('Required').min(1, 'Min. 1'),
 };
 
-interface ProductFieldsetProps extends FieldsetOptions {
+interface ProductFieldsetProps extends Partial<FieldsetOptions> {
 	label: string;
 }
 

@@ -86,12 +86,12 @@ export function useFormValidation({
 }
 
 export interface FieldsetOptions {
-	name?: string;
+	name: string;
 	value?: Record<string, any>;
 	error?: Record<string, any>;
 }
 
-export type FieldAttributes<Tag> = Tag extends 'input'
+export type FieldAttributes<Tag, Type = string> = Tag extends 'input'
 	? ClassAttributes<HTMLInputElement> &
 			Required<
 				Pick<
@@ -136,29 +136,31 @@ export type FieldAttributes<Tag> = Tag extends 'input'
 				'required' | 'multiple' | 'defaultValue'
 			>
 	: Tag extends 'fieldset'
-	? {
-			list: Array<{
-				key: number;
-				options: FieldsetOptions;
-				deleteButton: Required<
+	? Type extends 'array'
+		? {
+				list: Array<{
+					key: number;
+					options: FieldsetOptions;
+					deleteButton: Required<
+						Pick<
+							ButtonHTMLAttributes<HTMLButtonElement>,
+							'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
+						>
+					>;
+				}>;
+				addButton: Required<
 					Pick<
 						ButtonHTMLAttributes<HTMLButtonElement>,
 						'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
 					>
 				>;
-			}>;
-			addButton: Required<
-				Pick<
-					ButtonHTMLAttributes<HTMLButtonElement>,
-					'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
-				>
-			>;
-	  }
+		  }
+		: FieldsetOptions
 	: {};
 
 type FieldProps<Type> = {
-	[Property in keyof Type]: Type[Property] extends Field<infer Tag>
-		? FieldAttributes<Tag>
+	[Property in keyof Type]: Type[Property] extends Field<infer Tag, infer Type>
+		? FieldAttributes<Tag, Type>
 		: never;
 };
 
@@ -168,7 +170,7 @@ type Error<Type> = {
 
 export function useFieldset<Fieldset extends Record<string, Field>>(
 	fieldset: Fieldset,
-	options: FieldsetOptions = {},
+	options: Partial<FieldsetOptions> = {},
 ): [FieldProps<Fieldset>, Error<Fieldset>] {
 	const fieldsetRef = useRef(fieldset);
 	const elementRef = useRef<Record<string, HTMLInputElement | null>>({});
@@ -178,11 +180,14 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 		for (let [name, field] of Object.entries(fieldset)) {
 			const constraint = getConstraint(field);
 
-			if (constraint.tag !== 'fieldset' || !constraint.multiple) {
+			if (
+				constraint.tag !== 'fieldset' ||
+				typeof constraint.count === 'undefined'
+			) {
 				continue;
 			}
 
-			keysByName[name] = [...Array(constraint.multiple.value ?? 1).keys()];
+			keysByName[name] = [...Array(constraint.count ?? 1).keys()];
 		}
 
 		return keysByName;
@@ -352,14 +357,14 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 				if (
 					constraint.tag !== 'fieldset' ||
 					!constraint.multiple ||
-					keys.length !== constraint.multiple.value
+					keys.length !== constraint.count
 				) {
 					continue;
 				}
 
 				result = {
 					...result,
-					[name]: [...Array(constraint.multiple.value ?? 1).keys()],
+					[name]: [...Array(constraint.count ?? 1).keys()],
 				};
 			}
 

@@ -6,7 +6,7 @@ import { styles } from '~/helpers';
 import { Form, useFieldset, f, parse } from 'remix-form-validity';
 
 function configureFieldset(password: string) {
-	const fieldset = {
+	let fieldset = {
 		email: f
 			.input('email', 'Your email address is invalid')
 			.required('Email is required'),
@@ -19,10 +19,7 @@ function configureFieldset(password: string) {
 			.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
 			.replace(/-/g, '\\x2d');
 
-		fieldset.confirm.pattern(
-			new RegExp(escaped),
-			'Both passwords are not equal',
-		);
+		fieldset.confirm = fieldset.confirm.pattern(new RegExp(escaped));
 	}
 
 	return fieldset;
