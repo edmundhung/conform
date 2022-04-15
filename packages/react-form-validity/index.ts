@@ -1,4 +1,5 @@
 import type {
+	HTMLAttributes,
 	FormEventHandler,
 	FormHTMLAttributes,
 	InputHTMLAttributes,
@@ -21,7 +22,90 @@ import {
 
 export { f, parse } from 'form-validity';
 
-export type FormValidationProps = Pick<
+export interface FieldsetOptions {
+	name: string;
+	value?: Record<string, any>;
+	error?: Record<string, any>;
+}
+
+type FieldAttributes<Tag, Type = string> = Tag extends 'input'
+	? Type extends 'radio' | 'checkbox'
+		? Array<
+				Attributes<
+					InputHTMLAttributes<HTMLInputElement>,
+					'name' | 'type' | 'onInput' | 'onInvalid' | 'value',
+					'required' | 'defaultChecked'
+				>
+		  >
+		: Attributes<
+				InputHTMLAttributes<HTMLInputElement>,
+				'name' | 'type' | 'onInput' | 'onInvalid',
+				| 'required'
+				| 'multiple'
+				| 'minLength'
+				| 'maxLength'
+				| 'min'
+				| 'max'
+				| 'step'
+				| 'pattern'
+				| 'defaultValue'
+		  >
+	: Tag extends 'textarea'
+	? Attributes<
+			TextareaHTMLAttributes<HTMLTextAreaElement>,
+			'name' | 'onInput' | 'onInvalid',
+			'required' | 'minLength' | 'maxLength' | 'defaultValue'
+	  >
+	: Tag extends 'select'
+	? Attributes<
+			SelectHTMLAttributes<HTMLSelectElement>,
+			'name' | 'onInput' | 'onInvalid',
+			'required' | 'multiple' | 'defaultValue'
+	  >
+	: Tag extends 'fieldset'
+	? Type extends 'array'
+		? {
+				list: Array<{
+					key: number;
+					options: FieldsetOptions;
+					deleteButton: Required<
+						Pick<
+							ButtonHTMLAttributes<HTMLButtonElement>,
+							'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
+						>
+					>;
+				}>;
+				addButton: Required<
+					Pick<
+						ButtonHTMLAttributes<HTMLButtonElement>,
+						'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
+					>
+				>;
+		  }
+		: FieldsetOptions
+	: {};
+
+type Attributes<
+	OriginalAttributes extends HTMLAttributes<Element>,
+	Provided extends keyof OriginalAttributes,
+	Optional extends keyof OriginalAttributes,
+> = (OriginalAttributes extends HTMLAttributes<infer Element>
+	? ClassAttributes<Element>
+	: never) &
+	Required<Pick<OriginalAttributes, Provided>> &
+	Partial<Pick<OriginalAttributes, Optional>>;
+
+type FieldProps<Type> = {
+	[Property in keyof Type]: Type[Property] extends Field<infer Tag, infer Type>
+		? FieldAttributes<Tag, Type>
+		: never;
+};
+
+type Error<Type> = {
+	[Property in keyof Type]: string;
+};
+
+type FormValidityProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
 	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
@@ -31,7 +115,7 @@ export function useFormValidity({
 	onChange,
 	onBlur,
 	onSubmit,
-}: FormValidationProps): FormValidationProps {
+}: FormValidityProps): FormValidityProps {
 	const ref = useRef<{
 		submitted: boolean;
 		touched: Record<string, boolean | undefined>;
@@ -84,89 +168,6 @@ export function useFormValidity({
 		noValidate: noBrowserValidate,
 	};
 }
-
-export interface FieldsetOptions {
-	name: string;
-	value?: Record<string, any>;
-	error?: Record<string, any>;
-}
-
-export type FieldAttributes<Tag, Type = string> = Tag extends 'input'
-	? ClassAttributes<HTMLInputElement> &
-			Required<
-				Pick<
-					InputHTMLAttributes<HTMLInputElement>,
-					'name' | 'type' | 'onInput' | 'onInvalid'
-				>
-			> &
-			Pick<
-				InputHTMLAttributes<HTMLInputElement>,
-				| 'required'
-				| 'multiple'
-				| 'minLength'
-				| 'maxLength'
-				| 'min'
-				| 'max'
-				| 'step'
-				| 'pattern'
-				| 'defaultValue'
-			>
-	: Tag extends 'textarea'
-	? ClassAttributes<HTMLTextAreaElement> &
-			Required<
-				Pick<
-					TextareaHTMLAttributes<HTMLTextAreaElement>,
-					'name' | 'onInput' | 'onInvalid'
-				>
-			> &
-			Pick<
-				TextareaHTMLAttributes<HTMLTextAreaElement>,
-				'required' | 'minLength' | 'maxLength' | 'defaultValue'
-			>
-	: Tag extends 'select'
-	? ClassAttributes<HTMLSelectElement> &
-			Required<
-				Pick<
-					SelectHTMLAttributes<HTMLSelectElement>,
-					'name' | 'onInput' | 'onInvalid'
-				>
-			> &
-			Pick<
-				SelectHTMLAttributes<HTMLSelectElement>,
-				'required' | 'multiple' | 'defaultValue'
-			>
-	: Tag extends 'fieldset'
-	? Type extends 'array'
-		? {
-				list: Array<{
-					key: number;
-					options: FieldsetOptions;
-					deleteButton: Required<
-						Pick<
-							ButtonHTMLAttributes<HTMLButtonElement>,
-							'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
-						>
-					>;
-				}>;
-				addButton: Required<
-					Pick<
-						ButtonHTMLAttributes<HTMLButtonElement>,
-						'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
-					>
-				>;
-		  }
-		: FieldsetOptions
-	: {};
-
-type FieldProps<Type> = {
-	[Property in keyof Type]: Type[Property] extends Field<infer Tag, infer Type>
-		? FieldAttributes<Tag, Type>
-		: never;
-};
-
-type Error<Type> = {
-	[Property in keyof Type]: string;
-};
 
 export function useFieldset<Fieldset extends Record<string, Field>>(
 	fieldset: Fieldset,
