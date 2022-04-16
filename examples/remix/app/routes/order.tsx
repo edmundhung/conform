@@ -12,6 +12,7 @@ function configureFieldset(productCount?: number) {
 		products: f.fieldset(productCount ?? 1),
 		address: f.input('text').required('Address is required'),
 		remarks: f.textarea(),
+		terms: f.input('checkbox', 'acknowledgement').required(),
 	};
 }
 
@@ -115,7 +116,7 @@ export default function OrderForm() {
 						Add Product
 					</button>
 					<label className="block">
-						<span className={styles.label}>Address</span>
+						<div className={styles.label}>Address</div>
 						<input
 							className={
 								errorMessage.address ? styles.inputWithError : styles.input
@@ -125,7 +126,7 @@ export default function OrderForm() {
 						<p className={styles.errorMessage}>{errorMessage.address}</p>
 					</label>
 					<label className="block">
-						<span className={styles.label}>Remarks</span>
+						<div className={styles.label}>Remarks</div>
 						<textarea
 							className={
 								errorMessage.remarks ? styles.inputWithError : styles.input
@@ -133,6 +134,16 @@ export default function OrderForm() {
 							{...field.remarks}
 						/>
 						<p className={styles.errorMessage}>{errorMessage.remarks}</p>
+					</label>
+					<label className="block">
+						<span className={styles.label}>Terms and Conditions</span>
+						<input
+							className={
+								errorMessage.terms ? styles.checkboxWithError : styles.checkbox
+							}
+							{...field.terms}
+						/>
+						<p className={styles.errorMessage}>{errorMessage.terms}</p>
 					</label>
 				</div>
 			</Form>
@@ -155,14 +166,14 @@ function ProductFieldset({ label, ...options }: ProductFieldsetProps) {
 	return (
 		<fieldset className="flex gap-4">
 			<label className="block flex-1">
-				<span className={styles.label}>{label}</span>
+				<div className={styles.label}>{label}</div>
 				<input
 					className={error.item ? styles.inputWithError : styles.input}
 					{...field.item}
 				/>
 			</label>
 			<label className="block w-16">
-				<span className={styles.label}>Quantity</span>
+				<div className={styles.label}>Quantity</div>
 				<input
 					className={error.quantity ? styles.inputWithError : styles.input}
 					{...field.quantity}

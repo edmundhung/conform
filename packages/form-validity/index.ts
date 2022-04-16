@@ -135,6 +135,7 @@ type Constraint<Tag extends FieldTag = FieldTag> = {
 	multiple?: {
 		message: string | undefined;
 	};
+	value?: string;
 	count?: number;
 };
 
@@ -198,6 +199,10 @@ function configureF() {
 		};
 	}
 
+	function input<T extends 'checkbox' | 'radio'>(
+		type: T,
+		value: string,
+	): Field<'input', T>;
 	function input<T extends 'email' | 'number' | 'url'>(
 		type: T,
 		message?: string,
@@ -207,12 +212,18 @@ function configureF() {
 	): Field<'input', T>;
 	function input<T extends InputType>(
 		type: T,
-		message?: string,
+		messageOrValue?: string,
 	): Field<'input', T> {
+		const isCheckboxOrRadioButton = type === 'checkbox' || type === 'radio';
+
 		// @ts-expect-error
 		return createField({
 			tag: 'input',
-			type: { value: type, message },
+			type: {
+				value: type,
+				message: !isCheckboxOrRadioButton ? messageOrValue : undefined,
+			},
+			value: isCheckboxOrRadioButton ? messageOrValue : undefined,
 		});
 	}
 

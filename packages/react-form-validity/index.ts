@@ -8,6 +8,7 @@ import type {
 	ButtonHTMLAttributes,
 	SelectHTMLAttributes,
 	TextareaHTMLAttributes,
+	FormEvent,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
@@ -213,7 +214,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					},
 				];
 			} else {
-				const attributes: FieldAttributes<'input'> = {
+				const attributes = {
 					name,
 					type: constraint.type?.value as string,
 					required: Boolean(constraint.required),
@@ -234,11 +235,13 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					pattern: constraint.pattern
 						?.map((pattern) => pattern.value.source)
 						.join('|'),
+					value: constraint.value,
 					defaultValue: options.value?.[key],
-					ref(el) {
+					defaultChecked: constraint.value === options.value?.[key],
+					ref(el: HTMLInputElement) {
 						elementRef.current[key] = el;
 					},
-					onInput(e) {
+					onInput(e: FormEvent<HTMLInputElement>) {
 						const customMessage = checkCustomValidity(
 							e.currentTarget.value,
 							e.currentTarget.validity,
@@ -255,7 +258,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 							error[key] === '' ? error : { ...error, [key]: '' },
 						);
 					},
-					onInvalid(e) {
+					onInvalid(e: FormEvent<HTMLInputElement>) {
 						const customMessage = checkCustomValidity(
 							e.currentTarget.value,
 							e.currentTarget.validity,

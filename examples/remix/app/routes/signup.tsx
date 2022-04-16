@@ -71,7 +71,7 @@ export default function SignupForm() {
 			)}
 			<Form className={styles.form} method="post" noValidate>
 				<label className="block">
-					<span className={styles.label}>Email</span>
+					<div className={styles.label}>Email</div>
 					<input
 						className={error.email ? styles.inputWithError : styles.input}
 						{...field.email}
@@ -79,7 +79,7 @@ export default function SignupForm() {
 					<p className={styles.errorMessage}>{error.email}</p>
 				</label>
 				<label className="block">
-					<span className={styles.label}>Password</span>
+					<div className={styles.label}>Password</div>
 					<input
 						className={error.password ? styles.inputWithError : styles.input}
 						onBlur={(e) => setPassword(e.currentTarget.value)}
@@ -88,7 +88,7 @@ export default function SignupForm() {
 					<p className={styles.errorMessage}>{error.password}</p>
 				</label>
 				<label className="block">
-					<span className={styles.label}>Confirm Password</span>
+					<div className={styles.label}>Confirm Password</div>
 					<input
 						className={error.confirm ? styles.inputWithError : styles.input}
 						{...field.confirm}

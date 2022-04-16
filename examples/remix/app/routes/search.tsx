@@ -27,7 +27,7 @@ export default function SearchForm() {
 			</main>
 			<Form className={styles.form}>
 				<label className="block">
-					<span className={styles.label}>Keyword</span>
+					<div className={styles.label}>Keyword</div>
 					<input
 						className={error.keyword ? styles.inputWithError : styles.input}
 						{...field.keyword}
@@ -35,7 +35,7 @@ export default function SearchForm() {
 					<p className={styles.errorMessage}>{error.keyword}</p>
 				</label>
 				<label className="block">
-					<span className={styles.label}>Category</span>
+					<div className={styles.label}>Category</div>
 					<select
 						className={error.category ? styles.inputWithError : styles.input}
 						{...field.category}
