@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { forwardRef, createElement } from 'react';
 import { useFormValidity } from 'react-form-validity';
 
-export { useFieldset, parse, f } from 'react-form-validity';
+export { useFieldset, useFieldsetControl, parse, f } from 'react-form-validity';
 export type { FieldsetOptions } from 'react-form-validity';
 
 export const Form = forwardRef<

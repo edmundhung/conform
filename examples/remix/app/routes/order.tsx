@@ -3,16 +3,23 @@ import { json, redirect } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { useMemo } from 'react';
 import type { FieldsetOptions } from 'remix-form-validity';
-import { Form, useFieldset, f, parse } from 'remix-form-validity';
+import {
+	Form,
+	useFieldset,
+	useFieldsetControl,
+	f,
+	parse,
+} from 'remix-form-validity';
 import { cookie } from '~/cookie.server';
 import { styles } from '~/helpers';
 
 function configureFieldset(productCount?: number) {
 	return {
-		products: f.fieldset(productCount ?? 1),
+		products: f.fieldset(
+			Array(productCount ?? 1).fill(f.fieldset(productFieldset)),
+		),
 		address: f.input('text').required('Address is required'),
 		remarks: f.textarea(),
-		terms: f.input('checkbox', 'acknowledgement').required(),
 	};
 }
 
@@ -57,6 +64,7 @@ export default function OrderForm() {
 	const count = value?.products?.length;
 	const fieldset = useMemo(() => configureFieldset(count), [count]);
 	const [field, errorMessage] = useFieldset(fieldset, { value, error });
+	const [products, addProductButton] = useFieldsetControl(field.products);
 
 	return (
 		<>
@@ -90,7 +98,7 @@ export default function OrderForm() {
 				</button>
 				<div className="space-y-4">
 					<div className="space-y-2">
-						{field.products.list.map((product, index) => (
+						{products.map((product, index) => (
 							<div className="flex items-end gap-4" key={product.key}>
 								<div className="flex-1">
 									<ProductFieldset
@@ -100,7 +108,7 @@ export default function OrderForm() {
 								</div>
 								<button
 									className={styles.buttonWarning}
-									disabled={field.products.list.length === 1}
+									disabled={products.length === 1}
 									{...product.deleteButton}
 								>
 									⨯
@@ -110,8 +118,8 @@ export default function OrderForm() {
 					</div>
 					<button
 						className={styles.buttonSecondary}
-						disabled={field.products.list.length === 3}
-						{...field.products.addButton}
+						disabled={products.length === 3}
+						{...addProductButton}
 					>
 						Add Product
 					</button>
@@ -134,16 +142,6 @@ export default function OrderForm() {
 							{...field.remarks}
 						/>
 						<p className={styles.errorMessage}>{errorMessage.remarks}</p>
-					</label>
-					<label className="block">
-						<span className={styles.label}>Terms and Conditions</span>
-						<input
-							className={
-								errorMessage.terms ? styles.checkboxWithError : styles.checkbox
-							}
-							{...field.terms}
-						/>
-						<p className={styles.errorMessage}>{errorMessage.terms}</p>
 					</label>
 				</div>
 			</Form>

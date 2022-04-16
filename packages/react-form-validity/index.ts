@@ -13,7 +13,6 @@ import type {
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
 import {
-	getConstraint,
 	checkCustomValidity,
 	draftUpdate,
 	shouldSkipValidate,
@@ -65,24 +64,7 @@ type FieldAttributes<Tag, Type = string> = Tag extends 'input'
 	  >
 	: Tag extends 'fieldset'
 	? Type extends 'array'
-		? {
-				list: Array<{
-					key: number;
-					options: FieldsetOptions;
-					deleteButton: Required<
-						Pick<
-							ButtonHTMLAttributes<HTMLButtonElement>,
-							'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
-						>
-					>;
-				}>;
-				addButton: Required<
-					Pick<
-						ButtonHTMLAttributes<HTMLButtonElement>,
-						'type' | 'name' | 'value' | 'formNoValidate' | 'onClick'
-					>
-				>;
-		  }
+		? Array<FieldsetOptions>
 		: FieldsetOptions
 	: {};
 
@@ -170,235 +152,237 @@ export function useFormValidity({
 	};
 }
 
+function getKey(element: HTMLInputElement): string {
+	return element.name.slice(element.name.lastIndexOf('.') + 1);
+}
+
 export function useFieldset<Fieldset extends Record<string, Field>>(
 	fieldset: Fieldset,
-	options: Partial<FieldsetOptions> = {},
+	{ name, value, error }: Partial<FieldsetOptions> = {},
 ): [FieldProps<Fieldset>, Error<Fieldset>] {
-	const fieldsetRef = useRef(fieldset);
-	const elementRef = useRef<Record<string, HTMLInputElement | null>>({});
-	const [keysByName, setKeysByName] = useState(() => {
-		const keysByName = {} as Record<string, number[]>;
+	const ref = useRef({
+		element: {} as Record<string, HTMLInputElement | null>,
+		fieldset,
+		props: {
+			onInput(e: FormEvent<HTMLInputElement>) {
+				if (!e.currentTarget.validity.valid) {
+					return;
+				}
 
-		for (let [name, field] of Object.entries(fieldset)) {
-			const constraint = getConstraint(field);
+				const key = getKey(e.currentTarget);
 
-			if (
-				constraint.tag !== 'fieldset' ||
-				typeof constraint.count === 'undefined'
-			) {
-				continue;
-			}
+				setErrorMessage((error) =>
+					error[key] === '' ? error : { ...error, [key]: '' },
+				);
+			},
+			onInvalid(e: FormEvent<HTMLInputElement>) {
+				const element = e.currentTarget;
+				const key = getKey(element);
+				const config = ref.current.fieldset[key]?.getConfig();
 
-			keysByName[name] = [...Array(constraint.count ?? 1).keys()];
-		}
+				if (!config) {
+					return;
+				}
 
-		return keysByName;
+				const message =
+					checkCustomValidity(element.value, element.validity, config) ??
+					element.validationMessage;
+
+				setErrorMessage((error) =>
+					error[key] === message ? error : { ...error, [key]: message },
+				);
+			},
+		},
 	});
 	const [errorMessage, setErrorMessage] = useState(() =>
 		Object.fromEntries(
-			Object.keys(fieldset).map((name) => [name, options.error?.[name] ?? '']),
+			Object.keys(fieldset).map((name) => [name, error?.[name] ?? '']),
 		),
 	);
 	const field = useMemo(() => {
 		const entries = Object.entries(fieldset).map(([key, field]) => {
-			const constraint = getConstraint(field);
-			const name = options.name ? `${options.name}.${key}` : key;
-
-			if (constraint.tag === 'fieldset') {
-				return [
+			return [
+				key,
+				getFieldProps(field, {
 					key,
-					{
-						name,
-						value: options.value?.[key],
-						error: options.error?.[key],
-					},
-				];
-			} else {
-				const attributes = {
 					name,
-					type: constraint.type?.value as string,
-					required: Boolean(constraint.required),
-					multiple: Boolean(constraint.multiple),
-					minLength: constraint.minLength?.value,
-					maxLength: constraint.maxLength?.value,
-					min: constraint.min
-						? constraint.min.value instanceof Date
-							? constraint.min.value.toISOString()
-							: constraint.min.value
-						: undefined,
-					max: constraint.max
-						? constraint.max.value instanceof Date
-							? constraint.max.value.toISOString()
-							: constraint.max.value
-						: undefined,
-					step: constraint.step?.value,
-					pattern: constraint.pattern
-						?.map((pattern) => pattern.value.source)
-						.join('|'),
-					value: constraint.value,
-					defaultValue: options.value?.[key],
-					defaultChecked: constraint.value === options.value?.[key],
-					ref(el: HTMLInputElement) {
-						elementRef.current[key] = el;
+					value,
+					error,
+					props: {
+						...ref.current.props,
+						ref(element: HTMLInputElement | null) {
+							ref.current.element[key] = element;
+						},
 					},
-					onInput(e: FormEvent<HTMLInputElement>) {
-						const customMessage = checkCustomValidity(
-							e.currentTarget.value,
-							e.currentTarget.validity,
-							constraint,
-						);
-						const message = customMessage ?? e.currentTarget.validationMessage;
-
-						if (message) {
-							// Skip: the input is valid
-							return;
-						}
-
-						setErrorMessage((error) =>
-							error[key] === '' ? error : { ...error, [key]: '' },
-						);
-					},
-					onInvalid(e: FormEvent<HTMLInputElement>) {
-						const customMessage = checkCustomValidity(
-							e.currentTarget.value,
-							e.currentTarget.validity,
-							constraint,
-						);
-						const message = customMessage ?? e.currentTarget.validationMessage;
-
-						setErrorMessage((error) =>
-							error[key] === message ? error : { ...error, [key]: message },
-						);
-					},
-				};
-
-				return [key, attributes];
-			}
+				}),
+			];
 		});
 
 		return Object.fromEntries(entries);
-	}, [fieldset, options.name, options.value, options.error]);
-
-	const enhancedField = useMemo(() => {
-		let result = field;
-
-		for (let [name, props] of Object.entries<FieldsetOptions>(field)) {
-			const keys = keysByName[name];
-
-			if (!keys) {
-				continue;
-			}
-
-			const addButton: ButtonHTMLAttributes<HTMLButtonElement> = {
-				type: 'submit',
-				formNoValidate: true,
-				onClick(e) {
-					setKeysByName((result) => ({
-						...result,
-						[name]: (result[name] ?? []).concat(Date.now()),
-					}));
-					e.preventDefault();
-				},
-				...draftUpdate(name),
-			};
-
-			const list = keys.map<{ key: number; options: FieldsetOptions }>(
-				(key, index) => {
-					const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
-						...draftUpdate(name, index),
-						type: 'submit',
-						formNoValidate: true,
-						onClick(e) {
-							setKeysByName((result) => ({
-								...result,
-								[name]: [
-									...(result[name] ?? []).slice(0, index),
-									...(result[name] ?? []).slice(index + 1),
-								],
-							}));
-							e.preventDefault();
-						},
-					};
-
-					return {
-						key,
-						options: {
-							name: `${props.name}[${index}]`,
-							value: props.value?.[key],
-							error: props.error?.[key],
-						},
-						deleteButton,
-					};
-				},
-			);
-
-			result = {
-				...result,
-				[name]: {
-					list,
-					addButton,
-				},
-			};
-		}
-
-		return result;
-	}, [field, keysByName]);
+	}, [fieldset, name, value, error]);
 
 	useEffect(() => {
-		if (fieldsetRef.current === fieldset) {
+		if (ref.current.fieldset === fieldset) {
 			return;
 		}
 
-		fieldsetRef.current = fieldset;
+		ref.current.fieldset = fieldset;
 
-		setKeysByName((keysByName) => {
-			let result = keysByName;
+		setErrorMessage((errorMessage) => {
+			let result = errorMessage;
 
-			for (let [name, field] of Object.entries(fieldset)) {
-				const keys = result[name] ?? [];
-				const constraint = getConstraint(field);
+			for (let [key, field] of Object.entries(fieldset)) {
+				const element = ref.current.element[key];
+				let message = errorMessage[key];
 
-				if (
-					constraint.tag !== 'fieldset' ||
-					!constraint.multiple ||
-					keys.length !== constraint.count
-				) {
+				if (!message || !element) {
 					continue;
 				}
 
-				result = {
-					...result,
-					[name]: [...Array(constraint.count ?? 1).keys()],
-				};
+				const config = field.getConfig();
+				const customMessage =
+					checkCustomValidity(element.value, element.validity, config) ??
+					element.validationMessage;
+
+				if (message !== customMessage) {
+					result = {
+						...result,
+						[key]: customMessage,
+					};
+				}
 			}
 
 			return result;
 		});
-
-		setErrorMessage((errorMessage) => {
-			const entries = Object.entries(fieldset).map(([name, field]) => {
-				const element = elementRef.current[name];
-				let message = errorMessage[name];
-
-				if (message && element) {
-					const constraint = getConstraint(field);
-					const customMessage =
-						checkCustomValidity(element.value, element.validity, constraint) ??
-						element.validationMessage;
-
-					message = customMessage;
-				}
-
-				return [name, message];
-			});
-
-			return Object.fromEntries(entries);
-		});
 	}, [fieldset]);
 
 	return [
-		enhancedField,
+		field,
 		// @ts-expect-error
 		errorMessage,
 	];
+}
+
+export function useFieldsetControl(options: FieldsetOptions[]): [
+	Array<{
+		key: number;
+		options: FieldsetOptions;
+		deleteButton: ButtonHTMLAttributes<HTMLButtonElement>;
+	}>,
+	ButtonHTMLAttributes<HTMLButtonElement>,
+] {
+	const [keys, setKeys] = useState(() => [...Array(options.length).keys()]);
+	const name = options.reduce((result, option) => {
+		const name = option.name.slice(0, option.name.lastIndexOf('['));
+
+		if (result && result !== name) {
+			throw new Error(
+				'Inconsistent name found; Only nested array fieldset is supported',
+			);
+		}
+
+		return name;
+	}, '');
+	const addButton: ButtonHTMLAttributes<HTMLButtonElement> = {
+		type: 'submit',
+		formNoValidate: true,
+		onClick(e) {
+			setKeys((keys) => keys.concat(Date.now()));
+			e.preventDefault();
+		},
+		...draftUpdate(name),
+	};
+
+	const result = useMemo(
+		() =>
+			keys.map((key, index) => {
+				const deleteButton: ButtonHTMLAttributes<HTMLButtonElement> = {
+					...draftUpdate(name, index),
+					type: 'submit',
+					formNoValidate: true,
+					onClick(e) {
+						setKeys((keys) => [
+							...keys.slice(0, index),
+							...keys.slice(index + 1),
+						]);
+						e.preventDefault();
+					},
+				};
+
+				return {
+					key,
+					options: options[key] ?? {
+						name: `${name}[${index}]`,
+					},
+					deleteButton,
+				};
+			}),
+		[keys, name, options],
+	);
+
+	useEffect(() => {
+		setKeys((keys) => {
+			if (keys.length === options.length) {
+				return keys;
+			}
+
+			return [...Array(options.length).keys()];
+		});
+	}, [options.length]);
+
+	return [result, addButton];
+}
+
+/**
+ * Helpers
+ */
+interface FieldPropsOptions extends Partial<FieldsetOptions> {
+	key: string;
+	props: any;
+}
+
+function getFieldProps(field: Field, options: FieldPropsOptions) {
+	const config = field.getConfig();
+	const name = options.name ? `${options.name}.${options.key}` : options.key;
+
+	if (typeof config.count !== 'undefined') {
+		return [...Array(config.count).keys()].map((index) => ({
+			name: `${name}[${index}]`,
+			value: options.value?.[options.key]?.[index],
+			error: options.error?.[options.key]?.[index],
+		}));
+	} else if (config.tag === 'fieldset') {
+		return {
+			name,
+			value: options.value?.[options.key],
+			error: options.error?.[options.key],
+		};
+	} else {
+		const attributes = {
+			name,
+			type: config.type?.value as string,
+			required: Boolean(config.required),
+			multiple: Boolean(config.multiple),
+			minLength: config.minLength?.value,
+			maxLength: config.maxLength?.value,
+			min: config.min
+				? config.min.value instanceof Date
+					? config.min.value.toISOString()
+					: config.min.value
+				: undefined,
+			max: config.max
+				? config.max.value instanceof Date
+					? config.max.value.toISOString()
+					: config.max.value
+				: undefined,
+			step: config.step?.value,
+			pattern: config.pattern?.map((pattern) => pattern.value.source).join('|'),
+			value: config.value,
+			defaultValue: options.value?.[options.key],
+			defaultChecked: config.value === options.value?.[options.key],
+			...options.props,
+		};
+
+		return attributes;
+	}
 }

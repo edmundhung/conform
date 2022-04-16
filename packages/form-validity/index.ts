@@ -1,8 +1,6 @@
 /**
  * form-validity
  */
-const symbol = Symbol('constraint');
-
 type FieldTag = 'input' | 'textarea' | 'select' | 'fieldset';
 
 type InputType =
@@ -29,7 +27,7 @@ type InputType =
 	| 'url'
 	| 'week';
 
-type ConstraintType =
+type Constraints =
 	| 'required'
 	| 'length'
 	| 'range:date'
@@ -64,15 +62,14 @@ interface Multiple {
 	multiple(): this;
 }
 
-type FieldCreator<Type extends ConstraintType> = ('required' extends Type
-	? Required
-	: {}) &
-	('length' extends Type ? Length : {}) &
-	('range:date' extends Type ? Range<Date> : {}) &
-	('range:number' extends Type ? Range<number> : {}) &
-	('step' extends Type ? Step : {}) &
-	('pattern' extends Type ? Pattern : {}) &
-	('multiple' extends Type ? Multiple : {});
+type FieldCreator<Constraint extends Constraints> =
+	('required' extends Constraint ? Required : {}) &
+		('length' extends Constraint ? Length : {}) &
+		('range:date' extends Constraint ? Range<Date> : {}) &
+		('range:number' extends Constraint ? Range<number> : {}) &
+		('step' extends Constraint ? Step : {}) &
+		('pattern' extends Constraint ? Pattern : {}) &
+		('multiple' extends Constraint ? Multiple : {});
 
 export type Field<
 	Tag extends FieldTag = FieldTag,
@@ -97,9 +94,9 @@ export type Field<
 	? Type extends 'array'
 		? FieldCreator<'range:number'>
 		: {}
-	: unknown) & { [symbol]: Constraint<Tag> };
+	: unknown) & { getConfig: () => FieldConfig<Tag> };
 
-type Constraint<Tag extends FieldTag = FieldTag> = {
+type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	tag: Tag;
 	type?: {
 		value: InputType;
@@ -140,35 +137,35 @@ type Constraint<Tag extends FieldTag = FieldTag> = {
 };
 
 function configureF() {
-	function createField<Tag extends FieldTag>(constraint: Constraint<Tag>) {
+	function createField<Tag extends FieldTag>(config: FieldConfig<Tag>) {
 		return {
 			required(message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					required: { message },
 				});
 			},
 			min(value: number | Date, message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					min: { value, message },
 				});
 			},
 			max(value: number | Date, message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					max: { value, message },
 				});
 			},
 			minLength(value: number, message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					minLength: { value, message },
 				});
 			},
 			maxLength(value: number, message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					maxLength: { value, message },
 				});
 			},
@@ -178,12 +175,12 @@ function configureF() {
 						`global, ignoreCase, and multiline flags are not supported on the pattern attribute`,
 					);
 
-					return createField(constraint);
+					return createField(config);
 				}
 
 				return createField({
-					...constraint,
-					pattern: [...(constraint.pattern ?? [])].concat({
+					...config,
+					pattern: [...(config.pattern ?? [])].concat({
 						value,
 						message,
 					}),
@@ -191,11 +188,13 @@ function configureF() {
 			},
 			multiple(message?: string) {
 				return createField({
-					...constraint,
+					...config,
 					multiple: { message },
 				});
 			},
-			[symbol]: constraint,
+			getConfig() {
+				return config;
+			},
 		};
 	}
 
@@ -239,13 +238,14 @@ function configureF() {
 		});
 	}
 
-	function fieldset(): Field<'fieldset'>;
-	// @ts-expect-error
-	function fieldset(count: number): Field<'fieldset', 'array'>;
-	function fieldset(count?: number) {
+	function fieldset(shape: Record<string, Field>): Field<'fieldset'>;
+	function fieldset(shape: Array<Field>): Field<'fieldset', 'array'>;
+	function fieldset(
+		shape: Record<string, Field> | Array<Field>,
+	): Field<'fieldset'> | Field<'fieldset', 'array'> {
 		return createField({
 			tag: 'fieldset',
-			count,
+			count: Array.isArray(shape) ? shape.length : undefined,
 		});
 	}
 
@@ -262,18 +262,6 @@ function configureF() {
  * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
  */
 export const f = configureF();
-
-export function getConstraint<Tag extends FieldTag>(
-	field: Field<Tag>,
-): Constraint<Tag> {
-	if (typeof field[symbol] === 'undefined') {
-		throw new Error(
-			'Provided config is not a field; Please ensure only field object is used',
-		);
-	}
-
-	return field[symbol];
-}
 
 export function isElement<T extends HTMLElement>(
 	element: any,
@@ -409,12 +397,13 @@ export function parse<T>(
 	if (!update) {
 		for (const [name, field] of flatten<Field>(
 			fieldset,
-			(f) => typeof f[symbol] !== 'undefined',
+			(f) => typeof f.getConfig === 'function',
 		)) {
-			const constraint = getConstraint(field);
+			const config = field.getConfig();
 			const value = valueByName[name];
-			const validity = validate(value, constraint);
-			const message = checkCustomValidity(value, validity, constraint);
+			const validity = validate(value, config);
+			const message =
+				checkCustomValidity(value, validity, config) ?? 'The field is invalid';
 
 			if (message) {
 				errorEntries.push([name, message]);
@@ -516,7 +505,7 @@ function unflatten<T>(
 
 function validate(
 	value: FormDataEntryValue | undefined,
-	constraint: Constraint,
+	config: FieldConfig,
 ): ValidityState {
 	let badInput = false;
 	let customError = false;
@@ -530,7 +519,7 @@ function validate(
 	let valueMissing = false;
 
 	if (value instanceof File) {
-		typeMismatch = constraint.type?.value !== 'file';
+		typeMismatch = config.type?.value !== 'file';
 	} else {
 		const isURL = (value: string) => {
 			try {
@@ -542,36 +531,34 @@ function validate(
 		};
 
 		patternMismatch =
-			constraint.pattern?.some((pattern) => {
+			config.pattern?.some((pattern) => {
 				const match = value?.match(pattern.value);
 
 				return !match || value !== match[0];
 			}) ?? false;
-		rangeOverflow = constraint.max
+		rangeOverflow = config.max
 			? (typeof value !== 'undefined' &&
-					constraint.max.value instanceof Date &&
-					new Date(value) > constraint.max.value) ||
+					config.max.value instanceof Date &&
+					new Date(value) > config.max.value) ||
 			  (typeof value !== 'undefined' &&
-					typeof constraint.max.value === 'number' &&
-					Number(value) > constraint.max.value)
+					typeof config.max.value === 'number' &&
+					Number(value) > config.max.value)
 			: false;
-		rangeUnderflow = constraint.min
-			? (constraint.min.value instanceof Date &&
-					new Date(value ?? '') < constraint.min.value) ||
-			  (typeof constraint.min.value === 'number' &&
-					Number(value ?? '') < constraint.min.value)
+		rangeUnderflow = config.min
+			? (config.min.value instanceof Date &&
+					new Date(value ?? '') < config.min.value) ||
+			  (typeof config.min.value === 'number' &&
+					Number(value ?? '') < config.min.value)
 			: false;
-		tooLong = constraint.maxLength
-			? typeof value !== 'undefined' &&
-			  value.length > constraint.maxLength.value
+		tooLong = config.maxLength
+			? typeof value !== 'undefined' && value.length > config.maxLength.value
 			: false;
-		tooShort = constraint.minLength
-			? typeof value === 'undefined' ||
-			  value.length < constraint.minLength.value
+		tooShort = config.minLength
+			? typeof value === 'undefined' || value.length < config.minLength.value
 			: false;
 		typeMismatch =
-			(constraint.type?.value === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
-			(constraint.type?.value === 'url' && !isURL(value ?? ''));
+			(config.type?.value === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
+			(config.type?.value === 'url' && !isURL(value ?? ''));
 		valueMissing = typeof value === 'undefined' || value === '';
 	}
 
@@ -603,34 +590,31 @@ function validate(
 export function checkCustomValidity(
 	value: FormDataEntryValue,
 	validity: ValidityState,
-	constraint: Constraint,
+	config: FieldConfig,
 ): string | null {
-	if (validity.valueMissing) {
-		return constraint.required?.message ?? null;
-	} else if (validity.tooShort) {
-		return constraint.minLength?.message ?? null;
-	} else if (validity.tooLong) {
-		return constraint.maxLength?.message ?? null;
-	} else if (validity.stepMismatch) {
-		return constraint.step?.message ?? null;
-	} else if (validity.rangeUnderflow) {
-		return constraint.min?.message ?? null;
-	} else if (validity.rangeOverflow) {
-		return constraint.max?.message ?? null;
-	} else if (validity.typeMismatch || validity.badInput) {
-		return constraint.type?.message ?? null;
-	} else if (validity.patternMismatch) {
-		if (!constraint.pattern) {
-			return null;
-		} else if (constraint.pattern.length === 1) {
-			return constraint.pattern[0].message ?? null;
-		} else {
-			return (
-				constraint.pattern.find((pattern) =>
-					pattern.value.test(value as string),
-				)?.message ?? null
-			);
+	if (config.required && validity.valueMissing) {
+		return config.required.message ?? null;
+	} else if (config.minLength && validity.tooShort) {
+		return config.minLength.message ?? null;
+	} else if (config.maxLength && validity.tooLong) {
+		return config.maxLength.message ?? null;
+	} else if (config.step && validity.stepMismatch) {
+		return config.step.message ?? null;
+	} else if (config.min && validity.rangeUnderflow) {
+		return config.min.message ?? null;
+	} else if (config.max && validity.rangeOverflow) {
+		return config.max.message ?? null;
+	} else if (config.type && (validity.typeMismatch || validity.badInput)) {
+		return config.type.message ?? null;
+	} else if (config.pattern && validity.patternMismatch) {
+		if (config.pattern.length === 1) {
+			return config.pattern[0].message ?? null;
 		}
+
+		return (
+			config.pattern.find((pattern) => pattern.value.test(value as string))
+				?.message ?? null
+		);
 	} else {
 		return '';
 	}
