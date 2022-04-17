@@ -15,7 +15,7 @@ import { styles } from '~/helpers';
 
 function configureFieldset(productCount?: number) {
 	return {
-		products: f.fieldset(productFieldset, productCount ?? 1),
+		products: f.fieldset(productCount ?? 1),
 		address: f.input('text').required('Address is required'),
 		delivery: f
 			.input('radio', ['standard', 'express'])
@@ -37,10 +37,8 @@ export let loader: LoaderFunction = async ({ request }) => {
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
 	const { value, error, isDraft } = parse(formData, (value) => {
-		const fieldset = configureFieldset();
-
 		return {
-			...fieldset,
+			...configureFieldset(),
 			products: Array(value?.products.length ?? 1).fill(productFieldset),
 		};
 	});

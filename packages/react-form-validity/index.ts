@@ -13,6 +13,7 @@ import type {
 import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
 import {
+	getFieldConfig,
 	checkCustomValidity,
 	draftUpdate,
 	shouldSkipValidate,
@@ -178,7 +179,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 			onInvalid(e: FormEvent<HTMLInputElement>) {
 				const element = e.currentTarget;
 				const key = getKey(element);
-				const config = ref.current.fieldset[key]?.getConfig();
+				const config = getFieldConfig(ref.current.fieldset[key]);
 
 				if (!config) {
 					return;
@@ -239,7 +240,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					continue;
 				}
 
-				const config = field.getConfig();
+				const config = getFieldConfig(field);
 				const customMessage =
 					checkCustomValidity(element.value, element.validity, config) ??
 					element.validationMessage;
@@ -342,7 +343,7 @@ interface FieldPropsOptions extends Partial<FieldsetOptions> {
 }
 
 function getFieldProps(field: Field, options: FieldPropsOptions) {
-	const config = field.getConfig();
+	const config = getFieldConfig(field);
 	const name = options.name ? `${options.name}.${options.key}` : options.key;
 
 	if (config.tag === 'fieldset') {

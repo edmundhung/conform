@@ -71,31 +71,6 @@ type FieldCreator<Constraint extends Constraints> =
 		('pattern' extends Constraint ? Pattern : {}) &
 		('multiple' extends Constraint ? Multiple : {});
 
-export type Field<
-	Tag extends FieldTag = FieldTag,
-	Type extends InputType | 'default' | 'array' = 'default',
-> = (Tag extends 'input'
-	? Type extends 'checkbox' | 'file' | 'radio'
-		? FieldCreator<'required'>
-		: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
-		? FieldCreator<'required' | 'range:date' | 'step'>
-		: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
-		? FieldCreator<'required' | 'length' | 'pattern'>
-		: Type extends 'number'
-		? FieldCreator<'required' | 'range:number' | 'step'>
-		: Type extends 'range'
-		? FieldCreator<'range:number' | 'step'>
-		: {}
-	: Tag extends 'select'
-	? FieldCreator<'required'>
-	: Tag extends 'textarea'
-	? FieldCreator<'required' | 'length'>
-	: Tag extends 'fieldset'
-	? Type extends 'array'
-		? FieldCreator<'range:number'>
-		: {}
-	: unknown) & { getConfig: () => FieldConfig<Tag> };
-
 type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	tag: Tag;
 	type?: {
@@ -132,11 +107,40 @@ type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	multiple?: {
 		message: string | undefined;
 	};
-	shape?: Record<string, Field>;
 	options?: string[];
 	value?: string;
 	count?: number;
 };
+
+/**
+ * To hide the config from user
+ */
+const symbol = Symbol('form-validity');
+
+export type Field<
+	Tag extends FieldTag = FieldTag,
+	Type extends InputType | 'default' | 'array' = 'default',
+> = { [symbol]: FieldConfig<Tag> } & (Tag extends 'input'
+	? Type extends 'checkbox' | 'file' | 'radio'
+		? FieldCreator<'required'>
+		: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
+		? FieldCreator<'required' | 'range:date' | 'step'>
+		: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
+		? FieldCreator<'required' | 'length' | 'pattern'>
+		: Type extends 'number'
+		? FieldCreator<'required' | 'range:number' | 'step'>
+		: Type extends 'range'
+		? FieldCreator<'range:number' | 'step'>
+		: {}
+	: Tag extends 'select'
+	? FieldCreator<'required'>
+	: Tag extends 'textarea'
+	? FieldCreator<'required' | 'length'>
+	: Tag extends 'fieldset'
+	? Type extends 'array'
+		? FieldCreator<'range:number'>
+		: {}
+	: unknown);
 
 function configureF() {
 	function createField<Tag extends FieldTag>(config: FieldConfig<Tag>) {
@@ -194,9 +198,7 @@ function configureF() {
 					multiple: { message },
 				});
 			},
-			getConfig() {
-				return config;
-			},
+			[symbol]: config,
 		};
 	}
 
@@ -248,18 +250,13 @@ function configureF() {
 		});
 	}
 
-	function fieldset(shape: Record<string, Field>): Field<'fieldset', 'default'>;
+	function fieldset(): Field<'fieldset', 'default'>;
+	function fieldset(count: number): Field<'fieldset', 'array'>;
 	function fieldset(
-		shape: Record<string, Field>,
-		count: number,
-	): Field<'fieldset', 'array'>;
-	function fieldset(
-		shape: Record<string, Field>,
 		count?: number,
 	): Field<'fieldset', 'default'> | Field<'fieldset', 'array'> {
 		return createField({
 			tag: 'fieldset',
-			shape,
 			count,
 		});
 	}
@@ -277,6 +274,16 @@ function configureF() {
  * @see https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes
  */
 export const f = configureF();
+
+export function getFieldConfig<Tag extends FieldTag>(
+	field: Field<Tag>,
+): FieldConfig<Tag> {
+	if (typeof field[symbol] === 'undefined') {
+		throw new Error('Only field object is accepted');
+	}
+
+	return field[symbol];
+}
 
 export function isElement<T extends HTMLElement>(
 	element: any,
@@ -410,11 +417,8 @@ export function parse<T>(
 	const errorEntries: Array<[string, string]> = [];
 
 	if (!update) {
-		for (const [name, field] of flatten<Field>(
-			fieldset,
-			(f) => typeof f.getConfig === 'function',
-		)) {
-			const config = field.getConfig();
+		for (const [name, field] of flattenFieldset(fieldset)) {
+			const config = getFieldConfig(field);
 			const value = valueByName[name];
 			const validity = validate(value, config);
 			const message =
@@ -465,23 +469,24 @@ function getItem(obj: any, key: string, defaultValue?: any): any {
 	return target;
 }
 
-function flatten<T>(
-	item: any,
-	isLeaf: (item: any) => boolean,
-	prefix = '',
-): Array<[string, T]> {
-	let entries: Array<[string, T]> = [];
+function flattenFieldset(item: any, prefix = ''): Array<[string, Field]> {
+	let entries: Array<[string, Field]> = [];
+	let config: FieldConfig | null = item[symbol] ?? null;
 
-	if (isLeaf(item)) {
+	if (config?.tag === 'fieldset') {
+		throw new Error('Validation based on fieldset is not supported');
+	}
+
+	if (config) {
 		entries.push([prefix, item]);
 	} else if (Array.isArray(item)) {
 		for (var i = 0; i < item.length; i++) {
-			entries.push(...flatten<T>(item[i], isLeaf, `${prefix}[${i}]`));
+			entries.push(...flattenFieldset(item[i], `${prefix}[${i}]`));
 		}
 	} else {
 		for (const [key, value] of Object.entries(item)) {
 			entries.push(
-				...flatten<T>(value, isLeaf, prefix ? `${prefix}.${key}` : key),
+				...flattenFieldset(value, prefix ? `${prefix}.${key}` : key),
 			);
 		}
 	}
