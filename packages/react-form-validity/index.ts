@@ -345,18 +345,22 @@ function getFieldProps(field: Field, options: FieldPropsOptions) {
 	const config = field.getConfig();
 	const name = options.name ? `${options.name}.${options.key}` : options.key;
 
-	if (typeof config.count !== 'undefined') {
-		return [...Array(config.count).keys()].map((index) => ({
-			name: `${name}[${index}]`,
-			value: options.value?.[options.key]?.[index],
-			error: options.error?.[options.key]?.[index],
-		}));
-	} else if (config.tag === 'fieldset') {
-		return {
+	if (config.tag === 'fieldset') {
+		const option: FieldsetOptions = {
 			name,
 			value: options.value?.[options.key],
 			error: options.error?.[options.key],
 		};
+
+		if (typeof config.count === 'undefined') {
+			return option;
+		}
+
+		return [...Array(config.count).keys()].map((index) => ({
+			name: `${option.name}[${index}]`,
+			value: option.value?.[index],
+			error: option.error?.[index],
+		}));
 	} else {
 		const attributes = {
 			name,
@@ -377,12 +381,23 @@ function getFieldProps(field: Field, options: FieldPropsOptions) {
 				: undefined,
 			step: config.step?.value,
 			pattern: config.pattern?.map((pattern) => pattern.value.source).join('|'),
-			value: config.value,
-			defaultValue: options.value?.[options.key],
-			defaultChecked: config.value === options.value?.[options.key],
 			...options.props,
 		};
+		const defaultValue = options.value?.[options.key];
 
-		return attributes;
+		if (!config.options) {
+			return {
+				...attributes,
+				defaultValue,
+			};
+		}
+
+		return config.options.map((value) => ({
+			...attributes,
+			value,
+			defaultChecked: Array.isArray(defaultValue)
+				? defaultValue.includes(value)
+				: defaultValue === value,
+		}));
 	}
 }

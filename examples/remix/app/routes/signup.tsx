@@ -19,7 +19,10 @@ function configureFieldset(password: string) {
 			.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
 			.replace(/-/g, '\\x2d');
 
-		fieldset.confirm = fieldset.confirm.pattern(new RegExp(escaped));
+		fieldset.confirm = fieldset.confirm.pattern(
+			new RegExp(escaped),
+			'The password do not match',
+		);
 	}
 
 	return fieldset;

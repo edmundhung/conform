@@ -15,10 +15,11 @@ import { styles } from '~/helpers';
 
 function configureFieldset(productCount?: number) {
 	return {
-		products: f.fieldset(
-			Array(productCount ?? 1).fill(f.fieldset(productFieldset)),
-		),
+		products: f.fieldset(productFieldset, productCount ?? 1),
 		address: f.input('text').required('Address is required'),
+		delivery: f
+			.input('radio', ['standard', 'express'])
+			.required('Please select a delivery method'),
 		remarks: f.textarea(),
 	};
 }
@@ -133,6 +134,25 @@ export default function OrderForm() {
 						/>
 						<p className={styles.errorMessage}>{errorMessage.address}</p>
 					</label>
+					<div>
+						<div className={styles.label}>Delivery Method</div>
+						<div className="space-y-2 py-2">
+							{field.delivery.map((option, index) => (
+								<label className={styles.optionLabel} key={index}>
+									<input className={styles.optionInput} {...option} />
+									<span
+										className={
+											errorMessage.delivery
+												? styles.optionWithError
+												: styles.option
+										}
+									>
+										{option.value}
+									</span>
+								</label>
+							))}
+						</div>
+					</div>
 					<label className="block">
 						<div className={styles.label}>Remarks</div>
 						<textarea

@@ -132,6 +132,8 @@ type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	multiple?: {
 		message: string | undefined;
 	};
+	shape?: Record<string, Field>;
+	options?: string[];
 	value?: string;
 	count?: number;
 };
@@ -200,7 +202,7 @@ function configureF() {
 
 	function input<T extends 'checkbox' | 'radio'>(
 		type: T,
-		value: string,
+		options: string[],
 	): Field<'input', T>;
 	function input<T extends 'email' | 'number' | 'url'>(
 		type: T,
@@ -211,18 +213,26 @@ function configureF() {
 	): Field<'input', T>;
 	function input<T extends InputType>(
 		type: T,
-		messageOrValue?: string,
+		messageOrOptions?: string | string[],
 	): Field<'input', T> {
 		const isCheckboxOrRadioButton = type === 'checkbox' || type === 'radio';
+		const message =
+			!isCheckboxOrRadioButton && !Array.isArray(messageOrOptions)
+				? messageOrOptions
+				: undefined;
+		const options =
+			isCheckboxOrRadioButton && Array.isArray(messageOrOptions)
+				? messageOrOptions
+				: undefined;
 
 		// @ts-expect-error
 		return createField({
 			tag: 'input',
 			type: {
 				value: type,
-				message: !isCheckboxOrRadioButton ? messageOrValue : undefined,
+				message,
 			},
-			value: isCheckboxOrRadioButton ? messageOrValue : undefined,
+			options,
 		});
 	}
 
@@ -238,14 +248,19 @@ function configureF() {
 		});
 	}
 
-	function fieldset(shape: Record<string, Field>): Field<'fieldset'>;
-	function fieldset(shape: Array<Field>): Field<'fieldset', 'array'>;
+	function fieldset(shape: Record<string, Field>): Field<'fieldset', 'default'>;
 	function fieldset(
-		shape: Record<string, Field> | Array<Field>,
-	): Field<'fieldset'> | Field<'fieldset', 'array'> {
+		shape: Record<string, Field>,
+		count: number,
+	): Field<'fieldset', 'array'>;
+	function fieldset(
+		shape: Record<string, Field>,
+		count?: number,
+	): Field<'fieldset', 'default'> | Field<'fieldset', 'array'> {
 		return createField({
 			tag: 'fieldset',
-			count: Array.isArray(shape) ? shape.length : undefined,
+			shape,
+			count,
 		});
 	}
 
@@ -495,7 +510,14 @@ function unflatten<T>(
 				newValue = pointer[key] ?? (typeof next === 'number' ? [] : {});
 			}
 
+			// if (typeof pointer[key] !== 'undefined') {
+			// 	pointer[key] = Array.isArray(pointer[key])
+			// 		? pointer[key].concat(newValue)
+			// 		: [pointer[key], newValue];
+			// } else {
 			pointer[key] = newValue;
+			// }
+
 			pointer = pointer[key];
 		}
 	}
