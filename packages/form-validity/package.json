@@ -2,7 +2,7 @@
 	"name": "form-validity",
 	"description": "Input field validation schema based on Constraint validation API",
 	"license": "MIT",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
