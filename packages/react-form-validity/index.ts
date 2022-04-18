@@ -186,7 +186,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 				}
 
 				const message =
-					checkCustomValidity(element.value, element.validity, config) ??
+					checkCustomValidity(element.validity, config) ??
 					element.validationMessage;
 
 				setErrorMessage((error) =>
@@ -242,7 +242,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 
 				const config = getFieldConfig(field);
 				const customMessage =
-					checkCustomValidity(element.value, element.validity, config) ??
+					checkCustomValidity(element.validity, config) ??
 					element.validationMessage;
 
 				if (message !== customMessage) {
@@ -381,7 +381,7 @@ function getFieldProps(field: Field, options: FieldPropsOptions) {
 					: config.max.value
 				: undefined,
 			step: config.step?.value,
-			pattern: config.pattern?.map((pattern) => pattern.value.source).join('|'),
+			pattern: config.pattern?.value.source,
 			...options.props,
 		};
 		const defaultValue = options.value?.[options.key];

@@ -100,10 +100,10 @@ type FieldConfig<Tag extends FieldTag = FieldTag> = {
 		value: number | string;
 		message: string | undefined;
 	};
-	pattern?: Array<{
+	pattern?: {
 		value: RegExp;
 		message: string | undefined;
-	}>;
+	};
 	multiple?: {
 		message: string | undefined;
 	};
@@ -186,10 +186,7 @@ function configureF() {
 
 				return createField({
 					...config,
-					pattern: [...(config.pattern ?? [])].concat({
-						value,
-						message,
-					}),
+					pattern: { value, message },
 				});
 			},
 			multiple(message?: string) {
@@ -422,7 +419,7 @@ export function parse<T>(
 			const value = valueByName[name];
 			const validity = validate(value, config);
 			const message =
-				checkCustomValidity(value, validity, config) ?? 'The field is invalid';
+				checkCustomValidity(validity, config) ?? 'The field is invalid';
 
 			if (message) {
 				errorEntries.push([name, message]);
@@ -530,6 +527,15 @@ function unflatten<T>(
 	return result;
 }
 
+function isURL(value: string): boolean {
+	try {
+		new URL(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 function validate(
 	value: FormDataEntryValue | undefined,
 	config: FieldConfig,
@@ -543,50 +549,48 @@ function validate(
 	let tooLong = false;
 	let tooShort = false;
 	let typeMismatch = false;
-	let valueMissing = false;
+	let valueMissing = typeof value === 'undefined' || value === '';
 
 	if (value instanceof File) {
 		typeMismatch = config.type?.value !== 'file';
 	} else {
-		const isURL = (value: string) => {
-			try {
-				new URL(value);
-				return true;
-			} catch {
-				return false;
-			}
-		};
-
-		patternMismatch =
-			config.pattern?.some((pattern) => {
-				const match = value?.match(pattern.value);
-
-				return !match || value !== match[0];
-			}) ?? false;
-		rangeOverflow = config.max
-			? (typeof value !== 'undefined' &&
-					config.max.value instanceof Date &&
-					new Date(value) > config.max.value) ||
-			  (typeof value !== 'undefined' &&
-					typeof config.max.value === 'number' &&
-					Number(value) > config.max.value)
-			: false;
-		rangeUnderflow = config.min
-			? (config.min.value instanceof Date &&
-					new Date(value ?? '') < config.min.value) ||
-			  (typeof config.min.value === 'number' &&
-					Number(value ?? '') < config.min.value)
-			: false;
-		tooLong = config.maxLength
-			? typeof value !== 'undefined' && value.length > config.maxLength.value
-			: false;
-		tooShort = config.minLength
-			? typeof value === 'undefined' || value.length < config.minLength.value
-			: false;
 		typeMismatch =
 			(config.type?.value === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
 			(config.type?.value === 'url' && !isURL(value ?? ''));
-		valueMissing = typeof value === 'undefined' || value === '';
+
+		if (config.pattern) {
+			const match = value?.match(config.pattern.value);
+
+			patternMismatch = !match || value !== match[0];
+		}
+
+		if (config.max) {
+			rangeOverflow =
+				(typeof value !== 'undefined' &&
+					config.max.value instanceof Date &&
+					new Date(value) > config.max.value) ||
+				(typeof value !== 'undefined' &&
+					typeof config.max.value === 'number' &&
+					Number(value) > config.max.value);
+		}
+
+		if (config.min) {
+			rangeUnderflow =
+				(config.min.value instanceof Date &&
+					new Date(value ?? '') < config.min.value) ||
+				(typeof config.min.value === 'number' &&
+					Number(value ?? '') < config.min.value);
+		}
+
+		if (config.maxLength) {
+			tooLong =
+				typeof value !== 'undefined' && value.length > config.maxLength.value;
+		}
+
+		if (config.minLength) {
+			tooShort =
+				typeof value === 'undefined' || value.length < config.minLength.value;
+		}
 	}
 
 	return {
@@ -615,7 +619,6 @@ function validate(
 }
 
 export function checkCustomValidity(
-	value: FormDataEntryValue,
 	validity: ValidityState,
 	config: FieldConfig,
 ): string | null {
@@ -634,14 +637,7 @@ export function checkCustomValidity(
 	} else if (config.type && (validity.typeMismatch || validity.badInput)) {
 		return config.type.message ?? null;
 	} else if (config.pattern && validity.patternMismatch) {
-		if (config.pattern.length === 1) {
-			return config.pattern[0].message ?? null;
-		}
-
-		return (
-			config.pattern.find((pattern) => pattern.value.test(value as string))
-				?.message ?? null
-		);
+		return config.pattern.message ?? null;
 	} else {
 		return '';
 	}
