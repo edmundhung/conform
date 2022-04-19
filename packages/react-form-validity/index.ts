@@ -10,15 +10,21 @@ import type {
 	TextareaHTMLAttributes,
 	FormEvent,
 } from 'react';
-import { useEffect, useMemo, useState, useRef } from 'react';
+import {
+	createContext,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+	useRef,
+} from 'react';
 import type { Field } from 'form-validity';
 import {
 	getFieldConfig,
 	checkCustomValidity,
 	draftUpdate,
 	shouldSkipValidate,
-	isDirty,
-	isValidationConstraintSupported,
+	createConstraintRegistry,
 } from 'form-validity';
 
 export { f, parse } from 'form-validity';
@@ -94,12 +100,15 @@ type FormValidityProps = Pick<
 	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
 
+const Context = createContext(createConstraintRegistry());
+
 export function useFormValidity({
 	noValidate,
 	onChange,
 	onBlur,
 	onSubmit,
 }: FormValidityProps): FormValidityProps {
+	const registry = useContext(Context);
 	const ref = useRef<{
 		submitted: boolean;
 		touched: Record<string, boolean | undefined>;
@@ -108,22 +117,17 @@ export function useFormValidity({
 		noValidate ?? false,
 	);
 	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
-		if (
-			isValidationConstraintSupported(event.target) &&
-			isDirty(event.target)
-		) {
-			ref.current.touched[event.target.name] = true;
-			event.target.checkValidity();
-		}
+		ref.current.touched[event.target.name] = true;
+		registry.checkValidity(event.target);
 
 		onBlur?.(event);
 	};
 	const handleChange: FormEventHandler<HTMLFormElement> = (event) => {
 		if (
-			isValidationConstraintSupported(event.target) &&
-			(ref.current.submitted || ref.current.touched[event.target.name])
+			ref.current.submitted ||
+			ref.current.touched[(event.target as any)?.name ?? '']
 		) {
-			event.target.checkValidity();
+			registry.checkValidity(event.target);
 		}
 
 		onChange?.(event);
@@ -133,7 +137,7 @@ export function useFormValidity({
 
 		if (
 			!shouldSkipValidate((event.nativeEvent as SubmitEvent).submitter) &&
-			!event.currentTarget.checkValidity()
+			!registry.checkValidity(event.currentTarget)
 		) {
 			event.preventDefault();
 		} else {
@@ -161,21 +165,11 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 	fieldset: Fieldset,
 	{ name, value, error }: Partial<FieldsetOptions> = {},
 ): [FieldProps<Fieldset>, Error<Fieldset>] {
+	const registry = useContext(Context);
 	const ref = useRef({
 		element: {} as Record<string, HTMLInputElement | null>,
 		fieldset,
 		props: {
-			onInput(e: FormEvent<HTMLInputElement>) {
-				if (!e.currentTarget.validity.valid) {
-					return;
-				}
-
-				const key = getKey(e.currentTarget);
-
-				setErrorMessage((error) =>
-					error[key] === '' ? error : { ...error, [key]: '' },
-				);
-			},
 			onInvalid(e: FormEvent<HTMLInputElement>) {
 				const element = e.currentTarget;
 				const key = getKey(element);
@@ -183,6 +177,10 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 
 				if (!config) {
 					return;
+				}
+
+				if (element.validationMessage === 'valid') {
+					element.setCustomValidity('');
 				}
 
 				const message =
@@ -229,33 +227,16 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 
 		ref.current.fieldset = fieldset;
 
-		setErrorMessage((errorMessage) => {
-			let result = errorMessage;
+		// Revalidate fields as constraint might be changed
+		for (let [key, error] of Object.entries(errorMessage)) {
+			const field = ref.current.element[key];
 
-			for (let [key, field] of Object.entries(fieldset)) {
-				const element = ref.current.element[key];
-				let message = errorMessage[key];
-
-				if (!message || !element) {
-					continue;
-				}
-
-				const config = getFieldConfig(field);
-				const customMessage =
-					checkCustomValidity(element.validity, config) ??
-					element.validationMessage;
-
-				if (message !== customMessage) {
-					result = {
-						...result,
-						[key]: customMessage,
-					};
-				}
+			// Only check against fields with error
+			if (field && error !== '') {
+				registry.checkValidity(field);
 			}
-
-			return result;
-		});
-	}, [fieldset]);
+		}
+	}, [fieldset, errorMessage, registry]);
 
 	return [
 		field,
