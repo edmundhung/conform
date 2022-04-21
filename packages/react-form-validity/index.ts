@@ -10,21 +10,15 @@ import type {
 	TextareaHTMLAttributes,
 	FormEvent,
 } from 'react';
-import {
-	createContext,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-	useRef,
-} from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import type { Field } from 'form-validity';
 import {
 	getFieldConfig,
 	checkCustomValidity,
 	draftUpdate,
+	revalidate,
+	checkValidity,
 	shouldSkipValidate,
-	createConstraintRegistry,
 } from 'form-validity';
 
 export { f, parse } from 'form-validity';
@@ -100,15 +94,12 @@ type FormValidityProps = Pick<
 	'noValidate' | 'onChange' | 'onBlur' | 'onSubmit'
 >;
 
-const Context = createContext(createConstraintRegistry());
-
 export function useFormValidity({
 	noValidate,
 	onChange,
 	onBlur,
 	onSubmit,
 }: FormValidityProps): FormValidityProps {
-	const registry = useContext(Context);
 	const ref = useRef<{
 		submitted: boolean;
 		touched: Record<string, boolean | undefined>;
@@ -118,7 +109,7 @@ export function useFormValidity({
 	);
 	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
 		ref.current.touched[event.target.name] = true;
-		registry.checkValidity(event.target);
+		checkValidity(event.target);
 
 		onBlur?.(event);
 	};
@@ -127,7 +118,7 @@ export function useFormValidity({
 			ref.current.submitted ||
 			ref.current.touched[(event.target as any)?.name ?? '']
 		) {
-			registry.checkValidity(event.target);
+			checkValidity(event.target);
 		}
 
 		onChange?.(event);
@@ -137,7 +128,7 @@ export function useFormValidity({
 
 		if (
 			!shouldSkipValidate((event.nativeEvent as SubmitEvent).submitter) &&
-			!registry.checkValidity(event.currentTarget)
+			!checkValidity(event.currentTarget)
 		) {
 			event.preventDefault();
 		} else {
@@ -165,7 +156,6 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 	fieldset: Fieldset,
 	{ name, value, error }: Partial<FieldsetOptions> = {},
 ): [FieldProps<Fieldset>, Error<Fieldset>] {
-	const registry = useContext(Context);
 	const ref = useRef({
 		element: {} as Record<string, HTMLInputElement | null>,
 		fieldset,
@@ -179,12 +169,8 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					return;
 				}
 
-				if (element.validationMessage === 'valid') {
-					element.setCustomValidity('');
-				}
-
-				const message =
-					checkCustomValidity(element.validity, config) ??
+				let message =
+					checkCustomValidity(e.currentTarget.validity, config) ??
 					element.validationMessage;
 
 				setErrorMessage((error) =>
@@ -233,10 +219,10 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 
 			// Only check against fields with error
 			if (field && error !== '') {
-				registry.checkValidity(field);
+				revalidate(field);
 			}
 		}
-	}, [fieldset, errorMessage, registry]);
+	}, [fieldset, errorMessage]);
 
 	return [
 		field,

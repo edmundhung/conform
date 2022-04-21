@@ -643,108 +643,39 @@ export function checkCustomValidity(
 	}
 }
 
-interface ConstraintRegistry {
-	add(constraint: Constraint): string;
-	remove(constraint: Constraint): boolean;
-	checkValidity(element: unknown): boolean;
+/**
+ * Mnaully trigger an invalid event
+ * @param field
+ */
+export function revalidate(field: EventTarget): void {
+	field.dispatchEvent(new Event('invalid'));
 }
 
-interface Constraint {
-	(value: string): boolean;
-}
+/**
+ * Check if the form or field is valid
+ * by manually triggering an invalid event and check the final validity
+ * @param field
+ * @returns
+ */
+export function checkValidity(field: unknown): boolean {
+	if (isValidationConstraintSupported(field)) {
+		// We can skip this if there is no custom validation configured
+		revalidate(field);
 
-export function createConstraintRegistry(): ConstraintRegistry {
-	const constraintMap = new Map<Constraint, string>();
-	const validityMap = new Map<string, Constraint>();
+		// Check the latest validity
+		return field.validity.valid;
+	} else if (isElement<HTMLFormElement>(field, 'form')) {
+		let isValid = true;
 
-	function add(constraint: (value: string) => boolean): string {
-		let validityId = constraintMap.get(constraint);
-
-		if (!validityId) {
-			validityId = Date.now().toString(36);
-
-			validityMap.set(validityId, constraint);
-			constraintMap.set(constraint, validityId);
+		for (let element of Array.from(field.elements)) {
+			if (!checkValidity(element)) {
+				isValid = false;
+			}
 		}
 
-		return validityId;
+		return isValid;
 	}
 
-	function remove(constraint: (value: string) => boolean): boolean {
-		const validityId = constraintMap.get(constraint);
-
-		if (!validityId) {
-			return false;
-		}
-
-		return constraintMap.delete(constraint) && validityMap.delete(validityId);
-	}
-
-	function checkValidity(field: unknown): boolean {
-		if (isValidationConstraintSupported(field)) {
-			let wasInvalid = field.validity.customError;
-
-			if (wasInvalid) {
-				// Reset custom validity
-				field.setCustomValidity('');
-			}
-
-			if (field.validity.valid) {
-				// Check custom constraint only if all native constraint pass
-				const validityIds = field.dataset.validity?.split(',') ?? [];
-
-				for (let validityId of validityIds) {
-					const validate =
-						validityMap.get(validityId) ??
-						(() => {
-							console.warn(`Constraint ${validityId} not found`);
-							return true;
-						});
-					const success = validate(field.value);
-
-					if (!success) {
-						field.setCustomValidity(validityId);
-						// Error found. Skip checking the rest of the constraints
-						break;
-					}
-				}
-			}
-
-			let isValid = field.validity.valid;
-
-			// If it goes from invalid to valid after all the checks
-			if (wasInvalid && isValid) {
-				field.setCustomValidity('valid');
-			}
-
-			// If there is any native constraint failed validation
-			if (!isValid && !field.validity.customError) {
-				field.setCustomValidity('invalid');
-			}
-
-			// Notify the field to update the error message
-			field.checkValidity();
-
-			return isValid;
-		} else if (isElement<HTMLFormElement>(field, 'form')) {
-			let isValid = true;
-
-			for (let fieldElement of Array.from(field.elements)) {
-				if (!checkValidity(fieldElement)) {
-					isValid = false;
-				}
-			}
-
-			return isValid;
-		}
-
-		// Assuming it to be valid and fallback to server validation
-		return true;
-	}
-
-	return {
-		add,
-		remove,
-		checkValidity,
-	};
+	// Assuming it to be valid and fallback to server validation
+	return true;
 }
