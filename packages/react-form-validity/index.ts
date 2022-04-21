@@ -169,8 +169,24 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					return;
 				}
 
-				let message =
-					checkCustomValidity(e.currentTarget.validity, config) ??
+				if (element.validity.valid || element.validity.customError) {
+					let hasError = false;
+
+					for (let custom of config.custom ?? []) {
+						if (!custom.validate(element.value)) {
+							hasError = true;
+							element.setCustomValidity(custom.message);
+							break;
+						}
+					}
+
+					if (!hasError) {
+						element.setCustomValidity('');
+					}
+				}
+
+				const message =
+					checkCustomValidity(element.validity, config) ??
 					element.validationMessage;
 
 				setErrorMessage((error) =>

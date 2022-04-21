@@ -11,19 +11,11 @@ function configureFieldset(password: string) {
 			.input('email', 'Your email address is invalid')
 			.required('Email is required'),
 		password: f.input('password').required('Password is required'),
-		confirm: f.input('password').required('Confirm password is required'),
+		confirm: f
+			.input('password')
+			.required('Confirm password is required')
+			.custom((value) => value === password, 'The password do not match'),
 	};
-
-	if (password) {
-		const escaped = password
-			.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
-			.replace(/-/g, '\\x2d');
-
-		fieldset.confirm = fieldset.confirm.pattern(
-			new RegExp(escaped),
-			'The password do not match',
-		);
-	}
 
 	return fieldset;
 }

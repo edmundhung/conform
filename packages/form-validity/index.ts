@@ -62,14 +62,18 @@ interface Multiple {
 	multiple(): this;
 }
 
-type FieldCreator<Constraint extends Constraints> =
+interface Custom {
+	custom(validate: (value: string) => boolean, message: string): this;
+}
+
+type FieldCreator<Constraint extends Constraints> = Custom &
 	('required' extends Constraint ? Required : {}) &
-		('length' extends Constraint ? Length : {}) &
-		('range:date' extends Constraint ? Range<Date> : {}) &
-		('range:number' extends Constraint ? Range<number> : {}) &
-		('step' extends Constraint ? Step : {}) &
-		('pattern' extends Constraint ? Pattern : {}) &
-		('multiple' extends Constraint ? Multiple : {});
+	('length' extends Constraint ? Length : {}) &
+	('range:date' extends Constraint ? Range<Date> : {}) &
+	('range:number' extends Constraint ? Range<number> : {}) &
+	('step' extends Constraint ? Step : {}) &
+	('pattern' extends Constraint ? Pattern : {}) &
+	('multiple' extends Constraint ? Multiple : {});
 
 type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	tag: Tag;
@@ -107,6 +111,10 @@ type FieldConfig<Tag extends FieldTag = FieldTag> = {
 	multiple?: {
 		message: string | undefined;
 	};
+	custom?: Array<{
+		validate: (value: string) => boolean;
+		message: string;
+	}>;
 	options?: string[];
 	value?: string;
 	count?: number;
@@ -193,6 +201,15 @@ function configureF() {
 				return createField({
 					...config,
 					multiple: { message },
+				});
+			},
+			custom(validate: (value: string) => boolean, message: string) {
+				return createField({
+					...config,
+					custom: [...(config.custom ?? [])].concat({
+						validate,
+						message,
+					}),
 				});
 			},
 			[symbol]: config,
@@ -638,6 +655,8 @@ export function checkCustomValidity(
 		return config.type.message ?? null;
 	} else if (config.pattern && validity.patternMismatch) {
 		return config.pattern.message ?? null;
+	} else if (config.custom && validity.customError) {
+		return null;
 	} else {
 		return '';
 	}
