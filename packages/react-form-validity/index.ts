@@ -11,9 +11,8 @@ import type {
 	FormEvent,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import type { Field } from 'form-validity';
+import type { Field, FieldConfig } from 'form-validity';
 import {
-	getFieldConfig,
 	checkCustomValidity,
 	draftUpdate,
 	revalidate,
@@ -21,7 +20,7 @@ import {
 	shouldSkipValidate,
 } from 'form-validity';
 
-export { f, parse } from 'form-validity';
+export { f, parse, createFieldset } from 'form-validity';
 
 export interface FieldsetOptions {
 	name: string;
@@ -152,7 +151,7 @@ function getKey(element: HTMLInputElement): string {
 	return element.name.slice(element.name.lastIndexOf('.') + 1);
 }
 
-export function useFieldset<Fieldset extends Record<string, Field>>(
+export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 	fieldset: Fieldset,
 	{ name, value, error }: Partial<FieldsetOptions> = {},
 ): [FieldProps<Fieldset>, Error<Fieldset>] {
@@ -163,7 +162,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 			onInvalid(e: FormEvent<HTMLInputElement>) {
 				const element = e.currentTarget;
 				const key = getKey(element);
-				const config = getFieldConfig(ref.current.fieldset[key]);
+				const config = ref.current.fieldset[key];
 
 				if (!config) {
 					return;
@@ -173,7 +172,7 @@ export function useFieldset<Fieldset extends Record<string, Field>>(
 					let hasError = false;
 
 					for (let custom of config.custom ?? []) {
-						if (!custom.validate(element.value)) {
+						if (!custom.constraint(element.value)) {
 							hasError = true;
 							element.setCustomValidity(custom.message);
 							break;
@@ -325,8 +324,7 @@ interface FieldPropsOptions extends Partial<FieldsetOptions> {
 	props: any;
 }
 
-function getFieldProps(field: Field, options: FieldPropsOptions) {
-	const config = getFieldConfig(field);
+function getFieldProps(config: FieldConfig, options: FieldPropsOptions) {
 	const name = options.name ? `${options.name}.${options.key}` : options.key;
 
 	if (config.tag === 'fieldset') {
@@ -345,30 +343,43 @@ function getFieldProps(field: Field, options: FieldPropsOptions) {
 			value: option.value?.[index],
 			error: option.error?.[index],
 		}));
-	} else {
+	} else if (config.tag === 'input') {
 		const attributes = {
 			name,
-			type: config.type?.value as string,
-			required: Boolean(config.required),
-			multiple: Boolean(config.multiple),
-			minLength: config.minLength?.value,
-			maxLength: config.maxLength?.value,
+			type: config.type,
+			// @ts-expect-error
+			required: config.required,
+			// @ts-expect-error
+			minLength: config.minLength,
+			// @ts-expect-error
+			maxLength: config.maxLength,
+			// @ts-expect-error
 			min: config.min
-				? config.min.value instanceof Date
-					? config.min.value.toISOString()
-					: config.min.value
+				? // @ts-expect-error
+				  config.min instanceof Date
+					? // @ts-expect-error
+					  config.min.toISOString()
+					: // @ts-expect-error
+					  config.min
 				: undefined,
+			// @ts-expect-error
 			max: config.max
-				? config.max.value instanceof Date
-					? config.max.value.toISOString()
-					: config.max.value
+				? // @ts-expect-error
+				  config.max instanceof Date
+					? // @ts-expect-error
+					  config.max.toISOString()
+					: // @ts-expect-error
+					  config.max
 				: undefined,
-			step: config.step?.value,
-			pattern: config.pattern?.value.source,
+			// @ts-expect-error
+			step: config.step,
+			// @ts-expect-error
+			pattern: config.pattern?.source,
 			...options.props,
 		};
 		const defaultValue = options.value?.[options.key];
 
+		// @ts-expect-error
 		if (!config.options) {
 			return {
 				...attributes,
@@ -376,6 +387,7 @@ function getFieldProps(field: Field, options: FieldPropsOptions) {
 			};
 		}
 
+		// @ts-expect-error
 		return config.options.map((value) => ({
 			...attributes,
 			value,

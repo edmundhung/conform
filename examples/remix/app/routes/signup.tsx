@@ -3,10 +3,16 @@ import { json, redirect } from '@remix-run/node';
 import { useActionData, useSearchParams } from '@remix-run/react';
 import { useMemo, useState } from 'react';
 import { styles } from '~/helpers';
-import { Form, useFieldset, f, parse } from 'remix-form-validity';
+import {
+	Form,
+	useFieldset,
+	f,
+	parse,
+	createFieldset,
+} from 'remix-form-validity';
 
 function configureFieldset(password: string) {
-	let fieldset = {
+	return createFieldset({
 		email: f
 			.input('email', 'Your email address is invalid')
 			.required('Email is required'),
@@ -15,9 +21,7 @@ function configureFieldset(password: string) {
 			.input('password')
 			.required('Confirm password is required')
 			.custom((value) => value === password, 'The password do not match'),
-	};
-
-	return fieldset;
+	});
 }
 
 export let action: ActionFunction = async ({ request }) => {

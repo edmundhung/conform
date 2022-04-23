@@ -1,11 +1,11 @@
 import { useSearchParams } from '@remix-run/react';
 import { styles } from '~/helpers';
-import { Form, useFieldset, f } from 'remix-form-validity';
+import { Form, useFieldset, f, createFieldset } from 'remix-form-validity';
 
-const fieldset = {
+const fieldset = createFieldset({
 	keyword: f.input('search').required().minLength(3),
 	category: f.select().required(),
-};
+});
 
 export default function SearchForm() {
 	const [searchParams] = useSearchParams();

@@ -9,19 +9,20 @@ import {
 	useFieldsetControl,
 	f,
 	parse,
+	createFieldset,
 } from 'remix-form-validity';
 import { cookie } from '~/cookie.server';
 import { styles } from '~/helpers';
 
 function configureFieldset(productCount?: number) {
-	return {
+	return createFieldset({
 		products: f.fieldset(productCount ?? 1),
 		address: f.input('text').required('Address is required'),
 		delivery: f
 			.input('radio', ['standard', 'express'])
 			.required('Please select a delivery method'),
 		remarks: f.textarea(),
-	};
+	});
 }
 
 export let loader: LoaderFunction = async ({ request }) => {

@@ -75,51 +75,6 @@ type FieldCreator<Constraint extends Constraints> = Custom &
 	('pattern' extends Constraint ? Pattern : {}) &
 	('multiple' extends Constraint ? Multiple : {});
 
-type FieldConfig<Tag extends FieldTag = FieldTag> = {
-	tag: Tag;
-	type?: {
-		value: InputType;
-		message: string | undefined;
-	};
-	required?: {
-		message: string | undefined;
-	};
-	minLength?: {
-		value: number;
-		message: string | undefined;
-	};
-	maxLength?: {
-		value: number;
-		message: string | undefined;
-	};
-	min?: {
-		value: Date | number;
-		message: string | undefined;
-	};
-	max?: {
-		value: Date | number;
-		message: string | undefined;
-	};
-	step?: {
-		value: number | string;
-		message: string | undefined;
-	};
-	pattern?: {
-		value: RegExp;
-		message: string | undefined;
-	};
-	multiple?: {
-		message: string | undefined;
-	};
-	custom?: Array<{
-		validate: (value: string) => boolean;
-		message: string;
-	}>;
-	options?: string[];
-	value?: string;
-	count?: number;
-};
-
 /**
  * To hide the config from user
  */
@@ -156,33 +111,64 @@ function configureF() {
 			required(message?: string) {
 				return createField({
 					...config,
-					required: { message },
+					// @ts-expect-error
+					required: true,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						valueMissing: message,
+					},
 				});
 			},
 			min(value: number | Date, message?: string) {
 				return createField({
 					...config,
-					min: { value, message },
+					// @ts-expect-error
+					min: value,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						rangeUnderflow: message,
+					},
 				});
 			},
 			max(value: number | Date, message?: string) {
 				return createField({
 					...config,
-					max: { value, message },
+					// @ts-expect-error
+					max: value,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						rangeOverflow: message,
+					},
 				});
 			},
 			minLength(value: number, message?: string) {
 				return createField({
 					...config,
-					minLength: { value, message },
+					// @ts-expect-error
+					minLength: value,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						tooShort: message,
+					},
 				});
 			},
 			maxLength(value: number, message?: string) {
 				return createField({
 					...config,
-					maxLength: { value, message },
+					// @ts-expect-error
+					maxLength: value,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						tooLong: message,
+					},
 				});
 			},
+			// @ts-expect-error
 			pattern(value: RegExp, message?: string) {
 				if (value.global || value.ignoreCase || value.multiline) {
 					console.warn(
@@ -194,20 +180,20 @@ function configureF() {
 
 				return createField({
 					...config,
-					pattern: { value, message },
+					// @ts-expect-error
+					pattern: value,
+					validity: {
+						// @ts-expect-error
+						...config.validity,
+						patternMismatch: message,
+					},
 				});
 			},
-			multiple(message?: string) {
-				return createField({
-					...config,
-					multiple: { message },
-				});
-			},
-			custom(validate: (value: string) => boolean, message: string) {
+			custom(constraint: (value: string) => boolean, message: string) {
 				return createField({
 					...config,
 					custom: [...(config.custom ?? [])].concat({
-						validate,
+						constraint,
 						message,
 					}),
 				});
@@ -244,21 +230,24 @@ function configureF() {
 		// @ts-expect-error
 		return createField({
 			tag: 'input',
-			type: {
-				value: type,
-				message,
-			},
+			// @ts-expect-error
+			type,
 			options,
+			validity: {
+				typeMismatch: message,
+			},
 		});
 	}
 
 	function select(): Field<'select'> {
+		// @ts-expect-error
 		return createField({
 			tag: 'select',
 		});
 	}
 
 	function textarea(): Field<'textarea'> {
+		// @ts-expect-error
 		return createField({
 			tag: 'textarea',
 		});
@@ -269,6 +258,7 @@ function configureF() {
 	function fieldset(
 		count?: number,
 	): Field<'fieldset', 'default'> | Field<'fieldset', 'array'> {
+		// @ts-expect-error
 		return createField({
 			tag: 'fieldset',
 			count,
@@ -289,14 +279,24 @@ function configureF() {
  */
 export const f = configureF();
 
-export function getFieldConfig<Tag extends FieldTag>(
-	field: Field<Tag>,
-): FieldConfig<Tag> {
-	if (typeof field[symbol] === 'undefined') {
-		throw new Error('Only field object is accepted');
+type Fieldset<Config extends Record<string, Field>> = {
+	[Key in keyof Config]: FieldConfig<InferTag<Config[Key]>>;
+};
+
+type InferTag<Config> = Config extends Field<infer Tag> ? Tag : never;
+
+export function createFieldset<Config extends Record<string, Field>>(
+	config: Config,
+): Fieldset<Config> {
+	// @ts-ignore
+	let result: Fieldset<Config> = {};
+
+	for (const [key, field] of Object.entries<Field>(config)) {
+		// @ts-ignore
+		result[key as T] = field[symbol];
 	}
 
-	return field[symbol];
+	return result;
 }
 
 export function isElement<T extends HTMLElement>(
@@ -431,8 +431,7 @@ export function parse<T>(
 	const errorEntries: Array<[string, string]> = [];
 
 	if (!update) {
-		for (const [name, field] of flattenFieldset(fieldset)) {
-			const config = getFieldConfig(field);
+		for (const [name, config] of flattenFieldset(fieldset)) {
 			const value = valueByName[name];
 			const validity = validate(value, config);
 			const message =
@@ -483,15 +482,14 @@ function getItem(obj: any, key: string, defaultValue?: any): any {
 	return target;
 }
 
-function flattenFieldset(item: any, prefix = ''): Array<[string, Field]> {
-	let entries: Array<[string, Field]> = [];
-	let config: FieldConfig | null = item[symbol] ?? null;
+function flattenFieldset(item: any, prefix = ''): Array<[string, FieldConfig]> {
+	let entries: Array<[string, FieldConfig]> = [];
 
-	if (config?.tag === 'fieldset') {
+	if (item.tag === 'fieldset') {
 		throw new Error('Validation based on fieldset is not supported');
 	}
 
-	if (config) {
+	if (typeof item.tag !== 'undefined') {
 		entries.push([prefix, item]);
 	} else if (Array.isArray(item)) {
 		for (var i = 0; i < item.length; i++) {
@@ -569,44 +567,61 @@ function validate(
 	let valueMissing = typeof value === 'undefined' || value === '';
 
 	if (value instanceof File) {
-		typeMismatch = config.type?.value !== 'file';
+		typeMismatch = config.tag === 'input' && config.type !== 'file';
 	} else {
 		typeMismatch =
-			(config.type?.value === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
-			(config.type?.value === 'url' && !isURL(value ?? ''));
+			config.tag === 'input' &&
+			((config.type === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
+				(config.type === 'url' && !isURL(value ?? '')));
 
-		if (config.pattern) {
-			const match = value?.match(config.pattern.value);
+		// @ts-expect-error
+		if (typeof config.pattern !== 'undefined') {
+			// @ts-expect-error
+			const match = value?.match(config.pattern);
 
 			patternMismatch = !match || value !== match[0];
 		}
 
-		if (config.max) {
+		// @ts-expect-error
+		if (typeof config.max !== 'undefined') {
 			rangeOverflow =
 				(typeof value !== 'undefined' &&
-					config.max.value instanceof Date &&
-					new Date(value) > config.max.value) ||
+					// @ts-expect-error
+					config.max instanceof Date &&
+					// @ts-expect-error
+					new Date(value) > config.max) ||
 				(typeof value !== 'undefined' &&
-					typeof config.max.value === 'number' &&
-					Number(value) > config.max.value);
+					// @ts-expect-error
+					typeof config.max === 'number' &&
+					// @ts-expect-error
+					Number(value) > config.max);
 		}
 
-		if (config.min) {
+		// @ts-expect-error
+		if (typeof config.min !== 'undefined') {
 			rangeUnderflow =
+				// @ts-expect-error
 				(config.min.value instanceof Date &&
+					// @ts-expect-error
 					new Date(value ?? '') < config.min.value) ||
+				// @ts-expect-error
 				(typeof config.min.value === 'number' &&
+					// @ts-expect-error
 					Number(value ?? '') < config.min.value);
 		}
 
-		if (config.maxLength) {
+		// @ts-expect-error
+		if (typeof config.maxLength !== 'undefined') {
 			tooLong =
-				typeof value !== 'undefined' && value.length > config.maxLength.value;
+				// @ts-expect-error
+				typeof value !== 'undefined' && value.length > config.maxLength;
 		}
 
-		if (config.minLength) {
+		// @ts-expect-error
+		if (typeof config.minLength !== 'undefined') {
 			tooShort =
-				typeof value === 'undefined' || value.length < config.minLength.value;
+				// @ts-expect-error
+				typeof value === 'undefined' || value.length < config.minLength;
 		}
 	}
 
@@ -639,27 +654,27 @@ export function checkCustomValidity(
 	validity: ValidityState,
 	config: FieldConfig,
 ): string | null {
-	if (config.required && validity.valueMissing) {
-		return config.required.message ?? null;
-	} else if (config.minLength && validity.tooShort) {
-		return config.minLength.message ?? null;
-	} else if (config.maxLength && validity.tooLong) {
-		return config.maxLength.message ?? null;
-	} else if (config.step && validity.stepMismatch) {
-		return config.step.message ?? null;
-	} else if (config.min && validity.rangeUnderflow) {
-		return config.min.message ?? null;
-	} else if (config.max && validity.rangeOverflow) {
-		return config.max.message ?? null;
-	} else if (config.type && (validity.typeMismatch || validity.badInput)) {
-		return config.type.message ?? null;
-	} else if (config.pattern && validity.patternMismatch) {
-		return config.pattern.message ?? null;
-	} else if (config.custom && validity.customError) {
-		return null;
-	} else {
-		return '';
+	const validityKeys: Array<keyof ValidityState> = [
+		'valueMissing',
+		'tooShort',
+		'tooLong',
+		'stepMismatch',
+		'rangeUnderflow',
+		'rangeOverflow',
+		'typeMismatch',
+		'badInput',
+		'patternMismatch',
+		'customError',
+	];
+
+	for (let key of validityKeys) {
+		if (validity[key]) {
+			// @ts-ignore
+			return config.validity[key] ?? null;
+		}
 	}
+
+	return '';
 }
 
 /**
@@ -698,3 +713,142 @@ export function checkValidity(field: unknown): boolean {
 	// Assuming it to be valid and fallback to server validation
 	return true;
 }
+
+interface BaseField {
+	custom?: Array<{
+		constraint: (value: string) => boolean;
+		message: string;
+	}>;
+}
+
+interface FileField extends BaseField {
+	tag: 'input';
+	type: 'file';
+	required?: boolean;
+	multiple?: boolean;
+	options?: string[];
+	validity?: {
+		valueMissing?: string;
+		typeMismatch?: string;
+	};
+}
+
+interface DateField extends BaseField {
+	tag: 'input';
+	type: 'date' | 'datetime-local' | 'month' | 'time' | 'week';
+	required?: boolean;
+	min?: string;
+	max?: string;
+	step?: string;
+	validity?: {
+		valueMissing?: string;
+		stepMismatch?: string;
+		rangeUnderflow?: string;
+		rangeOverflow?: string;
+		typeMismatch?: string;
+		badInput?: string;
+	};
+}
+
+interface CheckboxOrRadioButton extends BaseField {
+	tag: 'input';
+	type: 'checkbox' | 'radio';
+	required?: boolean;
+	options?: string[];
+	validity?: {
+		valueMissing?: string;
+	};
+}
+
+interface TextField extends BaseField {
+	tag: 'input';
+	type: 'email' | 'password' | 'search' | 'tel' | 'text' | 'url';
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	pattern?: RegExp;
+	multiple?: boolean;
+	validity?: {
+		valueMissing?: string;
+		tooShort?: string;
+		tooLong?: string;
+		typeMismatch?: string;
+		badInput?: string;
+		patternMismatch?: string;
+	};
+}
+
+interface NumericField extends BaseField {
+	tag: 'input';
+	type: 'number';
+	required?: boolean;
+	min?: string;
+	max?: string;
+	step?: string;
+	validity?: {
+		valueMissing?: string;
+		stepMismatch?: string;
+		rangeUnderflow?: string;
+		rangeOverflow?: string;
+		typeMismatch?: string;
+		badInput?: string;
+	};
+}
+
+interface RangeField extends BaseField {
+	tag: 'input';
+	type: 'range';
+	min?: string;
+	max?: string;
+	step?: string;
+	validity?: {
+		stepMismatch?: string;
+		rangeUnderflow?: string;
+		rangeOverflow?: string;
+	};
+}
+
+interface SelectField extends BaseField {
+	tag: 'select';
+	required?: boolean;
+	multiple?: boolean;
+	validity?: {
+		valueMissing?: string;
+	};
+}
+
+interface TextareaField extends BaseField {
+	tag: 'textarea';
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	validity?: {
+		valueMissing?: string;
+		tooShort?: string;
+		tooLong?: string;
+		badInput?: string;
+	};
+}
+
+interface FieldsetField extends BaseField {
+	tag: 'fieldset';
+	count?: number;
+}
+
+type InputField =
+	| TextField
+	| CheckboxOrRadioButton
+	| NumericField
+	| DateField
+	| FileField
+	| RangeField;
+
+export type FieldConfig<Tag extends FieldTag = FieldTag> = Tag extends 'input'
+	? InputField
+	: Tag extends 'select'
+	? SelectField
+	: Tag extends 'textarea'
+	? TextareaField
+	: Tag extends 'fieldset'
+	? FieldsetField
+	: never;
