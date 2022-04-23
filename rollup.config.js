@@ -64,6 +64,7 @@ function configurePackage(name) {
 export default function rollup() {
 	let builds = [
 		...configurePackage('form-validity'),
+		...configurePackage('form-validity-schema'),
 		...configurePackage('react-form-validity'),
 		...configurePackage('remix-form-validity'),
 	];

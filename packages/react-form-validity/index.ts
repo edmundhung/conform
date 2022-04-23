@@ -11,7 +11,7 @@ import type {
 	FormEvent,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import type { Field, FieldConfig } from 'form-validity';
+import type { FieldConfig } from 'form-validity';
 import {
 	checkCustomValidity,
 	draftUpdate,
@@ -20,7 +20,7 @@ import {
 	shouldSkipValidate,
 } from 'form-validity';
 
-export { f, parse, createFieldset } from 'form-validity';
+export { process } from 'form-validity';
 
 export interface FieldsetOptions {
 	name: string;
@@ -79,7 +79,10 @@ type Attributes<
 	Partial<Pick<OriginalAttributes, Optional>>;
 
 type FieldProps<Type> = {
-	[Property in keyof Type]: Type[Property] extends Field<infer Tag, infer Type>
+	[Property in keyof Type]: Type[Property] extends FieldConfig<
+		infer Tag,
+		infer Type
+	>
 		? FieldAttributes<Tag, Type>
 		: never;
 };
@@ -147,10 +150,6 @@ export function useFormValidity({
 	};
 }
 
-function getKey(element: HTMLInputElement): string {
-	return element.name.slice(element.name.lastIndexOf('.') + 1);
-}
-
 export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 	fieldset: Fieldset,
 	{ name, value, error }: Partial<FieldsetOptions> = {},
@@ -158,60 +157,52 @@ export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 	const ref = useRef({
 		element: {} as Record<string, HTMLInputElement | null>,
 		fieldset,
-		props: {
-			onInvalid(e: FormEvent<HTMLInputElement>) {
-				const element = e.currentTarget;
-				const key = getKey(element);
-				const config = ref.current.fieldset[key];
-
-				if (!config) {
-					return;
-				}
-
-				if (element.validity.valid || element.validity.customError) {
-					let hasError = false;
-
-					for (let custom of config.custom ?? []) {
-						if (!custom.constraint(element.value)) {
-							hasError = true;
-							element.setCustomValidity(custom.message);
-							break;
-						}
-					}
-
-					if (!hasError) {
-						element.setCustomValidity('');
-					}
-				}
-
-				const message =
-					checkCustomValidity(element.validity, config) ??
-					element.validationMessage;
-
-				setErrorMessage((error) =>
-					error[key] === message ? error : { ...error, [key]: message },
-				);
-			},
-		},
 	});
-	const [errorMessage, setErrorMessage] = useState(() =>
-		Object.fromEntries(
-			Object.keys(fieldset).map((name) => [name, error?.[name] ?? '']),
-		),
+	const [errorMessage, setErrorMessage] = useState(
+		() =>
+			Object.fromEntries(
+				Object.keys(fieldset).map((name) => [name, error?.[name] ?? '']),
+			) as Error<Fieldset>,
 	);
 	const field = useMemo(() => {
-		const entries = Object.entries(fieldset).map(([key, field]) => {
+		const entries = Object.entries(fieldset).map(([key, config]) => {
 			return [
 				key,
-				getFieldProps(field, {
+				getFieldProps(config, {
 					key,
 					name,
 					value,
 					error,
 					props: {
-						...ref.current.props,
 						ref(element: HTMLInputElement | null) {
 							ref.current.element[key] = element;
+						},
+						onInvalid(e: FormEvent<HTMLInputElement>) {
+							const element = e.currentTarget;
+
+							if (element.validity.valid || element.validity.customError) {
+								let hasError = false;
+
+								for (let constraint of config.constraints ?? []) {
+									if (!constraint.isValid(element.value)) {
+										hasError = true;
+										element.setCustomValidity(constraint.message);
+										break;
+									}
+								}
+
+								if (!hasError) {
+									element.setCustomValidity('');
+								}
+							}
+
+							const message =
+								checkCustomValidity(element.validity, config) ??
+								element.validationMessage;
+
+							setErrorMessage((error) =>
+								error[key] === message ? error : { ...error, [key]: message },
+							);
 						},
 					},
 				}),
@@ -239,11 +230,7 @@ export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 		}
 	}, [fieldset, errorMessage]);
 
-	return [
-		field,
-		// @ts-expect-error
-		errorMessage,
-	];
+	return [field, errorMessage];
 }
 
 export function useFieldsetControl(options: FieldsetOptions[]): [
@@ -334,7 +321,7 @@ function getFieldProps(config: FieldConfig, options: FieldPropsOptions) {
 			error: options.error?.[options.key],
 		};
 
-		if (typeof config.count === 'undefined') {
+		if (config.type === 'nested') {
 			return option;
 		}
 
@@ -343,9 +330,10 @@ function getFieldProps(config: FieldConfig, options: FieldPropsOptions) {
 			value: option.value?.[index],
 			error: option.error?.[index],
 		}));
-	} else if (config.tag === 'input') {
+	} else {
 		const attributes = {
 			name,
+			// @ts-expect-error
 			type: config.type,
 			// @ts-expect-error
 			required: config.required,

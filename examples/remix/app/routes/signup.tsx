@@ -1,18 +1,13 @@
 import type { ActionFunction } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { useActionData, useSearchParams } from '@remix-run/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { styles } from '~/helpers';
-import {
-	Form,
-	useFieldset,
-	f,
-	parse,
-	createFieldset,
-} from 'remix-form-validity';
+import { f, parse, createFieldset } from '@form-validity/schema';
+import { Form, useFieldset, process } from 'remix-form-validity';
 
-function configureFieldset(password: string) {
-	return createFieldset({
+function configureSchema(password: string) {
+	return {
 		email: f
 			.input('email', 'Your email address is invalid')
 			.required('Email is required'),
@@ -21,14 +16,14 @@ function configureFieldset(password: string) {
 			.input('password')
 			.required('Confirm password is required')
 			.custom((value) => value === password, 'The password do not match'),
-	});
+	};
 }
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const { value, error } = parse(formData, (value) =>
-		configureFieldset(value?.password),
-	);
+	const { data } = process(formData);
+	const schema = configureSchema(data?.password);
+	const { value, error } = parse(data, schema);
 
 	if (error) {
 		return json(error);
@@ -41,7 +36,8 @@ export default function SignupForm() {
 	const [searchParams] = useSearchParams();
 	const serverError = useActionData();
 	const [password, setPassword] = useState('');
-	const fieldset = useMemo(() => configureFieldset(password), [password]);
+	const schema = configureSchema(password);
+	const fieldset = createFieldset(schema);
 	const [field, error] = useFieldset(fieldset);
 
 	return (

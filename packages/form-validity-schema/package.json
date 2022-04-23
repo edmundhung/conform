@@ -1,0 +1,20 @@
+{
+	"name": "@form-validity/schema",
+	"description": "Input field validation schema based on Constraint validation API",
+	"license": "MIT",
+	"version": "0.0.4",
+	"main": "index.js",
+	"module": "module/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/form-validity",
+		"directory": "packages/form-validity-schema"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/form-validity/issues"
+	},
+	"peerDependencies": {
+		"form-validity": "0.0.4"
+	},
+	"sideEffects": false
+}

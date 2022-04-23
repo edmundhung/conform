@@ -2,27 +2,26 @@ import type { ActionFunction, LoaderFunction } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { useMemo } from 'react';
+import { f, parse, createFieldset } from '@form-validity/schema';
 import type { FieldsetOptions } from 'remix-form-validity';
 import {
 	Form,
 	useFieldset,
 	useFieldsetControl,
-	f,
-	parse,
-	createFieldset,
+	process,
 } from 'remix-form-validity';
 import { cookie } from '~/cookie.server';
 import { styles } from '~/helpers';
 
-function configureFieldset(productCount?: number) {
-	return createFieldset({
+function configureSchema(productCount?: number) {
+	return {
 		products: f.fieldset(productCount ?? 1),
 		address: f.input('text').required('Address is required'),
 		delivery: f
 			.input('radio', ['standard', 'express'])
 			.required('Please select a delivery method'),
 		remarks: f.textarea(),
-	});
+	};
 }
 
 export let loader: LoaderFunction = async ({ request }) => {
@@ -37,17 +36,20 @@ export let loader: LoaderFunction = async ({ request }) => {
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const { value, error, isDraft } = parse(formData, (value) => {
-		return {
-			...configureFieldset(),
-			products: Array(value?.products.length ?? 1).fill(productFieldset),
-		};
+	const { isDraft, data } = process(formData);
+	const schema = configureSchema();
+	const { value, error } = parse(data, {
+		...schema,
+		products: Array(data?.products?.length ?? 1).fill(productSchema),
 	});
 
 	if (error || isDraft) {
 		return redirect('/order', {
 			headers: {
-				'Set-Cookie': await cookie.serialize({ value, error }),
+				'Set-Cookie': await cookie.serialize({
+					value,
+					error: !isDraft ? error : null,
+				}),
 			},
 		});
 	}
@@ -62,7 +64,12 @@ export let action: ActionFunction = async ({ request }) => {
 export default function OrderForm() {
 	const { success, value, error } = useLoaderData() ?? {};
 	const count = value?.products?.length;
-	const fieldset = useMemo(() => configureFieldset(count), [count]);
+	const fieldset = useMemo(() => {
+		const schema = configureSchema(count);
+		const fieldset = createFieldset(schema);
+
+		return fieldset;
+	}, [count]);
 	const [field, errorMessage] = useFieldset(fieldset, { value, error });
 	const [products, addProductButton] = useFieldsetControl(field.products);
 
@@ -168,10 +175,12 @@ export default function OrderForm() {
 	);
 }
 
-const productFieldset = {
+const productSchema = {
 	item: f.input('text').required('Product name is required'),
 	quantity: f.input('number', 'Invalid').required('Required').min(1, 'Min. 1'),
 };
+
+const productFieldset = createFieldset(productSchema);
 
 interface ProductFieldsetProps extends Partial<FieldsetOptions> {
 	label: string;

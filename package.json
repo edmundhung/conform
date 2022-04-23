@@ -4,6 +4,7 @@
 	"license": "MIT",
 	"workspaces": [
 		"packages/form-validity",
+		"packages/form-validity-schema",
 		"packages/react-form-validity",
 		"packages/remix-form-validity",
 		"examples/remix"
