@@ -53,8 +53,8 @@ export interface FieldConfig<Type extends FieldType = FieldType> {
 		patternMismatch?: string;
 	};
 	constraints?: Array<{
-		isValid: (value: any) => boolean;
-		message: string;
+		match: (value: any) => boolean;
+		message?: string;
 	}>;
 }
 
@@ -282,6 +282,63 @@ export function checkValidity(field: unknown): boolean {
 	return true;
 }
 
+export const ValidityCheck = {
+	valueMissing() {
+		return (value: string) => value === '';
+	},
+	tooShort(minLength: number) {
+		return (value: string) => value.length <= minLength;
+	},
+	tooLong(maxLength: number) {
+		return (value: string) => value.length >= maxLength;
+	},
+	rangeUnderflow(type: FieldType, min: string) {
+		const isDateType =
+			type === 'date' ||
+			type === 'datetime-local' ||
+			type === 'month' ||
+			type === 'time' ||
+			type === 'week';
+
+		return isDateType
+			? (value: string) => new Date(value) <= new Date(min)
+			: (value: string) => Number(value) <= Number(min);
+	},
+	rangeOverflow(type: FieldType, max: string) {
+		const isDateType =
+			type === 'date' ||
+			type === 'datetime-local' ||
+			type === 'month' ||
+			type === 'time' ||
+			type === 'week';
+
+		return isDateType
+			? (value: string) => new Date(value) < new Date(max)
+			: (value: string) => Number(value) < Number(max);
+	},
+	patternMismatch(pattern: string) {
+		return (value: string) => !new RegExp(pattern).test(value);
+	},
+	typeMismatch(type: FieldType) {
+		if (type === 'file') {
+			return (value: any) => !(value instanceof File);
+		}
+
+		if (type === 'url') {
+			return (value: string) => {
+				try {
+					new URL(value);
+					return false;
+				} catch {
+					return true;
+				}
+			};
+		}
+
+		return () => true;
+	},
+};
+
 /**
  * Refine the config setting based on type
  * @param config
@@ -304,8 +361,8 @@ export function patchNativeConstraints<Type extends FieldType>(
 			case 'valueMissing':
 				if (config.required) {
 					constraints.push({
-						isValid: (value: string) => value === '',
-						message: config.validity?.valueMissing ?? 'This field is required',
+						match: ValidityCheck.valueMissing(),
+						message: config.validity?.valueMissing,
 					});
 
 					delete result.required;
@@ -315,13 +372,8 @@ export function patchNativeConstraints<Type extends FieldType>(
 			case 'tooShort':
 				if (typeof config.minLength !== 'undefined') {
 					constraints.push({
-						isValid: (
-							(minLength: number) => (value: string) =>
-								value.length > minLength
-						)(config.minLength),
-						message:
-							config.validity?.tooShort ??
-							`This field should have minimum ${config.minLength} characters`,
+						match: ValidityCheck.tooShort(config.minLength),
+						message: config.validity?.tooShort,
 					});
 
 					delete result.minLength;
@@ -331,13 +383,8 @@ export function patchNativeConstraints<Type extends FieldType>(
 			case 'tooLong':
 				if (typeof config.maxLength !== 'undefined') {
 					constraints.push({
-						isValid: (
-							(maxLength: number) => (value: string) =>
-								value.length < maxLength
-						)(config.maxLength),
-						message:
-							config.validity?.tooLong ??
-							`This field should have maximum ${config.maxLength} characters`,
+						match: ValidityCheck.tooLong(config.maxLength),
+						message: config.validity?.tooLong,
 					});
 
 					delete result.maxLength;
@@ -346,28 +393,9 @@ export function patchNativeConstraints<Type extends FieldType>(
 				break;
 			case 'rangeUnderflow':
 				if (typeof config.min !== 'undefined') {
-					const isDateType =
-						config.type === 'date' ||
-						config.type === 'datetime-local' ||
-						config.type === 'month' ||
-						config.type === 'time' ||
-						config.type === 'week';
-
 					constraints.push({
-						isValid: isDateType
-							? (
-									(min: string) => (value: string) =>
-										new Date(value) > new Date(min)
-							  )(config.min)
-							: (
-									(min: string) => (value: string) =>
-										Number(value) > Number(min)
-							  )(config.min),
-						message:
-							config.validity?.rangeUnderflow ??
-							`This field should be min ${
-								isDateType ? new Date(config.min) : config.min
-							}`,
+						match: ValidityCheck.rangeUnderflow(config.type, config.min),
+						message: config.validity?.rangeUnderflow,
 					});
 
 					delete config.min;
@@ -376,28 +404,9 @@ export function patchNativeConstraints<Type extends FieldType>(
 				break;
 			case 'rangeOverflow':
 				if (typeof config.max !== 'undefined') {
-					const isDateType =
-						config.type === 'date' ||
-						config.type === 'datetime-local' ||
-						config.type === 'month' ||
-						config.type === 'time' ||
-						config.type === 'week';
-
 					constraints.push({
-						isValid: isDateType
-							? (
-									(max: string) => (value: string) =>
-										new Date(value) < new Date(max)
-							  )(config.max)
-							: (
-									(max: string) => (value: string) =>
-										Number(value) < Number(max)
-							  )(config.max),
-						message:
-							config.validity?.rangeOverflow ??
-							`This field should be max ${
-								isDateType ? new Date(config.max) : config.max
-							}`,
+						match: ValidityCheck.rangeOverflow(config.type, config.max),
+						message: config.validity?.rangeOverflow,
 					});
 
 					delete config.max;
@@ -407,12 +416,8 @@ export function patchNativeConstraints<Type extends FieldType>(
 			case 'patternMismatch':
 				if (config.pattern) {
 					constraints.push({
-						isValid: (
-							(pattern: string) => (value: string) =>
-								new RegExp(pattern).test(value)
-						)(config.pattern),
-						message:
-							config.validity?.patternMismatch ?? 'This field is invalid',
+						match: ValidityCheck.patternMismatch(config.pattern),
+						message: config.validity?.patternMismatch,
 					});
 
 					delete config.pattern;
@@ -426,20 +431,8 @@ export function patchNativeConstraints<Type extends FieldType>(
 			case 'typeMismatch':
 				if (config.type === 'file' || config.type === 'url') {
 					constraints.push({
-						isValid:
-							config.type === 'file'
-								? (value: any) => value instanceof File
-								: config.type === 'url'
-								? (value: string) => {
-										try {
-											new URL(value);
-											return true;
-										} catch {
-											return false;
-										}
-								  }
-								: () => false,
-						message: config.validity?.typeMismatch ?? 'This field is invalid',
+						match: ValidityCheck.typeMismatch(config.type),
+						message: config.validity?.typeMismatch,
 					});
 
 					delete config.validity?.typeMismatch;

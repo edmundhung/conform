@@ -143,11 +143,11 @@ function configureF() {
 					},
 				});
 			},
-			custom(isValid: (value: string) => boolean, message: string) {
+			custom(match: (value: string) => boolean, message: string) {
 				return createField({
 					...config,
 					constraints: [...(config.constraints ?? [])].concat({
-						isValid,
+						match,
 						message,
 					}),
 				});

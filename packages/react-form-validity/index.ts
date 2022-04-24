@@ -182,9 +182,11 @@ export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 								let hasError = false;
 
 								for (let constraint of config.constraints ?? []) {
-									if (!constraint.isValid(element.value)) {
+									if (constraint.match(element.value)) {
 										hasError = true;
-										element.setCustomValidity(constraint.message);
+										element.setCustomValidity(
+											constraint.message ?? 'This field is invalid',
+										);
 										break;
 									}
 								}
