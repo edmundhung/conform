@@ -1,5 +1,3 @@
-export type FieldTag = 'input' | 'select' | 'textarea' | 'fieldset';
-
 export type InputType =
 	| 'checkbox'
 	| 'color'
@@ -24,155 +22,41 @@ export type InputType =
 	| 'url'
 	| 'week';
 
-interface BaseField {
+export type FieldType =
+	| InputType
+	| 'select'
+	| 'textarea'
+	| 'fieldset'
+	| 'fieldset-array';
+
+export interface FieldConfig<Type extends FieldType = FieldType> {
+	type: Type;
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	min?: string;
+	max?: string;
+	step?: string;
+	multiple?: boolean;
+	pattern?: string;
+	options?: string[];
+	count?: number;
+	validity?: {
+		valueMissing?: string;
+		badInput?: string;
+		tooShort?: string;
+		tooLong?: string;
+		rangeUnderflow?: string;
+		rangeOverflow?: string;
+		stepMismatch?: string;
+		typeMismatch?: string;
+		patternMismatch?: string;
+	};
 	constraints?: Array<{
-		isValid: (value: string) => boolean;
+		isValid: (value: any) => boolean;
 		message: string;
 	}>;
 }
-
-interface FileField extends BaseField {
-	tag: 'input';
-	type: 'file';
-	required?: boolean;
-	multiple?: boolean;
-	options?: string[];
-	validity?: {
-		valueMissing?: string;
-		typeMismatch?: string;
-	};
-}
-
-interface DateField extends BaseField {
-	tag: 'input';
-	type: 'date' | 'datetime-local' | 'month' | 'time' | 'week';
-	required?: boolean;
-	min?: string;
-	max?: string;
-	step?: string;
-	validity?: {
-		valueMissing?: string;
-		stepMismatch?: string;
-		rangeUnderflow?: string;
-		rangeOverflow?: string;
-		typeMismatch?: string;
-		badInput?: string;
-	};
-}
-
-interface CheckboxOrRadioButton extends BaseField {
-	tag: 'input';
-	type: 'checkbox' | 'radio';
-	required?: boolean;
-	options?: string[];
-	validity?: {
-		valueMissing?: string;
-	};
-}
-
-interface TextField extends BaseField {
-	tag: 'input';
-	type: 'email' | 'password' | 'search' | 'tel' | 'text' | 'url';
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	pattern?: RegExp;
-	multiple?: boolean;
-	validity?: {
-		valueMissing?: string;
-		tooShort?: string;
-		tooLong?: string;
-		typeMismatch?: string;
-		badInput?: string;
-		patternMismatch?: string;
-	};
-}
-
-interface NumericField extends BaseField {
-	tag: 'input';
-	type: 'number';
-	required?: boolean;
-	min?: string;
-	max?: string;
-	step?: string;
-	validity?: {
-		valueMissing?: string;
-		stepMismatch?: string;
-		rangeUnderflow?: string;
-		rangeOverflow?: string;
-		typeMismatch?: string;
-		badInput?: string;
-	};
-}
-
-interface RangeField extends BaseField {
-	tag: 'input';
-	type: 'range';
-	min?: string;
-	max?: string;
-	step?: string;
-	validity?: {
-		stepMismatch?: string;
-		rangeUnderflow?: string;
-		rangeOverflow?: string;
-	};
-}
-
-interface SelectField extends BaseField {
-	tag: 'select';
-	required?: boolean;
-	multiple?: boolean;
-	validity?: {
-		valueMissing?: string;
-	};
-}
-
-interface TextareaField extends BaseField {
-	tag: 'textarea';
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	validity?: {
-		valueMissing?: string;
-		tooShort?: string;
-		tooLong?: string;
-		badInput?: string;
-	};
-}
-
-interface NestedFieldsetField extends BaseField {
-	tag: 'fieldset';
-	type: 'nested';
-}
-
-interface FieldsetArrayField extends BaseField {
-	tag: 'fieldset';
-	type: 'array';
-	count: number;
-}
-
-type InputField =
-	| TextField
-	| CheckboxOrRadioButton
-	| NumericField
-	| DateField
-	| FileField
-	| RangeField;
-
-export type FieldConfig<
-	Tag extends FieldTag = any,
-	Type extends InputType | 'array' | 'default' = any,
-> = Tag extends 'input'
-	? InputField
-	: Tag extends 'select'
-	? SelectField
-	: Tag extends 'textarea'
-	? TextareaField
-	: Tag extends 'fieldset'
-	? Type extends 'array'
-		? FieldsetArrayField
-		: NestedFieldsetField
-	: never;
 
 export function isElement<T extends HTMLElement>(
 	element: any,
@@ -336,7 +220,7 @@ export function checkCustomValidity(
 	validity: ValidityState,
 	config: FieldConfig,
 ): string | null {
-	const validityKeys: Array<keyof ValidityState> = [
+	const validityKeys: Array<keyof Required<FieldConfig>['validity']> = [
 		'valueMissing',
 		'tooShort',
 		'tooLong',
@@ -346,14 +230,16 @@ export function checkCustomValidity(
 		'typeMismatch',
 		'badInput',
 		'patternMismatch',
-		'customError',
 	];
 
 	for (let key of validityKeys) {
 		if (validity[key]) {
-			// @ts-ignore
 			return config.validity?.[key] ?? null;
 		}
+	}
+
+	if (validity.customError) {
+		return null;
 	}
 
 	return '';
@@ -394,4 +280,231 @@ export function checkValidity(field: unknown): boolean {
 
 	// Assuming it to be valid and fallback to server validation
 	return true;
+}
+
+/**
+ * Refine the config setting based on type
+ * @param config
+ */
+export function patchNativeConstraints<Type extends FieldType>(
+	config: FieldConfig<Type>,
+	validityKeys: Array<keyof Omit<ValidityState, 'customError' | 'valid'>>,
+): FieldConfig<Type> {
+	const constraints: FieldConfig['constraints'] = [];
+	const result: FieldConfig<Type> = {
+		...config,
+		validity: {
+			...config.validity,
+		},
+		constraints: [...(config.constraints ?? [])],
+	};
+
+	for (let key of validityKeys) {
+		switch (key) {
+			case 'valueMissing':
+				if (config.required) {
+					constraints.push({
+						isValid: (value: string) => value === '',
+						message: config.validity?.valueMissing ?? 'This field is required',
+					});
+
+					delete result.required;
+					delete result.validity?.valueMissing;
+				}
+				break;
+			case 'tooShort':
+				if (typeof config.minLength !== 'undefined') {
+					constraints.push({
+						isValid: (
+							(minLength: number) => (value: string) =>
+								value.length > minLength
+						)(config.minLength),
+						message:
+							config.validity?.tooShort ??
+							`This field should have minimum ${config.minLength} characters`,
+					});
+
+					delete result.minLength;
+					delete result.validity?.tooShort;
+				}
+				break;
+			case 'tooLong':
+				if (typeof config.maxLength !== 'undefined') {
+					constraints.push({
+						isValid: (
+							(maxLength: number) => (value: string) =>
+								value.length < maxLength
+						)(config.maxLength),
+						message:
+							config.validity?.tooLong ??
+							`This field should have maximum ${config.maxLength} characters`,
+					});
+
+					delete result.maxLength;
+					delete result.validity?.tooLong;
+				}
+				break;
+			case 'rangeUnderflow':
+				if (typeof config.min !== 'undefined') {
+					const isDateType =
+						config.type === 'date' ||
+						config.type === 'datetime-local' ||
+						config.type === 'month' ||
+						config.type === 'time' ||
+						config.type === 'week';
+
+					constraints.push({
+						isValid: isDateType
+							? (
+									(min: string) => (value: string) =>
+										new Date(value) > new Date(min)
+							  )(config.min)
+							: (
+									(min: string) => (value: string) =>
+										Number(value) > Number(min)
+							  )(config.min),
+						message:
+							config.validity?.rangeUnderflow ??
+							`This field should be min ${
+								isDateType ? new Date(config.min) : config.min
+							}`,
+					});
+
+					delete config.min;
+					delete config.validity?.rangeUnderflow;
+				}
+				break;
+			case 'rangeOverflow':
+				if (typeof config.max !== 'undefined') {
+					const isDateType =
+						config.type === 'date' ||
+						config.type === 'datetime-local' ||
+						config.type === 'month' ||
+						config.type === 'time' ||
+						config.type === 'week';
+
+					constraints.push({
+						isValid: isDateType
+							? (
+									(max: string) => (value: string) =>
+										new Date(value) < new Date(max)
+							  )(config.max)
+							: (
+									(max: string) => (value: string) =>
+										Number(value) < Number(max)
+							  )(config.max),
+						message:
+							config.validity?.rangeOverflow ??
+							`This field should be max ${
+								isDateType ? new Date(config.max) : config.max
+							}`,
+					});
+
+					delete config.max;
+					delete config.validity?.rangeOverflow;
+				}
+				break;
+			case 'patternMismatch':
+				if (config.pattern) {
+					constraints.push({
+						isValid: (
+							(pattern: string) => (value: string) =>
+								new RegExp(pattern).test(value)
+						)(config.pattern),
+						message:
+							config.validity?.patternMismatch ?? 'This field is invalid',
+					});
+
+					delete config.pattern;
+					delete config.validity?.patternMismatch;
+				}
+				break;
+			case 'badInput':
+			case 'stepMismatch':
+				// TODO
+				break;
+			case 'typeMismatch':
+				if (config.type === 'file' || config.type === 'url') {
+					constraints.push({
+						isValid:
+							config.type === 'file'
+								? (value: any) => value instanceof File
+								: config.type === 'url'
+								? (value: string) => {
+										try {
+											new URL(value);
+											return true;
+										} catch {
+											return false;
+										}
+								  }
+								: () => false,
+						message: config.validity?.typeMismatch ?? 'This field is invalid',
+					});
+
+					delete config.validity?.typeMismatch;
+				}
+		}
+	}
+
+	return {
+		...result,
+		constraints: constraints.concat(result.constraints ?? []),
+	};
+}
+
+export function refineConfig<Type extends FieldType>(
+	config: FieldConfig<Type>,
+): FieldConfig<Type> {
+	switch (config.type) {
+		case 'checkbox':
+		case 'radio':
+		case 'file':
+		case 'select':
+			return patchNativeConstraints(config, [
+				'tooShort',
+				'tooLong',
+				'rangeUnderflow',
+				'rangeOverflow',
+				'stepMismatch',
+				'patternMismatch',
+			]);
+		case 'date':
+		case 'datetime-local':
+		case 'month':
+		case 'time':
+		case 'week':
+		case 'number':
+			return patchNativeConstraints(config, [
+				'tooShort',
+				'tooLong',
+				'patternMismatch',
+			]);
+		case 'email':
+		case 'password':
+		case 'search':
+		case 'tel':
+		case 'text':
+		case 'url':
+			return patchNativeConstraints(config, [
+				'rangeUnderflow',
+				'rangeOverflow',
+				'stepMismatch',
+			]);
+		case 'range':
+			return patchNativeConstraints(config, [
+				'valueMissing',
+				'tooShort',
+				'tooLong',
+				'patternMismatch',
+			]);
+		case 'textarea':
+			return patchNativeConstraints(config, [
+				'rangeUnderflow',
+				'rangeOverflow',
+				'patternMismatch',
+			]);
+		default:
+			return config;
+	}
 }

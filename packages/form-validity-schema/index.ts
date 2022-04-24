@@ -1,5 +1,9 @@
-import type { FieldConfig, FieldTag, InputType } from 'form-validity';
-import { checkCustomValidity, unflatten, getDataByName } from 'form-validity';
+import type { FieldConfig, FieldType, InputType } from 'form-validity';
+import {
+	patchNativeConstraints,
+	unflatten,
+	getDataByName,
+} from 'form-validity';
 
 interface Required {
 	required(message?: string): this;
@@ -45,30 +49,28 @@ type FieldCreator<Constraint extends string> = Custom &
  */
 const symbol = Symbol('form-validity');
 
-export type Field<
-	Tag extends FieldTag = FieldTag,
-	Type extends InputType | 'default' | 'array' = 'default',
-> = { [symbol]: FieldConfig<Tag> } & (Tag extends 'input'
-	? Type extends 'checkbox' | 'file' | 'radio'
-		? FieldCreator<'required'>
-		: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
-		? FieldCreator<'required' | 'range:date' | 'step'>
-		: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
-		? FieldCreator<'required' | 'length' | 'pattern'>
-		: Type extends 'number'
-		? FieldCreator<'required' | 'range:number' | 'step'>
-		: Type extends 'range'
-		? FieldCreator<'range:number' | 'step'>
-		: {}
-	: Tag extends 'select'
+export type Field<Type extends FieldType = FieldType> = (Type extends
+	| 'checkbox'
+	| 'file'
+	| 'radio'
 	? FieldCreator<'required'>
-	: Tag extends 'textarea'
+	: Type extends 'date' | 'datetime-local' | 'month' | 'time' | 'week'
+	? FieldCreator<'required' | 'range:date' | 'step'>
+	: Type extends 'email' | 'password' | 'search' | 'tel' | 'text' | 'url'
+	? FieldCreator<'required' | 'length' | 'pattern'>
+	: Type extends 'number'
+	? FieldCreator<'required' | 'range:number' | 'step'>
+	: Type extends 'range'
+	? FieldCreator<'range:number' | 'step'>
+	: Type extends 'select'
+	? FieldCreator<'required'>
+	: Type extends 'textarea'
 	? FieldCreator<'required' | 'length'>
-	: Tag extends 'fieldset'
-	? Type extends 'array'
-		? FieldCreator<'range:number'>
-		: {}
-	: unknown);
+	: Type extends 'fieldset'
+	? {}
+	: Type extends 'fieldset-array'
+	? FieldCreator<'range:number'>
+	: never) & { [symbol]: FieldConfig<Type> };
 
 function configureF() {
 	function createField<Tag extends FieldTag>(config: FieldConfig<Tag>) {
@@ -76,10 +78,8 @@ function configureF() {
 			required(message?: string) {
 				return createField({
 					...config,
-					// @ts-expect-error
 					required: true,
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						valueMissing: message,
 					},
@@ -88,10 +88,8 @@ function configureF() {
 			min(value: number | Date, message?: string) {
 				return createField({
 					...config,
-					// @ts-expect-error
-					min: value,
+					min: value instanceof Date ? value.toISOString() : value.toString(),
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						rangeUnderflow: message,
 					},
@@ -100,10 +98,8 @@ function configureF() {
 			max(value: number | Date, message?: string) {
 				return createField({
 					...config,
-					// @ts-expect-error
-					max: value,
+					max: value instanceof Date ? value.toISOString() : value.toString(),
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						rangeOverflow: message,
 					},
@@ -112,10 +108,8 @@ function configureF() {
 			minLength(value: number, message?: string) {
 				return createField({
 					...config,
-					// @ts-expect-error
 					minLength: value,
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						tooShort: message,
 					},
@@ -124,16 +118,13 @@ function configureF() {
 			maxLength(value: number, message?: string) {
 				return createField({
 					...config,
-					// @ts-expect-error
 					maxLength: value,
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						tooLong: message,
 					},
 				});
 			},
-			// @ts-expect-error
 			pattern(value: RegExp, message?: string) {
 				if (value.global || value.ignoreCase || value.multiline) {
 					console.warn(
@@ -145,10 +136,8 @@ function configureF() {
 
 				return createField({
 					...config,
-					// @ts-expect-error
-					pattern: value,
+					pattern: value.source,
 					validity: {
-						// @ts-expect-error
 						...config.validity,
 						patternMismatch: message,
 					},
@@ -170,18 +159,18 @@ function configureF() {
 	function input<T extends 'checkbox' | 'radio'>(
 		type: T,
 		options: string[],
-	): Field<'input', T>;
+	): Field<T>;
 	function input<T extends 'email' | 'number' | 'url'>(
 		type: T,
 		message?: string,
-	): Field<'input', T>;
+	): Field<T>;
 	function input<T extends Exclude<InputType, 'email' | 'number' | 'url'>>(
 		type: T,
-	): Field<'input', T>;
+	): Field<T>;
 	function input<T extends InputType>(
 		type: T,
 		messageOrOptions?: string | string[],
-	): Field<'input', T> {
+	): Field<T> {
 		const isCheckboxOrRadioButton = type === 'checkbox' || type === 'radio';
 		const message =
 			!isCheckboxOrRadioButton && !Array.isArray(messageOrOptions)
@@ -194,8 +183,6 @@ function configureF() {
 
 		// @ts-expect-error
 		return createField({
-			tag: 'input',
-			// @ts-expect-error
 			type,
 			options,
 			validity: {
@@ -205,36 +192,25 @@ function configureF() {
 	}
 
 	function select(): Field<'select'> {
-		// @ts-expect-error
 		return createField({
-			tag: 'select',
+			type: 'select',
 		});
 	}
 
 	function textarea(): Field<'textarea'> {
-		// @ts-expect-error
 		return createField({
-			tag: 'textarea',
+			type: 'textarea',
 		});
 	}
 
-	function fieldset(): Field<'fieldset', 'default'>;
-	function fieldset(count: number): Field<'fieldset', 'array'>;
+	function fieldset(): Field<'fieldset'>;
+	function fieldset(count: number): Field<'fieldset-array'>;
 	function fieldset(
 		count?: number,
-	): Field<'fieldset', 'default'> | Field<'fieldset', 'array'> {
-		if (typeof count === 'undefined') {
-			// @ts-expect-error
-			return createField({
-				tag: 'fieldset',
-				type: 'nested',
-			});
-		}
-
+	): Field<'fieldset'> | Field<'fieldset-array'> {
 		// @ts-expect-error
 		return createField({
-			tag: 'fieldset',
-			type: 'array',
+			type: typeof count === 'undefined' ? 'fieldset' : 'fieldset-array',
 			count,
 		});
 	}
@@ -286,9 +262,7 @@ export function parse<T>(
 	for (const [name, field] of flattenSchema(schema)) {
 		const value = getDataByName(data, name);
 		const config = getFieldConfig(field);
-		const validity = validate(value, config);
-		const message =
-			checkCustomValidity(validity, config) ?? 'The field is invalid';
+		const message = validate(value ?? '', config);
 
 		if (message) {
 			errorEntries.push([name, message]);
@@ -317,7 +291,7 @@ function flattenSchema(item: any, prefix = ''): Array<[string, Field]> {
 	let entries: Array<[string, Field]> = [];
 	let config: FieldConfig | null = item[symbol] ?? null;
 
-	if (config?.tag === 'fieldset') {
+	if (config?.type === 'fieldset' || config?.type === 'fieldset-array') {
 		throw new Error('Validation based on fieldset is not supported');
 	}
 
@@ -336,110 +310,23 @@ function flattenSchema(item: any, prefix = ''): Array<[string, Field]> {
 	return entries;
 }
 
-function isURL(value: string): boolean {
-	try {
-		new URL(value);
-		return true;
-	} catch {
-		return false;
-	}
-}
+function validate(value: FormDataEntryValue, config: FieldConfig): string {
+	const { constraints } = patchNativeConstraints(config, [
+		'valueMissing',
+		'badInput',
+		'tooShort',
+		'tooLong',
+		'rangeUnderflow',
+		'rangeOverflow',
+		'stepMismatch',
+		'patternMismatch',
+	]);
 
-function validate(
-	value: FormDataEntryValue | undefined,
-	config: FieldConfig,
-): ValidityState {
-	let badInput = false;
-	let customError = false;
-	let patternMismatch = false;
-	let rangeOverflow = false;
-	let rangeUnderflow = false;
-	let stepMismatch = false;
-	let tooLong = false;
-	let tooShort = false;
-	let typeMismatch = false;
-	let valueMissing = typeof value === 'undefined' || value === '';
-
-	if (value instanceof File) {
-		typeMismatch = config.tag === 'input' && config.type !== 'file';
-	} else {
-		typeMismatch =
-			config.tag === 'input' &&
-			((config.type === 'email' && !/^\S+@\S+$/.test(value ?? '')) ||
-				(config.type === 'url' && !isURL(value ?? '')));
-
-		// @ts-expect-error
-		if (typeof config.pattern !== 'undefined') {
-			// @ts-expect-error
-			const match = value?.match(config.pattern);
-
-			patternMismatch = !match || value !== match[0];
-		}
-
-		// @ts-expect-error
-		if (typeof config.max !== 'undefined') {
-			rangeOverflow =
-				(typeof value !== 'undefined' &&
-					// @ts-expect-error
-					config.max instanceof Date &&
-					// @ts-expect-error
-					new Date(value) > config.max) ||
-				(typeof value !== 'undefined' &&
-					// @ts-expect-error
-					typeof config.max === 'number' &&
-					// @ts-expect-error
-					Number(value) > config.max);
-		}
-
-		// @ts-expect-error
-		if (typeof config.min !== 'undefined') {
-			rangeUnderflow =
-				// @ts-expect-error
-				(config.min.value instanceof Date &&
-					// @ts-expect-error
-					new Date(value ?? '') < config.min.value) ||
-				// @ts-expect-error
-				(typeof config.min.value === 'number' &&
-					// @ts-expect-error
-					Number(value ?? '') < config.min.value);
-		}
-
-		// @ts-expect-error
-		if (typeof config.maxLength !== 'undefined') {
-			tooLong =
-				// @ts-expect-error
-				typeof value !== 'undefined' && value.length > config.maxLength;
-		}
-
-		// @ts-expect-error
-		if (typeof config.minLength !== 'undefined') {
-			tooShort =
-				// @ts-expect-error
-				typeof value === 'undefined' || value.length < config.minLength;
+	for (let constraint of constraints ?? []) {
+		if (!constraint.isValid(value)) {
+			return constraint.message;
 		}
 	}
 
-	return {
-		badInput,
-		customError,
-		patternMismatch,
-		rangeOverflow,
-		rangeUnderflow,
-		stepMismatch,
-		tooLong,
-		tooShort,
-		typeMismatch,
-		valid:
-			!badInput &&
-			!customError &&
-			!patternMismatch &&
-			!rangeOverflow &&
-			!rangeUnderflow &&
-			!stepMismatch &&
-			!tooLong &&
-			!tooShort &&
-			!typeMismatch &&
-			!valueMissing,
-		valueMissing,
-	};
+	return '';
 }

@@ -11,9 +11,10 @@ import type {
 	FormEvent,
 } from 'react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import type { FieldConfig } from 'form-validity';
+import type { FieldType, FieldConfig } from 'form-validity';
 import {
 	checkCustomValidity,
+	refineConfig,
 	draftUpdate,
 	revalidate,
 	checkValidity,
@@ -28,45 +29,43 @@ export interface FieldsetOptions {
 	error?: Record<string, any>;
 }
 
-type FieldAttributes<Tag, Type = string> = Tag extends 'input'
-	? Type extends 'radio' | 'checkbox'
-		? Array<
-				Attributes<
-					InputHTMLAttributes<HTMLInputElement>,
-					'name' | 'type' | 'onInput' | 'onInvalid' | 'value',
-					'required' | 'defaultChecked'
-				>
-		  >
-		: Attributes<
-				InputHTMLAttributes<HTMLInputElement>,
-				'name' | 'type' | 'onInput' | 'onInvalid',
-				| 'required'
-				| 'multiple'
-				| 'minLength'
-				| 'maxLength'
-				| 'min'
-				| 'max'
-				| 'step'
-				| 'pattern'
-				| 'defaultValue'
-		  >
-	: Tag extends 'textarea'
+type FieldAttributes<Type extends FieldType> = Type extends 'textarea'
 	? Attributes<
 			TextareaHTMLAttributes<HTMLTextAreaElement>,
 			'name' | 'onInput' | 'onInvalid',
 			'required' | 'minLength' | 'maxLength' | 'defaultValue'
 	  >
-	: Tag extends 'select'
+	: Type extends 'select'
 	? Attributes<
 			SelectHTMLAttributes<HTMLSelectElement>,
 			'name' | 'onInput' | 'onInvalid',
 			'required' | 'multiple' | 'defaultValue'
 	  >
-	: Tag extends 'fieldset'
-	? Type extends 'array'
-		? Array<FieldsetOptions>
-		: FieldsetOptions
-	: {};
+	: Type extends 'fieldset'
+	? FieldsetOptions
+	: Type extends 'fieldset-array'
+	? Array<FieldsetOptions>
+	: Type extends 'radio' | 'checkbox'
+	? Array<
+			Attributes<
+				InputHTMLAttributes<HTMLInputElement>,
+				'name' | 'type' | 'onInput' | 'onInvalid' | 'value',
+				'required' | 'defaultChecked'
+			>
+	  >
+	: Attributes<
+			InputHTMLAttributes<HTMLInputElement>,
+			'name' | 'type' | 'onInput' | 'onInvalid',
+			| 'required'
+			| 'multiple'
+			| 'minLength'
+			| 'maxLength'
+			| 'min'
+			| 'max'
+			| 'step'
+			| 'pattern'
+			| 'defaultValue'
+	  >;
 
 type Attributes<
 	OriginalAttributes extends HTMLAttributes<Element>,
@@ -79,11 +78,8 @@ type Attributes<
 	Partial<Pick<OriginalAttributes, Optional>>;
 
 type FieldProps<Type> = {
-	[Property in keyof Type]: Type[Property] extends FieldConfig<
-		infer Tag,
-		infer Type
-	>
-		? FieldAttributes<Tag, Type>
+	[Property in keyof Type]: Type[Property] extends FieldConfig<infer Type>
+		? FieldAttributes<Type>
 		: never;
 };
 
@@ -165,7 +161,9 @@ export function useFieldset<Fieldset extends Record<string, FieldConfig>>(
 			) as Error<Fieldset>,
 	);
 	const field = useMemo(() => {
-		const entries = Object.entries(fieldset).map(([key, config]) => {
+		const entries = Object.entries(fieldset).map(([key, fieldConfig]) => {
+			const config = refineConfig(fieldConfig);
+
 			return [
 				key,
 				getFieldProps(config, {
@@ -311,77 +309,53 @@ interface FieldPropsOptions extends Partial<FieldsetOptions> {
 	props: any;
 }
 
-function getFieldProps(config: FieldConfig, options: FieldPropsOptions) {
+function getFieldProps<Type extends FieldType>(
+	config: FieldConfig<Type>,
+	options: FieldPropsOptions,
+) {
 	const name = options.name ? `${options.name}.${options.key}` : options.key;
+	const value = options.value?.[options.key];
+	const error = options.error?.[options.key];
 
-	if (config.tag === 'fieldset') {
-		const option: FieldsetOptions = {
+	if (config.type === 'fieldset') {
+		return {
 			name,
-			value: options.value?.[options.key],
-			error: options.error?.[options.key],
+			value,
+			error,
 		};
-
-		if (config.type === 'nested') {
-			return option;
-		}
-
-		return [...Array(config.count).keys()].map((index) => ({
-			name: `${option.name}[${index}]`,
-			value: option.value?.[index],
-			error: option.error?.[index],
+	} else if (config.type === 'fieldset-array') {
+		return [...Array(config.count ?? 1).keys()].map((index) => ({
+			name: `${name}[${index}]`,
+			value: value?.[index],
+			error: error?.[index],
 		}));
 	} else {
-		const attributes = {
+		const attributes: InputHTMLAttributes<HTMLInputElement> = {
 			name,
-			// @ts-expect-error
 			type: config.type,
-			// @ts-expect-error
 			required: config.required,
-			// @ts-expect-error
 			minLength: config.minLength,
-			// @ts-expect-error
 			maxLength: config.maxLength,
-			// @ts-expect-error
-			min: config.min
-				? // @ts-expect-error
-				  config.min instanceof Date
-					? // @ts-expect-error
-					  config.min.toISOString()
-					: // @ts-expect-error
-					  config.min
-				: undefined,
-			// @ts-expect-error
-			max: config.max
-				? // @ts-expect-error
-				  config.max instanceof Date
-					? // @ts-expect-error
-					  config.max.toISOString()
-					: // @ts-expect-error
-					  config.max
-				: undefined,
-			// @ts-expect-error
+			min: config.min,
+			max: config.max,
 			step: config.step,
-			// @ts-expect-error
-			pattern: config.pattern?.source,
+			pattern: config.pattern,
 			...options.props,
 		};
-		const defaultValue = options.value?.[options.key];
 
-		// @ts-expect-error
 		if (!config.options) {
 			return {
 				...attributes,
-				defaultValue,
+				defaultValue: value,
 			};
 		}
 
-		// @ts-expect-error
-		return config.options.map((value) => ({
+		return config.options.map((option) => ({
 			...attributes,
-			value,
-			defaultChecked: Array.isArray(defaultValue)
-				? defaultValue.includes(value)
-				: defaultValue === value,
+			value: option,
+			defaultChecked: Array.isArray(option)
+				? value.includes(option)
+				: value === option,
 		}));
 	}
 }
