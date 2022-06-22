@@ -1,0 +1,29 @@
+{
+	"name": "@conform-to/dom",
+	"description": "Utility library built on top of the Constraint Validation API",
+	"license": "MIT",
+	"version": "0.0.1",
+	"main": "index.js",
+	"module": "module/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conforms",
+		"directory": "packages/conform-dom"
+	},
+	"author": {
+		"name": "Edmund Hung",
+		"email": "me@edmund.dev",
+		"url": "https://edmund.dev"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conforms/issues"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"validation",
+		"dom"
+	],
+	"sideEffects": false
+}

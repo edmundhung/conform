@@ -1,8 +1,9 @@
 {
 	"private": true,
-	"name": "form-validity-monorepo",
+	"name": "conform-monorepo",
 	"license": "MIT",
 	"workspaces": [
+		"packages/conform-dom",
 		"packages/form-validity",
 		"packages/form-validity-schema",
 		"packages/react-form-validity",

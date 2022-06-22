@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import babel from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
@@ -63,10 +63,15 @@ function configurePackage(name) {
 
 export default function rollup() {
 	let builds = [
-		...configurePackage('form-validity'),
-		...configurePackage('form-validity-schema'),
-		...configurePackage('react-form-validity'),
-		...configurePackage('remix-form-validity'),
+		// Base
+		...configurePackage('conform-dom'),
+
+		// Validator integration
+		// ...configurePackage('conform-zod'),
+
+		// View integration
+		// ...configurePackage('conform-react'),
+		// ...configurePackage('conform-remix-react'),
 	];
 
 	return builds;
