@@ -1,0 +1,35 @@
+{
+	"name": "@conform-to/react",
+	"description": "React form validation built on top of the Constraint Validation API",
+	"license": "MIT",
+	"version": "0.0.1",
+	"main": "index.js",
+	"module": "module/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conforms",
+		"directory": "packages/conform-react"
+	},
+	"author": {
+		"name": "Edmund Hung",
+		"email": "me@edmund.dev",
+		"url": "https://edmund.dev"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conforms/issues"
+	},
+	"dependencies": {
+		"@conform-to/dom": "0.0.1"
+	},
+	"peerDependencies": {
+		"react": ">=16.8"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"validation",
+		"react"
+	],
+	"sideEffects": false
+}

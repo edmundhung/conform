@@ -70,7 +70,7 @@ export default function rollup() {
 		// ...configurePackage('conform-zod'),
 
 		// View integration
-		// ...configurePackage('conform-react'),
+		...configurePackage('conform-react'),
 		// ...configurePackage('conform-remix-react'),
 	];
 

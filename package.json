@@ -4,6 +4,7 @@
 	"license": "MIT",
 	"workspaces": [
 		"packages/conform-dom",
+		"packages/conform-react",
 		"packages/form-validity",
 		"packages/form-validity-schema",
 		"packages/react-form-validity",
