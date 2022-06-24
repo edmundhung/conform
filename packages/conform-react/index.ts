@@ -43,12 +43,12 @@ interface FieldListControl {
 }
 
 export const f = {
-	input({
+	input<Type extends string | number | Date>({
 		name,
 		form,
 		value,
 		constraint,
-	}: FieldConfig): InputHTMLAttributes<HTMLInputElement> {
+	}: FieldConfig<Type>): InputHTMLAttributes<HTMLInputElement> {
 		return {
 			name,
 			form,
@@ -59,7 +59,6 @@ export const f = {
 			min: constraint?.min,
 			max: constraint?.max,
 			step: constraint?.step,
-			multiple: constraint?.multiple,
 			pattern: constraint?.pattern,
 		};
 	},
@@ -82,7 +81,7 @@ export const f = {
 		form,
 		value,
 		constraint,
-	}: FieldConfig): TextareaHTMLAttributes<HTMLTextAreaElement> {
+	}: FieldConfig<string>): TextareaHTMLAttributes<HTMLTextAreaElement> {
 		return {
 			name,
 			form,
@@ -171,7 +170,7 @@ export function useFieldset<Type extends Record<string, any>>(
 ] {
 	const ref = useRef<FieldsetElement>(null);
 
-	const nameKeyMapping = Object.keys(schema.config).reduce<
+	const nameKeyMapping = Object.keys(schema.constraint).reduce<
 		Record<string, keyof Type>
 	>((result, key) => {
 		const fieldName = config.name ? `${config.name}.${key}` : key;
@@ -260,6 +259,7 @@ export function useFieldList<InnerType, Type extends Array<InnerType>>(
 						name: `${config.name}[${index}]`,
 						value: config.value?.[index],
 						error: config.error?.[index],
+						// @ts-expect-error
 						constraint: {
 							...config.constraint,
 							multiple: false,

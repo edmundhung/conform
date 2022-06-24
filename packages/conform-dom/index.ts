@@ -1,65 +1,54 @@
 /**
  *
  */
-export interface Constraint {
-	required: boolean;
-	minLength: number;
-	maxLength: number;
-	min: string;
-	max: string;
-	step: string;
-	multiple: boolean;
-	pattern: string;
-}
+export type Constraint<Type> = (undefined extends Type
+	? { required?: false }
+	: { required: true }) &
+	(Type extends Array<any> ? { multiple: true } : { multiple?: false }) &
+	(Type extends string | number | Date
+		? {
+				required?: boolean;
+				minLength?: number;
+				maxLength?: number;
+				min?: string;
+				max?: string;
+				step?: string;
+				multiple?: boolean;
+				pattern?: string;
+		  }
+		: {});
 
 /**
  *
  */
 export interface FieldConfig<Type = any> {
 	name: string;
-	value?: FieldsetValue<Type>;
-	error?: FieldsetError<Type>;
+	value?: FieldsetData<Type, string>;
+	error?: FieldsetData<Type, string>;
 	form?: string;
-	constraint?: Partial<Constraint>;
+	constraint?: Constraint<Type>;
 }
 
 /**
  *
  */
 export type Schema<Type extends Record<string, any>> = {
-	validate: (value: FieldsetValue<Type>) => FieldsetError<Type>;
-	config: {
-		[Key in keyof Type]: {
-			constraint?: Partial<Constraint>;
-			validate(value: FieldsetValue<Type[Key]>): FieldsetError<Type[Key]>;
-			getValidationMessage?: (
-				validationMessage: string,
-				validity: ValidityState,
-			) => string;
-		};
-	};
+	constraint: { [Key in keyof Type]-?: Constraint<Type[Key]> };
+	validate: (
+		value: FieldsetData<Type, string>,
+		validity: FieldsetData<Type, ValidityState>,
+	) => Record<keyof Type, string>;
 };
 
 /**
  * Data structure of the form value
  */
-export type FieldsetValue<Type> = Type extends string | number | Date
-	? string
+export type FieldsetData<Type, Value> = Type extends string | number | Date
+	? Value
 	: Type extends Array<infer InnerType>
-	? Array<FieldsetValue<InnerType>>
+	? Array<FieldsetData<InnerType, Value>>
 	: Type extends Object
-	? { [Key in keyof Type]: FieldsetValue<Type[Key]> }
-	: never;
-
-/**
- * Data structure of the error
- */
-export type FieldsetError<Type> = Type extends string | number | Date
-	? Array<string>
-	: Type extends Array<infer InnerType>
-	? Array<FieldsetError<InnerType>>
-	: Type extends Object
-	? { [Key in keyof Type]: FieldsetError<Type[Key]> }
+	? { [Key in keyof Type]: FieldsetData<Type[Key], Value> }
 	: never;
 
 /**
@@ -80,27 +69,15 @@ export type FieldElement =
 /**
  *
  * @param element
- * @param tag
- * @returns
- */
-function isElement<T extends HTMLElement>(
-	element: any,
-	tag: string,
-): element is T {
-	return !!element && element.tagName?.toLowerCase() === tag;
-}
-
-/**
- *
- * @param element
  * @returns
  */
 export function isFieldsetElement(
 	element: unknown,
 ): element is FieldsetElement {
 	return (
-		isElement<HTMLInputElement>(element, 'form') ||
-		isElement<HTMLSelectElement>(element, 'fieldset')
+		element instanceof Element &&
+		(element.tagName.toLowerCase() === 'form' ||
+			element.tagName.toLowerCase() === 'fieldset')
 	);
 }
 
@@ -111,10 +88,11 @@ export function isFieldsetElement(
  */
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
-		isElement<HTMLInputElement>(element, 'input') ||
-		isElement<HTMLSelectElement>(element, 'select') ||
-		isElement<HTMLTextAreaElement>(element, 'textarea') ||
-		isElement<HTMLButtonElement>(element, 'button')
+		element instanceof Element &&
+		(element.tagName === 'input' ||
+			element.tagName === 'select' ||
+			element.tagName === 'textarea' ||
+			element.tagName === 'button')
 	);
 }
 
@@ -169,40 +147,6 @@ export function reportValidity(fieldset: FieldsetElement): boolean {
  * @param fieldset
  * @param schema
  * @param options
- * @returns
- */
-export function getFieldElementsEntries<Type extends Record<string, any>>(
-	fieldset: FieldsetElement,
-	schema: Schema<Type>,
-	options: {
-		name?: string;
-	},
-): Array<[string, FieldElement | FieldElement[] | null]> {
-	const entries: Array<[string, FieldElement | FieldElement[] | null]> = [];
-
-	for (let key of Object.keys(schema.config)) {
-		let item = fieldset.elements.namedItem(
-			options.name ? `${options.name}.${key}` : key,
-		);
-		let element: FieldElement | FieldElement[] | null = null;
-
-		if (item instanceof RadioNodeList) {
-			element = Array.from(item).filter(isFieldElement);
-		} else if (isFieldElement(item)) {
-			element = item;
-		}
-
-		entries.push([key, element]);
-	}
-
-	return entries;
-}
-
-/**
- *
- * @param fieldset
- * @param schema
- * @param options
  */
 export function validate<Type extends Record<string, any>>(
 	fieldset: HTMLFormElement | HTMLFieldSetElement,
@@ -211,34 +155,66 @@ export function validate<Type extends Record<string, any>>(
 		name?: string;
 	},
 ): void {
-	const entries = getFieldElementsEntries(fieldset, schema, options);
+	const nodesByKey: Record<string, Node[]> = {};
 	const value: Record<string, string | string[] | null> = {};
+	const validity: Record<string, ValidityState | ValidityState[] | null> = {};
 
-	for (let [key, field] of entries) {
-		let fieldValue: string | string[] | null = null;
+	for (let key of Object.keys(schema.constraint)) {
+		const constraint = schema.constraint[key];
+		const name = options.name ? `${options.name}.${key}` : key;
+		const item = fieldset.elements.namedItem(name);
 
-		if (Array.isArray(field)) {
-			fieldValue = field.map((el) => el.value);
-		} else if (field) {
-			fieldValue = field.value;
+		const nodes: Node[] = [];
+		const fieldValue: string[] = [];
+		const fieldValidity: ValidityState[] = [];
+
+		if (item instanceof RadioNodeList) {
+			if (!constraint.multiple) {
+				console.warn('Multiple is set to false but received multiple nodes');
+			}
+
+			nodes.push(...Array.from(item));
+		} else if (isFieldElement(item)) {
+			nodes.push(item);
 		}
 
-		value[key] = fieldValue;
+		for (const node of nodes) {
+			if (!isFieldElement(node)) {
+				console.warn(`Unexpected element with key "${key}"; Received`, node);
+				continue;
+			}
+
+			fieldValue.push(node.value);
+			fieldValidity.push(node.validity);
+		}
+
+		if (constraint.multiple) {
+			value[key] = fieldValue;
+			validity[key] = fieldValidity;
+		} else {
+			value[key] = fieldValue[0] ?? null;
+			validity[key] = fieldValidity[0] ?? null;
+		}
+
+		nodesByKey[key] = nodes;
 	}
 
-	const error = schema.validate(value as FieldsetValue<Type>);
+	const error = schema.validate(
+		value as FieldsetData<Type, string>,
+		validity as FieldsetData<Type, ValidityState>,
+	);
 
-	console.log('validate', { value, error });
+	for (let [key, nodes] of Object.entries(nodesByKey)) {
+		let customValidity = error[key];
 
-	// for (let [key, field] of entries) {
-	//     if (Array.isArray(field)) {
-	//         for (let el of field) {
-	//             el.setCustomValidity()
-	//         }
-	//     } else if (field) {
-	//         field.setCustomValidity(error[key] ?? '');
-	//     }
-	// }
+		for (const node of nodes) {
+			if (!isFieldElement(node)) {
+				continue;
+			}
+
+			node.setCustomValidity(customValidity);
+		}
+	}
 }
 
 /**
@@ -252,20 +228,21 @@ export function createFieldConfig<Type extends Record<string, any>>(
 	options: {
 		name?: string;
 		form?: string;
-		value?: FieldsetValue<Type>;
-		error?: FieldsetError<Type>;
+		value?: FieldsetData<Type, string>;
+		error?: FieldsetData<Type, string>;
 	},
 ): { [Key in keyof Type]: FieldConfig<Type[Key]> } {
 	const result: { [Key in keyof Type]: FieldConfig<Type[Key]> } = {} as any;
 
-	for (const key of Object.keys(schema.config)) {
-		const field = schema.config[key];
-		const config: FieldConfig = {
+	for (const key of Object.keys(schema.constraint)) {
+		const constraint = schema.constraint[key];
+		const config: FieldConfig<any> = {
 			name: options.name ? `${options.name}.${key}` : key,
 			form: options.form,
 			value: options.value?.[key],
 			error: options.error?.[key],
-			constraint: field.constraint,
+			// @ts-expect-error
+			constraint,
 		};
 
 		result[key as keyof Type] = config;
@@ -281,11 +258,12 @@ export function createFieldConfig<Type extends Record<string, any>>(
  */
 export function shouldSkipValidate(event: SubmitEvent): boolean {
 	if (
-		!isElement<HTMLButtonElement>(event.submitter, 'button') &&
-		!isElement<HTMLInputElement>(event.submitter, 'input')
+		event.submitter?.tagName === 'button' ||
+		event.submitter?.tagName === 'input'
 	) {
-		return false;
+		return (event.submitter as HTMLButtonElement | HTMLInputElement)
+			.formNoValidate;
 	}
 
-	return event.submitter.formNoValidate;
+	return false;
 }
