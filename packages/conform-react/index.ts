@@ -17,7 +17,10 @@ import {
 	reportValidity,
 	shouldSkipValidate,
 	createFieldConfig,
+	getFields,
 } from '@conform-to/dom';
+
+export { getFields };
 
 type FormProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
@@ -30,10 +33,11 @@ interface UseFormOptions extends FormProps {
 }
 
 interface FieldsetProps {
-	ref: RefObject<FieldsetElement>;
-	onChange: FormEventHandler<FieldsetElement>;
-	onReset: FormEventHandler<FieldsetElement>;
-	onInvalid: FormEventHandler<FieldsetElement>;
+	ref: RefObject<HTMLFieldSetElement>;
+	name?: string;
+	onChange: FormEventHandler<HTMLFieldSetElement>;
+	onReset: FormEventHandler<HTMLFieldSetElement>;
+	onInvalid: FormEventHandler<HTMLFieldSetElement>;
 }
 
 interface FieldListControl {
@@ -100,7 +104,7 @@ export function useForm({
 	noValidate = false,
 	fallbackMode = 'none',
 	initialReport = 'onSubmit',
-}: UseFormOptions): FormProps {
+}: UseFormOptions = {}): FormProps {
 	const [formNoValidate, setFormNoValidate] = useState(
 		noValidate || fallbackMode !== 'native',
 	);
@@ -167,7 +171,7 @@ export function useFieldset<Type extends Record<string, any>>(
 	{ [Key in keyof Type]: FieldConfig<Type[Key]> },
 	Record<keyof Type, string>,
 ] {
-	const ref = useRef<FieldsetElement>(null);
+	const ref = useRef<HTMLFieldSetElement>(null);
 
 	const nameKeyMapping = Object.keys(schema.constraint).reduce<
 		Record<string, keyof Type>
@@ -187,10 +191,15 @@ export function useFieldset<Type extends Record<string, any>>(
 				]),
 			) as Record<keyof Type, string>,
 	);
-	const setup = {
+
+	const setup: FieldsetProps = {
 		ref,
+		name: config.name,
 		onChange(e: FormEvent<FieldsetElement>) {
-			schema.validate(e.currentTarget, config);
+			const fieldset = e.currentTarget;
+
+			schema.validate?.(fieldset);
+			setErrorMessage((error) => resetErrorMessages(fieldset, error));
 		},
 		onReset(e: FormEvent<FieldsetElement>) {
 			setErrorMessage({} as Record<keyof Type, string>);
@@ -237,7 +246,8 @@ export function useFieldset<Type extends Record<string, any>>(
 			);
 		}
 
-		schema.validate(fieldset, config);
+		schema.validate?.(fieldset);
+		setErrorMessage((error) => resetErrorMessages(fieldset, error));
 	}, [schema, config]);
 
 	return [setup, field, errorMessage];
@@ -309,4 +319,34 @@ export function useFieldList<InnerType, Type extends Array<InnerType>>(
 	}, [size]);
 
 	return [list, controls];
+}
+
+function resetErrorMessages<T extends Record<string, any>>(
+	fieldset: FieldsetElement,
+	error: T,
+): T {
+	const updates: Array<[string, string]> = [];
+
+	for (let [key, message] of Object.entries(error)) {
+		if (!message) {
+			continue;
+		}
+
+		const fields = getFields(fieldset, key);
+
+		for (let field of fields) {
+			if (field.validity.valid) {
+				updates.push([key, '']);
+			}
+		}
+	}
+
+	if (updates.length === 0) {
+		return error;
+	}
+
+	return {
+		...error,
+		...Object.fromEntries(updates),
+	};
 }

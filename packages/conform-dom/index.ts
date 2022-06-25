@@ -34,7 +34,7 @@ export interface FieldConfig<Type = any> {
  */
 export type Schema<Type extends Record<string, any>> = {
 	constraint: { [Key in keyof Type]-?: Constraint<Type[Key]> };
-	validate: (element: FieldsetElement, options?: { name?: string }) => void;
+	validate?: (element: FieldsetElement) => void;
 };
 
 /**
@@ -73,8 +73,8 @@ export function isFieldsetElement(
 ): element is FieldsetElement {
 	return (
 		element instanceof Element &&
-		(element.tagName.toLowerCase() === 'form' ||
-			element.tagName.toLowerCase() === 'fieldset')
+		(element.tagName.toLowerCase() === 'FORM' ||
+			element.tagName.toLowerCase() === 'FIELDSET')
 	);
 }
 
@@ -86,10 +86,10 @@ export function isFieldsetElement(
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
-		(element.tagName === 'input' ||
-			element.tagName === 'select' ||
-			element.tagName === 'textarea' ||
-			element.tagName === 'button')
+		(element.tagName === 'INPUT' ||
+			element.tagName === 'SELECT' ||
+			element.tagName === 'TEXTAREA' ||
+			element.tagName === 'BUTTON')
 	);
 }
 
@@ -260,4 +260,26 @@ export function unflatten<T>(
 	}
 
 	return result;
+}
+
+/**
+ *
+ * @param fieldset
+ * @param key
+ * @returns
+ */
+export function getFields(
+	fieldset: FieldsetElement,
+	key: string,
+): FieldElement[] {
+	const name = fieldset.name ? `${fieldset.name}.${key}` : key;
+	const item = fieldset.elements.namedItem(name);
+	const nodes =
+		item instanceof RadioNodeList
+			? Array.from(item)
+			: item !== null
+			? [item]
+			: [];
+
+	return nodes.filter(isFieldElement);
 }

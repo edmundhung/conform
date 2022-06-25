@@ -1,16 +1,26 @@
-import { useSearchParams } from '@remix-run/react';
+import { useSearchParams, Form } from '@remix-run/react';
 import { styles } from '~/helpers';
-import { Form, useFieldset } from 'remix-form-validity';
-import { f, createFieldset } from '@form-validity/schema';
-
-const fieldset = createFieldset({
-	keyword: f.input('search').required().minLength(3),
-	category: f.select().required(),
-});
+import { useForm, useFieldset } from '@conform-to/react';
 
 export default function SearchForm() {
 	const [searchParams] = useSearchParams();
-	const [field, error] = useFieldset(fieldset);
+	const formProps = useForm({
+		initialReport: 'onBlur',
+	});
+	const [setup, field, error] = useFieldset<{
+		keyword: string;
+		category: string;
+	}>({
+		constraint: {
+			keyword: {
+				required: true,
+				minLength: 3,
+			},
+			category: {
+				required: true,
+			},
+		},
+	});
 
 	const keyword = searchParams.get('keyword');
 	const categories = searchParams.getAll('category');
@@ -26,32 +36,40 @@ export default function SearchForm() {
 					category: {categories.length > 0 ? categories.join(', ') : 'n/a'}
 				</div>
 			</main>
-			<Form className={styles.form}>
-				<label className="block">
-					<div className={styles.label}>Keyword</div>
-					<input
-						className={error.keyword ? styles.inputWithError : styles.input}
-						{...field.keyword}
-					/>
-					<p className={styles.errorMessage}>{error.keyword}</p>
-				</label>
-				<label className="block">
-					<div className={styles.label}>Category</div>
-					<select
-						className={error.category ? styles.inputWithError : styles.input}
-						{...field.category}
-					>
-						<option value="">Please select</option>
-						<option value="book">Book</option>
-						<option value="food">Food</option>
-						<option value="movie">Movie</option>
-						<option value="music">Music</option>
-					</select>
-					<p className={styles.errorMessage}>{error.category}</p>
-				</label>
-				<button type="submit" className={styles.buttonPrimary}>
-					Search
-				</button>
+			<Form className={styles.form} {...formProps}>
+				<fieldset {...setup}>
+					<label className="block">
+						<div className={styles.label}>Keyword</div>
+						<input
+							className={error.keyword ? styles.inputWithError : styles.input}
+							{...(({ error, constraint, ...props }) => ({
+								...props,
+								...constraint,
+							}))(field.keyword)}
+						/>
+						<p className={styles.errorMessage}>{error.keyword}</p>
+					</label>
+					<label className="block">
+						<div className={styles.label}>Category</div>
+						<select
+							className={error.category ? styles.inputWithError : styles.input}
+							{...(({ error, constraint, ...props }) => ({
+								...props,
+								...constraint,
+							}))(field.category)}
+						>
+							<option value="">Please select</option>
+							<option value="book">Book</option>
+							<option value="food">Food</option>
+							<option value="movie">Movie</option>
+							<option value="music">Music</option>
+						</select>
+						<p className={styles.errorMessage}>{error.category}</p>
+					</label>
+					<button type="submit" className={styles.buttonPrimary}>
+						Search
+					</button>
+				</fieldset>
 			</Form>
 		</>
 	);
