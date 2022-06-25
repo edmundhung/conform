@@ -34,10 +34,7 @@ export interface FieldConfig<Type = any> {
  */
 export type Schema<Type extends Record<string, any>> = {
 	constraint: { [Key in keyof Type]-?: Constraint<Type[Key]> };
-	validate: (
-		value: FieldsetData<Type, string>,
-		validity: FieldsetData<Type, ValidityState>,
-	) => Record<keyof Type, string>;
+	validate: (element: FieldsetElement, options?: { name?: string }) => void;
 };
 
 /**
@@ -144,81 +141,6 @@ export function reportValidity(fieldset: FieldsetElement): boolean {
 
 /**
  *
- * @param fieldset
- * @param schema
- * @param options
- */
-export function validate<Type extends Record<string, any>>(
-	fieldset: HTMLFormElement | HTMLFieldSetElement,
-	schema: Schema<Type>,
-	options: {
-		name?: string;
-	},
-): void {
-	const nodesByKey: Record<string, Node[]> = {};
-	const value: Record<string, string | string[] | null> = {};
-	const validity: Record<string, ValidityState | ValidityState[] | null> = {};
-
-	for (let key of Object.keys(schema.constraint)) {
-		const constraint = schema.constraint[key];
-		const name = options.name ? `${options.name}.${key}` : key;
-		const item = fieldset.elements.namedItem(name);
-
-		const nodes: Node[] = [];
-		const fieldValue: string[] = [];
-		const fieldValidity: ValidityState[] = [];
-
-		if (item instanceof RadioNodeList) {
-			if (!constraint.multiple) {
-				console.warn('Multiple is set to false but received multiple nodes');
-			}
-
-			nodes.push(...Array.from(item));
-		} else if (isFieldElement(item)) {
-			nodes.push(item);
-		}
-
-		for (const node of nodes) {
-			if (!isFieldElement(node)) {
-				console.warn(`Unexpected element with key "${key}"; Received`, node);
-				continue;
-			}
-
-			fieldValue.push(node.value);
-			fieldValidity.push(node.validity);
-		}
-
-		if (constraint.multiple) {
-			value[key] = fieldValue;
-			validity[key] = fieldValidity;
-		} else {
-			value[key] = fieldValue[0] ?? null;
-			validity[key] = fieldValidity[0] ?? null;
-		}
-
-		nodesByKey[key] = nodes;
-	}
-
-	const error = schema.validate(
-		value as FieldsetData<Type, string>,
-		validity as FieldsetData<Type, ValidityState>,
-	);
-
-	for (let [key, nodes] of Object.entries(nodesByKey)) {
-		let customValidity = error[key];
-
-		for (const node of nodes) {
-			if (!isFieldElement(node)) {
-				continue;
-			}
-
-			node.setCustomValidity(customValidity);
-		}
-	}
-}
-
-/**
- *
  * @param schema
  * @param options
  * @returns
@@ -266,4 +188,76 @@ export function shouldSkipValidate(event: SubmitEvent): boolean {
 	}
 
 	return false;
+}
+
+/**
+ *
+ * @param name
+ * @returns
+ */
+export function getPaths(name: string): Array<string | number> {
+	const pattern = /(\w+)\[(\d+)\]/;
+
+	return name.split('.').flatMap((key) => {
+		const matches = pattern.exec(key);
+
+		if (!matches) {
+			return key;
+		}
+
+		return [matches[1], Number(matches[2])];
+	});
+}
+
+export function getName(paths: Array<string | number>): string {
+	const name = paths.reduce((name, path) => {
+		if (typeof path === 'number') {
+			return `${name}[${path}]`;
+		}
+
+		return `${name}.${path}`;
+	});
+
+	return `${name}`;
+}
+
+/**
+ *
+ * @param entries
+ * @returns
+ */
+export function unflatten<T>(
+	entries: Array<[string, T]> | Iterable<[string, T]>,
+): any {
+	const result: any = {};
+
+	for (let [key, value] of entries) {
+		let paths = getPaths(key);
+		let length = paths.length;
+		let lastIndex = length - 1;
+		let index = -1;
+		let pointer = result;
+
+		while (pointer != null && ++index < length) {
+			let key = paths[index];
+			let next = paths[index + 1];
+			let newValue = value;
+
+			if (index != lastIndex) {
+				newValue = pointer[key] ?? (typeof next === 'number' ? [] : {});
+			}
+
+			// if (typeof pointer[key] !== 'undefined') {
+			// 	pointer[key] = Array.isArray(pointer[key])
+			// 		? pointer[key].concat(newValue)
+			// 		: [pointer[key], newValue];
+			// } else {
+			pointer[key] = newValue;
+			// }
+
+			pointer = pointer[key];
+		}
+	}
+
+	return result;
 }

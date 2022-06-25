@@ -16,7 +16,6 @@ import {
 	setFieldState,
 	reportValidity,
 	shouldSkipValidate,
-	validate,
 	createFieldConfig,
 } from '@conform-to/dom';
 
@@ -191,7 +190,7 @@ export function useFieldset<Type extends Record<string, any>>(
 	const setup = {
 		ref,
 		onChange(e: FormEvent<FieldsetElement>) {
-			validate(e.currentTarget, schema, config);
+			schema.validate(e.currentTarget, config);
 		},
 		onReset(e: FormEvent<FieldsetElement>) {
 			setErrorMessage({} as Record<keyof Type, string>);
@@ -238,7 +237,7 @@ export function useFieldset<Type extends Record<string, any>>(
 			);
 		}
 
-		validate(fieldset, schema, config);
+		schema.validate(fieldset, config);
 	}, [schema, config]);
 
 	return [setup, field, errorMessage];
