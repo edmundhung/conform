@@ -19,13 +19,7 @@ function createFormDataParser<T extends z.ZodType<any>>(
 				return;
 			}
 
-			const number = Number(value);
-
-			if (Number.isNaN(number)) {
-				return;
-			}
-
-			return number;
+			return Number(value);
 		};
 	} else if (schema instanceof z.ZodDate) {
 		return (value) => {
@@ -43,6 +37,16 @@ function createFormDataParser<T extends z.ZodType<any>>(
 
 			return value === 'on';
 		};
+	} else if (schema instanceof z.ZodOptional) {
+		const def = schema.unwrap();
+		const parse = createFormDataParser(def);
+
+		return parse;
+	} else if (schema instanceof z.ZodEffects) {
+		const def = schema.innerType();
+		const parse = createFormDataParser(def);
+
+		return parse;
 	} else if (schema instanceof z.ZodArray) {
 		const parse = createFormDataParser(schema.element);
 
@@ -90,7 +94,9 @@ function createFormDataParser<T extends z.ZodType<any>>(
 	`);
 }
 
-function getFieldConstraint<T>(schema: z.ZodType<T>): Constraint<T> {
+function inferConstraint<T extends z.ZodTypeAny>(
+	schema: T,
+): Constraint<z.infer<T>> {
 	let def = schema;
 
 	// @ts-expect-error
@@ -148,11 +154,27 @@ function getFieldConstraint<T>(schema: z.ZodType<T>): Constraint<T> {
 	return constraint;
 }
 
-export function parse<T extends Record<string, any>>(
+function getSchemaShape<T extends Record<string, any>>(
+	schema: z.ZodType<T>,
+): z.ZodRawShape {
+	if (schema instanceof z.ZodObject) {
+		return schema.shape;
+	}
+
+	if (schema instanceof z.ZodEffects) {
+		return getSchemaShape(schema.innerType());
+	}
+
+	throw new Error(
+		'Unknown schema provided; The schema could be either ZodObject or ZodEffects only',
+	);
+}
+
+export function parse<T extends z.ZodTypeAny>(
 	entries: Array<[string, string]>,
-	schema: z.ZodObject<T>,
+	schema: T,
 ): {
-	value: T | null;
+	value: z.infer<T> | null;
 	error: Record<string, string> | null;
 } {
 	const parse = createFormDataParser(schema);
@@ -175,15 +197,19 @@ export function parse<T extends Record<string, any>>(
 	};
 }
 
-export function createFieldset<T>(schema: z.ZodObject<T>): Schema<T> {
+export function createFieldset<T extends Record<string, any>>(
+	schema: z.ZodType<T>,
+): Schema<T> {
 	const parse = createFormDataParser(schema);
+	const shape = getSchemaShape(schema);
 
 	return {
 		// @ts-expect-error
 		constraint: Object.fromEntries(
-			Object.entries(schema.shape).map<[string, Constraint<any>]>(
-				([key, def]) => [key, getFieldConstraint(def)],
-			),
+			Object.entries(shape).map<[string, Constraint<any>]>(([key, def]) => [
+				key,
+				inferConstraint(def),
+			]),
 		),
 		validate(fieldset: FieldsetElement, options: { name?: string } = {}) {
 			const formData = new FormData(fieldset.form);
@@ -204,7 +230,7 @@ export function createFieldset<T>(schema: z.ZodObject<T>): Schema<T> {
 			const result = schema.safeParse(value);
 			const errors = !result.success ? result.error.errors : [];
 
-			for (const key of Object.keys(schema.shape)) {
+			for (const key of Object.keys(shape)) {
 				const name = options.name ? getName([options.name, key]) : key;
 				const item = fieldset.elements.namedItem(name);
 				const nodes =
@@ -213,6 +239,8 @@ export function createFieldset<T>(schema: z.ZodObject<T>): Schema<T> {
 						: item !== null
 						? [item]
 						: [];
+				const validationMessage =
+					errors.find((e) => name === getName(e.path))?.message ?? '';
 
 				for (const node of nodes) {
 					if (!isFieldElement(node)) {
@@ -223,9 +251,7 @@ export function createFieldset<T>(schema: z.ZodObject<T>): Schema<T> {
 						continue;
 					}
 
-					node.setCustomValidity(
-						errors.find((e) => name === getName(e.path))?.message ?? '',
-					);
+					node.setCustomValidity(validationMessage);
 				}
 			}
 		},
