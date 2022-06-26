@@ -214,15 +214,17 @@ export function getPaths(name: string): Array<string | number> {
 }
 
 export function getName(paths: Array<string | number>): string {
-	const name = paths.reduce((name, path) => {
+	return paths.reduce<string>((name, path) => {
+		if (name === '') {
+			return `${path}`;
+		}
+
 		if (typeof path === 'number') {
 			return `${name}[${path}]`;
 		}
 
 		return `${name}.${path}`;
-	});
-
-	return `${name}`;
+	}, '');
 }
 
 /**
