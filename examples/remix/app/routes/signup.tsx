@@ -61,7 +61,7 @@ export default function SignupForm() {
 						<div className={styles.label}>Password</div>
 						<input
 							className={error.password ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.password)}
+							{...f.input(setup.field.password, { type: 'password' })}
 						/>
 						<p className={styles.errorMessage}>{error.password}</p>
 					</label>
@@ -69,7 +69,7 @@ export default function SignupForm() {
 						<div className={styles.label}>Confirm Password</div>
 						<input
 							className={error.confirm ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.confirm)}
+							{...f.input(setup.field.confirm, { type: 'password' })}
 						/>
 						<p className={styles.errorMessage}>{error.confirm}</p>
 					</label>

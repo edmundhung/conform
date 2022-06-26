@@ -51,52 +51,48 @@ interface FieldListControl {
 }
 
 export const f = {
-	input<Type extends string | number | Date | undefined>({
-		name,
-		form,
-		value,
-		constraint,
-	}: FieldConfig<Type>): InputHTMLAttributes<HTMLInputElement> {
+	input<Type extends string | number | Date | undefined>(
+		config: FieldConfig<Type>,
+		{ type, value }: { type?: string; value?: string } = {},
+	): InputHTMLAttributes<HTMLInputElement> {
 		return {
-			name,
-			form,
-			defaultValue: value?.toString(),
-			required: constraint?.required,
-			minLength: constraint?.minLength,
-			maxLength: constraint?.maxLength,
-			min: constraint?.min,
-			max: constraint?.max,
-			step: constraint?.step,
-			pattern: constraint?.pattern,
+			type,
+			name: config.name,
+			form: config.form,
+			value: type === 'checkbox' || type === 'radio' ? value : undefined,
+			defaultValue: config.value?.toString(),
+			defaultChecked:
+				type === 'checkbox' || type === 'radio'
+					? config.value === value
+					: undefined,
+			required: config.constraint?.required,
+			minLength: config.constraint?.minLength,
+			maxLength: config.constraint?.maxLength,
+			min: config.constraint?.min,
+			max: config.constraint?.max,
+			step: config.constraint?.step,
+			pattern: config.constraint?.pattern,
 		};
 	},
-	select({
-		name,
-		form,
-		value,
-		constraint,
-	}: FieldConfig): SelectHTMLAttributes<HTMLSelectElement> {
+	select(config: FieldConfig): SelectHTMLAttributes<HTMLSelectElement> {
 		return {
-			name,
-			form,
-			defaultValue: value?.toString(),
-			required: constraint?.required,
-			multiple: constraint?.multiple,
+			name: config.name,
+			form: config.form,
+			defaultValue: config.value?.toString(),
+			required: config.constraint?.required,
+			multiple: config.constraint?.multiple,
 		};
 	},
-	textarea({
-		name,
-		form,
-		value,
-		constraint,
-	}: FieldConfig<string>): TextareaHTMLAttributes<HTMLTextAreaElement> {
+	textarea(
+		config: FieldConfig<string | undefined>,
+	): TextareaHTMLAttributes<HTMLTextAreaElement> {
 		return {
-			name,
-			form,
-			defaultValue: value?.toString(),
-			required: constraint?.required,
-			minLength: constraint?.minLength,
-			maxLength: constraint?.maxLength,
+			name: config.name,
+			form: config.form,
+			defaultValue: config.value?.toString(),
+			required: config.constraint?.required,
+			minLength: config.constraint?.minLength,
+			maxLength: config.constraint?.maxLength,
 		};
 	},
 };
