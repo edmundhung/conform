@@ -131,8 +131,12 @@ export function reportValidity(fieldset: FieldsetElement): boolean {
 	let isValid = true;
 
 	for (const field of fieldset.elements) {
-		if (isFieldElement(field) && field.dataset.touched) {
-			isValid = isValid && field.reportValidity();
+		if (
+			isFieldElement(field) &&
+			field.dataset.touched &&
+			!field.checkValidity()
+		) {
+			isValid = false;
 		}
 	}
 
