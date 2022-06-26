@@ -32,12 +32,16 @@ interface UseFormOptions extends FormProps {
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 }
 
-interface FieldsetProps {
-	ref: RefObject<HTMLFieldSetElement>;
-	name?: string;
-	onChange: FormEventHandler<HTMLFieldSetElement>;
-	onReset: FormEventHandler<HTMLFieldSetElement>;
-	onInvalid: FormEventHandler<HTMLFieldSetElement>;
+interface SetupProps<Type> {
+	fieldset: {
+		ref: RefObject<HTMLFieldSetElement>;
+		name?: string;
+		form?: string;
+		onChange: FormEventHandler<HTMLFieldSetElement>;
+		onReset: FormEventHandler<HTMLFieldSetElement>;
+		onInvalid: FormEventHandler<HTMLFieldSetElement>;
+	};
+	field: { [Key in keyof Type]-?: FieldConfig<Type[Key]> };
 }
 
 interface FieldListControl {
@@ -46,7 +50,7 @@ interface FieldListControl {
 }
 
 export const f = {
-	input<Type extends string | number | Date>({
+	input<Type extends string | number | Date | undefined>({
 		name,
 		form,
 		value,
@@ -55,7 +59,7 @@ export const f = {
 		return {
 			name,
 			form,
-			value: `${value}`,
+			defaultValue: value?.toString(),
 			required: constraint?.required,
 			minLength: constraint?.minLength,
 			maxLength: constraint?.maxLength,
@@ -74,7 +78,7 @@ export const f = {
 		return {
 			name,
 			form,
-			value: `${value}`,
+			defaultValue: value?.toString(),
 			required: constraint?.required,
 			multiple: constraint?.multiple,
 		};
@@ -88,7 +92,7 @@ export const f = {
 		return {
 			name,
 			form,
-			value: `${value}`,
+			defaultValue: value?.toString(),
 			required: constraint?.required,
 			minLength: constraint?.minLength,
 			maxLength: constraint?.maxLength,
@@ -166,11 +170,7 @@ export function useForm({
 export function useFieldset<Type extends Record<string, any>>(
 	schema: Schema<Type>,
 	config: Partial<FieldConfig<Type>> = {},
-): [
-	FieldsetProps,
-	{ [Key in keyof Type]: FieldConfig<Type[Key]> },
-	Record<keyof Type, string>,
-] {
+): [SetupProps<Type>, Record<keyof Type, string>] {
 	const ref = useRef<HTMLFieldSetElement>(null);
 
 	const nameKeyMapping = Object.keys(schema.constraint).reduce<
@@ -192,42 +192,45 @@ export function useFieldset<Type extends Record<string, any>>(
 			) as Record<keyof Type, string>,
 	);
 
-	const setup: FieldsetProps = {
-		ref,
-		name: config.name,
-		onChange(e: FormEvent<FieldsetElement>) {
-			const fieldset = e.currentTarget;
+	const setup: SetupProps<Type> = {
+		fieldset: {
+			ref,
+			name: config.name,
+			form: config.form,
+			onChange(e: FormEvent<FieldsetElement>) {
+				const fieldset = e.currentTarget;
 
-			schema.validate?.(fieldset);
-			setErrorMessage((error) => resetErrorMessages(fieldset, error));
-		},
-		onReset(e: FormEvent<FieldsetElement>) {
-			setErrorMessage({} as Record<keyof Type, string>);
-		},
-		onInvalid(e: FormEvent<FieldsetElement>) {
-			const element = isFieldElement(e.target) ? e.target : null;
-			const key = element ? nameKeyMapping[element.name] : null;
+				schema.validate?.(fieldset);
+				setErrorMessage((error) => resetErrorMessages(fieldset, error));
+			},
+			onReset(e: FormEvent<FieldsetElement>) {
+				setErrorMessage({} as Record<keyof Type, string>);
+			},
+			onInvalid(e: FormEvent<FieldsetElement>) {
+				const element = isFieldElement(e.target) ? e.target : null;
+				const key = element ? nameKeyMapping[element.name] : null;
 
-			if (!element || !key) {
-				return;
-			}
-
-			// Disable browser report
-			e.preventDefault();
-
-			setErrorMessage((message) => {
-				if (message[key] === element.validationMessage) {
-					return message;
+				if (!element || !key) {
+					return;
 				}
 
-				return {
-					...message,
-					[key]: element.validationMessage,
-				};
-			});
+				// Disable browser report
+				e.preventDefault();
+
+				setErrorMessage((message) => {
+					if (message[key] === element.validationMessage) {
+						return message;
+					}
+
+					return {
+						...message,
+						[key]: element.validationMessage,
+					};
+				});
+			},
 		},
+		field: createFieldConfig(schema, config),
 	};
-	const field = createFieldConfig(schema, config);
 
 	useEffect(() => {
 		const fieldset = ref.current;
@@ -250,7 +253,7 @@ export function useFieldset<Type extends Record<string, any>>(
 		setErrorMessage((error) => resetErrorMessages(fieldset, error));
 	}, [schema, config]);
 
-	return [setup, field, errorMessage];
+	return [setup, errorMessage];
 }
 
 export function useFieldList<InnerType, Type extends Array<InnerType>>(

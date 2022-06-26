@@ -1,13 +1,13 @@
 import { useSearchParams, Form } from '@remix-run/react';
 import { styles } from '~/helpers';
-import { useForm, useFieldset } from '@conform-to/react';
+import { useForm, useFieldset, f } from '@conform-to/react';
 
 export default function SearchForm() {
 	const [searchParams] = useSearchParams();
 	const formProps = useForm({
 		initialReport: 'onBlur',
 	});
-	const [setup, field, error] = useFieldset<{
+	const [setup, error] = useFieldset<{
 		keyword: string;
 		category: string;
 	}>({
@@ -42,10 +42,7 @@ export default function SearchForm() {
 						<div className={styles.label}>Keyword</div>
 						<input
 							className={error.keyword ? styles.inputWithError : styles.input}
-							{...(({ error, constraint, ...props }) => ({
-								...props,
-								...constraint,
-							}))(field.keyword)}
+							{...f.input(setup.field.keyword)}
 						/>
 						<p className={styles.errorMessage}>{error.keyword}</p>
 					</label>
@@ -53,10 +50,7 @@ export default function SearchForm() {
 						<div className={styles.label}>Category</div>
 						<select
 							className={error.category ? styles.inputWithError : styles.input}
-							{...(({ error, constraint, ...props }) => ({
-								...props,
-								...constraint,
-							}))(field.category)}
+							{...f.select(setup.field.category)}
 						>
 							<option value="">Please select</option>
 							<option value="book">Book</option>

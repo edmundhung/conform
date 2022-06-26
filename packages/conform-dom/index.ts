@@ -157,7 +157,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 		value?: FieldsetData<Type, string>;
 		error?: FieldsetData<Type, string>;
 	},
-): { [Key in keyof Type]: FieldConfig<Type[Key]> } {
+): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
 	const result: { [Key in keyof Type]: FieldConfig<Type[Key]> } = {} as any;
 
 	for (const key of Object.keys(schema.constraint)) {
