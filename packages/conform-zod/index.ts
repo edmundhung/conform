@@ -2,6 +2,16 @@ import type { Constraint, FieldsetElement, Schema } from '@conform-to/dom';
 import { unflatten, getName, isFieldElement } from '@conform-to/dom';
 import * as z from 'zod';
 
+type FormState<T> =
+	| {
+			error: Record<string, string>;
+			value: T | null;
+	  }
+	| {
+			error: null;
+			value: T;
+	  };
+
 function createFormDataParser<T extends z.ZodType<any>>(
 	schema: T,
 ): (data: unknown) => unknown {
@@ -171,14 +181,11 @@ function getSchemaShape<T extends Record<string, any>>(
 }
 
 export function parse<T extends z.ZodTypeAny>(
-	entries: Array<[string, string]>,
+	payload: FormData | URLSearchParams,
 	schema: T,
-): {
-	value: z.infer<T> | null;
-	error: Record<string, string> | null;
-} {
+): FormState<z.infer<T>> {
 	const parse = createFormDataParser(schema);
-	const data = unflatten(entries);
+	const data = unflatten(payload.entries());
 	const value = parse(data);
 	const result = schema.safeParse(value);
 

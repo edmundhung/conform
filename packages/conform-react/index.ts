@@ -18,6 +18,7 @@ import {
 	shouldSkipValidate,
 	createFieldConfig,
 	getFields,
+	getName,
 } from '@conform-to/dom';
 
 export { getFields };
@@ -172,24 +173,13 @@ export function useFieldset<Type extends Record<string, any>>(
 	config: Partial<FieldConfig<Type>> = {},
 ): [SetupProps<Type>, Record<keyof Type, string>] {
 	const ref = useRef<HTMLFieldSetElement>(null);
-
-	const nameKeyMapping = Object.keys(schema.constraint).reduce<
-		Record<string, keyof Type>
-	>((result, key) => {
-		const fieldName = config.name ? `${config.name}.${key}` : key;
-
-		result[fieldName] = key;
-
-		return result;
-	}, {});
-	const [errorMessage, setErrorMessage] = useState(
-		() =>
-			Object.fromEntries(
-				Object.keys(nameKeyMapping).map((name) => [
-					name,
-					config.error?.[name] ?? '',
-				]),
-			) as Record<keyof Type, string>,
+	const [errorMessage, setErrorMessage] = useState(() =>
+		Object.fromEntries(
+			Object.keys(schema.constraint).map((name) => [
+				name,
+				config.error?.[name] ?? '',
+			]),
+		),
 	);
 
 	const setup: SetupProps<Type> = {
@@ -208,7 +198,9 @@ export function useFieldset<Type extends Record<string, any>>(
 			},
 			onInvalid(e: FormEvent<FieldsetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
-				const key = element ? nameKeyMapping[element.name] : null;
+				const key = Object.keys(schema.constraint).find(
+					(key) => element?.name === getName([e.currentTarget.name, key]),
+				);
 
 				if (!element || !key) {
 					return;
@@ -251,9 +243,20 @@ export function useFieldset<Type extends Record<string, any>>(
 
 		schema.validate?.(fieldset);
 		setErrorMessage((error) => resetErrorMessages(fieldset, error));
-	}, [schema, config]);
+	}, [schema]);
 
-	return [setup, errorMessage];
+	useEffect(() => {
+		setErrorMessage(
+			Object.fromEntries(
+				Object.keys(schema.constraint).map((name) => [
+					name,
+					config.error?.[name] ?? '',
+				]),
+			),
+		);
+	}, [config.error, schema]);
+
+	return [setup, errorMessage as Record<keyof Type, string>];
 }
 
 export function useFieldList<InnerType, Type extends Array<InnerType>>(

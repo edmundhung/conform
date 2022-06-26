@@ -67,7 +67,7 @@ export default function rollup() {
 		...configurePackage('conform-dom'),
 
 		// Validator integration
-		// ...configurePackage('conform-zod'),
+		...configurePackage('conform-zod'),
 
 		// View integration
 		...configurePackage('conform-react'),

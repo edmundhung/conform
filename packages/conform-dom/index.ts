@@ -158,7 +158,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 		error?: FieldsetData<Type, string>;
 	},
 ): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
-	const result: { [Key in keyof Type]: FieldConfig<Type[Key]> } = {} as any;
+	const result: { [Key in keyof Type]-?: FieldConfig<Type[Key]> } = {} as any;
 
 	for (const key of Object.keys(schema.constraint)) {
 		const constraint = schema.constraint[key];
@@ -215,15 +215,15 @@ export function getPaths(name: string): Array<string | number> {
 
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
-		if (name === '') {
-			return `${path}`;
+		if (name === '' || path === '') {
+			return [name, path].join('');
 		}
 
 		if (typeof path === 'number') {
 			return `${name}[${path}]`;
 		}
 
-		return `${name}.${path}`;
+		return [name, path].join('.');
 	}, '');
 }
 
