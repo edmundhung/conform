@@ -45,8 +45,8 @@ export type FieldsetData<Type, Value> = Type extends string | number | Date
 	: Type extends Array<infer InnerType>
 	? Array<FieldsetData<InnerType, Value>>
 	: Type extends Object
-	? { [Key in keyof Type]: FieldsetData<Type[Key], Value> }
-	: never;
+	? { [Key in keyof Type]?: FieldsetData<Type[Key], Value> }
+	: unknown;
 
 /**
  * Element that maintains a list of fields
@@ -63,11 +63,22 @@ export type FieldElement =
 	| HTMLTextAreaElement
 	| HTMLButtonElement;
 
-/**
- *
- * @param element
- * @returns
- */
+export type FormResult<T> =
+	| {
+			state: 'processed';
+			value: FieldsetData<T, string> | null;
+			error: FieldsetData<T, string> | null;
+	  }
+	| {
+			state: 'rejected';
+			value: FieldsetData<T, string> | null;
+			error: FieldsetData<T, string>;
+	  }
+	| {
+			state: 'accepted';
+			value: T;
+	  };
+
 export function isFieldsetElement(
 	element: unknown,
 ): element is FieldsetElement {
@@ -78,11 +89,6 @@ export function isFieldsetElement(
 	);
 }
 
-/**
- *
- * @param element
- * @returns
- */
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -93,12 +99,6 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
-/**
- *
- * @param field
- * @param state
- * @returns
- */
 export function setFieldState(
 	field: unknown,
 	state: { touched: boolean },
@@ -122,11 +122,6 @@ export function setFieldState(
 	}
 }
 
-/**
- *
- * @param fieldset
- * @returns
- */
 export function reportValidity(fieldset: FieldsetElement): boolean {
 	let isValid = true;
 
@@ -143,12 +138,6 @@ export function reportValidity(fieldset: FieldsetElement): boolean {
 	return isValid;
 }
 
-/**
- *
- * @param schema
- * @param options
- * @returns
- */
 export function createFieldConfig<Type extends Record<string, any>>(
 	schema: Schema<Type>,
 	options: {
@@ -177,15 +166,10 @@ export function createFieldConfig<Type extends Record<string, any>>(
 	return result;
 }
 
-/**
- *
- * @param event
- * @returns
- */
 export function shouldSkipValidate(event: SubmitEvent): boolean {
 	if (
-		event.submitter?.tagName === 'button' ||
-		event.submitter?.tagName === 'input'
+		event.submitter?.tagName === 'BUTTON' ||
+		event.submitter?.tagName === 'INPUT'
 	) {
 		return (event.submitter as HTMLButtonElement | HTMLInputElement)
 			.formNoValidate;
@@ -194,13 +178,12 @@ export function shouldSkipValidate(event: SubmitEvent): boolean {
 	return false;
 }
 
-/**
- *
- * @param name
- * @returns
- */
-export function getPaths(name: string): Array<string | number> {
+export function getPaths(name?: string): Array<string | number> {
 	const pattern = /(\w+)\[(\d+)\]/;
+
+	if (!name) {
+		return [];
+	}
 
 	return name.split('.').flatMap((key) => {
 		const matches = pattern.exec(key);
@@ -227,14 +210,11 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-/**
- *
- * @param entries
- * @returns
- */
-export function unflatten<T>(
-	entries: Array<[string, T]> | Iterable<[string, T]>,
-): any {
+export function transform(
+	entries:
+		| Array<[string, FormDataEntryValue]>
+		| Iterable<[string, FormDataEntryValue]>,
+): unknown {
 	const result: any = {};
 
 	for (let [key, value] of entries) {
@@ -268,17 +248,99 @@ export function unflatten<T>(
 	return result;
 }
 
-/**
- *
- * @param fieldset
- * @param key
- * @returns
- */
+export function createControlButton(
+	name: string,
+	action: 'prepend' | 'remove',
+	data: any,
+): {
+	type: 'submit';
+	name: string;
+	value: string;
+	formNoValidate: boolean;
+} {
+	return {
+		type: 'submit',
+		name: '__conform__',
+		value: [name, action, JSON.stringify(data)].join('::'),
+		formNoValidate: true,
+	};
+}
+
+export function parse(
+	payload: FormData | URLSearchParams,
+): FormResult<unknown> {
+	const command = payload.get('__conform__');
+
+	if (command) {
+		payload.delete('__conform__');
+	}
+
+	const value = transform(payload.entries());
+
+	if (command) {
+		try {
+			if (command instanceof File) {
+				throw new Error(
+					'The __conform__ key is reserved for special command and could not be used for file upload.',
+				);
+			}
+
+			const [name, action, json] = command.split('::');
+
+			let list: any = value;
+
+			for (let path of getPaths(name)) {
+				list = list[path];
+
+				if (typeof list === 'undefined') {
+					break;
+				}
+			}
+
+			switch (action) {
+				case 'prepend':
+					const initialValue = JSON.parse(json);
+
+					list.push(initialValue);
+					break;
+				case 'remove':
+					const { index } = JSON.parse(json);
+
+					list.splice(index, 1);
+					break;
+				default:
+					throw new Error(
+						'Invalid action found; Only `prepend` and `remove` is accepted',
+					);
+			}
+		} catch (e) {
+			return {
+				state: 'rejected',
+				value,
+				error: {
+					__conform__: e instanceof Error ? e.message : 'Something went wrong',
+				},
+			};
+		}
+
+		return {
+			state: 'processed',
+			value,
+			error: null,
+		};
+	}
+
+	return {
+		state: 'accepted',
+		value,
+	};
+}
+
 export function getFields(
 	fieldset: FieldsetElement,
 	key: string,
 ): FieldElement[] {
-	const name = fieldset.name ? `${fieldset.name}.${key}` : key;
+	const name = getName([fieldset.name ?? '', key]);
 	const item = fieldset.elements.namedItem(name);
 	const nodes =
 		item instanceof RadioNodeList

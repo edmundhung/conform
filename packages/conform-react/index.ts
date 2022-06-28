@@ -17,6 +17,7 @@ import {
 	reportValidity,
 	shouldSkipValidate,
 	createFieldConfig,
+	createControlButton,
 	getFields,
 	getName,
 } from '@conform-to/dom';
@@ -255,38 +256,41 @@ export function useFieldset<Type extends Record<string, any>>(
 	return [setup, errorMessage as Record<keyof Type, string>];
 }
 
-export function useFieldList<InnerType, Type extends Array<InnerType>>(
+export function useFieldList<Type extends Array<any>>(
 	config: FieldConfig<Type>,
-): [Array<{ key: string; config: FieldConfig<InnerType> }>, FieldListControl] {
+): [
+	Array<{
+		key: string;
+		config: FieldConfig<
+			Type extends Array<infer InnerType> ? InnerType : never
+		>;
+	}>,
+	FieldListControl,
+] {
 	const size = config.value?.length ?? 1;
 	const [keys, setKeys] = useState(() => [...Array(size).keys()]);
 	const list = useMemo(
 		() =>
-			keys.map<{ key: string; config: FieldConfig<InnerType> }>(
-				(key, index) => ({
-					key: `${key}`,
-					config: {
-						...config,
-						name: `${config.name}[${index}]`,
-						value: config.value?.[index],
-						error: config.error?.[index],
-						// @ts-expect-error
-						constraint: {
-							...config.constraint,
-							multiple: false,
-						},
+			keys.map<{ key: string; config: FieldConfig }>((key, index) => ({
+				key: `${key}`,
+				config: {
+					...config,
+					name: `${config.name}[${index}]`,
+					value: config.value?.[index],
+					error: config.error?.[index],
+					// @ts-expect-error
+					constraint: {
+						...config.constraint,
+						multiple: false,
 					},
-				}),
-			),
+				},
+			})),
 		[keys, config],
 	);
 	const controls = {
 		prepend(): ButtonHTMLAttributes<HTMLButtonElement> {
 			return {
-				type: 'submit',
-				name: config.name,
-				value: 'conforms::prepend',
-				formNoValidate: true,
+				...createControlButton(config.name, 'prepend', {}),
 				onClick(e) {
 					setKeys((keys) => keys.concat(Date.now()));
 					e.preventDefault();
@@ -295,10 +299,7 @@ export function useFieldList<InnerType, Type extends Array<InnerType>>(
 		},
 		remove(index: number): ButtonHTMLAttributes<HTMLButtonElement> {
 			return {
-				type: 'submit',
-				name: config.name,
-				value: `conforms::remove:${index}`,
-				formNoValidate: true,
+				...createControlButton(config.name, 'remove', { index }),
 				onClick(e) {
 					setKeys((keys) => [
 						...keys.slice(0, index),

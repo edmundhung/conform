@@ -1,108 +1,17 @@
-import type { Constraint, FieldsetElement, Schema } from '@conform-to/dom';
-import { unflatten, getName, isFieldElement } from '@conform-to/dom';
+import type {
+	Constraint,
+	FieldsetElement,
+	Schema,
+	FormResult,
+	FieldsetData,
+} from '@conform-to/dom';
+import {
+	parse as baseParse,
+	transform,
+	getName,
+	isFieldElement,
+} from '@conform-to/dom';
 import * as z from 'zod';
-
-type FormState<T> =
-	| {
-			error: Record<string, string>;
-			value: T | null;
-	  }
-	| {
-			error: null;
-			value: T;
-	  };
-
-function createFormDataParser<T extends z.ZodType<any>>(
-	schema: T,
-): (data: unknown) => unknown {
-	if (schema instanceof z.ZodString || schema instanceof z.ZodEnum) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return value;
-		};
-	} else if (schema instanceof z.ZodNumber) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return Number(value);
-		};
-	} else if (schema instanceof z.ZodDate) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return new Date(value);
-		};
-	} else if (schema instanceof z.ZodBoolean) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return value === 'on';
-		};
-	} else if (schema instanceof z.ZodOptional) {
-		const def = schema.unwrap();
-		const parse = createFormDataParser(def);
-
-		return parse;
-	} else if (schema instanceof z.ZodEffects) {
-		const def = schema.innerType();
-		const parse = createFormDataParser(def);
-
-		return parse;
-	} else if (schema instanceof z.ZodArray) {
-		const parse = createFormDataParser(schema.element);
-
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			if (!Array.isArray(value)) {
-				return;
-			}
-
-			return value.map(parse);
-		};
-	} else if (schema instanceof z.ZodObject) {
-		const shape: Record<string, (value: unknown) => unknown> = {};
-
-		for (let [key, def] of Object.entries(schema.shape)) {
-			// @ts-expect-error
-			shape[key] = createFormDataParser(def);
-		}
-
-		return (value) => {
-			if (typeof value !== 'object') {
-				return;
-			}
-
-			const object = Object(value);
-			const result: Record<string, unknown> = {};
-
-			for (let [key, parse] of Object.entries(shape)) {
-				const item = parse(object[key]);
-
-				if (typeof item !== 'undefined') {
-					result[key] = item;
-				}
-			}
-
-			return result;
-		};
-	}
-
-	throw new Error(`
-		Unsupported zod type provided; Please raise an issue explaining your usecase
-	`);
-}
 
 function inferConstraint<T extends z.ZodTypeAny>(
 	schema: T,
@@ -180,34 +89,133 @@ function getSchemaShape<T extends Record<string, any>>(
 	);
 }
 
-export function parse<T extends z.ZodTypeAny>(
-	payload: FormData | URLSearchParams,
+function createParser<T extends z.ZodType<any>>(
 	schema: T,
-): FormState<z.infer<T>> {
-	const parse = createFormDataParser(schema);
-	const data = unflatten(payload.entries());
-	const value = parse(data);
-	const result = schema.safeParse(value);
+): (data: unknown) => unknown {
+	if (schema instanceof z.ZodString || schema instanceof z.ZodEnum) {
+		return (value) => {
+			if (typeof value !== 'string' || value === '') {
+				return;
+			}
 
-	if (!result.success) {
-		return {
-			value: null,
-			error: unflatten(
-				result.error.errors.map((e) => [getName(e.path), e.message]),
-			),
+			return value;
+		};
+	} else if (schema instanceof z.ZodNumber) {
+		return (value) => {
+			if (typeof value !== 'string' || value === '') {
+				return;
+			}
+
+			return Number(value);
+		};
+	} else if (schema instanceof z.ZodDate) {
+		return (value) => {
+			if (typeof value !== 'string' || value === '') {
+				return;
+			}
+
+			return new Date(value);
+		};
+	} else if (schema instanceof z.ZodBoolean) {
+		return (value) => {
+			if (typeof value !== 'string' || value === '') {
+				return;
+			}
+
+			return value === 'on';
+		};
+	} else if (schema instanceof z.ZodOptional) {
+		const def = schema.unwrap();
+		const parse = createParser(def);
+
+		return parse;
+	} else if (schema instanceof z.ZodEffects) {
+		const def = schema.innerType();
+		const parse = createParser(def);
+
+		return parse;
+	} else if (schema instanceof z.ZodArray) {
+		const parse = createParser(schema.element);
+
+		return (value) => {
+			if (!Array.isArray(value)) {
+				return;
+			}
+
+			return value.map(parse);
+		};
+	} else if (schema instanceof z.ZodObject) {
+		const shape: Record<string, (value: unknown) => unknown> = {};
+
+		for (let [key, def] of Object.entries(schema.shape)) {
+			// @ts-expect-error
+			shape[key] = createParser(def);
+		}
+
+		return (value) => {
+			if (typeof value !== 'object') {
+				return;
+			}
+
+			const object = Object(value);
+			const result: Record<string, unknown> = {};
+
+			for (let [key, parse] of Object.entries(shape)) {
+				const item = parse(object[key]);
+
+				if (typeof item !== 'undefined') {
+					result[key] = item;
+				}
+			}
+
+			return result;
 		};
 	}
 
-	return {
-		value: result.data,
-		error: null,
-	};
+	throw new Error(`
+		Unsupported zod type provided; Please raise an issue explaining your usecase
+	`);
+}
+
+function formatError<T>(error: z.ZodError<T>): FieldsetData<T, string> {
+	return transform(
+		error.errors.map((e) => [getName(e.path), e.message]),
+	) as FieldsetData<T, string>;
+}
+
+export function parse<T>(
+	payload: FormData | URLSearchParams,
+	schema: z.ZodType<T>,
+): FormResult<T> {
+	const parse = createParser(schema);
+	const formResult = baseParse(payload);
+	const value = parse(formResult.value);
+	const result = schema.safeParse(value);
+
+	if (formResult.state === 'processed') {
+		// @ts-expect-error
+		return formResult;
+	}
+
+	if (result.success) {
+		return {
+			state: 'accepted',
+			value: result.data,
+		};
+	} else {
+		return {
+			state: 'rejected',
+			// @ts-expect-error
+			value: formResult.value,
+			error: formatError(result.error),
+		};
+	}
 }
 
 export function createFieldset<T extends Record<string, any>>(
 	schema: z.ZodType<T>,
 ): Schema<T> {
-	const parse = createFormDataParser(schema);
+	const parse = createParser(schema);
 	const shape = getSchemaShape(schema);
 
 	return {
@@ -232,7 +240,7 @@ export function createFieldset<T extends Record<string, any>>(
 
 				return result;
 			}, []);
-			const data = unflatten(entries);
+			const data = transform(entries);
 			const value = parse(data);
 			const result = schema.safeParse(value);
 			const errors = !result.success ? result.error.errors : [];
