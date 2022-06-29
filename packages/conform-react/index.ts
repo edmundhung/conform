@@ -166,13 +166,13 @@ export function useForm({
 }
 
 export function useFieldset<Type extends Record<string, any>>(
-	schema: Schema<Type>,
+	{ constraint, validate }: Schema<Type>,
 	config: Partial<FieldConfig<Type>> = {},
 ): [SetupProps<Type>, Record<keyof Type, string>] {
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const [errorMessage, setErrorMessage] = useState(() =>
 		Object.fromEntries(
-			Object.keys(schema.constraint).reduce<Array<[string, string]>>(
+			Object.keys(constraint).reduce<Array<[string, string]>>(
 				(result, name) => {
 					const error = config.error?.[name];
 
@@ -195,7 +195,7 @@ export function useFieldset<Type extends Record<string, any>>(
 			onChange(e: FormEvent<FieldsetElement>) {
 				const fieldset = e.currentTarget;
 
-				schema.validate?.(fieldset);
+				validate?.(fieldset);
 				setErrorMessage((error) => resetErrorMessages(fieldset, error));
 			},
 			onReset(e: FormEvent<FieldsetElement>) {
@@ -204,7 +204,7 @@ export function useFieldset<Type extends Record<string, any>>(
 			},
 			onInvalid(e: FormEvent<FieldsetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
-				const key = Object.keys(schema.constraint).find(
+				const key = Object.keys(constraint).find(
 					(key) => element?.name === getName([e.currentTarget.name, key]),
 				);
 
@@ -227,10 +227,13 @@ export function useFieldset<Type extends Record<string, any>>(
 				});
 			},
 		},
-		field: createFieldConfig(schema, {
-			...config,
-			error: Object.assign({}, config.error, errorMessage),
-		}),
+		field: createFieldConfig(
+			{ constraint, validate },
+			{
+				...config,
+				error: Object.assign({}, config.error, errorMessage),
+			},
+		),
 	};
 
 	useEffect(() => {
@@ -250,28 +253,27 @@ export function useFieldset<Type extends Record<string, any>>(
 			);
 		}
 
-		schema.validate?.(fieldset);
+		validate?.(fieldset);
 		setErrorMessage((error) => resetErrorMessages(fieldset, error));
-	}, [schema]);
+	}, [validate]);
 
 	useEffect(() => {
-		setErrorMessage(
-			Object.fromEntries(
-				Object.keys(schema.constraint).reduce<Array<[string, string]>>(
-					(result, name) => {
-						const error = config.error?.[name];
+		setErrorMessage((error) =>
+			Object.keys(constraint).reduce((result, name) => {
+				const prevError = error[name];
+				const nextError = config.error?.[name];
 
-						if (typeof error === 'string') {
-							result.push([name, error]);
-						}
+				if (typeof nextError === 'string' && prevError !== nextError) {
+					return {
+						...result,
+						[name]: nextError,
+					};
+				}
 
-						return result;
-					},
-					[],
-				),
-			),
+				return result;
+			}, error),
 		);
-	}, [config.error, schema]);
+	}, [config.error, constraint]);
 
 	return [setup, errorMessage as Record<keyof Type, string>];
 }

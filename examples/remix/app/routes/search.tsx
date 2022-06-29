@@ -37,7 +37,7 @@ export default function SearchForm() {
 				</div>
 			</main>
 			<Form className={styles.form} {...formProps}>
-				<fieldset {...setup}>
+				<fieldset {...setup.fieldset}>
 					<label className="block">
 						<div className={styles.label}>Keyword</div>
 						<input
