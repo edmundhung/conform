@@ -191,6 +191,7 @@ export function useFieldset<Type extends Record<string, any>>(
 				setErrorMessage((error) => resetErrorMessages(fieldset, error));
 			},
 			onReset(e: FormEvent<FieldsetElement>) {
+				setFieldState(e.currentTarget, { touched: false });
 				setErrorMessage({} as Record<keyof Type, string>);
 			},
 			onInvalid(e: FormEvent<FieldsetElement>) {
