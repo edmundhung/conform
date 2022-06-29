@@ -172,10 +172,18 @@ export function useFieldset<Type extends Record<string, any>>(
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const [errorMessage, setErrorMessage] = useState(() =>
 		Object.fromEntries(
-			Object.keys(schema.constraint).map((name) => [
-				name,
-				config.error?.[name] ?? '',
-			]),
+			Object.keys(schema.constraint).reduce<Array<[string, string]>>(
+				(result, name) => {
+					const error = config.error?.[name];
+
+					if (typeof error === 'string') {
+						result.push([name, error]);
+					}
+
+					return result;
+				},
+				[],
+			),
 		),
 	);
 
@@ -219,7 +227,10 @@ export function useFieldset<Type extends Record<string, any>>(
 				});
 			},
 		},
-		field: createFieldConfig(schema, config),
+		field: createFieldConfig(schema, {
+			...config,
+			error: Object.assign({}, config.error, errorMessage),
+		}),
 	};
 
 	useEffect(() => {
@@ -246,10 +257,18 @@ export function useFieldset<Type extends Record<string, any>>(
 	useEffect(() => {
 		setErrorMessage(
 			Object.fromEntries(
-				Object.keys(schema.constraint).map((name) => [
-					name,
-					config.error?.[name] ?? '',
-				]),
+				Object.keys(schema.constraint).reduce<Array<[string, string]>>(
+					(result, name) => {
+						const error = config.error?.[name];
+
+						if (typeof error === 'string') {
+							result.push([name, error]);
+						}
+
+						return result;
+					},
+					[],
+				),
 			),
 		);
 	}, [config.error, schema]);
