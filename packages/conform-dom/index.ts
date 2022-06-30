@@ -1,22 +1,20 @@
 /**
  *
  */
-export type Constraint<Type> = (undefined extends Type
-	? { required?: false }
-	: { required: true }) &
-	(Type extends Array<any> ? { multiple: true } : { multiple?: false }) &
-	(Type extends string | number | Date
-		? {
-				required?: boolean;
-				minLength?: number;
-				maxLength?: number;
-				min?: string;
-				max?: string;
-				step?: string;
-				multiple?: boolean;
-				pattern?: string;
-		  }
-		: {});
+export type Constraint<Type> = (Type extends string | number | Date | undefined
+	? {
+			required?: boolean;
+			minLength?: number;
+			maxLength?: number;
+			min?: string;
+			max?: string;
+			step?: string;
+			multiple?: boolean;
+			pattern?: string;
+	  }
+	: {}) &
+	(undefined extends Type ? { required?: false } : { required: true }) &
+	(Type extends Array<any> ? { multiple: true } : { multiple?: false });
 
 /**
  *

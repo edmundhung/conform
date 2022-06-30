@@ -61,7 +61,7 @@ export const f = {
 			name: config.name,
 			form: config.form,
 			value: type === 'checkbox' || type === 'radio' ? value : undefined,
-			defaultValue: config.value?.toString(),
+			defaultValue: `${config.value ?? ''}`,
 			defaultChecked:
 				type === 'checkbox' || type === 'radio'
 					? config.value === value
@@ -75,22 +75,24 @@ export const f = {
 			pattern: config.constraint?.pattern,
 		};
 	},
-	select(config: FieldConfig): SelectHTMLAttributes<HTMLSelectElement> {
+	select<T extends any>(
+		config: FieldConfig<T>,
+	): SelectHTMLAttributes<HTMLSelectElement> {
 		return {
 			name: config.name,
 			form: config.form,
-			defaultValue: config.value?.toString(),
+			defaultValue: `${config.value ?? ''}`,
 			required: config.constraint?.required,
 			multiple: config.constraint?.multiple,
 		};
 	},
-	textarea(
-		config: FieldConfig<string | undefined>,
+	textarea<T extends string | undefined>(
+		config: FieldConfig<T>,
 	): TextareaHTMLAttributes<HTMLTextAreaElement> {
 		return {
 			name: config.name,
 			form: config.form,
-			defaultValue: config.value?.toString(),
+			defaultValue: `${config.value ?? ''}`,
 			required: config.constraint?.required,
 			minLength: config.constraint?.minLength,
 			maxLength: config.constraint?.maxLength,
