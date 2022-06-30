@@ -10,17 +10,22 @@ export default function SearchForm() {
 	const [setup, error] = useFieldset<{
 		keyword: string;
 		category: string;
-	}>({
-		constraint: {
-			keyword: {
-				required: true,
-				minLength: 3,
-			},
-			category: {
-				required: true,
+	}>(
+		{
+			constraint: {
+				keyword: {
+					required: true,
+					minLength: 3,
+				},
+				category: {
+					required: true,
+				},
 			},
 		},
-	});
+		{
+			form: 'search',
+		},
+	);
 
 	const keyword = searchParams.get('keyword');
 	const categories = searchParams.getAll('category');
@@ -36,35 +41,34 @@ export default function SearchForm() {
 					category: {categories.length > 0 ? categories.join(', ') : 'n/a'}
 				</div>
 			</main>
-			<Form className={styles.form} {...formProps}>
-				<fieldset {...setup.fieldset}>
-					<label className="block">
-						<div className={styles.label}>Keyword</div>
-						<input
-							className={error.keyword ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.keyword)}
-						/>
-						<p className={styles.errorMessage}>{error.keyword}</p>
-					</label>
-					<label className="block">
-						<div className={styles.label}>Category</div>
-						<select
-							className={error.category ? styles.inputWithError : styles.input}
-							{...f.select(setup.field.category)}
-						>
-							<option value="">Please select</option>
-							<option value="book">Book</option>
-							<option value="food">Food</option>
-							<option value="movie">Movie</option>
-							<option value="music">Music</option>
-						</select>
-						<p className={styles.errorMessage}>{error.category}</p>
-					</label>
-					<button type="submit" className={styles.buttonPrimary}>
-						Search
-					</button>
-				</fieldset>
-			</Form>
+			<Form id="search" {...formProps} />
+			<fieldset className={styles.form} {...setup.fieldset}>
+				<label className="block">
+					<div className={styles.label}>Keyword</div>
+					<input
+						className={error.keyword ? styles.inputWithError : styles.input}
+						{...f.input(setup.field.keyword)}
+					/>
+					<p className={styles.errorMessage}>{error.keyword}</p>
+				</label>
+				<label className="block">
+					<div className={styles.label}>Category</div>
+					<select
+						className={error.category ? styles.inputWithError : styles.input}
+						{...f.select(setup.field.category)}
+					>
+						<option value="">Please select</option>
+						<option value="book">Book</option>
+						<option value="food">Food</option>
+						<option value="movie">Movie</option>
+						<option value="music">Music</option>
+					</select>
+					<p className={styles.errorMessage}>{error.category}</p>
+				</label>
+				<button type="submit" className={styles.buttonPrimary} form="search">
+					Search
+				</button>
+			</fieldset>
 		</>
 	);
 }

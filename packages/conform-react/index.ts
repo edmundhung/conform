@@ -1,6 +1,5 @@
 import type {
 	ButtonHTMLAttributes,
-	FocusEventHandler,
 	FormEvent,
 	FormEventHandler,
 	FormHTMLAttributes,
@@ -26,7 +25,7 @@ export { getFields };
 
 type FormProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
-	'onChange' | 'onBlur' | 'onSubmit' | 'onReset' | 'noValidate'
+	'onSubmit' | 'onReset' | 'noValidate'
 >;
 
 interface UseFormOptions extends FormProps {
@@ -99,39 +98,18 @@ export const f = {
 };
 
 export function useForm({
-	onChange,
-	onBlur,
 	onReset,
 	onSubmit,
 	noValidate = false,
 	fallbackMode = 'none',
 	initialReport = 'onSubmit',
-}: UseFormOptions = {}): FormProps {
+}: UseFormOptions = {}): FormProps & {
+	ref: RefObject<HTMLFormElement>;
+} {
+	const ref = useRef<HTMLFormElement>(null);
 	const [formNoValidate, setFormNoValidate] = useState(
 		noValidate || fallbackMode !== 'native',
 	);
-	const handleBlur: FocusEventHandler<HTMLFormElement> = (event) => {
-		if (!noValidate) {
-			if (initialReport === 'onBlur') {
-				setFieldState(event.target, { touched: true });
-			}
-
-			reportValidity(event.currentTarget);
-		}
-
-		onBlur?.(event);
-	};
-	const handleChange: FormEventHandler<HTMLFormElement> = (event) => {
-		if (!noValidate) {
-			if (initialReport === 'onChange') {
-				setFieldState(event.target, { touched: true });
-			}
-
-			reportValidity(event.currentTarget);
-		}
-
-		onChange?.(event);
-	};
 	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
 		if (!noValidate) {
 			setFieldState(event.currentTarget, { touched: true });
@@ -156,9 +134,49 @@ export function useForm({
 		setFormNoValidate(true);
 	}, []);
 
+	useEffect(() => {
+		if (noValidate) {
+			return;
+		}
+
+		const handleChange = (event: Event) => {
+			if (!isFieldElement(event.target) || event.target?.form !== ref.current) {
+				return;
+			}
+
+			if (initialReport === 'onChange') {
+				setFieldState(event.target, { touched: true });
+			}
+
+			if (ref.current) {
+				reportValidity(ref.current);
+			}
+		};
+		const handleBlur = (event: FocusEvent) => {
+			if (!isFieldElement(event.target) || event.target?.form !== ref.current) {
+				return;
+			}
+
+			if (initialReport === 'onBlur') {
+				setFieldState(event.target, { touched: true });
+			}
+
+			if (ref.current) {
+				reportValidity(ref.current);
+			}
+		};
+
+		document.body.addEventListener('input', handleChange);
+		document.body.addEventListener('focusout', handleBlur);
+
+		return () => {
+			document.body.removeEventListener('input', handleChange);
+			document.body.removeEventListener('focusout', handleBlur);
+		};
+	}, [noValidate, initialReport]);
+
 	return {
-		onChange: handleChange,
-		onBlur: handleBlur,
+		ref,
 		onSubmit: handleSubmit,
 		onReset: handleReset,
 		noValidate: formNoValidate,
