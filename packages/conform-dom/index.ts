@@ -250,7 +250,7 @@ export function transform(
 
 export function createControlButton(
 	name: string,
-	action: 'prepend' | 'remove',
+	action: 'prepend' | 'append' | 'remove',
 	data: any,
 ): {
 	type: 'submit';
@@ -297,12 +297,23 @@ export function parse(
 				}
 			}
 
+			if (!Array.isArray(list)) {
+				throw new Error('');
+			}
+
 			switch (action) {
-				case 'prepend':
+				case 'prepend': {
+					const initialValue = JSON.parse(json);
+
+					list.unshift(initialValue);
+					break;
+				}
+				case 'append': {
 					const initialValue = JSON.parse(json);
 
 					list.push(initialValue);
 					break;
+				}
 				case 'remove':
 					const { index } = JSON.parse(json);
 
@@ -310,7 +321,7 @@ export function parse(
 					break;
 				default:
 					throw new Error(
-						'Invalid action found; Only `prepend` and `remove` is accepted',
+						'Invalid action found; Only `prepend`, `append` and `remove` is accepted',
 					);
 			}
 		} catch (e) {

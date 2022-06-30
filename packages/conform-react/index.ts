@@ -47,6 +47,7 @@ interface SetupProps<Type> {
 
 interface FieldListControl {
 	prepend(): ButtonHTMLAttributes<HTMLButtonElement>;
+	append(): ButtonHTMLAttributes<HTMLButtonElement>;
 	remove(index: number): ButtonHTMLAttributes<HTMLButtonElement>;
 }
 
@@ -327,17 +328,26 @@ export function useFieldList<Type extends Array<any>>(
 			})),
 		[keys, config],
 	);
-	const controls = {
-		prepend(): ButtonHTMLAttributes<HTMLButtonElement> {
+	const controls: FieldListControl = {
+		prepend() {
 			return {
 				...createControlButton(config.name, 'prepend', {}),
 				onClick(e) {
-					setKeys((keys) => keys.concat(Date.now()));
+					setKeys((keys) => [Date.now(), ...keys]);
 					e.preventDefault();
 				},
 			};
 		},
-		remove(index: number): ButtonHTMLAttributes<HTMLButtonElement> {
+		append() {
+			return {
+				...createControlButton(config.name, 'append', {}),
+				onClick(e) {
+					setKeys((keys) => [...keys, Date.now()]);
+					e.preventDefault();
+				},
+			};
+		},
+		remove(index) {
 			return {
 				...createControlButton(config.name, 'remove', { index }),
 				onClick(e) {

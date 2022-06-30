@@ -90,7 +90,7 @@ export default function OrderForm() {
 					<button
 						className={styles.buttonSecondary}
 						disabled={products.length === 3}
-						{...control.prepend()}
+						{...control.append()}
 					>
 						Add Product
 					</button>
