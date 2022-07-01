@@ -36,7 +36,7 @@ export default function App() {
 					<footer className="flex justify-between text-sm p-8 flex-row-reverse">
 						<a
 							className="hover:underline"
-							href="https://github.com/edmundhung/form-validity"
+							href="https://github.com/edmundhung/conform"
 							target="_blank"
 							rel="noopener noreferrer"
 						>

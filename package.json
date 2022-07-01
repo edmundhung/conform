@@ -6,10 +6,6 @@
 		"packages/conform-dom",
 		"packages/conform-zod",
 		"packages/conform-react",
-		"packages/form-validity",
-		"packages/form-validity-schema",
-		"packages/react-form-validity",
-		"packages/remix-form-validity",
 		"examples/remix"
 	],
 	"scripts": {

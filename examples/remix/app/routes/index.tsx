@@ -4,7 +4,7 @@ export default function LoginForm() {
 	return (
 		<>
 			<header className="p-8">
-				<h1 className="text-xl">form-validity</h1>
+				<h1 className="text-xl">conform</h1>
 				<div>Examples</div>
 			</header>
 			<ul className="bg-white border drop-shadow rounded-lg divide-y">
