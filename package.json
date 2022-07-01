@@ -10,6 +10,7 @@
 	],
 	"scripts": {
 		"build": "rollup -c && tsc -b",
+		"test": "playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"
 	},
