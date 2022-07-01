@@ -82,8 +82,7 @@ export function isFieldsetElement(
 ): element is FieldsetElement {
 	return (
 		element instanceof Element &&
-		(element.tagName.toLowerCase() === 'FORM' ||
-			element.tagName.toLowerCase() === 'FIELDSET')
+		(element.tagName === 'FORM' || element.tagName === 'FIELDSET')
 	);
 }
 
