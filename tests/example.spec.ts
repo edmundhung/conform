@@ -10,73 +10,42 @@ async function getValidationMessage(page: Page, name: string): Promise<string> {
 		>((field) => field.validationMessage);
 }
 
-test.describe('Search', () => {
+test.describe('Search Form', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/search');
 	});
 
-	test('should work', async ({ page }) => {
-		let url = page.url();
-
+	test('validate user input properly', async ({ page }) => {
 		await page.locator('button[type="submit"]').click();
-
-		expect(page.url(), 'Submission should be blocked').toBe(url);
-
-		let keywordError: string;
-		let categoryError: string;
-
-		[keywordError, categoryError] = await Promise.all([
-			getValidationMessage(page, 'keyword'),
-			getValidationMessage(page, 'category'),
-		]);
-
-		await expect(page.locator('p')).toHaveText([keywordError, categoryError], {
-			useInnerText: true,
-		});
-
-		expect(keywordError).not.toBe('');
-		expect(categoryError).not.toBe('');
+		await expect(page.locator('p')).toHaveText(
+			['Keyword is required', await getValidationMessage(page, 'category')],
+			{
+				useInnerText: true,
+			},
+		);
 
 		await page.locator('input[name="keyword"]').type('co');
-
-		[keywordError, categoryError] = await Promise.all([
-			getValidationMessage(page, 'keyword'),
-			getValidationMessage(page, 'category'),
-		]);
-
-		await expect(page.locator('p')).toHaveText([keywordError, categoryError], {
-			useInnerText: true,
-		});
-
-		expect(keywordError).not.toBe('');
-		expect(categoryError).not.toBe('');
+		await expect(page.locator('p')).toHaveText(
+			[
+				'Please fill in at least 3 characters',
+				await getValidationMessage(page, 'category'),
+			],
+			{
+				useInnerText: true,
+			},
+		);
 
 		await page.locator('input[name="keyword"]').type('conform');
-
-		[keywordError, categoryError] = await Promise.all([
-			getValidationMessage(page, 'keyword'),
-			getValidationMessage(page, 'category'),
-		]);
-
-		await expect(page.locator('p')).toHaveText([keywordError, categoryError], {
-			useInnerText: true,
-		});
-
-		expect(keywordError).toBe('');
-		expect(categoryError).not.toBe('');
+		await expect(page.locator('p')).toHaveText(
+			['', await getValidationMessage(page, 'category')],
+			{
+				useInnerText: true,
+			},
+		);
 
 		await page.locator('select[name="category"]').selectOption('book');
-
-		[keywordError, categoryError] = await Promise.all([
-			getValidationMessage(page, 'keyword'),
-			getValidationMessage(page, 'category'),
-		]);
-
-		await expect(page.locator('p')).toHaveText([keywordError, categoryError], {
+		await expect(page.locator('p')).toHaveText(['', ''], {
 			useInnerText: true,
 		});
-
-		expect(keywordError).toBe('');
-		expect(categoryError).toBe('');
 	});
 });

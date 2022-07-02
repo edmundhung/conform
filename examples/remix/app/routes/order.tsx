@@ -1,7 +1,7 @@
 import type { ActionFunction } from '@remix-run/node';
 import type { FieldConfig } from '@conform-to/dom';
 import { Form, useActionData } from '@remix-run/react';
-import { parse, createFieldset } from '@conform-to/zod';
+import { parse, createFieldset as resolve } from '@conform-to/zod';
 import { useForm, useFieldset, useFieldList, f } from '@conform-to/react';
 import { styles } from '~/helpers';
 import * as z from 'zod';
@@ -13,61 +13,48 @@ const product = z.object({
 		.min(1, 'Min. 1'),
 });
 
-const schema = z.object({
+const order = z.object({
 	products: z.array(product).min(1, 'At least 1 product is required'),
 	address: z.string({ required_error: 'Address is required' }),
 	delivery: z.enum(['standard', 'express']),
 	remarks: z.string().optional(),
 });
 
-const fieldset = createFieldset(schema);
+const schema = resolve(order);
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const formResult = parse(formData, schema);
+	const formResult = parse(formData, order);
 
 	return formResult;
 };
 
 export default function OrderForm() {
-	const formResult = useActionData() ?? {};
-	const formProps = useForm({ initialReport: 'onBlur' });
-	const [setup, errorMessage] = useFieldset(fieldset, formResult);
-	const [products, control] = useFieldList(setup.field.products);
+	const result = useActionData();
+	const form = useForm({ initialReport: 'onBlur' });
+	const [fieldset, fields] = useFieldset(schema, result);
+	const [products, control] = useFieldList(fields.products);
 
 	return (
 		<>
 			<main className="p-8">
-				{formResult.state === 'accepted' ? (
+				<div className="mb-4">Order Form</div>
+				{result?.state === 'accepted' ? (
 					<>
-						<div className="mb-4 text-emerald-500">Order success</div>
-						{formResult.value?.products?.map((product, i) => (
-							<div key={i} className="text-gray-600">{`Product #${i + 1} - ${
-								product.item
-							} x${product.quantity}`}</div>
-						)) ?? null}
-						<div className="text-gray-600">
-							Address:{' '}
-							{formResult.value?.address ? formResult.value.address : 'n/a'}
-						</div>
-						<div className="text-gray-600">
-							Remarks:{' '}
-							{formResult.value?.remarks ? formResult.value.remarks : 'n/a'}
-						</div>
+						<div className="mb-4 text-emerald-500">Success</div>
+						<pre>{JSON.stringify(result?.value, null, 2)}</pre>
 					</>
-				) : (
-					<div className="mb-4">Wanna order something?</div>
-				)}
+				) : null}
 			</main>
 			<Form
 				method="post"
 				className={`flex flex-col-reverse ${styles.form}`}
-				{...formProps}
+				{...form}
 			>
 				<button type="submit" className={styles.buttonPrimary}>
 					Order now
 				</button>
-				<fieldset className="space-y-4" {...setup.fieldset}>
+				<fieldset className="space-y-4" {...fieldset}>
 					<div className="space-y-2">
 						{products.map((product, index) => (
 							<div className="flex items-end gap-4" key={product.key}>
@@ -98,27 +85,27 @@ export default function OrderForm() {
 						<div className={styles.label}>Address</div>
 						<input
 							className={
-								errorMessage.address ? styles.inputWithError : styles.input
+								fields.address.error ? styles.inputWithError : styles.input
 							}
-							{...f.input(setup.field.address)}
+							{...f.input(fields.address)}
 						/>
-						<p className={styles.errorMessage}>{errorMessage.address}</p>
+						<p className={styles.errorMessage}>{fields.address.error}</p>
 					</label>
 					<div>
 						<div className={styles.label}>Delivery Method</div>
 						<div className="space-y-2 py-2">
-							{schema.shape.delivery.options.map((option) => (
+							{order.shape.delivery.options.map((option) => (
 								<label className={styles.optionLabel} key={option}>
 									<input
 										className={styles.optionInput}
-										{...f.input(setup.field.delivery, {
+										{...f.input(fields.delivery, {
 											type: 'radio',
 											value: option,
 										})}
 									/>
 									<span
 										className={
-											errorMessage.delivery
+											fields.delivery.error
 												? styles.optionWithError
 												: styles.option
 										}
@@ -133,11 +120,11 @@ export default function OrderForm() {
 						<div className={styles.label}>Remarks</div>
 						<textarea
 							className={
-								errorMessage.remarks ? styles.inputWithError : styles.input
+								fields.remarks.error ? styles.inputWithError : styles.input
 							}
-							{...f.textarea(setup.field.remarks)}
+							{...f.textarea(fields.remarks)}
 						/>
-						<p className={styles.errorMessage}>{errorMessage.remarks}</p>
+						<p className={styles.errorMessage}>{fields.remarks.error}</p>
 					</label>
 				</fieldset>
 			</Form>
@@ -145,29 +132,31 @@ export default function OrderForm() {
 	);
 }
 
-const productFieldset = createFieldset(product);
+const productSchema = resolve(product);
 
 interface ProductFieldsetProps extends FieldConfig<z.infer<typeof product>> {
 	label: string;
 }
 
 function ProductFieldset({ label, ...options }: ProductFieldsetProps) {
-	const [setup, error] = useFieldset(productFieldset, options);
+	const [fieldset, fields] = useFieldset(productSchema, options);
 
 	return (
-		<fieldset className="flex gap-4" {...setup.fieldset}>
+		<fieldset className="flex gap-4" {...fieldset}>
 			<label className="block flex-1">
 				<div className={styles.label}>{label}</div>
 				<input
-					className={error.item ? styles.inputWithError : styles.input}
-					{...f.input(setup.field.item)}
+					className={fields.item.error ? styles.inputWithError : styles.input}
+					{...f.input(fields.item)}
 				/>
 			</label>
 			<label className="block w-16">
 				<div className={styles.label}>Quantity</div>
 				<input
-					className={error.quantity ? styles.inputWithError : styles.input}
-					{...f.input(setup.field.quantity, { type: 'number' })}
+					className={
+						fields.quantity.error ? styles.inputWithError : styles.input
+					}
+					{...f.input(fields.quantity, { type: 'number' })}
 				/>
 			</label>
 		</fieldset>

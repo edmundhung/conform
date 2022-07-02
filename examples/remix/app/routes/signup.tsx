@@ -1,17 +1,16 @@
-import type { ActionFunction } from '@remix-run/node';
-import { json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
-import { styles } from '~/helpers';
 import { useForm, useFieldset, f } from '@conform-to/react';
-import { createFieldset, parse } from '@conform-to/zod';
+import { createFieldset as resolve, parse } from '@conform-to/zod';
 import z from 'zod';
+import { styles } from '~/helpers';
 
-const schema = z
+const signup = z
 	.object({
 		email: z
 			.string({ required_error: 'Email is required' })
 			.email('Your email address is invalid'),
-		password: z.string({ required_error: 'Password is required' }),
+		password: z
+			.string({ required_error: 'Password is required' })
+			.min(8, 'The minimum password length is 8 characters'),
 		confirm: z.string({ required_error: 'Confirm password is required' }),
 	})
 	.refine((value) => value.password === value.confirm, {
@@ -19,65 +18,64 @@ const schema = z
 		path: ['confirm'],
 	});
 
-const fieldset = createFieldset(schema);
-
-export let action: ActionFunction = async ({ request }) => {
-	const formData = await request.formData();
-	const formState = parse(formData, schema);
-
-	return json(formState);
-};
+const schema = resolve(signup);
 
 export default function SignupForm() {
-	const formState = useActionData() ?? {};
-	const formProps = useForm({ initialReport: 'onBlur' });
-	const [setup, error] = useFieldset(fieldset);
+	const form = useForm({
+		onSubmit(e) {
+			e.preventDefault();
+
+			// This time we parse the FormData with zod schema
+			const formData = new FormData(e.currentTarget);
+			const data = parse(formData, signup);
+
+			console.log('submitted', data);
+		},
+	});
+	const [fieldset, fields] = useFieldset(schema);
 
 	return (
 		<>
-			{formState.error ? (
-				<main className="p-8">
-					<div className="mb-4 text-pink-500">Signup Error</div>
-					{Object.values(formState.error).map((error, i) => (
-						<div className="text-gray-600" key={i}>{`${error}`}</div>
-					))}
-				</main>
-			) : (
-				<main className="p-8">
-					<div className="mb-4">Signup</div>
-				</main>
-			)}
-			<Form className={styles.form} method="post" {...formProps}>
-				<fieldset {...setup.fieldset}>
+			<main className="p-8">
+				<div className="mb-4">Signup</div>
+			</main>
+			<form className={styles.form} method="post" {...form}>
+				<fieldset {...fieldset}>
 					<label className="block">
 						<div className={styles.label}>Email</div>
 						<input
-							className={error.email ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.email)}
+							className={
+								fields.email.error ? styles.inputWithError : styles.input
+							}
+							{...f.input(fields.email)}
 						/>
-						<p className={styles.errorMessage}>{error.email}</p>
+						<p className={styles.errorMessage}>{fields.email.error}</p>
 					</label>
 					<label className="block">
 						<div className={styles.label}>Password</div>
 						<input
-							className={error.password ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.password, { type: 'password' })}
+							className={
+								fields.password.error ? styles.inputWithError : styles.input
+							}
+							{...f.input(fields.password, { type: 'password' })}
 						/>
-						<p className={styles.errorMessage}>{error.password}</p>
+						<p className={styles.errorMessage}>{fields.password.error}</p>
 					</label>
 					<label className="block">
 						<div className={styles.label}>Confirm Password</div>
 						<input
-							className={error.confirm ? styles.inputWithError : styles.input}
-							{...f.input(setup.field.confirm, { type: 'password' })}
+							className={
+								fields.confirm.error ? styles.inputWithError : styles.input
+							}
+							{...f.input(fields.confirm, { type: 'password' })}
 						/>
-						<p className={styles.errorMessage}>{error.confirm}</p>
+						<p className={styles.errorMessage}>{fields.confirm.error}</p>
 					</label>
 					<button type="submit" className={styles.buttonPrimary}>
 						Sign up
 					</button>
 				</fieldset>
-			</Form>
+			</form>
 		</>
 	);
 }

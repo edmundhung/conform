@@ -28,21 +28,18 @@ type FormProps = Pick<
 	'onSubmit' | 'onReset' | 'noValidate'
 >;
 
+interface FieldsetProps {
+	ref: RefObject<HTMLFieldSetElement>;
+	name?: string;
+	form?: string;
+	onChange: FormEventHandler<HTMLFieldSetElement>;
+	onReset: FormEventHandler<HTMLFieldSetElement>;
+	onInvalid: FormEventHandler<HTMLFieldSetElement>;
+}
+
 interface UseFormOptions extends FormProps {
 	fallbackMode?: 'native' | 'none';
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
-}
-
-interface SetupProps<Type> {
-	fieldset: {
-		ref: RefObject<HTMLFieldSetElement>;
-		name?: string;
-		form?: string;
-		onChange: FormEventHandler<HTMLFieldSetElement>;
-		onReset: FormEventHandler<HTMLFieldSetElement>;
-		onInvalid: FormEventHandler<HTMLFieldSetElement>;
-	};
-	field: { [Key in keyof Type]-?: FieldConfig<Type[Key]> };
 }
 
 interface FieldListControl {
@@ -56,16 +53,15 @@ export const f = {
 		config: FieldConfig<Type>,
 		{ type, value }: { type?: string; value?: string } = {},
 	): InputHTMLAttributes<HTMLInputElement> {
+		const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
+
 		return {
 			type,
 			name: config.name,
 			form: config.form,
-			value: type === 'checkbox' || type === 'radio' ? value : undefined,
-			defaultValue: `${config.value ?? ''}`,
-			defaultChecked:
-				type === 'checkbox' || type === 'radio'
-					? config.value === value
-					: undefined,
+			value: isCheckboxOrRadio ? value : undefined,
+			defaultValue: !isCheckboxOrRadio ? `${config.value ?? ''}` : undefined,
+			defaultChecked: isCheckboxOrRadio ? config.value === value : undefined,
 			required: config.constraint?.required,
 			minLength: config.constraint?.minLength,
 			maxLength: config.constraint?.maxLength,
@@ -189,7 +185,7 @@ export function useForm({
 export function useFieldset<Type extends Record<string, any>>(
 	{ constraint, validate }: Schema<Type>,
 	config: Partial<FieldConfig<Type>> = {},
-): [SetupProps<Type>, Record<keyof Type, string>] {
+): [FieldsetProps, { [Key in keyof Type]-?: FieldConfig<Type[Key]> }] {
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const [errorMessage, setErrorMessage] = useState(() =>
 		Object.fromEntries(
@@ -208,54 +204,52 @@ export function useFieldset<Type extends Record<string, any>>(
 		),
 	);
 
-	const setup: SetupProps<Type> = {
-		fieldset: {
-			ref,
-			name: config.name,
-			form: config.form,
-			onChange(e: FormEvent<FieldsetElement>) {
-				const fieldset = e.currentTarget;
+	const fieldset = {
+		ref,
+		name: config.name,
+		form: config.form,
+		onChange(e: FormEvent<FieldsetElement>) {
+			const fieldset = e.currentTarget;
 
-				validate?.(fieldset);
-				setErrorMessage((error) => resetErrorMessages(fieldset, error));
-			},
-			onReset(e: FormEvent<FieldsetElement>) {
-				setFieldState(e.currentTarget, { touched: false });
-				setErrorMessage({} as Record<keyof Type, string>);
-			},
-			onInvalid(e: FormEvent<FieldsetElement>) {
-				const element = isFieldElement(e.target) ? e.target : null;
-				const key = Object.keys(constraint).find(
-					(key) => element?.name === getName([e.currentTarget.name, key]),
-				);
+			validate?.(fieldset);
+			setErrorMessage((error) => resetErrorMessages(fieldset, error));
+		},
+		onReset(e: FormEvent<FieldsetElement>) {
+			setFieldState(e.currentTarget, { touched: false });
+			setErrorMessage({} as Record<keyof Type, string>);
+		},
+		onInvalid(e: FormEvent<FieldsetElement>) {
+			const element = isFieldElement(e.target) ? e.target : null;
+			const key = Object.keys(constraint).find(
+				(key) => element?.name === getName([e.currentTarget.name, key]),
+			);
 
-				if (!element || !key) {
-					return;
+			if (!element || !key) {
+				return;
+			}
+
+			// Disable browser report
+			e.preventDefault();
+
+			setErrorMessage((message) => {
+				if (message[key] === element.validationMessage) {
+					return message;
 				}
 
-				// Disable browser report
-				e.preventDefault();
-
-				setErrorMessage((message) => {
-					if (message[key] === element.validationMessage) {
-						return message;
-					}
-
-					return {
-						...message,
-						[key]: element.validationMessage,
-					};
-				});
-			},
+				return {
+					...message,
+					[key]: element.validationMessage,
+				};
+			});
 		},
-		field: createFieldConfig(
-			{ constraint, validate },
-			{
-				...config,
-				error: Object.assign({}, config.error, errorMessage),
-			},
-		),
 	};
+	const fields = createFieldConfig(
+		{ constraint, validate },
+		{
+			...config,
+			error: Object.assign({}, config.error, errorMessage),
+		},
+	);
 
 	useEffect(() => {
 		const fieldset = ref.current;
@@ -296,7 +290,7 @@ export function useFieldset<Type extends Record<string, any>>(
 		);
 	}, [config.error, constraint]);
 
-	return [setup, errorMessage as Record<keyof Type, string>];
+	return [fieldset, fields];
 }
 
 export function useFieldList<Type extends Array<any>>(

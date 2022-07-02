@@ -38,7 +38,11 @@ export type Schema<Type extends Record<string, any>> = {
 /**
  * Data structure of the form value
  */
-export type FieldsetData<Type, Value> = Type extends string | number | Date
+export type FieldsetData<Type, Value> = Type extends
+	| string
+	| number
+	| Date
+	| undefined
 	? Value
 	: Type extends Array<infer InnerType>
 	? Array<FieldsetData<InnerType, Value>>

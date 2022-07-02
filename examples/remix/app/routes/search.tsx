@@ -1,61 +1,100 @@
-import { useSearchParams, Form } from '@remix-run/react';
+import { useForm, useFieldset, f, getFields } from '@conform-to/react';
 import { styles } from '~/helpers';
-import { useForm, useFieldset, f } from '@conform-to/react';
+
+interface State {
+	keyword: string;
+	category: string;
+}
 
 export default function SearchForm() {
-	const [searchParams] = useSearchParams();
-	const formProps = useForm({
+	const form = useForm({
+		/**
+		 * Optional - Decide when the error should be reported initially
+		 * Default to ['onSubmit'].
+		 */
 		initialReport: 'onBlur',
+
+		/**
+		 * Optional - Disable validation if set to [true]
+		 * Default to [false]
+		 */
+		noValidate: false,
+
+		/**
+		 * Optional - Submit handler
+		 * Triggered only when the form is valid or if noValidate is set to [true]
+		 * Fallbacks to native form submission
+		 */
+		onSubmit(e) {
+			e.preventDefault();
+
+			const formData = new FormData(e.currentTarget);
+			const payload = Object.fromEntries(formData);
+
+			console.log('Submitted', payload);
+		},
 	});
-	const [setup, error] = useFieldset<{
-		keyword: string;
-		category: string;
-	}>(
-		{
-			constraint: {
-				keyword: {
-					required: true,
-					minLength: 3,
-				},
-				category: {
-					required: true,
-				},
+	const [fieldset, fields] = useFieldset<State>({
+		/**
+		 * Required - Define the fields and coresponding constraint
+		 * All keys will be used as the name of the field
+		 */
+		constraint: {
+			keyword: {
+				required: true,
+				minLength: 3,
+			},
+			category: {
+				required: true,
 			},
 		},
-		{
-			form: 'search',
-		},
-	);
+		/**
+		 * Optional - Customise validation behaviour
+		 * Fallbacks to native validation message provided by the vendor
+		 */
+		validate(element) {
+			const [keyword] = getFields(element, 'keyword');
 
-	const keyword = searchParams.get('keyword');
-	const categories = searchParams.getAll('category');
+			if (keyword.validity.valueMissing) {
+				// Native constraint (required) with custom message
+				keyword.setCustomValidity('Keyword is required');
+			} else if (keyword.validity.tooShort) {
+				// Native constraint (minLength) with custom message
+				keyword.setCustomValidity('Please fill in at least 3 characters');
+			} else if (keyword.value === 'something') {
+				// Custom constraint
+				keyword.setCustomValidity('Be a little more specific please');
+			} else {
+				// Reset the custom error state of the field (Important!)
+				keyword.setCustomValidity('');
+			}
+
+			// Here we didn't call setCustomValidity for category
+			// So it fallbacks to native validation message
+			// These messages varies based on browser vendors
+		},
+	});
 
 	return (
-		<>
-			<main className="p-8">
-				<div className="mb-4">Current search criteria</div>
-				<div className="text-gray-600">
-					keyword: {keyword ? keyword : 'n/a'}
-				</div>
-				<div className="text-gray-600">
-					category: {categories.length > 0 ? categories.join(', ') : 'n/a'}
-				</div>
-			</main>
-			<Form id="search" {...formProps} />
-			<fieldset className={styles.form} {...setup.fieldset}>
+		<form {...form}>
+			<fieldset className={styles.form} {...fieldset}>
 				<label className="block">
 					<div className={styles.label}>Keyword</div>
 					<input
-						className={error.keyword ? styles.inputWithError : styles.input}
-						{...f.input(setup.field.keyword)}
+						className={
+							fields.keyword.error ? styles.inputWithError : styles.input
+						}
+						{...f.input(fields.keyword)}
 					/>
-					<p className={styles.errorMessage}>{error.keyword}</p>
+					<p className={styles.errorMessage}>{fields.keyword.error}</p>
 				</label>
 				<label className="block">
 					<div className={styles.label}>Category</div>
 					<select
-						className={error.category ? styles.inputWithError : styles.input}
-						{...f.select(setup.field.category)}
+						className={
+							fields.category.error ? styles.inputWithError : styles.input
+						}
+						{...f.select(fields.category)}
 					>
 						<option value="">Please select</option>
 						<option value="book">Book</option>
@@ -63,12 +102,12 @@ export default function SearchForm() {
 						<option value="movie">Movie</option>
 						<option value="music">Music</option>
 					</select>
-					<p className={styles.errorMessage}>{error.category}</p>
+					<p className={styles.errorMessage}>{fields.category.error}</p>
 				</label>
-				<button type="submit" className={styles.buttonPrimary} form="search">
+				<button type="submit" className={styles.buttonPrimary}>
 					Search
 				</button>
 			</fieldset>
-		</>
+		</form>
 	);
 }
