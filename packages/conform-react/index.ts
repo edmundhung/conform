@@ -121,7 +121,7 @@ export function useForm({
 				!shouldSkipValidate(event.nativeEvent as SubmitEvent) &&
 				!event.currentTarget.reportValidity()
 			) {
-				event.preventDefault();
+				return event.preventDefault();
 			}
 		}
 
