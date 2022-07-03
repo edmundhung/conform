@@ -5,30 +5,29 @@ export default function LoginForm() {
 		<>
 			<header className="p-8">
 				<h1 className="text-xl">conform</h1>
-				<div>Examples</div>
 			</header>
 			<ul className="bg-white border drop-shadow rounded-lg divide-y">
 				<li>
 					<Link className="block p-8" to="search">
-						<div>Simple example - Search form</div>
-						<div className="text-gray-500">Showcasing basic setup</div>
+						<div>Basic example</div>
+						<div className="text-gray-500">
+							Building a simple search form with React
+						</div>
 					</Link>
 				</li>
 				<li>
 					<Link className="block p-8" to="signup">
-						<div>Real life example - Signup form</div>
+						<div>Zod example</div>
 						<div className="text-gray-500">
-							Covering `server-side validation`, `custom message` and
-							`conditional constraint`
+							Validating a signup form end to end using Zod
 						</div>
 					</Link>
 				</li>
 				<li>
 					<Link className="block p-8" to="order">
-						<div>Advance example - Order Form</div>
+						<div>Nested list example</div>
 						<div className="text-gray-500">
-							Demonstrating `nested structure` and `lists` by composing multiple
-							fieldset
+							Composing nested list using `useFieldset` and `useFieldList`
 						</div>
 					</Link>
 				</li>

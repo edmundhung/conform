@@ -1,5 +1,7 @@
 import { useForm, useFieldset, conform } from '@conform-to/react';
 import { resolve, parse } from '@conform-to/zod';
+import { type ActionFunction } from '@remix-run/node';
+import { Form, useActionData } from '@remix-run/react';
 import z from 'zod';
 import { styles } from '~/helpers';
 
@@ -20,33 +22,36 @@ const signup = z
 
 const schema = resolve(signup);
 
+export let action: ActionFunction = async ({ request }) => {
+	const formData = await request.formData();
+	const data = parse(formData, signup);
+
+	return data;
+};
+
 export default function SignupForm() {
-	const formProps = useForm({
-		onSubmit(e) {
-			e.preventDefault();
-
-			// This time we parse the FormData with zod schema
-			const formData = new FormData(e.currentTarget);
-			const data = parse(formData, signup);
-
-			console.log('submitted', data);
-		},
+	const formResult = useActionData();
+	const formProps = useForm();
+	const [fieldsetProps, { email, password, confirm }] = useFieldset(schema, {
+		error: formResult?.error,
 	});
-	const [fieldsetProps, { email, password, confirm }] = useFieldset(schema);
 
 	return (
-		<form className={styles.form} method="post" {...formProps}>
+		<Form method="post" {...formProps}>
 			<main className="p-8">
 				<div className="mb-4">Signup</div>
+				{formResult?.state === 'accepted' ? (
+					<pre>{JSON.stringify(formResult?.value, null, 2)}</pre>
+				) : null}
 			</main>
-			<fieldset {...fieldsetProps}>
+			<fieldset className={styles.form} {...fieldsetProps}>
 				<label className="block">
 					<div className={styles.label}>Email</div>
 					<input
 						className={email.error ? styles.invalidInput : styles.input}
 						{...conform.input(email)}
 					/>
-					<p className={styles.errorMessage}>{password.error}</p>
+					<p className={styles.errorMessage}>{email.error}</p>
 				</label>
 				<label className="block">
 					<div className={styles.label}>Password</div>
@@ -68,6 +73,6 @@ export default function SignupForm() {
 					Sign up
 				</button>
 			</fieldset>
-		</form>
+		</Form>
 	);
 }

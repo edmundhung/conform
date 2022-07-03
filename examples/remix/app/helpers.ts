@@ -42,5 +42,5 @@ export const styles = {
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
         disabled:opacity-50 disabled:hover:bg-red-600
     `,
-	errorMessage: 'my-2 text-pink-600 text-sm peer-valid:hidden',
+	errorMessage: 'my-2 text-pink-600 text-sm peer-valid:invisible',
 };

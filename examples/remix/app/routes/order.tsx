@@ -13,14 +13,16 @@ const product = z.object({
 		.min(1, 'Min. 1'),
 });
 
-const order = z.object({
-	products: z.array(product).min(1, 'At least 1 product is required'),
+const shipping = z.object({
 	address: z.string({ required_error: 'Address is required' }),
 	delivery: z.enum(['standard', 'express']),
-	remarks: z.string().optional(),
 });
 
-const schema = resolve(order);
+const order = z.object({
+	products: z.array(product).min(1, 'At least 1 product is required'),
+	shipping: shipping,
+	remarks: z.string().optional(),
+});
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
@@ -32,14 +34,17 @@ export let action: ActionFunction = async ({ request }) => {
 export default function OrderForm() {
 	const formResult = useActionData();
 	const formProps = useForm({ initialReport: 'onBlur' });
-	const [fieldset, { products, address, delivery, remarks }] = useFieldset(
-		schema,
-		formResult,
+	const [fieldsetProps, { products, shipping, remarks }] = useFieldset(
+		resolve(order),
+		{
+			initialValue: formResult?.value,
+			error: formResult?.error,
+		},
 	);
 	const [productList, control] = useFieldList(products);
 
 	return (
-		<>
+		<Form method="post" {...formProps}>
 			<main className="p-8">
 				<div className="mb-4">Order Form</div>
 				{formResult?.state === 'accepted' ? (
@@ -49,15 +54,8 @@ export default function OrderForm() {
 					</>
 				) : null}
 			</main>
-			<Form
-				method="post"
-				className={`flex flex-col-reverse ${styles.form}`}
-				{...formProps}
-			>
-				<button type="submit" className={styles.buttonPrimary}>
-					Order now
-				</button>
-				<fieldset className="space-y-4" {...fieldset}>
+			<fieldset className={styles.form} {...fieldsetProps}>
+				<div className="space-y-4">
 					<div className="space-y-2">
 						{productList.map((product, index) => (
 							<div className="flex items-end gap-4" key={product.key}>
@@ -77,44 +75,10 @@ export default function OrderForm() {
 							</div>
 						))}
 					</div>
-					<button
-						className={styles.buttonSecondary}
-						disabled={productList.length === 3}
-						{...control.append()}
-					>
+					<button className={styles.buttonSecondary} {...control.append()}>
 						Add Product
 					</button>
-					<label className="block">
-						<div className={styles.label}>Address</div>
-						<input
-							className={address.error ? styles.invalidInput : styles.input}
-							{...conform.input(address)}
-						/>
-						<p className={styles.errorMessage}>{address.error}</p>
-					</label>
-					<div>
-						<div className={styles.label}>Delivery Method</div>
-						<div className="space-y-2 py-2">
-							{order.shape.delivery.options.map((option) => (
-								<label className={styles.optionLabel} key={option}>
-									<input
-										className={styles.optionInput}
-										{...conform.input(delivery, {
-											type: 'radio',
-											value: option,
-										})}
-									/>
-									<span
-										className={
-											delivery.error ? styles.invalidOption : styles.option
-										}
-									>
-										{option}
-									</span>
-								</label>
-							))}
-						</div>
-					</div>
+					<ShippingFieldset {...shipping} />
 					<label className="block">
 						<div className={styles.label}>Remarks</div>
 						<textarea
@@ -123,21 +87,65 @@ export default function OrderForm() {
 						/>
 						<p className={styles.errorMessage}>{remarks.error}</p>
 					</label>
-				</fieldset>
-			</Form>
-		</>
+				</div>
+
+				<button type="submit" className={styles.buttonPrimary}>
+					Order now
+				</button>
+			</fieldset>
+		</Form>
 	);
 }
 
-const productSchema = resolve(product);
+function ShippingFieldset(config: FieldConfig<z.infer<typeof shipping>>) {
+	const [fieldsetProps, { address, delivery }] = useFieldset(
+		resolve(shipping),
+		config,
+	);
 
-interface ProductFieldsetProps extends FieldConfig<z.infer<typeof product>> {
-	label: string;
+	return (
+		<fieldset {...fieldsetProps}>
+			<label className="block">
+				<div className={styles.label}>Address</div>
+				<input
+					className={address.error ? styles.invalidInput : styles.input}
+					{...conform.input(address)}
+				/>
+				<p className={styles.errorMessage}>{address.error}</p>
+			</label>
+			<div>
+				<div className={styles.label}>Delivery Method</div>
+				<div className="space-y-2 py-2">
+					{shipping.shape.delivery.options.map((option) => (
+						<label className={styles.optionLabel} key={option}>
+							<input
+								className={styles.optionInput}
+								{...conform.input(delivery, {
+									type: 'radio',
+									value: option,
+								})}
+							/>
+							<span
+								className={
+									delivery.error ? styles.invalidOption : styles.option
+								}
+							>
+								{option}
+							</span>
+						</label>
+					))}
+				</div>
+			</div>
+		</fieldset>
+	);
 }
 
-function ProductFieldset({ label, ...config }: ProductFieldsetProps) {
+function ProductFieldset({
+	label,
+	...config
+}: FieldConfig<z.infer<typeof product>> & { label: string }) {
 	const [fieldsetProps, { item, quantity }] = useFieldset(
-		productSchema,
+		resolve(product),
 		config,
 	);
 
