@@ -21,7 +21,7 @@ export type Constraint<Type> = (Type extends string | number | Date | undefined
  */
 export interface FieldConfig<Type = any> {
 	name: string;
-	value?: FieldsetData<Type, string>;
+	initialValue?: FieldsetData<Type, string>;
 	error?: FieldsetData<Type, string>;
 	form?: string;
 	constraint?: Constraint<Type>;
@@ -144,7 +144,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 	options: {
 		name?: string;
 		form?: string;
-		value?: FieldsetData<Type, string>;
+		initialValue?: FieldsetData<Type, string>;
 		error?: FieldsetData<Type, string>;
 	},
 ): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
@@ -155,7 +155,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 		const config: FieldConfig<any> = {
 			name: options.name ? `${options.name}.${key}` : key,
 			form: options.form,
-			value: options.value?.[key],
+			initialValue: options.initialValue?.[key],
 			error: options.error?.[key],
 			// @ts-expect-error
 			constraint,
