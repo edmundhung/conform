@@ -149,7 +149,7 @@ interface FieldsetProps {
 	ref: RefObject<HTMLFieldSetElement>;
 	name?: string;
 	form?: string;
-	onChange: FormEventHandler<HTMLFieldSetElement>;
+	onInput: FormEventHandler<HTMLFieldSetElement>;
 	onReset: FormEventHandler<HTMLFieldSetElement>;
 	onInvalid: FormEventHandler<HTMLFieldSetElement>;
 }
@@ -292,7 +292,7 @@ export function useFieldset<Type extends Record<string, any>>(
 			ref,
 			name: config.name,
 			form: config.form,
-			onChange(e: FormEvent<FieldsetElement>) {
+			onInput(e: FormEvent<FieldsetElement>) {
 				const fieldset = e.currentTarget;
 
 				schema.validate?.(fieldset);

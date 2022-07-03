@@ -31,6 +31,12 @@ export default function LoginForm() {
 						</div>
 					</Link>
 				</li>
+				<li>
+					<Link className="block p-8" to="material-ui">
+						<div>Material-ui example</div>
+						<div className="text-gray-500">Integrating with ui libraries</div>
+					</Link>
+				</li>
 			</ul>
 		</>
 	);
