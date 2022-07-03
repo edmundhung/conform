@@ -1,4 +1,20 @@
 import type {
+	FieldsetElement,
+	FieldConfig,
+	Schema,
+	FieldsetData,
+} from '@conform-to/dom';
+import {
+	isFieldElement,
+	setFieldState,
+	reportValidity,
+	shouldSkipValidate,
+	createFieldConfig,
+	createControlButton,
+	getFieldElements,
+	getName,
+} from '@conform-to/dom';
+import type {
 	ButtonHTMLAttributes,
 	FormEvent,
 	FormEventHandler,
@@ -8,20 +24,7 @@ import type {
 	SelectHTMLAttributes,
 	TextareaHTMLAttributes,
 } from 'react';
-import type { FieldsetElement, FieldConfig, Schema } from '@conform-to/dom';
-import { useRef, useState, useEffect, useMemo } from 'react';
-import {
-	isFieldElement,
-	setFieldState,
-	reportValidity,
-	shouldSkipValidate,
-	createFieldConfig,
-	createControlButton,
-	getFields,
-	getName,
-} from '@conform-to/dom';
-
-export { getFields };
+import { useRef, useState, useEffect, useMemo, useReducer } from 'react';
 
 type FormProps = Pick<
 	FormHTMLAttributes<HTMLFormElement>,
@@ -48,7 +51,7 @@ interface FieldListControl {
 	remove(index: number): ButtonHTMLAttributes<HTMLButtonElement>;
 }
 
-export const f = {
+export const conform = {
 	input<Type extends string | number | Date | undefined>(
 		config: FieldConfig<Type>,
 		{ type, value }: { type?: string; value?: string } = {},
@@ -183,114 +186,177 @@ export function useForm({
 }
 
 export function useFieldset<Type extends Record<string, any>>(
-	{ constraint, validate }: Schema<Type>,
+	schema: Schema<Type>,
 	config: Partial<FieldConfig<Type>> = {},
 ): [FieldsetProps, { [Key in keyof Type]-?: FieldConfig<Type[Key]> }] {
 	const ref = useRef<HTMLFieldSetElement>(null);
-	const [errorMessage, setErrorMessage] = useState(() =>
-		Object.fromEntries(
-			Object.keys(constraint).reduce<Array<[string, string]>>(
-				(result, name) => {
-					const error = config.error?.[name];
+	const [errorMessage, dispatch] = useReducer(
+		(
+			state: Record<string, string>,
+			action:
+				| {
+						type: 'migrate';
+						payload: {
+							keys: string[];
+							error: FieldsetData<Type, string> | undefined;
+						};
+				  }
+				| { type: 'cleanup'; payload: { fieldset: FieldsetElement } }
+				| { type: 'report'; payload: { key: string; message: string } }
+				| { type: 'reset' },
+		) => {
+			switch (action.type) {
+				case 'report': {
+					const { key, message } = action.payload;
 
-					if (typeof error === 'string') {
-						result.push([name, error]);
+					if (state[key] === message) {
+						return state;
 					}
 
-					return result;
-				},
-				[],
+					return {
+						...state,
+						[key]: message,
+					};
+				}
+				case 'migrate': {
+					let { keys, error } = action.payload;
+					let nextState = state;
+
+					for (let key of Object.keys(keys)) {
+						const prevError = state[key];
+						const nextError = error?.[key];
+
+						if (typeof nextError === 'string' && prevError !== nextError) {
+							return {
+								...nextState,
+								[key]: nextError,
+							};
+						}
+					}
+
+					return nextState;
+				}
+				case 'cleanup': {
+					let { fieldset } = action.payload;
+					let updates: Array<[string, string]> = [];
+
+					for (let [key, message] of Object.entries(state)) {
+						if (!message) {
+							continue;
+						}
+
+						const fields = getFieldElements(fieldset, key);
+
+						if (fields.every((field) => field.validity.valid)) {
+							updates.push([key, '']);
+						}
+					}
+
+					if (updates.length === 0) {
+						return state;
+					}
+
+					return {
+						...state,
+						...Object.fromEntries(updates),
+					};
+				}
+				case 'reset': {
+					return {};
+				}
+			}
+		},
+		{},
+		() =>
+			Object.fromEntries(
+				Object.keys(schema.fields).reduce<Array<[string, string]>>(
+					(result, name) => {
+						const error = config.error?.[name];
+
+						if (typeof error === 'string') {
+							result.push([name, error]);
+						}
+
+						return result;
+					},
+					[],
+				),
 			),
-		),
 	);
 
-	const fieldset = {
-		ref,
-		name: config.name,
-		form: config.form,
-		onChange(e: FormEvent<FieldsetElement>) {
-			const fieldset = e.currentTarget;
+	useEffect(
+		() => {
+			const fieldset = ref.current;
 
-			validate?.(fieldset);
-			setErrorMessage((error) => resetErrorMessages(fieldset, error));
-		},
-		onReset(e: FormEvent<FieldsetElement>) {
-			setFieldState(e.currentTarget, { touched: false });
-			setErrorMessage({} as Record<keyof Type, string>);
-		},
-		onInvalid(e: FormEvent<FieldsetElement>) {
-			const element = isFieldElement(e.target) ? e.target : null;
-			const key = Object.keys(constraint).find(
-				(key) => element?.name === getName([e.currentTarget.name, key]),
-			);
-
-			if (!element || !key) {
+			if (!fieldset) {
+				console.warn(
+					'No fieldset ref found; You must pass the fieldsetProps to the fieldset element',
+				);
 				return;
 			}
 
-			// Disable browser report
-			e.preventDefault();
+			if (!fieldset?.form) {
+				console.warn(
+					'No form element is linked to the fieldset; Do you forgot setting the form attribute?',
+				);
+			}
 
-			setErrorMessage((message) => {
-				if (message[key] === element.validationMessage) {
-					return message;
-				}
-
-				return {
-					...message,
-					[key]: element.validationMessage,
-				};
-			});
+			schema.validate?.(fieldset);
+			dispatch({ type: 'cleanup', payload: { fieldset } });
 		},
-	};
-	const fields = createFieldConfig(
-		{ constraint, validate },
-		{
-			...config,
-			error: Object.assign({}, config.error, errorMessage),
-		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[schema.validate],
 	);
 
 	useEffect(() => {
-		const fieldset = ref.current;
-		const form = fieldset?.form;
+		dispatch({
+			type: 'migrate',
+			payload: {
+				keys: Object.keys(schema.fields),
+				error: config.error,
+			},
+		});
+	}, [config.error, schema.fields]);
 
-		if (!fieldset) {
-			console.warn(
-				'Missing fieldset ref; Please make sure the ref to be passed to the element',
-			);
-			return;
-		}
+	return [
+		{
+			ref,
+			name: config.name,
+			form: config.form,
+			onChange(e: FormEvent<FieldsetElement>) {
+				const fieldset = e.currentTarget;
 
-		if (!form) {
-			console.warn(
-				'No form related to the fieldset; It must be placed within the form tag or else a form id should be provided',
-			);
-		}
+				schema.validate?.(fieldset);
+				dispatch({ type: 'cleanup', payload: { fieldset } });
+			},
+			onReset(e: FormEvent<FieldsetElement>) {
+				setFieldState(e.currentTarget, { touched: false });
+				dispatch({ type: 'reset' });
+			},
+			onInvalid(e: FormEvent<FieldsetElement>) {
+				const element = isFieldElement(e.target) ? e.target : null;
+				const key = Object.keys(schema.fields).find(
+					(key) => element?.name === getName([e.currentTarget.name, key]),
+				);
 
-		validate?.(fieldset);
-		setErrorMessage((error) => resetErrorMessages(fieldset, error));
-	}, [validate]);
-
-	useEffect(() => {
-		setErrorMessage((error) =>
-			Object.keys(constraint).reduce((result, name) => {
-				const prevError = error[name];
-				const nextError = config.error?.[name];
-
-				if (typeof nextError === 'string' && prevError !== nextError) {
-					return {
-						...result,
-						[name]: nextError,
-					};
+				if (!element || !key) {
+					return;
 				}
 
-				return result;
-			}, error),
-		);
-	}, [config.error, constraint]);
+				// Disable browser report
+				e.preventDefault();
 
-	return [fieldset, fields];
+				dispatch({
+					type: 'report',
+					payload: { key, message: element.validationMessage },
+				});
+			},
+		},
+		createFieldConfig(schema, {
+			...config,
+			error: Object.assign({}, config.error, errorMessage),
+		}),
+	];
 }
 
 export function useFieldList<Type extends Array<any>>(
@@ -368,34 +434,4 @@ export function useFieldList<Type extends Array<any>>(
 	}, [size]);
 
 	return [list, controls];
-}
-
-function resetErrorMessages<T extends Record<string, any>>(
-	fieldset: FieldsetElement,
-	error: T,
-): T {
-	const updates: Array<[string, string]> = [];
-
-	for (let [key, message] of Object.entries(error)) {
-		if (!message) {
-			continue;
-		}
-
-		const fields = getFields(fieldset, key);
-
-		for (let field of fields) {
-			if (field.validity.valid) {
-				updates.push([key, '']);
-			}
-		}
-	}
-
-	if (updates.length === 0) {
-		return error;
-	}
-
-	return {
-		...error,
-		...Object.fromEntries(updates),
-	};
 }

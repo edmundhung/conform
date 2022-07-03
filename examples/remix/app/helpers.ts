@@ -6,7 +6,7 @@ export const styles = {
         border-slate-300 rounded-md text-sm shadow-sm 
         focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
     `,
-	inputWithError: `
+	invalidInput: `
         peer mt-1 block w-full px-3 py-2 bg-white border
         border-slate-300 rounded-md text-sm shadow-sm 
         focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500
@@ -19,7 +19,7 @@ export const styles = {
 	option: `
         flex-1 capitalize text-sm
     `,
-	optionWithError: `
+	invalidOption: `
         flex-1 capitalize text-sm peer-invalid:text-pink-600
     `,
 	optionInput: `

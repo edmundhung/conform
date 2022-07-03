@@ -18,16 +18,16 @@ test.describe('Search Form', () => {
 	test('validate user input properly', async ({ page }) => {
 		await page.locator('button[type="submit"]').click();
 		await expect(page.locator('p')).toHaveText(
-			['Keyword is required', await getValidationMessage(page, 'category')],
+			['', await getValidationMessage(page, 'category')],
 			{
 				useInnerText: true,
 			},
 		);
 
-		await page.locator('input[name="keyword"]').type('co');
+		await page.locator('input[name="keyword"]').type('con');
 		await expect(page.locator('p')).toHaveText(
 			[
-				'Please fill in at least 3 characters',
+				'Please fill in at least 4 characters',
 				await getValidationMessage(page, 'category'),
 			],
 			{
@@ -35,7 +35,7 @@ test.describe('Search Form', () => {
 			},
 		);
 
-		await page.locator('input[name="keyword"]').type('conform');
+		await page.locator('input[name="keyword"]').type('form');
 		await expect(page.locator('p')).toHaveText(
 			['', await getValidationMessage(page, 'category')],
 			{

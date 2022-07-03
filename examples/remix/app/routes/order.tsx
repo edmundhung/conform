@@ -1,10 +1,10 @@
-import type { ActionFunction } from '@remix-run/node';
 import type { FieldConfig } from '@conform-to/dom';
+import { useForm, useFieldset, useFieldList, conform } from '@conform-to/react';
+import { parse, resolve } from '@conform-to/zod';
+import type { ActionFunction } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { parse, createFieldset as resolve } from '@conform-to/zod';
-import { useForm, useFieldset, useFieldList, f } from '@conform-to/react';
-import { styles } from '~/helpers';
 import * as z from 'zod';
+import { styles } from '~/helpers';
 
 const product = z.object({
 	item: z.string({ required_error: 'Product name is required' }),
@@ -30,33 +30,36 @@ export let action: ActionFunction = async ({ request }) => {
 };
 
 export default function OrderForm() {
-	const result = useActionData();
-	const form = useForm({ initialReport: 'onBlur' });
-	const [fieldset, fields] = useFieldset(schema, result);
-	const [products, control] = useFieldList(fields.products);
+	const formResult = useActionData();
+	const formProps = useForm({ initialReport: 'onBlur' });
+	const [fieldset, { products, address, delivery, remarks }] = useFieldset(
+		schema,
+		formResult,
+	);
+	const [productList, control] = useFieldList(products);
 
 	return (
 		<>
 			<main className="p-8">
 				<div className="mb-4">Order Form</div>
-				{result?.state === 'accepted' ? (
+				{formResult?.state === 'accepted' ? (
 					<>
 						<div className="mb-4 text-emerald-500">Success</div>
-						<pre>{JSON.stringify(result?.value, null, 2)}</pre>
+						<pre>{JSON.stringify(formResult?.value, null, 2)}</pre>
 					</>
 				) : null}
 			</main>
 			<Form
 				method="post"
 				className={`flex flex-col-reverse ${styles.form}`}
-				{...form}
+				{...formProps}
 			>
 				<button type="submit" className={styles.buttonPrimary}>
 					Order now
 				</button>
 				<fieldset className="space-y-4" {...fieldset}>
 					<div className="space-y-2">
-						{products.map((product, index) => (
+						{productList.map((product, index) => (
 							<div className="flex items-end gap-4" key={product.key}>
 								<div className="flex-1">
 									<ProductFieldset
@@ -66,7 +69,7 @@ export default function OrderForm() {
 								</div>
 								<button
 									className={styles.buttonWarning}
-									disabled={products.length === 1}
+									disabled={productList.length === 1}
 									{...control.remove(index)}
 								>
 									⨯
@@ -76,7 +79,7 @@ export default function OrderForm() {
 					</div>
 					<button
 						className={styles.buttonSecondary}
-						disabled={products.length === 3}
+						disabled={productList.length === 3}
 						{...control.append()}
 					>
 						Add Product
@@ -84,12 +87,10 @@ export default function OrderForm() {
 					<label className="block">
 						<div className={styles.label}>Address</div>
 						<input
-							className={
-								fields.address.error ? styles.inputWithError : styles.input
-							}
-							{...f.input(fields.address)}
+							className={address.error ? styles.invalidInput : styles.input}
+							{...conform.input(address)}
 						/>
-						<p className={styles.errorMessage}>{fields.address.error}</p>
+						<p className={styles.errorMessage}>{address.error}</p>
 					</label>
 					<div>
 						<div className={styles.label}>Delivery Method</div>
@@ -98,16 +99,14 @@ export default function OrderForm() {
 								<label className={styles.optionLabel} key={option}>
 									<input
 										className={styles.optionInput}
-										{...f.input(fields.delivery, {
+										{...conform.input(delivery, {
 											type: 'radio',
 											value: option,
 										})}
 									/>
 									<span
 										className={
-											fields.delivery.error
-												? styles.optionWithError
-												: styles.option
+											delivery.error ? styles.invalidOption : styles.option
 										}
 									>
 										{option}
@@ -119,12 +118,10 @@ export default function OrderForm() {
 					<label className="block">
 						<div className={styles.label}>Remarks</div>
 						<textarea
-							className={
-								fields.remarks.error ? styles.inputWithError : styles.input
-							}
-							{...f.textarea(fields.remarks)}
+							className={remarks.error ? styles.invalidInput : styles.input}
+							{...conform.textarea(remarks)}
 						/>
-						<p className={styles.errorMessage}>{fields.remarks.error}</p>
+						<p className={styles.errorMessage}>{remarks.error}</p>
 					</label>
 				</fieldset>
 			</Form>
@@ -138,25 +135,26 @@ interface ProductFieldsetProps extends FieldConfig<z.infer<typeof product>> {
 	label: string;
 }
 
-function ProductFieldset({ label, ...options }: ProductFieldsetProps) {
-	const [fieldset, fields] = useFieldset(productSchema, options);
+function ProductFieldset({ label, ...config }: ProductFieldsetProps) {
+	const [fieldsetProps, { item, quantity }] = useFieldset(
+		productSchema,
+		config,
+	);
 
 	return (
-		<fieldset className="flex gap-4" {...fieldset}>
+		<fieldset className="flex gap-4" {...fieldsetProps}>
 			<label className="block flex-1">
 				<div className={styles.label}>{label}</div>
 				<input
-					className={fields.item.error ? styles.inputWithError : styles.input}
-					{...f.input(fields.item)}
+					className={item.error ? styles.invalidInput : styles.input}
+					{...conform.input(item)}
 				/>
 			</label>
 			<label className="block w-16">
 				<div className={styles.label}>Quantity</div>
 				<input
-					className={
-						fields.quantity.error ? styles.inputWithError : styles.input
-					}
-					{...f.input(fields.quantity, { type: 'number' })}
+					className={quantity.error ? styles.invalidInput : styles.input}
+					{...conform.input(quantity, { type: 'number' })}
 				/>
 			</label>
 		</fieldset>

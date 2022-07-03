@@ -31,7 +31,7 @@ export interface FieldConfig<Type = any> {
  *
  */
 export type Schema<Type extends Record<string, any>> = {
-	constraint: { [Key in keyof Type]-?: Constraint<Type[Key]> };
+	fields: { [Key in keyof Type]-?: Constraint<Type[Key]> };
 	validate?: (element: FieldsetElement) => void;
 };
 
@@ -150,8 +150,8 @@ export function createFieldConfig<Type extends Record<string, any>>(
 ): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
 	const result: { [Key in keyof Type]-?: FieldConfig<Type[Key]> } = {} as any;
 
-	for (const key of Object.keys(schema.constraint)) {
-		const constraint = schema.constraint[key];
+	for (const key of Object.keys(schema.fields)) {
+		const constraint = schema.fields[key];
 		const config: FieldConfig<any> = {
 			name: options.name ? `${options.name}.${key}` : key,
 			form: options.form,
@@ -348,7 +348,7 @@ export function parse(
 	};
 }
 
-export function getFields(
+export function getFieldElements(
 	fieldset: FieldsetElement,
 	key: string,
 ): FieldElement[] {

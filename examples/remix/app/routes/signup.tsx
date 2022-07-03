@@ -1,5 +1,5 @@
-import { useForm, useFieldset, f } from '@conform-to/react';
-import { createFieldset as resolve, parse } from '@conform-to/zod';
+import { useForm, useFieldset, conform } from '@conform-to/react';
+import { resolve, parse } from '@conform-to/zod';
 import z from 'zod';
 import { styles } from '~/helpers';
 
@@ -21,7 +21,7 @@ const signup = z
 const schema = resolve(signup);
 
 export default function SignupForm() {
-	const form = useForm({
+	const formProps = useForm({
 		onSubmit(e) {
 			e.preventDefault();
 
@@ -32,50 +32,42 @@ export default function SignupForm() {
 			console.log('submitted', data);
 		},
 	});
-	const [fieldset, fields] = useFieldset(schema);
+	const [fieldsetProps, { email, password, confirm }] = useFieldset(schema);
 
 	return (
-		<>
+		<form className={styles.form} method="post" {...formProps}>
 			<main className="p-8">
 				<div className="mb-4">Signup</div>
 			</main>
-			<form className={styles.form} method="post" {...form}>
-				<fieldset {...fieldset}>
-					<label className="block">
-						<div className={styles.label}>Email</div>
-						<input
-							className={
-								fields.email.error ? styles.inputWithError : styles.input
-							}
-							{...f.input(fields.email)}
-						/>
-						<p className={styles.errorMessage}>{fields.email.error}</p>
-					</label>
-					<label className="block">
-						<div className={styles.label}>Password</div>
-						<input
-							className={
-								fields.password.error ? styles.inputWithError : styles.input
-							}
-							{...f.input(fields.password, { type: 'password' })}
-						/>
-						<p className={styles.errorMessage}>{fields.password.error}</p>
-					</label>
-					<label className="block">
-						<div className={styles.label}>Confirm Password</div>
-						<input
-							className={
-								fields.confirm.error ? styles.inputWithError : styles.input
-							}
-							{...f.input(fields.confirm, { type: 'password' })}
-						/>
-						<p className={styles.errorMessage}>{fields.confirm.error}</p>
-					</label>
-					<button type="submit" className={styles.buttonPrimary}>
-						Sign up
-					</button>
-				</fieldset>
-			</form>
-		</>
+			<fieldset {...fieldsetProps}>
+				<label className="block">
+					<div className={styles.label}>Email</div>
+					<input
+						className={email.error ? styles.invalidInput : styles.input}
+						{...conform.input(email)}
+					/>
+					<p className={styles.errorMessage}>{password.error}</p>
+				</label>
+				<label className="block">
+					<div className={styles.label}>Password</div>
+					<input
+						className={password.error ? styles.invalidInput : styles.input}
+						{...conform.input(password, { type: 'password' })}
+					/>
+					<p className={styles.errorMessage}>{password.error}</p>
+				</label>
+				<label className="block">
+					<div className={styles.label}>Confirm Password</div>
+					<input
+						className={confirm.error ? styles.invalidInput : styles.input}
+						{...conform.input(confirm, { type: 'password' })}
+					/>
+					<p className={styles.errorMessage}>{confirm.error}</p>
+				</label>
+				<button type="submit" className={styles.buttonPrimary}>
+					Sign up
+				</button>
+			</fieldset>
+		</form>
 	);
 }

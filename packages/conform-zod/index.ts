@@ -9,7 +9,7 @@ import {
 	parse as baseParse,
 	transform,
 	getName,
-	isFieldElement,
+	getFieldElements,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -212,7 +212,7 @@ export function parse<T>(
 	}
 }
 
-export function createFieldset<T extends Record<string, any>>(
+export function resolve<T extends Record<string, any>>(
 	schema: z.ZodType<T>,
 ): Schema<T> {
 	const parse = createParser(schema);
@@ -220,20 +220,20 @@ export function createFieldset<T extends Record<string, any>>(
 
 	return {
 		// @ts-expect-error
-		constraint: Object.fromEntries(
+		fields: Object.fromEntries(
 			Object.entries(shape).map<[string, Constraint<any>]>(([key, def]) => [
 				key,
 				inferConstraint(def),
 			]),
 		),
-		validate(fieldset: FieldsetElement, options: { name?: string } = {}) {
+		validate(fieldset: FieldsetElement) {
 			const formData = new FormData(fieldset.form);
 			const entries = Array.from(formData.entries()).reduce<
 				Array<[string, string]>
 			>((result, [key, value]) => {
-				if (!options.name || key.startsWith(`${options.name}.`)) {
+				if (!fieldset.name || key.startsWith(`${fieldset.name}.`)) {
 					result.push([
-						key.slice(options.name ? options.name.length + 1 : 0),
+						key.slice(fieldset.name ? fieldset.name.length + 1 : 0),
 						value.toString(),
 					]);
 				}
@@ -246,27 +246,12 @@ export function createFieldset<T extends Record<string, any>>(
 			const errors = !result.success ? result.error.errors : [];
 
 			for (const key of Object.keys(shape)) {
-				const name = options.name ? getName([options.name, key]) : key;
-				const item = fieldset.elements.namedItem(name);
-				const nodes =
-					item instanceof RadioNodeList
-						? Array.from(item)
-						: item !== null
-						? [item]
-						: [];
+				const fields = getFieldElements(fieldset, key);
 				const validationMessage =
-					errors.find((e) => name === getName(e.path))?.message ?? '';
+					errors.find((e) => key === e.path[0])?.message ?? '';
 
-				for (const node of nodes) {
-					if (!isFieldElement(node)) {
-						console.warn(
-							`Unexpected element with key "${key}"; Received`,
-							node,
-						);
-						continue;
-					}
-
-					node.setCustomValidity(validationMessage);
+				for (const field of fields) {
+					field.setCustomValidity(validationMessage);
 				}
 			}
 		},

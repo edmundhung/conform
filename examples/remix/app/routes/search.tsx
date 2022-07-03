@@ -1,13 +1,14 @@
-import { useForm, useFieldset, f, getFields } from '@conform-to/react';
+import { getFieldElements } from '@conform-to/dom';
+import { useForm, useFieldset, conform } from '@conform-to/react';
 import { styles } from '~/helpers';
 
 interface State {
-	keyword: string;
+	keyword?: string;
 	category: string;
 }
 
 export default function SearchForm() {
-	const form = useForm({
+	const formProps = useForm({
 		/**
 		 * Optional - Decide when the error should be reported initially
 		 * Default to ['onSubmit'].
@@ -34,15 +35,14 @@ export default function SearchForm() {
 			console.log('Submitted', payload);
 		},
 	});
-	const [fieldset, fields] = useFieldset<State>({
+	const [fieldsetProps, { keyword, category }] = useFieldset<State>({
 		/**
 		 * Required - Define the fields and coresponding constraint
 		 * All keys will be used as the name of the field
 		 */
-		constraint: {
+		fields: {
 			keyword: {
-				required: true,
-				minLength: 3,
+				minLength: 4,
 			},
 			category: {
 				required: true,
@@ -50,17 +50,14 @@ export default function SearchForm() {
 		},
 		/**
 		 * Optional - Customise validation behaviour
-		 * Fallbacks to native validation message provided by the vendor
+		 * Fallbacks to native validation message provided by the browser vendors
 		 */
 		validate(element) {
-			const [keyword] = getFields(element, 'keyword');
+			const [keyword] = getFieldElements(element, 'keyword');
 
-			if (keyword.validity.valueMissing) {
-				// Native constraint (required) with custom message
-				keyword.setCustomValidity('Keyword is required');
-			} else if (keyword.validity.tooShort) {
+			if (keyword.validity.tooShort) {
 				// Native constraint (minLength) with custom message
-				keyword.setCustomValidity('Please fill in at least 3 characters');
+				keyword.setCustomValidity('Please fill in at least 4 characters');
 			} else if (keyword.value === 'something') {
 				// Custom constraint
 				keyword.setCustomValidity('Be a little more specific please');
@@ -76,25 +73,21 @@ export default function SearchForm() {
 	});
 
 	return (
-		<form {...form}>
-			<fieldset className={styles.form} {...fieldset}>
+		<form {...formProps}>
+			<fieldset className={styles.form} {...fieldsetProps}>
 				<label className="block">
 					<div className={styles.label}>Keyword</div>
 					<input
-						className={
-							fields.keyword.error ? styles.inputWithError : styles.input
-						}
-						{...f.input(fields.keyword)}
+						className={keyword.error ? styles.invalidInput : styles.input}
+						{...conform.input(keyword)}
 					/>
-					<p className={styles.errorMessage}>{fields.keyword.error}</p>
+					<p className={styles.errorMessage}>{keyword.error}</p>
 				</label>
 				<label className="block">
 					<div className={styles.label}>Category</div>
 					<select
-						className={
-							fields.category.error ? styles.inputWithError : styles.input
-						}
-						{...f.select(fields.category)}
+						className={category.error ? styles.invalidInput : styles.input}
+						{...conform.select(category)}
 					>
 						<option value="">Please select</option>
 						<option value="book">Book</option>
@@ -102,7 +95,7 @@ export default function SearchForm() {
 						<option value="movie">Movie</option>
 						<option value="music">Music</option>
 					</select>
-					<p className={styles.errorMessage}>{fields.category.error}</p>
+					<p className={styles.errorMessage}>{category.error}</p>
 				</label>
 				<button type="submit" className={styles.buttonPrimary}>
 					Search
