@@ -62,17 +62,16 @@ function configurePackage(name) {
 }
 
 export default function rollup() {
-	let builds = [
+	const packages = [
 		// Base
-		...configurePackage('conform-dom'),
+		'conform-dom',
 
 		// Validator integration
-		...configurePackage('conform-zod'),
+		'conform-zod',
 
 		// View integration
-		...configurePackage('conform-react'),
-		// ...configurePackage('conform-remix-react'),
+		'conform-react',
 	];
 
-	return builds;
+	return packages.flatMap(configurePackage);
 }

@@ -7,7 +7,7 @@
 	"module": "module/index.js",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/edmundhung/conforms",
+		"url": "https://github.com/edmundhung/conform",
 		"directory": "packages/conform-dom"
 	},
 	"author": {
@@ -16,7 +16,7 @@
 		"url": "https://edmund.dev"
 	},
 	"bugs": {
-		"url": "https://github.com/edmundhung/conforms/issues"
+		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"keywords": [
 		"constraint-validation",
