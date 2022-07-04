@@ -1,27 +1,42 @@
 # @conform-to/dom
 
-> Utility library built on top of the [Constraint Validation](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation) API
+> A set of opinionated helpers interacting with the DOM elements
 
 ## API Reference
 
-- [isFieldsetElement](#isFieldsetElement)
-- [isFieldElement](#isFieldElement)
-- [setFieldState](#setFieldState)
-- [reportValidity](#reportValidity)
-- [getFieldElementsEntries](#getFieldElementsEntries)
-- [validate](#validate)
+- [createControlButton](#createControlButton)
 - [createFieldConfig](#createFieldConfig)
+- [getFieldElements](#getFieldElements)
+- [getName](#getName)
+- [getPaths](#getPaths)
+- [isFieldElement](#isFieldElement)
+- [parse](#parse)
+- [reportValidity](#reportValidity)
+- [setFieldState](#setFieldState)
+- [shouldSkipValidate](#shouldSkipValidate)
+- [setFieldState](#setFieldState)
+- [transform](#transform)
 
-### isFieldsetElement
+### createControlButton
+
+### createFieldConfig
+
+### getFieldElements
+
+### getName
+
+### getPaths
 
 ### isFieldElement
 
-### setFieldState
+### isFieldsetElement
+
+### parse
 
 ### reportValidity
 
-### getFieldElementsEntries
+### setFieldState
 
-### validate
+### shouldSkipValidate
 
-### createFieldConfig
+### transform

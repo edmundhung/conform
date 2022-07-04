@@ -1,12 +1,12 @@
 # @conform-to/zod
 
-> Schema config with [Zod](https://github.com/colinhacks/zod)
+> Schema resolver integrating [zod](https://github.com/colinhacks/zod) for end-to-end type safety
 
 ## API Reference
 
-- [createFieldset](#createFieldset)
 - [parse](#parse)
-
-### createFieldset
+- [resolve](#resolve)
 
 ### parse
+
+### resolve

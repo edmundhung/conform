@@ -1,15 +1,21 @@
 # @conform-to/react
 
-> React form validation built on top of the [Constraint Validation](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation) API
+> View adapter for [react](https://github.com/facebook/react), built on top of `@conform-to/dom`
 
 ## API Reference
 
+- [conform](#conform)
+- [useControlledInput](#useControlledInput)
 - [useForm](#useForm)
-- [useFieldSet](#useFieldSet)
+- [useFieldset](#useFieldset)
 - [useFieldList](#useFieldList)
+
+### conform
+
+### useControlledInput
 
 ### useForm
 
-### useFieldSet
+### useFieldset
 
 ### useFieldList
