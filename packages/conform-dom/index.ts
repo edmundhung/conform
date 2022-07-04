@@ -1,6 +1,3 @@
-/**
- *
- */
 export type Constraint<Type> = (Type extends string | number | Date | undefined
 	? {
 			required?: boolean;
@@ -16,9 +13,6 @@ export type Constraint<Type> = (Type extends string | number | Date | undefined
 	(undefined extends Type ? { required?: false } : { required: true }) &
 	(Type extends Array<any> ? { multiple: true } : { multiple?: false });
 
-/**
- *
- */
 export interface FieldConfig<Type = any> {
 	name: string;
 	initialValue?: FieldsetData<Type, string>;
@@ -27,9 +21,6 @@ export interface FieldConfig<Type = any> {
 	constraint?: Constraint<Type>;
 }
 
-/**
- *
- */
 export type Schema<Type extends Record<string, any>> = {
 	fields: { [Key in keyof Type]-?: Constraint<Type[Key]> };
 	validate?: (element: FieldsetElement) => void;

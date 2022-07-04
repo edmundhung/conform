@@ -15,6 +15,7 @@
 		"watch": "run-p watch:*",
 		"watch:js": "npm run build:js -- --watch",
 		"watch:ts": "npm run build:ts -- --watch",
+		"example:remix": "npm run dev --workspace=./examples/remix",
 		"test": "playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"
