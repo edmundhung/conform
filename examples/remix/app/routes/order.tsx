@@ -1,7 +1,12 @@
-import type { FieldConfig } from '@conform-to/dom';
-import { useForm, useFieldset, useFieldList, conform } from '@conform-to/react';
+import {
+	type FieldConfig,
+	useForm,
+	useFieldset,
+	useFieldList,
+	conform,
+} from '@conform-to/react';
 import { parse, resolve } from '@conform-to/zod';
-import type { ActionFunction } from '@remix-run/node';
+import { type ActionFunction } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import * as z from 'zod';
 import { styles } from '~/helpers';

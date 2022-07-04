@@ -1,5 +1,4 @@
-import { test, expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { type Page, test, expect } from '@playwright/test';
 
 async function getValidationMessage(page: Page, name: string): Promise<string> {
 	return page

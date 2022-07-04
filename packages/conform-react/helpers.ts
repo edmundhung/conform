@@ -1,8 +1,8 @@
-import type { FieldConfig } from '@conform-to/dom';
-import type {
-	InputHTMLAttributes,
-	SelectHTMLAttributes,
-	TextareaHTMLAttributes,
+import { type FieldConfig } from '@conform-to/dom';
+import {
+	type InputHTMLAttributes,
+	type SelectHTMLAttributes,
+	type TextareaHTMLAttributes,
 } from 'react';
 
 export function input<Type extends string | number | Date | undefined>(

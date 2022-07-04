@@ -1,11 +1,9 @@
-import type {
-	Constraint,
-	FieldsetElement,
-	Schema,
-	FormResult,
-	FieldsetData,
-} from '@conform-to/dom';
 import {
+	type Constraint,
+	type FieldsetElement,
+	type Schema,
+	type FormResult,
+	type FieldsetData,
 	parse as baseParse,
 	transform,
 	getName,
