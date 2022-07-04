@@ -1,6 +1,12 @@
 export const styles = {
-	form: 'bg-white border drop-shadow rounded-lg p-8',
+	header: 'p-8',
+	result: 'border-l-4 border-emerald-500 pl-4 py-2 mt-4',
+	block: 'block',
+	card: 'bg-white border drop-shadow rounded-lg p-8 space-y-4',
+	list: 'space-y-4',
 	label: 'text-sm font-medium text-slate-700',
+	row: 'flex items-end gap-4',
+	rowContent: 'flex-1',
 	input: `
         peer mt-1 block w-full px-3 py-2 bg-white border
         border-slate-300 rounded-md text-sm shadow-sm 

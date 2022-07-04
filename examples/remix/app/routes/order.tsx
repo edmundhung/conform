@@ -50,49 +50,46 @@ export default function OrderForm() {
 
 	return (
 		<Form method="post" {...formProps}>
-			<main className="p-8">
-				<div className="mb-4">Order Form</div>
+			<header className={styles.header}>
+				<h1>Order Form</h1>
 				{formResult?.state === 'accepted' ? (
-					<>
-						<div className="mb-4 text-emerald-500">Success</div>
-						<pre>{JSON.stringify(formResult?.value, null, 2)}</pre>
-					</>
+					<pre className={styles.result}>
+						{JSON.stringify(formResult?.value, null, 2)}
+					</pre>
 				) : null}
-			</main>
-			<fieldset className={styles.form} {...fieldsetProps}>
-				<div className="space-y-4">
-					<div className="space-y-2">
-						{productList.map((product, index) => (
-							<div className="flex items-end gap-4" key={product.key}>
-								<div className="flex-1">
-									<ProductFieldset
-										label={`Product #${index + 1}`}
-										{...product.config}
-									/>
-								</div>
-								<button
-									className={styles.buttonWarning}
-									disabled={productList.length === 1}
-									{...control.remove(index)}
-								>
-									⨯
-								</button>
+			</header>
+			<fieldset className={styles.card} {...fieldsetProps}>
+				<div className={styles.list}>
+					{productList.map((product, index) => (
+						<div className={styles.row} key={product.key}>
+							<div className={styles.rowContent}>
+								<ProductFieldset
+									label={`Product #${index + 1}`}
+									{...product.config}
+								/>
 							</div>
-						))}
-					</div>
-					<button className={styles.buttonSecondary} {...control.append()}>
-						Add Product
-					</button>
-					<ShippingFieldset {...shipping} />
-					<label className="block">
-						<div className={styles.label}>Remarks</div>
-						<textarea
-							className={remarks.error ? styles.invalidInput : styles.input}
-							{...conform.textarea(remarks)}
-						/>
-						<p className={styles.errorMessage}>{remarks.error}</p>
-					</label>
+							<button
+								className={styles.buttonWarning}
+								disabled={productList.length === 1}
+								{...control.remove(index)}
+							>
+								⨯
+							</button>
+						</div>
+					))}
 				</div>
+				<button className={styles.buttonSecondary} {...control.append()}>
+					Add Product
+				</button>
+				<ShippingFieldset {...shipping} />
+				<label className={styles.block}>
+					<div className={styles.label}>Remarks</div>
+					<textarea
+						className={remarks.error ? styles.invalidInput : styles.input}
+						{...conform.textarea(remarks)}
+					/>
+					<p className={styles.errorMessage}>{remarks.error}</p>
+				</label>
 
 				<button type="submit" className={styles.buttonPrimary}>
 					Order now

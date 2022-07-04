@@ -99,13 +99,15 @@ export default function SearchForm() {
 
 	return (
 		<form {...formProps}>
-			<main className="p-8">
-				<div className="mb-4">Search Form</div>
+			<header className={styles.header}>
+				<h1>Search Form</h1>
 				{Array.from(searchParams.keys()).length > 0 ? (
-					<pre>{JSON.stringify(Object.fromEntries(searchParams), null, 2)}</pre>
+					<pre className={styles.result}>
+						{JSON.stringify(Object.fromEntries(searchParams), null, 2)}
+					</pre>
 				) : null}
-			</main>
-			<fieldset className={styles.form} {...fieldsetProps}>
+			</header>
+			<fieldset className={styles.card} {...fieldsetProps}>
 				<label className="block">
 					<div className={styles.label}>Keyword</div>
 					<input

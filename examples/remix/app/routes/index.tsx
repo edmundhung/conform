@@ -1,10 +1,19 @@
 import { Link } from '@remix-run/react';
+import { styles } from '~/helpers';
 
-export default function LoginForm() {
+export default function Home() {
 	return (
 		<>
-			<header className="p-8">
-				<h1 className="text-xl">conform</h1>
+			<header className={styles.header}>
+				<h1 className="text-xl">conform demo</h1>
+				<a
+					className="hover:underline"
+					href="https://github.com/edmundhung/conform"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					GitHub: edmundhung/conform
+				</a>
 			</header>
 			<ul className="bg-white border drop-shadow rounded-lg divide-y">
 				<li>

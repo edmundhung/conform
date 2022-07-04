@@ -3,6 +3,7 @@ import { resolve } from '@conform-to/zod';
 import { TextField, Button, MenuItem, Stack, Box } from '@mui/material';
 import { useState } from 'react';
 import { z } from 'zod';
+import { styles } from '~/helpers';
 
 const muiFields = z.object({
 	text: z.string(),
@@ -37,12 +38,13 @@ export default function Integration() {
 
 	return (
 		<form {...formProps}>
-			{query !== null ? (
-				<Box paddingY={3}>
-					<pre>{JSON.stringify(query, null, 2)}</pre>
-				</Box>
-			) : null}
-			<fieldset {...fieldsetProps}>
+			<header className={styles.header}>
+				<h1>Material-ui fields</h1>
+				{query !== null ? (
+					<pre className={styles.result}>{JSON.stringify(query, null, 2)}</pre>
+				) : null}
+			</header>
+			<fieldset className={styles.card} {...fieldsetProps}>
 				{selectInput}
 				<Stack spacing={3}>
 					<TextField

@@ -2,11 +2,13 @@
 
 > The API is not yet stable. Expect breaking changes on minor versions before v1 (stable release).
 
-Conform is a form validation library built on top of the [Constraint Validation](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation) API. [[Can I use?](https://caniuse.com/constraint-validation)]
+Conform is a form validation library built on top of the [Constraint Validation](https://caniuse.com/constraint-validation) API.
 
 - Transferable knowledge: Conform relies on the Web API heavily. From configuring the constraint to validating by setting custom validity. If you don't like part of the solution, you can always replace it with your own solution.
 - Schema-first: Define the data structure and map it to smaller individual fieldset, then compose them to make complex form. Conform aims at making easy form easy, complex form simple.
 - Framework agnostic: The DOM is the only thing it depends on. At the end, it's just HTML &copy;
+
+Demo: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix?file=/app/routes/search.tsx) | [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/remix?file=app%2Froutes%2Fsearch.tsx)
 
 ## Packages
 

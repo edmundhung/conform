@@ -21,8 +21,26 @@ export const meta: MetaFunction = () => ({
 	viewport: 'width=device-width,initial-scale=1',
 });
 
+const repository = 'https://github.com/edmundhung/conform';
+
+function getSource(pathname: string): string | null {
+	switch (pathname) {
+		case '/search':
+			return `${repository}/blob/main/examples/remix/app/routes/search.tsx`;
+		case '/signup':
+			return `${repository}/blob/main/examples/remix/app/routes/signup.tsx`;
+		case '/order':
+			return `${repository}/blob/main/examples/remix/app/routes/order.tsx`;
+		case '/material-ui':
+			return `${repository}/blob/main/examples/remix/app/routes/material-ui.tsx`;
+	}
+
+	return null;
+}
+
 export default function App() {
 	const location = useLocation();
+	const source = getSource(location.pathname);
 
 	return (
 		<html lang="en" className="h-full bg-gray-50">
@@ -33,21 +51,23 @@ export default function App() {
 			<body className="h-full">
 				<div className="max-w-lg mx-auto p-8">
 					<Outlet />
-					<footer className="flex justify-between text-sm p-8 flex-row-reverse">
-						<a
-							className="hover:underline"
-							href="https://github.com/edmundhung/conform"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							GitHub
-						</a>
-						{location.pathname !== '/' ? (
+					{location.pathname !== '/' ? (
+						<footer className="flex justify-between text-sm p-8 flex-row-reverse">
+							{source ? (
+								<a
+									className="hover:underline"
+									href={source}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									[Source]
+								</a>
+							) : null}
 							<Link className="hover:underline" to="/">
-								More examples
+								Back
 							</Link>
-						) : null}
-					</footer>
+						</footer>
+					) : null}
 				</div>
 				<ScrollRestoration />
 				<Scripts />

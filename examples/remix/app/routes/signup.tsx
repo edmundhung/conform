@@ -38,14 +38,16 @@ export default function SignupForm() {
 
 	return (
 		<Form method="post" {...formProps}>
-			<main className="p-8">
-				<div className="mb-4">Signup</div>
+			<header className={styles.header}>
+				<h1>Signup Form</h1>
 				{formResult?.state === 'accepted' ? (
-					<pre>{JSON.stringify(formResult?.value, null, 2)}</pre>
+					<pre className={styles.result}>
+						{JSON.stringify(formResult?.value, null, 2)}
+					</pre>
 				) : null}
-			</main>
-			<fieldset className={styles.form} {...fieldsetProps}>
-				<label className="block">
+			</header>
+			<fieldset className={styles.card} {...fieldsetProps}>
+				<label className={styles.block}>
 					<div className={styles.label}>Email</div>
 					<input
 						className={email.error ? styles.invalidInput : styles.input}
@@ -53,7 +55,7 @@ export default function SignupForm() {
 					/>
 					<p className={styles.errorMessage}>{email.error}</p>
 				</label>
-				<label className="block">
+				<label className={styles.block}>
 					<div className={styles.label}>Password</div>
 					<input
 						className={password.error ? styles.invalidInput : styles.input}
@@ -61,7 +63,7 @@ export default function SignupForm() {
 					/>
 					<p className={styles.errorMessage}>{password.error}</p>
 				</label>
-				<label className="block">
+				<label className={styles.block}>
 					<div className={styles.label}>Confirm Password</div>
 					<input
 						className={confirm.error ? styles.invalidInput : styles.input}
