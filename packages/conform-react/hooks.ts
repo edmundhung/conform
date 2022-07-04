@@ -18,11 +18,13 @@ import {
 	type FormEventHandler,
 	type FormHTMLAttributes,
 	type RefObject,
+	type ReactElement,
 	useRef,
 	useState,
 	useEffect,
 	useMemo,
 	useReducer,
+	createElement,
 } from 'react';
 
 interface FormConfig {
@@ -409,4 +411,61 @@ export function useFieldList<Type extends Array<any>>(
 	}, [size]);
 
 	return [list, controls];
+}
+
+interface InputControl {
+	value: string;
+	onChange: (value: string) => void;
+	onBlur: () => void;
+}
+
+export function useControlledInput<
+	T extends string | number | Date | undefined,
+>(field: FieldConfig<T>): [ReactElement, InputControl] {
+	const [value, setValue] = useState<string>(`${field.initialValue ?? ''}`);
+	const [shouldBlur, setShouldBlur] = useState(false);
+	const ref = useRef<HTMLInputElement>(null);
+	const input = useMemo(
+		() =>
+			createElement('input', {
+				...field.constraint,
+				ref,
+				name: field.name,
+				defaultValue: field.initialValue,
+				style: { display: 'none' },
+				'aria-hidden': true,
+			}),
+		[field.constraint, field.name, field.initialValue],
+	);
+
+	useEffect(() => {
+		if (!ref.current) {
+			return;
+		}
+
+		ref.current.value = value;
+		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
+	}, [value]);
+
+	useEffect(() => {
+		if (!shouldBlur) {
+			return;
+		}
+
+		ref.current?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+		setShouldBlur(false);
+	}, [shouldBlur]);
+
+	return [
+		input,
+		{
+			value,
+			onChange: (value: string) => {
+				setValue(value);
+			},
+			onBlur: () => {
+				setShouldBlur(true);
+			},
+		},
+	];
 }
