@@ -1,8 +1,8 @@
 {
 	"name": "@conform-to/dom",
-	"description": "Utility library built on top of the Constraint Validation API",
+	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {

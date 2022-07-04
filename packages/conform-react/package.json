@@ -1,8 +1,8 @@
 {
 	"name": "@conform-to/react",
-	"description": "React form validation built on top of the Constraint Validation API",
+	"description": "Conform view adapter for react",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -19,7 +19,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "0.0.1"
+		"@conform-to/dom": "0.1.0"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"
