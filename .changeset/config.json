@@ -6,6 +6,10 @@
 	"linked": [],
 	"access": "public",
 	"baseBranch": "main",
-	"updateInternalDependencies": "patch",
-	"ignore": []
+	"updateInternalDependencies": "minor",
+	"ignore": ["@conform-to/remix-example"],
+	"___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+		"onlyUpdatePeerDependentsWhenOutOfRange": true,
+		"useCalculatedVersionForSnapshots": true
+	}
 }
