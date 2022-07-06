@@ -1,0 +1,15 @@
+{
+	"$schema": "https://unpkg.com/@changesets/config@2.0.0/schema.json",
+	"changelog": "@changesets/cli/changelog",
+	"commit": false,
+	"fixed": [],
+	"linked": [],
+	"access": "public",
+	"baseBranch": "main",
+	"updateInternalDependencies": "minor",
+	"ignore": ["@conform-to/remix-example"],
+	"___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+		"onlyUpdatePeerDependentsWhenOutOfRange": true,
+		"useCalculatedVersionForSnapshots": true
+	}
+}

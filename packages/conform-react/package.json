@@ -19,7 +19,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "0.1.0"
+		"@conform-to/dom": "^0.1.0"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"
