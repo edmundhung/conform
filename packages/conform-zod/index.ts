@@ -11,12 +11,9 @@ import {
 } from '@conform-to/dom';
 import * as z from 'zod';
 
-function inferConstraint<T extends z.ZodTypeAny>(
-	schema: T,
-): Constraint<z.infer<T>> {
+function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 	let def = schema;
 
-	// @ts-expect-error
 	const constraint: Constraint = {
 		required: !def.isOptional(),
 	};
@@ -219,7 +216,7 @@ export function resolve<T extends Record<string, any>>(
 	return {
 		// @ts-expect-error
 		fields: Object.fromEntries(
-			Object.entries(shape).map<[string, Constraint<any>]>(([key, def]) => [
+			Object.entries(shape).map<[string, Constraint]>(([key, def]) => [
 				key,
 				inferConstraint(def),
 			]),
