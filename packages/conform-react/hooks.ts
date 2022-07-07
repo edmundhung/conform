@@ -358,7 +358,6 @@ export function useFieldList<Type extends Array<any>>(
 					name: `${config.name}[${index}]`,
 					initialValue: config.initialValue?.[index],
 					error: config.error?.[index],
-					// @ts-expect-error
 					constraint: {
 						...config.constraint,
 						multiple: false,

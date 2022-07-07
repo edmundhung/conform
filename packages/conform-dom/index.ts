@@ -1,28 +1,24 @@
-export type Constraint<Type> = (Type extends string | number | Date | undefined
-	? {
-			required?: boolean;
-			minLength?: number;
-			maxLength?: number;
-			min?: string;
-			max?: string;
-			step?: string;
-			multiple?: boolean;
-			pattern?: string;
-	  }
-	: {}) &
-	(undefined extends Type ? { required?: false } : { required: true }) &
-	(Type extends Array<any> ? { multiple: true } : { multiple?: false });
+export type Constraint = {
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	min?: string;
+	max?: string;
+	step?: string;
+	multiple?: boolean;
+	pattern?: string;
+};
 
 export interface FieldConfig<Type = any> {
 	name: string;
 	initialValue?: FieldsetData<Type, string>;
 	error?: FieldsetData<Type, string>;
 	form?: string;
-	constraint?: Constraint<Type>;
+	constraint?: Constraint;
 }
 
 export type Schema<Type extends Record<string, any>> = {
-	fields: { [Key in keyof Type]-?: Constraint<Type[Key]> };
+	fields: { [Key in keyof Type]-?: Constraint };
 	validate?: (element: FieldsetElement) => void;
 };
 
@@ -148,7 +144,6 @@ export function createFieldConfig<Type extends Record<string, any>>(
 			form: options.form,
 			initialValue: options.initialValue?.[key],
 			error: options.error?.[key],
-			// @ts-expect-error
 			constraint,
 		};
 
