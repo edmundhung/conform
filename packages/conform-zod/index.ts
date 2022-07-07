@@ -87,33 +87,19 @@ function getSchemaShape<T extends Record<string, any>>(
 function createParser<T extends z.ZodType<any>>(
 	schema: T,
 ): (data: unknown) => unknown {
-	if (schema instanceof z.ZodString || schema instanceof z.ZodEnum) {
+	if (
+		schema instanceof z.ZodString ||
+		schema instanceof z.ZodEnum ||
+		schema instanceof z.ZodNumber ||
+		schema instanceof z.ZodDate ||
+		schema instanceof z.ZodBoolean
+	) {
 		return (value) => {
-			if (typeof value !== 'string' || value === '') {
+			if (value === '') {
 				return;
 			}
 
 			return value;
-		};
-	} else if (schema instanceof z.ZodNumber) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return Number(value);
-		};
-	} else if (schema instanceof z.ZodDate) {
-		return (value) => {
-			if (typeof value !== 'string' || value === '') {
-				return;
-			}
-
-			return new Date(value);
-		};
-	} else if (schema instanceof z.ZodBoolean) {
-		return (value) => {
-			return value === 'on';
 		};
 	} else if (schema instanceof z.ZodOptional) {
 		const def = schema.unwrap();

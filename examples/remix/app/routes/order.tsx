@@ -13,9 +13,12 @@ import { styles } from '~/helpers';
 
 const product = z.object({
 	item: z.string({ required_error: 'Product name is required' }),
-	quantity: z
-		.number({ required_error: 'Required', invalid_type_error: 'Invalid' })
-		.min(1, 'Min. 1'),
+	quantity: z.preprocess(
+		Number,
+		z
+			.number({ required_error: 'Required', invalid_type_error: 'Invalid' })
+			.min(1, 'Min. 1'),
+	),
 });
 
 const shipping = z.object({
