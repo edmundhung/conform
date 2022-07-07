@@ -14,6 +14,7 @@ const signup = z
 			.string({ required_error: 'Password is required' })
 			.min(8, 'The minimum password length is 8 characters'),
 		confirm: z.string({ required_error: 'Confirm password is required' }),
+		remember: z.boolean(),
 	})
 	.refine((value) => value.password === value.confirm, {
 		message: 'The password do not match',
@@ -32,9 +33,12 @@ export let action: ActionFunction = async ({ request }) => {
 export default function SignupForm() {
 	const formResult = useActionData();
 	const formProps = useForm();
-	const [fieldsetProps, { email, password, confirm }] = useFieldset(schema, {
-		error: formResult?.error,
-	});
+	const [fieldsetProps, { email, password, confirm, remember }] = useFieldset(
+		schema,
+		{
+			error: formResult?.error,
+		},
+	);
 
 	return (
 		<Form method="post" {...formProps}>
@@ -70,6 +74,19 @@ export default function SignupForm() {
 						{...conform.input(confirm, { type: 'password' })}
 					/>
 					<p className={styles.errorMessage}>{confirm.error}</p>
+				</label>
+				<label className={styles.optionLabel}>
+					<input
+						className={styles.optionInput}
+						{...conform.input(remember, {
+							type: 'checkbox',
+						})}
+					/>
+					<span
+						className={remember.error ? styles.invalidOption : styles.option}
+					>
+						Remember me
+					</span>
 				</label>
 				<button type="submit" className={styles.buttonPrimary}>
 					Sign up

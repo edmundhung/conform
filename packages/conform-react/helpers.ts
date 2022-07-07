@@ -5,23 +5,17 @@ import {
 	type TextareaHTMLAttributes,
 } from 'react';
 
-export function input<Type extends string | number | Date | undefined>(
+export function input<
+	Type extends string | number | Date | boolean | undefined,
+>(
 	config: FieldConfig<Type>,
 	{ type, value }: { type?: string; value?: string } = {},
 ): InputHTMLAttributes<HTMLInputElement> {
 	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
-
-	return {
+	const attributes: InputHTMLAttributes<HTMLInputElement> = {
 		type,
 		name: config.name,
 		form: config.form,
-		value: isCheckboxOrRadio ? value : undefined,
-		defaultValue: !isCheckboxOrRadio
-			? `${config.initialValue ?? ''}`
-			: undefined,
-		defaultChecked: isCheckboxOrRadio
-			? config.initialValue === value
-			: undefined,
 		required: config.constraint?.required,
 		minLength: config.constraint?.minLength,
 		maxLength: config.constraint?.maxLength,
@@ -30,6 +24,15 @@ export function input<Type extends string | number | Date | undefined>(
 		step: config.constraint?.step,
 		pattern: config.constraint?.pattern,
 	};
+
+	if (isCheckboxOrRadio) {
+		attributes.value = value ?? 'on';
+		attributes.defaultChecked = config.initialValue === attributes.value;
+	} else {
+		attributes.defaultValue = `${config.initialValue ?? ''}`;
+	}
+
+	return attributes;
 }
 
 export function select<T extends any>(
