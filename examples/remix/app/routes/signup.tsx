@@ -14,7 +14,7 @@ const signup = z
 			.string({ required_error: 'Password is required' })
 			.min(8, 'The minimum password length is 8 characters'),
 		confirm: z.string({ required_error: 'Confirm password is required' }),
-		remember: z.boolean(),
+		remember: z.boolean().optional(),
 	})
 	.refine((value) => value.password === value.confirm, {
 		message: 'The password do not match',

@@ -63,11 +63,6 @@ function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 					break;
 			}
 		}
-	} else if (schema instanceof z.ZodBoolean) {
-		// Making a checkbox required would result in either `true` or undefined
-		// It would be simpler to treat undefined or empty string as `false` and
-		// make it always optional in the form instead
-		constraint.required = false;
 	}
 
 	return constraint;
