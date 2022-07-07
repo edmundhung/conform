@@ -660,16 +660,6 @@ video {
 		var(--tw-sepia) var(--tw-drop-shadow);
 }
 
-.invalid\:border-pink-500:invalid {
-	--tw-border-opacity: 1;
-	border-color: rgb(236 72 153 / var(--tw-border-opacity));
-}
-
-.invalid\:text-pink-600:invalid {
-	--tw-text-opacity: 1;
-	color: rgb(219 39 119 / var(--tw-text-opacity));
-}
-
 .focus\:border-indigo-500:focus {
 	--tw-border-opacity: 1;
 	border-color: rgb(99 102 241 / var(--tw-border-opacity));
@@ -694,16 +684,26 @@ video {
 	--tw-ring-color: rgb(99 102 241 / var(--tw-ring-opacity));
 }
 
-.focus\:invalid\:border-pink-500:invalid:focus {
+.peer:valid ~ .peer-valid\:invisible {
+	visibility: hidden;
+}
+
+.touched\:invalid\:border-pink-500:invalid[data-touched='true'] {
 	--tw-border-opacity: 1;
 	border-color: rgb(236 72 153 / var(--tw-border-opacity));
 }
 
-.focus\:invalid\:ring-pink-500:invalid:focus {
-	--tw-ring-opacity: 1;
-	--tw-ring-color: rgb(236 72 153 / var(--tw-ring-opacity));
+.touched\:invalid\:text-pink-600:invalid[data-touched='true'] {
+	--tw-text-opacity: 1;
+	color: rgb(219 39 119 / var(--tw-text-opacity));
 }
 
-.peer:valid ~ .peer-valid\:invisible {
-	visibility: hidden;
+.touched\:focus\:invalid\:border-pink-500:invalid:focus[data-touched='true'] {
+	--tw-border-opacity: 1;
+	border-color: rgb(236 72 153 / var(--tw-border-opacity));
+}
+
+.touched\:focus\:invalid\:ring-pink-500:invalid:focus[data-touched='true'] {
+	--tw-ring-opacity: 1;
+	--tw-ring-color: rgb(236 72 153 / var(--tw-ring-opacity));
 }
