@@ -1,5 +1,4 @@
 export const styles = {
-	container: 'lg:grid lg:grid-cols-2 lg:gap-6',
 	input: `
         peer mt-1 focus:ring-indigo-500 focus:border-indigo-500
         block w-full shadow-sm lg:text-sm border-gray-300 rounded-md

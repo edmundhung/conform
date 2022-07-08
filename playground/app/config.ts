@@ -4,20 +4,8 @@ import { z } from 'zod';
 
 const FormConfigSchema = z.object({
 	initialReport: z.enum(['onSubmit', 'onBlur', 'onChange']).optional(),
-	noValidate: z.preprocess((value) => {
-		if (typeof value === 'undefined') {
-			return;
-		}
-
-		return true;
-	}, z.boolean().optional()),
-	fallbackNative: z.preprocess((value) => {
-		if (typeof value === 'undefined') {
-			return;
-		}
-
-		return true;
-	}, z.boolean().optional()),
+	noValidate: z.boolean().optional(),
+	fallbackNative: z.boolean().optional(),
 });
 
 export type FormConfig = z.infer<typeof FormConfigSchema>;

@@ -8,7 +8,7 @@ import {
 } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 import { useState } from 'react';
-import { Field, Fieldset } from '~/components';
+import { Field, Playground } from '~/components';
 import { useFormConfig } from '~/config';
 import { styles } from '~/helpers';
 
@@ -48,32 +48,34 @@ export default function Basic() {
 	const [fieldsetProps, { email, password, age }] = useFieldset(schema);
 
 	return (
-		<Form className={styles.container} {...formProps}>
-			<Fieldset
-				title="Basic"
-				description="React only example"
-				result={result}
-				{...fieldsetProps}
-			>
-				<Field label="Email" error={email.error}>
-					<input
-						className={styles.input}
-						{...conform.input(email, { type: 'email' })}
-					/>
-				</Field>
-				<Field label="Password" error={password.error}>
-					<input
-						className={styles.input}
-						{...conform.input(password, { type: 'password' })}
-					/>
-				</Field>
-				<Field label="Age" error={age.error}>
-					<input
-						className={styles.input}
-						{...conform.input(age, { type: 'number' })}
-					/>
-				</Field>
-			</Fieldset>
-		</Form>
+		<Playground
+			title="Basic"
+			description="React only example"
+			result={result}
+			form="basic"
+		>
+			<Form id="basic" {...formProps}>
+				<fieldset {...fieldsetProps}>
+					<Field label="Email" error={email.error}>
+						<input
+							className={styles.input}
+							{...conform.input(email, { type: 'email' })}
+						/>
+					</Field>
+					<Field label="Password" error={password.error}>
+						<input
+							className={styles.input}
+							{...conform.input(password, { type: 'password' })}
+						/>
+					</Field>
+					<Field label="Age" error={age.error}>
+						<input
+							className={styles.input}
+							{...conform.input(age, { type: 'number' })}
+						/>
+					</Field>
+				</fieldset>
+			</Form>
+		</Playground>
 	);
 }
