@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: Tests
 on:
   push:
     branches:
@@ -9,8 +9,8 @@ on:
     - main
 jobs:
 
-  test:
-    name: 🔍 Testing
+  e2e:
+    name: 🔍 E2E Testing
     runs-on: ubuntu-latest
     steps:
     - name: 🛑 Cancel Previous Runs
@@ -25,9 +25,9 @@ jobs:
       uses: bahmutov/npm-install@v1
     - name: 🎭 Install Playwright
       run: npx playwright install --with-deps
-    - name: 📦 Build the worker
+    - name: 📦 Build the packages
       run: npm run build
-    - name: 💣 Run some tests
+    - name: 💣 Run playwright tests
       run: npm run test
     - uses: actions/upload-artifact@v2
       if: always()

@@ -40,6 +40,9 @@ const config: PlaywrightTestConfig = {
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: 'on-first-retry',
+
+		// DEBUG
+		headless: !process.env.DEBUG,
 	},
 
 	/* Configure projects for major browsers */
@@ -99,7 +102,7 @@ const config: PlaywrightTestConfig = {
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: 'npm run dev --workspace=./examples/remix',
+		command: 'npm run playground',
 		port: 3000,
 	},
 };
