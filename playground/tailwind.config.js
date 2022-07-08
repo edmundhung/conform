@@ -1,3 +1,4 @@
+let form = require('@tailwindcss/forms');
 let plugin = require('tailwindcss/plugin');
 
 module.exports = {
@@ -6,6 +7,7 @@ module.exports = {
 		extend: {},
 	},
 	plugins: [
+		form,
 		plugin(function ({ addVariant }) {
 			addVariant('touched', '&[data-touched="true"]');
 		}),

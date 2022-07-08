@@ -1,4 +1,8 @@
-import type { MetaFunction, LinksFunction } from '@remix-run/node';
+import type {
+	MetaFunction,
+	LinksFunction,
+	LoaderFunction,
+} from '@remix-run/node';
 import {
 	Links,
 	LiveReload,
@@ -7,7 +11,10 @@ import {
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
+
 import stylesUrl from '~/styles/tailwind.css';
+import { getFormConfig } from '~/config';
+import { styles } from './helpers';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
@@ -19,6 +26,13 @@ export const meta: MetaFunction = () => ({
 	viewport: 'width=device-width,initial-scale=1',
 });
 
+export let loader: LoaderFunction = ({ request }) => {
+	const url = new URL(request.url);
+	const config = getFormConfig(url.searchParams);
+
+	return config;
+};
+
 export default function App() {
 	return (
 		<html lang="en">
@@ -26,7 +40,7 @@ export default function App() {
 				<Meta />
 				<Links />
 			</head>
-			<body>
+			<body className="antialiased font-sans bg-gray-200 max-w-7xl mx-auto py-10 lg:px-6 lg:px-8">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />
