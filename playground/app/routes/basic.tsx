@@ -111,8 +111,6 @@ function CustomValidationFieldset() {
 
 			if (number.validity.valueMissing) {
 				number.setCustomValidity('Number is required');
-			} else if (number.validity.typeMismatch) {
-				number.setCustomValidity('Number is invalid');
 			} else if (
 				number.validity.rangeUnderflow ||
 				number.validity.rangeOverflow
