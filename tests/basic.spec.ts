@@ -8,35 +8,28 @@ async function clickSubmitButton(playground: Locator): Promise<void> {
 	return playground.locator('button[type="submit"]').click();
 }
 
-async function getValidationMessage(
-	playground: Locator,
-	name: string,
-): Promise<string> {
-	return playground
-		.locator(`[name="${name}"]`)
-		.evaluate<
-			string,
-			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-		>((field) => field.validationMessage);
+async function getValidationMessage(field: Locator): Promise<string> {
+	return field.evaluate<
+		string,
+		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+	>((field) => field.validationMessage);
 }
 
 async function getErrorMessages(playground: Locator): Promise<string[]> {
 	return playground.locator('label > p').allInnerTexts();
 }
 
-async function getConstraint(playground: Locator, name: string) {
-	return playground
-		.locator(`[name="${name}"]`)
-		.evaluate((input: HTMLInputElement) => ({
-			required: input.required,
-			minLength: input.minLength,
-			maxLength: input.maxLength,
-			min: input.min,
-			max: input.max,
-			step: input.step,
-			multiple: input.multiple,
-			pattern: input.pattern,
-		}));
+async function getConstraint(field: Locator) {
+	return field.evaluate((input: HTMLInputElement) => ({
+		required: input.required,
+		minLength: input.minLength,
+		maxLength: input.maxLength,
+		min: input.min,
+		max: input.max,
+		step: input.step,
+		multiple: input.multiple,
+		pattern: input.pattern,
+	}));
 }
 
 async function getFormResult(playground: Locator): Promise<unknown> {
@@ -46,17 +39,17 @@ async function getFormResult(playground: Locator): Promise<unknown> {
 	return data;
 }
 
-test.describe('Native Constraint', () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto('/basic');
-	});
+test.beforeEach(async ({ page }) => {
+	await page.goto('/basic');
+});
 
+test.describe('Native Constraint', () => {
 	test('configure all input fields correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
 		const [email, password, age] = await Promise.all([
-			getConstraint(playground, 'email'),
-			getConstraint(playground, 'password'),
-			getConstraint(playground, 'age'),
+			getConstraint(playground.locator('[name="email"]')),
+			getConstraint(playground.locator('[name="password"]')),
+			getConstraint(playground.locator('[name="age"]')),
 		]);
 
 		expect({ email, password, age }).toEqual({
@@ -93,49 +86,54 @@ test.describe('Native Constraint', () => {
 		});
 	});
 
-	test('report validation message on submit', async ({ page }) => {
+	test('report error message provided by the browser vendor', async ({
+		page,
+	}) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
+		const email = playground.locator('[name="email"]');
+		const password = playground.locator('[name="password"]');
+		const age = playground.locator('[name="age"]');
 
 		await clickSubmitButton(playground);
 
 		expect(await getErrorMessages(playground)).toEqual(
 			await Promise.all([
-				getValidationMessage(playground, 'email'),
-				getValidationMessage(playground, 'password'),
-				getValidationMessage(playground, 'age'),
+				getValidationMessage(email),
+				getValidationMessage(password),
+				getValidationMessage(age),
 			]),
 		);
 
-		await playground.locator('[name="email"]').type('me@edmund.dev');
+		await email.type('me@edmund.dev');
 		expect(await getErrorMessages(playground)).toEqual(
 			await Promise.all([
 				'',
-				getValidationMessage(playground, 'password'),
-				getValidationMessage(playground, 'age'),
+				getValidationMessage(password),
+				getValidationMessage(age),
 			]),
 		);
 
-		await playground.locator('[name="password"]').type('conform!');
+		await password.type('conform!');
 		expect(await getErrorMessages(playground)).toEqual(
 			await Promise.all([
 				'',
-				getValidationMessage(playground, 'password'),
-				getValidationMessage(playground, 'age'),
+				getValidationMessage(password),
+				getValidationMessage(age),
 			]),
 		);
 
-		await playground.locator('[name="password"]').fill('');
-		await playground.locator('[name="password"]').type('constraintvalidation');
+		await password.fill('');
+		await password.type('constraintvalidation');
 		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all(['', '', getValidationMessage(playground, 'age')]),
+			await Promise.all(['', '', getValidationMessage(age)]),
 		);
 
-		await playground.locator('[name="age"]').type('9');
+		await age.type('9');
 		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all(['', '', getValidationMessage(playground, 'age')]),
+			await Promise.all(['', '', getValidationMessage(age)]),
 		);
 
-		await playground.locator('[name="age"]').type('1'); // 9 -> 91
+		await age.type('1'); // 9 -> 91
 		expect(await getErrorMessages(playground)).toEqual(['', '', '']);
 
 		await clickSubmitButton(playground);
