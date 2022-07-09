@@ -8,11 +8,22 @@ async function clickSubmitButton(playground: Locator): Promise<void> {
 	return playground.locator('button[type="submit"]').click();
 }
 
+async function clickResetButton(playground: Locator): Promise<void> {
+	return playground.locator('button[type="reset"]').click();
+}
+
 async function getValidationMessage(field: Locator): Promise<string> {
 	return field.evaluate<
 		string,
 		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 	>((field) => field.validationMessage);
+}
+
+async function isTouched(field: Locator): Promise<boolean> {
+	return field.evaluate<
+		boolean,
+		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+	>((field) => typeof field.dataset.touched !== 'undefined');
 }
 
 async function getErrorMessages(playground: Locator): Promise<string[]> {
@@ -186,5 +197,46 @@ test.describe('Custom Constraint', () => {
 			number: '10',
 			accept: 'on',
 		});
+	});
+
+	test('clear error messages, touched state and reset validity on reset', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Custom Constraint');
+		const number = playground.locator('[name="number"]');
+		const accept = playground.locator('[name="accept"]');
+
+		const initialValidationMessages = [
+			'Number is required',
+			'Please accept before submit',
+		];
+
+		await clickSubmitButton(playground);
+
+		expect(
+			await Promise.all([isTouched(number), isTouched(accept)]),
+		).not.toContain(false);
+		expect(await getErrorMessages(playground)).toEqual(
+			initialValidationMessages,
+		);
+
+		await number.type('5');
+
+		expect(await getErrorMessages(playground)).not.toEqual(
+			initialValidationMessages,
+		);
+
+		await clickResetButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual(['', '']);
+		expect(
+			await Promise.all([
+				getValidationMessage(number),
+				getValidationMessage(accept),
+			]),
+		).toEqual(initialValidationMessages);
+		expect(
+			await Promise.all([isTouched(number), isTouched(accept)]),
+		).not.toContain(true);
 	});
 });

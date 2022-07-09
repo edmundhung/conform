@@ -156,7 +156,6 @@ interface FieldsetProps {
 	name?: string;
 	form?: string;
 	onInput: FormEventHandler<HTMLFieldSetElement>;
-	onReset: FormEventHandler<HTMLFieldSetElement>;
 	onInvalid: FormEventHandler<HTMLFieldSetElement>;
 }
 
@@ -278,6 +277,21 @@ export function useFieldset<Type extends Record<string, any>>(
 
 			schema.validate?.(fieldset);
 			dispatch({ type: 'cleanup', payload: { fieldset } });
+
+			const resetHandler = (e: Event) => {
+				if (e.target !== fieldset.form) {
+					return;
+				}
+
+				schema.validate?.(fieldset);
+				dispatch({ type: 'reset' });
+			};
+
+			document.addEventListener('reset', resetHandler);
+
+			return () => {
+				document.removeEventListener('reset', resetHandler);
+			};
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[schema.validate],
@@ -303,10 +317,6 @@ export function useFieldset<Type extends Record<string, any>>(
 
 				schema.validate?.(fieldset);
 				dispatch({ type: 'cleanup', payload: { fieldset } });
-			},
-			onReset(e: FormEvent<FieldsetElement>) {
-				setFieldState(e.currentTarget, { touched: false });
-				dispatch({ type: 'reset' });
 			},
 			onInvalid(e: FormEvent<FieldsetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
