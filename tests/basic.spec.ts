@@ -71,7 +71,7 @@ test.describe('Native Constraint', () => {
 				min: '',
 				max: '',
 				step: '',
-				multiple: false,
+				multiple: true,
 				pattern: '',
 			},
 			password: {

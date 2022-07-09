@@ -23,6 +23,7 @@ export function input<
 		max: config.constraint?.max,
 		step: config.constraint?.step,
 		pattern: config.constraint?.pattern,
+		multiple: config.constraint?.multiple,
 	};
 
 	if (isCheckboxOrRadio) {
