@@ -51,6 +51,7 @@ function NativeConstraintFieldset() {
 		fields: {
 			email: {
 				required: true,
+				multiple: true,
 			},
 			password: {
 				required: true,
