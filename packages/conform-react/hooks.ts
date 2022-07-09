@@ -102,7 +102,11 @@ export function useForm({
 		}
 
 		const handleChange = (event: Event) => {
-			if (!isFieldElement(event.target) || event.target?.form !== ref.current) {
+			if (
+				!ref.current ||
+				!isFieldElement(event.target) ||
+				event.target?.form !== ref.current
+			) {
 				return;
 			}
 
@@ -110,12 +114,14 @@ export function useForm({
 				setFieldState(event.target, { touched: true });
 			}
 
-			if (ref.current) {
-				reportValidity(ref.current);
-			}
+			reportValidity(ref.current);
 		};
 		const handleBlur = (event: FocusEvent) => {
-			if (!isFieldElement(event.target) || event.target?.form !== ref.current) {
+			if (
+				!ref.current ||
+				!isFieldElement(event.target) ||
+				event.target?.form !== ref.current
+			) {
 				return;
 			}
 
@@ -123,17 +129,15 @@ export function useForm({
 				setFieldState(event.target, { touched: true });
 			}
 
-			if (ref.current) {
-				reportValidity(ref.current);
-			}
+			reportValidity(ref.current);
 		};
 
-		document.body.addEventListener('input', handleChange);
-		document.body.addEventListener('focusout', handleBlur);
+		document.addEventListener('input', handleChange);
+		document.addEventListener('focusout', handleBlur);
 
 		return () => {
-			document.body.removeEventListener('input', handleChange);
-			document.body.removeEventListener('focusout', handleBlur);
+			document.removeEventListener('input', handleChange);
+			document.removeEventListener('focusout', handleBlur);
 		};
 	}, [noValidate, initialReport]);
 
