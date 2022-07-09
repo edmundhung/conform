@@ -144,3 +144,47 @@ test.describe('Native Constraint', () => {
 		});
 	});
 });
+
+test.describe('Custom Constraint', () => {
+	test('report error messages correctly', async ({ page }) => {
+		const playground = getPlaygroundLocator(page, 'Custom Constraint');
+		const number = playground.locator('[name="number"]');
+		const accept = playground.locator('[name="accept"]');
+
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			'Number is required',
+			'Please accept before submit',
+		]);
+
+		await number.type('0');
+		expect(await getErrorMessages(playground)).toEqual([
+			'Number must be between 1 and 10',
+			'Please accept before submit',
+		]);
+
+		await number.fill('');
+		await number.type('5');
+		expect(await getErrorMessages(playground)).toEqual([
+			'Are you sure?',
+			'Please accept before submit',
+		]);
+
+		await number.fill('');
+		await number.type('10');
+		expect(await getErrorMessages(playground)).toEqual([
+			'',
+			'Please accept before submit',
+		]);
+
+		await accept.check();
+		expect(await getErrorMessages(playground)).toEqual(['', '']);
+
+		await clickSubmitButton(playground);
+		expect(await getFormResult(playground)).toEqual({
+			number: '10',
+			accept: 'on',
+		});
+	});
+});
