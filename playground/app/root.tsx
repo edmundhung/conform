@@ -14,7 +14,6 @@ import {
 
 import stylesUrl from '~/styles/tailwind.css';
 import { getFormConfig } from '~/config';
-import { styles } from './helpers';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
@@ -40,7 +39,7 @@ export default function App() {
 				<Meta />
 				<Links />
 			</head>
-			<body className="antialiased font-sans bg-gray-200 max-w-7xl mx-auto py-10 lg:px-6 lg:px-8">
+			<body className="antialiased font-sans bg-gray-100 max-w-7xl mx-auto py-10 lg:px-8">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />

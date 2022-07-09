@@ -1,5 +1,8 @@
+import { type FormResult } from '@conform-to/dom';
+import { parse as baseParse } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { useFormAction, useMatches } from '@remix-run/react';
+import { type FormEventHandler, useState } from 'react';
 import { z } from 'zod';
 
 const FormConfigSchema = z.object({
@@ -34,4 +37,34 @@ export function useFormConfig(): [FormConfig, string] {
 	}
 
 	return [config, `${action}?${searchParams}`];
+}
+
+export function useFormResult(): [
+	Record<string, FormResult<any> | undefined>,
+	FormEventHandler<HTMLFormElement>,
+	FormEventHandler<HTMLFormElement>,
+] {
+	const [map, setMap] = useState({});
+	const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+		e.preventDefault();
+
+		const form = e.currentTarget;
+		const formData = new FormData(form);
+		const result = baseParse(formData);
+
+		setMap((map) => ({
+			...map,
+			[form.id]: result,
+		}));
+	};
+	const handleReset: FormEventHandler<HTMLFormElement> = (e) => {
+		const form = e.currentTarget;
+
+		setMap((map) => ({
+			...map,
+			[form.id]: undefined,
+		}));
+	};
+
+	return [map, handleSubmit, handleReset];
 }

@@ -1,81 +1,154 @@
-import { type FormResult } from '@conform-to/dom';
 import {
-	type Schema,
 	useFieldset,
 	conform,
 	useForm,
-	parse,
+	getFieldElements,
 } from '@conform-to/react';
 import { Form } from '@remix-run/react';
-import { useState } from 'react';
 import { Field, Playground } from '~/components';
-import { useFormConfig } from '~/config';
+import { useFormConfig, useFormResult } from '~/config';
 import { styles } from '~/helpers';
 
-const schema: Schema<{ email: string; password: string; age: string }> = {
-	fields: {
-		email: {
-			required: true,
-		},
-		password: {
-			required: true,
-			minLength: 8,
-			maxLength: 20,
-			pattern: '[0-9a-zA-Z]{8,20}',
-		},
-		age: {
-			min: '1',
-			max: '100',
-			step: '10',
-		},
-	},
-};
-
 export default function Basic() {
-	const [result, setResult] = useState<FormResult<any> | undefined>();
+	const [result, onSubmit, onReset] = useFormResult();
 	const [config] = useFormConfig();
 	const formProps = useForm({
 		...config,
-		onSubmit(e) {
-			e.preventDefault();
-
-			const formData = new FormData(e.currentTarget);
-			const result = parse(formData);
-
-			setResult(result);
-		},
+		onSubmit,
+		onReset,
 	});
-	const [fieldsetProps, { email, password, age }] = useFieldset(schema);
 
 	return (
-		<Playground
-			title="Basic"
-			description="React only example"
-			result={result}
-			form="basic"
-		>
-			<Form id="basic" {...formProps}>
-				<fieldset {...fieldsetProps}>
-					<Field label="Email" error={email.error}>
-						<input
-							className={styles.input}
-							{...conform.input(email, { type: 'email' })}
-						/>
-					</Field>
-					<Field label="Password" error={password.error}>
-						<input
-							className={styles.input}
-							{...conform.input(password, { type: 'password' })}
-						/>
-					</Field>
-					<Field label="Age" error={age.error}>
-						<input
-							className={styles.input}
-							{...conform.input(age, { type: 'number' })}
-						/>
-					</Field>
-				</fieldset>
-			</Form>
-		</Playground>
+		<>
+			<Playground
+				title="Native constraints"
+				description="Reporting error messages provided by the browser vendor"
+				result={result['native']}
+				form="native"
+			>
+				<Form id="native" {...formProps}>
+					<NativeConstraintFieldset />
+				</Form>
+			</Playground>
+			<hr className={styles.divider} />
+			<Playground
+				title="Custom constraints"
+				description="Setting up custom validation rules with user-defined error messages"
+				result={result['custom']}
+				form="custom"
+			>
+				<Form id="custom" {...formProps}>
+					<CustomValidationFieldset />
+				</Form>
+			</Playground>
+		</>
+	);
+}
+
+function NativeConstraintFieldset() {
+	const [fieldsetProps, { email, password, age }] = useFieldset<{
+		email: string;
+		password: string;
+		age: string;
+	}>({
+		fields: {
+			email: {
+				required: true,
+			},
+			password: {
+				required: true,
+				minLength: 8,
+				maxLength: 20,
+				pattern: '[0-9a-zA-Z]{8,20}',
+			},
+			age: {
+				min: '1',
+				max: '100',
+				step: '10',
+			},
+		},
+	});
+
+	return (
+		<fieldset {...fieldsetProps}>
+			<Field label="Email" error={email.error}>
+				<input
+					className={styles.input}
+					{...conform.input(email, { type: 'email' })}
+				/>
+			</Field>
+			<Field label="Password" error={password.error}>
+				<input
+					className={styles.input}
+					{...conform.input(password, { type: 'password' })}
+				/>
+			</Field>
+			<Field label="Age" error={age.error}>
+				<input
+					className={styles.input}
+					{...conform.input(age, { type: 'number' })}
+				/>
+			</Field>
+		</fieldset>
+	);
+}
+
+function CustomValidationFieldset() {
+	const [fieldsetProps, { number, accept }] = useFieldset<{
+		number: string;
+		accept: string;
+	}>({
+		fields: {
+			number: {
+				required: true,
+				min: '1',
+				max: '10',
+			},
+			accept: {
+				required: true,
+			},
+		},
+		validate(element) {
+			const [number] = getFieldElements(element, 'number');
+			const [accept] = getFieldElements(element, 'accept');
+
+			if (number.validity.valueMissing) {
+				number.setCustomValidity('Number is required');
+			} else if (number.validity.typeMismatch) {
+				number.setCustomValidity('Number is invalid');
+			} else if (
+				number.validity.rangeUnderflow ||
+				number.validity.rangeOverflow
+			) {
+				number.setCustomValidity('Number must be between 1 and 10');
+			} else if (number.value === '5') {
+				number.setCustomValidity('Are you sure?');
+			} else {
+				number.setCustomValidity('');
+			}
+
+			if (accept.validity.valueMissing) {
+				accept.setCustomValidity('Please accept before submit');
+			} else {
+				accept.setCustomValidity('');
+			}
+		},
+	});
+
+	return (
+		<fieldset {...fieldsetProps}>
+			<Field label="Your lucky number" error={number.error} inline>
+				<input
+					className={styles.input}
+					{...conform.input(number, { type: 'number' })}
+				/>
+			</Field>
+			<Field label="Accept" error={accept.error} inline>
+				<input
+					className={styles.checkbox}
+					{...conform.input(accept, { type: 'checkbox' })}
+				/>
+			</Field>
+		</fieldset>
 	);
 }
