@@ -12,32 +12,29 @@ import { styles } from '~/helpers';
 export default function Basic() {
 	const [result, onSubmit, onReset] = useFormResult();
 	const [config] = useFormConfig();
-	const formProps = useForm({
-		...config,
-		onSubmit,
-		onReset,
-	});
+	const nativeFormProps = useForm({ ...config, onSubmit, onReset });
+	const customFormProps = useForm({ ...config, onSubmit, onReset });
 
 	return (
 		<>
 			<Playground
-				title="Native constraints"
+				title="Native Constraint"
 				description="Reporting error messages provided by the browser vendor"
 				result={result['native']}
 				form="native"
 			>
-				<Form id="native" {...formProps}>
+				<Form id="native" {...nativeFormProps}>
 					<NativeConstraintFieldset />
 				</Form>
 			</Playground>
 			<hr className={styles.divider} />
 			<Playground
-				title="Custom constraints"
+				title="Custom Constraint"
 				description="Setting up custom validation rules with user-defined error messages"
 				result={result['custom']}
 				form="custom"
 			>
-				<Form id="custom" {...formProps}>
+				<Form id="custom" {...customFormProps}>
 					<CustomValidationFieldset />
 				</Form>
 			</Playground>

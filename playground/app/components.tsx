@@ -42,7 +42,7 @@ export function Playground<T>({
 	children,
 }: PlaygroundProps<T>) {
 	return (
-		<div className="lg:grid lg:grid-cols-2 lg:gap-6">
+		<div className="lg:grid lg:grid-cols-2 lg:gap-6" data-playground={title}>
 			<aside className="flex flex-col">
 				<header className="px-4 lg:px-0">
 					<h3 className="text-lg font-medium leading-6 text-gray-900">
