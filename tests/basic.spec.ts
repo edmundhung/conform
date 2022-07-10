@@ -1,54 +1,14 @@
-import { type Page, type Locator, test, expect } from '@playwright/test';
-
-function getPlaygroundLocator(page: Page, title: string): Locator {
-	return page.locator(`[data-playground="${title}"]`);
-}
-
-async function clickSubmitButton(playground: Locator): Promise<void> {
-	return playground.locator('button[type="submit"]').click();
-}
-
-async function clickResetButton(playground: Locator): Promise<void> {
-	return playground.locator('button[type="reset"]').click();
-}
-
-async function getValidationMessage(field: Locator): Promise<string> {
-	return field.evaluate<
-		string,
-		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-	>((field) => field.validationMessage);
-}
-
-async function isTouched(field: Locator): Promise<boolean> {
-	return field.evaluate<
-		boolean,
-		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-	>((field) => typeof field.dataset.touched !== 'undefined');
-}
-
-async function getErrorMessages(playground: Locator): Promise<string[]> {
-	return playground.locator('label > p').allInnerTexts();
-}
-
-async function getConstraint(field: Locator) {
-	return field.evaluate((input: HTMLInputElement) => ({
-		required: input.required,
-		minLength: input.minLength,
-		maxLength: input.maxLength,
-		min: input.min,
-		max: input.max,
-		step: input.step,
-		multiple: input.multiple,
-		pattern: input.pattern,
-	}));
-}
-
-async function getFormResult(playground: Locator): Promise<unknown> {
-	const result = await playground.locator('pre').innerText();
-	const data = JSON.parse(result);
-
-	return data;
-}
+import { test, expect } from '@playwright/test';
+import {
+	getPlaygroundLocator,
+	getConstraint,
+	clickSubmitButton,
+	getErrorMessages,
+	getValidationMessage,
+	getFormResult,
+	isTouched,
+	clickResetButton,
+} from './helpers';
 
 test.beforeEach(async ({ page }) => {
 	await page.goto('/basic');
