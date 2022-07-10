@@ -16,6 +16,7 @@ export default function ZodIntegration() {
 		<>
 			<Playground
 				title="Type Conversion"
+				description="Parsing the form data based on the defined preprocess with zod"
 				result={getResult('type', (formData) =>
 					parse(formData, typeConversionSchema),
 				)}
@@ -25,7 +26,6 @@ export default function ZodIntegration() {
 					<TypeConversionFieldset />
 				</Form>
 			</Playground>
-			<hr className={styles.divider} />
 		</>
 	);
 }
