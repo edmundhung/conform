@@ -26,21 +26,21 @@ export function Field({ label, inline, error, children }: FieldProps) {
 	);
 }
 
-interface PlaygroundProps<T> {
+interface PlaygroundProps {
 	title: string;
 	description?: string;
-	form?: string;
-	result?: FormResult<T>;
+	form: string;
+	result?: FormResult<unknown>;
 	children: ReactElement;
 }
 
-export function Playground<T>({
+export function Playground({
 	title,
 	description,
 	form,
 	result,
 	children,
-}: PlaygroundProps<T>) {
+}: PlaygroundProps) {
 	return (
 		<div className="lg:grid lg:grid-cols-2 lg:gap-6" data-playground={title}>
 			<aside className="flex flex-col">
@@ -61,6 +61,7 @@ export function Playground<T>({
 			</aside>
 			<div>
 				<main className="shadow lg:rounded-md lg:overflow-hidden">
+					<input type="hidden" name="playground" value={form} form={form} />
 					<div className="mt-5 lg:mt-0 lg:col-span-2 px-4 py-5 bg-white lg:p-6">
 						{children}
 					</div>

@@ -3,26 +3,25 @@ import { parse, resolve } from '@conform-to/zod';
 import { Form } from '@remix-run/react';
 import { z } from 'zod';
 import { Field, Playground } from '~/components';
-import { useFormConfig, useFormResult } from '~/config';
 import { styles } from '~/helpers';
+import { loader, action, useActionData } from '~/playground';
 
-const schema = z.object({
-	number: z.preprocess(Number, z.number()),
-	boolean: z.preprocess((value) => value === 'Yes', z.boolean()),
-	datetime: z.preprocess((value) => new Date(value as any), z.date()),
-});
+export { loader, action };
 
 export default function ZodIntegration() {
-	const [result, onSubmit, onReset] = useFormResult((payload) =>
-		parse(payload, schema),
-	);
-	const [config] = useFormConfig();
-	const typeFormProps = useForm({ ...config, onSubmit, onReset });
+	const { config, action, getResult } = useActionData();
+	const typeFormProps = useForm(config);
 
 	return (
 		<>
-			<Playground title="Type Conversion" result={result['type']} form="type">
-				<Form id="type" {...typeFormProps}>
+			<Playground
+				title="Type Conversion"
+				result={getResult('type', (formData) =>
+					parse(formData, typeConversionSchema),
+				)}
+				form="type"
+			>
+				<Form id="type" method="post" action={action} {...typeFormProps}>
 					<TypeConversionFieldset />
 				</Form>
 			</Playground>
@@ -31,9 +30,15 @@ export default function ZodIntegration() {
 	);
 }
 
+const typeConversionSchema = z.object({
+	number: z.preprocess(Number, z.number()),
+	boolean: z.preprocess((value) => value === 'Yes', z.boolean()),
+	datetime: z.preprocess((value) => new Date(value as any), z.date()),
+});
+
 function TypeConversionFieldset() {
 	const [fieldsetProps, { number, datetime, boolean }] = useFieldset(
-		resolve(schema),
+		resolve(typeConversionSchema),
 	);
 
 	return (

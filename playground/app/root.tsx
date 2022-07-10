@@ -1,8 +1,4 @@
-import type {
-	MetaFunction,
-	LinksFunction,
-	LoaderFunction,
-} from '@remix-run/node';
+import type { MetaFunction, LinksFunction } from '@remix-run/node';
 import {
 	Links,
 	LiveReload,
@@ -11,9 +7,7 @@ import {
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
-
 import stylesUrl from '~/styles/tailwind.css';
-import { getFormConfig } from '~/config';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
@@ -24,13 +18,6 @@ export const meta: MetaFunction = () => ({
 	title: 'Conform Playground',
 	viewport: 'width=device-width,initial-scale=1',
 });
-
-export let loader: LoaderFunction = ({ request }) => {
-	const url = new URL(request.url);
-	const config = getFormConfig(url.searchParams);
-
-	return config;
-};
 
 export default function App() {
 	return (

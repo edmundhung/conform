@@ -3,28 +3,28 @@ import {
 	conform,
 	useForm,
 	getFieldElements,
-	parse,
 } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 import { Field, Playground } from '~/components';
-import { useFormConfig, useFormResult } from '~/config';
 import { styles } from '~/helpers';
+import { action, loader, useActionData } from '~/playground';
+
+export { loader, action };
 
 export default function Basic() {
-	const [result, onSubmit, onReset] = useFormResult(parse);
-	const [config] = useFormConfig();
-	const nativeFormProps = useForm({ ...config, onSubmit, onReset });
-	const customFormProps = useForm({ ...config, onSubmit, onReset });
+	const { config, action, getResult } = useActionData();
+	const nativeFormProps = useForm(config);
+	const customFormProps = useForm(config);
 
 	return (
 		<>
 			<Playground
 				title="Native Constraint"
 				description="Reporting error messages provided by the browser vendor"
-				result={result['native']}
+				result={getResult('native')}
 				form="native"
 			>
-				<Form id="native" {...nativeFormProps}>
+				<Form id="native" method="post" action={action} {...nativeFormProps}>
 					<NativeConstraintFieldset />
 				</Form>
 			</Playground>
@@ -32,10 +32,10 @@ export default function Basic() {
 			<Playground
 				title="Custom Constraint"
 				description="Setting up custom validation rules with user-defined error messages"
-				result={result['custom']}
+				result={getResult('custom')}
 				form="custom"
 			>
-				<Form id="custom" {...customFormProps}>
+				<Form id="custom" method="post" action={action} {...customFormProps}>
 					<CustomValidationFieldset />
 				</Form>
 			</Playground>
