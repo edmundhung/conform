@@ -12,15 +12,17 @@ import {
 import * as z from 'zod';
 
 function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
-	let def = schema;
-
 	const constraint: Constraint = {
-		required: !def.isOptional(),
+		required: true,
 	};
 
-	if (schema instanceof z.ZodArray) {
-		constraint.multiple = true;
-		def = schema.element;
+	if (schema instanceof z.ZodEffects) {
+		return inferConstraint(schema.innerType());
+	} else if (schema instanceof z.ZodOptional) {
+		return {
+			...inferConstraint(schema.unwrap()),
+			required: false,
+		};
 	}
 
 	if (schema instanceof z.ZodString) {
@@ -54,11 +56,6 @@ function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 				case 'max':
 					if (!constraint.max || constraint.max > check.value) {
 						constraint.max = check.value;
-					}
-					break;
-				case 'multipleOf':
-					if (!constraint.step) {
-						constraint.step = check.value;
 					}
 					break;
 			}
