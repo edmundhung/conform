@@ -3,6 +3,7 @@ import {
 	conform,
 	useForm,
 	getFieldElements,
+	parse,
 } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 import { Field, Playground } from '~/components';
@@ -10,7 +11,7 @@ import { useFormConfig, useFormResult } from '~/config';
 import { styles } from '~/helpers';
 
 export default function Basic() {
-	const [result, onSubmit, onReset] = useFormResult();
+	const [result, onSubmit, onReset] = useFormResult(parse);
 	const [config] = useFormConfig();
 	const nativeFormProps = useForm({ ...config, onSubmit, onReset });
 	const customFormProps = useForm({ ...config, onSubmit, onReset });

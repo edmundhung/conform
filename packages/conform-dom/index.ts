@@ -29,6 +29,7 @@ export type FieldsetData<Type, Value> = Type extends
 	| string
 	| number
 	| Date
+	| boolean
 	| undefined
 	? Value
 	: Type extends Array<infer InnerType>

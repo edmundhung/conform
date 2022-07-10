@@ -1,5 +1,4 @@
 import { type FormResult } from '@conform-to/dom';
-import { parse as baseParse } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { useFormAction, useMatches } from '@remix-run/react';
 import { type FormEventHandler, useState } from 'react';
@@ -39,8 +38,10 @@ export function useFormConfig(): [FormConfig, string] {
 	return [config, `${action}?${searchParams}`];
 }
 
-export function useFormResult(): [
-	Record<string, FormResult<any> | undefined>,
+export function useFormResult<T>(
+	parse: (payload: FormData | URLSearchParams) => FormResult<T>,
+): [
+	Record<string, FormResult<T> | undefined>,
 	FormEventHandler<HTMLFormElement>,
 	FormEventHandler<HTMLFormElement>,
 ] {
@@ -50,7 +51,7 @@ export function useFormResult(): [
 
 		const form = e.currentTarget;
 		const formData = new FormData(form);
-		const result = baseParse(formData);
+		const result = parse(formData);
 
 		setMap((map) => ({
 			...map,
