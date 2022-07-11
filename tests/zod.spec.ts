@@ -68,9 +68,12 @@ test.describe('Type Conversion', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getFormResult(playground)).toEqual({
-			number: 123,
-			datetime: '2022-07-04T12:00:00.000Z',
-			boolean: true,
+			state: 'accepted',
+			value: {
+				number: 123,
+				datetime: '2022-07-04T12:00:00.000Z',
+				boolean: true,
+			},
 		});
 	});
 });

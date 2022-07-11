@@ -50,11 +50,17 @@ export function Playground({
 					</h3>
 					<p className="mt-1 mb-2 text-sm text-gray-600">{description}</p>
 				</header>
-				{result?.state === 'accepted' ? (
+				{result ? (
 					<details open={true}>
 						<summary>Result</summary>
-						<pre className="m-4 border-l-4 border-emerald-500 pl-4 py-2 mt-4">
-							{JSON.stringify(result.value, null, 2)}
+						<pre
+							className={`m-4 border-l-4 ${
+								result.state === 'rejected'
+									? 'border-pink-600'
+									: 'border-emerald-500'
+							} pl-4 py-2 mt-4`}
+						>
+							{JSON.stringify(result, null, 2)}
 						</pre>
 					</details>
 				) : null}
