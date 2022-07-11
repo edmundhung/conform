@@ -13,14 +13,15 @@ test.beforeEach(async ({ page }) => {
 test.describe('Native Constraint', () => {
 	test('infer constraint correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
-		const [subject, remarks, grade] = await Promise.all([
-			getConstraint(playground.locator('[name="subject"]')),
+		const [name, remarks, score, grade] = await Promise.all([
+			getConstraint(playground.locator('[name="name"]')),
 			getConstraint(playground.locator('[name="remarks"]')),
+			getConstraint(playground.locator('[name="score"]')),
 			getConstraint(playground.locator('[name="grade"]')),
 		]);
 
-		expect({ subject, remarks, grade }).toEqual({
-			subject: {
+		expect({ name, remarks, score, grade }).toEqual({
+			name: {
 				required: true,
 				minLength: 8,
 				maxLength: 20,
@@ -40,7 +41,7 @@ test.describe('Native Constraint', () => {
 				multiple: false,
 				pattern: '',
 			},
-			grade: {
+			score: {
 				required: false,
 				minLength: -1,
 				maxLength: -1,
@@ -49,6 +50,16 @@ test.describe('Native Constraint', () => {
 				step: '',
 				multiple: false,
 				pattern: '',
+			},
+			grade: {
+				required: false,
+				minLength: -1,
+				maxLength: -1,
+				min: '',
+				max: '',
+				step: '',
+				multiple: false,
+				pattern: 'A|B|C|D|E|F',
 			},
 		});
 	});

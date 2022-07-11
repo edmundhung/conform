@@ -68,6 +68,13 @@ function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 					break;
 			}
 		}
+	} else if (schema instanceof z.ZodEnum) {
+		constraint.pattern = schema.options
+			.map((option: string) =>
+				// To escape unsafe characters on regex
+				option.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'),
+			)
+			.join('|');
 	}
 
 	return constraint;

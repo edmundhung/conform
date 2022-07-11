@@ -44,29 +44,30 @@ export default function ZodIntegration() {
 }
 
 const nativeConstraintSchema = z.object({
-	subject: z
+	name: z
 		.string()
 		.min(8)
 		.max(20)
 		.regex(/^[0-9a-zA-Z]{8,20}$/),
 	remarks: z.string().optional(),
-	grade: z.preprocess(
+	score: z.preprocess(
 		(value) => (typeof value !== 'undefined' ? Number(value) : undefined),
 		z.number().min(1).max(100).step(10).optional(),
 	),
+	grade: z.enum(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
 });
 
 function NativeConstraintFieldset() {
-	const [fieldsetProps, { subject, remarks, grade }] = useFieldset(
+	const [fieldsetProps, { name, remarks, grade, score }] = useFieldset(
 		resolve(nativeConstraintSchema),
 	);
 
 	return (
 		<fieldset {...fieldsetProps}>
-			<Field label="Subject" error={subject.error}>
+			<Field label="Name" error={name.error}>
 				<input
 					className={styles.input}
-					{...conform.input(subject, { type: 'text' })}
+					{...conform.input(name, { type: 'text' })}
 				/>
 			</Field>
 			<Field label="Remarks" error={remarks.error}>
@@ -75,10 +76,16 @@ function NativeConstraintFieldset() {
 					{...conform.input(remarks, { type: 'text' })}
 				/>
 			</Field>
+			<Field label="Score" error={score.error}>
+				<input
+					className={styles.input}
+					{...conform.input(score, { type: 'number' })}
+				/>
+			</Field>
 			<Field label="Grade" error={grade.error}>
 				<input
 					className={styles.input}
-					{...conform.input(grade, { type: 'number' })}
+					{...conform.input(grade, { type: 'text' })}
 				/>
 			</Field>
 		</fieldset>
