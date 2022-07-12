@@ -24,61 +24,61 @@ Feel free to **SKIP** setting up this hook if the native browser behaviour fullf
 import { useForm } from '@conform-to/react';
 
 function RandomForm() {
-	const setupForm = useForm({
-		/**
-		 * Decide when the error should be reported initially.
-		 * Options: onSubmit | onBlur | onChange
-		 * Default: onSubmit
-		 */
-		initialReport: 'onBlur',
+  const setupForm = useForm({
+    /**
+     * Decide when the error should be reported initially.
+     * Options: onSubmit | onBlur | onChange
+     * Default: onSubmit
+     */
+    initialReport: 'onBlur',
 
-		/**
-		 * Native browser report will be enabled before hydation
-		 * if this is set to `true`.
-		 * Default: `false`
-		 */
-		fallbackNative: true,
+    /**
+     * Native browser report will be enabled before hydation
+     * if this is set to `true`.
+     * Default: `false`
+     */
+    fallbackNative: true,
 
-		/**
-		 * The form could be submitted regardless of any invalid
-		 * inputs exists or not if this is set to `true`.
-		 * Default: `false`
-		 */
-		noValidate: false,
+    /**
+     * The form could be submitted regardless of any invalid
+     * inputs exists or not if this is set to `true`.
+     * Default: `false`
+     */
+    noValidate: false,
 
-		/**
-		 * The submit handler will be triggered when
-		 * (1) All the fields are valid, or
-		 * (2) noValidate is set to `true`
-		 */
-		onSubmit(e) {
-			// ...
-		},
+    /**
+     * The submit handler will be triggered when
+     * (1) All the fields are valid, or
+     * (2) noValidate is set to `true`
+     */
+    onSubmit(e) {
+        // ...
+    },
 
-		/**
-		 * The reset handler will be triggered when
-		 * (1) The reset button of the form is clicked, or
-		 * (2) The reset function of the form is called
-		 */
-		onReset(e) {
-			// ...
-		},
-	});
+    /**
+     * The reset handler will be triggered when
+     * (1) The reset button of the form is clicked, or
+     * (2) The reset function of the form is called
+     */
+    onReset(e) {
+        // ...
+    },
+  });
 
-	return <form {...setupForm}>{/* ... */}</form>;
+  return <form {...setupForm}>{/* ... */}</form>;
 
-	// This is equivalent to:
-	//
-	// return (
-	//     <form
-	//         ref={setupForm.ref}
-	//         onSubmit={setupForm.onSubmit}
-	//         onReset={setupForm.onReset}
-	//         noValidate={setForm.noValidate}
-	//     >
-	//         {/* ... */}
-	//     </form>
-	// );
+  // This is equivalent to:
+  //
+  // return (
+  //     <form
+  //         ref={setupForm.ref}
+  //         onSubmit={setupForm.onSubmit}
+  //         onReset={setupForm.onReset}
+  //         noValidate={setForm.noValidate}
+  //     >
+  //         {/* ... */}
+  //     </form>
+  // );
 }
 ```
 
@@ -88,88 +88,87 @@ function RandomForm() {
 import { useFieldset } from '@conform-to/react';
 
 const schema = {
-	/**
-	 * Define the schema and the constraint of each fields
-	 */
-	fields: {
-		isbn: {
-			//
-			required: true,
-			minLength: 10,
-			maxLength: 13,
-			pattern: '[0-9]{10,13}',
-		},
-	},
+  /**
+   * Define the schema and the constraint of each fields
+   */
+  fields: {
+    isbn: {
+      required: true,
+      minLength: 10,
+      maxLength: 13,
+      pattern: '[0-9]{10,13}',
+    },
+  },
 
-	/**
-	 *
-	 *
-	 */
-	validate(element) {},
+  /**
+   *
+   *
+   */
+  validate(element) {},
 };
 
 function RandomFieldset() {
-	const [setupFieldset, fields] = useFieldset(schema, {
-		/**
-		 * Name of the fieldset (For nested fieldset)
-		 */
-		name: 'book',
+  const [setupFieldset, fields] = useFieldset(schema, {
+    /**
+     * Name of the fieldset (For nested fieldset)
+     */
+    name: 'book',
 
-		/**
-		 *  Id of the correponding form
-		 */
-		form: 'random-form-id',
+    /**
+     *  Id of the correponding form
+     */
+    form: 'random-form-id',
 
-		/**
-		 * Initial value of the fieldset
-		 */
-		initialValue: {
-			isbn: '0340013818',
-		},
+    /**
+     * Initial value of the fieldset
+     */
+    initialValue: {
+      isbn: '0340013818',
+    },
 
-		/**
-		 * To populate error reported by the server
-		 */
-		error: {
-			isbn: 'Invalid ISBN',
-		},
-	});
+    /**
+     * To populate error reported by the server
+     */
+    error: {
+      isbn: 'Invalid ISBN',
+    },
+  });
 
-	console.log(isbn.name);
-	// 'book.isbn' or
-	// 'isbn' if name is not provided
-	console.log(isbn.form);
-	// 'random-form-id' or
-	// undefined if form is not provided
-	console.log(isbn.initialValue);
-	// '0340013818' or
-	// undefined if initalValue is not provided
-	console.log(isbn.error);
-	// Latest error message
-	// 'Invalid ISBN' initially if error is provided
-	console.log(isbn.constraint);
-	//  {
-	//    required: true,
-	//    minLength: 10,
-	//    maxLength: 13,
-	//    pattern: '[0-9]{10,13}',
-	//  }
+  console.log(isbn.name);
+  // 'book.isbn' or
+  // 'isbn' if name is not provided
+  console.log(isbn.form);
+  // 'random-form-id' or
+  // undefined if form is not provided
+  console.log(isbn.initialValue);
+  // '0340013818' or
+  // undefined if initalValue is not provided
+  console.log(isbn.error);
+  // Latest error message
+  // 'Invalid ISBN' initially if error is provided
+  console.log(isbn.constraint);
+  //  {
+  //    required: true,
+  //    minLength: 10,
+  //    maxLength: 13,
+  //    pattern: '[0-9]{10,13}',
+  //  }
 
-	return <fieldset {...setupFieldset}>{/* ... */}</fieldset>;
+  return <fieldset {...setupFieldset}>{/* ... */}</fieldset>;
 
-	// This is equivalent to:
-	//
-	// return (
-	//     <fieldset
-	//         ref={setupFieldset.ref}
-	//         name={setupFieldset.name}
-	//         form={setupFieldset.form}
-	//         onInput={setupFieldset.onInput}
-	//         onInvalid={setupFieldset.onInvalid}
-	//     >
-	//         {/* ... */}
-	//     </fieldset>
-	// );
+  // This is equivalent to:
+  //
+  // return (
+  //   <fieldset
+  //     ref={setupFieldset.ref}
+  //     name={setupFieldset.name}
+  //     form={setupFieldset.form}
+  //     onInput={setupFieldset.onInput}
+  //     onInvalid={setupFieldset.onInvalid}
+  //   >
+  //     {/* ... */}
+  //   </fieldset>
+  // );
 }
 ```
 
@@ -185,51 +184,57 @@ It provides several helpers to setup a native input fields quickly:
 import { conform } from '@conform-to/react';
 
 function RandomForm() {
-	const [setupFieldset, { cateogry }] = useFieldset(/* ... */);
+  const [setupFieldset, { cateogry }] = useFieldset(/* ... */);
 
-	return (
-		<fieldset {...setupFieldset}>
-			<input {...conform.input(cateogry, { type: 'text' })} />
-			<textarea {...conform.textarea(cateogry)} />
-			<select {...conform.select(cateogry)}>{/* ... */}</select>
-		</fieldset>
-	);
+  return (
+    <fieldset {...setupFieldset}>
+      <input {...conform.input(cateogry, { type: 'text' })} />
+      <textarea {...conform.textarea(cateogry)} />
+      <select {...conform.select(cateogry)}>{/* ... */}</select>
+    </fieldset>
+  );
+}
+```
 
-	// This is equivalent to:
-	//
-	// return (
-	//     <fieldset {...setupFieldset}>
-	//         <input
-	//             type="text"
-	//             name={isbn.name}
-	//             form={isbn.form}
-	//             defaultValue={isbn.initialValue}
-	//             requried={isbn.constraint?.required}
-	//             minLength={isbn.constraint?.minLength}
-	//             maxLength={isbn.constraint?.maxLength}
-	//             min={isbn.constraint?.min}
-	//             max={isbn.constraint?.max}
-	//             multiple={isbn.constraint?.multiple}
-	//             pattern={isbn.constraint?.pattern}
-	//         >
-	//         <textarea
-	//             name={isbn.name}
-	//             form={isbn.form}
-	//             defaultValue={isbn.initialValue}
-	//             requried={isbn.constraint?.required}
-	//             minLength={isbn.constraint?.minLength}
-	//             maxLength={isbn.constraint?.maxLength}
-	//         />
-	//         <select
-	//             name={isbn.name}
-	//             form={isbn.form}
-	//             defaultValue={isbn.initialValue}
-	//             requried={isbn.constraint?.required}
-	//             multiple={isbn.constraint?.multiple}
-	//         >
-	//             {/* ... */}
-	//         </select>
-	//     </fieldset>
-	// );
+This is equivalent to:
+
+```tsx
+function RandomForm() {
+  const [setupFieldset, { cateogry }] = useFieldset(/* ... */);
+
+  return (
+    <fieldset {...setupFieldset}>
+      <input
+        type="text"
+        name={isbn.name}
+        form={isbn.form}
+        defaultValue={isbn.initialValue}
+        requried={isbn.constraint?.required}
+        minLength={isbn.constraint?.minLength}
+        maxLength={isbn.constraint?.maxLength}
+        min={isbn.constraint?.min}
+        max={isbn.constraint?.max}
+        multiple={isbn.constraint?.multiple}
+        pattern={isbn.constraint?.pattern}
+      >
+      <textarea
+        name={isbn.name}
+        form={isbn.form}
+        defaultValue={isbn.initialValue}
+        requried={isbn.constraint?.required}
+        minLength={isbn.constraint?.minLength}
+        maxLength={isbn.constraint?.maxLength}
+      />
+      <select
+        name={isbn.name}
+        form={isbn.form}
+        defaultValue={isbn.initialValue}
+        requried={isbn.constraint?.required}
+        multiple={isbn.constraint?.multiple}
+      >
+        {/* ... */}
+      </select>
+    </fieldset>
+  );
 }
 ```
