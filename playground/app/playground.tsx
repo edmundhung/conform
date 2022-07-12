@@ -52,7 +52,17 @@ export function useActionData() {
 	const action = useFormAction();
 	const [formDataById, setFormDataById] = useState<
 		Record<string, URLSearchParams | undefined>
-	>({});
+	>(() => {
+		if (actionData) {
+			const { form, entries } = actionData;
+
+			return {
+				[form]: entries,
+			};
+		}
+
+		return {};
+	});
 	const searchParams = new URLSearchParams();
 
 	for (const [key, value] of Object.entries(config)) {

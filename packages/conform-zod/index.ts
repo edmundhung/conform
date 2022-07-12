@@ -12,18 +12,28 @@ import {
 import * as z from 'zod';
 
 function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
-	let def = schema;
-
 	const constraint: Constraint = {
-		required: !def.isOptional(),
+		required: true,
 	};
 
-	if (schema instanceof z.ZodArray) {
-		constraint.multiple = true;
-		def = schema.element;
-	}
-
-	if (schema instanceof z.ZodString) {
+	if (schema instanceof z.ZodEffects) {
+		return inferConstraint(schema.innerType());
+	} else if (schema instanceof z.ZodOptional) {
+		return {
+			...inferConstraint(schema.unwrap()),
+			required: false,
+		};
+	} else if (schema instanceof z.ZodDefault) {
+		return {
+			...inferConstraint(schema.removeDefault()),
+			required: false,
+		};
+	} else if (schema instanceof z.ZodArray) {
+		return {
+			...inferConstraint(schema.element),
+			multiple: true,
+		};
+	} else if (schema instanceof z.ZodString) {
 		for (let check of schema._def.checks) {
 			switch (check.kind) {
 				case 'min':
@@ -56,13 +66,15 @@ function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 						constraint.max = check.value;
 					}
 					break;
-				case 'multipleOf':
-					if (!constraint.step) {
-						constraint.step = check.value;
-					}
-					break;
 			}
 		}
+	} else if (schema instanceof z.ZodEnum) {
+		constraint.pattern = schema.options
+			.map((option: string) =>
+				// To escape unsafe characters on regex
+				option.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'),
+			)
+			.join('|');
 	}
 
 	return constraint;
@@ -70,18 +82,16 @@ function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
 
 function getSchemaShape<T extends Record<string, any>>(
 	schema: z.ZodType<T>,
-): z.ZodRawShape {
+): z.ZodRawShape | null {
 	if (schema instanceof z.ZodObject) {
 		return schema.shape;
-	}
-
-	if (schema instanceof z.ZodEffects) {
+	} else if (schema instanceof z.ZodEffects) {
 		return getSchemaShape(schema.innerType());
+	} else if (schema instanceof z.ZodOptional) {
+		return getSchemaShape(schema.unwrap());
 	}
 
-	throw new Error(
-		'Unknown schema provided; The schema could be either ZodObject or ZodEffects only',
-	);
+	return null;
 }
 
 function createParser<T extends z.ZodType<any>>(
@@ -101,6 +111,11 @@ function createParser<T extends z.ZodType<any>>(
 
 			return value;
 		};
+	} else if (schema instanceof z.ZodDefault) {
+		const def = schema.removeDefault();
+		const parse = createParser(def);
+
+		return parse;
 	} else if (schema instanceof z.ZodOptional) {
 		const def = schema.unwrap();
 		const parse = createParser(def);
@@ -194,6 +209,12 @@ export function resolve<T extends Record<string, any>>(
 ): Schema<T> {
 	const parse = createParser(schema);
 	const shape = getSchemaShape(schema);
+
+	if (!shape) {
+		throw new Error(
+			'Unknown schema provided; The schema must have an object shape',
+		);
+	}
 
 	return {
 		// @ts-expect-error
