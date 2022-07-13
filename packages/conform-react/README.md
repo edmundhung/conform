@@ -10,6 +10,8 @@
 - [useControlledInput](#useControlledInput)
 - [conform](#conform)
 
+---
+
 ### useForm
 
 By default, the browser calls [reportValidity()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity) on the form element when you submit the form. This checks the validity of all the fields in it and reports if there are errors through the bubbles.
@@ -24,98 +26,121 @@ Feel free to **SKIP** setting up this hook if the native browser behaviour fullf
 import { useForm } from '@conform-to/react';
 
 function RandomForm() {
-  const setupForm = useForm({
+  const formConfig = useForm({
     /**
      * Decide when the error should be reported initially.
-     * Options: onSubmit | onBlur | onChange
-     * Default: onSubmit
+     * The options are `onSubmit`, `onBlur` or `onChange`.
+     * Default to `onSubmit`
      */
     initialReport: 'onBlur',
 
     /**
      * Native browser report will be enabled before hydation
-     * if this is set to `true`.
-     * Default: `false`
+     * if this is set to `true`. Default to `false`.
      */
     fallbackNative: true,
 
     /**
-     * The form could be submitted regardless of any invalid
-     * inputs exists or not if this is set to `true`.
-     * Default: `false`
+     * The form could be submitted regardless of the validity
+     * of the form if this is set to `true`. Default to 
+     * `false`.
      */
     noValidate: false,
 
     /**
-     * The submit handler will be triggered when
-     * (1) All the fields are valid, or
-     * (2) noValidate is set to `true`
+     * Form submit handler
+     * 
+     * It will NOT be called if
+     * (1) one of the fields is invalid, and
+     * (2) noValidate is set to false
      */
     onSubmit(e) {
         // ...
     },
 
     /**
-     * The reset handler will be triggered when
-     * (1) The reset button of the form is clicked, or
-     * (2) The reset function of the form is called
+     * Form reset handler
      */
     onReset(e) {
         // ...
     },
   });
 
-  return <form {...setupForm}>{/* ... */}</form>;
-
-  // This is equivalent to:
-  //
-  // return (
-  //     <form
-  //         ref={setupForm.ref}
-  //         onSubmit={setupForm.onSubmit}
-  //         onReset={setupForm.onReset}
-  //         noValidate={setForm.noValidate}
-  //     >
-  //         {/* ... */}
-  //     </form>
-  // );
+  return (
+    <form {...formConfig}>
+      {/* ... */}
+    </form>
+  );
 }
 ```
 
+<details>
+<summary>What is `formConfig`?</summary>
+
+It is a group of properties required to setup the form. They can also be set up explicitly as shown below:
+
+```tsx
+<form
+  ref={formConfig.ref}
+  onSubmit={formConfig.onSubmit}
+  onReset={formConfig.onReset}
+  noValidate={formConfig.noValidate}
+>
+  {/* ... */}
+</form>
+```
+
+</details>
+
+---
+
 ### useFieldset
+
+This hook prepares all the config you need to setup the fieldset based on the provided schema.
 
 ```tsx
 import { useFieldset } from '@conform-to/react';
 
-const schema = {
-  /**
-   * Define the schema and the constraint of each fields
-   */
-  fields: {
-    isbn: {
-      required: true,
-      minLength: 10,
-      maxLength: 13,
-      pattern: '[0-9]{10,13}',
+/**
+ * Schema of the fieldset
+ * 
+ * Defining a schema manually could be error-prone. It
+ * is strongly recommended to use a schema validation
+ * library with a schema resolver.
+ * 
+ * Currently only Zod is supported and Yup support is
+ * coming soon. Please check the corresponding package
+ * for the setup required
+ */ 
+const schema = /*
+  Assuming this to be a schema for book and it looks like this:
+
+  {
+    name: string;
+    isbn: string;
+    quantity: number;
+  }
+
+*/
+
+function BookFieldset() {
+  const [
+    fieldsetConfig,
+    {
+      name,
+      isbn,
+      quantity,
     },
-  },
-
-  /**
-   *
-   *
-   */
-  validate(element) {},
-};
-
-function RandomFieldset() {
-  const [setupFieldset, fields] = useFieldset(schema, {
+  ] = useFieldset(schema, {
     /**
-     * Name of the fieldset (For nested fieldset)
+     * Name of the fieldset
+     * Required only for nested fieldset.
      */
     name: 'book',
 
     /**
-     *  Id of the correponding form
+     * Id of the form
+     * Required only if the fieldset is placed out of the form
      */
     form: 'random-form-id',
 
@@ -127,58 +152,152 @@ function RandomFieldset() {
     },
 
     /**
-     * To populate error reported by the server
+     * Error reported by the server 
      */
     error: {
       isbn: 'Invalid ISBN',
     },
   });
 
+  /**
+   * This would be `book.isbn` instead of `isbn`
+   * if the `name` option is provided
+   */ 
   console.log(isbn.name);
-  // 'book.isbn' or
-  // 'isbn' if name is not provided
+
+  /**
+   * This would be `random-form-id`
+   * because of the `form` option provided
+   */ 
   console.log(isbn.form);
-  // 'random-form-id' or
-  // undefined if form is not provided
+
+  /**
+   * This would be `0340013818` if specified
+   * on the `initalValue` option 
+   */  
   console.log(isbn.initialValue);
-  // '0340013818' or
-  // undefined if initalValue is not provided
+
+  /**
+   * Current error message
+   * This would be 'Invalid ISBN' initially if specified 
+   * on the `error` option
+   */ 
   console.log(isbn.error);
-  // Latest error message
-  // 'Invalid ISBN' initially if error is provided
+
+  /**
+   * Constraint of the field (required, minLength etc)
+   * 
+   * For example, the constraint of the isbn field could be:
+   * {
+   *   required: true,
+   *   pattern: '[0-9]{10,13}'
+   * }
+   */ 
   console.log(isbn.constraint);
-  //  {
-  //    required: true,
-  //    minLength: 10,
-  //    maxLength: 13,
-  //    pattern: '[0-9]{10,13}',
-  //  }
 
-  return <fieldset {...setupFieldset}>{/* ... */}</fieldset>;
-
-  // This is equivalent to:
-  //
-  // return (
-  //   <fieldset
-  //     ref={setupFieldset.ref}
-  //     name={setupFieldset.name}
-  //     form={setupFieldset.form}
-  //     onInput={setupFieldset.onInput}
-  //     onInvalid={setupFieldset.onInvalid}
-  //   >
-  //     {/* ... */}
-  //   </fieldset>
-  // );
+  return (
+    <fieldset {...fieldsetConfig}>
+      {/* ... */}
+    </fieldset>)
+  );
 }
 ```
 
+<details>
+  <summary>What is `fieldsetConfig`?</summary>
+
+It is a group of properties required to setup the fieldset. They can also be set up explicitly as shown below:
+
+```tsx
+<fieldset
+  ref={fieldsetConfig.ref}
+  name={fieldsetConfig.name}
+  form={fieldsetConfig.form}
+  onInput={fieldsetConfig.onInput}
+  onInvalid={fieldsetConfig.onInvalid}
+>
+  {/* ... */}
+</fieldset>
+```
+</details>
+
+<details>
+<summary>How is a schema looks like?</summary>
+
+```tsx
+import type { Schema } from '@conform-to/react';
+
+/**
+ * Defining a schema manually
+ */ 
+const bookSchema: Schema<{
+  name: string;
+  isbn: string;
+  quantity?: number;
+}> = {
+  /**
+   * Define the fields with its constraint together
+   */
+  fields: {
+    name: {
+      required: true,
+    },
+    isbn: {
+      required: true,
+      minLength: 10,
+      maxLength: 13,
+      pattern: '[0-9]{10,13}',
+    },
+    quantity: {
+      min: '0',
+    },
+  },
+
+  /**
+   * Customise validation behaviour
+   * Fallbacks to native browser validation if not specified
+   */
+  validate(fieldset) {
+    /**
+     * Lookup the field elements using the fieldset element
+     */
+    const [name] = getFieldElements(fieldset, 'name');
+
+    if (name.validity.valueMissing) {
+			/**
+       * Setting error message based on validity
+       */
+			name.setCustomValidity('Required');
+		} else if (name.value === 'something') {
+			/**
+       * Setting error message based on custom constraint
+       */
+			name.setCustomValidity('Please enter a valid name');
+		} else {
+			/**
+       * Clearing the error message (Important!)
+       */ 
+			name.setCustomValidity('');
+		}
+  },
+};
+
+```
+</details>
+
+---
+
 ### useFieldList
+
+---
 
 ### useControlledInput
 
+---
+
 ### conform
 
-It provides several helpers to setup a native input fields quickly:
+It provides several helpers to setup a native input field quickly:
 
 ```tsx
 import { conform } from '@conform-to/react';
@@ -206,31 +325,31 @@ function RandomForm() {
     <fieldset {...setupFieldset}>
       <input
         type="text"
-        name={isbn.name}
-        form={isbn.form}
-        defaultValue={isbn.initialValue}
-        requried={isbn.constraint?.required}
-        minLength={isbn.constraint?.minLength}
-        maxLength={isbn.constraint?.maxLength}
-        min={isbn.constraint?.min}
-        max={isbn.constraint?.max}
-        multiple={isbn.constraint?.multiple}
-        pattern={isbn.constraint?.pattern}
-      >
+        name={cateogry.name}
+        form={cateogry.form}
+        defaultValue={cateogry.initialValue}
+        requried={cateogry.constraint?.required}
+        minLength={cateogry.constraint?.minLength}
+        maxLength={cateogry.constraint?.maxLength}
+        min={cateogry.constraint?.min}
+        max={cateogry.constraint?.max}
+        multiple={cateogry.constraint?.multiple}
+        pattern={cateogry.constraint?.pattern}
+      >2
       <textarea
-        name={isbn.name}
-        form={isbn.form}
-        defaultValue={isbn.initialValue}
-        requried={isbn.constraint?.required}
-        minLength={isbn.constraint?.minLength}
-        maxLength={isbn.constraint?.maxLength}
+        name={cateogry.name}
+        form={cateogry.form}
+        defaultValue={cateogry.initialValue}
+        requried={cateogry.constraint?.required}
+        minLength={cateogry.constraint?.minLength}
+        maxLength={cateogry.constraint?.maxLength}
       />
       <select
-        name={isbn.name}
-        form={isbn.form}
-        defaultValue={isbn.initialValue}
-        requried={isbn.constraint?.required}
-        multiple={isbn.constraint?.multiple}
+        name={cateogry.name}
+        form={cateogry.form}
+        defaultValue={cateogry.initialValue}
+        requried={cateogry.constraint?.required}
+        multiple={cateogry.constraint?.multiple}
       >
         {/* ... */}
       </select>
