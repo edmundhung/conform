@@ -73,7 +73,7 @@ function RandomForm() {
 <details>
 <summary>What is `formProps`?</summary>
 
-It is a group of properties required to setup the form. They can also be set up explicitly as shown below:
+It is a group of properties required to setup the form. They can also be set explicitly as shown below:
 
 ```tsx
 <form
@@ -209,7 +209,7 @@ function BookFieldset() {
 <details>
   <summary>What is `fieldsetProps`?</summary>
 
-It is a group of properties required to setup the fieldset. They can also be set up explicitly as shown below:
+It is a group of properties required to setup the fieldset. They can also be set explicitly as shown below:
 
 ```tsx
 <fieldset
