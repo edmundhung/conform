@@ -28,9 +28,16 @@ const signup = z
 
 export default function SignupForm() {
   const formProps = useForm({
-    onSubmit(e) {
-      e.preventDefault();
-      // ...
+    /**
+     * Optional. Fallback to native form submit
+     */
+    onSubmit(event) {
+      event.preventDefault();
+
+      const formData = new FormData(e.currentTarget);
+      const result = parse(formData, signup);
+
+      // Send the data with fetch API
     },
   });
   const [fieldsetProps, { email, password, confirm }] = useFieldset(
@@ -46,12 +53,12 @@ export default function SignupForm() {
           <p>{email.error}</p>
         </label>
         <label>
-          <div>Password</div>
+          Password:
           <input {...conform.input(password, { type: 'password' })} />
           <p>{password.error}</p>
         </label>
         <label>
-          <div>Confirm Password</div>
+          Confirm Password:
           <input {...conform.input(confirm, { type: 'password' })} />
           <p>{confirm.error}</p>
         </label>

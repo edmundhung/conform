@@ -57,25 +57,30 @@ export default function SearchForm() {
 	const formProps = useForm({
 		/**
 		 * Decide when the error should be reported initially.
+		 * The options are `onSubmit`, `onBlur` or `onChange`.
 		 * Default to `onSubmit`
 		 */
 		initialReport: 'onBlur',
 
 		/**
-		 * Native browser report will be used before hydation if it is set to `true`.
-		 * Default to `false`
+		 * Native browser report will be enabled before hydation
+		 * if this is set to `true`. Default to `false`.
 		 */
 		fallbackNative: true,
 
 		/**
-		 * The form could be submitted even if there is invalid input control if it is set to `true`.
-		 * Default to `false`
+		 * The form could be submitted regardless of the validity
+		 * of the form if this is set to `true`. Default to
+		 * `false`.
 		 */
 		noValidate: false,
 
 		/**
-		 * The submit handler will be triggered only when the form is valid.
-		 * Or when noValidate is set to `true`
+		 * Form submit handler
+		 *
+		 * It will NOT be called if
+		 * (1) one of the fields is invalid, and
+		 * (2) noValidate is set to false
 		 */
 		onSubmit(e) {
 			e.preventDefault();
