@@ -26,7 +26,7 @@ Feel free to **SKIP** this if the native browser behaviour fullfills your need.
 import { useForm } from '@conform-to/react';
 
 function RandomForm() {
-  const formConfig = useForm({
+  const formProps = useForm({
     /**
      * Decide when the error should be reported initially.
      * The options are `onSubmit`, `onBlur` or `onChange`.
@@ -67,7 +67,7 @@ function RandomForm() {
   });
 
   return (
-    <form {...formConfig}>
+    <form {...formProps}>
       {/* ... */}
     </form>
   );
@@ -75,16 +75,16 @@ function RandomForm() {
 ```
 
 <details>
-<summary>What is `formConfig`?</summary>
+<summary>What is `formProps`?</summary>
 
 It is a group of properties required to setup the form. They can also be set up explicitly as shown below:
 
 ```tsx
 <form
-  ref={formConfig.ref}
-  onSubmit={formConfig.onSubmit}
-  onReset={formConfig.onReset}
-  noValidate={formConfig.noValidate}
+  ref={formProps.ref}
+  onSubmit={formProps.onSubmit}
+  onReset={formProps.onReset}
+  noValidate={formProps.noValidate}
 >
   {/* ... */}
 </form>
@@ -124,7 +124,7 @@ const schema = /*
 
 function BookFieldset() {
   const [
-    fieldsetConfig,
+    fieldsetProps,
     {
       name,
       isbn,
@@ -203,7 +203,7 @@ function BookFieldset() {
   console.log(isbn.constraint);
 
   return (
-    <fieldset {...fieldsetConfig}>
+    <fieldset {...fieldsetProps}>
       {/* ... */}
     </fieldset>)
   );
@@ -211,17 +211,17 @@ function BookFieldset() {
 ```
 
 <details>
-  <summary>What is `fieldsetConfig`?</summary>
+  <summary>What is `fieldsetProps`?</summary>
 
 It is a group of properties required to setup the fieldset. They can also be set up explicitly as shown below:
 
 ```tsx
 <fieldset
-  ref={fieldsetConfig.ref}
-  name={fieldsetConfig.name}
-  form={fieldsetConfig.form}
-  onInput={fieldsetConfig.onInput}
-  onInvalid={fieldsetConfig.onInvalid}
+  ref={fieldsetProps.ref}
+  name={fieldsetProps.name}
+  form={fieldsetProps.form}
+  onInput={fieldsetProps.onInput}
+  onInvalid={fieldsetProps.onInvalid}
 >
   {/* ... */}
 </fieldset>
@@ -310,23 +310,23 @@ import { useFieldset, useFieldList } from '@conform-to/react';
  */ 
 
 function CollectionForm() {
-  const [fieldsetConfig, { books }] = useFieldset(collectionSchema);
-  const [bookList, controls] = useFieldList(books);
+  const [fieldsetProps, { books }] = useFieldset(collectionSchema);
+  const [bookList, control] = useFieldList(books);
 
   return (
-    <fieldset {...fieldsetConfig}>
+    <fieldset {...fieldsetProps}>
       {bookList.map(({ key, config }, index) => (
         <div key={key}>
           {/* `config` is a FieldConfig object similar to `books` */}
           <BookFieldset {...config}>
 
           {/* To setup a delete button */}
-          <button {...controls.remove(index)}>Delete</button>
+          <button {...control.remove(index)}>Delete</button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row */}
-      <button {...controls.append()}>add</button>
+      <button {...control.append()}>add</button>
     </fieldset>
   );
 }
@@ -337,7 +337,7 @@ function CollectionForm() {
  * options with the component props instead
  */ 
 function BookFieldset({ name, form, initialValue, error }) {
-  const [fieldsetConfig, { name, isbn }] = useFieldset(bookSchema, {
+  const [fieldsetProps, { name, isbn }] = useFieldset(bookSchema, {
     name,
     form,
     initialValue,
@@ -345,7 +345,7 @@ function BookFieldset({ name, form, initialValue, error }) {
   });
 
   return (
-    <fieldset {...fieldsetConfig}>
+    <fieldset {...fieldsetProps}>
       {/* ... */}
     </fieldset>
   );
@@ -378,11 +378,11 @@ import { useControlledInput } from '@conform-to/react';
 import { Select, MenuItem } from '@mui/material';
 
 function RandomFieldset() {
-  const [fieldsetConfig, { category }] = useFieldset(schema);
+  const [fieldsetProps, { category }] = useFieldset(schema);
   const [input, control] = useControlledInput(category);
 
   return (
-    <fieldset {...fieldsetConfig}>
+    <fieldset {...fieldsetProps}>
       {/* Render the shadow input somewhere within the fieldset */}
       {input}
 
