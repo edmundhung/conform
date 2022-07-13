@@ -74,7 +74,7 @@ More examples here: [Codesandbox](https://codesandbox.io/s/github/edmundhung/con
 ## API References
 
 | Package                                     | Description                                                  | Size                                                                                                                                |
-| ------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| :------------------------------------------ | :----------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
 | @conform-to/dom                             | A set of opinionated helpers interacting with the DOM        | [![package size](https://img.shields.io/bundlephobia/minzip/@conform-to/dom)](https://bundlephobia.com/package/@conform-to/dom)     |
 | [@conform-to/react](packages/conform-react) | View adapter for [react](https://github.com/facebook/react)  | [![package size](https://img.shields.io/bundlephobia/minzip/@conform-to/react)](https://bundlephobia.com/package/@conform-to/react) |
 | [@conform-to/zod](packages/conform-zod)     | Schema resolver for [zod](https://github.com/colinhacks/zod) | [![package size](https://img.shields.io/bundlephobia/minzip/@conform-to/zod)](https://bundlephobia.com/package/@conform-to/zod)     |
