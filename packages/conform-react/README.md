@@ -115,10 +115,9 @@ import { useFieldset } from '@conform-to/react';
 const schema = /*
   Assuming this to be a schema for book and it looks like this:
 
-  {
+  type Book = {
     name: string;
     isbn: string;
-    quantity: number;
   }
 
 */
@@ -129,7 +128,6 @@ function BookFieldset() {
     {
       name,
       isbn,
-      quantity,
     },
   ] = useFieldset(schema, {
     /**
@@ -297,6 +295,77 @@ const bookSchema: Schema<{
 ---
 
 ### useFieldList
+
+This hook is used in combination with `useFieldset` to handle array structure:
+
+```tsx
+import { useFieldset, useFieldList } from '@conform-to/react';
+
+/**
+ * Consider the schema as follow: 
+ * 
+ * type Collection = {
+ *   books: Array<{ name: string; isbn: string; }>
+ * } 
+ */ 
+
+function CollectionForm() {
+  const [fieldsetConfig, { books }] = useFieldset(collectionSchema);
+  const [bookList, controls] = useFieldList(books);
+
+  return (
+    <fieldset {...fieldsetConfig}>
+      {bookList.map(({ key, config }, index) => (
+        <div key={key}>
+          {/* `config` is a FieldConfig object similar to `books` */}
+          <BookFieldset {...config}>
+
+          {/* To setup a delete button */}
+          <button {...controls.remove(index)}>Delete</button>
+        </div>
+      ))}
+
+      {/* To setup a button that can append a new row */}
+      <button {...controls.append()}>add</button>
+    </fieldset>
+  );
+}
+
+/**
+ * This is basically the BookFieldset component from
+ * the `useFieldset` example, but setting all the
+ * options with the component props instead
+ */ 
+function BookFieldset({ name, form, initialValue, error }) {
+  const [fieldsetConfig, { name, isbn }] = useFieldset(bookSchema, {
+    name,
+    form,
+    initialValue,
+    error,
+  });
+
+  return (
+    <fieldset {...fieldsetConfig}>
+      {/* ... */}
+    </fieldset>
+  );
+}
+```
+
+<details>
+  <summary>What can I do with `controls`?</summary>
+
+```tsx
+{/* To append a new row... */}
+<button {...controls.append()}>Append</button>
+
+{/* To prepend a new row... */}
+<button {...controls.prepend()}>Prepend</button>
+
+{/* To remove a row by index */}
+<button {...controls.remove(index)}>Remove</button>
+```
+</details>
 
 ---
 
