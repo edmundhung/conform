@@ -14,7 +14,7 @@ import { styles } from '~/helpers';
 const product = z.object({
 	item: z.string({ required_error: 'Product name is required' }),
 	quantity: z.preprocess(
-		Number,
+		(data) => (typeof data !== 'undefined' ? Number(data) : data),
 		z
 			.number({ required_error: 'Required', invalid_type_error: 'Invalid' })
 			.min(1, 'Min. 1'),
