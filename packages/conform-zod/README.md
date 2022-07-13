@@ -80,7 +80,7 @@ export let action = async ({ request }) => {
 
   // Return the current result if not accepted
   if (result.state !== 'accepted') {
-      return json(result);
+    return json(result);
   }
 
   // Do something else

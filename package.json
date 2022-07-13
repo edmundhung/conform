@@ -44,6 +44,7 @@
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",
-		"*.{js,jsx,ts,tsx,css,json,yaml}": "prettier --ignore-path .gitignore --write"
+		"*.{js,jsx,ts,tsx,css,json,yaml}": "prettier --ignore-path .gitignore --write",
+		"*.{md}": "prettier --ignore-path .gitignore --write --use-tabs false"
 	}
 }

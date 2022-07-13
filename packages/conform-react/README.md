@@ -42,35 +42,31 @@ function RandomForm() {
 
     /**
      * The form could be submitted regardless of the validity
-     * of the form if this is set to `true`. Default to 
+     * of the form if this is set to `true`. Default to
      * `false`.
      */
     noValidate: false,
 
     /**
      * Form submit handler
-     * 
+     *
      * It will NOT be called if
      * (1) one of the fields is invalid, and
      * (2) noValidate is set to false
      */
     onSubmit(e) {
-        // ...
+      // ...
     },
 
     /**
      * Form reset handler
      */
     onReset(e) {
-        // ...
+      // ...
     },
   });
 
-  return (
-    <form {...formProps}>
-      {/* ... */}
-    </form>
-  );
+  return <form {...formProps}>{/* ... */}</form>;
 }
 ```
 
@@ -103,15 +99,15 @@ import { useFieldset } from '@conform-to/react';
 
 /**
  * Schema of the fieldset
- * 
+ *
  * Defining a schema manually could be error-prone. It
  * is strongly recommended to use a schema validation
  * library with a schema resolver.
- * 
+ *
  * Currently only Zod is supported and Yup support is
  * coming soon. Please check the corresponding package
  * for the setup required
- */ 
+ */
 const schema = /*
   Assuming this to be a schema for book and it looks like this:
 
@@ -150,7 +146,7 @@ function BookFieldset() {
     },
 
     /**
-     * Error reported by the server 
+     * Error reported by the server
      */
     error: {
       isbn: 'Invalid ISBN',
@@ -160,46 +156,46 @@ function BookFieldset() {
   /**
    * The variable `isbn` is a FieldConfig object
    * It is used to configure the field (input, select, textarea)
-   * 
+   *
    * Please check the docs of the `conform` helpers for how to
    * use them together
-   */ 
+   */
   console.log(isbn);
 
   /**
    * This would be `book.isbn` instead of `isbn`
    * if the `name` option is provided
-   */ 
+   */
   console.log(isbn.name);
 
   /**
    * This would be `random-form-id`
    * because of the `form` option provided
-   */ 
+   */
   console.log(isbn.form);
 
   /**
    * This would be `0340013818` if specified
-   * on the `initalValue` option 
-   */  
+   * on the `initalValue` option
+   */
   console.log(isbn.initialValue);
 
   /**
    * Current error message
-   * This would be 'Invalid ISBN' initially if specified 
+   * This would be 'Invalid ISBN' initially if specified
    * on the `error` option
-   */ 
+   */
   console.log(isbn.error);
 
   /**
    * Constraint of the field (required, minLength etc)
-   * 
+   *
    * For example, the constraint of the isbn field could be:
    * {
    *   required: true,
    *   pattern: '[0-9]{10,13}'
    * }
-   */ 
+   */
   console.log(isbn.constraint);
 
   return (
@@ -226,6 +222,7 @@ It is a group of properties required to setup the fieldset. They can also be set
   {/* ... */}
 </fieldset>
 ```
+
 </details>
 
 <details>
@@ -236,7 +233,7 @@ import type { Schema } from '@conform-to/react';
 
 /**
  * Defining a schema manually
- */ 
+ */
 const bookSchema: Schema<{
   name: string;
   isbn: string;
@@ -283,13 +280,13 @@ const bookSchema: Schema<{
     } else {
       /**
        * Clearing the error message (Important!)
-       */ 
+       */
       name.setCustomValidity('');
     }
   },
 };
-
 ```
+
 </details>
 
 ---
@@ -302,12 +299,12 @@ This hook is used in combination with `useFieldset` to handle array structure:
 import { useFieldset, useFieldList } from '@conform-to/react';
 
 /**
- * Consider the schema as follow: 
- * 
+ * Consider the schema as follow:
+ *
  * type Collection = {
  *   books: Array<{ name: string; isbn: string; }>
- * } 
- */ 
+ * }
+ */
 
 function CollectionForm() {
   const [fieldsetProps, { books }] = useFieldset(collectionSchema);
@@ -335,7 +332,7 @@ function CollectionForm() {
  * This is basically the BookFieldset component from
  * the `useFieldset` example, but setting all the
  * options with the component props instead
- */ 
+ */
 function BookFieldset({ name, form, initialValue, error }) {
   const [fieldsetProps, { name, isbn }] = useFieldset(bookSchema, {
     name,
@@ -356,15 +353,16 @@ function BookFieldset({ name, form, initialValue, error }) {
   <summary>What can I do with `controls`?</summary>
 
 ```tsx
-{/* To append a new row... */}
-<button {...controls.append()}>Append</button>
+// To append a new row
+<button {...controls.append()}>Append</button>;
 
-{/* To prepend a new row... */}
-<button {...controls.prepend()}>Prepend</button>
+// To prepend a new row
+<button {...controls.prepend()}>Prepend</button>;
 
-{/* To remove a row by index */}
-<button {...controls.remove(index)}>Remove</button>
+// To remove a row by index
+<button {...controls.remove(index)}>Remove</button>;
 ```
+
 </details>
 
 ---
