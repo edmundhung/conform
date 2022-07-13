@@ -20,7 +20,7 @@ This hook enhances this behaviour by allowing the developers to decide the best 
 
 But, setting `initialReport` to `onSubmit` still works different from the native browser behaviour, which basically calls `reportValidity()` only at the time a submit event is received. The `useForm` hook introduces a **touched** state to each fields. It will eagerly report the validity of the field once it is touched. Any errors reported later will be updated as soon as new errors are found.
 
-Feel free to **SKIP** setting up this hook if the native browser behaviour fullfills your need.
+Feel free to **SKIP** this if the native browser behaviour fullfills your need.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -160,6 +160,15 @@ function BookFieldset() {
   });
 
   /**
+   * The variable `isbn` is a FieldConfig object
+   * It is used to configure the field (input, select, textarea)
+   * 
+   * Please check the docs of the `conform` helpers for how to
+   * use them together
+   */ 
+  console.log(isbn);
+
+  /**
    * This would be `book.isbn` instead of `isbn`
    * if the `name` option is provided
    */ 
@@ -264,21 +273,21 @@ const bookSchema: Schema<{
     const [name] = getFieldElements(fieldset, 'name');
 
     if (name.validity.valueMissing) {
-			/**
+      /**
        * Setting error message based on validity
        */
-			name.setCustomValidity('Required');
-		} else if (name.value === 'something') {
-			/**
+      name.setCustomValidity('Required');
+    } else if (name.value === 'something') {
+      /**
        * Setting error message based on custom constraint
        */
-			name.setCustomValidity('Please enter a valid name');
-		} else {
-			/**
+      name.setCustomValidity('Please enter a valid name');
+    } else {
+      /**
        * Clearing the error message (Important!)
        */ 
-			name.setCustomValidity('');
-		}
+      name.setCustomValidity('');
+    }
   },
 };
 
