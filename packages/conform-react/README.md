@@ -379,7 +379,7 @@ import { Select, MenuItem } from '@mui/material';
 
 function RandomFieldset() {
   const [fieldsetConfig, { category }] = useFieldset(schema);
-	const [input, control] = useControlledInput(category);
+  const [input, control] = useControlledInput(category);
 
   return (
     <fieldset {...fieldsetConfig}>
