@@ -1,5 +1,5 @@
 export {
-	type FieldConfig,
+	type FieldProps,
 	type Schema,
 	parse,
 	getFieldElements,

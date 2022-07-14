@@ -1,5 +1,5 @@
 import {
-	type FieldConfig,
+	type FieldsetConfig,
 	useForm,
 	useFieldset,
 	useFieldList,
@@ -68,7 +68,7 @@ export default function OrderForm() {
 							<div className={styles.rowContent}>
 								<ProductFieldset
 									label={`Product #${index + 1}`}
-									{...product.config}
+									{...product.props}
 								/>
 							</div>
 							<button
@@ -102,7 +102,7 @@ export default function OrderForm() {
 	);
 }
 
-function ShippingFieldset(config: FieldConfig<z.infer<typeof shipping>>) {
+function ShippingFieldset(config: FieldsetConfig<z.infer<typeof shipping>>) {
 	const [fieldsetProps, { address, delivery }] = useFieldset(
 		resolve(shipping),
 		config,
@@ -148,7 +148,7 @@ function ShippingFieldset(config: FieldConfig<z.infer<typeof shipping>>) {
 function ProductFieldset({
 	label,
 	...config
-}: FieldConfig<z.infer<typeof product>> & { label: string }) {
+}: FieldsetConfig<z.infer<typeof product>> & { label: string }) {
 	const [fieldsetProps, { item, quantity }] = useFieldset(
 		resolve(product),
 		config,

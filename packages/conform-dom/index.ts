@@ -2,19 +2,18 @@ export type Constraint = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;
-	min?: string;
-	max?: string;
+	min?: string | number;
+	max?: string | number;
 	step?: string;
 	multiple?: boolean;
 	pattern?: string;
 };
 
-export interface FieldConfig<Type = any> {
+export interface FieldProps<Type = any> extends Constraint {
 	name: string;
 	defaultValue?: FieldsetData<Type, string>;
 	error?: FieldsetData<Type, string>;
 	form?: string;
-	constraint?: Constraint;
 }
 
 export type Schema<Type extends Record<string, any>> = {
@@ -127,7 +126,7 @@ export function reportValidity(fieldset: FieldsetElement): boolean {
 	return isValid;
 }
 
-export function createFieldConfig<Type extends Record<string, any>>(
+export function getFieldProps<Type extends Record<string, any>>(
 	schema: Schema<Type>,
 	options: {
 		name?: string;
@@ -135,20 +134,20 @@ export function createFieldConfig<Type extends Record<string, any>>(
 		defaultValue?: FieldsetData<Type, string>;
 		error?: FieldsetData<Type, string>;
 	},
-): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
-	const result: { [Key in keyof Type]-?: FieldConfig<Type[Key]> } = {} as any;
+): { [Key in keyof Type]-?: FieldProps<Type[Key]> } {
+	const result: { [Key in keyof Type]-?: FieldProps<Type[Key]> } = {} as any;
 
 	for (const key of Object.keys(schema.fields)) {
 		const constraint = schema.fields[key];
-		const config: FieldConfig<any> = {
+		const props: FieldProps<any> = {
 			name: options.name ? `${options.name}.${key}` : key,
 			form: options.form,
 			defaultValue: options.defaultValue?.[key],
 			error: options.error?.[key],
-			constraint,
+			...constraint,
 		};
 
-		result[key as keyof Type] = config;
+		result[key as keyof Type] = props;
 	}
 
 	return result;

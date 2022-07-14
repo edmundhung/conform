@@ -1,4 +1,4 @@
-import { type FieldConfig } from '@conform-to/dom';
+import { type FieldProps } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,
@@ -8,55 +8,55 @@ import {
 export function input<
 	Type extends string | number | Date | boolean | undefined,
 >(
-	config: FieldConfig<Type>,
+	props: FieldProps<Type>,
 	{ type, value }: { type?: string; value?: string } = {},
 ): InputHTMLAttributes<HTMLInputElement> {
 	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
 	const attributes: InputHTMLAttributes<HTMLInputElement> = {
 		type,
-		name: config.name,
-		form: config.form,
-		required: config.constraint?.required,
-		minLength: config.constraint?.minLength,
-		maxLength: config.constraint?.maxLength,
-		min: config.constraint?.min,
-		max: config.constraint?.max,
-		step: config.constraint?.step,
-		pattern: config.constraint?.pattern,
-		multiple: config.constraint?.multiple,
+		name: props.name,
+		form: props.form,
+		required: props.required,
+		minLength: props.minLength,
+		maxLength: props.maxLength,
+		min: props.min,
+		max: props.max,
+		step: props.step,
+		pattern: props.pattern,
+		multiple: props.multiple,
 	};
 
 	if (isCheckboxOrRadio) {
 		attributes.value = value ?? 'on';
-		attributes.defaultChecked = config.defaultValue === attributes.value;
+		attributes.defaultChecked = props.defaultValue === attributes.value;
 	} else {
-		attributes.defaultValue = `${config.defaultValue ?? ''}`;
+		attributes.defaultValue = `${props.defaultValue ?? ''}`;
 	}
 
 	return attributes;
 }
 
 export function select<T extends any>(
-	config: FieldConfig<T>,
+	props: FieldProps<T>,
 ): SelectHTMLAttributes<HTMLSelectElement> {
 	return {
-		name: config.name,
-		form: config.form,
-		defaultValue: `${config.defaultValue ?? ''}`,
-		required: config.constraint?.required,
-		multiple: config.constraint?.multiple,
+		name: props.name,
+		form: props.form,
+		defaultValue: `${props.defaultValue ?? ''}`,
+		required: props.required,
+		multiple: props.multiple,
 	};
 }
 
 export function textarea<T extends string | undefined>(
-	config: FieldConfig<T>,
+	props: FieldProps<T>,
 ): TextareaHTMLAttributes<HTMLTextAreaElement> {
 	return {
-		name: config.name,
-		form: config.form,
-		defaultValue: `${config.defaultValue ?? ''}`,
-		required: config.constraint?.required,
-		minLength: config.constraint?.minLength,
-		maxLength: config.constraint?.maxLength,
+		name: props.name,
+		form: props.form,
+		defaultValue: `${props.defaultValue ?? ''}`,
+		required: props.required,
+		minLength: props.minLength,
+		maxLength: props.maxLength,
 	};
 }

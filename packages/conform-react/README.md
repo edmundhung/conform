@@ -154,7 +154,7 @@ function BookFieldset() {
   });
 
   /**
-   * The variable `isbn` is a FieldConfig object
+   * The variable `isbn` is a FieldProps object
    * It is used to configure the field (input, select, textarea)
    *
    * Please check the docs of the `conform` helpers for how to
@@ -314,7 +314,7 @@ function CollectionForm() {
     <fieldset {...fieldsetProps}>
       {bookList.map(({ key, config }, index) => (
         <div key={key}>
-          {/* `config` is a FieldConfig object similar to `books` */}
+          {/* `config` is a FieldProps object similar to `books` */}
           <BookFieldset {...config}>
 
           {/* To setup a delete button */}
@@ -438,28 +438,28 @@ function RandomForm() {
         name={cateogry.name}
         form={cateogry.form}
         defaultValue={cateogry.defaultValue}
-        requried={cateogry.constraint?.required}
-        minLength={cateogry.constraint?.minLength}
-        maxLength={cateogry.constraint?.maxLength}
-        min={cateogry.constraint?.min}
-        max={cateogry.constraint?.max}
-        multiple={cateogry.constraint?.multiple}
-        pattern={cateogry.constraint?.pattern}
+        requried={cateogry.required}
+        minLength={cateogry.minLength}
+        maxLength={cateogry.maxLength}
+        min={cateogry.min}
+        max={cateogry.max}
+        multiple={cateogry.multiple}
+        pattern={cateogry.pattern}
       >2
       <textarea
         name={cateogry.name}
         form={cateogry.form}
         defaultValue={cateogry.defaultValue}
-        requried={cateogry.constraint?.required}
-        minLength={cateogry.constraint?.minLength}
-        maxLength={cateogry.constraint?.maxLength}
+        requried={cateogry.required}
+        minLength={cateogry.minLength}
+        maxLength={cateogry.maxLength}
       />
       <select
         name={cateogry.name}
         form={cateogry.form}
         defaultValue={cateogry.defaultValue}
-        requried={cateogry.constraint?.required}
-        multiple={cateogry.constraint?.multiple}
+        requried={cateogry.required}
+        multiple={cateogry.multiple}
       >
         {/* ... */}
       </select>
