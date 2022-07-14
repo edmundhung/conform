@@ -1,13 +1,13 @@
 import {
 	type FieldsetElement,
-	type FieldConfig,
+	type FieldProps,
 	type Schema,
 	type FieldsetData,
 	isFieldElement,
 	setFieldState,
 	reportValidity,
 	shouldSkipValidate,
-	createFieldConfig,
+	getFieldProps,
 	createControlButton,
 	getFieldElements,
 	getName,
@@ -27,7 +27,7 @@ import {
 	createElement,
 } from 'react';
 
-interface FormConfig {
+export interface FormConfig {
 	/**
 	 * Decide when the error should be reported initially.
 	 * Default to `onSubmit`
@@ -149,7 +149,9 @@ export function useForm({
 	};
 }
 
-interface FieldsetConfig<Type> extends Partial<FieldConfig<Type>> {}
+export type FieldsetConfig<Type> = Partial<
+	Pick<FieldProps<Type>, 'name' | 'form' | 'defaultValue' | 'error'>
+>;
 
 interface FieldsetProps {
 	ref: RefObject<HTMLFieldSetElement>;
@@ -162,7 +164,7 @@ interface FieldsetProps {
 export function useFieldset<Type extends Record<string, any>>(
 	schema: Schema<Type>,
 	config: FieldsetConfig<Type> = {},
-): [FieldsetProps, { [Key in keyof Type]-?: FieldConfig<Type[Key]> }] {
+): [FieldsetProps, { [Key in keyof Type]-?: FieldProps<Type[Key]> }] {
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const [errorMessage, dispatch] = useReducer(
 		(
@@ -337,7 +339,7 @@ export function useFieldset<Type extends Record<string, any>>(
 				});
 			},
 		},
-		createFieldConfig(schema, {
+		getFieldProps(schema, {
 			...config,
 			error: Object.assign({}, config.error, errorMessage),
 		}),
@@ -351,39 +353,34 @@ interface FieldListControl {
 }
 
 export function useFieldList<Type extends Array<any>>(
-	config: FieldConfig<Type>,
+	props: FieldProps<Type>,
 ): [
 	Array<{
 		key: string;
-		config: FieldConfig<
-			Type extends Array<infer InnerType> ? InnerType : never
-		>;
+		props: FieldProps<Type extends Array<infer InnerType> ? InnerType : never>;
 	}>,
 	FieldListControl,
 ] {
-	const size = config.defaultValue?.length ?? 1;
+	const size = props.defaultValue?.length ?? 1;
 	const [keys, setKeys] = useState(() => [...Array(size).keys()]);
 	const list = useMemo(
 		() =>
-			keys.map<{ key: string; config: FieldConfig }>((key, index) => ({
+			keys.map<{ key: string; props: FieldProps }>((key, index) => ({
 				key: `${key}`,
-				config: {
-					...config,
-					name: `${config.name}[${index}]`,
-					defaultValue: config.defaultValue?.[index],
-					error: config.error?.[index],
-					constraint: {
-						...config.constraint,
-						multiple: false,
-					},
+				props: {
+					...props,
+					name: `${props.name}[${index}]`,
+					defaultValue: props.defaultValue?.[index],
+					error: props.error?.[index],
+					multiple: false,
 				},
 			})),
-		[keys, config],
+		[keys, props],
 	);
 	const controls: FieldListControl = {
 		prepend() {
 			return {
-				...createControlButton(config.name, 'prepend', {}),
+				...createControlButton(props.name, 'prepend', {}),
 				onClick(e) {
 					setKeys((keys) => [Date.now(), ...keys]);
 					e.preventDefault();
@@ -392,7 +389,7 @@ export function useFieldList<Type extends Array<any>>(
 		},
 		append() {
 			return {
-				...createControlButton(config.name, 'append', {}),
+				...createControlButton(props.name, 'append', {}),
 				onClick(e) {
 					setKeys((keys) => [...keys, Date.now()]);
 					e.preventDefault();
@@ -401,7 +398,7 @@ export function useFieldList<Type extends Array<any>>(
 		},
 		remove(index) {
 			return {
-				...createControlButton(config.name, 'remove', { index }),
+				...createControlButton(props.name, 'remove', { index }),
 				onClick(e) {
 					setKeys((keys) => [
 						...keys.slice(0, index),
@@ -434,50 +431,55 @@ interface InputControl {
 
 export function useControlledInput<
 	T extends string | number | Date | undefined,
->(field: FieldConfig<T>): [ReactElement, InputControl] {
-	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);
-	const [shouldBlur, setShouldBlur] = useState(false);
+>(field: FieldProps<T>): [ReactElement, InputControl] {
 	const ref = useRef<HTMLInputElement>(null);
 	const input = useMemo(
 		() =>
 			createElement('input', {
-				...field.constraint,
 				ref,
 				name: field.name,
+				form: field.form,
 				defaultValue: field.defaultValue,
-				style: { display: 'none' },
+				required: field.required,
+				minLength: field.minLength,
+				maxLength: field.maxLength,
+				min: field.min,
+				max: field.max,
+				step: field.step,
+				pattern: field.pattern,
+				hidden: true,
 				'aria-hidden': true,
 			}),
-		[field.constraint, field.name, field.defaultValue],
+		[
+			field.name,
+			field.form,
+			field.defaultValue,
+			field.required,
+			field.minLength,
+			field.maxLength,
+			field.min,
+			field.max,
+			field.step,
+			field.pattern,
+		],
 	);
-
-	useEffect(() => {
-		if (!ref.current) {
-			return;
-		}
-
-		ref.current.value = value;
-		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
-	}, [value]);
-
-	useEffect(() => {
-		if (!shouldBlur) {
-			return;
-		}
-
-		ref.current?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
-		setShouldBlur(false);
-	}, [shouldBlur]);
 
 	return [
 		input,
 		{
-			value,
+			value: ref.current?.value ?? `${field.defaultValue ?? ''}`,
 			onChange: (value: string) => {
-				setValue(value);
+				if (!ref.current) {
+					return;
+				}
+
+				ref.current.value = value;
+				ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
 			},
 			onBlur: () => {
-				setShouldBlur(true);
+				ref.current?.dispatchEvent(
+					new FocusEvent('focusout', { bubbles: true }),
+				);
 			},
 		},
 	];

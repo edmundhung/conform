@@ -5,7 +5,7 @@
 ## API Reference
 
 - [createControlButton](#createControlButton)
-- [createFieldConfig](#createFieldConfig)
+- [getFieldProps](#getFieldProps)
 - [getFieldElements](#getFieldElements)
 - [getName](#getName)
 - [getPaths](#getPaths)
@@ -19,7 +19,7 @@
 
 ### createControlButton
 
-### createFieldConfig
+### getFieldProps
 
 ### getFieldElements
 

@@ -11,7 +11,7 @@ import {
 } from '@conform-to/dom';
 import * as z from 'zod';
 
-function inferConstraint<T extends z.ZodTypeAny>(schema: T): Constraint {
+function inferConstraint<T>(schema: z.ZodType<T>): Constraint {
 	const constraint: Constraint = {
 		required: true,
 	};

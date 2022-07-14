@@ -51,7 +51,7 @@ export default function Integration() {
 						label="Text"
 						name={text.name}
 						defaultValue={text.defaultValue}
-						required={text.constraint?.required}
+						required={text.required}
 						error={Boolean(text.error)}
 						helperText={text.error}
 						fullWidth
@@ -59,7 +59,7 @@ export default function Integration() {
 					<TextField
 						label="Select"
 						name={select.name}
-						required={select.constraint?.required}
+						required={select.required}
 						value={selectControl.value ?? ''}
 						onChange={(e) => selectControl.onChange(e.target.value)}
 						onBlur={selectControl.onBlur}
@@ -77,7 +77,7 @@ export default function Integration() {
 						label="Textarea"
 						name={textarea.name}
 						defaultValue={textarea.defaultValue}
-						required={textarea.constraint?.required}
+						required={textarea.required}
 						error={Boolean(textarea.error)}
 						helperText={textarea.error}
 						multiline
