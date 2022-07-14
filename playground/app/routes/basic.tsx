@@ -12,7 +12,7 @@ import { action, loader, useActionData } from '~/playground';
 export { loader, action };
 
 export default function Basic() {
-	const { config, action, getResult } = useActionData();
+	const { config, action, getSubmission } = useActionData();
 	const nativeFormProps = useForm(config);
 	const customFormProps = useForm(config);
 
@@ -21,7 +21,7 @@ export default function Basic() {
 			<Playground
 				title="Native Constraint"
 				description="Reporting error messages provided by the browser vendor"
-				result={getResult('native')}
+				submission={getSubmission('native')}
 				form="native"
 			>
 				<Form id="native" method="post" action={action} {...nativeFormProps}>
@@ -32,7 +32,7 @@ export default function Basic() {
 			<Playground
 				title="Custom Constraint"
 				description="Setting up custom validation rules with user-defined error messages"
-				result={getResult('custom')}
+				submission={getSubmission('custom')}
 				form="custom"
 			>
 				<Form id="custom" method="post" action={action} {...customFormProps}>

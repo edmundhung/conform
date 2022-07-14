@@ -52,20 +52,24 @@ export type FieldElement =
 	| HTMLTextAreaElement
 	| HTMLButtonElement;
 
-export type FormResult<T> =
+export interface FormState<T> {
+	value: FieldsetData<T, string>;
+	error: FieldsetData<T, string>;
+}
+
+export type Submission<T extends Record<string, unknown>> =
 	| {
-			state: 'processed';
-			value: FieldsetData<T, string> | null;
-			error: FieldsetData<T, string> | null;
+			state: 'modified';
+			form: FormState<T>;
 	  }
 	| {
 			state: 'rejected';
-			value: FieldsetData<T, string> | null;
-			error: FieldsetData<T, string>;
+			form: FormState<T>;
 	  }
 	| {
 			state: 'accepted';
-			value: T;
+			data: T;
+			form: FormState<T>;
 	  };
 
 export function isFieldsetElement(
@@ -201,7 +205,7 @@ export function transform(
 	entries:
 		| Array<[string, FormDataEntryValue]>
 		| Iterable<[string, FormDataEntryValue]>,
-): unknown {
+): Record<string, unknown> {
 	const result: any = {};
 
 	for (let [key, value] of entries) {
@@ -255,7 +259,7 @@ export function createControlButton(
 
 export function parse(
 	payload: FormData | URLSearchParams,
-): FormResult<unknown> {
+): Submission<Record<string, unknown>> {
 	const command = payload.get('__conform__');
 
 	if (command) {
@@ -314,23 +318,32 @@ export function parse(
 		} catch (e) {
 			return {
 				state: 'rejected',
-				value,
-				error: {
-					__conform__: e instanceof Error ? e.message : 'Something went wrong',
+				form: {
+					value,
+					error: {
+						__conform__:
+							e instanceof Error ? e.message : 'Something went wrong',
+					},
 				},
 			};
 		}
 
 		return {
-			state: 'processed',
-			value,
-			error: null,
+			state: 'modified',
+			form: {
+				value,
+				error: {},
+			},
 		};
 	}
 
 	return {
 		state: 'accepted',
-		value,
+		data: value,
+		form: {
+			value,
+			error: {},
+		},
 	};
 }
 

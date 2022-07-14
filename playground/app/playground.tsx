@@ -11,18 +11,24 @@ import { z } from 'zod';
 
 const FormConfigSchema = z.object({
 	initialReport: z.enum(['onSubmit', 'onBlur', 'onChange']).optional(),
-	noValidate: z.boolean().optional(),
-	fallbackNative: z.boolean().optional(),
+	noValidate: z.preprocess(
+		(data) => (typeof data !== 'undefined' ? Boolean(data) : data),
+		z.boolean().optional(),
+	),
+	fallbackNative: z.preprocess(
+		(data) => (typeof data !== 'undefined' ? Boolean(data) : data),
+		z.boolean().optional(),
+	),
 });
 
 function getFormConfig(searchParams: URLSearchParams) {
-	const result = parse(searchParams, FormConfigSchema);
+	const submission = parse(searchParams, FormConfigSchema);
 
-	if (result.state !== 'accepted') {
+	if (submission.state !== 'accepted') {
 		throw new Response('Bad request', { status: 400 });
 	}
 
-	return result.value;
+	return submission.data;
 }
 
 export let loader: LoaderFunction = async ({ request }) => {
@@ -100,7 +106,7 @@ export function useActionData() {
 	}, [actionData]);
 
 	return {
-		getResult(form: string, parse = baseParse) {
+		getSubmission(form: string, parse = baseParse) {
 			const payload = formDataById[form];
 
 			if (!payload) {
@@ -108,9 +114,9 @@ export function useActionData() {
 			}
 
 			const formData = new URLSearchParams(payload);
-			const result = parse(formData);
+			const submission = parse(formData);
 
-			return result;
+			return submission;
 		},
 		config: {
 			...actionData?.config,

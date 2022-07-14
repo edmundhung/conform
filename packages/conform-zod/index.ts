@@ -2,7 +2,7 @@ import {
 	type Constraint,
 	type FieldsetElement,
 	type Schema,
-	type FormResult,
+	type Submission,
 	type FieldsetData,
 	parse as baseParse,
 	transform,
@@ -94,9 +94,7 @@ function getSchemaShape<T extends Record<string, any>>(
 	return null;
 }
 
-function createParser<T extends z.ZodType<any>>(
-	schema: T,
-): (data: unknown) => unknown {
+function createParser<T>(schema: z.ZodType<T>): (data: unknown) => unknown {
 	if (
 		schema instanceof z.ZodString ||
 		schema instanceof z.ZodEnum ||
@@ -175,31 +173,41 @@ function formatError<T>(error: z.ZodError<T>): FieldsetData<T, string> {
 	) as FieldsetData<T, string>;
 }
 
-export function parse<T>(
+export function parse<T extends Record<string, unknown>>(
 	payload: FormData | URLSearchParams,
 	schema: z.ZodType<T>,
-): FormResult<T> {
+): Submission<T> {
 	const parse = createParser(schema);
-	const formResult = baseParse(payload);
-	const value = parse(formResult.value);
+	const submission = baseParse(payload);
+	const value = parse(submission.form.value);
 	const result = schema.safeParse(value);
 
-	if (formResult.state === 'processed') {
-		// @ts-expect-error
-		return formResult;
+	if (submission.state === 'modified') {
+		return {
+			state: 'modified',
+			// @ts-expect-error
+			form: submission.form,
+		};
 	}
 
 	if (result.success) {
 		return {
 			state: 'accepted',
-			value: result.data,
+			data: result.data,
+			// @ts-expect-error
+			form: submission.form,
 		};
 	} else {
 		return {
 			state: 'rejected',
 			// @ts-expect-error
-			value: formResult.value,
-			error: formatError(result.error),
+			form: {
+				...submission.form,
+				error: {
+					...submission.form.error,
+					...formatError(result.error),
+				},
+			},
 		};
 	}
 }
