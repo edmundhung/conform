@@ -139,9 +139,9 @@ function BookFieldset() {
     form: 'random-form-id',
 
     /**
-     * Initial value of the fieldset
+     * Default value of the fieldset
      */
-    initialValue: {
+    defaultValue: {
       isbn: '0340013818',
     },
 
@@ -178,7 +178,7 @@ function BookFieldset() {
    * This would be `0340013818` if specified
    * on the `initalValue` option
    */
-  console.log(isbn.initialValue);
+  console.log(isbn.defaultValue);
 
   /**
    * Current error message
@@ -333,11 +333,11 @@ function CollectionForm() {
  * the `useFieldset` example, but setting all the
  * options with the component props instead
  */
-function BookFieldset({ name, form, initialValue, error }) {
+function BookFieldset({ name, form, defaultValue, error }) {
   const [fieldsetProps, { name, isbn }] = useFieldset(bookSchema, {
     name,
     form,
-    initialValue,
+    defaultValue,
     error,
   });
 
@@ -437,7 +437,7 @@ function RandomForm() {
         type="text"
         name={cateogry.name}
         form={cateogry.form}
-        defaultValue={cateogry.initialValue}
+        defaultValue={cateogry.defaultValue}
         requried={cateogry.constraint?.required}
         minLength={cateogry.constraint?.minLength}
         maxLength={cateogry.constraint?.maxLength}
@@ -449,7 +449,7 @@ function RandomForm() {
       <textarea
         name={cateogry.name}
         form={cateogry.form}
-        defaultValue={cateogry.initialValue}
+        defaultValue={cateogry.defaultValue}
         requried={cateogry.constraint?.required}
         minLength={cateogry.constraint?.minLength}
         maxLength={cateogry.constraint?.maxLength}
@@ -457,7 +457,7 @@ function RandomForm() {
       <select
         name={cateogry.name}
         form={cateogry.form}
-        defaultValue={cateogry.initialValue}
+        defaultValue={cateogry.defaultValue}
         requried={cateogry.constraint?.required}
         multiple={cateogry.constraint?.multiple}
       >

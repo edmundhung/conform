@@ -96,7 +96,7 @@ export default function SearchForm() {
 		},
 	});
 	const [fieldsetProps, { keyword, category }] = useFieldset(schema, {
-		initialValue: {
+		defaultValue: {
 			keyword: searchParams.get('keyword') ?? '',
 			category: searchParams.get('category') ?? '',
 		},

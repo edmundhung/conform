@@ -11,7 +11,7 @@ export type Constraint = {
 
 export interface FieldConfig<Type = any> {
 	name: string;
-	initialValue?: FieldsetData<Type, string>;
+	defaultValue?: FieldsetData<Type, string>;
 	error?: FieldsetData<Type, string>;
 	form?: string;
 	constraint?: Constraint;
@@ -132,7 +132,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 	options: {
 		name?: string;
 		form?: string;
-		initialValue?: FieldsetData<Type, string>;
+		defaultValue?: FieldsetData<Type, string>;
 		error?: FieldsetData<Type, string>;
 	},
 ): { [Key in keyof Type]-?: FieldConfig<Type[Key]> } {
@@ -143,7 +143,7 @@ export function createFieldConfig<Type extends Record<string, any>>(
 		const config: FieldConfig<any> = {
 			name: options.name ? `${options.name}.${key}` : key,
 			form: options.form,
-			initialValue: options.initialValue?.[key],
+			defaultValue: options.defaultValue?.[key],
 			error: options.error?.[key],
 			constraint,
 		};
@@ -291,15 +291,15 @@ export function parse(
 
 			switch (action) {
 				case 'prepend': {
-					const initialValue = JSON.parse(json);
+					const defaultValue = JSON.parse(json);
 
-					list.unshift(initialValue);
+					list.unshift(defaultValue);
 					break;
 				}
 				case 'append': {
-					const initialValue = JSON.parse(json);
+					const defaultValue = JSON.parse(json);
 
-					list.push(initialValue);
+					list.push(defaultValue);
 					break;
 				}
 				case 'remove':

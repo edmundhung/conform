@@ -28,9 +28,9 @@ export function input<
 
 	if (isCheckboxOrRadio) {
 		attributes.value = value ?? 'on';
-		attributes.defaultChecked = config.initialValue === attributes.value;
+		attributes.defaultChecked = config.defaultValue === attributes.value;
 	} else {
-		attributes.defaultValue = `${config.initialValue ?? ''}`;
+		attributes.defaultValue = `${config.defaultValue ?? ''}`;
 	}
 
 	return attributes;
@@ -42,7 +42,7 @@ export function select<T extends any>(
 	return {
 		name: config.name,
 		form: config.form,
-		defaultValue: `${config.initialValue ?? ''}`,
+		defaultValue: `${config.defaultValue ?? ''}`,
 		required: config.constraint?.required,
 		multiple: config.constraint?.multiple,
 	};
@@ -54,7 +54,7 @@ export function textarea<T extends string | undefined>(
 	return {
 		name: config.name,
 		form: config.form,
-		defaultValue: `${config.initialValue ?? ''}`,
+		defaultValue: `${config.defaultValue ?? ''}`,
 		required: config.constraint?.required,
 		minLength: config.constraint?.minLength,
 		maxLength: config.constraint?.maxLength,
