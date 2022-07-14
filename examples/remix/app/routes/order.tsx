@@ -45,7 +45,7 @@ export default function OrderForm() {
 	const [fieldsetProps, { products, shipping, remarks }] = useFieldset(
 		resolve(order),
 		{
-			initialValue: formResult?.value,
+			defaultValue: formResult?.value,
 			error: formResult?.error,
 		},
 	);

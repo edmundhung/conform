@@ -50,7 +50,7 @@ export default function Integration() {
 					<TextField
 						label="Text"
 						name={text.name}
-						defaultValue={text.initialValue}
+						defaultValue={text.defaultValue}
 						required={text.constraint?.required}
 						error={Boolean(text.error)}
 						helperText={text.error}
@@ -76,7 +76,7 @@ export default function Integration() {
 					<TextField
 						label="Textarea"
 						name={textarea.name}
-						defaultValue={textarea.initialValue}
+						defaultValue={textarea.defaultValue}
 						required={textarea.constraint?.required}
 						error={Boolean(textarea.error)}
 						helperText={textarea.error}

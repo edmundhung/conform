@@ -361,7 +361,7 @@ export function useFieldList<Type extends Array<any>>(
 	}>,
 	FieldListControl,
 ] {
-	const size = config.initialValue?.length ?? 1;
+	const size = config.defaultValue?.length ?? 1;
 	const [keys, setKeys] = useState(() => [...Array(size).keys()]);
 	const list = useMemo(
 		() =>
@@ -370,7 +370,7 @@ export function useFieldList<Type extends Array<any>>(
 				config: {
 					...config,
 					name: `${config.name}[${index}]`,
-					initialValue: config.initialValue?.[index],
+					defaultValue: config.defaultValue?.[index],
 					error: config.error?.[index],
 					constraint: {
 						...config.constraint,
@@ -435,7 +435,7 @@ interface InputControl {
 export function useControlledInput<
 	T extends string | number | Date | undefined,
 >(field: FieldConfig<T>): [ReactElement, InputControl] {
-	const [value, setValue] = useState<string>(`${field.initialValue ?? ''}`);
+	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);
 	const [shouldBlur, setShouldBlur] = useState(false);
 	const ref = useRef<HTMLInputElement>(null);
 	const input = useMemo(
@@ -444,11 +444,11 @@ export function useControlledInput<
 				...field.constraint,
 				ref,
 				name: field.name,
-				defaultValue: field.initialValue,
+				defaultValue: field.defaultValue,
 				style: { display: 'none' },
 				'aria-hidden': true,
 			}),
-		[field.constraint, field.name, field.initialValue],
+		[field.constraint, field.name, field.defaultValue],
 	);
 
 	useEffect(() => {
