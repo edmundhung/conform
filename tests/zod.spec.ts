@@ -80,10 +80,18 @@ test.describe('Type Conversion', () => {
 
 		expect(await getFormResult(playground)).toEqual({
 			state: 'accepted',
-			value: {
+			data: {
 				number: 123,
 				datetime: '2022-07-04T12:00:00.000Z',
 				boolean: true,
+			},
+			form: {
+				value: {
+					number: '123',
+					datetime: '2022-07-04T12:00Z',
+					boolean: 'Yes',
+				},
+				error: {},
 			},
 		});
 	});

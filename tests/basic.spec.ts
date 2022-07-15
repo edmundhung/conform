@@ -110,10 +110,18 @@ test.describe('Native Constraint', () => {
 		await clickSubmitButton(playground);
 		expect(await getFormResult(playground)).toEqual({
 			state: 'accepted',
-			value: {
+			data: {
 				email: 'me@edmund.dev',
 				password: 'constraintvalidation',
 				age: '91',
+			},
+			form: {
+				value: {
+					email: 'me@edmund.dev',
+					password: 'constraintvalidation',
+					age: '91',
+				},
+				error: {},
 			},
 		});
 	});
@@ -158,9 +166,16 @@ test.describe('Custom Constraint', () => {
 		await clickSubmitButton(playground);
 		expect(await getFormResult(playground)).toEqual({
 			state: 'accepted',
-			value: {
+			data: {
 				number: '10',
 				accept: 'on',
+			},
+			form: {
+				value: {
+					number: '10',
+					accept: 'on',
+				},
+				error: {},
 			},
 		});
 	});
