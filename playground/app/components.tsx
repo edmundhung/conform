@@ -1,4 +1,4 @@
-import type { FormResult } from '@conform-to/dom';
+import type { Submission } from '@conform-to/dom';
 import type { ReactElement } from 'react';
 
 interface FieldProps {
@@ -30,7 +30,7 @@ interface PlaygroundProps {
 	title: string;
 	description?: string;
 	form: string;
-	result?: FormResult<unknown>;
+	submission?: Submission<Record<string, unknown>>;
 	children: ReactElement;
 }
 
@@ -38,7 +38,7 @@ export function Playground({
 	title,
 	description,
 	form,
-	result,
+	submission,
 	children,
 }: PlaygroundProps) {
 	return (
@@ -50,17 +50,17 @@ export function Playground({
 					</h3>
 					<p className="mt-1 mb-2 text-sm text-gray-600">{description}</p>
 				</header>
-				{result ? (
+				{submission ? (
 					<details open={true}>
-						<summary>Result</summary>
+						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 ${
-								result.state === 'rejected'
+								submission.state === 'rejected'
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
 						>
-							{JSON.stringify(result, null, 2)}
+							{JSON.stringify(submission, null, 2)}
 						</pre>
 					</details>
 				) : null}

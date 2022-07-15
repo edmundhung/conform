@@ -9,7 +9,7 @@ import { loader, action, useActionData } from '~/playground';
 export { loader, action };
 
 export default function ZodIntegration() {
-	const { config, action, getResult } = useActionData();
+	const { config, action, getSubmission } = useActionData();
 	const typeFormProps = useForm(config);
 
 	return (
@@ -17,7 +17,7 @@ export default function ZodIntegration() {
 			<Playground
 				title="Native Constraint"
 				description="Infering constraint based on the zod schema"
-				result={getResult('native', (formData) =>
+				submission={getSubmission('native', (formData) =>
 					parse(formData, nativeConstraintSchema),
 				)}
 				form="native"
@@ -30,7 +30,7 @@ export default function ZodIntegration() {
 			<Playground
 				title="Type Conversion"
 				description="Parsing the form data based on the defined preprocess with zod"
-				result={getResult('type', (formData) =>
+				submission={getSubmission('type', (formData) =>
 					parse(formData, typeConversionSchema),
 				)}
 				form="type"

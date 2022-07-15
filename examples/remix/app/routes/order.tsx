@@ -1,5 +1,6 @@
 import {
 	type FieldsetConfig,
+	type Submission,
 	useForm,
 	useFieldset,
 	useFieldList,
@@ -8,7 +9,7 @@ import {
 import { parse, resolve } from '@conform-to/zod';
 import { type ActionFunction } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import * as z from 'zod';
+import { z } from 'zod';
 import { styles } from '~/helpers';
 
 const product = z.object({
@@ -34,19 +35,19 @@ const order = z.object({
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const formResult = parse(formData, order);
+	const submission = parse(formData, order);
 
-	return formResult;
+	return submission;
 };
 
 export default function OrderForm() {
-	const formResult = useActionData();
+	const submission = useActionData<Submission<z.infer<typeof order>>>();
 	const formProps = useForm({ initialReport: 'onBlur' });
 	const [fieldsetProps, { products, shipping, remarks }] = useFieldset(
 		resolve(order),
 		{
-			defaultValue: formResult?.value,
-			error: formResult?.error,
+			defaultValue: submission?.form.value,
+			error: submission?.form.error,
 		},
 	);
 	const [productList, control] = useFieldList(products);
@@ -55,9 +56,9 @@ export default function OrderForm() {
 		<Form method="post" {...formProps}>
 			<header className={styles.header}>
 				<h1>Order Form</h1>
-				{formResult?.state === 'accepted' ? (
+				{submission?.state === 'accepted' ? (
 					<pre className={styles.result}>
-						{JSON.stringify(formResult?.value, null, 2)}
+						{JSON.stringify(submission?.data, null, 2)}
 					</pre>
 				) : null}
 			</header>

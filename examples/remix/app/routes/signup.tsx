@@ -1,8 +1,12 @@
-import { useForm, useFieldset, conform } from '@conform-to/react';
+import {
+	type Submission,
+	useForm,
+	useFieldset,
+	conform,
+} from '@conform-to/react';
 import { resolve, parse } from '@conform-to/zod';
-import { type ActionFunction } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
-import z from 'zod';
+import { useState } from 'react';
+import { z } from 'zod';
 import { styles } from '~/helpers';
 
 const signup = z
@@ -21,32 +25,35 @@ const signup = z
 		path: ['confirm'],
 	});
 
-const schema = resolve(signup);
-
-export let action: ActionFunction = async ({ request }) => {
-	const formData = await request.formData();
-	const data = parse(formData, signup);
-
-	return data;
-};
-
 export default function SignupForm() {
-	const formResult = useActionData();
-	const formProps = useForm();
+	const [submission, setSubmission] = useState<Submission<
+		z.infer<typeof signup>
+	> | null>(null);
+	const formProps = useForm({
+		onSubmit(event) {
+			event.preventDefault();
+
+			const formData = new FormData(event.currentTarget);
+			const submission = parse(formData, signup);
+
+			setSubmission(submission);
+		},
+	});
 	const [fieldsetProps, { email, password, confirm, remember }] = useFieldset(
-		schema,
+		resolve(signup),
 		{
-			error: formResult?.error,
+			defaultValue: submission?.form.value,
+			error: submission?.form.error,
 		},
 	);
 
 	return (
-		<Form method="post" {...formProps}>
+		<form {...formProps}>
 			<header className={styles.header}>
 				<h1>Signup Form</h1>
-				{formResult?.state === 'accepted' ? (
+				{submission?.state === 'accepted' ? (
 					<pre className={styles.result}>
-						{JSON.stringify(formResult?.value, null, 2)}
+						{JSON.stringify(submission?.data, null, 2)}
 					</pre>
 				) : null}
 			</header>
@@ -93,6 +100,6 @@ export default function SignupForm() {
 					Sign up
 				</button>
 			</fieldset>
-		</Form>
+		</form>
 	);
 }
