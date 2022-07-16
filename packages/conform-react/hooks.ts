@@ -286,8 +286,12 @@ export function useFieldset<Type extends Record<string, any>>(
 					return;
 				}
 
-				schema.validate?.(fieldset);
 				dispatch({ type: 'reset' });
+
+				setTimeout(() => {
+					// Delay revalidation until reset is completed
+					schema.validate?.(fieldset);
+				}, 0);
 			};
 
 			document.addEventListener('reset', resetHandler);

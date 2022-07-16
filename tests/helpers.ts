@@ -1,3 +1,4 @@
+import type { Constraint } from '@conform-to/dom';
 import type { Page, Locator } from '@playwright/test';
 
 export function getPlaygroundLocator(page: Page, title: string): Locator {
@@ -30,22 +31,49 @@ export async function getErrorMessages(playground: Locator): Promise<string[]> {
 	return playground.locator('label > p').allInnerTexts();
 }
 
-export async function getConstraint(field: Locator) {
-	return field.evaluate((input: HTMLInputElement) => ({
-		required: input.required,
-		minLength: input.minLength,
-		maxLength: input.maxLength,
-		min: input.min,
-		max: input.max,
-		step: input.step,
-		multiple: input.multiple,
-		pattern: input.pattern,
-	}));
+export async function getConstraint(field: Locator): Promise<Constraint> {
+	return field.evaluate((input: HTMLInputElement) => {
+		const constraint: Constraint = {};
+
+		if (input.required) {
+			constraint.required = true;
+		}
+
+		if (input.multiple) {
+			constraint.multiple = true;
+		}
+
+		if (typeof input.minLength !== 'undefined' && input.minLength !== -1) {
+			constraint.minLength = input.minLength;
+		}
+
+		if (typeof input.maxLength !== 'undefined' && input.maxLength !== -1) {
+			constraint.maxLength = input.maxLength;
+		}
+
+		if (input.min) {
+			constraint.min = input.min;
+		}
+
+		if (input.max) {
+			constraint.max = input.max;
+		}
+
+		if (input.step) {
+			constraint.step = input.step;
+		}
+
+		if (input.pattern) {
+			constraint.pattern = input.pattern;
+		}
+
+		return constraint;
+	});
 }
 
-export async function getFormResult(playground: Locator): Promise<unknown> {
+export async function getSubmission(playground: Locator): Promise<unknown> {
 	const result = await playground.locator('pre').innerText();
-	const data = JSON.parse(result);
+	const data = result ? JSON.parse(result) : null;
 
 	return data;
 }

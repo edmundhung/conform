@@ -1,151 +1,87 @@
-import {
-	useFieldset,
-	conform,
-	useForm,
-	getFieldElements,
-} from '@conform-to/react';
-import { Form } from '@remix-run/react';
-import { Field, Playground } from '~/components';
-import { styles } from '~/helpers';
-import { action, loader, useActionData } from '~/playground';
+import { type Schema, getFieldElements } from '@conform-to/react';
+import { type MovieSchema, MovieFieldset } from '~/fieldset';
+import { action, Form, Playground } from '~/playground';
 
-export { loader, action };
+export { action };
 
 export default function Basic() {
-	const { config, action, getSubmission } = useActionData();
-	const nativeFormProps = useForm(config);
-	const customFormProps = useForm(config);
+	const movieSchema: Schema<MovieSchema> = {
+		fields: {
+			title: {
+				required: true,
+				pattern: '[0-9a-zA-Z ]{1,20}',
+			},
+			description: {
+				minLength: 30,
+				maxLength: 200,
+			},
+			genres: {
+				required: true,
+				multiple: true,
+			},
+			rating: {
+				min: '0.5',
+				max: '5',
+				step: '0.5',
+			},
+		},
+	};
+	const movieSchemaWithCustomMessage: Schema<MovieSchema> = {
+		fields: movieSchema.fields,
+		validate(element) {
+			const [title] = getFieldElements(element, 'title');
+			const [description] = getFieldElements(element, 'description');
+			const [genres] = getFieldElements(element, 'genres');
+			const [rating] = getFieldElements(element, 'rating');
+
+			if (title.validity.valueMissing) {
+				title.setCustomValidity('Title is required');
+			} else if (title.validity.patternMismatch) {
+				title.setCustomValidity('Please enter a valid title');
+			} else {
+				title.setCustomValidity('');
+			}
+
+			if (description.validity.tooShort) {
+				description.setCustomValidity('Please provides more details');
+			} else {
+				description.setCustomValidity('');
+			}
+
+			if (genres.validity.valueMissing) {
+				genres.setCustomValidity('Genre is required');
+			} else {
+				genres.setCustomValidity('');
+			}
+
+			if (rating.validity.stepMismatch) {
+				rating.setCustomValidity('The provided rating is invalid');
+			} else {
+				rating.setCustomValidity('');
+			}
+		},
+	};
 
 	return (
 		<>
 			<Playground
 				title="Native Constraint"
 				description="Reporting error messages provided by the browser vendor"
-				submission={getSubmission('native')}
 				form="native"
 			>
-				<Form id="native" method="post" action={action} {...nativeFormProps}>
-					<NativeConstraintFieldset />
+				<Form id="native" method="post">
+					<MovieFieldset schema={movieSchema} />
 				</Form>
 			</Playground>
-			<hr className={styles.divider} />
 			<Playground
 				title="Custom Constraint"
 				description="Setting up custom validation rules with user-defined error messages"
-				submission={getSubmission('custom')}
 				form="custom"
 			>
-				<Form id="custom" method="post" action={action} {...customFormProps}>
-					<CustomValidationFieldset />
+				<Form id="custom" method="post">
+					<MovieFieldset schema={movieSchemaWithCustomMessage} />
 				</Form>
 			</Playground>
 		</>
-	);
-}
-
-function NativeConstraintFieldset() {
-	const [fieldsetProps, { email, password, age }] = useFieldset<{
-		email: string;
-		password: string;
-		age: string;
-	}>({
-		fields: {
-			email: {
-				required: true,
-				multiple: true,
-			},
-			password: {
-				required: true,
-				minLength: 8,
-				maxLength: 20,
-				pattern: '[0-9a-zA-Z]{8,20}',
-			},
-			age: {
-				min: '1',
-				max: '100',
-				step: '10',
-			},
-		},
-	});
-
-	return (
-		<fieldset {...fieldsetProps}>
-			<Field label="Email" error={email.error}>
-				<input
-					className={styles.input}
-					{...conform.input(email, { type: 'email' })}
-				/>
-			</Field>
-			<Field label="Password" error={password.error}>
-				<input
-					className={styles.input}
-					{...conform.input(password, { type: 'password' })}
-				/>
-			</Field>
-			<Field label="Age" error={age.error}>
-				<input
-					className={styles.input}
-					{...conform.input(age, { type: 'number' })}
-				/>
-			</Field>
-		</fieldset>
-	);
-}
-
-function CustomValidationFieldset() {
-	const [fieldsetProps, { number, accept }] = useFieldset<{
-		number: string;
-		accept: string;
-	}>({
-		fields: {
-			number: {
-				required: true,
-				min: '1',
-				max: '10',
-			},
-			accept: {
-				required: true,
-			},
-		},
-		validate(element) {
-			const [number] = getFieldElements(element, 'number');
-			const [accept] = getFieldElements(element, 'accept');
-
-			if (number.validity.valueMissing) {
-				number.setCustomValidity('Number is required');
-			} else if (
-				number.validity.rangeUnderflow ||
-				number.validity.rangeOverflow
-			) {
-				number.setCustomValidity('Number must be between 1 and 10');
-			} else if (number.value === '5') {
-				number.setCustomValidity('Are you sure?');
-			} else {
-				number.setCustomValidity('');
-			}
-
-			if (accept.validity.valueMissing) {
-				accept.setCustomValidity('Please accept before submit');
-			} else {
-				accept.setCustomValidity('');
-			}
-		},
-	});
-
-	return (
-		<fieldset {...fieldsetProps}>
-			<Field label="Your lucky number" error={number.error} inline>
-				<input
-					className={styles.input}
-					{...conform.input(number, { type: 'number' })}
-				/>
-			</Field>
-			<Field label="Accept" error={accept.error} inline>
-				<input
-					className={styles.checkbox}
-					{...conform.input(accept, { type: 'checkbox' })}
-				/>
-			</Field>
-		</fieldset>
 	);
 }

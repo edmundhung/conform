@@ -5,7 +5,7 @@ import {
 	clickSubmitButton,
 	getErrorMessages,
 	getValidationMessage,
-	getFormResult,
+	getSubmission,
 	isTouched,
 	clickResetButton,
 } from './helpers';
@@ -17,42 +17,30 @@ test.beforeEach(async ({ page }) => {
 test.describe('Native Constraint', () => {
 	test('configure all input fields correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
-		const [email, password, age] = await Promise.all([
-			getConstraint(playground.locator('[name="email"]')),
-			getConstraint(playground.locator('[name="password"]')),
-			getConstraint(playground.locator('[name="age"]')),
+		const [title, description, genres, rating] = await Promise.all([
+			getConstraint(playground.locator('[name="title"]')),
+			getConstraint(playground.locator('[name="description"]')),
+			getConstraint(playground.locator('[name="genres"]')),
+			getConstraint(playground.locator('[name="rating"]')),
 		]);
 
-		expect({ email, password, age }).toEqual({
-			email: {
+		expect({ title, description, genres, rating }).toEqual({
+			title: {
 				required: true,
-				minLength: -1,
-				maxLength: -1,
-				min: '',
-				max: '',
-				step: '',
+				pattern: '[0-9a-zA-Z ]{1,20}',
+			},
+			description: {
+				minLength: 30,
+				maxLength: 200,
+			},
+			genres: {
+				required: true,
 				multiple: true,
-				pattern: '',
 			},
-			password: {
-				required: true,
-				minLength: 8,
-				maxLength: 20,
-				min: '',
-				max: '',
-				step: '',
-				multiple: false,
-				pattern: '[0-9a-zA-Z]{8,20}',
-			},
-			age: {
-				required: false,
-				minLength: -1,
-				maxLength: -1,
-				min: '1',
-				max: '100',
-				step: '10',
-				multiple: false,
-				pattern: '',
+			rating: {
+				min: '0.5',
+				max: '5',
+				step: '0.5',
 			},
 		});
 	});
@@ -61,65 +49,50 @@ test.describe('Native Constraint', () => {
 		page,
 	}) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
-		const email = playground.locator('[name="email"]');
-		const password = playground.locator('[name="password"]');
-		const age = playground.locator('[name="age"]');
+		const title = playground.locator('[name="title"]');
+		const description = playground.locator('[name="description"]');
+		const genres = playground.locator('[name="genres"]');
+		const rating = playground.locator('[name="rating"]');
+
+		async function expectErrorMessagesEqualsToValidationMessages() {
+			const [actualMessages, ...expectedMessages] = await Promise.all([
+				getErrorMessages(playground),
+				getValidationMessage(title),
+				getValidationMessage(description),
+				getValidationMessage(genres),
+				getValidationMessage(rating),
+			]);
+
+			expect(actualMessages).toEqual(expectedMessages);
+		}
 
 		await clickSubmitButton(playground);
-
-		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all([
-				getValidationMessage(email),
-				getValidationMessage(password),
-				getValidationMessage(age),
-			]),
+		await expectErrorMessagesEqualsToValidationMessages();
+		await title.type('The Dark Knight');
+		await expectErrorMessagesEqualsToValidationMessages();
+		await description.type(
+			'When the menace known as the Joker wreaks havoc...',
 		);
-
-		await email.type('me@edmund.dev');
-		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all([
-				'',
-				getValidationMessage(password),
-				getValidationMessage(age),
-			]),
-		);
-
-		await password.type('conform!');
-		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all([
-				'',
-				getValidationMessage(password),
-				getValidationMessage(age),
-			]),
-		);
-
-		await password.fill('');
-		await password.type('constraintvalidation');
-		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all(['', '', getValidationMessage(age)]),
-		);
-
-		await age.type('9');
-		expect(await getErrorMessages(playground)).toEqual(
-			await Promise.all(['', '', getValidationMessage(age)]),
-		);
-
-		await age.type('1'); // 9 -> 91
-		expect(await getErrorMessages(playground)).toEqual(['', '', '']);
-
+		await expectErrorMessagesEqualsToValidationMessages();
+		await genres.selectOption({ label: 'Action' });
+		await expectErrorMessagesEqualsToValidationMessages();
+		await rating.type('4.5');
 		await clickSubmitButton(playground);
-		expect(await getFormResult(playground)).toEqual({
+
+		expect(await getSubmission(playground)).toEqual({
 			state: 'accepted',
 			data: {
-				email: 'me@edmund.dev',
-				password: 'constraintvalidation',
-				age: '91',
+				title: 'The Dark Knight',
+				description: 'When the menace known as the Joker wreaks havoc...',
+				genres: 'action',
+				rating: '4.5',
 			},
 			form: {
 				value: {
-					email: 'me@edmund.dev',
-					password: 'constraintvalidation',
-					age: '91',
+					title: 'The Dark Knight',
+					description: 'When the menace known as the Joker wreaks havoc...',
+					genres: 'action',
+					rating: '4.5',
 				},
 				error: {},
 			},
@@ -130,50 +103,88 @@ test.describe('Native Constraint', () => {
 test.describe('Custom Constraint', () => {
 	test('report error messages correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Custom Constraint');
-		const number = playground.locator('[name="number"]');
-		const accept = playground.locator('[name="accept"]');
+		const title = playground.locator('[name="title"]');
+		const description = playground.locator('[name="description"]');
+		const genres = playground.locator('[name="genres"]');
+		const rating = playground.locator('[name="rating"]');
 
 		await clickSubmitButton(playground);
 
 		expect(await getErrorMessages(playground)).toEqual([
-			'Number is required',
-			'Please accept before submit',
+			'Title is required',
+			'',
+			'Genre is required',
+			'',
 		]);
 
-		await number.type('0');
+		await title.type('What?');
 		expect(await getErrorMessages(playground)).toEqual([
-			'Number must be between 1 and 10',
-			'Please accept before submit',
+			'Please enter a valid title',
+			'',
+			'Genre is required',
+			'',
 		]);
 
-		await number.fill('');
-		await number.type('5');
-		expect(await getErrorMessages(playground)).toEqual([
-			'Are you sure?',
-			'Please accept before submit',
-		]);
-
-		await number.fill('');
-		await number.type('10');
+		await title.fill('');
+		await title.type('The Matrix');
 		expect(await getErrorMessages(playground)).toEqual([
 			'',
-			'Please accept before submit',
+			'',
+			'Genre is required',
+			'',
 		]);
 
-		await accept.check();
-		expect(await getErrorMessages(playground)).toEqual(['', '']);
+		await description.type('When a beautiful stranger...');
+		expect(await getErrorMessages(playground)).toEqual([
+			'',
+			'Please provides more details',
+			'Genre is required',
+			'',
+		]);
+
+		await description.fill('');
+		await description.type(
+			'When a beautiful stranger leads computer hacker Neo to...',
+		);
+		expect(await getErrorMessages(playground)).toEqual([
+			'',
+			'',
+			'Genre is required',
+			'',
+		]);
+
+		await genres.selectOption({ label: 'Science Fiction' });
+		expect(await getErrorMessages(playground)).toEqual(['', '', '', '']);
+
+		await rating.type('3.9');
+		expect(await getErrorMessages(playground)).toEqual([
+			'',
+			'',
+			'',
+			'The provided rating is invalid',
+		]);
+
+		await rating.fill('');
+		await rating.type('4.0');
+		expect(await getErrorMessages(playground)).toEqual(['', '', '', '']);
 
 		await clickSubmitButton(playground);
-		expect(await getFormResult(playground)).toEqual({
+		expect(await getSubmission(playground)).toEqual({
 			state: 'accepted',
 			data: {
-				number: '10',
-				accept: 'on',
+				title: 'The Matrix',
+				description:
+					'When a beautiful stranger leads computer hacker Neo to...',
+				genres: 'sci-fi',
+				rating: '4.0',
 			},
 			form: {
 				value: {
-					number: '10',
-					accept: 'on',
+					title: 'The Matrix',
+					description:
+						'When a beautiful stranger leads computer hacker Neo to...',
+					genres: 'sci-fi',
+					rating: '4.0',
 				},
 				error: {},
 			},
@@ -184,40 +195,55 @@ test.describe('Custom Constraint', () => {
 		page,
 	}) => {
 		const playground = getPlaygroundLocator(page, 'Custom Constraint');
-		const number = playground.locator('[name="number"]');
-		const accept = playground.locator('[name="accept"]');
-
-		const initialValidationMessages = [
-			'Number is required',
-			'Please accept before submit',
-		];
+		const title = playground.locator('[name="title"]');
+		const description = playground.locator('[name="description"]');
+		const genres = playground.locator('[name="genres"]');
+		const rating = playground.locator('[name="rating"]');
+		const initialValidationMessages = await Promise.all([
+			getValidationMessage(title),
+			getValidationMessage(description),
+			getValidationMessage(genres),
+			getValidationMessage(rating),
+		]);
 
 		await clickSubmitButton(playground);
 
-		expect(
-			await Promise.all([isTouched(number), isTouched(accept)]),
-		).not.toContain(false);
 		expect(await getErrorMessages(playground)).toEqual(
 			initialValidationMessages,
 		);
+		expect(
+			await Promise.all([
+				isTouched(title),
+				isTouched(description),
+				isTouched(genres),
+				isTouched(rating),
+			]),
+		).not.toContain(false);
 
-		await number.type('5');
-
-		expect(await getErrorMessages(playground)).not.toEqual(
-			initialValidationMessages,
-		);
+		await title.type('Up');
+		expect(await getErrorMessages(playground)).toEqual([
+			'',
+			...initialValidationMessages.slice(1),
+		]);
 
 		await clickResetButton(playground);
 
-		expect(await getErrorMessages(playground)).toEqual(['', '']);
+		expect(await getErrorMessages(playground)).toEqual(['', '', '', '']);
 		expect(
 			await Promise.all([
-				getValidationMessage(number),
-				getValidationMessage(accept),
+				getValidationMessage(title),
+				getValidationMessage(description),
+				getValidationMessage(genres),
+				getValidationMessage(rating),
 			]),
 		).toEqual(initialValidationMessages);
 		expect(
-			await Promise.all([isTouched(number), isTouched(accept)]),
+			await Promise.all([
+				isTouched(title),
+				isTouched(description),
+				isTouched(genres),
+				isTouched(rating),
+			]),
 		).not.toContain(true);
 	});
 });
