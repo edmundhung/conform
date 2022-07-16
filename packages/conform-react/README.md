@@ -121,6 +121,13 @@ const schema = /*
 function BookFieldset() {
   const [
     fieldsetProps,
+    /**
+     * The variables `name` and `isbn` are FieldProps objects
+     * They are used to configure the field (input, select, textarea)
+     *
+     * Please check the docs of the `conform` helpers for how to
+     * use them together
+     */
     {
       name,
       isbn,
@@ -153,50 +160,43 @@ function BookFieldset() {
     },
   });
 
-  /**
-   * The variable `isbn` is a FieldProps object
-   * It is used to configure the field (input, select, textarea)
-   *
-   * Please check the docs of the `conform` helpers for how to
-   * use them together
-   */
-  console.log(isbn);
+  const {
+    /**
+     * This would be `book.isbn` instead of `isbn`
+     * if the `name` option is provided
+     */
+    name,
 
-  /**
-   * This would be `book.isbn` instead of `isbn`
-   * if the `name` option is provided
-   */
-  console.log(isbn.name);
+    /**
+     * This would be `random-form-id`
+     * because of the `form` option provided
+     */
+    form,
 
-  /**
-   * This would be `random-form-id`
-   * because of the `form` option provided
-   */
-  console.log(isbn.form);
+    /**
+     * This would be `0340013818` if specified
+     * on the `initalValue` option
+     */
+    defaultValue,
 
-  /**
-   * This would be `0340013818` if specified
-   * on the `initalValue` option
-   */
-  console.log(isbn.defaultValue);
+    /**
+     * Current error message
+     * This would be 'Invalid ISBN' initially if specified
+     * on the `error` option
+     */
+    error,
 
-  /**
-   * Current error message
-   * This would be 'Invalid ISBN' initially if specified
-   * on the `error` option
-   */
-  console.log(isbn.error);
-
-  /**
-   * Constraint of the field (required, minLength etc)
-   *
-   * For example, the constraint of the isbn field could be:
-   * {
-   *   required: true,
-   *   pattern: '[0-9]{10,13}'
-   * }
-   */
-  console.log(isbn.constraint);
+    /**
+     * Constraint of the field (required, minLength etc)
+     *
+     * For example, the constraint of the isbn field could be:
+     * {
+     *   required: true,
+     *   pattern: '[0-9]{10,13}'
+     * }
+     */
+    ...constraint,
+  } = isbn;
 
   return (
     <fieldset {...fieldsetProps}>
@@ -312,10 +312,10 @@ function CollectionForm() {
 
   return (
     <fieldset {...fieldsetProps}>
-      {bookList.map(({ key, config }, index) => (
-        <div key={key}>
-          {/* `config` is a FieldProps object similar to `books` */}
-          <BookFieldset {...config}>
+      {bookList.map((book, index) => (
+        <div key={book.key}>
+          {/* `book.props` is a FieldProps object similar to `books` */}
+          <BookFieldset {...book.props}>
 
           {/* To setup a delete button */}
           <button {...control.remove(index)}>Delete</button>
@@ -353,14 +353,20 @@ function BookFieldset({ name, form, defaultValue, error }) {
   <summary>What can I do with `controls`?</summary>
 
 ```tsx
-// To append a new row
-<button {...controls.append()}>Append</button>;
+// To append a new row with optional defaultValue
+<button {...controls.append(defaultValue)}>Append</button>;
 
-// To prepend a new row
-<button {...controls.prepend()}>Prepend</button>;
+// To prepend a new row with optional defaultValue
+<button {...controls.prepend(defaultValue)}>Prepend</button>;
 
 // To remove a row by index
 <button {...controls.remove(index)}>Remove</button>;
+
+// To replace a row with another defaultValue
+<button {...controls.replace(index, defaultValue)}>Replace</button>;
+
+// To reorder a particular row to an another index
+<button {...controls.reorder(fromIndex, toIndex)}>Reorder</button>;
 ```
 
 </details>
@@ -445,7 +451,7 @@ function RandomForm() {
         max={cateogry.max}
         multiple={cateogry.multiple}
         pattern={cateogry.pattern}
-      >2
+      >
       <textarea
         name={cateogry.name}
         form={cateogry.form}
