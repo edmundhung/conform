@@ -8,6 +8,8 @@ import {
 	getSubmission,
 	isTouched,
 	clickResetButton,
+	getLoginFieldset,
+	getMovieFieldset,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -17,11 +19,12 @@ test.beforeEach(async ({ page }) => {
 test.describe('Native Constraint', () => {
 	test('configure all input fields correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
+		const fieldset = getMovieFieldset(playground);
 		const [title, description, genres, rating] = await Promise.all([
-			getConstraint(playground.locator('[name="title"]')),
-			getConstraint(playground.locator('[name="description"]')),
-			getConstraint(playground.locator('[name="genres"]')),
-			getConstraint(playground.locator('[name="rating"]')),
+			getConstraint(fieldset.title),
+			getConstraint(fieldset.description),
+			getConstraint(fieldset.genres),
+			getConstraint(fieldset.rating),
 		]);
 
 		expect({ title, description, genres, rating }).toEqual({
@@ -49,10 +52,7 @@ test.describe('Native Constraint', () => {
 		page,
 	}) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
-		const title = playground.locator('[name="title"]');
-		const description = playground.locator('[name="description"]');
-		const genres = playground.locator('[name="genres"]');
-		const rating = playground.locator('[name="rating"]');
+		const { title, description, genres, rating } = getMovieFieldset(playground);
 
 		async function expectErrorMessagesEqualsToValidationMessages() {
 			const [actualMessages, ...expectedMessages] = await Promise.all([
@@ -103,10 +103,7 @@ test.describe('Native Constraint', () => {
 test.describe('Custom Constraint', () => {
 	test('report error messages correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Custom Constraint');
-		const title = playground.locator('[name="title"]');
-		const description = playground.locator('[name="description"]');
-		const genres = playground.locator('[name="genres"]');
-		const rating = playground.locator('[name="rating"]');
+		const { title, description, genres, rating } = getMovieFieldset(playground);
 
 		await clickSubmitButton(playground);
 
@@ -195,10 +192,7 @@ test.describe('Custom Constraint', () => {
 		page,
 	}) => {
 		const playground = getPlaygroundLocator(page, 'Custom Constraint');
-		const title = playground.locator('[name="title"]');
-		const description = playground.locator('[name="description"]');
-		const genres = playground.locator('[name="genres"]');
-		const rating = playground.locator('[name="rating"]');
+		const { title, description, genres, rating } = getMovieFieldset(playground);
 		const initialValidationMessages = await Promise.all([
 			getValidationMessage(title),
 			getValidationMessage(description),
@@ -245,5 +239,163 @@ test.describe('Custom Constraint', () => {
 				isTouched(rating),
 			]),
 		).not.toContain(true);
+	});
+});
+
+test.describe('Skip Validation', () => {
+	test('submit without providing any values', async ({ page }) => {
+		const playground = getPlaygroundLocator(page, 'Skip Validation');
+		const { email } = getLoginFieldset(playground);
+
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			state: 'accepted',
+			data: {
+				email: '',
+				password: '',
+			},
+			form: {
+				value: {
+					email: '',
+					password: '',
+				},
+				error: {},
+			},
+		});
+
+		await email.type('invalid email');
+
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			state: 'accepted',
+			data: {
+				email: 'invalid email',
+				password: '',
+			},
+			form: {
+				value: {
+					email: 'invalid email',
+					password: '',
+				},
+				error: {},
+			},
+		});
+	});
+});
+
+test.describe('Reporting on submit', () => {
+	test('no error would be reported before users try submitting the form', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Reporting on submit');
+		const { email, password } = getLoginFieldset(playground);
+
+		await email.type('Invalid email');
+		await password.type('1234');
+
+		// To ensure it leaves the password field
+		await playground.press('Tab');
+
+		expect(await getErrorMessages(playground)).toEqual(['', '']);
+
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			expect.stringMatching(/\w+/),
+		]);
+	});
+});
+
+test.describe('Reporting on change', () => {
+	test('error to be reported once the users type something on the field', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Reporting on change');
+		const { email, password } = getLoginFieldset(playground);
+
+		await email.type('Invalid email');
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			'',
+		]);
+
+		await password.type('1234');
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			expect.stringMatching(/\w+/),
+		]);
+	});
+});
+
+test.describe('Reporting on blur', () => {
+	test('error not to be reported until the users leave the field', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Reporting on blur');
+		const { email, password } = getLoginFieldset(playground);
+
+		await email.type('Invalid email');
+		expect(await getErrorMessages(playground)).toEqual(['', '']);
+
+		await playground.press('Tab');
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			'',
+		]);
+
+		await password.type('1234');
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			'',
+		]);
+
+		await playground.press('Tab');
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			expect.stringMatching(/\w+/),
+		]);
+	});
+});
+
+test.describe('Remote form', () => {
+	test('validate like normal form setup', async ({ page }) => {
+		const playground = getPlaygroundLocator(page, 'Reporting on blur');
+		const { email, password } = getLoginFieldset(playground);
+
+		await email.type('Invalid email');
+		await password.type('1234');
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expect.stringMatching(/\w+/),
+			expect.stringMatching(/\w+/),
+		]);
+
+		await email.press('Control+a');
+		await email.type('me@edmund.dev');
+		await password.press('Control+a');
+		await password.type('secretpassword');
+
+		expect(await getErrorMessages(playground)).toEqual(['', '']);
+
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			state: 'accepted',
+			data: {
+				email: 'me@edmund.dev',
+				password: 'secretpassword',
+			},
+			form: {
+				value: {
+					email: 'me@edmund.dev',
+					password: 'secretpassword',
+				},
+				error: {},
+			},
+		});
 	});
 });

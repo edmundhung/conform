@@ -136,10 +136,10 @@ export function LoginFieldset({
 
 	return (
 		<fieldset {...fieldsetProps}>
-			<Field label="Email" error={email.error} inline>
+			<Field label="Email" error={email.error}>
 				<input {...conform.input(email, { type: 'email' })} />
 			</Field>
-			<Field label="Password" error={password.error} inline>
+			<Field label="Password" error={password.error}>
 				<input {...conform.input(password, { type: 'password' })} />
 			</Field>
 		</fieldset>

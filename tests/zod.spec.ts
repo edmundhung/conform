@@ -4,6 +4,8 @@ import {
 	getSubmission,
 	clickSubmitButton,
 	getConstraint,
+	getPaymentFieldset,
+	getStudentFieldset,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -13,11 +15,12 @@ test.beforeEach(async ({ page }) => {
 test.describe('Native Constraint', () => {
 	test('infer constraint correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
+		const fieldset = getStudentFieldset(playground);
 		const [name, remarks, score, grade] = await Promise.all([
-			getConstraint(playground.locator('[name="name"]')),
-			getConstraint(playground.locator('[name="remarks"]')),
-			getConstraint(playground.locator('[name="score"]')),
-			getConstraint(playground.locator('[name="grade"]')),
+			getConstraint(fieldset.name),
+			getConstraint(fieldset.remarks),
+			getConstraint(fieldset.score),
+			getConstraint(fieldset.grade),
 		]);
 
 		expect({ name, remarks, score, grade }).toEqual({
@@ -42,10 +45,8 @@ test.describe('Native Constraint', () => {
 test.describe('Type Conversion', () => {
 	test('convert values based on the preprocess setup', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Type Conversion');
-		const account = playground.locator('[name="account"]');
-		const amount = playground.locator('[name="amount"]');
-		const timestamp = playground.locator('[name="timestamp"]');
-		const verified = playground.locator('[name="verified"]');
+		const { account, amount, timestamp, verified } =
+			getPaymentFieldset(playground);
 
 		await account.type('DE91 1000 0000 0123 4567 89');
 		await amount.type('123');

@@ -1,5 +1,10 @@
 import { type Schema, getFieldElements } from '@conform-to/react';
-import { type MovieSchema, MovieFieldset } from '~/fieldset';
+import {
+	type MovieSchema,
+	type LoginSchema,
+	MovieFieldset,
+	LoginFieldset,
+} from '~/fieldset';
 import { action, Form, Playground } from '~/playground';
 
 export { action };
@@ -61,6 +66,17 @@ export default function Basic() {
 			}
 		},
 	};
+	const loginSchema: Schema<LoginSchema> = {
+		fields: {
+			email: {
+				required: true,
+			},
+			password: {
+				required: true,
+				minLength: 8,
+			},
+		},
+	};
 
 	return (
 		<>
@@ -81,6 +97,50 @@ export default function Basic() {
 				<Form id="custom" method="post">
 					<MovieFieldset schema={movieSchemaWithCustomMessage} />
 				</Form>
+			</Playground>
+			<Playground
+				title="Skip Validation"
+				description="Disabling validation by using the `noValidate` option"
+				form="disable"
+			>
+				<Form id="disable" method="post" noValidate>
+					<LoginFieldset schema={loginSchema} />
+				</Form>
+			</Playground>
+			<Playground
+				title="Reporting on submit"
+				description="No error would be reported before users try submitting the form"
+				form="onsubmit"
+			>
+				<Form id="onsubmit" method="post" initialReport="onSubmit">
+					<LoginFieldset schema={loginSchema} />
+				</Form>
+			</Playground>
+			<Playground
+				title="Reporting on change"
+				description="Error would be reported once the users type something on the field"
+				form="onchange"
+			>
+				<Form id="onchange" method="post" initialReport="onChange">
+					<LoginFieldset schema={loginSchema} />
+				</Form>
+			</Playground>
+			<Playground
+				title="Reporting on blur"
+				description="Error would not be reported until the users leave the field"
+				form="onblur"
+			>
+				<Form id="onblur" method="post" initialReport="onBlur">
+					<LoginFieldset schema={loginSchema} />
+				</Form>
+			</Playground>
+			<Playground
+				title="Remote form"
+				description="Connecting the form and fieldset using the `form` attribute"
+				form="remote"
+			>
+				<Form id="remote" method="post" />
+				<LoginFieldset form="remote" schema={loginSchema} />
 			</Playground>
 		</>
 	);

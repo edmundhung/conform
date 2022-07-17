@@ -77,3 +77,52 @@ export async function getSubmission(playground: Locator): Promise<unknown> {
 
 	return data;
 }
+
+export function getMovieFieldset(playground: Locator) {
+	const title = playground.locator('[name="title"]');
+	const description = playground.locator('[name="description"]');
+	const genres = playground.locator('[name="genres"]');
+	const rating = playground.locator('[name="rating"]');
+
+	return {
+		title,
+		description,
+		genres,
+		rating,
+	};
+}
+
+export function getStudentFieldset(playground: Locator) {
+	const name = playground.locator('[name="name"]');
+	const remarks = playground.locator('[name="remarks"]');
+	const score = playground.locator('[name="score"]');
+	const grade = playground.locator('[name="grade"]');
+
+	return {
+		name,
+		remarks,
+		score,
+		grade,
+	};
+}
+
+export function getPaymentFieldset(playground: Locator) {
+	const account = playground.locator('[name="account"]');
+	const amount = playground.locator('[name="amount"]');
+	const timestamp = playground.locator('[name="timestamp"]');
+	const verified = playground.locator('[name="verified"]');
+
+	return {
+		account,
+		amount,
+		timestamp,
+		verified,
+	};
+}
+
+export function getLoginFieldset(playground: Locator) {
+	return {
+		email: playground.locator('[name="email"]'),
+		password: playground.locator('[name="password"]'),
+	};
+}
