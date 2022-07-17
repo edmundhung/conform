@@ -10,6 +10,7 @@ import {
 	clickResetButton,
 	getLoginFieldset,
 	getMovieFieldset,
+	getTaskFieldset,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -393,6 +394,85 @@ test.describe('Remote form', () => {
 				value: {
 					email: 'me@edmund.dev',
 					password: 'secretpassword',
+				},
+				error: {},
+			},
+		});
+	});
+});
+
+test.describe('Nested list', () => {
+	test('manipulating the list with different control commands', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Nested list');
+		const tasks = playground.locator('ol > li');
+
+		expect(tasks).toHaveCount(1);
+
+		const task0 = getTaskFieldset(tasks.nth(0), 'tasks[0]');
+		const task1 = getTaskFieldset(tasks.nth(1), 'tasks[1]');
+
+		await task0.content.type('Write tests for nested list');
+		await task0.completed.check();
+
+		await playground.locator('button:text("Insert top")').click();
+
+		expect(await task0.content.inputValue()).toBe('');
+		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task1.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task1.completed.isChecked()).toBe(true);
+
+		await tasks.nth(0).locator('button:text("Delete")').click();
+
+		expect(await task0.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task0.completed.isChecked()).toBe(true);
+
+		await playground.locator('button:text("Insert bottom")').click();
+		await task1.content.type('Write more tests');
+		await task1.completed.check();
+		await tasks.nth(1).locator('button:text("Move to top")').click();
+
+		expect(await task0.content.inputValue()).toBe('Write more tests');
+		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task1.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task1.completed.isChecked()).toBe(true);
+
+		await tasks.nth(0).locator('button:text("Clear")').click();
+
+		expect(await task0.content.inputValue()).toBe('');
+		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task1.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task1.completed.isChecked()).toBe(true);
+
+		await task0.content.type('Write even more tests');
+		await playground.locator('[name="title"]').type('Testing plan');
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			state: 'accepted',
+			data: {
+				title: 'Testing plan',
+				tasks: [
+					{ content: 'Write even more tests' },
+					{ content: 'Write tests for nested list', completed: 'on' },
+				],
+			},
+			form: {
+				value: {
+					title: 'Testing plan',
+					tasks: [
+						{ content: 'Write even more tests' },
+						{ content: 'Write tests for nested list', completed: 'on' },
+					],
 				},
 				error: {},
 			},

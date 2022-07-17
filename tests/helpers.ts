@@ -6,11 +6,11 @@ export function getPlaygroundLocator(page: Page, title: string): Locator {
 }
 
 export async function clickSubmitButton(playground: Locator): Promise<void> {
-	return playground.locator('button[type="submit"]').click();
+	return playground.locator('footer button[type="submit"]').click();
 }
 
 export async function clickResetButton(playground: Locator): Promise<void> {
-	return playground.locator('button[type="reset"]').click();
+	return playground.locator('footer button[type="reset"]').click();
 }
 
 export async function getValidationMessage(field: Locator): Promise<string> {
@@ -124,5 +124,12 @@ export function getLoginFieldset(playground: Locator) {
 	return {
 		email: playground.locator('[name="email"]'),
 		password: playground.locator('[name="password"]'),
+	};
+}
+
+export function getTaskFieldset(fieldset: Locator, name: string) {
+	return {
+		content: fieldset.locator(`[name="${name}.content"]`),
+		completed: fieldset.locator(`[name="${name}.completed"]`),
 	};
 }

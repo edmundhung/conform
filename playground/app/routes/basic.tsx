@@ -1,16 +1,19 @@
 import { type Schema, getFieldElements } from '@conform-to/react';
 import {
-	type MovieSchema,
-	type LoginSchema,
+	type Movie,
+	type LoginForm,
+	type Checklist,
+	type Task,
 	MovieFieldset,
 	LoginFieldset,
+	ChecklistFieldset,
 } from '~/fieldset';
 import { action, Form, Playground } from '~/playground';
 
 export { action };
 
 export default function Basic() {
-	const movieSchema: Schema<MovieSchema> = {
+	const movieSchema: Schema<Movie> = {
 		fields: {
 			title: {
 				required: true,
@@ -31,7 +34,7 @@ export default function Basic() {
 			},
 		},
 	};
-	const movieSchemaWithCustomMessage: Schema<MovieSchema> = {
+	const movieSchemaWithCustomMessage: Schema<Movie> = {
 		fields: movieSchema.fields,
 		validate(element) {
 			const [title] = getFieldElements(element, 'title');
@@ -66,7 +69,7 @@ export default function Basic() {
 			}
 		},
 	};
-	const loginSchema: Schema<LoginSchema> = {
+	const loginSchema: Schema<LoginForm> = {
 		fields: {
 			email: {
 				required: true,
@@ -75,6 +78,24 @@ export default function Basic() {
 				required: true,
 				minLength: 8,
 			},
+		},
+	};
+	const checklistSchmea: Schema<Checklist> = {
+		fields: {
+			title: {
+				required: true,
+			},
+			tasks: {
+				required: true,
+			},
+		},
+	};
+	const taskSchema: Schema<Task> = {
+		fields: {
+			content: {
+				required: true,
+			},
+			completed: {},
 		},
 	};
 
@@ -141,6 +162,15 @@ export default function Basic() {
 			>
 				<Form id="remote" method="post" />
 				<LoginFieldset form="remote" schema={loginSchema} />
+			</Playground>
+			<Playground
+				title="Nested list"
+				description="Constructing a nested array using useFieldList"
+				form="nested-list"
+			>
+				<Form id="nested-list" method="post">
+					<ChecklistFieldset schema={checklistSchmea} taskSchema={taskSchema} />
+				</Form>
 			</Playground>
 		</>
 	);
