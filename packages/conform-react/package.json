@@ -2,7 +2,7 @@
 	"name": "@conform-to/react",
 	"description": "Conform view adapter for react",
 	"license": "MIT",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -19,7 +19,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "0.1.1"
+		"@conform-to/dom": "0.2.0"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"

@@ -13,8 +13,8 @@
 		"start": "remix-serve build"
 	},
 	"dependencies": {
-		"@conform-to/react": "0.1.1",
-		"@conform-to/zod": "0.1.1",
+		"@conform-to/react": "0.2.0",
+		"@conform-to/zod": "0.2.0",
 		"@emotion/react": "^11.9.3",
 		"@emotion/styled": "^11.9.3",
 		"@mui/material": "^5.8.6",
