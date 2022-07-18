@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import {
 	getPlaygroundLocator,
-	getFormResult,
+	getSubmission,
 	clickSubmitButton,
 	getConstraint,
+	getPaymentFieldset,
+	getStudentFieldset,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -13,11 +15,12 @@ test.beforeEach(async ({ page }) => {
 test.describe('Native Constraint', () => {
 	test('infer constraint correctly', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Native Constraint');
+		const fieldset = getStudentFieldset(playground);
 		const [name, remarks, score, grade] = await Promise.all([
-			getConstraint(playground.locator('[name="name"]')),
-			getConstraint(playground.locator('[name="remarks"]')),
-			getConstraint(playground.locator('[name="score"]')),
-			getConstraint(playground.locator('[name="grade"]')),
+			getConstraint(fieldset.name),
+			getConstraint(fieldset.remarks),
+			getConstraint(fieldset.score),
+			getConstraint(fieldset.grade),
 		]);
 
 		expect({ name, remarks, score, grade }).toEqual({
@@ -25,40 +28,14 @@ test.describe('Native Constraint', () => {
 				required: true,
 				minLength: 8,
 				maxLength: 20,
-				min: '',
-				max: '',
-				step: '',
-				multiple: false,
 				pattern: '^[0-9a-zA-Z]{8,20}$',
 			},
-			remarks: {
-				required: false,
-				minLength: -1,
-				maxLength: -1,
-				min: '',
-				max: '',
-				step: '',
-				multiple: false,
-				pattern: '',
-			},
+			remarks: {},
 			score: {
-				required: false,
-				minLength: -1,
-				maxLength: -1,
-				min: '1',
+				min: '0',
 				max: '100',
-				step: '',
-				multiple: false,
-				pattern: '',
 			},
 			grade: {
-				required: false,
-				minLength: -1,
-				maxLength: -1,
-				min: '',
-				max: '',
-				step: '',
-				multiple: false,
 				pattern: 'A|B|C|D|E|F',
 			},
 		});
@@ -68,28 +45,30 @@ test.describe('Native Constraint', () => {
 test.describe('Type Conversion', () => {
 	test('convert values based on the preprocess setup', async ({ page }) => {
 		const playground = getPlaygroundLocator(page, 'Type Conversion');
-		const number = playground.locator('[name="number"]');
-		const datetime = playground.locator('[name="datetime"]');
-		const boolean = playground.locator('[name="boolean"]');
+		const { account, amount, timestamp, verified } =
+			getPaymentFieldset(playground);
 
-		await number.type('123');
-		await datetime.type('2022-07-04T12:00Z');
-		await boolean.type('Yes');
+		await account.type('DE91 1000 0000 0123 4567 89');
+		await amount.type('123');
+		await timestamp.type('2022-07-04T12:00Z');
+		await verified.check();
 
 		await clickSubmitButton(playground);
 
-		expect(await getFormResult(playground)).toEqual({
+		expect(await getSubmission(playground)).toEqual({
 			state: 'accepted',
 			data: {
-				number: 123,
-				datetime: '2022-07-04T12:00:00.000Z',
-				boolean: true,
+				account: 'DE91 1000 0000 0123 4567 89',
+				amount: 123,
+				timestamp: '2022-07-04T12:00:00.000Z',
+				verified: true,
 			},
 			form: {
 				value: {
-					number: '123',
-					datetime: '2022-07-04T12:00Z',
-					boolean: 'Yes',
+					account: 'DE91 1000 0000 0123 4567 89',
+					amount: '123',
+					timestamp: '2022-07-04T12:00Z',
+					verified: 'Yes',
 				},
 				error: {},
 			},

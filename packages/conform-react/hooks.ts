@@ -8,9 +8,10 @@ import {
 	reportValidity,
 	shouldSkipValidate,
 	getFieldProps,
-	createControlButton,
+	getControlButtonProps,
 	getFieldElements,
 	getName,
+	applyControlCommand,
 } from '@conform-to/dom';
 import {
 	type ButtonHTMLAttributes,
@@ -285,8 +286,12 @@ export function useFieldset<Type extends Record<string, any>>(
 					return;
 				}
 
-				schema.validate?.(fieldset);
 				dispatch({ type: 'reset' });
+
+				setTimeout(() => {
+					// Delay revalidation until reset is completed
+					schema.validate?.(fieldset);
+				}, 0);
 			};
 
 			document.addEventListener('reset', resetHandler);
@@ -346,64 +351,123 @@ export function useFieldset<Type extends Record<string, any>>(
 	];
 }
 
-interface FieldListControl {
-	prepend(): ButtonHTMLAttributes<HTMLButtonElement>;
-	append(): ButtonHTMLAttributes<HTMLButtonElement>;
+interface FieldListControl<T> {
+	prepend(
+		defaultValue?: FieldsetData<T, string>,
+	): ButtonHTMLAttributes<HTMLButtonElement>;
+	append(
+		defaultValue?: FieldsetData<T, string>,
+	): ButtonHTMLAttributes<HTMLButtonElement>;
+	replace(
+		index: number,
+		defaultValue: FieldsetData<T, string>,
+	): ButtonHTMLAttributes<HTMLButtonElement>;
 	remove(index: number): ButtonHTMLAttributes<HTMLButtonElement>;
+	reorder(
+		fromIndex: number,
+		toIndex: number,
+	): ButtonHTMLAttributes<HTMLButtonElement>;
 }
 
-export function useFieldList<Type extends Array<any>>(
-	props: FieldProps<Type>,
-): [
+export function useFieldList<Payload>(props: FieldProps<Array<Payload>>): [
 	Array<{
 		key: string;
-		props: FieldProps<Type extends Array<infer InnerType> ? InnerType : never>;
+		props: FieldProps<Payload>;
 	}>,
-	FieldListControl,
+	FieldListControl<Payload>,
 ] {
-	const size = props.defaultValue?.length ?? 1;
-	const [keys, setKeys] = useState(() => [...Array(size).keys()]);
-	const list = useMemo(
-		() =>
-			keys.map<{ key: string; props: FieldProps }>((key, index) => ({
-				key: `${key}`,
-				props: {
-					...props,
-					name: `${props.name}[${index}]`,
-					defaultValue: props.defaultValue?.[index],
-					error: props.error?.[index],
-					multiple: false,
-				},
-			})),
-		[keys, props],
+	const [entries, setEntries] = useState<
+		Array<[string, FieldsetData<Payload, string> | undefined]>
+	>(() => Object.entries(props.defaultValue ?? [undefined]));
+	const list = entries.map<{ key: string; props: FieldProps<Payload> }>(
+		([key, defaultValue], index) => ({
+			key: `${key}`,
+			props: {
+				...props,
+				name: `${props.name}[${index}]`,
+				defaultValue: defaultValue ?? props.defaultValue?.[index],
+				error: props.error?.[index],
+				multiple: false,
+			},
+		}),
 	);
-	const controls: FieldListControl = {
-		prepend() {
+	const controls: FieldListControl<Payload> = {
+		prepend(defaultValue) {
 			return {
-				...createControlButton(props.name, 'prepend', {}),
+				...getControlButtonProps(props.name, 'prepend', {
+					defaultValue,
+				}),
 				onClick(e) {
-					setKeys((keys) => [Date.now(), ...keys]);
+					setEntries((entries) =>
+						applyControlCommand([...entries], 'prepend', {
+							defaultValue: [`${Date.now()}`, defaultValue],
+						}),
+					);
 					e.preventDefault();
 				},
 			};
 		},
-		append() {
+		append(defaultValue) {
 			return {
-				...createControlButton(props.name, 'append', {}),
+				...getControlButtonProps(props.name, 'append', {
+					defaultValue,
+				}),
 				onClick(e) {
-					setKeys((keys) => [...keys, Date.now()]);
+					setEntries((entries) =>
+						applyControlCommand([...entries], 'append', {
+							defaultValue: [`${Date.now()}`, defaultValue],
+						}),
+					);
+					e.preventDefault();
+				},
+			};
+		},
+		replace(index, defaultValue) {
+			return {
+				...getControlButtonProps(props.name, 'replace', {
+					index,
+					defaultValue,
+				}),
+				onClick(e) {
+					setEntries((entries) =>
+						applyControlCommand([...entries], 'replace', {
+							defaultValue: [`${Date.now()}`, defaultValue],
+							index,
+						}),
+					);
 					e.preventDefault();
 				},
 			};
 		},
 		remove(index) {
 			return {
-				...createControlButton(props.name, 'remove', { index }),
+				...getControlButtonProps(props.name, 'remove', { index }),
 				onClick(e) {
-					setKeys((keys) => [
-						...keys.slice(0, index),
-						...keys.slice(index + 1),
-					]);
+					setEntries((entries) =>
+						applyControlCommand([...entries], 'remove', {
+							index,
+						}),
+					);
+					e.preventDefault();
+				},
+			};
+		},
+		reorder(fromIndex, toIndex) {
+			return {
+				...getControlButtonProps(props.name, 'reorder', {
+					from: fromIndex,
+					to: toIndex,
+				}),
+				onClick(e) {
+					if (fromIndex !== toIndex) {
+						setEntries((entries) =>
+							applyControlCommand([...entries], 'reorder', {
+								from: fromIndex,
+								to: toIndex,
+							}),
+						);
+					}
+
 					e.preventDefault();
 				},
 			};
@@ -411,14 +475,8 @@ export function useFieldList<Type extends Array<any>>(
 	};
 
 	useEffect(() => {
-		setKeys((keys) => {
-			if (keys.length === size) {
-				return keys;
-			}
-
-			return [...Array(size).keys()];
-		});
-	}, [size]);
+		setEntries(Object.entries(props.defaultValue ?? [undefined]));
+	}, [props.defaultValue]);
 
 	return [list, controls];
 }

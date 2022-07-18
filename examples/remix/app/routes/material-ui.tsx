@@ -58,8 +58,6 @@ export default function Integration() {
 					/>
 					<TextField
 						label="Select"
-						name={select.name}
-						required={select.required}
 						value={selectControl.value ?? ''}
 						onChange={(e) => selectControl.onChange(e.target.value)}
 						onBlur={selectControl.onBlur}

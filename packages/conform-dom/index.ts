@@ -72,6 +72,21 @@ export type Submission<T extends Record<string, unknown>> =
 			form: FormState<T>;
 	  };
 
+export interface ControlButtonProps {
+	type: 'submit';
+	name: string;
+	value: string;
+	formNoValidate: boolean;
+}
+
+export interface ControlAction<T = unknown> {
+	prepend: { defaultValue: T };
+	append: { defaultValue: T };
+	replace: { defaultValue: T; index: number };
+	remove: { index: number };
+	reorder: { from: number; to: number };
+}
+
 export function isFieldsetElement(
 	element: unknown,
 ): element is FieldsetElement {
@@ -239,22 +254,52 @@ export function transform(
 	return result;
 }
 
-export function createControlButton(
-	name: string,
-	action: 'prepend' | 'append' | 'remove',
-	data: any,
-): {
-	type: 'submit';
-	name: string;
-	value: string;
-	formNoValidate: boolean;
-} {
+export function getControlButtonProps<
+	Action extends keyof ControlAction,
+	Payload extends ControlAction[Action],
+>(name: string, action: Action, payload: Payload): ControlButtonProps {
 	return {
 		type: 'submit',
 		name: '__conform__',
-		value: [name, action, JSON.stringify(data)].join('::'),
+		value: [name, action, JSON.stringify(payload)].join('::'),
 		formNoValidate: true,
 	};
+}
+
+export function applyControlCommand<
+	Type,
+	Action extends keyof ControlAction<Type>,
+	Payload extends ControlAction<Type>[Action],
+>(list: Array<Type>, action: Action | string, payload: Payload): Array<Type> {
+	switch (action) {
+		case 'prepend': {
+			const { defaultValue } = payload as ControlAction<Type>['prepend'];
+			list.unshift(defaultValue);
+			break;
+		}
+		case 'append': {
+			const { defaultValue } = payload as ControlAction<Type>['append'];
+			list.push(defaultValue);
+			break;
+		}
+		case 'replace': {
+			const { defaultValue, index } = payload as ControlAction<Type>['replace'];
+			list.splice(index, 1, defaultValue);
+			break;
+		}
+		case 'remove':
+			const { index } = payload as ControlAction<Type>['remove'];
+			list.splice(index, 1);
+			break;
+		case 'reorder':
+			const { from, to } = payload as ControlAction<Type>['reorder'];
+			list.splice(to, 0, ...list.splice(from, 1));
+			break;
+		default:
+			throw new Error('Invalid action found');
+	}
+
+	return list;
 }
 
 export function parse(
@@ -292,29 +337,7 @@ export function parse(
 				throw new Error('');
 			}
 
-			switch (action) {
-				case 'prepend': {
-					const defaultValue = JSON.parse(json);
-
-					list.unshift(defaultValue);
-					break;
-				}
-				case 'append': {
-					const defaultValue = JSON.parse(json);
-
-					list.push(defaultValue);
-					break;
-				}
-				case 'remove':
-					const { index } = JSON.parse(json);
-
-					list.splice(index, 1);
-					break;
-				default:
-					throw new Error(
-						'Invalid action found; Only `prepend`, `append` and `remove` is accepted',
-					);
-			}
+			applyControlCommand(list, action, JSON.parse(json));
 		} catch (e) {
 			return {
 				state: 'rejected',

@@ -4,10 +4,10 @@
 	"sideEffects": false,
 	"scripts": {
 		"build": "run-p build:*",
-		"build:style": "cross-env NODE_ENV=production tailwindcss -o ./app/styles/tailwind.css --minify",
+		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
 		"build:remix": "remix build",
 		"dev": "run-p dev:*",
-		"dev:style": "tailwindcss -o ./app/styles/tailwind.css --watch",
+		"dev:style": "tailwindcss -i ./styles.css -o ./app/styles.css --watch",
 		"dev:remix": "remix dev",
 		"start": "remix-serve build"
 	},

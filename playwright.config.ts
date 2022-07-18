@@ -40,9 +40,6 @@ const config: PlaywrightTestConfig = {
 
 		/* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: 'on-first-retry',
-
-		// DEBUG
-		headless: !process.env.DEBUG,
 	},
 
 	/* Configure projects for major browsers */
@@ -106,5 +103,31 @@ const config: PlaywrightTestConfig = {
 		port: process.env.PORT ? Number(process.env.PORT) : 3000,
 	},
 };
+
+if (typeof process.env.DEBUG !== 'undefined') {
+	config.use = {
+		...config.use,
+		headless: false,
+	};
+
+	config.projects = (config.projects ?? []).reduce<
+		Required<PlaywrightTestConfig>['projects']
+	>((list, project) => {
+		if (project.name === 'chromium') {
+			list.push({
+				...project,
+				use: {
+					...project.use,
+					launchOptions: {
+						...project.use?.launchOptions,
+						slowMo: 150,
+					},
+				},
+			});
+		}
+
+		return list;
+	}, []);
+}
 
 export default config;

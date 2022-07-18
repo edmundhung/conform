@@ -42,7 +42,11 @@ export function select<T extends any>(
 	return {
 		name: props.name,
 		form: props.form,
-		defaultValue: `${props.defaultValue ?? ''}`,
+		defaultValue: props.multiple
+			? Array.isArray(props.defaultValue)
+				? props.defaultValue
+				: []
+			: `${props.defaultValue ?? ''}`,
 		required: props.required,
 		multiple: props.multiple,
 	};

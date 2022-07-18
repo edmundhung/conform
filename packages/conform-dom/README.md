@@ -4,7 +4,7 @@
 
 ## API Reference
 
-- [createControlButton](#createControlButton)
+- [getControlButtonProps](#getControlButtonProps)
 - [getFieldProps](#getFieldProps)
 - [getFieldElements](#getFieldElements)
 - [getName](#getName)
@@ -17,7 +17,7 @@
 - [setFieldState](#setFieldState)
 - [transform](#transform)
 
-### createControlButton
+### getControlButtonProps
 
 ### getFieldProps
 
