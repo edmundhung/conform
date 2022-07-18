@@ -11,6 +11,7 @@ import {
 	getLoginFieldset,
 	getMovieFieldset,
 	getTaskFieldset,
+	expectNonEmptyString,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -304,8 +305,8 @@ test.describe('Reporting on submit', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
+			expectNonEmptyString,
 		]);
 	});
 });
@@ -319,14 +320,14 @@ test.describe('Reporting on change', () => {
 
 		await email.type('Invalid email');
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
 			'',
 		]);
 
 		await password.type('1234');
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
+			expectNonEmptyString,
 		]);
 	});
 });
@@ -343,27 +344,27 @@ test.describe('Reporting on blur', () => {
 
 		await playground.press('Tab');
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
 			'',
 		]);
 
 		await password.type('1234');
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
 			'',
 		]);
 
 		await playground.press('Tab');
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
+			expectNonEmptyString,
 		]);
 	});
 });
 
 test.describe('Remote form', () => {
 	test('validate like normal form setup', async ({ page }) => {
-		const playground = getPlaygroundLocator(page, 'Reporting on blur');
+		const playground = getPlaygroundLocator(page, 'Remote form');
 		const { email, password } = getLoginFieldset(playground);
 
 		await email.type('Invalid email');
@@ -371,8 +372,8 @@ test.describe('Remote form', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getErrorMessages(playground)).toEqual([
-			expect.stringMatching(/\w+/),
-			expect.stringMatching(/\w+/),
+			expectNonEmptyString,
+			expectNonEmptyString,
 		]);
 
 		await email.press('Control+a');
@@ -402,6 +403,79 @@ test.describe('Remote form', () => {
 });
 
 test.describe('Nested list', () => {
+	test('validating new inputs correctly', async ({ page }) => {
+		const playground = getPlaygroundLocator(page, 'Nested list');
+		const tasks = playground.locator('ol > li');
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+		]);
+
+		await playground.locator('button:text("Insert top")').click();
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+			expectNonEmptyString,
+			'',
+		]);
+
+		await playground.locator('button:text("Insert bottom")').click();
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+			expectNonEmptyString,
+			'',
+			expectNonEmptyString,
+			'',
+		]);
+
+		const task0 = getTaskFieldset(tasks.nth(0), 'tasks[0]');
+		const task1 = getTaskFieldset(tasks.nth(1), 'tasks[1]');
+		const task2 = getTaskFieldset(tasks.nth(2), 'tasks[2]');
+
+		await playground.locator('[name="title"]').type('My schedule');
+		await task0.content.type('Urgent task');
+		await task1.content.type('Daily task');
+		await task2.content.type('Ad hoc task');
+
+		expect(await getErrorMessages(playground)).not.toContain(
+			expectNonEmptyString,
+		);
+
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			state: 'accepted',
+			data: {
+				title: 'My schedule',
+				tasks: [
+					{ content: 'Urgent task' },
+					{ content: 'Daily task' },
+					{ content: 'Ad hoc task' },
+				],
+			},
+			form: {
+				value: {
+					title: 'My schedule',
+					tasks: [
+						{ content: 'Urgent task' },
+						{ content: 'Daily task' },
+						{ content: 'Ad hoc task' },
+					],
+				},
+				error: {},
+			},
+		});
+	});
+
 	test('manipulating the list with different control commands', async ({
 		page,
 	}) => {

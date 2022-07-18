@@ -1,5 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import type { Page, Locator } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 export function getPlaygroundLocator(page: Page, title: string): Locator {
 	return page.locator(`[data-playground="${title}"]`);
@@ -133,3 +134,5 @@ export function getTaskFieldset(fieldset: Locator, name: string) {
 		completed: fieldset.locator(`[name="${name}.completed"]`),
 	};
 }
+
+export const expectNonEmptyString = expect.stringMatching(/^$|\s/);
