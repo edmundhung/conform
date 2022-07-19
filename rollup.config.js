@@ -66,10 +66,11 @@ export default function rollup() {
 		// Base
 		'conform-dom',
 
-		// Validator integration
+		// Schema resolver
 		'conform-zod',
+		'conform-yup',
 
-		// View integration
+		// View adapter
 		'conform-react',
 	];
 
