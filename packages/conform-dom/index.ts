@@ -224,6 +224,10 @@ export function transform(
 	const result: any = {};
 
 	for (let [key, value] of entries) {
+		if (value === '') {
+			continue;
+		}
+
 		let paths = getPaths(key);
 		let length = paths.length;
 		let lastIndex = length - 1;

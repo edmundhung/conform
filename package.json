@@ -5,6 +5,7 @@
 	"workspaces": [
 		"packages/conform-dom",
 		"packages/conform-zod",
+		"packages/conform-yup",
 		"packages/conform-react",
 		"playground",
 		"examples/remix"
