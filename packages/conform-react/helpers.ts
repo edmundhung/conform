@@ -3,6 +3,7 @@ import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,
 	type TextareaHTMLAttributes,
+	type OutputHTMLAttributes,
 } from 'react';
 
 export function input<
@@ -62,5 +63,17 @@ export function textarea<T extends string | undefined>(
 		required: props.required,
 		minLength: props.minLength,
 		maxLength: props.maxLength,
+	};
+}
+
+export function output<T>(
+	props: FieldProps<T>,
+): OutputHTMLAttributes<HTMLOutputElement> {
+	return {
+		name: props.name,
+		form: props.form,
+		children: typeof props.error === 'string' ? props.error : '',
+		// @ts-expect-error
+		'data-conform-output': 'true',
 	};
 }

@@ -12,6 +12,7 @@ import {
 	getFieldElements,
 	getName,
 	applyControlCommand,
+	getOutputElements,
 } from '@conform-to/dom';
 import {
 	type ButtonHTMLAttributes,
@@ -167,99 +168,6 @@ export function useFieldset<Type extends Record<string, any>>(
 	config: FieldsetConfig<Type> = {},
 ): [FieldsetProps, { [Key in keyof Type]-?: FieldProps<Type[Key]> }] {
 	const ref = useRef<HTMLFieldSetElement>(null);
-	const [errorMessage, dispatch] = useReducer(
-		(
-			state: Record<string, string>,
-			action:
-				| {
-						type: 'migrate';
-						payload: {
-							keys: string[];
-							error: FieldsetData<Type, string> | undefined;
-						};
-				  }
-				| { type: 'cleanup'; payload: { fieldset: FieldsetElement } }
-				| { type: 'report'; payload: { key: string; message: string } }
-				| { type: 'reset' },
-		) => {
-			switch (action.type) {
-				case 'report': {
-					const { key, message } = action.payload;
-
-					if (state[key] === message) {
-						return state;
-					}
-
-					return {
-						...state,
-						[key]: message,
-					};
-				}
-				case 'migrate': {
-					let { keys, error } = action.payload;
-					let nextState = state;
-
-					for (let key of Object.keys(keys)) {
-						const prevError = state[key];
-						const nextError = error?.[key];
-
-						if (typeof nextError === 'string' && prevError !== nextError) {
-							return {
-								...nextState,
-								[key]: nextError,
-							};
-						}
-					}
-
-					return nextState;
-				}
-				case 'cleanup': {
-					let { fieldset } = action.payload;
-					let updates: Array<[string, string]> = [];
-
-					for (let [key, message] of Object.entries(state)) {
-						if (!message) {
-							continue;
-						}
-
-						const fields = getFieldElements(fieldset, key);
-
-						if (fields.every((field) => field.validity.valid)) {
-							updates.push([key, '']);
-						}
-					}
-
-					if (updates.length === 0) {
-						return state;
-					}
-
-					return {
-						...state,
-						...Object.fromEntries(updates),
-					};
-				}
-				case 'reset': {
-					return {};
-				}
-			}
-		},
-		{},
-		() =>
-			Object.fromEntries(
-				Object.keys(schema.fields).reduce<Array<[string, string]>>(
-					(result, name) => {
-						const error = config.error?.[name];
-
-						if (typeof error === 'string') {
-							result.push([name, error]);
-						}
-
-						return result;
-					},
-					[],
-				),
-			),
-	);
 
 	useEffect(
 		() => {
@@ -279,14 +187,11 @@ export function useFieldset<Type extends Record<string, any>>(
 			}
 
 			schema.validate?.(fieldset);
-			dispatch({ type: 'cleanup', payload: { fieldset } });
 
 			const resetHandler = (e: Event) => {
 				if (e.target !== fieldset.form) {
 					return;
 				}
-
-				dispatch({ type: 'reset' });
 
 				setTimeout(() => {
 					// Delay revalidation until reset is completed
@@ -304,16 +209,6 @@ export function useFieldset<Type extends Record<string, any>>(
 		[schema.validate],
 	);
 
-	useEffect(() => {
-		dispatch({
-			type: 'migrate',
-			payload: {
-				keys: Object.keys(schema.fields),
-				error: config.error,
-			},
-		});
-	}, [config.error, schema.fields]);
-
 	return [
 		{
 			ref,
@@ -323,7 +218,20 @@ export function useFieldset<Type extends Record<string, any>>(
 				const fieldset = e.currentTarget;
 
 				schema.validate?.(fieldset);
-				dispatch({ type: 'cleanup', payload: { fieldset } });
+
+				const element = isFieldElement(e.target) ? e.target : null;
+				const key = Object.keys(schema.fields).find(
+					(key) => element?.name === getName([e.currentTarget.name, key]),
+				);
+				const message = element?.validationMessage ?? '';
+
+				if (!key || message !== '') {
+					return;
+				}
+
+				for (const output of getOutputElements(e.currentTarget, key)) {
+					output.value = message;
+				}
 			},
 			onInvalid(e: FormEvent<FieldsetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
@@ -338,16 +246,14 @@ export function useFieldset<Type extends Record<string, any>>(
 				// Disable browser report
 				e.preventDefault();
 
-				dispatch({
-					type: 'report',
-					payload: { key, message: element.validationMessage },
-				});
+				if (e.currentTarget) {
+					for (const output of getOutputElements(e.currentTarget, key)) {
+						output.value = element.validationMessage;
+					}
+				}
 			},
 		},
-		getFieldProps(schema, {
-			...config,
-			error: Object.assign({}, config.error, errorMessage),
-		}),
+		getFieldProps(schema, config),
 	];
 }
 

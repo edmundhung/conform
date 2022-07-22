@@ -385,3 +385,25 @@ export function getFieldElements(
 
 	return nodes.filter(isFieldElement);
 }
+
+export function isOutputElement(
+	element: unknown,
+): element is HTMLOutputElement {
+	return element instanceof Element && element.tagName === 'OUTPUT';
+}
+
+export function getOutputElements(
+	fieldset: FieldsetElement,
+	key: string,
+): HTMLOutputElement[] {
+	const outputs: HTMLOutputElement[] = [];
+	const name = getName([fieldset.name ?? '', key]);
+
+	for (const element of fieldset.elements) {
+		if (isOutputElement(element) && element.name === name) {
+			outputs.push(element);
+		}
+	}
+
+	return outputs;
+}
