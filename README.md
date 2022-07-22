@@ -11,7 +11,7 @@ Conform is a form validation library built on top of the [Constraint Validation]
 ## Example (React + Zod)
 
 ```tsx
-import { useForm, useFieldset, conform } from '@conform-to/react';
+import { useFieldset, conform } from '@conform-to/react';
 import { resolve, parse } from '@conform-to/zod';
 import z from 'zod';
 
@@ -27,25 +27,21 @@ const signup = z
   });
 
 export default function SignupForm() {
-  const formProps = useForm({
-    /**
-     * Optional. Fallback to native form submit
-     */
-    onSubmit(event) {
-      event.preventDefault();
-
-      const formData = new FormData(e.currentTarget);
-      const result = parse(formData, signup);
-
-      // Send the data with fetch API
-    },
-  });
   const [fieldsetProps, { email, password, confirm }] = useFieldset(
     resolve(signup),
   );
 
   return (
-    <form {...formProps}>
+    <form
+      onSubmit={event => {
+        event.preventDefault();
+
+        const formData = new FormData(e.currentTarget);
+        const result = parse(formData, signup);
+
+        // Send the data with fetch API
+      }
+    >
       <fieldset {...fieldsetProps}>
         <label>
           Email:
