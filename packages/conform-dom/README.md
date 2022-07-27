@@ -30,7 +30,7 @@
 
 ### isFieldElement
 
-### isFieldsetElement
+### isFieldsetField
 
 ### parse
 

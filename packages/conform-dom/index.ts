@@ -38,12 +38,6 @@ export type FieldsetData<Type, Value> = Type extends
 	: unknown;
 
 /**
- * Element that maintains a list of fields
- * i.e. fieldset.elements
- */
-export type FieldsetElement = HTMLFormElement | HTMLFieldSetElement;
-
-/**
  * Element type that might be a candiate of Constraint Validation
  */
 export type FieldElement =
@@ -87,15 +81,6 @@ export interface ControlAction<T = unknown> {
 	reorder: { from: number; to: number };
 }
 
-export function isFieldsetElement(
-	element: unknown,
-): element is FieldsetElement {
-	return (
-		element instanceof Element &&
-		(element.tagName === 'FORM' || element.tagName === 'FIELDSET')
-	);
-}
-
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -110,15 +95,7 @@ export function setFieldState(
 	field: unknown,
 	state: { touched: boolean },
 ): void {
-	if (isFieldsetElement(field)) {
-		for (let element of field.elements) {
-			setFieldState(element, state);
-		}
-		return;
-	}
-
 	if (!isFieldElement(field)) {
-		console.warn('Only input/select/textarea/button element can be touched');
 		return;
 	}
 
@@ -129,7 +106,7 @@ export function setFieldState(
 	}
 }
 
-export function reportValidity(fieldset: FieldsetElement): boolean {
+export function reportValidity(fieldset: HTMLFormElement): boolean {
 	let isValid = true;
 
 	for (const field of fieldset.elements) {
@@ -428,7 +405,7 @@ export function parse(
  * @deprecated
  */
 export function getFieldElements(
-	fieldset: FieldsetElement,
+	fieldset: HTMLFieldSetElement,
 	key: string,
 ): FieldElement[] {
 	const name = getName([fieldset.name ?? '', key]);
