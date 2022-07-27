@@ -6,22 +6,23 @@
 
 - [getControlButtonProps](#getControlButtonProps)
 - [getFieldProps](#getFieldProps)
-- [getFieldElements](#getFieldElements)
+- [getFieldsetData](#getFieldsetData)
 - [getName](#getName)
 - [getPaths](#getPaths)
 - [isFieldElement](#isFieldElement)
+- [isFieldsetField](#isFieldsetField)
 - [parse](#parse)
 - [reportValidity](#reportValidity)
 - [setFieldState](#setFieldState)
+- [setFieldsetError](#setFieldsetError)
 - [shouldSkipValidate](#shouldSkipValidate)
-- [setFieldState](#setFieldState)
 - [transform](#transform)
 
 ### getControlButtonProps
 
 ### getFieldProps
 
-### getFieldElements
+### getFieldsetData
 
 ### getName
 
@@ -29,13 +30,15 @@
 
 ### isFieldElement
 
-### isFieldsetElement
+### isFieldsetField
 
 ### parse
 
 ### reportValidity
 
 ### setFieldState
+
+### setFieldsetError
 
 ### shouldSkipValidate
 

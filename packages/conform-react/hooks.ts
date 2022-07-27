@@ -1,5 +1,4 @@
 import {
-	type FieldsetElement,
 	type FieldProps,
 	type Schema,
 	type FieldsetData,
@@ -75,7 +74,9 @@ export function useForm({
 	);
 	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
 		if (!noValidate) {
-			setFieldState(event.currentTarget, { touched: true });
+			for (let element of event.currentTarget.elements) {
+				setFieldState(element, { touched: true });
+			}
 
 			if (
 				!shouldSkipValidate(event.nativeEvent as SubmitEvent) &&
@@ -88,7 +89,9 @@ export function useForm({
 		onSubmit?.(event);
 	};
 	const handleReset: FormEventHandler<HTMLFormElement> = (event) => {
-		setFieldState(event.currentTarget, { touched: false });
+		for (let element of event.currentTarget.elements) {
+			setFieldState(element, { touched: false });
+		}
 
 		onReset?.(event);
 	};
@@ -178,7 +181,7 @@ export function useFieldset<Type extends Record<string, any>>(
 							error: FieldsetData<Type, string> | undefined;
 						};
 				  }
-				| { type: 'cleanup'; payload: { fieldset: FieldsetElement } }
+				| { type: 'cleanup'; payload: { fieldset: HTMLFieldSetElement } }
 				| { type: 'report'; payload: { key: string; message: string } }
 				| { type: 'reset' },
 		) => {
@@ -319,13 +322,13 @@ export function useFieldset<Type extends Record<string, any>>(
 			ref,
 			name: config.name,
 			form: config.form,
-			onInput(e: FormEvent<FieldsetElement>) {
+			onInput(e: FormEvent<HTMLFieldSetElement>) {
 				const fieldset = e.currentTarget;
 
 				schema.validate?.(fieldset);
 				dispatch({ type: 'cleanup', payload: { fieldset } });
 			},
-			onInvalid(e: FormEvent<FieldsetElement>) {
+			onInvalid(e: FormEvent<HTMLFieldSetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
 				const key = Object.keys(schema.fields).find(
 					(key) => element?.name === getName([e.currentTarget.name, key]),
