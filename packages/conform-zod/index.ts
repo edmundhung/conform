@@ -1,13 +1,13 @@
 import {
 	type Constraint,
-	type FieldsetElement,
 	type Schema,
 	type Submission,
 	type FieldsetData,
 	parse as baseParse,
 	transform,
 	getName,
-	getFieldElements,
+	getFieldsetData,
+	setFieldsetError,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -94,93 +94,12 @@ function getSchemaShape<T extends Record<string, any>>(
 	return null;
 }
 
-function createParser<T>(schema: z.ZodType<T>): (data: unknown) => unknown {
-	if (
-		schema instanceof z.ZodString ||
-		schema instanceof z.ZodEnum ||
-		schema instanceof z.ZodNumber ||
-		schema instanceof z.ZodDate ||
-		schema instanceof z.ZodBoolean
-	) {
-		return (value) => {
-			if (value === '') {
-				return;
-			}
-
-			return value;
-		};
-	} else if (schema instanceof z.ZodDefault) {
-		const def = schema.removeDefault();
-		const parse = createParser(def);
-
-		return parse;
-	} else if (schema instanceof z.ZodOptional) {
-		const def = schema.unwrap();
-		const parse = createParser(def);
-
-		return parse;
-	} else if (schema instanceof z.ZodEffects) {
-		const def = schema.innerType();
-		const parse = createParser(def);
-
-		return parse;
-	} else if (schema instanceof z.ZodArray) {
-		const parse = createParser(schema.element);
-
-		return (value) => {
-			if (!Array.isArray(value)) {
-				return;
-			}
-
-			return value.map(parse);
-		};
-	} else if (schema instanceof z.ZodObject) {
-		const shape: Record<string, (value: unknown) => unknown> = {};
-
-		for (let [key, def] of Object.entries(schema.shape)) {
-			// @ts-expect-error
-			shape[key] = createParser(def);
-		}
-
-		return (value) => {
-			if (typeof value !== 'object') {
-				return;
-			}
-
-			const object = Object(value);
-			const result: Record<string, unknown> = {};
-
-			for (let [key, parse] of Object.entries(shape)) {
-				const item = parse(object[key]);
-
-				if (typeof item !== 'undefined') {
-					result[key] = item;
-				}
-			}
-
-			return result;
-		};
-	}
-
-	throw new Error(`
-		Unsupported zod type provided; Please raise an issue explaining your usecase
-	`);
-}
-
-function formatError<T>(error: z.ZodError<T>): FieldsetData<T, string> {
-	return transform(
-		error.errors.map((e) => [getName(e.path), e.message]),
-	) as FieldsetData<T, string>;
-}
-
 export function parse<T extends Record<string, unknown>>(
 	payload: FormData | URLSearchParams,
 	schema: z.ZodType<T>,
 ): Submission<T> {
-	const parse = createParser(schema);
 	const submission = baseParse(payload);
-	const value = parse(submission.form.value);
-	const result = schema.safeParse(value);
+	const result = schema.safeParse(submission.form.value);
 
 	if (submission.state === 'modified') {
 		return {
@@ -205,7 +124,9 @@ export function parse<T extends Record<string, unknown>>(
 				...submission.form,
 				error: {
 					...submission.form.error,
-					...formatError(result.error),
+					...(transform(
+						result.error.errors.map((e) => [getName(e.path), e.message]),
+					) as FieldsetData<T, string>),
 				},
 			},
 		};
@@ -215,7 +136,6 @@ export function parse<T extends Record<string, unknown>>(
 export function resolve<T extends Record<string, any>>(
 	schema: z.ZodType<T>,
 ): Schema<T> {
-	const parse = createParser(schema);
 	const shape = getSchemaShape(schema);
 
 	if (!shape) {
@@ -232,34 +152,18 @@ export function resolve<T extends Record<string, any>>(
 				inferConstraint(def),
 			]),
 		),
-		validate(fieldset: FieldsetElement) {
-			const formData = new FormData(fieldset.form);
-			const entries = Array.from(formData.entries()).reduce<
-				Array<[string, string]>
-			>((result, [key, value]) => {
-				if (!fieldset.name || key.startsWith(`${fieldset.name}.`)) {
-					result.push([
-						key.slice(fieldset.name ? fieldset.name.length + 1 : 0),
-						value.toString(),
-					]);
-				}
+		validate(fieldset: HTMLFieldSetElement) {
+			const data = getFieldsetData(fieldset);
+			const result = schema.safeParse(data);
+			const errors = !result.success
+				? result.error.errors.map<[string, string]>((e) => [
+						getName(e.path),
+						e.message,
+				  ])
+				: [];
+			const keys = Object.keys(shape);
 
-				return result;
-			}, []);
-			const data = transform(entries);
-			const value = parse(data);
-			const result = schema.safeParse(value);
-			const errors = !result.success ? result.error.errors : [];
-
-			for (const key of Object.keys(shape)) {
-				const fields = getFieldElements(fieldset, key);
-				const validationMessage =
-					errors.find((e) => key === e.path[0])?.message ?? '';
-
-				for (const field of fields) {
-					field.setCustomValidity(validationMessage);
-				}
-			}
+			setFieldsetError(fieldset, keys, errors);
 		},
 	};
 }

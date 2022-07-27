@@ -319,13 +319,13 @@ export function useFieldset<Type extends Record<string, any>>(
 			ref,
 			name: config.name,
 			form: config.form,
-			onInput(e: FormEvent<FieldsetElement>) {
+			onInput(e: FormEvent<HTMLFieldSetElement>) {
 				const fieldset = e.currentTarget;
 
 				schema.validate?.(fieldset);
 				dispatch({ type: 'cleanup', payload: { fieldset } });
 			},
-			onInvalid(e: FormEvent<FieldsetElement>) {
+			onInvalid(e: FormEvent<HTMLFieldSetElement>) {
 				const element = isFieldElement(e.target) ? e.target : null;
 				const key = Object.keys(schema.fields).find(
 					(key) => element?.name === getName([e.currentTarget.name, key]),

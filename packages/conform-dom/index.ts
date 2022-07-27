@@ -18,7 +18,7 @@ export interface FieldProps<Type = any> extends Constraint {
 
 export type Schema<Type extends Record<string, any>> = {
 	fields: { [Key in keyof Type]-?: Constraint };
-	validate?: (element: FieldsetElement) => void;
+	validate?: (element: HTMLFieldSetElement) => void;
 };
 
 /**
@@ -216,6 +216,55 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
+export function getFieldsetData(
+	fieldset: HTMLFieldSetElement,
+): FieldsetData<Record<string, unknown>, string> {
+	const entries: Array<[string, FormDataEntryValue]> = [];
+
+	if (fieldset.form) {
+		const formData = new FormData(fieldset.form);
+
+		for (const [key, value] of formData) {
+			if (!fieldset.name || key.startsWith(`${fieldset.name}.`)) {
+				entries.push([
+					key.slice(fieldset.name ? fieldset.name.length + 1 : 0),
+					value,
+				]);
+			}
+		}
+	}
+
+	return transform(entries);
+}
+
+export function setFieldsetError(
+	fieldset: HTMLFieldSetElement,
+	keys: string[],
+	errors: Array<[string, string]>,
+) {
+	const firstErrorByName = Object.fromEntries([...errors].reverse());
+
+	for (const element of fieldset.elements) {
+		if (!isFieldsetField(fieldset, keys, element)) {
+			continue;
+		}
+
+		element.setCustomValidity(firstErrorByName[element.name] ?? '');
+	}
+}
+
+export function isFieldsetField(
+	fieldset: HTMLFieldSetElement,
+	keys: string[],
+	element: unknown,
+): element is FieldElement {
+	return (
+		isFieldElement(element) &&
+		element.form === fieldset.form &&
+		keys.some((key) => element.name.startsWith(getName([fieldset.name, key])))
+	);
+}
+
 export function transform(
 	entries:
 		| Array<[string, FormDataEntryValue]>
@@ -224,6 +273,10 @@ export function transform(
 	const result: any = {};
 
 	for (let [key, value] of entries) {
+		if (value === '') {
+			continue;
+		}
+
 		let paths = getPaths(key);
 		let length = paths.length;
 		let lastIndex = length - 1;
@@ -370,6 +423,10 @@ export function parse(
 	};
 }
 
+/**
+ * Lookup the corresponding element based on fieldset name and key
+ * @deprecated
+ */
 export function getFieldElements(
 	fieldset: FieldsetElement,
 	key: string,
