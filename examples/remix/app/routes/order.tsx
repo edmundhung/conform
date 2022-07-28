@@ -1,7 +1,6 @@
 import {
 	type FieldsetConfig,
 	type Submission,
-	useForm,
 	useFieldset,
 	useFieldList,
 	conform,
@@ -42,10 +41,10 @@ export let action: ActionFunction = async ({ request }) => {
 
 export default function OrderForm() {
 	const submission = useActionData<Submission<z.infer<typeof order>>>();
-	const formProps = useForm({ initialReport: 'onBlur' });
 	const [fieldsetProps, { products, shipping, remarks }] = useFieldset(
 		resolve(order),
 		{
+			initialReport: 'onBlur',
 			defaultValue: submission?.form.value,
 			error: submission?.form.error,
 		},
@@ -53,7 +52,7 @@ export default function OrderForm() {
 	const [productList, control] = useFieldList(products);
 
 	return (
-		<Form method="post" {...formProps}>
+		<Form method="post">
 			<header className={styles.header}>
 				<h1>Order Form</h1>
 				{submission?.state === 'accepted' ? (

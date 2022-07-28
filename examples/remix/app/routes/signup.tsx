@@ -1,9 +1,4 @@
-import {
-	type Submission,
-	useForm,
-	useFieldset,
-	conform,
-} from '@conform-to/react';
+import { type Submission, useFieldset, conform } from '@conform-to/react';
 import { resolve, parse } from '@conform-to/zod';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -29,16 +24,6 @@ export default function SignupForm() {
 	const [submission, setSubmission] = useState<Submission<
 		z.infer<typeof signup>
 	> | null>(null);
-	const formProps = useForm({
-		onSubmit(event) {
-			event.preventDefault();
-
-			const formData = new FormData(event.currentTarget);
-			const submission = parse(formData, signup);
-
-			setSubmission(submission);
-		},
-	});
 	const [fieldsetProps, { email, password, confirm, remember }] = useFieldset(
 		resolve(signup),
 		{
@@ -48,7 +33,16 @@ export default function SignupForm() {
 	);
 
 	return (
-		<form {...formProps}>
+		<form
+			onSubmit={(event) => {
+				event.preventDefault();
+
+				const formData = new FormData(event.currentTarget);
+				const submission = parse(formData, signup);
+
+				setSubmission(submission);
+			}}
+		>
 			<header className={styles.header}>
 				<h1>Signup Form</h1>
 				{submission?.state === 'accepted' ? (

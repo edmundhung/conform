@@ -13,7 +13,6 @@
 		"build": "run-s build:*",
 		"build:js": "rollup -c",
 		"build:ts": "tsc -b",
-		"build:playground": "npm run build --workspace=playground",
 		"watch": "run-p watch:*",
 		"watch:js": "npm run build:js -- --watch",
 		"watch:ts": "npm run build:ts -- --watch",

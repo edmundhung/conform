@@ -1,4 +1,4 @@
-import { useFieldset, useForm, useControlledInput } from '@conform-to/react';
+import { useFieldset, useControlledInput } from '@conform-to/react';
 import { resolve } from '@conform-to/zod';
 import { TextField, Button, MenuItem, Stack } from '@mui/material';
 import { useState } from 'react';
@@ -13,15 +13,11 @@ const muiFields = z.object({
 
 export default function Integration() {
 	const [query, setQuery] = useState<any>(null);
-	const formProps = useForm({
-		initialReport: 'onBlur',
-		onSubmit(e) {
-			e.preventDefault();
-			setQuery(Object.fromEntries(new FormData(e.currentTarget)));
-		},
-	});
 	const [fieldsetProps, { text, select, textarea }] = useFieldset(
 		resolve(muiFields),
+		{
+			initialReport: 'onBlur',
+		},
 	);
 
 	/**
@@ -37,7 +33,12 @@ export default function Integration() {
 	const [selectInput, selectControl] = useControlledInput(select);
 
 	return (
-		<form {...formProps}>
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				setQuery(Object.fromEntries(new FormData(e.currentTarget)));
+			}}
+		>
 			<header className={styles.header}>
 				<h1>Material-ui fields</h1>
 				{query !== null ? (
