@@ -18,7 +18,7 @@
 		"watch:ts": "npm run build:ts -- --watch",
 		"playground": "npm run dev --workspace=playground",
 		"example:remix": "npm run dev --workspace=./examples/remix",
-		"test": "playwright test",
+		"test": "npm run build --workspace=playground && playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"
 	},
