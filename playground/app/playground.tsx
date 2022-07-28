@@ -1,8 +1,7 @@
 import { type ActionFunction } from '@remix-run/node';
-import { useActionData, Form as RemixForm } from '@remix-run/react';
+import { useActionData } from '@remix-run/react';
 import { parse as baseParse, type Submission } from '@conform-to/dom';
 import { useState, useEffect, type ReactNode } from 'react';
-import { type FormConfig, useForm } from '@conform-to/react';
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
@@ -17,22 +16,6 @@ export let action: ActionFunction = async ({ request }) => {
 		entries: Array.from(formData),
 	};
 };
-
-interface FormProps extends FormConfig {
-	id: string;
-	method: 'get' | 'post';
-	children?: ReactNode;
-}
-
-export function Form({ id, method, children, ...config }: FormProps) {
-	const formProps = useForm(config);
-
-	return (
-		<RemixForm id={id} method={method} {...formProps}>
-			{children}
-		</RemixForm>
-	);
-}
 
 interface FieldProps {
 	label: string;

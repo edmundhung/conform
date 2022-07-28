@@ -359,7 +359,7 @@ export function parse(
 
 export function subscribeFieldset(
 	fieldset: HTMLFieldSetElement,
-	{ fields, validate, initialReport, error }: any,
+	{ fields, validate, initialReport, onReport }: any,
 ) {
 	if (!fieldset.form) {
 		console.warn(
@@ -384,11 +384,8 @@ export function subscribeFieldset(
 				continue;
 			}
 
-			if (
-				element.dataset.conformError &&
-				element.validationMessage !== element.dataset.conformError
-			) {
-				delete element.dataset.conformError;
+			if (element.validationMessage === '') {
+				onReport(element.name, '');
 			}
 
 			if (element.dataset.conformTouched) {
@@ -403,7 +400,7 @@ export function subscribeFieldset(
 
 		// Disable browser report
 		event.preventDefault();
-		event.target.dataset.conformError = event.target.validationMessage;
+		onReport(event.target.name, event.target.validationMessage);
 	};
 	const blurHandler = (event: FocusEvent) => {
 		if (!isFieldsetField(fieldset, keys, event.target)) {
@@ -446,28 +443,30 @@ export function subscribeFieldset(
 
 		for (const element of fieldset.elements) {
 			if (isFieldsetField(fieldset, keys, element)) {
-				delete element.dataset.conformError;
 				delete element.dataset.conformTouched;
+				onReport(element.name, '');
 			}
 		}
 
-		// Revalidate the fieldset
-		validate?.(fieldset);
+		// Revalidate the fieldset after form reset
+		setTimeout(() => {
+			validate?.(fieldset);
+		}, 0);
 	};
 
 	validate?.(fieldset);
 
-	document.addEventListener('input', inputHandler);
+	document.addEventListener('input', inputHandler, true);
 	document.addEventListener('blur', blurHandler, true);
 	document.addEventListener('invalid', invalidHandler, true);
-	document.addEventListener('click', clickHandler);
+	document.addEventListener('click', clickHandler, true);
 	document.addEventListener('reset', resetHandler);
 
 	return () => {
-		document.removeEventListener('input', inputHandler);
+		document.removeEventListener('input', inputHandler, true);
 		document.removeEventListener('blur', blurHandler, true);
 		document.removeEventListener('invalid', invalidHandler, true);
-		document.removeEventListener('click', clickHandler);
+		document.removeEventListener('click', clickHandler, true);
 		document.removeEventListener('reset', resetHandler);
 	};
 }

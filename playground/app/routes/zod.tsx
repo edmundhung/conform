@@ -1,6 +1,7 @@
+import { Form } from '@remix-run/react';
 import { parse, resolve } from '@conform-to/zod';
 import { z } from 'zod';
-import { action, Playground, Form } from '~/playground';
+import { action, Playground } from '~/playground';
 import { PaymentFieldset, StudentFieldset } from '~/fieldset';
 
 export { action };

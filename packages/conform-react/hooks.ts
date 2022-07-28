@@ -2,12 +2,9 @@ import {
 	type FieldProps,
 	type Schema,
 	type FieldsetData,
-	isFieldElement,
 	getFieldProps,
 	getControlButtonProps,
-	getName,
 	applyControlCommand,
-	isFieldsetField,
 	subscribeFieldset,
 } from '@conform-to/dom';
 import {
@@ -42,6 +39,14 @@ export function useFieldset<Type extends Record<string, unknown>>(
 	schema: Schema<Type>,
 	config: FieldsetConfig<Type> = {},
 ): [FieldsetProps, { [Key in keyof Type]-?: FieldProps<Type[Key]> }] {
+	const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+	const schedulerRef = useRef<{
+		timeout: NodeJS.Timeout | null;
+		updates: Array<[string, string]>;
+	}>({
+		timeout: null,
+		updates: [],
+	});
 	const [errorMessage, setErrorMessage] = useState(() => {
 		let result: Record<string, string> = {};
 
@@ -55,10 +60,9 @@ export function useFieldset<Type extends Record<string, unknown>>(
 
 		return result;
 	});
-	const ref = useRef<HTMLFieldSetElement>(null);
 
 	useEffect(() => {
-		const fieldset = ref.current;
+		const fieldset = fieldsetRef.current;
 
 		if (!fieldset) {
 			console.warn(
@@ -67,66 +71,42 @@ export function useFieldset<Type extends Record<string, unknown>>(
 			return;
 		}
 
-		const keys = Object.keys(schema.fields);
-		const observer = new MutationObserver((mutations) => {
-			const errors: Array<[string, string]> = [];
-
-			for (const record of mutations) {
-				if (!isFieldElement(record.target)) {
-					continue;
-				}
-
-				switch (record.attributeName) {
-					case 'data-conform-error': {
-						const name = record.target.name;
-						const error = record.target.dataset.conformError ?? '';
-						const key = keys.find(
-							(key) => name === getName([fieldset.name, key]),
-						);
-
-						if (key) {
-							errors.push([key, error]);
-						}
-					}
-				}
-			}
-
-			if (errors.length > 0) {
-				setErrorMessage((prev) => {
-					let next = prev;
-
-					for (const [key, message] of errors) {
-						if (prev[key] !== message) {
-							next = {
-								...next,
-								[key]: message,
-							};
-						}
-					}
-
-					return next;
-				});
-			}
-		});
-
-		for (const element of fieldset.elements) {
-			if (isFieldsetField(fieldset, keys, element)) {
-				observer.observe(element, {
-					attributes: true,
-					attributeFilter: ['data-conform-error'],
-				});
-			}
-		}
-
 		const unsubscribe = subscribeFieldset(fieldset, {
 			fields: schema.fields,
 			validate: schema.validate,
 			initialReport: config.initialReport,
+			onReport(key: string, message: string) {
+				const { timeout, updates } = schedulerRef.current;
+
+				updates.push([key, message]);
+
+				if (timeout) {
+					clearTimeout(timeout);
+					schedulerRef.current.timeout = null;
+				}
+
+				schedulerRef.current.timeout = setTimeout(() => {
+					setErrorMessage((prev) => {
+						let next = prev;
+
+						for (const [key, message] of updates) {
+							if (next[key] !== message && next[key] === prev[key]) {
+								next = {
+									...next,
+									[key]: message,
+								};
+							}
+						}
+
+						return next;
+					});
+					schedulerRef.current.updates = [];
+				}, 0);
+			},
 		});
 
 		return () => {
 			unsubscribe();
-			observer.disconnect();
 		};
 	}, [schema, config.initialReport]);
 
@@ -142,7 +122,7 @@ export function useFieldset<Type extends Record<string, unknown>>(
 
 	return [
 		{
-			ref,
+			ref: fieldsetRef,
 			name: config.name,
 			form: config.form,
 		},
