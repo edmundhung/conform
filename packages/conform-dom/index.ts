@@ -179,24 +179,33 @@ export function setFieldsetError(
 	const firstErrorByName = Object.fromEntries([...errors].reverse());
 
 	for (const element of fieldset.elements) {
-		if (!isFieldsetField(fieldset, keys, element)) {
+		if (!isFieldElement(element)) {
 			continue;
 		}
 
-		element.setCustomValidity(firstErrorByName[element.name] ?? '');
+		const key = getKey(fieldset, element);
+
+		if (key !== null && keys.includes(key)) {
+			element.setCustomValidity(firstErrorByName[element.name] ?? '');
+		}
 	}
 }
 
-export function isFieldsetField(
+export function getKey(
 	fieldset: HTMLFieldSetElement,
-	keys: string[],
-	element: unknown,
-): element is FieldElement {
-	return (
-		isFieldElement(element) &&
-		element.form === fieldset.form &&
-		keys.some((key) => element.name.startsWith(getName([fieldset.name, key])))
-	);
+	element: FieldElement,
+): string | null {
+	if (fieldset.form !== element.form) {
+		return null;
+	}
+
+	const name =
+		fieldset.name === '' || element.name.startsWith(fieldset.name)
+			? element.name.slice(fieldset.name ? fieldset.name.length + 1 : 0)
+			: '';
+	const [key] = getPaths(name);
+
+	return typeof key === 'string' ? key : null;
 }
 
 export function transform(
@@ -368,69 +377,89 @@ export function subscribeFieldset(
 	}
 
 	const keys = Object.keys(fields);
+	const isRelatedField = (element: FieldElement): boolean => {
+		const key = getKey(fieldset, element);
+
+		return key !== null && keys.includes(key);
+	};
 	const inputHandler = (event: Event) => {
-		if (!isFieldsetField(fieldset, keys, event.target)) {
+		if (!isFieldElement(event.target) || !isRelatedField(event.target)) {
 			return;
 		}
 
 		validate?.(fieldset);
 
-		if (initialReport === 'onChange') {
-			event.target.dataset.conformTouched = 'true';
-		}
-
 		for (const element of fieldset.elements) {
-			if (!isFieldsetField(fieldset, keys, element)) {
+			if (!isFieldElement(element)) {
 				continue;
 			}
 
-			if (element.validationMessage === '') {
-				onReport(element.name, '');
-			}
+			const key = getKey(fieldset, element);
 
-			if (element.dataset.conformTouched) {
-				element.reportValidity();
+			if (key) {
+				if (element.validationMessage === '') {
+					onReport(key, '');
+				}
+
+				if (element.dataset.conformTouched) {
+					element.reportValidity();
+				}
 			}
+		}
+
+		if (initialReport === 'onChange') {
+			event.target.dataset.conformTouched = 'true';
 		}
 	};
 	const invalidHandler = (event: Event) => {
-		if (!isFieldsetField(fieldset, keys, event.target)) {
+		if (!isFieldElement(event.target)) {
 			return;
 		}
 
-		// Disable browser report
-		event.preventDefault();
-		onReport(event.target.name, event.target.validationMessage);
+		const key = getKey(fieldset, event.target);
+
+		if (key !== null && keys.includes(key)) {
+			onReport(key, event.target.validationMessage);
+
+			// Disable browser report
+			event.preventDefault();
+		}
 	};
 	const blurHandler = (event: FocusEvent) => {
-		if (!isFieldsetField(fieldset, keys, event.target)) {
+		if (!isFieldElement(event.target)) {
 			return;
 		}
 
-		if (initialReport === 'onBlur') {
-			event.target.dataset.conformTouched = 'true';
-		}
+		const key = getKey(fieldset, event.target);
 
-		for (const element of fieldset.elements) {
-			if (
-				isFieldsetField(fieldset, keys, element) &&
-				element.dataset.conformTouched
-			) {
-				element.reportValidity();
+		if (key !== null && keys.includes(key)) {
+			for (const element of fieldset.elements) {
+				if (
+					isFieldElement(element) &&
+					isRelatedField(element) &&
+					element.dataset.conformTouched
+				) {
+					element.reportValidity();
+				}
+			}
+
+			if (initialReport === 'onBlur') {
+				event.target.dataset.conformTouched = 'true';
 			}
 		}
 	};
 	const clickHandler = (event: MouseEvent) => {
 		if (
 			!isFieldElement(event.target) ||
-			event.target?.form !== fieldset?.form
+			event.target?.form !== fieldset?.form ||
+			event.defaultPrevented
 		) {
 			return;
 		}
 
 		if (event.target.type === 'submit') {
 			for (const element of fieldset.elements) {
-				if (isFieldsetField(fieldset, keys, element)) {
+				if (isFieldElement(element) && isRelatedField(element)) {
 					element.dataset.conformTouched = 'true';
 				}
 			}
@@ -442,9 +471,15 @@ export function subscribeFieldset(
 		}
 
 		for (const element of fieldset.elements) {
-			if (isFieldsetField(fieldset, keys, element)) {
+			if (!isFieldElement(element)) {
+				continue;
+			}
+
+			const key = getKey(fieldset, element);
+
+			if (key !== null && keys.includes(key)) {
 				delete element.dataset.conformTouched;
-				onReport(element.name, '');
+				onReport(key, '');
 			}
 		}
 
@@ -459,14 +494,14 @@ export function subscribeFieldset(
 	document.addEventListener('input', inputHandler, true);
 	document.addEventListener('blur', blurHandler, true);
 	document.addEventListener('invalid', invalidHandler, true);
-	document.addEventListener('click', clickHandler, true);
+	document.addEventListener('click', clickHandler);
 	document.addEventListener('reset', resetHandler);
 
 	return () => {
 		document.removeEventListener('input', inputHandler, true);
 		document.removeEventListener('blur', blurHandler, true);
 		document.removeEventListener('invalid', invalidHandler, true);
-		document.removeEventListener('click', clickHandler, true);
+		document.removeEventListener('click', clickHandler);
 		document.removeEventListener('reset', resetHandler);
 	};
 }
