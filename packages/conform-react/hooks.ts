@@ -40,13 +40,6 @@ export function useFieldset<Type extends Record<string, unknown>>(
 	config: FieldsetConfig<Type> = {},
 ): [FieldsetProps, { [Key in keyof Type]-?: FieldProps<Type[Key]> }] {
 	const fieldsetRef = useRef<HTMLFieldSetElement>(null);
-	const schedulerRef = useRef<{
-		timeout: NodeJS.Timeout | null;
-		updates: Array<[string, string]>;
-	}>({
-		timeout: null,
-		updates: [],
-	});
 	const [errorMessage, setErrorMessage] = useState(() => {
 		let result: Record<string, string> = {};
 
@@ -76,32 +69,18 @@ export function useFieldset<Type extends Record<string, unknown>>(
 			validate: schema.validate,
 			initialReport: config.initialReport,
 			onReport(key: string, message: string) {
-				const { timeout, updates } = schedulerRef.current;
+				setErrorMessage((prev) => {
+					let next = prev;
 
-				updates.push([key, message]);
+					if (next[key] !== message) {
+						next = {
+							...next,
+							[key]: message,
+						};
+					}
 
-				if (timeout) {
-					clearTimeout(timeout);
-					schedulerRef.current.timeout = null;
-				}
-
-				schedulerRef.current.timeout = setTimeout(() => {
-					setErrorMessage((prev) => {
-						let next = prev;
-
-						for (const [key, message] of updates) {
-							if (next[key] !== message && next[key] === prev[key]) {
-								next = {
-									...next,
-									[key]: message,
-								};
-							}
-						}
-
-						return next;
-					});
-					schedulerRef.current.updates = [];
-				}, 0);
+					return next;
+				});
 			},
 		});
 
