@@ -1,7 +1,9 @@
 import {
 	type FieldProps,
-	type Schema,
+	type FieldElement,
 	type FieldsetData,
+	type Primitive,
+	type Schema,
 	isFieldElement,
 	setFieldState,
 	reportValidity,
@@ -13,19 +15,18 @@ import {
 	applyControlCommand,
 } from '@conform-to/dom';
 import {
+	type InputHTMLAttributes,
 	type ButtonHTMLAttributes,
 	type FormEvent,
 	type FormEventHandler,
 	type FormHTMLAttributes,
 	type RefObject,
-	type ReactElement,
 	useRef,
 	useState,
 	useEffect,
-	useMemo,
 	useReducer,
-	createElement,
 } from 'react';
+import { input } from './helpers';
 
 export interface FormConfig {
 	/**
@@ -484,64 +485,54 @@ export function useFieldList<Payload>(props: FieldProps<Array<Payload>>): [
 	return [list, controls];
 }
 
-interface InputControl {
-	value: string;
-	onChange: (value: string) => void;
-	onBlur: () => void;
+interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {
+	ref: RefObject<HTMLInputElement>;
 }
 
-export function useControlledInput<
-	T extends string | number | Date | undefined,
->(field: FieldProps<T>): [ReactElement, InputControl] {
+interface InputControl {
+	value: string;
+	onChange: (eventOrValue: { target: { value: string } } | string) => void;
+	onBlur: () => void;
+	onInvalid: (event: FormEvent<FieldElement>) => void;
+}
+
+export function useControlledInput<Schema extends Primitive = Primitive>(
+	field: FieldProps<Schema>,
+): [ShadowInputProps, InputControl] {
 	const ref = useRef<HTMLInputElement>(null);
-	const input = useMemo(
-		() =>
-			createElement('input', {
-				ref,
-				name: field.name,
-				form: field.form,
-				defaultValue: field.defaultValue,
-				required: field.required,
-				minLength: field.minLength,
-				maxLength: field.maxLength,
-				min: field.min,
-				max: field.max,
-				step: field.step,
-				pattern: field.pattern,
-				hidden: true,
-				'aria-hidden': true,
-			}),
-		[
-			field.name,
-			field.form,
-			field.defaultValue,
-			field.required,
-			field.minLength,
-			field.maxLength,
-			field.min,
-			field.max,
-			field.step,
-			field.pattern,
-		],
-	);
+	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);
+	const handleChange: InputControl['onChange'] = (eventOrValue) => {
+		if (!ref.current) {
+			return;
+		}
+
+		const newValue =
+			typeof eventOrValue === 'string'
+				? eventOrValue
+				: eventOrValue.target.value;
+
+		ref.current.value = newValue;
+		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
+		setValue(newValue);
+	};
+	const handleBlur: InputControl['onBlur'] = () => {
+		ref.current?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+	};
+	const handleInvalid: InputControl['onInvalid'] = (event) => {
+		event.preventDefault();
+	};
 
 	return [
-		input,
 		{
-			value: ref.current?.value ?? `${field.defaultValue ?? ''}`,
-			onChange: (value: string) => {
-				if (!ref.current) {
-					return;
-				}
-
-				ref.current.value = value;
-				ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
-			},
-			onBlur: () => {
-				ref.current?.dispatchEvent(
-					new FocusEvent('focusout', { bubbles: true }),
-				);
-			},
+			ref,
+			hidden: true,
+			...input(field, { type: 'text' }),
+		},
+		{
+			value,
+			onChange: handleChange,
+			onBlur: handleBlur,
+			onInvalid: handleInvalid,
 		},
 	];
 }

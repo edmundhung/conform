@@ -1,3 +1,5 @@
+export type Primitive = null | undefined | string | number | boolean | Date;
+
 export type Constraint = {
 	required?: boolean;
 	minLength?: number;
@@ -24,12 +26,7 @@ export type Schema<Type extends Record<string, any>> = {
 /**
  * Data structure of the form value
  */
-export type FieldsetData<Type, Value> = Type extends
-	| string
-	| number
-	| Date
-	| boolean
-	| undefined
+export type FieldsetData<Type, Value> = Type extends Primitive
 	? Value
 	: Type extends Array<infer InnerType>
 	? Array<FieldsetData<InnerType, Value>>
