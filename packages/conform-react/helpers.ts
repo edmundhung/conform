@@ -1,14 +1,12 @@
-import { type FieldProps } from '@conform-to/dom';
+import { type FieldProps, type Primitive } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,
 	type TextareaHTMLAttributes,
 } from 'react';
 
-export function input<
-	Type extends string | number | Date | boolean | undefined,
->(
-	props: FieldProps<Type>,
+export function input<Schema extends Primitive>(
+	props: FieldProps<Schema>,
 	{ type, value }: { type?: string; value?: string } = {},
 ): InputHTMLAttributes<HTMLInputElement> {
 	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
@@ -30,14 +28,14 @@ export function input<
 		attributes.value = value ?? 'on';
 		attributes.defaultChecked = props.defaultValue === attributes.value;
 	} else {
-		attributes.defaultValue = `${props.defaultValue ?? ''}`;
+		attributes.defaultValue = props.defaultValue;
 	}
 
 	return attributes;
 }
 
-export function select<T extends any>(
-	props: FieldProps<T>,
+export function select<Schema extends Primitive>(
+	props: FieldProps<Schema>,
 ): SelectHTMLAttributes<HTMLSelectElement> {
 	return {
 		name: props.name,
@@ -52,8 +50,8 @@ export function select<T extends any>(
 	};
 }
 
-export function textarea<T extends string | undefined>(
-	props: FieldProps<T>,
+export function textarea<Schema extends Primitive>(
+	props: FieldProps<Schema>,
 ): TextareaHTMLAttributes<HTMLTextAreaElement> {
 	return {
 		name: props.name,

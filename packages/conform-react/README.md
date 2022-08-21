@@ -375,29 +375,30 @@ function BookFieldset({ name, form, defaultValue, error }) {
 
 ### useControlledInput
 
-This hooks creates a shadow input that would be used to validate against the schema. Mainly used to get around problem integrating with controlled component.
+It helps hooking up a controlled component with a shadow input for validation. This is particular useful when integrating dropdown and datepicker whichs introuces different input mode.
 
 ```tsx
 import { useControlledInput } from '@conform-to/react';
 import { Select, MenuItem } from '@mui/material';
 
-function RandomFieldset() {
+function MuiForm() {
   const [fieldsetProps, { category }] = useFieldset(schema);
-  const [input, control] = useControlledInput(category);
+  const [inputProps, control] = useControlledInput(category);
 
   return (
     <fieldset {...fieldsetProps}>
-      {/* Render the shadow input somewhere within the fieldset */}
-      {input}
+      {/* Render a shadow input somewhere */}
+      <input {...inputProps} />
 
       {/* MUI Select is a controlled component */}
       <Select
         label="Category"
-        value={control.value ?? ''}
-        onChange={(e) => control.onChange(e.target.value)}
-        onBlur={() => control.onBlur()}
-        error={Boolean(category.error)}
-        helperText={category.error}
+        value={control.value}
+        onChange={control.onChange}
+        onBlur={control.onBlur}
+        inputProps={{
+          onInvalid: control.onInvalid
+        }}
       >
         <MenuItem value="">Please select</MenuItem>
         <MenuItem value="a">Category A</MenuItem>

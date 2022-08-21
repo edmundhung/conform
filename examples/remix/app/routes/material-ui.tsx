@@ -34,7 +34,7 @@ export default function Integration() {
 	 * This creates a shadow input that would be used to validate against the schema instead and
 	 * let you hook it up with the controlled component life cycle
 	 */
-	const [selectInput, selectControl] = useControlledInput(select);
+	const [selectProps, selectControl] = useControlledInput(select);
 
 	return (
 		<form {...formProps}>
@@ -45,7 +45,7 @@ export default function Integration() {
 				) : null}
 			</header>
 			<fieldset className={styles.card} {...fieldsetProps}>
-				{selectInput}
+				<input {...selectProps} />
 				<Stack spacing={3}>
 					<TextField
 						label="Text"
