@@ -4,7 +4,6 @@
 
 ## API Reference
 
-- [getControlButtonProps](#getControlButtonProps)
 - [getFieldProps](#getFieldProps)
 - [getFieldsetData](#getFieldsetData)
 - [getName](#getName)
@@ -17,8 +16,6 @@
 - [setFieldsetError](#setFieldsetError)
 - [shouldSkipValidate](#shouldSkipValidate)
 - [transform](#transform)
-
-### getControlButtonProps
 
 ### getFieldProps
 

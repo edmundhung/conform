@@ -253,9 +253,15 @@ test.describe('Skip Validation', () => {
 
 		expect(await getSubmission(playground)).toEqual({
 			state: 'accepted',
-			data: {},
+			data: {
+				email: '',
+				password: '',
+			},
 			form: {
-				value: {},
+				value: {
+					email: '',
+					password: '',
+				},
 				error: {},
 			},
 		});
@@ -268,10 +274,12 @@ test.describe('Skip Validation', () => {
 			state: 'accepted',
 			data: {
 				email: 'invalid email',
+				password: '',
 			},
 			form: {
 				value: {
 					email: 'invalid email',
+					password: '',
 				},
 				error: {},
 			},

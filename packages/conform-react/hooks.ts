@@ -2,6 +2,7 @@ import {
 	type FieldProps,
 	type FieldElement,
 	type FieldsetData,
+	type ListCommand,
 	type Primitive,
 	type Schema,
 	isFieldElement,
@@ -9,14 +10,16 @@ import {
 	reportValidity,
 	shouldSkipValidate,
 	getFieldProps,
-	getControlButtonProps,
 	getFieldElements,
 	getName,
-	applyControlCommand,
+	listCommandKey,
+	serializeListCommand,
+	parseListCommand,
+	updateList,
+	getFormElement,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
-	type ButtonHTMLAttributes,
 	type FormEvent,
 	type FormEventHandler,
 	type FormHTMLAttributes,
@@ -74,15 +77,15 @@ export function useForm({
 		noValidate || !fallbackNative,
 	);
 	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
-		if (!noValidate) {
-			for (let element of event.currentTarget.elements) {
+		const form = event.currentTarget;
+		const nativeEvent = event.nativeEvent as SubmitEvent;
+
+		if (!noValidate && !event.defaultPrevented) {
+			for (let element of form.elements) {
 				setFieldState(element, { touched: true });
 			}
 
-			if (
-				!shouldSkipValidate(event.nativeEvent as SubmitEvent) &&
-				!event.currentTarget.reportValidity()
-			) {
+			if (!shouldSkipValidate(nativeEvent) && !form.reportValidity()) {
 				return event.preventDefault();
 			}
 		}
@@ -355,30 +358,38 @@ export function useFieldset<Type extends Record<string, any>>(
 	];
 }
 
-interface FieldListControl<T> {
-	prepend(
-		defaultValue?: FieldsetData<T, string>,
-	): ButtonHTMLAttributes<HTMLButtonElement>;
-	append(
-		defaultValue?: FieldsetData<T, string>,
-	): ButtonHTMLAttributes<HTMLButtonElement>;
-	replace(
-		index: number,
-		defaultValue: FieldsetData<T, string>,
-	): ButtonHTMLAttributes<HTMLButtonElement>;
-	remove(index: number): ButtonHTMLAttributes<HTMLButtonElement>;
-	reorder(
-		fromIndex: number,
-		toIndex: number,
-	): ButtonHTMLAttributes<HTMLButtonElement>;
+interface ControlButtonProps {
+	name?: string;
+	value?: string;
+	form?: string;
+	formNoValidate: true;
 }
 
-export function useFieldList<Payload>(props: FieldProps<Array<Payload>>): [
+type CommandPayload<
+	Schema,
+	Type extends ListCommand<FieldsetData<Schema, string>>['type'],
+> = Extract<
+	ListCommand<FieldsetData<Schema, string>>,
+	{ type: Type }
+>['payload'];
+
+interface ListControl<Schema> {
+	prepend(payload?: CommandPayload<Schema, 'prepend'>): ControlButtonProps;
+	append(payload?: CommandPayload<Schema, 'append'>): ControlButtonProps;
+	replace(payload: CommandPayload<Schema, 'replace'>): ControlButtonProps;
+	remove(payload: CommandPayload<Schema, 'remove'>): ControlButtonProps;
+	reorder(payload: CommandPayload<Schema, 'reorder'>): ControlButtonProps;
+}
+
+export function useFieldList<Payload = any>(
+	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	props: FieldProps<Array<Payload>>,
+): [
 	Array<{
 		key: string;
 		props: FieldProps<Payload>;
 	}>,
-	FieldListControl<Payload>,
+	ListControl<Payload>,
 ] {
 	const [entries, setEntries] = useState<
 		Array<[string, FieldsetData<Payload, string> | undefined]>
@@ -391,98 +402,87 @@ export function useFieldList<Payload>(props: FieldProps<Array<Payload>>): [
 				name: `${props.name}[${index}]`,
 				defaultValue: defaultValue ?? props.defaultValue?.[index],
 				error: props.error?.[index],
-				multiple: false,
 			},
 		}),
 	);
-	const controls: FieldListControl<Payload> = {
-		prepend(defaultValue) {
-			return {
-				...getControlButtonProps(props.name, 'prepend', {
-					defaultValue,
-				}),
-				onClick(e) {
-					setEntries((entries) =>
-						applyControlCommand([...entries], 'prepend', {
-							defaultValue: [`${Date.now()}`, defaultValue],
-						}),
-					);
-					e.preventDefault();
-				},
-			};
+	const control = new Proxy(
+		{},
+		{
+			get(_target, type: any) {
+				return (payload: any = {}) => {
+					return {
+						name: listCommandKey,
+						value: serializeListCommand(props.name, { type, payload }),
+						form: props.form,
+						formNoValidate: true,
+					};
+				};
+			},
 		},
-		append(defaultValue) {
-			return {
-				...getControlButtonProps(props.name, 'append', {
-					defaultValue,
-				}),
-				onClick(e) {
-					setEntries((entries) =>
-						applyControlCommand([...entries], 'append', {
-							defaultValue: [`${Date.now()}`, defaultValue],
-						}),
-					);
-					e.preventDefault();
-				},
-			};
-		},
-		replace(index, defaultValue) {
-			return {
-				...getControlButtonProps(props.name, 'replace', {
-					index,
-					defaultValue,
-				}),
-				onClick(e) {
-					setEntries((entries) =>
-						applyControlCommand([...entries], 'replace', {
-							defaultValue: [`${Date.now()}`, defaultValue],
-							index,
-						}),
-					);
-					e.preventDefault();
-				},
-			};
-		},
-		remove(index) {
-			return {
-				...getControlButtonProps(props.name, 'remove', { index }),
-				onClick(e) {
-					setEntries((entries) =>
-						applyControlCommand([...entries], 'remove', {
-							index,
-						}),
-					);
-					e.preventDefault();
-				},
-			};
-		},
-		reorder(fromIndex, toIndex) {
-			return {
-				...getControlButtonProps(props.name, 'reorder', {
-					from: fromIndex,
-					to: toIndex,
-				}),
-				onClick(e) {
-					if (fromIndex !== toIndex) {
-						setEntries((entries) =>
-							applyControlCommand([...entries], 'reorder', {
-								from: fromIndex,
-								to: toIndex,
-							}),
-						);
-					}
-
-					e.preventDefault();
-				},
-			};
-		},
-	};
+	) as ListControl<Payload>;
 
 	useEffect(() => {
 		setEntries(Object.entries(props.defaultValue ?? [undefined]));
-	}, [props.defaultValue]);
 
-	return [list, controls];
+		const submitHandler = (event: SubmitEvent) => {
+			const form = getFormElement(ref.current);
+
+			if (
+				!form ||
+				event.target !== form ||
+				!(event.submitter instanceof HTMLButtonElement) ||
+				event.submitter.name !== listCommandKey
+			) {
+				return;
+			}
+
+			const [name, command] = parseListCommand(event.submitter.value);
+
+			if (name !== props.name) {
+				return;
+			}
+
+			switch (command.type) {
+				case 'append':
+				case 'prepend':
+				case 'replace':
+					command.payload.defaultValue = [
+						`${Date.now()}`,
+						command.payload.defaultValue,
+					];
+					break;
+			}
+
+			setEntries((entries) =>
+				updateList(
+					[...entries],
+					command as ListCommand<
+						[string, FieldsetData<Payload, string> | undefined]
+					>,
+				),
+			);
+			event.preventDefault();
+		};
+		const resetHandler = (event: Event) => {
+			const form = getFormElement(ref.current);
+
+			if (!form || event.target !== form) {
+				return;
+			}
+
+			setEntries(Object.entries(props.defaultValue ?? []));
+		};
+
+		document.addEventListener('submit', submitHandler, true);
+		document.addEventListener('reset', resetHandler);
+
+		return () => {
+			document.removeEventListener('submit', submitHandler, true);
+			document.removeEventListener('reset', resetHandler);
+		};
+	}, [ref, props.name, props.defaultValue]);
+
+	return [list, control];
 }
 
 interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {

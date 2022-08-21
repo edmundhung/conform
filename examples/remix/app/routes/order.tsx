@@ -50,7 +50,7 @@ export default function OrderForm() {
 			error: submission?.form.error,
 		},
 	);
-	const [productList, control] = useFieldList(products);
+	const [productList, control] = useFieldList(formProps.ref, products);
 
 	return (
 		<Form method="post" {...formProps}>
@@ -75,7 +75,7 @@ export default function OrderForm() {
 							<button
 								className={styles.buttonWarning}
 								disabled={productList.length === 1}
-								{...control.remove(index)}
+								{...control.remove({ index })}
 							>
 								⨯
 							</button>
