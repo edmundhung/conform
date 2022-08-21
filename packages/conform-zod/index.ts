@@ -1,13 +1,13 @@
 import {
-	type Constraint,
+	type FieldConstraint,
+	type FieldError,
 	type Schema,
 	type Submission,
-	type FieldsetData,
-	parse as baseParse,
+	createSubmission,
+	getFormData,
 	getName,
-	getFieldsetData,
-	setFieldsetError,
-	unflatten,
+	setFormError,
+	setValue,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -33,8 +33,22 @@ function cleanup(data: unknown): unknown {
 	}
 }
 
-function inferConstraint<T>(schema: z.ZodType<T>): Constraint {
-	const constraint: Constraint = {
+function formatError<Schema>(error: z.ZodError<Schema>): FieldError<Schema> {
+	const result: FieldError<Schema> = {};
+
+	for (const issue of error.errors) {
+		setValue<string>(
+			result,
+			issue.path.flatMap((path) => ['details', path]).concat('message'),
+			(prev) => (prev ? prev : issue.message),
+		);
+	}
+
+	return result;
+}
+
+function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint {
+	const constraint: FieldConstraint = {
 		required: true,
 	};
 
@@ -120,7 +134,7 @@ export function parse<T extends Record<string, unknown>>(
 	payload: FormData | URLSearchParams,
 	schema: z.ZodType<T>,
 ): Submission<T> {
-	const submission = baseParse(payload);
+	const submission = createSubmission(payload);
 
 	if (submission.state !== 'accepted') {
 		// @ts-expect-error
@@ -143,12 +157,7 @@ export function parse<T extends Record<string, unknown>>(
 			// @ts-expect-error
 			form: {
 				...submission.form,
-				error: {
-					...submission.form.error,
-					...(unflatten(
-						result.error.errors.map((e) => [getName(e.path), e.message]),
-					) as FieldsetData<T, string>),
-				},
+				error: formatError(result.error),
 			},
 		};
 	}
@@ -168,14 +177,18 @@ export function resolve<T extends Record<string, any>>(
 	return {
 		// @ts-expect-error
 		fields: Object.fromEntries(
-			Object.entries(shape).map<[string, Constraint]>(([key, def]) => [
+			Object.entries(shape).map<[string, FieldConstraint]>(([key, def]) => [
 				key,
 				inferConstraint(def),
 			]),
 		),
-		validate(fieldset: HTMLFieldSetElement) {
-			const data = getFieldsetData(fieldset);
-			const value = cleanup(data);
+		validate(
+			form: HTMLFormElement,
+			submitter?: HTMLInputElement | HTMLButtonElement | null,
+		) {
+			const payload = getFormData(form, submitter);
+			const submission = createSubmission(payload);
+			const value = cleanup(submission.form.value);
 			const result = schema.safeParse(value);
 			const errors = !result.success
 				? result.error.errors.map<[string, string]>((e) => [
@@ -183,9 +196,8 @@ export function resolve<T extends Record<string, any>>(
 						e.message,
 				  ])
 				: [];
-			const keys = Object.keys(shape);
 
-			setFieldsetError(fieldset, keys, errors);
+			setFormError(form, errors);
 		},
 	};
 }

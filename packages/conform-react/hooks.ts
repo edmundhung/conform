@@ -1,17 +1,13 @@
 import {
-	type FieldProps,
+	type FieldConfig,
+	type FieldError,
+	type FieldValue,
 	type FieldElement,
-	type FieldsetData,
+	type FieldsetConstraint,
 	type ListCommand,
 	type Primitive,
-	type Schema,
 	isFieldElement,
-	setFieldState,
-	reportValidity,
-	shouldSkipValidate,
-	getFieldProps,
-	getFieldElements,
-	getName,
+	getKey,
 	listCommandKey,
 	serializeListCommand,
 	parseListCommand,
@@ -21,341 +17,354 @@ import {
 import {
 	type InputHTMLAttributes,
 	type FormEvent,
-	type FormEventHandler,
 	type FormHTMLAttributes,
 	type RefObject,
 	useRef,
 	useState,
 	useEffect,
-	useReducer,
 } from 'react';
 import { input } from './helpers';
 
 export interface FormConfig {
 	/**
-	 * Decide when the error should be reported initially.
+	 * Define when the error should be reported initially.
+	 * Support "onSubmit", "onChange", "onBlur".
+	 *
 	 * Default to `onSubmit`
 	 */
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 
 	/**
-	 * Native browser report will be used before hydation if it is set to `true`.
-	 * Default to `false`
+	 * Enable native validation before hydation.
 	 */
 	fallbackNative?: boolean;
 
 	/**
-	 * The form could be submitted even if there is invalid input control if it is set to `true`.
-	 * Default to `false`
+	 * Allow the form to be submitted regardless of the form validity.
 	 */
 	noValidate?: boolean;
 
 	/**
-	 * The submit handler will be triggered only when the form is valid.
-	 * Or when noValidate is set to `true`
+	 * A function to be called when the form should be (re)validated.
+	 */
+	validate?: (
+		form: HTMLFormElement,
+		submitter?: HTMLInputElement | HTMLButtonElement | null,
+	) => void;
+
+	/**
+	 * The submit event handler of the form. It will be called
+	 * only when the form is considered valid.
 	 */
 	onSubmit?: FormHTMLAttributes<HTMLFormElement>['onSubmit'];
-	onReset?: FormHTMLAttributes<HTMLFormElement>['onReset'];
 }
 
 interface FormProps {
 	ref: RefObject<HTMLFormElement>;
 	onSubmit: Required<FormHTMLAttributes<HTMLFormElement>>['onSubmit'];
-	onReset: Required<FormHTMLAttributes<HTMLFormElement>>['onReset'];
 	noValidate: Required<FormHTMLAttributes<HTMLFormElement>>['noValidate'];
 }
 
-export function useForm({
-	onReset,
-	onSubmit,
-	noValidate = false,
-	fallbackNative = false,
-	initialReport = 'onSubmit',
-}: FormConfig = {}): FormProps {
+export function useForm(config: FormConfig = {}): FormProps {
+	const { validate } = config;
+
 	const ref = useRef<HTMLFormElement>(null);
-	const [formNoValidate, setFormNoValidate] = useState(
-		noValidate || !fallbackNative,
+	const [noValidate, setNoValidate] = useState(
+		config.noValidate || !config.fallbackNative,
 	);
-	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
-		const form = event.currentTarget;
-		const nativeEvent = event.nativeEvent as SubmitEvent;
-
-		if (!noValidate && !event.defaultPrevented) {
-			for (let element of form.elements) {
-				setFieldState(element, { touched: true });
-			}
-
-			if (!shouldSkipValidate(nativeEvent) && !form.reportValidity()) {
-				return event.preventDefault();
-			}
-		}
-
-		onSubmit?.(event);
-	};
-	const handleReset: FormEventHandler<HTMLFormElement> = (event) => {
-		for (let element of event.currentTarget.elements) {
-			setFieldState(element, { touched: false });
-		}
-
-		onReset?.(event);
-	};
 
 	useEffect(() => {
-		setFormNoValidate(true);
+		setNoValidate(true);
 	}, []);
 
 	useEffect(() => {
-		if (noValidate) {
+		if (config.noValidate) {
 			return;
 		}
 
-		const handleChange = (event: Event) => {
+		if (ref.current) {
+			validate?.(ref.current);
+		}
+
+		const handleInput = (event: Event) => {
+			const field = event.target;
+			const form = ref.current;
+
+			if (!form || !isFieldElement(field) || field.form !== form) {
+				return;
+			}
+
+			validate?.(form);
+
+			if (config.initialReport === 'onChange') {
+				field.dataset.conformTouched = 'true';
+			}
+
+			for (const field of form.elements) {
+				if (isFieldElement(field) && field.dataset.conformTouched) {
+					field.reportValidity();
+				}
+			}
+		};
+		const handleFocusout = (event: FocusEvent) => {
+			const field = event.target;
+			const form = ref.current;
+
 			if (
-				!ref.current ||
-				!isFieldElement(event.target) ||
-				event.target?.form !== ref.current
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				config.initialReport !== 'onBlur'
 			) {
 				return;
 			}
 
-			if (initialReport === 'onChange') {
-				setFieldState(event.target, { touched: true });
-			}
-
-			reportValidity(ref.current);
+			field.dataset.conformTouched = 'true';
+			field.reportValidity();
 		};
-		const handleBlur = (event: FocusEvent) => {
-			if (
-				!ref.current ||
-				!isFieldElement(event.target) ||
-				event.target?.form !== ref.current
-			) {
+		const handleReset = (event: Event) => {
+			const form = ref.current;
+
+			if (!form || event.target !== form) {
 				return;
 			}
 
-			if (initialReport === 'onBlur') {
-				setFieldState(event.target, { touched: true });
+			for (const field of form.elements) {
+				if (isFieldElement(field)) {
+					delete field.dataset.conformTouched;
+				}
 			}
 
-			reportValidity(ref.current);
+			setTimeout(() => {
+				validate?.(form);
+			}, 0);
 		};
 
-		document.addEventListener('input', handleChange);
-		document.addEventListener('focusout', handleBlur);
+		document.addEventListener('input', handleInput, true);
+		document.addEventListener('focusout', handleFocusout);
+		document.addEventListener('reset', handleReset);
 
 		return () => {
-			document.removeEventListener('input', handleChange);
-			document.removeEventListener('focusout', handleBlur);
+			document.removeEventListener('input', handleInput, true);
+			document.removeEventListener('focusout', handleFocusout);
+			document.removeEventListener('reset', handleReset);
 		};
-	}, [noValidate, initialReport]);
+	}, [validate, config.initialReport, config.noValidate]);
 
 	return {
 		ref,
-		onSubmit: handleSubmit,
-		onReset: handleReset,
-		noValidate: formNoValidate,
+		noValidate,
+		onSubmit(event) {
+			const form = event.currentTarget;
+			const nativeEvent = event.nativeEvent as SubmitEvent;
+			const submitter =
+				nativeEvent.submitter instanceof HTMLButtonElement ||
+				nativeEvent.submitter instanceof HTMLInputElement
+					? nativeEvent.submitter
+					: null;
+
+			validate?.(form, submitter);
+
+			if (!config.noValidate && !event.defaultPrevented) {
+				for (const field of form.elements) {
+					if (isFieldElement(field)) {
+						field.dataset.conformTouched = 'true';
+					}
+				}
+
+				if (
+					!submitter?.formNoValidate &&
+					!event.currentTarget.reportValidity()
+				) {
+					event.preventDefault();
+					return;
+				}
+			}
+
+			config.onSubmit?.(event);
+		},
 	};
 }
 
-export type FieldsetConfig<Type> = Partial<
-	Pick<FieldProps<Type>, 'name' | 'form' | 'defaultValue' | 'error'>
->;
+export type Field<Schema> = {
+	config: FieldConfig<Schema>;
+	error?: string;
+};
 
-interface FieldsetProps {
-	ref: RefObject<HTMLFieldSetElement>;
+export type Fieldset<Schema extends Record<string, any>> = {
+	[Key in keyof Schema]-?: Field<Schema[Key]>;
+};
+
+export interface FieldsetConfig<Schema extends Record<string, any>> {
 	name?: string;
+	defaultValue?: FieldValue<Schema>;
+	initialError?: FieldError<Schema>['details'];
+	constraint?: FieldsetConstraint<Schema>;
 	form?: string;
-	onInput: FormEventHandler<HTMLFieldSetElement>;
-	onInvalid: FormEventHandler<HTMLFieldSetElement>;
 }
 
-export function useFieldset<Type extends Record<string, any>>(
-	schema: Schema<Type>,
-	config: FieldsetConfig<Type> = {},
-): [FieldsetProps, { [Key in keyof Type]-?: FieldProps<Type[Key]> }] {
-	const ref = useRef<HTMLFieldSetElement>(null);
-	const [errorMessage, dispatch] = useReducer(
-		(
-			state: Record<string, string>,
-			action:
-				| {
-						type: 'migrate';
-						payload: {
-							keys: string[];
-							error: FieldsetData<Type, string> | undefined;
-						};
-				  }
-				| { type: 'cleanup'; payload: { fieldset: HTMLFieldSetElement } }
-				| { type: 'report'; payload: { key: string; message: string } }
-				| { type: 'reset' },
-		) => {
-			switch (action.type) {
-				case 'report': {
-					const { key, message } = action.payload;
+export function useFieldset<Schema extends Record<string, any>>(
+	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	config?: FieldsetConfig<Schema>,
+): Fieldset<Schema>;
+export function useFieldset<Schema extends Record<string, any>>(
+	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	config?: FieldConfig<Schema>,
+): Fieldset<Schema>;
+export function useFieldset<Schema extends Record<string, any>>(
+	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
+): Fieldset<Schema> {
+	const [error, setError] = useState<Record<string, string | undefined>>(() => {
+		const result: Record<string, string> = {};
 
-					if (state[key] === message) {
-						return state;
-					}
-
-					return {
-						...state,
-						[key]: message,
-					};
-				}
-				case 'migrate': {
-					let { keys, error } = action.payload;
-					let nextState = state;
-
-					for (let key of Object.keys(keys)) {
-						const prevError = state[key];
-						const nextError = error?.[key];
-
-						if (typeof nextError === 'string' && prevError !== nextError) {
-							return {
-								...nextState,
-								[key]: nextError,
-							};
-						}
-					}
-
-					return nextState;
-				}
-				case 'cleanup': {
-					let { fieldset } = action.payload;
-					let updates: Array<[string, string]> = [];
-
-					for (let [key, message] of Object.entries(state)) {
-						if (!message) {
-							continue;
-						}
-
-						const fields = getFieldElements(fieldset, key);
-
-						if (fields.every((field) => field.validity.valid)) {
-							updates.push([key, '']);
-						}
-					}
-
-					if (updates.length === 0) {
-						return state;
-					}
-
-					return {
-						...state,
-						...Object.fromEntries(updates),
-					};
-				}
-				case 'reset': {
-					return {};
-				}
+		for (const [key, error] of Object.entries(config?.initialError ?? {})) {
+			if (error?.message) {
+				result[key] = error.message;
 			}
-		},
-		{},
-		() =>
-			Object.fromEntries(
-				Object.keys(schema.fields).reduce<Array<[string, string]>>(
-					(result, name) => {
-						const error = config.error?.[name];
+		}
 
-						if (typeof error === 'string') {
-							result.push([name, error]);
+		return result;
+	});
+
+	useEffect(() => {
+		const resetError = (form: HTMLFormElement) => {
+			setError((prev) => {
+				let next = prev;
+
+				for (const field of form.elements) {
+					if (isFieldElement(field)) {
+						const key = getKey(field.name, config?.name);
+
+						if (key) {
+							const prevMessage = next?.[key] ?? '';
+							const nextMessage = field.validationMessage;
+
+							if (prevMessage !== '' && prevMessage !== nextMessage) {
+								next = {
+									...next,
+									[key]: nextMessage,
+								};
+							}
 						}
+					}
+				}
 
-						return result;
-					},
-					[],
-				),
-			),
-	);
+				return next;
+			});
+		};
+		const handleInput = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const field = event.target;
 
-	useEffect(
-		() => {
-			const fieldset = ref.current;
-
-			if (!fieldset) {
-				console.warn(
-					'No fieldset ref found; You must pass the fieldsetProps to the fieldset element',
-				);
+			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
 			}
 
-			if (!fieldset?.form) {
-				console.warn(
-					'No form element is linked to the fieldset; Do you forgot setting the form attribute?',
-				);
+			resetError(form);
+		};
+		const invalidHandler = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const field = event.target;
+
+			if (!form || !isFieldElement(field) || field.form !== form) {
+				return;
 			}
 
-			schema.validate?.(fieldset);
-			dispatch({ type: 'cleanup', payload: { fieldset } });
+			const key = getKey(field.name, config?.name);
 
-			const resetHandler = (e: Event) => {
-				if (e.target !== fieldset.form) {
-					return;
-				}
+			if (key) {
+				setError((prev) => {
+					const prevMessage = prev?.[key] ?? '';
 
-				dispatch({ type: 'reset' });
+					if (prevMessage === field.validationMessage) {
+						return prev;
+					}
 
-				setTimeout(() => {
-					// Delay revalidation until reset is completed
-					schema.validate?.(fieldset);
-				}, 0);
-			};
+					return {
+						...prev,
+						[key]: field.validationMessage,
+					};
+				});
 
-			document.addEventListener('reset', resetHandler);
+				event.preventDefault();
+			}
+		};
+		const submitHandler = (event: SubmitEvent) => {
+			const form = getFormElement(ref.current);
 
-			return () => {
-				document.removeEventListener('reset', resetHandler);
-			};
-		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[schema.validate],
-	);
+			if (!form || event.target !== form) {
+				return;
+			}
+
+			resetError(form);
+		};
+		const resetHandler = (event: Event) => {
+			const form = getFormElement(ref.current);
+
+			if (!form || event.target !== form) {
+				return;
+			}
+
+			setError({});
+		};
+
+		document.addEventListener('input', handleInput);
+		document.addEventListener('invalid', invalidHandler, true);
+		document.addEventListener('submit', submitHandler);
+		document.addEventListener('reset', resetHandler);
+
+		return () => {
+			document.removeEventListener('input', handleInput);
+			document.removeEventListener('invalid', invalidHandler, true);
+			document.removeEventListener('submit', submitHandler);
+			document.removeEventListener('reset', resetHandler);
+		};
+	}, [ref, config?.name]);
 
 	useEffect(() => {
-		dispatch({
-			type: 'migrate',
-			payload: {
-				keys: Object.keys(schema.fields),
-				error: config.error,
-			},
+		setError((prev) => {
+			let next = prev;
+
+			for (const [key, error] of Object.entries(config?.initialError ?? {})) {
+				if (next[key] !== error?.message) {
+					next = {
+						...next,
+						[key]: error?.message ?? '',
+					};
+				}
+			}
+
+			return next;
 		});
-	}, [config.error, schema.fields]);
+	}, [config?.name, config?.initialError]);
 
-	return [
+	return new Proxy(
+		{},
 		{
-			ref,
-			name: config.name,
-			form: config.form,
-			onInput(e: FormEvent<HTMLFieldSetElement>) {
-				const fieldset = e.currentTarget;
-
-				schema.validate?.(fieldset);
-				dispatch({ type: 'cleanup', payload: { fieldset } });
-			},
-			onInvalid(e: FormEvent<HTMLFieldSetElement>) {
-				const element = isFieldElement(e.target) ? e.target : null;
-				const key = Object.keys(schema.fields).find(
-					(key) => element?.name === getName([e.currentTarget.name, key]),
-				);
-
-				if (!element || !key) {
+			get(_target, key) {
+				if (typeof key !== 'string') {
 					return;
 				}
 
-				// Disable browser report
-				e.preventDefault();
+				const constraint = (config as FieldsetConfig<Schema>)?.constraint?.[
+					key
+				];
+				const field: Field<unknown> = {
+					config: {
+						name: config?.name ? `${config.name}.${key}` : key,
+						form: config?.form,
+						defaultValue: config?.defaultValue?.[key],
+						initialError: config?.initialError?.[key]?.details,
+						...constraint,
+					},
+					error: error?.[key] ?? '',
+				};
 
-				dispatch({
-					type: 'report',
-					payload: { key, message: element.validationMessage },
-				});
+				return field;
 			},
 		},
-		getFieldProps(schema, {
-			...config,
-			error: Object.assign({}, config.error, errorMessage),
-		}),
-	];
+	) as Fieldset<Schema>;
 }
 
 interface ControlButtonProps {
@@ -367,11 +376,8 @@ interface ControlButtonProps {
 
 type CommandPayload<
 	Schema,
-	Type extends ListCommand<FieldsetData<Schema, string>>['type'],
-> = Extract<
-	ListCommand<FieldsetData<Schema, string>>,
-	{ type: Type }
->['payload'];
+	Type extends ListCommand<FieldValue<Schema>>['type'],
+> = Extract<ListCommand<FieldValue<Schema>>, { type: Type }>['payload'];
 
 interface ListControl<Schema> {
 	prepend(payload?: CommandPayload<Schema, 'prepend'>): ControlButtonProps;
@@ -383,25 +389,25 @@ interface ListControl<Schema> {
 
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
-	props: FieldProps<Array<Payload>>,
+	config: FieldConfig<Array<Payload>>,
 ): [
 	Array<{
 		key: string;
-		props: FieldProps<Payload>;
+		config: FieldConfig<Payload>;
 	}>,
 	ListControl<Payload>,
 ] {
 	const [entries, setEntries] = useState<
-		Array<[string, FieldsetData<Payload, string> | undefined]>
-	>(() => Object.entries(props.defaultValue ?? [undefined]));
-	const list = entries.map<{ key: string; props: FieldProps<Payload> }>(
+		Array<[string, FieldValue<Payload> | undefined]>
+	>(() => Object.entries(config.defaultValue ?? [undefined]));
+	const list = entries.map<{ key: string; config: FieldConfig<Payload> }>(
 		([key, defaultValue], index) => ({
 			key: `${key}`,
-			props: {
-				...props,
-				name: `${props.name}[${index}]`,
-				defaultValue: defaultValue ?? props.defaultValue?.[index],
-				error: props.error?.[index],
+			config: {
+				...config,
+				name: `${config.name}[${index}]`,
+				defaultValue: defaultValue ?? config.defaultValue?.[index],
+				initialError: config.initialError?.[index]?.details,
 			},
 		}),
 	);
@@ -412,8 +418,8 @@ export function useFieldList<Payload = any>(
 				return (payload: any = {}) => {
 					return {
 						name: listCommandKey,
-						value: serializeListCommand(props.name, { type, payload }),
-						form: props.form,
+						value: serializeListCommand(config.name, { type, payload }),
+						form: config.form,
 						formNoValidate: true,
 					};
 				};
@@ -422,7 +428,7 @@ export function useFieldList<Payload = any>(
 	) as ListControl<Payload>;
 
 	useEffect(() => {
-		setEntries(Object.entries(props.defaultValue ?? [undefined]));
+		setEntries(Object.entries(config.defaultValue ?? [undefined]));
 
 		const submitHandler = (event: SubmitEvent) => {
 			const form = getFormElement(ref.current);
@@ -438,7 +444,7 @@ export function useFieldList<Payload = any>(
 
 			const [name, command] = parseListCommand(event.submitter.value);
 
-			if (name !== props.name) {
+			if (name !== config.name) {
 				return;
 			}
 
@@ -456,9 +462,7 @@ export function useFieldList<Payload = any>(
 			setEntries((entries) =>
 				updateList(
 					[...entries],
-					command as ListCommand<
-						[string, FieldsetData<Payload, string> | undefined]
-					>,
+					command as ListCommand<[string, FieldValue<Payload> | undefined]>,
 				),
 			);
 			event.preventDefault();
@@ -470,7 +474,7 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			setEntries(Object.entries(props.defaultValue ?? []));
+			setEntries(Object.entries(config.defaultValue ?? []));
 		};
 
 		document.addEventListener('submit', submitHandler, true);
@@ -480,7 +484,7 @@ export function useFieldList<Payload = any>(
 			document.removeEventListener('submit', submitHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref, props.name, props.defaultValue]);
+	}, [ref, config.name, config.defaultValue]);
 
 	return [list, control];
 }
@@ -497,7 +501,7 @@ interface InputControl {
 }
 
 export function useControlledInput<Schema extends Primitive = Primitive>(
-	field: FieldProps<Schema>,
+	field: FieldConfig<Schema>,
 ): [ShadowInputProps, InputControl] {
 	const ref = useRef<HTMLInputElement>(null);
 	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);

@@ -1,6 +1,38 @@
 export type Primitive = null | undefined | string | number | boolean | Date;
 
-export type Constraint = {
+export type FieldElement =
+	| HTMLInputElement
+	| HTMLSelectElement
+	| HTMLTextAreaElement
+	| HTMLButtonElement;
+
+export interface FieldConfig<Schema = unknown> extends FieldConstraint {
+	name: string;
+	defaultValue?: FieldValue<Schema>;
+	initialError?: FieldError<Schema>['details'];
+	form?: string;
+}
+
+export type FieldValue<Schema> = Schema extends Primitive | File
+	? string
+	: Schema extends Array<infer InnerType>
+	? Array<FieldValue<InnerType>>
+	: Schema extends Record<string, any>
+	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
+	: unknown;
+
+export interface FieldError<Schema> {
+	message?: string;
+	details?: Schema extends Primitive | File
+		? never
+		: Schema extends Array<infer InnerType>
+		? Array<FieldError<InnerType>>
+		: Schema extends Record<string, any>
+		? { [Key in keyof Schema]?: FieldError<Schema[Key]> }
+		: unknown;
+}
+
+export type FieldConstraint = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;
@@ -11,41 +43,21 @@ export type Constraint = {
 	pattern?: string;
 };
 
-export interface FieldProps<Type = any> extends Constraint {
-	name: string;
-	defaultValue?: FieldsetData<Type, string>;
-	error?: FieldsetData<Type, string>;
-	form?: string;
-}
-
-export type Schema<Type extends Record<string, any>> = {
-	fields: { [Key in keyof Type]-?: Constraint };
-	validate?: (element: HTMLFieldSetElement) => void;
+export type FieldsetConstraint<Schema extends Record<string, any>> = {
+	[Key in keyof Schema]?: FieldConstraint;
 };
 
-/**
- * Data structure of the form value
- */
-export type FieldsetData<Type, Value> = Type extends Primitive
-	? Value
-	: Type extends Array<infer InnerType>
-	? Array<FieldsetData<InnerType, Value>>
-	: Type extends Object
-	? { [Key in keyof Type]?: FieldsetData<Type[Key], Value> }
-	: unknown;
+export type Schema<Type extends Record<string, any>> = {
+	fields: FieldsetConstraint<Type>;
+	validate?: (
+		element: HTMLFormElement,
+		submitter?: HTMLInputElement | HTMLButtonElement | null,
+	) => void;
+};
 
-/**
- * Element type that might be a candiate of Constraint Validation
- */
-export type FieldElement =
-	| HTMLInputElement
-	| HTMLSelectElement
-	| HTMLTextAreaElement
-	| HTMLButtonElement;
-
-export interface FormState<T> {
-	value: FieldsetData<T, string>;
-	error: FieldsetData<T, string>;
+export interface FormState<Schema extends Record<string, any>> {
+	value: FieldValue<Schema>;
+	error: FieldError<Schema>;
 }
 
 export type Submission<T extends Record<string, unknown>> =
@@ -73,76 +85,6 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
-export function setFieldState(
-	field: unknown,
-	state: { touched: boolean },
-): void {
-	if (!isFieldElement(field)) {
-		return;
-	}
-
-	if (state.touched) {
-		field.dataset.touched = 'true';
-	} else {
-		delete field.dataset.touched;
-	}
-}
-
-export function reportValidity(fieldset: HTMLFormElement): boolean {
-	let isValid = true;
-
-	for (const field of fieldset.elements) {
-		if (
-			isFieldElement(field) &&
-			field.dataset.touched &&
-			!field.checkValidity()
-		) {
-			isValid = false;
-		}
-	}
-
-	return isValid;
-}
-
-export function getFieldProps<Type extends Record<string, any>>(
-	schema: Schema<Type>,
-	options: {
-		name?: string;
-		form?: string;
-		defaultValue?: FieldsetData<Type, string>;
-		error?: FieldsetData<Type, string>;
-	},
-): { [Key in keyof Type]-?: FieldProps<Type[Key]> } {
-	const result: { [Key in keyof Type]-?: FieldProps<Type[Key]> } = {} as any;
-
-	for (const key of Object.keys(schema.fields)) {
-		const constraint = schema.fields[key];
-		const props: FieldProps<any> = {
-			name: options.name ? `${options.name}.${key}` : key,
-			form: options.form,
-			defaultValue: options.defaultValue?.[key],
-			error: options.error?.[key],
-			...constraint,
-		};
-
-		result[key as keyof Type] = props;
-	}
-
-	return result;
-}
-
-export function shouldSkipValidate(event: SubmitEvent): boolean {
-	if (
-		event.submitter?.tagName === 'BUTTON' ||
-		event.submitter?.tagName === 'INPUT'
-	) {
-		return (event.submitter as HTMLButtonElement | HTMLInputElement)
-			.formNoValidate;
-	}
-
-	return false;
-}
-
 export function getPaths(name?: string): Array<string | number> {
 	const pattern = /(\w+)\[(\d+)\]/;
 
@@ -161,6 +103,19 @@ export function getPaths(name?: string): Array<string | number> {
 	});
 }
 
+export function getFormData(
+	form: HTMLFormElement,
+	submitter?: HTMLInputElement | HTMLButtonElement | null,
+): FormData {
+	const payload = new FormData(form);
+
+	if (submitter?.name) {
+		payload.append(submitter.name, submitter.value);
+	}
+
+	return payload;
+}
+
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (name === '' || path === '') {
@@ -175,36 +130,31 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function getFieldsetData(
-	fieldset: HTMLFieldSetElement,
-): FieldsetData<Record<string, unknown>, string> {
-	const entries: Array<[string, FormDataEntryValue]> = [];
+export function getKey(
+	fieldName: string,
+	fieldsetName: string = '',
+): string | null {
+	const name =
+		fieldsetName === '' || fieldName.startsWith(fieldsetName)
+			? fieldName.slice(fieldsetName ? fieldsetName.length + 1 : 0)
+			: '';
+	const paths = getPaths(name);
 
-	if (fieldset.form) {
-		const formData = new FormData(fieldset.form);
-
-		for (const [key, value] of formData) {
-			if (!fieldset.name || key.startsWith(`${fieldset.name}.`)) {
-				entries.push([
-					key.slice(fieldset.name ? fieldset.name.length + 1 : 0),
-					value,
-				]);
-			}
-		}
+	if (paths.length > 1) {
+		return null;
 	}
 
-	return unflatten(entries);
+	return typeof paths[0] === 'string' ? paths[0] : null;
 }
 
-export function setFieldsetError(
-	fieldset: HTMLFieldSetElement,
-	keys: string[],
+export function setFormError(
+	form: HTMLFormElement,
 	errors: Array<[string, string]>,
 ) {
 	const firstErrorByName = Object.fromEntries([...errors].reverse());
 
-	for (const element of fieldset.elements) {
-		if (!isFieldsetField(fieldset, keys, element)) {
+	for (const element of form.elements) {
+		if (!isFieldElement(element)) {
 			continue;
 		}
 
@@ -212,16 +162,27 @@ export function setFieldsetError(
 	}
 }
 
-export function isFieldsetField(
-	fieldset: HTMLFieldSetElement,
-	keys: string[],
-	element: unknown,
-): element is FieldElement {
-	return (
-		isFieldElement(element) &&
-		element.form === fieldset.form &&
-		keys.some((key) => element.name.startsWith(getName([fieldset.name, key])))
-	);
+export function setValue<T>(
+	target: any,
+	paths: Array<string | number>,
+	valueFn: (prev?: T) => T,
+): void {
+	let length = paths.length;
+	let lastIndex = length - 1;
+	let index = -1;
+	let pointer = target;
+
+	while (pointer != null && ++index < length) {
+		let key = paths[index];
+		let next = paths[index + 1];
+		let newValue =
+			index != lastIndex
+				? pointer[key] ?? (typeof next === 'number' ? [] : {})
+				: valueFn(pointer[key]);
+
+		pointer[key] = newValue;
+		pointer = pointer[key];
+	}
 }
 
 export function flatten(
@@ -258,29 +219,20 @@ export function unflatten(
 
 	for (let [key, value] of entries) {
 		let paths = getPaths(key);
-		let length = paths.length;
-		let lastIndex = length - 1;
-		let index = -1;
-		let pointer = result;
 
-		while (pointer != null && ++index < length) {
-			let key = paths[index];
-			let next = paths[index + 1];
-			let newValue = value;
-
-			if (index != lastIndex) {
-				newValue = pointer[key] ?? (typeof next === 'number' ? [] : {});
+		setValue(result, paths, (prev) => {
+			if (prev) {
+				throw new Error('Entry with the same name is not supported');
 			}
 
-			pointer[key] = newValue;
-			pointer = pointer[key];
-		}
+			return value;
+		});
 	}
 
 	return result;
 }
 
-export function parse(
+export function createSubmission(
 	payload: FormData | URLSearchParams,
 ): Submission<Record<string, unknown>> {
 	let value: Record<string, unknown> = {};
@@ -304,7 +256,7 @@ export function parse(
 			form: {
 				value,
 				error: {
-					__conform__: e instanceof Error ? e.message : 'Submission failed',
+					message: e instanceof Error ? e.message : 'Submission failed',
 				},
 			},
 		};
@@ -320,24 +272,28 @@ export function parse(
 	};
 }
 
-/**
- * Lookup the corresponding element based on fieldset name and key
- * @deprecated
- */
-export function getFieldElements(
-	fieldset: HTMLFieldSetElement,
-	key: string,
-): FieldElement[] {
-	const name = getName([fieldset.name ?? '', key]);
-	const item = fieldset.elements.namedItem(name);
-	const nodes =
-		item instanceof RadioNodeList
-			? Array.from(item)
-			: item !== null
-			? [item]
-			: [];
+export function createValidate(
+	handler: (
+		field:
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLButtonElement,
+		formData: FormData,
+	) => void,
+): (
+	form: HTMLFormElement,
+	submitter?: HTMLInputElement | HTMLButtonElement | null,
+) => void {
+	return (form, submitter) => {
+		const formData = getFormData(form, submitter);
 
-	return nodes.filter(isFieldElement);
+		for (const field of form.elements) {
+			if (isFieldElement(field)) {
+				handler(field, formData);
+			}
+		}
+	};
 }
 
 export function getFormElement(
