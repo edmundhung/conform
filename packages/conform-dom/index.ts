@@ -63,21 +63,6 @@ export type Submission<T extends Record<string, unknown>> =
 			form: FormState<T>;
 	  };
 
-export interface ControlButtonProps {
-	type: 'submit';
-	name: string;
-	value: string;
-	formNoValidate: boolean;
-}
-
-export interface ControlAction<T = unknown> {
-	prepend: { defaultValue: T };
-	append: { defaultValue: T };
-	replace: { defaultValue: T; index: number };
-	remove: { index: number };
-	reorder: { from: number; to: number };
-}
-
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -208,7 +193,7 @@ export function getFieldsetData(
 		}
 	}
 
-	return transform(entries);
+	return unflatten(entries);
 }
 
 export function setFieldsetError(
@@ -239,7 +224,32 @@ export function isFieldsetField(
 	);
 }
 
-export function transform(
+export function flatten(
+	data: unknown,
+	prefix = '',
+): Array<[string, FormDataEntryValue]> {
+	let entries: Array<[string, FormDataEntryValue]> = [];
+
+	if (
+		typeof data === 'string' ||
+		typeof data === 'undefined' ||
+		data instanceof File
+	) {
+		entries.push([prefix, data ?? '']);
+	} else if (Array.isArray(data)) {
+		for (let i = 0; i < data.length; i++) {
+			entries.push(...flatten(data[i], `${prefix}[${i}]`));
+		}
+	} else {
+		for (const [key, value] of Object.entries(Object(data))) {
+			entries.push(...flatten(value, prefix ? `${prefix}.${key}` : key));
+		}
+	}
+
+	return entries;
+}
+
+export function unflatten(
 	entries:
 		| Array<[string, FormDataEntryValue]>
 		| Iterable<[string, FormDataEntryValue]>,
@@ -247,10 +257,6 @@ export function transform(
 	const result: any = {};
 
 	for (let [key, value] of entries) {
-		if (value === '') {
-			continue;
-		}
-
 		let paths = getPaths(key);
 		let length = paths.length;
 		let lastIndex = length - 1;
@@ -266,14 +272,7 @@ export function transform(
 				newValue = pointer[key] ?? (typeof next === 'number' ? [] : {});
 			}
 
-			// if (typeof pointer[key] !== 'undefined') {
-			// 	pointer[key] = Array.isArray(pointer[key])
-			// 		? pointer[key].concat(newValue)
-			// 		: [pointer[key], newValue];
-			// } else {
 			pointer[key] = newValue;
-			// }
-
 			pointer = pointer[key];
 		}
 	}
@@ -281,108 +280,32 @@ export function transform(
 	return result;
 }
 
-export function getControlButtonProps<
-	Action extends keyof ControlAction,
-	Payload extends ControlAction[Action],
->(name: string, action: Action, payload: Payload): ControlButtonProps {
-	return {
-		type: 'submit',
-		name: '__conform__',
-		value: [name, action, JSON.stringify(payload)].join('::'),
-		formNoValidate: true,
-	};
-}
-
-export function applyControlCommand<
-	Type,
-	Action extends keyof ControlAction<Type>,
-	Payload extends ControlAction<Type>[Action],
->(list: Array<Type>, action: Action | string, payload: Payload): Array<Type> {
-	switch (action) {
-		case 'prepend': {
-			const { defaultValue } = payload as ControlAction<Type>['prepend'];
-			list.unshift(defaultValue);
-			break;
-		}
-		case 'append': {
-			const { defaultValue } = payload as ControlAction<Type>['append'];
-			list.push(defaultValue);
-			break;
-		}
-		case 'replace': {
-			const { defaultValue, index } = payload as ControlAction<Type>['replace'];
-			list.splice(index, 1, defaultValue);
-			break;
-		}
-		case 'remove':
-			const { index } = payload as ControlAction<Type>['remove'];
-			list.splice(index, 1);
-			break;
-		case 'reorder':
-			const { from, to } = payload as ControlAction<Type>['reorder'];
-			list.splice(to, 0, ...list.splice(from, 1));
-			break;
-		default:
-			throw new Error('Invalid action found');
-	}
-
-	return list;
-}
-
 export function parse(
 	payload: FormData | URLSearchParams,
 ): Submission<Record<string, unknown>> {
-	const command = payload.get('__conform__');
+	let value: Record<string, unknown> = {};
 
-	if (command) {
-		payload.delete('__conform__');
-	}
+	try {
+		const modifiedPayload = applyListCommand(payload);
+		value = unflatten(modifiedPayload.entries());
 
-	const value = transform(payload.entries());
-
-	if (command) {
-		try {
-			if (command instanceof File) {
-				throw new Error(
-					'The __conform__ key is reserved for special command and could not be used for file upload.',
-				);
-			}
-
-			const [name, action, json] = command.split('::');
-
-			let list: any = value;
-
-			for (let path of getPaths(name)) {
-				list = list[path];
-
-				if (typeof list === 'undefined') {
-					break;
-				}
-			}
-
-			if (!Array.isArray(list)) {
-				throw new Error('');
-			}
-
-			applyControlCommand(list, action, JSON.parse(json));
-		} catch (e) {
+		if (payload !== modifiedPayload) {
 			return {
-				state: 'rejected',
+				state: 'modified',
 				form: {
 					value,
-					error: {
-						__conform__:
-							e instanceof Error ? e.message : 'Something went wrong',
-					},
+					error: {},
 				},
 			};
 		}
-
+	} catch (e) {
 		return {
-			state: 'modified',
+			state: 'rejected',
 			form: {
 				value,
-				error: {},
+				error: {
+					__conform__: e instanceof Error ? e.message : 'Submission failed',
+				},
 			},
 		};
 	}
@@ -415,4 +338,125 @@ export function getFieldElements(
 			: [];
 
 	return nodes.filter(isFieldElement);
+}
+
+export function getFormElement(
+	element:
+		| HTMLFormElement
+		| HTMLFieldSetElement
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| HTMLButtonElement
+		| null,
+): HTMLFormElement | null {
+	const form = element instanceof HTMLFormElement ? element : element?.form;
+
+	if (!form) {
+		return null;
+	}
+
+	return form;
+}
+
+export type ListCommand<Schema> =
+	| { type: 'prepend'; payload: { defaultValue: Schema } }
+	| { type: 'append'; payload: { defaultValue: Schema } }
+	| { type: 'replace'; payload: { defaultValue: Schema; index: number } }
+	| { type: 'remove'; payload: { index: number } }
+	| { type: 'reorder'; payload: { from: number; to: number } };
+
+export const listCommandKey = '__conform__';
+
+export function serializeListCommand<Schema>(
+	name: string,
+	{ type, payload }: ListCommand<Schema>,
+): string {
+	return [name, type, JSON.stringify(payload)].join('::');
+}
+
+export function parseListCommand<Schema>(
+	serialized: string,
+): [string, ListCommand<Schema>] {
+	const [name, type, json] = serialized.split('::');
+
+	return [name, { type: type as any, payload: JSON.parse(json) }];
+}
+
+export function updateList<Type>(
+	list: Array<Type>,
+	command: ListCommand<Type>,
+): Array<Type> {
+	switch (command.type) {
+		case 'prepend': {
+			list.unshift(command.payload.defaultValue);
+			break;
+		}
+		case 'append': {
+			list.push(command.payload.defaultValue);
+			break;
+		}
+		case 'replace': {
+			list.splice(command.payload.index, 1, command.payload.defaultValue);
+			break;
+		}
+		case 'remove':
+			list.splice(command.payload.index, 1);
+			break;
+		case 'reorder':
+			list.splice(
+				command.payload.to,
+				0,
+				...list.splice(command.payload.from, 1),
+			);
+			break;
+		default:
+			throw new Error('Invalid list command');
+	}
+
+	return list;
+}
+
+export function applyListCommand(
+	payload: FormData | URLSearchParams,
+): FormData | URLSearchParams {
+	const command = payload.get(listCommandKey);
+
+	if (!command) {
+		return payload;
+	}
+
+	payload.delete(listCommandKey);
+
+	if (command instanceof File) {
+		throw new Error(
+			`The "${listCommandKey}" key could not be used for file upload`,
+		);
+	}
+
+	const result = new FormData();
+	const entries: Array<[string, FormDataEntryValue]> = [];
+	const [key, listCommand] = parseListCommand(command);
+
+	for (const [name, value] of payload) {
+		if (name.startsWith(key)) {
+			entries.push([name.replace(key, 'list'), value]);
+		} else {
+			result.append(name, value);
+		}
+	}
+
+	const { list } = unflatten(entries);
+
+	if (!Array.isArray(list)) {
+		throw new Error('The list command can only be applied to a list');
+	}
+
+	updateList(list, listCommand);
+
+	for (const [name, value] of flatten(list, key)) {
+		result.append(name, value);
+	}
+
+	return result;
 }

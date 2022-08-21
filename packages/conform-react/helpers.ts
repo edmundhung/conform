@@ -34,7 +34,7 @@ export function input<Schema extends Primitive>(
 	return attributes;
 }
 
-export function select<Schema extends Primitive>(
+export function select<Schema extends Primitive | Array<Primitive>>(
 	props: FieldProps<Schema>,
 ): SelectHTMLAttributes<HTMLSelectElement> {
 	return {

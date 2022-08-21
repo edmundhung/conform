@@ -4,12 +4,34 @@ import {
 	type Submission,
 	type FieldsetData,
 	parse as baseParse,
-	transform,
 	getName,
 	getFieldsetData,
 	setFieldsetError,
+	unflatten,
 } from '@conform-to/dom';
 import * as z from 'zod';
+
+function cleanup(data: unknown): unknown {
+	if (
+		typeof data === 'string' ||
+		typeof data === 'undefined' ||
+		data instanceof File
+	) {
+		return data !== '' ? data : undefined;
+	} else if (Array.isArray(data)) {
+		return data.map((item) => cleanup(item));
+	} else if (data !== null && typeof data === 'object') {
+		let result: Record<string, unknown> = {};
+
+		for (let [key, value] of Object.entries(data)) {
+			result[key] = cleanup(value);
+		}
+
+		return result;
+	} else {
+		throw new Error('Invalid data');
+	}
+}
 
 function inferConstraint<T>(schema: z.ZodType<T>): Constraint {
 	const constraint: Constraint = {
@@ -99,15 +121,14 @@ export function parse<T extends Record<string, unknown>>(
 	schema: z.ZodType<T>,
 ): Submission<T> {
 	const submission = baseParse(payload);
-	const result = schema.safeParse(submission.form.value);
 
-	if (submission.state === 'modified') {
-		return {
-			state: 'modified',
-			// @ts-expect-error
-			form: submission.form,
-		};
+	if (submission.state !== 'accepted') {
+		// @ts-expect-error
+		return submission;
 	}
+
+	const value = cleanup(submission.form.value);
+	const result = schema.safeParse(value);
 
 	if (result.success) {
 		return {
@@ -124,7 +145,7 @@ export function parse<T extends Record<string, unknown>>(
 				...submission.form,
 				error: {
 					...submission.form.error,
-					...(transform(
+					...(unflatten(
 						result.error.errors.map((e) => [getName(e.path), e.message]),
 					) as FieldsetData<T, string>),
 				},
@@ -154,7 +175,8 @@ export function resolve<T extends Record<string, any>>(
 		),
 		validate(fieldset: HTMLFieldSetElement) {
 			const data = getFieldsetData(fieldset);
-			const result = schema.safeParse(data);
+			const value = cleanup(data);
+			const result = schema.safeParse(value);
 			const errors = !result.success
 				? result.error.errors.map<[string, string]>((e) => [
 						getName(e.path),
