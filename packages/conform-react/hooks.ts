@@ -17,7 +17,6 @@ import {
 import {
 	type InputHTMLAttributes,
 	type FormEvent,
-	type FormHTMLAttributes,
 	type RefObject,
 	useRef,
 	useState,
@@ -35,12 +34,12 @@ export interface FormConfig {
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 
 	/**
-	 * Enable native validation before hydation.
+	 * Fallback native validation before hydation.
 	 */
 	fallbackNative?: boolean;
 
 	/**
-	 * Allow the form to be submitted regardless of the form validity.
+	 * Accept form submission regardless of the form validity.
 	 */
 	noValidate?: boolean;
 
@@ -56,15 +55,24 @@ export interface FormConfig {
 	 * The submit event handler of the form. It will be called
 	 * only when the form is considered valid.
 	 */
-	onSubmit?: FormHTMLAttributes<HTMLFormElement>['onSubmit'];
+	onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
 }
 
+/**
+ * Properties to be applied to the form element
+ */
 interface FormProps {
 	ref: RefObject<HTMLFormElement>;
-	onSubmit: Required<FormHTMLAttributes<HTMLFormElement>>['onSubmit'];
-	noValidate: Required<FormHTMLAttributes<HTMLFormElement>>['noValidate'];
+	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+	noValidate: boolean;
 }
 
+/**
+ * Returns properties required to hook into form events.
+ * Applied custom validation and define when error should be reported.
+ *
+ * @see https://github.com/edmundhung/conform/tree/v0.2.0/packages/conform-react/README.md#useform
+ */
 export function useForm(config: FormConfig = {}): FormProps {
 	const { validate } = config;
 
@@ -78,14 +86,12 @@ export function useForm(config: FormConfig = {}): FormProps {
 	}, []);
 
 	useEffect(() => {
-		if (config.noValidate) {
-			return;
-		}
-
+		// Initialize form validation messages
 		if (ref.current) {
 			validate?.(ref.current);
 		}
 
+		// Revalidate the form when input value is changed
 		const handleInput = (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
@@ -96,17 +102,21 @@ export function useForm(config: FormConfig = {}): FormProps {
 
 			validate?.(form);
 
-			if (config.initialReport === 'onChange') {
-				field.dataset.conformTouched = 'true';
-			}
+			if (!config.noValidate) {
+				if (config.initialReport === 'onChange') {
+					field.dataset.conformTouched = 'true';
+				}
 
-			for (const field of form.elements) {
-				if (isFieldElement(field) && field.dataset.conformTouched) {
-					field.reportValidity();
+				// Field validity might be changed due to cross reference
+				for (const field of form.elements) {
+					if (isFieldElement(field) && field.dataset.conformTouched) {
+						// Report latest error for all touched fields
+						field.checkValidity();
+					}
 				}
 			}
 		};
-		const handleFocusout = (event: FocusEvent) => {
+		const handleBlur = (event: FocusEvent) => {
 			const field = event.target;
 			const form = ref.current;
 
@@ -114,6 +124,7 @@ export function useForm(config: FormConfig = {}): FormProps {
 				!form ||
 				!isFieldElement(field) ||
 				field.form !== form ||
+				config.noValidate ||
 				config.initialReport !== 'onBlur'
 			) {
 				return;
@@ -129,24 +140,36 @@ export function useForm(config: FormConfig = {}): FormProps {
 				return;
 			}
 
+			// Reset all field state
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
 				}
 			}
 
+			/**
+			 * The reset event is triggered before form reset happens.
+			 * This make sure the form to be revalidated with initial values.
+			 */
 			setTimeout(() => {
 				validate?.(form);
 			}, 0);
 		};
 
+		/**
+		 * The input event handler will be triggered in capturing phase in order to
+		 * allow follow-up action in the bubble phase based on the latest validity
+
+		 * E.g. `useFieldset` reset the error of valid field after checking the
+		 * validity in the bubble phase.
+		 */
 		document.addEventListener('input', handleInput, true);
-		document.addEventListener('focusout', handleFocusout);
+		document.addEventListener('blur', handleBlur, true);
 		document.addEventListener('reset', handleReset);
 
 		return () => {
 			document.removeEventListener('input', handleInput, true);
-			document.removeEventListener('focusout', handleFocusout);
+			document.removeEventListener('blur', handleBlur, true);
 			document.removeEventListener('reset', handleReset);
 		};
 	}, [validate, config.initialReport, config.noValidate]);
@@ -163,56 +186,97 @@ export function useForm(config: FormConfig = {}): FormProps {
 					? nativeEvent.submitter
 					: null;
 
+			// Validating the form with the submitter value
 			validate?.(form, submitter);
 
-			if (!config.noValidate && !event.defaultPrevented) {
+			/**
+			 * It checks defaultPrevented to confirm if the submission is intentional
+			 * This is utilized by `useFieldList` to modify the list state when the submit
+			 * event is captured and revalidate the form with new fields without triggering
+			 * a form submission at the same time.
+			 */
+			if (
+				!config.noValidate &&
+				!submitter?.formNoValidate &&
+				!event.defaultPrevented
+			) {
+				// Mark all fields as touched
 				for (const field of form.elements) {
 					if (isFieldElement(field)) {
 						field.dataset.conformTouched = 'true';
 					}
 				}
 
-				if (
-					!submitter?.formNoValidate &&
-					!event.currentTarget.reportValidity()
-				) {
+				// Check the validity of the form
+				if (!event.currentTarget.reportValidity()) {
 					event.preventDefault();
-					return;
 				}
 			}
 
-			config.onSubmit?.(event);
+			if (!event.defaultPrevented) {
+				config.onSubmit?.(event);
+			}
 		},
 	};
 }
 
+/**
+ * All the information of the field, including state and config.
+ */
 export type Field<Schema> = {
 	config: FieldConfig<Schema>;
 	error?: string;
 };
 
+/**
+ * A set of field information.
+ */
 export type Fieldset<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]-?: Field<Schema[Key]>;
 };
 
 export interface FieldsetConfig<Schema extends Record<string, any>> {
+	/**
+	 * The prefix used to generate the name of nested fields.
+	 */
 	name?: string;
+
+	/**
+	 * An object representing the initial value of the fieldset.
+	 */
 	defaultValue?: FieldValue<Schema>;
+
+	/**
+	 * An object describing the error of each field
+	 */
 	initialError?: FieldError<Schema>['details'];
+
+	/**
+	 * An object describing the constraint of each field
+	 */
 	constraint?: FieldsetConstraint<Schema>;
+
+	/**
+	 * The id of the form, connecting each field to a form remotely.
+	 */
 	form?: string;
 }
 
+/**
+ * Returns all the information about the fieldset.
+ *
+ * @see https://github.com/edmundhung/conform/tree/v0.2.0/packages/conform-react/README.md#usefieldset
+ */
 export function useFieldset<Schema extends Record<string, any>>(
-	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config?: FieldsetConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
-	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config?: FieldConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
-	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
 	const [error, setError] = useState<Record<string, string | undefined>>(() => {
@@ -228,6 +292,12 @@ export function useFieldset<Schema extends Record<string, any>>(
 	});
 
 	useEffect(() => {
+		/**
+		 * Reset the error state of each field if its validity is changed.
+		 *
+		 * This is a workaround as no official way is provided to notify
+		 * when the validity of the field is changed from `invalid` to `valid`.
+		 */
 		const resetError = (form: HTMLFormElement) => {
 			setError((prev) => {
 				let next = prev;
@@ -240,6 +310,11 @@ export function useFieldset<Schema extends Record<string, any>>(
 							const prevMessage = next?.[key] ?? '';
 							const nextMessage = field.validationMessage;
 
+							/**
+							 * Techincally, checking prevMessage not being empty while nextMessage being empty
+							 * is sufficient for our usecase. It checks if the message is changed instead to allow
+							 * the hook to be useful independently.
+							 */
 							if (prevMessage !== '' && prevMessage !== nextMessage) {
 								next = {
 									...next,
@@ -273,6 +348,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 			const key = getKey(field.name, config?.name);
 
+			// Update the error only if the field belongs to the fieldset
 			if (key) {
 				setError((prev) => {
 					const prevMessage = prev?.[key] ?? '';
@@ -297,6 +373,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
+			// This helps resetting error that fullfilled by the submitter
 			resetError(form);
 		};
 		const resetHandler = (event: Event) => {
@@ -310,6 +387,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 		};
 
 		document.addEventListener('input', handleInput);
+		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
@@ -339,6 +417,11 @@ export function useFieldset<Schema extends Record<string, any>>(
 		});
 	}, [config?.name, config?.initialError]);
 
+	/**
+	 * This allows us constructing the field at runtime as we have no information
+	 * about which fields would be available. The proxy will also help tracking
+	 * the usage of each field for optimization in the future.
+	 */
 	return new Proxy(
 		{},
 		{
@@ -379,6 +462,9 @@ type CommandPayload<
 	Type extends ListCommand<FieldValue<Schema>>['type'],
 > = Extract<ListCommand<FieldValue<Schema>>, { type: Type }>['payload'];
 
+/**
+ * A group of helpers for configuring a list control button
+ */
 interface ListControl<Schema> {
 	prepend(payload?: CommandPayload<Schema, 'prepend'>): ControlButtonProps;
 	append(payload?: CommandPayload<Schema, 'append'>): ControlButtonProps;
@@ -387,8 +473,14 @@ interface ListControl<Schema> {
 	reorder(payload: CommandPayload<Schema, 'reorder'>): ControlButtonProps;
 }
 
+/**
+ * Returns a list of key and config, with a group of helpers
+ * configuring buttons for list manipulation
+ *
+ * @see https://github.com/edmundhung/conform/tree/v0.2.0/packages/conform-react/README.md#usefieldlist
+ */
 export function useFieldList<Payload = any>(
-	ref: RefObject<HTMLFormElement> | RefObject<HTMLFieldSetElement>,
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
 ): [
 	Array<{
@@ -402,7 +494,7 @@ export function useFieldList<Payload = any>(
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
 	const list = entries.map<{ key: string; config: FieldConfig<Payload> }>(
 		([key, defaultValue], index) => ({
-			key: `${key}`,
+			key,
 			config: {
 				...config,
 				name: `${config.name}[${index}]`,
@@ -411,6 +503,11 @@ export function useFieldList<Payload = any>(
 			},
 		}),
 	);
+
+	/***
+	 * This use proxy to capture all information about the command and
+	 * have it encoded in the value.
+	 */
 	const control = new Proxy(
 		{},
 		{
@@ -428,7 +525,25 @@ export function useFieldList<Payload = any>(
 	) as ListControl<Payload>;
 
 	useEffect(() => {
-		setEntries(Object.entries(config.defaultValue ?? [undefined]));
+		setEntries((prevEntries) => {
+			const nextEntries = Object.entries(config.defaultValue ?? [undefined]);
+
+			if (prevEntries.length !== nextEntries.length) {
+				return nextEntries;
+			}
+
+			for (let i = 0; i < prevEntries.length; i++) {
+				const [prevKey, prevValue] = prevEntries[i];
+				const [nextKey, nextValue] = nextEntries[i];
+
+				if (prevKey !== nextKey || prevValue !== nextValue) {
+					return nextEntries;
+				}
+			}
+
+			// No need to rerender in this case
+			return prevEntries;
+		});
 
 		const submitHandler = (event: SubmitEvent) => {
 			const form = getFormElement(ref.current);
@@ -445,6 +560,7 @@ export function useFieldList<Payload = any>(
 			const [name, command] = parseListCommand(event.submitter.value);
 
 			if (name !== config.name) {
+				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
 
@@ -461,7 +577,7 @@ export function useFieldList<Payload = any>(
 
 			setEntries((entries) =>
 				updateList(
-					[...entries],
+					[...(entries ?? [])],
 					command as ListCommand<[string, FieldValue<Payload> | undefined]>,
 				),
 			);
@@ -500,6 +616,13 @@ interface InputControl {
 	onInvalid: (event: FormEvent<FieldElement>) => void;
 }
 
+/**
+ * Returns the properties required to configure a shadow input for validation.
+ * This is particular useful when integrating dropdown and datepicker whichs
+ * introduces custom input mode.
+ *
+ * @see https://github.com/edmundhung/conform/tree/v0.2.0/packages/conform-react/README.md#usecontrolledinput
+ */
 export function useControlledInput<Schema extends Primitive = Primitive>(
 	field: FieldConfig<Schema>,
 ): [ShadowInputProps, InputControl] {
@@ -520,7 +643,7 @@ export function useControlledInput<Schema extends Primitive = Primitive>(
 		setValue(newValue);
 	};
 	const handleBlur: InputControl['onBlur'] = () => {
-		ref.current?.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+		ref.current?.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 	};
 	const handleInvalid: InputControl['onInvalid'] = (event) => {
 		event.preventDefault();
