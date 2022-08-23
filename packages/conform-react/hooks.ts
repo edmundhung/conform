@@ -29,17 +29,21 @@ export interface FormConfig {
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
-	 * Default to `onSubmit`
+	 * Default to `onSubmit`.
 	 */
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 
 	/**
-	 * Fallback native validation before hydation.
+	 * Enable native validation before hydation.
+	 *
+	 * Default to `false`.
 	 */
 	fallbackNative?: boolean;
 
 	/**
 	 * Accept form submission regardless of the form validity.
+	 *
+	 * Default to `false`.
 	 */
 	noValidate?: boolean;
 
@@ -247,7 +251,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	defaultValue?: FieldValue<Schema>;
 
 	/**
-	 * An object describing the error of each field
+	 * An object describing the initial error of each field
 	 */
 	initialError?: FieldError<Schema>['details'];
 
