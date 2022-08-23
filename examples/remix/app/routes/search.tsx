@@ -2,8 +2,8 @@ import {
 	type Schema,
 	useForm,
 	useFieldset,
+	createValidate,
 	conform,
-	getFieldElements,
 } from '@conform-to/react';
 import { useSearchParams } from 'react-router-dom';
 import { styles } from '~/helpers';
@@ -32,24 +32,29 @@ const schema: Schema<{
 	 * Optional - Customise validation behaviour
 	 * Fallbacks to native validation message provided by the browser vendors
 	 */
-	validate(element) {
-		const [keyword] = getFieldElements(element, 'keyword');
-
-		if (keyword.validity.tooShort) {
-			// Native constraint (minLength) with custom message
-			keyword.setCustomValidity('Please fill in at least 4 characters');
-		} else if (keyword.value === 'something') {
-			// Custom constraint
-			keyword.setCustomValidity('Be a little more specific please');
-		} else {
-			// Reset the custom error state of the field (Important!)
-			keyword.setCustomValidity('');
+	validate: createValidate((field) => {
+		switch (field.name) {
+			case 'keyword': {
+				if (field.validity.tooShort) {
+					// Native constraint (minLength) with custom message
+					field.setCustomValidity('Please fill in at least 4 characters');
+				} else if (field.value === 'something') {
+					// Custom constraint
+					field.setCustomValidity('Be a little more specific please');
+				} else {
+					// Reset the custom error state of the field (Important!)
+					field.setCustomValidity('');
+				}
+				break;
+			}
+			case 'category': {
+				// Here we didn't call setCustomValidity for category
+				// So it fallbacks to native validation message
+				// These messages varies based on browser vendors
+				break;
+			}
 		}
-
-		// Here we didn't call setCustomValidity for category
-		// So it fallbacks to native validation message
-		// These messages varies based on browser vendors
-	},
+	}),
 };
 
 export default function SearchForm() {
@@ -95,7 +100,8 @@ export default function SearchForm() {
 			setSearchParams(query);
 		},
 	});
-	const [fieldsetProps, { keyword, category }] = useFieldset(schema, {
+	const { keyword, category } = useFieldset(formProps.ref, {
+		constraint: schema.fields,
 		defaultValue: {
 			keyword: searchParams.get('keyword') ?? '',
 			category: searchParams.get('category') ?? '',
@@ -112,7 +118,7 @@ export default function SearchForm() {
 					</pre>
 				) : null}
 			</header>
-			<fieldset className={styles.card} {...fieldsetProps}>
+			<fieldset className={styles.card}>
 				<label className="block">
 					<div className={styles.label}>Keyword</div>
 					<input

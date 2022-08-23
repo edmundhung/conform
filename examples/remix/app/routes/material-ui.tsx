@@ -11,18 +11,21 @@ const muiFields = z.object({
 	textarea: z.string().min(10),
 });
 
+const { validate, fields } = resolve(muiFields);
+
 export default function Integration() {
 	const [query, setQuery] = useState<any>(null);
 	const formProps = useForm({
 		initialReport: 'onBlur',
+		validate,
 		onSubmit(e) {
 			e.preventDefault();
 			setQuery(Object.fromEntries(new FormData(e.currentTarget)));
 		},
 	});
-	const [fieldsetProps, { text, select, textarea }] = useFieldset(
-		resolve(muiFields),
-	);
+	const { text, select, textarea } = useFieldset(formProps.ref, {
+		constraint: fields,
+	});
 
 	/**
 	 * MUI Select is a controlled component and behaves very different from native input/select.
@@ -34,7 +37,7 @@ export default function Integration() {
 	 * This creates a shadow input that would be used to validate against the schema instead and
 	 * let you hook it up with the controlled component life cycle
 	 */
-	const [selectProps, selectControl] = useControlledInput(select);
+	const [selectProps, selectControl] = useControlledInput(select.config);
 
 	return (
 		<form {...formProps}>
@@ -44,14 +47,14 @@ export default function Integration() {
 					<pre className={styles.result}>{JSON.stringify(query, null, 2)}</pre>
 				) : null}
 			</header>
-			<fieldset className={styles.card} {...fieldsetProps}>
+			<fieldset className={styles.card}>
 				<input {...selectProps} />
 				<Stack spacing={3}>
 					<TextField
 						label="Text"
-						name={text.name}
-						defaultValue={text.defaultValue}
-						required={text.required}
+						name={text.config.name}
+						defaultValue={text.config.defaultValue}
+						required={text.config.required}
 						error={Boolean(text.error)}
 						helperText={text.error}
 						fullWidth
@@ -73,9 +76,9 @@ export default function Integration() {
 					</TextField>
 					<TextField
 						label="Textarea"
-						name={textarea.name}
-						defaultValue={textarea.defaultValue}
-						required={textarea.required}
+						name={textarea.config.name}
+						defaultValue={textarea.config.defaultValue}
+						required={textarea.config.required}
 						error={Boolean(textarea.error)}
 						helperText={textarea.error}
 						multiline

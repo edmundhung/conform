@@ -1,4 +1,4 @@
-import { type FieldProps, type Primitive } from '@conform-to/dom';
+import { type FieldConfig, type Primitive } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,
@@ -6,59 +6,59 @@ import {
 } from 'react';
 
 export function input<Schema extends Primitive>(
-	props: FieldProps<Schema>,
+	config: FieldConfig<Schema>,
 	{ type, value }: { type?: string; value?: string } = {},
 ): InputHTMLAttributes<HTMLInputElement> {
 	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
 	const attributes: InputHTMLAttributes<HTMLInputElement> = {
 		type,
-		name: props.name,
-		form: props.form,
-		required: props.required,
-		minLength: props.minLength,
-		maxLength: props.maxLength,
-		min: props.min,
-		max: props.max,
-		step: props.step,
-		pattern: props.pattern,
-		multiple: props.multiple,
+		name: config.name,
+		form: config.form,
+		required: config.required,
+		minLength: config.minLength,
+		maxLength: config.maxLength,
+		min: config.min,
+		max: config.max,
+		step: config.step,
+		pattern: config.pattern,
+		multiple: config.multiple,
 	};
 
 	if (isCheckboxOrRadio) {
 		attributes.value = value ?? 'on';
-		attributes.defaultChecked = props.defaultValue === attributes.value;
+		attributes.defaultChecked = config.defaultValue === attributes.value;
 	} else {
-		attributes.defaultValue = props.defaultValue;
+		attributes.defaultValue = config.defaultValue;
 	}
 
 	return attributes;
 }
 
 export function select<Schema extends Primitive | Array<Primitive>>(
-	props: FieldProps<Schema>,
+	config: FieldConfig<Schema>,
 ): SelectHTMLAttributes<HTMLSelectElement> {
 	return {
-		name: props.name,
-		form: props.form,
-		defaultValue: props.multiple
-			? Array.isArray(props.defaultValue)
-				? props.defaultValue
+		name: config.name,
+		form: config.form,
+		defaultValue: config.multiple
+			? Array.isArray(config.defaultValue)
+				? config.defaultValue
 				: []
-			: `${props.defaultValue ?? ''}`,
-		required: props.required,
-		multiple: props.multiple,
+			: `${config.defaultValue ?? ''}`,
+		required: config.required,
+		multiple: config.multiple,
 	};
 }
 
 export function textarea<Schema extends Primitive>(
-	props: FieldProps<Schema>,
+	config: FieldConfig<Schema>,
 ): TextareaHTMLAttributes<HTMLTextAreaElement> {
 	return {
-		name: props.name,
-		form: props.form,
-		defaultValue: `${props.defaultValue ?? ''}`,
-		required: props.required,
-		minLength: props.minLength,
-		maxLength: props.maxLength,
+		name: config.name,
+		form: config.form,
+		defaultValue: `${config.defaultValue ?? ''}`,
+		required: config.required,
+		minLength: config.minLength,
+		maxLength: config.maxLength,
 	};
 }

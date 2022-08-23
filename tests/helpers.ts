@@ -25,7 +25,7 @@ export async function isTouched(field: Locator): Promise<boolean> {
 	return field.evaluate<
 		boolean,
 		HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-	>((field) => typeof field.dataset.touched !== 'undefined');
+	>((field) => typeof field.dataset.conformTouched !== 'undefined');
 }
 
 export async function getErrorMessages(playground: Locator): Promise<string[]> {

@@ -39,13 +39,11 @@ export default function SignupForm() {
 			setSubmission(submission);
 		},
 	});
-	const [fieldsetProps, { email, password, confirm, remember }] = useFieldset(
-		resolve(signup),
-		{
-			defaultValue: submission?.form.value,
-			error: submission?.form.error,
-		},
-	);
+	const { email, password, confirm, remember } = useFieldset(formProps.ref, {
+		constraint: resolve(signup).fields,
+		defaultValue: submission?.form.value,
+		initialError: submission?.form.error.details,
+	});
 
 	return (
 		<form {...formProps}>
@@ -57,12 +55,12 @@ export default function SignupForm() {
 					</pre>
 				) : null}
 			</header>
-			<fieldset className={styles.card} {...fieldsetProps}>
+			<fieldset className={styles.card}>
 				<label className={styles.block}>
 					<div className={styles.label}>Email</div>
 					<input
 						className={email.error ? styles.invalidInput : styles.input}
-						{...conform.input(email)}
+						{...conform.input(email.config)}
 					/>
 					<p className={styles.errorMessage}>{email.error}</p>
 				</label>
@@ -70,7 +68,7 @@ export default function SignupForm() {
 					<div className={styles.label}>Password</div>
 					<input
 						className={password.error ? styles.invalidInput : styles.input}
-						{...conform.input(password, { type: 'password' })}
+						{...conform.input(password.config, { type: 'password' })}
 					/>
 					<p className={styles.errorMessage}>{password.error}</p>
 				</label>
@@ -78,14 +76,14 @@ export default function SignupForm() {
 					<div className={styles.label}>Confirm Password</div>
 					<input
 						className={confirm.error ? styles.invalidInput : styles.input}
-						{...conform.input(confirm, { type: 'password' })}
+						{...conform.input(confirm.config, { type: 'password' })}
 					/>
 					<p className={styles.errorMessage}>{confirm.error}</p>
 				</label>
 				<label className={styles.optionLabel}>
 					<input
 						className={styles.optionInput}
-						{...conform.input(remember, {
+						{...conform.input(remember.config, {
 							type: 'checkbox',
 							value: 'yes',
 						})}

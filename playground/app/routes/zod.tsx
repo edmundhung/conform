@@ -44,8 +44,12 @@ export default function ZodIntegration() {
 				parse={(payload) => parse(payload, StudentSchema)}
 				form="native"
 			>
-				<Form id="native" method="post">
-					<StudentFieldset schema={resolve(StudentSchema)} />
+				<Form
+					id="native"
+					method="post"
+					validate={resolve(StudentSchema).validate}
+				>
+					<StudentFieldset constraint={resolve(StudentSchema).fields} />
 				</Form>
 			</Playground>
 			<Playground
@@ -54,8 +58,12 @@ export default function ZodIntegration() {
 				parse={(payload) => parse(payload, paymentSchema)}
 				form="type"
 			>
-				<Form id="type" method="post">
-					<PaymentFieldset schema={resolve(paymentSchema)} />
+				<Form
+					id="type"
+					method="post"
+					validate={resolve(paymentSchema).validate}
+				>
+					<PaymentFieldset constraint={resolve(paymentSchema).fields} />
 				</Form>
 			</Playground>
 		</>

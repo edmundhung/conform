@@ -1,6 +1,6 @@
 import { type ActionFunction } from '@remix-run/node';
 import { useActionData, Form as RemixForm } from '@remix-run/react';
-import { parse as baseParse, type Submission } from '@conform-to/dom';
+import { createSubmission, type Submission } from '@conform-to/dom';
 import { useState, useEffect, type ReactNode } from 'react';
 import { type FormConfig, useForm } from '@conform-to/react';
 
@@ -73,7 +73,7 @@ export function Playground({
 	title,
 	description,
 	form,
-	parse = baseParse,
+	parse = createSubmission,
 	children,
 }: PlaygroundProps) {
 	const actionData = useActionData();
