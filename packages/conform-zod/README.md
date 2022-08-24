@@ -5,92 +5,87 @@
 ## API Reference
 
 - [resolve](#resolve)
-- [parse](#parse)
 
 ### resolve
 
 This resolves zod schema to a conform schema:
 
 ```tsx
-import { useFieldset } from '@conform-to/react';
+import { useForm, useFieldset } from '@conform-to/react';
 import { resolve } from '@conform-to/zod';
 import { z } from 'zod';
 
 // Define the schema with zod
-const schema = z.object({
-  email: z.string(),
-  password: z.string(),
-});
+const schema = resolve(
+  z.object({
+    email: z.string(),
+    password: z.string(),
+  })
+);
 
 // When used with `@conform-to/react`:
-function RandomForm() {
-  const [setupFieldset, { email, password }] = useFieldset(resolve(schema));
+function ExampleForm() {
+  const formProps = useForm({
+    // Validating the form with the schema
+    validate: schema.validate
+    onSubmit: event => {
+      // Read the FormData from the from
+      const payload = new FormData(e.target);
+
+      // Parse the data against the zod schema
+      const submission = schema.parse(payload);
+
+      // It could be accepted / rejected / modified
+      console.log(submission.state);
+
+      // Parsed value (Only if accepted)
+      console.log(submission.data);
+
+      // Structured form value
+      console.log(submission.form.value);
+
+      // Structured form error (only if rejected)
+      console.log(submission.form.error);
+    };
+  })
+  const [setupFieldset, { email, password }] = useFieldset({
+    // Inferring the constraint with the schema
+    constraint: schema.constraint
+  });
 
   // ...
 }
 ```
 
-### parse
-
-The `parse` function could be used to parse the FormData on client side:
-
-```tsx
-const schema = z.object({
-  // Define the schema with zod
-});
-
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  // Read the FormData from the from
-  const formData = new FormData(e.target);
-
-  // Parse the data against the zod schema
-  const result = parse(formData, schema);
-
-  console.log(result.state);
-  // It could be accepted / rejected / processed
-
-  console.log(result.value);
-  // Parsed value (if accepted)
-  // or Fieldset data in schema structure (if not)
-
-  console.log(result.error);
-  // Fieldset error in schema structure  (if rejected)
-});
-```
-
 Or parse the request payload on server side (e.g. Remix):
 
 ```tsx
-import { parse } from '@conform-to/zod';
+import { resolve } from '@conform-to/zod';
 import { z } from 'zod';
 
-const schema = z.object({
-  // Define the schema with zod
-});
+const schema = resolve(
+  z.object({
+    // Define the schema with zod
+  }),
+);
 
 export let action = async ({ request }) => {
   const formData = await request.formData();
-  const result = parse(formData, schema);
+  const submission = schema.parse(formData);
 
-  // Depends on the usecase, you can also do this:
-  // const url = new URL(request.url)
-  // const result = parse(url.searchParams, schema)
-
-  // Return the current result if not accepted
-  if (result.state !== 'accepted') {
-    return json(result);
+  // Return the current form state if not accepted
+  if (submission.state !== 'accepted') {
+    return json(submission.form);
   }
 
   // Do something else
 };
 
-export default function SomeRoute() {
-  const result = useActionData();
+export default function ExampleRoute() {
+  const formState = useActionData();
 
-  // You can then use result.value / result.error
-  // to populate inital value of each fields and
-  // its corresponding error
+  // You can then use formState.value / formState.error
+  // to populate inital value of each fields with
+  // the intital error
 }
 ```

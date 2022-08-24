@@ -1,6 +1,5 @@
 import {
 	type Submission,
-	type InferSchema,
 	useForm,
 	useFieldset,
 	conform,
