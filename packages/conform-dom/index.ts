@@ -47,12 +47,14 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type Schema<Type extends Record<string, any>> = {
-	fields: FieldsetConstraint<Type>;
-	validate?: (
+export type Schema<Shape extends Record<string, any>, Source> = {
+	source: Source;
+	constraint: FieldsetConstraint<Shape>;
+	validate: (
 		element: HTMLFormElement,
 		submitter?: HTMLInputElement | HTMLButtonElement | null,
 	) => void;
+	parse: (payload: FormData | URLSearchParams) => Submission<Shape>;
 };
 
 export interface FormState<Schema extends Record<string, any>> {

@@ -6,48 +6,55 @@ import {
 	useFieldList,
 	conform,
 } from '@conform-to/react';
-import { parse, resolve } from '@conform-to/zod';
+import { resolve } from '@conform-to/zod';
 import { type ActionFunction } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
 import { styles } from '~/helpers';
 
-const product = z.object({
-	item: z.string({ required_error: 'Product name is required' }),
-	quantity: z.preprocess(
-		(data) => (typeof data !== 'undefined' ? Number(data) : data),
-		z
-			.number({ required_error: 'Required', invalid_type_error: 'Invalid' })
-			.min(1, 'Min. 1'),
-	),
-});
+const product = resolve(
+	z.object({
+		item: z.string({ required_error: 'Product name is required' }),
+		quantity: z.preprocess(
+			(data) => (typeof data !== 'undefined' ? Number(data) : data),
+			z
+				.number({ required_error: 'Required', invalid_type_error: 'Invalid' })
+				.min(1, 'Min. 1'),
+		),
+	}),
+);
 
-const shipping = z.object({
-	address: z.string({ required_error: 'Address is required' }),
-	delivery: z.enum(['standard', 'express']),
-});
+const shipping = resolve(
+	z.object({
+		address: z.string({ required_error: 'Address is required' }),
+		delivery: z.enum(['standard', 'express']),
+	}),
+);
 
-const order = z.object({
-	products: z.array(product).min(1, 'At least 1 product is required'),
-	shipping: shipping,
-	remarks: z.string().optional(),
-});
-
-const { validate, fields } = resolve(order);
+const order = resolve(
+	z.object({
+		products: z.array(product.source).min(1, 'At least 1 product is required'),
+		shipping: shipping.source,
+		remarks: z.string().optional(),
+	}),
+);
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
-	const submission = parse(formData, order);
+	const submission = order.parse(formData);
 
 	return submission;
 };
 
 export default function OrderForm() {
-	const submission = useActionData<Submission<z.infer<typeof order>>>();
-	const formProps = useForm({ initialReport: 'onBlur', validate });
+	const submission = useActionData<Submission<z.infer<typeof order.source>>>();
+	const formProps = useForm({
+		initialReport: 'onBlur',
+		validate: order.validate,
+	});
 	const { products, shipping, remarks } = useFieldset(formProps.ref, {
-		constraint: fields,
+		constraint: order.constraint,
 		defaultValue: submission?.form.value,
 		initialError: submission?.form.error.details,
 	});
@@ -104,10 +111,12 @@ export default function OrderForm() {
 	);
 }
 
-function ShippingFieldset(config: FieldsetConfig<z.infer<typeof shipping>>) {
+function ShippingFieldset(
+	config: FieldsetConfig<z.infer<typeof shipping.source>>,
+) {
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const { address, delivery } = useFieldset(ref, {
-		constraint: resolve(shipping).fields,
+		constraint: shipping.constraint,
 		...config,
 	});
 
@@ -124,7 +133,7 @@ function ShippingFieldset(config: FieldsetConfig<z.infer<typeof shipping>>) {
 			<div>
 				<div className={styles.label}>Delivery Method</div>
 				<div className="space-y-2 py-2">
-					{shipping.shape.delivery.options.map((option) => (
+					{shipping.source.shape.delivery.options.map((option) => (
 						<label className={styles.optionLabel} key={option}>
 							<input
 								className={styles.optionInput}
@@ -151,10 +160,10 @@ function ShippingFieldset(config: FieldsetConfig<z.infer<typeof shipping>>) {
 function ProductFieldset({
 	label,
 	...config
-}: FieldsetConfig<z.infer<typeof product>> & { label: string }) {
+}: FieldsetConfig<z.infer<typeof product.source>> & { label: string }) {
 	const ref = useRef<HTMLFieldSetElement>(null);
 	const { item, quantity } = useFieldset(ref, {
-		constraint: resolve(product).fields,
+		constraint: product.constraint,
 		...config,
 	});
 

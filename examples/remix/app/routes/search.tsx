@@ -11,51 +11,10 @@ import { styles } from '~/helpers';
 /**
  * Define the schema of the fieldset manually
  */
-const schema: Schema<{
+interface Search {
 	keyword?: string;
 	category: string;
-}> = {
-	/**
-	 * Required - Define the fields and coresponding constraint
-	 * All keys will be used as the name of the field
-	 */
-	fields: {
-		keyword: {
-			minLength: 4,
-		},
-		category: {
-			required: true,
-		},
-	},
-
-	/**
-	 * Optional - Customise validation behaviour
-	 * Fallbacks to native validation message provided by the browser vendors
-	 */
-	validate: createValidate((field) => {
-		switch (field.name) {
-			case 'keyword': {
-				if (field.validity.tooShort) {
-					// Native constraint (minLength) with custom message
-					field.setCustomValidity('Please fill in at least 4 characters');
-				} else if (field.value === 'something') {
-					// Custom constraint
-					field.setCustomValidity('Be a little more specific please');
-				} else {
-					// Reset the custom error state of the field (Important!)
-					field.setCustomValidity('');
-				}
-				break;
-			}
-			case 'category': {
-				// Here we didn't call setCustomValidity for category
-				// So it fallbacks to native validation message
-				// These messages varies based on browser vendors
-				break;
-			}
-		}
-	}),
-};
+}
 
 export default function SearchForm() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -80,6 +39,30 @@ export default function SearchForm() {
 		 */
 		noValidate: false,
 
+		validate: createValidate((field) => {
+			switch (field.name) {
+				case 'keyword': {
+					if (field.validity.tooShort) {
+						// Native constraint (minLength) with custom message
+						field.setCustomValidity('Please fill in at least 4 characters');
+					} else if (field.value === 'something') {
+						// Custom constraint
+						field.setCustomValidity('Be a little more specific please');
+					} else {
+						// Reset the custom error state of the field (Important!)
+						field.setCustomValidity('');
+					}
+					break;
+				}
+				case 'category': {
+					// Here we didn't call setCustomValidity for category
+					// So it fallbacks to native validation message
+					// These messages varies based on browser vendors
+					break;
+				}
+			}
+		}),
+
 		/**
 		 * Form submit handler
 		 *
@@ -101,7 +84,14 @@ export default function SearchForm() {
 		},
 	});
 	const { keyword, category } = useFieldset(formProps.ref, {
-		constraint: schema.fields,
+		constraint: {
+			keyword: {
+				minLength: 4,
+			},
+			category: {
+				required: true,
+			},
+		},
 		defaultValue: {
 			keyword: searchParams.get('keyword') ?? '',
 			category: searchParams.get('category') ?? '',
