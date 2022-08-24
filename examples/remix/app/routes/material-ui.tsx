@@ -5,26 +5,26 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { styles } from '~/helpers';
 
-const muiFields = z.object({
-	text: z.string(),
-	select: z.enum(['a', 'b', 'c']),
-	textarea: z.string().min(10),
-});
-
-const { validate, fields } = resolve(muiFields);
+const muiFields = resolve(
+	z.object({
+		text: z.string(),
+		select: z.enum(['a', 'b', 'c']),
+		textarea: z.string().min(10),
+	}),
+);
 
 export default function Integration() {
 	const [query, setQuery] = useState<any>(null);
 	const formProps = useForm({
 		initialReport: 'onBlur',
-		validate,
+		validate: muiFields.validate,
 		onSubmit(e) {
 			e.preventDefault();
 			setQuery(Object.fromEntries(new FormData(e.currentTarget)));
 		},
 	});
 	const { text, select, textarea } = useFieldset(formProps.ref, {
-		constraint: fields,
+		constraint: muiFields.constraint,
 	});
 
 	/**

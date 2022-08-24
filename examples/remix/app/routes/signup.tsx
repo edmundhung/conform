@@ -1,46 +1,53 @@
 import {
 	type Submission,
+	type InferSchema,
 	useForm,
 	useFieldset,
 	conform,
 } from '@conform-to/react';
-import { resolve, parse } from '@conform-to/zod';
+import { resolve } from '@conform-to/zod';
 import { useState } from 'react';
 import { z } from 'zod';
 import { styles } from '~/helpers';
 
-const signup = z
-	.object({
-		email: z
-			.string({ required_error: 'Email is required' })
-			.email('Your email address is invalid'),
-		password: z
-			.string({ required_error: 'Password is required' })
-			.min(8, 'The minimum password length is 8 characters'),
-		confirm: z.string({ required_error: 'Confirm password is required' }),
-		remember: z.preprocess((value) => value === 'yes', z.boolean().optional()),
-	})
-	.refine((value) => value.password === value.confirm, {
-		message: 'The password do not match',
-		path: ['confirm'],
-	});
+const signup = resolve(
+	z
+		.object({
+			email: z
+				.string({ required_error: 'Email is required' })
+				.email('Your email address is invalid'),
+			password: z
+				.string({ required_error: 'Password is required' })
+				.min(8, 'The minimum password length is 8 characters'),
+			confirm: z.string({ required_error: 'Confirm password is required' }),
+			remember: z.preprocess(
+				(value) => value === 'yes',
+				z.boolean().optional(),
+			),
+		})
+		.refine((value) => value.password === value.confirm, {
+			message: 'The password do not match',
+			path: ['confirm'],
+		}),
+);
 
 export default function SignupForm() {
 	const [submission, setSubmission] = useState<Submission<
-		z.infer<typeof signup>
+		z.infer<typeof signup.source>
 	> | null>(null);
 	const formProps = useForm({
+		validate: signup.validate,
 		onSubmit(event) {
 			event.preventDefault();
 
 			const formData = new FormData(event.currentTarget);
-			const submission = parse(formData, signup);
+			const submission = signup.parse(formData);
 
 			setSubmission(submission);
 		},
 	});
 	const { email, password, confirm, remember } = useFieldset(formProps.ref, {
-		constraint: resolve(signup).fields,
+		constraint: signup.constraint,
 		defaultValue: submission?.form.value,
 		initialError: submission?.form.error.details,
 	});

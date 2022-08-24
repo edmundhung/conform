@@ -1,5 +1,6 @@
 import {
 	type FieldConstraint,
+	type FieldsetConstraint,
 	type FieldError,
 	type Schema,
 	type Submission,
@@ -48,24 +49,24 @@ function formatError<Schema>(error: z.ZodError<Schema>): FieldError<Schema> {
 }
 
 function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint {
-	const constraint: FieldConstraint = {
-		required: true,
-	};
+	let constraint: FieldConstraint = {};
 
 	if (schema instanceof z.ZodEffects) {
-		return inferConstraint(schema.innerType());
+		constraint = {
+			...inferConstraint(schema.innerType()),
+		};
 	} else if (schema instanceof z.ZodOptional) {
-		return {
+		constraint = {
 			...inferConstraint(schema.unwrap()),
 			required: false,
 		};
 	} else if (schema instanceof z.ZodDefault) {
-		return {
+		constraint = {
 			...inferConstraint(schema.removeDefault()),
 			required: false,
 		};
 	} else if (schema instanceof z.ZodArray) {
-		return {
+		constraint = {
 			...inferConstraint(schema.element),
 			multiple: true,
 		};
@@ -113,6 +114,10 @@ function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint {
 			.join('|');
 	}
 
+	if (typeof constraint.required === 'undefined') {
+		constraint.required = true;
+	}
+
 	return constraint;
 }
 
@@ -130,43 +135,10 @@ function getSchemaShape<T extends Record<string, any>>(
 	return null;
 }
 
-export function parse<T extends Record<string, unknown>>(
-	payload: FormData | URLSearchParams,
-	schema: z.ZodType<T>,
-): Submission<T> {
-	const submission = createSubmission(payload);
-
-	if (submission.state !== 'accepted') {
-		// @ts-expect-error
-		return submission;
-	}
-
-	const value = cleanup(submission.form.value);
-	const result = schema.safeParse(value);
-
-	if (result.success) {
-		return {
-			state: 'accepted',
-			data: result.data,
-			// @ts-expect-error
-			form: submission.form,
-		};
-	} else {
-		return {
-			state: 'rejected',
-			// @ts-expect-error
-			form: {
-				...submission.form,
-				error: formatError(result.error),
-			},
-		};
-	}
-}
-
-export function resolve<T extends Record<string, any>>(
-	schema: z.ZodType<T>,
-): Schema<T> {
-	const shape = getSchemaShape(schema);
+export function resolve<Source extends z.ZodTypeAny>(
+	source: Source,
+): Schema<z.infer<Source>, Source> {
+	const shape = getSchemaShape(source);
 
 	if (!shape) {
 		throw new Error(
@@ -175,21 +147,18 @@ export function resolve<T extends Record<string, any>>(
 	}
 
 	return {
-		// @ts-expect-error
-		fields: Object.fromEntries(
+		source,
+		constraint: Object.fromEntries(
 			Object.entries(shape).map<[string, FieldConstraint]>(([key, def]) => [
 				key,
 				inferConstraint(def),
 			]),
-		),
-		validate(
-			form: HTMLFormElement,
-			submitter?: HTMLInputElement | HTMLButtonElement | null,
-		) {
+		) as FieldsetConstraint<z.infer<Source>>,
+		validate(form, submitter) {
 			const payload = getFormData(form, submitter);
 			const submission = createSubmission(payload);
 			const value = cleanup(submission.form.value);
-			const result = schema.safeParse(value);
+			const result = source.safeParse(value);
 			const errors = !result.success
 				? result.error.errors.map<[string, string]>((e) => [
 						getName(e.path),
@@ -198,6 +167,33 @@ export function resolve<T extends Record<string, any>>(
 				: [];
 
 			setFormError(form, errors);
+		},
+		parse(payload): Submission<z.infer<Source>> {
+			const submission = createSubmission(payload);
+
+			if (submission.state !== 'accepted') {
+				return submission;
+			}
+
+			const value = cleanup(submission.form.value);
+			const result = source.safeParse(value);
+
+			if (result.success) {
+				return {
+					state: 'accepted',
+					data: result.data,
+					form: submission.form,
+				};
+			} else {
+				return {
+					state: 'rejected',
+					form: {
+						// @ts-expect-error
+						value: submission.form.value,
+						error: formatError(result.error),
+					},
+				};
+			}
 		},
 	};
 }
