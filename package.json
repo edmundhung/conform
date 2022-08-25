@@ -3,11 +3,9 @@
 	"name": "conform-monorepo",
 	"license": "MIT",
 	"workspaces": [
-		"packages/conform-dom",
-		"packages/conform-zod",
-		"packages/conform-react",
-		"playground",
-		"examples/remix"
+		"packages/*",
+		"examples/*",
+		"playground"
 	],
 	"scripts": {
 		"build": "run-s build:*",
