@@ -1,0 +1,32 @@
+input[data-conform-touched]:invalid {
+	border-color: red;
+}
+
+input + div {
+	color: red;
+}
+
+fieldset {
+	border: none;
+	padding: 10px 0;
+}
+
+ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+li {
+	margin: 10px 0;
+	padding: 10px;
+	border: 1px dotted gray;
+}
+
+input {
+	margin: 2px 0;
+}
+
+input[type='checkbox'] {
+	margin: 0 10px;
+}

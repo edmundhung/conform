@@ -1,0 +1,13 @@
+label {
+	display: block;
+	padding-top: 0.2em;
+	padding-bottom: 0.2em;
+}
+
+input[data-conform-touched]:invalid {
+	border-color: red;
+}
+
+input + div {
+	color: red;
+}

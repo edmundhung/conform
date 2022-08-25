@@ -3,7 +3,7 @@
 	"private": true,
 	"sideEffects": false,
 	"scripts": {
-		"build": "run-p build:*",
+		"build": "run-s build:*",
 		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
 		"build:remix": "remix build",
 		"dev": "run-p dev:*",
@@ -17,8 +17,8 @@
 		"@remix-run/node": "^1.6.3",
 		"@remix-run/react": "^1.6.3",
 		"@remix-run/serve": "^1.6.3",
-		"react": "^17.0.2",
-		"react-dom": "^17.0.2"
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0"
 	},
 	"devDependencies": {
 		"@remix-run/dev": "^1.6.3",
