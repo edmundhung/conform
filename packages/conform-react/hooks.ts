@@ -75,7 +75,7 @@ interface FormProps {
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.3.0-pre.0/packages/conform-react/README.md#useform
+ * @see https://github.com/edmundhung/conform/tree/v0.3.0/packages/conform-react/README.md#useform
  */
 export function useForm(config: FormConfig = {}): FormProps {
 	const { validate } = config;
@@ -269,7 +269,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 /**
  * Returns all the information about the fieldset.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.3.0-pre.0/packages/conform-react/README.md#usefieldset
+ * @see https://github.com/edmundhung/conform/tree/v0.3.0/packages/conform-react/README.md#usefieldset
  */
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
@@ -481,7 +481,7 @@ interface ListControl<Schema> {
  * Returns a list of key and config, with a group of helpers
  * configuring buttons for list manipulation
  *
- * @see https://github.com/edmundhung/conform/tree/v0.3.0-pre.0/packages/conform-react/README.md#usefieldlist
+ * @see https://github.com/edmundhung/conform/tree/v0.3.0/packages/conform-react/README.md#usefieldlist
  */
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
@@ -625,7 +625,7 @@ interface InputControl {
  * This is particular useful when integrating dropdown and datepicker whichs
  * introduces custom input mode.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.3.0-pre.0/packages/conform-react/README.md#usecontrolledinput
+ * @see https://github.com/edmundhung/conform/tree/v0.3.0/packages/conform-react/README.md#usecontrolledinput
  */
 export function useControlledInput<Schema extends Primitive = Primitive>(
 	field: FieldConfig<Schema>,
