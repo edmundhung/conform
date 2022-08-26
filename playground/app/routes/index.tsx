@@ -13,6 +13,11 @@ export default function Home() {
 					Zod
 				</Link>
 			</li>
+			<li>
+				<Link className="hover:underline" to="yup">
+					Yup
+				</Link>
+			</li>
 		</ul>
 	);
 }
