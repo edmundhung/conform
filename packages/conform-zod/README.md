@@ -5,6 +5,7 @@
 ## API Reference
 
 - [resolve](#resolve)
+- [ifNonEmptyString](#ifNonEmptyString)
 
 ### resolve
 
@@ -88,4 +89,38 @@ export default function ExampleRoute() {
   // to populate inital value of each fields with
   // the intital error
 }
+```
+
+### ifNonEmptyString
+
+As `zod` does not have specific logic for handling form data, there are some common cases need to be handled by the users. For example,
+
+1. it does not treat empty string as invalid for a requried field
+2. it has no type coercion support (e.g. '1' -> 1)
+
+The zod schema resolver currently does an extra cleanup step to transform empty string to undefined internally. But users are still required to do convert the data to their desired type themselves.
+
+```tsx
+import { z } from 'zod';
+import { resolve, ifNonEmptyString } from '@conform-to/zod';
+
+const schema = resolve(
+  z.object({
+    // No preprocess is needed for string as empty string
+    // is already converted to undefined by the resolver
+    text: z.string({ required_error: 'This field is required' }),
+
+    // Cast to number manually
+    number: z.preprocess(
+      ifNonEmptyString(Number),
+      z.number({ required_error: 'This field is required' }),
+    ),
+
+    // This is how you will do it without the helper
+    date: z.preprocess(
+      (value) => (typeof value === 'string' ? new Date(value) : value),
+      z.date({ required_error: 'This field is required' }),
+    ),
+  }),
+);
 ```

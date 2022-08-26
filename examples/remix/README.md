@@ -10,3 +10,5 @@ It works without JS.
 
 - [useForm](../../packages/conform-react/README.md#useForm)
 - [useFieldset](../../packages/conform-react/README.md#useFieldset)
+- [resolve](../../packages/conform-zod/README.md#resolve)
+- [ifNonEmptyString](../../packages/conform-zod/README.md#ifNonEmptyString)
