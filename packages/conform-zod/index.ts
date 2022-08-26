@@ -138,21 +138,26 @@ function getSchemaShape<T extends Record<string, any>>(
 export function resolve<Source extends z.ZodTypeAny>(
 	source: Source,
 ): Schema<z.infer<Source>, Source> {
-	const shape = getSchemaShape(source);
-
-	if (!shape) {
-		throw new Error(
-			'Unknown schema provided; The schema must have an object shape',
-		);
-	}
-
 	return {
 		source,
-		constraint: Object.fromEntries(
-			Object.entries(shape).map<[string, FieldConstraint]>(([key, def]) => [
-				key,
-				inferConstraint(def),
-			]),
+		constraint: new Proxy(
+			{},
+			{
+				get(_target, key) {
+					if (typeof key !== 'string') {
+						return;
+					}
+
+					const shape = getSchemaShape(source);
+					const schema = shape?.[key];
+
+					if (!schema) {
+						return {};
+					}
+
+					return inferConstraint(schema);
+				},
+			},
 		) as FieldsetConstraint<z.infer<Source>>,
 		validate(form, submitter) {
 			const payload = getFormData(form, submitter);
@@ -195,5 +200,21 @@ export function resolve<Source extends z.ZodTypeAny>(
 				};
 			}
 		},
+	};
+}
+
+export function ifNonEmptyString(
+	fn: (value: string) => unknown,
+): (value: unknown) => unknown {
+	return (value: unknown) => {
+		if (typeof value !== 'string') {
+			return value;
+		}
+
+		if (value === '') {
+			return undefined;
+		}
+
+		return fn(value);
 	};
 }

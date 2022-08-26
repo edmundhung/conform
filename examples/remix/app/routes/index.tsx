@@ -4,7 +4,7 @@ import {
 	useFieldset,
 	useFieldList,
 } from '@conform-to/react';
-import { resolve } from '@conform-to/zod';
+import { ifNonEmptyString, resolve } from '@conform-to/zod';
 import { type ActionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
@@ -13,7 +13,10 @@ import { z } from 'zod';
 const Task = resolve(
 	z.object({
 		content: z.string(),
-		completed: z.preprocess((value) => value === 'yes', z.boolean()),
+		completed: z.preprocess(
+			ifNonEmptyString((value) => value === 'yes'),
+			z.boolean(),
+		),
 	}),
 );
 

@@ -1,4 +1,4 @@
-import { resolve } from '@conform-to/zod';
+import { resolve, ifNonEmptyString } from '@conform-to/zod';
 import { z } from 'zod';
 import { action, Playground, Form } from '~/playground';
 import { PaymentFieldset, StudentFieldset } from '~/fieldset';
@@ -15,7 +15,7 @@ export default function ZodIntegration() {
 				.regex(/^[0-9a-zA-Z]{8,20}$/),
 			remarks: z.string().optional(),
 			score: z.preprocess(
-				(value) => (typeof value !== 'undefined' ? Number(value) : undefined),
+				ifNonEmptyString(Number),
 				z.number().min(0).max(100).step(0.5).optional(),
 			),
 			grade: z.enum(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
@@ -24,17 +24,13 @@ export default function ZodIntegration() {
 	const paymentSchema = resolve(
 		z.object({
 			account: z.string(),
-			amount: z.preprocess(
-				(value) => (typeof value !== 'undefined' ? Number(value) : value),
-				z.number(),
-			),
+			amount: z.preprocess(ifNonEmptyString(Number), z.number()),
 			timestamp: z.preprocess(
-				(value) =>
-					typeof value !== 'undefined' ? new Date(value as any) : value,
+				ifNonEmptyString((value) => new Date(value)),
 				z.date(),
 			),
 			verified: z.preprocess(
-				(value) => (typeof value !== 'undefined' ? value === 'Yes' : value),
+				ifNonEmptyString((value) => value === 'Yes'),
 				z.boolean(),
 			),
 		}),
