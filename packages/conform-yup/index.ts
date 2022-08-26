@@ -12,35 +12,15 @@ import {
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
-function cleanup(data: unknown): unknown {
-	if (
-		typeof data === 'string' ||
-		typeof data === 'undefined' ||
-		data instanceof File
-	) {
-		return data !== '' ? data : undefined;
-	} else if (Array.isArray(data)) {
-		return data.map((item) => cleanup(item));
-	} else if (data !== null && typeof data === 'object') {
-		let result: Record<string, unknown> = {};
-
-		for (let [key, value] of Object.entries(data)) {
-			result[key] = cleanup(value);
-		}
-
-		return result;
-	} else {
-		throw new Error('Invalid data');
-	}
-}
-
 function formatError<Schema>(error: yup.ValidationError): FieldError<Schema> {
 	const result: FieldError<Schema> = {};
 
 	for (const validationError of error.inner) {
 		setValue<string>(
 			result,
-			getPaths(validationError.path).flatMap((path) => ['details', path]).concat('message'),
+			getPaths(validationError.path)
+				.flatMap((path) => ['details', path])
+				.concat('message'),
 			(prev) => (prev ? prev : validationError.message),
 		);
 	}
@@ -128,20 +108,24 @@ export function resolve<Source extends yup.AnyObjectSchema>(
 					return [key, constraint];
 				},
 			),
-		)  as FieldsetConstraint<yup.InferType<Source>>,
+		) as FieldsetConstraint<yup.InferType<Source>>,
 		validate(form, submitter) {
 			const payload = getFormData(form, submitter);
 			const submission = createSubmission(payload);
-			const value = cleanup(submission.form.value);
 			const errors: Array<[string, string]> = [];
 
 			try {
-				source.validateSync(value, {
+				source.validateSync(submission.form.value, {
 					abortEarly: false,
 				});
 			} catch (e) {
 				if (e instanceof yup.ValidationError) {
-					errors.push(...e.inner.map<[string, string]>(error => [error.path ?? '', error.message]));
+					errors.push(
+						...e.inner.map<[string, string]>((error) => [
+							error.path ?? '',
+							error.message,
+						]),
+					);
 				} else {
 					throw e;
 				}
@@ -151,15 +135,13 @@ export function resolve<Source extends yup.AnyObjectSchema>(
 		},
 		parse(payload): Submission<yup.InferType<Source>> {
 			const submission = createSubmission(payload);
-			
+
 			if (submission.state !== 'accepted') {
 				return submission;
 			}
 
 			try {
-				const value = cleanup(submission.form.value);
-				// source.cast(submission.form.value);
-				const result = source.validateSync(value, {
+				const result = source.validateSync(submission.form.value, {
 					abortEarly: false,
 				});
 
@@ -182,6 +164,6 @@ export function resolve<Source extends yup.AnyObjectSchema>(
 
 				throw error;
 			}
-		}
+		},
 	};
 }
