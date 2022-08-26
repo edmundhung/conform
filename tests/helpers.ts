@@ -32,9 +32,7 @@ export async function getErrorMessages(playground: Locator): Promise<string[]> {
 	return playground.locator('label > p').allInnerTexts();
 }
 
-export async function getFieldConstraint(
-	field: Locator,
-): Promise<FieldConstraint> {
+export async function getConstraint(field: Locator): Promise<FieldConstraint> {
 	return field.evaluate((input: HTMLInputElement) => {
 		const constraint: FieldConstraint = {};
 
