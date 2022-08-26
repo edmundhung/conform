@@ -1,4 +1,4 @@
-import type { Constraint } from '@conform-to/dom';
+import type { FieldConstraint } from '@conform-to/dom';
 import type { Page, Locator } from '@playwright/test';
 import { expect } from '@playwright/test';
 
@@ -32,9 +32,9 @@ export async function getErrorMessages(playground: Locator): Promise<string[]> {
 	return playground.locator('label > p').allInnerTexts();
 }
 
-export async function getConstraint(field: Locator): Promise<Constraint> {
+export async function getConstraint(field: Locator): Promise<FieldConstraint> {
 	return field.evaluate((input: HTMLInputElement) => {
-		const constraint: Constraint = {};
+		const constraint: FieldConstraint = {};
 
 		if (input.required) {
 			constraint.required = true;
