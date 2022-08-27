@@ -5,6 +5,7 @@
 	"workspaces": [
 		"packages/*",
 		"examples/*",
+		"guide",
 		"playground"
 	],
 	"scripts": {
