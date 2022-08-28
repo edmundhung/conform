@@ -34,7 +34,7 @@ export default function LoginForm() {
       <label>
         <div>Password</div>
         <input type="password" name="password" required />
-        <div>{passowrd.error}</div>
+        <div>{password.error}</div>
       </label>
       <button type="submit">Login</button>
     </form>
