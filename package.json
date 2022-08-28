@@ -15,6 +15,7 @@
 		"watch": "run-p watch:*",
 		"watch:js": "npm run build:js -- --watch",
 		"watch:ts": "npm run build:ts -- --watch",
+		"guide": "npm run dev --workspace=guide",
 		"playground": "npm run dev --workspace=playground",
 		"test": "npm run build --workspace=playground && playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
