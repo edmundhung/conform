@@ -509,13 +509,13 @@ import { useRef } from 'react';
 
 function RandomForm() {
   const ref = useRef();
-  const { cateogry } = useFieldset(ref);
+  const { category } = useFieldset(ref);
 
   return (
     <fieldset ref={ref}>
-      <input {...conform.input(cateogry, { type: 'text' })} />
-      <textarea {...conform.textarea(cateogry)} />
-      <select {...conform.select(cateogry)}>{/* ... */}</select>
+      <input {...conform.input(category, { type: 'text' })} />
+      <textarea {...conform.textarea(category)} />
+      <select {...conform.select(category)}>{/* ... */}</select>
     </fieldset>
   );
 }
@@ -526,37 +526,37 @@ This is equivalent to:
 ```tsx
 function RandomForm() {
   const ref = useRef();
-  const { cateogry } = useFieldset(ref);
+  const { category } = useFieldset(ref);
 
   return (
     <fieldset ref={ref}>
       <input
         type="text"
-        name={cateogry.name}
-        form={cateogry.form}
-        defaultValue={cateogry.defaultValue}
-        requried={cateogry.required}
-        minLength={cateogry.minLength}
-        maxLength={cateogry.maxLength}
-        min={cateogry.min}
-        max={cateogry.max}
-        multiple={cateogry.multiple}
-        pattern={cateogry.pattern}
+        name={category.name}
+        form={category.form}
+        defaultValue={category.defaultValue}
+        requried={category.required}
+        minLength={category.minLength}
+        maxLength={category.maxLength}
+        min={category.min}
+        max={category.max}
+        multiple={category.multiple}
+        pattern={category.pattern}
       >
       <textarea
-        name={cateogry.name}
-        form={cateogry.form}
-        defaultValue={cateogry.defaultValue}
-        requried={cateogry.required}
-        minLength={cateogry.minLength}
-        maxLength={cateogry.maxLength}
+        name={category.name}
+        form={category.form}
+        defaultValue={category.defaultValue}
+        requried={category.required}
+        minLength={category.minLength}
+        maxLength={category.maxLength}
       />
       <select
-        name={cateogry.name}
-        form={cateogry.form}
-        defaultValue={cateogry.defaultValue}
-        requried={cateogry.required}
-        multiple={cateogry.multiple}
+        name={category.name}
+        form={category.form}
+        defaultValue={category.defaultValue}
+        requried={category.required}
+        multiple={category.multiple}
       >
         {/* ... */}
       </select>
