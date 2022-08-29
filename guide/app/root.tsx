@@ -1,4 +1,4 @@
-import type { MetaFunction } from '@remix-run/cloudflare';
+import type { MetaFunction, LinksFunction } from '@remix-run/cloudflare';
 import {
 	Links,
 	LiveReload,
@@ -7,6 +7,11 @@ import {
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
+import stylesUrl from '~/styles.css';
+
+export let links: LinksFunction = () => {
+	return [{ rel: 'stylesheet', href: stylesUrl }];
+};
 
 export const meta: MetaFunction = () => ({
 	charset: 'utf-8',
@@ -21,7 +26,7 @@ export default function App() {
 				<Meta />
 				<Links />
 			</head>
-			<body>
+			<body className="antialiased">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />
