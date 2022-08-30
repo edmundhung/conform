@@ -353,7 +353,7 @@ type Collection = {
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books);
+  const [bookList, control] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
@@ -392,13 +392,13 @@ import { useRef } from 'react';
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books);
+  const [bookList, control] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
       {bookList.map((book, index) => (
         <div key={book.key}>
-          {/* `book.props` is a FieldConfig object similar to `books` */}
+          {/* `book.config` is a FieldConfig object similar to `books` */}
           <BookFieldset {...book.config}>
 
           {/* To setup a delete button */}
@@ -470,7 +470,7 @@ import { useRef } from 'react';
 function MuiForm() {
   const ref = useRef();
   const { category } = useFieldset(schema);
-  const [inputProps, control] = useControlledInput(category);
+  const [inputProps, control] = useControlledInput(category.config);
 
   return (
     <fieldset ref={ref}>
@@ -513,9 +513,9 @@ function RandomForm() {
 
   return (
     <fieldset ref={ref}>
-      <input {...conform.input(category, { type: 'text' })} />
-      <textarea {...conform.textarea(category)} />
-      <select {...conform.select(category)}>{/* ... */}</select>
+      <input {...conform.input(category.config, { type: 'text' })} />
+      <textarea {...conform.textarea(category.config)} />
+      <select {...conform.select(category.config)}>{/* ... */}</select>
     </fieldset>
   );
 }
@@ -532,31 +532,31 @@ function RandomForm() {
     <fieldset ref={ref}>
       <input
         type="text"
-        name={category.name}
-        form={category.form}
-        defaultValue={category.defaultValue}
-        requried={category.required}
-        minLength={category.minLength}
-        maxLength={category.maxLength}
-        min={category.min}
-        max={category.max}
-        multiple={category.multiple}
-        pattern={category.pattern}
+        name={category.config.name}
+        form={category.config.form}
+        defaultValue={category.config.defaultValue}
+        requried={category.config.required}
+        minLength={category.config.minLength}
+        maxLength={category.config.maxLength}
+        min={category.config.min}
+        max={category.config.max}
+        multiple={category.config.multiple}
+        pattern={category.config.pattern}
       >
       <textarea
-        name={category.name}
-        form={category.form}
-        defaultValue={category.defaultValue}
-        requried={category.required}
-        minLength={category.minLength}
-        maxLength={category.maxLength}
+        name={category.config.name}
+        form={category.config.form}
+        defaultValue={category.config.defaultValue}
+        requried={category.config.required}
+        minLength={category.config.minLength}
+        maxLength={category.config.maxLength}
       />
       <select
-        name={category.name}
-        form={category.form}
-        defaultValue={category.defaultValue}
-        requried={category.required}
-        multiple={category.multiple}
+        name={category.config.name}
+        form={category.config.form}
+        defaultValue={category.config.defaultValue}
+        requried={category.config.required}
+        multiple={category.config.multiple}
       >
         {/* ... */}
       </select>

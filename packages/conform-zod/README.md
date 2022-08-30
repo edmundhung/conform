@@ -50,7 +50,7 @@ function ExampleForm() {
     };
   })
   const [setupFieldset, { email, password }] = useFieldset({
-    // Inferring the constraint with the schema
+    // Optional: setup native constraint inferred from the schema
     constraint: schema.constraint
   });
 
