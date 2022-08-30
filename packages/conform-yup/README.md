@@ -15,7 +15,7 @@ import { useForm, useFieldset } from '@conform-to/react';
 import { resolve } from '@conform-to/yup';
 import * as yup from 'yup';
 
-// Define the schema with zod
+// Define the schema with yup
 const schema = resolve(
   yup.object({
     email: yup.string().required(),
@@ -32,7 +32,7 @@ function ExampleForm() {
       // Read the FormData from the from
       const payload = new FormData(e.target);
 
-      // Parse the data against the zod schema
+      // Parse the data against the yup schema
       const submission = schema.parse(payload);
 
       // It could be accepted / rejected / modified
@@ -49,7 +49,7 @@ function ExampleForm() {
     };
   })
   const [setupFieldset, { email, password }] = useFieldset({
-    // Inferring the constraint with the schema
+    // Optional: setup native constraint inferred from the schema
     constraint: schema.constraint
   });
 
