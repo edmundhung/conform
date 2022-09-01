@@ -219,31 +219,31 @@ function BookFieldset() {
    * This would be 'Invalid ISBN' initially as specified
    * in the initialError config
    */
-  console.log(book.error);
+  console.log(isbn.error);
 
   /**
    * This would be `book.isbn` instead of `isbn`
    * if the `name` option is provided
    */
-  console.log(book.config.name);
+  console.log(isbn.config.name);
 
   /**
    * This would be `0340013818` if specified
    * on the `initalValue` option
    */
-  console.log(book.config.defaultValue);
+  console.log(isbn.config.defaultValue);
 
   /**
    * Initial error message
    * This would be 'Invalid ISBN' if specified
    */
-  console.log(book.config.initialError);
+  console.log(isbn.config.initialError);
 
   /**
    * This would be `random-form-id`
    * because of the `form` option provided
    */
-  console.log(book.config.form);
+  console.log(isbn.config.form);
 
   /**
    * Constraint of the field (required, minLength etc)
@@ -254,8 +254,8 @@ function BookFieldset() {
    *   pattern: '[0-9]{10,13}'
    * }
    */
-  console.log(book.config.required);
-  console.log(book.config.pattern);
+  console.log(isbn.config.required);
+  console.log(isbn.config.pattern);
 
   return <form {...formProps}>{/* ... */}</form>;
 }
