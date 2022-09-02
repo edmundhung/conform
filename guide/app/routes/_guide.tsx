@@ -4,14 +4,14 @@ export default function Guide() {
 	return (
 		<>
 			<header className="sticky top-0 w-full backdrop-blur transition-colors duration-500 z-50 border-b border-zinc-800">
-				<div className="max-w-7xl mx-auto py-4 px-8">
+				<div className="container mx-auto py-4 px-8">
 					<Link className="text-xl font-medium tracking-wider uppercase" to="/">
 						conform
 					</Link>
 				</div>
 			</header>
-			<main className="max-w-7xl mx-auto flex">
-				<nav className="sticky top-16 py-8 px-8 text-lg w-72 self-start overflow-y-auto">
+			<main className="container mx-auto flex">
+				<nav className="flex-none sticky top-16 py-8 px-8 text-lg w-72 self-start overflow-y-auto">
 					<ul className="space-y-5">
 						<li>
 							<NavLink to="playground">Playground</NavLink>

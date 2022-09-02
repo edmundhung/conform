@@ -31,11 +31,13 @@ export default function Page() {
 	let { content } = useLoaderData<typeof loader>();
 
 	return (
-		<div className="flex relative">
-			<section className="flex-1 prose prose-zinc dark:prose-invert py-8">
-				{renderers.react(content, react)}
-			</section>
-			<aside className="sticky top-16 py-8 px-8 w-72 text-lg self-start overflow-y-auto">
+		<div className="flex">
+			<div className="flex-1 py-8">
+				<section className="prose prose-zinc dark:prose-invert max-w-none">
+					{renderers.react(content, react)}
+				</section>
+			</div>
+			<aside className="sticky top-16 flex-none py-8 px-8 w-72 text-lg self-start overflow-y-auto">
 				<h2>Table of content</h2>
 			</aside>
 		</div>
