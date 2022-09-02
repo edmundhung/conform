@@ -31,8 +31,13 @@ export default function Page() {
 	let { content } = useLoaderData<typeof loader>();
 
 	return (
-		<article className="prose prose-zinc prose-invert">
-			{renderers.react(content, react)}
-		</article>
+		<div className="flex relative">
+			<section className="flex-1 prose prose-zinc dark:prose-invert py-8">
+				{renderers.react(content, react)}
+			</section>
+			<aside className="sticky top-16 py-8 px-8 w-72 text-lg self-start overflow-y-auto">
+				<h2>Table of content</h2>
+			</aside>
+		</div>
 	);
 }
