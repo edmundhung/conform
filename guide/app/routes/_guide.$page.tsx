@@ -1,6 +1,15 @@
-import { json, type LoaderArgs } from '@remix-run/cloudflare';
+import {
+	type LinksFunction,
+	type LoaderArgs,
+	json,
+} from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
 import { parse, render } from '~/markdoc';
+import stylesUrl from '~/styles/code.css';
+
+export let links: LinksFunction = () => {
+	return [{ rel: 'stylesheet', href: stylesUrl }];
+};
 
 async function getMarkdown(context: unknown, page: string | undefined) {
 	const response = page

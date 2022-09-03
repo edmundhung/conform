@@ -4,4 +4,5 @@ node_modules
 /app/styles.css
 /functions
 /public/build
+/public/docs
 .env

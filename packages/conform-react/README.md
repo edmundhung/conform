@@ -2,7 +2,7 @@
 
 > [React](https://github.com/facebook/react) adapter for [conform](https://github.com/edmundhung/conform)
 
-## API Reference
+## API References
 
 - [useForm](#useForm)
 - [useFieldset](#useFieldset)
@@ -399,7 +399,7 @@ function CollectionFieldset() {
       {bookList.map((book, index) => (
         <div key={book.key}>
           {/* `book.config` is a FieldConfig object similar to `books` */}
-          <BookFieldset {...book.config}>
+          <BookFieldset {...book.config} />
 
           {/* To setup a delete button */}
           <button {...control.remove({ index })}>Delete</button>
@@ -426,11 +426,7 @@ function BookFieldset({ name, form, defaultValue, error }) {
     error,
   });
 
-  return (
-    <fieldset ref={ref}>
-      {/* ... */}
-    </fieldset>
-  );
+  return <fieldset ref={ref}>{/* ... */}</fieldset>;
 }
 ```
 
