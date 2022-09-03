@@ -1,7 +1,6 @@
-import { parse, transform, renderers } from '@markdoc/markdoc';
 import { json, type LoaderArgs } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import * as react from 'react';
+import { parse, render } from '~/markdoc';
 
 async function getMarkdown(context: unknown, page: string | undefined) {
 	const response = page
@@ -19,11 +18,9 @@ async function getMarkdown(context: unknown, page: string | undefined) {
 
 export async function loader({ params, context }: LoaderArgs) {
 	const markdown = await getMarkdown(context, params.page);
-	const ast = parse(markdown);
-	const content = transform(ast);
 
 	return json({
-		content,
+		content: parse(markdown),
 	});
 }
 
@@ -34,7 +31,7 @@ export default function Page() {
 		<div className="flex">
 			<div className="flex-1 py-8">
 				<section className="prose prose-zinc dark:prose-invert max-w-none">
-					{renderers.react(content, react)}
+					{render(content)}
 				</section>
 			</div>
 			<aside className="sticky top-16 flex-none py-8 px-8 w-72 text-lg self-start overflow-y-auto">
