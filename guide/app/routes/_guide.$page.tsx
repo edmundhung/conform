@@ -37,15 +37,10 @@ export default function Page() {
 	let { content } = useLoaderData<typeof loader>();
 
 	return (
-		<div className="flex">
-			<div className="flex-1 py-8">
-				<section className="prose prose-zinc dark:prose-invert max-w-none">
-					{render(content)}
-				</section>
-			</div>
-			<aside className="sticky top-16 flex-none py-8 px-8 w-72 text-lg self-start overflow-y-auto">
-				<h2>Table of content</h2>
-			</aside>
+		<div className="py-8">
+			<section className="prose prose-zinc dark:prose-invert max-w-none pr-72">
+				{render(content)}
+			</section>
 		</div>
 	);
 }

@@ -8,6 +8,14 @@ import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 ReactSyntaxHighlighter.registerLanguage('ts', ts);
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 
+export function Aside({ children }: { children: React.ReactNode }) {
+	return (
+		<aside className="float-right sticky top-16 w-72 -mr-72 p-8 -mt-40">
+			{children}
+		</aside>
+	);
+}
+
 export function Fence({
 	language,
 	useInlineStyles = false,
@@ -39,13 +47,35 @@ export function Details({
 	);
 }
 
-export function parse(markdown: string) {
-	const content = markdown.replace(
-		/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
-		'{% details summary="$1" %}$2{% /details %}',
+export function Heading({
+	level,
+	children,
+}: {
+	level: number;
+	children: React.ReactNode;
+}) {
+	const HeadingTag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+	const id =
+		typeof children === 'string'
+			? children.replace(/[?]/g, '').replace(/\s+/g, '-')
+			: '';
+
+	return (
+		<HeadingTag id={id} className="-mt-24 pt-24">
+			{children}
+		</HeadingTag>
 	);
+}
+
+export function parse(markdown: string) {
+	const content = markdown
+		.replace(
+			/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
+			'{% details summary="$1" %}$2{% /details %}',
+		)
+		.replace(/<!-- (\/?aside) -->/g, '{% $1 %}');
 	const ast = markdoc.parse(content);
-	const result = markdoc.transform(ast, {
+	const node = markdoc.transform(ast, {
 		nodes: {
 			fence: {
 				render: 'Fence',
@@ -57,12 +87,21 @@ export function parse(markdown: string) {
 					},
 				},
 			},
+			heading: {
+				render: 'Heading',
+				attributes: {
+					level: { type: Number, required: true, default: 1 },
+				},
+			},
 		},
 		tags: {
+			aside: {
+				render: 'Aside',
+				description: 'Side notes',
+			},
 			details: {
 				render: 'Details',
 				description: 'Native Details tag',
-				children: [],
 				attributes: {
 					summary: {
 						type: String,
@@ -73,14 +112,16 @@ export function parse(markdown: string) {
 		},
 	});
 
-	return result;
+	return node;
 }
 
 export function render(node: markdoc.RenderableTreeNodes) {
 	return markdoc.renderers.react(node, React, {
 		components: {
+			Aside,
 			Details,
 			Fence,
+			Heading,
 		},
 	});
 }
