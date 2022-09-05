@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@markdoc/markdoc": "^0.1.7",
+		"@octokit/core": "^4.0.5",
 		"@remix-run/cloudflare": "^1.7.0",
 		"@remix-run/cloudflare-pages": "^1.7.0",
 		"@remix-run/react": "^1.7.0",
