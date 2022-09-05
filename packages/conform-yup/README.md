@@ -2,9 +2,12 @@
 
 > [Yup](https://github.com/jquense/yup) schema resolver for [conform](https://github.com/edmundhung/conform)
 
+<!-- aside -->
+
 ## API Reference
 
 - [resolve](#resolve)
+<!-- /aside -->
 
 ### resolve
 

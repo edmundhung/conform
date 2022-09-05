@@ -66,17 +66,17 @@ pre[class*='language-'] {
 	color: #fb4934; /* red2 */
 }
 
-.token.operator,
-.token.punctuation,
-.token.attr-name {
-	color: #a89984; /* fg4 / gray1 */
-}
-
 .token.tag,
 .token.tag .punctuation,
 .token.doctype,
 .token.builtin {
 	color: #fabd2f; /* yellow2 */
+}
+
+.token.operator,
+.token.punctuation,
+.token.attr-name {
+	color: #a89984; /* fg4 / gray1 */
 }
 
 .token.entity,

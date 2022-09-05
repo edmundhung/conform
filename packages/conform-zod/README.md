@@ -2,10 +2,13 @@
 
 > [Zod](https://github.com/colinhacks/zod) schema resolver for [conform](https://github.com/edmundhung/conform)
 
+<!-- aside -->
+
 ## API Reference
 
 - [resolve](#resolve)
 - [ifNonEmptyString](#ifNonEmptyString)
+<!-- /aside -->
 
 ### resolve
 

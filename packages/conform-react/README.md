@@ -2,6 +2,8 @@
 
 > [React](https://github.com/facebook/react) adapter for [conform](https://github.com/edmundhung/conform)
 
+<!-- aside -->
+
 ## API References
 
 - [useForm](#useForm)
@@ -9,8 +11,7 @@
 - [useFieldList](#useFieldList)
 - [useControlledInput](#useControlledInput)
 - [conform](#conform)
-
----
+<!-- /aside -->
 
 ### useForm
 
