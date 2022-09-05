@@ -9,6 +9,8 @@
 - [resolve](#resolve)
 <!-- /aside -->
 
+---
+
 ### resolve
 
 It resolves yup schema to a conform schema:

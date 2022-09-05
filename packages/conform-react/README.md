@@ -13,6 +13,8 @@
 - [conform](#conform)
 <!-- /aside -->
 
+---
+
 ### useForm
 
 By default, the browser calls the [reportValidity()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity) API on the form element when it is submitted. This checks the validity of all the fields in it and reports if there are errors through the bubbles.
