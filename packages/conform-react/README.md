@@ -4,7 +4,7 @@
 
 <!-- aside -->
 
-## API References
+## API Reference
 
 - [useForm](#useForm)
 - [useFieldset](#useFieldset)

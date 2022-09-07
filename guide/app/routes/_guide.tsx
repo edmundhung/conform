@@ -40,7 +40,7 @@ export default function Guide() {
 							</ul>
 						</li>
 						<li>
-							API References
+							API Reference
 							<ul className="m-4 mr-0 space-y-2">
 								<li>
 									<NavLink to="/api/react">@conform-to/react</NavLink>
