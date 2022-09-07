@@ -1,19 +1,7 @@
-import { Octokit } from '@octokit/core';
 import { type LoaderArgs, json } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { parse, render } from '~/markdoc';
-
-async function getGitHubReadme(dir: string, ref = 'main') {
-	const octokit = new Octokit();
-	const file = await octokit.request('GET /repos/{owner}/{repo}/readme/{dir}', {
-		owner: 'edmundhung',
-		repo: 'conform',
-		dir,
-		ref,
-	});
-
-	return file.data;
-}
+import { parse, Markdoc } from '~/markdoc';
+import { getGitHubReadme } from '~/octokit';
 
 export async function loader({ params, context }: LoaderArgs) {
 	const readme = await getGitHubReadme(
@@ -31,9 +19,7 @@ export default function Page() {
 
 	return (
 		<div className="py-8">
-			<section className="prose prose-zinc dark:prose-invert max-w-none pr-72">
-				{render(content)}
-			</section>
+			<Markdoc content={content} />
 		</div>
 	);
 }

@@ -44,7 +44,7 @@ export default function LoginForm() {
 
 More examples can be found [here](examples)
 
-## API References
+## API Reference
 
 <!-- prettier-ignore-start -->
 | Package | Description | Size |

@@ -115,13 +115,17 @@ export function parse(markdown: string) {
 	return node;
 }
 
-export function render(node: markdoc.RenderableTreeNodes) {
-	return markdoc.renderers.react(node, React, {
-		components: {
-			Aside,
-			Details,
-			Fence,
-			Heading,
-		},
-	});
+export function Markdoc({ content }: { content: markdoc.RenderableTreeNodes }) {
+	return (
+		<section className="prose prose-zinc dark:prose-invert max-w-none pr-72">
+			{markdoc.renderers.react(content, React, {
+				components: {
+					Aside,
+					Details,
+					Fence,
+					Heading,
+				},
+			})}
+		</section>
+	);
 }
