@@ -9,7 +9,7 @@ export let links: LinksFunction = () => {
 export default function Guide() {
 	return (
 		<>
-			<header className="sticky top-0 w-full backdrop-blur transition-colors duration-500 z-50 border-b border-zinc-800">
+			<header className="sticky top-0 w-full backdrop-blur transition-colors duration-500 z-50 border-b border-zinc-800 bg-zinc-900/75">
 				<div className="container mx-auto py-4 px-8">
 					<Link className="text-xl font-medium tracking-wider uppercase" to="/">
 						conform
@@ -46,10 +46,10 @@ export default function Guide() {
 									<NavLink to="/api/react">@conform-to/react</NavLink>
 								</li>
 								<li>
-									<NavLink to="/api/zod">@conform-to/zod</NavLink>
+									<NavLink to="/api/yup">@conform-to/yup</NavLink>
 								</li>
 								<li>
-									<NavLink to="/api/yup">@conform-to/yup</NavLink>
+									<NavLink to="/api/zod">@conform-to/zod</NavLink>
 								</li>
 							</ul>
 						</li>
@@ -57,7 +57,9 @@ export default function Guide() {
 							Examples
 							<ul className="m-4 mr-0 space-y-2">
 								<li>
-									<NavLink to="/examples/basic">Create React App</NavLink>
+									<NavLink to="/examples/creact-react-app">
+										Create React App
+									</NavLink>
 								</li>
 								<li>
 									<NavLink to="/examples/material-ui">Material UI</NavLink>
