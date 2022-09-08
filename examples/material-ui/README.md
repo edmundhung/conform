@@ -1,6 +1,6 @@
 # Material UI Example
 
-> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/material-ui) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui)
+> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/material-ui) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/material-ui)
 
 This example shows you how to integrate controlled component for validation using the `useControlledInput` hook
 

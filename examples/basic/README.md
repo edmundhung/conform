@@ -1,6 +1,6 @@
 # Basic Example
 
-> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/basic) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/basic)
+> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/basic) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/basic)
 
 This example shows you how to create a login form with native constraint and message with the `useForm` hook and `useFieldset` hook without the need to specify any validation logic or messages\*.
 
