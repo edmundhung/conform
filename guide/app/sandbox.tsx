@@ -1,9 +1,21 @@
+import { useEffect, useState } from 'react';
+
 interface SandboxProps {
 	title: string;
 	path: string;
 }
 
 export function Sandbox({ title, path }: SandboxProps) {
+	const [hydated, setHydrated] = useState(false);
+
+	useEffect(() => {
+		setHydrated(true);
+	}, []);
+
+	if (!hydated) {
+		return null;
+	}
+
 	return (
 		<iframe
 			title={title}
