@@ -1,17 +1,19 @@
 import { type LoaderArgs, json } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
+import { getBranch } from '~/context';
 import { parse, Markdoc } from '~/markdoc';
 import { getGitHubReadme } from '~/octokit';
 import { Sandbox } from '~/sandbox';
 
 export async function loader({ params, context }: LoaderArgs) {
+	const branch = getBranch(context);
 	const readme = await getGitHubReadme(
 		`examples/${params.integration}`,
-		(context as any).env?.CF_PAGES_BRANCH,
+		branch,
 	);
 
 	return json({
-		path: `edmundhung/conform/tree/v0.3.0/examples/${params.integration}`,
+		path: `edmundhung/conform/tree/${branch}/examples/${params.integration}`,
 		content: parse(atob(readme.content)),
 	});
 }
