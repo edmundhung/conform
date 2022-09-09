@@ -6,8 +6,7 @@
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [Enhancing your form](#enhancing-your-form)
-- [Customizing the messages](#enhancing-your-form)
+- [Enhancement](#enhancement)
 
 <!-- /aside -->
 
@@ -19,21 +18,24 @@ npm install @conform-to/react
 
 ## Quick start
 
-To begin, let's make a login form with a basic requirement: The **email** field should be a valid email address and the **password** field should not be left empty.
+To begin, let's make a login form with a basic requirement:
+
+- The **email** field should be a valid email address,
+- The **password** field should not be left empty.
 
 ```tsx
 export default function LoginForm() {
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const value = Object.fromEntries(formData);
-
-    console.log(value);
-  }
-
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+
+        const formData = new FormData(event.currentTarget);
+        const value = Object.fromEntries(formData);
+
+        console.log(value);
+      }}
+    >
       <label>
         <div>Email</div>
         <input type="email" name="email" required />
@@ -54,41 +56,40 @@ export default function LoginForm() {
 }
 ```
 
-By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. However, the [error bubble](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) doesn't look good. It is also not customizable.
+By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. However, the [error bubble](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) is not ideal, especially, when we find out it is not customizable.
 
-## Populating the errors
+## Enhancement
 
 To enhance this, let's introduce the `useForm` and `useFieldset` hook to populate these error messages next to the input fields manually.
 
-```diff
-+import { useForm, useFieldset } from '@conform-to/react';
+```tsx
+import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
-  const onSubmit = event => {
+  const onSubmit = ;
+  const formProps = useForm({
+    onSubmit: event => {
       event.preventDefault();
 
       const formData = new FormData(event.currentTarget);
       const value = Object.fromEntries(formData);
 
       console.log(value);
-  };
-+ const formProps = useForm({
-+   onSubmit,
-+ });
-+ const { email, password } = useFieldset(formProps.ref);
+    },
+  });
+  const { email, password } = useFieldset(formProps.ref);
 
   return (
-+   <form {...formProps}>
--   <form onSubmit={onSubmit}>
+    <form {...formProps}>
       <label>
         <div>Email</div>
         <input type="email" name="email" required />
-+       <div>{email.error}</div>
+        <div>{email.error}</div>
       </label>
       <label>
         <div>Password</div>
         <input type="password" name="password" required />
-+       <div>{password.error}</div>
+        <div>{password.error}</div>
       </label>
       <label>
         <div>
@@ -108,7 +109,7 @@ These messages are provided by the browser vendor and might varies depending on 
 
 In the next section, we will show you how to customize the validation messages and setup custom constraints.
 
-[Next section](../constraint)
+[> Next](../constraint)
 
 ## Demo
 
