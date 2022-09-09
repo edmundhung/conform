@@ -66,9 +66,8 @@ To enhance this, let's introduce the `useForm` and `useFieldset` hook to populat
 import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
-  const onSubmit = ;
   const formProps = useForm({
-    onSubmit: event => {
+    onSubmit(event) {
       event.preventDefault();
 
       const formData = new FormData(event.currentTarget);
