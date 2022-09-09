@@ -2,10 +2,8 @@ import * as markdoc from '@markdoc/markdoc';
 import * as React from 'react';
 import type { SyntaxHighlighterProps } from 'react-syntax-highlighter';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
-import ts from 'react-syntax-highlighter/dist/cjs/languages/prism/typescript';
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 
-ReactSyntaxHighlighter.registerLanguage('ts', ts);
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 
 export function Aside({ children }: { children: React.ReactNode }) {
@@ -57,7 +55,7 @@ export function Heading({
 	const HeadingTag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 	const id =
 		typeof children === 'string'
-			? children.replace(/[?]/g, '').replace(/\s+/g, '-')
+			? children.replace(/[?]/g, '').replace(/\s+/g, '-').toLowerCase()
 			: '';
 
 	return (

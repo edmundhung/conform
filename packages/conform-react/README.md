@@ -6,10 +6,10 @@
 
 ## API Reference
 
-- [useForm](#useForm)
-- [useFieldset](#useFieldset)
-- [useFieldList](#useFieldList)
-- [useControlledInput](#useControlledInput)
+- [useForm](#useform)
+- [useFieldset](#usefieldset)
+- [useFieldList](#usefieldlist)
+- [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
 <!-- /aside -->
 
