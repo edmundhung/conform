@@ -39,7 +39,7 @@ export function Details({
 	children: React.ReactElement;
 }) {
 	return (
-		<details>
+		<details className="border border-zinc-700 p-4 my-4">
 			<summary>{summary}</summary>
 			{children}
 		</details>

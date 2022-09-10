@@ -23,10 +23,10 @@ export default function Guide() {
 							Get Started
 							<ul className="m-4 mr-0 space-y-2">
 								<li>
-									<NavLink to="/basic">Basic</NavLink>
+									<NavLink to="/basics">Basics</NavLink>
 								</li>
 								<li>
-									<NavLink to="/constraint">Constraint</NavLink>
+									<NavLink to="/validation">Validation</NavLink>
 								</li>
 								<li>
 									<NavLink to="/nested">Nested</NavLink>

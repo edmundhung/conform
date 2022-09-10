@@ -1,5 +1,5 @@
 {
-	"name": "@conform-to/constraint-example",
+	"name": "@conform-to/validation-example",
 	"private": true,
 	"dependencies": {
 		"@conform-to/react": "0.3.0",

@@ -7,10 +7,9 @@
 ## API Reference
 
 - [resolve](#resolve)
-- [ifNonEmptyString](#ifNonEmptyString)
-<!-- /aside -->
+- [ifNonEmptyString](#ifnonemptystring)
 
----
+<!-- /aside -->
 
 ### resolve
 

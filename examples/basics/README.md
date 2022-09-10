@@ -1,4 +1,4 @@
-# Basic
+# Basics
 
 In this section, we will cover how to build a simple login form by utilizing native constraint and then enhance the error handling by populating validation messages manually.
 
@@ -8,7 +8,10 @@ In this section, we will cover how to build a simple login form by utilizing nat
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [Enhancement](#enhancement)
+- [Enhancing with conform](#enhancing-with-conform)
+  - [Capturing errors](#)
+  - [Early reporting](#)
+  - [Styling invalid fields](#)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -21,7 +24,7 @@ npm install @conform-to/react
 
 ## Quick start
 
-To begin, let's make a login form with a basic requirement:
+To begin, let's make a login form with 2 basic requirements:
 
 - The **email** field should be a valid email address,
 - The **password** field should not be left empty.

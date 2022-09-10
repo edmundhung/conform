@@ -1,10 +1,15 @@
-# Nested Example
+# Nested
 
-> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/nested) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/nested)
+In this section, we will coverhow to construct nested data structure by following the naming convention.
 
-This example shows you how to construct nested data structure by following the naming convention
+<!-- aside -->
 
-## Related APIs
+## Table of Contents
 
-- [useForm](../../packages/conform-react/README.md#useForm)
-- [useFieldset](../../packages/conform-react/README.md#useFieldset)
+- [Demo](#demo)
+
+<!-- /aside -->
+
+## Demo
+
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/nested) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/nested)

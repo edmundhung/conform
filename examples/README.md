@@ -3,8 +3,8 @@
 <!-- prettier-ignore-start -->
 | Name | Description | Link |
 | :--- | :---------- | :--- |
-| [basic](basic) | Creating a login form with native constraint validation | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/basic) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/basic) |
-| [constraint](constaint) | Setting up custom constraint with the Constraint Validation API for a sign up form | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/constraint) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/constraint) |
+| [basics](basics) | Creating a login form with native constraint validation | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/basics) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/basics) |
+| [validation](validation) | Setting up custom constraint with the Constraint Validation API for a sign up form | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/validation) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/validation) |
 | [nested](nested) | Constructing nested data structure by following the naming convention with a payment form example | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/nested) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/nested) |
 | [remote](remote) | Connecting a remote form with its field using the form attribute | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/remote) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/remote) |
 | [list](list) | Managing a dynamic list of fields with control buttons for a todo list example | [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/list) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/list) |

@@ -1,10 +1,15 @@
-# Remote Example
+# Remote
 
-> Preview: [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/remote) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/remote)
+In this section, we will cover how to connect a remote form with its field using the `form` attribute and validate based on the button value.
 
-This example shows you how to connect a remote form with its field using the `form` attribute and validate based on the button value.
+<!-- aside -->
 
-## Related APIs
+## Table of Contents
 
-- [useForm](../../packages/conform-react/README.md#useForm)
-- [useFieldset](../../packages/conform-react/README.md#useFieldset)
+- [Demo](#demo)
+
+<!-- /aside -->
+
+## Demo
+
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/remote) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/remote)

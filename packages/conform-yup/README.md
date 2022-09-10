@@ -7,9 +7,8 @@
 ## API Reference
 
 - [resolve](#resolve)
-<!-- /aside -->
 
----
+<!-- /aside -->
 
 ### resolve
 
