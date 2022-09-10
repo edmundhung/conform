@@ -1,4 +1,5 @@
 import * as markdoc from '@markdoc/markdoc';
+import { Link as RouterLink } from '@remix-run/react';
 import * as React from 'react';
 import type { SyntaxHighlighterProps } from 'react-syntax-highlighter';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
@@ -65,6 +66,34 @@ export function Heading({
 	);
 }
 
+export function Link({
+	href,
+	title,
+	children,
+}: {
+	href: string;
+	title: string;
+	children: React.ReactNode;
+}) {
+	if (
+		href.startsWith('https://') ||
+		href.startsWith('http://') ||
+		href.startsWith('//')
+	) {
+		return (
+			<a href={href} title={title}>
+				{children}
+			</a>
+		);
+	}
+
+	return (
+		<RouterLink to={href} title={title} prefetch="intent">
+			{children}
+		</RouterLink>
+	);
+}
+
 export function parse(markdown: string) {
 	const content = markdown
 		.replace(
@@ -89,6 +118,13 @@ export function parse(markdown: string) {
 				render: 'Heading',
 				attributes: {
 					level: { type: Number, required: true, default: 1 },
+				},
+			},
+			link: {
+				render: 'Link',
+				attributes: {
+					href: { type: String, required: true },
+					title: { type: String },
 				},
 			},
 		},
@@ -122,6 +158,7 @@ export function Markdoc({ content }: { content: markdoc.RenderableTreeNodes }) {
 					Details,
 					Fence,
 					Heading,
+					Link,
 				},
 			})}
 		</section>
