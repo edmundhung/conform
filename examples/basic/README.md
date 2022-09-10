@@ -1,5 +1,7 @@
 # Basic
 
+In this section, we will cover how to build a simple login form by utilizing native constraint and then enhance the error handling by populating validation messages manually.
+
 <!-- aside -->
 
 ## Table of Contents
@@ -7,6 +9,7 @@
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Enhancement](#enhancement)
+- [Demo](#demo)
 
 <!-- /aside -->
 
@@ -102,11 +105,9 @@ export default function LoginForm() {
 }
 ```
 
-You might wonder where are these error messages come from, or you might already notice - they are the same as the one you saw on the error bubbles:
+You might wonder where are these error messages come from, or you might already notice - they are the same as the one you saw on the error bubbles: Indeed, these messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
 
-These messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
-
-In the next section, we will show you how to customize the validation messages and setup custom constraints.
+In the next section, we will show you how to customize the validation messages and configure custom constraints.
 
 [> Next](../constraint)
 
