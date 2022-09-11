@@ -1,20 +1,102 @@
 # Validation
 
-In this section, we will briefly introduce the Constraint Validation API and show you how to customize the validation messages and configure custom constraint.
+In this section, we will explain different approaches for applying validations and briefly introduce the Constraint Validation API.
 
 <!-- aside -->
 
 ## Table of Contents
 
 - [Schema Resolver](#schema-resolver)
-  - [Yup](#yup)
-  - [Zod](#zod)
+  - [Using yup](#using-yup)
+  - [Using zod](#using-zod)
 - [Constraint Validation](#constraint-validation)
   - [Manual Validation](#manual-validation)
-  - [Using `createValidate`](#using-createvalidate)
+  - [With createValidate](#with-createvalidate)
 - [Demo](#demo)
 
 <!-- /aside -->
+
+## Schema Resolver
+
+The recommended approach for form validation is to integrate schema validation libraries through our schema resolver, such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod).
+
+Consider a signup form with the following requirments:
+
+- The **email** field should be a valid email address,
+- The **password** field should not be empty with a minimum length of 10 characters.
+- The **conform-password** field should match the **password** field.
+
+### Using yup
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { resolve } from '@conform-to/yup';
+import * as yup from 'yup';
+
+const schema = resolve(
+  yup.object({
+    email: yup
+      .string()
+      .required('Email is required')
+      .email('Please enter a valid email'),
+    password: yup
+      .string()
+      .required('Password is required')
+      .min(10, 'The password should be at least 10 characters long'),
+    'confirm-password': yup
+      .string()
+      .required('Confirm Password is required')
+      .equals([yup.ref('password')], 'The password does not match'),
+  }),
+);
+
+export default function SignupForm() {
+  const formProps = useForm({
+    validate: schema.validate,
+  });
+
+  return <form {...formProps}>{/* ... */}</form>;
+}
+```
+
+[Full example](/examples/yup)
+
+### Using zod
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { resolve } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = resolve(
+  z
+    .object({
+      email: z
+        .string({ required_error: 'Email is required' })
+        .email('Please enter a valid email'),
+      password: z
+        .string({ required_error: 'Password is required' })
+        .min(10, 'The password should be at least 10 characters long'),
+      'confirm-password': z.string({
+        required_error: 'Confirm Password is required',
+      }),
+    })
+    .refine((value) => value.password === value['confirm-password'], {
+      message: 'The password does not match',
+      path: ['confirm-password'],
+    }),
+);
+
+export default function SignupForm() {
+  const formProps = useForm({
+    validate: schema.validate,
+  });
+
+  return <form {...formProps}>{/* ... */}</form>;
+}
+```
+
+[Full example](/examples/zod)
 
 ## Constraint Validation
 
@@ -26,22 +108,9 @@ The [Constraint Validation](https://caniuse.com/constraint-validation) API is in
 
 Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
 
-## Schema Resolver
-
-If you find it tedious still using the createValidate helper with the DOM APIs, conform provides an alternative solution which integrate with schema validation library such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod). We have prepared examples for each of the integration.
-
-- [@conform-to/yup](../yup)
-- [@conform-to/zod](../zod)
-
 ## Manual Validation
 
 Conform provides a [createValidate](/packages/conform-react#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
-
-Consider a signup form with the following requirments:
-
-- The **email** field should be a valid email address,
-- The **password** field should not be empty with a minimum length of 10 characters.
-- The **conform-password** field should match the **password** field.
 
 ```tsx
 import { useForm, useFieldset, createValidate } from '@conform-to/react';
