@@ -35,7 +35,7 @@ export default function Guide() {
 									<NavLink to="/list">List</NavLink>
 								</li>
 								<li>
-									<NavLink to="/remote">Remote</NavLink>
+									<NavLink to="/advanced">Advanced</NavLink>
 								</li>
 							</ul>
 						</li>

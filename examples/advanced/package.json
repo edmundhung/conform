@@ -1,5 +1,5 @@
 {
-	"name": "@conform-to/remote-example",
+	"name": "@conform-to/advanced-example",
 	"private": true,
 	"dependencies": {
 		"@conform-to/react": "0.3.0",
