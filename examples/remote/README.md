@@ -1,4 +1,4 @@
-# Remote
+# Advanced
 
 In this section, we will cover how to connect a remote form with its field using the `form` attribute and validate based on the button value.
 
@@ -6,9 +6,15 @@ In this section, we will cover how to connect a remote form with its field using
 
 ## Table of Contents
 
+- [Remote form](#remote-form)
+- [Button value](#button-value)
 - [Demo](#demo)
 
 <!-- /aside -->
+
+## Remote form
+
+## Button value
 
 ## Demo
 

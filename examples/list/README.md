@@ -6,9 +6,24 @@ In this section, we will cover how to manage a dynamic list of fields with contr
 
 ## Table of Contents
 
+- [Naming convention](#naming-convention)
+- [Configuration](#configuration)
+  - [Manual setup](#manual-setup)
+  - [Derived config](#derived-config)
+- [Control buttons](#control-buttons)
 - [Demo](#demo)
 
 <!-- /aside -->
+
+## Naming convention
+
+## Configuration
+
+### Manual setup
+
+### Derived config
+
+## Control buttons
 
 ## Demo
 

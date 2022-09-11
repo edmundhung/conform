@@ -1,14 +1,26 @@
 # Nested
 
-In this section, we will coverhow to construct nested data structure by following the naming convention.
+In this section, we will cover how to construct nested data structure by following the naming convention.
 
 <!-- aside -->
 
 ## Table of Contents
 
+- [Naming convention](#naming-convention)
+- [Configuration](#configuration)
+  - [Manual setup](#manual-setup)
+  - [Derived config](#derived-config)
 - [Demo](#demo)
 
 <!-- /aside -->
+
+## Naming convention
+
+## Configuration
+
+### Manual setup
+
+### Derived config
 
 ## Demo
 
