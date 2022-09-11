@@ -1,11 +1,13 @@
 import * as markdoc from '@markdoc/markdoc';
 import { Link as RouterLink } from '@remix-run/react';
 import * as React from 'react';
-import type { SyntaxHighlighterProps } from 'react-syntax-highlighter';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
+import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
+import style from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
+ReactSyntaxHighlighter.registerLanguage('css', css);
 
 export function Aside({ children }: { children: React.ReactNode }) {
 	return (
@@ -17,17 +19,19 @@ export function Aside({ children }: { children: React.ReactNode }) {
 
 export function Fence({
 	language,
-	useInlineStyles = false,
-	showLineNumbers = language === 'tsx',
-	...props
-}: SyntaxHighlighterProps): React.ReactElement {
+	children,
+}: {
+	language: string;
+	children: string;
+}): React.ReactElement {
 	return (
 		<ReactSyntaxHighlighter
 			language={language}
-			useInlineStyles={false}
-			showLineNumbers={showLineNumbers}
-			{...props}
-		/>
+			style={style}
+			showLineNumbers={language === 'tsx' || language === 'css'}
+		>
+			{children}
+		</ReactSyntaxHighlighter>
 	);
 }
 

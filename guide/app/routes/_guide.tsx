@@ -1,10 +1,4 @@
-import { type LinksFunction } from '@remix-run/cloudflare';
 import { Link, NavLink, Outlet } from '@remix-run/react';
-import stylesUrl from '~/styles/code.css';
-
-export let links: LinksFunction = () => {
-	return [{ rel: 'stylesheet', href: stylesUrl }];
-};
 
 export default function Guide() {
 	return (
