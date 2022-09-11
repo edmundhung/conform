@@ -2,13 +2,14 @@ import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
 	const formProps = useForm({
+		initialReport: 'onBlur',
 		onSubmit(event) {
 			event.preventDefault();
 
 			const formData = new FormData(event.currentTarget);
-			const result = Object.fromEntries(formData);
+			const value = Object.fromEntries(formData);
 
-			console.log(result);
+			console.log(value);
 		},
 	});
 	const { email, password } = useFieldset(formProps.ref);
@@ -26,8 +27,10 @@ export default function LoginForm() {
 				<div>{password.error}</div>
 			</label>
 			<label>
-				<span>Remember me</span>
-				<input type="checkbox" name="remember-me" value="yes" />
+				<div>
+					<span>Remember me</span>
+					<input type="checkbox" name="remember-me" value="yes" />
+				</div>
 			</label>
 			<button type="submit">Login</button>
 		</form>

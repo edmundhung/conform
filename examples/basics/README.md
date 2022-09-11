@@ -9,9 +9,9 @@ In this section, we will cover how to build a simple login form by utilizing nat
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Enhancing with conform](#enhancing-with-conform)
-  - [Capturing errors](#)
-  - [Early reporting](#)
-  - [Styling invalid fields](#)
+  - [Capturing errors](#capturing-errors)
+  - [Styling invalid fields](#styling-invalid-fields)
+  - [Early reporting](#early-reporting)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -26,8 +26,8 @@ npm install @conform-to/react
 
 To begin, let's make a login form with 2 basic requirements:
 
-- The **email** field should be a valid email address,
-- The **password** field should not be left empty.
+- The **email** field should be a valid email address
+- The **password** field should not be empty
 
 ```tsx
 export default function LoginForm() {
@@ -62,11 +62,15 @@ export default function LoginForm() {
 }
 ```
 
-By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. However, the [error bubble](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) is not ideal, especially, when we find out it is not customizable.
+## Enhancing with conform
 
-## Enhancement
+By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. However, there are still things that can be improved:
 
-To enhance this, let's introduce the `useForm` and `useFieldset` hook to populate these error messages next to the input fields manually.
+### Capturing errors
+
+With the help of native form validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up if they try to submit a form with invalid fields. These bubbles, unfortunately, are not customizable.
+
+What if we can capture the error messages and decide where to put them ourselves? Let's introduce **conform**:
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -108,11 +112,40 @@ export default function LoginForm() {
 }
 ```
 
-You might wonder where are these error messages come from, or you might already notice - they are the same as the one you saw on the error bubbles: Indeed, these messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
+<details>
+<summary>Where are these error messages come from?</summary>
+You might already notice - they are the same as the one you saw on the error bubbles: Indeed, these messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
+</details>
 
-In the next section, we will show you how to customize the validation messages and configure custom constraints.
+### Styling invalid fields
 
-[> Next](../constraint)
+It might be common to update the class name based on the error state. However, conform makes it possible to style using a combination of [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) with data attribute as well:
+
+```css
+input[data-conform-touched]:invalid {
+  border-color: red;
+}
+
+input + div {
+  color: red;
+}
+```
+
+### Early reporting
+
+Currently, form error will not be reported until a submission is made. We can take this one step further by passing the `initialReport` option to `onBlur`, making the errors to be reported once the user leave the field:
+
+```tsx
+import { useForm } from '@conform-to/react';
+
+export default function LoginForm() {
+  const formProps = useForm({
+    initialReport: 'onBlur',
+  });
+
+  return <form {...formProps}>{/* ... */}</form>;
+}
+```
 
 ## Demo
 
