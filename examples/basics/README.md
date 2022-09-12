@@ -1,6 +1,6 @@
 # Basics
 
-In this section, we will cover how to build a simple login form by utilizing native constraint and then enhance the error handling by populating validation messages manually.
+In this section, we will cover how to build a simple login form by utilizing native constraint and then enhancing it with conform.
 
 <!-- aside -->
 
