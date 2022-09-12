@@ -204,10 +204,22 @@ export function useForm(config: FormConfig = {}): FormProps {
 				!submitter?.formNoValidate &&
 				!event.defaultPrevented
 			) {
-				// Mark all fields as touched
+				let focused = false;
+
 				for (const field of form.elements) {
 					if (isFieldElement(field)) {
+						// Mark the field as touched
 						field.dataset.conformTouched = 'true';
+
+						// Focus on the first invalid field
+						if (
+							!focused &&
+							!field.validity.valid &&
+							field.tagName !== 'BUTTON'
+						) {
+							field.focus();
+							focused = true;
+						}
 					}
 				}
 
@@ -613,7 +625,8 @@ interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {
 	ref: RefObject<HTMLInputElement>;
 }
 
-interface InputControl {
+interface InputControl<Element extends { focus: () => void }> {
+	ref: RefObject<Element>;
 	value: string;
 	onChange: (eventOrValue: { target: { value: string } } | string) => void;
 	onBlur: () => void;
@@ -627,12 +640,14 @@ interface InputControl {
  *
  * @see https://github.com/edmundhung/conform/tree/v0.3.0/packages/conform-react/README.md#usecontrolledinput
  */
-export function useControlledInput<Schema extends Primitive = Primitive>(
-	field: FieldConfig<Schema>,
-): [ShadowInputProps, InputControl] {
+export function useControlledInput<
+	Element extends { focus: () => void } = HTMLInputElement,
+	Schema extends Primitive = Primitive,
+>(field: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
 	const ref = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<Element>(null);
 	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);
-	const handleChange: InputControl['onChange'] = (eventOrValue) => {
+	const handleChange: InputControl<Element>['onChange'] = (eventOrValue) => {
 		if (!ref.current) {
 			return;
 		}
@@ -646,10 +661,10 @@ export function useControlledInput<Schema extends Primitive = Primitive>(
 		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
 		setValue(newValue);
 	};
-	const handleBlur: InputControl['onBlur'] = () => {
+	const handleBlur: InputControl<Element>['onBlur'] = () => {
 		ref.current?.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 	};
-	const handleInvalid: InputControl['onInvalid'] = (event) => {
+	const handleInvalid: InputControl<Element>['onInvalid'] = (event) => {
 		event.preventDefault();
 	};
 
@@ -657,9 +672,14 @@ export function useControlledInput<Schema extends Primitive = Primitive>(
 		{
 			ref,
 			hidden: true,
+			onFocus() {
+				console.log('focus', inputRef.current);
+				inputRef.current?.focus();
+			},
 			...input(field, { type: 'text' }),
 		},
 		{
+			ref: inputRef,
 			value,
 			onChange: handleChange,
 			onBlur: handleBlur,
