@@ -6,19 +6,23 @@ In this section, we will explain different approaches for applying validations a
 
 ## Table of Contents
 
-- [Schema Resolver](#schema-resolver)
-  - [Using yup](#using-yup)
-  - [Using zod](#using-zod)
 - [Constraint Validation](#constraint-validation)
-  - [Manual Validation](#manual-validation)
+- [Schema Resolver](#schema-resolver)
+- [Manual Validation](#manual-validation)
   - [With createValidate](#with-createvalidate)
 - [Demo](#demo)
 
 <!-- /aside -->
 
-## Schema Resolver
+## Constraint Validation
 
-The recommended approach for form validation is to integrate schema validation libraries through our schema resolver, such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod).
+The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
+
+- Utilizing [HTML attributes](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes) for validations (e.g. `required`, `type`)
+- Accessing form validity and configure custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validationMessage`, `setCustomValidity()`)
+- Styling form elements with [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) based on the validity (e.g. `:required`, `:invalid`)
+
+Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
 
 Consider a signup form with the following requirments:
 
@@ -26,7 +30,12 @@ Consider a signup form with the following requirments:
 - The **password** field should not be empty with a minimum length of 10 characters.
 - The **conform-password** field should match the **password** field.
 
-### Using yup
+## Schema Resolver
+
+The recommended approach for form validation is to integrate schema validation libraries through our schema resolver, such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod).
+
+<details>
+<summary>With `yup`</summary>
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -61,7 +70,10 @@ export default function SignupForm() {
 
 [Full example](/examples/yup)
 
-### Using zod
+</details>
+
+<details>
+<summary>With `zod`</summary>
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -98,15 +110,7 @@ export default function SignupForm() {
 
 [Full example](/examples/zod)
 
-## Constraint Validation
-
-The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
-
-- Utilizing [HTML attributes](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes) for validations (e.g. `required`, `type`)
-- Accessing form validity and configure custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validationMessage`, `setCustomValidity()`)
-- Styling form elements with [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) based on the validity (e.g. `:required`, `:invalid`)
-
-Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
+</details>
 
 ## Manual Validation
 
