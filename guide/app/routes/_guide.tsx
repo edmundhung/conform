@@ -51,15 +51,16 @@ export default function Guide() {
 							Examples
 							<ul className="m-4 mr-0 space-y-2">
 								<li>
-									<NavLink to="/examples/creact-react-app">
-										Create React App
-									</NavLink>
-								</li>
-								<li>
 									<NavLink to="/examples/material-ui">Material UI</NavLink>
 								</li>
 								<li>
 									<NavLink to="/examples/remix">Remix</NavLink>
+								</li>
+								<li>
+									<NavLink to="/examples/yup">Yup</NavLink>
+								</li>
+								<li>
+									<NavLink to="/examples/zod">Zod</NavLink>
 								</li>
 							</ul>
 						</li>
