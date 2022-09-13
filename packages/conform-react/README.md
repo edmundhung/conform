@@ -151,6 +151,20 @@ function LoginForm() {
 
 </details>
 
+<details>
+<summary></summary>
+
+```ts
+interface ValidateFunction {
+  valdiate(
+    form: HTMLFormElement,
+    submitter?: HTMLInputElement | HTMLButtonElement | null,
+  );
+}
+```
+
+</details>
+
 ---
 
 ### useFieldset
@@ -492,6 +506,57 @@ function MuiForm() {
       </TextField>
     </fieldset>
   )
+}
+```
+
+---
+
+### createValidate
+
+This help you configure a validate function to check the validity of each fields and setup custom messages using the Constraint Validation APIs.
+
+```tsx
+import { useForm, createValidate } from '@conform-to/react';
+
+export default function SignupForm() {
+  const formProps = useForm({
+    validate: createValidate((field, formData) => {
+      switch (field.name) {
+        case 'email':
+          if (field.validity.valueMissing) {
+            field.setCustomValidity('Email is required');
+          } else if (field.validity.typeMismatch) {
+            field.setCustomValidity('Please enter a valid email');
+          } else {
+            field.setCustomValidity('');
+          }
+          break;
+        case 'password':
+          if (field.validity.valueMissing) {
+            field.setCustomValidity('Password is required');
+          } else if (field.validity.tooShort) {
+            field.setCustomValidity(
+              'The password should be at least 10 characters long',
+            );
+          } else {
+            field.setCustomValidity('');
+          }
+          break;
+        case 'confirm-password': {
+          if (field.validity.valueMissing) {
+            field.setCustomValidity('Confirm Password is required');
+          } else if (field.value !== formData.get('password')) {
+            field.setCustomValidity('The password does not match');
+          } else {
+            field.setCustomValidity('');
+          }
+          break;
+        }
+      }
+    }),
+  });
+
+  return <form {...formProps}>{/* ... */}</form>;
 }
 ```
 

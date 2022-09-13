@@ -9,7 +9,6 @@ In this section, we will explain different approaches for applying validations a
 - [Constraint Validation](#constraint-validation)
 - [Schema Resolver](#schema-resolver)
 - [Manual Validation](#manual-validation)
-  - [With createValidate](#with-createvalidate)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -24,18 +23,18 @@ The [Constraint Validation](https://caniuse.com/constraint-validation) API is in
 
 Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
 
+## Schema Resolver
+
+The recommended approach at the moment is to integrate schema validation libraries such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod) through a schema resolver, which resolves FormData to the desired structure and set the error from the parsing result though the Constraint Validation APIs.
+
 Consider a signup form with the following requirments:
 
 - The **email** field should be a valid email address,
 - The **password** field should not be empty with a minimum length of 10 characters.
 - The **conform-password** field should match the **password** field.
 
-## Schema Resolver
-
-The recommended approach for form validation is to integrate schema validation libraries through our schema resolver, such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod).
-
 <details>
-<summary>With `yup`</summary>
+<summary>With `yup` </summary>
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -114,10 +113,10 @@ export default function SignupForm() {
 
 ## Manual Validation
 
-Conform provides a [createValidate](/packages/conform-react#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
+If none of the [schema resolvers](#schema-resolver) fits your requirements, you can also setup the validation manually by using the [createValidate](/packages/conform-react#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
 
 ```tsx
-import { useForm, useFieldset, createValidate } from '@conform-to/react';
+import { useForm, createValidate } from '@conform-to/react';
 
 export default function SignupForm() {
   const formProps = useForm({
@@ -155,41 +154,9 @@ export default function SignupForm() {
         }
       }
     }),
-    onSubmit(event) {
-      event.preventDefault();
-
-      const formData = new FormData(event.currentTarget);
-      const value = Object.fromEntries(formData);
-
-      console.log(value);
-    },
   });
-  const {
-    email,
-    password,
-    'confirm-password': confirmPassword,
-  } = useFieldset(formProps.ref);
 
-  return (
-    <form {...formProps}>
-      <label>
-        <div>Email</div>
-        <input type="email" name="email" required />
-        <div>{email.error}</div>
-      </label>
-      <label>
-        <div>Password</div>
-        <input type="password" name="password" required minLength={10} />
-        <div>{password.error}</div>
-      </label>
-      <label>
-        <div>Confirm Password</div>
-        <input type="password" name="confirm-password" required />
-        <div>{confirmPassword.error}</div>
-      </label>
-      <button type="submit">Login</button>
-    </form>
-  );
+  return <form {...formProps}>{/* ... */}</form>;
 }
 ```
 
