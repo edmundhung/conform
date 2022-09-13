@@ -1,6 +1,6 @@
 # Validation
 
-In this section, we will explain different approaches for applying validations and briefly introduce the Constraint Validation API.
+In this section, we will briefly introduce the Constraint Validation API and explain different approaches for applying validations.
 
 <!-- aside -->
 

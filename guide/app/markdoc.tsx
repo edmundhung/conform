@@ -43,7 +43,7 @@ export function Details({
 	children: React.ReactElement;
 }) {
 	return (
-		<details className="border border-zinc-700 p-4 my-4">
+		<details className="border border-zinc-700 p-4 my-6">
 			<summary>{summary}</summary>
 			{children}
 		</details>
@@ -155,7 +155,7 @@ export function parse(markdown: string) {
 
 export function Markdoc({ content }: { content: markdoc.RenderableTreeNodes }) {
 	return (
-		<section className="prose prose-zinc dark:prose-invert max-w-none pr-72">
+		<section className="prose prose-zinc dark:prose-invert max-w-none pr-72 prose-pre:!my-6">
 			{markdoc.renderers.react(content, React, {
 				components: {
 					Aside,

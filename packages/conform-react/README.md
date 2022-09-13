@@ -10,6 +10,7 @@
 - [useFieldset](#usefieldset)
 - [useFieldList](#usefieldlist)
 - [useControlledInput](#usecontrolledinput)
+- [createValidate](#createvalidate)
 - [conform](#conform)
 
 <!-- /aside -->
