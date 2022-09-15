@@ -91,8 +91,14 @@ export function Link({
 		);
 	}
 
+	let to = href;
+
+	if (to.startsWith('/packages/')) {
+		to = to.replace('/packages/conform-', '/api/').replace('/README.md', '');
+	}
+
 	return (
-		<RouterLink to={href} title={title} prefetch="intent">
+		<RouterLink to={to} title={title} prefetch="intent">
 			{children}
 		</RouterLink>
 	);
