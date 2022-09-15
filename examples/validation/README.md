@@ -113,7 +113,7 @@ export default function SignupForm() {
 
 ## Manual Validation
 
-If none of the [schema resolvers](#schema-resolver) fits your requirements, you can also setup the validation manually by using the [createValidate](/packages/conform-react#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
+If none of the [schema resolvers](#schema-resolver) fits your requirements, you can also setup the validation manually by using the [createValidate](/packages/conform-react/README.md#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
 
 ```tsx
 import { useForm, createValidate } from '@conform-to/react';

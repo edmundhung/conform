@@ -95,7 +95,7 @@ function PaymentForm() {
 
 ### Derived config
 
-Alternatively, there is also dervied config provided by [useFieldset](/packages/conform-react#usefieldset):
+Alternatively, there is also dervied config provided by [useFieldset](/packages/conform-react/README.md#usefieldset):
 
 ```tsx
 export default function PaymentForm() {

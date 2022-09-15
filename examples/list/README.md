@@ -119,7 +119,7 @@ export default function TodoForm() {
 
 ### Derived config
 
-Alternatively, there is also dervied config provided by [useFieldset](/packages/conform-react#usefieldset):
+Alternatively, there is also dervied config provided by [useFieldset](/packages/conform-react/README.md#usefieldset):
 
 ```tsx
 export default function TodoForm() {
@@ -170,7 +170,7 @@ export function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 
 ## Dynamic list
 
-Conform provides an additional hook [useFieldList](/packages/conform-react#usefieldlist) to handle dynamic list and setup control buttons:
+Conform provides an additional hook [useFieldList](/packages/conform-react/README.md#usefieldlist) to handle dynamic list and setup control buttons:
 
 ```tsx
 export default function TodoForm() {

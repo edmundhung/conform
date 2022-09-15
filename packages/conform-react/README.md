@@ -152,20 +152,6 @@ function LoginForm() {
 
 </details>
 
-<details>
-<summary></summary>
-
-```ts
-interface ValidateFunction {
-  valdiate(
-    form: HTMLFormElement,
-    submitter?: HTMLInputElement | HTMLButtonElement | null,
-  );
-}
-```
-
-</details>
-
 ---
 
 ### useFieldset
