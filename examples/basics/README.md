@@ -149,4 +149,4 @@ export default function LoginForm() {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/v0.3.0/examples/basic) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/v0.3.0/examples/basic)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/basic) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/basic)
