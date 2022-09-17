@@ -64,7 +64,7 @@ export function Heading({
 			: '';
 
 	return (
-		<HeadingTag id={id} className="-mt-24 pt-24">
+		<HeadingTag id={id} className="-mt-20 pt-20 lg:-mt-24 lg:pt-24">
 			{children}
 		</HeadingTag>
 	);
