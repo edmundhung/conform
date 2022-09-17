@@ -10,8 +10,8 @@ export default function Guide() {
 					</Link>
 				</div>
 			</header>
-			<main className="container mx-auto flex">
-				<nav className="flex-none sticky top-16 py-8 px-8 text-lg w-72 self-start overflow-y-auto">
+			<main className="container mx-auto flex flex-col lg:flex-row p-4">
+				<nav className="lg:flex-none lg:sticky lg:top-16 p-4 text-lg lg:w-72 self-start overflow-y-auto">
 					<ul className="space-y-5">
 						<li>
 							Get Started
@@ -66,7 +66,7 @@ export default function Guide() {
 						</li>
 					</ul>
 				</nav>
-				<div className="flex-1">
+				<div className="flex-1 p-4">
 					<Outlet />
 				</div>
 			</main>

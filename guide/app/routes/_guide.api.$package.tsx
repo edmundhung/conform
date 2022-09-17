@@ -18,8 +18,8 @@ export default function Page() {
 	let { content } = useLoaderData<typeof loader>();
 
 	return (
-		<div className="py-8">
+		<>
 			<Markdoc content={content} />
-		</div>
+		</>
 	);
 }

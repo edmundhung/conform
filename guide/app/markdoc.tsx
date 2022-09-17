@@ -11,7 +11,7 @@ ReactSyntaxHighlighter.registerLanguage('css', css);
 
 export function Aside({ children }: { children: React.ReactNode }) {
 	return (
-		<aside className="float-right sticky top-16 w-72 -mr-72 p-8 -mt-40">
+		<aside className="xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:p-8 xl:-mt-40">
 			{children}
 		</aside>
 	);
@@ -43,7 +43,7 @@ export function Details({
 	children: React.ReactElement;
 }) {
 	return (
-		<details className="border border-zinc-700 p-4 my-6">
+		<details className="border border-zinc-700 rounded p-4 my-6">
 			<summary>{summary}</summary>
 			{children}
 		</details>
@@ -161,7 +161,7 @@ export function parse(markdown: string) {
 
 export function Markdoc({ content }: { content: markdoc.RenderableTreeNodes }) {
 	return (
-		<section className="prose prose-zinc dark:prose-invert max-w-none pr-72 prose-pre:!my-6">
+		<section className="prose prose-zinc dark:prose-invert max-w-none xl:pr-72 prose-pre:!my-6">
 			{markdoc.renderers.react(content, React, {
 				components: {
 					Aside,

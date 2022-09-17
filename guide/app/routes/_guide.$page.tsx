@@ -19,9 +19,9 @@ export default function Page() {
 	let { path, content } = useLoaderData<typeof loader>();
 
 	return (
-		<div className="py-8">
+		<>
 			<Markdoc content={content} />
 			<Sandbox title="Sandbox" path={path} />
-		</div>
+		</>
 	);
 }
