@@ -1,19 +1,24 @@
-import { Link, NavLink, Outlet } from '@remix-run/react';
-import { useState } from 'react';
+import { Link, NavLink, Outlet, useLocation } from '@remix-run/react';
+import { useEffect, useState } from 'react';
 
 export default function Guide() {
 	const [navOpen, setNavOpen] = useState(false);
+	const location = useLocation();
+
+	useEffect(() => {
+		setNavOpen(false);
+	}, [location]);
 
 	return (
 		<>
 			<header className="h-16 sticky top-0 w-full backdrop-blur z-50 border-b border-zinc-800 bg-zinc-900/75">
-				<div className="lg:container mx-auto p-4 flex justify-between">
-					<div className="flex flex-row gap-4">
+				<div className="lg:container mx-auto p-4 flex justify-between items-center">
+					<div className="flex flex-row gap-4 items-center">
 						<label
 							htmlFor="nav"
-							className="border border-zince-300 hover:border-white px-1 rounded lg:hidden text-zinc-300 hover:text-white"
+							className="px-1 lg:hidden text-zinc-300 hover:text-white"
 						>
-							≡
+							☰
 						</label>
 						<Link
 							className="text-xl font-medium tracking-wider uppercase"
@@ -51,14 +56,7 @@ export default function Guide() {
 					onChange={(e) => setNavOpen(e.target.checked)}
 				/>
 				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 peer-checked:border-b lg:border-none border-zinc-800 bg-zinc-900/75 max-h-[calc(100vh-4rem)]">
-					<ul
-						className="space-y-5 px-4 py-8"
-						onClick={(e) => {
-							if (e.target instanceof HTMLAnchorElement) {
-								setNavOpen(false);
-							}
-						}}
-					>
+					<ul className="space-y-5 px-4 py-8">
 						<li>
 							Get Started
 							<ul className="m-4 mr-0 space-y-2">

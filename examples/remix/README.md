@@ -6,10 +6,10 @@ It works without JS.
 
 ## Related APIs
 
-- [useForm](/packages/conform-react/README.md#useForm)
-- [useFieldset](/packages/conform-react/README.md#useFieldset)
+- [useForm](/packages/conform-react/README.md#useform)
+- [useFieldset](/packages/conform-react/README.md#usefieldset)
 - [resolve](/packages/conform-zod/README.md#resolve)
-- [ifNonEmptyString](/packages/conform-zod/README.md#ifNonEmptyString)
+- [ifNonEmptyString](/packages/conform-zod/README.md#ifnonemptystring)
 
 ## Demo
 

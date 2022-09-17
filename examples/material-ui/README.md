@@ -4,9 +4,9 @@ This example shows you how to integrate controlled component for validation usin
 
 ## Related APIs
 
-- [useForm](/packages/conform-react/README.md#useForm)
-- [useFieldset](/packages/conform-react/README.md#useFieldset)
-- [useControlledInput](/packages/conform-react/README.md#useControlledInput)
+- [useForm](/packages/conform-react/README.md#useform)
+- [useFieldset](/packages/conform-react/README.md#usefieldset)
+- [useControlledInput](/packages/conform-react/README.md#usecontrolledinput)
 
 ## Demo
 
