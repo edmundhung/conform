@@ -92,4 +92,4 @@ const validate = createValidate((field, formData) => {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/advanced) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/advanced)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/advanced) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/advanced)

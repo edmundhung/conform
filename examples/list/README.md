@@ -235,4 +235,4 @@ Checkout the [remix](/examples/remix) example for a demo.
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/list) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/list)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/list) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/list)

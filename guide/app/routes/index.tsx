@@ -1,3 +1,9 @@
+import { redirect } from '@remix-run/cloudflare';
+
+export function loader() {
+	return redirect('/basics');
+}
+
 export default function Index() {
 	return (
 		<div className="flex flex-col h-screen items-center justify-center p-4">

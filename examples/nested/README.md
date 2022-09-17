@@ -140,4 +140,4 @@ export default function PaymentForm() {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/nested) \| [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/nested)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/nested) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/nested)
