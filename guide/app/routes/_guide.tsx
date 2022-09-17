@@ -3,16 +3,20 @@ import { Link, NavLink, Outlet } from '@remix-run/react';
 export default function Guide() {
 	return (
 		<>
-			<header className="sticky top-0 w-full backdrop-blur transition-colors duration-500 z-50 border-b border-zinc-800 bg-zinc-900/75">
-				<div className="container mx-auto py-4 px-8">
+			<header className="h-16 sticky top-0 w-full backdrop-blur z-50 border-b border-zinc-800 bg-zinc-900/75">
+				<div className="lg:container mx-auto py-4 px-8 flex justify-between">
 					<Link className="text-xl font-medium tracking-wider uppercase" to="/">
 						conform
 					</Link>
+					<label htmlFor="nav" className="border px-1 rounded lg:hidden">
+						≡
+					</label>
 				</div>
 			</header>
-			<main className="container mx-auto flex flex-col lg:flex-row p-4">
-				<nav className="lg:flex-none lg:sticky lg:top-16 p-4 text-lg lg:w-72 self-start overflow-y-auto">
-					<ul className="space-y-5">
+			<main className="lg:container mx-auto flex flex-col lg:flex-row">
+				<input id="nav" className="peer hidden" type="checkbox" />
+				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 peer-checked:border-b lg:border-none border-zinc-800 bg-zinc-900/75">
+					<ul className="space-y-5 p-8">
 						<li>
 							Get Started
 							<ul className="m-4 mr-0 space-y-2">
@@ -66,8 +70,10 @@ export default function Guide() {
 						</li>
 					</ul>
 				</nav>
-				<div className="flex-1 p-4">
-					<Outlet />
+				<div className="flex-1">
+					<div className="p-8 lg:pl-0">
+						<Outlet />
+					</div>
 				</div>
 			</main>
 		</>
