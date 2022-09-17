@@ -4,7 +4,7 @@ export default function Guide() {
 	return (
 		<>
 			<header className="h-16 sticky top-0 w-full backdrop-blur z-50 border-b border-zinc-800 bg-zinc-900/75">
-				<div className="lg:container mx-auto py-4 px-8 flex justify-between">
+				<div className="lg:container mx-auto p-4 flex justify-between">
 					<Link className="text-xl font-medium tracking-wider uppercase" to="/">
 						conform
 					</Link>
@@ -15,8 +15,8 @@ export default function Guide() {
 			</header>
 			<main className="lg:container mx-auto flex flex-col lg:flex-row">
 				<input id="nav" className="peer hidden" type="checkbox" />
-				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 peer-checked:border-b lg:border-none border-zinc-800 bg-zinc-900/75">
-					<ul className="space-y-5 p-8">
+				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 peer-checked:border-b lg:border-none border-zinc-800 bg-zinc-900/75 max-h-[calc(100vh-4rem)]">
+					<ul className="space-y-5 px-4 py-8">
 						<li>
 							Get Started
 							<ul className="m-4 mr-0 space-y-2">
@@ -71,7 +71,7 @@ export default function Guide() {
 					</ul>
 				</nav>
 				<div className="flex-1">
-					<div className="p-8 lg:pl-0">
+					<div className="px-4 py-8">
 						<Outlet />
 					</div>
 				</div>
