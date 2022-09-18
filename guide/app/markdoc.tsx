@@ -11,7 +11,7 @@ ReactSyntaxHighlighter.registerLanguage('css', css);
 
 export function Aside({ children }: { children: React.ReactNode }) {
 	return (
-		<aside className="xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto">
+		<aside className="xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto  prose-ul:list-none prose-ul:pl-0 prose-a:border-l prose-a:px-4 prose-li:m-0 prose-a:block prose-a:py-2 hover:prose-a:text-white hover:prose-a:border-white prose-a:no-underline prose-a:text-zinc-400 prose-a:border-zinc-700">
 			{children}
 		</aside>
 	);

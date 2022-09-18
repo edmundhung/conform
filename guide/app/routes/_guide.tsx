@@ -1,6 +1,44 @@
 import { Link, NavLink, Outlet, useLocation } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 
+interface Navigation {
+	title: string;
+	menus: Array<{
+		title: string;
+		to: string;
+	}>;
+}
+
+const navigations: Navigation[] = [
+	{
+		title: 'Get Started',
+		menus: [
+			{ title: 'Basics', to: '/basics' },
+			{ title: 'Validation', to: '/validation' },
+			{ title: 'Nested', to: '/nested' },
+			{ title: 'List', to: '/list' },
+			{ title: 'Advanced', to: '/advanced' },
+		],
+	},
+	{
+		title: 'API Reference',
+		menus: [
+			{ title: '@conform-to/react', to: '/api/react' },
+			{ title: '@conform-to/yup', to: '/api/yup' },
+			{ title: '@conform-to/zod', to: '/api/zod' },
+		],
+	},
+	{
+		title: 'Examples',
+		menus: [
+			{ title: 'Material UI', to: '/api/material-ui' },
+			{ title: 'Remix', to: '/examples/remix' },
+			{ title: 'Yup', to: '/examples/yup' },
+			{ title: 'Zod', to: '/examples/zod' },
+		],
+	},
+];
+
 export default function Guide() {
 	const [navOpen, setNavOpen] = useState(false);
 	const location = useLocation();
@@ -11,12 +49,12 @@ export default function Guide() {
 
 	return (
 		<>
-			<header className="h-16 sticky top-0 w-full backdrop-blur z-50 border-b border-zinc-800 bg-zinc-900/75">
+			<header className="h-16 sticky top-0 w-full backdrop-blur z-50 border-b border-zinc-700 bg-zinc-900/75">
 				<div className="lg:container mx-auto p-4 flex justify-between items-center">
 					<div className="flex flex-row gap-4 items-center">
 						<label
 							htmlFor="nav"
-							className="px-1 lg:hidden text-zinc-300 hover:text-white"
+							className="px-1 lg:hidden text-zinc-400 hover:text-white"
 						>
 							☰
 						</label>
@@ -28,9 +66,9 @@ export default function Guide() {
 						</Link>
 					</div>
 					<a
-						className="text-zinc-300 hover:text-white"
+						className="text-zinc-400 hover:text-white"
 						href="https://github.com/edmundhung/conform"
-						title="github"
+						title="GitHub"
 					>
 						<svg
 							aria-hidden="true"
@@ -55,83 +93,32 @@ export default function Guide() {
 					checked={navOpen}
 					onChange={(e) => setNavOpen(e.target.checked)}
 				/>
-				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 peer-checked:border-b lg:border-none border-zinc-800 bg-zinc-900/75 max-h-[calc(100vh-4rem)]">
+				<nav className="hidden flex-none lg:block lg:sticky lg:top-16 peer-checked:block peer-checked:sticky peer-checked:top-16 text-lg lg:w-72 w-full self-start overflow-y-auto peer-checked:backdrop-blur z-30 h-[calc(100vh-4rem)]">
 					<ul className="space-y-5 px-4 py-8">
-						<li>
-							Get Started
-							<ul className="m-4 mr-0 space-y-2">
-								<li>
-									<NavLink to="/basics" prefetch="intent">
-										Basics
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/validation" prefetch="intent">
-										Validation
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/nested" prefetch="intent">
-										Nested
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/list" prefetch="intent">
-										List
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/advanced" prefetch="intent">
-										Advanced
-									</NavLink>
-								</li>
-							</ul>
-						</li>
-						<li>
-							API Reference
-							<ul className="m-4 mr-0 space-y-2">
-								<li>
-									<NavLink to="/api/react" prefetch="intent">
-										@conform-to/react
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/api/yup" prefetch="intent">
-										@conform-to/yup
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/api/zod" prefetch="intent">
-										@conform-to/zod
-									</NavLink>
-								</li>
-							</ul>
-						</li>
-						<li>
-							Examples
-							<ul className="m-4 mr-0 space-y-2">
-								<li>
-									<NavLink to="/examples/material-ui" prefetch="intent">
-										Material UI
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/examples/remix" prefetch="intent">
-										Remix
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/examples/yup" prefetch="intent">
-										Yup
-									</NavLink>
-								</li>
-								<li>
-									<NavLink to="/examples/zod" prefetch="intent">
-										Zod
-									</NavLink>
-								</li>
-							</ul>
-						</li>
+						{navigations.map((nav) => (
+							<li key={nav.title}>
+								{nav.title}
+								<ul className="my-4">
+									{nav.menus.map((item) => (
+										<li key={item.title}>
+											<NavLink
+												className={({ isActive }: { isActive: boolean }) =>
+													`block px-4 py-1 border-l ${
+														isActive
+															? 'text-white border-white'
+															: 'text-zinc-400 border-zinc-700 hover:text-zinc-200 hover:border-zinc-500'
+													}`
+												}
+												to={item.to}
+												prefetch="intent"
+											>
+												{item.title}
+											</NavLink>
+										</li>
+									))}
+								</ul>
+							</li>
+						))}
 					</ul>
 				</nav>
 				<div className="flex-1">
