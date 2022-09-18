@@ -29,7 +29,7 @@ export function isGetStartedGuide(name: string | undefined) {
 		return false;
 	}
 
-	const guides = ['basics', 'valdiation', 'nested', 'list', 'advanced'];
+	const guides = ['basics', 'validation', 'nested', 'list', 'advanced'];
 
 	return guides.includes(name);
 }
