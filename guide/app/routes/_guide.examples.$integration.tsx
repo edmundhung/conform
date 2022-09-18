@@ -8,23 +8,23 @@ import { Markdown, Sandbox } from '~/components';
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
 	const readme = await getGitHubReadme(
-		`examples/${params.integration}`,
 		branch,
+		`examples/${params.integration}`,
 	);
 
 	return json({
-		path: `edmundhung/conform/tree/${branch}/examples/${params.integration}`,
+		src: `edmundhung/conform/tree/${branch}/examples/${params.integration}`,
 		content: parse(atob(readme.content)),
 	});
 }
 
 export default function Page() {
-	let { path, content } = useLoaderData<typeof loader>();
+	let { src, content } = useLoaderData<typeof loader>();
 
 	return (
 		<>
 			<Markdown content={content} />
-			<Sandbox title="Sandbox" path={path} />
+			<Sandbox title="Sandbox" src={src} />
 		</>
 	);
 }

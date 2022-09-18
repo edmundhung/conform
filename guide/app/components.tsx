@@ -18,7 +18,7 @@ const style = {
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
 
-export function Sandbox({ title, path }: { title: string; path: string }) {
+export function Sandbox({ title, src }: { title: string; src: string }) {
 	const [hydated, setHydrated] = React.useState(false);
 
 	React.useEffect(() => {
@@ -32,8 +32,8 @@ export function Sandbox({ title, path }: { title: string; path: string }) {
 	return (
 		<iframe
 			title={title}
-			src={`https://codesandbox.io/embed/github/${path}?editorsize=60`}
-			className="my-10 w-full aspect-[16/9] outline outline-1 outline-zinc-800 outline-offset-4 rounded"
+			src={`https://codesandbox.io/embed/github/${src}?editorsize=60`}
+			className="min-h-[70vh] my-6 w-full aspect-[16/9] outline outline-1 outline-zinc-800 outline-offset-4 rounded"
 			sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 		/>
 	);
@@ -43,7 +43,7 @@ export function Aside({ children }: { children: React.ReactNode }) {
 	return (
 		<aside
 			className={`
-				xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:h-[calc(100vh-4rem)] overflow-y-auto
+				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
 				prose-ul:list-none prose-ul:m-0 prose-ul:pl-0 prose-li:m-0 prose-li:pl-0
 				prose-a:block prose-a:border-l prose-a:px-4 prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 prose-a:border-zinc-700
 				hover:prose-a:text-white hover:prose-a:border-white 
@@ -143,7 +143,7 @@ export function Link({
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
-		<section className="prose prose-zinc dark:prose-invert max-w-none xl:pr-72 prose-pre:!my-6">
+		<section className="prose prose-zinc dark:prose-invert max-w-none xl:pr-72 prose-pre:!mt-6 prose-pre:!mb-8">
 			{renderers.react(content, React, {
 				components: {
 					Aside,

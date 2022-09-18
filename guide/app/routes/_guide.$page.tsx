@@ -7,21 +7,21 @@ import { Markdown, Sandbox } from '~/components';
 
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
-	const readme = await getGitHubReadme(`examples/${params.page}`, branch);
+	const readme = await getGitHubReadme(branch, `examples/${params.page}`);
 
 	return json({
-		path: `edmundhung/conform/tree/${branch}/examples/${params.page}`,
+		src: `edmundhung/conform/tree/${branch}/examples/${params.page}`,
 		content: parse(atob(readme.content)),
 	});
 }
 
 export default function Page() {
-	let { path, content } = useLoaderData<typeof loader>();
+	let { src, content } = useLoaderData<typeof loader>();
 
 	return (
 		<>
 			<Markdown content={content} />
-			<Sandbox title="Sandbox" path={path} />
+			<Sandbox title="Sandbox" src={src} />
 		</>
 	);
 }
