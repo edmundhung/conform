@@ -1,7 +1,8 @@
 import { Octokit } from '@octokit/core';
 
-export async function getGitHubReadme(dir: string, ref = 'main') {
+export async function getGitHubReadme(ref = 'main', dir = '') {
 	const octokit = new Octokit();
+
 	try {
 		const file = await octokit.request(
 			'GET /repos/{owner}/{repo}/readme/{dir}',

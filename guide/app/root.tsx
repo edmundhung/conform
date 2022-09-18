@@ -17,6 +17,7 @@ export let links: LinksFunction = () => {
 export const meta: MetaFunction = () => ({
 	charset: 'utf-8',
 	title: 'Conform Guide',
+	description: 'Make your form conform to the dom',
 	viewport: 'width=device-width,initial-scale=1',
 });
 

@@ -31,7 +31,7 @@ const navigations: Navigation[] = [
 	{
 		title: 'Examples',
 		menus: [
-			{ title: 'Material UI', to: '/api/material-ui' },
+			{ title: 'Material UI', to: '/examples/material-ui' },
 			{ title: 'Remix', to: '/examples/remix' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
