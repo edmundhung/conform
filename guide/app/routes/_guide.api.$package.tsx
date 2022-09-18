@@ -1,6 +1,7 @@
 import { type LoaderArgs, json } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { parse, Markdoc } from '~/markdoc';
+import { Markdown } from '~/components';
+import { parse } from '~/markdoc.server';
 import { getGitHubReadme } from '~/octokit';
 
 export async function loader({ params, context }: LoaderArgs) {
@@ -19,7 +20,7 @@ export default function Page() {
 
 	return (
 		<>
-			<Markdoc content={content} />
+			<Markdown content={content} />
 		</>
 	);
 }

@@ -1,4 +1,5 @@
-import * as markdoc from '@markdoc/markdoc';
+import type { RenderableTreeNodes } from '@markdoc/markdoc';
+import { renderers } from '@markdoc/markdoc';
 import { Link as RouterLink } from '@remix-run/react';
 import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
@@ -9,9 +10,37 @@ import style from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
 
+export function Sandbox({ title, path }: { title: string; path: string }) {
+	const [hydated, setHydrated] = React.useState(false);
+
+	React.useEffect(() => {
+		setHydrated(true);
+	}, []);
+
+	if (!hydated) {
+		return null;
+	}
+
+	return (
+		<iframe
+			title={title}
+			src={`https://codesandbox.io/embed/github/${path}?editorsize=60`}
+			className="my-10 w-full aspect-[16/9] outline outline-zinc-800 outline-offset-4"
+			sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+		/>
+	);
+}
+
 export function Aside({ children }: { children: React.ReactNode }) {
 	return (
-		<aside className="xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto  prose-ul:list-none prose-ul:pl-0 prose-a:border-l prose-a:px-4 prose-li:m-0 prose-a:block prose-a:py-2 hover:prose-a:text-white hover:prose-a:border-white prose-a:no-underline prose-a:text-zinc-400 prose-a:border-zinc-700">
+		<aside
+			className={`
+				xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:h-[calc(100vh-4rem)] overflow-y-auto
+				prose-ul:list-none prose-ul:m-0 prose-ul:pl-0 prose-li:m-0 prose-li:pl-0
+				prose-a:block prose-a:border-l prose-a:px-4 prose-a:py-2 prose-a:no-underline prose-a:text-zinc-400 prose-a:border-zinc-700
+				hover:prose-a:text-white hover:prose-a:border-white 
+			`}
+		>
 			{children}
 		</aside>
 	);
@@ -104,65 +133,10 @@ export function Link({
 	);
 }
 
-export function parse(markdown: string) {
-	const content = markdown
-		.replace(
-			/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
-			'{% details summary="$1" %}$2{% /details %}',
-		)
-		.replace(/<!-- (\/?aside) -->/g, '{% $1 %}');
-	const ast = markdoc.parse(content);
-	const node = markdoc.transform(ast, {
-		nodes: {
-			fence: {
-				render: 'Fence',
-				attributes: {
-					language: {
-						type: String,
-						description:
-							'The programming language of the code block. Place it after the backticks.',
-					},
-				},
-			},
-			heading: {
-				render: 'Heading',
-				attributes: {
-					level: { type: Number, required: true, default: 1 },
-				},
-			},
-			link: {
-				render: 'Link',
-				attributes: {
-					href: { type: String, required: true },
-					title: { type: String },
-				},
-			},
-		},
-		tags: {
-			aside: {
-				render: 'Aside',
-				description: 'Side notes',
-			},
-			details: {
-				render: 'Details',
-				description: 'Native Details tag',
-				attributes: {
-					summary: {
-						type: String,
-						description: 'Summary of the block',
-					},
-				},
-			},
-		},
-	});
-
-	return node;
-}
-
-export function Markdoc({ content }: { content: markdoc.RenderableTreeNodes }) {
+export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
 		<section className="prose prose-zinc dark:prose-invert max-w-none xl:pr-72 prose-pre:!my-6">
-			{markdoc.renderers.react(content, React, {
+			{renderers.react(content, React, {
 				components: {
 					Aside,
 					Details,

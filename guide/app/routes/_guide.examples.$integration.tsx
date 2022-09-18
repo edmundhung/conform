@@ -1,9 +1,9 @@
 import { type LoaderArgs, json } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
-import { parse, Markdoc } from '~/markdoc';
+import { parse } from '~/markdoc.server';
 import { getGitHubReadme } from '~/octokit';
-import { Sandbox } from '~/sandbox';
+import { Markdown, Sandbox } from '~/components';
 
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
@@ -23,7 +23,7 @@ export default function Page() {
 
 	return (
 		<>
-			<Markdoc content={content} />
+			<Markdown content={content} />
 			<Sandbox title="Sandbox" path={path} />
 		</>
 	);
