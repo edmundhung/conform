@@ -3,11 +3,11 @@
 	"sideEffects": false,
 	"scripts": {
 		"build": "run-s \"build:*\"",
-		"build:style": "cross-env NODE_ENV=production tailwindcss -o ./app/styles.css --minify",
+		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
 		"build:remix": "remix build",
 		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.js",
 		"dev:remix": "remix watch",
-		"dev:style": "tailwindcss -o ./app/styles.css --watch",
+		"dev:style": "tailwindcss -i ./styles.css -o ./app/styles.css --watch",
 		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev ./public",
 		"dev": "remix build && run-p \"dev:*\"",
 		"start": "cross-env NODE_ENV=production npm run dev:wrangler"

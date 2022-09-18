@@ -30,7 +30,7 @@ export function CatchBoundary() {
 				<Meta />
 				<Links />
 			</head>
-			<body className="antialiased bg-zinc-900 text-white flex flex-col h-screen items-center justify-center p-4">
+			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white flex flex-col h-screen items-center justify-center p-4">
 				<h1 className="text-3xl font-medium tracking-wider">
 					{caught.status} {caught.statusText}
 				</h1>
@@ -47,7 +47,7 @@ export default function App() {
 				<Meta />
 				<Links />
 			</head>
-			<body className="antialiased bg-zinc-900 text-white">
+			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />
