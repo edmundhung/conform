@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/core';
+import { notFound } from '~/util';
 
 export async function getGitHubReadme(ref = 'main', dir = '') {
 	const octokit = new Octokit();
@@ -17,7 +18,7 @@ export async function getGitHubReadme(ref = 'main', dir = '') {
 		return file.data;
 	} catch (e) {
 		if ((e as any).status === 404) {
-			throw new Response('Not found', { status: 404, statusText: 'Not Found' });
+			throw notFound();
 		}
 
 		throw e;

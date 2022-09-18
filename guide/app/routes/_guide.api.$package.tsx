@@ -7,7 +7,7 @@ import {
 import { useLoaderData } from '@remix-run/react';
 import { Markdown } from '~/components';
 import { getBranch } from '~/context';
-import { formatTitle } from '~/format';
+import { formatTitle } from '~/util';
 import { parse } from '~/markdoc.server';
 import { getGitHubReadme } from '~/octokit';
 

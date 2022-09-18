@@ -9,7 +9,7 @@ import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
 import { getGitHubReadme } from '~/octokit';
 import { Markdown, Sandbox } from '~/components';
-import { formatTitle } from '~/format';
+import { formatTitle, isGetStartedGuide, notFound } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -22,6 +22,10 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export async function loader({ params, context }: LoaderArgs) {
+	if (isGetStartedGuide(params.integration)) {
+		throw notFound();
+	}
+
 	const branch = getBranch(context);
 	const readme = await getGitHubReadme(
 		branch,

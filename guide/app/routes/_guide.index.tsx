@@ -8,7 +8,7 @@ import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
 import { getGitHubReadme } from '~/octokit';
 import { Markdown, Sandbox } from '~/components';
-import { getIntroduction } from '~/format';
+import { getIntroduction } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;

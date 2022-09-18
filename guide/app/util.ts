@@ -19,3 +19,17 @@ export function getIntroduction(content: string) {
 export function formatTitle(text: string): string {
 	return `${text.slice(0, 1).toUpperCase()}${text.slice(1).toLowerCase()}`;
 }
+
+export function notFound() {
+	return new Response('Not found', { status: 404, statusText: 'Not Found' });
+}
+
+export function isGetStartedGuide(name: string | undefined) {
+	if (!name) {
+		return false;
+	}
+
+	const guides = ['basics', 'valdiation', 'nested', 'list', 'advanced'];
+
+	return guides.includes(name);
+}
