@@ -2,10 +2,14 @@
 
 > [Zod](https://github.com/colinhacks/zod) schema resolver for [conform](https://github.com/edmundhung/conform)
 
+<!-- aside -->
+
 ## API Reference
 
 - [resolve](#resolve)
-- [ifNonEmptyString](#ifNonEmptyString)
+- [ifNonEmptyString](#ifnonemptystring)
+
+<!-- /aside -->
 
 ### resolve
 
@@ -90,6 +94,8 @@ export default function ExampleRoute() {
   // the intital error
 }
 ```
+
+---
 
 ### ifNonEmptyString
 

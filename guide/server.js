@@ -5,7 +5,14 @@ const handleRequest = createPagesFunctionHandler({
 	build,
 	// eslint-disable-next-line no-undef
 	mode: process.env.NODE_ENV,
-	getLoadContext: (context) => context.env,
+	getLoadContext: (context) => {
+		const env = {
+			...context.env,
+			CF_PAGES_BRANCH: 'main',
+		};
+
+		return { env };
+	},
 });
 
 export function onRequest(context) {

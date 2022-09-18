@@ -17,6 +17,7 @@ export let links: LinksFunction = () => {
 export const meta: MetaFunction = () => ({
 	charset: 'utf-8',
 	title: 'Conform Guide',
+	description: 'Make your form conform to the dom',
 	viewport: 'width=device-width,initial-scale=1',
 });
 
@@ -30,7 +31,7 @@ export function CatchBoundary() {
 				<Meta />
 				<Links />
 			</head>
-			<body className="antialiased flex flex-col h-screen items-center justify-center bg-black text-white p-4">
+			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white flex flex-col h-screen items-center justify-center p-4">
 				<h1 className="text-3xl font-medium tracking-wider">
 					{caught.status} {caught.statusText}
 				</h1>
@@ -47,7 +48,7 @@ export default function App() {
 				<Meta />
 				<Links />
 			</head>
-			<body className="antialiased">
+			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />

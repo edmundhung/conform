@@ -6,7 +6,7 @@ Conform is a form validation library built on top of the [Constraint Validation]
 - **Framework Agnostic**: The DOM is the only dependency. Conform makes use of native [Web APIs](https://developer.mozilla.org/en-US/docs/Web/API) exclusively. You don't have to use React / Vue / Svelte to utilise this library.
 - **Flexible Setup**: It can validates fields anywhere in the dom with the help of [form attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form). Also enables CSS pseudo-classes like `:valid` and `:invalid`, allowing flexible styling across your form without the need to manipulate the class names.
 
-## Example
+## Quick start
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -42,7 +42,7 @@ export default function LoginForm() {
 }
 ```
 
-More examples can be found [here](examples)
+Learn more about conform [here](https://conform.guide)
 
 ## API References
 
