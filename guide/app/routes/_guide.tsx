@@ -59,7 +59,7 @@ export default function Guide() {
 							☰
 						</label>
 						<Link
-							className="text-xl font-medium tracking-wider uppercase"
+							className="text-xl font-medium tracking-widest uppercase"
 							to="/"
 						>
 							conform
