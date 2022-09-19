@@ -1,11 +1,7 @@
-import {
-	type FieldsetConfig,
-	useForm,
-	useFieldset,
-	useFieldList,
-} from '@conform-to/react';
+import type { FieldsetConfig } from '@conform-to/react';
+import { useForm, useFieldset, useFieldList } from '@conform-to/react';
 import { ifNonEmptyString, resolve } from '@conform-to/zod';
-import { type ActionArgs } from '@remix-run/node';
+import type { ActionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
