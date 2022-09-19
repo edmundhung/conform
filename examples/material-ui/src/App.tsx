@@ -26,9 +26,7 @@ export default function ArticleForm() {
 	 * This hook help you setting up a shadow input that would be used to validate against the
 	 * schema instead and let you hook it up with the controlled component life cycle
 	 */
-	const [categoryInput, control] = useControlledInput<HTMLDivElement>(
-		category.config,
-	);
+	const [categoryInput, control] = useControlledInput(category.config);
 
 	return (
 		<form {...formProps}>
@@ -40,10 +38,10 @@ export default function ArticleForm() {
 					helperText={title.error}
 					required
 				/>
-				<input {...categoryInput} hidden={false} required />
+				<input {...categoryInput} required />
 				<TextField
 					label="Category"
-					ref={control.ref}
+					inputRef={control.ref}
 					value={control.value}
 					onChange={control.onChange}
 					onBlur={control.onBlur}
