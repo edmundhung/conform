@@ -1,5 +1,5 @@
+import type { FieldsetConfig } from '@conform-to/react';
 import {
-	type FieldsetConfig,
 	useForm,
 	useFieldset,
 	useFieldList,
