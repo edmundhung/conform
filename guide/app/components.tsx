@@ -143,7 +143,7 @@ export function Link({
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
-		<section className="prose prose-zinc prose-invert max-w-none xl:pr-72 prose-pre:!mt-6 prose-pre:!mb-8">
+		<section className="prose prose-invert max-w-none xl:pr-72 prose-pre:!mt-6 prose-pre:!mb-8">
 			{renderers.react(content, React, {
 				components: {
 					Aside,
