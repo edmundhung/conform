@@ -479,6 +479,7 @@ function MuiForm() {
       {/* MUI Select is a controlled component */}
       <Select
         label="Category"
+        inputRef={control.ref}
         value={control.value}
         onChange={control.onChange}
         onBlur={control.onBlur}

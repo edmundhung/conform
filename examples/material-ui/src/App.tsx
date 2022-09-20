@@ -41,6 +41,7 @@ export default function ArticleForm() {
 				<input {...categoryInput} required />
 				<TextField
 					label="Category"
+					inputRef={control.ref}
 					value={control.value}
 					onChange={control.onChange}
 					onBlur={control.onBlur}

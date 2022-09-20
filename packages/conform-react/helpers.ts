@@ -24,6 +24,10 @@ export function input<Schema extends Primitive>(
 		multiple: config.multiple,
 	};
 
+	if (typeof config.initialError !== 'undefined') {
+		attributes.autoFocus = true;
+	}
+
 	if (isCheckboxOrRadio) {
 		attributes.value = value ?? 'on';
 		attributes.defaultChecked = config.defaultValue === attributes.value;
@@ -37,7 +41,7 @@ export function input<Schema extends Primitive>(
 export function select<Schema extends Primitive | Array<Primitive>>(
 	config: FieldConfig<Schema>,
 ): SelectHTMLAttributes<HTMLSelectElement> {
-	return {
+	const attributes: SelectHTMLAttributes<HTMLSelectElement> = {
 		name: config.name,
 		form: config.form,
 		defaultValue: config.multiple
@@ -47,18 +51,35 @@ export function select<Schema extends Primitive | Array<Primitive>>(
 			: `${config.defaultValue ?? ''}`,
 		required: config.required,
 		multiple: config.multiple,
+		autoFocus:
+			typeof config.initialError !== 'undefined'
+				? Boolean(config.initialError)
+				: undefined,
 	};
+
+	if (typeof config.initialError !== 'undefined') {
+		attributes.autoFocus = true;
+	}
+
+	return attributes;
 }
 
 export function textarea<Schema extends Primitive>(
 	config: FieldConfig<Schema>,
 ): TextareaHTMLAttributes<HTMLTextAreaElement> {
-	return {
+	const attributes: TextareaHTMLAttributes<HTMLTextAreaElement> = {
 		name: config.name,
 		form: config.form,
 		defaultValue: `${config.defaultValue ?? ''}`,
 		required: config.required,
 		minLength: config.minLength,
 		maxLength: config.maxLength,
+		autoFocus: Boolean(config.initialError),
 	};
+
+	if (typeof config.initialError !== 'undefined') {
+		attributes.autoFocus = true;
+	}
+
+	return attributes;
 }

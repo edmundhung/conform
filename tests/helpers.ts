@@ -6,6 +6,10 @@ export function getPlaygroundLocator(page: Page, title: string): Locator {
 	return page.locator(`[data-playground="${title}"]`);
 }
 
+export function hasFocus(locator: Locator): Promise<boolean> {
+	return locator.evaluate((el) => el === document.activeElement);
+}
+
 export async function clickSubmitButton(playground: Locator): Promise<void> {
 	return playground.locator('footer button[type="submit"]').click();
 }

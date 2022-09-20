@@ -12,6 +12,7 @@ import {
 	getMovieFieldset,
 	getTaskFieldset,
 	expectNonEmptyString,
+	hasFocus,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -399,6 +400,24 @@ test.describe('Remote form', () => {
 				error: {},
 			},
 		});
+	});
+});
+
+test.describe('Autofocus error', () => {
+	test('no error would be reported before users try submitting the form', async ({
+		page,
+	}) => {
+		const playground = getPlaygroundLocator(page, 'Autofocus error');
+		const { email, password } = getLoginFieldset(playground);
+
+		await clickSubmitButton(playground);
+
+		expect(await hasFocus(email)).toBe(true);
+
+		await email.type('me@edmund.dev');
+		await email.press('Enter');
+
+		expect(await hasFocus(password)).toBe(true);
 	});
 });
 

@@ -155,6 +155,15 @@ export default function Basic() {
 				<LoginFieldset form="remote" constraint={loginConstraint} />
 			</Playground>
 			<Playground
+				title="Autofocus error"
+				description="The first error field should be focused when user try to submit the form"
+				form="autofocus"
+			>
+				<Form id="autofocus" method="post">
+					<LoginFieldset constraint={loginConstraint} />
+				</Form>
+			</Playground>
+			<Playground
 				title="Nested list"
 				description="Constructing a nested array using useFieldList"
 				form="nested-list"
