@@ -25,7 +25,7 @@ export function input<Schema extends Primitive>(
 	};
 
 	if (typeof config.initialError !== 'undefined') {
-		attributes.autoFocus = Boolean(config.initialError);
+		attributes.autoFocus = true;
 	}
 
 	if (isCheckboxOrRadio) {
@@ -58,7 +58,7 @@ export function select<Schema extends Primitive | Array<Primitive>>(
 	};
 
 	if (typeof config.initialError !== 'undefined') {
-		attributes.autoFocus = Boolean(config.initialError);
+		attributes.autoFocus = true;
 	}
 
 	return attributes;
@@ -78,7 +78,7 @@ export function textarea<Schema extends Primitive>(
 	};
 
 	if (typeof config.initialError !== 'undefined') {
-		attributes.autoFocus = Boolean(config.initialError);
+		attributes.autoFocus = true;
 	}
 
 	return attributes;

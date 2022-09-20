@@ -454,7 +454,9 @@ export function useFieldset<Schema extends Record<string, any>>(
 						name: config?.name ? `${config.name}.${key}` : key,
 						form: config?.form,
 						defaultValue: config?.defaultValue?.[key],
-						initialError: config?.initialError?.[key]?.details,
+						initialError:
+							config?.initialError?.[key]?.details ??
+							config?.initialError?.[key]?.message,
 						...constraint,
 					},
 					error: error?.[key] ?? '',
