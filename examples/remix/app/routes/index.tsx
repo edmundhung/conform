@@ -1,5 +1,5 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import { useForm, useFieldset, useFieldList } from '@conform-to/react';
+import { useForm, useFieldset, useFieldList, conform } from '@conform-to/react';
 import { ifNonEmptyString, resolve } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -49,6 +49,10 @@ export default function OrderForm() {
 	);
 	const [taskList, control] = useFieldList(formProps.ref, tasks.config);
 
+	console.log('error', formState?.error);
+	console.log('title', title.config);
+	console.log('tasks', tasks.config);
+
 	return (
 		<Form method="post" {...formProps}>
 			<fieldset>
@@ -56,8 +60,7 @@ export default function OrderForm() {
 					<div>Title</div>
 					<input
 						className={title.error ? 'error' : ''}
-						name={title.config.name}
-						defaultValue={title.config.defaultValue}
+						{...conform.input(title.config)}
 					/>
 					<div>{title.error}</div>
 				</label>
@@ -106,10 +109,8 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 			<label>
 				<div>{title}</div>
 				<input
-					type="text"
 					className={content.error ? 'error' : ''}
-					name={content.config.name}
-					defaultValue={content.config.defaultValue}
+					{...conform.input(content.config)}
 				/>
 				<div>{content.error}</div>
 			</label>
@@ -117,11 +118,11 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 				<label>
 					<span>Completed</span>
 					<input
-						type="checkbox"
 						className={completed.error ? 'error' : ''}
-						name={completed.config.name}
-						value="yes"
-						defaultChecked={completed.config.defaultValue === 'yes'}
+						{...conform.input(completed.config, {
+							type: 'checkbox',
+							value: 'yes',
+						})}
 					/>
 				</label>
 			</div>
