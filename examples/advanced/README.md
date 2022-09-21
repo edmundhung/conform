@@ -78,7 +78,7 @@ const validate = createValidate((field, formData) => {
       const type = formData.get('type');
       
       // In this example, there are two submit buttons
-      // with `value`s of `subscription` and `onetime-purchase`.
+      // with values of `subscription` and `onetime-purchase`.
       if (type === 'subscription' && field.value === '') {
         field.setCustomValidity('Frequnecy is required');
       } else if (type === 'onetime-purchase' && field.value !== '') {
