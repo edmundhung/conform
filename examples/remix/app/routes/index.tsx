@@ -47,10 +47,7 @@ export default function OrderForm() {
 			initialError: formState?.error.details,
 		},
 	);
-	const [taskList, control] = useFieldList(formProps.ref, {
-		...tasks.config,
-		defaultValue: [],
-	});
+	const [taskList, control] = useFieldList(formProps.ref, tasks.config);
 
 	return (
 		<Form method="post" {...formProps}>
