@@ -49,10 +49,6 @@ export default function OrderForm() {
 	);
 	const [taskList, control] = useFieldList(formProps.ref, tasks.config);
 
-	console.log('error', formState?.error);
-	console.log('title', title.config);
-	console.log('tasks', tasks.config);
-
 	return (
 		<Form method="post" {...formProps}>
 			<fieldset>

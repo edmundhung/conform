@@ -571,4 +571,19 @@ test.describe('Nested list', () => {
 			},
 		});
 	});
+
+	test('reset internal state properly', async ({ page }) => {
+		const playground = getPlaygroundLocator(page, 'Nested list');
+		const tasks = playground.locator('ol > li');
+
+		expect(tasks).toHaveCount(1);
+
+		await playground.locator('button:text("Insert bottom")').click();
+
+		expect(tasks).toHaveCount(2);
+
+		await clickResetButton(playground);
+
+		expect(tasks).toHaveCount(1);
+	});
 });

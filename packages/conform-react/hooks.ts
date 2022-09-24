@@ -543,26 +543,6 @@ export function useFieldList<Payload = any>(
 	) as ListControl<Payload>;
 
 	useEffect(() => {
-		setEntries((prevEntries) => {
-			const nextEntries = Object.entries(config.defaultValue ?? [undefined]);
-
-			if (prevEntries.length !== nextEntries.length) {
-				return nextEntries;
-			}
-
-			for (let i = 0; i < prevEntries.length; i++) {
-				const [prevKey, prevValue] = prevEntries[i];
-				const [nextKey, nextValue] = nextEntries[i];
-
-				if (prevKey !== nextKey || prevValue !== nextValue) {
-					return nextEntries;
-				}
-			}
-
-			// No need to rerender in this case
-			return prevEntries;
-		});
-
 		const submitHandler = (event: SubmitEvent) => {
 			const form = getFormElement(ref.current);
 
@@ -608,7 +588,7 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			setEntries(Object.entries(config.defaultValue ?? []));
+			setEntries(Object.entries(config.defaultValue ?? [undefined]));
 		};
 
 		document.addEventListener('submit', submitHandler, true);
