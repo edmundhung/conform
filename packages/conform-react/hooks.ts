@@ -588,7 +588,7 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			setEntries(Object.entries(config.defaultValue ?? []));
+			setEntries(Object.entries(config.defaultValue ?? [undefined]));
 		};
 
 		document.addEventListener('submit', submitHandler, true);
