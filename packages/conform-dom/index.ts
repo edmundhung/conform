@@ -9,7 +9,7 @@ export type FieldElement =
 export interface FieldConfig<Schema = unknown> extends FieldConstraint {
 	name: string;
 	defaultValue?: FieldValue<Schema>;
-	initialError?: FieldError<Schema>['details'];
+	initialError?: Array<[string, string]>;
 	form?: string;
 }
 
@@ -20,17 +20,6 @@ export type FieldValue<Schema> = Schema extends Primitive | File
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
 	: unknown;
-
-export interface FieldError<Schema> {
-	message?: string;
-	details?: Schema extends Primitive | File
-		? never
-		: Schema extends Array<infer InnerType>
-		? Array<FieldError<InnerType>>
-		: Schema extends Record<string, any>
-		? { [Key in keyof Schema]?: FieldError<Schema[Key]> }
-		: unknown;
-}
 
 export type FieldConstraint = {
 	required?: boolean;
@@ -59,7 +48,7 @@ export type Schema<Shape extends Record<string, any>, Source> = {
 
 export interface FormState<Schema extends Record<string, any>> {
 	value: FieldValue<Schema>;
-	error: FieldError<Schema>;
+	error: Array<[string, string]>;
 }
 
 export type Submission<T extends Record<string, unknown>> =
@@ -248,7 +237,7 @@ export function createSubmission(
 				state: 'modified',
 				form: {
 					value,
-					error: {},
+					error: [],
 				},
 			};
 		}
@@ -257,9 +246,7 @@ export function createSubmission(
 			state: 'rejected',
 			form: {
 				value,
-				error: {
-					message: e instanceof Error ? e.message : 'Submission failed',
-				},
+				error: [['', e instanceof Error ? e.message : 'Submission failed']],
 			},
 		};
 	}
@@ -269,7 +256,7 @@ export function createSubmission(
 		data: value,
 		form: {
 			value,
-			error: {},
+			error: [],
 		},
 	};
 }

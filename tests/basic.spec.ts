@@ -97,7 +97,7 @@ test.describe('Native Constraint', () => {
 					genres: 'action',
 					rating: '4.5',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -186,7 +186,7 @@ test.describe('Custom Constraint', () => {
 					genres: 'sci-fi',
 					rating: '4.0',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -263,7 +263,7 @@ test.describe('Skip Validation', () => {
 					email: '',
 					password: '',
 				},
-				error: {},
+				error: [],
 			},
 		});
 
@@ -282,7 +282,7 @@ test.describe('Skip Validation', () => {
 					email: 'invalid email',
 					password: '',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -397,7 +397,7 @@ test.describe('Remote form', () => {
 					email: 'me@edmund.dev',
 					password: 'secretpassword',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -490,7 +490,7 @@ test.describe('Nested list', () => {
 						{ content: 'Ad hoc task' },
 					],
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -567,7 +567,7 @@ test.describe('Nested list', () => {
 						{ content: 'Write tests for nested list', completed: 'on' },
 					],
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});

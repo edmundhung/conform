@@ -70,7 +70,7 @@ test.describe('Type Conversion', () => {
 					timestamp: '2022-07-04T12:00Z',
 					verified: 'Yes',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
