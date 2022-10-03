@@ -297,16 +297,12 @@ export function useFieldset<Schema extends Record<string, any>>(
 	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
 	const configRef = useRef(config);
-	const [currentConfig, setCurrentConfig] = useState<{
-		name?: string;
-		form?: string;
+	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Schema>;
-		constraint: FieldsetConstraint<Schema>;
 		initialError: Record<string, Array<[string, string]> | undefined>;
 	}>(
 		// @ts-expect-error
 		() => {
-			const fieldsetConfig = config as FieldsetConfig<Schema> | undefined;
 			const initialError: Record<string, Array<[string, string]> | undefined> =
 				{};
 
@@ -326,10 +322,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			}
 
 			return {
-				name: fieldsetConfig?.name,
-				form: fieldsetConfig?.form,
-				defaultValue: fieldsetConfig?.defaultValue ?? {},
-				constraint: fieldsetConfig?.constraint ?? {},
+				defaultValue: config?.defaultValue ?? {},
 				initialError,
 			};
 		},
@@ -337,7 +330,9 @@ export function useFieldset<Schema extends Record<string, any>>(
 	const [error, setError] = useState<Record<string, string | undefined>>(() => {
 		const result: Record<string, string> = {};
 
-		for (const [key, entries] of Object.entries(currentConfig.initialError)) {
+		for (const [key, entries] of Object.entries(
+			uncontrolledState.initialError,
+		)) {
 			const [name, message] = entries?.[0] ?? [];
 
 			if (name === '') {
@@ -365,7 +360,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 				for (const field of form.elements) {
 					if (isFieldElement(field)) {
-						const key = getKey(field.name, currentConfig.name);
+						const key = getKey(field.name, configRef.current?.name);
 
 						if (key) {
 							const prevMessage = next?.[key] ?? '';
@@ -407,7 +402,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
-			const key = getKey(field.name, currentConfig.name);
+			const key = getKey(field.name, configRef.current?.name);
 
 			// Update the error only if the field belongs to the fieldset
 			if (key) {
@@ -448,11 +443,9 @@ export function useFieldset<Schema extends Record<string, any>>(
 				| FieldsetConfig<Schema>
 				| undefined;
 
-			setCurrentConfig({
-				...fieldsetConfig,
+			setUncontrolledState({
 				// @ts-expect-error
 				defaultValue: fieldsetConfig?.defaultValue ?? {},
-				constraint: fieldsetConfig?.constraint ?? {},
 				initialError: {},
 			});
 			setError({});
@@ -470,7 +463,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref, currentConfig.name]);
+	}, [ref]);
 
 	/**
 	 * This allows us constructing the field at runtime as we have no information
@@ -485,13 +478,14 @@ export function useFieldset<Schema extends Record<string, any>>(
 					return;
 				}
 
-				const constraint = currentConfig.constraint[key];
+				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
+				const constraint = fieldsetConfig.constraint?.[key];
 				const field: Field<unknown> = {
 					config: {
-						name: currentConfig.name ? `${currentConfig.name}.${key}` : key,
-						form: currentConfig.form,
-						defaultValue: currentConfig.defaultValue[key],
-						initialError: currentConfig.initialError[key],
+						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
+						form: fieldsetConfig.form,
+						defaultValue: uncontrolledState.defaultValue[key],
+						initialError: uncontrolledState.initialError[key],
 						...constraint,
 					},
 					error: error?.[key] ?? '',
@@ -543,9 +537,7 @@ export function useFieldList<Payload = any>(
 	ListControl<Payload>,
 ] {
 	const configRef = useRef(config);
-	const [currentConfig, setCurrentConfig] = useState<{
-		name?: string;
-		form?: string;
+	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Array<Payload>>;
 		initialError: Array<Array<[string, string]> | undefined>;
 	}>(() => {
@@ -567,7 +559,6 @@ export function useFieldList<Payload = any>(
 		}
 
 		return {
-			...config,
 			defaultValue: config.defaultValue ?? [],
 			initialError,
 		};
@@ -579,10 +570,10 @@ export function useFieldList<Payload = any>(
 		([key, defaultValue], index) => ({
 			key,
 			config: {
-				name: `${currentConfig.name}[${index}]`,
-				form: currentConfig.form,
-				defaultValue: defaultValue ?? currentConfig.defaultValue[index],
-				initialError: currentConfig.initialError[index],
+				name: `${config.name}[${index}]`,
+				form: config.form,
+				defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
+				initialError: uncontrolledState.initialError[index],
 			},
 		}),
 	);
@@ -626,7 +617,7 @@ export function useFieldList<Payload = any>(
 
 			const [name, command] = parseListCommand(event.submitter.value);
 
-			if (name !== currentConfig.name) {
+			if (name !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
@@ -659,8 +650,7 @@ export function useFieldList<Payload = any>(
 
 			const fieldConfig = configRef.current;
 
-			setCurrentConfig({
-				...fieldConfig,
+			setUncontrolledState({
 				defaultValue: fieldConfig.defaultValue ?? [],
 				initialError: [],
 			});
@@ -674,7 +664,7 @@ export function useFieldList<Payload = any>(
 			document.removeEventListener('submit', submitHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref, currentConfig.name]);
+	}, [ref]);
 
 	return [list, control];
 }
@@ -705,7 +695,13 @@ export function useControlledInput<
 	const ref = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<Element>(null);
 	const configRef = useRef(config);
-	const [currentConfig, setCurrentConfig] = useState(config);
+	const [uncontrolledState, setUncontrolledState] = useState<{
+		defaultValue?: FieldValue<Schema>;
+		initialError?: Array<[string, string]>;
+	}>({
+		defaultValue: config.defaultValue,
+		initialError: config.initialError,
+	});
 	const [value, setValue] = useState<string>(`${config.defaultValue ?? ''}`);
 	const handleChange: InputControl<Element>['onChange'] = (eventOrValue) => {
 		if (!ref.current) {
@@ -740,7 +736,10 @@ export function useControlledInput<
 				return;
 			}
 
-			setCurrentConfig(configRef.current);
+			setUncontrolledState({
+				defaultValue: configRef.current.defaultValue,
+				initialError: configRef.current.initialError,
+			});
 			setValue(`${configRef.current.defaultValue ?? ''}`);
 		};
 
@@ -768,7 +767,7 @@ export function useControlledInput<
 			onFocus() {
 				inputRef.current?.focus();
 			},
-			...input(currentConfig, { type: 'text' }),
+			...input({ ...config, ...uncontrolledState }, { type: 'text' }),
 		},
 		{
 			ref: inputRef,
