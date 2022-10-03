@@ -1,56 +1,70 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import { useForm, useFieldset, useFieldList, conform } from '@conform-to/react';
-import { ifNonEmptyString, resolve } from '@conform-to/zod';
+import {
+	useForm,
+	useFieldset,
+	useFieldList,
+	conform,
+	parse,
+	setFormError,
+} from '@conform-to/react';
+import { getError, ifNonEmptyString } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
+import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
 
-const Task = resolve(
-	z.object({
-		content: z.string(),
-		completed: z.preprocess(
-			ifNonEmptyString((value) => value === 'yes'),
-			z.boolean(),
-		),
-	}),
-);
+const taskSchema = z.object({
+	content: z.preprocess(ifNonEmptyString(), z.string()),
+	completed: z.preprocess((value) => value === 'yes', z.boolean()),
+});
 
-const Todo = resolve(
-	z.object({
-		title: z.string(),
-		tasks: z.array(Task.source).min(1),
-	}),
-);
+const todoSchema = z.object({
+	title: z.preprocess(ifNonEmptyString(), z.string()),
+	tasks: z.array(taskSchema).min(1),
+});
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = Todo.parse(formData);
+	const state = parse(formData);
+	const result = todoSchema.safeParse(state.value);
+	const error = !result.success
+		? state.error.concat(getError(result.error))
+		: state.error;
 
-	if (submission.state !== 'accepted') {
-		return submission.form;
+	if (error.length > 0) {
+		return json({
+			...state,
+			error,
+		});
 	}
 
-	console.log('Submission', submission.data);
+	console.log('result', result);
+	return redirect('/');
 };
 
 export default function OrderForm() {
-	const formState = useActionData<typeof action>();
-	const formProps = useForm({
-		initialReport: 'onBlur',
-		validate: Todo.validate,
-	});
-	const { title, tasks } = useFieldset<z.infer<typeof Todo.source>>(
-		formProps.ref,
-		{
-			defaultValue: formState?.value,
-			initialError: formState?.error,
+	const state = useActionData<typeof action>();
+	const form = useForm({
+		state,
+		validate(formData, form) {
+			const state = parse(formData);
+			const result = todoSchema.safeParse(state.value);
+			const error = !result.success
+				? state.error.concat(getError(result.error))
+				: state.error;
+
+			setFormError(form, error);
 		},
+	});
+	const { title, tasks } = useFieldset<z.infer<typeof todoSchema>>(
+		form.props.ref,
+		form.config,
 	);
-	const [taskList, control] = useFieldList(formProps.ref, tasks.config);
+	const [taskList, control] = useFieldList(form.props.ref, tasks.config);
 
 	return (
-		<Form method="post" {...formProps}>
+		<Form method="post" {...form.props}>
 			<fieldset>
 				<label>
 					<div>Title</div>
@@ -76,12 +90,6 @@ export default function OrderForm() {
 						</li>
 					))}
 				</ul>
-				<button
-					hidden
-					name={tasks.config.name}
-					className={tasks.error ? 'error' : ''}
-				/>
-				<div>{tasks.error}</div>
 				<div>
 					<button {...control.append()}>Add task</button>
 				</div>
@@ -91,8 +99,7 @@ export default function OrderForm() {
 	);
 }
 
-interface TaskFieldsetProps
-	extends FieldsetConfig<z.infer<typeof Task.source>> {
+interface TaskFieldsetProps extends FieldsetConfig<z.infer<typeof taskSchema>> {
 	title: string;
 }
 

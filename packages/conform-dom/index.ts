@@ -36,35 +36,11 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type Schema<Shape extends Record<string, any>, Source> = {
-	source: Source;
-	constraint: FieldsetConstraint<Shape>;
-	validate: (
-		element: HTMLFormElement,
-		submitter?: HTMLInputElement | HTMLButtonElement | null,
-	) => void;
-	parse: (payload: FormData | URLSearchParams) => Submission<Shape>;
-};
-
 export interface FormState<Schema extends Record<string, any>> {
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
+	scope?: string[];
 }
-
-export type Submission<T extends Record<string, unknown>> =
-	| {
-			state: 'modified';
-			form: FormState<T>;
-	  }
-	| {
-			state: 'rejected';
-			form: FormState<T>;
-	  }
-	| {
-			state: 'accepted';
-			data: T;
-			form: FormState<T>;
-	  };
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -77,7 +53,7 @@ export function isFieldElement(element: unknown): element is FieldElement {
 }
 
 export function getPaths(name?: string): Array<string | number> {
-	const pattern = /(\w+)\[(\d+)\]/;
+	const pattern = /(\w*)\[(\d+)\]/;
 
 	if (!name) {
 		return [];
@@ -88,6 +64,10 @@ export function getPaths(name?: string): Array<string | number> {
 
 		if (!matches) {
 			return key;
+		}
+
+		if (matches[1] === '') {
+			return Number(matches[2]);
 		}
 
 		return [matches[1], Number(matches[2])];
@@ -109,12 +89,12 @@ export function getFormData(
 
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
-		if (name === '' || path === '') {
-			return [name, path].join('');
-		}
-
 		if (typeof path === 'number') {
 			return `${name}[${path}]`;
+		}
+
+		if (name === '' || path === '') {
+			return [name, path].join('');
 		}
 
 		return [name, path].join('.');
@@ -140,12 +120,13 @@ export function getKey(
 
 export function setFormError(
 	form: HTMLFormElement,
-	errors: Array<[string, string]>,
+	error: Array<[string, string]>,
+	scope?: string[],
 ) {
-	const firstErrorByName = Object.fromEntries([...errors].reverse());
+	const firstErrorByName = Object.fromEntries([...error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element)) {
+		if (!isFieldElement(element) || (scope && !scope.includes(element.name))) {
 			continue;
 		}
 
@@ -176,31 +157,6 @@ export function setValue<T>(
 	}
 }
 
-export function flatten(
-	data: unknown,
-	prefix = '',
-): Array<[string, FormDataEntryValue]> {
-	let entries: Array<[string, FormDataEntryValue]> = [];
-
-	if (
-		typeof data === 'string' ||
-		typeof data === 'undefined' ||
-		data instanceof File
-	) {
-		entries.push([prefix, data ?? '']);
-	} else if (Array.isArray(data)) {
-		for (let i = 0; i < data.length; i++) {
-			entries.push(...flatten(data[i], `${prefix}[${i}]`));
-		}
-	} else {
-		for (const [key, value] of Object.entries(Object(data))) {
-			entries.push(...flatten(value, prefix ? `${prefix}.${key}` : key));
-		}
-	}
-
-	return entries;
-}
-
 export function unflatten(
 	entries:
 		| Array<[string, FormDataEntryValue]>
@@ -223,68 +179,6 @@ export function unflatten(
 	return result;
 }
 
-export function createSubmission(
-	payload: FormData | URLSearchParams,
-): Submission<Record<string, unknown>> {
-	let value: Record<string, unknown> = {};
-
-	try {
-		const modifiedPayload = applyListCommand(payload);
-		value = unflatten(modifiedPayload.entries());
-
-		if (payload !== modifiedPayload) {
-			return {
-				state: 'modified',
-				form: {
-					value,
-					error: [],
-				},
-			};
-		}
-	} catch (e) {
-		return {
-			state: 'rejected',
-			form: {
-				value,
-				error: [['', e instanceof Error ? e.message : 'Submission failed']],
-			},
-		};
-	}
-
-	return {
-		state: 'accepted',
-		data: value,
-		form: {
-			value,
-			error: [],
-		},
-	};
-}
-
-export function createValidate(
-	handler: (
-		field:
-			| HTMLInputElement
-			| HTMLSelectElement
-			| HTMLTextAreaElement
-			| HTMLButtonElement,
-		formData: FormData,
-	) => void,
-): (
-	form: HTMLFormElement,
-	submitter?: HTMLInputElement | HTMLButtonElement | null,
-) => void {
-	return (form, submitter) => {
-		const formData = getFormData(form, submitter);
-
-		for (const field of form.elements) {
-			if (isFieldElement(field)) {
-				handler(field, formData);
-			}
-		}
-	};
-}
-
 export function getFormElement(
 	element:
 		| HTMLFormElement
@@ -304,28 +198,113 @@ export function getFormElement(
 	return form;
 }
 
-export type ListCommand<Schema> =
-	| { type: 'prepend'; payload: { defaultValue: Schema } }
-	| { type: 'append'; payload: { defaultValue: Schema } }
-	| { type: 'replace'; payload: { defaultValue: Schema; index: number } }
-	| { type: 'remove'; payload: { index: number } }
-	| { type: 'reorder'; payload: { from: number; to: number } };
+export function focusFirstInvalidField(
+	form: HTMLFormElement,
+	scope?: string[],
+): void {
+	const currentFocus = document.activeElement;
 
-export const listCommandKey = '__conform__';
+	if (
+		!isFieldElement(currentFocus) ||
+		currentFocus.tagName !== 'BUTTON' ||
+		currentFocus.form !== form
+	) {
+		return;
+	}
 
-export function serializeListCommand<Schema>(
-	name: string,
-	{ type, payload }: ListCommand<Schema>,
-): string {
-	return [name, type, JSON.stringify(payload)].join('::');
+	for (const field of form.elements) {
+		if (isFieldElement(field)) {
+			// Focus on the first non button field
+			if (
+				!field.validity.valid &&
+				field.dataset.conformTouched &&
+				field.tagName !== 'BUTTON' &&
+				(!scope || scope.includes(field.name))
+			) {
+				field.focus();
+				break;
+			}
+		}
+	}
 }
 
-export function parseListCommand<Schema>(
-	serialized: string,
-): [string, ListCommand<Schema>] {
-	const [name, type, json] = serialized.split('::');
+export function parse(
+	payload: FormData | URLSearchParams,
+): FormState<Record<string, unknown>> {
+	let state: FormState<Record<string, unknown>> = {
+		value: {},
+		error: [],
+	};
 
-	return [name, { type: type as any, payload: JSON.parse(json) }];
+	try {
+		let controlButtonValue = payload.get(controlButtonName);
+
+		if (controlButtonValue) {
+			if (controlButtonValue instanceof File) {
+				throw new Error(
+					`The "${controlButtonName}" name could not be used for file upload`,
+				);
+			}
+
+			payload.delete(controlButtonName);
+		}
+
+		const command = controlButtonValue
+			? parseCommand(controlButtonValue)
+			: null;
+
+		state.value = unflatten(payload.entries());
+
+		if (!command) {
+			state.scope = Array.from(payload.keys());
+		} else {
+			if (isListCommand(command)) {
+				state = applyListCommand(state, command);
+			} else {
+				state.error.push(['', 'Unknown command provided']);
+			}
+		}
+	} catch (e) {
+		state.error.push([
+			'',
+			e instanceof Error ? e.message : 'Failed parsing the provided payload',
+		]);
+	}
+
+	return state;
+}
+
+export type Command = {
+	type: string;
+};
+
+export type ListCommand<Schema = unknown> =
+	| { type: 'prepend'; scope: string; payload: { defaultValue: Schema } }
+	| { type: 'append'; scope: string; payload: { defaultValue: Schema } }
+	| {
+			type: 'replace';
+			scope: string;
+			payload: { defaultValue: Schema; index: number };
+	  }
+	| { type: 'remove'; scope: string; payload: { index: number } }
+	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
+
+export const controlButtonName = '__conform__';
+
+export function parseCommand<Command extends { type: Type }, Type = string>(
+	serialized: string,
+): Command | null {
+	try {
+		const command = JSON.parse(serialized);
+
+		if (typeof command.type !== 'string') {
+			throw new Error('Invalid command');
+		}
+
+		return command;
+	} catch (e) {
+		return null;
+	}
 }
 
 export function updateList<Type>(
@@ -362,46 +341,30 @@ export function updateList<Type>(
 	return list;
 }
 
-export function applyListCommand(
-	payload: FormData | URLSearchParams,
-): FormData | URLSearchParams {
-	const command = payload.get(listCommandKey);
+export function isListCommand(command: Command): command is ListCommand {
+	return ['prepend', 'append', 'replace', 'remove', 'reorder'].includes(
+		command.type,
+	);
+}
 
-	if (!command) {
-		return payload;
-	}
+export function applyListCommand<Schema extends Record<string, unknown>>(
+	state: FormState<Schema>,
+	command: ListCommand,
+): FormState<Schema> {
+	const paths = getPaths(command.scope);
+	const value = state.value;
 
-	payload.delete(listCommandKey);
-
-	if (command instanceof File) {
-		throw new Error(
-			`The "${listCommandKey}" key could not be used for file upload`,
-		);
-	}
-
-	const result = new FormData();
-	const entries: Array<[string, FormDataEntryValue]> = [];
-	const [key, listCommand] = parseListCommand(command);
-
-	for (const [name, value] of payload) {
-		if (name.startsWith(key)) {
-			entries.push([name.replace(key, 'list'), value]);
-		} else {
-			result.append(name, value);
+	setValue(value, paths, (list) => {
+		if (!Array.isArray(list)) {
+			throw new Error('The list command can only be applied to a list');
 		}
-	}
 
-	const { list } = unflatten(entries);
+		return updateList(list, command);
+	});
 
-	if (!Array.isArray(list)) {
-		throw new Error('The list command can only be applied to a list');
-	}
-
-	updateList(list, listCommand);
-
-	for (const [name, value] of flatten(list, key)) {
-		result.append(name, value);
-	}
-
-	return result;
+	return {
+		value,
+		error: [...state.error, [controlButtonName, 'List modified']],
+		scope: [],
+	};
 }

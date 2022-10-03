@@ -1,10 +1,9 @@
 export {
 	type FormState,
 	type FieldsetConstraint,
-	type Schema,
-	type Submission,
-	createSubmission,
-	createValidate,
+	isFieldElement,
+	setFormError,
+	parse,
 } from '@conform-to/dom';
 export * from './hooks';
 export * as conform from './helpers';

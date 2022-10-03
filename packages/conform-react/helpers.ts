@@ -1,4 +1,8 @@
-import { type FieldConfig, type Primitive } from '@conform-to/dom';
+import {
+	type FieldConfig,
+	type Primitive,
+	controlButtonName,
+} from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,
@@ -24,7 +28,7 @@ export function input<Schema extends Primitive>(
 		multiple: config.multiple,
 	};
 
-	if (typeof config.initialError !== 'undefined') {
+	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;
 	}
 
@@ -51,13 +55,9 @@ export function select<Schema extends Primitive | Array<Primitive>>(
 			: `${config.defaultValue ?? ''}`,
 		required: config.required,
 		multiple: config.multiple,
-		autoFocus:
-			typeof config.initialError !== 'undefined'
-				? Boolean(config.initialError)
-				: undefined,
 	};
 
-	if (typeof config.initialError !== 'undefined') {
+	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;
 	}
 
@@ -77,7 +77,7 @@ export function textarea<Schema extends Primitive>(
 		autoFocus: Boolean(config.initialError),
 	};
 
-	if (typeof config.initialError !== 'undefined') {
+	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;
 	}
 

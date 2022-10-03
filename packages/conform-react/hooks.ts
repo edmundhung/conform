@@ -3,17 +3,20 @@ import {
 	type FieldValue,
 	type FieldElement,
 	type FieldsetConstraint,
+	type FormState,
 	type ListCommand,
 	type Primitive,
-	isFieldElement,
-	getKey,
-	listCommandKey,
-	serializeListCommand,
-	parseListCommand,
-	updateList,
+	controlButtonName,
+	focusFirstInvalidField,
+	getFormData,
 	getFormElement,
-	getPaths,
+	getKey,
 	getName,
+	getPaths,
+	isFieldElement,
+	parseCommand,
+	setFormError,
+	updateList,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -25,7 +28,7 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-export interface FormConfig {
+export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
@@ -33,6 +36,16 @@ export interface FormConfig {
 	 * Default to `onSubmit`.
 	 */
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
+
+	/**
+	 * An object representing the initial value of the form.
+	 */
+	defaultValue?: FieldValue<Schema>;
+
+	/**
+	 * An object describing the current state of the form
+	 */
+	state?: FormState<Schema>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -51,10 +64,7 @@ export interface FormConfig {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	validate?: (
-		form: HTMLFormElement,
-		submitter?: HTMLInputElement | HTMLButtonElement | null,
-	) => void;
+	validate?: (formData: FormData, form: HTMLFormElement) => void;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -72,74 +82,122 @@ interface FormProps {
 	noValidate: boolean;
 }
 
+interface Form<Schema extends Record<string, any>> {
+	props: FormProps;
+	config: FieldsetConfig<Schema>;
+}
+
 /**
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
  *
  * @see https://github.com/edmundhung/conform/tree/v0.3.1/packages/conform-react/README.md#useform
  */
-export function useForm(config: FormConfig = {}): FormProps {
-	const { validate } = config;
-
+export function useForm<Schema extends Record<string, any>>(
+	config: FormConfig<Schema> = {},
+): Form<Schema> {
+	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
+	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
+		() => {
+			const error = config.state?.error ?? [];
+			const scope = config.state?.scope;
+
+			return {
+				defaultValue: config.state?.value ?? config.defaultValue,
+				initialError: error.filter(
+					([name]) =>
+						name !== controlButtonName && (!scope || scope.includes(name)),
+				),
+			};
+		},
+	);
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
 	);
+
+	useEffect(() => {
+		configRef.current = config;
+	});
 
 	useEffect(() => {
 		setNoValidate(true);
 	}, []);
 
 	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !config.state) {
+			return;
+		}
+
+		setFormError(form, config.state.error, config.state.scope);
+
+		/**
+		 * The submit event is used to notify the other listeners
+		 * somethings might have changed. This would be captured
+		 * by the submit event listeners of `useFieldset` and
+		 * reset the error state based on the validity.
+		 */
+		const submitEvent = new SubmitEvent('submit', {
+			bubbles: true,
+			cancelable: true,
+		});
+
+		submitEvent.preventDefault();
+		form.dispatchEvent(submitEvent);
+
+		if (!form.reportValidity()) {
+			focusFirstInvalidField(form, config.state.scope);
+		}
+	}, [config.state]);
+
+	useEffect(() => {
 		// Initialize form validation messages
 		if (ref.current) {
-			validate?.(ref.current);
+			configRef.current.validate?.(new FormData(ref.current), ref.current);
 		}
 
 		// Revalidate the form when input value is changed
 		const handleInput = (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
+			const formConfig = configRef.current;
 
 			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
 			}
 
-			validate?.(form);
+			if (formConfig.initialReport === 'onChange') {
+				field.dataset.conformTouched = 'true';
+			}
 
-			if (!config.noValidate) {
-				if (config.initialReport === 'onChange') {
-					field.dataset.conformTouched = 'true';
-				}
+			formConfig.validate?.(new FormData(form), form);
 
-				// Field validity might be changed due to cross reference
-				for (const field of form.elements) {
-					if (isFieldElement(field) && field.dataset.conformTouched) {
-						// Report latest error for all touched fields
-						field.checkValidity();
-					}
-				}
+			if (!formConfig.noValidate) {
+				form.checkValidity();
 			}
 		};
 		const handleBlur = (event: FocusEvent) => {
 			const field = event.target;
 			const form = ref.current;
+			const formConfig = configRef.current;
 
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				config.noValidate ||
-				config.initialReport !== 'onBlur'
-			) {
+			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
 			}
 
-			field.dataset.conformTouched = 'true';
-			field.reportValidity();
+			if (formConfig.initialReport === 'onBlur') {
+				field.dataset.conformTouched = 'true';
+
+				if (!formConfig.noValidate) {
+					field.reportValidity();
+				}
+			}
 		};
 		const handleReset = (event: Event) => {
 			const form = ref.current;
+			const formConfig = configRef.current;
 
 			if (!form || event.target !== form) {
 				return;
@@ -152,12 +210,17 @@ export function useForm(config: FormConfig = {}): FormProps {
 				}
 			}
 
+			setFieldsetConfig({
+				defaultValue: formConfig.defaultValue,
+				initialError: [],
+			});
+
 			/**
 			 * The reset event is triggered before form reset happens.
 			 * This make sure the form to be revalidated with initial values.
 			 */
 			setTimeout(() => {
-				validate?.(form);
+				formConfig.validate?.(new FormData(form), form);
 			}, 0);
 		};
 
@@ -177,63 +240,58 @@ export function useForm(config: FormConfig = {}): FormProps {
 			document.removeEventListener('blur', handleBlur, true);
 			document.removeEventListener('reset', handleReset);
 		};
-	}, [validate, config.initialReport, config.noValidate]);
+	}, []);
 
 	return {
-		ref,
-		noValidate,
-		onSubmit(event) {
-			const form = event.currentTarget;
-			const nativeEvent = event.nativeEvent as SubmitEvent;
-			const submitter =
-				nativeEvent.submitter instanceof HTMLButtonElement ||
-				nativeEvent.submitter instanceof HTMLInputElement
-					? nativeEvent.submitter
-					: null;
+		props: {
+			ref,
+			noValidate,
+			onSubmit(event) {
+				const formConfig = configRef.current;
+				const form = event.currentTarget;
+				const nativeEvent = event.nativeEvent as SubmitEvent;
+				const submitter =
+					nativeEvent.submitter instanceof HTMLButtonElement ||
+					nativeEvent.submitter instanceof HTMLInputElement
+						? nativeEvent.submitter
+						: null;
 
-			// Validating the form with the submitter value
-			validate?.(form, submitter);
-
-			/**
-			 * It checks defaultPrevented to confirm if the submission is intentional
-			 * This is utilized by `useFieldList` to modify the list state when the submit
-			 * event is captured and revalidate the form with new fields without triggering
-			 * a form submission at the same time.
-			 */
-			if (
-				!config.noValidate &&
-				!submitter?.formNoValidate &&
-				!event.defaultPrevented
-			) {
-				let focused = false;
-
-				for (const field of form.elements) {
-					if (isFieldElement(field)) {
-						// Mark the field as touched
-						field.dataset.conformTouched = 'true';
-
-						// Focus on the first invalid field
-						if (
-							!focused &&
-							!field.validity.valid &&
-							field.tagName !== 'BUTTON'
-						) {
-							field.focus();
-							focused = true;
+				/**
+				 * It checks defaultPrevented to confirm if the submission is intentional
+				 * This is utilized by `useFieldList` to modify the list state when the submit
+				 * event is captured and revalidate the form with new fields without triggering
+				 * a form submission at the same time.
+				 */
+				if (!event.defaultPrevented) {
+					// Touch all fields only if the submitter is not a control button
+					if (submitter?.name !== controlButtonName) {
+						for (const field of form.elements) {
+							if (isFieldElement(field)) {
+								// Mark the field as touched
+								field.dataset.conformTouched = 'true';
+							}
 						}
+
+						// Validating the form with the submitter value
+						formConfig.validate?.(getFormData(form, submitter), form);
+					}
+
+					if (
+						!config.noValidate &&
+						!submitter?.formNoValidate &&
+						!event.currentTarget.reportValidity()
+					) {
+						event.preventDefault();
+						focusFirstInvalidField(form);
 					}
 				}
 
-				// Check the validity of the form
-				if (!event.currentTarget.reportValidity()) {
-					event.preventDefault();
+				if (!event.defaultPrevented) {
+					config.onSubmit?.(event);
 				}
-			}
-
-			if (!event.defaultPrevented) {
-				config.onSubmit?.(event);
-			}
+			},
 		},
+		config: fieldsetConfig,
 	};
 }
 
@@ -406,18 +464,20 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 			// Update the error only if the field belongs to the fieldset
 			if (key) {
-				setError((prev) => {
-					const prevMessage = prev?.[key] ?? '';
+				if (field.dataset.conformTouched) {
+					setError((prev) => {
+						const prevMessage = prev?.[key] ?? '';
 
-					if (prevMessage === field.validationMessage) {
-						return prev;
-					}
+						if (prevMessage === field.validationMessage) {
+							return prev;
+						}
 
-					return {
-						...prev,
-						[key]: field.validationMessage,
-					};
-				});
+						return {
+							...prev,
+							[key]: field.validationMessage,
+						};
+					});
+				}
 
 				event.preventDefault();
 			}
@@ -588,8 +648,8 @@ export function useFieldList<Payload = any>(
 			get(_target, type: any) {
 				return (payload: any = {}) => {
 					return {
-						name: listCommandKey,
-						value: serializeListCommand(config.name, { type, payload }),
+						name: controlButtonName,
+						value: JSON.stringify({ type, scope: config.name, payload }),
 						form: config.form,
 						formNoValidate: true,
 					};
@@ -610,34 +670,38 @@ export function useFieldList<Payload = any>(
 				!form ||
 				event.target !== form ||
 				!(event.submitter instanceof HTMLButtonElement) ||
-				event.submitter.name !== listCommandKey
+				event.submitter.name !== controlButtonName
 			) {
 				return;
 			}
 
-			const [name, command] = parseListCommand(event.submitter.value);
+			const command = parseCommand<ListCommand<FieldValue<Payload>>>(
+				event.submitter.value,
+			);
 
-			if (name !== configRef.current.name) {
+			if (!command || command.scope !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
 
-			switch (command.type) {
-				case 'append':
-				case 'prepend':
-				case 'replace':
-					command.payload.defaultValue = [
-						`${Date.now()}`,
-						command.payload.defaultValue,
-					];
-					break;
-			}
+			// @ts-expect-error
+			const adjustedCommand: ListCommand<
+				[string, FieldValue<Payload> | undefined]
+			> =
+				command.type === 'append' ||
+				command.type === 'prepend' ||
+				command.type === 'replace'
+					? {
+							...command,
+							payload: {
+								...command.payload,
+								defaultValue: [`${Date.now()}`, command.payload.defaultValue],
+							},
+					  }
+					: command;
 
 			setEntries((entries) =>
-				updateList(
-					[...(entries ?? [])],
-					command as ListCommand<[string, FieldValue<Payload> | undefined]>,
-				),
+				updateList([...(entries ?? [])], adjustedCommand),
 			);
 			event.preventDefault();
 		};
