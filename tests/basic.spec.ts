@@ -97,7 +97,7 @@ test.describe('Native Constraint', () => {
 					genres: 'action',
 					rating: '4.5',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -186,7 +186,7 @@ test.describe('Custom Constraint', () => {
 					genres: 'sci-fi',
 					rating: '4.0',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -263,7 +263,7 @@ test.describe('Skip Validation', () => {
 					email: '',
 					password: '',
 				},
-				error: {},
+				error: [],
 			},
 		});
 
@@ -282,7 +282,7 @@ test.describe('Skip Validation', () => {
 					email: 'invalid email',
 					password: '',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -397,7 +397,7 @@ test.describe('Remote form', () => {
 					email: 'me@edmund.dev',
 					password: 'secretpassword',
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -490,7 +490,7 @@ test.describe('Nested list', () => {
 						{ content: 'Ad hoc task' },
 					],
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -501,7 +501,7 @@ test.describe('Nested list', () => {
 		const playground = getPlaygroundLocator(page, 'Nested list');
 		const tasks = playground.locator('ol > li');
 
-		expect(tasks).toHaveCount(1);
+		await expect(tasks).toHaveCount(1);
 
 		const task0 = getTaskFieldset(tasks.nth(0), 'tasks[0]');
 		const task1 = getTaskFieldset(tasks.nth(1), 'tasks[1]');
@@ -567,7 +567,7 @@ test.describe('Nested list', () => {
 						{ content: 'Write tests for nested list', completed: 'on' },
 					],
 				},
-				error: {},
+				error: [],
 			},
 		});
 	});
@@ -576,14 +576,14 @@ test.describe('Nested list', () => {
 		const playground = getPlaygroundLocator(page, 'Nested list');
 		const tasks = playground.locator('ol > li');
 
-		expect(tasks).toHaveCount(1);
+		await expect(tasks).toHaveCount(1);
 
 		await playground.locator('button:text("Insert bottom")').click();
 
-		expect(tasks).toHaveCount(2);
+		await expect(tasks).toHaveCount(2);
 
 		await clickResetButton(playground);
 
-		expect(tasks).toHaveCount(1);
+		await expect(tasks).toHaveCount(1);
 	});
 });

@@ -1,6 +1,5 @@
 import {
 	type FieldConfig,
-	type FieldError,
 	type FieldValue,
 	type FieldElement,
 	type FieldsetConstraint,
@@ -13,6 +12,8 @@ import {
 	parseListCommand,
 	updateList,
 	getFormElement,
+	getPaths,
+	getName,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -265,7 +266,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the initial error of each field
 	 */
-	initialError?: FieldError<Schema>['details'];
+	initialError?: Array<[string, string]>;
 
 	/**
 	 * An object describing the constraint of each field
@@ -295,16 +296,55 @@ export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
+	const configRef = useRef(config);
+	const [uncontrolledState, setUncontrolledState] = useState<{
+		defaultValue: FieldValue<Schema>;
+		initialError: Record<string, Array<[string, string]> | undefined>;
+	}>(
+		// @ts-expect-error
+		() => {
+			const initialError: Record<string, Array<[string, string]> | undefined> =
+				{};
+
+			for (const [name, message] of config?.initialError ?? []) {
+				const [key, ...paths] = getPaths(name);
+
+				if (typeof key === 'string') {
+					const scopedName = getName(paths);
+					const entries = initialError[key] ?? [];
+
+					if (scopedName === '' && entries.length > 0 && entries[0][0] !== '') {
+						initialError[key] = [[scopedName, message], ...entries];
+					} else {
+						initialError[key] = [...entries, [scopedName, message]];
+					}
+				}
+			}
+
+			return {
+				defaultValue: config?.defaultValue ?? {},
+				initialError,
+			};
+		},
+	);
 	const [error, setError] = useState<Record<string, string | undefined>>(() => {
 		const result: Record<string, string> = {};
 
-		for (const [key, error] of Object.entries(config?.initialError ?? {})) {
-			if (error?.message) {
-				result[key] = error.message;
+		for (const [key, entries] of Object.entries(
+			uncontrolledState.initialError,
+		)) {
+			const [name, message] = entries?.[0] ?? [];
+
+			if (name === '') {
+				result[key] = message ?? '';
 			}
 		}
 
 		return result;
+	});
+
+	useEffect(() => {
+		configRef.current = config;
 	});
 
 	useEffect(() => {
@@ -320,7 +360,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 				for (const field of form.elements) {
 					if (isFieldElement(field)) {
-						const key = getKey(field.name, config?.name);
+						const key = getKey(field.name, configRef.current?.name);
 
 						if (key) {
 							const prevMessage = next?.[key] ?? '';
@@ -362,7 +402,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
-			const key = getKey(field.name, config?.name);
+			const key = getKey(field.name, configRef.current?.name);
 
 			// Update the error only if the field belongs to the fieldset
 			if (key) {
@@ -399,6 +439,15 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
+			const fieldsetConfig = configRef.current as
+				| FieldsetConfig<Schema>
+				| undefined;
+
+			setUncontrolledState({
+				// @ts-expect-error
+				defaultValue: fieldsetConfig?.defaultValue ?? {},
+				initialError: {},
+			});
 			setError({});
 		};
 
@@ -414,24 +463,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref, config?.name]);
-
-	useEffect(() => {
-		setError((prev) => {
-			let next = prev;
-
-			for (const [key, error] of Object.entries(config?.initialError ?? {})) {
-				if (next[key] !== error?.message) {
-					next = {
-						...next,
-						[key]: error?.message ?? '',
-					};
-				}
-			}
-
-			return next;
-		});
-	}, [config?.name, config?.initialError]);
+	}, [ref]);
 
 	/**
 	 * This allows us constructing the field at runtime as we have no information
@@ -446,17 +478,14 @@ export function useFieldset<Schema extends Record<string, any>>(
 					return;
 				}
 
-				const constraint = (config as FieldsetConfig<Schema>)?.constraint?.[
-					key
-				];
+				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
+				const constraint = fieldsetConfig.constraint?.[key];
 				const field: Field<unknown> = {
 					config: {
-						name: config?.name ? `${config.name}.${key}` : key,
-						form: config?.form,
-						defaultValue: config?.defaultValue?.[key],
-						initialError:
-							config?.initialError?.[key]?.details ??
-							config?.initialError?.[key]?.message,
+						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
+						form: fieldsetConfig.form,
+						defaultValue: uncontrolledState.defaultValue[key],
+						initialError: uncontrolledState.initialError[key],
 						...constraint,
 					},
 					error: error?.[key] ?? '',
@@ -507,6 +536,33 @@ export function useFieldList<Payload = any>(
 	}>,
 	ListControl<Payload>,
 ] {
+	const configRef = useRef(config);
+	const [uncontrolledState, setUncontrolledState] = useState<{
+		defaultValue: FieldValue<Array<Payload>>;
+		initialError: Array<Array<[string, string]> | undefined>;
+	}>(() => {
+		const initialError: Array<Array<[string, string]> | undefined> = [];
+
+		for (const [name, message] of config?.initialError ?? []) {
+			const [index, ...paths] = getPaths(name);
+
+			if (typeof index === 'number') {
+				const scopedName = getName(paths);
+				const entries = initialError[index] ?? [];
+
+				if (scopedName === '' && entries.length > 0 && entries[0][0] !== '') {
+					initialError[index] = [[scopedName, message], ...entries];
+				} else {
+					initialError[index] = [...entries, [scopedName, message]];
+				}
+			}
+		}
+
+		return {
+			defaultValue: config.defaultValue ?? [],
+			initialError,
+		};
+	});
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
@@ -514,10 +570,10 @@ export function useFieldList<Payload = any>(
 		([key, defaultValue], index) => ({
 			key,
 			config: {
-				...config,
 				name: `${config.name}[${index}]`,
-				defaultValue: defaultValue ?? config.defaultValue?.[index],
-				initialError: config.initialError?.[index]?.details,
+				form: config.form,
+				defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
+				initialError: uncontrolledState.initialError[index],
 			},
 		}),
 	);
@@ -543,6 +599,10 @@ export function useFieldList<Payload = any>(
 	) as ListControl<Payload>;
 
 	useEffect(() => {
+		configRef.current = config;
+	});
+
+	useEffect(() => {
 		const submitHandler = (event: SubmitEvent) => {
 			const form = getFormElement(ref.current);
 
@@ -557,7 +617,7 @@ export function useFieldList<Payload = any>(
 
 			const [name, command] = parseListCommand(event.submitter.value);
 
-			if (name !== config.name) {
+			if (name !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
@@ -588,7 +648,13 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			setEntries(Object.entries(config.defaultValue ?? [undefined]));
+			const fieldConfig = configRef.current;
+
+			setUncontrolledState({
+				defaultValue: fieldConfig.defaultValue ?? [],
+				initialError: [],
+			});
+			setEntries(Object.entries(fieldConfig.defaultValue ?? [undefined]));
 		};
 
 		document.addEventListener('submit', submitHandler, true);
@@ -598,7 +664,7 @@ export function useFieldList<Payload = any>(
 			document.removeEventListener('submit', submitHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref, config.name, config.defaultValue]);
+	}, [ref]);
 
 	return [list, control];
 }
@@ -625,10 +691,18 @@ interface InputControl<Element extends { focus: () => void }> {
 export function useControlledInput<
 	Element extends { focus: () => void } = HTMLInputElement,
 	Schema extends Primitive = Primitive,
->(field: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
+>(config: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
 	const ref = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<Element>(null);
-	const [value, setValue] = useState<string>(`${field.defaultValue ?? ''}`);
+	const configRef = useRef(config);
+	const [uncontrolledState, setUncontrolledState] = useState<{
+		defaultValue?: FieldValue<Schema>;
+		initialError?: Array<[string, string]>;
+	}>({
+		defaultValue: config.defaultValue,
+		initialError: config.initialError,
+	});
+	const [value, setValue] = useState<string>(`${config.defaultValue ?? ''}`);
 	const handleChange: InputControl<Element>['onChange'] = (eventOrValue) => {
 		if (!ref.current) {
 			return;
@@ -650,6 +724,32 @@ export function useControlledInput<
 		event.preventDefault();
 	};
 
+	useEffect(() => {
+		configRef.current = config;
+	});
+
+	useEffect(() => {
+		const resetHandler = (event: Event) => {
+			const form = getFormElement(ref.current);
+
+			if (!form || event.target !== form) {
+				return;
+			}
+
+			setUncontrolledState({
+				defaultValue: configRef.current.defaultValue,
+				initialError: configRef.current.initialError,
+			});
+			setValue(`${configRef.current.defaultValue ?? ''}`);
+		};
+
+		document.addEventListener('reset', resetHandler);
+
+		return () => {
+			document.removeEventListener('reset', resetHandler);
+		};
+	}, []);
+
 	return [
 		{
 			ref,
@@ -667,7 +767,7 @@ export function useControlledInput<
 			onFocus() {
 				inputRef.current?.focus();
 			},
-			...input(field, { type: 'text' }),
+			...input({ ...config, ...uncontrolledState }, { type: 'text' }),
 		},
 		{
 			ref: inputRef,

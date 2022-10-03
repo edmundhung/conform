@@ -1,31 +1,16 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type FieldError,
 	type Schema,
 	type Submission,
 	createSubmission,
 	getFormData,
-	getPaths,
 	setFormError,
-	setValue,
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
-function formatError<Schema>(error: yup.ValidationError): FieldError<Schema> {
-	const result: FieldError<Schema> = {};
-
-	for (const validationError of error.inner) {
-		setValue<string>(
-			result,
-			getPaths(validationError.path)
-				.flatMap((path) => ['details', path])
-				.concat('message'),
-			(prev) => (prev ? prev : validationError.message),
-		);
-	}
-
-	return result;
+function formatError(yupError: yup.ValidationError): Array<[string, string]> {
+	return yupError.inner.map((error) => [error.path ?? '', error.message]);
 }
 
 export function resolve<Source extends yup.AnyObjectSchema>(

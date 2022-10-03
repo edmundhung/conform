@@ -1,14 +1,12 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type FieldError,
 	type Schema,
 	type Submission,
 	createSubmission,
 	getFormData,
 	getName,
 	setFormError,
-	setValue,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -34,18 +32,13 @@ function cleanup(data: unknown): unknown {
 	}
 }
 
-function formatError<Schema>(error: z.ZodError<Schema>): FieldError<Schema> {
-	const result: FieldError<Schema> = {};
-
-	for (const issue of error.errors) {
-		setValue<string>(
-			result,
-			issue.path.flatMap((path) => ['details', path]).concat('message'),
-			(prev) => (prev ? prev : issue.message),
-		);
-	}
-
-	return result;
+function formatError<Schema>(
+	zodError: z.ZodError<Schema>,
+): Array<[string, string]> {
+	return zodError.errors.map<[string, string]>((e) => [
+		getName(e.path),
+		e.message,
+	]);
 }
 
 function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint {
