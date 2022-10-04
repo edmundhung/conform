@@ -1,8 +1,12 @@
 import { type ActionFunction } from '@remix-run/node';
 import { useActionData, Form as RemixForm } from '@remix-run/react';
-import { createSubmission, type Submission } from '@conform-to/dom';
 import { useState, useEffect, type ReactNode } from 'react';
-import { type FormConfig, useForm } from '@conform-to/react';
+import {
+	type FormConfig,
+	type FormState,
+	useForm,
+	parse as parseFormState,
+} from '@conform-to/react';
 
 export let action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
@@ -18,17 +22,23 @@ export let action: ActionFunction = async ({ request }) => {
 	};
 };
 
-interface FormProps extends FormConfig {
+interface FormProps<Schema extends Record<string, any>>
+	extends FormConfig<Schema> {
 	id: string;
 	method: 'get' | 'post';
 	children?: ReactNode;
 }
 
-export function Form({ id, method, children, ...config }: FormProps) {
-	const formProps = useForm(config);
+export function Form<Schema extends Record<string, any>>({
+	id,
+	method,
+	children,
+	...config
+}: FormProps<Schema>) {
+	const form = useForm(config);
 
 	return (
-		<RemixForm id={id} method={method} {...formProps}>
+		<RemixForm id={id} method={method} {...form.props}>
 			{children}
 		</RemixForm>
 	);
@@ -65,7 +75,7 @@ interface PlaygroundProps {
 	form: string;
 	parse?: (
 		payload: URLSearchParams | FormData,
-	) => Submission<Record<string, unknown>>;
+	) => FormState<Record<string, unknown>>;
 	children: ReactNode;
 }
 
@@ -73,7 +83,7 @@ export function Playground({
 	title,
 	description,
 	form,
-	parse = createSubmission,
+	parse = parseFormState,
 	children,
 }: PlaygroundProps) {
 	const actionData = useActionData();
@@ -93,7 +103,7 @@ export function Playground({
 		setPayload(new URLSearchParams(actionData.entries));
 	}, [actionData, form]);
 
-	const submission = payload ? parse(payload) : null;
+	const formState = payload ? parse(payload) : null;
 
 	return (
 		<section
@@ -107,17 +117,17 @@ export function Playground({
 					</h3>
 					<p className="mt-1 mb-2 text-sm text-gray-600">{description}</p>
 				</header>
-				{submission ? (
+				{formState ? (
 					<details open={true}>
 						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 ${
-								submission.state === 'rejected'
+								formState.error.length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
 						>
-							{JSON.stringify(submission, null, 2)}
+							{JSON.stringify(formState, null, 2)}
 						</pre>
 					</details>
 				) : null}

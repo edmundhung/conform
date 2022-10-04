@@ -83,22 +83,14 @@ test.describe('Native Constraint', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['title', 'description', 'genres', 'rating'],
+			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
 				genres: 'action',
 				rating: '4.5',
 			},
-			form: {
-				value: {
-					title: 'The Dark Knight',
-					description: 'When the menace known as the Joker wreaks havoc...',
-					genres: 'action',
-					rating: '4.5',
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 });
@@ -170,24 +162,15 @@ test.describe('Custom Constraint', () => {
 
 		await clickSubmitButton(playground);
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['title', 'description', 'genres', 'rating'],
+			value: {
 				title: 'The Matrix',
 				description:
 					'When a beautiful stranger leads computer hacker Neo to...',
 				genres: 'sci-fi',
 				rating: '4.0',
 			},
-			form: {
-				value: {
-					title: 'The Matrix',
-					description:
-						'When a beautiful stranger leads computer hacker Neo to...',
-					genres: 'sci-fi',
-					rating: '4.0',
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 
@@ -253,18 +236,12 @@ test.describe('Skip Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['email', 'password'],
+			value: {
 				email: '',
 				password: '',
 			},
-			form: {
-				value: {
-					email: '',
-					password: '',
-				},
-				error: [],
-			},
+			error: [],
 		});
 
 		await email.type('invalid email');
@@ -272,18 +249,12 @@ test.describe('Skip Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['email', 'password'],
+			value: {
 				email: 'invalid email',
 				password: '',
 			},
-			form: {
-				value: {
-					email: 'invalid email',
-					password: '',
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 });
@@ -387,18 +358,12 @@ test.describe('Remote form', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['email', 'password'],
+			value: {
 				email: 'me@edmund.dev',
 				password: 'secretpassword',
 			},
-			form: {
-				value: {
-					email: 'me@edmund.dev',
-					password: 'secretpassword',
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 });
@@ -415,7 +380,7 @@ test.describe('Autofocus error', () => {
 		expect(await hasFocus(email)).toBe(true);
 
 		await email.type('me@edmund.dev');
-		await email.press('Enter');
+		await clickSubmitButton(playground);
 
 		expect(await hasFocus(password)).toBe(true);
 	});
@@ -472,8 +437,13 @@ test.describe('Nested list', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: [
+				'title',
+				'tasks[0].content',
+				'tasks[1].content',
+				'tasks[2].content',
+			],
+			value: {
 				title: 'My schedule',
 				tasks: [
 					{ content: 'Urgent task' },
@@ -481,17 +451,7 @@ test.describe('Nested list', () => {
 					{ content: 'Ad hoc task' },
 				],
 			},
-			form: {
-				value: {
-					title: 'My schedule',
-					tasks: [
-						{ content: 'Urgent task' },
-						{ content: 'Daily task' },
-						{ content: 'Ad hoc task' },
-					],
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 
@@ -551,24 +511,20 @@ test.describe('Nested list', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: [
+				'title',
+				'tasks[0].content',
+				'tasks[1].content',
+				'tasks[1].completed',
+			],
+			value: {
 				title: 'Testing plan',
 				tasks: [
 					{ content: 'Write even more tests' },
 					{ content: 'Write tests for nested list', completed: 'on' },
 				],
 			},
-			form: {
-				value: {
-					title: 'Testing plan',
-					tasks: [
-						{ content: 'Write even more tests' },
-						{ content: 'Write tests for nested list', completed: 'on' },
-					],
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 

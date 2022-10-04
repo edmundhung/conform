@@ -56,22 +56,14 @@ test.describe('Type Conversion', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			state: 'accepted',
-			data: {
+			scope: ['account', 'amount', 'timestamp', 'verified'],
+			value: {
 				account: 'DE91 1000 0000 0123 4567 89',
 				amount: 123,
 				timestamp: '2022-07-04T12:00:00.000Z',
 				verified: true,
 			},
-			form: {
-				value: {
-					account: 'DE91 1000 0000 0123 4567 89',
-					amount: '123',
-					timestamp: '2022-07-04T12:00Z',
-					verified: 'Yes',
-				},
-				error: [],
-			},
+			error: [],
 		});
 	});
 });
