@@ -162,10 +162,15 @@ export function unflatten(
 		| Array<[string, FormDataEntryValue]>
 		| Iterable<[string, FormDataEntryValue]>,
 ): Record<string, unknown> {
-	const result: any = {};
+	const result: Record<string, unknown> = {};
 
-	for (let [key, value] of entries) {
-		let paths = getPaths(key);
+	for (let [name, value] of entries) {
+		let paths = getPaths(name);
+
+		// Skip empty string
+		if (value === '') {
+			continue;
+		}
 
 		setValue(result, paths, (prev) => {
 			if (prev) {

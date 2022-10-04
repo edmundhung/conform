@@ -237,10 +237,7 @@ test.describe('Skip Validation', () => {
 
 		expect(await getSubmission(playground)).toEqual({
 			scope: ['email', 'password'],
-			value: {
-				email: '',
-				password: '',
-			},
+			value: {},
 			error: [],
 		});
 
@@ -252,7 +249,6 @@ test.describe('Skip Validation', () => {
 			scope: ['email', 'password'],
 			value: {
 				email: 'invalid email',
-				password: '',
 			},
 			error: [],
 		});

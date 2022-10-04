@@ -12,25 +12,20 @@ export { action };
 
 export default function ZodIntegration() {
 	const studentSchema = z.object({
-		name: z.preprocess(
-			ifNonEmptyString(),
-			z
-				.string()
-				.min(8)
-				.max(20)
-				.regex(/^[0-9a-zA-Z]{8,20}$/),
-		),
-		remarks: z.preprocess(ifNonEmptyString(), z.string().optional()),
+		name: z
+			.string()
+			.min(8)
+			.max(20)
+			.regex(/^[0-9a-zA-Z]{8,20}$/),
+		remarks: z.string().optional(),
 		score: z.preprocess(
 			ifNonEmptyString(Number),
 			z.number().min(0).max(100).step(0.5).optional(),
 		),
-		grade: z
-			.preprocess(ifNonEmptyString(), z.enum(['A', 'B', 'C', 'D', 'E', 'F']))
-			.default('F'),
+		grade: z.enum(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
 	});
 	const paymentSchema = z.object({
-		account: z.preprocess(ifNonEmptyString(), z.string()),
+		account: z.string(),
 		amount: z.preprocess(ifNonEmptyString(Number), z.number()),
 		timestamp: z.preprocess(
 			ifNonEmptyString((value) => new Date(value)),

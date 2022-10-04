@@ -118,7 +118,7 @@ export function getError(
 }
 
 export function ifNonEmptyString(
-	fn: (value: string) => unknown = (value) => value,
+	fn: (value: string) => unknown,
 ): (value: unknown) => unknown {
 	return (value: unknown) => {
 		if (typeof value !== 'string') {
