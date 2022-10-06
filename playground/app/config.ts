@@ -23,7 +23,8 @@ const formConfig = z.object({
 			ifNonEmptyString((value) => value === 'true'),
 			z.boolean(),
 		)
-		.optional(),
+		.optional()
+		.default(true),
 });
 
 export function parseConfig(request: Request) {

@@ -11,10 +11,15 @@ import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
 
 const schema = z.object({
-	account: z.string(),
+	iban: z
+		.string()
+		.regex(
+			/^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$/,
+			'Please provide a valid IBAN',
+		),
 	amount: z.object({
-		currency: z.string(),
-		value: z.preprocess(ifNonEmptyString(Number), z.number()),
+		currency: z.enum(['USD', 'EUR', 'GBP']),
+		value: z.preprocess(ifNonEmptyString(Number), z.number().min(1)),
 	}),
 	timestamp: z.preprocess(
 		ifNonEmptyString((value) => new Date(value)),
@@ -22,7 +27,7 @@ const schema = z.object({
 	),
 	verified: z.preprocess(
 		ifNonEmptyString((value) => value === 'Yes'),
-		z.boolean(),
+		z.boolean().optional(),
 	),
 });
 
@@ -46,13 +51,13 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function PaymentForm() {
-	const config = useLoaderData();
+	const { validate, ...config } = useLoaderData();
 	const state = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
 	});
-	const { account, amount, timestamp, verified } = useFieldset(form.props.ref, {
+	const { iban, amount, timestamp, verified } = useFieldset(form.props.ref, {
 		...form.config,
 		constraint: getFieldsetConstraint(schema),
 	});
@@ -65,14 +70,15 @@ export default function PaymentForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Payment Form" formState={state}>
 				<fieldset>
-					<Field label="Account" error={account.error}>
-						<input {...conform.input(account.config, { type: 'text' })} />
+					<Field label="IBAN" error={iban.error}>
+						<input {...conform.input(iban.config, { type: 'text' })} />
 					</Field>
 					<Field label="Currency" error={currency.error}>
 						<select {...conform.select(currency.config)}>
+							<option value="">Please specify</option>
 							<option value="USD">USD</option>
 							<option value="EUR">EUR</option>
-							<option value="HKD">HKD</option>
+							<option value="GBP">GBP</option>
 						</select>
 					</Field>
 					<Field label="Value" error={value.error}>

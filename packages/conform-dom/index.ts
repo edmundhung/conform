@@ -36,7 +36,9 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export interface FormState<Schema extends Record<string, any>> {
+export interface FormState<
+	Schema extends Record<string, any> = Record<string, any>,
+> {
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
 	scope?: string[];
@@ -261,6 +263,7 @@ export function parse(
 		state.value = unflatten(payload.entries());
 
 		if (!command) {
+			console.log('setting scope', Array.from(payload.keys()));
 			state.scope = Array.from(payload.keys());
 		} else {
 			if (isListCommand(command)) {

@@ -2,8 +2,47 @@ import type { FieldConstraint } from '@conform-to/dom';
 import type { Page, Locator } from '@playwright/test';
 import { expect } from '@playwright/test';
 
-export function getPlaygroundLocator(page: Page, title: string): Locator {
-	return page.locator(`[data-playground="${title}"]`);
+interface FormConfig {
+	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
+	defaultValue?: any;
+	fallbackNative?: boolean;
+	noValidate?: boolean;
+	validate?: boolean;
+}
+
+export async function gotoForm(
+	page: Page,
+	route: string,
+	config?: FormConfig,
+): Promise<Locator> {
+	const searchParams = new URLSearchParams();
+
+	if (typeof config?.initialReport !== 'undefined') {
+		searchParams.set('initialReport', config.initialReport);
+	}
+
+	if (typeof config?.defaultValue !== 'undefined') {
+		searchParams.set('defaultValue', JSON.stringify(config.defaultValue));
+	}
+
+	if (typeof config?.fallbackNative !== 'undefined') {
+		searchParams.set(
+			'fallbackNative',
+			config.fallbackNative ? 'true' : 'false',
+		);
+	}
+
+	if (typeof config?.noValidate !== 'undefined') {
+		searchParams.set('noValidate', config.noValidate ? 'true' : 'false');
+	}
+
+	if (typeof config?.validate !== 'undefined') {
+		searchParams.set('validate', config.validate ? 'true' : 'false');
+	}
+
+	await page.goto(`${route}?${searchParams}`);
+
+	return page.locator('section');
 }
 
 export function hasFocus(locator: Locator): Promise<boolean> {
@@ -76,6 +115,22 @@ export async function getConstraint(field: Locator): Promise<FieldConstraint> {
 	});
 }
 
+export async function getFieldsetConstraint(
+	fieldset: Record<string, Locator>,
+): Promise<Record<string, FieldConstraint>> {
+	const result = await Promise.all(
+		Object.entries(fieldset).map<Promise<[string, FieldConstraint]>>(
+			async ([key, locator]) => {
+				const constraint = await getConstraint(locator);
+
+				return [key, constraint];
+			},
+		),
+	);
+
+	return Object.fromEntries(result);
+}
+
 export async function getSubmission(playground: Locator): Promise<unknown> {
 	const result = await playground.locator('pre').innerText();
 	const data = result ? JSON.parse(result) : null;
@@ -112,14 +167,16 @@ export function getStudentFieldset(playground: Locator) {
 }
 
 export function getPaymentFieldset(playground: Locator) {
-	const account = playground.locator('[name="account"]');
-	const amount = playground.locator('[name="amount"]');
+	const iban = playground.locator('[name="iban"]');
+	const currency = playground.locator('[name="amount.currency"]');
+	const value = playground.locator('[name="amount.value"]');
 	const timestamp = playground.locator('[name="timestamp"]');
 	const verified = playground.locator('[name="verified"]');
 
 	return {
-		account,
-		amount,
+		iban,
+		currency,
+		value,
 		timestamp,
 		verified,
 	};
@@ -129,6 +186,14 @@ export function getLoginFieldset(playground: Locator) {
 	return {
 		email: playground.locator('[name="email"]'),
 		password: playground.locator('[name="password"]'),
+	};
+}
+
+export function getSignupFieldset(playground: Locator) {
+	return {
+		email: playground.locator('[name="email"]'),
+		password: playground.locator('[name="password"]'),
+		confirmPassword: playground.locator('[name="confirmPassword"]'),
 	};
 }
 

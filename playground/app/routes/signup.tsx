@@ -1,6 +1,6 @@
+import type { FormState } from '@conform-to/react';
 import {
 	conform,
-	type FormState,
 	parse,
 	useFieldset,
 	useForm,
@@ -11,9 +11,10 @@ import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
 
-interface Login {
+interface Signup {
 	email: string;
 	password: string;
+	confirmPassword: string;
 }
 
 function validate(state: FormState): FormState {
@@ -25,12 +26,13 @@ function validate(state: FormState): FormState {
 		state.error.push(['password', 'Password is required']);
 	}
 
-	if (
-		state.error.length === 0 &&
-		(state.value.email !== 'me@edmund.dev' ||
-			state.value.password !== '$eCreTP@ssWord')
-	) {
-		state.error.push(['_', 'The provided email or password is not valid']);
+	if (typeof state.value.confirmPassword !== 'string') {
+		state.error.push(['confirmPassword', 'Confirm password is required']);
+	} else if (state.value.confirmPassword !== state.value.password) {
+		state.error.push([
+			'confirmPassword',
+			'The password provided does not match',
+		]);
 	}
 
 	return {
@@ -56,7 +58,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function LoginForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Login>({
+	const form = useForm<Signup>({
 		...config,
 		state,
 		validate: config.validate
@@ -68,23 +70,28 @@ export default function LoginForm() {
 			  }
 			: undefined,
 	});
-	const { email, password } = useFieldset(form.props.ref, form.config);
+	const { email, password, confirmPassword } = useFieldset(form.props.ref, {
+		...form.config,
+		form: 'signup',
+	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Login Form" formState={state}>
-				<fieldset>
-					<Field label="Email" error={email.error}>
-						<input
-							{...conform.input(email.config, { type: 'email' })}
-							autoComplete="off"
-						/>
-					</Field>
-					<Field label="Password" error={password.error}>
-						<input {...conform.input(password.config, { type: 'password' })} />
-					</Field>
-				</fieldset>
-			</Playground>
-		</Form>
+		<Playground title="Signup Form" form="signup" formState={state}>
+			<Form id="signup" method="post" {...form.props} />
+			<Field label="Email" error={email.error}>
+				<input
+					{...conform.input(email.config, { type: 'email' })}
+					autoComplete="off"
+				/>
+			</Field>
+			<Field label="Password" error={password.error}>
+				<input {...conform.input(password.config, { type: 'password' })} />
+			</Field>
+			<Field label="Confirm password" error={confirmPassword.error}>
+				<input
+					{...conform.input(confirmPassword.config, { type: 'password' })}
+				/>
+			</Field>
+		</Playground>
 	);
 }

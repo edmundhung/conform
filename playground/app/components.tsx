@@ -30,6 +30,7 @@ export function Field({ label, inline, error, children }: FieldProps) {
 interface PlaygroundProps {
 	title: string;
 	description?: string;
+	form?: string;
 	formState?: FormState<Record<string, unknown>>;
 	children: ReactNode;
 }
@@ -37,6 +38,7 @@ interface PlaygroundProps {
 export function Playground({
 	title,
 	description,
+	form,
 	formState,
 	children,
 }: PlaygroundProps) {
@@ -83,6 +85,7 @@ export function Playground({
 							type="submit"
 							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 							onClick={() => setState(null)}
+							form={form}
 						>
 							Submit
 						</button>
@@ -90,6 +93,7 @@ export function Playground({
 							type="reset"
 							className="inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 							onClick={() => setState(null)}
+							form={form}
 						>
 							Reset
 						</button>

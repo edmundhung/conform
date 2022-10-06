@@ -53,23 +53,25 @@ export default function StudentForm() {
 	const form = useForm<yup.InferType<typeof schema>>({
 		...config,
 		state,
-		validate(formData, form) {
-			const state = parse(formData);
+		validate: config.validate
+			? (formData, form) => {
+					const state = parse(formData);
 
-			try {
-				schema.validateSync(state.value, {
-					abortEarly: false,
-				});
-			} catch (error) {
-				if (error instanceof yup.ValidationError) {
-					state.error = state.error.concat(getError(error));
-				} else {
-					state.error = state.error.concat([['_', 'Validation failed']]);
-				}
-			}
+					try {
+						schema.validateSync(state.value, {
+							abortEarly: false,
+						});
+					} catch (error) {
+						if (error instanceof yup.ValidationError) {
+							state.error = state.error.concat(getError(error));
+						} else {
+							state.error = state.error.concat([['_', 'Validation failed']]);
+						}
+					}
 
-			setFormError(form, state.error);
-		},
+					setFormError(form, state.error);
+			  }
+			: undefined,
 	});
 	const { name, remarks, grade, score } = useFieldset(form.props.ref, {
 		...form.config,

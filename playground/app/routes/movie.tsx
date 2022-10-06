@@ -48,7 +48,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 	if (typeof state.value.title !== 'string') {
 		state.error.push(['title', 'Title is required']);
-	} else if (new RegExp('[0-9a-zA-Z ]{1,20}').test(state.value.title)) {
+	} else if (!state.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
 		state.error.push(['title', 'Please enter a valid title']);
 	}
 
@@ -65,7 +65,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 	if (
 		typeof state.value.rating === 'string' &&
-		Number(state.value.rating) % 0.5 === 0
+		Number(state.value.rating) % 0.5 !== 0
 	) {
 		state.error.push(['rating', 'The provided rating is invalid']);
 	}
@@ -79,9 +79,8 @@ export default function MovieForm() {
 	const form = useForm<Movie>({
 		...config,
 		state,
-		validate: !config.validate
-			? undefined
-			: (formData, form) => {
+		validate: config.validate
+			? (formData, form) => {
 					for (const field of form.elements) {
 						if (isFieldElement(field)) {
 							switch (field.name) {
@@ -118,7 +117,8 @@ export default function MovieForm() {
 							}
 						}
 					}
-			  },
+			  }
+			: undefined,
 	});
 	const { title, description, genres, rating } = useFieldset<Movie>(
 		form.props.ref,
