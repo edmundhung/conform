@@ -16,12 +16,11 @@ import {
 	getSignupFieldset,
 	hasFocus,
 	getTaskFieldset,
+	waitForFormState,
 } from './helpers';
 
-test.describe('Native Constraint', () => {
-	test('configured all input fields based on the provided constraint', async ({
-		page,
-	}) => {
+test.describe('Constraint', () => {
+	test('Manual constraint definition', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
 		const fieldset = getMovieFieldset(form);
 		const constraint = await getFieldsetConstraint(fieldset);
@@ -47,7 +46,7 @@ test.describe('Native Constraint', () => {
 		});
 	});
 
-	test('derived constraint from zod', async ({ page }) => {
+	test('Derived constraint from zod schema', async ({ page }) => {
 		const form = await gotoForm(page, '/payment');
 		const fieldset = getPaymentFieldset(form);
 		const constraint = await getFieldsetConstraint(fieldset);
@@ -71,7 +70,7 @@ test.describe('Native Constraint', () => {
 		});
 	});
 
-	test('derived constraint from yup', async ({ page }) => {
+	test('Derived constraint from yup schema', async ({ page }) => {
 		const form = await gotoForm(page, '/student');
 		const fieldset = getStudentFieldset(form);
 		const constraint = await getFieldsetConstraint(fieldset);
@@ -93,10 +92,10 @@ test.describe('Native Constraint', () => {
 			},
 		});
 	});
+});
 
-	test('report error message provided by the browser vendor', async ({
-		page,
-	}) => {
+test.describe('Client Validation', () => {
+	test('Browser validation', async ({ page }) => {
 		const form = await gotoForm(page, '/movie', { validate: false });
 		const { title, description, genres, rating } = getMovieFieldset(form);
 
@@ -136,10 +135,8 @@ test.describe('Native Constraint', () => {
 			error: [],
 		});
 	});
-});
 
-test.describe('Custom Constraint', () => {
-	test('report error messages correctly', async ({ page }) => {
+	test('Custom Validation', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
 		const { title, description, genres, rating } = getMovieFieldset(form);
 
@@ -217,9 +214,40 @@ test.describe('Custom Constraint', () => {
 		});
 	});
 
-	test('clear error messages, touched state and reset validity on reset', async ({
-		page,
-	}) => {
+	test('Associating input', async ({ page }) => {
+		const playground = await gotoForm(page, '/signup');
+		const { email, password, confirmPassword } = getSignupFieldset(playground);
+
+		await email.type('Invalid email');
+		await password.type('1234');
+		await clickSubmitButton(playground);
+
+		expect(await getErrorMessages(playground)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			expectNonEmptyString,
+		]);
+
+		await email.press('Control+a');
+		await email.type('me@edmund.dev');
+		await password.press('Control+a');
+		await password.type('secretpassword');
+		await confirmPassword.type('secretpassword');
+
+		expect(await getErrorMessages(playground)).toEqual(['', '', '']);
+
+		await clickSubmitButton(playground);
+
+		expect(await getSubmission(playground)).toEqual({
+			scope: ['email', 'password', 'confirmPassword'],
+			value: {
+				email: 'me@edmund.dev',
+			},
+			error: [],
+		});
+	});
+
+	test('Reset', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
 		const { title, description, genres, rating } = getMovieFieldset(form);
 		const initialValidationMessages = await Promise.all([
@@ -267,10 +295,8 @@ test.describe('Custom Constraint', () => {
 			]),
 		).not.toContain(true);
 	});
-});
 
-test.describe('Skip Validation', () => {
-	test('submit without providing any values', async ({ page }) => {
+	test('Submission with `noValidate: true`', async ({ page }) => {
 		const form = await gotoForm(page, '/login', { noValidate: true });
 		const { email } = getLoginFieldset(form);
 
@@ -297,113 +323,8 @@ test.describe('Skip Validation', () => {
 			error: [['password', 'Password is required']],
 		});
 	});
-});
 
-test.describe('Reporting on submit', () => {
-	test('no error would be reported before users try submitting the form', async ({
-		page,
-	}) => {
-		const form = await gotoForm(page, '/login', { initialReport: 'onSubmit' });
-		const { email, password } = getLoginFieldset(form);
-
-		await email.type('Invalid email');
-		await password.type('1234');
-
-		// To ensure it leaves the password field
-		await form.press('Tab');
-
-		expect(await getErrorMessages(form)).toEqual(['', '']);
-
-		await clickSubmitButton(form);
-
-		expect(await getErrorMessages(form)).toEqual([
-			expectNonEmptyString,
-			expectNonEmptyString,
-		]);
-	});
-});
-
-test.describe('Reporting on change', () => {
-	test('error to be reported once the users type something on the field', async ({
-		page,
-	}) => {
-		const form = await gotoForm(page, '/login', { initialReport: 'onSubmit' });
-		const { email, password } = getLoginFieldset(form);
-
-		await email.type('Invalid email');
-		expect(await getErrorMessages(form)).toEqual([expectNonEmptyString, '']);
-
-		await password.type('1234');
-		expect(await getErrorMessages(form)).toEqual([
-			expectNonEmptyString,
-			expectNonEmptyString,
-		]);
-	});
-});
-
-test.describe('Reporting on blur', () => {
-	test('error not to be reported until the users leave the field', async ({
-		page,
-	}) => {
-		const form = await gotoForm(page, '/login', { initialReport: 'onSubmit' });
-		const { email, password } = getLoginFieldset(form);
-
-		await email.type('Invalid email');
-		expect(await getErrorMessages(form)).toEqual(['', '']);
-
-		await form.press('Tab');
-		expect(await getErrorMessages(form)).toEqual([expectNonEmptyString, '']);
-
-		await password.type('1234');
-		expect(await getErrorMessages(form)).toEqual([expectNonEmptyString, '']);
-
-		await form.press('Tab');
-		expect(await getErrorMessages(form)).toEqual([
-			expectNonEmptyString,
-			expectNonEmptyString,
-		]);
-	});
-});
-
-test.describe('Remote form', () => {
-	test('validate like normal form setup', async ({ page }) => {
-		const playground = await gotoForm(page, '/signup');
-		const { email, password, confirmPassword } = getSignupFieldset(playground);
-
-		await email.type('Invalid email');
-		await password.type('1234');
-		await clickSubmitButton(playground);
-
-		expect(await getErrorMessages(playground)).toEqual([
-			expectNonEmptyString,
-			expectNonEmptyString,
-			expectNonEmptyString,
-		]);
-
-		await email.press('Control+a');
-		await email.type('me@edmund.dev');
-		await password.press('Control+a');
-		await password.type('secretpassword');
-		await confirmPassword.type('secretpassword');
-
-		expect(await getErrorMessages(playground)).toEqual(['', '', '']);
-
-		await clickSubmitButton(playground);
-
-		expect(await getSubmission(playground)).toEqual({
-			scope: ['email', 'password', 'confirmPassword'],
-			value: {
-				email: 'me@edmund.dev',
-			},
-			error: [],
-		});
-	});
-});
-
-test.describe('Autofocus error', () => {
-	test('no error would be reported before users try submitting the form', async ({
-		page,
-	}) => {
+	test('Autofocus invalid field', async ({ page }) => {
 		const form = await gotoForm(page, '/login');
 		const { email, password } = getLoginFieldset(form);
 
@@ -418,10 +339,144 @@ test.describe('Autofocus error', () => {
 	});
 });
 
-test.describe('Nested list', () => {
-	test('validating new inputs correctly', async ({ page }) => {
+test.describe('Server Validation', () => {
+	test('Error reporting', async ({ page }) => {
+		const form = await gotoForm(page, '/login', {
+			validate: false,
+			noValidate: true,
+		});
+		const { email } = getLoginFieldset(form);
+
+		await clickSubmitButton(form);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'Email is required',
+			'Password is required',
+		]);
+
+		await email.type('me@edmund.dev');
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+
+		expect(await getErrorMessages(form)).toEqual(['', 'Password is required']);
+	});
+
+	test('Autofocus invalid field', async ({ page }) => {
+		const form = await gotoForm(page, '/login', {
+			validate: false,
+			noValidate: true,
+		});
+		const { email, password } = getLoginFieldset(form);
+
+		await clickSubmitButton(form);
+
+		expect(await hasFocus(email)).toBe(true);
+
+		await email.type('me@edmund.dev');
+		await clickSubmitButton(form);
+
+		expect(await hasFocus(password)).toBe(true);
+	});
+});
+
+test.describe('Error Reporting', () => {
+	test('initialReport: onSubmit', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', { initialReport: 'onSubmit' });
+		const { email, password, confirmPassword } = getSignupFieldset(form);
+
+		await email.type('Invalid email');
+		await password.type('1234');
+		await confirmPassword.type('5678');
+
+		// To ensure it leaves the last field
+		await form.press('Tab');
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+
+		await clickSubmitButton(form);
+
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			expectNonEmptyString,
+		]);
+	});
+
+	test('initialReport: onChange', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', { initialReport: 'onChange' });
+		const { email, password, confirmPassword } = getSignupFieldset(form);
+
+		await email.type('Invalid email');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			'',
+			'',
+		]);
+
+		await password.type('1234');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+		]);
+
+		await confirmPassword.type('5678');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			expectNonEmptyString,
+		]);
+	});
+
+	test('initialReport: onBlur', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', { initialReport: 'onBlur' });
+		const { email, password, confirmPassword } = getSignupFieldset(form);
+
+		await email.type('Invalid email');
+		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+
+		await form.press('Tab');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			'',
+			'',
+		]);
+
+		await password.type('1234');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			'',
+			'',
+		]);
+
+		await form.press('Tab');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+		]);
+
+		await confirmPassword.type('5678');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			'',
+		]);
+
+		await form.press('Tab');
+		expect(await getErrorMessages(form)).toEqual([
+			expectNonEmptyString,
+			expectNonEmptyString,
+			expectNonEmptyString,
+		]);
+	});
+});
+
+test.describe('Field list', () => {
+	test('Client Validation', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
+
+		await clickSubmitButton(form);
 
 		expect(await getErrorMessages(form)).toEqual([
 			expectNonEmptyString,
@@ -485,9 +540,7 @@ test.describe('Nested list', () => {
 		});
 	});
 
-	test('manipulating the list with different control commands', async ({
-		page,
-	}) => {
+	test('Control buttons', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 
@@ -558,7 +611,7 @@ test.describe('Nested list', () => {
 		});
 	});
 
-	test('reset internal state properly', async ({ page }) => {
+	test('Reset', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 

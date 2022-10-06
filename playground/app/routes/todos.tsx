@@ -2,6 +2,7 @@ import type { FieldsetConfig } from '@conform-to/react';
 import {
 	conform,
 	parse,
+	setFormError,
 	useFieldList,
 	useFieldset,
 	useForm,
@@ -47,11 +48,24 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function TodosForm() {
-	const { validate, ...config } = useLoaderData();
+	const config = useLoaderData();
 	const state = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
+		validate: config.validate
+			? (formData, form) => {
+					const state = parse(formData);
+					const result = schema.safeParse(state.value);
+					const error = !result.success
+						? state.error.concat(getError(result.error))
+						: state.error;
+
+					console.log(error);
+
+					setFormError(form, error);
+			  }
+			: undefined,
 	});
 
 	return (

@@ -45,7 +45,13 @@ const config: PlaywrightTestConfig = {
 	/* Configure projects for major browsers */
 	projects: [
 		{
+			name: 'node',
+			testMatch: /conform-\w+.spec.ts/,
+		},
+
+		{
 			name: 'chromium',
+			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Chrome'],
 			},
@@ -53,6 +59,7 @@ const config: PlaywrightTestConfig = {
 
 		{
 			name: 'firefox',
+			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Firefox'],
 			},
@@ -60,6 +67,7 @@ const config: PlaywrightTestConfig = {
 
 		{
 			name: 'webkit',
+			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Safari'],
 			},
@@ -101,6 +109,7 @@ const config: PlaywrightTestConfig = {
 	webServer: {
 		command: 'npm start --workspace=playground',
 		port: process.env.PORT ? Number(process.env.PORT) : 3000,
+		reuseExistingServer: !process.env.CI,
 	},
 };
 

@@ -10,7 +10,6 @@ import {
 	focusFirstInvalidField,
 	getFormData,
 	getFormElement,
-	getKey,
 	getName,
 	getPaths,
 	isFieldElement,
@@ -416,11 +415,17 @@ export function useFieldset<Schema extends Record<string, any>>(
 			setError((prev) => {
 				let next = prev;
 
-				for (const field of form.elements) {
-					if (isFieldElement(field)) {
-						const key = getKey(field.name, configRef.current?.name);
+				const fieldsetName = configRef.current?.name ?? '';
 
-						if (key) {
+				for (const field of form.elements) {
+					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
+						const [key, ...paths] = getPaths(
+							fieldsetName.length > 0
+								? field.name.slice(fieldsetName.length + 1)
+								: field.name,
+						);
+
+						if (typeof key === 'string' && paths.length === 0) {
 							const prevMessage = next?.[key] ?? '';
 							const nextMessage = field.validationMessage;
 
@@ -455,15 +460,25 @@ export function useFieldset<Schema extends Record<string, any>>(
 		const invalidHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const field = event.target;
+			const fieldsetName = configRef.current?.name ?? '';
 
-			if (!form || !isFieldElement(field) || field.form !== form) {
+			if (
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				!field.name.startsWith(fieldsetName)
+			) {
 				return;
 			}
 
-			const key = getKey(field.name, configRef.current?.name);
+			const [key, ...paths] = getPaths(
+				fieldsetName.length > 0
+					? field.name.slice(fieldsetName.length + 1)
+					: field.name,
+			);
 
 			// Update the error only if the field belongs to the fieldset
-			if (key) {
+			if (typeof key === 'string' && paths.length === 0) {
 				if (field.dataset.conformTouched) {
 					setError((prev) => {
 						const prevMessage = prev?.[key] ?? '';

@@ -1,5 +1,5 @@
 import type { FieldConstraint } from '@conform-to/dom';
-import type { Page, Locator } from '@playwright/test';
+import type { Page, Locator, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 interface FormConfig {
@@ -47,6 +47,26 @@ export async function gotoForm(
 
 export function hasFocus(locator: Locator): Promise<boolean> {
 	return locator.evaluate((el) => el === document.activeElement);
+}
+
+export async function waitForFormState(page: Page): Promise<Response> {
+	return await page.waitForResponse(async (response) => {
+		try {
+			const result = await response.json();
+
+			if (
+				typeof result.value === 'undefined' ||
+				typeof result.error === 'undefined' ||
+				typeof result.scope === 'undefined'
+			) {
+				return false;
+			}
+		} catch (e) {
+			return false;
+		}
+
+		return true;
+	});
 }
 
 export async function clickSubmitButton(playground: Locator): Promise<void> {
@@ -204,4 +224,4 @@ export function getTaskFieldset(fieldset: Locator, name: string) {
 	};
 }
 
-export const expectNonEmptyString = expect.stringMatching(/^$|\s/);
+export const expectNonEmptyString = expect.stringMatching(/\w+/);

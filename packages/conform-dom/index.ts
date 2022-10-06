@@ -54,7 +54,7 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
-export function getPaths(name?: string): Array<string | number> {
+export function getPaths(name: string): Array<string | number> {
 	const pattern = /(\w*)\[(\d+)\]/;
 
 	if (!name) {
@@ -101,23 +101,6 @@ export function getName(paths: Array<string | number>): string {
 
 		return [name, path].join('.');
 	}, '');
-}
-
-export function getKey(
-	fieldName: string,
-	fieldsetName: string = '',
-): string | null {
-	const name =
-		fieldsetName === '' || fieldName.startsWith(fieldsetName)
-			? fieldName.slice(fieldsetName ? fieldsetName.length + 1 : 0)
-			: '';
-	const paths = getPaths(name);
-
-	if (paths.length > 1) {
-		return null;
-	}
-
-	return typeof paths[0] === 'string' ? paths[0] : null;
 }
 
 export function setFormError(
@@ -169,14 +152,13 @@ export function unflatten(
 	for (let [name, value] of entries) {
 		let paths = getPaths(name);
 
-		// Skip empty string
-		if (value === '') {
-			continue;
-		}
-
 		setValue(result, paths, (prev) => {
 			if (prev) {
 				throw new Error('Entry with the same name is not supported');
+			}
+
+			if (value === '') {
+				return undefined;
 			}
 
 			return value;
@@ -256,26 +238,24 @@ export function parse(
 			payload.delete(controlButtonName);
 		}
 
+		state.value = unflatten(payload.entries());
+		state.scope = Array.from(payload.keys());
+
 		const command = controlButtonValue
 			? parseCommand(controlButtonValue)
 			: null;
 
-		state.value = unflatten(payload.entries());
-
-		if (!command) {
-			console.log('setting scope', Array.from(payload.keys()));
-			state.scope = Array.from(payload.keys());
-		} else {
+		if (command) {
 			if (isListCommand(command)) {
 				state = applyListCommand(state, command);
 			} else {
-				state.error.push(['', 'Unknown command provided']);
+				state.error.push(['', 'Unknown command received']);
 			}
 		}
 	} catch (e) {
 		state.error.push([
 			'',
-			e instanceof Error ? e.message : 'Failed parsing the provided payload',
+			e instanceof Error ? e.message : 'Invalid payload received',
 		]);
 	}
 
@@ -311,7 +291,8 @@ export function parseCommand<Command extends { type: Type }, Type = string>(
 
 		return command;
 	} catch (e) {
-		return null;
+		console.warn(`Invalid command received: ${e}`);
+		throw new Error('Invalid command received');
 	}
 }
 

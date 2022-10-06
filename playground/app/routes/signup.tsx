@@ -24,6 +24,8 @@ function validate(state: FormState): FormState {
 
 	if (typeof state.value.password !== 'string') {
 		state.error.push(['password', 'Password is required']);
+	} else if (state.value.password.length < 8) {
+		state.error.push(['password', 'Password is too short']);
 	}
 
 	if (typeof state.value.confirmPassword !== 'string') {
