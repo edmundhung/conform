@@ -2,31 +2,6 @@ import type { FormState } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
-interface FieldProps {
-	label: string;
-	inline?: boolean;
-	error?: string;
-	children: ReactNode;
-}
-
-export function Field({ label, inline, error, children }: FieldProps) {
-	return (
-		<label className="mb-4 block">
-			<div
-				className={
-					inline
-						? 'flex flex-row justify-between items-center gap-8 whitespace-nowrap'
-						: ''
-				}
-			>
-				<div className="block text-sm font-medium text-gray-700">{label}</div>
-				{children}
-			</div>
-			<p className="my-1 text-pink-600 text-sm">{error}</p>
-		</label>
-	);
-}
-
 interface PlaygroundProps {
 	title: string;
 	description?: string;
@@ -64,7 +39,7 @@ export function Playground({
 					<details open={true}>
 						<summary>Form State</summary>
 						<pre
-							className={`m-4 border-l-4 ${
+							className={`m-4 border-l-4 overflow-x-scroll ${
 								state.error.length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
@@ -101,5 +76,49 @@ export function Playground({
 				</main>
 			</div>
 		</section>
+	);
+}
+
+interface FieldProps {
+	label: string;
+	inline?: boolean;
+	error?: string;
+	children: ReactNode;
+}
+
+export function Field({ label, inline, error, children }: FieldProps) {
+	return (
+		<label className="mb-4 block">
+			<div
+				className={
+					inline
+						? 'flex flex-row justify-between items-center gap-8 whitespace-nowrap'
+						: ''
+				}
+			>
+				<div className="block text-sm font-medium text-gray-700">{label}</div>
+				{children}
+			</div>
+			<p className="my-1 text-pink-600 text-sm">{error}</p>
+		</label>
+	);
+}
+
+interface AlertProps {
+	message: string;
+}
+
+export function Alert({ message }: AlertProps) {
+	return (
+		<label
+			className={
+				message
+					? 'flex gap-4 bg-red-100 text-red-500 text-sm p-4 mb-4 rounded'
+					: 'hidden'
+			}
+		>
+			<span>❌</span>
+			<p>{message}</p>
+		</label>
 	);
 }

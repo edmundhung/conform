@@ -1,3 +1,4 @@
+import type { FormState } from '@conform-to/react';
 import {
 	conform,
 	parse,
@@ -24,14 +25,7 @@ const schema = yup.object({
 	grade: yup.string().oneOf(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
 });
 
-export let loader = async ({ request }: LoaderArgs) => {
-	return parseConfig(request);
-};
-
-export let action = async ({ request }: ActionArgs) => {
-	const formData = await request.formData();
-	const state = parse(formData);
-
+function validate(state: FormState): FormState {
 	try {
 		state.value = schema.validateSync(state.value, {
 			abortEarly: false,
@@ -40,11 +34,22 @@ export let action = async ({ request }: ActionArgs) => {
 		if (error instanceof yup.ValidationError) {
 			state.error = state.error.concat(getError(error));
 		} else {
-			state.error = state.error.concat([['_', 'Validation failed']]);
+			state.error = state.error.concat([['', 'Validation failed']]);
 		}
 	}
 
 	return state;
+}
+
+export let loader = async ({ request }: LoaderArgs) => {
+	return parseConfig(request);
+};
+
+export let action = async ({ request }: ActionArgs) => {
+	const formData = await request.formData();
+	const state = parse(formData);
+
+	return validate(state);
 };
 
 export default function StudentForm() {
@@ -56,24 +61,13 @@ export default function StudentForm() {
 		validate: config.validate
 			? (formData, form) => {
 					const state = parse(formData);
+					const result = validate(state);
 
-					try {
-						schema.validateSync(state.value, {
-							abortEarly: false,
-						});
-					} catch (error) {
-						if (error instanceof yup.ValidationError) {
-							state.error = state.error.concat(getError(error));
-						} else {
-							state.error = state.error.concat([['_', 'Validation failed']]);
-						}
-					}
-
-					setFormError(form, state.error);
+					setFormError(form, result.error);
 			  }
 			: undefined,
 	});
-	const { name, remarks, grade, score } = useFieldset(form.props.ref, {
+	const { name, remarks, grade, score } = useFieldset(form.ref, {
 		...form.config,
 		constraint: getFieldsetConstraint(schema),
 	});

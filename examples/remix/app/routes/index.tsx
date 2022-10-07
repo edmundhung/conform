@@ -58,10 +58,10 @@ export default function OrderForm() {
 		},
 	});
 	const { title, tasks } = useFieldset<z.infer<typeof todoSchema>>(
-		form.props.ref,
+		form.ref,
 		form.config,
 	);
-	const [taskList, control] = useFieldList(form.props.ref, tasks.config);
+	const [taskList, control] = useFieldList(form.ref, tasks.config);
 
 	return (
 		<Form method="post" {...form.props}>

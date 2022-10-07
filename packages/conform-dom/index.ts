@@ -41,7 +41,7 @@ export interface FormState<
 > {
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
-	scope?: string[];
+	touched?: string[];
 }
 
 export function isFieldElement(element: unknown): element is FieldElement {
@@ -106,12 +106,15 @@ export function getName(paths: Array<string | number>): string {
 export function setFormError(
 	form: HTMLFormElement,
 	error: Array<[string, string]>,
-	scope?: string[],
+	touched?: string[],
 ) {
 	const firstErrorByName = Object.fromEntries([...error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element) || (scope && !scope.includes(element.name))) {
+		if (
+			!isFieldElement(element) ||
+			(touched && !touched.includes(element.name))
+		) {
 			continue;
 		}
 
@@ -189,7 +192,7 @@ export function getFormElement(
 
 export function focusFirstInvalidField(
 	form: HTMLFormElement,
-	scope?: string[],
+	touched?: string[],
 ): void {
 	const currentFocus = document.activeElement;
 
@@ -208,7 +211,7 @@ export function focusFirstInvalidField(
 				!field.validity.valid &&
 				field.dataset.conformTouched &&
 				field.tagName !== 'BUTTON' &&
-				(!scope || scope.includes(field.name))
+				(!touched || touched.includes(field.name))
 			) {
 				field.focus();
 				break;
@@ -239,7 +242,6 @@ export function parse(
 		}
 
 		state.value = unflatten(payload.entries());
-		state.scope = Array.from(payload.keys());
 
 		const command = controlButtonValue
 			? parseCommand(controlButtonValue)
@@ -354,6 +356,6 @@ export function applyListCommand<Schema extends Record<string, unknown>>(
 	return {
 		value,
 		error: [...state.error, [controlButtonName, 'List modified']],
-		scope: [],
+		touched: [command.scope, ...(state.touched ?? [])],
 	};
 }

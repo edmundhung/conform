@@ -27,7 +27,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -44,7 +43,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['account', 'amount.currency', 'amount.value', 'reference'],
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -64,12 +62,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: [
-					'title',
-					'tasks[0].content',
-					'tasks[0].completed',
-					'tasks[1].content',
-				],
 				value: {
 					tasks: [
 						{ content: 'Test some stuffs', completed: 'Yes' },
@@ -89,7 +81,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -107,7 +98,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['title'],
 				value: {
 					title: 'Test command',
 				},
@@ -121,7 +111,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['title'],
 				value: {},
 				error: [['', 'Invalid command received']],
 			});
@@ -133,7 +122,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['title'],
 				value: {},
 				error: [['', 'Unknown command received']],
 			});
@@ -145,7 +133,7 @@ test.describe('conform-dom', () => {
 				['tasks[0].completed', 'Yes'],
 			];
 			const result = {
-				scope: [],
+				touched: ['tasks'],
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},

@@ -126,7 +126,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['title', 'description', 'genres', 'rating'],
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
@@ -203,7 +202,6 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
-			scope: ['title', 'description', 'genres', 'rating'],
 			value: {
 				title: 'The Matrix',
 				description:
@@ -240,7 +238,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			scope: ['email', 'password', 'confirmPassword'],
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -304,7 +301,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['email', 'password'],
 			value: {},
 			error: [
 				['email', 'Email is required'],
@@ -317,7 +313,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['email', 'password'],
 			value: {
 				email: 'invalid email',
 			},
@@ -346,11 +341,12 @@ test.describe('Server Validation', () => {
 			validate: false,
 			noValidate: true,
 		});
-		const { email } = getLoginFieldset(form);
+		const { email, password } = getLoginFieldset(form);
 
 		await clickSubmitButton(form);
 
 		expect(await getErrorMessages(form)).toEqual([
+			'',
 			'Email is required',
 			'Password is required',
 		]);
@@ -358,7 +354,24 @@ test.describe('Server Validation', () => {
 		await email.type('me@edmund.dev');
 		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual(['', 'Password is required']);
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Password is required',
+		]);
+
+		await password.type('SecretPassword');
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		expect(await getErrorMessages(form)).toEqual([
+			'The provided email or password is not valid',
+			'',
+			'',
+		]);
+
+		await password.press('Control+a');
+		await password.type('$eCreTP@ssWord');
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		expect(await getErrorMessages(form)).toEqual(['', '', '']);
 	});
 
 	test('Autofocus invalid field', async ({ page }) => {
@@ -368,7 +381,7 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await clickSubmitButton(form);
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
 
 		expect(await hasFocus(email)).toBe(true);
 
@@ -523,12 +536,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'title',
-				'tasks[0].content',
-				'tasks[1].content',
-				'tasks[2].content',
-			],
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -595,12 +602,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'title',
-				'tasks[0].content',
-				'tasks[1].content',
-				'tasks[1].completed',
-			],
 			value: {
 				title: 'Testing plan',
 				tasks: [
@@ -638,21 +639,32 @@ test.describe('No JS', () => {
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
 		expect(await getErrorMessages(form)).toEqual([
+			'',
 			'Email is required',
 			'Password is required',
 		]);
 
 		await email.type('me@edmund.dev');
-		await password.type('$eCreTP@ssWord');
+		await password.type('SecretPassword');
 
 		expect(await getErrorMessages(form)).toEqual([
+			'',
 			'Email is required',
 			'Password is required',
 		]);
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual(['', '']);
+		expect(await getErrorMessages(form)).toEqual([
+			'The provided email or password is not valid',
+			'',
+			'',
+		]);
+
+		await password.type('$eCreTP@ssWord');
+		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '']);
 	});
 
 	test('List Command', async ({ page }) => {

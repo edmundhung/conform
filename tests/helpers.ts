@@ -56,8 +56,7 @@ export async function waitForFormState(page: Page): Promise<Response> {
 
 			if (
 				typeof result.value === 'undefined' ||
-				typeof result.error === 'undefined' ||
-				typeof result.scope === 'undefined'
+				typeof result.error === 'undefined'
 			) {
 				return false;
 			}

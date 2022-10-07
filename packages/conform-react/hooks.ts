@@ -82,6 +82,8 @@ interface FormProps {
 }
 
 interface Form<Schema extends Record<string, any>> {
+	ref: RefObject<HTMLFormElement>;
+	error: string;
 	props: FormProps;
 	config: FieldsetConfig<Schema>;
 }
@@ -97,16 +99,23 @@ export function useForm<Schema extends Record<string, any>>(
 ): Form<Schema> {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
+	const [error, setError] = useState<string>(() => {
+		const [, message] = config.state?.error?.find(([key]) => key === '') ?? [];
+
+		return message ?? '';
+	});
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
 			const error = config.state?.error ?? [];
-			const scope = config.state?.scope;
+			const touched = config.state?.touched;
 
 			return {
 				defaultValue: config.state?.value ?? config.defaultValue,
 				initialError: error.filter(
 					([name]) =>
-						name !== controlButtonName && (!scope || scope.includes(name)),
+						name !== '' &&
+						name !== controlButtonName &&
+						(!touched || touched.includes(name)),
 				),
 			};
 		},
@@ -130,7 +139,7 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		setFormError(form, config.state.error, config.state.scope);
+		setFormError(form, config.state.error, config.state.touched);
 
 		/**
 		 * The submit event is used to notify the other listeners
@@ -147,7 +156,7 @@ export function useForm<Schema extends Record<string, any>>(
 		form.dispatchEvent(submitEvent);
 
 		if (!form.reportValidity()) {
-			focusFirstInvalidField(form, config.state.scope);
+			focusFirstInvalidField(form, config.state.touched);
 		}
 	}, [config.state]);
 
@@ -194,6 +203,25 @@ export function useForm<Schema extends Record<string, any>>(
 				}
 			}
 		};
+		const handleInvalid = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const field = event.target;
+
+			if (
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				field.name !== ''
+			) {
+				return;
+			}
+
+			event.preventDefault();
+
+			if (field.dataset.conformTouched) {
+				setError(field.validationMessage);
+			}
+		};
 		const handleReset = (event: Event) => {
 			const form = ref.current;
 			const formConfig = configRef.current;
@@ -209,6 +237,7 @@ export function useForm<Schema extends Record<string, any>>(
 				}
 			}
 
+			setError('');
 			setFieldsetConfig({
 				defaultValue: formConfig.defaultValue,
 				initialError: [],
@@ -232,16 +261,20 @@ export function useForm<Schema extends Record<string, any>>(
 		 */
 		document.addEventListener('input', handleInput, true);
 		document.addEventListener('blur', handleBlur, true);
+		document.addEventListener('invalid', handleInvalid, true);
 		document.addEventListener('reset', handleReset);
 
 		return () => {
 			document.removeEventListener('input', handleInput, true);
 			document.removeEventListener('blur', handleBlur, true);
+			document.removeEventListener('invalid', handleInvalid, true);
 			document.removeEventListener('reset', handleReset);
 		};
 	}, []);
 
 	return {
+		ref,
+		error,
 		props: {
 			ref,
 			noValidate,
@@ -254,6 +287,13 @@ export function useForm<Schema extends Record<string, any>>(
 					nativeEvent.submitter instanceof HTMLInputElement
 						? nativeEvent.submitter
 						: null;
+
+				for (const element of form.elements) {
+					if (isFieldElement(element) && element.name === '') {
+						setError(element.validationMessage);
+						break;
+					}
+				}
 
 				/**
 				 * It checks defaultPrevented to confirm if the submission is intentional

@@ -120,13 +120,10 @@ export default function MovieForm() {
 			  }
 			: undefined,
 	});
-	const { title, description, genres, rating } = useFieldset<Movie>(
-		form.props.ref,
-		{
-			...form.config,
-			constraint,
-		},
-	);
+	const { title, description, genres, rating } = useFieldset<Movie>(form.ref, {
+		...form.config,
+		constraint,
+	});
 
 	return (
 		<Form method="post" {...form.props}>

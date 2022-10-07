@@ -37,13 +37,7 @@ function validate(state: FormState): FormState {
 		]);
 	}
 
-	return {
-		...state,
-		value: {
-			email: state.value.email,
-			// Never send the password back to the client
-		},
-	};
+	return state;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -52,9 +46,15 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const state = validate(parse(formData));
 
-	return validate(state);
+	return {
+		...state,
+		value: {
+			email: state.value.email,
+			// Never send the password back to the client
+		},
+	};
 };
 
 export default function LoginForm() {
@@ -72,7 +72,7 @@ export default function LoginForm() {
 			  }
 			: undefined,
 	});
-	const { email, password, confirmPassword } = useFieldset(form.props.ref, {
+	const { email, password, confirmPassword } = useFieldset(form.ref, {
 		...form.config,
 		form: 'signup',
 	});

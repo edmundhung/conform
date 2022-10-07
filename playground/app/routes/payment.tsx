@@ -57,11 +57,11 @@ export default function PaymentForm() {
 		...config,
 		state,
 	});
-	const { iban, amount, timestamp, verified } = useFieldset(form.props.ref, {
+	const { iban, amount, timestamp, verified } = useFieldset(form.ref, {
 		...form.config,
 		constraint: getFieldsetConstraint(schema),
 	});
-	const { currency, value } = useFieldset(form.props.ref, {
+	const { currency, value } = useFieldset(form.ref, {
 		...amount.config,
 		constraint: getFieldsetConstraint(schema.shape.amount),
 	});
