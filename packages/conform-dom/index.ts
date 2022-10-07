@@ -106,15 +106,12 @@ export function getName(paths: Array<string | number>): string {
 export function setFormError(
 	form: HTMLFormElement,
 	error: Array<[string, string]>,
-	touched?: string[],
+	shouldUpdateField: (field: FieldElement) => boolean = () => true,
 ) {
 	const firstErrorByName = Object.fromEntries([...error].reverse());
 
 	for (const element of form.elements) {
-		if (
-			!isFieldElement(element) ||
-			(touched && !touched.includes(element.name))
-		) {
+		if (!isFieldElement(element) || !shouldUpdateField(element)) {
 			continue;
 		}
 
@@ -192,7 +189,7 @@ export function getFormElement(
 
 export function focusFirstInvalidField(
 	form: HTMLFormElement,
-	touched?: string[],
+	fields?: string[],
 ): void {
 	const currentFocus = document.activeElement;
 
@@ -211,7 +208,7 @@ export function focusFirstInvalidField(
 				!field.validity.valid &&
 				field.dataset.conformTouched &&
 				field.tagName !== 'BUTTON' &&
-				(!touched || touched.includes(field.name))
+				(!fields || fields.includes(field.name))
 			) {
 				field.focus();
 				break;

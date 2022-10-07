@@ -61,8 +61,6 @@ export default function TodosForm() {
 						? state.error.concat(getError(result.error))
 						: state.error;
 
-					console.log(error);
-
 					setFormError(form, error);
 			  }
 			: undefined,

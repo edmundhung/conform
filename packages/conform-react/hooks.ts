@@ -139,7 +139,12 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		setFormError(form, config.state.error, config.state.touched);
+		setFormError(
+			form,
+			config.state.error,
+			(field) =>
+				!config.state?.touched || config.state.touched.includes(field.name),
+		);
 
 		/**
 		 * The submit event is used to notify the other listeners

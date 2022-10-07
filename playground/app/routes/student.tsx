@@ -27,7 +27,7 @@ const schema = yup.object({
 
 function validate(state: FormState): FormState {
 	try {
-		state.value = schema.validateSync(state.value, {
+		schema.validateSync(state.value, {
 			abortEarly: false,
 		});
 	} catch (error) {
