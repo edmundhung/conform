@@ -217,10 +217,22 @@ export function getSignupFieldset(playground: Locator) {
 	};
 }
 
-export function getTaskFieldset(fieldset: Locator, name: string) {
+export function getTodosFieldset(playground: Locator) {
 	return {
-		content: fieldset.locator(`[name="${name}.content"]`),
-		completed: fieldset.locator(`[name="${name}.completed"]`),
+		title: playground.locator('[name="title"]'),
+		tasks: playground.locator('ol > li'),
+		insertTop: playground.locator('button:text("Insert top")'),
+		insertBottom: playground.locator('button:text("Insert bottom")'),
+	};
+}
+
+export function getTaskFieldset(list: Locator, name: string, index: number) {
+	return {
+		content: list.nth(index).locator(`[name="${name}[${index}].content"]`),
+		completed: list.nth(index).locator(`[name="${name}[${index}].completed"]`),
+		delete: list.nth(index).locator('button:text("Delete")'),
+		clear: list.nth(index).locator('button:text("Clear")'),
+		moveToTop: list.nth(index).locator('button:text("Move to top")'),
 	};
 }
 

@@ -25,14 +25,6 @@ function validate(state: FormState): FormState {
 		state.error.push(['password', 'Password is required']);
 	}
 
-	if (
-		state.error.length === 0 &&
-		(state.value.email !== 'me@edmund.dev' ||
-			state.value.password !== '$eCreTP@ssWord')
-	) {
-		state.error.push(['_', 'The provided email or password is not valid']);
-	}
-
 	return {
 		...state,
 		value: {
@@ -48,9 +40,17 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const state = validate(parse(formData));
 
-	return validate(state);
+	if (
+		state.error.length === 0 &&
+		(state.value.email !== 'me@edmund.dev' ||
+			state.value.password !== '$eCreTP@ssWord')
+	) {
+		state.error.push(['_', 'The provided email or password is not valid']);
+	}
+
+	return state;
 };
 
 export default function LoginForm() {

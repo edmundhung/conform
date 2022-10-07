@@ -17,6 +17,7 @@ import {
 	hasFocus,
 	getTaskFieldset,
 	waitForFormState,
+	getTodosFieldset,
 } from './helpers';
 
 test.describe('Constraint', () => {
@@ -508,9 +509,9 @@ test.describe('Field list', () => {
 			'',
 		]);
 
-		const task0 = getTaskFieldset(tasks.nth(0), 'tasks[0]');
-		const task1 = getTaskFieldset(tasks.nth(1), 'tasks[1]');
-		const task2 = getTaskFieldset(tasks.nth(2), 'tasks[2]');
+		const task0 = getTaskFieldset(tasks, 'tasks', 0);
+		const task1 = getTaskFieldset(tasks, 'tasks', 1);
+		const task2 = getTaskFieldset(tasks, 'tasks', 2);
 
 		await form.locator('[name="title"]').type('My schedule');
 		await task0.content.type('Urgent task');
@@ -546,8 +547,8 @@ test.describe('Field list', () => {
 
 		await expect(tasks).toHaveCount(1);
 
-		const task0 = getTaskFieldset(tasks.nth(0), 'tasks[0]');
-		const task1 = getTaskFieldset(tasks.nth(1), 'tasks[1]');
+		const task0 = getTaskFieldset(tasks, 'tasks', 0);
+		const task1 = getTaskFieldset(tasks, 'tasks', 1);
 
 		await task0.content.type('Write tests for nested list');
 		await task0.completed.check();
@@ -624,5 +625,109 @@ test.describe('Field list', () => {
 		await clickResetButton(form);
 
 		await expect(tasks).toHaveCount(1);
+	});
+});
+
+test.describe('No JS', () => {
+	test.use({ javaScriptEnabled: false });
+
+	test('Basic form', async ({ page }) => {
+		const form = await gotoForm(page, '/login');
+		const { email, password } = getLoginFieldset(form);
+
+		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'Email is required',
+			'Password is required',
+		]);
+
+		await email.type('me@edmund.dev');
+		await password.type('$eCreTP@ssWord');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'Email is required',
+			'Password is required',
+		]);
+
+		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+
+		expect(await getErrorMessages(form)).toEqual(['', '']);
+	});
+
+	test('List Command', async ({ page }) => {
+		const form = await gotoForm(page, '/todos');
+		const todos = getTodosFieldset(form);
+		const task0 = getTaskFieldset(todos.tasks, 'tasks', 0);
+		const task1 = getTaskFieldset(todos.tasks, 'tasks', 1);
+		const task2 = getTaskFieldset(todos.tasks, 'tasks', 2);
+
+		await todos.title.type('Test plan');
+		await task0.content.type('Write tests for nested list');
+		await task0.completed.check();
+		await Promise.all([page.waitForNavigation(), todos.insertBottom.click()]);
+
+		await expect(todos.tasks).toHaveCount(2);
+
+		expect(await todos.title.inputValue()).toBe('Test plan');
+		expect(await task0.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task1.content.inputValue()).toBe('');
+		expect(await task1.completed.isChecked()).toBe(false);
+
+		await task1.content.type('Write more tests');
+		await Promise.all([page.waitForNavigation(), todos.insertTop.click()]);
+
+		await expect(todos.tasks).toHaveCount(3);
+
+		expect(await task0.content.inputValue()).toBe('');
+		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task1.content.inputValue()).toBe(
+			'Write tests for nested list',
+		);
+		expect(await task1.completed.isChecked()).toBe(true);
+		expect(await task2.content.inputValue()).toBe('Write more tests');
+		expect(await task2.completed.isChecked()).toBe(false);
+
+		await task0.content.type('Cut a release');
+		await Promise.all([page.waitForNavigation(), task1.delete.click()]);
+
+		await expect(todos.tasks).toHaveCount(2);
+
+		expect(await task0.content.inputValue()).toBe('Cut a release');
+		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task1.content.inputValue()).toBe('Write more tests');
+		expect(await task1.completed.isChecked()).toBe(false);
+
+		await task1.completed.check();
+		await Promise.all([page.waitForNavigation(), task1.moveToTop.click()]);
+
+		await expect(todos.tasks).toHaveCount(2);
+
+		expect(await task0.content.inputValue()).toBe('Write more tests');
+		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task1.content.inputValue()).toBe('Cut a release');
+		expect(await task1.completed.isChecked()).toBe(false);
+
+		await Promise.all([page.waitForNavigation(), task0.clear.click()]);
+
+		await expect(todos.tasks).toHaveCount(2);
+
+		expect(await task0.content.inputValue()).toBe('');
+		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task1.content.inputValue()).toBe('Cut a release');
+		expect(await task1.completed.isChecked()).toBe(false);
+
+		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			expectNonEmptyString,
+			'',
+			'',
+			'',
+		]);
 	});
 });
