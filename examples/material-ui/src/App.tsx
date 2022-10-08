@@ -8,7 +8,7 @@ interface Article {
 }
 
 export default function ArticleForm() {
-	const formProps = useForm({
+	const form = useForm({
 		initialReport: 'onBlur',
 		onSubmit: (event) => {
 			event.preventDefault();
@@ -19,7 +19,7 @@ export default function ArticleForm() {
 			console.log(result);
 		},
 	});
-	const { title, category, content } = useFieldset<Article>(formProps.ref);
+	const { title, category, content } = useFieldset<Article>(form.ref);
 
 	/**
 	 * MUI Select is a controlled component and behaves very different from native input/select.
@@ -29,7 +29,7 @@ export default function ArticleForm() {
 	const [categoryInput, control] = useControlledInput(category.config);
 
 	return (
-		<form {...formProps}>
+		<form {...form.props}>
 			<Stack spacing={3}>
 				<TextField
 					label="title"

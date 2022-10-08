@@ -1,29 +1,35 @@
-import { useFieldset, useForm } from '@conform-to/react';
-import { resolve } from '@conform-to/zod';
+import { parse, setFormError, useFieldset, useForm } from '@conform-to/react';
+import { getError } from '@conform-to/zod';
 import { z } from 'zod';
 
-const schema = resolve(
-	z
-		.object({
-			email: z
-				.string({ required_error: 'Email is required' })
-				.email('Please enter a valid email'),
-			password: z
-				.string({ required_error: 'Password is required' })
-				.min(10, 'The password should be at least 10 characters long'),
-			'confirm-password': z.string({
-				required_error: 'Confirm Password is required',
-			}),
-		})
-		.refine((value) => value.password === value['confirm-password'], {
-			message: 'The password does not match',
-			path: ['confirm-password'],
+const schema = z
+	.object({
+		email: z
+			.string({ required_error: 'Email is required' })
+			.email('Please enter a valid email'),
+		password: z
+			.string({ required_error: 'Password is required' })
+			.min(10, 'The password should be at least 10 characters long'),
+		'confirm-password': z.string({
+			required_error: 'Confirm Password is required',
 		}),
-);
+	})
+	.refine((value) => value.password === value['confirm-password'], {
+		message: 'The password does not match',
+		path: ['confirm-password'],
+	});
 
 export default function SignupForm() {
-	const formProps = useForm({
-		validate: schema.validate,
+	const form = useForm({
+		validate(formData, form) {
+			const state = parse(formData);
+			const result = schema.safeParse(state.value);
+			const error = !result.success
+				? state.error.concat(getError(result.error))
+				: state.error;
+
+			setFormError(form, error);
+		},
 		onSubmit: async (event) => {
 			event.preventDefault();
 
@@ -37,10 +43,10 @@ export default function SignupForm() {
 		email,
 		password,
 		'confirm-password': confirmPassword,
-	} = useFieldset<z.infer<typeof schema.source>>(formProps.ref);
+	} = useFieldset<z.infer<typeof schema>>(form.ref);
 
 	return (
-		<form {...formProps}>
+		<form {...form.props}>
 			<label>
 				<div>Email</div>
 				<input type="email" name="email" />

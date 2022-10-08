@@ -7,7 +7,7 @@ import {
 	parse,
 	setFormError,
 } from '@conform-to/react';
-import { getError, ifNonEmptyString } from '@conform-to/zod';
+import { getError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -15,12 +15,12 @@ import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
-	content: z.preprocess(ifNonEmptyString(), z.string()),
-	completed: z.preprocess((value) => value === 'yes', z.boolean()),
+	content: z.string(),
+	completed: z.preprocess((value) => value === 'yes', z.boolean().optional()),
 });
 
 const todoSchema = z.object({
-	title: z.preprocess(ifNonEmptyString(), z.string()),
+	title: z.string(),
 	tasks: z.array(taskSchema).min(1),
 });
 
