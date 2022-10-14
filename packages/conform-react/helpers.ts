@@ -1,8 +1,4 @@
-import {
-	type FieldConfig,
-	type Primitive,
-	controlButtonName,
-} from '@conform-to/dom';
+import { type FieldConfig, type Primitive } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
 	type SelectHTMLAttributes,

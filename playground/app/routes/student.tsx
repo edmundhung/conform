@@ -47,7 +47,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const [state] = parse(formData);
 
 	return validate(state);
 };
@@ -59,13 +59,21 @@ export default function StudentForm() {
 		...config,
 		state,
 		validate: config.validate
-			? (formData, form) => {
-					const state = parse(formData);
+			? ({ formData, form }) => {
+					const [state] = parse(formData);
 					const result = validate(state);
 
 					setFormError(form, result.error);
 			  }
 			: undefined,
+		onSubmit(event, action) {
+			switch (action?.name) {
+				case 'validate': {
+					event.preventDefault();
+					break;
+				}
+			}
+		},
 	});
 	const { name, remarks, grade, score } = useFieldset(form.ref, {
 		...form.config,

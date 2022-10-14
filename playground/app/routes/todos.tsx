@@ -34,7 +34,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const [state] = parse(formData);
 	const result = schema.safeParse(state.value);
 
 	if (!result.success) {
@@ -54,8 +54,8 @@ export default function TodosForm() {
 		...config,
 		state,
 		validate: config.validate
-			? (formData, form) => {
-					const state = parse(formData);
+			? ({ formData, form }) => {
+					const [state] = parse(formData);
 					const result = schema.safeParse(state.value);
 					const error = !result.success
 						? state.error.concat(getError(result.error))
@@ -64,6 +64,14 @@ export default function TodosForm() {
 					setFormError(form, error);
 			  }
 			: undefined,
+		onSubmit(event, action) {
+			switch (action?.name) {
+				case 'validate': {
+					event.preventDefault();
+					break;
+				}
+			}
+		},
 	});
 
 	return (

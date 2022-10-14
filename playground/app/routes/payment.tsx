@@ -37,7 +37,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const [state] = parse(formData);
 	const result = schema.safeParse(state.value);
 
 	if (!result.success) {
@@ -56,6 +56,14 @@ export default function PaymentForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
+		onSubmit(event, action) {
+			switch (action?.name) {
+				case 'validate': {
+					event.preventDefault();
+					break;
+				}
+			}
+		},
 	});
 	const { iban, amount, timestamp, verified } = useFieldset(form.ref, {
 		...form.config,

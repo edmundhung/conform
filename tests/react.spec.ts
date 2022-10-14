@@ -343,7 +343,7 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await clickSubmitButton(form);
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
 
 		expect(await getErrorMessages(form)).toEqual([
 			'',
@@ -386,7 +386,7 @@ test.describe('Server Validation', () => {
 		expect(await hasFocus(email)).toBe(true);
 
 		await email.type('me@edmund.dev');
-		await clickSubmitButton(form);
+		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
 
 		expect(await hasFocus(password)).toBe(true);
 	});

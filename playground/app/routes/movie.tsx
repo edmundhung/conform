@@ -44,7 +44,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
+	const [state] = parse(formData);
 
 	if (typeof state.value.title !== 'string') {
 		state.error.push(['title', 'Title is required']);
@@ -80,7 +80,7 @@ export default function MovieForm() {
 		...config,
 		state,
 		validate: config.validate
-			? (formData, form) => {
+			? ({ form }) => {
 					for (const field of form.elements) {
 						if (isFieldElement(field)) {
 							switch (field.name) {
@@ -119,6 +119,14 @@ export default function MovieForm() {
 					}
 			  }
 			: undefined,
+		onSubmit(event, action) {
+			switch (action?.name) {
+				case 'validate': {
+					event.preventDefault();
+					break;
+				}
+			}
+		},
 	});
 	const { title, description, genres, rating } = useFieldset<Movie>(form.ref, {
 		...form.config,

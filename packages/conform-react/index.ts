@@ -3,6 +3,8 @@ export {
 	type FieldsetConstraint,
 	isFieldElement,
 	setFormError,
+	serverValidation,
+	hasError,
 	parse,
 } from '@conform-to/dom';
 export * from './hooks';

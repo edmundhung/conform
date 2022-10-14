@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { parse, getPaths, getName, controlButtonName } from '@conform-to/dom';
+import { parse, getPaths, getName } from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
@@ -26,13 +26,16 @@ test.describe('conform-dom', () => {
 						['description', 'Once upon a time...'],
 					]),
 				),
-			).toEqual({
-				value: {
-					title: 'The cat',
-					description: 'Once upon a time...',
+			).toEqual([
+				{
+					value: {
+						title: 'The cat',
+						description: 'Once upon a time...',
+					},
+					error: [],
 				},
-				error: [],
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
@@ -42,16 +45,19 @@ test.describe('conform-dom', () => {
 						['reference', ''],
 					]),
 				),
-			).toEqual({
-				value: {
-					account: 'AB00 1111 2222 3333 4444',
-					amount: {
-						currency: 'EUR',
-						value: '99.9',
+			).toEqual([
+				{
+					value: {
+						account: 'AB00 1111 2222 3333 4444',
+						amount: {
+							currency: 'EUR',
+							value: '99.9',
+						},
 					},
+					error: [],
 				},
-				error: [],
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
@@ -61,15 +67,18 @@ test.describe('conform-dom', () => {
 						['tasks[1].content', 'Test integration'],
 					]),
 				),
-			).toEqual({
-				value: {
-					tasks: [
-						{ content: 'Test some stuffs', completed: 'Yes' },
-						{ content: 'Test integration' },
-					],
+			).toEqual([
+				{
+					value: {
+						tasks: [
+							{ content: 'Test some stuffs', completed: 'Yes' },
+							{ content: 'Test integration' },
+						],
+					},
+					error: [],
 				},
-				error: [],
-			});
+				null,
+			]);
 		});
 
 		test('URLSearchParams', () => {
@@ -80,51 +89,63 @@ test.describe('conform-dom', () => {
 						['description', 'Once upon a time...'],
 					]),
 				),
-			).toEqual({
-				value: {
-					title: 'The cat',
-					description: 'Once upon a time...',
+			).toEqual([
+				{
+					value: {
+						title: 'The cat',
+						description: 'Once upon a time...',
+					},
+					error: [],
 				},
-				error: [],
-			});
+				null,
+			]);
 		});
 
-		test('Invalid command', () => {
+		test('Invalid list command', () => {
 			expect(
 				parse(
 					createFormData([
 						['title', 'Test command'],
-						[controlButtonName, 'invalid command'],
+						['conform/test', 'command value'],
 					]),
 				),
-			).toEqual({
-				value: {
-					title: 'Test command',
+			).toEqual([
+				{
+					value: {
+						title: 'Test command',
+					},
+					error: [],
 				},
-				error: [['', 'Invalid command received']],
-			});
+				{ name: 'test', value: 'command value' },
+			]);
 			expect(
 				parse(
 					createFormData([
 						['title', ''],
-						[controlButtonName, JSON.stringify({ greeting: 'Hello World' })],
+						['conform/list', JSON.stringify({ greeting: 'Hello World' })],
 					]),
 				),
-			).toEqual({
-				value: {},
-				error: [['', 'Invalid command received']],
-			});
+			).toEqual([
+				{
+					value: {},
+					error: [['', 'Invalid command received']],
+				},
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						['title', ''],
-						[controlButtonName, JSON.stringify({ type: 'test' })],
+						['conform/list', JSON.stringify({ type: 'test' })],
 					]),
 				),
-			).toEqual({
-				value: {},
-				error: [['', 'Unknown command received']],
-			});
+			).toEqual([
+				{
+					value: {},
+					error: [['', 'Unknown command received']],
+				},
+				null,
+			]);
 		});
 
 		test('List command', () => {
@@ -137,7 +158,7 @@ test.describe('conform-dom', () => {
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
-				error: [[controlButtonName, 'List modified']],
+				error: [['conform/list', 'Action received']],
 			};
 
 			expect(
@@ -145,23 +166,26 @@ test.describe('conform-dom', () => {
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({ type: 'prepend', scope: 'tasks', payload: {} }),
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [undefined, ...result.value.tasks],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [undefined, ...result.value.tasks],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({
 								type: 'prepend',
 								scope: 'tasks',
@@ -170,34 +194,40 @@ test.describe('conform-dom', () => {
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [{ content: 'Something' }, ...result.value.tasks],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [{ content: 'Something' }, ...result.value.tasks],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({ type: 'append', scope: 'tasks', payload: {} }),
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [...result.value.tasks, undefined],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [...result.value.tasks, undefined],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({
 								type: 'append',
 								scope: 'tasks',
@@ -206,18 +236,21 @@ test.describe('conform-dom', () => {
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [...result.value.tasks, { content: 'Something' }],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [...result.value.tasks, { content: 'Something' }],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({
 								type: 'replace',
 								scope: 'tasks',
@@ -226,18 +259,21 @@ test.describe('conform-dom', () => {
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [{ content: 'Something' }],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [{ content: 'Something' }],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({
 								type: 'remove',
 								scope: 'tasks',
@@ -246,19 +282,22 @@ test.describe('conform-dom', () => {
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [],
+					},
 				},
-			});
+				null,
+			]);
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						['tasks[1].content', 'Test more stuffs'],
 						[
-							controlButtonName,
+							'conform/list',
 							JSON.stringify({
 								type: 'reorder',
 								scope: 'tasks',
@@ -267,12 +306,15 @@ test.describe('conform-dom', () => {
 						],
 					]),
 				),
-			).toEqual({
-				...result,
-				value: {
-					tasks: [{ content: 'Test more stuffs' }, ...result.value.tasks],
+			).toEqual([
+				{
+					...result,
+					value: {
+						tasks: [{ content: 'Test more stuffs' }, ...result.value.tasks],
+					},
 				},
-			});
+				null,
+			]);
 		});
 	});
 

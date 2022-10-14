@@ -6,16 +6,20 @@ import {
 	type FormState,
 	type ListCommand,
 	type Primitive,
-	controlButtonName,
 	focusFirstInvalidField,
-	getFormData,
 	getFormElement,
 	getName,
 	getPaths,
 	isFieldElement,
-	parseCommand,
+	parseListCommand,
 	setFormError,
+	requestSubmit,
+	requestValidate,
 	updateList,
+	getSubmissionType,
+	getFormData,
+	parse,
+	getFieldElement,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -26,6 +30,23 @@ import {
 	useEffect,
 } from 'react';
 import { input } from './helpers';
+
+interface FormInputEvent extends Event {
+	target: FieldElement;
+	currentTarget: HTMLFormElement;
+}
+
+interface FormFocusEvent extends FocusEvent {
+	target: FieldElement;
+	currentTarget: HTMLFormElement;
+}
+
+interface Context<Schema extends Record<string, any>> {
+	form: HTMLFormElement;
+	target: FieldElement | null;
+	formData: FormData;
+	submission: FormState<Schema>;
+}
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
@@ -63,13 +84,19 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	validate?: (formData: FormData, form: HTMLFormElement) => void;
+	validate?: (context: Context<Schema>) => boolean | undefined;
+
+	onInput?: (event: FormInputEvent) => void;
+	onBlur?: (event: FormFocusEvent) => void;
 
 	/**
 	 * The submit event handler of the form. It will be called
 	 * only when the form is considered valid.
 	 */
-	onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
+	onSubmit?: (
+		event: FormEvent<HTMLFormElement>,
+		context: Context<Schema>,
+	) => void;
 }
 
 /**
@@ -107,15 +134,15 @@ export function useForm<Schema extends Record<string, any>>(
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
 			const error = config.state?.error ?? [];
-			const touched = config.state?.touched;
+			const scope = config.state?.scope;
 
 			return {
 				defaultValue: config.state?.value ?? config.defaultValue,
 				initialError: error.filter(
 					([name]) =>
 						name !== '' &&
-						name !== controlButtonName &&
-						(!touched || touched.includes(name)),
+						getSubmissionType(name) === null &&
+						(!scope || scope.includes(name)),
 				),
 			};
 		},
@@ -139,38 +166,16 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		setFormError(
-			form,
-			config.state.error,
-			(field) =>
-				!config.state?.touched || config.state.touched.includes(field.name),
-		);
+		setFormError(form, config.state.error, config.state.scope);
 
-		/**
-		 * The submit event is used to notify the other listeners
-		 * somethings might have changed. This would be captured
-		 * by the submit event listeners of `useFieldset` and
-		 * reset the error state based on the validity.
-		 */
-		const submitEvent = new SubmitEvent('submit', {
-			bubbles: true,
-			cancelable: true,
-		});
-
-		submitEvent.preventDefault();
-		form.dispatchEvent(submitEvent);
+		requestSubmit(form);
 
 		if (!form.reportValidity()) {
-			focusFirstInvalidField(form, config.state.touched);
+			focusFirstInvalidField(form, config.state.scope);
 		}
 	}, [config.state]);
 
 	useEffect(() => {
-		// Initialize form validation messages
-		if (ref.current) {
-			configRef.current.validate?.(new FormData(ref.current), ref.current);
-		}
-
 		// Revalidate the form when input value is changed
 		const handleInput = (event: Event) => {
 			const field = event.target;
@@ -181,14 +186,18 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
+			formConfig.onInput?.({
+				...event,
+				target: field,
+				currentTarget: form,
+			});
+
 			if (formConfig.initialReport === 'onChange') {
 				field.dataset.conformTouched = 'true';
 			}
 
-			formConfig.validate?.(new FormData(form), form);
-
-			if (!formConfig.noValidate) {
-				form.checkValidity();
+			if (field.dataset.conformTouched && !event.defaultPrevented) {
+				requestValidate(form, field.name);
 			}
 		};
 		const handleBlur = (event: FocusEvent) => {
@@ -200,12 +209,20 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
-			if (formConfig.initialReport === 'onBlur') {
+			formConfig.onBlur?.({
+				...event,
+				target: field,
+				currentTarget: form,
+			});
+
+			if (
+				formConfig.initialReport === 'onBlur' &&
+				!field.dataset.conformTouched &&
+				!event.defaultPrevented
+			) {
 				field.dataset.conformTouched = 'true';
 
-				if (!formConfig.noValidate) {
-					field.reportValidity();
-				}
+				requestValidate(form, field.name);
 			}
 		};
 		const handleInvalid = (event: Event) => {
@@ -239,6 +256,7 @@ export function useForm<Schema extends Record<string, any>>(
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
+					field.setCustomValidity('');
 				}
 			}
 
@@ -247,14 +265,6 @@ export function useForm<Schema extends Record<string, any>>(
 				defaultValue: formConfig.defaultValue,
 				initialError: [],
 			});
-
-			/**
-			 * The reset event is triggered before form reset happens.
-			 * This make sure the form to be revalidated with initial values.
-			 */
-			setTimeout(() => {
-				formConfig.validate?.(new FormData(form), form);
-			}, 0);
 		};
 
 		/**
@@ -287,11 +297,10 @@ export function useForm<Schema extends Record<string, any>>(
 				const formConfig = configRef.current;
 				const form = event.currentTarget;
 				const nativeEvent = event.nativeEvent as SubmitEvent;
-				const submitter =
-					nativeEvent.submitter instanceof HTMLButtonElement ||
-					nativeEvent.submitter instanceof HTMLInputElement
-						? nativeEvent.submitter
-						: null;
+				const submitter = nativeEvent.submitter as
+					| HTMLButtonElement
+					| HTMLInputElement
+					| null;
 
 				for (const element of form.elements) {
 					if (isFieldElement(element) && element.name === '') {
@@ -306,32 +315,53 @@ export function useForm<Schema extends Record<string, any>>(
 				 * event is captured and revalidate the form with new fields without triggering
 				 * a form submission at the same time.
 				 */
-				if (!event.defaultPrevented) {
-					// Touch all fields only if the submitter is not a control button
-					if (submitter?.name !== controlButtonName) {
-						for (const field of form.elements) {
-							if (isFieldElement(field)) {
-								// Mark the field as touched
-								field.dataset.conformTouched = 'true';
-							}
+				if (!submitter || event.defaultPrevented) {
+					event.preventDefault();
+					return;
+				}
+
+				const formData = getFormData(form, submitter);
+				const submission = parse<Schema>(formData);
+				const target =
+					submission.type === 'validate' && submitter.value !== ''
+						? getFieldElement(form, submitter.value)
+						: null;
+				const context: Context<Schema> = {
+					formData,
+					form,
+					target,
+					submission,
+				};
+
+				// Touch all fields only if the submitter is not a command button
+				if (!submission.type) {
+					for (const field of form.elements) {
+						if (isFieldElement(field)) {
+							// Mark the field as touched
+							field.dataset.conformTouched = 'true';
 						}
-
-						// Validating the form with the submitter value
-						formConfig.validate?.(getFormData(form, submitter), form);
 					}
+				}
 
-					if (
-						!config.noValidate &&
-						!submitter?.formNoValidate &&
-						!event.currentTarget.reportValidity()
-					) {
-						event.preventDefault();
-						focusFirstInvalidField(form);
+				if (
+					typeof formConfig.validate === 'function' &&
+					!config.noValidate &&
+					!submitter.formNoValidate
+				) {
+					try {
+						formConfig.validate(context);
+
+						if (!form.reportValidity()) {
+							event.preventDefault();
+							focusFirstInvalidField(form);
+						}
+					} catch (e) {
+						console.warn(e);
 					}
 				}
 
 				if (!event.defaultPrevented) {
-					config.onSubmit?.(event);
+					config.onSubmit?.(event, context);
 				}
 			},
 		},
@@ -574,13 +604,13 @@ export function useFieldset<Schema extends Record<string, any>>(
 		document.addEventListener('input', handleInput);
 		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
-		document.addEventListener('submit', submitHandler);
+		document.addEventListener('submit', submitHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			document.removeEventListener('input', handleInput);
 			document.removeEventListener('invalid', invalidHandler, true);
-			document.removeEventListener('submit', submitHandler);
+			document.removeEventListener('submit', submitHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, [ref]);
@@ -708,7 +738,7 @@ export function useFieldList<Payload = any>(
 			get(_target, type: any) {
 				return (payload: any = {}) => {
 					return {
-						name: controlButtonName,
+						name: 'conform/list',
 						value: JSON.stringify({ type, scope: config.name, payload }),
 						form: config.form,
 						formNoValidate: true,
@@ -730,39 +760,37 @@ export function useFieldList<Payload = any>(
 				!form ||
 				event.target !== form ||
 				!(event.submitter instanceof HTMLButtonElement) ||
-				event.submitter.name !== controlButtonName
+				event.submitter.name !== 'conform/list'
 			) {
 				return;
 			}
 
-			const command = parseCommand<ListCommand<FieldValue<Payload>>>(
+			const command = parseListCommand<ListCommand<FieldValue<Payload>>>(
 				event.submitter.value,
 			);
 
-			if (!command || command.scope !== configRef.current.name) {
+			if (command.scope !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
 
-			// @ts-expect-error
-			const adjustedCommand: ListCommand<
-				[string, FieldValue<Payload> | undefined]
-			> =
-				command.type === 'append' ||
-				command.type === 'prepend' ||
-				command.type === 'replace'
-					? {
+			setEntries((entries) => {
+				switch (command.type) {
+					case 'append':
+					case 'prepend':
+					case 'replace':
+						return updateList([...(entries ?? [])], {
 							...command,
 							payload: {
 								...command.payload,
 								defaultValue: [`${Date.now()}`, command.payload.defaultValue],
 							},
-					  }
-					: command;
-
-			setEntries((entries) =>
-				updateList([...(entries ?? [])], adjustedCommand),
-			);
+						} as ListCommand<[string, FieldValue<Payload> | undefined]>);
+					default: {
+						return updateList([...(entries ?? [])], command);
+					}
+				}
+			});
 			event.preventDefault();
 		};
 		const resetHandler = (event: Event) => {

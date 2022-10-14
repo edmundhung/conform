@@ -34,20 +34,21 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = validate(parse(formData));
+	const [state] = parse(formData);
+	const result = validate(state);
 
 	if (
-		state.error.length === 0 &&
-		(state.value.email !== 'me@edmund.dev' ||
-			state.value.password !== '$eCreTP@ssWord')
+		result.error.length === 0 &&
+		(result.value.email !== 'me@edmund.dev' ||
+			result.value.password !== '$eCreTP@ssWord')
 	) {
-		state.error.push(['', 'The provided email or password is not valid']);
+		result.error.push(['', 'The provided email or password is not valid']);
 	}
 
 	return {
-		...state,
+		...result,
 		value: {
-			email: state.value.email,
+			email: result.value.email,
 			// Never send the password back to the client
 		},
 	};
@@ -60,13 +61,25 @@ export default function LoginForm() {
 		...config,
 		state,
 		validate: config.validate
-			? (formData, form) => {
-					const state = parse(formData);
+			? ({ formData, form, target }) => {
+					const [state] = parse(formData);
 					const result = validate(state);
 
-					setFormError(form, result.error);
+					setFormError(
+						form,
+						result.error,
+						(field) => !target || field.name === target?.name,
+					);
 			  }
 			: undefined,
+		onSubmit(event, action) {
+			switch (action?.name) {
+				case 'validate': {
+					event.preventDefault();
+					break;
+				}
+			}
+		},
 	});
 	const { email, password } = useFieldset(form.ref, form.config);
 
