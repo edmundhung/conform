@@ -8,9 +8,7 @@ export default function LoginForm() {
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			if (submission.type !== 'validate') {
-				console.log(submission);
-			}
+			console.log(submission);
 		},
 	});
 	const { email, password } = useFieldset(form.ref, form.config);

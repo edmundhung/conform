@@ -37,9 +37,7 @@ export default function ExampleForm() {
 		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			if (submission.type !== 'validate') {
-				console.log(submission);
-			}
+			console.log(submission);
 		},
 	});
 

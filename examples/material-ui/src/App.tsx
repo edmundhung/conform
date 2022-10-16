@@ -16,9 +16,7 @@ export default function ArticleForm() {
 		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			if (submission.type !== 'validate') {
-				console.log(submission);
-			}
+			console.log(submission);
 		},
 	});
 	const { title, category, content } = useFieldset(form.ref, form.config);

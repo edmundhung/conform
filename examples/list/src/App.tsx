@@ -21,9 +21,7 @@ export default function TodoForm() {
 		async onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			if (submission.type !== 'validate') {
-				console.log(submission);
-			}
+			console.log(submission);
 		},
 	});
 	const { title, tasks } = useFieldset(form.ref, form.config);

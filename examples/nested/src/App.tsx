@@ -17,9 +17,7 @@ export default function PaymentForm() {
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			if (submission.type !== 'validate') {
-				console.log(submission);
-			}
+			console.log(submission);
 		},
 	});
 	const { account, amount, reference } = useFieldset(form.ref, form.config);
