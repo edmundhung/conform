@@ -1,24 +1,25 @@
 import {
 	type FieldConfig,
-	type FieldValue,
 	type FieldElement,
+	type FieldValue,
 	type FieldsetConstraint,
-	type FormState,
 	type ListCommand,
 	type Primitive,
+	type Submission,
+	type SubmissionStatus,
 	focusFirstInvalidField,
+	getFormData,
 	getFormElement,
 	getName,
 	getPaths,
+	getSubmissionType,
 	isFieldElement,
+	parse,
 	parseListCommand,
 	requestSubmit,
+	reportValidity,
 	requestValidate,
 	updateList,
-	getSubmissionType,
-	getFormData,
-	parse,
-	reportValidity,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -30,10 +31,10 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-interface Context<Schema extends Record<string, any>> {
+interface FormContext<Schema extends Record<string, any>> {
 	form: HTMLFormElement;
 	formData: FormData;
-	submission: FormState<Schema>;
+	submission: Submission<Schema>;
 }
 
 export interface FormConfig<Schema extends Record<string, any>> {
@@ -51,9 +52,9 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	defaultValue?: FieldValue<Schema>;
 
 	/**
-	 * An object describing the current state of the form
+	 * An object describing the status of the last submission
 	 */
-	state?: FormState<Schema>;
+	status?: SubmissionStatus<Schema>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -72,7 +73,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: Context<Schema>) => boolean;
+	onValidate?: (context: FormContext<Schema>) => boolean;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -80,7 +81,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	 */
 	onSubmit?: (
 		event: FormEvent<HTMLFormElement>,
-		context: Context<Schema>,
+		context: FormContext<Schema>,
 	) => void;
 }
 
@@ -112,17 +113,17 @@ export function useForm<Schema extends Record<string, any>>(
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
-		const [, message] = config.state?.error?.find(([key]) => key === '') ?? [];
+		const [, message] = config.status?.error?.find(([key]) => key === '') ?? [];
 
 		return message ?? '';
 	});
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
-			const error = config.state?.error ?? [];
-			const scope = config.state?.scope;
+			const error = config.status?.error ?? [];
+			const scope = config.status?.scope;
 
 			return {
-				defaultValue: config.state?.value ?? config.defaultValue,
+				defaultValue: config.status?.value ?? config.defaultValue,
 				initialError: error.filter(
 					([name]) =>
 						name !== '' &&
@@ -147,16 +148,16 @@ export function useForm<Schema extends Record<string, any>>(
 	useEffect(() => {
 		const form = ref.current;
 
-		if (!form || !config.state) {
+		if (!form || !config.status) {
 			return;
 		}
 
-		if (!reportValidity(form, config.state)) {
-			focusFirstInvalidField(form, config.state.scope);
+		if (!reportValidity(form, config.status)) {
+			focusFirstInvalidField(form, config.status.scope);
 		}
 
 		requestSubmit(form);
-	}, [config.state]);
+	}, [config.status]);
 
 	useEffect(() => {
 		// Revalidate the form when input value is changed
@@ -292,7 +293,7 @@ export function useForm<Schema extends Record<string, any>>(
 
 				const formData = getFormData(form, submitter);
 				const submission = parse<Schema>(formData);
-				const context: Context<Schema> = {
+				const context: FormContext<Schema> = {
 					form,
 					formData,
 					submission,

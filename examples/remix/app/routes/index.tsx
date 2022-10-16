@@ -44,14 +44,14 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function OrderForm() {
-	const state = useActionData<typeof action>();
+	const status = useActionData<typeof action>();
 	const form = useForm({
-		state,
+		status,
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
 			const error = !result.success
-				? state.error.concat(getError(result.error, submission.scope))
-				: state.error;
+				? submission.error.concat(getError(result.error, submission.scope))
+				: submission.error;
 
 			return reportValidity(form, {
 				...submission,

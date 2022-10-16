@@ -49,10 +49,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function TodosForm() {
 	const config = useLoaderData();
-	const state = useActionData();
+	const status = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
-		state,
+		status,
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = schema.safeParse(submission.value);
@@ -75,7 +75,7 @@ export default function TodosForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Todos Form" formState={state}>
+			<Playground title="Todos Form" status={status}>
 				<TodosFieldset {...form.config} />
 			</Playground>
 		</Form>

@@ -36,15 +36,16 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type FormState<
-	Schema extends Record<string, any> = Record<string, any>,
-> = {
-	type?: string;
-	data?: string;
+export interface SubmissionStatus<Schema = unknown> {
 	scope: string[];
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
-};
+}
+
+export interface Submission<Schema = unknown> extends SubmissionStatus<Schema> {
+	type?: string;
+	data?: string;
+}
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -105,10 +106,6 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function serverValidation() {
-	return new Error('Server validion');
-}
-
 export function hasError(
 	error: Array<[string, string]>,
 	name: string,
@@ -122,7 +119,7 @@ export function hasError(
 
 export function reportValidity(
 	form: HTMLFormElement,
-	result: FormState,
+	result: SubmissionStatus,
 ): boolean {
 	const firstErrorByName = Object.fromEntries([...result.error].reverse());
 
@@ -246,8 +243,8 @@ export function getSubmissionType(name: string): string | null {
 
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
-): FormState<Schema> {
-	let submission: FormState<Record<string, unknown>> = {
+): Submission<Schema> {
+	let submission: Submission<Record<string, unknown>> = {
 		value: {},
 		error: [],
 		scope: [''],
@@ -319,7 +316,7 @@ export function parse<Schema extends Record<string, any>>(
 	// Remove duplicates
 	submission.scope = Array.from(new Set(submission.scope));
 
-	return submission as FormState<Schema>;
+	return submission as Submission<Schema>;
 }
 
 export type Command = {
@@ -359,10 +356,10 @@ export function parseListCommand<Type = unknown>(
 	}
 }
 
-export function updateList<Type>(
-	list: Array<Type>,
-	command: ListCommand<Type>,
-): Array<Type> {
+export function updateList<Schema>(
+	list: Array<Schema>,
+	command: ListCommand<Schema>,
+): Array<Schema> {
 	switch (command.type) {
 		case 'prepend': {
 			list.unshift(command.payload.defaultValue);
@@ -387,15 +384,15 @@ export function updateList<Type>(
 			);
 			break;
 		default:
-			throw new Error('Invalid list command');
+			throw new Error('Unknown list command received');
 	}
 
 	return list;
 }
 
-export function handleList<Schema extends Record<string, unknown>>(
-	submission: FormState<Schema>,
-): FormState<Schema> {
+export function handleList<Schema>(
+	submission: Submission<Schema>,
+): SubmissionStatus<Schema> {
 	const command = parseListCommand(submission.data);
 	const paths = getPaths(command.scope);
 

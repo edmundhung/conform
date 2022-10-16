@@ -96,10 +96,10 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function SignupForm() {
-	const state = useActionData();
+	const status = useActionData();
 	const form = useForm<MetricDefinition>({
 		initialReport: 'onBlur',
-		state,
+		status,
 		onValidate({ submission, form }) {
 			const result = schema.safeParse(submission.value);
 			const scope = new Set(submission.scope);
@@ -145,7 +145,7 @@ export default function SignupForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Signup Form" formState={state}>
+			<Playground title="Signup Form" status={status}>
 				<Alert message={form.error} />
 				<Field label="Name" error={name.error}>
 					<input

@@ -43,7 +43,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success) {
 		return {
 			...submission,
-			error: submission.error.concat(getError(result.error, submission.scope)),
+			error: getError(result.error, submission.scope),
 		};
 	}
 
@@ -52,10 +52,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function PaymentForm() {
 	const { validate, ...config } = useLoaderData();
-	const state = useActionData();
+	const status = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
-		state,
+		status,
 		onSubmit(event, { submission }) {
 			switch (submission.type) {
 				case 'validate': {
@@ -76,7 +76,7 @@ export default function PaymentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Payment Form" formState={state}>
+			<Playground title="Payment Form" status={status}>
 				<fieldset>
 					<Field label="IBAN" error={iban.error}>
 						<input {...conform.input(iban.config, { type: 'text' })} />

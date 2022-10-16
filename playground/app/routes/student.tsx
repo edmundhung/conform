@@ -1,5 +1,11 @@
-import { FormState, reportValidity } from '@conform-to/react';
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import type { Submission, SubmissionStatus } from '@conform-to/react';
+import {
+	conform,
+	useFieldset,
+	useForm,
+	parse,
+	reportValidity,
+} from '@conform-to/react';
 import { getFieldsetConstraint, getError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -19,7 +25,9 @@ const schema = yup.object({
 	grade: yup.string().oneOf(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
 });
 
-function validate(submission: FormState): FormState {
+type Schema = yup.InferType<typeof schema>;
+
+function validate(submission: Submission<Schema>): SubmissionStatus<Schema> {
 	try {
 		schema.validateSync(submission.value, {
 			abortEarly: false,
@@ -50,15 +58,15 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function StudentForm() {
 	const config = useLoaderData();
-	const state = useActionData();
-	const form = useForm<yup.InferType<typeof schema>>({
+	const status = useActionData();
+	const form = useForm<Schema>({
 		...config,
-		state,
+		status,
 		onValidate: config.validate
 			? ({ form, submission }) => {
-					const result = validate(submission);
+					const status = validate(submission);
 
-					return reportValidity(form, result);
+					return reportValidity(form, status);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {
@@ -77,7 +85,7 @@ export default function StudentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Student Form" formState={state}>
+			<Playground title="Student Form" status={status}>
 				<fieldset>
 					<Field label="Name" error={name.error}>
 						<input {...conform.input(name.config, { type: 'text' })} />
