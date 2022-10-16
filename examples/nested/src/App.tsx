@@ -11,15 +11,14 @@ interface Payment {
 
 export default function PaymentForm() {
 	const form = useForm<Payment>({
+		onValidate({ form }) {
+			return form.reportValidity();
+		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			switch (submission.type) {
-				case 'validate':
-					break;
-				default:
-					console.log(submission);
-					break;
+			if (submission.type !== 'validate') {
+				console.log(submission);
 			}
 		},
 	});

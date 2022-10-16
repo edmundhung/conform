@@ -32,18 +32,28 @@ export let action = async ({ request }: ActionArgs) => {
 		? submission.error.concat(getError(result.error, submission.scope))
 		: submission.error;
 
-	if (error.length > 0) {
-		return json({
-			...submission,
-			error,
-		});
-	}
+	switch (submission.type) {
+		case 'validate': {
+			return json({
+				...submission,
+				error,
+			});
+		}
+		default: {
+			if (error.length > 0) {
+				return json({
+					...submission,
+					error,
+				});
+			}
 
-	console.log('result', result);
-	return redirect('/');
+			console.log('result', result);
+			return redirect('/');
+		}
+	}
 };
 
-export default function OrderForm() {
+export default function TodoForm() {
 	const status = useActionData<typeof action>();
 	const form = useForm<z.infer<typeof todoSchema>>({
 		status,

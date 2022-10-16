@@ -15,15 +15,14 @@ interface Todo {
 export default function TodoForm() {
 	const form = useForm<Todo>({
 		initialReport: 'onBlur',
-		onSubmit: async (event, { submission }) => {
+		onValidate({ form }) {
+			return form.reportValidity();
+		},
+		async onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			switch (submission.type) {
-				case 'validate':
-					break;
-				default:
-					console.log(submission);
-					break;
+			if (submission.type !== 'validate') {
+				console.log(submission);
 			}
 		},
 	});

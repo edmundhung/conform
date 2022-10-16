@@ -1,10 +1,16 @@
 import { useForm, useFieldset, isFieldElement } from '@conform-to/react';
 
+interface Signup {
+	email: string;
+	password: string;
+	'confirm-password': string;
+}
+
 export default function SignupForm() {
-	const form = useForm({
-		onValidate({ formData, form }) {
+	const form = useForm<Signup>({
+		onValidate({ form, submission }) {
 			for (const field of Array.from(form.elements)) {
-				if (isFieldElement(field)) {
+				if (isFieldElement(field) && submission.scope.includes(field.name)) {
 					switch (field.name) {
 						case 'email':
 							if (field.validity.valueMissing) {
@@ -29,7 +35,7 @@ export default function SignupForm() {
 						case 'confirm-password': {
 							if (field.validity.valueMissing) {
 								field.setCustomValidity('Confirm Password is required');
-							} else if (field.value !== formData.get('password')) {
+							} else if (field.value !== submission.value.password) {
 								field.setCustomValidity('The password does not match');
 							} else {
 								field.setCustomValidity('');
@@ -45,12 +51,8 @@ export default function SignupForm() {
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			switch (submission.type) {
-				case 'validate':
-					break;
-				default:
-					console.log(submission);
-					break;
+			if (submission.type !== 'validate') {
+				console.log(submission);
 			}
 		},
 	});
@@ -58,7 +60,7 @@ export default function SignupForm() {
 		email,
 		password,
 		'confirm-password': confirmPassword,
-	} = useFieldset(form.ref);
+	} = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>

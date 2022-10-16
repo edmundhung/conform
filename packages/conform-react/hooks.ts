@@ -265,7 +265,6 @@ export function useForm<Schema extends Record<string, any>>(
 			ref,
 			noValidate,
 			onSubmit(event) {
-				const formConfig = configRef.current;
 				const form = event.currentTarget;
 				const nativeEvent = event.nativeEvent as SubmitEvent;
 				const submitter = nativeEvent.submitter as
@@ -309,12 +308,13 @@ export function useForm<Schema extends Record<string, any>>(
 					}
 				}
 
-				if (!config.noValidate && !submitter.formNoValidate) {
+				if (
+					typeof config.onValidate === 'function' &&
+					!config.noValidate &&
+					!submitter.formNoValidate
+				) {
 					try {
-						const isValid =
-							formConfig.onValidate?.(context) ?? form.reportValidity();
-
-						if (!isValid) {
+						if (!config.onValidate(context)) {
 							focusFirstInvalidField(form);
 							event.preventDefault();
 						}
