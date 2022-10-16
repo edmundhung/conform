@@ -40,7 +40,7 @@ export type FormState<
 	Schema extends Record<string, any> = Record<string, any>,
 > = {
 	type?: string;
-	data: string;
+	data?: string;
 	scope: string[];
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
@@ -120,20 +120,21 @@ export function hasError(
 	);
 }
 
-export function setFormError(
+export function reportValidity(
 	form: HTMLFormElement,
-	error: Array<[string, string]>,
-	scope: string[],
-) {
-	const firstErrorByName = Object.fromEntries([...error].reverse());
+	result: FormState,
+): boolean {
+	const firstErrorByName = Object.fromEntries([...result.error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element) || !scope.includes(element.name)) {
+		if (!isFieldElement(element) || !result.scope.includes(element.name)) {
 			continue;
 		}
 
 		element.setCustomValidity(firstErrorByName[element.name] ?? '');
 	}
+
+	return form.reportValidity();
 }
 
 export function setValue<T>(
@@ -243,32 +244,10 @@ export function getSubmissionType(name: string): string | null {
 	return name.slice(prefix.length);
 }
 
-export function getFieldElement(
-	form: HTMLFormElement,
-	name: string,
-): FieldElement {
-	const item = form.elements.namedItem(name);
-
-	if (item === null) {
-		throw new Error(`No form elements with name "${name}"`);
-	}
-
-	if (item instanceof RadioNodeList) {
-		throw new Error(`Form elements with same name "${name}" are not supported`);
-	}
-
-	if (!isFieldElement(item)) {
-		throw new Error(`The element with name "${name}" is not a field element`);
-	}
-
-	return item;
-}
-
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
 ): FormState<Schema> {
 	let submission: FormState<Record<string, unknown>> = {
-		data: '',
 		value: {},
 		error: [],
 		scope: [''],
@@ -315,31 +294,26 @@ export function parse<Schema extends Record<string, any>>(
 						throw new Error('Entry with the same name is not supported');
 					}
 
-					if (value === '') {
-						return undefined;
-					}
-
 					return value;
 				});
 			}
+		}
+
+		switch (submission.type) {
+			case 'validate':
+				if (typeof submission.data !== 'undefined' && submission.data !== '') {
+					submission.scope = [submission.data];
+				}
+				break;
+			case 'list':
+				submission = handleList(submission);
+				break;
 		}
 	} catch (e) {
 		submission.error.push([
 			'',
 			e instanceof Error ? e.message : 'Invalid payload received',
 		]);
-	}
-
-	switch (submission.type) {
-		case 'validate': {
-			if (submission.data !== '') {
-				submission.scope = [submission.data];
-			}
-			break;
-		}
-		case 'list': {
-			submission = handleList(submission);
-		}
 	}
 
 	// Remove duplicates
@@ -365,10 +339,10 @@ export type ListCommand<Schema = unknown> =
 	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
 
 export function parseListCommand<Type = unknown>(
-	serializedJSON: string,
+	data: string | undefined,
 ): ListCommand<Type> {
 	try {
-		const command = JSON.parse(serializedJSON);
+		const command = JSON.parse(data ?? '');
 
 		if (
 			typeof command.type !== 'string' ||
@@ -376,13 +350,12 @@ export function parseListCommand<Type = unknown>(
 				command.type,
 			)
 		) {
-			throw new Error('Invalid command');
+			throw new Error('Unsupported list command type');
 		}
 
 		return command;
-	} catch (e) {
-		console.warn(`Invalid command received: ${e}`);
-		throw new Error('Invalid command received');
+	} catch (error) {
+		throw new Error(`Invalid list command: "${data}"; ${error}`);
 	}
 }
 

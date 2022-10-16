@@ -1,10 +1,10 @@
 import {
-	conform,
 	type FormState,
-	parse,
+	conform,
 	useFieldset,
 	useForm,
-	setFormError,
+	parse,
+	reportValidity,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -16,16 +16,19 @@ interface Login {
 	password: string;
 }
 
-function validate(state: FormState): FormState {
-	if (typeof state.value.email !== 'string') {
-		state.error.push(['email', 'Email is required']);
+function validate(submission: FormState): FormState {
+	if (submission.scope.includes('email') && submission.value.email === '') {
+		submission.error.push(['email', 'Email is required']);
 	}
 
-	if (typeof state.value.password !== 'string') {
-		state.error.push(['password', 'Password is required']);
+	if (
+		submission.scope.includes('password') &&
+		submission.value.password === ''
+	) {
+		submission.error.push(['password', 'Password is required']);
 	}
 
-	return state;
+	return submission;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -34,21 +37,21 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const [state] = parse(formData);
-	const result = validate(state);
+	const submission = parse(formData);
+	const state = validate(submission);
 
 	if (
-		result.error.length === 0 &&
-		(result.value.email !== 'me@edmund.dev' ||
-			result.value.password !== '$eCreTP@ssWord')
+		state.error.length === 0 &&
+		(state.value.email !== 'me@edmund.dev' ||
+			state.value.password !== '$eCreTP@ssWord')
 	) {
-		result.error.push(['', 'The provided email or password is not valid']);
+		state.error.push(['', 'The provided email or password is not valid']);
 	}
 
 	return {
-		...result,
+		...state,
 		value: {
-			email: result.value.email,
+			email: state.value.email,
 			// Never send the password back to the client
 		},
 	};
@@ -61,19 +64,14 @@ export default function LoginForm() {
 		...config,
 		state,
 		validate: config.validate
-			? ({ formData, form, target }) => {
-					const [state] = parse(formData);
-					const result = validate(state);
+			? ({ form, submission }) => {
+					const result = validate(submission);
 
-					setFormError(
-						form,
-						result.error,
-						(field) => !target || field.name === target?.name,
-					);
+					return reportValidity(form, result);
 			  }
 			: undefined,
-		onSubmit(event, action) {
-			switch (action?.name) {
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
 				case 'validate': {
 					event.preventDefault();
 					break;

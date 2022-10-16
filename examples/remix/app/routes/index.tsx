@@ -5,7 +5,7 @@ import {
 	useFieldList,
 	conform,
 	parse,
-	setFormError,
+	reportValidity,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -26,15 +26,15 @@ const todoSchema = z.object({
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const state = parse(formData);
-	const result = todoSchema.safeParse(state.value);
+	const submission = parse(formData);
+	const result = todoSchema.safeParse(submission.value);
 	const error = !result.success
-		? state.error.concat(getError(result.error))
-		: state.error;
+		? submission.error.concat(getError(result.error, submission.scope))
+		: submission.error;
 
 	if (error.length > 0) {
 		return json({
-			...state,
+			...submission,
 			error,
 		});
 	}
@@ -47,14 +47,16 @@ export default function OrderForm() {
 	const state = useActionData<typeof action>();
 	const form = useForm({
 		state,
-		validate(formData, form) {
-			const state = parse(formData);
-			const result = todoSchema.safeParse(state.value);
+		validate({ form, submission }) {
+			const result = todoSchema.safeParse(submission.value);
 			const error = !result.success
-				? state.error.concat(getError(result.error))
+				? state.error.concat(getError(result.error, submission.scope))
 				: state.error;
 
-			setFormError(form, error);
+			return reportValidity(form, {
+				...submission,
+				error,
+			});
 		},
 	});
 	const { title, tasks } = useFieldset<z.infer<typeof todoSchema>>(

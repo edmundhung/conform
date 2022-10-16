@@ -1,11 +1,5 @@
-import type { FormState } from '@conform-to/react';
-import {
-	conform,
-	parse,
-	setFormError,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
+import { FormState, reportValidity } from '@conform-to/react';
+import { conform, parse, useFieldset, useForm } from '@conform-to/react';
 import { getFieldsetConstraint, getError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -25,20 +19,22 @@ const schema = yup.object({
 	grade: yup.string().oneOf(['A', 'B', 'C', 'D', 'E', 'F']).default('F'),
 });
 
-function validate(state: FormState): FormState {
+function validate(submission: FormState): FormState {
 	try {
-		schema.validateSync(state.value, {
+		schema.validateSync(submission.value, {
 			abortEarly: false,
 		});
 	} catch (error) {
 		if (error instanceof yup.ValidationError) {
-			state.error = state.error.concat(getError(error));
+			submission.error = submission.error.concat(
+				getError(error, submission.scope),
+			);
 		} else {
-			state.error = state.error.concat([['', 'Validation failed']]);
+			submission.error = submission.error.concat([['', 'Validation failed']]);
 		}
 	}
 
-	return state;
+	return submission;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -47,9 +43,9 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const [state] = parse(formData);
+	const submission = parse(formData);
 
-	return validate(state);
+	return validate(submission);
 };
 
 export default function StudentForm() {
@@ -59,15 +55,14 @@ export default function StudentForm() {
 		...config,
 		state,
 		validate: config.validate
-			? ({ formData, form }) => {
-					const [state] = parse(formData);
-					const result = validate(state);
+			? ({ form, submission }) => {
+					const result = validate(submission);
 
-					setFormError(form, result.error);
+					return reportValidity(form, result);
 			  }
 			: undefined,
-		onSubmit(event, action) {
-			switch (action?.name) {
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
 				case 'validate': {
 					event.preventDefault();
 					break;

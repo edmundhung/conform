@@ -1,11 +1,11 @@
 import type { FieldsetConfig } from '@conform-to/react';
 import {
 	conform,
-	parse,
-	setFormError,
 	useFieldList,
 	useFieldset,
 	useForm,
+	parse,
+	reportValidity,
 } from '@conform-to/react';
 import { getError, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -16,10 +16,10 @@ import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
 
 const schema = z.object({
-	title: z.string(),
+	title: z.string().min(1, 'Title is required'),
 	tasks: z.array(
 		z.object({
-			content: z.string(),
+			content: z.string().min(1, 'Content is required'),
 			completed: z.preprocess(
 				(value) => value === 'yes',
 				z.boolean().optional(),
@@ -34,17 +34,17 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const [state] = parse(formData);
-	const result = schema.safeParse(state.value);
+	const submission = parse(formData);
+	const result = schema.safeParse(submission.value);
 
 	if (!result.success) {
 		return {
-			...state,
-			error: state.error.concat(getError(result.error)),
+			...submission,
+			error: submission.error.concat(getError(result.error, submission.scope)),
 		};
 	}
 
-	return state;
+	return submission;
 };
 
 export default function TodosForm() {
@@ -54,18 +54,17 @@ export default function TodosForm() {
 		...config,
 		state,
 		validate: config.validate
-			? ({ formData, form }) => {
-					const [state] = parse(formData);
-					const result = schema.safeParse(state.value);
-					const error = !result.success
-						? state.error.concat(getError(result.error))
-						: state.error;
+			? ({ form, submission }) => {
+					const result = schema.safeParse(submission.value);
 
-					setFormError(form, error);
+					return reportValidity(form, {
+						...submission,
+						error: !result.success ? getError(result.error) : submission.error,
+					});
 			  }
 			: undefined,
-		onSubmit(event, action) {
-			switch (action?.name) {
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
 				case 'validate': {
 					event.preventDefault();
 					break;

@@ -110,10 +110,18 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 
 export function getError(
 	error: z.ZodError<any> | null,
+	scope?: string[],
 ): Array<[string, string]> {
 	return (
-		error?.errors.map<[string, string]>((e) => [getName(e.path), e.message]) ??
-		[]
+		error?.errors.reduce<Array<[string, string]>>((result, e) => {
+			const name = getName(e.path);
+
+			if (!scope || scope.includes(name)) {
+				result.push([name, e.message]);
+			}
+
+			return result;
+		}, []) ?? []
 	);
 }
 

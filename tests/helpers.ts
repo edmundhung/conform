@@ -49,22 +49,11 @@ export function hasFocus(locator: Locator): Promise<boolean> {
 	return locator.evaluate((el) => el === document.activeElement);
 }
 
-export async function waitForFormState(page: Page): Promise<Response> {
+export async function waitForDataResponse(page: Page): Promise<Response> {
 	return await page.waitForResponse(async (response) => {
-		try {
-			const result = await response.json();
+		const responseUrl = new URL(response.url());
 
-			if (
-				typeof result.value === 'undefined' ||
-				typeof result.error === 'undefined'
-			) {
-				return false;
-			}
-		} catch (e) {
-			return false;
-		}
-
-		return true;
+		return responseUrl.searchParams.has('_data');
 	});
 }
 
@@ -160,13 +149,13 @@ export async function getSubmission(playground: Locator): Promise<unknown> {
 export function getMovieFieldset(playground: Locator) {
 	const title = playground.locator('[name="title"]');
 	const description = playground.locator('[name="description"]');
-	const genres = playground.locator('[name="genres"]');
+	const genre = playground.locator('[name="genre"]');
 	const rating = playground.locator('[name="rating"]');
 
 	return {
 		title,
 		description,
-		genres,
+		genre,
 		rating,
 	};
 }

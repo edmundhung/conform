@@ -12,14 +12,13 @@ import {
 	getPaths,
 	isFieldElement,
 	parseListCommand,
-	setFormError,
 	requestSubmit,
 	requestValidate,
 	updateList,
 	getSubmissionType,
 	getFormData,
 	parse,
-	getFieldElement,
+	reportValidity,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -43,7 +42,6 @@ interface FormFocusEvent extends FocusEvent {
 
 interface Context<Schema extends Record<string, any>> {
 	form: HTMLFormElement;
-	target: FieldElement | null;
 	formData: FormData;
 	submission: FormState<Schema>;
 }
@@ -84,7 +82,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	validate?: (context: Context<Schema>) => boolean | undefined;
+	validate?: (context: Context<Schema>) => boolean;
 
 	onInput?: (event: FormInputEvent) => void;
 	onBlur?: (event: FormFocusEvent) => void;
@@ -166,13 +164,11 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		setFormError(form, config.state.error, config.state.scope);
-
-		requestSubmit(form);
-
-		if (!form.reportValidity()) {
+		if (!reportValidity(form, config.state)) {
 			focusFirstInvalidField(form, config.state.scope);
 		}
+
+		requestSubmit(form);
 	}, [config.state]);
 
 	useEffect(() => {
@@ -322,14 +318,9 @@ export function useForm<Schema extends Record<string, any>>(
 
 				const formData = getFormData(form, submitter);
 				const submission = parse<Schema>(formData);
-				const target =
-					submission.type === 'validate' && submitter.value !== ''
-						? getFieldElement(form, submitter.value)
-						: null;
 				const context: Context<Schema> = {
-					formData,
 					form,
-					target,
+					formData,
 					submission,
 				};
 
@@ -349,11 +340,9 @@ export function useForm<Schema extends Record<string, any>>(
 					!submitter.formNoValidate
 				) {
 					try {
-						formConfig.validate(context);
-
-						if (!form.reportValidity()) {
-							event.preventDefault();
+						if (!formConfig.validate(context)) {
 							focusFirstInvalidField(form);
+							event.preventDefault();
 						}
 					} catch (e) {
 						console.warn(e);
@@ -604,13 +593,13 @@ export function useFieldset<Schema extends Record<string, any>>(
 		document.addEventListener('input', handleInput);
 		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
-		document.addEventListener('submit', submitHandler, true);
+		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			document.removeEventListener('input', handleInput);
 			document.removeEventListener('invalid', invalidHandler, true);
-			document.removeEventListener('submit', submitHandler, true);
+			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, [ref]);

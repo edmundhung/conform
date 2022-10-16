@@ -14,7 +14,7 @@ import { parseConfig } from '~/config';
 interface Movie {
 	title: string;
 	description?: string;
-	genres: string[];
+	genre: string;
 	rating?: number;
 }
 
@@ -27,9 +27,16 @@ const constraint: FieldsetConstraint<Movie> = {
 		minLength: 30,
 		maxLength: 200,
 	},
-	genres: {
+	genre: {
 		required: true,
-		multiple: true,
+		/**
+		 * No value from multiple select will be included in the FormData
+		 * when nothing is selected. This makes it hard to know the field
+		 * exist and add it to part of the scope. As native select is
+		 * uncommon (especially with `multiple`) due to lack of customization
+		 * capablity. This is considered a limitation for now.
+		 */
+		// multiple: true,
 	},
 	rating: {
 		min: '0.5',
@@ -44,33 +51,33 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const [state] = parse(formData);
+	const submission = parse(formData);
 
-	if (typeof state.value.title !== 'string') {
-		state.error.push(['title', 'Title is required']);
-	} else if (!state.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
-		state.error.push(['title', 'Please enter a valid title']);
+	if (submission.value.title === '') {
+		submission.error.push(['title', 'Title is required']);
+	} else if (!`${submission.value.title}`.match(/[0-9a-zA-Z ]{1,20}/)) {
+		submission.error.push(['title', 'Please enter a valid title']);
 	}
 
 	if (
-		typeof state.value.description === 'string' &&
-		state.value.description.length < 30
+		submission.value.description !== '' &&
+		`${submission.value.description}`.length < 30
 	) {
-		state.error.push(['description', 'Please provides more details']);
+		submission.error.push(['description', 'Please provides more details']);
 	}
 
-	if (typeof state.value.genres !== 'string') {
-		state.error.push(['genres', 'Genre is required']);
+	if (submission.value.genre === '') {
+		submission.error.push(['genre', 'Genre is required']);
 	}
 
 	if (
-		typeof state.value.rating === 'string' &&
-		Number(state.value.rating) % 0.5 !== 0
+		typeof submission.value.rating === 'string' &&
+		Number(submission.value.rating) % 0.5 !== 0
 	) {
-		state.error.push(['rating', 'The provided rating is invalid']);
+		submission.error.push(['rating', 'The provided rating is invalid']);
 	}
 
-	return state;
+	return submission;
 };
 
 export default function MovieForm() {
@@ -80,9 +87,12 @@ export default function MovieForm() {
 		...config,
 		state,
 		validate: config.validate
-			? ({ form }) => {
+			? ({ form, submission }) => {
 					for (const field of form.elements) {
-						if (isFieldElement(field)) {
+						if (
+							isFieldElement(field) &&
+							submission.scope.includes(field.name)
+						) {
 							switch (field.name) {
 								case 'title':
 									if (field.validity.valueMissing) {
@@ -100,7 +110,7 @@ export default function MovieForm() {
 										field.setCustomValidity('');
 									}
 									break;
-								case 'genres':
+								case 'genre':
 									if (field.validity.valueMissing) {
 										field.setCustomValidity('Genre is required');
 									} else {
@@ -117,10 +127,12 @@ export default function MovieForm() {
 							}
 						}
 					}
+
+					return form.reportValidity();
 			  }
 			: undefined,
-		onSubmit(event, action) {
-			switch (action?.name) {
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
 				case 'validate': {
 					event.preventDefault();
 					break;
@@ -128,7 +140,7 @@ export default function MovieForm() {
 			}
 		},
 	});
-	const { title, description, genres, rating } = useFieldset<Movie>(form.ref, {
+	const { title, description, genre, rating } = useFieldset<Movie>(form.ref, {
 		...form.config,
 		constraint,
 	});
@@ -143,8 +155,9 @@ export default function MovieForm() {
 					<Field label="Description" error={description.error}>
 						<textarea {...conform.textarea(description.config)} />
 					</Field>
-					<Field label="Genres" error={genres.error}>
-						<select {...conform.select(genres.config)}>
+					<Field label="Genre" error={genre.error}>
+						<select {...conform.select(genre.config)}>
+							<option value="">Please select</option>
 							<option value="action">Action</option>
 							<option value="adventure">Adventure</option>
 							<option value="comedy">Comedy</option>

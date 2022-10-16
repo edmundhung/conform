@@ -1,4 +1,4 @@
-import { useFieldset, useForm, parse, setFormError } from '@conform-to/react';
+import { useFieldset, useForm, reportValidity } from '@conform-to/react';
 import { getError } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -19,30 +19,29 @@ const schema = yup.object({
 
 export default function SignupForm() {
 	const form = useForm({
-		validate(formData, form) {
-			const state = parse(formData);
-
+		validate({ form, submission }) {
 			try {
-				schema.validateSync(state.value, {
+				schema.validateSync(submission.value, {
 					abortEarly: false,
 				});
 			} catch (error) {
 				if (error instanceof yup.ValidationError) {
-					state.error = state.error.concat(getError(error));
+					submission.error = submission.error.concat(
+						getError(error, submission.scope),
+					);
 				} else {
-					state.error = state.error.concat([['', 'Validation failed']]);
+					submission.error = submission.error.concat([
+						['', 'Validation failed'],
+					]);
 				}
 			}
 
-			setFormError(form, state.error);
+			return reportValidity(form, submission);
 		},
-		onSubmit: async (event) => {
+		onSubmit: async (event, context) => {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const state = parse(formData);
-
-			console.log(state);
+			console.log(context);
 		},
 	});
 	const {

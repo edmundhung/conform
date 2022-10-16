@@ -1,4 +1,4 @@
-import { getError, ifNonEmptyString } from '@conform-to/zod';
+import { ifNonEmptyString } from '@conform-to/zod';
 import { z } from 'zod';
 
 const formConfig = z.object({
@@ -33,7 +33,7 @@ export function parseConfig(request: Request) {
 	const result = formConfig.safeParse(query);
 
 	if (!result.success) {
-		throw new Error(`Invalid query provided: ${getError(result.error)}`);
+		throw new Error(`Invalid query provided: ${JSON.stringify(result.error)}`);
 	}
 
 	return result.data;

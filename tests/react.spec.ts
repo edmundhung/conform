@@ -16,7 +16,7 @@ import {
 	getSignupFieldset,
 	hasFocus,
 	getTaskFieldset,
-	waitForFormState,
+	waitForDataResponse,
 	getTodosFieldset,
 } from './helpers';
 
@@ -35,9 +35,8 @@ test.describe('Constraint', () => {
 				minLength: 30,
 				maxLength: 200,
 			},
-			genres: {
+			genre: {
 				required: true,
-				multiple: true,
 			},
 			rating: {
 				min: '0.5',
@@ -98,14 +97,14 @@ test.describe('Constraint', () => {
 test.describe('Client Validation', () => {
 	test('Browser validation', async ({ page }) => {
 		const form = await gotoForm(page, '/movie', { validate: false });
-		const { title, description, genres, rating } = getMovieFieldset(form);
+		const { title, description, genre, rating } = getMovieFieldset(form);
 
 		async function expectErrorMessagesEqualsToValidationMessages() {
 			const [actualMessages, ...expectedMessages] = await Promise.all([
 				getErrorMessages(form),
 				getValidationMessage(title),
 				getValidationMessage(description),
-				getValidationMessage(genres),
+				getValidationMessage(genre),
 				getValidationMessage(rating),
 			]);
 
@@ -120,16 +119,17 @@ test.describe('Client Validation', () => {
 			'When the menace known as the Joker wreaks havoc...',
 		);
 		await expectErrorMessagesEqualsToValidationMessages();
-		await genres.selectOption({ label: 'Action' });
+		await genre.selectOption({ label: 'Action' });
 		await expectErrorMessagesEqualsToValidationMessages();
 		await rating.type('4.5');
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
-				genres: 'action',
+				genre: 'action',
 				rating: '4.5',
 			},
 			error: [],
@@ -138,7 +138,7 @@ test.describe('Client Validation', () => {
 
 	test('Custom Validation', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
-		const { title, description, genres, rating } = getMovieFieldset(form);
+		const { title, description, genre, rating } = getMovieFieldset(form);
 
 		await clickSubmitButton(form);
 
@@ -185,7 +185,7 @@ test.describe('Client Validation', () => {
 			'',
 		]);
 
-		await genres.selectOption({ label: 'Science Fiction' });
+		await genre.selectOption({ label: 'Science Fiction' });
 		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
 
 		await rating.type('3.9');
@@ -202,11 +202,12 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
+			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Matrix',
 				description:
 					'When a beautiful stranger leads computer hacker Neo to...',
-				genres: 'sci-fi',
+				genre: 'sci-fi',
 				rating: '4.0',
 			},
 			error: [],
@@ -238,6 +239,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
+			scope: ['', 'email', 'password', 'confirmPassword'],
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -247,22 +249,24 @@ test.describe('Client Validation', () => {
 
 	test('Reset', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
-		const { title, description, genres, rating } = getMovieFieldset(form);
+		const { title, description, genre, rating } = getMovieFieldset(form);
 		const initialValidationMessages = await Promise.all([
 			getValidationMessage(title),
 			getValidationMessage(description),
-			getValidationMessage(genres),
+			getValidationMessage(genre),
 			getValidationMessage(rating),
 		]);
 
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual(initialValidationMessages);
+		const currentValidationMessages = await getErrorMessages(form);
+
+		expect(currentValidationMessages).not.toEqual(initialValidationMessages);
 		expect(
 			await Promise.all([
 				isTouched(title),
 				isTouched(description),
-				isTouched(genres),
+				isTouched(genre),
 				isTouched(rating),
 			]),
 		).not.toContain(false);
@@ -270,7 +274,7 @@ test.describe('Client Validation', () => {
 		await title.type('Up');
 		expect(await getErrorMessages(form)).toEqual([
 			'',
-			...initialValidationMessages.slice(1),
+			...currentValidationMessages.slice(1),
 		]);
 
 		await clickResetButton(form);
@@ -280,7 +284,7 @@ test.describe('Client Validation', () => {
 			await Promise.all([
 				getValidationMessage(title),
 				getValidationMessage(description),
-				getValidationMessage(genres),
+				getValidationMessage(genre),
 				getValidationMessage(rating),
 			]),
 		).toEqual(initialValidationMessages);
@@ -288,7 +292,7 @@ test.describe('Client Validation', () => {
 			await Promise.all([
 				isTouched(title),
 				isTouched(description),
-				isTouched(genres),
+				isTouched(genre),
 				isTouched(rating),
 			]),
 		).not.toContain(true);
@@ -301,7 +305,10 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			value: {},
+			scope: ['', 'email', 'password'],
+			value: {
+				email: '',
+			},
 			error: [
 				['email', 'Email is required'],
 				['password', 'Password is required'],
@@ -313,6 +320,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			scope: ['', 'email', 'password'],
 			value: {
 				email: 'invalid email',
 			},
@@ -343,7 +351,7 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
 		expect(await getErrorMessages(form)).toEqual([
 			'',
@@ -352,7 +360,7 @@ test.describe('Server Validation', () => {
 		]);
 
 		await email.type('me@edmund.dev');
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
 		expect(await getErrorMessages(form)).toEqual([
 			'',
@@ -361,7 +369,7 @@ test.describe('Server Validation', () => {
 		]);
 
 		await password.type('SecretPassword');
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 		expect(await getErrorMessages(form)).toEqual([
 			'The provided email or password is not valid',
 			'',
@@ -370,7 +378,7 @@ test.describe('Server Validation', () => {
 
 		await password.press('Control+a');
 		await password.type('$eCreTP@ssWord');
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 		expect(await getErrorMessages(form)).toEqual(['', '', '']);
 	});
 
@@ -381,12 +389,12 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
 		expect(await hasFocus(email)).toBe(true);
 
 		await email.type('me@edmund.dev');
-		await Promise.all([waitForFormState(page), clickSubmitButton(form)]);
+		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
 		expect(await hasFocus(password)).toBe(true);
 	});
@@ -536,6 +544,17 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			scope: [
+				'',
+				'title',
+				'tasks',
+				'tasks[0]',
+				'tasks[0].content',
+				'tasks[1]',
+				'tasks[1].content',
+				'tasks[2]',
+				'tasks[2].content',
+			],
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -602,6 +621,16 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			scope: [
+				'',
+				'title',
+				'tasks',
+				'tasks[0]',
+				'tasks[0].content',
+				'tasks[1]',
+				'tasks[1].content',
+				'tasks[1].completed',
+			],
 			value: {
 				title: 'Testing plan',
 				tasks: [

@@ -37,17 +37,17 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const [state] = parse(formData);
-	const result = schema.safeParse(state.value);
+	const submission = parse(formData);
+	const result = schema.safeParse(submission.value);
 
 	if (!result.success) {
 		return {
-			...state,
-			error: state.error.concat(getError(result.error)),
+			...submission,
+			error: submission.error.concat(getError(result.error, submission.scope)),
 		};
 	}
 
-	return state;
+	return submission;
 };
 
 export default function PaymentForm() {
@@ -56,8 +56,8 @@ export default function PaymentForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
-		onSubmit(event, action) {
-			switch (action?.name) {
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
 				case 'validate': {
 					event.preventDefault();
 					break;
