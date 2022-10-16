@@ -51,9 +51,11 @@ export function hasFocus(locator: Locator): Promise<boolean> {
 
 export async function waitForDataResponse(page: Page): Promise<Response> {
 	return await page.waitForResponse(async (response) => {
-		const responseUrl = new URL(response.url());
+		const request = response.request();
+		const method = request.method();
+		const url = new URL(response.url());
 
-		return responseUrl.searchParams.has('_data');
+		return method === 'POST' && url.searchParams.has('_data');
 	});
 }
 
@@ -202,6 +204,14 @@ export function getSignupFieldset(playground: Locator) {
 		email: playground.locator('[name="email"]'),
 		password: playground.locator('[name="password"]'),
 		confirmPassword: playground.locator('[name="confirmPassword"]'),
+	};
+}
+
+export function getEmployeeFieldset(playground: Locator) {
+	return {
+		name: playground.locator('[name="name"]'),
+		email: playground.locator('[name="email"]'),
+		title: playground.locator('[name="title"]'),
 	};
 }
 

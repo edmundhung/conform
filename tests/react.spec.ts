@@ -18,6 +18,7 @@ import {
 	getTaskFieldset,
 	waitForDataResponse,
 	getTodosFieldset,
+	getEmployeeFieldset,
 } from './helpers';
 
 test.describe('Constraint', () => {
@@ -351,35 +352,139 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'Email is required',
-			'Password is required',
-		]);
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', 'Email is required', 'Password is required']);
 
 		await email.type('me@edmund.dev');
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'',
-			'Password is required',
-		]);
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', '', 'Password is required']);
 
 		await password.type('SecretPassword');
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
-		expect(await getErrorMessages(form)).toEqual([
-			'The provided email or password is not valid',
-			'',
-			'',
-		]);
+		await clickSubmitButton(form);
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['The provided email or password is not valid', '', '']);
 
 		await password.press('Control+a');
 		await password.type('$eCreTP@ssWord');
+		await clickSubmitButton(form);
+		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '']);
+	});
+
+	test('Async validation', async ({ page }) => {
+		const form = await gotoForm(page, '/employee');
+		const { name, email, title } = getEmployeeFieldset(form);
+
+		await page.route('**', (route) => {
+			const request = route.request();
+			const url = new URL(request.url());
+			const body = request.postData();
+			const headers = request.headers();
+
+			if (
+				request.method() !== 'POST' ||
+				!url.searchParams.has('_data') ||
+				!body ||
+				headers['content-type'] !== 'application/x-www-form-urlencoded'
+			) {
+				return route.continue();
+			}
+
+			const value = Object.fromEntries(new URLSearchParams(body));
+
+			// When validting the email field
+			if (
+				value['conform/validate'] === 'email' &&
+				[
+					'hey@conform.gu',
+					'hey@conform.gui',
+					'hey@conform.guid',
+					'hey@conform.guide',
+				].includes(value.email)
+			) {
+				return route.continue();
+			}
+
+			// When clicking on the submit button
+			if (typeof value['conform/validate'] === 'undefined') {
+				return route.continue();
+			}
+
+			return route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					value: {},
+					error: [['', 'Request forbidden']],
+					scope: [''],
+				}),
+			});
+		});
+
+		await clickSubmitButton(form);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'Name is required',
+			'Email is required',
+			'Title is required',
+		]);
+
+		await name.type('Edmund Hung');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Email is required',
+			'Title is required',
+		]);
+
+		await email.type('hey@conform.g');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Email is invalid',
+			'Title is required',
+		]);
+
+		await email.type('u');
+
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', '', 'Email is already used', 'Title is required']);
+
+		await email.type('i');
+
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', '', 'Email is already used', 'Title is required']);
+
+		await email.type('d');
+
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', '', 'Email is already used', 'Title is required']);
+
+		await email.type('e');
+
+		await expect
+			.poll(() => getErrorMessages(form))
+			.toEqual(['', '', '', 'Title is required']);
+
+		await title.type('Software Developer');
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+
 		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
-		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
 	});
 
 	test('Autofocus invalid field', async ({ page }) => {
@@ -389,14 +494,14 @@ test.describe('Server Validation', () => {
 		});
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
-		expect(await hasFocus(email)).toBe(true);
+		await expect.poll(() => hasFocus(email)).toBe(true);
 
 		await email.type('me@edmund.dev');
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
-		expect(await hasFocus(password)).toBe(true);
+		await expect.poll(() => hasFocus(password)).toBe(true);
 	});
 });
 
