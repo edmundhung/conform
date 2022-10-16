@@ -140,7 +140,7 @@ export default function MovieForm() {
 			}
 		},
 	});
-	const { title, description, genre, rating } = useFieldset<Movie>(form.ref, {
+	const { title, description, genre, rating } = useFieldset(form.ref, {
 		...form.config,
 		constraint,
 	});

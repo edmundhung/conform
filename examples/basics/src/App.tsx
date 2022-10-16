@@ -6,16 +6,22 @@ export default function LoginForm() {
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
-	const { email, password } = useFieldset(form.ref);
+	const { email, password } = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>
 			<label>
 				<div>Email</div>
-				<input type="email" name="email" required />
+				<input type="email" name="email" required autoComplete="off" />
 				<div>{email.error}</div>
 			</label>
 			<label>

@@ -10,14 +10,20 @@ interface Payment {
 }
 
 export default function PaymentForm() {
-	const form = useForm({
+	const form = useForm<Payment>({
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
-	const { account, amount, reference } = useFieldset<Payment>(form.ref);
+	const { account, amount, reference } = useFieldset(form.ref, form.config);
 	const { currency, value } = useFieldset(form.ref, amount.config);
 
 	return (

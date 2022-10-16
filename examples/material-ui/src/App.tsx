@@ -8,15 +8,21 @@ interface Article {
 }
 
 export default function ArticleForm() {
-	const form = useForm({
+	const form = useForm<Article>({
 		initialReport: 'onBlur',
 		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
-	const { title, category, content } = useFieldset<Article>(form.ref);
+	const { title, category, content } = useFieldset(form.ref, form.config);
 
 	/**
 	 * MUI Select is a controlled component and behaves very different from native input/select.

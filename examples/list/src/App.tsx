@@ -13,15 +13,21 @@ interface Todo {
 }
 
 export default function TodoForm() {
-	const form = useForm({
+	const form = useForm<Todo>({
 		initialReport: 'onBlur',
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
-	const { title, tasks } = useFieldset<Todo>(form.ref);
+	const { title, tasks } = useFieldset(form.ref, form.config);
 	const [taskList, control] = useFieldList(form.ref, tasks.config);
 
 	return (

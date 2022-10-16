@@ -37,7 +37,13 @@ export default function ExampleForm() {
 		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
 

@@ -15,12 +15,12 @@ import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
-	content: z.string(),
+	content: z.string().min(1, 'Content is required'),
 	completed: z.preprocess((value) => value === 'yes', z.boolean().optional()),
 });
 
 const todoSchema = z.object({
-	title: z.string(),
+	title: z.string().min(1, 'Title is required'),
 	tasks: z.array(taskSchema).min(1),
 });
 
@@ -45,7 +45,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function OrderForm() {
 	const status = useActionData<typeof action>();
-	const form = useForm({
+	const form = useForm<z.infer<typeof todoSchema>>({
 		status,
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
@@ -58,11 +58,15 @@ export default function OrderForm() {
 				error,
 			});
 		},
+		onSubmit(event, { submission }) {
+			switch (submission.type) {
+				case 'validate':
+					event.preventDefault();
+					break;
+			}
+		},
 	});
-	const { title, tasks } = useFieldset<z.infer<typeof todoSchema>>(
-		form.ref,
-		form.config,
-	);
+	const { title, tasks } = useFieldset(form.ref, form.config);
 	const [taskList, control] = useFieldList(form.ref, tasks.config);
 
 	return (

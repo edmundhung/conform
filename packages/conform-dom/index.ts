@@ -119,12 +119,12 @@ export function hasError(
 
 export function reportValidity(
 	form: HTMLFormElement,
-	result: SubmissionStatus,
+	status: SubmissionStatus,
 ): boolean {
-	const firstErrorByName = Object.fromEntries([...result.error].reverse());
+	const firstErrorByName = Object.fromEntries([...status.error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element) || !result.scope.includes(element.name)) {
+		if (!isFieldElement(element) || !status.scope.includes(element.name)) {
 			continue;
 		}
 

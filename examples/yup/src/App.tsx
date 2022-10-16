@@ -18,7 +18,7 @@ const schema = yup.object({
 });
 
 export default function SignupForm() {
-	const form = useForm({
+	const form = useForm<yup.InferType<typeof schema>>({
 		onValidate({ form, submission }) {
 			try {
 				schema.validateSync(submission.value, {
@@ -38,23 +38,29 @@ export default function SignupForm() {
 
 			return reportValidity(form, submission);
 		},
-		onSubmit: async (event, context) => {
+		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(context);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
 	const {
 		email,
 		password,
 		'confirm-password': confirmPassword,
-	} = useFieldset<yup.InferType<typeof schema>>(form.ref);
+	} = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>
 			<label>
 				<div>Email</div>
-				<input type="email" name="email" />
+				<input type="email" name="email" autoComplete="off" />
 				<div>{email.error}</div>
 			</label>
 			<label>

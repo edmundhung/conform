@@ -5,14 +5,14 @@ import { z } from 'zod';
 const schema = z
 	.object({
 		email: z
-			.string({ required_error: 'Email is required' })
+			.string()
+			.min(1, 'Email is required')
 			.email('Please enter a valid email'),
 		password: z
-			.string({ required_error: 'Password is required' })
+			.string()
+			.min(1, 'Password is required')
 			.min(10, 'The password should be at least 10 characters long'),
-		'confirm-password': z.string({
-			required_error: 'Confirm Password is required',
-		}),
+		'confirm-password': z.string().min(1, 'Confirm Password is required'),
 	})
 	.refine((value) => value.password === value['confirm-password'], {
 		message: 'The password does not match',
@@ -20,7 +20,7 @@ const schema = z
 	});
 
 export default function SignupForm() {
-	const form = useForm({
+	const form = useForm<z.infer<typeof schema>>({
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
 
@@ -34,20 +34,26 @@ export default function SignupForm() {
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(submission);
+			switch (submission.type) {
+				case 'validate':
+					break;
+				default:
+					console.log(submission);
+					break;
+			}
 		},
 	});
 	const {
 		email,
 		password,
 		'confirm-password': confirmPassword,
-	} = useFieldset<z.infer<typeof schema>>(form.ref);
+	} = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>
 			<label>
 				<div>Email</div>
-				<input type="email" name="email" />
+				<input type="email" name="email" autoComplete="off" />
 				<div>{email.error}</div>
 			</label>
 			<label>
