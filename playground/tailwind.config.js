@@ -9,7 +9,7 @@ module.exports = {
 	plugins: [
 		form,
 		plugin(function ({ addVariant }) {
-			addVariant('touched', '&[data-touched="true"]');
+			addVariant('touched', '&[data-conform-touched="true"]');
 		}),
 	],
 };

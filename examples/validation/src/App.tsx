@@ -1,61 +1,70 @@
-import { useForm, useFieldset, createValidate } from '@conform-to/react';
+import { useForm, useFieldset, isFieldElement } from '@conform-to/react';
+
+interface Signup {
+	email: string;
+	password: string;
+	'confirm-password': string;
+}
 
 export default function SignupForm() {
-	const formProps = useForm({
-		validate: createValidate((field, formData) => {
-			switch (field.name) {
-				case 'email':
-					if (field.validity.valueMissing) {
-						field.setCustomValidity('Email is required');
-					} else if (field.validity.typeMismatch) {
-						field.setCustomValidity('Please enter a valid email');
-					} else {
-						field.setCustomValidity('');
+	const form = useForm<Signup>({
+		onValidate({ form, submission }) {
+			for (const field of Array.from(form.elements)) {
+				if (isFieldElement(field) && submission.scope.includes(field.name)) {
+					switch (field.name) {
+						case 'email':
+							if (field.validity.valueMissing) {
+								field.setCustomValidity('Email is required');
+							} else if (field.validity.typeMismatch) {
+								field.setCustomValidity('Please enter a valid email');
+							} else {
+								field.setCustomValidity('');
+							}
+							break;
+						case 'password':
+							if (field.validity.valueMissing) {
+								field.setCustomValidity('Password is required');
+							} else if (field.validity.tooShort) {
+								field.setCustomValidity(
+									'The password should be at least 10 characters long',
+								);
+							} else {
+								field.setCustomValidity('');
+							}
+							break;
+						case 'confirm-password': {
+							if (field.validity.valueMissing) {
+								field.setCustomValidity('Confirm Password is required');
+							} else if (field.value !== submission.value.password) {
+								field.setCustomValidity('The password does not match');
+							} else {
+								field.setCustomValidity('');
+							}
+							break;
+						}
 					}
-					break;
-				case 'password':
-					if (field.validity.valueMissing) {
-						field.setCustomValidity('Password is required');
-					} else if (field.validity.tooShort) {
-						field.setCustomValidity(
-							'The password should be at least 10 characters long',
-						);
-					} else {
-						field.setCustomValidity('');
-					}
-					break;
-				case 'confirm-password': {
-					if (field.validity.valueMissing) {
-						field.setCustomValidity('Confirm Password is required');
-					} else if (field.value !== formData.get('password')) {
-						field.setCustomValidity('The password does not match');
-					} else {
-						field.setCustomValidity('');
-					}
-					break;
 				}
 			}
-		}),
-		onSubmit(event) {
+
+			return form.reportValidity();
+		},
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const result = Object.fromEntries(formData);
-
-			console.log(result);
+			console.log(submission);
 		},
 	});
 	const {
 		email,
 		password,
 		'confirm-password': confirmPassword,
-	} = useFieldset(formProps.ref);
+	} = useFieldset(form.ref, form.config);
 
 	return (
-		<form {...formProps}>
+		<form {...form.props}>
 			<label>
 				<div>Email</div>
-				<input type="email" name="email" required />
+				<input type="email" name="email" required autoComplete="off" />
 				<div>{email.error}</div>
 			</label>
 			<label>

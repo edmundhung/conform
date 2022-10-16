@@ -1,10 +1,5 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import {
-	useForm,
-	useFieldset,
-	useFieldList,
-	createSubmission,
-} from '@conform-to/react';
+import { useForm, useFieldset, useFieldList } from '@conform-to/react';
 import { useRef } from 'react';
 
 interface Task {
@@ -18,22 +13,22 @@ interface Todo {
 }
 
 export default function TodoForm() {
-	const formProps = useForm({
+	const form = useForm<Todo>({
 		initialReport: 'onBlur',
-		onSubmit: async (event) => {
+		onValidate({ form }) {
+			return form.reportValidity();
+		},
+		async onSubmit(event, { submission }) {
 			event.preventDefault();
-
-			const formData = new FormData(event.currentTarget);
-			const submission = createSubmission(formData);
 
 			console.log(submission);
 		},
 	});
-	const { title, tasks } = useFieldset<Todo>(formProps.ref);
-	const [taskList, control] = useFieldList(formProps.ref, tasks.config);
+	const { title, tasks } = useFieldset(form.ref, form.config);
+	const [taskList, control] = useFieldList(form.ref, tasks.config);
 
 	return (
-		<form {...formProps}>
+		<form {...form.props}>
 			<fieldset>
 				<label>
 					<div>Title</div>

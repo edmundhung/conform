@@ -37,9 +37,8 @@ export default function LoginForm() {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget);
-        const value = Object.fromEntries(formData);
 
-        console.log(value);
+        console.log(formData);
       }}
     >
       <label>
@@ -70,26 +69,26 @@ By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/At
 
 With the help of native form validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up if they try to submit a form with invalid fields. These bubbles, unfortunately, are not customizable.
 
-What if we can capture the error messages and decide where to put them ourselves? Let's introduce **conform**:
+What if we can capture the error messages and decide where to put them ourselves? Let's introduce the [useForm](/packages/conform-react/README.md#useform) and [useFieldset](/packages/conform-react/README.md#usefieldset) hooks:
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
-  const formProps = useForm({
+  const form = useForm({
+    onValidate({ form }) {
+      return form.reportValidity();
+    }
     onSubmit(event) {
       event.preventDefault();
 
-      const formData = new FormData(event.currentTarget);
-      const value = Object.fromEntries(formData);
-
-      console.log(value);
+      console.log(formData);
     },
   });
-  const { email, password } = useFieldset(formProps.ref);
+  const { email, password } = useFieldset(form.ref);
 
   return (
-    <form {...formProps}>
+    <form {...form.props}>
       <label>
         <div>Email</div>
         <input type="email" name="email" required />
@@ -139,11 +138,11 @@ Currently, form error will not be reported until a submission is made. We can ta
 import { useForm } from '@conform-to/react';
 
 export default function LoginForm() {
-  const formProps = useForm({
+  const form = useForm({
     initialReport: 'onBlur',
   });
 
-  return <form {...formProps}>{/* ... */}</form>;
+  return <form {...form.props}>{/* ... */}</form>;
 }
 ```
 

@@ -1,46 +1,49 @@
-import { useForm, useFieldset, createValidate } from '@conform-to/react';
+import { useForm, useFieldset, isFieldElement } from '@conform-to/react';
 import { useRef } from 'react';
 
 export default function ExampleForm() {
-	const formProps = useForm({
+	const form = useForm({
 		initialReport: 'onBlur',
-		validate: createValidate((field, formData) => {
-			switch (field.name) {
-				case 'quantity': {
-					if (field.value === '') {
-						field.setCustomValidity('Quantity is required');
-					} else {
-						field.setCustomValidity('');
-					}
-					break;
-				}
-				case 'frequency': {
-					const type = formData.get('type');
+		onValidate({ formData, form }) {
+			for (const field of Array.from(form.elements)) {
+				if (isFieldElement(field)) {
+					switch (field.name) {
+						case 'quantity': {
+							if (field.value === '') {
+								field.setCustomValidity('Quantity is required');
+							} else {
+								field.setCustomValidity('');
+							}
+							break;
+						}
+						case 'frequency': {
+							const type = formData.get('type');
 
-					if (type === 'subscription' && field.value === '') {
-						field.setCustomValidity('Frequnecy is required');
-					} else if (type === 'onetime-purchase' && field.value !== '') {
-						field.setCustomValidity('Frequnecy should be blank');
-					} else {
-						field.setCustomValidity('');
+							if (type === 'subscription' && field.value === '') {
+								field.setCustomValidity('Frequnecy is required');
+							} else if (type === 'onetime-purchase' && field.value !== '') {
+								field.setCustomValidity('Frequnecy should be blank');
+							} else {
+								field.setCustomValidity('');
+							}
+							break;
+						}
 					}
-					break;
 				}
 			}
-		}),
-		onSubmit: (event) => {
+
+			return form.reportValidity();
+		},
+		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const value = Object.fromEntries(formData);
-
-			console.log(value);
+			console.log(submission);
 		},
 	});
 
 	return (
 		<div>
-			<form id="product" {...formProps}>
+			<form id="product" {...form.props}>
 				<fieldset>
 					<legend>Product</legend>
 					<select name="product">

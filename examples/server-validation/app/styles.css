@@ -1,0 +1,27 @@
+fieldset {
+	border: none;
+	padding: 10px 0;
+}
+
+ul {
+	border: 1px dotted gray;
+	list-style: none;
+	margin: 10px 0;
+	padding: 10px;
+}
+
+input {
+	margin: 2px 0;
+}
+
+input[type='checkbox'] {
+	margin: 0 10px;
+}
+
+input.error {
+	border-color: red;
+}
+
+input.error + div {
+	color: red;
+}
