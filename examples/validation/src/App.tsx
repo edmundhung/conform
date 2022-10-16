@@ -2,7 +2,7 @@ import { useForm, useFieldset, isFieldElement } from '@conform-to/react';
 
 export default function SignupForm() {
 	const form = useForm({
-		validate(formData, form) {
+		onValidate({ formData, form }) {
 			for (const field of Array.from(form.elements)) {
 				if (isFieldElement(field)) {
 					switch (field.name) {
@@ -39,14 +39,13 @@ export default function SignupForm() {
 					}
 				}
 			}
+
+			return form.reportValidity();
 		},
-		onSubmit(event) {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const result = Object.fromEntries(formData);
-
-			console.log(result);
+			console.log(submission);
 		},
 	});
 	const {

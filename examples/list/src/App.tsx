@@ -1,5 +1,5 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import { useForm, useFieldset, useFieldList, parse } from '@conform-to/react';
+import { useForm, useFieldset, useFieldList } from '@conform-to/react';
 import { useRef } from 'react';
 
 interface Task {
@@ -15,11 +15,8 @@ interface Todo {
 export default function TodoForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
-		onSubmit: async (event) => {
+		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
-
-			const formData = new FormData(event.currentTarget);
-			const submission = parse(formData);
 
 			console.log(submission);
 		},

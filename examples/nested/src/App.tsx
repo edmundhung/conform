@@ -1,4 +1,4 @@
-import { useForm, useFieldset, parse } from '@conform-to/react';
+import { useForm, useFieldset } from '@conform-to/react';
 
 interface Payment {
 	account: string;
@@ -11,13 +11,10 @@ interface Payment {
 
 export default function PaymentForm() {
 	const form = useForm({
-		onSubmit(event) {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const state = parse(formData);
-
-			console.log(state);
+			console.log(submission);
 		},
 	});
 	const { account, amount, reference } = useFieldset<Payment>(form.ref);

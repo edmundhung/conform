@@ -86,7 +86,7 @@ export default function MovieForm() {
 	const form = useForm<Movie>({
 		...config,
 		state,
-		validate: config.validate
+		onValidate: config.validate
 			? ({ form, submission }) => {
 					for (const field of form.elements) {
 						if (

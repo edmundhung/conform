@@ -10,13 +10,10 @@ interface Article {
 export default function ArticleForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
-		onSubmit: (event) => {
+		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const result = Object.fromEntries(formData);
-
-			console.log(result);
+			console.log(submission);
 		},
 	});
 	const { title, category, content } = useFieldset<Article>(form.ref);

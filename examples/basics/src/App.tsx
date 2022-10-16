@@ -3,13 +3,10 @@ import { useForm, useFieldset } from '@conform-to/react';
 export default function LoginForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
-		onSubmit(event) {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const value = Object.fromEntries(formData);
-
-			console.log(value);
+			console.log(submission);
 		},
 	});
 	const { email, password } = useFieldset(form.ref);

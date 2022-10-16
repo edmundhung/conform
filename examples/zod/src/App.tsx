@@ -21,7 +21,7 @@ const schema = z
 
 export default function SignupForm() {
 	const form = useForm({
-		validate({ form, submission }) {
+		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
 
 			return reportValidity(form, {
@@ -31,10 +31,10 @@ export default function SignupForm() {
 					: submission.error,
 			});
 		},
-		onSubmit: async (event, context) => {
+		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
 
-			console.log(context);
+			console.log(submission);
 		},
 	});
 	const {

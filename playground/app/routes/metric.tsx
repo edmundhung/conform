@@ -100,7 +100,7 @@ export default function SignupForm() {
 	const form = useForm<MetricDefinition>({
 		initialReport: 'onBlur',
 		state,
-		validate({ submission, form }) {
+		onValidate({ submission, form }) {
 			const result = schema.safeParse(submission.value);
 			const scope = new Set(submission.scope);
 

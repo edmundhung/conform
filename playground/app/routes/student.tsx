@@ -54,7 +54,7 @@ export default function StudentForm() {
 	const form = useForm<yup.InferType<typeof schema>>({
 		...config,
 		state,
-		validate: config.validate
+		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = validate(submission);
 

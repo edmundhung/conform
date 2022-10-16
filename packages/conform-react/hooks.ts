@@ -30,16 +30,6 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-interface FormInputEvent extends Event {
-	target: FieldElement;
-	currentTarget: HTMLFormElement;
-}
-
-interface FormFocusEvent extends FocusEvent {
-	target: FieldElement;
-	currentTarget: HTMLFormElement;
-}
-
 interface Context<Schema extends Record<string, any>> {
 	form: HTMLFormElement;
 	formData: FormData;
@@ -82,10 +72,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	validate?: (context: Context<Schema>) => boolean;
-
-	onInput?: (event: FormInputEvent) => void;
-	onBlur?: (event: FormFocusEvent) => void;
+	onValidate?: (context: Context<Schema>) => boolean;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -182,17 +169,11 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
-			formConfig.onInput?.({
-				...event,
-				target: field,
-				currentTarget: form,
-			});
-
 			if (formConfig.initialReport === 'onChange') {
 				field.dataset.conformTouched = 'true';
 			}
 
-			if (field.dataset.conformTouched && !event.defaultPrevented) {
+			if (field.dataset.conformTouched) {
 				requestValidate(form, field.name);
 			}
 		};
@@ -205,16 +186,9 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
-			formConfig.onBlur?.({
-				...event,
-				target: field,
-				currentTarget: form,
-			});
-
 			if (
 				formConfig.initialReport === 'onBlur' &&
-				!field.dataset.conformTouched &&
-				!event.defaultPrevented
+				!field.dataset.conformTouched
 			) {
 				field.dataset.conformTouched = 'true';
 
@@ -334,13 +308,12 @@ export function useForm<Schema extends Record<string, any>>(
 					}
 				}
 
-				if (
-					typeof formConfig.validate === 'function' &&
-					!config.noValidate &&
-					!submitter.formNoValidate
-				) {
+				if (!config.noValidate && !submitter.formNoValidate) {
 					try {
-						if (!formConfig.validate(context)) {
+						const isValid =
+							formConfig.onValidate?.(context) ?? form.reportValidity();
+
+						if (!isValid) {
 							focusFirstInvalidField(form);
 							event.preventDefault();
 						}

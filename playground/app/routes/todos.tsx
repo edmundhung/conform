@@ -53,7 +53,7 @@ export default function TodosForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
-		validate: config.validate
+		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = schema.safeParse(submission.value);
 

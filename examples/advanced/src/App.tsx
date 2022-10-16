@@ -4,7 +4,7 @@ import { useRef } from 'react';
 export default function ExampleForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
-		validate(formData, form) {
+		onValidate({ formData, form }) {
 			for (const field of Array.from(form.elements)) {
 				if (isFieldElement(field)) {
 					switch (field.name) {
@@ -31,14 +31,13 @@ export default function ExampleForm() {
 					}
 				}
 			}
+
+			return form.reportValidity();
 		},
-		onSubmit: (event) => {
+		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 
-			const formData = new FormData(event.currentTarget);
-			const value = Object.fromEntries(formData);
-
-			console.log(value);
+			console.log(submission);
 		},
 	});
 

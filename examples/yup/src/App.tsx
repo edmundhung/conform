@@ -19,7 +19,7 @@ const schema = yup.object({
 
 export default function SignupForm() {
 	const form = useForm({
-		validate({ form, submission }) {
+		onValidate({ form, submission }) {
 			try {
 				schema.validateSync(submission.value, {
 					abortEarly: false,

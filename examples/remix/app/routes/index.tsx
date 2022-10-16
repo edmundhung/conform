@@ -47,7 +47,7 @@ export default function OrderForm() {
 	const state = useActionData<typeof action>();
 	const form = useForm({
 		state,
-		validate({ form, submission }) {
+		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
 			const error = !result.success
 				? state.error.concat(getError(result.error, submission.scope))

@@ -63,7 +63,7 @@ export default function LoginForm() {
 	const form = useForm<Login>({
 		...config,
 		state,
-		validate: config.validate
+		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = validate(submission);
 
