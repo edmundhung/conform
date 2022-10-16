@@ -58,10 +58,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function EmployeeForm() {
 	const config = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<Schema>({
 		...config,
-		status,
+		state,
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
 			const error = submission.error.concat(
@@ -93,7 +93,7 @@ export default function EmployeeForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Employee Form" status={status}>
+			<Playground title="Employee Form" state={state}>
 				<Alert message={form.error} />
 				<Field label="Name" error={name.error}>
 					<input

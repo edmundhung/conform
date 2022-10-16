@@ -1,4 +1,4 @@
-import type { Submission, SubmissionStatus } from '@conform-to/react';
+import type { FormState, Submission } from '@conform-to/react';
 import {
 	conform,
 	useFieldset,
@@ -27,7 +27,7 @@ const schema = yup.object({
 
 type Schema = yup.InferType<typeof schema>;
 
-function validate(submission: Submission<Schema>): SubmissionStatus<Schema> {
+function validate(submission: Submission<Schema>): FormState<Schema> {
 	try {
 		schema.validateSync(submission.value, {
 			abortEarly: false,
@@ -58,15 +58,15 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function StudentForm() {
 	const config = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<Schema>({
 		...config,
-		status,
+		state,
 		onValidate: config.validate
 			? ({ form, submission }) => {
-					const status = validate(submission);
+					const state = validate(submission);
 
-					return reportValidity(form, status);
+					return reportValidity(form, state);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {
@@ -85,7 +85,7 @@ export default function StudentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Student Form" status={status}>
+			<Playground title="Student Form" state={state}>
 				<fieldset>
 					<Field label="Name" error={name.error}>
 						<input {...conform.input(name.config, { type: 'text' })} />

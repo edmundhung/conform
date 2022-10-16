@@ -82,10 +82,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function MovieForm() {
 	const config = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<Movie>({
 		...config,
-		status,
+		state,
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					for (const field of form.elements) {
@@ -147,7 +147,7 @@ export default function MovieForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Movie Form" status={status}>
+			<Playground title="Movie Form" state={state}>
 				<fieldset>
 					<Field label="Title" error={title.error}>
 						<input {...conform.input(title.config, { type: 'text' })} />

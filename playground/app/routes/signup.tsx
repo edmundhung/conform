@@ -1,4 +1,4 @@
-import type { Submission, SubmissionStatus } from '@conform-to/react';
+import type { FormState, Submission } from '@conform-to/react';
 import {
 	conform,
 	parse,
@@ -17,7 +17,7 @@ interface Signup {
 	confirmPassword: string;
 }
 
-function validate(submission: Submission<Signup>): SubmissionStatus<Signup> {
+function validate(submission: Submission<Signup>): FormState<Signup> {
 	const scope = new Set(submission.scope);
 	const error = [...submission.error];
 	const { email, password, confirmPassword } = submission.value;
@@ -79,22 +79,22 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData);
-	const status = validate(submission);
+	const state = validate(submission);
 
-	return status;
+	return state;
 };
 
 export default function SignupForm() {
 	const config = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<Signup>({
 		...config,
-		status,
+		state,
 		onValidate: config.validate
 			? ({ form, submission }) => {
-					const status = validate(submission);
+					const state = validate(submission);
 
-					return reportValidity(form, status);
+					return reportValidity(form, state);
 			  }
 			: undefined,
 		async onSubmit(event, { submission }) {
@@ -114,7 +114,7 @@ export default function SignupForm() {
 	});
 
 	return (
-		<Playground title="Signup Form" form="signup" status={status}>
+		<Playground title="Signup Form" form="signup" state={state}>
 			<Form id="signup" method="post" {...form.props} />
 			<Field label="Email" error={email.error}>
 				<input

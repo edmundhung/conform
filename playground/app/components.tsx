@@ -1,4 +1,4 @@
-import type { SubmissionStatus } from '@conform-to/react';
+import type { FormState } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -6,7 +6,7 @@ interface PlaygroundProps {
 	title: string;
 	description?: string;
 	form?: string;
-	status?: SubmissionStatus<Record<string, unknown>>;
+	state?: FormState<Record<string, unknown>>;
 	children: ReactNode;
 }
 
@@ -14,14 +14,14 @@ export function Playground({
 	title,
 	description,
 	form,
-	status,
+	state,
 	children,
 }: PlaygroundProps) {
-	const [currentStatus, setSubmissionStatus] = useState(status ?? null);
+	const [status, setFormState] = useState(state ?? null);
 
 	useEffect(() => {
-		setSubmissionStatus(status ?? null);
-	}, [status]);
+		setFormState(state ?? null);
+	}, [state]);
 
 	return (
 		<section
@@ -35,17 +35,17 @@ export function Playground({
 					</h3>
 					<p className="mt-1 mb-2 text-sm text-gray-600">{description}</p>
 				</header>
-				{currentStatus ? (
+				{status ? (
 					<details open={true}>
-						<summary>Submission Status</summary>
+						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 overflow-x-scroll ${
-								currentStatus.error.length > 0
+								status.error.length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
 						>
-							{JSON.stringify(currentStatus, null, 2)}
+							{JSON.stringify(status, null, 2)}
 						</pre>
 					</details>
 				) : null}
@@ -59,7 +59,7 @@ export function Playground({
 						<button
 							type="submit"
 							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-							onClick={() => setSubmissionStatus(null)}
+							onClick={() => setFormState(null)}
 							form={form}
 						>
 							Submit
@@ -67,7 +67,7 @@ export function Playground({
 						<button
 							type="reset"
 							className="inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-							onClick={() => setSubmissionStatus(null)}
+							onClick={() => setFormState(null)}
 							form={form}
 						>
 							Reset

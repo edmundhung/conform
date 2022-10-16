@@ -1,6 +1,6 @@
 import {
+	type FormState,
 	type Submission,
-	type SubmissionStatus,
 	conform,
 	useFieldset,
 	useForm,
@@ -17,7 +17,7 @@ interface Login {
 	password: string;
 }
 
-function validate(submission: Submission<Login>): SubmissionStatus<Login> {
+function validate(submission: Submission<Login>): FormState<Login> {
 	if (submission.scope.includes('email') && submission.value.email === '') {
 		submission.error.push(['email', 'Email is required']);
 	}
@@ -39,20 +39,20 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse<Login>(formData);
-	const status = validate(submission);
+	const state = validate(submission);
 
 	if (
-		status.error.length === 0 &&
-		(status.value.email !== 'me@edmund.dev' ||
-			status.value.password !== '$eCreTP@ssWord')
+		state.error.length === 0 &&
+		(state.value.email !== 'me@edmund.dev' ||
+			state.value.password !== '$eCreTP@ssWord')
 	) {
-		status.error.push(['', 'The provided email or password is not valid']);
+		state.error.push(['', 'The provided email or password is not valid']);
 	}
 
 	return {
-		...status,
+		...state,
 		value: {
-			email: status.value.email,
+			email: state.value.email,
 			// Never send the password back to the client
 		},
 	};
@@ -60,15 +60,15 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function LoginForm() {
 	const config = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<Login>({
 		...config,
-		status,
+		state,
 		onValidate: config.validate
 			? ({ form, submission }) => {
-					const status = validate(submission);
+					const state = validate(submission);
 
-					return reportValidity(form, status);
+					return reportValidity(form, state);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {
@@ -84,7 +84,7 @@ export default function LoginForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Login Form" status={status}>
+			<Playground title="Login Form" state={state}>
 				<Alert message={form.error} />
 				<Field label="Email" error={email.error}>
 					<input

@@ -36,16 +36,22 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export interface SubmissionStatus<Schema = unknown> {
+export type FormState<Schema = unknown> = {
 	scope: string[];
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
-}
+};
 
-export interface Submission<Schema = unknown> extends SubmissionStatus<Schema> {
-	type?: string;
-	data?: string;
-}
+export type Submission<Schema = unknown> = FormState<Schema> &
+	(
+		| {
+				type?: undefined;
+		  }
+		| {
+				type: string;
+				data: string;
+		  }
+	);
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -119,12 +125,12 @@ export function hasError(
 
 export function reportValidity(
 	form: HTMLFormElement,
-	status: SubmissionStatus,
+	state: FormState,
 ): boolean {
-	const firstErrorByName = Object.fromEntries([...status.error].reverse());
+	const firstErrorByName = Object.fromEntries([...state.error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element) || !status.scope.includes(element.name)) {
+		if (!isFieldElement(element) || !state.scope.includes(element.name)) {
 			continue;
 		}
 
@@ -265,8 +271,11 @@ export function parse<Schema extends Record<string, any>>(
 					throw new Error('The conform command could only be set on a button');
 				}
 
-				submission.type = submissionType;
-				submission.data = value;
+				submission = {
+					...submission,
+					type: submissionType,
+					data: value,
+				};
 			} else {
 				const paths = getPaths(name);
 				const scopes = paths.reduce<string[]>((result, path) => {
@@ -335,11 +344,11 @@ export type ListCommand<Schema = unknown> =
 	| { type: 'remove'; scope: string; payload: { index: number } }
 	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
 
-export function parseListCommand<Type = unknown>(
-	data: string | undefined,
-): ListCommand<Type> {
+export function parseListCommand<Schema = unknown>(
+	data: string,
+): ListCommand<Schema> {
 	try {
-		const command = JSON.parse(data ?? '');
+		const command = JSON.parse(data);
 
 		if (
 			typeof command.type !== 'string' ||
@@ -392,7 +401,11 @@ export function updateList<Schema>(
 
 export function handleList<Schema>(
 	submission: Submission<Schema>,
-): SubmissionStatus<Schema> {
+): Submission<Schema> {
+	if (submission.type !== 'list') {
+		return submission;
+	}
+
 	const command = parseListCommand(submission.data);
 	const paths = getPaths(command.scope);
 

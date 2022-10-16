@@ -52,10 +52,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function PaymentForm() {
 	const { validate, ...config } = useLoaderData();
-	const status = useActionData();
+	const state = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
-		status,
+		state,
 		onSubmit(event, { submission }) {
 			switch (submission.type) {
 				case 'validate': {
@@ -76,7 +76,7 @@ export default function PaymentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Payment Form" status={status}>
+			<Playground title="Payment Form" state={state}>
 				<fieldset>
 					<Field label="IBAN" error={iban.error}>
 						<input {...conform.input(iban.config, { type: 'text' })} />

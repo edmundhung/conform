@@ -54,9 +54,9 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function TodoForm() {
-	const status = useActionData<typeof action>();
+	const state = useActionData<typeof action>();
 	const form = useForm<z.infer<typeof todoSchema>>({
-		status,
+		state,
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
 			const error = !result.success

@@ -3,10 +3,10 @@ import {
 	type FieldElement,
 	type FieldValue,
 	type FieldsetConstraint,
+	type FormState,
 	type ListCommand,
 	type Primitive,
 	type Submission,
-	type SubmissionStatus,
 	focusFirstInvalidField,
 	getFormData,
 	getFormElement,
@@ -52,9 +52,9 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	defaultValue?: FieldValue<Schema>;
 
 	/**
-	 * An object describing the status of the last submission
+	 * An object describing the state from the last submission
 	 */
-	status?: SubmissionStatus<Schema>;
+	state?: FormState<Schema>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -113,17 +113,17 @@ export function useForm<Schema extends Record<string, any>>(
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
-		const [, message] = config.status?.error?.find(([key]) => key === '') ?? [];
+		const [, message] = config.state?.error?.find(([key]) => key === '') ?? [];
 
 		return message ?? '';
 	});
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
-			const error = config.status?.error ?? [];
-			const scope = config.status?.scope;
+			const error = config.state?.error ?? [];
+			const scope = config.state?.scope;
 
 			return {
-				defaultValue: config.status?.value ?? config.defaultValue,
+				defaultValue: config.state?.value ?? config.defaultValue,
 				initialError: error.filter(
 					([name]) =>
 						name !== '' &&
@@ -148,16 +148,16 @@ export function useForm<Schema extends Record<string, any>>(
 	useEffect(() => {
 		const form = ref.current;
 
-		if (!form || !config.status) {
+		if (!form || !config.state) {
 			return;
 		}
 
-		if (!reportValidity(form, config.status)) {
-			focusFirstInvalidField(form, config.status.scope);
+		if (!reportValidity(form, config.state)) {
+			focusFirstInvalidField(form, config.state.scope);
 		}
 
 		requestSubmit(form);
-	}, [config.status]);
+	}, [config.state]);
 
 	useEffect(() => {
 		// Revalidate the form when input value is changed
