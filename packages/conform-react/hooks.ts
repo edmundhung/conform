@@ -120,15 +120,11 @@ export function useForm<Schema extends Record<string, any>>(
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
 			const error = config.state?.error ?? [];
-			const scope = config.state?.scope;
 
 			return {
 				defaultValue: config.state?.value ?? config.defaultValue,
 				initialError: error.filter(
-					([name]) =>
-						name !== '' &&
-						getSubmissionType(name) === null &&
-						(!scope || scope.includes(name)),
+					([name]) => name !== '' && getSubmissionType(name) === null,
 				),
 			};
 		},
@@ -152,8 +148,8 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		if (!reportValidity(form, config.state)) {
-			focusFirstInvalidField(form, config.state.scope);
+		if (!reportValidity(form, config.state.error)) {
+			focusFirstInvalidField(form);
 		}
 
 		requestSubmit(form);
@@ -443,58 +439,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 	});
 
 	useEffect(() => {
-		/**
-		 * Reset the error state of each field if its validity is changed.
-		 *
-		 * This is a workaround as no official way is provided to notify
-		 * when the validity of the field is changed from `invalid` to `valid`.
-		 */
-		const resetError = (form: HTMLFormElement) => {
-			setError((prev) => {
-				let next = prev;
-
-				const fieldsetName = configRef.current?.name ?? '';
-
-				for (const field of form.elements) {
-					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
-						const [key, ...paths] = getPaths(
-							fieldsetName.length > 0
-								? field.name.slice(fieldsetName.length + 1)
-								: field.name,
-						);
-
-						if (typeof key === 'string' && paths.length === 0) {
-							const prevMessage = next?.[key] ?? '';
-							const nextMessage = field.validationMessage;
-
-							/**
-							 * Techincally, checking prevMessage not being empty while nextMessage being empty
-							 * is sufficient for our usecase. It checks if the message is changed instead to allow
-							 * the hook to be useful independently.
-							 */
-							if (prevMessage !== '' && prevMessage !== nextMessage) {
-								next = {
-									...next,
-									[key]: nextMessage,
-								};
-							}
-						}
-					}
-				}
-
-				return next;
-			});
-		};
-		const handleInput = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-
-			if (!form || !isFieldElement(field) || field.form !== form) {
-				return;
-			}
-
-			resetError(form);
-		};
 		const invalidHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const field = event.target;
@@ -542,8 +486,33 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
-			// This helps resetting error that fullfilled by the submitter
-			resetError(form);
+			/**
+			 * Reset the error state of each field if its validity is changed.
+			 *
+			 * This is a workaround as no official way is provided to notify
+			 * when the validity of the field is changed from `invalid` to `valid`.
+			 */
+			setError((prev) => {
+				let next = prev;
+
+				const fieldsetName = configRef.current?.name ?? '';
+
+				for (const field of form.elements) {
+					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
+						const prevMessage = next?.[field.name] ?? '';
+						const nextMessage = field.validationMessage;
+
+						if (prevMessage !== '' && nextMessage === '') {
+							next = {
+								...next,
+								[field.name]: '',
+							};
+						}
+					}
+				}
+
+				return next;
+			});
 		};
 		const resetHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
@@ -564,14 +533,12 @@ export function useFieldset<Schema extends Record<string, any>>(
 			setError({});
 		};
 
-		document.addEventListener('input', handleInput);
 		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			document.removeEventListener('input', handleInput);
 			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);

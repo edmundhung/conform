@@ -34,9 +34,7 @@ function validate(submission: Submission<Schema>): FormState<Schema> {
 		});
 	} catch (error) {
 		if (error instanceof yup.ValidationError) {
-			submission.error = submission.error.concat(
-				getError(error, submission.scope),
-			);
+			submission.error = submission.error.concat(getError(error));
 		} else {
 			submission.error = submission.error.concat([['', 'Validation failed']]);
 		}
@@ -66,7 +64,7 @@ export default function StudentForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					return reportValidity(form, state.error);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {

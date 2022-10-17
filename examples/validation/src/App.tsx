@@ -10,7 +10,7 @@ export default function SignupForm() {
 	const form = useForm<Signup>({
 		onValidate({ form, submission }) {
 			for (const field of Array.from(form.elements)) {
-				if (isFieldElement(field) && submission.scope.includes(field.name)) {
+				if (isFieldElement(field)) {
 					switch (field.name) {
 						case 'email':
 							if (field.validity.valueMissing) {

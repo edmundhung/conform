@@ -18,14 +18,11 @@ interface Login {
 }
 
 function validate(submission: Submission<Login>): FormState<Login> {
-	if (submission.scope.includes('email') && submission.value.email === '') {
+	if (!submission.value.email) {
 		submission.error.push(['email', 'Email is required']);
 	}
 
-	if (
-		submission.scope.includes('password') &&
-		submission.value.password === ''
-	) {
+	if (!submission.value.password) {
 		submission.error.push(['password', 'Password is required']);
 	}
 
@@ -68,7 +65,7 @@ export default function LoginForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					return reportValidity(form, state.error);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {

@@ -26,9 +26,7 @@ export default function SignupForm() {
 				});
 			} catch (error) {
 				if (error instanceof yup.ValidationError) {
-					submission.error = submission.error.concat(
-						getError(error, submission.scope),
-					);
+					submission.error = submission.error.concat(getError(error));
 				} else {
 					submission.error = submission.error.concat([
 						['', 'Validation failed'],
@@ -36,7 +34,7 @@ export default function SignupForm() {
 				}
 			}
 
-			return reportValidity(form, submission);
+			return reportValidity(form, submission.error);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();

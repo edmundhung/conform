@@ -27,7 +27,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['', 'title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -44,14 +43,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: [
-					'',
-					'account',
-					'amount',
-					'amount.currency',
-					'amount.value',
-					'reference',
-				],
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -72,16 +63,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: [
-					'',
-					'title',
-					'tasks',
-					'tasks[0]',
-					'tasks[0].content',
-					'tasks[0].completed',
-					'tasks[1]',
-					'tasks[1].content',
-				],
 				value: {
 					title: '',
 					tasks: [
@@ -102,7 +83,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['', 'title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -122,7 +102,6 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				type: 'test',
 				data: 'command value',
-				scope: ['', 'title'],
 				value: {
 					title: 'Test command',
 				},
@@ -138,7 +117,6 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				type: 'list',
 				data: JSON.stringify({ greeting: 'Hello World' }),
-				scope: ['', 'title'],
 				value: {
 					title: '',
 				},
@@ -158,7 +136,6 @@ test.describe('conform-dom', () => {
 			];
 			const result = {
 				type: 'list',
-				scope: ['tasks'],
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},

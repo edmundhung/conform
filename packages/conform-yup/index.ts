@@ -84,15 +84,10 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 
 export function getError(
 	error: yup.ValidationError | null,
-	scope?: string[],
 ): Array<[string, string]> {
 	return (
 		error?.inner.reduce<Array<[string, string]>>((result, e) => {
-			const name = e.path ?? '';
-
-			if (!scope || scope.includes(name)) {
-				result.push([name, e.message]);
-			}
+			result.push([e.path ?? '', e.message]);
 
 			return result;
 		}, []) ?? []

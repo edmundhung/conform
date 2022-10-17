@@ -31,15 +31,18 @@ export let action = async ({ request }: ActionArgs) => {
 	const result = await schema
 		.refine(
 			async (employee) => {
-				if (!submission.scope.includes('email')) {
-					return true;
+				if (
+					(submission.type === 'validate' && submission.data === 'email') ||
+					typeof submission.type === 'undefined'
+				) {
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(employee.email === 'hey@conform.guide');
+						}, Math.random() * 500);
+					});
 				}
 
-				return new Promise((resolve) => {
-					setTimeout(() => {
-						resolve(employee.email === 'hey@conform.guide');
-					}, Math.random() * 100);
-				});
+				return true;
 			},
 			{
 				message: 'Email is already used',
@@ -51,7 +54,7 @@ export let action = async ({ request }: ActionArgs) => {
 	return {
 		...submission,
 		error: submission.error.concat(
-			!result.success ? getError(result.error, submission.scope) : [],
+			!result.success ? getError(result.error) : [],
 		),
 	};
 };
@@ -67,25 +70,32 @@ export default function EmployeeForm() {
 			const error = submission.error.concat(
 				!result.success ? getError(result.error) : [],
 			);
+			const hasEmailError = hasError(error, 'email');
 
-			if (submission.scope.includes('email') && !hasError(error, 'email')) {
-				// Skip reporting client validation result
+			if (
+				submission.type === 'validate' &&
+				submission.data === 'email' &&
+				!hasEmailError
+			) {
+				// Consider the submission to be valid
 				return true;
 			}
 
-			return reportValidity(form, {
-				...submission,
-				error,
-			});
+			if (typeof submission.type === 'undefined' && !hasEmailError) {
+				// Consider the submission to be valid too
+				return true;
+			}
+
+			/**
+			 * The `reportValidity` helper does 2 things for you:
+			 * (1) Set all error to the dom and trigger the `invalid` event through `form.reportValidity()`
+			 * (2) Return whether the form is valid or not. If the form is invalid, stop it.
+			 */
+			return reportValidity(form, error);
 		},
 		async onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					if (submission.data !== 'email') {
-						event.preventDefault();
-					}
-					break;
-				}
+			if (submission.type === 'validate' && submission.data !== 'email') {
+				event.preventDefault();
 			}
 		},
 	});

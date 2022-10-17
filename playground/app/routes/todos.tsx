@@ -40,7 +40,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success) {
 		return {
 			...submission,
-			error: submission.error.concat(getError(result.error, submission.scope)),
+			error: submission.error.concat(getError(result.error)),
 		};
 	}
 
@@ -56,11 +56,11 @@ export default function TodosForm() {
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = schema.safeParse(submission.value);
+					const error = submission.error.concat(
+						!result.success ? getError(result.error) : [],
+					);
 
-					return reportValidity(form, {
-						...submission,
-						error: !result.success ? getError(result.error) : submission.error,
-					});
+					return reportValidity(form, error);
 			  }
 			: undefined,
 		onSubmit(event, { submission }) {

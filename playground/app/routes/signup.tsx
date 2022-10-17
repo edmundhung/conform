@@ -18,48 +18,25 @@ interface Signup {
 }
 
 function validate(submission: Submission<Signup>): FormState<Signup> {
-	const scope = new Set(submission.scope);
 	const error = [...submission.error];
 	const { email, password, confirmPassword } = submission.value;
 
-	for (const field of scope) {
-		switch (field) {
-			case 'email': {
-				if (typeof email === 'undefined' || email === '') {
-					error.push([field, 'Email is required']);
-				} else if (!email.match(/^[^()@\s]+@[\w\d.]+$/)) {
-					error.push([field, 'Email is invalid']);
-				}
-				break;
-			}
-			case 'password': {
-				if (!scope.has('confirmPassword')) {
-					scope.add('confirmPassword');
-				}
+	if (!email) {
+		error.push(['email', 'Email is required']);
+	} else if (!email.match(/^[^()@\s]+@[\w\d.]+$/)) {
+		error.push(['email', 'Email is invalid']);
+	}
 
-				if (typeof password === 'undefined' || password === '') {
-					error.push(['password', 'Password is required']);
-				} else if (`${password}`.length < 8) {
-					error.push(['password', 'Password is too short']);
-				}
-				break;
-			}
-			case 'confirmPassword': {
-				if (!scope.has('password')) {
-					scope.add('password');
-				}
+	if (!password) {
+		error.push(['password', 'Password is required']);
+	} else if (password.length < 8) {
+		error.push(['password', 'Password is too short']);
+	}
 
-				if (typeof confirmPassword === 'undefined' || confirmPassword === '') {
-					error.push(['confirmPassword', 'Confirm password is required']);
-				} else if (confirmPassword !== password) {
-					error.push([
-						'confirmPassword',
-						'The password provided does not match',
-					]);
-				}
-				break;
-			}
-		}
+	if (!confirmPassword) {
+		error.push(['confirmPassword', 'Confirm password is required']);
+	} else if (confirmPassword !== password) {
+		error.push(['confirmPassword', 'The password provided does not match']);
 	}
 
 	return {
@@ -67,7 +44,6 @@ function validate(submission: Submission<Signup>): FormState<Signup> {
 			email,
 			// Never send the password back to the client
 		},
-		scope: Array.from(scope),
 		error,
 	};
 }
@@ -94,17 +70,12 @@ export default function SignupForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					return reportValidity(form, state.error);
 			  }
 			: undefined,
 		async onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					if (submission.data !== 'username') {
-						event.preventDefault();
-					}
-					break;
-				}
+			if (submission.type === 'validate') {
+				event.preventDefault();
 			}
 		},
 	});

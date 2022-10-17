@@ -45,25 +45,17 @@ export let action = async ({ request }: ActionArgs) => {
 	 * (3) `submission.type` : Type of the submission.
 	 * 		Set only when the user click on named button with pattern (`conform/${type}`),
 	 * 		e.g. `validate`
-	 * (4) `submission.scope`: Scope of the submission. Name of the fields that should be validated.
-	 * 		e.g. The scope will be `name` only when the user is typing on the name field.
 	 */
 	const submission = parse(formData);
 	const result = await schema
+		// Async validation. e.g. checking uniqueness
 		.refine(
-			async (employee) => {
-				// Zod does
-				if (!submission.scope.includes('email')) {
-					return true;
-				}
-
-				// Async validation. e.g. checking uniqueness
-				return new Promise((resolve) => {
+			async (employee) =>
+				new Promise((resolve) => {
 					setTimeout(() => {
 						resolve(employee.email === 'hey@conform.guide');
 					}, Math.random() * 100);
-				});
-			},
+				}),
 			{
 				message: 'Email is already used',
 				path: ['email'],
@@ -74,10 +66,9 @@ export let action = async ({ request }: ActionArgs) => {
 	// Return the state to the client if the submission is made for validation purpose
 	if (!result.success || submission.type === 'validate') {
 		return json({
-			scope: submission.scope,
 			value: submission.value,
 			error: submission.error.concat(
-				!result.success ? getError(result.error, submission.scope) : [],
+				!result.success ? getError(result.error) : [],
 			),
 		});
 	}
@@ -87,7 +78,7 @@ export let action = async ({ request }: ActionArgs) => {
 	return redirect('/');
 };
 
-export default function TodoForm() {
+export default function EmployeeForm() {
 	// FormState returned from the server
 	const state = useActionData<FormState<Schema>>();
 
@@ -121,14 +112,19 @@ export default function TodoForm() {
 			const error = submission.error.concat(
 				!result.success ? getError(result.error) : [],
 			);
+			const hasEmailError = hasError(error, 'email');
 
-			/**
-			 * Since only `email` requires extra validation from the server.
-			 * We skip reporting client error if the email is being validated while there is no error found from the client.
-			 * e.g. Client validation would be enough if the email is invalid
-			 */
-			if (submission.scope.includes('email') && !hasError(error, 'email')) {
-				// Server validation is needed
+			if (
+				submission.type === 'validate' &&
+				submission.data === 'email' &&
+				!hasEmailError
+			) {
+				// Consider the submission to be valid
+				return true;
+			}
+
+			if (typeof submission.type === 'undefined' && !hasEmailError) {
+				// Consider the submission to be valid too
 				return true;
 			}
 
@@ -137,24 +133,11 @@ export default function TodoForm() {
 			 * (1) Set all error to the dom and trigger the `invalid` event through `form.reportValidity()`
 			 * (2) Return whether the form is valid or not. If the form is invalid, stop it.
 			 */
-			return reportValidity(form, {
-				...submission,
-				error,
-			});
+			return reportValidity(form, error);
 		},
 		async onSubmit(event, { submission }) {
-			/**
-			 * The `onSubmit` hook will be called only if `onValidate` returns true,
-			 * or when `noValidate` / `formNoValidate` is configured
-			 */
-			switch (submission.type) {
-				case 'validate': {
-					if (submission.data !== 'email') {
-						// We need server validation only for the email field, stop the rest
-						event.preventDefault();
-					}
-					break;
-				}
+			if (submission.type === 'validate' && submission.data !== 'email') {
+				event.preventDefault();
 			}
 		},
 	});

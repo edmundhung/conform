@@ -23,13 +23,11 @@ export default function SignupForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
+			const error = submission.error.concat(
+				!result.success ? getError(result.error) : [],
+			);
 
-			return reportValidity(form, {
-				...submission,
-				error: !result.success
-					? submission.error.concat(getError(result.error, submission.scope))
-					: submission.error,
-			});
+			return reportValidity(form, error);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();

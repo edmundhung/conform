@@ -89,10 +89,7 @@ export default function MovieForm() {
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					for (const field of form.elements) {
-						if (
-							isFieldElement(field) &&
-							submission.scope.includes(field.name)
-						) {
+						if (isFieldElement(field)) {
 							switch (field.name) {
 								case 'title':
 									if (field.validity.valueMissing) {

@@ -37,7 +37,6 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 };
 
 export type FormState<Schema = unknown> = {
-	scope: string[];
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
 };
@@ -125,12 +124,12 @@ export function hasError(
 
 export function reportValidity(
 	form: HTMLFormElement,
-	state: FormState,
+	error: Array<[string, string]>,
 ): boolean {
-	const firstErrorByName = Object.fromEntries([...state.error].reverse());
+	const firstErrorByName = Object.fromEntries([...error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element) || !state.scope.includes(element.name)) {
+		if (!isFieldElement(element)) {
 			continue;
 		}
 
@@ -207,10 +206,7 @@ export function getFormElement(
 	return form;
 }
 
-export function focusFirstInvalidField(
-	form: HTMLFormElement,
-	fields?: string[],
-): void {
+export function focusFirstInvalidField(form: HTMLFormElement): void {
 	const currentFocus = document.activeElement;
 
 	if (
@@ -227,8 +223,7 @@ export function focusFirstInvalidField(
 			if (
 				!field.validity.valid &&
 				field.dataset.conformTouched &&
-				field.tagName !== 'BUTTON' &&
-				(!fields || fields.includes(field.name))
+				field.tagName !== 'BUTTON'
 			) {
 				field.focus();
 				break;
@@ -253,7 +248,6 @@ export function parse<Schema extends Record<string, any>>(
 	let submission: Submission<Record<string, unknown>> = {
 		value: {},
 		error: [],
-		scope: [''],
 	};
 
 	try {
@@ -278,22 +272,6 @@ export function parse<Schema extends Record<string, any>>(
 				};
 			} else {
 				const paths = getPaths(name);
-				const scopes = paths.reduce<string[]>((result, path) => {
-					if (result.length === 0) {
-						if (typeof path !== 'string') {
-							throw new Error(`Invalid name received: ${name}`);
-						}
-
-						result.push(path);
-					} else {
-						const [lastName] = result.slice(-1);
-						result.push(getName([lastName, path]));
-					}
-
-					return result;
-				}, []);
-
-				submission.scope.push(...scopes);
 
 				setValue(submission.value, paths, (prev) => {
 					if (prev) {
@@ -306,11 +284,6 @@ export function parse<Schema extends Record<string, any>>(
 		}
 
 		switch (submission.type) {
-			case 'validate':
-				if (typeof submission.data !== 'undefined' && submission.data !== '') {
-					submission.scope = [submission.data];
-				}
-				break;
 			case 'list':
 				submission = handleList(submission);
 				break;
@@ -321,9 +294,6 @@ export function parse<Schema extends Record<string, any>>(
 			e instanceof Error ? e.message : 'Invalid payload received',
 		]);
 	}
-
-	// Remove duplicates
-	submission.scope = Array.from(new Set(submission.scope));
 
 	return submission as Submission<Schema>;
 }
@@ -417,8 +387,5 @@ export function handleList<Schema>(
 		return updateList(list, command);
 	});
 
-	return {
-		...submission,
-		scope: [command.scope],
-	};
+	return submission;
 }

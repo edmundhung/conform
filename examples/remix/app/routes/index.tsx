@@ -29,7 +29,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse(formData);
 	const result = todoSchema.safeParse(submission.value);
 	const error = !result.success
-		? submission.error.concat(getError(result.error, submission.scope))
+		? submission.error.concat(getError(result.error))
 		: submission.error;
 
 	switch (submission.type) {
@@ -60,13 +60,10 @@ export default function TodoForm() {
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
 			const error = !result.success
-				? submission.error.concat(getError(result.error, submission.scope))
+				? submission.error.concat(getError(result.error))
 				: submission.error;
 
-			return reportValidity(form, {
-				...submission,
-				error,
-			});
+			return reportValidity(form, error);
 		},
 		onSubmit(event, { submission }) {
 			switch (submission.type) {

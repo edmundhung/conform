@@ -126,7 +126,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
@@ -203,7 +202,6 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Matrix',
 				description:
@@ -240,7 +238,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			scope: ['', 'email', 'password', 'confirmPassword'],
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -306,7 +303,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'email', 'password'],
 			value: {
 				email: '',
 			},
@@ -321,7 +317,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'email', 'password'],
 			value: {
 				email: 'invalid email',
 			},
@@ -422,7 +417,6 @@ test.describe('Server Validation', () => {
 				body: JSON.stringify({
 					value: {},
 					error: [['', 'Request forbidden']],
-					scope: [''],
 				}),
 			});
 		});
@@ -649,17 +643,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'',
-				'title',
-				'tasks',
-				'tasks[0]',
-				'tasks[0].content',
-				'tasks[1]',
-				'tasks[1].content',
-				'tasks[2]',
-				'tasks[2].content',
-			],
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -726,16 +709,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'',
-				'title',
-				'tasks',
-				'tasks[0]',
-				'tasks[0].content',
-				'tasks[1]',
-				'tasks[1].content',
-				'tasks[1].completed',
-			],
 			value: {
 				title: 'Testing plan',
 				tasks: [
