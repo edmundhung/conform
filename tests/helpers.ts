@@ -3,7 +3,7 @@ import type { Page, Locator, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 interface FormConfig {
-	mode: 'client-only' | 'server-validation';
+	mode?: 'client-only' | 'server-validation';
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 	defaultValue?: any;
 	fallbackNative?: boolean;
