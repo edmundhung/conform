@@ -54,6 +54,7 @@ test.describe('Constraint', () => {
 
 		expect(constraint).toEqual({
 			iban: {
+				minLength: 1,
 				required: true,
 				pattern: '^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$',
 			},
@@ -245,7 +246,82 @@ test.describe('Client Validation', () => {
 		});
 	});
 
-	test('Reset', async ({ page }) => {
+	test('Zod integration', async ({ page }) => {
+		const form = await gotoForm(page, '/payment');
+		const fieldset = getPaymentFieldset(form);
+		const timestamp = new Date().toISOString();
+
+		await clickSubmitButton(form);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'IBAN is required',
+			'Please select a currency',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.iban.type('DE89 3704 0044 0532 0130 00');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'Please select a currency',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.currency.selectOption('EUR');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.value.type('1');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.timestamp.type(timestamp);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'',
+			'',
+			'Please verify',
+		]);
+
+		await fieldset.verified.check();
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '', '', '']);
+
+		await clickSubmitButton(form);
+
+		expect(await getSubmission(form)).toEqual({
+			value: {
+				iban: 'DE89 3704 0044 0532 0130 00',
+				amount: {
+					currency: 'EUR',
+					value: '1',
+				},
+				timestamp,
+				verified: 'Yes',
+			},
+			error: [],
+		});
+	});
+
+	test('Form reset', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
 		const { title, description, genre, rating } = getMovieFieldset(form);
 		const initialValidationMessages = await Promise.all([
@@ -722,7 +798,7 @@ test.describe('Field list', () => {
 		});
 	});
 
-	test('Reset', async ({ page }) => {
+	test('Form reset', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 

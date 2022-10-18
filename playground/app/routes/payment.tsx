@@ -1,4 +1,10 @@
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import {
+	conform,
+	parse,
+	reportValidity,
+	useFieldset,
+	useForm,
+} from '@conform-to/react';
 import {
 	getError,
 	getFieldsetConstraint,
@@ -13,21 +19,25 @@ import { parseConfig } from '~/config';
 const schema = z.object({
 	iban: z
 		.string()
+		.min(1, 'IBAN is required')
 		.regex(
 			/^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$/,
 			'Please provide a valid IBAN',
 		),
 	amount: z.object({
-		currency: z.enum(['USD', 'EUR', 'GBP']),
-		value: z.preprocess(ifNonEmptyString(Number), z.number().min(1)),
+		currency: z.string().min(3, 'Please select a currency'),
+		value: z.preprocess(
+			ifNonEmptyString(Number),
+			z.number({ required_error: 'Value is required' }).min(1),
+		),
 	}),
 	timestamp: z.preprocess(
 		ifNonEmptyString((value) => new Date(value)),
-		z.date(),
+		z.date({ required_error: 'Timestamp is required' }),
 	),
 	verified: z.preprocess(
 		ifNonEmptyString((value) => value === 'Yes'),
-		z.boolean().optional(),
+		z.boolean().optional().refine(Boolean, 'Please verify'),
 	),
 });
 
@@ -51,11 +61,21 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function PaymentForm() {
-	const { validate, ...config } = useLoaderData();
+	const config = useLoaderData();
 	const state = useActionData();
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
+		onValidate: config.validate
+			? ({ form, submission }) => {
+					const result = schema.safeParse(submission.value);
+					const error = submission.error.concat(
+						!result.success ? getError(result.error) : [],
+					);
+
+					return reportValidity(form, error);
+			  }
+			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {

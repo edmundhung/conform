@@ -509,13 +509,16 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 				for (const field of form.elements) {
 					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
-						const prevMessage = next?.[field.name] ?? '';
+						const key = fieldsetName
+							? field.name.slice(fieldsetName.length + 1)
+							: field.name;
+						const prevMessage = next?.[key] ?? '';
 						const nextMessage = field.validationMessage;
 
 						if (prevMessage !== '' && nextMessage === '') {
 							next = {
 								...next,
-								[field.name]: '',
+								[key]: '',
 							};
 						}
 					}
