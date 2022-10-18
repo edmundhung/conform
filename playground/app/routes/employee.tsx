@@ -31,10 +31,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const result = await schema
 		.refine(
 			async (employee) => {
-				if (
-					(submission.type === 'validate' && submission.data === 'email') ||
-					typeof submission.type === 'undefined'
-				) {
+				if (submission.type !== 'validate' || submission.metadata === 'email') {
 					return new Promise((resolve) => {
 						setTimeout(() => {
 							resolve(employee.email === 'hey@conform.guide');
@@ -70,31 +67,18 @@ export default function EmployeeForm() {
 			const error = submission.error.concat(
 				!result.success ? getError(result.error) : [],
 			);
-			const hasEmailError = hasError(error, 'email');
 
 			if (
-				submission.type === 'validate' &&
-				submission.data === 'email' &&
-				!hasEmailError
+				(submission.type !== 'validate' || submission.metadata === 'email') &&
+				!hasError(error, 'email')
 			) {
-				// Consider the submission to be valid
 				return true;
 			}
 
-			if (typeof submission.type === 'undefined' && !hasEmailError) {
-				// Consider the submission to be valid too
-				return true;
-			}
-
-			/**
-			 * The `reportValidity` helper does 2 things for you:
-			 * (1) Set all error to the dom and trigger the `invalid` event through `form.reportValidity()`
-			 * (2) Return whether the form is valid or not. If the form is invalid, stop it.
-			 */
 			return reportValidity(form, error);
 		},
 		async onSubmit(event, { submission }) {
-			if (submission.type === 'validate' && submission.data !== 'email') {
+			if (submission.type === 'validate' && submission.metadata !== 'email') {
 				event.preventDefault();
 			}
 		},

@@ -1,5 +1,4 @@
 import {
-	type FormState,
 	type Submission,
 	conform,
 	useFieldset,
@@ -17,7 +16,7 @@ interface Login {
 	password: string;
 }
 
-function validate(submission: Submission<Login>): FormState<Login> {
+function validate(submission: Submission<Login>): Submission<Login> {
 	if (!submission.value.email) {
 		submission.error.push(['email', 'Email is required']);
 	}

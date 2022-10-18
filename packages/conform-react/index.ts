@@ -1,6 +1,5 @@
 export {
 	type FieldsetConstraint,
-	type FormState,
 	type Submission,
 	hasError,
 	isFieldElement,

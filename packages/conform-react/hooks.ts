@@ -3,7 +3,6 @@ import {
 	type FieldElement,
 	type FieldValue,
 	type FieldsetConstraint,
-	type FormState,
 	type ListCommand,
 	type Primitive,
 	type Submission,
@@ -54,7 +53,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the state from the last submission
 	 */
-	state?: FormState<Schema>;
+	state?: Submission<Schema>;
 
 	/**
 	 * Enable native validation before hydation.

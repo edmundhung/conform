@@ -36,21 +36,18 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type FormState<Schema = unknown> = {
-	value: FieldValue<Schema>;
-	error: Array<[string, string]>;
-};
-
-export type Submission<Schema = unknown> = FormState<Schema> &
-	(
-		| {
-				type?: undefined;
-		  }
-		| {
-				type: string;
-				data: string;
-		  }
-	);
+export type Submission<Schema = unknown> =
+	| {
+			type?: undefined;
+			value: FieldValue<Schema>;
+			error: Array<[string, string]>;
+	  }
+	| {
+			type: string;
+			metadata: string;
+			value: FieldValue<Schema>;
+			error: Array<[string, string]>;
+	  };
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -268,7 +265,7 @@ export function parse<Schema extends Record<string, any>>(
 				submission = {
 					...submission,
 					type: submissionType,
-					data: value,
+					metadata: value,
 				};
 			} else {
 				const paths = getPaths(name);
@@ -376,7 +373,7 @@ export function handleList<Schema>(
 		return submission;
 	}
 
-	const command = parseListCommand(submission.data);
+	const command = parseListCommand(submission.metadata);
 	const paths = getPaths(command.scope);
 
 	setValue(submission.value, paths, (list) => {

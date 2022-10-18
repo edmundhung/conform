@@ -1,4 +1,4 @@
-import type { FormState } from '@conform-to/react';
+import type { Submission } from '@conform-to/react';
 import {
 	conform,
 	parse,
@@ -79,8 +79,8 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function EmployeeForm() {
-	// FormState returned from the server
-	const state = useActionData<FormState<Schema>>();
+	// Last submission returned from the server
+	const state = useActionData<Submission<Schema>>();
 
 	/**
 	 * The useForm hook now returns a `Form` object
@@ -115,9 +115,8 @@ export default function EmployeeForm() {
 			const hasEmailError = hasError(error, 'email');
 
 			if (
-				submission.type === 'validate' &&
-				submission.data === 'email' &&
-				!hasEmailError
+				(submission.type !== 'validate' || submission.metadata === 'email') &&
+				!hasError(error, 'email')
 			) {
 				// Consider the submission to be valid
 				return true;
@@ -136,7 +135,7 @@ export default function EmployeeForm() {
 			return reportValidity(form, error);
 		},
 		async onSubmit(event, { submission }) {
-			if (submission.type === 'validate' && submission.data !== 'email') {
+			if (submission.type === 'validate' && submission.metadata !== 'email') {
 				event.preventDefault();
 			}
 		},

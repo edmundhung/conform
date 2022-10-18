@@ -1,4 +1,4 @@
-import type { FormState, Submission } from '@conform-to/react';
+import type { Submission } from '@conform-to/react';
 import {
 	conform,
 	useFieldset,
@@ -27,7 +27,7 @@ const schema = yup.object({
 
 type Schema = yup.InferType<typeof schema>;
 
-function validate(submission: Submission<Schema>): FormState<Schema> {
+function validate(submission: Submission<Schema>): Submission<Schema> {
 	try {
 		schema.validateSync(submission.value, {
 			abortEarly: false,

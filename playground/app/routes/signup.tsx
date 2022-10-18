@@ -1,4 +1,4 @@
-import type { FormState, Submission } from '@conform-to/react';
+import type { Submission } from '@conform-to/react';
 import {
 	conform,
 	parse,
@@ -17,7 +17,7 @@ interface Signup {
 	confirmPassword: string;
 }
 
-function validate(submission: Submission<Signup>): FormState<Signup> {
+function validate(submission: Submission<Signup>): Submission<Signup> {
 	const error = [...submission.error];
 	const { email, password, confirmPassword } = submission.value;
 
