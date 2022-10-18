@@ -38,6 +38,11 @@ interface FormContext<Schema extends Record<string, any>> {
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
+	 * Validation mode. Default to `client-only`.
+	 */
+	mode?: 'client-only' | 'server-validation';
+
+	/**
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
@@ -303,23 +308,29 @@ export function useForm<Schema extends Record<string, any>>(
 					}
 				}
 
-				if (
-					typeof config.onValidate === 'function' &&
-					!config.noValidate &&
-					!submitter.formNoValidate
-				) {
-					try {
-						if (!config.onValidate(context)) {
+				try {
+					if (!config.noValidate && !submitter.formNoValidate) {
+						const isValid =
+							config.onValidate?.(context) ?? form.reportValidity();
+
+						if (!isValid) {
 							focusFirstInvalidField(form);
 							event.preventDefault();
 						}
-					} catch (e) {
-						console.warn(e);
 					}
-				}
 
-				if (!event.defaultPrevented) {
-					config.onSubmit?.(event, context);
+					if (!event.defaultPrevented) {
+						if (
+							config.mode !== 'server-validation' &&
+							submission.type === 'validate'
+						) {
+							event.preventDefault();
+						} else {
+							config.onSubmit?.(event, context);
+						}
+					}
+				} catch (e) {
+					console.warn(e);
 				}
 			},
 		},

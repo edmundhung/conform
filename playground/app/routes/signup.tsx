@@ -73,11 +73,14 @@ export default function SignupForm() {
 					return reportValidity(form, state.error);
 			  }
 			: undefined,
-		async onSubmit(event, { submission }) {
-			if (submission.type === 'validate') {
-				event.preventDefault();
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { email, password, confirmPassword } = useFieldset(form.ref, {
 		...form.config,

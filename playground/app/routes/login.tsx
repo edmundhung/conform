@@ -67,14 +67,14 @@ export default function LoginForm() {
 					return reportValidity(form, state.error);
 			  }
 			: undefined,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { email, password } = useFieldset(form.ref, form.config);
 

@@ -63,14 +63,14 @@ export default function TodosForm() {
 					return reportValidity(form, error);
 			  }
 			: undefined,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 
 	return (

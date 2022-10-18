@@ -56,14 +56,14 @@ export default function PaymentForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { iban, amount, timestamp, verified } = useFieldset(form.ref, {
 		...form.config,

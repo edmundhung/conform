@@ -11,9 +11,6 @@ interface Payment {
 
 export default function PaymentForm() {
 	const form = useForm<Payment>({
-		onValidate({ form }) {
-			return form.reportValidity();
-		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();
 

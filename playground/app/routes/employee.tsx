@@ -68,20 +68,28 @@ export default function EmployeeForm() {
 				!result.success ? getError(result.error) : [],
 			);
 
-			if (
-				(submission.type !== 'validate' || submission.metadata === 'email') &&
-				!hasError(error, 'email')
-			) {
-				return true;
+			if (config.mode === 'server-validation') {
+				if (
+					(submission.type !== 'validate' || submission.metadata === 'email') &&
+					!hasError(error, 'email')
+				) {
+					return true;
+				}
 			}
 
 			return reportValidity(form, error);
 		},
-		async onSubmit(event, { submission }) {
-			if (submission.type === 'validate' && submission.metadata !== 'email') {
-				event.preventDefault();
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (
+							submission.type === 'validate' &&
+							submission.metadata !== 'email'
+						) {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { name, email, title } = useFieldset(form.ref, form.config);
 

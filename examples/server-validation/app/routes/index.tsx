@@ -92,9 +92,14 @@ export default function EmployeeForm() {
 	 * (4) form.error: Form error. Set when an error with an empty string name is provided by the form state.
 	 */
 	const form = useForm<Schema>({
+		// Begin validating on blur
+		initialReport: 'onBlur',
+
+		// Enable server validation mode
+		mode: 'server-validation',
+
 		// Just hook it up with the result from useActionData()
 		state,
-		initialReport: 'onBlur',
 
 		/**
 		 * The validate hook - `onValidate(context: FormContext): boolean`
@@ -112,18 +117,12 @@ export default function EmployeeForm() {
 			const error = submission.error.concat(
 				!result.success ? getError(result.error) : [],
 			);
-			const hasEmailError = hasError(error, 'email');
 
 			if (
 				(submission.type !== 'validate' || submission.metadata === 'email') &&
 				!hasError(error, 'email')
 			) {
 				// Consider the submission to be valid
-				return true;
-			}
-
-			if (typeof submission.type === 'undefined' && !hasEmailError) {
-				// Consider the submission to be valid too
 				return true;
 			}
 
