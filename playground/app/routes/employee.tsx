@@ -64,20 +64,21 @@ export default function EmployeeForm() {
 		state,
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
-			const error = submission.error.concat(
-				!result.success ? getError(result.error) : [],
-			);
+
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
+			}
 
 			if (config.mode === 'server-validation') {
 				if (
 					(submission.type !== 'validate' || submission.metadata === 'email') &&
-					!hasError(error, 'email')
+					!hasError(submission.error, 'email')
 				) {
 					return true;
 				}
 			}
 
-			return reportValidity(form, error);
+			return reportValidity(form, submission);
 		},
 		onSubmit:
 			config.mode === 'server-validation'

@@ -114,13 +114,14 @@ export default function EmployeeForm() {
 		onValidate({ form, submission }) {
 			// Similar to server validation without the extra refine()
 			const result = schema.safeParse(submission.value);
-			const error = submission.error.concat(
-				!result.success ? getError(result.error) : [],
-			);
+
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
+			}
 
 			if (
 				(submission.type !== 'validate' || submission.metadata === 'email') &&
-				!hasError(error, 'email')
+				!hasError(submission.error, 'email')
 			) {
 				// Consider the submission to be valid
 				return true;
@@ -131,7 +132,7 @@ export default function EmployeeForm() {
 			 * (1) Set all error to the dom and trigger the `invalid` event through `form.reportValidity()`
 			 * (2) Return whether the form is valid or not. If the form is invalid, stop it.
 			 */
-			return reportValidity(form, error);
+			return reportValidity(form, submission);
 		},
 		async onSubmit(event, { submission }) {
 			if (submission.type === 'validate' && submission.metadata !== 'email') {

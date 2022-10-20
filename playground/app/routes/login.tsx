@@ -64,7 +64,7 @@ export default function LoginForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state.error);
+					return reportValidity(form, state);
 			  }
 			: undefined,
 		onSubmit:

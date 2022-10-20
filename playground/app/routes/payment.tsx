@@ -69,11 +69,12 @@ export default function PaymentForm() {
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					const result = schema.safeParse(submission.value);
-					const error = submission.error.concat(
-						!result.success ? getError(result.error) : [],
-					);
 
-					return reportValidity(form, error);
+					if (!result.success) {
+						submission.error = submission.error.concat(getError(result.error));
+					}
+
+					return reportValidity(form, submission);
 			  }
 			: undefined,
 		onSubmit:

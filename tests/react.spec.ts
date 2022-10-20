@@ -544,15 +544,18 @@ test.describe('Server Validation', () => {
 			.poll(() => getErrorMessages(form))
 			.toEqual(['', '', 'Email is already used', 'Title is required']);
 
-		await email.type('e');
-
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', '', 'Title is required']);
-
 		await title.type('Software Developer');
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Email is already used',
+			'',
+		]);
+
+		await email.type('e');
+
+		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '', '']);
 
 		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 

@@ -59,11 +59,12 @@ export default function TodoForm() {
 		state,
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
-			const error = !result.success
-				? submission.error.concat(getError(result.error))
-				: submission.error;
 
-			return reportValidity(form, error);
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
+			}
+
+			return reportValidity(form, submission);
 		},
 		onSubmit(event, { submission }) {
 			switch (submission.type) {

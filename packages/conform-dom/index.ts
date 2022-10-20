@@ -121,16 +121,22 @@ export function hasError(
 
 export function reportValidity(
 	form: HTMLFormElement,
-	error: Array<[string, string]>,
+	submission: Submission,
 ): boolean {
-	const firstErrorByName = Object.fromEntries([...error].reverse());
+	const firstErrorByName = Object.fromEntries([...submission.error].reverse());
 
 	for (const element of form.elements) {
-		if (!isFieldElement(element)) {
-			continue;
-		}
+		if (isFieldElement(element)) {
+			const error = firstErrorByName[element.name];
 
-		element.setCustomValidity(firstErrorByName[element.name] ?? '');
+			if (
+				error ||
+				submission.type !== 'validate' ||
+				submission.metadata === element.name
+			) {
+				element.setCustomValidity(error ?? '');
+			}
+		}
 	}
 
 	return form.reportValidity();

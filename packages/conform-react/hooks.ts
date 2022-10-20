@@ -152,7 +152,7 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		if (!reportValidity(form, config.state.error)) {
+		if (!reportValidity(form, config.state)) {
 			focusFirstInvalidField(form);
 		}
 

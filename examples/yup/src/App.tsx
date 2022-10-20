@@ -34,7 +34,7 @@ export default function SignupForm() {
 				}
 			}
 
-			return reportValidity(form, submission.error);
+			return reportValidity(form, submission);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
