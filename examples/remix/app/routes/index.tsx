@@ -28,9 +28,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData);
 	const result = todoSchema.safeParse(submission.value);
-	const error = !result.success
-		? submission.error.concat(getError(result.error))
-		: submission.error;
+	const error = submission.error.concat(getError(result));
 
 	switch (submission.type) {
 		case 'validate': {

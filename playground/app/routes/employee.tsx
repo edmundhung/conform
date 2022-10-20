@@ -51,9 +51,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 	return {
 		...submission,
-		error: submission.error.concat(
-			!result.success ? getError(result.error) : [],
-		),
+		error: submission.error.concat(getError(result)),
 	};
 };
 

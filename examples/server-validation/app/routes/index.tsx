@@ -68,9 +68,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success || submission.type === 'validate') {
 		return json({
 			value: submission.value,
-			error: submission.error.concat(
-				!result.success ? getError(result.error) : [],
-			),
+			error: submission.error.concat(getError(result)),
 		});
 	}
 

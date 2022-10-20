@@ -53,7 +53,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success) {
 		return {
 			...submission,
-			error: getError(result.error),
+			error: submission.error.concat(getError(result.error)),
 		};
 	}
 
