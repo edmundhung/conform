@@ -4,7 +4,7 @@ import {
 	useFieldset,
 	useForm,
 	hasError,
-	reportValidity,
+	setFormError,
 	shouldValidate,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
@@ -75,11 +75,11 @@ export default function EmployeeForm() {
 					shouldValidate(submission, 'email') &&
 					!hasError(submission.error, 'email')
 				) {
-					return true;
+					throw form;
 				}
 			}
 
-			return reportValidity(form, submission);
+			setFormError(form, submission);
 		},
 		onSubmit:
 			config.mode === 'server-validation'

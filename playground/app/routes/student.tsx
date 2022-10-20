@@ -4,7 +4,7 @@ import {
 	useFieldset,
 	useForm,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getFieldsetConstraint, getError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -64,7 +64,7 @@ export default function StudentForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					setFormError(form, state);
 			  }
 			: undefined,
 		onSubmit:

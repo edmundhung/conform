@@ -1,7 +1,7 @@
 import {
 	conform,
 	parse,
-	reportValidity,
+	setFormError,
 	useFieldset,
 	useForm,
 } from '@conform-to/react';
@@ -74,7 +74,7 @@ export default function PaymentForm() {
 						submission.error = submission.error.concat(getError(result.error));
 					}
 
-					return reportValidity(form, submission);
+					setFormError(form, submission);
 			  }
 			: undefined,
 		onSubmit:

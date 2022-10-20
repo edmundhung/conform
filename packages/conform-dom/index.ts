@@ -123,10 +123,10 @@ export function hasError(
 	);
 }
 
-export function reportValidity(
+export function setFormError(
 	form: HTMLFormElement,
 	submission: Submission,
-): boolean {
+): void {
 	const firstErrorByName = Object.fromEntries([...submission.error].reverse());
 
 	for (const element of form.elements) {
@@ -141,8 +141,6 @@ export function reportValidity(
 			}
 		}
 	}
-
-	return form.reportValidity();
 }
 
 export function setValue<T>(

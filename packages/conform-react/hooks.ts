@@ -16,8 +16,8 @@ import {
 	parse,
 	parseListCommand,
 	requestSubmit,
-	reportValidity,
 	requestValidate,
+	setFormError,
 	updateList,
 } from '@conform-to/dom';
 import {
@@ -77,7 +77,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: FormContext<Schema>) => boolean;
+	onValidate?: (context: FormContext<Schema>) => void;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -152,7 +152,9 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		if (!reportValidity(form, config.state)) {
+		setFormError(form, config.state);
+
+		if (!form.reportValidity()) {
 			focusFirstInvalidField(form);
 		}
 
@@ -310,27 +312,28 @@ export function useForm<Schema extends Record<string, any>>(
 
 				try {
 					if (!config.noValidate && !submitter.formNoValidate) {
-						const isValid =
-							config.onValidate?.(context) ?? form.reportValidity();
+						config.onValidate?.(context);
 
-						if (!isValid) {
+						if (!form.reportValidity()) {
 							focusFirstInvalidField(form);
 							event.preventDefault();
 						}
 					}
-
-					if (!event.defaultPrevented) {
-						if (
-							config.mode !== 'server-validation' &&
-							submission.type === 'validate'
-						) {
-							event.preventDefault();
-						} else {
-							config.onSubmit?.(event, context);
-						}
-					}
 				} catch (e) {
-					console.warn(e);
+					if (e !== form) {
+						console.warn(e);
+					}
+				}
+
+				if (!event.defaultPrevented) {
+					if (
+						config.mode !== 'server-validation' &&
+						submission.type === 'validate'
+					) {
+						event.preventDefault();
+					} else {
+						config.onSubmit?.(event, context);
+					}
 				}
 			},
 		},

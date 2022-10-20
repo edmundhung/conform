@@ -5,7 +5,7 @@ import {
 	useFieldset,
 	useForm,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getError, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -61,7 +61,7 @@ export default function TodosForm() {
 						submission.error = submission.error.concat(getError(result.error));
 					}
 
-					return reportValidity(form, submission);
+					setFormError(form, submission);
 			  }
 			: undefined,
 		onSubmit:

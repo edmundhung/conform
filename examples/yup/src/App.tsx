@@ -1,4 +1,4 @@
-import { useFieldset, useForm, reportValidity } from '@conform-to/react';
+import { useFieldset, useForm, setFormError } from '@conform-to/react';
 import { getError } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -34,7 +34,7 @@ export default function SignupForm() {
 				}
 			}
 
-			return reportValidity(form, submission);
+			setFormError(form, submission);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();

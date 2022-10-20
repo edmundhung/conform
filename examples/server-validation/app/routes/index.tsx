@@ -6,7 +6,7 @@ import {
 	useForm,
 	hasError,
 	shouldValidate,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -90,14 +90,14 @@ export default function EmployeeForm() {
 	 * (2) form.config: Fieldset config to be passed to the useFieldset hook.
 	 * 	   [Optional] Needed only if the fields have default value / nojs support is needed)
 	 * (3) form.ref: Ref object of the form element. Same as `form.props.ref`
-	 * (4) form.error: Form error. Set when an error with an empty string name is provided by the form state.
+	 * (4) form.error: Form error. Set when an error with an empty string name is provided.
 	 */
 	const form = useForm<Schema>({
-		// Begin validating on blur
-		initialReport: 'onBlur',
-
 		// Enable server validation mode
 		mode: 'server-validation',
+
+		// Begin validating on blur
+		initialReport: 'onBlur',
 
 		// Just hook it up with the result from useActionData()
 		state,
@@ -124,16 +124,14 @@ export default function EmployeeForm() {
 				shouldValidate(submission, 'email') &&
 				!hasError(submission.error, 'email')
 			) {
-				// Consider the submission to be valid
-				return true;
+				// Skip reporting client error
+				throw form;
 			}
 
 			/**
-			 * The `reportValidity` helper does 2 things for you:
-			 * (1) Set all error to the dom and trigger the `invalid` event through `form.reportValidity()`
-			 * (2) Return whether the form is valid or not. If the form is invalid, stop it.
+			 * Set the submission error to the dom
 			 */
-			return reportValidity(form, submission);
+			setFormError(form, submission);
 		},
 		async onSubmit(event, { submission }) {
 			if (submission.type === 'validate' && submission.metadata !== 'email') {

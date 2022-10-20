@@ -5,7 +5,7 @@ import {
 	useFieldList,
 	conform,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -64,7 +64,7 @@ export default function TodoForm() {
 				submission.error = submission.error.concat(getError(result.error));
 			}
 
-			return reportValidity(form, submission);
+			setFormError(form, submission);
 		},
 		onSubmit(event, { submission }) {
 			switch (submission.type) {
