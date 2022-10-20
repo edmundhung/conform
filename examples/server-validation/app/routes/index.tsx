@@ -44,8 +44,9 @@ export let action = async ({ request }: ActionArgs) => {
 	 * (1) `submission.value`: Structured form value based on the name (path)
 	 * (2) `submission.error`: Error (if any) while parsing the FormData object,
 	 * (3) `submission.type` : Type of the submission.
-	 * 		Set only when the user click on named button with pattern (`conform/${type}`),
-	 * 		e.g. `validate`
+	 * 		The type would be `undefined` when user click on any normal submit button.
+	 * 		It would be set only when the user click on named button with pattern (`conform/${type}`),
+	 * 		e.g. Conform is clicking on a button with name `conform/validate` when validating, so the type would be `valdiate`.
 	 */
 	const submission = parse(formData);
 	const result = await schema
@@ -67,7 +68,7 @@ export let action = async ({ request }: ActionArgs) => {
 	// Return the state to the client if the submission is made for validation purpose
 	if (!result.success || submission.type === 'validate') {
 		return json({
-			value: submission.value,
+			...submission,
 			error: submission.error.concat(getError(result)),
 		});
 	}
@@ -106,7 +107,6 @@ export default function EmployeeForm() {
 		 *
 		 * (1) Renamed from `validate` to `onValidate`
 		 * (2) Changed the function signature with a new context object, including `form`, `formData` and `submission`
-		 * (3) It should now returns a boolean indicating if the server validation is needed
 		 *
 		 * If both `onValidate` and `onSubmit` are commented out, then it will validate the form completely by server validation
 		 */
