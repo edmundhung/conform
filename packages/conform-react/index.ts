@@ -2,6 +2,7 @@ export {
 	type FieldsetConstraint,
 	type Submission,
 	hasError,
+	shouldValidate,
 	isFieldElement,
 	parse,
 	reportValidity,

@@ -5,6 +5,7 @@ import {
 	useForm,
 	hasError,
 	reportValidity,
+	shouldValidate,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -71,7 +72,7 @@ export default function EmployeeForm() {
 
 			if (config.mode === 'server-validation') {
 				if (
-					(submission.type !== 'validate' || submission.metadata === 'email') &&
+					shouldValidate(submission, 'email') &&
 					!hasError(submission.error, 'email')
 				) {
 					return true;

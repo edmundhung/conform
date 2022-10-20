@@ -108,6 +108,10 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
+export function shouldValidate(submission: Submission, name: string): boolean {
+	return submission.type !== 'validate' || submission.metadata === name;
+}
+
 export function hasError(
 	error: Array<[string, string]>,
 	name: string,
@@ -130,9 +134,8 @@ export function reportValidity(
 			const error = firstErrorByName[element.name];
 
 			if (
-				error ||
-				submission.type !== 'validate' ||
-				submission.metadata === element.name
+				typeof error !== 'undefined' ||
+				shouldValidate(submission, element.name)
 			) {
 				element.setCustomValidity(error ?? '');
 			}

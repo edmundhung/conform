@@ -5,6 +5,7 @@ import {
 	useFieldset,
 	useForm,
 	hasError,
+	shouldValidate,
 	reportValidity,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
@@ -120,7 +121,7 @@ export default function EmployeeForm() {
 			}
 
 			if (
-				(submission.type !== 'validate' || submission.metadata === 'email') &&
+				shouldValidate(submission, 'email') &&
 				!hasError(submission.error, 'email')
 			) {
 				// Consider the submission to be valid
