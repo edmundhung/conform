@@ -131,7 +131,7 @@ export default function EmployeeForm() {
 			 */
 			setFormError(form, submission);
 		},
-		async onSubmit(event, { submission }) {
+		onSubmit(event, { submission }) {
 			if (submission.type === 'validate' && submission.metadata !== 'email') {
 				event.preventDefault();
 			}
