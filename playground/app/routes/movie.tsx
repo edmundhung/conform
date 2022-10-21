@@ -89,10 +89,7 @@ export default function MovieForm() {
 		onValidate: config.validate
 			? ({ form, submission }) => {
 					for (const field of form.elements) {
-						if (
-							isFieldElement(field) &&
-							submission.scope.includes(field.name)
-						) {
+						if (isFieldElement(field)) {
 							switch (field.name) {
 								case 'title':
 									if (field.validity.valueMissing) {
@@ -131,14 +128,14 @@ export default function MovieForm() {
 					return form.reportValidity();
 			  }
 			: undefined,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { title, description, genre, rating } = useFieldset(form.ref, {
 		...form.config,

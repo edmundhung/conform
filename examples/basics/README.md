@@ -76,9 +76,6 @@ import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
   const form = useForm({
-    onValidate({ form }) {
-      return form.reportValidity();
-    }
     onSubmit(event) {
       event.preventDefault();
 

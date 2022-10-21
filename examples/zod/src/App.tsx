@@ -1,4 +1,4 @@
-import { reportValidity, useFieldset, useForm } from '@conform-to/react';
+import { setFormError, useFieldset, useForm } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -24,12 +24,11 @@ export default function SignupForm() {
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
 
-			return reportValidity(form, {
-				...submission,
-				error: !result.success
-					? submission.error.concat(getError(result.error, submission.scope))
-					: submission.error,
-			});
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
+			}
+
+			setFormError(form, submission);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();

@@ -15,10 +15,7 @@ interface Todo {
 export default function TodoForm() {
 	const form = useForm<Todo>({
 		initialReport: 'onBlur',
-		onValidate({ form }) {
-			return form.reportValidity();
-		},
-		async onSubmit(event, { submission }) {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
 			console.log(submission);

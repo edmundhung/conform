@@ -13,16 +13,13 @@ import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
   const form = useForm({
-    onValidate({ form }) {
-      return form.reportValidity();
-    },
     onSubmit(event, { submission }) {
       event.preventDefault();
 
       console.log(submission);
     },
   });
-  const { email, password } = useFieldset(form.ref, form.config);
+  const { email, password } = useFieldset(form.ref);
 
   return (
     <form {...form.props}>

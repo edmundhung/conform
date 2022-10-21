@@ -108,21 +108,25 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	return result;
 }
 
-export function getError(
-	error: z.ZodError<any> | null,
-	scope?: string[],
+export function getError<Schema>(
+	result: z.SafeParseReturnType<unknown, Schema> | z.ZodError<Schema>,
 ): Array<[string, string]> {
-	return (
-		error?.errors.reduce<Array<[string, string]>>((result, e) => {
-			const name = getName(e.path);
+	const issues =
+		result instanceof z.ZodError
+			? result.errors
+			: !result.success
+			? result.error.errors
+			: null;
 
-			if (!scope || scope.includes(name)) {
-				result.push([name, e.message]);
-			}
+	if (!issues) {
+		return [];
+	}
 
-			return result;
-		}, []) ?? []
-	);
+	return issues.reduce<Array<[string, string]>>((result, e) => {
+		result.push([getName(e.path), e.message]);
+
+		return result;
+	}, []);
 }
 
 export function ifNonEmptyString(

@@ -1,10 +1,10 @@
-import type { FormState, Submission } from '@conform-to/react';
+import type { Submission } from '@conform-to/react';
 import {
 	conform,
 	useFieldset,
 	useForm,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getFieldsetConstraint, getError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -27,16 +27,14 @@ const schema = yup.object({
 
 type Schema = yup.InferType<typeof schema>;
 
-function validate(submission: Submission<Schema>): FormState<Schema> {
+function validate(submission: Submission<Schema>): Submission<Schema> {
 	try {
 		schema.validateSync(submission.value, {
 			abortEarly: false,
 		});
 	} catch (error) {
 		if (error instanceof yup.ValidationError) {
-			submission.error = submission.error.concat(
-				getError(error, submission.scope),
-			);
+			submission.error = submission.error.concat(getError(error));
 		} else {
 			submission.error = submission.error.concat([['', 'Validation failed']]);
 		}
@@ -66,17 +64,17 @@ export default function StudentForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					setFormError(form, state);
 			  }
 			: undefined,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { name, remarks, grade, score } = useFieldset(form.ref, {
 		...form.config,

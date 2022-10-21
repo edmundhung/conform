@@ -10,9 +10,6 @@ interface Article {
 export default function ArticleForm() {
 	const form = useForm<Article>({
 		initialReport: 'onBlur',
-		onValidate({ form }) {
-			return form.reportValidity();
-		},
 		onSubmit: (event, { submission }) => {
 			event.preventDefault();
 

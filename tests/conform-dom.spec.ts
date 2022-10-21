@@ -27,7 +27,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['', 'title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -44,14 +43,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: [
-					'',
-					'account',
-					'amount',
-					'amount.currency',
-					'amount.value',
-					'reference',
-				],
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -72,16 +63,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: [
-					'',
-					'title',
-					'tasks',
-					'tasks[0]',
-					'tasks[0].content',
-					'tasks[0].completed',
-					'tasks[1]',
-					'tasks[1].content',
-				],
 				value: {
 					title: '',
 					tasks: [
@@ -102,7 +83,6 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				scope: ['', 'title', 'description'],
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -121,8 +101,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				type: 'test',
-				data: 'command value',
-				scope: ['', 'title'],
+				metadata: 'command value',
 				value: {
 					title: 'Test command',
 				},
@@ -137,8 +116,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				type: 'list',
-				data: JSON.stringify({ greeting: 'Hello World' }),
-				scope: ['', 'title'],
+				metadata: JSON.stringify({ greeting: 'Hello World' }),
 				value: {
 					title: '',
 				},
@@ -158,7 +136,6 @@ test.describe('conform-dom', () => {
 			];
 			const result = {
 				type: 'list',
-				scope: ['tasks'],
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
@@ -177,7 +154,11 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({ type: 'prepend', scope: 'tasks', payload: {} }),
+				metadata: JSON.stringify({
+					type: 'prepend',
+					scope: 'tasks',
+					payload: {},
+				}),
 				value: {
 					tasks: [undefined, ...result.value.tasks],
 				},
@@ -198,7 +179,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({
+				metadata: JSON.stringify({
 					type: 'prepend',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' } },
@@ -219,7 +200,11 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({ type: 'append', scope: 'tasks', payload: {} }),
+				metadata: JSON.stringify({
+					type: 'append',
+					scope: 'tasks',
+					payload: {},
+				}),
 				value: {
 					tasks: [...result.value.tasks, undefined],
 				},
@@ -240,7 +225,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({
+				metadata: JSON.stringify({
 					type: 'append',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' } },
@@ -265,7 +250,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({
+				metadata: JSON.stringify({
 					type: 'replace',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' }, index: 0 },
@@ -290,7 +275,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({
+				metadata: JSON.stringify({
 					type: 'remove',
 					scope: 'tasks',
 					payload: { index: 0 },
@@ -316,7 +301,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				data: JSON.stringify({
+				metadata: JSON.stringify({
 					type: 'reorder',
 					scope: 'tasks',
 					payload: { from: 0, to: 1 },

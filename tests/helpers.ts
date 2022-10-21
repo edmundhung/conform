@@ -3,6 +3,7 @@ import type { Page, Locator, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 interface FormConfig {
+	mode?: 'client-only' | 'server-validation';
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
 	defaultValue?: any;
 	fallbackNative?: boolean;
@@ -16,6 +17,10 @@ export async function gotoForm(
 	config?: FormConfig,
 ): Promise<Locator> {
 	const searchParams = new URLSearchParams();
+
+	if (typeof config?.mode !== 'undefined') {
+		searchParams.set('mode', config.mode);
+	}
 
 	if (typeof config?.initialReport !== 'undefined') {
 		searchParams.set('initialReport', config.initialReport);

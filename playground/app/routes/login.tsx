@@ -1,11 +1,10 @@
 import {
-	type FormState,
 	type Submission,
 	conform,
 	useFieldset,
 	useForm,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -17,15 +16,12 @@ interface Login {
 	password: string;
 }
 
-function validate(submission: Submission<Login>): FormState<Login> {
-	if (submission.scope.includes('email') && submission.value.email === '') {
+function validate(submission: Submission<Login>): Submission<Login> {
+	if (!submission.value.email) {
 		submission.error.push(['email', 'Email is required']);
 	}
 
-	if (
-		submission.scope.includes('password') &&
-		submission.value.password === ''
-	) {
+	if (!submission.value.password) {
 		submission.error.push(['password', 'Password is required']);
 	}
 
@@ -68,17 +64,17 @@ export default function LoginForm() {
 			? ({ form, submission }) => {
 					const state = validate(submission);
 
-					return reportValidity(form, state);
+					setFormError(form, state);
 			  }
 			: undefined,
-		onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					event.preventDefault();
-					break;
-				}
-			}
-		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (submission.type === 'validate') {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { email, password } = useFieldset(form.ref, form.config);
 

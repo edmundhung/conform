@@ -54,6 +54,7 @@ test.describe('Constraint', () => {
 
 		expect(constraint).toEqual({
 			iban: {
+				minLength: 1,
 				required: true,
 				pattern: '^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$',
 			},
@@ -126,7 +127,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
@@ -203,7 +203,6 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'title', 'description', 'genre', 'rating'],
 			value: {
 				title: 'The Matrix',
 				description:
@@ -240,7 +239,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			scope: ['', 'email', 'password', 'confirmPassword'],
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -248,7 +246,82 @@ test.describe('Client Validation', () => {
 		});
 	});
 
-	test('Reset', async ({ page }) => {
+	test('Zod integration', async ({ page }) => {
+		const form = await gotoForm(page, '/payment');
+		const fieldset = getPaymentFieldset(form);
+		const timestamp = new Date().toISOString();
+
+		await clickSubmitButton(form);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'IBAN is required',
+			'Please select a currency',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.iban.type('DE89 3704 0044 0532 0130 00');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'Please select a currency',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.currency.selectOption('EUR');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Value is required',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.value.type('1');
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'',
+			'Timestamp is required',
+			'Please verify',
+		]);
+
+		await fieldset.timestamp.type(timestamp);
+
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'',
+			'',
+			'Please verify',
+		]);
+
+		await fieldset.verified.check();
+
+		expect(await getErrorMessages(form)).toEqual(['', '', '', '', '']);
+
+		await clickSubmitButton(form);
+
+		expect(await getSubmission(form)).toEqual({
+			value: {
+				iban: 'DE89 3704 0044 0532 0130 00',
+				amount: {
+					currency: 'EUR',
+					value: '1',
+				},
+				timestamp,
+				verified: 'Yes',
+			},
+			error: [],
+		});
+	});
+
+	test('Form reset', async ({ page }) => {
 		const form = await gotoForm(page, '/movie');
 		const { title, description, genre, rating } = getMovieFieldset(form);
 		const initialValidationMessages = await Promise.all([
@@ -306,7 +379,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'email', 'password'],
 			value: {
 				email: '',
 			},
@@ -321,7 +393,6 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: ['', 'email', 'password'],
 			value: {
 				email: 'invalid email',
 			},
@@ -378,7 +449,9 @@ test.describe('Server Validation', () => {
 	});
 
 	test('Async validation', async ({ page }) => {
-		const form = await gotoForm(page, '/employee');
+		const form = await gotoForm(page, '/employee', {
+			mode: 'server-validation',
+		});
 		const { name, email, title } = getEmployeeFieldset(form);
 
 		await page.route('**', (route) => {
@@ -422,7 +495,6 @@ test.describe('Server Validation', () => {
 				body: JSON.stringify({
 					value: {},
 					error: [['', 'Request forbidden']],
-					scope: [''],
 				}),
 			});
 		});
@@ -472,15 +544,18 @@ test.describe('Server Validation', () => {
 			.poll(() => getErrorMessages(form))
 			.toEqual(['', '', 'Email is already used', 'Title is required']);
 
-		await email.type('e');
-
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', '', 'Title is required']);
-
 		await title.type('Software Developer');
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		expect(await getErrorMessages(form)).toEqual([
+			'',
+			'',
+			'Email is already used',
+			'',
+		]);
+
+		await email.type('e');
+
+		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '', '']);
 
 		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
@@ -649,17 +724,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'',
-				'title',
-				'tasks',
-				'tasks[0]',
-				'tasks[0].content',
-				'tasks[1]',
-				'tasks[1].content',
-				'tasks[2]',
-				'tasks[2].content',
-			],
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -726,16 +790,6 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			scope: [
-				'',
-				'title',
-				'tasks',
-				'tasks[0]',
-				'tasks[0].content',
-				'tasks[1]',
-				'tasks[1].content',
-				'tasks[1].completed',
-			],
 			value: {
 				title: 'Testing plan',
 				tasks: [
@@ -747,7 +801,7 @@ test.describe('Field list', () => {
 		});
 	});
 
-	test('Reset', async ({ page }) => {
+	test('Form reset', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 

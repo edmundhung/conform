@@ -3,7 +3,6 @@ import {
 	type FieldElement,
 	type FieldValue,
 	type FieldsetConstraint,
-	type FormState,
 	type ListCommand,
 	type Primitive,
 	type Submission,
@@ -17,8 +16,8 @@ import {
 	parse,
 	parseListCommand,
 	requestSubmit,
-	reportValidity,
 	requestValidate,
+	setFormError,
 	updateList,
 } from '@conform-to/dom';
 import {
@@ -39,6 +38,11 @@ interface FormContext<Schema extends Record<string, any>> {
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
+	 * Validation mode. Default to `client-only`.
+	 */
+	mode?: 'client-only' | 'server-validation';
+
+	/**
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
@@ -54,7 +58,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the state from the last submission
 	 */
-	state?: FormState<Schema>;
+	state?: Submission<Schema>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -73,7 +77,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: FormContext<Schema>) => boolean;
+	onValidate?: (context: FormContext<Schema>) => void;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -120,15 +124,11 @@ export function useForm<Schema extends Record<string, any>>(
 	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
 		() => {
 			const error = config.state?.error ?? [];
-			const scope = config.state?.scope;
 
 			return {
 				defaultValue: config.state?.value ?? config.defaultValue,
 				initialError: error.filter(
-					([name]) =>
-						name !== '' &&
-						getSubmissionType(name) === null &&
-						(!scope || scope.includes(name)),
+					([name]) => name !== '' && getSubmissionType(name) === null,
 				),
 			};
 		},
@@ -152,8 +152,10 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		if (!reportValidity(form, config.state)) {
-			focusFirstInvalidField(form, config.state.scope);
+		setFormError(form, config.state);
+
+		if (!form.reportValidity()) {
+			focusFirstInvalidField(form);
 		}
 
 		requestSubmit(form);
@@ -308,23 +310,30 @@ export function useForm<Schema extends Record<string, any>>(
 					}
 				}
 
-				if (
-					typeof config.onValidate === 'function' &&
-					!config.noValidate &&
-					!submitter.formNoValidate
-				) {
-					try {
-						if (!config.onValidate(context)) {
+				try {
+					if (!config.noValidate && !submitter.formNoValidate) {
+						config.onValidate?.(context);
+
+						if (!form.reportValidity()) {
 							focusFirstInvalidField(form);
 							event.preventDefault();
 						}
-					} catch (e) {
+					}
+				} catch (e) {
+					if (e !== form) {
 						console.warn(e);
 					}
 				}
 
 				if (!event.defaultPrevented) {
-					config.onSubmit?.(event, context);
+					if (
+						config.mode !== 'server-validation' &&
+						submission.type === 'validate'
+					) {
+						event.preventDefault();
+					} else {
+						config.onSubmit?.(event, context);
+					}
 				}
 			},
 		},
@@ -443,58 +452,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 	});
 
 	useEffect(() => {
-		/**
-		 * Reset the error state of each field if its validity is changed.
-		 *
-		 * This is a workaround as no official way is provided to notify
-		 * when the validity of the field is changed from `invalid` to `valid`.
-		 */
-		const resetError = (form: HTMLFormElement) => {
-			setError((prev) => {
-				let next = prev;
-
-				const fieldsetName = configRef.current?.name ?? '';
-
-				for (const field of form.elements) {
-					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
-						const [key, ...paths] = getPaths(
-							fieldsetName.length > 0
-								? field.name.slice(fieldsetName.length + 1)
-								: field.name,
-						);
-
-						if (typeof key === 'string' && paths.length === 0) {
-							const prevMessage = next?.[key] ?? '';
-							const nextMessage = field.validationMessage;
-
-							/**
-							 * Techincally, checking prevMessage not being empty while nextMessage being empty
-							 * is sufficient for our usecase. It checks if the message is changed instead to allow
-							 * the hook to be useful independently.
-							 */
-							if (prevMessage !== '' && prevMessage !== nextMessage) {
-								next = {
-									...next,
-									[key]: nextMessage,
-								};
-							}
-						}
-					}
-				}
-
-				return next;
-			});
-		};
-		const handleInput = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-
-			if (!form || !isFieldElement(field) || field.form !== form) {
-				return;
-			}
-
-			resetError(form);
-		};
 		const invalidHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const field = event.target;
@@ -542,8 +499,36 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
-			// This helps resetting error that fullfilled by the submitter
-			resetError(form);
+			/**
+			 * Reset the error state of each field if its validity is changed.
+			 *
+			 * This is a workaround as no official way is provided to notify
+			 * when the validity of the field is changed from `invalid` to `valid`.
+			 */
+			setError((prev) => {
+				let next = prev;
+
+				const fieldsetName = configRef.current?.name ?? '';
+
+				for (const field of form.elements) {
+					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
+						const key = fieldsetName
+							? field.name.slice(fieldsetName.length + 1)
+							: field.name;
+						const prevMessage = next?.[key] ?? '';
+						const nextMessage = field.validationMessage;
+
+						if (prevMessage !== '' && nextMessage === '') {
+							next = {
+								...next,
+								[key]: '',
+							};
+						}
+					}
+				}
+
+				return next;
+			});
 		};
 		const resetHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
@@ -564,14 +549,12 @@ export function useFieldset<Schema extends Record<string, any>>(
 			setError({});
 		};
 
-		document.addEventListener('input', handleInput);
 		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			document.removeEventListener('input', handleInput);
 			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);

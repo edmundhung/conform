@@ -4,7 +4,8 @@ import {
 	useFieldset,
 	useForm,
 	hasError,
-	reportValidity,
+	setFormError,
+	shouldValidate,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -31,15 +32,15 @@ export let action = async ({ request }: ActionArgs) => {
 	const result = await schema
 		.refine(
 			async (employee) => {
-				if (!submission.scope.includes('email')) {
-					return true;
+				if (submission.type !== 'validate' || submission.metadata === 'email') {
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(employee.email === 'hey@conform.guide');
+						}, Math.random() * 500);
+					});
 				}
 
-				return new Promise((resolve) => {
-					setTimeout(() => {
-						resolve(employee.email === 'hey@conform.guide');
-					}, Math.random() * 100);
-				});
+				return true;
 			},
 			{
 				message: 'Email is already used',
@@ -50,9 +51,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 	return {
 		...submission,
-		error: submission.error.concat(
-			!result.success ? getError(result.error, submission.scope) : [],
-		),
+		error: submission.error.concat(getError(result)),
 	};
 };
 
@@ -64,30 +63,33 @@ export default function EmployeeForm() {
 		state,
 		onValidate({ form, submission }) {
 			const result = schema.safeParse(submission.value);
-			const error = submission.error.concat(
-				!result.success ? getError(result.error) : [],
-			);
 
-			if (submission.scope.includes('email') && !hasError(error, 'email')) {
-				// Skip reporting client validation result
-				return true;
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
 			}
 
-			return reportValidity(form, {
-				...submission,
-				error,
-			});
-		},
-		async onSubmit(event, { submission }) {
-			switch (submission.type) {
-				case 'validate': {
-					if (submission.data !== 'email') {
-						event.preventDefault();
-					}
-					break;
+			if (config.mode === 'server-validation') {
+				if (
+					shouldValidate(submission, 'email') &&
+					!hasError(submission.error, 'email')
+				) {
+					throw form;
 				}
 			}
+
+			setFormError(form, submission);
 		},
+		onSubmit:
+			config.mode === 'server-validation'
+				? (event, { submission }) => {
+						if (
+							submission.type === 'validate' &&
+							submission.metadata !== 'email'
+						) {
+							event.preventDefault();
+						}
+				  }
+				: undefined,
 	});
 	const { name, email, title } = useFieldset(form.ref, form.config);
 

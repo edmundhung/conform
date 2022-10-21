@@ -5,7 +5,7 @@ import {
 	useFieldList,
 	conform,
 	parse,
-	reportValidity,
+	setFormError,
 } from '@conform-to/react';
 import { getError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -28,9 +28,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData);
 	const result = todoSchema.safeParse(submission.value);
-	const error = !result.success
-		? submission.error.concat(getError(result.error, submission.scope))
-		: submission.error;
+	const error = submission.error.concat(getError(result));
 
 	switch (submission.type) {
 		case 'validate': {
@@ -59,14 +57,12 @@ export default function TodoForm() {
 		state,
 		onValidate({ form, submission }) {
 			const result = todoSchema.safeParse(submission.value);
-			const error = !result.success
-				? submission.error.concat(getError(result.error, submission.scope))
-				: submission.error;
 
-			return reportValidity(form, {
-				...submission,
-				error,
-			});
+			if (!result.success) {
+				submission.error = submission.error.concat(getError(result.error));
+			}
+
+			setFormError(form, submission);
 		},
 		onSubmit(event, { submission }) {
 			switch (submission.type) {

@@ -1,4 +1,4 @@
-import { useFieldset, useForm, reportValidity } from '@conform-to/react';
+import { useFieldset, useForm, setFormError } from '@conform-to/react';
 import { getError } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -26,9 +26,7 @@ export default function SignupForm() {
 				});
 			} catch (error) {
 				if (error instanceof yup.ValidationError) {
-					submission.error = submission.error.concat(
-						getError(error, submission.scope),
-					);
+					submission.error = submission.error.concat(getError(error));
 				} else {
 					submission.error = submission.error.concat([
 						['', 'Validation failed'],
@@ -36,7 +34,7 @@ export default function SignupForm() {
 				}
 			}
 
-			return reportValidity(form, submission);
+			setFormError(form, submission);
 		},
 		onSubmit: async (event, { submission }) => {
 			event.preventDefault();
