@@ -27,11 +27,14 @@ export async function loader({ params, context }: LoaderArgs) {
 	}
 
 	const branch = getBranch(context);
-	const readme = await getFile(`examples/${params.page}/README.md`, branch);
+	const readme = await getFile(
+		`docs/examples/${params.page}/README.md`,
+		branch,
+	);
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/examples/${params.page}`,
+			src: `edmundhung/conform/tree/${branch}/docs/examples/${params.page}`,
 			content: parse(atob(readme.content)),
 		},
 		{

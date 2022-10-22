@@ -13,4 +13,4 @@ It works without JS.
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/remix)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/remix) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/remix)

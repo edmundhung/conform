@@ -76,7 +76,7 @@ const validate = createValidate((field, formData) => {
     }
     case 'frequency': {
       const type = formData.get('type');
-      
+
       // In this example, there are two submit buttons
       // with values of `subscription` and `onetime-purchase`.
       if (type === 'subscription' && field.value === '') {
@@ -94,4 +94,4 @@ const validate = createValidate((field, formData) => {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/advanced) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/advanced)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/advanced) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/advanced)

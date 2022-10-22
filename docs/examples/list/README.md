@@ -228,8 +228,8 @@ Currently, there are **5** commands supported:
 
 These commands are built with progressive enhancement in mind and work regradless of JavaScript is enabled or not.
 
-Checkout the [remix](/examples/remix) example for a demo.
+Checkout the [remix](/docs/examples/remix) example for a demo.
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/list) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/list)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/list) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/list)

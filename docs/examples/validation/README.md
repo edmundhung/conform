@@ -67,7 +67,7 @@ export default function SignupForm() {
 }
 ```
 
-[Full example](/examples/yup)
+[Full example](/docs/examples/yup)
 
 </details>
 
@@ -107,7 +107,7 @@ export default function SignupForm() {
 }
 ```
 
-[Full example](/examples/zod)
+[Full example](/docs/examples/zod)
 
 </details>
 
@@ -162,4 +162,4 @@ export default function SignupForm() {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/validation) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/validation)
+> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/validation) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/validation)
