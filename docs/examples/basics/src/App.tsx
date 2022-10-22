@@ -9,7 +9,7 @@ export default function LoginForm() {
 		onSubmit(event, { formData }) {
 			event.preventDefault();
 
-			console.log(formData);
+			console.log(Object.fromEntries(formData));
 		},
 	});
 	/**

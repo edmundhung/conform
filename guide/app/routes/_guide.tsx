@@ -14,8 +14,9 @@ const navigations: Navigation[] = [
 		title: 'Get Started',
 		menus: [
 			{ title: 'Basics', to: '/basics' },
+			{ title: 'Command', to: '/command' },
 			{ title: 'Validation', to: '/validation' },
-			{ title: 'Commands', to: '/commands' },
+			{ title: 'Schema', to: '/schema' },
 		],
 	},
 	{

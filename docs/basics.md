@@ -8,10 +8,9 @@ In this section, we will cover how to build a simple login form by utilizing nat
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
-- [Enhancing with conform](#enhancing-with-conform)
-  - [Capturing errors](#capturing-errors)
-  - [Styling invalid fields](#styling-invalid-fields)
-  - [Early reporting](#early-reporting)
+- [Capturing errors](#capturing-errors)
+- [Styling input](#styling-input)
+- [Early reporting](#early-reporting)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -103,7 +102,7 @@ export default function LoginForm() {
 You might already notice - they are the same as the one you saw on the error bubbles: Indeed, these messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
 </details>
 
-### Styling invalid fields
+### Styling input
 
 It might be common to update the class name based on the error state. However, conform makes it possible to style using a combination of [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) with data attribute as well:
 
@@ -138,6 +137,6 @@ export default function LoginForm() {
 
 <!-- sandbox title="Login form demo" src="/docs/examples/basics" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/basics)
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/basics).
 
 <!-- /sandbox -->
