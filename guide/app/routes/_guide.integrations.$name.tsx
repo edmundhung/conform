@@ -17,24 +17,24 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
 export const meta: MetaFunction = ({ params }) => {
 	return {
-		title: `Conform Guide - ${formatTitle(params.integration ?? '')} example`,
+		title: `Conform Guide - ${formatTitle(params.name ?? '')} integrations`,
 	};
 };
 
 export async function loader({ params, context }: LoaderArgs) {
-	if (isGetStartedGuide(params.integration)) {
+	if (isGetStartedGuide(params.name)) {
 		throw notFound();
 	}
 
 	const branch = getBranch(context);
 	const readme = await getFile(
-		`docs/examples/${params.integration}/README.md`,
+		`docs/integrations/${params.name}/README.md`,
 		branch,
 	);
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/docs/examples/${params.integration}`,
+			src: `edmundhung/conform/tree/${branch}/docs/integrations/${params.name}`,
 			content: parse(atob(readme.content)),
 		},
 		{

@@ -15,9 +15,14 @@ const navigations: Navigation[] = [
 		menus: [
 			{ title: 'Basics', to: '/basics' },
 			{ title: 'Validation', to: '/validation' },
-			{ title: 'Nested', to: '/nested' },
-			{ title: 'List', to: '/list' },
-			{ title: 'Advanced', to: '/advanced' },
+			{ title: 'Commands', to: '/commands' },
+		],
+	},
+	{
+		title: 'Integrations',
+		menus: [
+			{ title: 'Create React App', to: '/integrations/create-react-app' },
+			{ title: 'Remix', to: '/integrations/remix' },
 		],
 	},
 	{
@@ -32,7 +37,6 @@ const navigations: Navigation[] = [
 		title: 'Examples',
 		menus: [
 			{ title: 'Material UI', to: '/examples/material-ui' },
-			{ title: 'Remix', to: '/examples/remix' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
 		],
