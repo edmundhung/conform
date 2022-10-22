@@ -6,7 +6,7 @@ export function parse(markdown: string) {
 			/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
 			'{% details summary="$1" %}$2{% /details %}',
 		)
-		.replace(/<!-- (\/?aside) -->/g, '{% $1 %}');
+		.replace(/<!-- (\/?(aside|sandbox)( \w+=".+")*) -->/g, '{% $1 %}');
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
@@ -38,6 +38,21 @@ export function parse(markdown: string) {
 			aside: {
 				render: 'Aside',
 				description: 'Side notes',
+			},
+			sandbox: {
+				render: 'Sandbox',
+				description: 'To display an embedded sandbox',
+				attributes: {
+					title: {
+						type: String,
+						description: 'Title of the sandbox',
+					},
+					src: {
+						type: String,
+						required: true,
+						description: 'Path to the source of the sandbox',
+					},
+				},
 			},
 			details: {
 				render: 'Details',

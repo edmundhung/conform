@@ -1,6 +1,6 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
-import { Link as RouterLink } from '@remix-run/react';
+import { Link as RouterLink, useMatches } from '@remix-run/react';
 import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
@@ -18,7 +18,22 @@ const style = {
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
 
-export function Sandbox({ title, src }: { title: string; src: string }) {
+export function useRootLoaderData() {
+	const [root] = useMatches();
+
+	return root.data;
+}
+
+export function Sandbox({
+	title,
+	src,
+	children,
+}: {
+	title: string;
+	src: string;
+	children: React.ReactNode;
+}) {
+	const { repository, branch } = useRootLoaderData();
 	const [hydated, setHydrated] = React.useState(false);
 
 	React.useEffect(() => {
@@ -26,13 +41,19 @@ export function Sandbox({ title, src }: { title: string; src: string }) {
 	}, []);
 
 	if (!hydated) {
-		return null;
+		return children;
 	}
+
+	const url = new URL(
+		`https://codesandbox.io/embed/github/${repository}/tree/${branch}${src}`,
+	);
+
+	url.searchParams.set('editorsize', '60');
 
 	return (
 		<iframe
 			title={title}
-			src={`https://codesandbox.io/embed/github/${src}?editorsize=60`}
+			src={url.toString()}
 			className="min-h-[70vh] my-6 w-full aspect-[16/9] outline outline-1 outline-zinc-800 outline-offset-4 rounded"
 			sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 		/>
@@ -147,6 +168,7 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 			{renderers.react(content, React, {
 				components: {
 					Aside,
+					Sandbox,
 					Details,
 					Fence,
 					Heading,

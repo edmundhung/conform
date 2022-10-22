@@ -94,4 +94,8 @@ const validate = createValidate((field, formData) => {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/advanced) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/advanced)
+<!-- sandbox src="/docs/examples/advanced" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/advanced).
+
+<!-- /sandbox -->

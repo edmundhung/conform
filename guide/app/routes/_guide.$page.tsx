@@ -8,8 +8,8 @@ import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
 import { getFile } from '~/octokit';
-import { Markdown, Sandbox } from '~/components';
-import { formatTitle, isGetStartedGuide, notFound } from '~/util';
+import { Markdown } from '~/components';
+import { formatTitle } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -27,7 +27,6 @@ export async function loader({ params, context }: LoaderArgs) {
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/docs/examples/${params.page}`,
 			content: parse(atob(readme.content)),
 		},
 		{
@@ -39,12 +38,7 @@ export async function loader({ params, context }: LoaderArgs) {
 }
 
 export default function Page() {
-	let { src, content } = useLoaderData<typeof loader>();
+	let { content } = useLoaderData<typeof loader>();
 
-	return (
-		<>
-			<Markdown content={content} />
-			<Sandbox title="Sandbox" src={src} />
-		</>
-	);
+	return <Markdown content={content} />;
 }

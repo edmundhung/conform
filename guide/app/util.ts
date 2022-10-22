@@ -23,13 +23,3 @@ export function formatTitle(text: string): string {
 export function notFound() {
 	return new Response('Not found', { status: 404, statusText: 'Not Found' });
 }
-
-export function isGetStartedGuide(name: string | undefined) {
-	if (!name) {
-		return false;
-	}
-
-	const guides = ['basics', 'validation', 'nested', 'list', 'advanced'];
-
-	return guides.includes(name);
-}

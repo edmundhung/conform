@@ -7,7 +7,7 @@ import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
 import { getFile } from '~/octokit';
-import { Markdown, Sandbox } from '~/components';
+import { Markdown } from '~/components';
 import { getIntroduction } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
@@ -33,12 +33,7 @@ export async function loader({ context }: LoaderArgs) {
 }
 
 export default function Index() {
-	const { src, content } = useLoaderData<typeof loader>();
+	const { content } = useLoaderData<typeof loader>();
 
-	return (
-		<>
-			<Markdown content={content} />
-			<Sandbox title="Quick start" src={src} />
-		</>
-	);
+	return <Markdown content={content} />;
 }

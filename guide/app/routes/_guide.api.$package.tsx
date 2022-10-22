@@ -43,9 +43,5 @@ export async function loader({ params, context }: LoaderArgs) {
 export default function Page() {
 	let { content } = useLoaderData<typeof loader>();
 
-	return (
-		<>
-			<Markdown content={content} />
-		</>
-	);
+	return <Markdown content={content} />;
 }

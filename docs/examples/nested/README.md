@@ -137,4 +137,8 @@ export default function PaymentForm() {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/nested) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/nested)
+<!-- sandbox src="/docs/examples/nested" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/nested).
+
+<!-- /sandbox -->

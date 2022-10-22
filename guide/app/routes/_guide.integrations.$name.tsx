@@ -8,8 +8,8 @@ import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
 import { getFile } from '~/octokit';
-import { Markdown, Sandbox } from '~/components';
-import { formatTitle, isGetStartedGuide, notFound } from '~/util';
+import { Markdown } from '~/components';
+import { formatTitle } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -22,10 +22,6 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export async function loader({ params, context }: LoaderArgs) {
-	if (isGetStartedGuide(params.name)) {
-		throw notFound();
-	}
-
 	const branch = getBranch(context);
 	const readme = await getFile(
 		`docs/integrations/${params.name}/README.md`,
@@ -34,7 +30,6 @@ export async function loader({ params, context }: LoaderArgs) {
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/docs/integrations/${params.name}`,
 			content: parse(atob(readme.content)),
 		},
 		{
@@ -46,12 +41,7 @@ export async function loader({ params, context }: LoaderArgs) {
 }
 
 export default function Page() {
-	let { src, content } = useLoaderData<typeof loader>();
+	let { content } = useLoaderData<typeof loader>();
 
-	return (
-		<>
-			<Markdown content={content} />
-			<Sandbox title="Sandbox" src={src} />
-		</>
-	);
+	return <Markdown content={content} />;
 }

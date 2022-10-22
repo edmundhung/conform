@@ -13,4 +13,8 @@ It works without JS.
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/remix) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/remix)
+<!-- sandbox src="/docs/integrations/remix" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/integrations/remix).
+
+<!-- /sandbox -->

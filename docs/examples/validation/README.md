@@ -162,4 +162,8 @@ export default function SignupForm() {
 
 ## Demo
 
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/validation) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/docs/examples/validation)
+<!-- sandbox src="/docs/examples/validation" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/validation).
+
+<!-- /sandbox -->

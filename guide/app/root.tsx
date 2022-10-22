@@ -1,4 +1,8 @@
-import type { MetaFunction, LinksFunction } from '@remix-run/cloudflare';
+import type {
+	MetaFunction,
+	LinksFunction,
+	LoaderArgs,
+} from '@remix-run/cloudflare';
 import {
 	Links,
 	LiveReload,
@@ -8,10 +12,22 @@ import {
 	ScrollRestoration,
 	useCatch,
 } from '@remix-run/react';
+import { json } from '@remix-run/cloudflare';
 import stylesUrl from '~/styles.css';
+import { getBranch } from './context';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
+};
+
+export let loader = ({ context }: LoaderArgs) => {
+	const repository = 'edmundhung/conform';
+	const branch = getBranch(context);
+
+	return json({
+		repository,
+		branch,
+	});
 };
 
 export const meta: MetaFunction = () => ({
