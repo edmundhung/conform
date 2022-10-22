@@ -20,20 +20,17 @@ In this section, we will cover how to manage a dynamic list of fields with contr
 
 Conform utilise a naming definition similiar to how array items are accessed in JavaScript: `array[index]`. The square bracket notation could be nested as many levels as you need and mixed with the dot notation for [nested data structure](../nested).
 
-Once the name of the fields are configured properly, you will need to consturct a submission object using the `createSubmission()` API instead of `Object.fromEntries()`:
+Once the name of the fields are configured properly, you can just access the value from `submission.value`:
 
 ```tsx
 import { useForm, createSubmission } from '@conform-to/react';
 
 export default function PaymentForm() {
   const formProps = useForm({
-    onSubmit(event) {
+    onSubmit(event, { submission }) {
       event.preventDefault();
 
-      const formData = new FormData(event.currentTarget);
-      const submission = createSubmission(formData);
-
-      console.log(submission);
+      console.log(submission.value);
     },
   });
 
@@ -63,10 +60,10 @@ It can be setup manually as below:
 
 ```tsx
 export default function TodoForm() {
-  const formProps = useForm();
+  const form = useForm();
 
   return (
-    <form {...formProps}>
+    <form {...form.props}>
       <fieldset>
         <label>
           <div>Title</div>
@@ -123,11 +120,11 @@ Alternatively, there is also dervied config provided by [useFieldset](/packages/
 
 ```tsx
 export default function TodoForm() {
-  const formProps = useForm();
-  const { title, tasks } = useFieldset<Todo>(formProps.ref);
+  const form = useForm();
+  const { title, tasks } = useFieldset<Todo>(form.ref);
 
   return (
-    <form {...formProps}>
+    <form {...form.props}>
       <fieldset>
         <label>
           <div>Title</div>
@@ -174,12 +171,12 @@ Conform provides an additional hook [useFieldList](/packages/conform-react/READM
 
 ```tsx
 export default function TodoForm() {
-  const formProps = useForm();
-  const { title, tasks } = useFieldset<Todo>(formProps.ref);
-  const [taskList, control] = useFieldList(formProps.ref, tasks.config);
+  const form = useForm();
+  const { title, tasks } = useFieldset<Todo>(form.ref);
+  const [taskList, control] = useFieldList(form.ref, tasks.config);
 
   return (
-    <form {...formProps}>
+    <form {...form.props}>
       <fieldset>
         <label>
           <div>Title</div>

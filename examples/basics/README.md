@@ -37,7 +37,6 @@ export default function LoginForm() {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget);
-
         console.log(formData);
       }}
     >
@@ -61,9 +60,7 @@ export default function LoginForm() {
 }
 ```
 
-## Enhancing with conform
-
-By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. However, there are still things that can be improved:
+By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API.
 
 ### Capturing errors
 
@@ -75,33 +72,26 @@ What if we can capture the error messages and decide where to put them ourselves
 import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
+  /**
+   * The useForm hook let you take control of the browser
+   * validation flow and customize it
+   */
   const form = useForm({
-    onSubmit(event) {
+    onSubmit(event, { formData }) {
       event.preventDefault();
 
       console.log(formData);
     },
   });
+  /**
+   * The useFieldset hook let you subscribe to the state
+   * of each field
+   */
   const { email, password } = useFieldset(form.ref);
 
   return (
     <form {...form.props}>
-      <label>
-        <div>Email</div>
-        <input type="email" name="email" required />
-        <div>{email.error}</div>
-      </label>
-      <label>
-        <div>Password</div>
-        <input type="password" name="password" required />
-        <div>{password.error}</div>
-      </label>
-      <label>
-        <div>
-          <span>Remember me</span>
-          <input type="checkbox" name="remember-me" value="yes" />
-        </div>
-      </label>
+      {/* ... */}
       <button type="submit">Login</button>
     </form>
   );
@@ -121,15 +111,11 @@ It might be common to update the class name based on the error state. However, c
 input[data-conform-touched]:invalid {
   border-color: red;
 }
-
-input + div {
-  color: red;
-}
 ```
 
 ### Early reporting
 
-Currently, form error will not be reported until a submission is made. We can take this one step further by passing the `initialReport` option to `onBlur`, making the errors to be reported once the user leave the field:
+Currently, form error will not be reported until a submission is made. If you want it to be shown earlier, just set the `initialReport` option to `onBlur` and now error should be reported once the user leave the field:
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -139,7 +125,12 @@ export default function LoginForm() {
     initialReport: 'onBlur',
   });
 
-  return <form {...form.props}>{/* ... */}</form>;
+  return (
+    <form {...form.props}>
+      {/* ... */}
+      <button type="submit">Login</button>
+    </form>
+  );
 }
 ```
 

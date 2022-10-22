@@ -1,13 +1,21 @@
 import { useForm, useFieldset } from '@conform-to/react';
 
 export default function LoginForm() {
+	/**
+	 * The useForm hook let you take control of the browser
+	 * validation flow and customize it
+	 */
 	const form = useForm({
-		onSubmit(event, { submission }) {
+		onSubmit(event, { formData }) {
 			event.preventDefault();
 
-			console.log(submission);
+			console.log(formData);
 		},
 	});
+	/**
+	 * The useFieldset hook let you subscribe to the state
+	 * of each field
+	 */
 	const { email, password } = useFieldset(form.ref);
 
 	return (
