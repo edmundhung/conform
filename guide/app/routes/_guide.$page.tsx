@@ -7,7 +7,7 @@ import {
 import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
 import { parse } from '~/markdoc.server';
-import { getGitHubReadme } from '~/octokit';
+import { getFile } from '~/octokit';
 import { Markdown, Sandbox } from '~/components';
 import { formatTitle, isGetStartedGuide, notFound } from '~/util';
 
@@ -27,7 +27,7 @@ export async function loader({ params, context }: LoaderArgs) {
 	}
 
 	const branch = getBranch(context);
-	const readme = await getGitHubReadme(branch, `examples/${params.page}`);
+	const readme = await getFile(`examples/${params.page}/README.md`, branch);
 
 	return json(
 		{

@@ -9,7 +9,7 @@ import { Markdown } from '~/components';
 import { getBranch } from '~/context';
 import { formatTitle } from '~/util';
 import { parse } from '~/markdoc.server';
-import { getGitHubReadme } from '~/octokit';
+import { getFile } from '~/octokit';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -23,9 +23,9 @@ export const meta: MetaFunction = ({ params }) => {
 
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
-	const readme = await getGitHubReadme(
+	const readme = await getFile(
+		`packages/conform-${params.package}/README.md`,
 		branch,
-		`packages/conform-${params.package}`,
 	);
 
 	return json(

@@ -1,19 +1,23 @@
 import { Octokit } from '@octokit/core';
 import { notFound } from '~/util';
 
-export async function getGitHubReadme(ref = 'main', dir = '') {
+export async function getFile(path: string, ref = 'main') {
 	const octokit = new Octokit();
 
 	try {
 		const file = await octokit.request(
-			'GET /repos/{owner}/{repo}/readme/{dir}',
+			'GET /repos/{owner}/{repo}/contents/{path}',
 			{
 				owner: 'edmundhung',
 				repo: 'conform',
-				dir,
+				path,
 				ref,
 			},
 		);
+
+		if (Array.isArray(file.data) || file.data.type !== 'file') {
+			throw new Error('The path provided should be pointed to a file');
+		}
 
 		return file.data;
 	} catch (e) {
