@@ -68,10 +68,10 @@ export function Aside({ children }: { children: React.ReactNode }) {
 	return (
 		<aside
 			className={`
-				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
-				prose-ul:list-none prose-ul:m-0 prose-ul:pl-0 prose-li:m-0 prose-li:pl-0
-				prose-a:block prose-a:border-l prose-a:px-4 prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 prose-a:border-zinc-700
-				hover:prose-a:text-white hover:prose-a:border-white 
+				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-4 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
+				prose-ul:list-none prose-ul:m-0 prose-ul:pl-4 prose-li:m-0 prose-li:pl-0 prose-headings:pl-4
+				prose-a:block prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 
+				hover:prose-a:text-white  
 			`}
 		>
 			{children}
