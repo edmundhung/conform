@@ -1,4 +1,4 @@
-# Schema
+# Submission
 
 In this section, we will cover how to construct nested data structure by following the naming convention.
 
@@ -10,6 +10,9 @@ In this section, we will cover how to construct nested data structure by followi
 - [Configuration](#configuration)
   - [Manual setup](#manual-setup)
   - [Derived config](#derived-config)
+- [Control button](#control-button)
+  - [Custom types](#custom-types)
+  - [Built-in types](#built-in-types)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -91,19 +94,20 @@ export default function TodoForm() {
             <fieldset>
               <label>
                 <span>{title}</span>
-                <input type="text" name="tasks[1].content" required />
+                <input type="text" name="tasks[0].content" required />
               </label>
               <div>
                 <label>
                   <span>Completed</span>
                   <input
                     type="checkbox"
-                    name="tasks[1].completed"
+                    name="tasks[0].completed"
                     value="yes"
                   />
                 </label>
               </div>
             </fieldset>
+            {/* repeat with tasks[1], tasks[2] and so on */}
           </li>
         </ul>
       </fieldset>
@@ -121,21 +125,21 @@ Alternatively, there is also dervied config provided by [useFieldset](/packages/
 export default function TodoForm() {
   const form = useForm();
   const { title, tasks } = useFieldset<Todo>(form.ref);
+  const [taskList, control] = useFieldList(form.ref, tasks.config);
 
   return (
     <form {...form.props}>
       <fieldset>
         <label>
           <div>Title</div>
-          <input type="text" name="title" required />
+          <input type="text" name={title.config.name} required />
         </label>
         <ul>
-          <li>
-            <TaskFieldset title="Task #1" name={`${tasks.config.name}[0]`} />
-          </li>
-          <li>
-            <TaskFieldset title="Task #2" name={`${tasks.config.name}[1]`} />
-          </li>
+          {taskList.map((task, index) => (
+            <li key={task.key}>
+              <TaskFieldset title={`Task #${index + 1}`} {...task.config} />
+            </li>
+          ))}
         </ul>
       </fieldset>
       <button type="submit">Save</button>
@@ -166,8 +170,8 @@ export function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 
 ## Demo
 
-<!-- sandbox src="/docs/examples/nested" -->
+<!-- sandbox src="/docs/examples/todos" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/nested).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/todos).
 
 <!-- /sandbox -->
