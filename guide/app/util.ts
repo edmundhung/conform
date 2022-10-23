@@ -2,15 +2,11 @@ export function getIntroduction(content: string) {
 	const lines = [];
 
 	for (const line of content.split('\n')) {
-		if (line.startsWith('## ')) {
+		if (line.startsWith('## API References')) {
 			break;
 		}
 
-		if (line.startsWith('# ')) {
-			lines.push('# Conform');
-		} else {
-			lines.push(line);
-		}
+		lines.push(line);
 	}
 
 	return lines.join('\n');

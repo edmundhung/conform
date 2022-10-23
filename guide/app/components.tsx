@@ -1,8 +1,4 @@
-import type {
-	RenderableTreeNodes,
-	RenderableTreeNode,
-	Tag,
-} from '@markdoc/markdoc';
+import type { RenderableTreeNodes } from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
 import { Link as RouterLink, useMatches } from '@remix-run/react';
 import * as React from 'react';
@@ -10,6 +6,7 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-ligh
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
+import { getChildren, isTag } from './markdoc';
 
 const style = {
 	...darcula,
@@ -126,7 +123,10 @@ export function Heading({
 			: '';
 
 	return (
-		<HeadingTag id={id} className="-mt-20 pt-20 lg:-mt-24 lg:pt-24">
+		<HeadingTag
+			id={id}
+			className="-mt-20 pt-20 lg:-mt-24 lg:pt-24 prose-a:inline-block prose-img:m-0"
+		>
 			{children}
 		</HeadingTag>
 	);
@@ -167,14 +167,8 @@ export function Link({
 }
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
-	function isTag(node: RenderableTreeNode): node is Tag {
-		return node !== null && typeof node !== 'string';
-	}
-
 	const hasSidebar =
-		!Array.isArray(content) &&
-		isTag(content) &&
-		typeof content.children.find(
+		typeof getChildren(content).find(
 			(node) => isTag(node) && node.name === 'Aside',
 		) !== 'undefined';
 

@@ -69,3 +69,17 @@ export function parse(markdown: string) {
 
 	return node;
 }
+
+export function isTag(node: markdoc.RenderableTreeNode): node is markdoc.Tag {
+	return node !== null && typeof node !== 'string';
+}
+
+export function getChildren(
+	nodes: markdoc.RenderableTreeNodes,
+): markdoc.RenderableTreeNode[] {
+	if (Array.isArray(nodes) || !isTag(nodes)) {
+		return [];
+	}
+
+	return nodes.children;
+}

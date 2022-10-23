@@ -5,7 +5,7 @@ import {
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
 import { getBranch } from '~/context';
-import { parse } from '~/markdoc.server';
+import { parse } from '~/markdoc';
 import { getFile } from '~/octokit';
 import { Markdown } from '~/components';
 import { getIntroduction } from '~/util';
