@@ -1,18 +1,145 @@
 # Validation
 
-In this section, we will briefly introduce the Constraint Validation API and explain different approaches for applying validations.
+**Conform** adopts a `server-first` paradigma. It tries to submit your form for validation and uses client-side validation to improve the user experience by blocking it when deemed unnecessary.
 
 <!-- aside -->
 
 ## Table of Contents
 
-- [Constraint Validation](#constraint-validation)
-- [Manual Validation](#manual-validation)
+- [Server Validation](#server-validation)
+  - [Schema Integration](#schema-integration)
+  - [Validating on-demand](#validating-on-demand)
+- [Client Validation](#client-validation)
+  - [Constraint Validation](#constraint-validation)
+  - [Reusing schema](#resuing-schema)
 - [Demo](#demo)
 
 <!-- /aside -->
 
-## Constraint Validation
+## Server Validation
+
+Your APIs should always validate the form data provided regardless if client validation is done well. There are also things that can only be validated server side, e.g. checking the uniqness of a username on the database. It could be considered the source of truth of your validation logic.
+
+For example, you can validate a login form in Remix as follow:
+
+```tsx
+import { parse } from '@conform-to/react';
+
+interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const submission = parse<LoginForm>(formData);
+
+  if (!submission.value.email) {
+    submission.error.push(['email', 'Email is required']);
+  } else if (!submission.value.email.includes('@')) {
+    submission.error.push(['email', 'Email is invalid']);
+  }
+
+  if (!submission.value.password) {
+    submission.error.push(['password', 'Password is required']);
+  }
+
+  /**
+   * Try logging the user in only when the submission is intentional
+   * with no error found
+   */
+  if (submission.type !== 'validate' && submission.error.length === 0) {
+    try {
+      return await login(submission.value);
+    } catch (error) {
+      /**
+       * By specifying the key as '', the message will be
+       * treated as a form-level error and populated
+       * on the client side as `form.error`
+       */
+      submission.error.push(['', 'Login failed']);
+    }
+  }
+
+  return submission;
+}
+```
+
+### Schema Integration
+
+Integrating with a schema validation library is simple. For example, you can integrate it with `zod` like this:
+
+```tsx
+import { parse } from '@conform-to/react';
+import { getError } from '@conform-to/zod';
+import { z } from 'zod';
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const submission = parse(formData);
+  const result = z
+    .object({
+      email: z.string().min(1, 'Email is required').email('Email is invalid'),
+      password: z.string().min(1, 'Password is required'),
+    })
+    .safeParse(submission.value);
+
+  if (submission.type !== 'validate' && result.success) {
+    try {
+      return await login(result.data);
+    } catch (error) {
+      submission.error.push(['', 'Login failed']);
+    }
+  } else {
+    /**
+     * The `getError` helpers simply convert the ZodError to
+     * a set of key/value pairs which represent the name and
+     * error of each field.
+     */
+    submission.error = submission.error.concat(getError(result));
+  }
+
+  return submission;
+}
+```
+
+### Validating on-demand
+
+Some validation rule could be expensive especially when it requires query result from database or even 3rd party services. This can be minimized by checking the submission type and metadata, or using the `shouldValidate()` helper.
+
+```tsx
+import { parse, shouldValidate } from '@conform-to/react';
+import { getError } from '@conform-to/zod';
+import { z } from 'zod';
+
+export async function action({ request }) {
+  const formData = await request.formData();
+  const submission = parse(formData);
+
+  if (!submission.value.email) {
+    submission.error.push(['email', 'Email is required']);
+  } else if (!submission.value.email.includes('@')) {
+    submission.error.push(['email', 'Email is invalid']);
+  } else if (
+    // Continue checking only if necessary
+    shouldValidate(submission, 'email') &&
+    // e.g. Verifying if the email exists on the database (Example only)
+    (await isRegistered(submission.value.email))
+  ) {
+    submission.error.push(['email', 'Email is not registered']);
+  }
+
+  if (!submission.value.password) {
+    submission.error.push(['password', 'Password is required']);
+  }
+
+  /* ... */
+}
+```
+
+## Client Validation
+
+### Constraint Validation
 
 The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
 
