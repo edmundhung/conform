@@ -1,4 +1,8 @@
-import type { RenderableTreeNodes } from '@markdoc/markdoc';
+import type {
+	RenderableTreeNodes,
+	RenderableTreeNode,
+	Tag,
+} from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
 import { Link as RouterLink, useMatches } from '@remix-run/react';
 import * as React from 'react';
@@ -163,8 +167,23 @@ export function Link({
 }
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
+	function isTag(node: RenderableTreeNode): node is Tag {
+		return node !== null && typeof node !== 'string';
+	}
+
+	const hasSidebar =
+		!Array.isArray(content) &&
+		isTag(content) &&
+		typeof content.children.find(
+			(node) => isTag(node) && node.name === 'Aside',
+		) !== 'undefined';
+
 	return (
-		<section className="prose prose-invert max-w-none xl:pr-72 prose-pre:!mt-6 prose-pre:!mb-8">
+		<section
+			className={`prose prose-invert max-w-none prose-pre:!mt-6 prose-pre:!mb-8 ${
+				hasSidebar ? 'xl:pr-72' : ''
+			}`}
+		>
 			{renderers.react(content, React, {
 				components: {
 					Aside,
