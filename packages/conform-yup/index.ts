@@ -1,5 +1,5 @@
 import { type FieldConstraint, type FieldsetConstraint } from '@conform-to/dom';
-import type * as yup from 'yup';
+import * as yup from 'yup';
 
 export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	source: Source,
@@ -83,13 +83,16 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 }
 
 export function getError(
-	error: yup.ValidationError | null,
+	error: unknown,
+	fallbackMessage = 'Oops! Something went wrong.',
 ): Array<[string, string]> {
-	return (
-		error?.inner.reduce<Array<[string, string]>>((result, e) => {
+	if (error instanceof yup.ValidationError) {
+		return error.inner.reduce<Array<[string, string]>>((result, e) => {
 			result.push([e.path ?? '', e.message]);
 
 			return result;
-		}, []) ?? []
-	);
+		}, []);
+	}
+
+	return [['', error instanceof Error ? error.message : fallbackMessage]];
 }

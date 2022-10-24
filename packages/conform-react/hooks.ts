@@ -312,7 +312,13 @@ export function useForm<Schema extends Record<string, any>>(
 
 				try {
 					if (!config.noValidate && !submitter.formNoValidate) {
-						config.onValidate?.(context);
+						if (typeof config.onValidate === 'function') {
+							config.onValidate(context);
+						} else if (config.mode === 'server-validation') {
+							// Skip reporting validity as server error
+							// could only be resolved manually
+							throw form;
+						}
 
 						if (!form.reportValidity()) {
 							focusFirstInvalidField(form);

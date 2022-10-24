@@ -3,6 +3,10 @@ fieldset {
 	padding: 10px 0;
 }
 
+legend {
+	color: red;
+}
+
 ul {
 	border: 1px dotted gray;
 	list-style: none;

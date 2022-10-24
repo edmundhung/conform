@@ -26,18 +26,7 @@ export default function SignupForm() {
 					abortEarly: false,
 				});
 			} catch (error) {
-				if (error instanceof yup.ValidationError) {
-					/**
-					 * The `getError` helper simply resolves the Yup ValidationError
-					 * to a set of key/value pairs which refers to the name and
-					 * error of each field.
-					 */
-					submission.error = submission.error.concat(getError(error));
-				} else {
-					submission.error = submission.error.concat([
-						['', 'Validation failed'],
-					]);
-				}
+				submission.error = submission.error.concat(getError(error));
 			}
 
 			setFormError(form, submission);

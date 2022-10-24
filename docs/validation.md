@@ -103,26 +103,24 @@ import { z } from 'zod';
 export async function action({ request }) {
   const formData = await request.formData();
   const submission = parse(formData);
-  const result = z
-    .object({
-      email: z.string().min(1, 'Email is required').email('Email is invalid'),
-      password: z.string().min(1, 'Password is required'),
-    })
-    .safeParse(submission.value);
+  const schema = z.object({
+    email: z.string().min(1, 'Email is required').email('Email is invalid'),
+    password: z.string().min(1, 'Password is required'),
+  });
 
-  if (submission.type !== 'validate' && result.success) {
-    try {
+  try {
+    const data = schema.parse(submission.value);
+
+    if (typeof submission.type === 'undefined') {
       return await login(result.data);
-    } catch (error) {
-      submission.error.push(['', 'Login failed']);
     }
-  } else {
+  } catch (error) {
     /**
      * The `getError` helpers simply resolves the ZodError to
      * a set of key/value pairs which refers to the name and
      * error of each field.
      */
-    submission.error = submission.error.concat(getError(result));
+    submission.error = submission.error.concat(getError(error));
   }
 
   return submission;
@@ -135,8 +133,6 @@ Some validation rule could be expensive especially when it requires query result
 
 ```tsx
 import { parse, shouldValidate } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
-import { z } from 'zod';
 
 export async function action({ request }) {
   const formData = await request.formData();

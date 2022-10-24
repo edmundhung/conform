@@ -12,7 +12,7 @@
 
 ### getError
 
-This resolves the ZodError/SafeParseReturnType to a set of key/value pairs which refers to the name and error of each field.
+This formats the received error to a set of key/value pairs which refers to the name and error of each field. If the value provided is not an ZodError or Error, the fallback message will be used.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -32,10 +32,6 @@ function ExampleForm() {
       const result = schema.safeParse(submission.value);
 
       if (!result.success) {
-        /**
-         *  The result is of type `SafeParseReturnType`.
-         *  So either `getError(result)` or `getError(result.error)` would work
-         */
         submission.error = submission.error.concat(getError(result.error));
       }
 
@@ -63,20 +59,16 @@ export let action = async ({ request }) => {
   const submission = parse(formData);
 
   try {
-    // You can extends the schema with async validation as well
     const data = await schema.parseAsync(submission.value);
 
-    if (submission.type !== 'validate') {
+    if (typeof submission.type === 'undefined') {
       return await handleFormData(data);
     }
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      submission.error = submission.error.concat(getError(error));
-    } else {
-      submission.error = submission.error.concat([
-        ['', 'Sorry, something went wrong.'],
-      ]);
-    }
+    submission.error = submission.error.concat(
+      // The 2nd argument is an optional fallback message
+      getError(error, 'The application has encountered an unknown error.'),
+    );
   }
 
   return submission;
