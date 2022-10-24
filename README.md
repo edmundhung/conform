@@ -8,7 +8,7 @@ Conform is a form validation library built on top of the [Constraint Validation]
 
 ## Quick start
 
-<!-- sandbox title="Simple demo" src="/docs/examples/basics" -->
+<!-- sandbox title="Simple demo" src="/examples/basic" -->
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';

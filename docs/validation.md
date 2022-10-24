@@ -345,8 +345,8 @@ export default function login() {
 
 ## Demo
 
-<!-- sandbox src="/docs/examples/validation" -->
+<!-- sandbox src="/examples/validation" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/validation).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/validation).
 
 <!-- /sandbox -->

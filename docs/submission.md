@@ -301,8 +301,8 @@ Valdation is also done through command buttons. For details, please check the [V
 
 ## Demo
 
-<!-- sandbox src="/docs/examples/todos" -->
+<!-- sandbox src="/examples/todos" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/todos).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/todos).
 
 <!-- /sandbox -->

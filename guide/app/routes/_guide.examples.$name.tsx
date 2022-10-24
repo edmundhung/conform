@@ -23,10 +23,7 @@ export const meta: MetaFunction = ({ params }) => {
 
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
-	const readme = await getFile(
-		`docs/examples/${params.name}/README.md`,
-		branch,
-	);
+	const readme = await getFile(`examples/${params.name}/README.md`, branch);
 
 	return json(
 		{

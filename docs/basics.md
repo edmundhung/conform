@@ -135,8 +135,8 @@ export default function LoginForm() {
 
 ## Demo
 
-<!-- sandbox title="Login form demo" src="/docs/examples/basics" -->
+<!-- sandbox title="Login form demo" src="/examples/basic" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/examples/basics).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/basic).
 
 <!-- /sandbox -->

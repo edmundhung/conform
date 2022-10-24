@@ -1,5 +1,5 @@
 {
-	"name": "@conform-to/basics-example",
+	"name": "@conform-to/basic-example",
 	"private": true,
 	"dependencies": {
 		"@conform-to/react": "0.4.0-pre.1",

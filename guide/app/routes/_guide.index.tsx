@@ -21,7 +21,7 @@ export async function loader({ context }: LoaderArgs) {
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/docs/examples/basics`,
+			src: `edmundhung/conform/tree/${branch}/examples/basic`,
 			content: parse(introduction),
 		},
 		{
