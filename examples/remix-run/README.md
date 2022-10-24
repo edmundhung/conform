@@ -57,8 +57,8 @@ export default function SignupForm() {
 
 ## Demo
 
-<!-- sandbox src="/docs/integrations/remix" -->
+<!-- sandbox src="/examples/remix-run" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/docs/integrations/remix).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run).
 
 <!-- /sandbox -->

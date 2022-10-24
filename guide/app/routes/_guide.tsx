@@ -20,7 +20,7 @@ const navigations: Navigation[] = [
 	},
 	{
 		title: 'Integrations',
-		menus: [{ title: 'Remix', to: '/examples/remix' }],
+		menus: [{ title: 'Remix', to: '/examples/remix-run' }],
 	},
 	{
 		title: 'API Reference',
