@@ -1,6 +1,6 @@
 # Yup Example
 
-This example shows you how to validate the submission value using [yup](https://github.com/jquense/yup).
+This example shows you how to validate the submission value using [yup](https://github.com/jquense/yup) and resolve the result with the [getError](/packages/conform-yup/README.md#geterror) helper.
 
 <!-- sandbox src="/docs/examples/yup" -->
 

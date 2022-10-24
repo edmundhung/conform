@@ -21,11 +21,17 @@ export default function SignupForm() {
 	const form = useForm<yup.InferType<typeof schema>>({
 		onValidate({ form, submission }) {
 			try {
+				// Only sync validation is allowed on the client side
 				schema.validateSync(submission.value, {
 					abortEarly: false,
 				});
 			} catch (error) {
 				if (error instanceof yup.ValidationError) {
+					/**
+					 * The `getError` helper simply resolves the Yup ValidationError
+					 * to a set of key/value pairs which refers to the name and
+					 * error of each field.
+					 */
 					submission.error = submission.error.concat(getError(error));
 				} else {
 					submission.error = submission.error.concat([
@@ -36,7 +42,7 @@ export default function SignupForm() {
 
 			setFormError(form, submission);
 		},
-		onSubmit: async (event, { submission }) => {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
 			console.log(submission);

@@ -1,29 +1,30 @@
 # Validation
 
-**Conform** adopts a `server-first` paradigma. It tries to submit your form for validation and uses client-side validation to improve the user experience by blocking it when deemed unnecessary.
+**Conform** adopts a `server-first` paradigma. It submits your form for server validation and uses client validation as a middleware.
 
 <!-- aside -->
 
 ## Table of Contents
 
+- [Constraint Validation](#constraint-validation)
 - [Server Validation](#server-validation)
   - [Schema Integration](#schema-integration)
   - [Validating on-demand](#validating-on-demand)
 - [Client Validation](#client-validation)
-  - [Constraint Validation](#constraint-validation)
-  - [Reusing schema](#resuing-schema)
+  - [Sharing logics](#sharing-logics)
+  - [Fallback](#fallback)
 - [Demo](#demo)
 
 <!-- /aside -->
 
 ## Server Validation
 
-Your APIs should always validate the form data provided regardless if client validation is done well. There are also things that can only be validated server side, e.g. checking the uniqness of a username on the database. It could be considered the source of truth of your validation logic.
+Your APIs should always validate the form data provided regardless if client validation is done well. There are also things that can only be validated server side, e.g. checking if an email is registered on the database. It could be considered the source of truth of your validation logic.
 
 For example, you can validate a login form in Remix as follow:
 
 ```tsx
-import { parse } from '@conform-to/react';
+import { useForm, useFieldset, parse } from '@conform-to/react';
 
 interface LoginForm {
   email: string;
@@ -61,7 +62,32 @@ export async function action({ request }) {
     }
   }
 
-  return submission;
+  return json({
+    ...submission,
+    value: {
+      // Never send the password back to client
+      email: submission.value.email,
+    },
+  });
+}
+
+export default function login() {
+  const state = useActionData();
+  const form = useForm({
+    mode: 'server-validation',
+    state,
+  });
+  const { email, password } = useFieldset(form.ref, form.config);
+
+  return (
+    <Form method="post" {...form.props}>
+      <div>{form.error}</div>
+      <input type="text" name="email" />
+      <div>{email.error}</div>
+      <input type="password" name="password" />
+      <div>{password.error}</div>
+    </Form>
+  );
 }
 ```
 
@@ -92,8 +118,8 @@ export async function action({ request }) {
     }
   } else {
     /**
-     * The `getError` helpers simply convert the ZodError to
-     * a set of key/value pairs which represent the name and
+     * The `getError` helpers simply resolves the ZodError to
+     * a set of key/value pairs which refers to the name and
      * error of each field.
      */
     submission.error = submission.error.concat(getError(result));
@@ -139,150 +165,181 @@ export async function action({ request }) {
 
 ## Client Validation
 
-### Constraint Validation
+With proper server validation in place, client validation serves two main purposes:
 
-The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
+1. Shorten the feedback loop due to network latency
+2. Reduce server load caused by validation
 
-- Utilizing [HTML attributes](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes) for validations (e.g. `required`, `type`)
-- Accessing form validity and configure custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validationMessage`, `setCustomValidity()`)
-- Styling form elements with [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) based on the validity (e.g. `:required`, `:invalid`)
+### Sharing logics
 
-Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
-
-## Schema Resolver
-
-The recommended approach at the moment is to integrate schema validation libraries such as [yup](https://github.com/jquense/yup) and [zod](https://github.com/colinhacks/zod) through a schema resolver, which resolves FormData to the desired structure and set the error from the parsing result though the Constraint Validation APIs.
-
-Consider a signup form with the following requirments:
-
-- The **email** field should be a valid email address,
-- The **password** field should not be empty with a minimum length of 10 characters.
-- The **conform-password** field should match the **password** field.
-
-<details>
-<summary>With `yup` </summary>
+For example, you can validation logics between the server and client.
 
 ```tsx
-import { useForm } from '@conform-to/react';
-import { resolve } from '@conform-to/yup';
-import * as yup from 'yup';
+import type { Submission } from '@conform-to/react';
+import { useForm, useFieldset, parse, setFormError } from '@conform-to/react';
 
-const schema = resolve(
-  yup.object({
-    email: yup
-      .string()
-      .required('Email is required')
-      .email('Please enter a valid email'),
-    password: yup
-      .string()
-      .required('Password is required')
-      .min(10, 'The password should be at least 10 characters long'),
-    'confirm-password': yup
-      .string()
-      .required('Confirm Password is required')
-      .equals([yup.ref('password')], 'The password does not match'),
-  }),
-);
-
-export default function SignupForm() {
-  const formProps = useForm({
-    validate: schema.validate,
-  });
-
-  return <form {...formProps}>{/* ... */}</form>;
+interface LoginForm {
+  email: string;
+  password: string;
 }
-```
 
-[Full example](/docs/examples/yup)
+/**
+ * Move the validation logic out so it can be used
+ * on both client and server side
+ */
+function validate(submission: Submission<LoginForm>): Array<[string, string]> {
+  const error = [...submission.error];
 
-</details>
+  if (!submission.value.email) {
+    error.push(['email', 'Email is required']);
+  } else if (!submission.value.email.includes('@')) {
+    error.push(['email', 'Email is invalid']);
+  }
 
-<details>
-<summary>With `zod`</summary>
+  if (!submission.value.password) {
+    error.push(['password', 'Password is required']);
+  }
 
-```tsx
-import { useForm } from '@conform-to/react';
-import { resolve } from '@conform-to/zod';
-import { z } from 'zod';
-
-const schema = resolve(
-  z
-    .object({
-      email: z
-        .string({ required_error: 'Email is required' })
-        .email('Please enter a valid email'),
-      password: z
-        .string({ required_error: 'Password is required' })
-        .min(10, 'The password should be at least 10 characters long'),
-      'confirm-password': z.string({
-        required_error: 'Confirm Password is required',
-      }),
-    })
-    .refine((value) => value.password === value['confirm-password'], {
-      message: 'The password does not match',
-      path: ['confirm-password'],
-    }),
-);
-
-export default function SignupForm() {
-  const formProps = useForm({
-    validate: schema.validate,
-  });
-
-  return <form {...formProps}>{/* ... */}</form>;
+  return error;
 }
-```
 
-[Full example](/docs/examples/zod)
+export async function action({ request }) {
+  const formData = await request.formData();
+  const submission = parse<LoginForm>(formData);
+  const error = validate(submission);
 
-</details>
+  if (submission.type !== 'validate' && error.length === 0) {
+    try {
+      return await login(submission.value);
+    } catch (error) {
+      error.push(['', 'Login failed']);
+    }
+  }
 
-## Manual Validation
+  return json({
+    ...submission,
+    value: {
+      email: submission.value.email,
+    },
+    error,
+  });
+}
 
-If none of the [schema resolvers](#schema-resolver) fits your requirements, you can also setup the validation manually by using the [createValidate](/packages/conform-react/README.md#createvalidate) helper to validate each field and setup custom messages using the DOM APIs.
+export default function login() {
+  const state = useActionData();
+  const form = useForm({
+    mode: 'server-validation',
+    state,
+    onValidate({ form, submission }) {
+      // Reuse the validation logic
+      const error = validate(submission);
 
-```tsx
-import { useForm, createValidate } from '@conform-to/react';
+      /**
+       * This updates the form error based on the submission
+       * by using the Constraint Validation API
+       */
+      setFormError(form, {
+        ...submission,
+        error,
+      });
+    },
 
-export default function SignupForm() {
-  const formProps = useForm({
-    validate: createValidate((field, formData) => {
-      switch (field.name) {
-        case 'email':
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Email is required');
-          } else if (field.validity.typeMismatch) {
-            field.setCustomValidity('Please enter a valid email');
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        case 'password':
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Password is required');
-          } else if (field.validity.tooShort) {
-            field.setCustomValidity(
-              'The password should be at least 10 characters long',
-            );
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        case 'confirm-password': {
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Confirm Password is required');
-          } else if (field.value !== formData.get('password')) {
-            field.setCustomValidity('The password does not match');
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        }
+    onSubmit(event, { submission }) {
+      /**
+       * This can be removed by specifying the `mode` as
+       * 'client-only' instead of `server-validation`
+       */
+      if (submission.type === 'validate') {
+        /**
+         * As the client validation cover all the checks,
+         * there is no need to be validated by the server.
+         */
+        event.preventDefault();
       }
-    }),
+    },
   });
+  const { email, password } = useFieldset(form.ref, form.config);
 
-  return <form {...formProps}>{/* ... */}</form>;
+  return (
+    <Form method="post" {...form.props}>
+      <div>{form.error}</div>
+      <input type="text" name="email" />
+      <div>{email.error}</div>
+      <input type="password" name="password" />
+      <div>{password.error}</div>
+    </Form>
+  );
+}
+```
+
+### Fallback
+
+However, sometimes not every validation rules can be applied client side. Let's fallback to the server.
+
+```tsx
+import type { Submission } from '@conform-to/react';
+import { shouldValidate, hasError } from '@conform-to/react';
+
+export function action() {
+  // No change from the previous example
+}
+
+export default function login() {
+  const state = useActionData();
+  const form = useForm({
+    mode: 'server-validation',
+    state,
+    onValidate({ form, submission }) {
+      const error = validate(submission);
+
+      if (
+        /**
+         * Fallback only when the field should be validated
+         */
+        shouldValidate(submission, 'email') &&
+        /**
+         * We don't need server validation if the field
+         * has error. (e.g. Required / Invalid email)
+         */
+        !hasError(error, 'email')
+      ) {
+        /**
+         * This let us skips reporting client error and
+         * wait for response from the server
+         */
+        throw form;
+      }
+
+      /**
+       * This updates the form error based on the submission
+       * by using the Constraint Validation API
+       */
+      setFormError(form, {
+        ...submission,
+        error,
+      });
+    },
+
+    onSubmit(event, { submission }) {
+      /**
+       *  Do not block the submission when validating email
+       */
+      if (submission.type === 'validate' && submission.metadata !== 'email') {
+        event.preventDefault();
+      }
+    },
+  });
+  const { email, password } = useFieldset(form.ref, form.config);
+
+  return (
+    <Form method="post" {...form.props}>
+      <div>{form.error}</div>
+      <input type="text" name="email" />
+      <div>{email.error}</div>
+      <input type="password" name="password" />
+      <div>{password.error}</div>
+    </Form>
+  );
 }
 ```
 

@@ -22,15 +22,21 @@ const schema = z
 export default function SignupForm() {
 	const form = useForm<z.infer<typeof schema>>({
 		onValidate({ form, submission }) {
+			// Only sync validation is allowed on the client side
 			const result = schema.safeParse(submission.value);
 
 			if (!result.success) {
+				/**
+				 * The `getError` helper simply resolves the ZodError to
+				 * a set of key/value pairs which refers to the name and
+				 * error of each field.
+				 */
 				submission.error = submission.error.concat(getError(result.error));
 			}
 
 			setFormError(form, submission);
 		},
-		onSubmit: async (event, { submission }) => {
+		onSubmit(event, { submission }) {
 			event.preventDefault();
 
 			console.log(submission);
