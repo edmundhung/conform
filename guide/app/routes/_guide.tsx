@@ -20,10 +20,7 @@ const navigations: Navigation[] = [
 	},
 	{
 		title: 'Integrations',
-		menus: [
-			{ title: 'Create React App', to: '/integrations/create-react-app' },
-			{ title: 'Remix', to: '/integrations/remix' },
-		],
+		menus: [{ title: 'Remix', to: '/examples/remix' }],
 	},
 	{
 		title: 'API Reference',

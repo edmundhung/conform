@@ -1,14 +1,12 @@
 # Submission
 
-As a progressive enhancement first solution, **Conform** handles form data the same way the browser does, which treats it as a set of key/value pairs and it could be constructed by using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API.
-
-This structure, however, might feels limited comparing to JSON which supports nested data and array. A common solution would be introudcing a naming convention so it could be transformed into the desired structure.
+**Conform** handles form data as a set of key/value pairs and this is usually constructed by using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. This structure, however, does not have direct support of nested or array stucture. To resolve this, it adopts a naming convention to provides hints on how to properly transformed it into the desired structure with additonal metadata.
 
 <!-- aside -->
 
 ## Table of Contents
 
-- [Naming convention](#naming-convention)
+- [Schema](#schema)
 - [Configuration](#configuration)
   - [Manual setup](#manual-setup)
   - [Derived config](#derived-config)
@@ -19,11 +17,11 @@ This structure, however, might feels limited comparing to JSON which supports ne
 
 <!-- /aside -->
 
-## Naming convention
+## Schema
 
 The convention **conform** adopted is similiar to how properties are accessed in JavaScript: `object.property` and `array[index]`. These notations could be nested and mixed together.
 
-Once the name of the fields are configured properly, you can then access the value from `submission.value`:
+Once the name of the fields are configured properly, you can then [parse](/packages/conform-react/README.md#parse) the form data and access the value from `submission.value`.
 
 ```tsx
 import { parse } from '@conform-to/react';
