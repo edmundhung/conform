@@ -6,17 +6,19 @@
 
 ## API Reference
 
-- [getError](#geterror)
+- [formatError](#formatError)
 
 <!-- /aside -->
 
-### getError
+### formatError
 
-This formats the received error to a set of key/value pairs which refers to the name and error of each field. If the value provided is not an ZodError or Error, the fallback message will be used.
+This formats `ZodError` to the **conform** error structure (i.e. A set of key/value pairs).
+
+If the error received is not provided by Zod, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
 // Define the schema with zod
@@ -32,7 +34,7 @@ function ExampleForm() {
       const result = schema.safeParse(submission.value);
 
       if (!result.success) {
-        submission.error = submission.error.concat(getError(result.error));
+        submission.error = submission.error.concat(formatError(result.error));
       }
 
       setFormError(form, submission);
@@ -47,7 +49,7 @@ Or when validating the formData on server side (e.g. Remix):
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -67,7 +69,7 @@ export let action = async ({ request }) => {
   } catch (error) {
     submission.error = submission.error.concat(
       // The 2nd argument is an optional fallback message
-      getError(error, 'The application has encountered an unknown error.'),
+      formatError(error, 'The application has encountered an unknown error.'),
     );
   }
 

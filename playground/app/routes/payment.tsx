@@ -6,7 +6,7 @@ import {
 	useForm,
 } from '@conform-to/react';
 import {
-	getError,
+	formatError,
 	getFieldsetConstraint,
 	ifNonEmptyString,
 } from '@conform-to/zod';
@@ -53,7 +53,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success) {
 		return {
 			...submission,
-			error: submission.error.concat(getError(result.error)),
+			error: submission.error.concat(formatError(result.error)),
 		};
 	}
 
@@ -71,7 +71,9 @@ export default function PaymentForm() {
 					const result = schema.safeParse(submission.value);
 
 					if (!result.success) {
-						submission.error = submission.error.concat(getError(result.error));
+						submission.error = submission.error.concat(
+							formatError(result.error),
+						);
 					}
 
 					setFormError(form, submission);

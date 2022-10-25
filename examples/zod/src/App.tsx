@@ -1,5 +1,5 @@
 import { setFormError, useFieldset, useForm } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z
@@ -27,11 +27,11 @@ export default function SignupForm() {
 
 			if (!result.success) {
 				/**
-				 * The `getError` helper simply resolves the ZodError to
+				 * The `formatError` helper simply resolves the ZodError to
 				 * a set of key/value pairs which refers to the name and
 				 * error of each field.
 				 */
-				submission.error = submission.error.concat(getError(result.error));
+				submission.error = submission.error.concat(formatError(result.error));
 			}
 
 			setFormError(form, submission);

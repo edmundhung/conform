@@ -97,7 +97,7 @@ Integrating with a schema validation library is simple. For example, you can int
 
 ```tsx
 import { parse } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
 export async function action({ request }) {
@@ -116,11 +116,11 @@ export async function action({ request }) {
     }
   } catch (error) {
     /**
-     * The `getError` helpers simply resolves the ZodError to
+     * The `formatError` helpers simply resolves the ZodError to
      * a set of key/value pairs which refers to the name and
      * error of each field.
      */
-    submission.error = submission.error.concat(getError(error));
+    submission.error = submission.error.concat(formatError(error));
   }
 
   return submission;
@@ -168,7 +168,7 @@ With proper server validation in place, client validation serves two main purpos
 
 ### Sharing logics
 
-For example, you can validation logics between the server and client.
+For example, you can share validation logics between the server and client.
 
 ```tsx
 import type { Submission } from '@conform-to/react';

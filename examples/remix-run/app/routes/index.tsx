@@ -7,7 +7,7 @@ import {
 	shouldValidate,
 	setFormError,
 } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -54,7 +54,7 @@ export async function action({ request }: ActionArgs) {
 			return redirect('/');
 		}
 	} catch (error) {
-		submission.error = submission.error.concat(getError(error));
+		submission.error = submission.error.concat(formatError(error));
 	}
 
 	return json(submission);
@@ -83,7 +83,7 @@ export default function EmployeeForm() {
 			const result = schema.safeParse(submission.value);
 
 			if (!result.success) {
-				submission.error = submission.error.concat(getError(result.error));
+				submission.error = submission.error.concat(formatError(result.error));
 			}
 
 			if (

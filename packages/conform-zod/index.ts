@@ -108,7 +108,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	return result;
 }
 
-export function getError(
+export function formatError(
 	error: unknown,
 	fallbackMessage = 'Oops! Something went wrong.',
 ): Array<[string, string]> {

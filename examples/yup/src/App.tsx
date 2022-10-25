@@ -1,5 +1,5 @@
 import { useFieldset, useForm, setFormError } from '@conform-to/react';
-import { getError } from '@conform-to/yup';
+import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
 const schema = yup.object({
@@ -26,7 +26,7 @@ export default function SignupForm() {
 					abortEarly: false,
 				});
 			} catch (error) {
-				submission.error = submission.error.concat(getError(error));
+				submission.error = submission.error.concat(formatError(error));
 			}
 
 			setFormError(form, submission);

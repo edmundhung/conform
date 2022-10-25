@@ -6,7 +6,7 @@ import {
 	parse,
 	setFormError,
 } from '@conform-to/react';
-import { getFieldsetConstraint, getError } from '@conform-to/yup';
+import { getFieldsetConstraint, formatError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import * as yup from 'yup';
@@ -34,7 +34,7 @@ function validate(submission: Submission<Schema>): Submission<Schema> {
 		});
 	} catch (error) {
 		if (error instanceof yup.ValidationError) {
-			submission.error = submission.error.concat(getError(error));
+			submission.error = submission.error.concat(formatError(error));
 		} else {
 			submission.error = submission.error.concat([['', 'Validation failed']]);
 		}

@@ -6,17 +6,19 @@
 
 ## API Reference
 
-- [getError](#geterror)
+- [formatError](#formatError)
 
 <!-- /aside -->
 
-### resolve
+### formatError
 
-This resolves the Yup ValidationError to a set of key/value pairs which refers to the name and error of each field.
+This formats Yup `ValidationError` to the **conform** error structure (i.e. A set of key/value pairs).
+
+If the error received is not provided by Yup, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { getError } from '@conform-to/yup';
+import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
 // Define the schema with yup
@@ -34,13 +36,13 @@ function ExampleForm() {
           abortEarly: false,
         });
       } catch (error) {
-        if (error instanceof yup.ValidationError) {
-          submission.error = submission.error.concat(getError(error));
-        } else {
-          submission.error = submission.error.concat([
-            ['', 'Validation failed'],
-          ]);
-        }
+        submission.error = submission.error.concat(
+          // The 2nd argument is an optional fallback message
+          formatError(
+            error,
+            'The application has encountered an unknown error.',
+          ),
+        );
       }
 
       setFormError(form, submission);
@@ -55,7 +57,7 @@ Or when validating the formData on server side (e.g. Remix):
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
-import { getError } from '@conform-to/yup';
+import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
 const schema = yup.object({
@@ -77,7 +79,7 @@ export let action = async ({ request }) => {
     }
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      submission.error = submission.error.concat(getError(error));
+      submission.error = submission.error.concat(formatError(error));
     } else {
       submission.error = submission.error.concat([
         ['', 'Sorry, something went wrong.'],

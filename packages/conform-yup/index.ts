@@ -82,7 +82,7 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	) as FieldsetConstraint<yup.InferType<Source>>;
 }
 
-export function getError(
+export function formatError(
 	error: unknown,
 	fallbackMessage = 'Oops! Something went wrong.',
 ): Array<[string, string]> {
