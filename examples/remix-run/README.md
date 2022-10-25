@@ -6,59 +6,38 @@ This page shows you how to integrate conform with Remix. All examples works with
 
 ## Table of Contents
 
-- [Setting up Conform](#setting-up-conform)
-- [Configure validation](#configure-validation)
-- [Reducing the feedback loop](#reducing-the-feedback-loop)
-- [Fallback to the server](#fallback-to-the-server)
-- [Demo](#demo)
+- [Basic setup](#basic-setup)
+- [Server validation with Zod](#server-validation-with-zod)
+- [Client validation with fallback](#client-validation-with-fallback)
 
 <!-- /aside -->
 
-## Setting up Conform
+## Basic setup
 
-To begin, let's build a simple signup form with Remix.
+To begin, let's build a basic login form with Remix.
 
-```tsx
-export default function SignupForm() {
-  const form = useForm();
-  const { email, password, confirmPassword } = useFieldset(
-    form.ref,
-    form.config,
-  );
+<!-- sandbox src="/examples/remix-run?initialpath=/basic" -->
 
-  return (
-    <Form>
-      <div>
-        <label>
-          <div>Email</div>
-          <input type="text" name="email" />
-        </label>
-        <div>{email.error}</div>
-      </div>
-      <div>
-        <label>
-          <div>Password</div>
-          <input type="password" name="password" />
-        </label>
-        <div>{password.error}</div>
-      </div>
-      <div>
-        <label>
-          <div>Confirm password</div>
-          <input type="password" name="confirmPassword" />
-        </label>
-        <div>{confirmPassword.error}</div>
-      </div>
-      <button type="submit">Signup</button>
-    </Form>
-  );
-}
-```
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/basic).
 
-## Demo
+<!-- /sandbox -->
 
-<!-- sandbox src="/examples/remix-run" -->
+## Server validation with Zod
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run).
+Hand writting validation is error-prone. How about using **Zod**?
+
+<!-- sandbox src="/examples/remix-run?initialpath=/zod" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod).
+
+<!-- /sandbox -->
+
+## Client validation with fallback
+
+Server validation is good enough for many cases. But we can further improve the UX by shorten the feedback loop with client validation.
+
+<!-- sandbox src="/examples/remix-run?initialpath=/async-validation" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/async-validation).
 
 <!-- /sandbox -->

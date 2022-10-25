@@ -19,6 +19,14 @@ const schema = z.object({
 	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
 });
 
+async function isEmailUniquee(email: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			resolve(email !== 'me@edmund.dev');
+		}, Math.random() * 100);
+	});
+}
+
 async function createEmployee(data: z.infer<typeof schema>): Promise<void> {
 	throw new Error('Not implemented');
 }
@@ -26,27 +34,23 @@ async function createEmployee(data: z.infer<typeof schema>): Promise<void> {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData);
-	const serverSchema = schema.refine(
-		async (employee) => {
-			if (!shouldValidate(submission, 'email')) {
-				return true;
-			}
-
-			// Async validation. e.g. checking uniqueness
-			return new Promise((resolve) => {
-				setTimeout(() => {
-					resolve(employee.email !== 'me@edmund.dev');
-				}, Math.random() * 100);
-			});
-		},
-		{
-			message: 'Email is already used',
-			path: ['email'],
-		},
-	);
 
 	try {
-		const data = await serverSchema.parseAsync(submission.value);
+		const data = await schema
+			.refine(
+				async (employee) => {
+					if (!shouldValidate(submission, 'email')) {
+						return true;
+					}
+
+					return await isEmailUniquee(employee.email);
+				},
+				{
+					message: 'Email is already used',
+					path: ['email'],
+				},
+			)
+			.parseAsync(submission.value);
 
 		if (typeof submission.type === 'undefined') {
 			await createEmployee(data);
@@ -61,23 +65,11 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function EmployeeForm() {
-	// Last submission returned by the server
 	const state = useActionData<typeof action>();
-	// Setup conform
 	const form = useForm<z.infer<typeof schema>>({
-		// Enable server validation mode
 		mode: 'server-validation',
-
-		// Begin validating on blur
 		initialReport: 'onBlur',
-
-		// Sync the state from last submission
 		state,
-
-		/**
-		 * If both `onValidate` and `onSubmit` are removed,
-		 * it will be validated by the server driectly
-		 */
 		onValidate({ form, submission }) {
 			// Similar to server validation without the extra refine()
 			const result = schema.safeParse(submission.value);
@@ -87,19 +79,23 @@ export default function EmployeeForm() {
 			}
 
 			if (
+				// We want the server to check the uniqness only if necessary
 				shouldValidate(submission, 'email') &&
+				// The email field should be a valid email
 				!hasError(submission.error, 'email')
 			) {
-				// Skip reporting client error
+				// Fallback to server validation
 				throw form;
 			}
 
-			/**
-			 * Set the submission error to the dom
-			 */
+			// For the rest of the cases, handle it on the client
+			// with the constraint validation API
 			setFormError(form, submission);
 		},
+		// onSubmit will be triggered only if the submission is valid
 		onSubmit(event, { submission }) {
+			// Only the email field requires additional validation from the server
+			// We trust the client result otherwise
 			if (!shouldValidate(submission, 'email')) {
 				event.preventDefault();
 			}
