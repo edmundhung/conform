@@ -19,7 +19,7 @@ const schema = z.object({
 	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
 });
 
-async function isEmailUniquee(email: string): Promise<boolean> {
+async function isEmailUnique(email: string): Promise<boolean> {
 	return new Promise((resolve) => {
 		setTimeout(() => {
 			resolve(email !== 'me@edmund.dev');
@@ -43,7 +43,7 @@ export async function action({ request }: ActionArgs) {
 						return true;
 					}
 
-					return await isEmailUniquee(employee.email);
+					return await isEmailUnique(employee.email);
 				},
 				{
 					message: 'Email is already used',

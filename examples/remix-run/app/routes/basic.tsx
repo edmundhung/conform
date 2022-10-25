@@ -10,6 +10,15 @@ interface Employee {
 	title: string;
 }
 
+// Async validation. e.g. checking if an email is registered on a database
+async function isEmailUnique(email: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		setTimeout(() => {
+			resolve(email !== 'me@edmund.dev');
+		}, Math.random() * 100);
+	});
+}
+
 // Handle writting validation rules...
 async function validate(submission: Submission<Employee>) {
 	const error = [...submission.error];
@@ -22,7 +31,7 @@ async function validate(submission: Submission<Employee>) {
 		error.push(['email', 'Email is required']);
 	} else if (!submission.value.email.includes('@')) {
 		error.push(['email', 'Email is invalid']);
-	} else if (!(await isEmailUniquee(submission.value.email))) {
+	} else if (!(await isEmailUnique(submission.value.email))) {
 		error.push(['email', 'Email is  is already used']);
 	}
 
@@ -33,15 +42,6 @@ async function validate(submission: Submission<Employee>) {
 	}
 
 	return error;
-}
-
-// Async validation. e.g. checking if an email is registered on a database
-async function isEmailUniquee(email: string): Promise<boolean> {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve(email !== 'me@edmund.dev');
-		}, Math.random() * 100);
-	});
 }
 
 async function createEmployee(data: Employee): Promise<void> {

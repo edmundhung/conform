@@ -18,7 +18,7 @@ To begin, let's build a basic login form with Remix.
 
 <!-- sandbox src="/examples/remix-run?initialpath=/basic" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/basic).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/basic&file=/app/routes/basic.tsx&runonclick=1).
 
 <!-- /sandbox -->
 
@@ -28,7 +28,7 @@ Hand writting validation is error-prone. How about using **Zod**?
 
 <!-- sandbox src="/examples/remix-run?initialpath=/zod" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod&file=/app/routes/zod.tsx&runonclick=1).
 
 <!-- /sandbox -->
 
@@ -38,6 +38,6 @@ Server validation is good enough for many cases. But we can further improve the 
 
 <!-- sandbox src="/examples/remix-run?initialpath=/async-validation" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/async-validation).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/async-validation&file=/app/routes/async-validation.tsx&runonclick=1).
 
 <!-- /sandbox -->
