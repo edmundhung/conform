@@ -129,7 +129,7 @@ export async function action({ request }) {
 
 ### Validating on-demand
 
-Some validation rule could be expensive especially when it requires query result from database or even 3rd party services. This can be minimized by checking the submission type and metadata, or using the `shouldValidate()` helper.
+Some validation rule could be expensive especially when it requires query result from database or even 3rd party services. This can be minimized by checking the submission context and intent, or using the `shouldValidate()` helper.
 
 ```tsx
 import { parse, shouldValidate } from '@conform-to/react';
@@ -172,7 +172,7 @@ For example, you can share validation logics between the server and client.
 
 ```tsx
 import type { Submission } from '@conform-to/react';
-import { useForm, useFieldset, parse, setFormError } from '@conform-to/react';
+import { useForm, useFieldset, parse } from '@conform-to/react';
 
 interface LoginForm {
   email: string;
@@ -184,7 +184,7 @@ interface LoginForm {
  * on both client and server side
  */
 function validate(submission: Submission<LoginForm>): Array<[string, string]> {
-  const error = [...submission.error];
+  const error: Array<[string, string]> = [];
 
   if (!submission.value.email) {
     error.push(['email', 'Email is required']);
@@ -217,7 +217,7 @@ export async function action({ request }) {
     value: {
       email: submission.value.email,
     },
-    error,
+    error: submission.error.concat(error),
   });
 }
 
@@ -228,16 +228,7 @@ export default function login() {
     state,
     onValidate({ form, submission }) {
       // Reuse the validation logic
-      const error = validate(submission);
-
-      /**
-       * This updates the form error based on the submission
-       * by using the Constraint Validation API
-       */
-      setFormError(form, {
-        ...submission,
-        error,
-      });
+      return validate(submission);
     },
 
     onSubmit(event, { submission }) {
@@ -274,7 +265,7 @@ However, sometimes not every validation rules can be applied client side. Let's 
 
 ```tsx
 import type { Submission } from '@conform-to/react';
-import { shouldValidate, hasError } from '@conform-to/react';
+import { hasError } from '@conform-to/react';
 
 export function action() {
   // No change from the previous example
@@ -286,41 +277,17 @@ export default function login() {
     mode: 'server-validation',
     state,
     onValidate({ form, submission }) {
-      const error = validate(submission);
-
-      if (
-        /**
-         * Fallback only when the field should be validated
-         */
-        shouldValidate(submission, 'email') &&
-        /**
-         * We don't need server validation if the field
-         * has error. (e.g. Required / Invalid email)
-         */
-        !hasError(error, 'email')
-      ) {
-        /**
-         * This let us skips reporting client error and
-         * wait for response from the server
-         */
-        throw form;
-      }
-
-      /**
-       * This updates the form error based on the submission
-       * by using the Constraint Validation API
-       */
-      setFormError(form, {
-        ...submission,
-        error,
-      });
+      return validate(submission);
     },
 
     onSubmit(event, { submission }) {
       /**
        *  Do not block the submission when validating email
        */
-      if (submission.context === 'validate' && submission.intent !== 'email') {
+      if (
+        submission.context === 'validate' &&
+        (submission.intent !== 'email' || hasError(error, 'email'))
+      ) {
         event.preventDefault();
       }
     },

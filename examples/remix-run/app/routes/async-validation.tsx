@@ -4,6 +4,7 @@ import {
 	useFieldset,
 	useForm,
 	hasError,
+	shouldValidate,
 } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -37,10 +38,7 @@ export async function action({ request }: ActionArgs) {
 		const data = await schema
 			.refine(
 				async (employee) => {
-					if (
-						submission.context === 'validate' &&
-						submission.intent !== 'email'
-					) {
+					if (!shouldValidate(submission, 'email')) {
 						return true;
 					}
 
@@ -86,7 +84,7 @@ export default function EmployeeForm() {
 			// We trust the client result otherwise
 			if (
 				submission.context === 'validate' &&
-				(submission.intent !== 'email' || hasError(submission.error, 'email'))
+				(submission.intent !== 'email' || hasError(submission.error, ['email']))
 			) {
 				event.preventDefault();
 			}

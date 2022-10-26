@@ -202,17 +202,17 @@ function Product() {
 
 ### Command button
 
-The submitter value makes it possible to extends the form with different behaviour based on the additional value added to the form data.
+The submitter value makes it possible to extends the form with different behaviour based on the intent added to the form data.
 
 ```tsx
 function Product() {
   return (
     <form>
       <input type="hidden" name="productId" value="rf23g43" />
-      <button type="submit" name="action" value="add-to-cart">
+      <button type="submit" name="intent" value="add-to-cart">
         Add to Cart
       </button>
-      <button type="submit" name="action" value="buy-now">
+      <button type="submit" name="intent" value="buy-now">
         Buy now
       </button>
     </form>
@@ -222,7 +222,7 @@ function Product() {
 
 However, this also means we are poluting the form data with information that are used for controlling the behaviour of the form only.
 
-**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/action_), it will be excluded from the structured data (i.e. `submission.value`) with `submission.context` being _action_ and `submission.intent` being _add-to-cart_ or _buy-now_.
+**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/submit_), it will be excluded from the structured data (i.e. `submission.value`) with `submission.context` being _submit_ and `submission.intent` being _add-to-cart_ or _buy-now_.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -232,7 +232,7 @@ function Product() {
     onSubmit(event, { submission }) {
       event.preventDefault();
 
-      // This will log `action`
+      // This will log `submit`
       console.log(submission.context);
 
       // This will log `add-to-cart` or `buy-now`
@@ -246,10 +246,10 @@ function Product() {
   return (
     <form {...form.props}>
       <input type="hidden" name="productId" value="rf23g43" />
-      <button type="submit" name="conform/action" value="add-to-cart">
+      <button type="submit" name="conform/submit" value="add-to-cart">
         Add to Cart
       </button>
-      <button type="submit" name="conform/action" value="buy-now">
+      <button type="submit" name="conform/submit" value="buy-now">
         Buy now
       </button>
     </form>

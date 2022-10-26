@@ -102,14 +102,22 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
+export function shouldValidate(submission: Submission, name: string): boolean {
+	return (
+		submission.context === 'submit' ||
+		(submission.context === 'validate' && submission.intent === name)
+	);
+}
+
 export function hasError(
 	error: Array<[string, string]>,
-	name?: string,
+	names?: string[],
 ): boolean {
 	return (
 		typeof error.find(
 			([fieldName, message]) =>
-				(typeof name === 'undefined' || fieldName === name) && message !== '',
+				(typeof names === 'undefined' || names.includes(fieldName)) &&
+				message !== '',
 		) !== 'undefined'
 	);
 }
@@ -145,9 +153,7 @@ export function setFormError(
 
 			if (
 				typeof error !== 'undefined' ||
-				submission.context === 'submit' ||
-				(submission.context === 'validate' &&
-					submission.intent === element.name)
+				shouldValidate(submission, element.name)
 			) {
 				element.setCustomValidity(error ?? '');
 			}

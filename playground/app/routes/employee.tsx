@@ -2,6 +2,7 @@ import {
 	conform,
 	hasError,
 	parse,
+	shouldValidate,
 	useFieldset,
 	useForm,
 } from '@conform-to/react';
@@ -30,7 +31,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse(formData);
 	const serverSchema = schema.refine(
 		async (employee) => {
-			if (submission.context === 'validate' && submission.intent !== 'email') {
+			if (!shouldValidate(submission, 'email')) {
 				return true;
 			}
 
@@ -76,7 +77,7 @@ export default function EmployeeForm() {
 						if (
 							submission.context === 'validate' &&
 							(submission.intent !== 'email' ||
-								hasError(submission.error, 'email'))
+								hasError(submission.error, ['email']))
 						) {
 							event.preventDefault();
 						}
