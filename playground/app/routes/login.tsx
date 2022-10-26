@@ -68,7 +68,7 @@ export default function LoginForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.context === 'validate') {
 							event.preventDefault();
 						}
 				  }

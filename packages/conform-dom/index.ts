@@ -36,18 +36,12 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type Submission<Schema = unknown> =
-	| {
-			type?: undefined;
-			value: FieldValue<Schema>;
-			error: Array<[string, string]>;
-	  }
-	| {
-			type: string;
-			metadata: string;
-			value: FieldValue<Schema>;
-			error: Array<[string, string]>;
-	  };
+export type Submission<Schema = unknown> = {
+	context: string;
+	intent?: string;
+	value: FieldValue<Schema>;
+	error: Array<[string, string]>;
+};
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -151,8 +145,9 @@ export function setFormError(
 
 			if (
 				typeof error !== 'undefined' ||
-				submission.type !== 'validate' ||
-				submission.metadata === element.name
+				submission.context === 'submit' ||
+				(submission.context === 'validate' &&
+					submission.intent === element.name)
 			) {
 				element.setCustomValidity(error ?? '');
 			}
@@ -267,7 +262,9 @@ export function getSubmissionType(name: string): string | null {
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
 ): Submission<Schema> {
+	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
+		context: 'submit',
 		value: {},
 		error: [],
 	};
@@ -283,15 +280,16 @@ export function parse<Schema extends Record<string, any>>(
 					);
 				}
 
-				if (typeof submission.type !== 'undefined') {
+				if (hasCommand) {
 					throw new Error('The conform command could only be set on a button');
 				}
 
 				submission = {
 					...submission,
-					type: submissionType,
-					metadata: value,
+					context: submissionType,
+					intent: value,
 				};
+				hasCommand = true;
 			} else {
 				const paths = getPaths(name);
 
@@ -305,7 +303,7 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		switch (submission.type) {
+		switch (submission.context) {
 			case 'list':
 				submission = handleList(submission);
 				break;
@@ -394,11 +392,11 @@ export function updateList<Schema>(
 export function handleList<Schema>(
 	submission: Submission<Schema>,
 ): Submission<Schema> {
-	if (submission.type !== 'list') {
+	if (submission.context !== 'list') {
 		return submission;
 	}
 
-	const command = parseListCommand(submission.metadata);
+	const command = parseListCommand(submission.intent ?? '');
 	const paths = getPaths(command.scope);
 
 	setValue(submission.value, paths, (list) => {

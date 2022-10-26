@@ -304,7 +304,7 @@ export function useForm<Schema extends Record<string, any>>(
 					};
 
 					// Touch all fields only if the submitter is not a command button
-					if (!submission.type) {
+					if (submission.context === 'submit') {
 						for (const field of form.elements) {
 							if (isFieldElement(field)) {
 								// Mark the field as touched
@@ -320,7 +320,7 @@ export function useForm<Schema extends Record<string, any>>(
 					} else {
 						if (config.mode !== 'server-validation') {
 							// Clear previous result
-							setFormError(form, { value: {}, error: [] });
+							setFormError(form, { context: 'submit', value: {}, error: [] });
 						}
 
 						error = getFormError(form);
@@ -334,7 +334,7 @@ export function useForm<Schema extends Record<string, any>>(
 						(!config.noValidate &&
 							!submitter.formNoValidate &&
 							hasError(submission.error)) ||
-						(submission.type === 'validate' &&
+						(submission.context === 'validate' &&
 							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();

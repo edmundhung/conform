@@ -38,8 +38,8 @@ export async function action({ request }: ActionArgs) {
 			.refine(
 				async (employee) => {
 					if (
-						submission.type === 'validate' &&
-						submission.metadata !== 'email'
+						submission.context === 'validate' &&
+						submission.intent !== 'email'
 					) {
 						return true;
 					}
@@ -53,7 +53,7 @@ export async function action({ request }: ActionArgs) {
 			)
 			.parseAsync(submission.value);
 
-		if (typeof submission.type === 'undefined') {
+		if (submission.context === 'submit') {
 			await createEmployee(data);
 
 			return redirect('/');
@@ -85,8 +85,8 @@ export default function EmployeeForm() {
 			// Only the email field requires additional validation from the server
 			// We trust the client result otherwise
 			if (
-				submission.type === 'validate' &&
-				(submission.metadata !== 'email' || hasError(submission.error, 'email'))
+				submission.context === 'validate' &&
+				(submission.intent !== 'email' || hasError(submission.error, 'email'))
 			) {
 				event.preventDefault();
 			}

@@ -56,7 +56,7 @@ export async function action({ request }: ActionArgs) {
 	if (error.length === 0) {
 		try {
 			// Check if it is default submission
-			if (typeof submission.type === 'undefined') {
+			if (submission.context === 'submit') {
 				await createEmployee(submission.value as Employee);
 				return redirect('/');
 			}

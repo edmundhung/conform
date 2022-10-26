@@ -63,7 +63,7 @@ export let action = async ({ request }) => {
   try {
     const data = await schema.parseAsync(submission.value);
 
-    if (typeof submission.type === 'undefined') {
+    if (submission.context === 'submit') {
       return await handleFormData(data);
     }
   } catch (error) {

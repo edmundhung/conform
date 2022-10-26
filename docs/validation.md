@@ -49,7 +49,7 @@ export async function action({ request }) {
    * Try logging the user in only when the submission is intentional
    * with no error found
    */
-  if (submission.type !== 'validate' && submission.error.length === 0) {
+  if (submission.context !== 'validate' && submission.error.length === 0) {
     try {
       return await login(submission.value);
     } catch (error) {
@@ -111,7 +111,7 @@ export async function action({ request }) {
   try {
     const data = schema.parse(submission.value);
 
-    if (typeof submission.type === 'undefined') {
+    if (submission.context === 'submit') {
       return await login(result.data);
     }
   } catch (error) {
@@ -204,7 +204,7 @@ export async function action({ request }) {
   const submission = parse<LoginForm>(formData);
   const error = validate(submission);
 
-  if (submission.type !== 'validate' && error.length === 0) {
+  if (submission.context !== 'validate' && error.length === 0) {
     try {
       return await login(submission.value);
     } catch (error) {
@@ -245,7 +245,7 @@ export default function login() {
        * This can be removed by specifying the `mode` as
        * 'client-only' instead of `server-validation`
        */
-      if (submission.type === 'validate') {
+      if (submission.context === 'validate') {
         /**
          * As the client validation cover all the checks,
          * there is no need to be validated by the server.
@@ -320,7 +320,7 @@ export default function login() {
       /**
        *  Do not block the submission when validating email
        */
-      if (submission.type === 'validate' && submission.metadata !== 'email') {
+      if (submission.context === 'validate' && submission.intent !== 'email') {
         event.preventDefault();
       }
     },

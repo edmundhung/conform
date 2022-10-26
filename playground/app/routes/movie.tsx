@@ -51,17 +51,17 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse<Movie>(formData);
 
-	if (submission.value.title === '') {
+	if (!submission.value.title) {
 		submission.error.push(['title', 'Title is required']);
-	} else if (!`${submission.value.title}`.match(/[0-9a-zA-Z ]{1,20}/)) {
+	} else if (!submission.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
 		submission.error.push(['title', 'Please enter a valid title']);
 	}
 
 	if (
-		submission.value.description !== '' &&
-		`${submission.value.description}`.length < 30
+		submission.value.description &&
+		submission.value.description.length < 30
 	) {
 		submission.error.push(['description', 'Please provides more details']);
 	}
@@ -70,10 +70,7 @@ export let action = async ({ request }: ActionArgs) => {
 		submission.error.push(['genre', 'Genre is required']);
 	}
 
-	if (
-		typeof submission.value.rating === 'string' &&
-		Number(submission.value.rating) % 0.5 !== 0
-	) {
+	if (submission.value.rating && Number(submission.value.rating) % 0.5 !== 0) {
 		submission.error.push(['rating', 'The provided rating is invalid']);
 	}
 
@@ -130,7 +127,7 @@ export default function MovieForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.context === 'validate') {
 							event.preventDefault();
 						}
 				  }

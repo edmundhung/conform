@@ -222,7 +222,7 @@ function Product() {
 
 However, this also means we are poluting the form data with information that are used for controlling the behaviour of the form only.
 
-**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/action_), it will be excluded from the structured data (i.e. `submission.value`) with `submission.type` being _action_ and `submission.metadata` being _add-to-cart_ or _buy-now_.
+**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/action_), it will be excluded from the structured data (i.e. `submission.value`) with `submission.context` being _action_ and `submission.intent` being _add-to-cart_ or _buy-now_.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -233,10 +233,10 @@ function Product() {
       event.preventDefault();
 
       // This will log `action`
-      console.log(submission.type);
+      console.log(submission.context);
 
       // This will log `add-to-cart` or `buy-now`
-      console.log(submission.metadata);
+      console.log(submission.intent);
 
       // This will log `{ productId: 'rf23g43' }`
       console.log(submission.value);
@@ -259,7 +259,7 @@ function Product() {
 
 ### Built-in commands
 
-Command button is also used internally. For example, [useFieldList](/packages/conform-react/README.md#usefieldlist) works by introducing a set of command buttons with `submission.type` being **list**:
+Command button is also used internally. For example, [useFieldList](/packages/conform-react/README.md#usefieldlist) works by introducing a set of command buttons with `submission.context` being **list**:
 
 ```tsx
 export default function Todos() {

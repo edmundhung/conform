@@ -33,8 +33,8 @@ export async function action({ request }: ActionArgs) {
 				async (employee) => {
 					// Validate only if necessary
 					if (
-						submission.type === 'validate' &&
-						submission.metadata !== 'email'
+						submission.context === 'validate' &&
+						submission.intent !== 'email'
 					) {
 						return true;
 					}
@@ -48,7 +48,7 @@ export async function action({ request }: ActionArgs) {
 			)
 			.parseAsync(submission.value);
 
-		if (typeof submission.type === 'undefined') {
+		if (submission.context === 'submit') {
 			await createEmployee(data);
 
 			return redirect('/');
