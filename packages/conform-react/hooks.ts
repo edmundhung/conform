@@ -19,6 +19,8 @@ import {
 	requestValidate,
 	setFormError,
 	updateList,
+	getFormError,
+	hasError,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -77,7 +79,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: FormContext<Schema>) => void;
+	onValidate?: (context: FormContext<Schema>) => Array<[string, string]>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -292,48 +294,63 @@ export function useForm<Schema extends Record<string, any>>(
 					return;
 				}
 
-				const formData = getFormData(form, submitter);
-				const submission = parse<Schema>(formData);
-				const context: FormContext<Schema> = {
-					form,
-					formData,
-					submission,
-				};
-
-				// Touch all fields only if the submitter is not a command button
-				if (!submission.type) {
-					for (const field of form.elements) {
-						if (isFieldElement(field)) {
-							// Mark the field as touched
-							field.dataset.conformTouched = 'true';
-						}
-					}
-				}
-
 				try {
-					if (!config.noValidate && !submitter.formNoValidate) {
-						config.onValidate?.(context);
+					const formData = getFormData(form, submitter);
+					const submission = parse<Schema>(formData);
+					const context: FormContext<Schema> = {
+						form,
+						formData,
+						submission,
+					};
 
-						if (!form.reportValidity()) {
-							focusFirstInvalidField(form);
-							event.preventDefault();
+					// Touch all fields only if the submitter is not a command button
+					if (submission.context === 'submit') {
+						for (const field of form.elements) {
+							if (isFieldElement(field)) {
+								// Mark the field as touched
+								field.dataset.conformTouched = 'true';
+							}
 						}
 					}
-				} catch (e) {
-					if (e !== form) {
-						console.warn(e);
-					}
-				}
 
-				if (!event.defaultPrevented) {
+					let error: Array<[string, string]>;
+
+					if (typeof config.onValidate === 'function') {
+						error = config.onValidate(context);
+					} else {
+						if (config.mode !== 'server-validation') {
+							// Clear previous result
+							setFormError(form, { context: 'submit', value: {}, error: [] });
+						}
+
+						error = getFormError(form);
+					}
+
+					if (error.length > 0) {
+						submission.error.push(...error);
+					}
+
 					if (
-						config.mode !== 'server-validation' &&
-						submission.type === 'validate'
+						(!config.noValidate &&
+							!submitter.formNoValidate &&
+							hasError(submission.error)) ||
+						(submission.context === 'validate' &&
+							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();
 					} else {
 						config.onSubmit?.(event, context);
 					}
+
+					if (event.defaultPrevented) {
+						setFormError(form, submission);
+
+						if (!form.reportValidity()) {
+							focusFirstInvalidField(form);
+						}
+					}
+				} catch (e) {
+					console.warn(e);
 				}
 			},
 		},

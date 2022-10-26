@@ -1,14 +1,14 @@
 import {
 	conform,
+	hasError,
 	parse,
+	shouldValidate,
 	useFieldset,
 	useForm,
-	hasError,
-	setFormError,
-	shouldValidate,
 } from '@conform-to/react';
-import { getError } from '@conform-to/zod';
+import { formatError } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
@@ -29,30 +29,31 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData);
-	const result = await schema
-		.refine(
-			async (employee) => {
-				if (submission.type !== 'validate' || submission.metadata === 'email') {
-					return new Promise((resolve) => {
-						setTimeout(() => {
-							resolve(employee.email === 'hey@conform.guide');
-						}, Math.random() * 500);
-					});
-				}
-
+	const serverSchema = schema.refine(
+		async (employee) => {
+			if (!shouldValidate(submission, 'email')) {
 				return true;
-			},
-			{
-				message: 'Email is already used',
-				path: ['email'],
-			},
-		)
-		.safeParseAsync(submission.value);
+			}
 
-	return {
-		...submission,
-		error: submission.error.concat(getError(result)),
-	};
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(employee.email === 'hey@conform.guide');
+				}, Math.random() * 500);
+			});
+		},
+		{
+			message: 'Email is already used',
+			path: ['email'],
+		},
+	);
+
+	try {
+		await serverSchema.parseAsync(submission.value);
+	} catch (error) {
+		submission.error = submission.error.concat(formatError(error));
+	}
+
+	return json(submission);
 };
 
 export default function EmployeeForm() {
@@ -61,30 +62,22 @@ export default function EmployeeForm() {
 	const form = useForm<Schema>({
 		...config,
 		state,
-		onValidate({ form, submission }) {
+		onValidate({ submission }) {
 			const result = schema.safeParse(submission.value);
 
-			if (!result.success) {
-				submission.error = submission.error.concat(getError(result.error));
+			if (result.success) {
+				return [];
 			}
 
-			if (config.mode === 'server-validation') {
-				if (
-					shouldValidate(submission, 'email') &&
-					!hasError(submission.error, 'email')
-				) {
-					throw form;
-				}
-			}
-
-			setFormError(form, submission);
+			return formatError(result.error);
 		},
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
 						if (
-							submission.type === 'validate' &&
-							submission.metadata !== 'email'
+							submission.context === 'validate' &&
+							(submission.intent !== 'email' ||
+								hasError(submission.error, ['email']))
 						) {
 							event.preventDefault();
 						}

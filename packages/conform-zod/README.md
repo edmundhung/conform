@@ -6,127 +6,83 @@
 
 ## API Reference
 
-- [resolve](#resolve)
-- [ifNonEmptyString](#ifnonemptystring)
+- [formatError](#formatError)
 
 <!-- /aside -->
 
-### resolve
+### formatError
 
-This resolves zod schema to a conform schema:
+This formats `ZodError` to the **conform** error structure (i.e. A set of key/value pairs).
+
+If the error received is not provided by Zod, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
 
 ```tsx
-import { useForm, useFieldset } from '@conform-to/react';
-import { resolve } from '@conform-to/zod';
+import { useForm } from '@conform-to/react';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
 // Define the schema with zod
-const schema = resolve(
-  z.object({
-    email: z.string(),
-    password: z.string(),
-  })
-);
+const schema = z.object({
+  email: z.string().min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
+});
 
-// When used with `@conform-to/react`:
 function ExampleForm() {
-  const formProps = useForm({
-    // Validating the form with the schema
-    validate: schema.validate
-    onSubmit: event => {
-      // Read the FormData from the from
-      const payload = new FormData(e.target);
+  const formProps = useForm<z.infer<typeof schema>>({
+    onValidate({ form, submission }) {
+      // Only sync validation is allowed on the client side
+      const result = schema.safeParse(submission.value);
 
-      // Parse the data against the zod schema
-      const submission = schema.parse(payload);
+      if (!result.success) {
+        submission.error = submission.error.concat(formatError(result.error));
+      }
 
-      // It could be accepted / rejected / modified
-      console.log(submission.state);
-
-      // Parsed value (Only if accepted)
-      console.log(submission.data);
-
-      // Structured form value
-      console.log(submission.form.value);
-
-      // Structured form error (only if rejected)
-      console.log(submission.form.error);
-    };
-  })
-  const [setupFieldset, { email, password }] = useFieldset({
-    // Optional: setup native constraint inferred from the schema
-    constraint: schema.constraint
+      setFormError(form, submission);
+    },
   });
 
   // ...
 }
 ```
 
-Or parse the request payload on server side (e.g. Remix):
+Or when validating the formData on server side (e.g. Remix):
 
 ```tsx
-import { resolve } from '@conform-to/zod';
+import { useForm, parse } from '@conform-to/react';
+import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
-const schema = resolve(
-  z.object({
-    // Define the schema with zod
-  }),
-);
+const schema = z.object({
+  // Define the schema with zod
+});
 
 export let action = async ({ request }) => {
   const formData = await request.formData();
-  const submission = schema.parse(formData);
+  const submission = parse(formData);
 
-  // Return the current form state if not accepted
-  if (submission.state !== 'accepted') {
-    return json(submission.form);
+  try {
+    const data = await schema.parseAsync(submission.value);
+
+    if (submission.context === 'submit') {
+      return await handleFormData(data);
+    }
+  } catch (error) {
+    submission.error = submission.error.concat(
+      // The 2nd argument is an optional fallback message
+      formatError(error, 'The application has encountered an unknown error.'),
+    );
   }
 
-  // Do something else
+  return submission;
 };
 
 export default function ExampleRoute() {
-  const formState = useActionData();
+  const state = useActionData();
+  const form = useForm({
+    mode: 'server-validation',
+    state,
+  });
 
-  // You can then use formState.value / formState.error
-  // to populate inital value of each fields with
-  // the intital error
+  // ...
 }
-```
-
----
-
-### ifNonEmptyString
-
-As `zod` does not have specific logic for handling form data, there are some common cases need to be handled by the users. For example,
-
-1. it does not treat empty string as invalid for a requried field
-2. it has no type coercion support (e.g. '1' -> 1)
-
-The zod schema resolver currently does an extra cleanup step to transform empty string to undefined internally. But users are still required to do convert the data to their desired type themselves.
-
-```tsx
-import { z } from 'zod';
-import { resolve, ifNonEmptyString } from '@conform-to/zod';
-
-const schema = resolve(
-  z.object({
-    // No preprocess is needed for string as empty string
-    // is already converted to undefined by the resolver
-    text: z.string({ required_error: 'This field is required' }),
-
-    // Cast to number manually
-    number: z.preprocess(
-      ifNonEmptyString(Number),
-      z.number({ required_error: 'This field is required' }),
-    ),
-
-    // This is how you will do it without the helper
-    date: z.preprocess(
-      (value) => (typeof value === 'string' ? new Date(value) : value),
-      z.date({ required_error: 'This field is required' }),
-    ),
-  }),
-);
 ```

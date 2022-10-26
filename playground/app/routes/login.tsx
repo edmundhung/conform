@@ -4,7 +4,6 @@ import {
 	useFieldset,
 	useForm,
 	parse,
-	setFormError,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -16,16 +15,18 @@ interface Login {
 	password: string;
 }
 
-function validate(submission: Submission<Login>): Submission<Login> {
+function validate(submission: Submission<Login>): Array<[string, string]> {
+	const error: Array<[string, string]> = [];
+
 	if (!submission.value.email) {
-		submission.error.push(['email', 'Email is required']);
+		error.push(['email', 'Email is required']);
 	}
 
 	if (!submission.value.password) {
-		submission.error.push(['password', 'Password is required']);
+		error.push(['password', 'Password is required']);
 	}
 
-	return submission;
+	return error;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -35,22 +36,23 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse<Login>(formData);
-	const state = validate(submission);
+	const error = validate(submission);
 
 	if (
-		state.error.length === 0 &&
-		(state.value.email !== 'me@edmund.dev' ||
-			state.value.password !== '$eCreTP@ssWord')
+		error.length === 0 &&
+		(submission.value.email !== 'me@edmund.dev' ||
+			submission.value.password !== '$eCreTP@ssWord')
 	) {
-		state.error.push(['', 'The provided email or password is not valid']);
+		error.push(['', 'The provided email or password is not valid']);
 	}
 
 	return {
-		...state,
+		...submission,
 		value: {
-			email: state.value.email,
+			email: submission.value.email,
 			// Never send the password back to the client
 		},
+		error: submission.error.concat(error),
 	};
 };
 
@@ -61,16 +63,12 @@ export default function LoginForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
-					const state = validate(submission);
-
-					setFormError(form, state);
-			  }
+			? ({ submission }) => validate(submission)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.context === 'validate') {
 							event.preventDefault();
 						}
 				  }

@@ -108,25 +108,18 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	return result;
 }
 
-export function getError<Schema>(
-	result: z.SafeParseReturnType<unknown, Schema> | z.ZodError<Schema>,
+export function formatError(
+	error: unknown,
+	fallbackMessage = 'Oops! Something went wrong.',
 ): Array<[string, string]> {
-	const issues =
-		result instanceof z.ZodError
-			? result.errors
-			: !result.success
-			? result.error.errors
-			: null;
+	if (error instanceof z.ZodError) {
+		return error.errors.reduce<Array<[string, string]>>((result, e) => {
+			result.push([getName(e.path), e.message]);
 
-	if (!issues) {
-		return [];
-	}
-
-	return issues.reduce<Array<[string, string]>>((result, e) => {
-		result.push([getName(e.path), e.message]);
-
-		return result;
-	}, []);
+			return result;
+		}, []);
+	} else
+		return [['', error instanceof Error ? error.message : fallbackMessage]];
 }
 
 export function ifNonEmptyString(

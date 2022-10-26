@@ -1,11 +1,12 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
-import { Link as RouterLink } from '@remix-run/react';
+import { Link as RouterLink, useMatches } from '@remix-run/react';
 import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
+import { getChildren, isTag } from './markdoc';
 
 const style = {
 	...darcula,
@@ -18,7 +19,22 @@ const style = {
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
 
-export function Sandbox({ title, src }: { title: string; src: string }) {
+export function useRootLoaderData() {
+	const [root] = useMatches();
+
+	return root.data;
+}
+
+export function Sandbox({
+	title,
+	src,
+	children,
+}: {
+	title: string;
+	src: string;
+	children: React.ReactNode;
+}) {
+	const { repository, branch } = useRootLoaderData();
 	const [hydated, setHydrated] = React.useState(false);
 
 	React.useEffect(() => {
@@ -26,13 +42,19 @@ export function Sandbox({ title, src }: { title: string; src: string }) {
 	}, []);
 
 	if (!hydated) {
-		return null;
+		return children;
 	}
+
+	const url = new URL(
+		`https://codesandbox.io/embed/github/${repository}/tree/${branch}${src}`,
+	);
+
+	url.searchParams.set('editorsize', '60');
 
 	return (
 		<iframe
 			title={title}
-			src={`https://codesandbox.io/embed/github/${src}?editorsize=60`}
+			src={url.toString()}
 			className="min-h-[70vh] my-6 w-full aspect-[16/9] outline outline-1 outline-zinc-800 outline-offset-4 rounded"
 			sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 		/>
@@ -43,10 +65,10 @@ export function Aside({ children }: { children: React.ReactNode }) {
 	return (
 		<aside
 			className={`
-				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-8 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
-				prose-ul:list-none prose-ul:m-0 prose-ul:pl-0 prose-li:m-0 prose-li:pl-0
-				prose-a:block prose-a:border-l prose-a:px-4 prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 prose-a:border-zinc-700
-				hover:prose-a:text-white hover:prose-a:border-white 
+				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-4 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
+				prose-ul:list-none prose-ul:m-0 prose-ul:pl-4 prose-li:m-0 prose-li:pl-0 prose-headings:pl-4
+				prose-a:block prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 
+				hover:prose-a:text-white  
 			`}
 		>
 			{children}
@@ -101,7 +123,10 @@ export function Heading({
 			: '';
 
 	return (
-		<HeadingTag id={id} className="-mt-20 pt-20 lg:-mt-24 lg:pt-24">
+		<HeadingTag
+			id={id}
+			className="-mt-20 pt-20 lg:-mt-24 lg:pt-24 prose-a:inline-block prose-img:m-0"
+		>
 			{children}
 		</HeadingTag>
 	);
@@ -142,11 +167,21 @@ export function Link({
 }
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
+	const hasSidebar =
+		typeof getChildren(content).find(
+			(node) => isTag(node) && node.name === 'Aside',
+		) !== 'undefined';
+
 	return (
-		<section className="prose prose-invert max-w-none xl:pr-72 prose-pre:!mt-6 prose-pre:!mb-8">
+		<section
+			className={`prose prose-invert max-w-none prose-pre:!mt-6 prose-pre:!mb-8 ${
+				hasSidebar ? 'xl:pr-72' : ''
+			}`}
+		>
 			{renderers.react(content, React, {
 				components: {
 					Aside,
+					Sandbox,
 					Details,
 					Fence,
 					Heading,

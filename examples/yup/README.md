@@ -1,13 +1,9 @@
 # Yup Example
 
-This example shows you how to validate the form and resolve its data with the yup schema resolver.
+This example shows you how to validate the submission value using [yup](https://github.com/jquense/yup) and resolve the result with the [formatError](/packages/conform-yup/README.md#formatError) helper.
 
-## Related APIs
+<!-- sandbox src="/examples/yup" -->
 
-- [useForm](/packages/conform-react/README.md#useform)
-- [useFieldset](/packages/conform-react/README.md#usefieldset)
-- [resolve](/packages/conform-yup/README.md#resolve)
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/yup).
 
-## Demo
-
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/yup) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/yup)
+<!-- /sandbox -->

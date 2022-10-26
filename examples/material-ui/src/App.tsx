@@ -19,15 +19,16 @@ export default function ArticleForm() {
 	const { title, category, content } = useFieldset(form.ref, form.config);
 
 	/**
-	 * MUI Select is a controlled component and behaves very different from native input/select.
-	 * This hook help you setting up a shadow input that would be used to validate against the
-	 * schema instead and let you hook it up with the controlled component life cycle
+	 * MUI Select is a non-native input and does not dispatch any DOM events (e.g. input / focus / blur).
+	 * This hooks works by dispatching DOM events manually on the shadow input and thus validated once
+	 * it is hooked up with the controlled component.
 	 */
 	const [categoryInput, control] = useControlledInput(category.config);
 
 	return (
 		<form {...form.props}>
 			<Stack spacing={3}>
+				{/* TextField uses native input by default */}
 				<TextField
 					label="title"
 					name="title"
@@ -45,8 +46,8 @@ export default function ArticleForm() {
 					error={Boolean(category.error)}
 					helperText={category.error}
 					inputProps={{
-						// To disable browser report caused by the required
-						// attribute set by mui input
+						// To disable error bubble caused by the constraint
+						// attribute set by mui input, e.g. `required`
 						onInvalid: control.onInvalid,
 					}}
 					select
@@ -57,6 +58,7 @@ export default function ArticleForm() {
 					<MenuItem value="b">Option B</MenuItem>
 					<MenuItem value="c">Option C</MenuItem>
 				</TextField>
+				{/* TextField uses native textarea when multiline is enabled also */}
 				<TextField
 					label="Content"
 					name="content"

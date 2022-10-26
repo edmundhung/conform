@@ -10,8 +10,12 @@
 - [useFieldset](#usefieldset)
 - [useFieldList](#usefieldlist)
 - [useControlledInput](#usecontrolledinput)
-- [createValidate](#createvalidate)
 - [conform](#conform)
+- [hasError](#haserror)
+- [isFieldElement](#isfieldelement)
+- [parse](#parse)
+- [setFormError](#setformerror)
+- [shouldValidate](#shouldvalidate)
 
 <!-- /aside -->
 
@@ -21,15 +25,23 @@ By default, the browser calls the [reportValidity()](https://developer.mozilla.o
 
 This hook enhances the form validation behaviour in 3 parts:
 
-1. It lets you hook up custom validation logic into different form events. For example, revalidation will be triggered whenever something changed.
-2. It provides options for you to decide the best timing to start reporting errors. This could be as earliest as the user start typing, or also as late as the user try submitting the form.
+1. It enhances form validation with custom rules by subscribing to different DOM events and reporting the errors only when it is configured to do so.
+2. It unifies client and server validation in one place.
 3. It exposes the state of each field in the form of [data attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/data-*), such as `data-conform-touched`, allowing flexible styling across your form without the need to manipulate the class names.
 
 ```tsx
 import { useForm } from '@conform-to/react';
 
 function LoginForm() {
-  const formProps = useForm({
+  const form = useForm({
+    /**
+     * Validation mode.
+     * Support "client-only" or "server-validation".
+     *
+     * Default to `client-only`.
+     */
+    mode: 'client-only',
+
     /**
      * Define when the error should be reported initially.
      * Support "onSubmit", "onChange", "onBlur".
@@ -37,6 +49,16 @@ function LoginForm() {
      * Default to `onSubmit`.
      */
     initialReport: 'onBlur',
+
+    /**
+     * An object representing the initial value of the form.
+     */
+    defaultValue: undefined;
+
+    /**
+     * An object describing the state from the last submission
+     */
+    state: undefined;
 
     /**
      * Enable native validation before hydation.
@@ -54,43 +76,38 @@ function LoginForm() {
 
     /**
      * A function to be called when the form should be (re)validated.
+     * Only sync validation is supported
      */
-    validate(form, submitter) {
+    onValidate({ form, formData, submission }) {
       // ...
     },
 
     /**
      * The submit event handler of the form.
      */
-    onSubmit(event) {
+    onSubmit(event, { form, formData, submission }) {
       // ...
     },
   });
 
-  return (
-    <form {...formProps}>
-      <input type="email" name="email" required />
-      <input type="password" name="password" required />
-      <button type="submit">Login</button>
-    </form>
-  );
+  // ...
 }
 ```
 
 <details>
-<summary>What is `formProps`?</summary>
+<summary>What is `form.props`?</summary>
 
 It is a group of properties properties required to hook into form events. They can also be set explicitly as shown below:
 
 ```tsx
 function RandomForm() {
-  const formProps = useForm();
+  const form = useForm();
 
   return (
     <form
-      ref={formProps.ref}
-      onSubmit={formProps.onSubmit}
-      noValidate={formProps.noValidate}
+      ref={form.props.ref}
+      onSubmit={form.props.onSubmit}
+      noValidate={form.props.noValidate}
     >
       {/* ... */}
     </form>
@@ -103,17 +120,17 @@ function RandomForm() {
 <details>
 <summary>Does it work with custom form component like Remix Form?</summary>
 
-Yes! It will fallback to native form submission if the submit event handler is omitted or the event is not default prevented.
+Yes! It will fallback to native form submission as long as the submit event is not default prevented.
 
 ```tsx
 import { useFrom } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 
 function LoginForm() {
-  const formProps = useForm();
+  const form = useForm();
 
   return (
-    <Form method="post" action="/login" {...formProps}>
+    <Form method="post" action="/login" {...form.props}>
       {/* ... */}
     </Form>
   );
@@ -123,9 +140,9 @@ function LoginForm() {
 </details>
 
 <details>
-<summary>Is the `validate` function required?</summary>
+<summary>Is the `onValidate` function required?</summary>
 
-The `validate` function is not required if the validation logic can be fully covered by the [native constraints](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes), e.g. **required** / **min** / **pattern** etc.
+The `onValidate` function is not required if the validation logic can be fully covered by the [native constraints](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes), e.g. **required** / **min** / **pattern** etc.
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -156,10 +173,10 @@ function LoginForm() {
 
 ### useFieldset
 
-This hook can be used to monitor the state of each field and help fields configuration. It lets you:
+This hook can be used to monitor the state of each field and help configuration. It lets you:
 
 1. Capturing errors at the form/fieldset level, removing the need to setup invalid handler on each field.
-2. Defining config in one central place. e.g. name, default value and constraint, then distributing it to each field using the [conform](#conform) helpers.
+2. Defining config in one central place. e.g. name, default value and constraint, then distributing it to each field with the [conform](#conform) helpers.
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -493,58 +510,7 @@ function MuiForm() {
         <MenuItem value="c">Category C</MenuItem>
       </TextField>
     </fieldset>
-  )
-}
-```
-
----
-
-### createValidate
-
-This help you configure a validate function to check the validity of each fields and setup custom messages using the Constraint Validation APIs.
-
-```tsx
-import { useForm, createValidate } from '@conform-to/react';
-
-export default function SignupForm() {
-  const formProps = useForm({
-    validate: createValidate((field, formData) => {
-      switch (field.name) {
-        case 'email':
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Email is required');
-          } else if (field.validity.typeMismatch) {
-            field.setCustomValidity('Please enter a valid email');
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        case 'password':
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Password is required');
-          } else if (field.validity.tooShort) {
-            field.setCustomValidity(
-              'The password should be at least 10 characters long',
-            );
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        case 'confirm-password': {
-          if (field.validity.valueMissing) {
-            field.setCustomValidity('Confirm Password is required');
-          } else if (field.value !== formData.get('password')) {
-            field.setCustomValidity('The password does not match');
-          } else {
-            field.setCustomValidity('');
-          }
-          break;
-        }
-      }
-    }),
-  });
-
-  return <form {...formProps}>{/* ... */}</form>;
+  );
 }
 ```
 
@@ -614,4 +580,147 @@ function RandomForm() {
     </fieldset>
   );
 }
+```
+
+### hasError
+
+This helper checks if there is any message defined in error array with the provided name.
+
+```ts
+import { hasError } from '@conform-to/react';
+
+/**
+ * Assume the error looks like this:
+ */
+const error = [['email', 'Email is required']];
+
+// This will log `true`
+console.log(hasError(error, 'email'));
+
+// This will log `false`
+console.log(hasError(error, 'password'));
+```
+
+---
+
+### isFieldElement
+
+This checks if the provided element is an `input` / `select` / `textarea` or `button` HTML element with type guard. Useful when you need to access the validityState of the fields and modify the validation message manually.
+
+```tsx
+import { isFieldElement } from '@conform-to/react';
+
+export default function SignupForm() {
+  const form = useForm({
+    onValidate({ form }) {
+      for (const element of form.elements) {
+        if (isFieldElement(element)) {
+          switch (field.name) {
+            case 'email':
+              if (field.validity.valueMissing) {
+                field.setCustomValidity('Email is required');
+              } else if (field.validity.typeMismatch) {
+                field.setCustomValidity('Please enter a valid email');
+              } else {
+                field.setCustomValidity('');
+              }
+              break;
+            case 'password':
+              if (field.validity.valueMissing) {
+                field.setCustomValidity('Password is required');
+              } else if (field.validity.tooShort) {
+                field.setCustomValidity(
+                  'The password should be at least 10 characters long',
+                );
+              } else {
+                field.setCustomValidity('');
+              }
+              break;
+            case 'confirm-password': {
+              if (field.validity.valueMissing) {
+                field.setCustomValidity('Confirm Password is required');
+              } else if (field.value !== formData.get('password')) {
+                field.setCustomValidity('The password does not match');
+              } else {
+                field.setCustomValidity('');
+              }
+              break;
+            }
+          }
+        }
+      }
+    },
+  });
+
+  // ...
+}
+```
+
+---
+
+### parse
+
+It parses the formData based on the [naming convention](/docs/submission).
+
+```tsx
+import { parse } from '@conform-to/react';
+
+const formData = new FormData(formElement);
+const submission = parse(formData);
+
+console.log(submission);
+```
+
+---
+
+### setFormError
+
+This helpers updates the form error based on the submission result by looping through all elements in the form and update the error with the [setCustomValidity](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/setCustomValidity) API.
+
+```tsx
+import { setFormError } from '@conform-to/react';
+
+function ExampleForm() {
+  const form = useForm({
+    onValidate({ form, submission }) {
+      const error = validate(submission);
+
+      setFormError(form, {
+        ...submission,
+        error,
+      });
+    },
+  });
+
+  // ...
+}
+```
+
+---
+
+### shouldValidate
+
+This helper checks if the scope of validation includes a specific field by checking the submission:
+
+```tsx
+import { shouldValidate } from '@conform-to/react';
+
+/**
+ * The submission type and metadata give us hint on what should be valdiated.
+ * If the type is 'validate', only the field with name matching the metadata must be validated.
+ *
+ * However, if the type is `undefined`, both will log true (Default submission)
+ */
+const submission = {
+  type: 'validate',
+  metadata: 'email',
+  value: {},
+  error: [],
+};
+
+// This will log 'true'
+console.log(shouldValidate(submission, 'email'));
+
+// This will log 'false'
+console.log(shouldValidate(submission, 'password'));
 ```

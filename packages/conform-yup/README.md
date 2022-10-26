@@ -6,90 +6,97 @@
 
 ## API Reference
 
-- [resolve](#resolve)
+- [formatError](#formatError)
 
 <!-- /aside -->
 
-### resolve
+### formatError
 
-It resolves yup schema to a conform schema:
+This formats Yup `ValidationError` to the **conform** error structure (i.e. A set of key/value pairs).
+
+If the error received is not provided by Yup, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
 
 ```tsx
-import { useForm, useFieldset } from '@conform-to/react';
-import { resolve } from '@conform-to/yup';
+import { useForm } from '@conform-to/react';
+import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
 // Define the schema with yup
-const schema = resolve(
-  yup.object({
-    email: yup.string().required(),
-    password: yup.string().required(),
-  })
-);
+const schema = yup.object({
+  email: yup.string().required(),
+  password: yup.string().required(),
+});
 
-// When used with `@conform-to/react`:
 function ExampleForm() {
-  const formProps = useForm({
-    // Validating the form with the schema
-    validate: schema.validate
-    onSubmit: event => {
-      // Read the FormData from the from
-      const payload = new FormData(e.target);
+  const formProps = useForm<yup.InferType<typeof schema>>({
+    onValidate({ form, submission }) {
+      try {
+        // Only sync validation is allowed on the client side
+        schema.validateSync(submission.value, {
+          abortEarly: false,
+        });
+      } catch (error) {
+        submission.error = submission.error.concat(
+          // The 2nd argument is an optional fallback message
+          formatError(
+            error,
+            'The application has encountered an unknown error.',
+          ),
+        );
+      }
 
-      // Parse the data against the yup schema
-      const submission = schema.parse(payload);
-
-      // It could be accepted / rejected / modified
-      console.log(submission.state);
-
-      // Parsed value (Only if accepted)
-      console.log(submission.data);
-
-      // Structured form value
-      console.log(submission.form.value);
-
-      // Structured form error (only if rejected)
-      console.log(submission.form.error);
-    };
-  })
-  const [setupFieldset, { email, password }] = useFieldset({
-    // Optional: setup native constraint inferred from the schema
-    constraint: schema.constraint
+      setFormError(form, submission);
+    },
   });
 
   // ...
 }
 ```
 
-Or parse the request payload on server side (e.g. Remix):
+Or when validating the formData on server side (e.g. Remix):
 
 ```tsx
-import { resolve } from '@conform-to/yup';
+import { useForm, parse } from '@conform-to/react';
+import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
-const schema = resolve(
-  yup.object({
-    // Define the schema with yup
-  }),
-);
+const schema = yup.object({
+  // Define the schema with yup
+});
 
 export let action = async ({ request }) => {
   const formData = await request.formData();
-  const submission = schema.parse(formData);
+  const submission = parse(formData);
 
-  // Return the current form state if not accepted
-  if (submission.state !== 'accepted') {
-    return json(submission.form);
+  try {
+    // You can extends the schema with async validation as well
+    const data = await schema.validate(submission.value, {
+      abortEarly: false,
+    });
+
+    if (submission.context !== 'validate') {
+      return await handleFormData(data);
+    }
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      submission.error = submission.error.concat(formatError(error));
+    } else {
+      submission.error = submission.error.concat([
+        ['', 'Sorry, something went wrong.'],
+      ]);
+    }
   }
 
-  // Do something else
+  return submission;
 };
 
 export default function ExampleRoute() {
-  const formState = useActionData();
+  const state = useActionData();
+  const form = useForm({
+    mode: 'server-validation',
+    state,
+  });
 
-  // You can then use formState.value / formState.error
-  // to populate inital value of each fields with
-  // the intital error
+  // ...
 }
 ```

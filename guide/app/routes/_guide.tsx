@@ -14,11 +14,13 @@ const navigations: Navigation[] = [
 		title: 'Get Started',
 		menus: [
 			{ title: 'Basics', to: '/basics' },
+			{ title: 'Submission', to: '/submission' },
 			{ title: 'Validation', to: '/validation' },
-			{ title: 'Nested', to: '/nested' },
-			{ title: 'List', to: '/list' },
-			{ title: 'Advanced', to: '/advanced' },
 		],
+	},
+	{
+		title: 'Integrations',
+		menus: [{ title: 'Remix', to: '/examples/remix-run' }],
 	},
 	{
 		title: 'API Reference',
@@ -32,7 +34,6 @@ const navigations: Navigation[] = [
 		title: 'Examples',
 		menus: [
 			{ title: 'Material UI', to: '/examples/material-ui' },
-			{ title: 'Remix', to: '/examples/remix' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
 		],

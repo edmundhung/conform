@@ -5,11 +5,11 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { Markdown } from '~/components';
 import { getBranch } from '~/context';
-import { formatTitle } from '~/util';
 import { parse } from '~/markdoc';
 import { getFile } from '~/octokit';
+import { Markdown } from '~/components';
+import { formatTitle } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -17,16 +17,13 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
 export const meta: MetaFunction = ({ params }) => {
 	return {
-		title: `Conform Guide - ${formatTitle(params.package ?? '')} API Reference`,
+		title: `Conform Guide - ${formatTitle(params.name ?? '')} example`,
 	};
 };
 
 export async function loader({ params, context }: LoaderArgs) {
 	const branch = getBranch(context);
-	const readme = await getFile(
-		`packages/conform-${params.package}/README.md`,
-		branch,
-	);
+	const readme = await getFile(`examples/${params.name}/README.md`, branch);
 
 	return json(
 		{

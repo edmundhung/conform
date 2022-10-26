@@ -1,7 +1,7 @@
 import type { FieldsetConstraint } from '@conform-to/react';
 import {
 	conform,
-	isFieldElement,
+	getFormError,
 	parse,
 	useFieldset,
 	useForm,
@@ -51,17 +51,17 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse<Movie>(formData);
 
-	if (submission.value.title === '') {
+	if (!submission.value.title) {
 		submission.error.push(['title', 'Title is required']);
-	} else if (!`${submission.value.title}`.match(/[0-9a-zA-Z ]{1,20}/)) {
+	} else if (!submission.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
 		submission.error.push(['title', 'Please enter a valid title']);
 	}
 
 	if (
-		submission.value.description !== '' &&
-		`${submission.value.description}`.length < 30
+		submission.value.description &&
+		submission.value.description.length < 30
 	) {
 		submission.error.push(['description', 'Please provides more details']);
 	}
@@ -70,10 +70,7 @@ export let action = async ({ request }: ActionArgs) => {
 		submission.error.push(['genre', 'Genre is required']);
 	}
 
-	if (
-		typeof submission.value.rating === 'string' &&
-		Number(submission.value.rating) % 0.5 !== 0
-	) {
+	if (submission.value.rating && Number(submission.value.rating) % 0.5 !== 0) {
 		submission.error.push(['rating', 'The provided rating is invalid']);
 	}
 
@@ -87,51 +84,50 @@ export default function MovieForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
-					for (const field of form.elements) {
-						if (isFieldElement(field)) {
-							switch (field.name) {
-								case 'title':
-									if (field.validity.valueMissing) {
-										field.setCustomValidity('Title is required');
-									} else if (field.validity.patternMismatch) {
-										field.setCustomValidity('Please enter a valid title');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'description':
-									if (field.validity.tooShort) {
-										field.setCustomValidity('Please provides more details');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'genre':
-									if (field.validity.valueMissing) {
-										field.setCustomValidity('Genre is required');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'rating':
-									if (field.validity.stepMismatch) {
-										field.setCustomValidity('The provided rating is invalid');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-							}
-						}
-					}
+			? ({ form }) =>
+					getFormError(form, (field) => {
+						let message = '';
 
-					return form.reportValidity();
-			  }
+						switch (field.name) {
+							case 'title':
+								if (field.validity.valueMissing) {
+									message = 'Title is required';
+								} else if (field.validity.patternMismatch) {
+									message = 'Please enter a valid title';
+								} else {
+									message = '';
+								}
+								break;
+							case 'description':
+								if (field.validity.tooShort) {
+									message = 'Please provides more details';
+								} else {
+									message = '';
+								}
+								break;
+							case 'genre':
+								if (field.validity.valueMissing) {
+									message = 'Genre is required';
+								} else {
+									message = '';
+								}
+								break;
+							case 'rating':
+								if (field.validity.stepMismatch) {
+									message = 'The provided rating is invalid';
+								} else {
+									message = '';
+								}
+								break;
+						}
+
+						return [[field.name, message]];
+					})
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.context === 'validate') {
 							event.preventDefault();
 						}
 				  }

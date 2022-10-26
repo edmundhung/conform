@@ -1,12 +1,6 @@
+import { conform, parse, useFieldset, useForm } from '@conform-to/react';
 import {
-	conform,
-	parse,
-	setFormError,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
-import {
-	getError,
+	formatError,
 	getFieldsetConstraint,
 	ifNonEmptyString,
 } from '@conform-to/zod';
@@ -53,7 +47,7 @@ export let action = async ({ request }: ActionArgs) => {
 	if (!result.success) {
 		return {
 			...submission,
-			error: submission.error.concat(getError(result.error)),
+			error: submission.error.concat(formatError(result.error)),
 		};
 	}
 
@@ -67,20 +61,20 @@ export default function PaymentForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
+			? ({ submission }) => {
 					const result = schema.safeParse(submission.value);
 
-					if (!result.success) {
-						submission.error = submission.error.concat(getError(result.error));
+					if (result.success) {
+						return [];
 					}
 
-					setFormError(form, submission);
+					return formatError(result.error);
 			  }
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.context === 'validate') {
 							event.preventDefault();
 						}
 				  }

@@ -1,13 +1,9 @@
 # Material UI Example
 
-This example shows you how to integrate controlled component for validation using the `useControlledInput` hook
+This example shows you how to validate non-native input (e.g. Custom dropdown) using the [useControlledInput](/packages/conform-react/README.md#usecontrolledinput) hook.
 
-## Related APIs
+<!-- sandbox src="/examples/material-ui" -->
 
-- [useForm](/packages/conform-react/README.md#useform)
-- [useFieldset](/packages/conform-react/README.md#usefieldset)
-- [useControlledInput](/packages/conform-react/README.md#usecontrolledinput)
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/material-ui).
 
-## Demo
-
-> [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/material-ui) / [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/material-ui)
+<!-- /sandbox -->

@@ -27,6 +27,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				context: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -43,6 +44,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				context: 'submit',
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -63,6 +65,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				context: 'submit',
 				value: {
 					title: '',
 					tasks: [
@@ -83,6 +86,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				context: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -100,8 +104,8 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'test',
-				metadata: 'command value',
+				context: 'test',
+				intent: 'command value',
 				value: {
 					title: 'Test command',
 				},
@@ -115,8 +119,8 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'list',
-				metadata: JSON.stringify({ greeting: 'Hello World' }),
+				context: 'list',
+				intent: JSON.stringify({ greeting: 'Hello World' }),
 				value: {
 					title: '',
 				},
@@ -135,7 +139,7 @@ test.describe('conform-dom', () => {
 				['tasks[0].completed', 'Yes'],
 			];
 			const result = {
-				type: 'list',
+				context: 'list',
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
@@ -154,7 +158,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'prepend',
 					scope: 'tasks',
 					payload: {},
@@ -179,7 +183,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'prepend',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' } },
@@ -200,7 +204,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'append',
 					scope: 'tasks',
 					payload: {},
@@ -225,7 +229,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'append',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' } },
@@ -250,7 +254,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'replace',
 					scope: 'tasks',
 					payload: { defaultValue: { content: 'Something' }, index: 0 },
@@ -275,7 +279,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'remove',
 					scope: 'tasks',
 					payload: { index: 0 },
@@ -301,7 +305,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				...result,
-				metadata: JSON.stringify({
+				intent: JSON.stringify({
 					type: 'reorder',
 					scope: 'tasks',
 					payload: { from: 0, to: 1 },

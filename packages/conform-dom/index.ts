@@ -36,18 +36,12 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint;
 };
 
-export type Submission<Schema = unknown> =
-	| {
-			type?: undefined;
-			value: FieldValue<Schema>;
-			error: Array<[string, string]>;
-	  }
-	| {
-			type: string;
-			metadata: string;
-			value: FieldValue<Schema>;
-			error: Array<[string, string]>;
-	  };
+export type Submission<Schema = unknown> = {
+	context: string;
+	intent?: string;
+	value: FieldValue<Schema>;
+	error: Array<[string, string]>;
+};
 
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
@@ -109,18 +103,42 @@ export function getName(paths: Array<string | number>): string {
 }
 
 export function shouldValidate(submission: Submission, name: string): boolean {
-	return submission.type !== 'validate' || submission.metadata === name;
+	return (
+		submission.context === 'submit' ||
+		(submission.context === 'validate' && submission.intent === name)
+	);
 }
 
 export function hasError(
 	error: Array<[string, string]>,
-	name: string,
+	names?: string[],
 ): boolean {
 	return (
 		typeof error.find(
-			([fieldName, message]) => fieldName === name && message !== '',
+			([fieldName, message]) =>
+				(typeof names === 'undefined' || names.includes(fieldName)) &&
+				message !== '',
 		) !== 'undefined'
 	);
+}
+
+export function getFormError(
+	form: HTMLFormElement,
+	getFieldError?: (field: FieldElement) => Array<[string, string]>,
+): Array<[string, string]> {
+	let error: Array<[string, string]> = [];
+
+	for (const element of form.elements) {
+		if (isFieldElement(element) && element.willValidate) {
+			error.push(
+				...(getFieldError?.(element) ?? [
+					[element.name, element.validationMessage],
+				]),
+			);
+		}
+	}
+
+	return error;
 }
 
 export function setFormError(
@@ -184,6 +202,7 @@ export function requestValidate(form: HTMLFormElement, field?: string) {
 
 	button.name = 'conform/validate';
 	button.value = field ?? '';
+	button.formNoValidate = true;
 	button.hidden = true;
 
 	form.appendChild(button);
@@ -249,7 +268,9 @@ export function getSubmissionType(name: string): string | null {
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
 ): Submission<Schema> {
+	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
+		context: 'submit',
 		value: {},
 		error: [],
 	};
@@ -265,15 +286,16 @@ export function parse<Schema extends Record<string, any>>(
 					);
 				}
 
-				if (typeof submission.type !== 'undefined') {
+				if (hasCommand) {
 					throw new Error('The conform command could only be set on a button');
 				}
 
 				submission = {
 					...submission,
-					type: submissionType,
-					metadata: value,
+					context: submissionType,
+					intent: value,
 				};
+				hasCommand = true;
 			} else {
 				const paths = getPaths(name);
 
@@ -287,7 +309,7 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		switch (submission.type) {
+		switch (submission.context) {
 			case 'list':
 				submission = handleList(submission);
 				break;
@@ -376,11 +398,11 @@ export function updateList<Schema>(
 export function handleList<Schema>(
 	submission: Submission<Schema>,
 ): Submission<Schema> {
-	if (submission.type !== 'list') {
+	if (submission.context !== 'list') {
 		return submission;
 	}
 
-	const command = parseListCommand(submission.metadata);
+	const command = parseListCommand(submission.intent ?? '');
 	const paths = getPaths(command.scope);
 
 	setValue(submission.value, paths, (list) => {
