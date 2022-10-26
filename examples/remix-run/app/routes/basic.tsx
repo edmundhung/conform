@@ -55,7 +55,6 @@ export async function action({ request }: ActionArgs) {
 
 	if (error.length === 0) {
 		try {
-			console.log(submission);
 			// Check if it is default submission
 			if (typeof submission.type === 'undefined') {
 				await createEmployee(submission.value as Employee);

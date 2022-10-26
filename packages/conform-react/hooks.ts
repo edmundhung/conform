@@ -318,8 +318,11 @@ export function useForm<Schema extends Record<string, any>>(
 					if (typeof config.onValidate === 'function') {
 						error = config.onValidate(context);
 					} else {
-						// Clear previous result
-						setFormError(form, { value: {}, error: [] });
+						if (config.mode !== 'server-validation') {
+							// Clear previous result
+							setFormError(form, { value: {}, error: [] });
+						}
+
 						error = getFormError(form);
 					}
 
