@@ -1,4 +1,4 @@
-import { useFieldset, useForm, setFormError } from '@conform-to/react';
+import { useFieldset, useForm } from '@conform-to/react';
 import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -19,17 +19,17 @@ const schema = yup.object({
 
 export default function SignupForm() {
 	const form = useForm<yup.InferType<typeof schema>>({
-		onValidate({ form, submission }) {
+		onValidate({ submission }) {
 			try {
 				// Only sync validation is allowed on the client side
 				schema.validateSync(submission.value, {
 					abortEarly: false,
 				});
-			} catch (error) {
-				submission.error = submission.error.concat(formatError(error));
-			}
 
-			setFormError(form, submission);
+				return [];
+			} catch (error) {
+				return formatError(error);
+			}
 		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();

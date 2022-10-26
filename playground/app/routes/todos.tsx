@@ -5,7 +5,6 @@ import {
 	useFieldset,
 	useForm,
 	parse,
-	setFormError,
 } from '@conform-to/react';
 import { formatError, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -54,16 +53,14 @@ export default function TodosForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
+			? ({ submission }) => {
 					const result = schema.safeParse(submission.value);
 
-					if (!result.success) {
-						submission.error = submission.error.concat(
-							formatError(result.error),
-						);
+					if (result.success) {
+						return [];
 					}
 
-					setFormError(form, submission);
+					return formatError(result.error);
 			  }
 			: undefined,
 		onSubmit:

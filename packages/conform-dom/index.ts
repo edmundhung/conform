@@ -108,19 +108,35 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name: string): boolean {
-	return submission.type !== 'validate' || submission.metadata === name;
-}
-
 export function hasError(
 	error: Array<[string, string]>,
-	name: string,
+	name?: string,
 ): boolean {
 	return (
 		typeof error.find(
-			([fieldName, message]) => fieldName === name && message !== '',
+			([fieldName, message]) =>
+				(typeof name === 'undefined' || fieldName === name) && message !== '',
 		) !== 'undefined'
 	);
+}
+
+export function getFormError(
+	form: HTMLFormElement,
+	getFieldError?: (field: FieldElement) => Array<[string, string]>,
+): Array<[string, string]> {
+	let error: Array<[string, string]> = [];
+
+	for (const element of form.elements) {
+		if (isFieldElement(element) && element.willValidate) {
+			error.push(
+				...(getFieldError?.(element) ?? [
+					[element.name, element.validationMessage],
+				]),
+			);
+		}
+	}
+
+	return error;
 }
 
 export function setFormError(
@@ -135,7 +151,8 @@ export function setFormError(
 
 			if (
 				typeof error !== 'undefined' ||
-				shouldValidate(submission, element.name)
+				submission.type !== 'validate' ||
+				submission.metadata === element.name
 			) {
 				element.setCustomValidity(error ?? '');
 			}
@@ -184,6 +201,7 @@ export function requestValidate(form: HTMLFormElement, field?: string) {
 
 	button.name = 'conform/validate';
 	button.value = field ?? '';
+	button.formNoValidate = true;
 	button.hidden = true;
 
 	form.appendChild(button);

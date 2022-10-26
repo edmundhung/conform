@@ -1,11 +1,9 @@
 import {
 	conform,
+	hasError,
 	parse,
 	useFieldset,
 	useForm,
-	hasError,
-	setFormError,
-	shouldValidate,
 } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -32,15 +30,15 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse(formData);
 	const serverSchema = schema.refine(
 		async (employee) => {
-			if (submission.type !== 'validate' || submission.metadata === 'email') {
-				return new Promise((resolve) => {
-					setTimeout(() => {
-						resolve(employee.email === 'hey@conform.guide');
-					}, Math.random() * 500);
-				});
+			if (submission.type === 'validate' && submission.metadata !== 'email') {
+				return true;
 			}
 
-			return true;
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(employee.email === 'hey@conform.guide');
+				}, Math.random() * 500);
+			});
 		},
 		{
 			message: 'Email is already used',
@@ -63,30 +61,22 @@ export default function EmployeeForm() {
 	const form = useForm<Schema>({
 		...config,
 		state,
-		onValidate({ form, submission }) {
+		onValidate({ submission }) {
 			const result = schema.safeParse(submission.value);
 
-			if (!result.success) {
-				submission.error = submission.error.concat(formatError(result.error));
+			if (result.success) {
+				return [];
 			}
 
-			if (config.mode === 'server-validation') {
-				if (
-					shouldValidate(submission, 'email') &&
-					!hasError(submission.error, 'email')
-				) {
-					throw form;
-				}
-			}
-
-			setFormError(form, submission);
+			return formatError(result.error);
 		},
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
 						if (
 							submission.type === 'validate' &&
-							submission.metadata !== 'email'
+							(submission.metadata !== 'email' ||
+								hasError(submission.error, 'email'))
 						) {
 							event.preventDefault();
 						}

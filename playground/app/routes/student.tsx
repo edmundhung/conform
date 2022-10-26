@@ -1,11 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import {
-	conform,
-	useFieldset,
-	useForm,
-	parse,
-	setFormError,
-} from '@conform-to/react';
+import { conform, useFieldset, useForm, parse } from '@conform-to/react';
 import { getFieldsetConstraint, formatError } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -27,20 +21,16 @@ const schema = yup.object({
 
 type Schema = yup.InferType<typeof schema>;
 
-function validate(submission: Submission<Schema>): Submission<Schema> {
+function validate(submission: Submission<Schema>): Array<[string, string]> {
 	try {
 		schema.validateSync(submission.value, {
 			abortEarly: false,
 		});
-	} catch (error) {
-		if (error instanceof yup.ValidationError) {
-			submission.error = submission.error.concat(formatError(error));
-		} else {
-			submission.error = submission.error.concat([['', 'Validation failed']]);
-		}
-	}
 
-	return submission;
+		return [];
+	} catch (error) {
+		return formatError(error);
+	}
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -50,8 +40,12 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData);
+	const error = validate(submission);
 
-	return validate(submission);
+	return {
+		...submission,
+		error: submission.error.concat(error),
+	};
 };
 
 export default function StudentForm() {
@@ -61,11 +55,7 @@ export default function StudentForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
-					const state = validate(submission);
-
-					setFormError(form, state);
-			  }
+			? ({ submission }) => validate(submission)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

@@ -1,10 +1,4 @@
-import {
-	conform,
-	parse,
-	useFieldset,
-	useForm,
-	shouldValidate,
-} from '@conform-to/react';
+import { conform, parse, useFieldset, useForm } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -38,7 +32,10 @@ export async function action({ request }: ActionArgs) {
 			.refine(
 				async (employee) => {
 					// Validate only if necessary
-					if (!shouldValidate(submission, 'email')) {
+					if (
+						submission.type === 'validate' &&
+						submission.metadata !== 'email'
+					) {
 						return true;
 					}
 

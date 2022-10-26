@@ -1,6 +1,6 @@
 import { Link } from '@remix-run/react';
 
-export function Index() {
+export default function Index() {
 	return (
 		<ul>
 			<li>

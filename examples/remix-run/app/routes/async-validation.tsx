@@ -4,8 +4,6 @@ import {
 	useFieldset,
 	useForm,
 	hasError,
-	shouldValidate,
-	setFormError,
 } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -39,7 +37,10 @@ export async function action({ request }: ActionArgs) {
 		const data = await schema
 			.refine(
 				async (employee) => {
-					if (!shouldValidate(submission, 'email')) {
+					if (
+						submission.type === 'validate' &&
+						submission.metadata !== 'email'
+					) {
 						return true;
 					}
 
@@ -70,33 +71,23 @@ export default function EmployeeForm() {
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
-		onValidate({ form, submission }) {
-			// Similar to server validation without the extra refine()
+		onValidate({ submission }) {
 			const result = schema.safeParse(submission.value);
 
-			if (!result.success) {
-				submission.error = submission.error.concat(formatError(result.error));
+			if (result.success) {
+				return [];
 			}
 
-			if (
-				// We want the server to check the uniqness only if necessary
-				shouldValidate(submission, 'email') &&
-				// The email field should be a valid email
-				!hasError(submission.error, 'email')
-			) {
-				// Fallback to server validation
-				throw form;
-			}
-
-			// For the rest of the cases, handle it on the client
-			// with the constraint validation API
-			setFormError(form, submission);
+			return formatError(result.error);
 		},
 		// onSubmit will be triggered only if the submission is valid
 		onSubmit(event, { submission }) {
 			// Only the email field requires additional validation from the server
 			// We trust the client result otherwise
-			if (!shouldValidate(submission, 'email')) {
+			if (
+				submission.type === 'validate' &&
+				(submission.metadata !== 'email' || hasError(submission.error, 'email'))
+			) {
 				event.preventDefault();
 			}
 		},

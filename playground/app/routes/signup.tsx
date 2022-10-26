@@ -1,11 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import {
-	conform,
-	parse,
-	useFieldset,
-	useForm,
-	setFormError,
-} from '@conform-to/react';
+import { conform, parse, useFieldset, useForm } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -67,10 +61,10 @@ export default function SignupForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
+			? ({ submission }) => {
 					const state = validate(submission);
 
-					setFormError(form, state);
+					return state.error;
 			  }
 			: undefined,
 		onSubmit:

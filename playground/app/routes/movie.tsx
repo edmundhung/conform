@@ -1,7 +1,7 @@
 import type { FieldsetConstraint } from '@conform-to/react';
 import {
 	conform,
-	isFieldElement,
+	getFormError,
 	parse,
 	useFieldset,
 	useForm,
@@ -87,46 +87,45 @@ export default function MovieForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form, submission }) => {
-					for (const field of form.elements) {
-						if (isFieldElement(field)) {
-							switch (field.name) {
-								case 'title':
-									if (field.validity.valueMissing) {
-										field.setCustomValidity('Title is required');
-									} else if (field.validity.patternMismatch) {
-										field.setCustomValidity('Please enter a valid title');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'description':
-									if (field.validity.tooShort) {
-										field.setCustomValidity('Please provides more details');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'genre':
-									if (field.validity.valueMissing) {
-										field.setCustomValidity('Genre is required');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-								case 'rating':
-									if (field.validity.stepMismatch) {
-										field.setCustomValidity('The provided rating is invalid');
-									} else {
-										field.setCustomValidity('');
-									}
-									break;
-							}
-						}
-					}
+			? ({ form }) =>
+					getFormError(form, (field) => {
+						let message = '';
 
-					return form.reportValidity();
-			  }
+						switch (field.name) {
+							case 'title':
+								if (field.validity.valueMissing) {
+									message = 'Title is required';
+								} else if (field.validity.patternMismatch) {
+									message = 'Please enter a valid title';
+								} else {
+									message = '';
+								}
+								break;
+							case 'description':
+								if (field.validity.tooShort) {
+									message = 'Please provides more details';
+								} else {
+									message = '';
+								}
+								break;
+							case 'genre':
+								if (field.validity.valueMissing) {
+									message = 'Genre is required';
+								} else {
+									message = '';
+								}
+								break;
+							case 'rating':
+								if (field.validity.stepMismatch) {
+									message = 'The provided rating is invalid';
+								} else {
+									message = '';
+								}
+								break;
+						}
+
+						return [[field.name, message]];
+					})
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
