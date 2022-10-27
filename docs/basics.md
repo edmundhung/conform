@@ -8,6 +8,7 @@ In this section, we will cover how to build a simple login form by utilizing nat
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
+- [Constraint Validation](#constraint-validation)
 - [Capturing errors](#capturing-errors)
 - [Styling input](#styling-input)
 - [Early reporting](#early-reporting)
@@ -60,11 +61,21 @@ export default function LoginForm() {
 }
 ```
 
-By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute, our form now stop users from submitting until they provide a valid email address with the password. We are also capturing the form value using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API.
+Both the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute and the email input type is a part of the [Constraint Validation](#constraint-validation) API. It tells the browser to stop users from submitting the from until they provide a valid email address with the password.
+
+### Constraint Validation
+
+The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
+
+- Utilizing [HTML attributes](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes) for validations (e.g. `required`, `type`)
+- Accessing form validity and configure custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validityState`, `setCustomValidity()`)
+- Styling form elements with [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) based on the validity (e.g. `:required`, `:invalid`)
+
+Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
 
 ### Capturing errors
 
-With the help of native form validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up when they try to submit a form with invalid fields. These bubbles are not customizable unfortunately. What if we can capture the error messages and decide where to put them ourselves?
+With the help of Constraint Validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up when they try to submit a form with invalid fields. These bubbles are not customizable unfortunately. What if we can capture the error messages and decide where to put them ourselves?
 
 Let's introduce the [useForm](/packages/conform-react/README.md#useform) and [useFieldset](/packages/conform-react/README.md#usefieldset) hooks.
 
@@ -150,6 +161,11 @@ export default function LoginForm() {
                * while the value does not match
                */
               messages.push('Email is invalid');
+            } else if (!element.value.endsWith('gmail.com')) {
+              /**
+               * We can also validate the field manually with custom logic
+               */
+              messages.push('Only gmail is accepted');
             }
             break;
           }

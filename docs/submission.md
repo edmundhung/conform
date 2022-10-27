@@ -32,7 +32,7 @@ console.log(submission.value);
 
 If the form data is malformed (i.e. Some entries violate the naming convention), any errors will be caught internally and you can access it through `submission.error`.
 
-## Configuration
+### Configuration
 
 There are 2 approaches to configure the input name. For example, if we are building a todo list with the following schemas:
 
@@ -217,7 +217,7 @@ function Product() {
 
 However, this polutes the form data with information that are used for controlling the behaviour of the form only.
 
-**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/submit_), it will be excluded from the structured value with `submission.context` being _validate_ and `submission.intent` being _add-to-cart_ or _buy-now_.
+**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/submit_), it will be excluded from the structured value with `submission.context` being _submit_ and `submission.intent` being _add-to-cart_ or _buy-now_.
 
 ```tsx
 import { useForm } from '@conform-to/react';

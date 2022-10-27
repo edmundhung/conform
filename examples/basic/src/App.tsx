@@ -13,6 +13,8 @@ export default function LoginForm() {
 							messages.push('Email is required');
 						} else if (element.validity.typeMismatch) {
 							messages.push('Email is invalid');
+						} else if (!element.value.endsWith('gmail.com')) {
+							messages.push('Only gmail is accepted');
 						}
 						break;
 					}

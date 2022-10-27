@@ -1,12 +1,12 @@
 # Validation
 
-**Conform** adopts a `server-first` paradigma. It submits your form for server validation and uses client validation as a middleware.
+**Conform** validates your form by making a submission and treats the client validation as a middleware.
 
 <!-- aside -->
 
 ## Table of Contents
 
-- [Constraint Validation](#constraint-validation)
+- [Concept](#concept)
 - [Server Validation](#server-validation)
   - [Schema Integration](#schema-integration)
   - [Validating on-demand](#validating-on-demand)
@@ -17,11 +17,15 @@
 
 <!-- /aside -->
 
+## Concept
+
+Conform tries to simplify the mental model by utilizing a server-first validation flow which submits your form for validation. This is achieved by creating a hidden [command button](./submission.md#built-in-commands) and clicking on it whenever validation is needed.
+
+Client validation can then be used to reduce the feedback loop by using the validation result on the client side to decide if the submission should be blocked through `event.preventDefault()`.
+
 ## Server Validation
 
-Your APIs should always validate the form data provided regardless if client validation is done well. There are also things that can only be validated server side, e.g. checking if an email is registered on the database. It could be considered the source of truth of your validation logic.
-
-For example, you can validate a login form in Remix as follow:
+**Conform** tries to makes it easy to validate the form data on the server. For example, you can validate a login form **fully server side** with Remix as shown below:
 
 ```tsx
 import { useForm, useFieldset, parse } from '@conform-to/react';
@@ -35,33 +39,41 @@ export async function action({ request }) {
   const formData = await request.formData();
   const submission = parse<LoginForm>(formData);
 
-  if (!submission.value.email) {
-    submission.error.push(['email', 'Email is required']);
-  } else if (!submission.value.email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
-  }
+  try {
+    switch (submission.context) {
+      // The context will be `submit` by default
+      case 'submit':
+      // The context will be `validate` for validation
+      case 'validate':
+        if (!submission.value.email) {
+          submission.error.push(['email', 'Email is required']);
+        } else if (!submission.value.email.includes('@')) {
+          submission.error.push(['email', 'Email is invalid']);
+        }
 
-  if (!submission.value.password) {
-    submission.error.push(['password', 'Password is required']);
-  }
+        if (!submission.value.password) {
+          submission.error.push(['password', 'Password is required']);
+        }
 
-  /**
-   * Try logging the user in only when the submission is intentional
-   * with no error found
-   */
-  if (submission.context !== 'validate' && submission.error.length === 0) {
-    try {
-      return await login(submission.value);
-    } catch (error) {
-      /**
-       * By specifying the key as '', the message will be
-       * treated as a form-level error and populated
-       * on the client side as `form.error`
-       */
-      submission.error.push(['', 'Login failed']);
+        /**
+         * No login should happen when the context is `validate`
+         * or if there is any error
+         */
+        if (submission.context === 'submit' && submission.error.length === 0) {
+          return await login(submission.value);
+        }
+        break;
     }
+  } catch (error) {
+    /**
+     * By specifying the key as '', the message will be
+     * treated as a form-level error and populated
+     * on the client side as `form.error`
+     */
+    submission.error.push(['', 'Login failed']);
   }
 
+  // Always sends the submission state back to client until the user is logged-in
   return json({
     ...submission,
     value: {
@@ -74,7 +86,16 @@ export async function action({ request }) {
 export default function login() {
   const state = useActionData();
   const form = useForm({
+    /**
+     * This tells conform to validate with the server.
+     * It defaults to `client-only` if not specified
+     */
     mode: 'server-validation',
+
+    /**
+     * Conform will report the server error based on the last
+     * submission state
+     */
     state,
   });
   const { email, password } = useFieldset(form.ref, form.config);
@@ -86,6 +107,7 @@ export default function login() {
       <div>{email.error}</div>
       <input type="password" name="password" />
       <div>{password.error}</div>
+      <button type="submit">Login</button>
     </Form>
   );
 }
@@ -93,7 +115,7 @@ export default function login() {
 
 ### Schema Integration
 
-Integrating with a schema validation library is simple. For example, you can integrate it with `zod` like this:
+Integrating with a schema validation library is also straight-forwad. For example, you can integrate it with `zod` like this:
 
 ```tsx
 import { parse } from '@conform-to/react';
@@ -161,10 +183,7 @@ export async function action({ request }) {
 
 ## Client Validation
 
-With proper server validation in place, client validation serves two main purposes:
-
-1. Shorten the feedback loop due to network latency
-2. Reduce server load caused by validation
+Client validation can be added to reduce the feedback loop.
 
 ### Sharing logics
 
@@ -202,14 +221,24 @@ function validate(submission: Submission<LoginForm>): Array<[string, string]> {
 export async function action({ request }) {
   const formData = await request.formData();
   const submission = parse<LoginForm>(formData);
-  const error = validate(submission);
 
-  if (submission.context !== 'validate' && error.length === 0) {
-    try {
-      return await login(submission.value);
-    } catch (error) {
-      error.push(['', 'Login failed']);
-    }
+  try {
+    switch (submission.context) {
+      case 'submit':
+      case 'validate': {
+        const error = validate(submission)
+
+        if (error.length > 0) {
+          submission.error =  submission.error.concat(error);
+        }
+
+        if (submission.context === 'submit' && submission.error.length === 0) {
+          return await login(submission.value);
+        }
+        break;
+      }
+  } catch (error) {
+    error.push(['', 'Login failed']);
   }
 
   return json({
@@ -217,7 +246,6 @@ export async function action({ request }) {
     value: {
       email: submission.value.email,
     },
-    error: submission.error.concat(error),
   });
 }
 
@@ -226,14 +254,14 @@ export default function login() {
   const form = useForm({
     mode: 'server-validation',
     state,
-    onValidate({ form, submission }) {
+    onValidate({ submission }) {
       // Reuse the validation logic
       return validate(submission);
     },
 
     onSubmit(event, { submission }) {
       /**
-       * This can be removed by specifying the `mode` as
+       * This checks can be removed by specifying the `mode` as
        * 'client-only' instead of `server-validation`
        */
       if (submission.context === 'validate') {
@@ -245,30 +273,21 @@ export default function login() {
       }
     },
   });
-  const { email, password } = useFieldset(form.ref, form.config);
 
-  return (
-    <Form method="post" {...form.props}>
-      <div>{form.error}</div>
-      <input type="text" name="email" />
-      <div>{email.error}</div>
-      <input type="password" name="password" />
-      <div>{password.error}</div>
-    </Form>
-  );
+  // ...
 }
 ```
 
 ### Fallback
 
-However, sometimes not every validation rules can be applied client side. Let's fallback to the server.
+However, sometimes not every validation rules can be applied client side. Let's fallback to server validation.
 
 ```tsx
 import type { Submission } from '@conform-to/react';
 import { hasError } from '@conform-to/react';
 
 export function action() {
-  // No change from the previous example
+  // ...
 }
 
 export default function login() {
@@ -279,10 +298,10 @@ export default function login() {
     onValidate({ form, submission }) {
       return validate(submission);
     },
-
     onSubmit(event, { submission }) {
       /**
-       *  Do not block the submission when validating email
+       * Block the submission only when validating fields
+       * other than email or if email has any error already
        */
       if (
         submission.context === 'validate' &&
@@ -292,17 +311,8 @@ export default function login() {
       }
     },
   });
-  const { email, password } = useFieldset(form.ref, form.config);
 
-  return (
-    <Form method="post" {...form.props}>
-      <div>{form.error}</div>
-      <input type="text" name="email" />
-      <div>{email.error}</div>
-      <input type="password" name="password" />
-      <div>{password.error}</div>
-    </Form>
-  );
+  // ...
 }
 ```
 
