@@ -11,12 +11,6 @@ import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 
-const schema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	email: z.string().min(1, 'Email is required').email('Email is invalid'),
-	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
-});
-
 async function isEmailUnique(email: string): Promise<boolean> {
 	return new Promise((resolve) => {
 		setTimeout(() => {
@@ -25,7 +19,7 @@ async function isEmailUnique(email: string): Promise<boolean> {
 	});
 }
 
-async function createEmployee(data: z.infer<typeof schema>): Promise<void> {
+async function createEmployee(data: unknown): Promise<void> {
 	throw new Error('Not implemented');
 }
 
@@ -34,7 +28,15 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		const data = await schema
+		const data = await z
+			.object({
+				name: z.string().min(1, 'Name is required'),
+				email: z.string().min(1, 'Email is required').email('Email is invalid'),
+				title: z
+					.string()
+					.min(1, 'Title is required')
+					.max(20, 'Title is too long'),
+			})
 			.refine(
 				async (employee) => {
 					// Validate only if necessary
@@ -65,7 +67,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function EmployeeForm() {
 	const state = useActionData<typeof action>();
-	const form = useForm<z.infer<typeof schema>>({
+	const form = useForm({
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
