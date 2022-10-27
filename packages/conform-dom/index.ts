@@ -111,13 +111,12 @@ export function shouldValidate(submission: Submission, name: string): boolean {
 
 export function hasError(
 	error: Array<[string, string]>,
-	names?: string[],
+	name?: string,
 ): boolean {
 	return (
 		typeof error.find(
 			([fieldName, message]) =>
-				(typeof names === 'undefined' || names.includes(fieldName)) &&
-				message !== '',
+				(typeof name === 'undefined' || name === fieldName) && message !== '',
 		) !== 'undefined'
 	);
 }

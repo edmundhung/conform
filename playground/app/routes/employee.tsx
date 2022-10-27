@@ -77,7 +77,7 @@ export default function EmployeeForm() {
 						if (
 							submission.context === 'validate' &&
 							(submission.intent !== 'email' ||
-								hasError(submission.error, ['email']))
+								hasError(submission.error, 'email'))
 						) {
 							event.preventDefault();
 						}
