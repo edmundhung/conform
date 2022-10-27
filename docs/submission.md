@@ -1,15 +1,13 @@
 # Submission
 
-**Conform** handles form data as a set of key/value pairs and this is usually constructed by using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. This structure, however, does not have direct support of nested or array stucture. To resolve this, it adopts a naming convention to provides hints on how to properly transformed it into the desired structure with additonal metadata.
+Submission is basically formData utilizing **Conform**'s naming convention.
 
 <!-- aside -->
 
 ## Table of Contents
 
-- [Schema](#schema)
-- [Configuration](#configuration)
-  - [Manual setup](#manual-setup)
-  - [Derived config](#derived-config)
+- [Data structure](#data-structure)
+  - [Configuration](#configuration)
 - [Form Submitter](#form-submitter)
   - [Command button](#command-button)
   - [Built-in commands](#built-in-commands)
@@ -17,26 +15,28 @@
 
 <!-- /aside -->
 
-## Schema
+## Data structure
 
-The convention **conform** adopted is similiar to how properties are accessed in JavaScript: `object.property` and `array[index]`. These notations could be nested and mixed together.
+**Conform** uses `object.property` and `array[index]` to define the data structure. These notations could be nested and mixed together.
 
-Once the name of the fields are configured properly, you can then [parse](/packages/conform-react/README.md#parse) the form data and access the value from `submission.value`.
+Just [parse](/packages/conform-react/README.md#parse) the form data and you will be able to access value with the defined structure through `submission.value`.
 
-```tsx
+```ts
 import { parse } from '@conform-to/react';
 
-const formData = new FormData(formElement);
+const formData = new FormData();
 const submission = parse(formData);
 
 console.log(submission.value);
 ```
 
+If the form data is malformed (i.e. Some entries violate the naming convention), any errors will be caught internally and you can access it through `submission.error`.
+
 ## Configuration
 
-There are 2 approaches to setup the field name. For example, if we are building a todo list with the following schema:
+There are 2 approaches to configure the input name. For example, if we are building a todo list with the following schemas:
 
-```ts
+```tsx
 interface Task {
   content: string;
   completed: boolean;
@@ -48,9 +48,7 @@ interface TodoList {
 }
 ```
 
-### Manual setup
-
-It can be setup manually:
+To setup manually:
 
 ```tsx
 export default function TodoForm() {
@@ -82,25 +80,7 @@ export default function TodoForm() {
               </div>
             </fieldset>
           </li>
-          <li>
-            <fieldset>
-              <label>
-                <span>{title}</span>
-                <input type="text" name="tasks[0].content" required />
-              </label>
-              <div>
-                <label>
-                  <span>Completed</span>
-                  <input
-                    type="checkbox"
-                    name="tasks[0].completed"
-                    value="yes"
-                  />
-                </label>
-              </div>
-            </fieldset>
-            {/* repeat with tasks[1], tasks[2] and so on */}
-          </li>
+          {/* repeat with tasks[1], tasks[2] and so on */}
         </ul>
       </fieldset>
       <button type="submit">Save</button>
@@ -109,31 +89,39 @@ export default function TodoForm() {
 }
 ```
 
-### Derived config
-
-However, naming fields manually might be error-prone, especailly when you are dealing with complex structure. You can also use the derived name provided by [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist) with optional type hints.
+Configuring fields' name manually might be error-prone. You can also use the derived config provided by [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist).
 
 ```tsx
 export default function TodoForm() {
-  // Define the shape of the schema as `Todo`
+  /**
+   * For better type-safety, you can also provide a schema to `useForm`
+   */
   const form = useForm<Todo>();
 
-  // It warns if you are accessing fields other than title and tasks
+  /**
+   * useFieldset handles object structure. It warns if you are
+   * accessing fields not defined in the schema
+   */
   const { title, tasks } = useFieldset(form.ref, form.config);
 
-  // The hook will warn if the shape of tasks is not an array
-  const [taskList, control] = useFieldList(form.ref, tasks.config);
+  /**
+   * useFieldList handles array structure. It warns if the shape
+   * of field provided is not an array
+   */
+  const [taskList, command] = useFieldList(form.ref, tasks.config);
 
   return (
     <form {...form.props}>
       <fieldset>
         <label>
           <div>Title</div>
+          {/* Configuring the input with the derived name */}
           <input type="text" name={title.config.name} required />
         </label>
         <ul>
           {taskList.map((task, index) => (
             <li key={task.key}>
+              {/* Pass the dervied config down the tree */}
               <TaskFieldset title={`Task #${index + 1}`} {...task.config} />
             </li>
           ))}
@@ -145,7 +133,14 @@ export default function TodoForm() {
 }
 
 export function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
+  /**
+   * If `form.ref` is not accessible, you can use a fieldset ref instead
+   */
   const ref = useRef<HTMLFieldSetElement>(null);
+  /**
+   * The task config will be picked up by the `useFieldset` again
+   * and derived config based on the field
+   */
   const { content, completed } = useFieldset(ref, config);
 
   return (
@@ -167,12 +162,12 @@ export function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 
 ## Form submitter
 
-Similar to input, a submit button can also contribute to the form data when provided a _name_ and _value_ . It will be added to the final form data only when it is the [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter). i.e. being clicked
+Similar to inputs, a submit button can also contribute to the form data when provided a _name_ and _value_ . It will be added to the final form data if it is the [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter). i.e. The button that triggered the submit event
 
 <details>
-<summary>Why is the submitter data not included in the FormData object?</summary>
+<summary>Why is the submitter value not included with `new FormData()`?</summary>
 
-Unfortunately, the FormData API is not able to capture the submitter information for us and requires some manipulations to mimick the browser behaviour. Because of this, **Conform** provides the modified formData to you as well.
+Unfortunately, the FormData API is not able to capture the submitter information directly and requires manipulations to mimick the browser behaviour. Because of this, **Conform** provides the modified formData to you as well.
 
 ```tsx
 function Product() {
@@ -181,16 +176,16 @@ function Product() {
       event.preventDefault();
 
       // This will log `null`
-      console.log(new FormData(event.currentTarget).get('action'));
+      console.log(new FormData(event.currentTarget).get('intent'));
 
       // This will log `bookmark`
-      console.log(formData.get('action'));
+      console.log(formData.get('intent'));
     },
   });
 
   return (
     <form>
-      <button type="submit" name="action" value="bookmark">
+      <button type="submit" name="intent" value="bookmark">
         Bookmark
       </button>
     </form>
@@ -202,7 +197,7 @@ function Product() {
 
 ### Command button
 
-The submitter value makes it possible to extends the form with different behaviour based on the intent added to the form data.
+The submitter value allows us extending the form with different behaviour based on the intent.
 
 ```tsx
 function Product() {
@@ -220,9 +215,9 @@ function Product() {
 }
 ```
 
-However, this also means we are poluting the form data with information that are used for controlling the behaviour of the form only.
+However, this polutes the form data with information that are used for controlling the behaviour of the form only.
 
-**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/submit_), it will be excluded from the structured data (i.e. `submission.value`) with `submission.context` being _submit_ and `submission.intent` being _add-to-cart_ or _buy-now_.
+**Conform** specializes this pattern by referring it as **Command button**. If the submitter name is prefixed with `conform/` (e.g. _conform/submit_), it will be excluded from the structured value with `submission.context` being _validate_ and `submission.intent` being _add-to-cart_ or _buy-now_.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -259,7 +254,7 @@ function Product() {
 
 ### Built-in commands
 
-Command button is also used internally. For example, [useFieldList](/packages/conform-react/README.md#usefieldlist) works by introducing a set of command buttons with `submission.context` being **list**:
+Command button is also used by **conform** internally. For example, it validates the form by clicking on a button named `conform/validate` with the name of the field being the value. While [useFieldList](/packages/conform-react/README.md#usefieldlist) setup the command button with the name `conform/list` and value representing the intent.
 
 ```tsx
 export default function Todos() {
@@ -272,32 +267,27 @@ export default function Todos() {
       <fieldset>
         <label>
           <div>Title</div>
-          <input type="text" name="title" required />
+          <input type="text" name={title.config.name} required />
         </label>
         <ul>
           {taskList.map((task, index) => (
             <li key={task.key}>
               <TaskFieldset title={`Task #${index + 1}`} {...task.config} />
+              {/* Command button 1 */}
               <button {...command.remove({ index })}>Delete</button>
-              <button {...command.reorder({ from: index, to: 0 })}>
-                Move to top
-              </button>
-              <button
-                {...command.replace({ index, defaultValue: { content: '' } })}
-              >
-                Clear
-              </button>
             </li>
           ))}
         </ul>
+        <div>
+          {/* Command button 2 */}
+          <button {...control.append()}>Add task</button>
+        </div>
       </fieldset>
       <button type="submit">Save</button>
     </form>
   );
 }
 ```
-
-Valdation is also done through command buttons. For details, please check the [Validation](./validation) section.
 
 ## Demo
 
