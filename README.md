@@ -24,7 +24,7 @@ export default function LoginForm() {
       console.log(value);
     },
   });
-  const { email, password } = useFieldset(form.ref);
+  const { email, password } = useFieldset(form.ref, form.config);
 
   return (
     <form {...form.props}>

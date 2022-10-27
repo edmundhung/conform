@@ -407,15 +407,15 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
  */
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldsetConfig<Schema>,
+	config: FieldsetConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldConfig<Schema>,
+	config: FieldConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
+	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
@@ -472,7 +472,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 		const invalidHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const field = event.target;
-			const fieldsetName = configRef.current?.name ?? '';
+			const fieldsetName = configRef.current.name ?? '';
 
 			if (
 				!form ||
@@ -525,7 +525,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			setError((prev) => {
 				let next = prev;
 
-				const fieldsetName = configRef.current?.name ?? '';
+				const fieldsetName = configRef.current.name ?? '';
 
 				for (const field of form.elements) {
 					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {

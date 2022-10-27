@@ -7,6 +7,7 @@
 ## API Reference
 
 - [formatError](#formatError)
+- [getFieldsetConstraint](#getfieldsetconstraint)
 
 <!-- /aside -->
 
@@ -81,6 +82,25 @@ export default function ExampleRoute() {
   const form = useForm({
     mode: 'server-validation',
     state,
+  });
+
+  // ...
+}
+```
+
+### getFieldsetConstraint
+
+This tries to infer constraint of each field based on the zod schema. This is useful only for:
+
+1. Make it easy to style input using CSS, e.g. `:required`
+2. Have some basic validation working before/without JS. But the message is not customizable and it might be simpler and cleaner relying on server validation.
+
+```tsx
+import { getFieldsetConstraint } from '@conform-to/zod';
+
+function LoginFieldset() {
+  const { email, password } = useFieldset(ref, {
+    constraint: getFieldsetConstraint(schema),
   });
 
   // ...
