@@ -36,7 +36,8 @@ export default function LoginForm() {
         event.preventDefault();
 
         const formData = new FormData(event.currentTarget);
-        console.log(formData);
+
+        console.log(Object.fromEntries(formData));
       }}
     >
       <label>
@@ -63,9 +64,9 @@ By utilising the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/At
 
 ### Capturing errors
 
-With the help of native form validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up if they try to submit a form with invalid fields. These bubbles, unfortunately, are not customizable.
+With the help of native form validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up when they try to submit a form with invalid fields. These bubbles are not customizable unfortunately. What if we can capture the error messages and decide where to put them ourselves?
 
-What if we can capture the error messages and decide where to put them ourselves? Let's introduce the [useForm](/packages/conform-react/README.md#useform) and [useFieldset](/packages/conform-react/README.md#usefieldset) hooks:
+Let's introduce the [useForm](/packages/conform-react/README.md#useform) and [useFieldset](/packages/conform-react/README.md#usefieldset) hooks.
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -73,63 +74,129 @@ import { useForm, useFieldset } from '@conform-to/react';
 export default function LoginForm() {
   /**
    * The useForm hook let you take control of the browser
-   * validation flow and customize it
+   * validation flow and customize it. The submit event
+   * handler will be called only when the form is valid.
    */
   const form = useForm({
     onSubmit(event, { formData }) {
       event.preventDefault();
 
-      console.log(formData);
+      console.log(Object.fromEntries(formData));
     },
   });
+
   /**
-   * The useFieldset hook let you subscribe to the state
-   * of each field
+   * The useFieldset hook helps you configuring each field and
+   * subscribe to its state. The properties accessed should
+   * match the name of the input.
    */
-  const { email, password } = useFieldset(form.ref);
+  const { email, password } = useFieldset(form.ref, form.config);
 
   return (
     <form {...form.props}>
-      {/* ... */}
+      <label>
+        <div>Email</div>
+        <input type="email" name="email" required autoComplete="off" />
+        {/* The email error captured */}
+        <div>{email.error}</div>
+      </label>
+      <label>
+        <div>Password</div>
+        <input type="password" name="password" required />
+        {/* The password error captured */}
+        <div>{password.error}</div>
+      </label>
+      <label>
+        <div>
+          <span>Remember me</span>
+          <input type="checkbox" name="remember-me" value="yes" />
+        </div>
+      </label>
       <button type="submit">Login</button>
     </form>
   );
 }
 ```
 
-<details>
-<summary>Where are these error messages come from?</summary>
-You might already notice - they are the same as the one you saw on the error bubbles: Indeed, these messages are provided by the browser vendor and might varies depending on your operating system and user language setting.
-</details>
+### Customizing errors
 
-### Styling input
+Although we haven't define any error message yet, the form above will already populate some message depends on the cases. These messages are provided by the browser vendor and might varies depending on your users operating system and language setting. Let's customize it based on the element's [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
 
-It might be common to update the class name based on the error state. However, conform makes it possible to style using a combination of [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) with data attribute as well:
+```tsx
+import { useForm, useFieldset, validateForm } from '@conform-to/react';
 
-```css
-input[data-conform-touched]:invalid {
-  border-color: red;
+export default function LoginForm() {
+  const form = useForm({
+    onValidate({ form }) {
+      /**
+       * The `validateForm` helper will loop through the form elements and call
+       * the provided validate function on each field. The result will then be
+       * formatted to the conform error structure (i.e. Array<[string, string]>).
+       */
+      const error = validateForm(form, (element) => {
+        const messages: string[] = [];
+
+        switch (element.name) {
+          case 'email': {
+            if (element.validity.valueMissing) {
+              /**
+               * This will be true when the input is marked as `required`
+               * while the input is blank
+               */
+              messages.push('Email is required');
+            } else if (element.validity.typeMismatch) {
+              /**
+               * This will be true when the input type is `email`
+               * while the value does not match
+               */
+              messages.push('Email is invalid');
+            }
+            break;
+          }
+          case 'password': {
+            if (element.validity.valueMissing) {
+              messages.push('Password is required');
+            }
+            break;
+          }
+        }
+
+        return messages;
+      });
+
+      // Return the error after validation
+      return error;
+    },
+
+    // ....
+  });
+
+  // ...
 }
 ```
 
-### Early reporting
+### Reporting errors
 
-Currently, form error will not be reported until a submission is made. If you want it to be shown earlier, just set the `initialReport` option to `onBlur` and now error should be reported once the user leave the field:
+Currently, form error will not be reported until a submission is made. If you want to have it shown earlier, you can set the `initialReport` option to `onBlur` and now error will be reported once the user leave the field.
 
 ```tsx
 import { useForm } from '@conform-to/react';
 
 export default function LoginForm() {
   const form = useForm({
+    /**
+     * Define when the error should be reported initially.
+     * Support "onSubmit", "onChange", "onBlur".
+     *
+     * Default to `onSubmit`.
+     */
     initialReport: 'onBlur',
+    onSubmit(event, { formData }) {
+      // ...
+    },
   });
 
-  return (
-    <form {...form.props}>
-      {/* ... */}
-      <button type="submit">Login</button>
-    </form>
-  );
+  // ...
 }
 ```
 

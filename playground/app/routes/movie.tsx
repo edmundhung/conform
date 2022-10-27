@@ -1,10 +1,10 @@
 import type { FieldsetConstraint } from '@conform-to/react';
 import {
 	conform,
-	getFormError,
 	parse,
 	useFieldset,
 	useForm,
+	validateForm,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -85,43 +85,35 @@ export default function MovieForm() {
 		state,
 		onValidate: config.validate
 			? ({ form }) =>
-					getFormError(form, (field) => {
-						let message = '';
+					validateForm(form, (element) => {
+						const messages: string[] = [];
 
-						switch (field.name) {
+						switch (element.name) {
 							case 'title':
-								if (field.validity.valueMissing) {
-									message = 'Title is required';
-								} else if (field.validity.patternMismatch) {
-									message = 'Please enter a valid title';
-								} else {
-									message = '';
+								if (element.validity.valueMissing) {
+									messages.push('Title is required');
+								} else if (element.validity.patternMismatch) {
+									messages.push('Please enter a valid title');
 								}
 								break;
 							case 'description':
-								if (field.validity.tooShort) {
-									message = 'Please provides more details';
-								} else {
-									message = '';
+								if (element.validity.tooShort) {
+									messages.push('Please provides more details');
 								}
 								break;
 							case 'genre':
-								if (field.validity.valueMissing) {
-									message = 'Genre is required';
-								} else {
-									message = '';
+								if (element.validity.valueMissing) {
+									messages.push('Genre is required');
 								}
 								break;
 							case 'rating':
-								if (field.validity.stepMismatch) {
-									message = 'The provided rating is invalid';
-								} else {
-									message = '';
+								if (element.validity.stepMismatch) {
+									messages.push('The provided rating is invalid');
 								}
 								break;
 						}
 
-						return [[field.name, message]];
+						return messages;
 					})
 			: undefined,
 		onSubmit:

@@ -19,7 +19,7 @@ import {
 	requestValidate,
 	setFormError,
 	updateList,
-	getFormError,
+	validateForm,
 	hasError,
 } from '@conform-to/dom';
 import {
@@ -323,7 +323,7 @@ export function useForm<Schema extends Record<string, any>>(
 							setFormError(form, { context: 'submit', value: {}, error: [] });
 						}
 
-						error = getFormError(form);
+						error = validateForm(form);
 					}
 
 					if (error.length > 0) {

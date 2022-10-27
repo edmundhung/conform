@@ -122,18 +122,18 @@ export function hasError(
 	);
 }
 
-export function getFormError(
+export function validateForm(
 	form: HTMLFormElement,
-	getFieldError?: (field: FieldElement) => Array<[string, string]>,
+	validateField?: (element: FieldElement) => string[],
 ): Array<[string, string]> {
 	let error: Array<[string, string]> = [];
 
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
+			const messages = validateField?.(element) ?? [element.validationMessage];
+
 			error.push(
-				...(getFieldError?.(element) ?? [
-					[element.name, element.validationMessage],
-				]),
+				...messages.map<[string, string]>((message) => [element.name, message]),
 			);
 		}
 	}

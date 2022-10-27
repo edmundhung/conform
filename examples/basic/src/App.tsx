@@ -1,22 +1,41 @@
-import { useForm, useFieldset } from '@conform-to/react';
+import { useForm, useFieldset, validateForm } from '@conform-to/react';
 
 export default function LoginForm() {
-	/**
-	 * The useForm hook let you take control of the browser
-	 * validation flow and customize it
-	 */
 	const form = useForm({
+		initialReport: 'onBlur',
+		onValidate({ form }) {
+			const error = validateForm(form, (element) => {
+				const messages: string[] = [];
+
+				switch (element.name) {
+					case 'email': {
+						if (element.validity.valueMissing) {
+							messages.push('Email is required');
+						} else if (element.validity.typeMismatch) {
+							messages.push('Email is invalid');
+						}
+						break;
+					}
+					case 'password': {
+						if (element.validity.valueMissing) {
+							messages.push('Password is required');
+						}
+						break;
+					}
+				}
+
+				return messages;
+			});
+
+			return error;
+		},
 		onSubmit(event, { formData }) {
 			event.preventDefault();
 
 			console.log(Object.fromEntries(formData));
 		},
 	});
-	/**
-	 * The useFieldset hook let you subscribe to the state
-	 * of each field
-	 */
-	const { email, password } = useFieldset(form.ref);
+	const { email, password } = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>
