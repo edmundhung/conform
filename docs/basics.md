@@ -1,6 +1,6 @@
 # Basics
 
-In this section, we will cover how to build a simple login form by utilizing native constraint and then enhancing it with conform.
+In this section, we will show how to build a login form by utilizing the Constraint Validation API with **Conform**.
 
 <!-- aside -->
 
@@ -10,7 +10,7 @@ In this section, we will cover how to build a simple login form by utilizing nat
 - [Quick start](#quick-start)
 - [Constraint Validation](#constraint-validation)
 - [Capturing errors](#capturing-errors)
-- [Styling input](#styling-input)
+- [Customize messages](#customize-messages)
 - [Early reporting](#early-reporting)
 - [Demo](#demo)
 
@@ -129,7 +129,7 @@ export default function LoginForm() {
 }
 ```
 
-### Customizing errors
+### Customize messages
 
 Although we haven't define any error message yet, the form above will already populate some message depends on the cases. These messages are provided by the browser vendor and might varies depending on your users operating system and language setting. Let's customize it based on the element's [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
 
@@ -191,7 +191,7 @@ export default function LoginForm() {
 }
 ```
 
-### Reporting errors
+### Early reporting
 
 Currently, form error will not be reported until a submission is made. If you want to have it shown earlier, you can set the `initialReport` option to `onBlur` and now error will be reported once the user leave the field.
 

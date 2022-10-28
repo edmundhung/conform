@@ -15,7 +15,7 @@ const schema = z
 		'confirm-password': z.string().min(1, 'Confirm Password is required'),
 	})
 	.refine((value) => value.password === value['confirm-password'], {
-		message: 'The password does not match',
+		message: 'Password does not match',
 		path: ['confirm-password'],
 	});
 

@@ -1,6 +1,6 @@
 # Validation
 
-**Conform** validates your form by making a submission and treats the client validation as a middleware.
+In this section, we will walk you through how to validate a signup form based on different requirements.
 
 <!-- aside -->
 
@@ -8,11 +8,11 @@
 
 - [Concept](#concept)
 - [Server Validation](#server-validation)
-  - [Schema Integration](#schema-integration)
-  - [Validating on-demand](#validating-on-demand)
+  - [Validate with a schema](#validate-with-a-schema)
 - [Client Validation](#client-validation)
-  - [Sharing logics](#sharing-logics)
-  - [Fallback](#fallback)
+- [Async Validation](#async-validation)
+  - [Setup a passthrough](#setup-a-passthrough)
+  - [Validate on-demand](#validate-on-demand)
 - [Demo](#demo)
 
 <!-- /aside -->
@@ -21,23 +21,26 @@
 
 Conform tries to simplify the mental model by utilizing a server-first validation flow which submits your form for validation. This is achieved by creating a hidden [command button](./submission.md#built-in-commands) and clicking on it whenever validation is needed.
 
-Client validation can then be used to reduce the feedback loop by using the validation result on the client side to decide if the submission should be blocked through `event.preventDefault()`.
+Now, client validation can be treated as a way to shorten the feedback loop. You can also setup a [passthrough](#setup-a-passthrough) based on the client validation result to decide if the submission should be rejected with `event.preventDefault()`.
 
 ## Server Validation
 
 **Conform** tries to makes it easy to validate the form data on the server. For example, you can validate a login form **fully server side** with Remix as shown below:
 
-```tsx
-import { useForm, useFieldset, parse } from '@conform-to/react';
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/server-validation&file=/app/routes/server-validation.tsx).
 
-interface LoginForm {
+```tsx
+import { parse, useFieldset, useForm } from '@conform-to/react';
+
+interface SignupForm {
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
-export async function action({ request }) {
+export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse<LoginForm>(formData);
+  const submission = parse<SignupForm>(formData);
 
   try {
     switch (submission.context) {
@@ -55,13 +58,25 @@ export async function action({ request }) {
           submission.error.push(['password', 'Password is required']);
         }
 
-        /**
-         * No login should happen when the context is `validate`
-         * or if there is any error
-         */
-        if (submission.context === 'submit' && submission.error.length === 0) {
-          return await login(submission.value);
+        if (!submission.value.confirmPassword) {
+          submission.error.push([
+            'confirmPassword',
+            'Confirm password is required',
+          ]);
+        } else if (
+          submission.value.confirmPassword !== submission.value.password
+        ) {
+          submission.error.push(['confirmPassword', 'Password does not match']);
         }
+
+        /**
+         * Signup only when the user click on the submit button
+         * and no error found
+         */
+        if (submission.context === 'submit' && !hasError(submission.error)) {
+          return await signup(submission.value);
+        }
+
         break;
     }
   } catch (error) {
@@ -70,10 +85,10 @@ export async function action({ request }) {
      * treated as a form-level error and populated
      * on the client side as `form.error`
      */
-    submission.error.push(['', 'Login failed']);
+    submission.error.push(['', 'Oops! Something went wrong.']);
   }
 
-  // Always sends the submission state back to client until the user is logged-in
+  // Always sends the submission state back to client until the user is signed up
   return json({
     ...submission,
     value: {
@@ -83,194 +98,147 @@ export async function action({ request }) {
   });
 }
 
-export default function login() {
-  const state = useActionData();
-  const form = useForm({
-    /**
-     * This tells conform to validate with the server.
-     * It defaults to `client-only` if not specified
-     */
+export default function Signup() {
+  // Last submission returned by the server
+  const state = useActionData<typeof action>();
+  const form = useForm<SignupForm>({
+    // Enable server validation mode
     mode: 'server-validation',
 
-    /**
-     * Conform will report the server error based on the last
-     * submission state
-     */
+    // Begin validating on blur
+    initialReport: 'onBlur',
+
+    // Sync the result of last submission
     state,
   });
-  const { email, password } = useFieldset(form.ref, form.config);
 
-  return (
-    <Form method="post" {...form.props}>
-      <div>{form.error}</div>
-      <input type="text" name="email" />
-      <div>{email.error}</div>
-      <input type="password" name="password" />
-      <div>{password.error}</div>
-      <button type="submit">Login</button>
-    </Form>
-  );
+  // ...
 }
 ```
 
-### Schema Integration
+### Validate with a schema
 
-Integrating with a schema validation library is also straight-forwad. For example, you can integrate it with `zod` like this:
+Writing validation logic manually could be cumbersome. You can also use a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod&file=/app/routes/zod.tsx).
 
 ```tsx
-import { parse } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import { z } from 'zod';
 
-export async function action({ request }) {
-  const formData = await request.formData();
-  const submission = parse(formData);
-  const schema = z.object({
-    email: z.string().min(1, 'Email is required').email('Email is invalid'),
-    password: z.string().min(1, 'Password is required'),
-  });
+export async function action({ request }: ActionArgs) {
+	const formData = await request.formData();
+	const submission = parse(formData);
 
-  try {
-    const data = schema.parse(submission.value);
+	try {
+		switch (submission.context) {gndform
+			case 'validate':
+			case 'submit': {
+				const data = z
+          .object({
+            email: z.string()
+              .min(1, 'Email is required')
+              .email('Email is invalid'),
+            password: z
+              .string()
+              .min(1, 'Password is required'),
+            confirmPassword: z
+              .string()
+              .min(1, 'Confirm Password is required'),
+          })
+          .refine(data => data.password === data.confirmPassword, {
+            message: 'Password does not match',
+            path: ['confirmPassword'],
+          })
+          .parse(submission.value);
 
-    if (submission.context === 'submit') {
-      return await login(result.data);
-    }
-  } catch (error) {
-    /**
-     * The `formatError` helpers simply resolves the ZodError to
-     * a set of key/value pairs which refers to the name and
-     * error of each field.
-     */
-    submission.error = submission.error.concat(formatError(error));
-  }
+				if (submission.context === 'submit') {
+					return await signup(data);
+				}
 
-  return submission;
-}
-```
+				break;
+			}
+		}
+	} catch (error) {
+		submission.error = submission.error.concat(formatError(error));
+	}
 
-### Validating on-demand
-
-Some validation rule could be expensive especially when it requires query result from database or even 3rd party services. This can be minimized by checking the submission context and intent, or using the `shouldValidate()` helper.
-
-```tsx
-import { parse, shouldValidate } from '@conform-to/react';
-
-export async function action({ request }) {
-  const formData = await request.formData();
-  const submission = parse(formData);
-
-  if (!submission.value.email) {
-    submission.error.push(['email', 'Email is required']);
-  } else if (!submission.value.email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
-  } else if (
-    // Continue checking only if necessary
-    shouldValidate(submission, 'email') &&
-    // e.g. Verifying if the email exists on the database (Example only)
-    (await isRegistered(submission.value.email))
-  ) {
-    submission.error.push(['email', 'Email is not registered']);
-  }
-
-  if (!submission.value.password) {
-    submission.error.push(['password', 'Password is required']);
-  }
-
-  /* ... */
+	return json(submission);
 }
 ```
 
 ## Client Validation
 
-Client validation can be added to reduce the feedback loop.
-
-### Sharing logics
-
-For example, you can share validation logics between the server and client.
+Validating fully on server side is great. But, if network latency is a concern, we can also share the validation logic on client side to shorten the feedback loop.
 
 ```tsx
 import type { Submission } from '@conform-to/react';
 import { useForm, useFieldset, parse } from '@conform-to/react';
 
-interface LoginForm {
-  email: string;
-  password: string;
-}
-
 /**
- * Move the validation logic out so it can be used
+ * Move the validation logic out of action so it can be used
  * on both client and server side
  */
-function validate(submission: Submission<LoginForm>): Array<[string, string]> {
-  const error: Array<[string, string]> = [];
+const schema = z
+  .object({
+    email: z.string().min(1, 'Email is required').email('Email is invalid'),
+    password: z.string().min(1, 'Password is required'),
+    confirmPassword: z.string().min(1, 'Confirm Password is required'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Password does not match',
+    path: ['confirmPassword'],
+  });
 
-  if (!submission.value.email) {
-    error.push(['email', 'Email is required']);
-  } else if (!submission.value.email.includes('@')) {
-    error.push(['email', 'Email is invalid']);
-  }
-
-  if (!submission.value.password) {
-    error.push(['password', 'Password is required']);
-  }
-
-  return error;
-}
-
-export async function action({ request }) {
+export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse<LoginForm>(formData);
+  const submission = parse(formData);
 
   try {
     switch (submission.context) {
-      case 'submit':
-      case 'validate': {
-        const error = validate(submission)
+      case 'validate':
+      case 'submit': {
+        const data = schema.parse(submission.value);
 
-        if (error.length > 0) {
-          submission.error =  submission.error.concat(error);
+        if (submission.context === 'submit') {
+          return await signup(data);
         }
 
-        if (submission.context === 'submit' && submission.error.length === 0) {
-          return await login(submission.value);
-        }
         break;
       }
+    }
   } catch (error) {
-    error.push(['', 'Login failed']);
+    submission.error = submission.error.concat(formatError(error));
   }
 
-  return json({
-    ...submission,
-    value: {
-      email: submission.value.email,
-    },
-  });
+  return json(submission);
 }
 
-export default function login() {
+export default function Signup() {
   const state = useActionData();
   const form = useForm({
-    mode: 'server-validation',
-    state,
-    onValidate({ submission }) {
-      // Reuse the validation logic
-      return validate(submission);
-    },
+    /**
+     * Changing the mode to `client-only` as the client
+     * validation does exactly the same checks as the
+     * server now. There is no need to confirm with the
+     * server again.
+     *
+     * This can be omitted directly as it is the default mode
+     */
+    mode: 'client-only',
 
-    onSubmit(event, { submission }) {
-      /**
-       * This checks can be removed by specifying the `mode` as
-       * 'client-only' instead of `server-validation`
-       */
-      if (submission.context === 'validate') {
-        /**
-         * As the client validation cover all the checks,
-         * there is no need to be validated by the server.
-         */
-        event.preventDefault();
+    state,
+
+    // Setup client validation
+    onValidate({ submission }) {
+      // Reuse the zod schema on client side
+      const result = schema.safeParse(submission.value);
+
+      if (result.success) {
+        return [];
       }
+
+      return formatError(result.error);
     },
   });
 
@@ -278,34 +246,44 @@ export default function login() {
 }
 ```
 
-### Fallback
+## Async valdiation
 
-However, sometimes not every validation rules can be applied client side. Let's fallback to server validation.
+Everything we did so far looks great, until one day, the requirment is changed. Now your user should also provide a _username_ which has to be **unique**. There are 2 situations here:
+
+1. You are validating fully on the server: Just query the database on the server and add an error message if it is used.
+2. You are validating also on the client: How?
+
+### Setup a passthrough
+
+The answer is to setup a **passthrough**. You can use the submission state to decide if confirming with the server is needed and let it do the job.
 
 ```tsx
-import type { Submission } from '@conform-to/react';
 import { hasError } from '@conform-to/react';
 
 export function action() {
   // ...
 }
 
-export default function login() {
+export default function Signup() {
   const state = useActionData();
   const form = useForm({
+    /**
+     * Changing the mode back to `server-validation`
+     * as you want to confirm with the server now.
+     */
     mode: 'server-validation',
     state,
-    onValidate({ form, submission }) {
-      return validate(submission);
+    onValidate({ submission }) {
+      // ...
     },
     onSubmit(event, { submission }) {
       /**
-       * Block the submission only when validating fields
-       * other than email or if email has any error already
+       * Let the submission passthrough if it is validating
+       * the username field and no error found on the client
        */
       if (
         submission.context === 'validate' &&
-        (submission.intent !== 'email' || hasError(error, 'email'))
+        (submission.intent !== 'username' || hasError(error, 'username'))
       ) {
         event.preventDefault();
       }
@@ -313,6 +291,54 @@ export default function login() {
   });
 
   // ...
+}
+```
+
+### Validate on-demand
+
+Some validation rules could be expensive especially when they require querying from database or 3rd party services. This can be minimized by checking the submission context and intent, or using the `shouldValidate()` helper.
+
+```tsx
+import { parse, shouldValidate } from '@conform-to/react';
+
+export async function action({ request }: ActionArgs) {
+  const formData = await request.formData();
+  const submission = parse(formData);
+
+  try {
+    switch (submission.context) {
+      case 'validate':
+      case 'submit': {
+        const data = await schema
+          .refine(
+            async ({ username }) => {
+              // Continue checking only if necessary
+              if (!shouldValidate(submission, 'username')) {
+                return true;
+              }
+
+              // Verifying if the username is already registed
+              return await isUsernameUnique(username);
+            },
+            {
+              message: 'Username is already used',
+              path: ['username'],
+            },
+          )
+          .parseAsync(submission.value);
+
+        if (submission.context === 'submit') {
+          return await signup(data);
+        }
+
+        break;
+      }
+    }
+  } catch (error) {
+    submission.error = submission.error.concat(formatError(error));
+  }
+
+  return json(submission);
 }
 ```
 

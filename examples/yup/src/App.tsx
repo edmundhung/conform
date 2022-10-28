@@ -14,7 +14,7 @@ const schema = yup.object({
 	'confirm-password': yup
 		.string()
 		.required('Confirm Password is required')
-		.equals([yup.ref('password')], 'The password does not match'),
+		.equals([yup.ref('password')], 'Password does not match'),
 });
 
 export default function SignupForm() {

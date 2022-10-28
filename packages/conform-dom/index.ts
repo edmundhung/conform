@@ -102,10 +102,11 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name: string): boolean {
+export function shouldValidate(submission: Submission, name?: string): boolean {
 	return (
 		submission.context === 'submit' ||
-		(submission.context === 'validate' && submission.intent === name)
+		(submission.context === 'validate' &&
+			(typeof name === 'undefined' || submission.intent === name))
 	);
 }
 

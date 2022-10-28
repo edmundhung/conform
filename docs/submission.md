@@ -1,6 +1,6 @@
 # Submission
 
-Submission is basically formData utilizing **Conform**'s naming convention.
+Submission is basically form data utilizing **Conform**'s naming convention.
 
 <!-- aside -->
 

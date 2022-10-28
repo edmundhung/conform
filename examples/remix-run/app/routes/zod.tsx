@@ -1,25 +1,22 @@
-import {
-	conform,
-	parse,
-	shouldValidate,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
+import { conform, parse, useFieldset, useForm } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
-import { json, redirect } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 
-async function isEmailUnique(email: string): Promise<boolean> {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve(email !== 'me@edmund.dev');
-		}, Math.random() * 100);
+const schema = z
+	.object({
+		email: z.string().min(1, 'Email is required').email('Email is invalid'),
+		password: z.string().min(1, 'Password is required'),
+		confirmPassword: z.string().min(1, 'Confirm Password is required'),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: 'Password does not match',
+		path: ['confirmPassword'],
 	});
-}
 
-async function createEmployee(data: unknown): Promise<void> {
+async function signup(data: unknown) {
 	throw new Error('Not implemented');
 }
 
@@ -28,35 +25,17 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		const data = await z
-			.object({
-				name: z.string().min(1, 'Name is required'),
-				email: z.string().min(1, 'Email is required').email('Email is invalid'),
-				title: z
-					.string()
-					.min(1, 'Title is required')
-					.max(20, 'Title is too long'),
-			})
-			.refine(
-				async (employee) => {
-					// Validate only if necessary
-					if (!shouldValidate(submission, 'email')) {
-						return true;
-					}
+		switch (submission.context) {
+			case 'validate':
+			case 'submit': {
+				const data = schema.parse(submission.value);
 
-					return await isEmailUnique(employee.email);
-				},
-				{
-					message: 'Email is already used',
-					path: ['email'],
-				},
-			)
-			.parseAsync(submission.value);
+				if (submission.context === 'submit') {
+					return await signup(data);
+				}
 
-		if (submission.context === 'submit') {
-			await createEmployee(data);
-
-			return redirect('/');
+				break;
+			}
 		}
 	} catch (error) {
 		submission.error = submission.error.concat(formatError(error));
@@ -65,27 +44,22 @@ export async function action({ request }: ActionArgs) {
 	return json(submission);
 }
 
-export default function EmployeeForm() {
+export default function Signup() {
 	const state = useActionData<typeof action>();
-	const form = useForm({
+	const form = useForm<z.infer<typeof schema>>({
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
 	});
-	const { name, email, title } = useFieldset(form.ref, form.config);
+	const { email, password, confirmPassword } = useFieldset(
+		form.ref,
+		form.config,
+	);
 
 	return (
 		<Form method="post" {...form.props}>
 			<fieldset>
 				<legend>{form.error}</legend>
-				<label>
-					<div>Name</div>
-					<input
-						className={name.error ? 'error' : ''}
-						{...conform.input(name.config)}
-					/>
-					<div>{name.error}</div>
-				</label>
 				<label>
 					<div>Email</div>
 					<input
@@ -95,15 +69,23 @@ export default function EmployeeForm() {
 					<div>{email.error}</div>
 				</label>
 				<label>
-					<div>Title</div>
+					<div>Password</div>
 					<input
-						className={title.error ? 'error' : ''}
-						{...conform.input(title.config)}
+						className={password.error ? 'error' : ''}
+						{...conform.input(password.config, { type: 'password' })}
 					/>
-					<div>{title.error}</div>
+					<div>{password.error}</div>
+				</label>
+				<label>
+					<div>Confirm Password</div>
+					<input
+						className={confirmPassword.error ? 'error' : ''}
+						{...conform.input(confirmPassword.config, { type: 'password' })}
+					/>
+					<div>{confirmPassword.error}</div>
 				</label>
 			</fieldset>
-			<button type="submit">Save</button>
+			<button type="submit">Signup</button>
 		</Form>
 	);
 }
