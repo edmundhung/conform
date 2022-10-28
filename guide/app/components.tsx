@@ -157,6 +157,8 @@ export function Link({
 
 	if (to.startsWith('/packages/')) {
 		to = to.replace('/packages/conform-', '/api/').replace('/README.md', '');
+	} else if (to.startsWith('/docs/')) {
+		to = to.replace('/docs/', '').replace('.md', '');
 	} else {
 		to = to.replace('.md', '');
 	}

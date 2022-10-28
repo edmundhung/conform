@@ -19,7 +19,7 @@ In this section, we will walk you through how to validate a signup form based on
 
 ## Concept
 
-Conform tries to simplify the mental model by utilizing a server-first validation flow which submits your form for validation. This is achieved by creating a hidden [command button](./submission.md#built-in-commands) and clicking on it whenever validation is needed.
+Conform tries to simplify the mental model by utilizing a server-first validation flow which submits your form for validation. This is achieved by creating a hidden [command button](/docs/submission.md#built-in-commands) and clicking on it whenever validation is needed.
 
 Now, client validation can be treated as a way to shorten the feedback loop. You can also setup a [passthrough](#setup-a-passthrough) based on the client validation result to decide if the submission should be rejected with `event.preventDefault()`.
 
