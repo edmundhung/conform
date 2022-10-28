@@ -325,7 +325,7 @@ function ExampleForm() {
 
 ### useFieldList
 
-It returns a list of key and config, with helpers to configure command buttons for list modification.
+It returns a list of key and config, with helpers to configure command buttons with [list command](/docs/submission.md#list-command).
 
 ```tsx
 import { useFieldset, useFieldList } from '@conform-to/react';

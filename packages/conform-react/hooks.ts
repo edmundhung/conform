@@ -317,13 +317,25 @@ export function useForm<Schema extends Record<string, any>>(
 
 					if (typeof config.onValidate === 'function') {
 						error = config.onValidate(context);
-					} else {
-						if (config.mode !== 'server-validation') {
-							// Clear previous result
-							setFormError(form, { context: 'submit', value: {}, error: [] });
-						}
+					} else if (config.mode !== 'server-validation') {
+						/**
+						 * As there is no custom validation logic defined,
+						 * removing the custom validity state will allow us
+						 * finding the latest validation message.
+						 *
+						 * This is mainly used to showcase the constraint validation API
+						 * with no actual usage and should be updated with a more meaningful
+						 * default in the future.
+						 */
+						setFormError(form, { context: 'submit', value: {}, error: [] });
 
 						error = validateForm(form);
+					} else {
+						/**
+						 * When validating fully on the server side, client error will not
+						 * be considered.
+						 */
+						error = [];
 					}
 
 					if (error.length > 0) {

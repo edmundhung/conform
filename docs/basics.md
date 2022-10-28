@@ -1,6 +1,6 @@
 # Basics
 
-In this section, we will show how to build a login form by utilizing the Constraint Validation API with **Conform**.
+In this section, we will show how to build a login form by utilizing the **Constraint Validation** API with **Conform**.
 
 <!-- aside -->
 
@@ -26,7 +26,7 @@ npm install @conform-to/react
 
 To begin, let's make a login form with 2 basic requirements:
 
-- The **email** field should be a valid email address
+- The **email** field should contain a valid email address
 - The **password** field should not be empty
 
 ```tsx
@@ -61,17 +61,17 @@ export default function LoginForm() {
 }
 ```
 
-Both the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute and the email input type is a part of the [Constraint Validation](#constraint-validation) API. It tells the browser to stop users from submitting the from until they provide a valid email address with the password.
+Both the **email** input type and the [required](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required) attribute are parts of the [Constraint Validation](#constraint-validation) API. It tells the browser to stop users from submitting the form until they provide a valid email address with the password.
 
 ### Constraint Validation
 
 The [Constraint Validation](https://caniuse.com/constraint-validation) API is introduced with HTML5 to enable native client side form validation. This includes:
 
 - Utilizing [HTML attributes](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes) for validations (e.g. `required`, `type`)
-- Accessing form validity and configure custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validityState`, `setCustomValidity()`)
+- Accessing form validity and configuring custom constraint through the [DOM APIs](https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation#extensions_to_other_interfaces) (e.g `validityState`, `setCustomValidity()`)
 - Styling form elements with [CSS pseudo-class](https://developer.mozilla.org/en-US/docs/Learn/Forms/Form_validation#the_constraint_validation_api) based on the validity (e.g. `:required`, `:invalid`)
 
-Conform utilize these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
+Conform utilizes these APIs internally. For example, form errors are reported by listening to the [invalid event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) and the error messages are captured from the element [validationMessage](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) property.
 
 ### Capturing errors
 
@@ -97,9 +97,9 @@ export default function LoginForm() {
   });
 
   /**
-   * The useFieldset hook helps you configuring each field and
+   * The useFieldset hook helps you configure each field and
    * subscribe to its state. The properties accessed should
-   * match the name of the input.
+   * match the name of the inputs.
    */
   const { email, password } = useFieldset(form.ref, form.config);
 
@@ -131,7 +131,7 @@ export default function LoginForm() {
 
 ### Customize messages
 
-Although we haven't define any error message yet, the form above will already populate some message depends on the cases. These messages are provided by the browser vendor and might varies depending on your users operating system and language setting. Let's customize it based on the element's [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
+Although we haven't define any error messages yet, the form above should be able to populate some message depends on the conditions. These messages are provided by the browser vendor and might vary depending on your users operating system and language setting. Let's customize messages based on the elements' [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
 
 ```tsx
 import { useForm, useFieldset, validateForm } from '@conform-to/react';
@@ -193,7 +193,7 @@ export default function LoginForm() {
 
 ### Early reporting
 
-Currently, form error will not be reported until a submission is made. If you want to have it shown earlier, you can set the `initialReport` option to `onBlur` and now error will be reported once the user leave the field.
+Currently, form error is reported only when a submission is made. If you want it to be shown earlier, you can set the `initialReport` option to `onBlur` and then error will be reported once the user leave the field.
 
 ```tsx
 import { useForm } from '@conform-to/react';
