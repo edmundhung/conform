@@ -2,7 +2,7 @@
 	"name": "@conform-to/basic-example",
 	"private": true,
 	"dependencies": {
-		"@conform-to/react": "0.4.0-pre.2",
+		"@conform-to/react": "0.4.0-pre.3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-scripts": "5.0.1"
