@@ -47,7 +47,7 @@ interface TodoList {
 }
 ```
 
-Approach 1 is to setup manually:
+The first approach is to setup manually:
 
 ```tsx
 export default function TodoForm() {
@@ -88,7 +88,7 @@ export default function TodoForm() {
 }
 ```
 
-Configuring fields' name manually might be error-prone. Approach 2 is to use the derived config provided by [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist).
+Configuring fields' name manually might be error-prone. Another approach is to use the derived config provided by [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist).
 
 ```tsx
 export default function TodoForm() {

@@ -22,7 +22,7 @@ async function signup(data: unknown) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse<z.infer<typeof schema>>(formData);
 
 	try {
 		switch (submission.type) {
@@ -41,7 +41,12 @@ export async function action({ request }: ActionArgs) {
 		submission.error.push(...formatError(error));
 	}
 
-	return json(submission);
+	return json({
+		...submission,
+		value: {
+			email: submission.value.email,
+		},
+	});
 }
 
 export default function Signup() {

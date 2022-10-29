@@ -6,7 +6,7 @@ import {
 	hasError,
 	shouldValidate,
 } from '@conform-to/react';
-import { formatError } from '@conform-to/zod';
+import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -77,25 +77,22 @@ export async function action({ request }: ActionArgs) {
 		submission.error.push(...formatError(error));
 	}
 
-	return json(submission);
+	return json({
+		...submission,
+		value: {
+			email: submission.value.email,
+		},
+	});
 }
 
 export default function Signup() {
 	const state = useActionData<typeof action>();
-	const form = useForm<z.infer<typeof schema>>({
+	const form = useForm({
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
-			const submission = parse(formData);
-
-			try {
-				schema.parse(submission.value);
-			} catch (error) {
-				submission.error.push(...formatError(error));
-			}
-
-			return submission;
+			return validate(formData, schema);
 		},
 		onSubmit(event, { submission }) {
 			// Only the email field requires additional validation from the server

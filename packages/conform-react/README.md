@@ -11,11 +11,11 @@
 - [useFieldList](#usefieldlist)
 - [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
+- [getFormError](#getFormError)
 - [hasError](#haserror)
 - [isFieldElement](#isfieldelement)
 - [parse](#parse)
 - [shouldValidate](#shouldvalidate)
-- [getFormError](#getFormError)
 
 <!-- /aside -->
 
@@ -555,6 +555,67 @@ function RandomForm() {
 }
 ```
 
+---
+
+### getFormError
+
+It will loop through the form elements and call the provided validate function on each field. The result will then be formatted to the conform error structure. It can be used for client validation only.
+
+```tsx
+export default function LoginForm() {
+  const form = useForm({
+    onValidate({ form, formData }) {
+      const submission = parse(formData);
+      const error = getFormError(form, (element) => {
+        const messages: string[] = [];
+
+        switch (element.name) {
+          case 'email': {
+            if (element.validity.valueMissing) {
+              /**
+               * This will be true when the input is marked as `required`
+               * while the input is blank
+               */
+              messages.push('Email is required');
+            } else if (element.validity.typeMismatch) {
+              /**
+               * This will be true when the input type is `email`
+               * while the value does not match
+               */
+              messages.push('Email is invalid');
+            } else if (!element.value.endsWith('gmail.com')) {
+              /**
+               * We can also validate the field manually with custom logic
+               */
+              messages.push('Only gmail is accepted');
+            }
+            break;
+          }
+          case 'password': {
+            // ...
+            break;
+          }
+        }
+
+        return messages;
+      });
+
+      // Returns the submission state
+      return {
+        ...submission,
+        error: submission.error.concat(error),
+      };
+    },
+
+    // ....
+  });
+
+  // ...
+}
+```
+
+---
+
 ### hasError
 
 This helper checks if there is any message defined in error array with the provided name.
@@ -656,63 +717,4 @@ console.log(shouldValidate(submission, 'email'));
 
 // This will log 'false'
 console.log(shouldValidate(submission, 'password'));
-```
-
----
-
-### getFormError
-
-It will loop through the form elements and call the provided validate function on each field. The result will then be formatted to the conform error structure. It can be used for client validation only.
-
-```tsx
-export default function LoginForm() {
-  const form = useForm({
-    onValidate({ form, formData }) {
-      const submission = parse(formData);
-      const error = getFormError(form, (element) => {
-        const messages: string[] = [];
-
-        switch (element.name) {
-          case 'email': {
-            if (element.validity.valueMissing) {
-              /**
-               * This will be true when the input is marked as `required`
-               * while the input is blank
-               */
-              messages.push('Email is required');
-            } else if (element.validity.typeMismatch) {
-              /**
-               * This will be true when the input type is `email`
-               * while the value does not match
-               */
-              messages.push('Email is invalid');
-            } else if (!element.value.endsWith('gmail.com')) {
-              /**
-               * We can also validate the field manually with custom logic
-               */
-              messages.push('Only gmail is accepted');
-            }
-            break;
-          }
-          case 'password': {
-            // ...
-            break;
-          }
-        }
-
-        return messages;
-      });
-
-      // Returns the submission state
-      return {
-        ...submission,
-        error: submission.error.concat(error),
-      };
-    },
-
-    // ....
-  });
-
-  // ...
-}
 ```

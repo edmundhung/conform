@@ -562,7 +562,9 @@ test.describe('Server Validation', () => {
 
 		await email.type('e');
 
-		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect
+			.poll(() => getErrorMessages(form), { timeout: 10000 })
+			.toEqual(['', '', '', '']);
 
 		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 

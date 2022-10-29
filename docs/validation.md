@@ -27,8 +27,6 @@ Now, client validation can be treated as a way to shorten the feedback loop. You
 
 **Conform** tries to makes it easy to validate the form data on the server. For example, you can validate a login form **fully server side** with Remix as shown below:
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/server-validation&file=/app/routes/server-validation.tsx).
-
 ```tsx
 import { parse, useFieldset, useForm } from '@conform-to/react';
 
@@ -116,11 +114,11 @@ export default function Signup() {
 }
 ```
 
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/server-validation&file=/app/routes/server-validation.tsx).
+
 ### Validate with a schema
 
 Writing validation logic manually could be cumbersome. You can also use a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
-
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod&file=/app/routes/zod.tsx).
 
 ```tsx
 import { formatError } from '@conform-to/zod';
@@ -161,6 +159,8 @@ export async function action({ request }: ActionArgs) {
   return json(submission);
 }
 ```
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod&file=/app/routes/zod.tsx).
 
 ## Client Validation
 
