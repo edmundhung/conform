@@ -9,7 +9,6 @@ import {
 	focusFirstInvalidField,
 	getFormData,
 	getFormElement,
-	getFormError,
 	getName,
 	getPaths,
 	getSubmissionType,
@@ -308,7 +307,23 @@ export function useForm<Schema extends Record<string, any>>(
 						submission = parse(formData);
 
 						if (config.mode !== 'server-validation') {
-							submission.error.push(...getFormError(form));
+							/**
+							 * As there is no custom logic defined,
+							 * removing the custom validity state will allow us
+							 * finding the latest validation message.
+							 *
+							 * This is mainly used to showcase the constraint validation API.
+							 */
+							setFormError(form, { type: 'submit', value: {}, error: [] });
+
+							for (const element of form.elements) {
+								if (isFieldElement(element) && element.willValidate) {
+									submission.error.push([
+										element.name,
+										element.validationMessage,
+									]);
+								}
+							}
 						}
 					}
 

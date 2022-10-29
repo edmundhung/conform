@@ -1,10 +1,10 @@
 import type { FieldsetConstraint } from '@conform-to/react';
 import {
 	conform,
+	getFormElements,
 	parse,
 	useFieldset,
 	useForm,
-	getFormError,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -86,41 +86,44 @@ export default function MovieForm() {
 		onValidate: config.validate
 			? ({ form, formData }) => {
 					const submission = parse(formData);
-					const error = getFormError(form, (element) => {
-						const messages: string[] = [];
 
+					for (const element of getFormElements(form)) {
 						switch (element.name) {
 							case 'title':
 								if (element.validity.valueMissing) {
-									messages.push('Title is required');
+									submission.error.push([element.name, 'Title is required']);
 								} else if (element.validity.patternMismatch) {
-									messages.push('Please enter a valid title');
+									submission.error.push([
+										element.name,
+										'Please enter a valid title',
+									]);
 								}
 								break;
 							case 'description':
 								if (element.validity.tooShort) {
-									messages.push('Please provides more details');
+									submission.error.push([
+										element.name,
+										'Please provides more details',
+									]);
 								}
 								break;
 							case 'genre':
 								if (element.validity.valueMissing) {
-									messages.push('Genre is required');
+									submission.error.push([element.name, 'Genre is required']);
 								}
 								break;
 							case 'rating':
 								if (element.validity.stepMismatch) {
-									messages.push('The provided rating is invalid');
+									submission.error.push([
+										element.name,
+										'The provided rating is invalid',
+									]);
 								}
 								break;
 						}
+					}
 
-						return messages;
-					});
-
-					return {
-						...submission,
-						error: submission.error.concat(error),
-					};
+					return submission;
 			  }
 			: undefined,
 		onSubmit:

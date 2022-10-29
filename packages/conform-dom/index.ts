@@ -53,6 +53,10 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
+export function getFormElements(form: HTMLFormElement): FieldElement[] {
+	return Array.from(form.elements).filter(isFieldElement);
+}
+
 export function getPaths(name: string): Array<string | number> {
 	const pattern = /(\w*)\[(\d+)\]/;
 
@@ -120,36 +124,6 @@ export function hasError(
 				(typeof name === 'undefined' || name === fieldName) && message !== '',
 		) !== 'undefined'
 	);
-}
-
-export function getFormError(
-	form: HTMLFormElement,
-	getFieldErrors?: (element: FieldElement) => string[],
-): Array<[string, string]> {
-	let error: Array<[string, string]> = [];
-
-	if (typeof getFieldErrors !== 'function') {
-		/**
-		 * As there is no custom logic defined,
-		 * removing the custom validity state will allow us
-		 * finding the latest validation message.
-		 *
-		 * This is mainly used to showcase the constraint validation API.
-		 */
-		setFormError(form, { type: 'submit', value: {}, error: [] });
-	}
-
-	for (const element of form.elements) {
-		if (isFieldElement(element) && element.willValidate) {
-			const messages = getFieldErrors?.(element) ?? [element.validationMessage];
-
-			error.push(
-				...messages.map<[string, string]>((message) => [element.name, message]),
-			);
-		}
-	}
-
-	return error;
 }
 
 export function setFormError(

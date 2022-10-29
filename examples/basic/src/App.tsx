@@ -1,39 +1,38 @@
-import { useForm, useFieldset, getFormError, parse } from '@conform-to/react';
+import {
+	useForm,
+	useFieldset,
+	parse,
+	getFormElements,
+} from '@conform-to/react';
 
 export default function LoginForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
 		onValidate({ form, formData }) {
 			const submission = parse(formData);
-			const error = getFormError(form, (element) => {
-				const messages: string[] = [];
 
+			for (const element of getFormElements(form)) {
 				switch (element.name) {
 					case 'email': {
 						if (element.validity.valueMissing) {
-							messages.push('Email is required');
+							submission.error.push([element.name, 'Email is required']);
 						} else if (element.validity.typeMismatch) {
-							messages.push('Email is invalid');
+							submission.error.push([element.name, 'Email is invalid']);
 						} else if (!element.value.endsWith('gmail.com')) {
-							messages.push('Only gmail is accepted');
+							submission.error.push([element.name, 'Only gmail is accepted']);
 						}
 						break;
 					}
 					case 'password': {
 						if (element.validity.valueMissing) {
-							messages.push('Password is required');
+							submission.error.push([element.name, 'Password is required']);
 						}
 						break;
 					}
 				}
+			}
 
-				return messages;
-			});
-
-			return {
-				...submission,
-				error: submission.error.concat(error),
-			};
+			return submission;
 		},
 		onSubmit(event, { formData }) {
 			event.preventDefault();

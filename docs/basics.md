@@ -134,24 +134,28 @@ export default function LoginForm() {
 Although we haven't define any error messages yet, the form above should be able to populate some message depends on the conditions. These messages are provided by the browser vendor and might vary depending on your users operating system and language setting. Let's customize messages based on the elements' [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
 
 ```tsx
-import { useForm, useFieldset, parse, getFormError } from '@conform-to/react';
+import { useForm, parse, getFormElements } from '@conform-to/react';
 
 export default function LoginForm() {
   const form = useForm({
     onValidate({ form, formData }) {
       /**
-       * We will cover the details of submission in the next section
+       * By parsing the formData, you will be able to access:
+       * 1) The value in the defined structure
+       *    e.g. { email: '', password: '' }
+       * 2) The error found while parsing the form data
+       *    e.g. [ ['email', 'Email is required'], ... ]
+       * 3) The type and intent of the submission
+       *
+       * More details will be covered in the submission section
        */
       const submission = parse(formData);
 
       /**
-       * The `getFormError` helper will loop through the form elements and call
-       * the provided validate function on each field. The result will then be
-       * formatted to the conform error structure (i.e. Array<[string, string]>).
+       * The `getFormElements` returns all input/select/textarea/button
+       * elements in the form
        */
-      const error = getFormError(form, (element) => {
-        const messages: string[] = [];
-
+      for (const element of getFormElements(form)) {
         switch (element.name) {
           case 'email': {
             if (element.validity.valueMissing) {
@@ -159,37 +163,31 @@ export default function LoginForm() {
                * This will be true when the input is marked as `required`
                * while the input is blank
                */
-              messages.push('Email is required');
+              submission.error.push([element.name, 'Email is required']);
             } else if (element.validity.typeMismatch) {
               /**
                * This will be true when the input type is `email`
                * while the value does not match
                */
-              messages.push('Email is invalid');
+              submission.error.push([element.name, 'Email is invalid']);
             } else if (!element.value.endsWith('gmail.com')) {
               /**
-               * We can also validate the field manually with custom logic
+               * You can also validate the field manually with custom logic
                */
-              messages.push('Only gmail is accepted');
+              submission.error.push([element.name, 'Only gmail is accepted']);
             }
             break;
           }
           case 'password': {
             if (element.validity.valueMissing) {
-              messages.push('Password is required');
+              submission.error.push([element.name, 'Password is required']);
             }
             break;
           }
         }
+      }
 
-        return messages;
-      });
-
-      // Returns the submission state
-      return {
-        ...submission,
-        error: submission.error.concat(error),
-      };
+      return submission;
     },
 
     // ....

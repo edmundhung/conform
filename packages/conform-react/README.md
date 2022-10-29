@@ -11,9 +11,8 @@
 - [useFieldList](#usefieldlist)
 - [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
-- [getFormError](#getFormError)
+- [getFormElements](#getformelements)
 - [hasError](#haserror)
-- [isFieldElement](#isfieldelement)
 - [parse](#parse)
 - [shouldValidate](#shouldvalidate)
 
@@ -557,54 +556,38 @@ function RandomForm() {
 
 ---
 
-### getFormError
+### getFormElements
 
-It will loop through the form elements and call the provided validate function on each field. The result will then be formatted to the conform error structure. It can be used for client validation only.
+It returns all _input_ / _select_ / _textarea_ or _button_ in the forms. Useful when looping through the form elements to validate each field.
 
 ```tsx
+import { useForm, parse, getFormElements } from '@conform-to/react';
+
 export default function LoginForm() {
   const form = useForm({
     onValidate({ form, formData }) {
       const submission = parse(formData);
-      const error = getFormError(form, (element) => {
-        const messages: string[] = [];
 
+      for (const element of getFormElements(form)) {
         switch (element.name) {
           case 'email': {
             if (element.validity.valueMissing) {
-              /**
-               * This will be true when the input is marked as `required`
-               * while the input is blank
-               */
-              messages.push('Email is required');
+              submission.error.push([element.name, 'Email is required']);
             } else if (element.validity.typeMismatch) {
-              /**
-               * This will be true when the input type is `email`
-               * while the value does not match
-               */
-              messages.push('Email is invalid');
-            } else if (!element.value.endsWith('gmail.com')) {
-              /**
-               * We can also validate the field manually with custom logic
-               */
-              messages.push('Only gmail is accepted');
+              submission.error.push([element.name, 'Email is invalid']);
             }
             break;
           }
           case 'password': {
-            // ...
+            if (element.validity.valueMissing) {
+              submission.error.push([element.name, 'Password is required']);
+            }
             break;
           }
         }
+      }
 
-        return messages;
-      });
-
-      // Returns the submission state
-      return {
-        ...submission,
-        error: submission.error.concat(error),
-      };
+      return submission;
     },
 
     // ....
@@ -633,47 +616,6 @@ console.log(hasError(error, 'email'));
 
 // This will log `false`
 console.log(hasError(error, 'password'));
-```
-
----
-
-### isFieldElement
-
-This checks if the provided element is an `input` / `select` / `textarea` or `button` HTML element with type guard. Useful when you need to access the validityState of the fields and modify the validation message manually.
-
-```tsx
-import { isFieldElement } from '@conform-to/react';
-
-export default function SignupForm() {
-  const form = useForm({
-    onValidate({ form }) {
-      for (const element of form.elements) {
-        if (isFieldElement(element)) {
-          switch (field.name) {
-            case 'email':
-              if (field.validity.valueMissing) {
-                field.setCustomValidity('Email is required');
-              } else if (field.validity.typeMismatch) {
-                field.setCustomValidity('Please enter a valid email');
-              } else {
-                field.setCustomValidity('');
-              }
-              break;
-            case 'password':
-              // ...
-              break;
-            case 'confirm-password': {
-              // ...
-              break;
-            }
-          }
-        }
-      }
-    },
-  });
-
-  // ...
-}
 ```
 
 ---
