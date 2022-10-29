@@ -11,29 +11,32 @@ interface Signup {
 	confirmPassword: string;
 }
 
-function validate(submission: Submission<Signup>): Array<[string, string]> {
-	const error: Array<[string, string]> = [];
+function validate(formData: FormData): Submission<Signup> {
+	const submission = parse<Signup>(formData);
 	const { email, password, confirmPassword } = submission.value;
 
 	if (!email) {
-		error.push(['email', 'Email is required']);
+		submission.error.push(['email', 'Email is required']);
 	} else if (!email.match(/^[^()@\s]+@[\w\d.]+$/)) {
-		error.push(['email', 'Email is invalid']);
+		submission.error.push(['email', 'Email is invalid']);
 	}
 
 	if (!password) {
-		error.push(['password', 'Password is required']);
+		submission.error.push(['password', 'Password is required']);
 	} else if (password.length < 8) {
-		error.push(['password', 'Password is too short']);
+		submission.error.push(['password', 'Password is too short']);
 	}
 
 	if (!confirmPassword) {
-		error.push(['confirmPassword', 'Confirm password is required']);
+		submission.error.push(['confirmPassword', 'Confirm password is required']);
 	} else if (confirmPassword !== password) {
-		error.push(['confirmPassword', 'The password provided does not match']);
+		submission.error.push([
+			'confirmPassword',
+			'The password provided does not match',
+		]);
 	}
 
-	return error;
+	return submission;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -42,8 +45,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
-	const error = validate(submission);
+	const submission = validate(formData);
 
 	return {
 		...submission,
@@ -51,7 +53,6 @@ export let action = async ({ request }: ActionArgs) => {
 			email: submission.value.email,
 			// Never send the password back to the client
 		},
-		error: submission.error.concat(error),
 	};
 };
 
@@ -62,7 +63,7 @@ export default function SignupForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ submission }) => validate(submission)
+			? ({ formData }) => validate(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

@@ -1,5 +1,5 @@
 import { useFieldset, useForm } from '@conform-to/react';
-import { formatError } from '@conform-to/zod';
+import { validate } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z
@@ -21,20 +21,8 @@ const schema = z
 
 export default function SignupForm() {
 	const form = useForm<z.infer<typeof schema>>({
-		onValidate({ submission }) {
-			// Only sync validation is allowed on the client side
-			const result = schema.safeParse(submission.value);
-
-			if (result.success) {
-				return [];
-			}
-
-			/**
-			 * The `formatError` helper simply resolves the ZodError to
-			 * a set of key/value pairs which refers to the name and
-			 * error of each field.
-			 */
-			return formatError(result.error);
+		onValidate({ formData }) {
+			return validate(formData, schema);
 		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();

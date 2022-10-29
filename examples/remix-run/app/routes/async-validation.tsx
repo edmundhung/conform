@@ -74,7 +74,7 @@ export async function action({ request }: ActionArgs) {
 			}
 		}
 	} catch (error) {
-		submission.error = submission.error.concat(formatError(error));
+		submission.error.push(...formatError(error));
 	}
 
 	return json(submission);
@@ -86,14 +86,16 @@ export default function Signup() {
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
-		onValidate({ submission }) {
-			const result = schema.safeParse(submission.value);
+		onValidate({ formData }) {
+			const submission = parse(formData);
 
-			if (result.success) {
-				return [];
+			try {
+				schema.parse(submission.value);
+			} catch (error) {
+				submission.error.push(...formatError(error));
 			}
 
-			return formatError(result.error);
+			return submission;
 		},
 		onSubmit(event, { submission }) {
 			// Only the email field requires additional validation from the server

@@ -1,4 +1,9 @@
-import { type FieldConstraint, type FieldsetConstraint } from '@conform-to/dom';
+import {
+	type FieldConstraint,
+	type FieldsetConstraint,
+	type Submission,
+	parse,
+} from '@conform-to/dom';
 import * as yup from 'yup';
 
 export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
@@ -95,4 +100,22 @@ export function formatError(
 	}
 
 	return [['', error instanceof Error ? error.message : fallbackMessage]];
+}
+
+export function validate<Schema extends yup.AnyObjectSchema>(
+	formData: FormData,
+	schema: Schema,
+	options: { fallbackMessage?: string } = {},
+): Submission<yup.InferType<Schema>> {
+	const submission = parse<yup.InferType<Schema>>(formData);
+
+	try {
+		schema.validateSync(submission.value, {
+			abortEarly: false,
+		});
+	} catch (error) {
+		submission.error.push(...formatError(error, options.fallbackMessage));
+	}
+
+	return submission;
 }

@@ -4,7 +4,7 @@ import {
 	parse,
 	useFieldset,
 	useForm,
-	validateForm,
+	getFormError,
 } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -84,8 +84,9 @@ export default function MovieForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form }) =>
-					validateForm(form, (element) => {
+			? ({ form, formData }) => {
+					const submission = parse(formData);
+					const error = getFormError(form, (element) => {
 						const messages: string[] = [];
 
 						switch (element.name) {
@@ -114,7 +115,13 @@ export default function MovieForm() {
 						}
 
 						return messages;
-					})
+					});
+
+					return {
+						...submission,
+						error: submission.error.concat(error),
+					};
+			  }
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

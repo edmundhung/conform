@@ -38,7 +38,7 @@ export async function action({ request }: ActionArgs) {
 			}
 		}
 	} catch (error) {
-		submission.error = submission.error.concat(formatError(error));
+		submission.error.push(...formatError(error));
 	}
 
 	return json(submission);

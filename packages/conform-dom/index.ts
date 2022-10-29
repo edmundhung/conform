@@ -122,15 +122,26 @@ export function hasError(
 	);
 }
 
-export function validateForm(
+export function getFormError(
 	form: HTMLFormElement,
-	validateField?: (element: FieldElement) => string[],
+	getFieldErrors?: (element: FieldElement) => string[],
 ): Array<[string, string]> {
 	let error: Array<[string, string]> = [];
 
+	if (typeof getFieldErrors !== 'function') {
+		/**
+		 * As there is no custom logic defined,
+		 * removing the custom validity state will allow us
+		 * finding the latest validation message.
+		 *
+		 * This is mainly used to showcase the constraint validation API.
+		 */
+		setFormError(form, { context: 'submit', value: {}, error: [] });
+	}
+
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
-			const messages = validateField?.(element) ?? [element.validationMessage];
+			const messages = getFieldErrors?.(element) ?? [element.validationMessage];
 
 			error.push(
 				...messages.map<[string, string]>((message) => [element.name, message]),

@@ -160,7 +160,7 @@ export async function action({ request }: ActionArgs) {
 			}
 		}
 	} catch (error) {
-		submission.error = submission.error.concat(formatError(error));
+		submission.error.push(...formatError(error));
 	}
 
 	return json(submission);
@@ -174,6 +174,7 @@ Validating fully on server side is great. But, if network latency is a concern, 
 ```tsx
 import type { Submission } from '@conform-to/react';
 import { useForm, useFieldset, parse } from '@conform-to/react';
+import { validate } from '@conform-to/zod';
 
 /**
  * Move the validation logic out of action so it can be used
@@ -208,7 +209,7 @@ export async function action({ request }: ActionArgs) {
       }
     }
   } catch (error) {
-    submission.error = submission.error.concat(formatError(error));
+    submission.error.push(...formatError(error));
   }
 
   return json(submission);
@@ -230,15 +231,9 @@ export default function Signup() {
     state,
 
     // Setup client validation
-    onValidate({ submission }) {
+    onValidate({ formData }) {
       // Reuse the zod schema on client side
-      const result = schema.safeParse(submission.value);
-
-      if (result.success) {
-        return [];
-      }
-
-      return formatError(result.error);
+      return validate(formData, schema);
     },
   });
 
@@ -273,7 +268,7 @@ export default function Signup() {
      */
     mode: 'server-validation',
     state,
-    onValidate({ submission }) {
+    onValidate({ formData }) {
       // ...
     },
     onSubmit(event, { submission }) {
@@ -335,7 +330,7 @@ export async function action({ request }: ActionArgs) {
       }
     }
   } catch (error) {
-    submission.error = submission.error.concat(formatError(error));
+    submission.error.push(...formatError(error));
   }
 
   return json(submission);

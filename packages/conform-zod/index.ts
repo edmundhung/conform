@@ -1,7 +1,9 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
+	type Submission,
 	getName,
+	parse,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -120,6 +122,22 @@ export function formatError(
 		}, []);
 	} else
 		return [['', error instanceof Error ? error.message : fallbackMessage]];
+}
+
+export function validate<Schema extends z.ZodTypeAny>(
+	formData: FormData,
+	schema: Schema,
+	options: { fallbackMessage?: string } = {},
+): Submission<z.infer<Schema>> {
+	const submission = parse<z.infer<Schema>>(formData);
+
+	try {
+		schema.parse(submission.value);
+	} catch (error) {
+		submission.error.push(...formatError(error, options.fallbackMessage));
+	}
+
+	return submission;
 }
 
 export function ifNonEmptyString(

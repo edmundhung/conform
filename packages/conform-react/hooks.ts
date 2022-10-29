@@ -9,6 +9,7 @@ import {
 	focusFirstInvalidField,
 	getFormData,
 	getFormElement,
+	getFormError,
 	getName,
 	getPaths,
 	getSubmissionType,
@@ -19,7 +20,6 @@ import {
 	requestValidate,
 	setFormError,
 	updateList,
-	validateForm,
 	hasError,
 } from '@conform-to/dom';
 import {
@@ -31,12 +31,6 @@ import {
 	useEffect,
 } from 'react';
 import { input } from './helpers';
-
-interface FormContext<Schema extends Record<string, any>> {
-	form: HTMLFormElement;
-	formData: FormData;
-	submission: Submission<Schema>;
-}
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
@@ -79,7 +73,13 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: FormContext<Schema>) => Array<[string, string]>;
+	onValidate?: ({
+		form,
+		formData,
+	}: {
+		form: HTMLFormElement;
+		formData: FormData;
+	}) => Submission<Schema>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -87,7 +87,10 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	 */
 	onSubmit?: (
 		event: FormEvent<HTMLFormElement>,
-		context: FormContext<Schema>,
+		context: {
+			formData: FormData;
+			submission: Submission<Schema>;
+		},
 	) => void;
 }
 
@@ -295,13 +298,19 @@ export function useForm<Schema extends Record<string, any>>(
 				}
 
 				try {
+					let submission: Submission<Schema>;
+
 					const formData = getFormData(form, submitter);
-					const submission = parse<Schema>(formData);
-					const context: FormContext<Schema> = {
-						form,
-						formData,
-						submission,
-					};
+
+					if (typeof config.onValidate === 'function') {
+						submission = config.onValidate({ form, formData });
+					} else {
+						submission = parse(formData);
+
+						if (config.mode !== 'server-validation') {
+							submission.error.push(...getFormError(form));
+						}
+					}
 
 					// Touch all fields only if the submitter is not a command button
 					if (submission.context === 'submit') {
@@ -313,35 +322,6 @@ export function useForm<Schema extends Record<string, any>>(
 						}
 					}
 
-					let error: Array<[string, string]>;
-
-					if (typeof config.onValidate === 'function') {
-						error = config.onValidate(context);
-					} else if (config.mode !== 'server-validation') {
-						/**
-						 * As there is no custom validation logic defined,
-						 * removing the custom validity state will allow us
-						 * finding the latest validation message.
-						 *
-						 * This is mainly used to showcase the constraint validation API
-						 * with no actual usage and should be updated with a more meaningful
-						 * default in the future.
-						 */
-						setFormError(form, { context: 'submit', value: {}, error: [] });
-
-						error = validateForm(form);
-					} else {
-						/**
-						 * When validating fully on the server side, client error will not
-						 * be considered.
-						 */
-						error = [];
-					}
-
-					if (error.length > 0) {
-						submission.error.push(...error);
-					}
-
 					if (
 						(!config.noValidate &&
 							!submitter.formNoValidate &&
@@ -351,7 +331,7 @@ export function useForm<Schema extends Record<string, any>>(
 					) {
 						event.preventDefault();
 					} else {
-						config.onSubmit?.(event, context);
+						config.onSubmit?.(event, { formData, submission });
 					}
 
 					if (event.defaultPrevented) {

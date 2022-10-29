@@ -1,10 +1,10 @@
-import { useForm, useFieldset, validateForm } from '@conform-to/react';
+import { useForm, useFieldset, getFormError } from '@conform-to/react';
 
 export default function LoginForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
 		onValidate({ form }) {
-			const error = validateForm(form, (element) => {
+			const error = getFormError(form, (element) => {
 				const messages: string[] = [];
 
 				switch (element.name) {

@@ -15,7 +15,7 @@
 - [isFieldElement](#isfieldelement)
 - [parse](#parse)
 - [shouldValidate](#shouldvalidate)
-- [validateForm](#validateform)
+- [getFormError](#getFormError)
 
 <!-- /aside -->
 
@@ -660,7 +660,7 @@ console.log(shouldValidate(submission, 'password'));
 
 ---
 
-### validateForm
+### getFormError
 
 It will loop through the form elements and call the provided validate function on each field. The result will then be formatted to the conform error structure. It can be used for client validation only.
 
@@ -668,7 +668,7 @@ It will loop through the form elements and call the provided validate function o
 export default function LoginForm() {
   const form = useForm({
     onValidate({ form }) {
-      const error = validateForm(form, (element) => {
+      const error = getFormError(form, (element) => {
         const messages: string[] = [];
 
         switch (element.name) {
