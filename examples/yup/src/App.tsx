@@ -1,5 +1,5 @@
 import { useFieldset, useForm } from '@conform-to/react';
-import { formatError } from '@conform-to/yup';
+import { validate } from '@conform-to/yup';
 import * as yup from 'yup';
 
 const schema = yup.object({
@@ -14,22 +14,13 @@ const schema = yup.object({
 	'confirm-password': yup
 		.string()
 		.required('Confirm Password is required')
-		.equals([yup.ref('password')], 'The password does not match'),
+		.equals([yup.ref('password')], 'Password does not match'),
 });
 
 export default function SignupForm() {
-	const form = useForm<yup.InferType<typeof schema>>({
-		onValidate({ submission }) {
-			try {
-				// Only sync validation is allowed on the client side
-				schema.validateSync(submission.value, {
-					abortEarly: false,
-				});
-
-				return [];
-			} catch (error) {
-				return formatError(error);
-			}
+	const form = useForm({
+		onValidate({ formData }) {
+			return validate(formData, schema);
 		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();

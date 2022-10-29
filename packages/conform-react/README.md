@@ -11,10 +11,9 @@
 - [useFieldList](#usefieldlist)
 - [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
+- [getFormElements](#getformelements)
 - [hasError](#haserror)
-- [isFieldElement](#isfieldelement)
 - [parse](#parse)
-- [setFormError](#setformerror)
 - [shouldValidate](#shouldvalidate)
 
 <!-- /aside -->
@@ -296,33 +295,6 @@ function Fieldset() {
 ```
 
 <details>
-<summary>Is it required to provide the FieldsetConfig to `useFieldset`?</summary>
-
-No. The only thing required is the ref object. All the config is optional. You can always pass them to each fields manually.
-
-```tsx
-import { useForm, useFieldset } from '@conform-to/react';
-
-function SubscriptionForm() {
-  const formProps = useForm();
-  const { email } = useFieldset(formProps.ref);
-
-  return (
-    <form {...formProps}>
-      <input
-        type="email"
-        name={email.config.name}
-        defaultValue="support@conform.dev"
-        required
-      />
-    </form>
-  );
-}
-```
-
-</details>
-
-<details>
 <summary>Why does `useFieldset` require a ref object of the form or fieldset?</summary>
 
 Unlike most of the form validation library out there, **conform** use the DOM as its context provider. As the dom maintains a link between each input / button / fieldset with the form through the [form property](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#properties) of these elements. The ref object allows us restricting the scope to elements associated to the same form only.
@@ -352,7 +324,7 @@ function ExampleForm() {
 
 ### useFieldList
 
-It returns a list of key and config, with a group of helpers configuring buttons for list manipulation
+It returns a list of key and config, with helpers to configure command buttons with [list command](/docs/submission.md#list-command).
 
 ```tsx
 import { useFieldset, useFieldList } from '@conform-to/react';
@@ -373,7 +345,7 @@ type Collection = {
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books.config);
+  const [bookList, command] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
@@ -390,12 +362,12 @@ function CollectionFieldset() {
           />
 
           {/* To setup a delete button */}
-          <button {...control.remove({ index })}>Delete</button>
+          <button {...command.remove({ index })}>Delete</button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row with optional default value */}
-      <button {...control.append({ defaultValue: { name: '', isbn: '' } })}>
+      <button {...command.append({ defaultValue: { name: '', isbn: '' } })}>
         add
       </button>
     </fieldset>
@@ -412,7 +384,7 @@ import { useRef } from 'react';
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books.config);
+  const [bookList, command] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
@@ -422,12 +394,12 @@ function CollectionFieldset() {
           <BookFieldset {...book.config} />
 
           {/* To setup a delete button */}
-          <button {...control.remove({ index })}>Delete</button>
+          <button {...command.remove({ index })}>Delete</button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row */}
-      <button {...control.append()}>add</button>
+      <button {...command.append()}>add</button>
     </fieldset>
   );
 }
@@ -582,6 +554,51 @@ function RandomForm() {
 }
 ```
 
+---
+
+### getFormElements
+
+It returns all _input_ / _select_ / _textarea_ or _button_ in the forms. Useful when looping through the form elements to validate each field.
+
+```tsx
+import { useForm, parse, getFormElements } from '@conform-to/react';
+
+export default function LoginForm() {
+  const form = useForm({
+    onValidate({ form, formData }) {
+      const submission = parse(formData);
+
+      for (const element of getFormElements(form)) {
+        switch (element.name) {
+          case 'email': {
+            if (element.validity.valueMissing) {
+              submission.error.push([element.name, 'Email is required']);
+            } else if (element.validity.typeMismatch) {
+              submission.error.push([element.name, 'Email is invalid']);
+            }
+            break;
+          }
+          case 'password': {
+            if (element.validity.valueMissing) {
+              submission.error.push([element.name, 'Password is required']);
+            }
+            break;
+          }
+        }
+      }
+
+      return submission;
+    },
+
+    // ....
+  });
+
+  // ...
+}
+```
+
+---
+
 ### hasError
 
 This helper checks if there is any message defined in error array with the provided name.
@@ -603,61 +620,6 @@ console.log(hasError(error, 'password'));
 
 ---
 
-### isFieldElement
-
-This checks if the provided element is an `input` / `select` / `textarea` or `button` HTML element with type guard. Useful when you need to access the validityState of the fields and modify the validation message manually.
-
-```tsx
-import { isFieldElement } from '@conform-to/react';
-
-export default function SignupForm() {
-  const form = useForm({
-    onValidate({ form }) {
-      for (const element of form.elements) {
-        if (isFieldElement(element)) {
-          switch (field.name) {
-            case 'email':
-              if (field.validity.valueMissing) {
-                field.setCustomValidity('Email is required');
-              } else if (field.validity.typeMismatch) {
-                field.setCustomValidity('Please enter a valid email');
-              } else {
-                field.setCustomValidity('');
-              }
-              break;
-            case 'password':
-              if (field.validity.valueMissing) {
-                field.setCustomValidity('Password is required');
-              } else if (field.validity.tooShort) {
-                field.setCustomValidity(
-                  'The password should be at least 10 characters long',
-                );
-              } else {
-                field.setCustomValidity('');
-              }
-              break;
-            case 'confirm-password': {
-              if (field.validity.valueMissing) {
-                field.setCustomValidity('Confirm Password is required');
-              } else if (field.value !== formData.get('password')) {
-                field.setCustomValidity('The password does not match');
-              } else {
-                field.setCustomValidity('');
-              }
-              break;
-            }
-          }
-        }
-      }
-    },
-  });
-
-  // ...
-}
-```
-
----
-
 ### parse
 
 It parses the formData based on the [naming convention](/docs/submission).
@@ -665,35 +627,10 @@ It parses the formData based on the [naming convention](/docs/submission).
 ```tsx
 import { parse } from '@conform-to/react';
 
-const formData = new FormData(formElement);
+const formData = new FormData();
 const submission = parse(formData);
 
 console.log(submission);
-```
-
----
-
-### setFormError
-
-This helpers updates the form error based on the submission result by looping through all elements in the form and update the error with the [setCustomValidity](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/setCustomValidity) API.
-
-```tsx
-import { setFormError } from '@conform-to/react';
-
-function ExampleForm() {
-  const form = useForm({
-    onValidate({ form, submission }) {
-      const error = validate(submission);
-
-      setFormError(form, {
-        ...submission,
-        error,
-      });
-    },
-  });
-
-  // ...
-}
 ```
 
 ---
@@ -706,14 +643,13 @@ This helper checks if the scope of validation includes a specific field by check
 import { shouldValidate } from '@conform-to/react';
 
 /**
- * The submission type and metadata give us hint on what should be valdiated.
+ * The submission type and intent give us hint on what should be valdiated.
  * If the type is 'validate', only the field with name matching the metadata must be validated.
- *
- * However, if the type is `undefined`, both will log true (Default submission)
+ * If the type is 'submit', everything should be validated (Default submission)
  */
 const submission = {
-  type: 'validate',
-  metadata: 'email',
+  context: 'validate',
+  intent: 'email',
   value: {},
   error: [],
 };

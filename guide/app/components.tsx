@@ -65,7 +65,7 @@ export function Aside({ children }: { children: React.ReactNode }) {
 	return (
 		<aside
 			className={`
-				mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-4 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
+				-ml-4 xl:ml-0 mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-4 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
 				prose-ul:list-none prose-ul:m-0 prose-ul:pl-4 prose-li:m-0 prose-li:pl-0 prose-headings:pl-4
 				prose-a:block prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 
 				hover:prose-a:text-white  
@@ -157,6 +157,10 @@ export function Link({
 
 	if (to.startsWith('/packages/')) {
 		to = to.replace('/packages/conform-', '/api/').replace('/README.md', '');
+	} else if (to.startsWith('/docs/')) {
+		to = to.replace('/docs', '').replace('.md', '');
+	} else {
+		to = to.replace('.md', '');
 	}
 
 	return (

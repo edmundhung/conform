@@ -1,6 +1,6 @@
 # Yup Example
 
-This example shows you how to validate the submission value using [yup](https://github.com/jquense/yup) and resolve the result with the [formatError](/packages/conform-yup/README.md#formatError) helper.
+This example shows you how to validate formData with [yup](https://github.com/jquense/yup) schema using the [validate](/packages/conform-yup/README.md#validate) helper.
 
 <!-- sandbox src="/examples/yup" -->
 

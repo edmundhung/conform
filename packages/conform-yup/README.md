@@ -7,6 +7,8 @@
 ## API Reference
 
 - [formatError](#formatError)
+- [getFieldsetConstraint](#getfieldsetconstraint)
+- [validate](#validate)
 
 <!-- /aside -->
 
@@ -17,7 +19,7 @@ This formats Yup `ValidationError` to the **conform** error structure (i.e. A se
 If the error received is not provided by Yup, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
 
 ```tsx
-import { useForm } from '@conform-to/react';
+import { useForm, parse } from '@conform-to/react';
 import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -29,23 +31,25 @@ const schema = yup.object({
 
 function ExampleForm() {
   const formProps = useForm<yup.InferType<typeof schema>>({
-    onValidate({ form, submission }) {
+    onValidate({ formData }) {
+      const submission = parse(formData);
+
       try {
         // Only sync validation is allowed on the client side
         schema.validateSync(submission.value, {
           abortEarly: false,
         });
       } catch (error) {
-        submission.error = submission.error.concat(
+        submission.error.push(
           // The 2nd argument is an optional fallback message
-          formatError(
+          ...formatError(
             error,
             'The application has encountered an unknown error.',
           ),
         );
       }
 
-      setFormError(form, submission);
+      return submission;
     },
   });
 
@@ -74,17 +78,11 @@ export let action = async ({ request }) => {
       abortEarly: false,
     });
 
-    if (submission.context !== 'validate') {
+    if (submission.type !== 'validate') {
       return await handleFormData(data);
     }
   } catch (error) {
-    if (error instanceof yup.ValidationError) {
-      submission.error = submission.error.concat(formatError(error));
-    } else {
-      submission.error = submission.error.concat([
-        ['', 'Sorry, something went wrong.'],
-      ]);
-    }
+    submission.error.push(...formatError(error));
   }
 
   return submission;
@@ -95,6 +93,55 @@ export default function ExampleRoute() {
   const form = useForm({
     mode: 'server-validation',
     state,
+  });
+
+  // ...
+}
+```
+
+### getFieldsetConstraint
+
+This tries to infer constraint of each field based on the yup schema. This is useful only for:
+
+1. Make it easy to style input using CSS, e.g. `:required`
+2. Have some basic validation working before/without JS. But the message is not customizable and it might be simpler and cleaner relying on server validation.
+
+```tsx
+import { getFieldsetConstraint } from '@conform-to/yup';
+
+function LoginFieldset() {
+  const form = useForm();
+  const { email, password } = useFieldset(ref, {
+    ...form.config,
+    constraint: getFieldsetConstraint(schema),
+  });
+
+  // ...
+}
+```
+
+### validate
+
+It parses the formData and returns a [submission](/docs/submission.md) object with the validation error, which removes the boilerplate code shown on the [formatError](#formaterror) example.
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { validate } from '@conform-to/yup';
+import * as yup from 'yup';
+
+const schema = yup.object({
+  email: yup.string().required(),
+  password: yup.string().required(),
+});
+
+function ExampleForm() {
+  const formProps = useForm({
+    onValidate({ formData }) {
+      return validate(formData, schema, {
+        // Optional
+        fallbackMessage: 'The application has encountered an unknown error.',
+      });
+    },
   });
 
   // ...

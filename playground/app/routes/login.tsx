@@ -15,18 +15,18 @@ interface Login {
 	password: string;
 }
 
-function validate(submission: Submission<Login>): Array<[string, string]> {
-	const error: Array<[string, string]> = [];
+function validate(formData: FormData): Submission<Login> {
+	const submission = parse<Login>(formData);
 
 	if (!submission.value.email) {
-		error.push(['email', 'Email is required']);
+		submission.error.push(['email', 'Email is required']);
 	}
 
 	if (!submission.value.password) {
-		error.push(['password', 'Password is required']);
+		submission.error.push(['password', 'Password is required']);
 	}
 
-	return error;
+	return submission;
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -35,15 +35,14 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse<Login>(formData);
-	const error = validate(submission);
+	const submission = validate(formData);
 
 	if (
-		error.length === 0 &&
+		submission.error.length === 0 &&
 		(submission.value.email !== 'me@edmund.dev' ||
 			submission.value.password !== '$eCreTP@ssWord')
 	) {
-		error.push(['', 'The provided email or password is not valid']);
+		submission.error.push(['', 'The provided email or password is not valid']);
 	}
 
 	return {
@@ -52,7 +51,6 @@ export let action = async ({ request }: ActionArgs) => {
 			email: submission.value.email,
 			// Never send the password back to the client
 		},
-		error: submission.error.concat(error),
 	};
 };
 
@@ -63,12 +61,12 @@ export default function LoginForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ submission }) => validate(submission)
+			? ({ formData }) => validate(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.context === 'validate') {
+						if (submission.type === 'validate') {
 							event.preventDefault();
 						}
 				  }

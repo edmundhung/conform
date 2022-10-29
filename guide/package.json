@@ -8,7 +8,7 @@
 		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.js",
 		"dev:remix": "remix watch",
 		"dev:style": "tailwindcss -i ./styles.css -o ./app/styles.css --watch",
-		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev ./public",
+		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev ./public --kv CACHE",
 		"dev": "remix build && run-p \"dev:*\"",
 		"start": "cross-env NODE_ENV=production npm run dev:wrangler"
 	},

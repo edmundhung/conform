@@ -127,7 +127,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
@@ -204,7 +204,7 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				title: 'The Matrix',
 				description:
@@ -241,7 +241,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -311,7 +311,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				iban: 'DE89 3704 0044 0532 0130 00',
 				amount: {
@@ -383,7 +383,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				email: '',
 			},
@@ -398,7 +398,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				email: 'invalid email',
 			},
@@ -499,7 +499,7 @@ test.describe('Server Validation', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify({
-					context: 'submit',
+					type: 'submit',
 					value: {},
 					error: [['', 'Request forbidden']],
 				}),
@@ -562,7 +562,9 @@ test.describe('Server Validation', () => {
 
 		await email.type('e');
 
-		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect
+			.poll(() => getErrorMessages(form), { timeout: 10000 })
+			.toEqual(['', '', '', '']);
 
 		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
 
@@ -731,7 +733,7 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -744,7 +746,7 @@ test.describe('Field list', () => {
 		});
 	});
 
-	test('Control buttons', async ({ page }) => {
+	test('Command buttons', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 
@@ -798,7 +800,7 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			context: 'submit',
+			type: 'submit',
 			value: {
 				title: 'Testing plan',
 				tasks: [

@@ -1,7 +1,7 @@
 import type { FieldsetConstraint } from '@conform-to/react';
 import {
 	conform,
-	getFormError,
+	getFormElements,
 	parse,
 	useFieldset,
 	useForm,
@@ -84,50 +84,52 @@ export default function MovieForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ form }) =>
-					getFormError(form, (field) => {
-						let message = '';
+			? ({ form, formData }) => {
+					const submission = parse(formData);
 
-						switch (field.name) {
+					for (const element of getFormElements(form)) {
+						switch (element.name) {
 							case 'title':
-								if (field.validity.valueMissing) {
-									message = 'Title is required';
-								} else if (field.validity.patternMismatch) {
-									message = 'Please enter a valid title';
-								} else {
-									message = '';
+								if (element.validity.valueMissing) {
+									submission.error.push([element.name, 'Title is required']);
+								} else if (element.validity.patternMismatch) {
+									submission.error.push([
+										element.name,
+										'Please enter a valid title',
+									]);
 								}
 								break;
 							case 'description':
-								if (field.validity.tooShort) {
-									message = 'Please provides more details';
-								} else {
-									message = '';
+								if (element.validity.tooShort) {
+									submission.error.push([
+										element.name,
+										'Please provides more details',
+									]);
 								}
 								break;
 							case 'genre':
-								if (field.validity.valueMissing) {
-									message = 'Genre is required';
-								} else {
-									message = '';
+								if (element.validity.valueMissing) {
+									submission.error.push([element.name, 'Genre is required']);
 								}
 								break;
 							case 'rating':
-								if (field.validity.stepMismatch) {
-									message = 'The provided rating is invalid';
-								} else {
-									message = '';
+								if (element.validity.stepMismatch) {
+									submission.error.push([
+										element.name,
+										'The provided rating is invalid',
+									]);
 								}
 								break;
 						}
+					}
 
-						return [[field.name, message]];
-					})
+					return submission;
+			  }
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.context === 'validate') {
+						if (submission.type === 'validate') {
 							event.preventDefault();
 						}
 				  }

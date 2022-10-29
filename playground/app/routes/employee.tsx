@@ -6,7 +6,7 @@ import {
 	useFieldset,
 	useForm,
 } from '@conform-to/react';
-import { formatError } from '@conform-to/zod';
+import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -50,7 +50,7 @@ export let action = async ({ request }: ActionArgs) => {
 	try {
 		await serverSchema.parseAsync(submission.value);
 	} catch (error) {
-		submission.error = submission.error.concat(formatError(error));
+		submission.error.push(...formatError(error));
 	}
 
 	return json(submission);
@@ -62,22 +62,16 @@ export default function EmployeeForm() {
 	const form = useForm<Schema>({
 		...config,
 		state,
-		onValidate({ submission }) {
-			const result = schema.safeParse(submission.value);
-
-			if (result.success) {
-				return [];
-			}
-
-			return formatError(result.error);
+		onValidate({ formData }) {
+			return validate(formData, schema);
 		},
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
 						if (
-							submission.context === 'validate' &&
+							submission.type === 'validate' &&
 							(submission.intent !== 'email' ||
-								hasError(submission.error, ['email']))
+								hasError(submission.error, 'email'))
 						) {
 							event.preventDefault();
 						}

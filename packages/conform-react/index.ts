@@ -1,9 +1,8 @@
 export {
 	type FieldsetConstraint,
 	type Submission,
-	getFormError,
+	getFormElements,
 	hasError,
-	isFieldElement,
 	parse,
 	shouldValidate,
 } from '@conform-to/dom';

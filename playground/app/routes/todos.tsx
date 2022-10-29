@@ -1,4 +1,4 @@
-import type { FieldsetConfig } from '@conform-to/react';
+import type { FieldsetConfig, Submission } from '@conform-to/react';
 import {
 	conform,
 	useFieldList,
@@ -27,21 +27,27 @@ const schema = z.object({
 	),
 });
 
+type Schema = z.infer<typeof schema>;
+
+function validate(formData: FormData): Submission<Schema> {
+	const submission = parse<Schema>(formData);
+
+	try {
+		schema.parse(submission.value);
+	} catch (error) {
+		submission.error.push(...formatError(error));
+	}
+
+	return submission;
+}
+
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
 };
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
-	const result = schema.safeParse(submission.value);
-
-	if (!result.success) {
-		return {
-			...submission,
-			error: submission.error.concat(formatError(result.error)),
-		};
-	}
+	const submission = validate(formData);
 
 	return submission;
 };
@@ -53,20 +59,12 @@ export default function TodosForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ submission }) => {
-					const result = schema.safeParse(submission.value);
-
-					if (result.success) {
-						return [];
-					}
-
-					return formatError(result.error);
-			  }
+			? ({ formData }) => validate(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.context === 'validate') {
+						if (submission.type === 'validate') {
 							event.preventDefault();
 						}
 				  }
@@ -107,7 +105,7 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 		...config,
 		constraint: getFieldsetConstraint(schema),
 	});
-	const [taskList, control] = useFieldList(ref, tasks.config);
+	const [taskList, command] = useFieldList(ref, tasks.config);
 
 	return (
 		<fieldset ref={ref} form={config.form}>
@@ -121,19 +119,19 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 						<div className="flex flex-row gap-2">
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.remove({ index })}
+								{...command.remove({ index })}
 							>
 								Delete
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.reorder({ from: index, to: 0 })}
+								{...command.reorder({ from: index, to: 0 })}
 							>
 								Move to top
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.replace({ index, defaultValue: { content: '' } })}
+								{...command.replace({ index, defaultValue: { content: '' } })}
 							>
 								Clear
 							</button>
@@ -144,13 +142,13 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 			<div className="flex flex-row gap-2">
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...control.prepend()}
+					{...command.prepend()}
 				>
 					Insert top
 				</button>
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...control.append()}
+					{...command.append()}
 				>
 					Insert bottom
 				</button>

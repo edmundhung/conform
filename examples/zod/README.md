@@ -1,6 +1,6 @@
 # Zod Example
 
-This example shows you how to validate the submission value using [zod](https://github.com/colinhacks/zod) and resolve the result with the [formatError](/packages/conform-zod/README.md#formatError) helper.
+This example shows you how to validate formData with [zod](https://github.com/colinhacks/zod) schema using the [validate](/packages/conform-zod/README.md#validate) helper.
 
 <!-- sandbox src="/examples/zod" -->
 

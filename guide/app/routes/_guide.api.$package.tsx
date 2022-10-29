@@ -6,10 +6,9 @@ import {
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
 import { Markdown } from '~/components';
-import { getBranch } from '~/context';
+import { getFileContent } from '~/context';
 import { formatTitle } from '~/util';
 import { parse } from '~/markdoc';
-import { getFile } from '~/octokit';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -22,19 +21,18 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export async function loader({ params, context }: LoaderArgs) {
-	const branch = getBranch(context);
-	const readme = await getFile(
+	const readme = await getFileContent(
+		context,
 		`packages/conform-${params.package}/README.md`,
-		branch,
 	);
 
 	return json(
 		{
-			content: parse(atob(readme.content)),
+			content: parse(atob(readme)),
 		},
 		{
 			headers: {
-				'Cache-Control': 'public, max-age=300',
+				'Cache-Control': 'public, max-age=60',
 			},
 		},
 	);

@@ -11,7 +11,12 @@ const handleRequest = createPagesFunctionHandler({
 			CF_PAGES_BRANCH: 'main',
 		};
 
-		return { env };
+		return {
+			env,
+			waitUntil(promise) {
+				context.waitUntil(promise);
+			},
+		};
 	},
 });
 

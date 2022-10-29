@@ -1,8 +1,8 @@
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import { conform, useFieldset, useForm } from '@conform-to/react';
 import {
-	formatError,
 	getFieldsetConstraint,
 	ifNonEmptyString,
+	validate,
 } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -41,15 +41,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
-	const result = schema.safeParse(submission.value);
-
-	if (!result.success) {
-		return {
-			...submission,
-			error: submission.error.concat(formatError(result.error)),
-		};
-	}
+	const submission = validate(formData, schema);
 
 	return submission;
 };
@@ -57,24 +49,16 @@ export let action = async ({ request }: ActionArgs) => {
 export default function PaymentForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<z.infer<typeof schema>>({
+	const form = useForm({
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ submission }) => {
-					const result = schema.safeParse(submission.value);
-
-					if (result.success) {
-						return [];
-					}
-
-					return formatError(result.error);
-			  }
+			? ({ formData }) => validate(formData, schema)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.context === 'validate') {
+						if (submission.type === 'validate') {
 							event.preventDefault();
 						}
 				  }

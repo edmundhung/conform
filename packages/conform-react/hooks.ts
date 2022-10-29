@@ -19,7 +19,6 @@ import {
 	requestValidate,
 	setFormError,
 	updateList,
-	getFormError,
 	hasError,
 } from '@conform-to/dom';
 import {
@@ -31,12 +30,6 @@ import {
 	useEffect,
 } from 'react';
 import { input } from './helpers';
-
-interface FormContext<Schema extends Record<string, any>> {
-	form: HTMLFormElement;
-	formData: FormData;
-	submission: Submission<Schema>;
-}
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
@@ -79,7 +72,13 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
-	onValidate?: (context: FormContext<Schema>) => Array<[string, string]>;
+	onValidate?: ({
+		form,
+		formData,
+	}: {
+		form: HTMLFormElement;
+		formData: FormData;
+	}) => Submission<Schema>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -87,7 +86,10 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	 */
 	onSubmit?: (
 		event: FormEvent<HTMLFormElement>,
-		context: FormContext<Schema>,
+		context: {
+			formData: FormData;
+			submission: Submission<Schema>;
+		},
 	) => void;
 }
 
@@ -295,16 +297,38 @@ export function useForm<Schema extends Record<string, any>>(
 				}
 
 				try {
+					let submission: Submission<Schema>;
+
 					const formData = getFormData(form, submitter);
-					const submission = parse<Schema>(formData);
-					const context: FormContext<Schema> = {
-						form,
-						formData,
-						submission,
-					};
+
+					if (typeof config.onValidate === 'function') {
+						submission = config.onValidate({ form, formData });
+					} else {
+						submission = parse(formData);
+
+						if (config.mode !== 'server-validation') {
+							/**
+							 * As there is no custom logic defined,
+							 * removing the custom validity state will allow us
+							 * finding the latest validation message.
+							 *
+							 * This is mainly used to showcase the constraint validation API.
+							 */
+							setFormError(form, { type: 'submit', value: {}, error: [] });
+
+							for (const element of form.elements) {
+								if (isFieldElement(element) && element.willValidate) {
+									submission.error.push([
+										element.name,
+										element.validationMessage,
+									]);
+								}
+							}
+						}
+					}
 
 					// Touch all fields only if the submitter is not a command button
-					if (submission.context === 'submit') {
+					if (submission.type === 'submit') {
 						for (const field of form.elements) {
 							if (isFieldElement(field)) {
 								// Mark the field as touched
@@ -313,33 +337,16 @@ export function useForm<Schema extends Record<string, any>>(
 						}
 					}
 
-					let error: Array<[string, string]>;
-
-					if (typeof config.onValidate === 'function') {
-						error = config.onValidate(context);
-					} else {
-						if (config.mode !== 'server-validation') {
-							// Clear previous result
-							setFormError(form, { context: 'submit', value: {}, error: [] });
-						}
-
-						error = getFormError(form);
-					}
-
-					if (error.length > 0) {
-						submission.error.push(...error);
-					}
-
 					if (
 						(!config.noValidate &&
 							!submitter.formNoValidate &&
 							hasError(submission.error)) ||
-						(submission.context === 'validate' &&
+						(submission.type === 'validate' &&
 							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();
 					} else {
-						config.onSubmit?.(event, context);
+						config.onSubmit?.(event, { formData, submission });
 					}
 
 					if (event.defaultPrevented) {
@@ -407,15 +414,15 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
  */
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldsetConfig<Schema>,
+	config: FieldsetConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldConfig<Schema>,
+	config: FieldConfig<Schema>,
 ): Fieldset<Schema>;
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config?: FieldsetConfig<Schema> | FieldConfig<Schema>,
+	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
@@ -472,7 +479,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 		const invalidHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const field = event.target;
-			const fieldsetName = configRef.current?.name ?? '';
+			const fieldsetName = configRef.current.name ?? '';
 
 			if (
 				!form ||
@@ -525,7 +532,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			setError((prev) => {
 				let next = prev;
 
-				const fieldsetName = configRef.current?.name ?? '';
+				const fieldsetName = configRef.current.name ?? '';
 
 				for (const field of form.elements) {
 					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
@@ -610,28 +617,17 @@ export function useFieldset<Schema extends Record<string, any>>(
 	) as Fieldset<Schema>;
 }
 
-interface ControlButtonProps {
+interface CommandButtonProps {
 	name?: string;
 	value?: string;
 	form?: string;
 	formNoValidate: true;
 }
 
-type CommandPayload<
+type ListCommandPayload<
 	Schema,
 	Type extends ListCommand<FieldValue<Schema>>['type'],
 > = Extract<ListCommand<FieldValue<Schema>>, { type: Type }>['payload'];
-
-/**
- * A group of helpers for configuring a list control button
- */
-interface ListControl<Schema> {
-	prepend(payload?: CommandPayload<Schema, 'prepend'>): ControlButtonProps;
-	append(payload?: CommandPayload<Schema, 'append'>): ControlButtonProps;
-	replace(payload: CommandPayload<Schema, 'replace'>): ControlButtonProps;
-	remove(payload: CommandPayload<Schema, 'remove'>): ControlButtonProps;
-	reorder(payload: CommandPayload<Schema, 'reorder'>): ControlButtonProps;
-}
 
 /**
  * Returns a list of key and config, with a group of helpers
@@ -647,7 +643,19 @@ export function useFieldList<Payload = any>(
 		key: string;
 		config: FieldConfig<Payload>;
 	}>,
-	ListControl<Payload>,
+	{
+		prepend(
+			payload?: ListCommandPayload<Payload, 'prepend'>,
+		): CommandButtonProps;
+		append(payload?: ListCommandPayload<Payload, 'append'>): CommandButtonProps;
+		replace(
+			payload: ListCommandPayload<Payload, 'replace'>,
+		): CommandButtonProps;
+		remove(payload: ListCommandPayload<Payload, 'remove'>): CommandButtonProps;
+		reorder(
+			payload: ListCommandPayload<Payload, 'reorder'>,
+		): CommandButtonProps;
+	},
 ] {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
@@ -695,7 +703,7 @@ export function useFieldList<Payload = any>(
 	 * This use proxy to capture all information about the command and
 	 * have it encoded in the value.
 	 */
-	const control = new Proxy(
+	const command = new Proxy(
 		{},
 		{
 			get(_target, type: any) {
@@ -709,7 +717,7 @@ export function useFieldList<Payload = any>(
 				};
 			},
 		},
-	) as ListControl<Payload>;
+	);
 
 	useEffect(() => {
 		configRef.current = config;
@@ -781,7 +789,11 @@ export function useFieldList<Payload = any>(
 		};
 	}, [ref]);
 
-	return [list, control];
+	return [
+		list,
+		// @ts-expect-error proxy type
+		command,
+	];
 }
 
 interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {

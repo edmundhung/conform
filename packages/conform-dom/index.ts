@@ -37,7 +37,7 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 };
 
 export type Submission<Schema = unknown> = {
-	context: string;
+	type: string;
 	intent?: string;
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
@@ -51,6 +51,10 @@ export function isFieldElement(element: unknown): element is FieldElement {
 			element.tagName === 'TEXTAREA' ||
 			element.tagName === 'BUTTON')
 	);
+}
+
+export function getFormElements(form: HTMLFormElement): FieldElement[] {
+	return Array.from(form.elements).filter(isFieldElement);
 }
 
 export function getPaths(name: string): Array<string | number> {
@@ -102,43 +106,24 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name: string): boolean {
+export function shouldValidate(submission: Submission, name?: string): boolean {
 	return (
-		submission.context === 'submit' ||
-		(submission.context === 'validate' && submission.intent === name)
+		submission.type === 'submit' ||
+		(submission.type === 'validate' &&
+			(typeof name === 'undefined' || submission.intent === name))
 	);
 }
 
 export function hasError(
 	error: Array<[string, string]>,
-	names?: string[],
+	name?: string,
 ): boolean {
 	return (
 		typeof error.find(
 			([fieldName, message]) =>
-				(typeof names === 'undefined' || names.includes(fieldName)) &&
-				message !== '',
+				(typeof name === 'undefined' || name === fieldName) && message !== '',
 		) !== 'undefined'
 	);
-}
-
-export function getFormError(
-	form: HTMLFormElement,
-	getFieldError?: (field: FieldElement) => Array<[string, string]>,
-): Array<[string, string]> {
-	let error: Array<[string, string]> = [];
-
-	for (const element of form.elements) {
-		if (isFieldElement(element) && element.willValidate) {
-			error.push(
-				...(getFieldError?.(element) ?? [
-					[element.name, element.validationMessage],
-				]),
-			);
-		}
-	}
-
-	return error;
 }
 
 export function setFormError(
@@ -270,7 +255,7 @@ export function parse<Schema extends Record<string, any>>(
 ): Submission<Schema> {
 	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
-		context: 'submit',
+		type: 'submit',
 		value: {},
 		error: [],
 	};
@@ -292,7 +277,7 @@ export function parse<Schema extends Record<string, any>>(
 
 				submission = {
 					...submission,
-					context: submissionType,
+					type: submissionType,
 					intent: value,
 				};
 				hasCommand = true;
@@ -309,7 +294,7 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		switch (submission.context) {
+		switch (submission.type) {
 			case 'list':
 				submission = handleList(submission);
 				break;
@@ -398,7 +383,7 @@ export function updateList<Schema>(
 export function handleList<Schema>(
 	submission: Submission<Schema>,
 ): Submission<Schema> {
-	if (submission.context !== 'list') {
+	if (submission.type !== 'list') {
 		return submission;
 	}
 
