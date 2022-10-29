@@ -1,6 +1,6 @@
 # Basics
 
-In this section, we will show how to build a login form by utilizing the **Constraint Validation** API with **Conform**.
+In this section, we will show you how to build a login form by utilizing the **Constraint Validation** API with **Conform**.
 
 <!-- aside -->
 

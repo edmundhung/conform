@@ -105,7 +105,7 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 		...config,
 		constraint: getFieldsetConstraint(schema),
 	});
-	const [taskList, control] = useFieldList(ref, tasks.config);
+	const [taskList, command] = useFieldList(ref, tasks.config);
 
 	return (
 		<fieldset ref={ref} form={config.form}>
@@ -119,19 +119,19 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 						<div className="flex flex-row gap-2">
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.remove({ index })}
+								{...command.remove({ index })}
 							>
 								Delete
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.reorder({ from: index, to: 0 })}
+								{...command.reorder({ from: index, to: 0 })}
 							>
 								Move to top
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...control.replace({ index, defaultValue: { content: '' } })}
+								{...command.replace({ index, defaultValue: { content: '' } })}
 							>
 								Clear
 							</button>
@@ -142,13 +142,13 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 			<div className="flex flex-row gap-2">
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...control.prepend()}
+					{...command.prepend()}
 				>
 					Insert top
 				</button>
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...control.append()}
+					{...command.append()}
 				>
 					Insert bottom
 				</button>

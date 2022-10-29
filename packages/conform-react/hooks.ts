@@ -602,28 +602,17 @@ export function useFieldset<Schema extends Record<string, any>>(
 	) as Fieldset<Schema>;
 }
 
-interface ControlButtonProps {
+interface CommandButtonProps {
 	name?: string;
 	value?: string;
 	form?: string;
 	formNoValidate: true;
 }
 
-type CommandPayload<
+type ListCommandPayload<
 	Schema,
 	Type extends ListCommand<FieldValue<Schema>>['type'],
 > = Extract<ListCommand<FieldValue<Schema>>, { type: Type }>['payload'];
-
-/**
- * A group of helpers for configuring a list control button
- */
-interface ListControl<Schema> {
-	prepend(payload?: CommandPayload<Schema, 'prepend'>): ControlButtonProps;
-	append(payload?: CommandPayload<Schema, 'append'>): ControlButtonProps;
-	replace(payload: CommandPayload<Schema, 'replace'>): ControlButtonProps;
-	remove(payload: CommandPayload<Schema, 'remove'>): ControlButtonProps;
-	reorder(payload: CommandPayload<Schema, 'reorder'>): ControlButtonProps;
-}
 
 /**
  * Returns a list of key and config, with a group of helpers
@@ -639,7 +628,19 @@ export function useFieldList<Payload = any>(
 		key: string;
 		config: FieldConfig<Payload>;
 	}>,
-	ListControl<Payload>,
+	{
+		prepend(
+			payload?: ListCommandPayload<Payload, 'prepend'>,
+		): CommandButtonProps;
+		append(payload?: ListCommandPayload<Payload, 'append'>): CommandButtonProps;
+		replace(
+			payload: ListCommandPayload<Payload, 'replace'>,
+		): CommandButtonProps;
+		remove(payload: ListCommandPayload<Payload, 'remove'>): CommandButtonProps;
+		reorder(
+			payload: ListCommandPayload<Payload, 'reorder'>,
+		): CommandButtonProps;
+	},
 ] {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
@@ -687,7 +688,7 @@ export function useFieldList<Payload = any>(
 	 * This use proxy to capture all information about the command and
 	 * have it encoded in the value.
 	 */
-	const control = new Proxy(
+	const command = new Proxy(
 		{},
 		{
 			get(_target, type: any) {
@@ -701,7 +702,7 @@ export function useFieldList<Payload = any>(
 				};
 			},
 		},
-	) as ListControl<Payload>;
+	);
 
 	useEffect(() => {
 		configRef.current = config;
@@ -773,7 +774,11 @@ export function useFieldList<Payload = any>(
 		};
 	}, [ref]);
 
-	return [list, control];
+	return [
+		list,
+		// @ts-expect-error proxy type
+		command,
+	];
 }
 
 interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {

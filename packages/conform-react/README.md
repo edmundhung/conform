@@ -346,7 +346,7 @@ type Collection = {
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books.config);
+  const [bookList, command] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
@@ -363,12 +363,12 @@ function CollectionFieldset() {
           />
 
           {/* To setup a delete button */}
-          <button {...control.remove({ index })}>Delete</button>
+          <button {...command.remove({ index })}>Delete</button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row with optional default value */}
-      <button {...control.append({ defaultValue: { name: '', isbn: '' } })}>
+      <button {...command.append({ defaultValue: { name: '', isbn: '' } })}>
         add
       </button>
     </fieldset>
@@ -385,7 +385,7 @@ import { useRef } from 'react';
 function CollectionFieldset() {
   const ref = useRef();
   const { books } = useFieldset<Collection>(ref);
-  const [bookList, control] = useFieldList(ref, books.config);
+  const [bookList, command] = useFieldList(ref, books.config);
 
   return (
     <fieldset ref={ref}>
@@ -395,12 +395,12 @@ function CollectionFieldset() {
           <BookFieldset {...book.config} />
 
           {/* To setup a delete button */}
-          <button {...control.remove({ index })}>Delete</button>
+          <button {...command.remove({ index })}>Delete</button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row */}
-      <button {...control.append()}>add</button>
+      <button {...command.append()}>add</button>
     </fieldset>
   );
 }

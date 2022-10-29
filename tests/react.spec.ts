@@ -746,7 +746,7 @@ test.describe('Field list', () => {
 		});
 	});
 
-	test('Control buttons', async ({ page }) => {
+	test('Command buttons', async ({ page }) => {
 		const form = await gotoForm(page, '/todos');
 		const tasks = form.locator('ol > li');
 

@@ -59,7 +59,7 @@ export default function TodoForm() {
 		},
 	});
 	const { title, tasks } = useFieldset(form.ref, form.config);
-	const [taskList, control] = useFieldList(form.ref, tasks.config);
+	const [taskList, command] = useFieldList(form.ref, tasks.config);
 
 	return (
 		<Form method="post" {...form.props}>
@@ -77,12 +77,12 @@ export default function TodoForm() {
 					{taskList.map((task, index) => (
 						<li key={task.key}>
 							<TaskFieldset title={`Task #${index + 1}`} {...task.config} />
-							<button {...control.remove({ index })}>Delete</button>
-							<button {...control.reorder({ from: index, to: 0 })}>
+							<button {...command.remove({ index })}>Delete</button>
+							<button {...command.reorder({ from: index, to: 0 })}>
 								Move to top
 							</button>
 							<button
-								{...control.replace({ index, defaultValue: { content: '' } })}
+								{...command.replace({ index, defaultValue: { content: '' } })}
 							>
 								Clear
 							</button>
@@ -90,7 +90,7 @@ export default function TodoForm() {
 					))}
 				</ul>
 				<div>
-					<button {...control.append()}>Add task</button>
+					<button {...command.append()}>Add task</button>
 				</div>
 			</fieldset>
 			<button type="submit">Save</button>
