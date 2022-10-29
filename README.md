@@ -2,8 +2,8 @@
 
 Conform is a form validation library built on top of the [Constraint Validation](https://caniuse.com/constraint-validation) API.
 
-- **Progressive Enhancement**: Its APIs are designed with progressive enhancement in mind to ensure a smooth and resillent experience before JavaScript is ready.
-- **Server-first validation**: It validates your form by making a submission. Your submit handler is now a middleware between you server and the client.
+- **Progressive Enhancement**: Its APIs are designed with progressive enhancement in mind to ensure a smooth and resillent experience before javascript is ready.
+- **Server-first validation**: It simplifies the mental model by utilizing a server-first validation flow which submits your form for validation.
 - **Lightweight**: It is only [4kB](https://bundlephobia.com/package/@conform-to/react) compressed thanks to all the native [Web APIs](https://developer.mozilla.org/en-US/docs/Web/API). _#useThePlatform_
 
 ## Quick start
