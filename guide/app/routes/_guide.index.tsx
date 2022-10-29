@@ -4,9 +4,8 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { getBranch } from '~/context';
+import { getFileContent } from '~/context';
 import { parse } from '~/markdoc';
-import { getFile } from '~/octokit';
 import { Markdown } from '~/components';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
@@ -14,17 +13,15 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 };
 
 export async function loader({ context }: LoaderArgs) {
-	const branch = getBranch(context);
-	const readme = await getFile('/README.md', branch);
+	const readme = await getFileContent(context, 'README.md');
 
 	return json(
 		{
-			src: `edmundhung/conform/tree/${branch}/examples/basic`,
-			content: parse(atob(readme.content)),
+			content: parse(atob(readme)),
 		},
 		{
 			headers: {
-				'Cache-Control': 'public, max-age=300',
+				'Cache-Control': 'public, max-age=60',
 			},
 		},
 	);

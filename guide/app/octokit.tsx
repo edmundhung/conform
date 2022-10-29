@@ -1,8 +1,11 @@
 import { Octokit } from '@octokit/core';
 import { notFound } from '~/util';
 
-export async function getFile(path: string, ref = 'main') {
-	const octokit = new Octokit();
+export async function getFile(
+	path: string,
+	{ auth, ref = 'main' }: { auth?: string; ref?: string } = {},
+) {
+	const octokit = new Octokit({ auth });
 
 	try {
 		const file = await octokit.request(
