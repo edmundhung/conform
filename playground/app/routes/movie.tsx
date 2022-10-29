@@ -126,7 +126,7 @@ export default function MovieForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.context === 'validate') {
+						if (submission.type === 'validate') {
 							event.preventDefault();
 						}
 				  }

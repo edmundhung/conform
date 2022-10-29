@@ -1,9 +1,10 @@
-import { useForm, useFieldset, getFormError } from '@conform-to/react';
+import { useForm, useFieldset, getFormError, parse } from '@conform-to/react';
 
 export default function LoginForm() {
 	const form = useForm({
 		initialReport: 'onBlur',
-		onValidate({ form }) {
+		onValidate({ form, formData }) {
+			const submission = parse(formData);
 			const error = getFormError(form, (element) => {
 				const messages: string[] = [];
 
@@ -29,7 +30,10 @@ export default function LoginForm() {
 				return messages;
 			});
 
-			return error;
+			return {
+				...submission,
+				error: submission.error.concat(error),
+			};
 		},
 		onSubmit(event, { formData }) {
 			event.preventDefault();

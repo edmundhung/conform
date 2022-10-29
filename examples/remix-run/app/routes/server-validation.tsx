@@ -24,10 +24,10 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse<SignupForm>(formData);
 
 	try {
-		switch (submission.context) {
-			// The context will be `submit` by default
+		switch (submission.type) {
+			// The type will be `submit` by default
 			case 'submit':
-			// The context will be `validate` for validation
+			// The type will be `validate` on validation
 			case 'validate':
 				if (!submission.value.email) {
 					submission.error.push(['email', 'Email is required']);
@@ -54,7 +54,7 @@ export async function action({ request }: ActionArgs) {
 				 * Signup only when the user click on the submit button
 				 * and no error found
 				 */
-				if (submission.context === 'submit' && !hasError(submission.error)) {
+				if (submission.type === 'submit' && !hasError(submission.error)) {
 					return await signup(submission.value);
 				}
 

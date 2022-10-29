@@ -37,7 +37,7 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 };
 
 export type Submission<Schema = unknown> = {
-	context: string;
+	type: string;
 	intent?: string;
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
@@ -104,8 +104,8 @@ export function getName(paths: Array<string | number>): string {
 
 export function shouldValidate(submission: Submission, name?: string): boolean {
 	return (
-		submission.context === 'submit' ||
-		(submission.context === 'validate' &&
+		submission.type === 'submit' ||
+		(submission.type === 'validate' &&
 			(typeof name === 'undefined' || submission.intent === name))
 	);
 }
@@ -136,7 +136,7 @@ export function getFormError(
 		 *
 		 * This is mainly used to showcase the constraint validation API.
 		 */
-		setFormError(form, { context: 'submit', value: {}, error: [] });
+		setFormError(form, { type: 'submit', value: {}, error: [] });
 	}
 
 	for (const element of form.elements) {
@@ -281,7 +281,7 @@ export function parse<Schema extends Record<string, any>>(
 ): Submission<Schema> {
 	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
-		context: 'submit',
+		type: 'submit',
 		value: {},
 		error: [],
 	};
@@ -303,7 +303,7 @@ export function parse<Schema extends Record<string, any>>(
 
 				submission = {
 					...submission,
-					context: submissionType,
+					type: submissionType,
 					intent: value,
 				};
 				hasCommand = true;
@@ -320,7 +320,7 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		switch (submission.context) {
+		switch (submission.type) {
 			case 'list':
 				submission = handleList(submission);
 				break;
@@ -409,7 +409,7 @@ export function updateList<Schema>(
 export function handleList<Schema>(
 	submission: Submission<Schema>,
 ): Submission<Schema> {
-	if (submission.context !== 'list') {
+	if (submission.type !== 'list') {
 		return submission;
 	}
 

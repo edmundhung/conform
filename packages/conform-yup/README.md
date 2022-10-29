@@ -78,7 +78,7 @@ export let action = async ({ request }) => {
       abortEarly: false,
     });
 
-    if (submission.context !== 'validate') {
+    if (submission.type !== 'validate') {
       return await handleFormData(data);
     }
   } catch (error) {

@@ -47,7 +47,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.context) {
+		switch (submission.type) {
 			case 'validate':
 			case 'submit': {
 				const data = await schema
@@ -66,7 +66,7 @@ export async function action({ request }: ActionArgs) {
 					)
 					.parseAsync(submission.value);
 
-				if (submission.context === 'submit') {
+				if (submission.type === 'submit') {
 					return await signup(data);
 				}
 
@@ -101,7 +101,7 @@ export default function Signup() {
 			// Only the email field requires additional validation from the server
 			// We trust the client result otherwise
 			if (
-				submission.context === 'validate' &&
+				submission.type === 'validate' &&
 				(submission.intent !== 'username' ||
 					hasError(submission.error, 'username'))
 			) {

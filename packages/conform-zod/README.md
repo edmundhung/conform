@@ -72,7 +72,7 @@ export let action = async ({ request }) => {
   try {
     const data = await schema.parseAsync(submission.value);
 
-    if (submission.context === 'submit') {
+    if (submission.type === 'submit') {
       return await handleFormData(data);
     }
   } catch (error) {

@@ -27,7 +27,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'submit',
+				type: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -44,7 +44,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'submit',
+				type: 'submit',
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -65,7 +65,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'submit',
+				type: 'submit',
 				value: {
 					title: '',
 					tasks: [
@@ -86,7 +86,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'submit',
+				type: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -104,7 +104,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'test',
+				type: 'test',
 				intent: 'command value',
 				value: {
 					title: 'Test command',
@@ -119,7 +119,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				context: 'list',
+				type: 'list',
 				intent: JSON.stringify({ greeting: 'Hello World' }),
 				value: {
 					title: '',
@@ -139,7 +139,7 @@ test.describe('conform-dom', () => {
 				['tasks[0].completed', 'Yes'],
 			];
 			const result = {
-				context: 'list',
+				type: 'list',
 				value: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},

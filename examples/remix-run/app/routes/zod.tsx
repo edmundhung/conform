@@ -25,12 +25,12 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.context) {
+		switch (submission.type) {
 			case 'validate':
 			case 'submit': {
 				const data = schema.parse(submission.value);
 
-				if (submission.context === 'submit') {
+				if (submission.type === 'submit') {
 					return await signup(data);
 				}
 

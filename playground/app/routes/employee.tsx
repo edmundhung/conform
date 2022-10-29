@@ -69,7 +69,7 @@ export default function EmployeeForm() {
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
 						if (
-							submission.context === 'validate' &&
+							submission.type === 'validate' &&
 							(submission.intent !== 'email' ||
 								hasError(submission.error, 'email'))
 						) {

@@ -29,7 +29,7 @@ const submission = parse(formData);
 console.log(submission.value);
 ```
 
-If the form data is malformed (i.e. some entries violate the naming convention), any errors will be caught internally and you can access them through `submission.error`.
+If the form data is malformed (i.e. some entries violate the naming convention), errors will be caught internally and you can access them through `submission.error`.
 
 ### Configuration
 
@@ -216,7 +216,7 @@ function Product() {
 
 However, this polutes the form data with information used for controlling form behaviour only.
 
-**Conform** specializes this pattern by referring it as a **command button**. If the submitter name is prefixed with `conform/`, e.g. _conform/submit_, it will be excluded from the value with `submission.context` being _submit_ and `submission.intent` being _add-to-cart_ or _buy-now_.
+**Conform** specializes this pattern by referring it as a **command button**. If the submitter name is prefixed with `conform/`, e.g. _conform/submit_, it will be excluded from the value with `submission.type` being _submit_ and `submission.intent` being _add-to-cart_ or _buy-now_.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -227,7 +227,7 @@ function Product() {
       event.preventDefault();
 
       // This will log `submit`
-      console.log(submission.context);
+      console.log(submission.type);
 
       // This will log `add-to-cart` or `buy-now`
       console.log(submission.intent);

@@ -640,7 +640,7 @@ This helper checks if the scope of validation includes a specific field by check
 import { shouldValidate } from '@conform-to/react';
 
 /**
- * The submission context and intent give us hint on what should be valdiated.
+ * The submission type and intent give us hint on what should be valdiated.
  * If the type is 'validate', only the field with name matching the metadata must be validated.
  * If the type is 'submit', everything should be validated (Default submission)
  */
@@ -667,7 +667,8 @@ It will loop through the form elements and call the provided validate function o
 ```tsx
 export default function LoginForm() {
   const form = useForm({
-    onValidate({ form }) {
+    onValidate({ form, formData }) {
+      const submission = parse(formData);
       const error = getFormError(form, (element) => {
         const messages: string[] = [];
 
@@ -702,8 +703,11 @@ export default function LoginForm() {
         return messages;
       });
 
-      // Return the error after validation
-      return error;
+      // Returns the submission state
+      return {
+        ...submission,
+        error: submission.error.concat(error),
+      };
     },
 
     // ....

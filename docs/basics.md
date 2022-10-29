@@ -134,11 +134,16 @@ export default function LoginForm() {
 Although we haven't define any error messages yet, the form above should be able to populate some message depends on the conditions. These messages are provided by the browser vendor and might vary depending on your users operating system and language setting. Let's customize messages based on the elements' [ValidityState](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState).
 
 ```tsx
-import { useForm, useFieldset, getFormError } from '@conform-to/react';
+import { useForm, useFieldset, parse, getFormError } from '@conform-to/react';
 
 export default function LoginForm() {
   const form = useForm({
-    onValidate({ form }) {
+    onValidate({ form, formData }) {
+      /**
+       * We will cover the details of submission in the next section
+       */
+      const submission = parse(formData);
+
       /**
        * The `getFormError` helper will loop through the form elements and call
        * the provided validate function on each field. The result will then be
@@ -180,8 +185,11 @@ export default function LoginForm() {
         return messages;
       });
 
-      // Return the error after validation
-      return error;
+      // Returns the submission state
+      return {
+        ...submission,
+        error: submission.error.concat(error),
+      };
     },
 
     // ....
