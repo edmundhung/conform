@@ -2,7 +2,7 @@
 	"name": "@conform-to/zod",
 	"description": "Conform schema resolver for Zod",
 	"license": "MIT",
-	"version": "0.4.0-pre.3",
+	"version": "0.4.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -14,7 +14,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"peerDependencies": {
-		"@conform-to/dom": "0.4.0-pre.3",
+		"@conform-to/dom": "0.4.0",
 		"zod": "^3.0.0"
 	},
 	"devDependencies": {
