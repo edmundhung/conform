@@ -34,6 +34,7 @@ const navigations: Navigation[] = [
 		title: 'Examples',
 		menus: [
 			{ title: 'Material UI', to: '/examples/material-ui' },
+			{ title: 'Headless UI', to: '/examples/headless-ui' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
 		],
