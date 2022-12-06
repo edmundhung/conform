@@ -6,7 +6,7 @@ export type FieldElement =
 	| HTMLTextAreaElement
 	| HTMLButtonElement;
 
-export interface FieldConfig<Schema = unknown> extends FieldConstraint {
+export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	name: string;
 	defaultValue?: FieldValue<Schema>;
 	initialError?: Array<[string, string]>;
@@ -21,19 +21,19 @@ export type FieldValue<Schema> = Schema extends Primitive | File
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
 	: unknown;
 
-export type FieldConstraint = {
+export type FieldConstraint<Schema> = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;
-	min?: string | number;
-	max?: string | number;
-	step?: string;
+	min?: Schema extends number ? number : string | number;
+	max?: Schema extends number ? number : string | number;
+	step?: Schema extends number ? number : string;
 	multiple?: boolean;
 	pattern?: string;
 };
 
 export type FieldsetConstraint<Schema extends Record<string, any>> = {
-	[Key in keyof Schema]?: FieldConstraint;
+	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
 export type Submission<Schema = unknown> = {

@@ -601,6 +601,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
 				const field: Field<unknown> = {
+					// @ts-expect-error
 					config: {
 						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
 						form: fieldsetConfig.form,
