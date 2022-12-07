@@ -1,6 +1,19 @@
-# Headless UI Example
+# Headless UI Integration
 
-This example shows you how to validate non-native input components, such as ListBox, Combobox, Switch and RadioGroup, using the [useControlledInput](/packages/conform-react/README.md#usecontrolledinput) hook.
+[Headless UI](https://headlessui.com) is a set of completely unstyled, fully accessible UI components for React, designed to integrate beautifully with Tailwind CSS. In this guide, we will show how to integrate its input components with Conform.
+
+## Compatibility
+
+> Based on @headless-ui/react@1.7.4
+
+| Component  | Native support | Integration required |
+| ---------- | :------------: | :------------------: |
+| ListBox    |                |         Yes          |
+| Combobox   |                |         Yes          |
+| Switch     |                |         Yes          |
+| RadioGroup |                |         Yes          |
+
+## Demo
 
 <!-- sandbox src="/examples/headless-ui?module=/src/App.tsx" -->
 
