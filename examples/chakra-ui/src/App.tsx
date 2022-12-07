@@ -31,6 +31,8 @@ import {
 	RangeSliderFilledTrack,
 	RangeSliderThumb,
 	RangeSliderTrack,
+	Heading,
+	Text,
 } from '@chakra-ui/react';
 import { useRef } from 'react';
 import { BaseInput, useInputControl } from './base';
@@ -57,6 +59,13 @@ export default function Example() {
 		<Container maxW="container.sm" paddingY={8}>
 			<form {...form.props}>
 				<Stack direction="column" spacing={8}>
+					<header>
+						<Heading mb={4}>Chakra UI Example</Heading>
+						<Text fontSize="xl">
+							This shows you how to integrate forms components with Conform.
+						</Text>
+					</header>
+
 					<FormControl isInvalid={Boolean(fieldset.email.error)}>
 						<FormLabel>Email (Input)</FormLabel>
 						<Input type="email" name={fieldset.email.config.name} required />

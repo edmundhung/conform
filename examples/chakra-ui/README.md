@@ -1,9 +1,23 @@
-# Material UI Example
+# Chakra UI Example
 
-This example shows you how to validate non-native input (e.g. Custom dropdown) using the [useControlledInput](/packages/conform-react/README.md#usecontrolledinput) hook.
+This example shows you how to integrate [chakra-ui](https://chakra-ui.com/docs/components) forms components with Conform.
 
-<!-- sandbox src="/examples/material-ui" -->
+| Component   |  Native support  | Integration required |
+| ----------- | :--------------: | :------------------: |
+| Input       |       Yes        |                      |
+| Select      |       Yes        |                      |
+| Textarea    |       Yes        |                      |
+| NumberInput | NumberInputField |  NumberInputStepper  |
+| PinInput    |                  |         Yes          |
+| Editable    |                  |         Yes          |
+| Checkbox    |       Yes        |                      |
+| Switch      |       Yes        |                      |
+| Slider      |                  |         Yes          |
+| RangeSlider |                  |         Yes          |
+| Radio       |       Yes        |                      |
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/material-ui).
+<!-- sandbox src="/examples/chakra-ui" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/chakra-ui).
 
 <!-- /sandbox -->
