@@ -1,4 +1,4 @@
-# Integrating with Material UI
+# Material UI Integration
 
 [Material UI](https://mui.com/material-ui) is a comprehensive library of components based on Google's Material Design system. In this guide, we will show how to integrate its **Inputs** components with Conform.
 
