@@ -1,6 +1,10 @@
-# Material UI Example
+# Integrating with Material UI
 
-This example shows you how to integrate [material-ui](https://mui.com/material-ui/) Inputs components with Conform.
+[Material UI](https://mui.com/material-ui) is a comprehensive library of components based on Google's Material Design system. In this guide, we will show how to integrate its **Inputs** components with Conform.
+
+## Compatibility
+
+> Based on @mui/material@5.10
 
 | Component             | Native support | Integration required |
 | --------------------- | :------------: | :------------------: |
@@ -14,6 +18,8 @@ This example shows you how to integrate [material-ui](https://mui.com/material-u
 | Rating                |                |         Yes          |
 | Slider                |                |         Yes          |
 | Switch                |                |         Yes          |
+
+## Demo
 
 <!-- sandbox src="/examples/material-ui" -->
 
