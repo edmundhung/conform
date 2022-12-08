@@ -1,0 +1,33 @@
+{
+	"name": "react-base-input",
+	"description": "A drop-in replacement of your hidden input that trigger the onChange handler",
+	"license": "MIT",
+	"version": "0.1.0",
+	"main": "index.js",
+	"module": "module/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conform",
+		"directory": "packages/react-base-input"
+	},
+	"author": {
+		"name": "Edmund Hung",
+		"email": "me@edmund.dev",
+		"url": "https://edmund.dev"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conform/issues"
+	},
+	"peerDependencies": {
+		"react": ">=16.8"
+	},
+	"devDependencies": {
+		"react": "^18.2.0"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"react"
+	],
+	"sideEffects": false
+}

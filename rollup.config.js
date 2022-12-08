@@ -72,6 +72,9 @@ export default function rollup() {
 
 		// View adapter
 		'conform-react',
+
+		// misc
+		'react-base-input',
 	];
 
 	return packages.flatMap(configurePackage);
