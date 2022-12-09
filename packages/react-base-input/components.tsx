@@ -8,6 +8,10 @@ import React, {
 	useImperativeHandle,
 } from 'react';
 
+/**
+ * useLayoutEffect is client-only.
+ * This basically makes it a no-op on server
+ */
 const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
@@ -17,7 +21,12 @@ const useSafeLayoutEffect =
  * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
  * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
  */
-function setNativeValue(element: HTMLElement, value: string) {
+function setNativeValue(element: HTMLInputElement, value: string) {
+	if (element.value === value) {
+		// It will not trigger a change event if `element.value` is the same as the set value
+		return;
+	}
+
 	const { set: valueSetter } =
 		Object.getOwnPropertyDescriptor(element, 'value') || {};
 	const prototype = Object.getPrototypeOf(element);
@@ -35,6 +44,10 @@ function setNativeValue(element: HTMLElement, value: string) {
 	}
 }
 
+/**
+ * Style to make the input element visually hidden
+ * Based on the `sr-only` class from tailwindcss
+ */
 const hiddenStyle: React.CSSProperties = {
 	position: 'absolute',
 	width: '1px',
@@ -54,6 +67,14 @@ export interface BaseInputProps
 	> {
 	name: string;
 	value: string;
+
+	/**
+	 * A reset event handler
+	 * This will be called if user clicks on a reset button
+	 * or calls reset() API on the HTMLFormElement
+	 *
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
+	 */
 	onReset?: (event: Event) => void;
 }
 
@@ -70,10 +91,6 @@ export const BaseInput = forwardRef(function BaseInput(
 		className,
 		style,
 		onChange,
-		onFocus,
-		onBlur,
-		onFocusCapture,
-		onBlurCapture,
 		onReset,
 		...inputProps
 	} = props;
@@ -87,29 +104,40 @@ export const BaseInput = forwardRef(function BaseInput(
 				return null;
 			}
 
-			return {
-				...$input,
-				focus() {
-					setTimeout(() => {
-						$input.dataset.mode = 'manual';
-						$input.dispatchEvent(
-							new FocusEvent('focusin', { bubbles: true, cancelable: true }),
-						);
-						$input.dispatchEvent(new FocusEvent('focus', { cancelable: true }));
-						delete $input.dataset.mode;
-					}, 0);
+			return new Proxy($input, {
+				get(target, prop, receiver) {
+					switch (prop) {
+						case 'focus':
+							setTimeout(() => {
+								target.dispatchEvent(
+									new FocusEvent('focusin', {
+										bubbles: true,
+										cancelable: true,
+									}),
+								);
+								target.dispatchEvent(
+									new FocusEvent('focus', { cancelable: true }),
+								);
+							}, 0);
+							break;
+						case 'blur':
+							setTimeout(() => {
+								$input.dispatchEvent(
+									new FocusEvent('focusout', {
+										bubbles: true,
+										cancelable: true,
+									}),
+								);
+								$input.dispatchEvent(
+									new FocusEvent('blur', { cancelable: true }),
+								);
+							}, 0);
+							break;
+						default:
+							return Reflect.get(target, prop, receiver);
+					}
 				},
-				blur() {
-					setTimeout(() => {
-						$input.dataset.mode = 'manual';
-						$input.dispatchEvent(
-							new FocusEvent('focusout', { bubbles: true, cancelable: true }),
-						);
-						$input.dispatchEvent(new FocusEvent('blur', { cancelable: true }));
-						delete $input.dataset.mode;
-					}, 0);
-				},
-			};
+			});
 		},
 	);
 
@@ -156,26 +184,6 @@ export const BaseInput = forwardRef(function BaseInput(
 			className={!hidden ? className : ''}
 			style={!hidden ? style : hiddenStyle}
 			onChange={onChange ?? (() => {})}
-			onFocusCapture={(event) => {
-				if (event.target.dataset.mode !== 'manual') {
-					onFocusCapture?.(event);
-				}
-			}}
-			onFocus={(event) => {
-				if (event.target.dataset.mode !== 'manual') {
-					onFocus?.(event);
-				}
-			}}
-			onBlurCapture={(event) => {
-				if (event.target.dataset.mode !== 'manual') {
-					onBlurCapture?.(event);
-				}
-			}}
-			onBlur={(event) => {
-				if (event.target.dataset.mode !== 'manual') {
-					onBlur?.(event);
-				}
-			}}
 			tabIndex={tabIndex}
 			{...inputProps}
 		/>
