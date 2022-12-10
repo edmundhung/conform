@@ -79,21 +79,27 @@ export interface BaseInputProps
 }
 
 export const BaseInput = forwardRef(function BaseInput(
-	props: BaseInputProps,
-	forwardedRef: ForwardedRef<HTMLInputElement>,
-) {
-	const ref = useRef<HTMLInputElement>(null);
-	const propsRef = useRef(props);
-
-	const {
+	{
 		hidden = true,
 		tabIndex = -1,
 		className,
 		style,
-		onChange,
+		value,
 		onReset,
 		...inputProps
-	} = props;
+	}: BaseInputProps,
+	forwardedRef: ForwardedRef<HTMLInputElement>,
+) {
+	const ref = useRef<HTMLInputElement>(null);
+	const internalRef = useRef({
+		onReset,
+		defaultValue: value,
+		isResetting: false,
+	});
+
+	useSafeLayoutEffect(() => {
+		internalRef.current.onReset = onReset;
+	});
 
 	useImperativeHandle<HTMLInputElement | null, HTMLInputElement | null>(
 		forwardedRef,
@@ -108,31 +114,31 @@ export const BaseInput = forwardRef(function BaseInput(
 				get(target, prop, receiver) {
 					switch (prop) {
 						case 'focus':
-							setTimeout(() => {
-								target.dispatchEvent(
-									new FocusEvent('focusin', {
-										bubbles: true,
-										cancelable: true,
-									}),
-								);
-								target.dispatchEvent(
-									new FocusEvent('focus', { cancelable: true }),
-								);
-							}, 0);
-							break;
+							return () =>
+								setTimeout(() => {
+									target.dispatchEvent(
+										new FocusEvent('focusin', {
+											bubbles: true,
+											cancelable: true,
+										}),
+									);
+									target.dispatchEvent(
+										new FocusEvent('focus', { cancelable: true }),
+									);
+								}, 0);
 						case 'blur':
-							setTimeout(() => {
-								$input.dispatchEvent(
-									new FocusEvent('focusout', {
-										bubbles: true,
-										cancelable: true,
-									}),
-								);
-								$input.dispatchEvent(
-									new FocusEvent('blur', { cancelable: true }),
-								);
-							}, 0);
-							break;
+							return () =>
+								setTimeout(() => {
+									$input.dispatchEvent(
+										new FocusEvent('focusout', {
+											bubbles: true,
+											cancelable: true,
+										}),
+									);
+									$input.dispatchEvent(
+										new FocusEvent('blur', { cancelable: true }),
+									);
+								}, 0);
 						default:
 							return Reflect.get(target, prop, receiver);
 					}
@@ -144,7 +150,8 @@ export const BaseInput = forwardRef(function BaseInput(
 	useSafeLayoutEffect(() => {
 		const handleReset = (event: Event) => {
 			if (event.target === ref.current?.form) {
-				propsRef.current.onReset?.(event);
+				internalRef.current.isResetting = true;
+				internalRef.current.onReset?.(event);
 			}
 		};
 
@@ -162,28 +169,41 @@ export const BaseInput = forwardRef(function BaseInput(
 			return;
 		}
 
-		const value = $input.value;
+		const previousValue = $input.value;
+		const nextValue = value;
 
-		$input.value = propsRef.current.value;
+		// This make sure no event is dispatched on the first effect run
+		if (nextValue === previousValue) {
+			return;
+		}
+
+		if (internalRef.current.isResetting) {
+			internalRef.current.isResetting = false;
+
+			// Reset only if nextValue is really reset to the default value
+			if (nextValue === internalRef.current.defaultValue) {
+				return;
+			}
+		}
+
+		// Dispatch beforeinput event before updating the input value
 		$input.dispatchEvent(
 			new InputEvent('beforeinput', { bubbles: true, cancelable: true }),
 		);
-		setNativeValue($input, value);
+		// Update the input value to trigger a change event
+		setNativeValue($input, nextValue);
+		// Dispatch input event with the updated input value
 		$input.dispatchEvent(
 			new InputEvent('input', { bubbles: true, cancelable: true }),
 		);
-	}, [props.value, hidden]);
-
-	useSafeLayoutEffect(() => {
-		propsRef.current = props;
-	});
+	}, [value, hidden]);
 
 	return (
 		<input
 			ref={ref}
 			className={!hidden ? className : ''}
 			style={!hidden ? style : hiddenStyle}
-			onChange={onChange ?? (() => {})}
+			defaultValue={internalRef.current.defaultValue}
 			tabIndex={tabIndex}
 			{...inputProps}
 		/>
