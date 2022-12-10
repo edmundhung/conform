@@ -12,6 +12,15 @@ async function getForm(page: Page, defaultValue?: string) {
 	};
 }
 
+function createLog(type: string, eventPhase: number) {
+	return JSON.stringify({
+		eventPhase,
+		type,
+		bubbles: true,
+		cancelable: false,
+	});
+}
+
 async function expectToHaveSameTexts(
 	baseLogs: Locator,
 	nativeLogs: Locator,
@@ -24,7 +33,7 @@ async function expectToHaveSameTexts(
 	expect(base).toEqual(native);
 }
 
-test.describe('BaseInput', () => {
+test.describe.only('BaseInput', () => {
 	test('emits nothing on load', async ({ page }) => {
 		const form = await getForm(page);
 
@@ -38,32 +47,40 @@ test.describe('BaseInput', () => {
 		await form.nativeInput.focus();
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
+			createLog('focus', 1),
+			createLog('focus', 3),
 		]);
 
 		await form.nativeInput.type('test');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 
 		await page.click('body');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Capturing: blur',
-			'Bubbling: blur',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('blur', 1),
+			createLog('blur', 3),
 		]);
 	});
 
@@ -82,63 +99,86 @@ test.describe('BaseInput', () => {
 		await form.nativeInput.press('Shift+ArrowLeft');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 
 		// Cut out 'c'
 		await form.nativeInput.press('Control+x');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 
 		// Paste the 'c' back
 		await form.nativeInput.press('Control+v');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 
 		// Select all text
 		await form.nativeInput.press('Control+a');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 
 		// Delete all text
 		await form.nativeInput.press('Backspace');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
-			'Bubbling: change',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('input', 3),
+			createLog('change', 3),
 		]);
 	});
 
@@ -156,11 +196,12 @@ test.describe('BaseInput', () => {
 		await expect(form.nativeInput).toHaveValue('abc');
 		await expectToHaveSameTexts(form.baseLogs, form.nativeLogs);
 		await expect(form.nativeLogs).toHaveText([
-			'Capturing: focus',
-			'Bubbling: focus',
-			'Bubbling: change',
-			'Capturing: blur',
-			'Bubbling: blur',
+			createLog('focus', 1),
+			createLog('focus', 3),
+			createLog('input', 3),
+			createLog('change', 3),
+			createLog('blur', 1),
+			createLog('blur', 3),
 		]);
 	});
 });

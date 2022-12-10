@@ -119,12 +119,9 @@ export const BaseInput = forwardRef(function BaseInput(
 									target.dispatchEvent(
 										new FocusEvent('focusin', {
 											bubbles: true,
-											cancelable: true,
 										}),
 									);
-									target.dispatchEvent(
-										new FocusEvent('focus', { cancelable: true }),
-									);
+									target.dispatchEvent(new FocusEvent('focus'));
 								}, 0);
 						case 'blur':
 							return () =>
@@ -132,12 +129,9 @@ export const BaseInput = forwardRef(function BaseInput(
 									$input.dispatchEvent(
 										new FocusEvent('focusout', {
 											bubbles: true,
-											cancelable: true,
 										}),
 									);
-									$input.dispatchEvent(
-										new FocusEvent('blur', { cancelable: true }),
-									);
+									$input.dispatchEvent(new FocusEvent('blur'));
 								}, 0);
 						default:
 							return Reflect.get(target, prop, receiver);
@@ -187,15 +181,11 @@ export const BaseInput = forwardRef(function BaseInput(
 		}
 
 		// Dispatch beforeinput event before updating the input value
-		$input.dispatchEvent(
-			new InputEvent('beforeinput', { bubbles: true, cancelable: true }),
-		);
+		$input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
 		// Update the input value to trigger a change event
 		setNativeValue($input, nextValue);
 		// Dispatch input event with the updated input value
-		$input.dispatchEvent(
-			new InputEvent('input', { bubbles: true, cancelable: true }),
-		);
+		$input.dispatchEvent(new InputEvent('input', { bubbles: true }));
 	}, [value, hidden]);
 
 	return (

@@ -1,25 +1,6 @@
 import { useSearchParams } from '@remix-run/react';
-import { useReducer, useRef, useState } from 'react';
+import { type FormEvent, useReducer, useRef, useState } from 'react';
 import { BaseInput } from 'react-base-input';
-
-/**
- * Format event phase number
- * @see https://developer.mozilla.org/en-US/docs/Web/API/Event/eventPhase
- */
-function getEventPhaseName(phase: number) {
-	switch (phase) {
-		case 0:
-			return 'None';
-		case 1:
-			return 'Capturing';
-		case 2:
-			return 'At target';
-		case 3:
-			return 'Bubbling';
-		default:
-			throw new Error('Unknown event phase');
-	}
-}
 
 export default function BaseInputText() {
 	const [searchParams] = useSearchParams();
@@ -29,24 +10,34 @@ export default function BaseInputText() {
 	const [logsByName, log] = useReducer(
 		(
 			logsByName: Record<string, string[]>,
-			event: { target: { name: string }; type: string; eventPhase: number },
-		) => ({
-			...logsByName,
-			[event.target.name]: [
-				...(logsByName[event.target.name] ?? []),
-				`${getEventPhaseName(event.eventPhase)}: ${event.type}`,
-			],
-		}),
+			event: FormEvent<HTMLFormElement>,
+		) => {
+			const input = event.target as HTMLInputElement;
+
+			return {
+				...logsByName,
+				[input.name]: [
+					...(logsByName[input.name] ?? []),
+					JSON.stringify({
+						eventPhase: event.eventPhase,
+						type: event.type,
+						bubbles: event.bubbles,
+						cancelable: event.cancelable,
+					}),
+				],
+			};
+		},
 		{},
 	);
 
 	return (
 		<form
-			onChange={(e: any) => log(e)}
-			onFocusCapture={(e: any) => log(e)}
-			onFocus={(e: any) => log(e)}
-			onBlurCapture={(e: any) => log(e)}
-			onBlur={(e: any) => log(e)}
+			onChange={log}
+			onInput={log}
+			onFocusCapture={log}
+			onFocus={log}
+			onBlurCapture={log}
+			onBlur={log}
 		>
 			<div className="sticky top-0 pt-4 pb-8 bg-gray-100 border-b">
 				<label>Type here</label>
