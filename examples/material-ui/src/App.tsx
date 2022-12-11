@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/dom';
-import { useForm, useFieldset, useControlledInput } from '@conform-to/react';
+import { useForm, useFieldset } from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -20,6 +20,8 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
+import { useRef, useState } from 'react';
+import { BaseInput } from 'react-base-input';
 
 interface Schema {
 	email: string;
@@ -172,28 +174,33 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 }
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
-	/**
-	 * MUI Select is a non-native input and does not dispatch any DOM events (e.g. input / focus / blur).
-	 * This hooks works by dispatching DOM events manually on the shadow input and thus validated once
-	 * it is hooked up with the controlled component.
-	 */
-	const [shadowInput, control] = useControlledInput(config);
+	const baseRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 
 	return (
 		<>
-			<input {...shadowInput} />
+			<BaseInput
+				ref={baseRef}
+				name={config.name}
+				value={value}
+				required={config.required}
+				onFocus={() => inputRef.current?.focus()}
+				onReset={() => setValue(config.defaultValue ?? '')}
+			/>
 			<TextField
 				label={label}
-				inputRef={control.ref}
-				value={control.value}
-				onChange={control.onChange}
-				onBlur={control.onBlur}
+				inputRef={inputRef}
+				value={value}
+				onChange={(event) => setValue(event.target.value)}
+				onFocus={() => baseRef.current?.focus()}
+				onBlur={() => baseRef.current?.blur()}
 				error={Boolean(error)}
 				helperText={error}
 				inputProps={{
-					// To disable error bubble caused by the constraint
-					// attribute set by mui input, e.g. `required`
-					onInvalid: control.onInvalid,
+					// To avoid error bubble caused by the constraint
+					// attribute set by mui input
+					required: false,
 				}}
 				select
 				required={config.required}
@@ -208,7 +215,9 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const baseRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 	const options = [
 		{ label: 'The Godfather', id: 1 },
 		{ label: 'Pulp Fiction', id: 2 },
@@ -216,27 +225,32 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 
 	return (
 		<>
-			<input {...shadowInput} />
+			<BaseInput
+				ref={baseRef}
+				name={config.name}
+				value={value}
+				required={config.required}
+				onFocus={() => inputRef.current?.focus()}
+				onReset={() => setValue(config.defaultValue ?? '')}
+			/>
 			<Autocomplete
 				disablePortal
 				options={options}
-				value={
-					options.find((option) => control.value === `${option.id}`) ?? null
-				}
-				onChange={(_, option) => control.onChange(`${option?.id ?? ''}`)}
+				value={options.find((option) => value === `${option.id}`) ?? null}
+				onChange={(_, option) => setValue(`${option?.id ?? ''}`)}
 				renderInput={(params) => (
 					<TextField
 						{...params}
 						label={label}
-						onBlur={control.onBlur}
+						inputRef={inputRef}
+						onFocus={() => baseRef.current?.focus()}
+						onBlur={() => baseRef.current?.blur()}
 						error={Boolean(error)}
 						helperText={error}
 						required={config.required}
 						inputProps={{
 							...params.inputProps,
-							// To disable error bubble caused by the constraint
-							// attribute set by mui input, e.g. `required`
-							onInvalid: control.onInvalid,
+							required: false,
 						}}
 					/>
 				)}
@@ -246,17 +260,28 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const baseRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 
 	return (
 		<>
-			<input {...shadowInput} />
+			<BaseInput
+				ref={baseRef}
+				name={config.name}
+				value={value}
+				required={config.required}
+				onFocus={() => inputRef.current?.focus()}
+				onReset={() => setValue(config.defaultValue ?? '')}
+			/>
 			<FormControl variant="standard" error={Boolean(error)} required>
 				<FormLabel>{label}</FormLabel>
 				<Rating
-					ref={control.ref}
-					value={control.value ? Number(control.value) : null}
-					onChange={(_, value) => control.onChange(`${value ?? ''}`)}
+					ref={inputRef}
+					value={value ? Number(value) : null}
+					onFocus={() => baseRef.current?.focus()}
+					onBlur={() => baseRef.current?.blur()}
+					onChange={(_, value) => setValue(`${value ?? ''}`)}
 				/>
 				<FormHelperText>{error}</FormHelperText>
 			</FormControl>
@@ -265,17 +290,24 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 }
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 
 	return (
 		<>
-			<input {...shadowInput} />
+			<BaseInput
+				name={config.name}
+				value={value}
+				required={config.required}
+				onFocus={() => inputRef.current?.focus()}
+				onReset={() => setValue(config.defaultValue ?? '')}
+			/>
 			<FormControl variant="standard" error={Boolean(error)} required>
 				<FormLabel>{label}</FormLabel>
 				<Slider
-					ref={control.ref}
-					value={control.value ? Number(control.value) : 0}
-					onChange={(_, value) => control.onChange(`${value}`)}
+					ref={inputRef}
+					value={value ? Number(value) : 0}
+					onChange={(_, value) => setValue(`${value}`)}
 				/>
 				<FormHelperText>{error}</FormHelperText>
 			</FormControl>
