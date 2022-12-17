@@ -85,16 +85,22 @@ export const BaseInput = forwardRef(function BaseInput(
 		className,
 		style,
 		value,
+		onFocus,
+		onBlur,
 		onReset,
 		...inputProps
 	}: BaseInputProps,
 	forwardedRef: ForwardedRef<HTMLInputElement>,
 ) {
 	const ref = useRef<HTMLInputElement>(null);
-	const internalRef = useRef({
+	const internalRef = useRef<{
+		onReset?: (event: Event) => void;
+		defaultValue: string;
+		state: 'idle' | 'reset' | 'focus';
+	}>({
 		onReset,
 		defaultValue: value,
-		isResetting: false,
+		state: 'idle',
 	});
 
 	useSafeLayoutEffect(() => {
@@ -114,24 +120,31 @@ export const BaseInput = forwardRef(function BaseInput(
 				get(target, prop, receiver) {
 					switch (prop) {
 						case 'focus':
-							return () =>
+							return () => {
+								if (internalRef.current.state === 'focus') {
+									return;
+								}
+
 								setTimeout(() => {
-									target.dispatchEvent(
-										new FocusEvent('focusin', {
-											bubbles: true,
-										}),
-									);
-									target.dispatchEvent(new FocusEvent('focus'));
+									const focusinEvent = new FocusEvent('focusin', {
+										bubbles: true,
+									});
+									const focusEvent = new FocusEvent('focus');
+
+									target.dispatchEvent(focusinEvent);
+									target.dispatchEvent(focusEvent);
 								}, 0);
+							};
 						case 'blur':
 							return () =>
 								setTimeout(() => {
-									$input.dispatchEvent(
-										new FocusEvent('focusout', {
-											bubbles: true,
-										}),
-									);
-									$input.dispatchEvent(new FocusEvent('blur'));
+									const focusoutEvent = new FocusEvent('focusout', {
+										bubbles: true,
+									});
+									const blurEvent = new FocusEvent('blur');
+
+									$input.dispatchEvent(focusoutEvent);
+									$input.dispatchEvent(blurEvent);
 								}, 0);
 						default:
 							return Reflect.get(target, prop, receiver);
@@ -144,11 +157,10 @@ export const BaseInput = forwardRef(function BaseInput(
 	useSafeLayoutEffect(() => {
 		const handleReset = (event: Event) => {
 			if (event.target === ref.current?.form) {
-				internalRef.current.isResetting = true;
+				internalRef.current.state = 'reset';
 				internalRef.current.onReset?.(event);
 			}
 		};
-
 		document.addEventListener('reset', handleReset);
 
 		return () => {
@@ -171,8 +183,8 @@ export const BaseInput = forwardRef(function BaseInput(
 			return;
 		}
 
-		if (internalRef.current.isResetting) {
-			internalRef.current.isResetting = false;
+		if (internalRef.current.state === 'reset') {
+			internalRef.current.state = 'idle';
 
 			// Reset only if nextValue is really reset to the default value
 			if (nextValue === internalRef.current.defaultValue) {
@@ -195,6 +207,18 @@ export const BaseInput = forwardRef(function BaseInput(
 			style={!hidden ? style : hiddenStyle}
 			defaultValue={internalRef.current.defaultValue}
 			tabIndex={tabIndex}
+			onFocus={(e) => {
+				setTimeout(() => {
+					internalRef.current.state = 'focus';
+					onFocus?.(e);
+					internalRef.current.state = 'idle';
+				}, 0);
+			}}
+			onBlur={(e) => {
+				if (internalRef.current.state !== 'focus') {
+					onBlur?.(e);
+				}
+			}}
 			{...inputProps}
 		/>
 	);
