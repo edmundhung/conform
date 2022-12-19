@@ -126,6 +126,62 @@ export function hasError(
 	);
 }
 
+export function getElementByName(
+	form: HTMLFormElement,
+	name: string,
+): Element | null {
+	const item = form.elements.namedItem(name);
+
+	if (item instanceof RadioNodeList) {
+		throw new Error('Repeated name is not supported');
+	}
+
+	return item;
+}
+
+export function reportSubmission(
+	form: HTMLFormElement,
+	submission: Submission,
+): void {
+	let messageByName: { [key in string]?: string } = {};
+
+	for (const [name, message] of submission.error) {
+		if (typeof messageByName[name] === 'undefined') {
+			// Only keep the first error message (for now)
+			messageByName[name] = message;
+
+			// Ensure each error has a matching element
+			if (getElementByName(form, name) === null) {
+				// Create placeholder button to keep the error without contributing to the form data
+				const button = document.createElement('button');
+
+				button.name = name;
+				button.hidden = true;
+
+				form.appendChild(button);
+			}
+		}
+	}
+
+	for (const element of form.elements) {
+		if (isFieldElement(element)) {
+			const message = messageByName[element.name];
+
+			if (
+				typeof message !== 'undefined' ||
+				shouldValidate(submission, element.name)
+			) {
+				const invalidEvent = new Event('invalid', { cancelable: true });
+
+				element.setCustomValidity(message ?? '');
+				element.dispatchEvent(invalidEvent);
+			}
+		}
+	}
+
+	focusFirstInvalidField(form);
+}
+
 export function setFormError(
 	form: HTMLFormElement,
 	submission: Submission,
