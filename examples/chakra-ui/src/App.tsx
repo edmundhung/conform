@@ -1,4 +1,9 @@
-import { type FieldConfig, useForm, useFieldset } from '@conform-to/react';
+import {
+	type FieldConfig,
+	useForm,
+	useFieldset,
+	useControlledInput,
+} from '@conform-to/react';
 import {
 	Stack,
 	FormControl,
@@ -27,15 +32,9 @@ import {
 	SliderTrack,
 	SliderFilledTrack,
 	SliderThumb,
-	RangeSlider,
-	RangeSliderFilledTrack,
-	RangeSliderThumb,
-	RangeSliderTrack,
 	Heading,
 	Text,
 } from '@chakra-ui/react';
-import { useRef } from 'react';
-import { BaseInput, useInputControl } from './base';
 
 interface Schema {
 	email: string;
@@ -151,12 +150,6 @@ export default function Example() {
 						<FormErrorMessage>{fieldset.progress.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.ranges.error)}>
-						<FormLabel>Ranges (RangeSlider)</FormLabel>
-						<ExampleRangeSlider name={fieldset.ranges.config.name} required />
-						<FormErrorMessage>{fieldset.ranges.error}</FormErrorMessage>
-					</FormControl>
-
 					<FormControl isInvalid={Boolean(fieldset.active.error)}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<RadioGroup
@@ -195,46 +188,43 @@ export default function Example() {
 	);
 }
 
-function ExampleNumberInput({ name, required }: FieldConfig<number>) {
-	const ref = useRef<HTMLInputElement>(null);
-	const control = useInputControl(ref);
+function ExampleNumberInput(config: FieldConfig<number>) {
+	const [shadowInputProps, control] = useControlledInput(config);
 
 	return (
-		<NumberInput name={name} isRequired={required} onChange={control.onChange}>
-			<NumberInputField ref={ref} />
-			<NumberInputStepper>
-				<NumberIncrementStepper />
-				<NumberDecrementStepper />
-			</NumberInputStepper>
-		</NumberInput>
+		<>
+			<input {...shadowInputProps} />
+			<NumberInput
+				isRequired={config.required}
+				value={control.value}
+				onChange={control.onChange}
+			>
+				<NumberInputField ref={control.ref} />
+				<NumberInputStepper>
+					<NumberIncrementStepper />
+					<NumberDecrementStepper />
+				</NumberInputStepper>
+			</NumberInput>
+		</>
 	);
 }
 
 function ExamplePinInput({
-	name,
-	required,
-	pattern,
 	isInvalid,
+	...config
 }: FieldConfig<string> & { isInvalid: boolean }) {
-	const baseRef = useRef<HTMLInputElement>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputControl(baseRef);
+	const [shadowInputProps, control] = useControlledInput(config);
 
 	return (
 		<>
-			<BaseInput
-				name={name}
-				required={required}
-				pattern={pattern}
-				ref={baseRef}
-				onFocus={() => inputRef.current?.focus()}
-			/>
+			<input {...shadowInputProps} />
 			<PinInput
 				type="alphanumeric"
+				value={control.value}
 				onChange={control.onChange}
 				isInvalid={isInvalid}
 			>
-				<PinInputField ref={inputRef} />
+				<PinInputField ref={control.ref} />
 				<PinInputField />
 				<PinInputField />
 				<PinInputField />
@@ -243,17 +233,15 @@ function ExamplePinInput({
 	);
 }
 
-function ExampleSlider({ name, defaultValue, required }: FieldConfig<number>) {
-	const ref = useRef<HTMLInputElement>(null);
-	const control = useInputControl(ref);
+function ExampleSlider(config: FieldConfig<number>) {
+	const [shadowInputProps, control] = useControlledInput(config);
 
 	return (
 		<>
-			<BaseInput ref={ref} name={name} required={required} />
+			<input {...shadowInputProps} />
 			<Slider
-				defaultValue={defaultValue ? Number(defaultValue) : undefined}
+				value={control.value ? Number(control.value) : undefined}
 				onChange={(value) => control.onChange(`${value}`)}
-				onFocus={control.onFocus}
 				onBlur={control.onBlur}
 			>
 				<SliderTrack>
@@ -262,36 +250,5 @@ function ExampleSlider({ name, defaultValue, required }: FieldConfig<number>) {
 				<SliderThumb />
 			</Slider>
 		</>
-	);
-}
-
-/**
- * RangeSlider validation is not supported at the moment
- */
-function ExampleRangeSlider({ name, defaultValue }: FieldConfig<number[]>) {
-	const ref = useRef<HTMLFieldSetElement>(null);
-	const ref0 = useRef<HTMLInputElement>(null);
-	const ref1 = useRef<HTMLInputElement>(null);
-	const control0 = useInputControl(ref0);
-	const control1 = useInputControl(ref1);
-
-	return (
-		<fieldset ref={ref}>
-			<BaseInput ref={ref0} name={`${name}[0]`} />
-			<BaseInput ref={ref1} name={`${name}[1]`} />
-			<RangeSlider
-				defaultValue={defaultValue?.map(Number)}
-				onChange={([value0, value1]) => {
-					control0.onChange(`${value0}`);
-					control1.onChange(`${value1}`);
-				}}
-			>
-				<RangeSliderTrack>
-					<RangeSliderFilledTrack />
-				</RangeSliderTrack>
-				<RangeSliderThumb index={0} />
-				<RangeSliderThumb index={1} />
-			</RangeSlider>
-		</fieldset>
 	);
 }
