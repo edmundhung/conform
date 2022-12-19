@@ -87,6 +87,7 @@ export default function LoginForm() {
 				<Field label="Password" error={password.error}>
 					<input {...conform.input(password.config, { type: 'password' })} />
 				</Field>
+				<button type="button">Non-submit button</button>
 			</Playground>
 		</Form>
 	);

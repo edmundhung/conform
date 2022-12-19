@@ -203,7 +203,7 @@ export function useForm<Schema extends Record<string, any>>(
 				!form ||
 				!isFieldElement(field) ||
 				field.form !== form ||
-				field.name !== ''
+				field.name !== '__form__'
 			) {
 				return;
 			}

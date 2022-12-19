@@ -126,19 +126,6 @@ export function hasError(
 	);
 }
 
-export function getElementByName(
-	form: HTMLFormElement,
-	name: string,
-): Element | null {
-	const item = form.elements.namedItem(name);
-
-	if (item instanceof RadioNodeList) {
-		throw new Error('Repeated name is not supported');
-	}
-
-	return item;
-}
-
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
@@ -150,13 +137,16 @@ export function reportSubmission(
 			// Only keep the first error message (for now)
 			messageByName[name] = message;
 
-			// Ensure each error has a matching element
-			if (getElementByName(form, name) === null) {
+			const elementName = name ? name : '__form__';
+			const item = form.elements.namedItem(elementName);
+
+			if (item === null) {
 				// Create placeholder button to keep the error without contributing to the form data
 				const button = document.createElement('button');
 
-				button.name = name;
+				button.name = elementName;
 				button.hidden = true;
+				button.dataset.conformTouched = 'true';
 
 				form.appendChild(button);
 			}
@@ -164,13 +154,11 @@ export function reportSubmission(
 	}
 
 	for (const element of form.elements) {
-		if (isFieldElement(element)) {
-			const message = messageByName[element.name];
+		if (isFieldElement(element) && element.willValidate) {
+			const name = element.name !== '__form__' ? element.name : '';
+			const message = messageByName[name];
 
-			if (
-				typeof message !== 'undefined' ||
-				shouldValidate(submission, element.name)
-			) {
+			if (typeof message !== 'undefined' || shouldValidate(submission, name)) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
 				element.setCustomValidity(message ?? '');
