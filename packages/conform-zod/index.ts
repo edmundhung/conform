@@ -24,7 +24,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		return null;
 	}
 
-	function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint {
+	function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint<T> {
 		let constraint: FieldConstraint = {};
 
 		if (schema instanceof z.ZodEffects) {
