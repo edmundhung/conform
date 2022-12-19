@@ -1,16 +1,44 @@
 import { type FieldConfig, type Primitive } from '@conform-to/dom';
-import {
-	type InputHTMLAttributes,
-	type SelectHTMLAttributes,
-	type TextareaHTMLAttributes,
-} from 'react';
+import { type HTMLInputTypeAttribute } from 'react';
+
+interface FieldProps {
+	name: string;
+	form?: string;
+	required?: boolean;
+	autoFocus?: boolean;
+}
+
+interface InputProps<Schema> extends FieldProps {
+	type?: HTMLInputTypeAttribute;
+	minLength?: number;
+	maxLength?: number;
+	min?: Schema extends number ? number : string | number;
+	max?: Schema extends number ? number : string | number;
+	step?: Schema extends number ? number : string | number;
+	pattern?: string;
+	multiple?: boolean;
+	value?: string;
+	defaultChecked?: boolean;
+	defaultValue?: string;
+}
+
+interface SelectProps extends FieldProps {
+	defaultValue?: string | number | readonly string[] | undefined;
+	multiple?: boolean;
+}
+
+interface TextareaProps extends FieldProps {
+	minLength?: number;
+	maxLength?: number;
+	defaultValue?: string;
+}
 
 export function input<Schema extends Primitive>(
 	config: FieldConfig<Schema>,
-	{ type, value }: { type?: string; value?: string } = {},
-): InputHTMLAttributes<HTMLInputElement> {
+	{ type, value }: { type?: HTMLInputTypeAttribute; value?: string } = {},
+): InputProps<Schema> {
 	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
-	const attributes: InputHTMLAttributes<HTMLInputElement> = {
+	const attributes: InputProps<Schema> = {
 		type,
 		name: config.name,
 		form: config.form,
@@ -40,8 +68,8 @@ export function input<Schema extends Primitive>(
 
 export function select<Schema extends Primitive | Array<Primitive>>(
 	config: FieldConfig<Schema>,
-): SelectHTMLAttributes<HTMLSelectElement> {
-	const attributes: SelectHTMLAttributes<HTMLSelectElement> = {
+): SelectProps {
+	const attributes: SelectProps = {
 		name: config.name,
 		form: config.form,
 		defaultValue: config.multiple
@@ -62,8 +90,8 @@ export function select<Schema extends Primitive | Array<Primitive>>(
 
 export function textarea<Schema extends Primitive>(
 	config: FieldConfig<Schema>,
-): TextareaHTMLAttributes<HTMLTextAreaElement> {
-	const attributes: TextareaHTMLAttributes<HTMLTextAreaElement> = {
+): TextareaProps {
+	const attributes: TextareaProps = {
 		name: config.name,
 		form: config.form,
 		defaultValue: `${config.defaultValue ?? ''}`,
