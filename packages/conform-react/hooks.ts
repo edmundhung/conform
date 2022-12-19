@@ -593,15 +593,14 @@ export function useFieldset<Schema extends Record<string, any>>(
 	return new Proxy(
 		{},
 		{
-			get(_target, key) {
+			get(_target, key): Field<any> | undefined {
 				if (typeof key !== 'string') {
 					return;
 				}
 
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
-				const field: Field<unknown> = {
-					// @ts-expect-error
+				const field = {
 					config: {
 						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
 						form: fieldsetConfig.form,

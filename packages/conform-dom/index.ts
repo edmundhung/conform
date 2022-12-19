@@ -21,12 +21,12 @@ export type FieldValue<Schema> = Schema extends Primitive | File
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
 	: unknown;
 
-export type FieldConstraint<Schema> = {
+export type FieldConstraint<Schema = any> = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;
-	min?: Schema extends number ? number : string | number;
-	max?: Schema extends number ? number : string | number;
+	min?: Schema extends number ? number : string;
+	max?: Schema extends number ? number : string;
 	step?: Schema extends number ? number : string;
 	multiple?: boolean;
 	pattern?: string;
