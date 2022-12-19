@@ -1,5 +1,9 @@
-import type { FieldConfig } from '@conform-to/dom';
-import { useForm, useFieldset, useControlledInput } from '@conform-to/react';
+import {
+	type FieldConfig,
+	useForm,
+	useFieldset,
+	useControlledInput,
+} from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
