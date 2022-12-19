@@ -1,4 +1,5 @@
 export {
+	type FieldConfig,
 	type FieldsetConstraint,
 	type Submission,
 	getFormElements,
