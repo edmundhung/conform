@@ -891,10 +891,12 @@ export function useControlledInput<
 				whiteSpace: 'nowrap',
 				borderWidth: 0,
 			},
+			tabIndex: -1,
+			'aria-hidden': true,
 			onFocus() {
 				inputRef.current?.focus();
 			},
-			...input({ ...config, ...uncontrolledState }, { type: 'text' }),
+			...input({ ...config, ...uncontrolledState }),
 		},
 		{
 			ref: inputRef,
