@@ -1,5 +1,9 @@
-import type { FieldConfig } from '@conform-to/dom';
-import { useForm, useFieldset, useControlledInput } from '@conform-to/react';
+import {
+	type FieldConfig,
+	useForm,
+	useFieldset,
+	useControlledInput,
+} from '@conform-to/react';
 import {
 	TextField,
 	Button,
