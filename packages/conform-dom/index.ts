@@ -58,7 +58,7 @@ export function getFormElements(form: HTMLFormElement): FieldElement[] {
 }
 
 export function getPaths(name: string): Array<string | number> {
-	const pattern = /(\w*)\[(\d+)\]/;
+	const pattern = /(\w*)\[(\d+)*\]/;
 
 	if (!name) {
 		return [];
@@ -95,7 +95,7 @@ export function getFormData(
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
-			return `${name}[${path}]`;
+			return `${name}[${!Number.isNaN(path) ? path : ''}]`;
 		}
 
 		if (name === '' || path === '') {
@@ -130,15 +130,33 @@ export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	let messageByName: { [key in string]?: string } = {};
+	const messageByName: Map<string, string> = new Map();
+	const nameByInput: Map<FieldElement, string> = new Map();
 
 	for (const [name, message] of submission.error) {
-		if (typeof messageByName[name] === 'undefined') {
+		if (!messageByName.has(name)) {
 			// Only keep the first error message (for now)
-			messageByName[name] = message;
+			messageByName.set(name, message);
 
 			const elementName = name ? name : '__form__';
-			const item = form.elements.namedItem(elementName);
+			let item = form.elements.namedItem(elementName);
+
+			if (item === null) {
+				const paths = getPaths(name);
+				const lastPath = paths[paths.length - 1];
+
+				if (typeof lastPath === 'number') {
+					item = form.elements.namedItem(getName(paths.slice(0, -1)));
+
+					if (item instanceof RadioNodeList) {
+						item = item.item(lastPath) as Element | null;
+					} else {
+						item = lastPath === 0 ? item : null;
+					}
+				} else {
+					item = form.elements.namedItem(`${name}[]`);
+				}
+			}
 
 			if (item === null) {
 				// Create placeholder button to keep the error without contributing to the form data
@@ -147,16 +165,25 @@ export function reportSubmission(
 				button.name = elementName;
 				button.hidden = true;
 				button.dataset.conformTouched = 'true';
+				item = button;
 
 				form.appendChild(button);
+			}
+
+			if (item instanceof RadioNodeList) {
+				for (const node of item) {
+					nameByInput.set(node as FieldElement, name);
+				}
+			} else {
+				nameByInput.set(item as FieldElement, name);
 			}
 		}
 	}
 
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
-			const name = element.name !== '__form__' ? element.name : '';
-			const message = messageByName[name];
+			const name = nameByInput.get(element) ?? element.name;
+			const message = messageByName.get(name);
 
 			if (typeof message !== 'undefined' || shouldValidate(submission, name)) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
@@ -207,6 +234,11 @@ export function setValue<T>(
 			index != lastIndex
 				? pointer[key] ?? (typeof next === 'number' ? [] : {})
 				: valueFn(pointer[key]);
+
+		// The path will be NaN if it matches `[]`
+		if (Number.isNaN(key)) {
+			key = pointer.length;
+		}
 
 		pointer[key] = newValue;
 		pointer = pointer[key];
@@ -329,8 +361,10 @@ export function parse<Schema extends Record<string, any>>(
 				const paths = getPaths(name);
 
 				setValue(submission.value, paths, (prev) => {
-					if (prev) {
-						throw new Error('Entry with the same name is not supported');
+					if (typeof prev !== 'undefined') {
+						throw new Error(
+							`The value of "${name}" overlaps with a previous entry. Please check conform's naming convention for details.`,
+						);
 					}
 
 					return value;

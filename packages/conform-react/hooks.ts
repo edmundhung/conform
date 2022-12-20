@@ -155,6 +155,8 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
+		console.log('last submission', config.state);
+
 		reportSubmission(form, config.state);
 	}, [config.state]);
 
@@ -478,7 +480,11 @@ export function useFieldset<Schema extends Record<string, any>>(
 			);
 
 			// Update the error only if the field belongs to the fieldset
-			if (typeof key === 'string' && paths.length === 0) {
+			if (
+				typeof key === 'string' &&
+				(paths.length === 0 ||
+					(paths.length === 1 && Number.isNaN(paths[paths.length - 1])))
+			) {
 				if (field.dataset.conformTouched) {
 					setError((prev) => {
 						const prevMessage = prev?.[key] ?? '';
@@ -837,6 +843,7 @@ export function useControlledInput<
 			onFocus() {
 				inputRef.current?.focus();
 			},
+			// @ts-expect-error
 			...input({ ...config, ...uncontrolledState }),
 		},
 		{

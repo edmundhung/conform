@@ -33,14 +33,17 @@ interface TextareaProps extends FieldProps {
 	defaultValue?: string;
 }
 
-export function input<Schema extends Primitive>(
+export function input<Schema extends File | File[]>(
+	config: FieldConfig<Schema>,
+	{ type }: { type: 'file' },
+): InputProps<Schema>;
+export function input<Schema extends Primitive | File | File[]>(
 	config: FieldConfig<Schema>,
 	{ type, value }: { type?: HTMLInputTypeAttribute; value?: string } = {},
 ): InputProps<Schema> {
-	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
 	const attributes: InputProps<Schema> = {
 		type,
-		name: config.name,
+		name: config.multiple ? `${config.name}[]` : config.name,
 		form: config.form,
 		required: config.required,
 		minLength: config.minLength,
@@ -56,11 +59,11 @@ export function input<Schema extends Primitive>(
 		attributes.autoFocus = true;
 	}
 
-	if (isCheckboxOrRadio) {
+	if (type === 'checkbox' || type === 'radio') {
 		attributes.value = value ?? 'on';
 		attributes.defaultChecked = config.defaultValue === attributes.value;
-	} else {
-		attributes.defaultValue = config.defaultValue;
+	} else if (type !== 'file') {
+		attributes.defaultValue = config.defaultValue as string | undefined;
 	}
 
 	return attributes;

@@ -322,6 +322,7 @@ test.describe('conform-dom', () => {
 			expect(getPaths('')).toEqual([]);
 			expect(getPaths('[0]')).toEqual([0]);
 			expect(getPaths('title')).toEqual(['title']);
+			expect(getPaths('file[]')).toEqual(['file', NaN]);
 			expect(getPaths('amount.currency')).toEqual(['amount', 'currency']);
 			expect(getPaths('tasks[0]')).toEqual(['tasks', 0]);
 			expect(getPaths('tasks[1].completed')).toEqual(['tasks', 1, 'completed']);
@@ -332,6 +333,7 @@ test.describe('conform-dom', () => {
 		test('Expected inputs', () => {
 			expect(getName([])).toEqual('');
 			expect(getName([0])).toEqual('[0]');
+			expect(getName(['file', NaN])).toEqual('file[]');
 			expect(getName(['title'])).toEqual('title');
 			expect(getName(['amount', 'currency'])).toEqual('amount.currency');
 			expect(getName(['tasks', 0])).toEqual('tasks[0]');
