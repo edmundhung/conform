@@ -699,18 +699,30 @@ export function useFieldList<Payload = any>(
 				typeof key === 'number' &&
 				paths.every((path) => Number.isNaN(path))
 			) {
+				let index = key;
+
+				if (Number.isNaN(index)) {
+					const item = form.elements.namedItem(field.name);
+
+					if (item instanceof RadioNodeList) {
+						index = Array.from(item.values()).indexOf(field);
+					} else {
+						index = 0;
+					}
+				}
+
 				if (field.dataset.conformTouched) {
 					setError((prev) => {
-						const prevMessage = prev?.[key] ?? '';
+						const prevMessage = prev?.[index] ?? '';
 
 						if (prevMessage === field.validationMessage) {
 							return prev;
 						}
 
 						return [
-							...prev.slice(0, key),
+							...prev.slice(0, index),
 							field.validationMessage,
-							...prev.slice(key + 1),
+							...prev.slice(index + 1),
 						];
 					});
 				}

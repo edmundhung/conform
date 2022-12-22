@@ -143,10 +143,10 @@ export function reportSubmission(
 
 			if (item === null) {
 				const paths = getPaths(name);
-				const lastPath = paths[paths.length - 1];
+				const lastPath = paths.pop();
 
 				if (typeof lastPath === 'number') {
-					item = form.elements.namedItem(getName(paths.slice(0, -1)));
+					item = form.elements.namedItem(getName([...paths, NaN]));
 
 					if (item instanceof RadioNodeList) {
 						item = item.item(lastPath) as Element | null;
