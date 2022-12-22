@@ -33,10 +33,6 @@ interface TextareaProps extends FieldProps {
 	defaultValue?: string;
 }
 
-export function input<Schema extends File | File[]>(
-	config: FieldConfig<Schema>,
-	{ type }: { type: 'file' },
-): InputProps<Schema>;
 export function input<Schema extends Primitive | File | File[]>(
 	config: FieldConfig<Schema>,
 	{ type, value }: { type?: HTMLInputTypeAttribute; value?: string } = {},
