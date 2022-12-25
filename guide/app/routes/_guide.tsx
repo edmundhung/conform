@@ -33,8 +33,9 @@ const navigations: Navigation[] = [
 	{
 		title: 'Examples',
 		menus: [
-			{ title: 'Material UI', to: '/examples/material-ui' },
+			{ title: 'Chakra UI', to: '/examples/chakra-ui' },
 			{ title: 'Headless UI', to: '/examples/headless-ui' },
+			{ title: 'Material UI', to: '/examples/material-ui' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
 		],
