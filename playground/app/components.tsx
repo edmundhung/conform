@@ -55,15 +55,7 @@ export function Playground({
 					<div className="mt-5 lg:mt-0 lg:col-span-2 px-4 py-5 bg-white lg:p-6">
 						{children}
 					</div>
-					<footer className="px-4 py-3 bg-gray-50 flex flex-row-reverse lg:px-6 gap-2">
-						<button
-							type="submit"
-							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-							onClick={() => setSubmission(null)}
-							form={form}
-						>
-							Submit
-						</button>
+					<footer className="px-4 py-3 bg-gray-50 flex flex-row lg:px-6 gap-2">
 						<button
 							type="reset"
 							className="inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -71,6 +63,14 @@ export function Playground({
 							form={form}
 						>
 							Reset
+						</button>
+						<button
+							type="submit"
+							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+							onClick={() => setSubmission(null)}
+							form={form}
+						>
+							Submit
 						</button>
 					</footer>
 				</main>
