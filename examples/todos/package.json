@@ -2,7 +2,7 @@
 	"name": "@conform-to/todos-example",
 	"private": true,
 	"dependencies": {
-		"@conform-to/react": "0.4.0",
+		"@conform-to/react": "0.4.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-scripts": "5.0.1"
