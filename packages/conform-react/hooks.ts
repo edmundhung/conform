@@ -279,7 +279,11 @@ export function useForm<Schema extends Record<string, any>>(
 					| null;
 
 				for (const element of form.elements) {
-					if (isFieldElement(element) && element.name === '') {
+					if (
+						isFieldElement(element) &&
+						element.name === '' &&
+						element.willValidate
+					) {
 						setError(element.validationMessage);
 						break;
 					}
