@@ -14,7 +14,10 @@ import { Playground, Field, Alert } from '~/components';
 import { parseConfig } from '~/config';
 
 const schema = z.object({
-	sections: z.array(z.string().min(1, 'The field is required')),
+	sections: z
+		.array(z.string().min(1, 'The field is required'))
+		.min(1, 'At least one section is required')
+		.max(5, 'Maximum 5 sections are accepted'),
 });
 
 type Schema = z.infer<typeof schema>;
@@ -28,9 +31,14 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse(formData);
 
 	try {
-		const data = schema.parse(submission.value);
-
-		console.log(data);
+		switch (submission.type) {
+			case 'validate':
+			case 'submit':
+			default:
+				const data = schema.parse(submission.value);
+				console.log(data);
+				break;
+		}
 	} catch (error) {
 		submission.error.push(...formatError(error));
 	}
@@ -99,13 +107,13 @@ export default function EmployeeForm() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...command.prepend()}
+						{...command.prepend({ defaultValue: '' })}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...command.append()}
+						{...command.append({ defaultValue: '' })}
 					>
 						Insert bottom
 					</button>
