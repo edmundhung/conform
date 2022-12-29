@@ -11,22 +11,28 @@ import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
-import { parseConfig } from '~/config';
 
 const schema = z.object({
-	sections: z
-		.array(z.string().min(1, 'The field is required'))
-		.min(1, 'At least one section is required')
-		.max(5, 'Maximum 5 sections are accepted'),
+	items: z
+		.array(
+			z
+				.string()
+				.min(1, 'The field is required')
+				.regex(/^[^0-9]+$/, 'Number is not allowed'),
+		)
+		.min(1, 'At least one item is required')
+		.max(5, 'Only five items are allowed in maximum'),
 });
 
-type Schema = z.infer<typeof schema>;
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
 
-export let loader = async ({ request }: LoaderArgs) => {
-	return parseConfig(request);
-};
+	return {
+		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
+	};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData);
 
@@ -34,9 +40,7 @@ export let action = async ({ request }: ActionArgs) => {
 		switch (submission.type) {
 			case 'validate':
 			case 'submit':
-			default:
-				const data = schema.parse(submission.value);
-				console.log(data);
+				schema.parse(submission.value);
 				break;
 		}
 	} catch (error) {
@@ -44,42 +48,30 @@ export let action = async ({ request }: ActionArgs) => {
 	}
 
 	return json(submission);
-};
+}
 
-export default function EmployeeForm() {
-	const config = useLoaderData();
+export default function SimpleList() {
+	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const form = useForm<Schema>({
-		...config,
+	const form = useForm<z.infer<typeof schema>>({
+		mode: noClientValidate ? 'server-validation' : 'client-only',
 		state,
-		onValidate: config.validate
+		onValidate: !noClientValidate
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.type === 'validate') {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
-	const { sections } = useFieldset(form.ref, form.config);
-	const [sectionList, command] = useFieldList(form.ref, sections.config);
+	const { items } = useFieldset(form.ref, form.config);
+	const [list, command] = useFieldList(form.ref, items.config);
 
 	return (
-		<Form method="post" {...form.props} encType="multipart/form-data">
+		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
 				<Alert message={form.error} />
 				<ol>
-					{sectionList.map((section, index) => (
-						<li key={section.key} className="border rounded-md p-4 mb-4">
-							<Field
-								key={section.key}
-								label={`Section #${index + 1}`}
-								error={section.error}
-							>
-								<textarea {...conform.input(section.config)} />
+					{list.map((item, index) => (
+						<li key={item.key} className="border rounded-md p-4 mb-4">
+							<Field label={`Item #${index + 1}`} error={item.error}>
+								<input {...conform.input(item.config, { type: 'text' })} />
 							</Field>
 							<div className="flex flex-row gap-2">
 								<button
