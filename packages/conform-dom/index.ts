@@ -151,6 +151,14 @@ export function reportSubmission(
 					if (item instanceof RadioNodeList) {
 						item = item.item(lastPath) as Element | null;
 					} else {
+						// Skip linking list item error if the multiple attribute is set
+						// ie. multiple file input / multiple select
+						if (
+							(item as HTMLInputElement | HTMLSelectElement | null)?.multiple
+						) {
+							item = null;
+						}
+
 						item = lastPath === 0 ? item : null;
 					}
 				} else {
@@ -171,6 +179,7 @@ export function reportSubmission(
 			}
 
 			if (item instanceof RadioNodeList) {
+				// This assumes all inputs have no multiple attribute set
 				for (const node of item) {
 					nameByInput.set(node as FieldElement, name);
 				}
