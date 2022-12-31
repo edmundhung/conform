@@ -142,28 +142,21 @@ export function reportSubmission(
 			let item = form.elements.namedItem(elementName);
 
 			if (item === null) {
-				const paths = getPaths(name);
-				const lastPath = paths.pop();
+				item = form.elements.namedItem(`${name}[]`);
+			}
 
-				if (typeof lastPath === 'number') {
-					item = form.elements.namedItem(getName([...paths, NaN]));
+			if (item instanceof RadioNodeList) {
+				throw new Error('Repeated name field is not supported');
+			}
 
-					if (item instanceof RadioNodeList) {
-						item = item.item(lastPath) as Element | null;
-					} else {
-						// Skip linking list item error if the multiple attribute is set
-						// ie. multiple file input / multiple select
-						if (
-							(item as HTMLInputElement | HTMLSelectElement | null)?.multiple
-						) {
-							item = null;
-						}
-
-						item = lastPath === 0 ? item : null;
-					}
-				} else {
-					item = form.elements.namedItem(`${name}[]`);
-				}
+			if (
+				item !== null &&
+				(item as FieldElement).name.endsWith('[]') &&
+				!(item as HTMLInputElement | HTMLSelectElement).multiple
+			) {
+				throw new Error(
+					`The multiple attribute is not set on ${(item as FieldElement).name}`,
+				);
 			}
 
 			if (item === null) {
@@ -178,14 +171,7 @@ export function reportSubmission(
 				form.appendChild(button);
 			}
 
-			if (item instanceof RadioNodeList) {
-				// This assumes all inputs have no multiple attribute set
-				for (const node of item) {
-					nameByInput.set(node as FieldElement, name);
-				}
-			} else {
-				nameByInput.set(item as FieldElement, name);
-			}
+			nameByInput.set(item as FieldElement, name);
 		}
 	}
 
