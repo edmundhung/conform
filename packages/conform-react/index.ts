@@ -4,6 +4,7 @@ export {
 	type Submission,
 	getFormElements,
 	hasError,
+	requestCommand,
 	parse,
 	shouldValidate,
 } from '@conform-to/dom';

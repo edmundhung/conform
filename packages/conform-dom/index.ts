@@ -207,30 +207,42 @@ export function setValue<T>(
 	}
 }
 
-export function requestSubmit(
-	form: HTMLFormElement,
-	submitter?: HTMLButtonElement | HTMLInputElement,
+/**
+ * Creates a command button on demand and trigger a form submit by clicking it.
+ */
+export function requestCommand(
+	form: HTMLFormElement | undefined,
+	command: { name: string; value: string; formNoValidate?: boolean },
 ): void {
-	const submitEvent = new SubmitEvent('submit', {
-		bubbles: true,
-		cancelable: true,
-		submitter,
-	});
+	if (!form) {
+		console.warn('No form element is provided');
+		return;
+	}
 
-	form.dispatchEvent(submitEvent);
-}
-
-export function requestValidate(form: HTMLFormElement, field?: string) {
 	const button = document.createElement('button');
 
-	button.name = 'conform/validate';
-	button.value = field ?? '';
-	button.formNoValidate = true;
+	button.name = command.name;
+	button.value = command.value;
 	button.hidden = true;
 
+	if (command.formNoValidate) {
+		button.formNoValidate = true;
+	}
+
 	form.appendChild(button);
-	requestSubmit(form, button);
+	button.click();
 	form.removeChild(button);
+}
+
+/**
+ * Dispatch the validate command for form validation
+ */
+export function requestValidate(form: HTMLFormElement, field?: string) {
+	requestCommand(form, {
+		name: 'conform/validate',
+		value: field ?? '',
+		formNoValidate: true,
+	});
 }
 
 export function getFormElement(
