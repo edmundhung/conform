@@ -13,8 +13,10 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	form?: string;
 }
 
-export type FieldValue<Schema> = Schema extends Primitive | File
+export type FieldValue<Schema> = Schema extends Primitive
 	? string
+	: Schema extends File
+	? File
 	: Schema extends Array<infer InnerType>
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>

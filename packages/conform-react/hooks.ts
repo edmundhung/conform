@@ -843,7 +843,7 @@ interface InputControl<Element extends { focus: () => void }> {
  */
 export function useControlledInput<
 	Element extends { focus: () => void } = HTMLInputElement,
-	Schema extends Primitive = Primitive,
+	Schema = any,
 >(config: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
 	const ref = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<Element>(null);
