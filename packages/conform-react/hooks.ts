@@ -6,7 +6,6 @@ import {
 	type ListCommand,
 	type Primitive,
 	type Submission,
-	focusFirstInvalidField,
 	getFormData,
 	getFormElement,
 	getName,
@@ -15,11 +14,10 @@ import {
 	isFieldElement,
 	parse,
 	parseListCommand,
-	requestSubmit,
 	requestValidate,
-	setFormError,
 	updateList,
 	hasError,
+	reportSubmission,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -156,13 +154,7 @@ export function useForm<Schema extends Record<string, any>>(
 			return;
 		}
 
-		setFormError(form, config.state);
-
-		if (!form.reportValidity()) {
-			focusFirstInvalidField(form);
-		}
-
-		requestSubmit(form);
+		reportSubmission(form, config.state);
 	}, [config.state]);
 
 	useEffect(() => {
@@ -210,7 +202,7 @@ export function useForm<Schema extends Record<string, any>>(
 				!form ||
 				!isFieldElement(field) ||
 				field.form !== form ||
-				field.name !== ''
+				field.name !== '__form__'
 			) {
 				return;
 			}
@@ -278,25 +270,13 @@ export function useForm<Schema extends Record<string, any>>(
 					| HTMLInputElement
 					| null;
 
-				for (const element of form.elements) {
-					if (
-						isFieldElement(element) &&
-						element.name === '' &&
-						element.willValidate
-					) {
-						setError(element.validationMessage);
-						break;
-					}
-				}
-
 				/**
 				 * It checks defaultPrevented to confirm if the submission is intentional
 				 * This is utilized by `useFieldList` to modify the list state when the submit
 				 * event is captured and revalidate the form with new fields without triggering
 				 * a form submission at the same time.
 				 */
-				if (!submitter || event.defaultPrevented) {
-					event.preventDefault();
+				if (event.defaultPrevented) {
 					return;
 				}
 
@@ -318,10 +298,9 @@ export function useForm<Schema extends Record<string, any>>(
 							 *
 							 * This is mainly used to showcase the constraint validation API.
 							 */
-							setFormError(form, { type: 'submit', value: {}, error: [] });
-
 							for (const element of form.elements) {
 								if (isFieldElement(element) && element.willValidate) {
+									element.setCustomValidity('');
 									submission.error.push([
 										element.name,
 										element.validationMessage,
@@ -343,7 +322,7 @@ export function useForm<Schema extends Record<string, any>>(
 
 					if (
 						(!config.noValidate &&
-							!submitter.formNoValidate &&
+							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
 						(submission.type === 'validate' &&
 							config.mode !== 'server-validation')
@@ -354,11 +333,7 @@ export function useForm<Schema extends Record<string, any>>(
 					}
 
 					if (event.defaultPrevented) {
-						setFormError(form, submission);
-
-						if (!form.reportValidity()) {
-							focusFirstInvalidField(form);
-						}
+						reportSubmission(form, submission);
 					}
 				} catch (e) {
 					console.warn(e);
@@ -520,44 +495,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 				event.preventDefault();
 			}
 		};
-		const submitHandler = (event: SubmitEvent) => {
-			const form = getFormElement(ref.current);
-
-			if (!form || event.target !== form) {
-				return;
-			}
-
-			/**
-			 * Reset the error state of each field if its validity is changed.
-			 *
-			 * This is a workaround as no official way is provided to notify
-			 * when the validity of the field is changed from `invalid` to `valid`.
-			 */
-			setError((prev) => {
-				let next = prev;
-
-				const fieldsetName = configRef.current.name ?? '';
-
-				for (const field of form.elements) {
-					if (isFieldElement(field) && field.name.startsWith(fieldsetName)) {
-						const key = fieldsetName
-							? field.name.slice(fieldsetName.length + 1)
-							: field.name;
-						const prevMessage = next?.[key] ?? '';
-						const nextMessage = field.validationMessage;
-
-						if (prevMessage !== '' && nextMessage === '') {
-							next = {
-								...next,
-								[key]: '',
-							};
-						}
-					}
-				}
-
-				return next;
-			});
-		};
 		const resetHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
 
@@ -579,12 +516,10 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 		// The invalid event does not bubble and so listening on the capturing pharse is needed
 		document.addEventListener('invalid', invalidHandler, true);
-		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			document.removeEventListener('invalid', invalidHandler, true);
-			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, [ref]);

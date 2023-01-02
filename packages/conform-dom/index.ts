@@ -126,24 +126,58 @@ export function hasError(
 	);
 }
 
-export function setFormError(
+export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	const firstErrorByName = Object.fromEntries([...submission.error].reverse());
+	const messageByName: Map<string, string> = new Map();
+	const nameByInput: Map<FieldElement, string> = new Map();
+
+	for (const [name, message] of submission.error) {
+		if (!messageByName.has(name)) {
+			// Only keep the first error message (for now)
+			messageByName.set(name, message);
+
+			// We can't use empty string as button name
+			// As `form.element.namedItem('')` will always returns null
+			const elementName = name ? name : '__form__';
+			let item = form.elements.namedItem(elementName);
+
+			if (item instanceof RadioNodeList) {
+				throw new Error('Repeated field name is not supported');
+			}
+
+			if (item === null) {
+				// Create placeholder button to keep the error without contributing to the form data
+				const button = document.createElement('button');
+
+				button.name = elementName;
+				button.hidden = true;
+				button.dataset.conformTouched = 'true';
+				item = button;
+
+				form.appendChild(button);
+			}
+
+			nameByInput.set(item as FieldElement, name);
+		}
+	}
 
 	for (const element of form.elements) {
-		if (isFieldElement(element)) {
-			const error = firstErrorByName[element.name];
+		if (isFieldElement(element) && element.willValidate) {
+			const name = nameByInput.get(element) ?? element.name;
+			const message = messageByName.get(name);
 
-			if (
-				typeof error !== 'undefined' ||
-				shouldValidate(submission, element.name)
-			) {
-				element.setCustomValidity(error ?? '');
+			if (typeof message !== 'undefined' || shouldValidate(submission, name)) {
+				const invalidEvent = new Event('invalid', { cancelable: true });
+
+				element.setCustomValidity(message ?? '');
+				element.dispatchEvent(invalidEvent);
 			}
 		}
 	}
+
+	focusFirstInvalidField(form);
 }
 
 export function setValue<T>(
