@@ -239,4 +239,16 @@ export function getTaskFieldset(list: Locator, name: string, index: number) {
 	};
 }
 
+export function getPlayground(page: Page) {
+	const form = page.locator('section');
+
+	return {
+		form,
+		submit: form.locator('footer button[type="submit"]'),
+		reset: form.locator('footer button[type="reset"]'),
+		submission: form.locator('pre'),
+		error: form.locator('label > p'),
+	};
+}
+
 export const expectNonEmptyString = expect.stringMatching(/\w+/);

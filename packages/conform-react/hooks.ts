@@ -580,6 +580,7 @@ export function useFieldList<Payload = any>(
 ): [
 	Array<{
 		key: string;
+		error: string | undefined;
 		config: FieldConfig<Payload>;
 	}>,
 	{
@@ -623,20 +624,26 @@ export function useFieldList<Payload = any>(
 			initialError,
 		};
 	});
+	const [error, setError] = useState(() =>
+		uncontrolledState.initialError.map((error) => error?.[0][1]),
+	);
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
-	const list = entries.map<{ key: string; config: FieldConfig<Payload> }>(
-		([key, defaultValue], index) => ({
-			key,
-			config: {
-				name: `${config.name}[${index}]`,
-				form: config.form,
-				defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
-				initialError: uncontrolledState.initialError[index],
-			},
-		}),
-	);
+	const list = entries.map<{
+		key: string;
+		error: string | undefined;
+		config: FieldConfig<Payload>;
+	}>(([key, defaultValue], index) => ({
+		key,
+		error: error[index],
+		config: {
+			name: `${config.name}[${index}]`,
+			form: config.form,
+			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
+			initialError: uncontrolledState.initialError[index],
+		},
+	}));
 
 	/***
 	 * This use proxy to capture all information about the command and
@@ -663,6 +670,45 @@ export function useFieldList<Payload = any>(
 	});
 
 	useEffect(() => {
+		const invalidHandler = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const field = event.target;
+			const prefix = configRef.current.name ?? '';
+
+			if (
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				!field.name.startsWith(prefix)
+			) {
+				return;
+			}
+
+			const [index, ...paths] = getPaths(
+				prefix.length > 0 ? field.name.slice(prefix.length) : field.name,
+			);
+
+			// Update the error only if the field belongs to the fieldset
+			if (typeof index === 'number' && paths.length === 0) {
+				if (field.dataset.conformTouched) {
+					setError((prev) => {
+						const prevMessage = prev?.[index] ?? '';
+
+						if (prevMessage === field.validationMessage) {
+							return prev;
+						}
+
+						return [
+							...prev.slice(0, index),
+							field.validationMessage,
+							...prev.slice(index + 1),
+						];
+					});
+				}
+
+				event.preventDefault();
+			}
+		};
 		const submitHandler = (event: SubmitEvent) => {
 			const form = getFormElement(ref.current);
 
@@ -701,6 +747,23 @@ export function useFieldList<Payload = any>(
 					}
 				}
 			});
+			setError((error) => {
+				switch (command.type) {
+					case 'append':
+					case 'prepend':
+					case 'replace':
+						return updateList([...error], {
+							...command,
+							payload: {
+								...command.payload,
+								defaultValue: undefined,
+							},
+						} as ListCommand<string | undefined>);
+					default: {
+						return updateList([...error], command);
+					}
+				}
+			});
 			event.preventDefault();
 		};
 		const resetHandler = (event: Event) => {
@@ -717,13 +780,16 @@ export function useFieldList<Payload = any>(
 				initialError: [],
 			});
 			setEntries(Object.entries(fieldConfig.defaultValue ?? [undefined]));
+			setError([]);
 		};
 
 		document.addEventListener('submit', submitHandler, true);
+		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			document.removeEventListener('submit', submitHandler, true);
+			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, [ref]);

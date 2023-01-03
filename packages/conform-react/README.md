@@ -324,7 +324,7 @@ function ExampleForm() {
 
 ### useFieldList
 
-It returns a list of key and config, with helpers to configure command buttons with [list command](/docs/submission.md#list-command).
+It returns a list of key, config and error, with helpers to configure [list command](/docs/submission.md#list-command) button.
 
 ```tsx
 import { useFieldset, useFieldList } from '@conform-to/react';
@@ -333,33 +333,24 @@ import { useRef } from 'react';
 /**
  * Consider the schema as follow:
  */
-type Book = {
-  name: string;
-  isbn: string;
-};
-
-type Collection = {
-  books: Book[];
+type Schema = {
+  list: string[];
 };
 
 function CollectionFieldset() {
-  const ref = useRef();
-  const { books } = useFieldset<Collection>(ref);
-  const [bookList, command] = useFieldList(ref, books.config);
+  const ref = useRef<HTMLFieldsetElement>(null);
+  const fieldset = useFieldset<Collection>(ref);
+  const [list, command] = useFieldList(ref, fieldset.list.config);
 
   return (
     <fieldset ref={ref}>
-      {bookList.map((book, index) => (
-        <div key={book.key}>
-          {/* To setup the fields */}
-          <input
-            name={`${book.config.name}.name`}
-            defaultValue={book.config.defaultValue.name}
-          />
-          <input
-            name={`${book.config.name}.isbn`}
-            defaultValue={book.config.defaultValue.isbn}
-          />
+      {list.map((item, index) => (
+        <div key={item.key}>
+          {/* Setup an input per item */}
+          <input {...conform.input(item.config)} />
+
+          {/* Error of each book */}
+          <span>{item.error}</span>
 
           {/* To setup a delete button */}
           <button {...command.remove({ index })}>Delete</button>
@@ -367,79 +358,86 @@ function CollectionFieldset() {
       ))}
 
       {/* To setup a button that can append a new row with optional default value */}
-      <button {...command.append({ defaultValue: { name: '', isbn: '' } })}>
-        add
-      </button>
+      <button {...command.append({ defaultValue: '' })}>add</button>
     </fieldset>
   );
 }
 ```
 
-This hook can also be used in combination with `useFieldset` to distribute the config:
+This hook can also be used in combination with `useFieldset` for nested list:
 
 ```tsx
-import { useForm, useFieldset, useFieldList } from '@conform-to/react';
+import {
+  type FieldConfig,
+  useForm,
+  useFieldset,
+  useFieldList,
+} from '@conform-to/react';
 import { useRef } from 'react';
 
+/**
+ * Consider the schema as follow:
+ */
+type Schema = {
+  list: Array<Item>;
+};
+
+type Item = {
+  title: string;
+  description: string;
+};
+
 function CollectionFieldset() {
-  const ref = useRef();
-  const { books } = useFieldset<Collection>(ref);
-  const [bookList, command] = useFieldList(ref, books.config);
+  const ref = useRef<HTMLFieldsetElement>(null);
+  const fieldset = useFieldset<Collection>(ref);
+  const [list, command] = useFieldList(ref, fieldset.list.config);
 
   return (
     <fieldset ref={ref}>
-      {bookList.map((book, index) => (
-        <div key={book.key}>
-          {/* `book.config` is a FieldConfig object similar to `books` */}
-          <BookFieldset {...book.config} />
-
-          {/* To setup a delete button */}
-          <button {...command.remove({ index })}>Delete</button>
+      {list.map((item, index) => (
+        <div key={item.key}>
+          {/* Pass the item config to another fieldset*/}
+          <ItemFieldset {...item.config} />
         </div>
       ))}
-
-      {/* To setup a button that can append a new row */}
-      <button {...command.append()}>add</button>
     </fieldset>
   );
 }
 
-/**
- * This is basically the BookFieldset component from
- * the `useFieldset` example, but setting all the
- * options with the component props instead
- */
-function BookFieldset({ name, form, defaultValue, error }) {
-  const ref = useRef();
-  const { name, isbn } = useFieldset(ref, {
-    name,
-    form,
-    defaultValue,
-    error,
-  });
+function ItemFieldset(config: FieldConfig<Item>) {
+  const ref = useRef<HTMLFieldsetElement>(null);
+  const { title, description } = useFieldset(ref, config);
 
-  return <fieldset ref={ref}>{/* ... */}</fieldset>;
+  return (
+    <fieldset ref={ref}>
+      <input {...conform.input(title.config)} />
+      <span>{title.error}</span>
+
+      <input {...conform.input(description.config)} />
+      <span>{description.error}</span>
+    </fieldset>
+  );
 }
 ```
 
 <details>
-  <summary>What can I do with `controls`?</summary>
+  <summary>What can I do with `command`?</summary>
 
 ```tsx
 // To append a new row with optional defaultValue
-<button {...controls.append({ defaultValue })}>Append</button>;
+<button {...command.append({ defaultValue })}>Append</button>;
 
 // To prepend a new row with optional defaultValue
-<button {...controls.prepend({ defaultValue })}>Prepend</button>;
+<button {...command.prepend({ defaultValue })}>Prepend</button>;
 
 // To remove a row by index
-<button {...controls.remove({ index })}>Remove</button>;
+<button {...command.remove({ index })}>Remove</button>;
 
 // To replace a row with another defaultValue
-<button {...controls.replace({ index, defaultValue })}>Replace</button>;
+<button {...command.replace({ index, defaultValue })}>Replace</button>;
 
 // To reorder a particular row to an another index
-<button {...controls.reorder({ from, to })}>Reorder</button>;
+<button {...command.reorder({ from, to })}>Reorder</button>;
 ```
 
 </details>
