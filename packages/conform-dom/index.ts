@@ -13,8 +13,10 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	form?: string;
 }
 
-export type FieldValue<Schema> = Schema extends Primitive | File
+export type FieldValue<Schema> = Schema extends Primitive
 	? string
+	: Schema extends File
+	? File
 	: Schema extends Array<infer InnerType>
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>
@@ -319,11 +321,13 @@ export function parse<Schema extends Record<string, any>>(
 				const paths = getPaths(name);
 
 				setValue(submission.value, paths, (prev) => {
-					if (prev) {
-						throw new Error('Entry with the same name is not supported');
+					if (!prev) {
+						return value;
+					} else if (Array.isArray(prev)) {
+						return prev.concat(value);
+					} else {
+						return [prev, value];
 					}
-
-					return value;
 				});
 			}
 		}

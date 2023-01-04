@@ -1,5 +1,5 @@
-import { type FieldConfig, type Primitive } from '@conform-to/dom';
-import { type HTMLInputTypeAttribute } from 'react';
+import type { FieldConfig } from '@conform-to/dom';
+import type { HTMLInputTypeAttribute } from 'react';
 
 interface FieldProps {
 	name: string;
@@ -33,13 +33,37 @@ interface TextareaProps extends FieldProps {
 	defaultValue?: string;
 }
 
-export function input<Schema extends Primitive>(
+type InputOptions =
+	| {
+			type: 'checkbox' | 'radio';
+			value?: string;
+	  }
+	| {
+			type: 'file';
+			value?: never;
+	  }
+	| {
+			type?: Exclude<
+				HTMLInputTypeAttribute,
+				'button' | 'submit' | 'hidden' | 'file'
+			>;
+			value?: never;
+	  };
+
+export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
-	{ type, value }: { type?: HTMLInputTypeAttribute; value?: string } = {},
+	options: { type: 'file' },
+): InputProps<Schema>;
+export function input<Schema extends any>(
+	config: FieldConfig<Schema>,
+	options?: InputOptions,
+): InputProps<Schema>;
+export function input<Schema>(
+	config: FieldConfig<Schema>,
+	options: InputOptions = {},
 ): InputProps<Schema> {
-	const isCheckboxOrRadio = type === 'checkbox' || type === 'radio';
 	const attributes: InputProps<Schema> = {
-		type,
+		type: options.type,
 		name: config.name,
 		form: config.form,
 		required: config.required,
@@ -56,19 +80,17 @@ export function input<Schema extends Primitive>(
 		attributes.autoFocus = true;
 	}
 
-	if (isCheckboxOrRadio) {
-		attributes.value = value ?? 'on';
+	if (options.type === 'checkbox' || options.type === 'radio') {
+		attributes.value = options.value ?? 'on';
 		attributes.defaultChecked = config.defaultValue === attributes.value;
-	} else {
-		attributes.defaultValue = config.defaultValue;
+	} else if (options.type !== 'file') {
+		attributes.defaultValue = config.defaultValue as string | undefined;
 	}
 
 	return attributes;
 }
 
-export function select<Schema extends Primitive | Array<Primitive>>(
-	config: FieldConfig<Schema>,
-): SelectProps {
+export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 	const attributes: SelectProps = {
 		name: config.name,
 		form: config.form,
@@ -88,9 +110,7 @@ export function select<Schema extends Primitive | Array<Primitive>>(
 	return attributes;
 }
 
-export function textarea<Schema extends Primitive>(
-	config: FieldConfig<Schema>,
-): TextareaProps {
+export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
 	const attributes: TextareaProps = {
 		name: config.name,
 		form: config.form,
