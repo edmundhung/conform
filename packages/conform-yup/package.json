@@ -2,7 +2,7 @@
 	"name": "@conform-to/yup",
 	"description": "Conform schema resolver for yup",
 	"license": "MIT",
-	"version": "0.4.1",
+	"version": "0.5.0-pre.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -14,7 +14,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"peerDependencies": {
-		"@conform-to/dom": "0.4.1",
+		"@conform-to/dom": "0.5.0-pre.0",
 		"yup": ">=0.32.0"
 	},
 	"devDependencies": {
