@@ -5,6 +5,8 @@ export {
 	getFormElements,
 	hasError,
 	requestCommand,
+	requestValidate,
+	requestSubmit,
 	parse,
 	shouldValidate,
 } from '@conform-to/dom';

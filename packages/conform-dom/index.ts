@@ -208,6 +208,24 @@ export function setValue<T>(
 }
 
 /**
+ * The ponyfill of `HTMLFormElement.requestSubmit()`
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit
+ * @see https://caniuse.com/?search=requestSubmit
+ */
+export function requestSubmit(
+	form: HTMLFormElement,
+	submitter?: HTMLButtonElement | HTMLInputElement,
+): void {
+	const submitEvent = new SubmitEvent('submit', {
+		bubbles: true,
+		cancelable: true,
+		submitter,
+	});
+
+	form.dispatchEvent(submitEvent);
+}
+
+/**
  * Creates a command button on demand and trigger a form submit by clicking it.
  */
 export function requestCommand(
