@@ -77,14 +77,14 @@ function LoginForm() {
      * A function to be called when the form should be (re)validated.
      * Only sync validation is supported
      */
-    onValidate({ form, formData, submission }) {
+    onValidate({ form, formData }) {
       // ...
     },
 
     /**
      * The submit event handler of the form.
      */
-    onSubmit(event, { form, formData, submission }) {
+    onSubmit(event, { formData, submission }) {
       // ...
     },
   });
@@ -147,11 +147,11 @@ The `onValidate` function is not required if the validation logic can be fully c
 import { useForm, useFieldset } from '@conform-to/react';
 
 function LoginForm() {
-  const formProps = useForm();
-  const { email, password } = useFieldset(formProps.ref);
+  const form = useForm();
+  const { email, password } = useFieldset(form.ref);
 
   return (
-    <form {...formProps}>
+    <form {...form.props}>
       <label>
         <input type="email" name="email" required />
         {email.error}
@@ -189,12 +189,12 @@ type Book = {
 };
 
 function BookFieldset() {
-  const formProps = useForm();
+  const form = useForm();
   const { name, isbn } = useFieldset<Book>(
     /**
      * A ref object of the form element or fieldset element
      */
-    formProps.ref,
+    form.ref,
     {
       /**
        * The prefix used to generate the name of nested fields.
@@ -276,7 +276,7 @@ function BookFieldset() {
   console.log(isbn.config.required);
   console.log(isbn.config.pattern);
 
-  return <form {...formProps}>{/* ... */}</form>;
+  return <form {...form.props}>{/* ... */}</form>;
 }
 ```
 

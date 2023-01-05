@@ -30,7 +30,7 @@ const schema = z.object({
 });
 
 function ExampleForm() {
-  const formProps = useForm<z.infer<typeof schema>>({
+  const form = useForm<z.infer<typeof schema>>({
     onValidate({ formData }) {
       // Only sync validation is allowed on the client side
       const submission = parse(formData);
@@ -133,7 +133,7 @@ const schema = z.object({
 });
 
 function ExampleForm() {
-  const formProps = useForm({
+  const form = useForm({
     onValidate({ formData }) {
       return validate(formData, schema, {
         // Optional
