@@ -30,7 +30,7 @@ const schema = yup.object({
 });
 
 function ExampleForm() {
-  const formProps = useForm<yup.InferType<typeof schema>>({
+  const form = useForm<yup.InferType<typeof schema>>({
     onValidate({ formData }) {
       const submission = parse(formData);
 
@@ -135,7 +135,7 @@ const schema = yup.object({
 });
 
 function ExampleForm() {
-  const formProps = useForm({
+  const form = useForm({
     onValidate({ formData }) {
       return validate(formData, schema, {
         // Optional
