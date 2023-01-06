@@ -120,7 +120,10 @@ export function shouldValidate(submission: Submission, name: string): boolean {
 	return (
 		submission.type === 'submit' ||
 		(submission.type === 'validate' &&
-			(submission.intent === '' || submission.intent === name))
+		(submission.intent === '' || submission.intent === name)) ||
+		(submission.type === 'list' &&
+			typeof submission.intent !== 'undefined' &&
+			parseListCommand(submission.intent).scope === name)
 	);
 }
 
@@ -366,12 +369,6 @@ export function parse<Schema extends Record<string, any>>(
 					}
 				});
 			}
-		}
-
-		switch (submission.type) {
-			case 'list':
-				submission = handleList(submission);
-				break;
 		}
 	} catch (e) {
 		submission.error.push([

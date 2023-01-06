@@ -1,3 +1,4 @@
+import { handleList } from '@conform-to/dom';
 import {
 	conform,
 	parse,
@@ -38,6 +39,8 @@ export async function action({ request }: ActionArgs) {
 
 	try {
 		switch (submission.type) {
+			case 'list':
+				return handleList(submission);
 			case 'validate':
 			case 'submit':
 				schema.parse(submission.value);

@@ -343,7 +343,8 @@ export function useForm<Schema extends Record<string, any>>(
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
 						(submission.type === 'validate' &&
-							config.mode !== 'server-validation')
+							config.mode !== 'server-validation') ||
+						submission.type === 'list'
 					) {
 						event.preventDefault();
 					} else {
@@ -736,7 +737,6 @@ export function useFieldList<Payload = any>(
 					}
 				}
 			});
-			event.preventDefault();
 		};
 		const resetHandler = (event: Event) => {
 			const form = getFormElement(ref.current);
