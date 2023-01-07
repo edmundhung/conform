@@ -7,10 +7,12 @@ export type FieldElement =
 	| HTMLButtonElement;
 
 export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
+	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
 	initialError?: Array<[string, string]>;
 	form?: string;
+	errorId?: string;
 }
 
 export type FieldValue<Schema> = Schema extends Primitive
