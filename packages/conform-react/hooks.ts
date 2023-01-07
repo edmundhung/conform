@@ -342,9 +342,8 @@ export function useForm<Schema extends Record<string, any>>(
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						(submission.type === 'validate' &&
-							config.mode !== 'server-validation') ||
-						submission.type === 'list'
+						((submission.type === 'validate' || submission.type === 'list') &&
+							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();
 					} else {

@@ -199,6 +199,10 @@ export function reportSubmission(
 			}
 		}
 	}
+
+	if (submission.type === 'submit') {
+		focusFirstInvalidField(form);
+	}
 }
 
 export function setValue<T>(
