@@ -593,18 +593,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 	) as Fieldset<Schema>;
 }
 
-interface CommandButtonProps {
-	name?: string;
-	value?: string;
-	form?: string;
-	formNoValidate: true;
-}
-
-type ListCommandPayload<
-	Schema,
-	Type extends ListCommand<FieldValue<Schema>>['type'],
-> = Extract<ListCommand<FieldValue<Schema>>, { type: Type }>['payload'];
-
 /**
  * Returns a list of key and config, with a group of helpers
  * configuring buttons for list manipulation
@@ -614,26 +602,11 @@ type ListCommandPayload<
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
-): [
-	Array<{
-		key: string;
-		error: string | undefined;
-		config: FieldConfig<Payload>;
-	}>,
-	{
-		prepend(
-			payload?: ListCommandPayload<Payload, 'prepend'>,
-		): CommandButtonProps;
-		append(payload?: ListCommandPayload<Payload, 'append'>): CommandButtonProps;
-		replace(
-			payload: ListCommandPayload<Payload, 'replace'>,
-		): CommandButtonProps;
-		remove(payload: ListCommandPayload<Payload, 'remove'>): CommandButtonProps;
-		reorder(
-			payload: ListCommandPayload<Payload, 'reorder'>,
-		): CommandButtonProps;
-	},
-] {
+): Array<{
+	key: string;
+	error: string | undefined;
+	config: FieldConfig<Payload>;
+}> {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Array<Payload>>;
@@ -667,26 +640,6 @@ export function useFieldList<Payload = any>(
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
-
-	/***
-	 * This use proxy to capture all information about the command and
-	 * have it encoded in the value.
-	 */
-	const command = new Proxy(
-		{},
-		{
-			get(_target, type: any) {
-				return (payload: any = {}) => {
-					return {
-						name: 'conform/list',
-						value: JSON.stringify({ type, scope: config.name, payload }),
-						form: config.form,
-						formNoValidate: true,
-					};
-				};
-			},
-		},
-	);
 
 	useEffect(() => {
 		configRef.current = config;
@@ -817,29 +770,25 @@ export function useFieldList<Payload = any>(
 		};
 	}, [ref]);
 
-	return [
-		entries.map(([key, defaultValue], index) => {
-			const fieldConfig: FieldConfig<any> = {
-				name: `${config.name}[${index}]`,
-				defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
-				initialError: uncontrolledState.initialError[index],
-			};
+	return entries.map(([key, defaultValue], index) => {
+		const fieldConfig: FieldConfig<any> = {
+			name: `${config.name}[${index}]`,
+			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
+			initialError: uncontrolledState.initialError[index],
+		};
 
-			if (config.form) {
-				fieldConfig.form = config.form;
-				fieldConfig.id = `${config.form}-${config.name}`;
-				fieldConfig.errorId = `${fieldConfig.id}-error`;
-			}
+		if (config.form) {
+			fieldConfig.form = config.form;
+			fieldConfig.id = `${config.form}-${config.name}`;
+			fieldConfig.errorId = `${fieldConfig.id}-error`;
+		}
 
-			return {
-				key,
-				error: error[index],
-				config: fieldConfig,
-			};
-		}),
-		// @ts-expect-error proxy type
-		command,
-	];
+		return {
+			key,
+			error: error[index],
+			config: fieldConfig,
+		};
+	});
 }
 
 interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {

@@ -1,4 +1,10 @@
-import { conform, parse, useFieldList, useForm } from '@conform-to/react';
+import {
+	conform,
+	parse,
+	useFieldList,
+	useForm,
+	list,
+} from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -54,14 +60,14 @@ export default function SimpleList() {
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
 	});
-	const [list, command] = useFieldList(form.ref, items.config);
+	const itemsList = useFieldList(form.ref, items.config);
 
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
 				<Alert message={form.error} />
 				<ol>
-					{list.map((item, index) => (
+					{itemsList.map((item, index) => (
 						<li key={item.key} className="border rounded-md p-4 mb-4">
 							<Field label={`Item #${index + 1}`} {...item}>
 								<input {...conform.input(item.config, { type: 'text' })} />
@@ -69,19 +75,22 @@ export default function SimpleList() {
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...command.remove({ index })}
+									{...list.remove(items.config.name, { index })}
 								>
 									Delete
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...command.reorder({ from: index, to: 0 })}
+									{...list.reorder(items.config.name, { from: index, to: 0 })}
 								>
 									Move to top
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...command.replace({ index, defaultValue: '' })}
+									{...list.replace(items.config.name, {
+										index,
+										defaultValue: '',
+									})}
 								>
 									Clear
 								</button>
@@ -92,13 +101,13 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...command.prepend({ defaultValue: '' })}
+						{...list.prepend(items.config.name, { defaultValue: '' })}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...command.append({ defaultValue: '' })}
+						{...list.append(items.config.name, { defaultValue: '' })}
 					>
 						Insert bottom
 					</button>

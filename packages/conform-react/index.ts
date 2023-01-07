@@ -4,6 +4,7 @@ export {
 	type Submission,
 	getFormElements,
 	hasError,
+	list,
 	requestCommand,
 	requestValidate,
 	requestSubmit,
