@@ -1,7 +1,6 @@
 import {
 	type FieldConfig,
 	useForm,
-	useFieldset,
 	useControlledInput,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
@@ -16,8 +15,7 @@ interface Schema {
 }
 
 export default function Example() {
-	const form = useForm<Schema>();
-	const fieldset = useFieldset(form.ref, form.config);
+	const [form, fieldset] = useForm<Schema>();
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">

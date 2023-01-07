@@ -1,4 +1,4 @@
-import { useFieldset, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { validate } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -20,21 +20,17 @@ const schema = z
 	});
 
 export default function SignupForm() {
-	const form = useForm<z.infer<typeof schema>>({
-		onValidate({ formData }) {
-			return validate(formData, schema);
-		},
-		onSubmit(event, { submission }) {
-			event.preventDefault();
+	const [form, { email, password, 'confirm-password': confirmPassword }] =
+		useForm<z.infer<typeof schema>>({
+			onValidate({ formData }) {
+				return validate(formData, schema);
+			},
+			onSubmit(event, { submission }) {
+				event.preventDefault();
 
-			console.log(submission);
-		},
-	});
-	const {
-		email,
-		password,
-		'confirm-password': confirmPassword,
-	} = useFieldset(form.ref, form.config);
+				console.log(submission);
+			},
+		});
 
 	return (
 		<form {...form.props}>

@@ -23,22 +23,20 @@ const todosSchema = z.object({
 	tasks: z.array(taskSchema).min(1),
 });
 
-function createTodos(data: unknown) {
-	throw new Error('Not implemented');
-}
+type Schema = z.infer<typeof todosSchema>;
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse<Schema>(formData);
 
 	try {
 		switch (submission.type) {
 			case 'submit':
 			case 'validate': {
-				const data = todosSchema.parse(submission.value);
+				todosSchema.parse(submission.value);
 
 				if (submission.type === 'submit') {
-					return await createTodos(data);
+					throw new Error('Not implemented');
 				}
 			}
 		}
@@ -51,14 +49,13 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function TodoForm() {
 	const state = useActionData<typeof action>();
-	const form = useForm<z.infer<typeof todosSchema>>({
+	const [form, { title, tasks }] = useForm<Schema>({
 		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
 			return validate(formData, todosSchema);
 		},
 	});
-	const { title, tasks } = useFieldset(form.ref, form.config);
 	const [taskList, command] = useFieldList(form.ref, tasks.config);
 
 	return (

@@ -54,6 +54,11 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	state?: Submission<Schema>;
 
 	/**
+	 * An object describing the constraint of each field
+	 */
+	constraint?: FieldsetConstraint<Schema>;
+
+	/**
 	 * Enable native validation before hydation.
 	 *
 	 * Default to `false`.
@@ -115,7 +120,7 @@ interface Form<Schema extends Record<string, any>> {
  */
 export function useForm<Schema extends Record<string, any>>(
 	config: FormConfig<Schema> = {},
-): Form<Schema> {
+): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
@@ -132,9 +137,11 @@ export function useForm<Schema extends Record<string, any>>(
 				initialError: error.filter(
 					([name]) => name !== '' && getSubmissionType(name) === null,
 				),
+				constraint: config.constraint,
 			};
 		},
 	);
+	const fieldset = useFieldset(ref, fieldsetConfig);
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
 	);
@@ -256,7 +263,7 @@ export function useForm<Schema extends Record<string, any>>(
 		};
 	}, []);
 
-	return {
+	const form: Form<Schema> = {
 		ref,
 		error,
 		props: {
@@ -342,6 +349,8 @@ export function useForm<Schema extends Record<string, any>>(
 		},
 		config: fieldsetConfig,
 	};
+
+	return [form, fieldset];
 }
 
 /**

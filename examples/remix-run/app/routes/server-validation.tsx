@@ -1,10 +1,4 @@
-import {
-	conform,
-	parse,
-	hasError,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
+import { conform, parse, hasError, useForm } from '@conform-to/react';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -13,10 +7,6 @@ interface SignupForm {
 	email: string;
 	password: string;
 	confirmPassword: string;
-}
-
-async function signup(data: unknown) {
-	throw new Error('Not implemented');
 }
 
 export async function action({ request }: ActionArgs) {
@@ -55,7 +45,7 @@ export async function action({ request }: ActionArgs) {
 				 * and no error found
 				 */
 				if (submission.type === 'submit' && !hasError(submission.error)) {
-					return await signup(submission.value);
+					throw new Error('Not implemented');
 				}
 
 				break;
@@ -82,7 +72,7 @@ export async function action({ request }: ActionArgs) {
 export default function Signup() {
 	// Last submission returned by the server
 	const state = useActionData<typeof action>();
-	const form = useForm<SignupForm>({
+	const [form, { email, password, confirmPassword }] = useForm<SignupForm>({
 		// Enable server validation mode
 		mode: 'server-validation',
 
@@ -92,10 +82,6 @@ export default function Signup() {
 		// Sync the result of last submission
 		state,
 	});
-	const { email, password, confirmPassword } = useFieldset(
-		form.ref,
-		form.config,
-	);
 
 	return (
 		<Form method="post" {...form.props}>

@@ -47,8 +47,7 @@ interface Schema {
 }
 
 export default function Example() {
-	const form = useForm<Schema>();
-	const fieldset = useFieldset(form.ref, form.config);
+	const [form, fieldset] = useForm<Schema>();
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
