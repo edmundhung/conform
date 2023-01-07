@@ -89,7 +89,7 @@ export function TaskFieldset(
 	});
 	return (
 		<fieldset ref={ref} form={config.form}>
-			<Field label="Content" error={content.error}>
+			<Field label="Content" {...content}>
 				<input {...conform.input(content.config, { type: 'text' })} />
 			</Field>
 			<Field label="Completed" error={completed.error} inline>
@@ -109,7 +109,7 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 
 	return (
 		<fieldset ref={ref} form={config.form}>
-			<Field label="Title" error={title.error}>
+			<Field label="Title" {...title}>
 				<input {...conform.input(title.config, { type: 'text' })} />
 			</Field>
 			<ol>

@@ -87,7 +87,7 @@ export async function isTouched(field: Locator): Promise<boolean> {
 }
 
 export async function getErrorMessages(playground: Locator): Promise<string[]> {
-	return playground.locator('label > p').allInnerTexts();
+	return playground.locator('main p').allInnerTexts();
 }
 
 export async function getConstraint(field: Locator): Promise<FieldConstraint> {
@@ -247,7 +247,7 @@ export function getPlayground(page: Page) {
 		submit: form.locator('footer button[type="submit"]'),
 		reset: form.locator('footer button[type="reset"]'),
 		submission: form.locator('pre'),
-		error: form.locator('label > p'),
+		error: form.locator('main p'),
 	};
 }
 

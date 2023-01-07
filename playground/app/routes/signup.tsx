@@ -79,20 +79,17 @@ export default function SignupForm() {
 	return (
 		<Playground title="Signup Form" form={form.props.id} state={state}>
 			<Form method="post" {...form.props} />
-			<Field label="Email" error={email.error}>
+			<Field label="Email" {...email}>
 				<input
 					{...conform.input(email.config, { type: 'email' })}
 					autoComplete="off"
 					form="signup"
 				/>
 			</Field>
-			<Field label="Password" error={password.error}>
-				<input
-					{...conform.input(password.config, { type: 'password' })}
-					form="signup"
-				/>
+			<Field label="Password" {...password}>
+				<input {...conform.input(password.config, { type: 'password' })} />
 			</Field>
-			<Field label="Confirm password" error={confirmPassword.error}>
+			<Field label="Confirm password" {...confirmPassword}>
 				<input
 					{...conform.input(confirmPassword.config, { type: 'password' })}
 					form="signup"

@@ -55,16 +55,16 @@ export default function StudentForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Student Form" state={state}>
 				<fieldset>
-					<Field label="Name" error={name.error}>
+					<Field label="Name" {...name}>
 						<input {...conform.input(name.config, { type: 'text' })} />
 					</Field>
-					<Field label="Remarks" error={remarks.error}>
+					<Field label="Remarks" {...remarks}>
 						<input {...conform.input(remarks.config, { type: 'text' })} />
 					</Field>
-					<Field label="Score" error={score.error}>
+					<Field label="Score" {...score}>
 						<input {...conform.input(score.config, { type: 'number' })} />
 					</Field>
-					<Field label="Grade" error={grade.error}>
+					<Field label="Grade" {...grade}>
 						<input {...conform.input(grade.config, { type: 'text' })} />
 					</Field>
 				</fieldset>
