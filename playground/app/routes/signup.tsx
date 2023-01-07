@@ -61,6 +61,7 @@ export default function SignupForm() {
 	const state = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm<Signup>({
 		...config,
+		id: 'signup',
 		state,
 		onValidate: config.validate
 			? ({ formData }) => validate(formData)
@@ -76,8 +77,8 @@ export default function SignupForm() {
 	});
 
 	return (
-		<Playground title="Signup Form" form="signup" state={state}>
-			<Form id="signup" method="post" {...form.props} />
+		<Playground title="Signup Form" form={form.props.id} state={state}>
+			<Form method="post" {...form.props} />
 			<Field label="Email" error={email.error}>
 				<input
 					{...conform.input(email.config, { type: 'email' })}
