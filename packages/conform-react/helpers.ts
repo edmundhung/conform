@@ -98,6 +98,7 @@ export function input<Schema>(
 
 export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 	const attributes: SelectProps = {
+		id: config.id,
 		name: config.name,
 		form: config.form,
 		defaultValue: config.multiple
@@ -120,6 +121,7 @@ export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 
 export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
 	const attributes: TextareaProps = {
+		id: config.id,
 		name: config.name,
 		form: config.form,
 		defaultValue: `${config.defaultValue ?? ''}`,
