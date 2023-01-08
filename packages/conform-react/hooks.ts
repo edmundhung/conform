@@ -239,6 +239,7 @@ export function useForm<Schema extends Record<string, any>>(
 			setError('');
 			setFieldsetConfig({
 				defaultValue: formConfig.defaultValue,
+				constraint: formConfig.constraint,
 				initialError: [],
 			});
 		};
