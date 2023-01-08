@@ -331,7 +331,7 @@ function ExampleForm() {
 It returns a list of key, config and error, with helpers to configure [list command](/docs/submission.md#list-command) button.
 
 ```tsx
-import { useFieldset, useFieldList } from '@conform-to/react';
+import { useFieldset, useFieldList, list } from '@conform-to/react';
 import { useRef } from 'react';
 
 /**
@@ -344,11 +344,11 @@ type Schema = {
 function CollectionFieldset() {
   const ref = useRef<HTMLFieldsetElement>(null);
   const fieldset = useFieldset<Collection>(ref);
-  const [list, command] = useFieldList(ref, fieldset.list.config);
+  const fieldList = useFieldList(ref, fieldset.list.config);
 
   return (
     <fieldset ref={ref}>
-      {list.map((item, index) => (
+      {fieldList.map((item, index) => (
         <div key={item.key}>
           {/* Setup an input per item */}
           <input {...conform.input(item.config)} />
@@ -357,12 +357,16 @@ function CollectionFieldset() {
           <span>{item.error}</span>
 
           {/* To setup a delete button */}
-          <button {...command.remove({ index })}>Delete</button>
+          <button {...list.remove(fieldset.list.config.name, { index })}>
+            Delete
+          </button>
         </div>
       ))}
 
       {/* To setup a button that can append a new row with optional default value */}
-      <button {...command.append({ defaultValue: '' })}>add</button>
+      <button {...list.append(fieldset.list.config.name, { defaultValue: '' })}>
+        add
+      </button>
     </fieldset>
   );
 }
@@ -394,11 +398,11 @@ type Item = {
 function CollectionFieldset() {
   const ref = useRef<HTMLFieldsetElement>(null);
   const fieldset = useFieldset<Collection>(ref);
-  const [list, command] = useFieldList(ref, fieldset.list.config);
+  const fieldList = useFieldList(ref, fieldset.list.config);
 
   return (
     <fieldset ref={ref}>
-      {list.map((item, index) => (
+      {fieldList.map((item, index) => (
         <div key={item.key}>
           {/* Pass the item config to another fieldset*/}
           <ItemFieldset {...item.config} />
@@ -425,23 +429,23 @@ function ItemFieldset(config: FieldConfig<Item>) {
 ```
 
 <details>
-  <summary>What can I do with `command`?</summary>
+  <summary>What can I do with `list`?</summary>
 
 ```tsx
 // To append a new row with optional defaultValue
-<button {...command.append({ defaultValue })}>Append</button>;
+<button {...list.append('name', { defaultValue })}>Append</button>;
 
 // To prepend a new row with optional defaultValue
-<button {...command.prepend({ defaultValue })}>Prepend</button>;
+<button {...list.prepend('name', { defaultValue })}>Prepend</button>;
 
 // To remove a row by index
-<button {...command.remove({ index })}>Remove</button>;
+<button {...list.remove('name', { index })}>Remove</button>;
 
 // To replace a row with another defaultValue
-<button {...command.replace({ index, defaultValue })}>Replace</button>;
+<button {...list.replace('name', { index, defaultValue })}>Replace</button>;
 
 // To reorder a particular row to an another index
-<button {...command.reorder({ from, to })}>Reorder</button>;
+<button {...list.reorder('name', { from, to })}>Reorder</button>;
 ```
 
 </details>

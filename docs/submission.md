@@ -101,7 +101,7 @@ export default function TodoForm() {
    * useFieldList handles array structure. It warns if the field
    * is not an array
    */
-  const [taskList, command] = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks.config);
 
   return (
     <form {...form.props}>
@@ -252,7 +252,7 @@ The [useFieldList](/packages/conform-react/README.md#usefieldlist) hook provide 
 ```tsx
 export default function Todos() {
   const [form, { title, tasks }] = useForm<Todo>();
-  const [taskList, command] = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks.config);
 
   return (
     <form {...form.props}>
@@ -266,13 +266,15 @@ export default function Todos() {
             <li key={task.key}>
               <TaskFieldset title={`Task #${index + 1}`} {...task.config} />
               {/* Command button 1 */}
-              <button {...command.remove({ index })}>Delete</button>
+              <button {...list.remove(tasks.config.name, { index })}>
+                Delete
+              </button>
             </li>
           ))}
         </ul>
         <div>
           {/* Command button 2 */}
-          <button {...control.append()}>Add task</button>
+          <button {...list.append(tasks.config.name)}>Add task</button>
         </div>
       </fieldset>
       <button type="submit">Save</button>
