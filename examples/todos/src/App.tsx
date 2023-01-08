@@ -13,7 +13,7 @@ interface Todo {
 }
 
 export default function TodoForm() {
-	const form = useForm<Todo>({
+	const [form, { title, tasks }] = useForm<Todo>({
 		initialReport: 'onBlur',
 		onSubmit(event, { submission }) {
 			event.preventDefault();
@@ -21,7 +21,6 @@ export default function TodoForm() {
 			console.log(submission);
 		},
 	});
-	const { title, tasks } = useFieldset(form.ref, form.config);
 	const [taskList, command] = useFieldList(form.ref, tasks.config);
 
 	return (

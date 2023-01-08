@@ -1,10 +1,4 @@
-import {
-	conform,
-	parse,
-	useFieldList,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
+import { conform, parse, useFieldList, useForm } from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -53,14 +47,13 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const form = useForm<z.infer<typeof schema>>({
+	const [form, { items }] = useForm<z.infer<typeof schema>>({
 		mode: noClientValidate ? 'server-validation' : 'client-only',
 		state,
 		onValidate: !noClientValidate
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
 	});
-	const { items } = useFieldset(form.ref, form.config);
 	const [list, command] = useFieldList(form.ref, items.config);
 
 	return (

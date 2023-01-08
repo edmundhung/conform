@@ -1,7 +1,6 @@
 import {
 	conform,
 	parse,
-	useFieldset,
 	useForm,
 	hasError,
 	shouldValidate,
@@ -87,7 +86,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const state = useActionData<typeof action>();
-	const form = useForm({
+	const [form, { email, username, password, confirmPassword }] = useForm({
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
@@ -106,10 +105,6 @@ export default function Signup() {
 			}
 		},
 	});
-	const { email, username, password, confirmPassword } = useFieldset(
-		form.ref,
-		form.config,
-	);
 
 	return (
 		<Form method="post" {...form.props}>

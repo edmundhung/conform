@@ -1,4 +1,4 @@
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { formatError } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -16,10 +16,6 @@ const schema = z
 		path: ['confirmPassword'],
 	});
 
-async function signup(data: unknown) {
-	throw new Error('Not implemented');
-}
-
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse<z.infer<typeof schema>>(formData);
@@ -28,10 +24,10 @@ export async function action({ request }: ActionArgs) {
 		switch (submission.type) {
 			case 'validate':
 			case 'submit': {
-				const data = schema.parse(submission.value);
+				schema.parse(submission.value);
 
 				if (submission.type === 'submit') {
-					return await signup(data);
+					throw new Error('Not implemented');
 				}
 
 				break;
@@ -51,15 +47,13 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const state = useActionData<typeof action>();
-	const form = useForm<z.infer<typeof schema>>({
+	const [form, { email, password, confirmPassword }] = useForm<
+		z.infer<typeof schema>
+	>({
 		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
 	});
-	const { email, password, confirmPassword } = useFieldset(
-		form.ref,
-		form.config,
-	);
 
 	return (
 		<Form method="post" {...form.props}>

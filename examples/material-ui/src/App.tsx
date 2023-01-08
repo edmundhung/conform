@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useFieldset, useControlledInput } from '@conform-to/react';
+import { useForm, useControlledInput } from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -34,8 +34,7 @@ interface Schema {
 }
 
 export default function ArticleForm() {
-	const form = useForm<Schema>();
-	const fieldset = useFieldset(form.ref, form.config);
+	const [form, fieldset] = useForm<Schema>();
 
 	return (
 		<Container maxWidth="sm">

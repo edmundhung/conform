@@ -1,4 +1,4 @@
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -67,13 +67,12 @@ export async function action({ request }: ActionArgs) {
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const form = useForm<Schema>({
+	const [form, { file, files }] = useForm<Schema>({
 		state,
 		onValidate: !noClientValidate
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
 	});
-	const { file, files } = useFieldset<Schema>(form.ref, form.config);
 
 	return (
 		<Form method="post" {...form.props} encType="multipart/form-data">

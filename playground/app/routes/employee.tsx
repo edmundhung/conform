@@ -3,7 +3,6 @@ import {
 	hasError,
 	parse,
 	shouldValidate,
-	useFieldset,
 	useForm,
 } from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
@@ -59,7 +58,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function EmployeeForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Schema>({
+	const [form, { name, email, title }] = useForm<Schema>({
 		...config,
 		state,
 		onValidate({ formData }) {
@@ -78,7 +77,6 @@ export default function EmployeeForm() {
 				  }
 				: undefined,
 	});
-	const { name, email, title } = useFieldset(form.ref, form.config);
 
 	return (
 		<Form method="post" {...form.props}>

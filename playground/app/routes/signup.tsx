@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { conform, parse, useFieldset, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -59,7 +59,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function SignupForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Signup>({
+	const [form, { email, password, confirmPassword }] = useForm<Signup>({
 		...config,
 		state,
 		onValidate: config.validate
@@ -74,10 +74,6 @@ export default function SignupForm() {
 				  }
 				: undefined,
 	});
-	const { email, password, confirmPassword } = useFieldset(form.ref, {
-		...form.config,
-		form: 'signup',
-	});
 
 	return (
 		<Playground title="Signup Form" form="signup" state={state}>
@@ -86,14 +82,19 @@ export default function SignupForm() {
 				<input
 					{...conform.input(email.config, { type: 'email' })}
 					autoComplete="off"
+					form="signup"
 				/>
 			</Field>
 			<Field label="Password" error={password.error}>
-				<input {...conform.input(password.config, { type: 'password' })} />
+				<input
+					{...conform.input(password.config, { type: 'password' })}
+					form="signup"
+				/>
 			</Field>
 			<Field label="Confirm password" error={confirmPassword.error}>
 				<input
 					{...conform.input(confirmPassword.config, { type: 'password' })}
+					form="signup"
 				/>
 			</Field>
 		</Playground>

@@ -1,12 +1,7 @@
-import {
-	useForm,
-	useFieldset,
-	parse,
-	getFormElements,
-} from '@conform-to/react';
+import { useForm, parse, getFormElements } from '@conform-to/react';
 
 export default function LoginForm() {
-	const form = useForm({
+	const [form, { email, password }] = useForm({
 		initialReport: 'onBlur',
 		onValidate({ form, formData }) {
 			const submission = parse(formData);
@@ -40,7 +35,6 @@ export default function LoginForm() {
 			console.log(Object.fromEntries(formData));
 		},
 	});
-	const { email, password } = useFieldset(form.ref, form.config);
 
 	return (
 		<form {...form.props}>

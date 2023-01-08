@@ -28,7 +28,7 @@ Now, client validation can be treated as a way to shorten the feedback loop. You
 **Conform** tries to makes it easy to validate the form data on the server. For example, you can validate a login form **fully server side** with Remix as shown below:
 
 ```tsx
-import { parse, useFieldset, useForm } from '@conform-to/react';
+import { parse, useForm } from '@conform-to/react';
 
 interface SignupForm {
   email: string;
@@ -99,7 +99,7 @@ export async function action({ request }: ActionArgs) {
 export default function Signup() {
   // Last submission returned by the server
   const state = useActionData<typeof action>();
-  const form = useForm<SignupForm>({
+  const [form] = useForm<SignupForm>({
     // Enable server validation mode
     mode: 'server-validation',
 
@@ -187,7 +187,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
   const state = useActionData();
-  const form = useForm({
+  const [form] = useForm({
     /**
      * Changing the mode to `client-only` as the client
      * validation does exactly the same checks as the
@@ -235,7 +235,7 @@ export function action() {
 
 export default function Signup() {
   const state = useActionData();
-  const form = useForm({
+  const [form] = useForm({
     /**
      * Changing the mode back to `server-validation`
      * as you want to confirm with the server now.

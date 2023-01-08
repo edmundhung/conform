@@ -54,6 +54,11 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	state?: Submission<Schema>;
 
 	/**
+	 * An object describing the constraint of each field
+	 */
+	constraint?: FieldsetConstraint<Schema>;
+
+	/**
 	 * Enable native validation before hydation.
 	 *
 	 * Default to `false`.
@@ -115,7 +120,7 @@ interface Form<Schema extends Record<string, any>> {
  */
 export function useForm<Schema extends Record<string, any>>(
 	config: FormConfig<Schema> = {},
-): Form<Schema> {
+): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
@@ -123,18 +128,23 @@ export function useForm<Schema extends Record<string, any>>(
 
 		return message ?? '';
 	});
-	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
-		() => {
-			const error = config.state?.error ?? [];
+	const [uncontrolledState, setUncontrolledState] = useState<
+		FieldsetConfig<Schema>
+	>(() => {
+		const error = config.state?.error ?? [];
 
-			return {
-				defaultValue: config.state?.value ?? config.defaultValue,
-				initialError: error.filter(
-					([name]) => name !== '' && getSubmissionType(name) === null,
-				),
-			};
-		},
-	);
+		return {
+			defaultValue: config.state?.value ?? config.defaultValue,
+			initialError: error.filter(
+				([name]) => name !== '' && getSubmissionType(name) === null,
+			),
+		};
+	});
+	const fieldsetConfig = {
+		...uncontrolledState,
+		constraint: config.constraint,
+	};
+	const fieldset = useFieldset(ref, fieldsetConfig);
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
 	);
@@ -230,7 +240,7 @@ export function useForm<Schema extends Record<string, any>>(
 			}
 
 			setError('');
-			setFieldsetConfig({
+			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
 				initialError: [],
 			});
@@ -256,7 +266,7 @@ export function useForm<Schema extends Record<string, any>>(
 		};
 	}, []);
 
-	return {
+	const form: Form<Schema> = {
 		ref,
 		error,
 		props: {
@@ -342,6 +352,8 @@ export function useForm<Schema extends Record<string, any>>(
 		},
 		config: fieldsetConfig,
 	};
+
+	return [form, fieldset];
 }
 
 /**
