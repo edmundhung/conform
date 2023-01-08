@@ -47,6 +47,12 @@ export type Submission<Schema = unknown> = {
 	error: Array<[string, string]>;
 };
 
+export interface CommandButtonProps<Name extends string = string> {
+	name: `conform/${Name}`;
+	value: string;
+	formNoValidate?: boolean;
+}
+
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -207,6 +213,11 @@ export function setValue<T>(
 	}
 }
 
+/**
+ * The ponyfill of `HTMLFormElement.requestSubmit()`
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit
+ * @see https://caniuse.com/?search=requestSubmit
+ */
 export function requestSubmit(
 	form: HTMLFormElement,
 	submitter?: HTMLButtonElement | HTMLInputElement,
@@ -220,17 +231,42 @@ export function requestSubmit(
 	form.dispatchEvent(submitEvent);
 }
 
-export function requestValidate(form: HTMLFormElement, field?: string) {
+/**
+ * Creates a command button on demand and trigger a form submit by clicking it.
+ */
+export function requestCommand(
+	form: HTMLFormElement | undefined,
+	buttonProps: CommandButtonProps,
+): void {
+	if (!form) {
+		console.warn('No form element is provided');
+		return;
+	}
+
 	const button = document.createElement('button');
 
-	button.name = 'conform/validate';
-	button.value = field ?? '';
-	button.formNoValidate = true;
+	button.name = buttonProps.name;
+	button.value = buttonProps.value;
 	button.hidden = true;
 
+	if (buttonProps.formNoValidate) {
+		button.formNoValidate = true;
+	}
+
 	form.appendChild(button);
-	requestSubmit(form, button);
+	button.click();
 	form.removeChild(button);
+}
+
+/**
+ * Dispatch the validate command for form validation
+ */
+export function requestValidate(form: HTMLFormElement, field?: string) {
+	requestCommand(form, {
+		name: 'conform/validate',
+		value: field ?? '',
+		formNoValidate: true,
+	});
 }
 
 export function getFormElement(
@@ -349,11 +385,6 @@ export function parse<Schema extends Record<string, any>>(
 	return submission as Submission<Schema>;
 }
 
-export type Command = {
-	name: string;
-	value: string;
-};
-
 export type ListCommand<Schema = unknown> =
 	| { type: 'prepend'; scope: string; payload: { defaultValue: Schema } }
 	| { type: 'append'; scope: string; payload: { defaultValue: Schema } }
@@ -373,11 +404,16 @@ export function parseListCommand<Schema = unknown>(
 
 		if (
 			typeof command.type !== 'string' ||
-			!['prepend', 'append', 'replace', 'remove', 'reorder'].includes(
-				command.type,
-			)
+			![
+				'prepend',
+				'append',
+				'replace',
+				'remove',
+				'reorder',
+				'combine',
+			].includes(command.type)
 		) {
-			throw new Error('Unsupported list command type');
+			throw new Error(`Unknown list command received: ${command.type}`);
 		}
 
 		return command;
@@ -431,12 +467,51 @@ export function handleList<Schema>(
 	const paths = getPaths(command.scope);
 
 	setValue(submission.value, paths, (list) => {
-		if (!Array.isArray(list)) {
+		if (typeof list !== 'undefined' && !Array.isArray(list)) {
 			throw new Error('The list command can only be applied to a list');
 		}
 
-		return updateList(list, command);
+		return updateList(list ?? [], command);
 	});
 
 	return submission;
 }
+
+export interface ListCommandButtonBuilder {
+	append<Schema>(
+		name: string,
+		payload?: { defaultValue: Schema },
+	): CommandButtonProps<'list'>;
+	prepend<Schema>(
+		name: string,
+		payload?: { defaultValue: Schema },
+	): CommandButtonProps<'list'>;
+	replace<Schema>(
+		name: string,
+		payload: { defaultValue: Schema; index: number },
+	): CommandButtonProps<'list'>;
+	remove(name: string, payload: { index: number }): CommandButtonProps<'list'>;
+	reorder(
+		name: string,
+		payload: { from: number; to: number },
+	): CommandButtonProps<'list'>;
+}
+
+export const list = new Proxy({} as ListCommandButtonBuilder, {
+	get(_target, type: any) {
+		switch (type) {
+			case 'append':
+			case 'prepend':
+			case 'replace':
+			case 'remove':
+			case 'reorder':
+				return (scope: string, payload = {}) => {
+					return {
+						name: 'conform/list',
+						value: JSON.stringify({ type, scope, payload }),
+						formNoValidate: true,
+					};
+				};
+		}
+	},
+});

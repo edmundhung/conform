@@ -1,5 +1,5 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import { useForm, useFieldset, useFieldList } from '@conform-to/react';
+import { useForm, useFieldset, useFieldList, list } from '@conform-to/react';
 import { useRef } from 'react';
 
 interface Task {
@@ -21,7 +21,7 @@ export default function TodoForm() {
 			console.log(submission);
 		},
 	});
-	const [taskList, command] = useFieldList(form.ref, tasks.config);
+	const taskList = useFieldList(form.ref, tasks.config);
 
 	return (
 		<form {...form.props}>
@@ -35,12 +35,19 @@ export default function TodoForm() {
 					{taskList.map((task, index) => (
 						<li key={task.key}>
 							<TaskFieldset title={`Task #${index + 1}`} {...task.config} />
-							<button {...command.remove({ index })}>Delete</button>
-							<button {...command.reorder({ from: index, to: 0 })}>
+							<button {...list.remove(tasks.config.name, { index })}>
+								Delete
+							</button>
+							<button
+								{...list.reorder(tasks.config.name, { from: index, to: 0 })}
+							>
 								Move to top
 							</button>
 							<button
-								{...command.replace({ index, defaultValue: { content: '' } })}
+								{...list.replace(tasks.config.name, {
+									index,
+									defaultValue: { content: '' },
+								})}
 							>
 								Clear
 							</button>
@@ -48,7 +55,7 @@ export default function TodoForm() {
 					))}
 				</ul>
 				<div>
-					<button {...command.append()}>Add task</button>
+					<button {...list.append(tasks.config.name)}>Add task</button>
 				</div>
 			</fieldset>
 			<button type="submit">Save</button>

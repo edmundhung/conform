@@ -5,6 +5,7 @@ import {
 	useFieldset,
 	useForm,
 	parse,
+	list,
 } from '@conform-to/react';
 import { formatError, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -105,7 +106,7 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 		...config,
 		constraint: getFieldsetConstraint(schema),
 	});
-	const [taskList, command] = useFieldList(ref, tasks.config);
+	const taskList = useFieldList(ref, tasks.config);
 
 	return (
 		<fieldset ref={ref} form={config.form}>
@@ -119,19 +120,22 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 						<div className="flex flex-row gap-2">
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...command.remove({ index })}
+								{...list.remove(tasks.config.name, { index })}
 							>
 								Delete
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...command.reorder({ from: index, to: 0 })}
+								{...list.reorder(tasks.config.name, { from: index, to: 0 })}
 							>
 								Move to top
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...command.replace({ index, defaultValue: { content: '' } })}
+								{...list.replace(tasks.config.name, {
+									index,
+									defaultValue: { content: '' },
+								})}
 							>
 								Clear
 							</button>
@@ -142,13 +146,13 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 			<div className="flex flex-row gap-2">
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...command.prepend()}
+					{...list.prepend(tasks.config.name)}
 				>
 					Insert top
 				</button>
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...command.append()}
+					{...list.append(tasks.config.name)}
 				>
 					Insert bottom
 				</button>

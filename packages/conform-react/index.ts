@@ -4,6 +4,10 @@ export {
 	type Submission,
 	getFormElements,
 	hasError,
+	list,
+	requestCommand,
+	requestValidate,
+	requestSubmit,
 	parse,
 	shouldValidate,
 } from '@conform-to/dom';

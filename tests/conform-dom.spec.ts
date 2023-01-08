@@ -127,7 +127,7 @@ test.describe('conform-dom', () => {
 				error: [
 					[
 						'',
-						'Invalid list command: "{"greeting":"Hello World"}"; Error: Unsupported list command type',
+						'Invalid list command: "{"greeting":"Hello World"}"; Error: Unknown list command received: undefined',
 					],
 				],
 			});
