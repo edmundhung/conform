@@ -244,6 +244,7 @@ export function useForm<Schema extends Record<string, any>>(
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
+					field.setAttribute('aria-invalid', 'false');
 					field.setCustomValidity('');
 				}
 			}
