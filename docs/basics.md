@@ -77,10 +77,10 @@ Conform utilizes these APIs internally. For example, form errors are reported by
 
 With the help of Constraint Validation, users will see [error bubbles](https://codesandbox.io/s/cocky-fermi-zwjort?file=/src/App.js) popping up when they try to submit a form with invalid fields. These bubbles are not customizable unfortunately. What if we can capture the error messages and decide where to put them ourselves?
 
-Let's introduce the [useForm](/packages/conform-react/README.md#useform) and [useFieldset](/packages/conform-react/README.md#usefieldset) hooks.
+Let's introduce the [useForm](/packages/conform-react/README.md#useform) hook.
 
 ```tsx
-import { useForm, useFieldset } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
 export default function LoginForm() {
   /**
@@ -88,20 +88,13 @@ export default function LoginForm() {
    * validation flow and customize it. The submit event
    * handler will be called only when the form is valid.
    */
-  const form = useForm({
+  const [form, { email, password }] = useForm({
     onSubmit(event, { formData }) {
       event.preventDefault();
 
       console.log(Object.fromEntries(formData));
     },
   });
-
-  /**
-   * The useFieldset hook helps you configure each field and
-   * subscribe to its state. The properties accessed should
-   * match the name of the inputs.
-   */
-  const { email, password } = useFieldset(form.ref, form.config);
 
   return (
     <form {...form.props}>
@@ -137,7 +130,7 @@ Although we haven't define any error messages yet, the form above should be able
 import { useForm, parse, getFormElements } from '@conform-to/react';
 
 export default function LoginForm() {
-  const form = useForm({
+  const [form] = useForm({
     onValidate({ form, formData }) {
       /**
        * By parsing the formData, you will be able to access:
@@ -205,7 +198,7 @@ Currently, form error is reported only when a submission is made. If you want it
 import { useForm } from '@conform-to/react';
 
 export default function LoginForm() {
-  const form = useForm({
+  const [form] = useForm({
     /**
      * Define when the error should be reported initially.
      * Support "onSubmit", "onChange", "onBlur".

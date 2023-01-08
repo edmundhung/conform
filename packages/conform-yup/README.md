@@ -30,7 +30,7 @@ const schema = yup.object({
 });
 
 function ExampleForm() {
-  const form = useForm<yup.InferType<typeof schema>>({
+  const [form] = useForm<yup.InferType<typeof schema>>({
     onValidate({ formData }) {
       const submission = parse(formData);
 
@@ -90,7 +90,7 @@ export let action = async ({ request }) => {
 
 export default function ExampleRoute() {
   const state = useActionData();
-  const form = useForm({
+  const [form] = useForm({
     mode: 'server-validation',
     state,
   });
@@ -110,9 +110,7 @@ This tries to infer constraint of each field based on the yup schema. This is us
 import { getFieldsetConstraint } from '@conform-to/yup';
 
 function LoginFieldset() {
-  const form = useForm();
-  const { email, password } = useFieldset(ref, {
-    ...form.config,
+  const [form, { email, password }] = useForm({
     constraint: getFieldsetConstraint(schema),
   });
 
@@ -135,7 +133,7 @@ const schema = yup.object({
 });
 
 function ExampleForm() {
-  const form = useForm({
+  const [form] = useForm({
     onValidate({ formData }) {
       return validate(formData, schema, {
         // Optional

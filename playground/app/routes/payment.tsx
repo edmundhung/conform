@@ -49,9 +49,10 @@ export let action = async ({ request }: ActionArgs) => {
 export default function PaymentForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm({
+	const [form, { iban, amount, timestamp, verified }] = useForm({
 		...config,
 		state,
+		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
@@ -63,10 +64,6 @@ export default function PaymentForm() {
 						}
 				  }
 				: undefined,
-	});
-	const { iban, amount, timestamp, verified } = useFieldset(form.ref, {
-		...form.config,
-		constraint: getFieldsetConstraint(schema),
 	});
 	const { currency, value } = useFieldset(form.ref, {
 		...amount.config,

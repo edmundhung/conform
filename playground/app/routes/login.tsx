@@ -1,10 +1,4 @@
-import {
-	type Submission,
-	conform,
-	useFieldset,
-	useForm,
-	parse,
-} from '@conform-to/react';
+import { type Submission, conform, useForm, parse } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field, Alert } from '~/components';
@@ -57,7 +51,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function LoginForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Login>({
+	const [form, { email, password }] = useForm<Login>({
 		...config,
 		state,
 		onValidate: config.validate
@@ -72,7 +66,6 @@ export default function LoginForm() {
 				  }
 				: undefined,
 	});
-	const { email, password } = useFieldset(form.ref, form.config);
 
 	return (
 		<Form method="post" {...form.props}>

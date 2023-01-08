@@ -128,19 +128,22 @@ export function useForm<Schema extends Record<string, any>>(
 
 		return message ?? '';
 	});
-	const [fieldsetConfig, setFieldsetConfig] = useState<FieldsetConfig<Schema>>(
-		() => {
-			const error = config.state?.error ?? [];
+	const [uncontrolledState, setUncontrolledState] = useState<
+		FieldsetConfig<Schema>
+	>(() => {
+		const error = config.state?.error ?? [];
 
-			return {
-				defaultValue: config.state?.value ?? config.defaultValue,
-				initialError: error.filter(
-					([name]) => name !== '' && getSubmissionType(name) === null,
-				),
-				constraint: config.constraint,
-			};
-		},
-	);
+		return {
+			defaultValue: config.state?.value ?? config.defaultValue,
+			initialError: error.filter(
+				([name]) => name !== '' && getSubmissionType(name) === null,
+			),
+		};
+	});
+	const fieldsetConfig = {
+		...uncontrolledState,
+		constraint: config.constraint,
+	};
 	const fieldset = useFieldset(ref, fieldsetConfig);
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
@@ -237,9 +240,8 @@ export function useForm<Schema extends Record<string, any>>(
 			}
 
 			setError('');
-			setFieldsetConfig({
+			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
-				constraint: formConfig.constraint,
 				initialError: [],
 			});
 		};

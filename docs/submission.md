@@ -51,7 +51,7 @@ The first approach is to setup manually:
 
 ```tsx
 export default function TodoForm() {
-  const form = useForm();
+  const [form] = useForm();
 
   return (
     <form {...form.props}>
@@ -95,13 +95,7 @@ export default function TodoForm() {
   /**
    * For better type safety, you can provide a schema to `useForm`
    */
-  const form = useForm<Todo>();
-
-  /**
-   * useFieldset handles object structure. It warns if you are
-   * accessing fields not defined in the schema
-   */
-  const { title, tasks } = useFieldset(form.ref, form.config);
+  const [form, { title, tasks }] = useForm<Todo>();
 
   /**
    * useFieldList handles array structure. It warns if the field
@@ -170,7 +164,7 @@ Unfortunately, the FormData API is not able to capture the submitter information
 
 ```tsx
 function Product() {
-  const form = useForm({
+  const [form] = useForm({
     onSubmit(event, { formData }) {
       event.preventDefault();
 
@@ -222,7 +216,7 @@ However, this polutes the form data with information used for controlling form b
 import { useForm } from '@conform-to/react';
 
 function Product() {
-  const form = useForm({
+  const [form] = useForm({
     onSubmit(event, { submission }) {
       event.preventDefault();
 
@@ -257,8 +251,7 @@ The [useFieldList](/packages/conform-react/README.md#usefieldlist) hook provide 
 
 ```tsx
 export default function Todos() {
-  const form = useForm();
-  const { title, tasks } = useFieldset<Todo>(form.ref, form.config);
+  const [form, { title, tasks }] = useForm<Todo>();
   const [taskList, command] = useFieldList(form.ref, tasks.config);
 
   return (

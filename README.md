@@ -11,10 +11,10 @@ Conform is a form validation library built on top of the [Constraint Validation]
 <!-- sandbox src="/examples/basic" -->
 
 ```tsx
-import { useForm, useFieldset } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
 export default function LoginForm() {
-  const form = useForm({
+  const [form, { email, password }] = useForm({
     onSubmit(event) {
       event.preventDefault();
 
@@ -24,7 +24,6 @@ export default function LoginForm() {
       console.log(value);
     },
   });
-  const { email, password } = useFieldset(form.ref, form.config);
 
   return (
     <form {...form.props}>

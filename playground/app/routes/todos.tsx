@@ -55,7 +55,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function TodosForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<z.infer<typeof schema>>({
+	const [form] = useForm<z.infer<typeof schema>>({
 		...config,
 		state,
 		onValidate: config.validate

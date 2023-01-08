@@ -32,7 +32,7 @@ This hook enhances the form validation behaviour in 3 parts:
 import { useForm } from '@conform-to/react';
 
 function LoginForm() {
-  const form = useForm({
+  const [form] = useForm({
     /**
      * Validation mode.
      * Support "client-only" or "server-validation".
@@ -58,6 +58,11 @@ function LoginForm() {
      * An object describing the state from the last submission
      */
     state: undefined;
+
+    /**
+     * An object describing the constraint of each field
+     */
+    constraint: undefined;
 
     /**
      * Enable native validation before hydation.
@@ -100,7 +105,7 @@ It is a group of properties properties required to hook into form events. They c
 
 ```tsx
 function RandomForm() {
-  const form = useForm();
+  const [form] = useForm();
 
   return (
     <form
@@ -126,7 +131,7 @@ import { useFrom } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 
 function LoginForm() {
-  const form = useForm();
+  const [form] = useForm();
 
   return (
     <Form method="post" action="/login" {...form.props}>
@@ -144,11 +149,10 @@ function LoginForm() {
 The `onValidate` function is not required if the validation logic can be fully covered by the [native constraints](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Constraint_validation#validation-related_attributes), e.g. **required** / **min** / **pattern** etc.
 
 ```tsx
-import { useForm, useFieldset } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
 function LoginForm() {
-  const form = useForm();
-  const { email, password } = useFieldset(form.ref);
+  const [form, { email, password }] = useForm();
 
   return (
     <form {...form.props}>
@@ -189,7 +193,7 @@ type Book = {
 };
 
 function BookFieldset() {
-  const form = useForm();
+  const [form] = useForm();
   const { name, isbn } = useFieldset<Book>(
     /**
      * A ref object of the form element or fieldset element
@@ -562,7 +566,7 @@ It returns all _input_ / _select_ / _textarea_ or _button_ in the forms. Useful 
 import { useForm, parse, getFormElements } from '@conform-to/react';
 
 export default function LoginForm() {
-  const form = useForm({
+  const [form] = useForm({
     onValidate({ form, formData }) {
       const submission = parse(formData);
 

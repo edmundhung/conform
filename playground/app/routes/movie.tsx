@@ -1,11 +1,4 @@
-import type { FieldsetConstraint } from '@conform-to/react';
-import {
-	conform,
-	getFormElements,
-	parse,
-	useFieldset,
-	useForm,
-} from '@conform-to/react';
+import { conform, getFormElements, parse, useForm } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -17,33 +10,6 @@ interface Movie {
 	genre: string;
 	rating?: number;
 }
-
-const constraint: FieldsetConstraint<Movie> = {
-	title: {
-		required: true,
-		pattern: '[0-9a-zA-Z ]{1,20}',
-	},
-	description: {
-		minLength: 30,
-		maxLength: 200,
-	},
-	genre: {
-		required: true,
-		/**
-		 * No value from multiple select will be included in the FormData
-		 * when nothing is selected. This makes it hard to know the field
-		 * exist and add it to part of the scope. As native select is
-		 * uncommon (especially with `multiple`) due to lack of customization
-		 * capablity. This is considered a limitation for now.
-		 */
-		// multiple: true,
-	},
-	rating: {
-		min: '0.5',
-		max: '5',
-		step: '0.5',
-	},
-};
 
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
@@ -80,9 +46,35 @@ export let action = async ({ request }: ActionArgs) => {
 export default function MovieForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Movie>({
+	const [form, { title, description, genre, rating }] = useForm<Movie>({
 		...config,
 		state,
+		constraint: {
+			title: {
+				required: true,
+				pattern: '[0-9a-zA-Z ]{1,20}',
+			},
+			description: {
+				minLength: 30,
+				maxLength: 200,
+			},
+			genre: {
+				required: true,
+				/**
+				 * No value from multiple select will be included in the FormData
+				 * when nothing is selected. This makes it hard to know the field
+				 * exist and add it to part of the scope. As native select is
+				 * uncommon (especially with `multiple`) due to lack of customization
+				 * capablity. This is considered a limitation for now.
+				 */
+				// multiple: true,
+			},
+			rating: {
+				min: '0.5',
+				max: '5',
+				step: '0.5',
+			},
+		},
 		onValidate: config.validate
 			? ({ form, formData }) => {
 					const submission = parse(formData);
@@ -134,10 +126,6 @@ export default function MovieForm() {
 						}
 				  }
 				: undefined,
-	});
-	const { title, description, genre, rating } = useFieldset(form.ref, {
-		...form.config,
-		constraint,
 	});
 
 	return (

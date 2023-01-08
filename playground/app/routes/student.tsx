@@ -1,4 +1,4 @@
-import { conform, useFieldset, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { getFieldsetConstraint, validate } from '@conform-to/yup';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -32,9 +32,12 @@ export let action = async ({ request }: ActionArgs) => {
 export default function StudentForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const form = useForm<Schema>({
+	const [form, { name, remarks, grade, score }] = useForm<
+		yup.InferType<typeof schema>
+	>({
 		...config,
 		state,
+		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
 			? ({ formData }) => validate(formData, schema)
 			: undefined,
@@ -46,10 +49,6 @@ export default function StudentForm() {
 						}
 				  }
 				: undefined,
-	});
-	const { name, remarks, grade, score } = useFieldset(form.ref, {
-		...form.config,
-		constraint: getFieldsetConstraint(schema),
 	});
 
 	return (
