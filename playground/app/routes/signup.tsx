@@ -77,7 +77,7 @@ export default function SignupForm() {
 	});
 
 	return (
-		<Playground title="Signup Form" form={form.props.id} state={state}>
+		<Playground title="Signup Form" form={form.id} state={state}>
 			<Form method="post" {...form.props} />
 			<Field label="Email" {...email}>
 				<input

@@ -113,6 +113,7 @@ interface FormProps {
 }
 
 interface Form<Schema extends Record<string, any>> {
+	id?: string;
 	ref: RefObject<HTMLFormElement>;
 	error: string;
 	props: FormProps;
@@ -275,6 +276,7 @@ export function useForm<Schema extends Record<string, any>>(
 	}, []);
 
 	const form: Form<Schema> = {
+		id: config.id,
 		ref,
 		error,
 		props: {
