@@ -87,63 +87,7 @@ export async function isTouched(field: Locator): Promise<boolean> {
 }
 
 export async function getErrorMessages(playground: Locator): Promise<string[]> {
-	return playground.locator('label > p').allInnerTexts();
-}
-
-export async function getConstraint(field: Locator): Promise<FieldConstraint> {
-	return field.evaluate((input: HTMLInputElement) => {
-		const constraint: FieldConstraint = {};
-
-		if (input.required) {
-			constraint.required = true;
-		}
-
-		if (input.multiple) {
-			constraint.multiple = true;
-		}
-
-		if (typeof input.minLength !== 'undefined' && input.minLength !== -1) {
-			constraint.minLength = input.minLength;
-		}
-
-		if (typeof input.maxLength !== 'undefined' && input.maxLength !== -1) {
-			constraint.maxLength = input.maxLength;
-		}
-
-		if (input.min) {
-			constraint.min = input.min;
-		}
-
-		if (input.max) {
-			constraint.max = input.max;
-		}
-
-		if (input.step) {
-			constraint.step = input.step;
-		}
-
-		if (input.pattern) {
-			constraint.pattern = input.pattern;
-		}
-
-		return constraint;
-	});
-}
-
-export async function getFieldsetConstraint(
-	fieldset: Record<string, Locator>,
-): Promise<Record<string, FieldConstraint>> {
-	const result = await Promise.all(
-		Object.entries(fieldset).map<Promise<[string, FieldConstraint]>>(
-			async ([key, locator]) => {
-				const constraint = await getConstraint(locator);
-
-				return [key, constraint];
-			},
-		),
-	);
-
-	return Object.fromEntries(result);
+	return playground.locator('main p').allInnerTexts();
 }
 
 export async function getSubmission(playground: Locator): Promise<unknown> {
@@ -164,20 +108,6 @@ export function getMovieFieldset(playground: Locator) {
 		description,
 		genre,
 		rating,
-	};
-}
-
-export function getStudentFieldset(playground: Locator) {
-	const name = playground.locator('[name="name"]');
-	const remarks = playground.locator('[name="remarks"]');
-	const score = playground.locator('[name="score"]');
-	const grade = playground.locator('[name="grade"]');
-
-	return {
-		name,
-		remarks,
-		score,
-		grade,
 	};
 }
 
@@ -240,14 +170,15 @@ export function getTaskFieldset(list: Locator, name: string, index: number) {
 }
 
 export function getPlayground(page: Page) {
-	const form = page.locator('section');
+	const container = page.locator('body');
 
 	return {
-		form,
-		submit: form.locator('footer button[type="submit"]'),
-		reset: form.locator('footer button[type="reset"]'),
-		submission: form.locator('pre'),
-		error: form.locator('label > p'),
+		container,
+		form: container.locator('form'),
+		submit: container.locator('footer button[type="submit"]'),
+		reset: container.locator('footer button[type="reset"]'),
+		submission: container.locator('pre'),
+		error: container.locator('main p'),
 	};
 }
 

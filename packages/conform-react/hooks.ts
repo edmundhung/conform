@@ -31,6 +31,12 @@ import { input } from './helpers';
 
 export interface FormConfig<Schema extends Record<string, any>> {
 	/**
+	 * If the form id is provided, Id for label,
+	 * input and error elements will be derived.
+	 */
+	id?: string;
+
+	/**
 	 * Validation mode. Default to `client-only`.
 	 */
 	mode?: 'client-only' | 'server-validation';
@@ -101,11 +107,13 @@ export interface FormConfig<Schema extends Record<string, any>> {
  */
 interface FormProps {
 	ref: RefObject<HTMLFormElement>;
+	id?: string;
 	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 	noValidate: boolean;
 }
 
 interface Form<Schema extends Record<string, any>> {
+	id?: string;
 	ref: RefObject<HTMLFormElement>;
 	error: string;
 	props: FormProps;
@@ -143,6 +151,7 @@ export function useForm<Schema extends Record<string, any>>(
 	const fieldsetConfig = {
 		...uncontrolledState,
 		constraint: config.constraint,
+		form: config.id,
 	};
 	const fieldset = useFieldset(ref, fieldsetConfig);
 	const [noValidate, setNoValidate] = useState(
@@ -235,6 +244,7 @@ export function useForm<Schema extends Record<string, any>>(
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
+					field.setAttribute('aria-invalid', 'false');
 					field.setCustomValidity('');
 				}
 			}
@@ -267,10 +277,12 @@ export function useForm<Schema extends Record<string, any>>(
 	}, []);
 
 	const form: Form<Schema> = {
+		id: config.id,
 		ref,
 		error,
 		props: {
 			ref,
+			id: config.id,
 			noValidate,
 			onSubmit(event) {
 				const form = event.currentTarget;
@@ -490,6 +502,14 @@ export function useFieldset<Schema extends Record<string, any>>(
 			// Update the error only if the field belongs to the fieldset
 			if (typeof key === 'string' && paths.length === 0) {
 				if (field.dataset.conformTouched) {
+					// Update the aria attribute only if it is set
+					if (field.getAttribute('aria-invalid')) {
+						field.setAttribute(
+							'aria-invalid',
+							field.validationMessage !== '' ? 'true' : 'false',
+						);
+					}
+
 					setError((prev) => {
 						const prevMessage = prev?.[key] ?? '';
 
@@ -544,23 +564,28 @@ export function useFieldset<Schema extends Record<string, any>>(
 	return new Proxy(
 		{},
 		{
-			get(_target, key): Field<any> | undefined {
+			get(_target, key) {
 				if (typeof key !== 'string') {
 					return;
 				}
 
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
-				const field = {
+				const field: Field<any> = {
 					config: {
 						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
-						form: fieldsetConfig.form,
 						defaultValue: uncontrolledState.defaultValue[key],
 						initialError: uncontrolledState.initialError[key],
 						...constraint,
 					},
 					error: error?.[key] ?? '',
 				};
+
+				if (fieldsetConfig.form) {
+					field.config.form = fieldsetConfig.form;
+					field.config.id = `${fieldsetConfig.form}-${field.config.name}`;
+					field.config.errorId = `${field.config.id}-error`;
+				}
 
 				return field;
 			},
@@ -642,20 +667,6 @@ export function useFieldList<Payload = any>(
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
-	const list = entries.map<{
-		key: string;
-		error: string | undefined;
-		config: FieldConfig<Payload>;
-	}>(([key, defaultValue], index) => ({
-		key,
-		error: error[index],
-		config: {
-			name: `${config.name}[${index}]`,
-			form: config.form,
-			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
-			initialError: uncontrolledState.initialError[index],
-		},
-	}));
 
 	/***
 	 * This use proxy to capture all information about the command and
@@ -807,7 +818,25 @@ export function useFieldList<Payload = any>(
 	}, [ref]);
 
 	return [
-		list,
+		entries.map(([key, defaultValue], index) => {
+			const fieldConfig: FieldConfig<any> = {
+				name: `${config.name}[${index}]`,
+				defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
+				initialError: uncontrolledState.initialError[index],
+			};
+
+			if (config.form) {
+				fieldConfig.form = config.form;
+				fieldConfig.id = `${config.form}-${config.name}`;
+				fieldConfig.errorId = `${fieldConfig.id}-error`;
+			}
+
+			return {
+				key,
+				error: error[index],
+				config: fieldConfig,
+			};
+		}),
 		// @ts-expect-error proxy type
 		command,
 	];

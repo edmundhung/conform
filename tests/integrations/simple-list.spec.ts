@@ -20,7 +20,7 @@ function getItemFieldset(list: Locator, index: number) {
 
 async function runValidationScenario(page: Page) {
 	const playground = getPlayground(page);
-	const fieldset = getFieldset(playground.form);
+	const fieldset = getFieldset(playground.container);
 	const item0 = getItemFieldset(fieldset.items, 0);
 	const item1 = getItemFieldset(fieldset.items, 1);
 	const item2 = getItemFieldset(fieldset.items, 2);
@@ -136,7 +136,7 @@ test.describe('With JS', () => {
 		await page.goto('/simple-list');
 
 		const playground = getPlayground(page);
-		const fieldset = getFieldset(playground.form);
+		const fieldset = getFieldset(playground.container);
 
 		await fieldset.insertBottom.click();
 		await playground.submit.click();

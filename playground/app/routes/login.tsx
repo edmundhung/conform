@@ -1,6 +1,7 @@
 import { type Submission, conform, useForm, parse } from '@conform-to/react';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
+import { useId } from 'react';
 import { Playground, Field, Alert } from '~/components';
 import { parseConfig } from '~/config';
 
@@ -49,10 +50,12 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function LoginForm() {
+	const formId = useId();
 	const config = useLoaderData();
 	const state = useActionData();
 	const [form, { email, password }] = useForm<Login>({
 		...config,
+		id: formId,
 		state,
 		onValidate: config.validate
 			? ({ formData }) => validate(formData)
@@ -71,13 +74,13 @@ export default function LoginForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Login Form" state={state}>
 				<Alert message={form.error} />
-				<Field label="Email" error={email.error}>
+				<Field label="Email" {...email}>
 					<input
 						{...conform.input(email.config, { type: 'email' })}
 						autoComplete="off"
 					/>
 				</Field>
-				<Field label="Password" error={password.error}>
+				<Field label="Password" {...password}>
 					<input {...conform.input(password.config, { type: 'password' })} />
 				</Field>
 			</Playground>

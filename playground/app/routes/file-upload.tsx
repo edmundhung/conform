@@ -78,10 +78,10 @@ export default function FileUpload() {
 		<Form method="post" {...form.props} encType="multipart/form-data">
 			<Playground title="Employee Form" state={state}>
 				<Alert message={form.error} />
-				<Field label="Single file" error={file.error}>
+				<Field label="Single file" {...file}>
 					<input {...conform.input(file.config, { type: 'file' })} />
 				</Field>
-				<Field label="Multiple files" error={files.error}>
+				<Field label="Multiple files" {...files}>
 					<input {...conform.input(files.config, { type: 'file' })} multiple />
 				</Field>
 			</Playground>

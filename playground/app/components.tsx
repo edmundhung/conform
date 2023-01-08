@@ -1,4 +1,4 @@
-import type { Submission } from '@conform-to/react';
+import type { FieldConfig, Submission } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -83,12 +83,13 @@ interface FieldProps {
 	label: string;
 	inline?: boolean;
 	error?: string;
+	config?: FieldConfig<any>;
 	children: ReactNode;
 }
 
-export function Field({ label, inline, error, children }: FieldProps) {
+export function Field({ label, inline, error, config, children }: FieldProps) {
 	return (
-		<label className="mb-4 block">
+		<div className="mb-4">
 			<div
 				className={
 					inline
@@ -96,11 +97,18 @@ export function Field({ label, inline, error, children }: FieldProps) {
 						: ''
 				}
 			>
-				<div className="block text-sm font-medium text-gray-700">{label}</div>
+				<label
+					htmlFor={config?.id}
+					className="block text-sm font-medium text-gray-700"
+				>
+					{label}
+				</label>
 				{children}
 			</div>
-			<p className="my-1 text-pink-600 text-sm">{error}</p>
-		</label>
+			<p id={config?.errorId} className="my-1 text-pink-600 text-sm">
+				{error}
+			</p>
+		</div>
 	);
 }
 

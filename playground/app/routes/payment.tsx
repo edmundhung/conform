@@ -74,10 +74,10 @@ export default function PaymentForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Payment Form" state={state}>
 				<fieldset>
-					<Field label="IBAN" error={iban.error}>
+					<Field label="IBAN" {...iban}>
 						<input {...conform.input(iban.config, { type: 'text' })} />
 					</Field>
-					<Field label="Currency" error={currency.error}>
+					<Field label="Currency" {...currency}>
 						<select {...conform.select(currency.config)}>
 							<option value="">Please specify</option>
 							<option value="USD">USD</option>
@@ -85,10 +85,10 @@ export default function PaymentForm() {
 							<option value="GBP">GBP</option>
 						</select>
 					</Field>
-					<Field label="Value" error={value.error}>
+					<Field label="Value" {...value}>
 						<input {...conform.input(value.config, { type: 'number' })} />
 					</Field>
-					<Field label="Timestamp" error={timestamp.error}>
+					<Field label="Timestamp" {...timestamp}>
 						<input {...conform.input(timestamp.config, { type: 'text' })} />
 					</Field>
 					<Field label="Verified" error={verified.error} inline>

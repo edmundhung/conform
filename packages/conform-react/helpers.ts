@@ -2,10 +2,13 @@ import type { FieldConfig } from '@conform-to/dom';
 import type { HTMLInputTypeAttribute } from 'react';
 
 interface FieldProps {
+	id?: string;
 	name: string;
 	form?: string;
 	required?: boolean;
 	autoFocus?: boolean;
+	'aria-invalid': boolean;
+	'aria-describedby'?: string;
 }
 
 interface InputProps<Schema> extends FieldProps {
@@ -63,6 +66,7 @@ export function input<Schema>(
 	options: InputOptions = {},
 ): InputProps<Schema> {
 	const attributes: InputProps<Schema> = {
+		id: config.id,
 		type: options.type,
 		name: config.name,
 		form: config.form,
@@ -74,6 +78,8 @@ export function input<Schema>(
 		step: config.step,
 		pattern: config.pattern,
 		multiple: config.multiple,
+		'aria-invalid': Boolean(config.initialError?.length),
+		'aria-describedby': config.errorId,
 	};
 
 	if (config.initialError && config.initialError.length > 0) {
@@ -92,6 +98,7 @@ export function input<Schema>(
 
 export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 	const attributes: SelectProps = {
+		id: config.id,
 		name: config.name,
 		form: config.form,
 		defaultValue: config.multiple
@@ -101,6 +108,8 @@ export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 			: `${config.defaultValue ?? ''}`,
 		required: config.required,
 		multiple: config.multiple,
+		'aria-invalid': Boolean(config.initialError?.length),
+		'aria-describedby': config.errorId,
 	};
 
 	if (config.initialError && config.initialError.length > 0) {
@@ -112,6 +121,7 @@ export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 
 export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
 	const attributes: TextareaProps = {
+		id: config.id,
 		name: config.name,
 		form: config.form,
 		defaultValue: `${config.defaultValue ?? ''}`,
@@ -119,6 +129,8 @@ export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
 		minLength: config.minLength,
 		maxLength: config.maxLength,
 		autoFocus: Boolean(config.initialError),
+		'aria-invalid': Boolean(config.initialError?.length),
+		'aria-describedby': config.errorId,
 	};
 
 	if (config.initialError && config.initialError.length > 0) {
