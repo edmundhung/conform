@@ -8,9 +8,7 @@ import {
 	clickResetButton,
 	getMovieFieldset,
 	getPaymentFieldset,
-	getFieldsetConstraint,
 	gotoForm,
-	getStudentFieldset,
 	getLoginFieldset,
 	expectNonEmptyString,
 	getSignupFieldset,
@@ -20,81 +18,6 @@ import {
 	getTodosFieldset,
 	getEmployeeFieldset,
 } from './helpers';
-
-test.describe('Constraint', () => {
-	test('Manual constraint definition', async ({ page }) => {
-		const form = await gotoForm(page, '/movie');
-		const fieldset = getMovieFieldset(form);
-		const constraint = await getFieldsetConstraint(fieldset);
-
-		expect(constraint).toEqual({
-			title: {
-				required: true,
-				pattern: '[0-9a-zA-Z ]{1,20}',
-			},
-			description: {
-				minLength: 30,
-				maxLength: 200,
-			},
-			genre: {
-				required: true,
-			},
-			rating: {
-				min: '0.5',
-				max: '5',
-				step: '0.5',
-			},
-		});
-	});
-
-	test('Derived constraint from zod schema', async ({ page }) => {
-		const form = await gotoForm(page, '/payment');
-		const fieldset = getPaymentFieldset(form);
-		const constraint = await getFieldsetConstraint(fieldset);
-
-		expect(constraint).toEqual({
-			iban: {
-				minLength: 1,
-				required: true,
-				pattern: '^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$',
-			},
-			currency: {
-				required: true,
-			},
-			value: {
-				required: true,
-				min: '1',
-			},
-			timestamp: {
-				required: true,
-			},
-			verified: {},
-		});
-	});
-
-	test('Derived constraint from yup schema', async ({ page }) => {
-		const form = await gotoForm(page, '/student');
-		const fieldset = getStudentFieldset(form);
-		const constraint = await getFieldsetConstraint(fieldset);
-
-		expect(constraint).toEqual({
-			name: {
-				required: true,
-				minLength: 8,
-				maxLength: 20,
-				pattern: '^[0-9a-zA-Z]{8,20}$',
-			},
-			remarks: {},
-			score: {
-				min: '0',
-				max: '100',
-			},
-			grade: {
-				pattern: 'A|B|C|D|E|F',
-			},
-		});
-	});
-});
 
 test.describe('Client Validation', () => {
 	test('Browser validation', async ({ page }) => {

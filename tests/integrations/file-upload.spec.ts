@@ -34,7 +34,7 @@ const testFiles: TestFile[] = [
 
 async function runValidationScenario(page: Page) {
 	const playground = getPlayground(page);
-	const fieldset = getFieldset(playground.form);
+	const fieldset = getFieldset(playground.container);
 
 	// Trigger form validation
 	await playground.submit.click();
