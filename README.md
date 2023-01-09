@@ -15,7 +15,7 @@ A progressive enhancement first form validation library, especially with Remix[\
 - Focus management on error [[?]](https://conform.guide/focus-management "Learn more")
 - About 4kb compressed [[?]](https://bundlephobia.com/package/@conform-to/react "Check the size on bundlephobia")
 
-### Demo
+### Quickstart
 
 Here is a real world example built with [Remix](https://remix.run) and validated using [Zod](https://zod.dev).
 
@@ -82,4 +82,4 @@ export default function LoginForm() {
 }
 ```
 
-Learn more about conform [here](https://conform.guide/basics).
+Learn more about conform [here](https://conform.guide/quickstart).
