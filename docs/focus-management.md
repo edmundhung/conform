@@ -33,7 +33,7 @@ import { TextField, MenuItem, Button } from '@mui/material';
 
 function Example() {
   const [form, { language }] = useForm();
-  const [shadowInputProps, control] = useControlledInput(config);
+  const [shadowInputProps, control] = useControlledInput(language.config);
 
   return (
     <form {...form.props}>
