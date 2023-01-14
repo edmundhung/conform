@@ -6,19 +6,9 @@ import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
-function isEmptyFile(file: unknown): boolean {
-	return (
-		// FIXME: The empty file is presented as empty string on server side
-		// This is caused by @remix-run/web-fetch considered empty filename as non-file entry
-		file === '' ||
-		(file instanceof File &&
-			file.name === '' &&
-			file.size === 0 &&
-			file.type === 'application/octet-stream')
-	);
-}
 const JsonFile = z
-	.instanceof(File, { message: 'File is required' })
+	.instanceof(File)
+	.refine((file) => file.name !== '' && file.size !== 0, 'File is required')
 	.refine(
 		(file) => file.type === 'application/json',
 		'Only JSON file is accepted',
@@ -26,15 +16,19 @@ const JsonFile = z
 
 const schema = z.object({
 	file: z.preprocess(
-		(file) => (isEmptyFile(file) ? undefined : file),
+		(value) => (value === '' ? new File([], '') : value),
 		JsonFile,
 	),
 	files: z
-		.preprocess(
-			(files) =>
-				isEmptyFile(files) ? [] : Array.isArray(files) ? files : [files],
-			z.array(JsonFile).min(1, 'At least 1 file is required'),
-		)
+		.preprocess((value) => {
+			if (Array.isArray(value)) {
+				return value;
+			} else if (value instanceof File && value.name !== '' && value.size > 0) {
+				return [value];
+			} else {
+				return [];
+			}
+		}, z.array(JsonFile).min(1, 'At least 1 file is required'))
 		.refine(
 			(files) => files.reduce((size, file) => size + file.size, 0) < 5 * 1024,
 			'Total file size must be less than 5kb',
