@@ -11,16 +11,16 @@ interface Navigation {
 
 const navigations: Navigation[] = [
 	{
-		title: 'Get Started',
+		title: 'Guides',
 		menus: [
-			{ title: 'Basics', to: '/basics' },
-			{ title: 'Submission', to: '/submission' },
+			{ title: 'Get Started', to: '/tutorial' },
 			{ title: 'Validation', to: '/validation' },
+			{ title: 'Nested object and Array', to: '/configuration' },
+			{ title: 'Integrations', to: '/integrations' },
+			{ title: 'File Upload', to: '/file-upload' },
+			{ title: 'Focus management', to: '/focus-management' },
+			{ title: 'Accessibility', to: '/accessibility' },
 		],
-	},
-	{
-		title: 'Integrations',
-		menus: [{ title: 'Remix', to: '/examples/remix-run' }],
 	},
 	{
 		title: 'API Reference',
@@ -36,6 +36,7 @@ const navigations: Navigation[] = [
 			{ title: 'Chakra UI', to: '/examples/chakra-ui' },
 			{ title: 'Headless UI', to: '/examples/headless-ui' },
 			{ title: 'Material UI', to: '/examples/material-ui' },
+			{ title: 'Remix', to: '/examples/remix-run' },
 			{ title: 'Yup', to: '/examples/yup' },
 			{ title: 'Zod', to: '/examples/zod' },
 		],
