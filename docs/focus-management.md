@@ -2,6 +2,15 @@
 
 Conform will focus on the first invalid field on submit.
 
+<!-- aside -->
+
+## On this page
+
+- Focusing before JavaScript is loaded
+- Focusing on Custom Control
+
+<!-- /aside -->
+
 ## Focusing before JavaScript is loaded
 
 To enable error focus working in a progressive manner, Conform also utilise the  
@@ -61,3 +70,5 @@ function Example() {
   );
 }
 ```
+
+Check the [integration](./integrations.md) guide for more details

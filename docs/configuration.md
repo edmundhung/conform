@@ -1,4 +1,4 @@
-# Nest object and Array
+# Nested object and Array
 
 Conform has support for nested object and array by introducing a naming convention.
 

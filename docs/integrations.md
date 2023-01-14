@@ -2,6 +2,15 @@
 
 Integrating a form validation library with form controls are cumbersome, especially when working with an existing design system. Progressively enhanced form control.
 
+<!-- aside -->
+
+## On this page
+
+- Native form controls
+- Custom input component
+
+<!-- /aside -->
+
 ## Native form controls
 
 By utilizing event delegation, Conform support native form controls out of the box, which includes `<input />`, `<select />` and `<textarea />`.

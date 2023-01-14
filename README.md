@@ -8,11 +8,12 @@ A progressive enhancement first form validation library, especially with Remix[\
 
 ### Highlights
 
-- Make your form progressively enhanced by default [[?]](https://conform.guide/overview "Learn more")
+- Make your form progressively enhanced by default [[?]](https://conform.guide "Learn more")
 - Simplifed intergration through event delegation [[?]](https://conform.guide/integrations "Learn more")
-- First-class support on async validation [[?]](https://conform.guide/async-validation "Learn more")
-- Derive field name with type checking [[?]](https://conform.guide/configuration "Learn more")
-- Focus management on error [[?]](https://conform.guide/focus-management "Learn more")
+- First-class support on async validation [[?]](https://conform.guide/validation "Learn more")
+- Field name inference with type checking [[?]](https://conform.guide/configuration "Learn more")
+- Focus management [[?]](https://conform.guide/focus-management "Learn more")
+- Accessibility support [[?]](https://conform.guide/accessibility "Learn more")
 - About 4kb compressed [[?]](https://bundlephobia.com/package/@conform-to/react "Check the size on bundlephobia")
 
 ### Quickstart
@@ -38,15 +39,18 @@ export async function action({ request }: ActionArgs) {
 
   try {
     const data = schema.parse(submission.value);
-    const user = await login(data);
 
-    if (!user) {
-      throw new Error(
-        'Sign-in failed. The email or password provided is not correct.',
-      );
+    if (submission.type === 'submit') {
+      const user = await login(data);
+
+      if (!user) {
+        throw new Error(
+          'Sign-in failed. The email or password provided is not correct.',
+        );
+      }
+
+      return redirect('/');
     }
-
-    return redirect('/');
   } catch (error) {
     submission.error.push(formatError(error));
   }
@@ -82,4 +86,4 @@ export default function LoginForm() {
 }
 ```
 
-Learn more about conform [here](https://conform.guide/quickstart).
+Learn more about conform [here](https://conform.guide).

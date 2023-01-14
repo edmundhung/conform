@@ -1,4 +1,4 @@
-<!-- # File Upload -->
+# File Upload
 
 Conform has support for validating file inputs as well.
 

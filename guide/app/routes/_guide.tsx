@@ -13,6 +13,7 @@ const navigations: Navigation[] = [
 	{
 		title: 'Guides',
 		menus: [
+			{ title: 'Overview', to: '/' },
 			{ title: 'Get Started', to: '/tutorial' },
 			{ title: 'Validation', to: '/validation' },
 			{ title: 'Nested object and Array', to: '/configuration' },

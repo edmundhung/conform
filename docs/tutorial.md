@@ -4,7 +4,7 @@ In this tutoiral, we will show you how to build a login form with [Remix](https:
 
 <!-- aside -->
 
-## Table of Contents
+## On this page
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
