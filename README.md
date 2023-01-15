@@ -1,16 +1,14 @@
 # CONFORM
 
-[![latest release](https://img.shields.io/github/v/release/edmundhung/conform?display_name=tag&sort=semver&style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/releases)
-![npm bundle size (scoped)](https://img.shields.io/bundlephobia/minzip/@conform-to/react?style=flat-square&labelColor=000&color=2a4233)
-[![GitHub license](https://img.shields.io/github/license/edmundhung/conform?style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/blob/main/LICENSE)
+[![latest release](https://img.shields.io/github/v/release/edmundhung/conform?display_name=tag&sort=semver&style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/releases) ![npm bundle size (scoped)](https://img.shields.io/bundlephobia/minzip/@conform-to/react?style=flat-square&labelColor=000&color=2a4233) [![GitHub license](https://img.shields.io/github/license/edmundhung/conform?style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/blob/main/LICENSE)
 
-A progressive enhancement first form validation library, especially with Remix[\*](#)
+A progressive enhancement first form validation library for Remix
 
 ### Highlights
 
-- Make your form progressively enhanced by default [[?]](https://conform.guide "Learn more")
+- Make your form progressively enhanced by default [[?]](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/todos&file=/app/routes/todos.tsx "Try it with JS disabled")
 - Simplifed intergration through event delegation [[?]](https://conform.guide/integrations "Learn more")
-- First-class support on async validation [[?]](https://conform.guide/validation "Learn more")
+- Server first validation [[?]](https://conform.guide/validation "Learn more")
 - Field name inference with type checking [[?]](https://conform.guide/configuration "Learn more")
 - Focus management [[?]](https://conform.guide/focus-management "Learn more")
 - Accessibility support [[?]](https://conform.guide/accessibility "Learn more")
@@ -18,13 +16,14 @@ A progressive enhancement first form validation library, especially with Remix[\
 
 ### Quickstart
 
-Here is a real world example built with [Remix](https://remix.run) and validated using [Zod](https://zod.dev).
+Here is a real world example built with [Remix](https://remix.run) and validating using [Zod](https://zod.dev).
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
 import { validate, formatError } from '@conform-to/zod';
 import { Form } from '@remix-run/react';
 import { json, redirect } from '@remix-run/node';
+import { useId } from 'react';
 import { z } from 'zod';
 import { login } from '~/auth';
 
@@ -52,7 +51,7 @@ export async function action({ request }: ActionArgs) {
       return redirect('/');
     }
   } catch (error) {
-    submission.error.push(formatError(error));
+    submission.error.push(...formatError(error));
   }
 
   return json(submission);
@@ -60,7 +59,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function LoginForm() {
   const state = useActionData<typeof action>();
+  const id = useId();
   const [form, { email, password }] = useForm<z.infer<typeof schema>>({
+    id,
     state,
     onValidate({ formData }) {
       return validate(formData, schema);
@@ -85,5 +86,3 @@ export default function LoginForm() {
   );
 }
 ```
-
-Learn more about conform [here](https://conform.guide).

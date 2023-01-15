@@ -320,11 +320,3 @@ export async function action({ request }: ActionArgs) {
   return json(submission);
 }
 ```
-
-## Demo
-
-<!-- sandbox src="/examples/remix-run?initialpath=/async-validation&module=/app/routes/async-validation.tsx" -->
-
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/async-validation&file=/app/routes/async-validation.tsx).
-
-<!-- /sandbox -->

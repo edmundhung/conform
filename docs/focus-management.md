@@ -70,4 +70,4 @@ function Example() {
 }
 ```
 
-Check the [integration](./integrations.md) guide for more details
+Check the [integration](/docs/integrations.md) guide for more details

@@ -81,6 +81,6 @@ function Example() {
 
 Here are some examples:
 
-- [Chakra UI](../examples/chakra-ui)
-- [Headless UI](../examples/headless-ui)
-- [Material UI](../examples/material-ui)
+- [Chakra UI](/examples/chakra-ui)
+- [Headless UI](/examples/headless-ui)
+- [Material UI](/examples/material-ui)
