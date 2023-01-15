@@ -1,6 +1,6 @@
 # Integrations
 
-Integrating a form validation library with form controls are cumbersome, especially when working with an existing design system. Progressively enhanced form control.
+In this guide, we will show you how Conform can works with different form controls, including custom input components.
 
 <!-- aside -->
 
@@ -13,7 +13,7 @@ Integrating a form validation library with form controls are cumbersome, especia
 
 ## Native form controls
 
-By utilizing event delegation, Conform support native form controls out of the box, which includes `<input />`, `<select />` and `<textarea />`.
+Conform utilize event delegation and support native form controls out of the box, which includes `<input />`, `<select />` and `<textarea />`.
 
 ```tsx
 function Example() {
@@ -47,6 +47,10 @@ function Example() {
 ```
 
 ## Custom input component
+
+When integrating with a UI components library, it is important to think about how it is different from a native input. For example, most of these libraries will provide an `<Input />` component which is simply a wrapper on top of native input and they will be supported by Conform out of the box too.
+
+However, for custom input like `<Select />` or `<DatePicker />`, you can make it progressivly enhanced with the [useControlledInput](../packages/conform-react/README.md#usecontrolledinput) hook:
 
 ```tsx
 import { useForm, useControlledInput } from '@conform-to/react';

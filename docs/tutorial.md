@@ -1,4 +1,4 @@
-# Tutorial
+# Get started
 
 In this tutoiral, we will show you how to build a login form with [Remix](https://remix.run).
 
@@ -7,22 +7,22 @@ In this tutoiral, we will show you how to build a login form with [Remix](https:
 ## On this page
 
 - [Installation](#installation)
-- [Quick start](#quick-start)
+- [Initial setup](#initial-setup)
 - [Introducing Conform](#introducing-conform)
-- [Client validation](#client-validation)
-- [Simplify configuration](#simplify-configuration)
+- [Sharing validation](#sharing-validation)
+- [Removing boilerplates](#removing-boilerplates)
 
 <!-- /aside -->
 
 ## Installation
 
-Before start, please install the react adapter:
+Before start, please install conform's react adapter:
 
 ```sh
 npm install @conform-to/react
 ```
 
-## Quick start
+## Initial setup
 
 Now, let's put up some markup and an action function for our login form:
 
@@ -92,11 +92,11 @@ export default function LoginForm() {
 }
 ```
 
-By this point, we have basically a working login form already. It validates the fields on submit and show errors if failed. Most importantly, it also works without JS!
+By this point, we have a basic login form working already. It validates the fields on submit and show errors if failed. Most importantly, it also works without JS!
 
 ## Introducing Conform
 
-Now, it's time to make introduce the [parse](../packages/conform-react/README.md#parse) helper function and the [useForm](../packages/conform-react/README.md#useform) hook:
+Then, it's time to introduce the [parse](../packages/conform-react/README.md#parse) helper function and the [useForm](../packages/conform-react/README.md#useform) hook:
 
 ```tsx
 import { parse, useForm } from '@conform-to/react';
@@ -176,20 +176,20 @@ export default function LoginForm() {
 }
 ```
 
-The login form is getting event better! In additional to the features we mentioned before, it now...
+The login form is getting even better! In additional to the features we mentioned before, it now...
 
-- Validates the fields when you leave the field
+- Validates the fields when you leave the input
 - Revalidates it once the value is changed
 - Auto focuses on the first invalid field
 
-Note that all the validation are done on server side, which is great because:
+Note that all the validation are done on server side, which means:
 
-- No need to bring in another package to the client bundle for validation (e.g. zod / yup)
-- Have one single place defining all the validation logic
+- There is no need to bring in another package to the client bundle for validation (e.g. zod / yup)
+- You can have one single place defining all the validation logic
 
-## Client Validation
+## Sharing validation
 
-Validaing on the server is cool, but it might also gives slower feedback due to network latency.
+Validating fully on the server is cool. However, network latency would be a concern if there is a need to provide instant feedback along with user typing. In this case, you can consider reusing the validation logic on the client as well.
 
 ```tsx
 import { parse, useForm } from '@conform-to/react';
@@ -197,6 +197,7 @@ import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
 
+// Refactor the validation logic to a standalone function
 function validate(formData: FormData) {
   const submission = parse(formData);
 
@@ -257,7 +258,11 @@ export default function LoginForm() {
 }
 ```
 
-## Simplify Configuration
+## Removing boilerplates
+
+Configuring each input is tedious especially when dealing with a complex form. The [conform](../packages/conform-react/README.md#conform) helpers can be used to remove these boilerplates.
+
+It also derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
 
 ```tsx
 import { parse, useForm, conform } from '@conform-to/react';

@@ -2,9 +2,13 @@
 
 Building an accessible form is critical. This includes providing unqiue id to link serveal pieces of information together, i.e. label and error of a particular input and leveraging aria-attributes that hint about the validity of the input, i.e. _aria-invalid_.
 
+## On this page
+
+- [Configuration](#configuration)
+
 ## Configuration
 
-The [useForm](../packages/conform-react/README.md#useform) hook accept an `id` as part of the config. This enables Conform to infer an id which you can assign to the label and error element. The [conform](../packages/conform-react/README.md#conform) helpers will also return the _id_, _aria-describedby_ and _aria-invalid_ attribute.
+The [useForm](../packages/conform-react/README.md#useform) hook accepts an `id` as part of the config. This enables Conform to infer an id which you can assign to the label and error element. The [conform](../packages/conform-react/README.md#conform) helpers will also return the _id_, _aria-describedby_ and _aria-invalid_ attributes.
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';

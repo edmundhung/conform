@@ -49,7 +49,7 @@ interface Schema {
 
 function Example() {
   // By providing a schema to useForm
-  const [form, { tasks }] = useForm<Schema>();
+  const [form, { address }] = useForm<Schema>();
   // All the field name will be checked with TypeScript
   const { city, zipcode, street, country } = useFieldset(
     form.ref,

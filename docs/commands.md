@@ -29,7 +29,7 @@ function Product() {
 }
 ```
 
-**Conform** refers this pattern as a **command button**. All you need is to name the button with the prefix `conform/`, e.g. `conform/submit`.
+**Conform** refers this pattern as a **command button**. If you name the button with a prefix `conform/`, e.g. `conform/submit`, its name and value will be used to populate the type and intent of the submission instead of the form value.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -104,13 +104,13 @@ A validation can be triggered by configuring a button with the [validate](../pac
 import { useForm, conform, validate } from '@conform-to/react';
 
 export default function Todos() {
-  const [form, { message }] = useForm();
+  const [form, { email }] = useForm();
 
   return (
     <form {...form.props}>
-      <input {...conform.input(message.config)} />
-      {/* Validating the message field only */}
-      <button {...validate(message.config.name)}>Validate</button>
+      <input {...conform.input(email.config)} />
+      {/* Validating field by name */}
+      <button {...validate(email.config.name)}>Validate email</button>
       {/* Validating the whole form */}
       <button {...validate()}>Validate</button>
       <button>Send</button>
@@ -194,4 +194,4 @@ export default function Todos() {
 }
 ```
 
-Note: Conform also utilise this helper to trigger the validate command based on the event received and its event target, e.g. blur / input event on each field.
+Conform also utilises this helper to trigger the validate command based on the event received and its event target, e.g. blur / input event on each field.
