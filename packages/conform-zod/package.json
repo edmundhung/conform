@@ -1,6 +1,6 @@
 {
 	"name": "@conform-to/zod",
-	"description": "Conform schema resolver for Zod",
+	"description": "Conform helpers for integrating with Zod",
 	"license": "MIT",
 	"version": "0.5.0-pre.0",
 	"main": "index.js",
