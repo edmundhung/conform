@@ -1,6 +1,4 @@
-# CONFORM
-
-[![latest release](https://img.shields.io/github/v/release/edmundhung/conform?display_name=tag&sort=semver&style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/releases) [![npm bundle size (scoped)](https://img.shields.io/bundlephobia/minzip/@conform-to/react?style=flat-square&labelColor=000&color=2a4233)](https://bundlephobia.com/package/@conform-to/react) [![GitHub license](https://img.shields.io/github/license/edmundhung/conform?style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/blob/main/LICENSE)
+# CONFORM [![latest release](https://img.shields.io/github/v/release/edmundhung/conform?display_name=tag&sort=semver&style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/releases) [![GitHub license](https://img.shields.io/github/license/edmundhung/conform?style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/blob/main/LICENSE)
 
 A progressive enhancement first form validation library for [Remix](https://remix.run)
 
