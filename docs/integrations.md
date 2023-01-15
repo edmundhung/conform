@@ -13,7 +13,7 @@ In this guide, we will show you how Conform can works with different form contro
 
 ## Native form controls
 
-Conform utilize event delegation and support native form controls out of the box, which includes `<input />`, `<select />` and `<textarea />`.
+Conform utilises event delegation and supports native form controls out of the box, which includes `<input />`, `<select />` and `<textarea />`.
 
 ```tsx
 function Example() {

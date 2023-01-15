@@ -15,7 +15,7 @@ Conform has support for validating file inputs as well.
 
 The setup is similar to normal inputs except the **encType** must be set to `multipart/form-data`.
 
-When the browser construct a form data set with an empty file input, a default file entry would be created. To validate if an file input is empty, you should check its filename and size.
+When the browser constructs a form data set with an empty file input, a default file entry would be created. To validate whether an file input is empty, you should check its filename and size.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -75,7 +75,7 @@ const schema = z.object({
 There are some caveats when validating a multiple file input:
 
 - Conform will transform the value to an array only when there are more than one entry with the same name. To ensure a consistent data structure, you need to preprocess the data as shown in the snippet.
-- Conform is not able to populate indivdiual error of a particular file. Please ensure all error messages is assigned properly, e.g. `files` instead of `files[1]`.
+- Conform is not able to populate indivdiual error of a particular file. Please ensure all error messages are assigned properly, e.g. `files` instead of `files[1]`.
 
 ```tsx
 import { useForm } from '@conform-to/react';

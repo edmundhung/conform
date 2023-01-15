@@ -22,11 +22,11 @@
 
 By default, the browser calls the [reportValidity()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity) API on the form element when a submission is triggered. This checks the validity of all the fields and reports through the error bubbles.
 
-This hook enhances the form validation behaviour in 3 parts:
+This hook enhances the form validation behaviour by:
 
-1. It enables customizing form validation behaviour.
-2. It captures the error message and removes the error bubbles.
-3. It prepares all properties required to configure the dom elements.
+- Enabling customizing form validation behaviour.
+- Capturing the error message and removes the error bubbles.
+- Preparing all properties required to configure the dom elements.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -107,7 +107,7 @@ function LoginForm() {
 <details>
 <summary>What is `form.props`?</summary>
 
-It is a group of properties properties required to hook into form events. They can also be set explicitly as shown below:
+It is a group of properties required to hook into form events. They can also be set explicitly as shown below:
 
 ```tsx
 function RandomForm() {
@@ -209,7 +209,7 @@ function Fieldset(config: FieldConfig<Address>) {
 <details>
 <summary>Why does `useFieldset` require a ref object of the form or fieldset?</summary>
 
-**conform** utilize the DOM as its context provider / input registry, which maintains a link between each input / button / fieldset with the form through the [form property](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#properties). The ref object allows it to restrict the scope to elements associated to the same form only.
+**conform** utilises the DOM as its context provider / input registry, which maintains a link between each input / button / fieldset with the form through the [form property](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#properties). The ref object allows it to restrict the scope to elements associated to the same form only.
 
 ```tsx
 function ExampleForm() {
@@ -236,7 +236,7 @@ function ExampleForm() {
 
 ### useFieldList
 
-This hook enables you to work with [array](/docs/configuration.md#array). It also works with the [list](#list) command button builder for modifying a list. It can also be used in combination with [useFieldset](#usefieldset) for [nested list](/docs/configuration.md#nested-list).
+This hook enables you to work with [array](/docs/configuration.md#array) and support [list](#list) command button builder to modify a list. It can also be used with [useFieldset](#usefieldset) for [nested list](/docs/configuration.md#nested-list) at the same time.
 
 ```tsx
 import { useForm, useFieldList, list } from '@conform-to/react';
@@ -280,7 +280,7 @@ function Example() {
 
 ### useControlledInput
 
-It returns the properties required to configure a shadow input for validation and helper to integrate it. This is particular useful when [integrating custom input components](/docs/integrations.md#custom-input-component) like dropdown and datepicker.
+It returns the properties required to configure a shadow input for validation and helper to integrate it. This is particularly useful when [integrating custom input components](/docs/integrations.md#custom-input-component) like dropdown and datepicker.
 
 ```tsx
 import { useForm, useControlledInput } from '@conform-to/react';
@@ -324,9 +324,9 @@ function MuiForm() {
 
 It provides several helpers to remove the boilerplate when configuring a form control.
 
-You are also recommended to create a wrapper on top if you need to integrate with custom input component. As the helper also derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded).
+You are recommended to create a wrapper on top if you need to integrate with custom input component. As the helper derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded).
 
-Instead of doing this:
+Before:
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -371,7 +371,7 @@ function Example() {
 }
 ```
 
-It simplifies it to this:
+After:
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';

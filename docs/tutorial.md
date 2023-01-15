@@ -24,7 +24,7 @@ npm install @conform-to/react
 
 ## Initial setup
 
-Now, let's put up some markup and an action function for our login form:
+Now, let's put some markup and an action function for our login form:
 
 ```tsx
 import { type ActionArgs, json } from '@remix-run/node';
@@ -92,7 +92,7 @@ export default function LoginForm() {
 }
 ```
 
-By this point, we have a basic login form working already. It validates the fields on submit and show errors if failed. Most importantly, it also works without JS!
+By this point, we have a basic login form working already. It validates the fields on submit and shows errors if failed. Most importantly, it also works without JS!
 
 ## Introducing Conform
 
@@ -176,7 +176,7 @@ export default function LoginForm() {
 }
 ```
 
-The login form is getting even better! In additional to the features we mentioned before, it now...
+The login form is getting even better! In addition to the features we mentioned before, it now...
 
 - Validates the fields when you leave the input
 - Revalidates it once the value is changed
@@ -184,12 +184,12 @@ The login form is getting even better! In additional to the features we mentione
 
 Note that all the validation are done on server side, which means:
 
-- There is no need to bring in another package to the client bundle for validation (e.g. zod / yup)
+- There is not need to introduce another package to the client bundle for validation (e.g. zod / yup)
 - You can have one single place defining all the validation logic
 
 ## Sharing validation
 
-Validating fully on the server is cool. However, network latency would be a concern if there is a need to provide instant feedback along with user typing. In this case, you can consider reusing the validation logic on the client as well.
+Validating fully on the server is cool. However, network latency would be a concern if there is a need to provide instant feedback while user is typing. In this case, you can consider reusing the validation logic on the client as well.
 
 ```tsx
 import { parse, useForm } from '@conform-to/react';

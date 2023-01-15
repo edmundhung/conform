@@ -87,8 +87,8 @@ export let action = async ({ request }) => {
 
 This tries to infer constraint of each field based on the zod schema. This is useful for:
 
-1. Make it easy to style input using CSS, e.g. `:required`
-2. Have some basic validation working before/without JS
+1. Making it easy to style input using CSS, e.g. `:required`
+2. Having some basic validation working before/without JS
 
 ```tsx
 import { useForm } from '@conform-to/react';

@@ -19,7 +19,7 @@ Conform supports several validation modes. In this section, we will walk you thr
 
 ## How it works
 
-Conform unified validation and submission as one single flow by utilizing the form submitter with a [custom submission type and intent](/docs/commands.md#command-button):
+Conform unifies validation and submission as one single flow by utilizing the form submitter with a [custom submission type and intent](/docs/commands.md#command-button):
 
 #### Flow
 
@@ -177,7 +177,7 @@ Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/t
 
 ## Client Validation
 
-Server validation works well generally. However, network latency would be a concern if there is a need to provide instant feedback along with user typing. In this case, you might want to validate on the client side as well.
+Server validation works well generally. However, network latency would be a concern if there is a need to provide instant feedback while user is typing. In this case, you might want to validate on the client side as well.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -217,7 +217,7 @@ export default function Signup() {
     onValidate({ formData }) {
       /**
        * The `validate` helper will parse the formData
-       * and returns the submission state with the validation
+       * and return the submission state with the validation
        * error
        */
       return validate(formData, schema);

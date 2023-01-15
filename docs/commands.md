@@ -11,7 +11,7 @@ A submit button can contribute to the form data when it triggers the submission 
 
 ### Command button
 
-The submitter allows us to extend the form with different behaviour based on the intent. However, it also polutes the form data with information used for controlling form behaviour only.
+The submitter allows us to extend the form with different behaviour based on the intent. However, it pollutes the form data with information used for controlling form behaviour.
 
 ```tsx
 function Product() {
@@ -29,7 +29,7 @@ function Product() {
 }
 ```
 
-**Conform** refers this pattern as a **command button**. If you name the button with a prefix `conform/`, e.g. `conform/submit`, its name and value will be used to populate the type and intent of the submission instead of the form value.
+**Conform** introduces this pattern as a **command button**. If you name the button with a prefix `conform/`, e.g. `conform/submit`, its name and value will be used to populate the type and intent of the submission instead of the form value.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -121,7 +121,7 @@ export default function Todos() {
 
 ## Triggering a command
 
-Sometimes, it could be useful to trigger a command without requiring the users to click on the command button. We can do this by capturing the button element with `useRef` and trigger the command with `.click()`
+Sometimes, it could be useful to trigger a command without requiring users to click on the command button. We can do this by capturing the button element with `useRef` and triggering the command with `.click()`
 
 ```tsx
 import { useForm, useFieldList, conform, list } from '@conform-to/react';
@@ -160,7 +160,7 @@ export default function Todos() {
 }
 ```
 
-However, if the command button can not be preconfigured easily, like drag and drop an item on the list with dynamic `from` / `to` index, it is also possible by using the [requestCommand](../packages/conform-react/README.md#requestCommand) helper.
+However, if the command button can not be pre-configured easily, like drag and drop an item on the list with dynamic `from` / `to` index, a command can be triggered by using the [requestCommand](../packages/conform-react/README.md#requestCommand) helper.
 
 ```tsx
 import {

@@ -31,7 +31,7 @@ console.log(submission.error); // e.g. []
 
 ## Nested Object
 
-When you need to setup fields as nested object, you can pass the parent field config to [useFieldset](../packages/conform-react/README.md#usefieldset) to get access to its child fields.
+When you need to set up fields as nested object, you can pass the parent field config to [useFieldset](../packages/conform-react/README.md#usefieldset) to get access to its child fields.
 
 Each field will come with name infered based on the config and will be set to the form control with the [conform](../packages/conform-react/README.md#conform) helper.
 
@@ -107,7 +107,7 @@ function Example() {
 }
 ```
 
-For information around modifying list (e.g. append / remove / reorder), see the [command](./command.md) section.
+For information about modifying list (e.g. append / remove / reorder), see the [command](./command.md) section.
 
 ## Nested List
 
