@@ -141,19 +141,22 @@ export function Link({
 	title: string;
 	children: React.ReactNode;
 }) {
+	const origin = 'https://conform.guide';
+	const url = href.startsWith(origin) ? href.replace(origin, '') : href;
+
 	if (
-		href.startsWith('https://') ||
-		href.startsWith('http://') ||
-		href.startsWith('//')
+		url.startsWith('https://') ||
+		url.startsWith('http://') ||
+		url.startsWith('//')
 	) {
 		return (
-			<a href={href} title={title}>
+			<a href={url} title={title}>
 				{children}
 			</a>
 		);
 	}
 
-	let to = href;
+	let to = url;
 
 	if (to.startsWith('/packages/')) {
 		to = to.replace('/packages/conform-', '/api/').replace('/README.md', '');
@@ -178,7 +181,7 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 
 	return (
 		<section
-			className={`prose prose-invert max-w-none prose-pre:!mt-6 prose-pre:!mb-8 ${
+			className={`prose prose-invert max-w-none prose-pre:!mt-6 prose-pre:!mb-8 prose-img:inline-block prose-img:m-0 ${
 				hasSidebar ? 'xl:pr-72' : ''
 			}`}
 		>
