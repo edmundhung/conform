@@ -6,15 +6,14 @@ Conform will focus on the first invalid field on submit.
 
 ## On this page
 
-- Focusing before JavaScript is loaded
-- Focusing on Custom Control
+- [Focusing before JavaScript is loaded](#focusing-before-javascript-is-loaded)
+- [Focusing on Custom Control](#focusing-on-custom-control)
 
 <!-- /aside -->
 
 ## Focusing before JavaScript is loaded
 
-To enable error focus working in a progressive manner, Conform also utilise the  
-[autofocus](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus) attribute. This will be set for you when using the [conform](../packages/conform-react/README.md#conform) helpers, which checks if there is any initial error from the previous submission.
+To enable error focus working in a progressive manner, Conform also utilise the [autofocus](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus) attribute. This will be set for you when using the [conform](../packages/conform-react/README.md#conform) helpers, which checks if there is any initial error from the previous submission.
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';

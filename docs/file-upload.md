@@ -6,8 +6,8 @@ Conform has support for validating file inputs as well.
 
 ## On this page
 
-- Setting up a file input
-- Multiple files
+- [Setting up a file input](#setting-up-a-file-input)
+- [Multiple files](#multiple-files)
 
 <!-- /aside -->
 

@@ -6,8 +6,8 @@ In this guide, we will show you how Conform can works with different form contro
 
 ## On this page
 
-- Native form controls
-- Custom input component
+- [Native form controls](#native-form-controls)
+- [Custom input component](#custom-input-component)
 
 <!-- /aside -->
 

@@ -21,6 +21,7 @@ const navigations: Navigation[] = [
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
 			{ title: 'Accessibility', to: '/accessibility' },
+			{ title: 'Examples', to: '/examples' },
 		],
 	},
 	{
@@ -29,17 +30,6 @@ const navigations: Navigation[] = [
 			{ title: '@conform-to/react', to: '/api/react' },
 			{ title: '@conform-to/yup', to: '/api/yup' },
 			{ title: '@conform-to/zod', to: '/api/zod' },
-		],
-	},
-	{
-		title: 'Examples',
-		menus: [
-			{ title: 'Chakra UI', to: '/examples/chakra-ui' },
-			{ title: 'Headless UI', to: '/examples/headless-ui' },
-			{ title: 'Material UI', to: '/examples/material-ui' },
-			{ title: 'Remix', to: '/examples/remix-run' },
-			{ title: 'Yup', to: '/examples/yup' },
-			{ title: 'Zod', to: '/examples/zod' },
 		],
 	},
 ];
