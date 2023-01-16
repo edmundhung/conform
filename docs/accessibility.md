@@ -1,6 +1,6 @@
 # Accessibility
 
-Building an accessible form is critical. This includes providing unqiue id to link multiple pieces of information together, i.e. label and error of a particular input and leveraging aria-attributes that hints about the validity of the input, i.e. _aria-invalid_.
+Building an accessible form is critical. This includes providing unique IDs to link multiple pieces of information together, i.e. label and error of a particular input and leveraging aria-attributes that hints about the validity of the input, i.e. _aria-invalid_.
 
 <!-- aside -->
 
