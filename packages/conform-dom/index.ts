@@ -259,14 +259,16 @@ export function requestCommand(
 }
 
 /**
- * Dispatch the validate command for form validation
+ * Returns the properties required to configure a command button for validation
+ *
+ * @see https://conform.guide/api/react#validate
  */
-export function requestValidate(form: HTMLFormElement, field?: string) {
-	requestCommand(form, {
+export function validate(field?: string): CommandButtonProps<'validate'> {
+	return {
 		name: 'conform/validate',
 		value: field ?? '',
 		formNoValidate: true,
-	});
+	};
 }
 
 export function getFormElement(
@@ -497,6 +499,11 @@ export interface ListCommandButtonBuilder {
 	): CommandButtonProps<'list'>;
 }
 
+/**
+ * Helpers to configure a command button for modifying a list
+ *
+ * @see https://conform.guide/api/react#list
+ */
 export const list = new Proxy({} as ListCommandButtonBuilder, {
 	get(_target, type: any) {
 		switch (type) {

@@ -14,10 +14,11 @@ import {
 	isFieldElement,
 	parse,
 	parseListCommand,
-	requestValidate,
 	updateList,
 	hasError,
 	reportSubmission,
+	validate,
+	requestCommand,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -192,7 +193,7 @@ export function useForm<Schema extends Record<string, any>>(
 			}
 
 			if (field.dataset.conformTouched) {
-				requestValidate(form, field.name);
+				requestCommand(form, validate(field.name));
 			}
 		};
 		const handleBlur = (event: FocusEvent) => {
@@ -210,7 +211,7 @@ export function useForm<Schema extends Record<string, any>>(
 			) {
 				field.dataset.conformTouched = 'true';
 
-				requestValidate(form, field.name);
+				requestCommand(form, validate(field.name));
 			}
 		};
 		const handleInvalid = (event: Event) => {
