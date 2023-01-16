@@ -1,6 +1,8 @@
-## Commands
+# Commands
 
 A submit button can contribute to the form data when it triggers the submission as a [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter).
+
+<!-- aside -->
 
 ## On this page
 
@@ -8,6 +10,8 @@ A submit button can contribute to the form data when it triggers the submission 
 - [Modifying a list](#modifying-a-list)
 - [Validation](#validation)
 - [Triggering a command](#triggering-a-command)
+
+<!-- /aside -->
 
 ### Command button
 
