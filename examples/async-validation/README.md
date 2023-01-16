@@ -1,4 +1,4 @@
-# Remix Example
+# Async Validation Example
 
 This example shows you how to how to implement async valdation with Conform.
 

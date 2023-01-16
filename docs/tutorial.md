@@ -1,4 +1,4 @@
-# Get started
+# Tutorial
 
 In this tutoiral, we will show you how to build a login form with [Remix](https://remix.run).
 
