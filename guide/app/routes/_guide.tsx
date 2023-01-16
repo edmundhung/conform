@@ -11,18 +11,23 @@ interface Navigation {
 
 const navigations: Navigation[] = [
 	{
-		title: 'Guides',
+		title: 'Get Started',
 		menus: [
 			{ title: 'Overview', to: '/' },
-			{ title: 'Get Started', to: '/tutorial' },
+			{ title: 'Tutorial', to: '/tutorial' },
+			{ title: 'Examples', to: '/examples' },
+		],
+	},
+	{
+		title: 'Guides',
+		menus: [
 			{ title: 'Validation', to: '/validation' },
-			{ title: 'Nested object and Array', to: '/configuration' },
 			{ title: 'Integrations', to: '/integrations' },
+			{ title: 'Nested object and Array', to: '/configuration' },
 			{ title: 'Commands', to: '/commands' },
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
 			{ title: 'Accessibility', to: '/accessibility' },
-			{ title: 'Examples', to: '/examples' },
 		],
 	},
 	{
