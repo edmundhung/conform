@@ -57,7 +57,7 @@ export default function SignupForm() {
 		});
 
 	return (
-		<Form {...form.props}>
+		<Form method="post" {...form.props}>
 			<label>
 				<div>Email</div>
 				<input
