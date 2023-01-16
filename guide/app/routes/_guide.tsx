@@ -13,14 +13,22 @@ const navigations: Navigation[] = [
 	{
 		title: 'Get Started',
 		menus: [
-			{ title: 'Basics', to: '/basics' },
-			{ title: 'Submission', to: '/submission' },
-			{ title: 'Validation', to: '/validation' },
+			{ title: 'Overview', to: '/' },
+			{ title: 'Tutorial', to: '/tutorial' },
+			{ title: 'Examples', to: '/examples' },
 		],
 	},
 	{
-		title: 'Integrations',
-		menus: [{ title: 'Remix', to: '/examples/remix-run' }],
+		title: 'Guides',
+		menus: [
+			{ title: 'Validation', to: '/validation' },
+			{ title: 'Integrations', to: '/integrations' },
+			{ title: 'Nested object and Array', to: '/configuration' },
+			{ title: 'Commands', to: '/commands' },
+			{ title: 'File Upload', to: '/file-upload' },
+			{ title: 'Focus management', to: '/focus-management' },
+			{ title: 'Accessibility', to: '/accessibility' },
+		],
 	},
 	{
 		title: 'API Reference',
@@ -28,16 +36,6 @@ const navigations: Navigation[] = [
 			{ title: '@conform-to/react', to: '/api/react' },
 			{ title: '@conform-to/yup', to: '/api/yup' },
 			{ title: '@conform-to/zod', to: '/api/zod' },
-		],
-	},
-	{
-		title: 'Examples',
-		menus: [
-			{ title: 'Chakra UI', to: '/examples/chakra-ui' },
-			{ title: 'Headless UI', to: '/examples/headless-ui' },
-			{ title: 'Material UI', to: '/examples/material-ui' },
-			{ title: 'Yup', to: '/examples/yup' },
-			{ title: 'Zod', to: '/examples/zod' },
 		],
 	},
 ];

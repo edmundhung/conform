@@ -1,6 +1,6 @@
 # @conform-to/yup
 
-> [Yup](https://github.com/jquense/yup) schema resolver for [conform](https://github.com/edmundhung/conform)
+> [Conform](https://github.com/edmundhung/conform) helpers for integrating with [Yup](https://github.com/jquense/yup)
 
 <!-- aside -->
 
@@ -14,16 +14,15 @@
 
 ### formatError
 
-This formats Yup `ValidationError` to the **conform** error structure (i.e. A set of key/value pairs).
+This formats Yup **ValidationError** to conform's error structure (i.e. A set of key/value pairs).
 
-If the error received is not provided by Yup, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
+If an error is received instead of the Yup **ValidationError**, it will be treated as a form level error with message set to **error.messages**.
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
 import { formatError } from '@conform-to/yup';
 import * as yup from 'yup';
 
-// Define the schema with yup
 const schema = yup.object({
   email: yup.string().required(),
   password: yup.string().required(),
@@ -40,13 +39,7 @@ function ExampleForm() {
           abortEarly: false,
         });
       } catch (error) {
-        submission.error.push(
-          // The 2nd argument is an optional fallback message
-          ...formatError(
-            error,
-            'The application has encountered an unknown error.',
-          ),
-        );
+        submission.error.push(...formatError(error));
       }
 
       return submission;
@@ -101,15 +94,22 @@ export default function ExampleRoute() {
 
 ### getFieldsetConstraint
 
-This tries to infer constraint of each field based on the yup schema. This is useful only for:
+This tries to infer constraint of each field based on the yup schema. This is useful for:
 
-1. Make it easy to style input using CSS, e.g. `:required`
-2. Have some basic validation working before/without JS. But the message is not customizable and it might be simpler and cleaner relying on server validation.
+1. Making it easy to style input using CSS, e.g. `:required`
+2. Having some basic validation working before/without JS.
 
 ```tsx
+import { useForm } from '@conform-to/react';
 import { getFieldsetConstraint } from '@conform-to/yup';
+import * as yup from 'yup';
 
-function LoginFieldset() {
+const schema = yup.object({
+  email: yup.string().required(),
+  password: yup.string().required(),
+});
+
+function Example() {
   const [form, { email, password }] = useForm({
     constraint: getFieldsetConstraint(schema),
   });
@@ -135,10 +135,7 @@ const schema = yup.object({
 function ExampleForm() {
   const [form] = useForm({
     onValidate({ formData }) {
-      return validate(formData, schema, {
-        // Optional
-        fallbackMessage: 'The application has encountered an unknown error.',
-      });
+      return validate(formData, schema);
     },
   });
 

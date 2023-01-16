@@ -1,6 +1,6 @@
 # @conform-to/zod
 
-> [Zod](https://github.com/colinhacks/zod) schema resolver for [conform](https://github.com/edmundhung/conform)
+> [Conform](https://github.com/edmundhung/conform) helpers for integrating with [Zod](https://github.com/colinhacks/zod)
 
 <!-- aside -->
 
@@ -14,9 +14,9 @@
 
 ### formatError
 
-This formats `ZodError` to the **conform** error structure (i.e. A set of key/value pairs).
+This formats **ZodError** to conform's error structure (i.e. A set of key/value pairs).
 
-If the error received is not provided by Zod, it will be treated as a form level error with message set to **error.messages** or **Oops! Something went wrong.** if no fallback message is provided.
+If an error is received instead of the ZodError, it will be treated as a form level error with message set to **error.messages**.
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
@@ -76,41 +76,32 @@ export let action = async ({ request }) => {
       return await handleFormData(data);
     }
   } catch (error) {
-    submission.error.push(
-      // The 2nd argument is an optional fallback message
-      ...formatError(
-        error,
-        'The application has encountered an unknown error.',
-      ),
-    );
+    submission.error.push(...formatError(error));
   }
 
   return submission;
 };
-
-export default function ExampleRoute() {
-  const state = useActionData();
-  const [form] = useForm({
-    mode: 'server-validation',
-    state,
-  });
-
-  // ...
-}
 ```
 
 ### getFieldsetConstraint
 
-This tries to infer constraint of each field based on the zod schema. This is useful only for:
+This tries to infer constraint of each field based on the zod schema. This is useful for:
 
-1. Make it easy to style input using CSS, e.g. `:required`
-2. Have some basic validation working before/without JS. But the message is not customizable and it might be simpler and cleaner relying on server validation.
+1. Making it easy to style input using CSS, e.g. `:required`
+2. Having some basic validation working before/without JS
 
 ```tsx
+import { useForm } from '@conform-to/react';
 import { getFieldsetConstraint } from '@conform-to/zod';
+import { z } from 'zod';
 
-function LoginFieldset() {
-  const { email, password } = useFieldset(ref, {
+const schema = z.object({
+  email: z.string().min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+function Example() {
+  const [form, { email, password }] = useForm({
     constraint: getFieldsetConstraint(schema),
   });
 
@@ -133,12 +124,9 @@ const schema = z.object({
 });
 
 function ExampleForm() {
-  const [form] = useForm({
+  const [form, { email, password }] = useForm({
     onValidate({ formData }) {
-      return validate(formData, schema, {
-        // Optional
-        fallbackMessage: 'The application has encountered an unknown error.',
-      });
+      return validate(formData, schema);
     },
   });
 

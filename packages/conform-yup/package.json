@@ -1,6 +1,6 @@
 {
 	"name": "@conform-to/yup",
-	"description": "Conform schema resolver for yup",
+	"description": "Conform helpers for integrating with yup",
 	"license": "MIT",
 	"version": "0.5.0-pre.0",
 	"main": "index.js",

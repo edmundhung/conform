@@ -1,12 +1,12 @@
 # Validation
 
-In this section, we will walk you through how to validate a signup form based on different requirements.
+Conform supports several validation modes. In this section, we will walk you through how to validate a signup form based on different requirements.
 
 <!-- aside -->
 
-## Table of Contents
+## On this page
 
-- [Concept](#concept)
+- [How it works](#how-it-works)
 - [Server Validation](#server-validation)
   - [Validate with a schema](#validate-with-a-schema)
 - [Client Validation](#client-validation)
@@ -17,15 +17,28 @@ In this section, we will walk you through how to validate a signup form based on
 
 <!-- /aside -->
 
-## Concept
+## How it works
 
-Conform tries to simplify the mental model by utilizing a server-first validation flow which submits your form for validation. This is achieved by creating a hidden [command button](/docs/submission.md#command-button) and clicking on it whenever validation is needed.
+Conform unifies validation and submission as one single flow by utilizing the form submitter with a [custom submission type and intent](/docs/commands.md#command-button):
 
-Now, client validation can be treated as a way to shorten the feedback loop. You can also setup a [passthrough](#setup-a-passthrough) based on the client validation result to decide if the submission should be rejected with `event.preventDefault()`.
+#### Flow
+
+1. Submission triggered
+2. Validate on the client if configured
+3. Stop the submission and report any errors found if any of the [conditions](#conditions) is met:
+4. Request sent to the server
+5. Validate on the server and process the data based on the submission type and intent
+6. Report server error
+
+#### Conditions
+
+- Errors found and the `noValidate` / `formNoValidate` attribute is not set to `true`
+- The submission type is `validate` and the validation mode is set to `client-validation`
+- `event.preventDefault()` is called on the submit event handler, e.g. async-validation
 
 ## Server Validation
 
-**Conform** tries to makes it easy to validate the form data on the server. For example, you can validate a login form **fully server side** with Remix as shown below:
+**Conform** enables you to validate a form **fully server side**.
 
 ```tsx
 import { parse, useForm } from '@conform-to/react';
@@ -164,7 +177,7 @@ Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/t
 
 ## Client Validation
 
-Validating fully on server side is great. But, if network latency is a concern, we can also validate on the client side to shorten the feedback loop.
+Server validation works well generally. However, network latency would be a concern if there is a need to provide instant feedback while user is typing. In this case, you might want to validate on the client side as well.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -204,7 +217,7 @@ export default function Signup() {
     onValidate({ formData }) {
       /**
        * The `validate` helper will parse the formData
-       * and returns the submission state with the validation
+       * and return the submission state with the validation
        * error
        */
       return validate(formData, schema);
@@ -217,10 +230,7 @@ export default function Signup() {
 
 ## Async valdiation
 
-Everything we did so far looks great, until one day, the requirment is changed. Now your user should also provide a _username_ which has to be **unique**. There are 2 situations here:
-
-1. If you are validating fully on the server, just query the database and add an error message if it is used.
-2. If you are validating also on the client, then you need to setup a **passthrough**.
+If you want to have some parts of the validation done on the server, while the rest of the validations are still handled on the client side. All you need is to setup a **passthrough**.
 
 ### Setup a passthrough
 
@@ -310,11 +320,3 @@ export async function action({ request }: ActionArgs) {
   return json(submission);
 }
 ```
-
-## Demo
-
-<!-- sandbox src="/examples/remix-run?initialpath=/async-validation&module=/app/routes/async-validation.tsx" -->
-
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/async-validation&file=/app/routes/async-validation.tsx).
-
-<!-- /sandbox -->
