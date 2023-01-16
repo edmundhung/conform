@@ -1,7 +1,0 @@
-input[data-conform-touched]:invalid {
-	border-color: red;
-}
-
-input + div {
-	color: red;
-}
