@@ -116,11 +116,11 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name?: string): boolean {
+export function shouldValidate(submission: Submission, name: string): boolean {
 	return (
 		submission.type === 'submit' ||
 		(submission.type === 'validate' &&
-			(typeof name === 'undefined' || submission.intent === name))
+			(submission.intent === '' || submission.intent === name))
 	);
 }
 
@@ -177,17 +177,24 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const name = nameByInput.get(element) ?? element.name;
 			const message = messageByName.get(name);
+			const elementShouldValidate = shouldValidate(submission, name);
 
-			if (typeof message !== 'undefined' || shouldValidate(submission, name)) {
+			if (elementShouldValidate) {
+				element.dataset.conformTouched = 'true';
+			}
+
+			if (typeof message !== 'undefined' || elementShouldValidate) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
 				element.setCustomValidity(message ?? '');
 				element.dispatchEvent(invalidEvent);
 			}
+
+			if (elementShouldValidate && !element.validity.valid) {
+				focus(element);
+			}
 		}
 	}
-
-	focusFirstInvalidField(form);
 }
 
 export function setValue<T>(
@@ -259,14 +266,16 @@ export function requestCommand(
 }
 
 /**
- * Dispatch the validate command for form validation
+ * Returns the properties required to configure a command button for validation
+ *
+ * @see https://conform.guide/api/react#validate
  */
-export function requestValidate(form: HTMLFormElement, field?: string) {
-	requestCommand(form, {
+export function validate(field?: string): CommandButtonProps<'validate'> {
+	return {
 		name: 'conform/validate',
 		value: field ?? '',
 		formNoValidate: true,
-	});
+	};
 }
 
 export function getFormElement(
@@ -288,30 +297,18 @@ export function getFormElement(
 	return form;
 }
 
-export function focusFirstInvalidField(form: HTMLFormElement): void {
+export function focus(field: FieldElement): void {
 	const currentFocus = document.activeElement;
 
 	if (
 		!isFieldElement(currentFocus) ||
 		currentFocus.tagName !== 'BUTTON' ||
-		currentFocus.form !== form
+		currentFocus.form !== field.form
 	) {
 		return;
 	}
 
-	for (const field of form.elements) {
-		if (isFieldElement(field)) {
-			// Focus on the first non button field
-			if (
-				!field.validity.valid &&
-				field.dataset.conformTouched &&
-				field.tagName !== 'BUTTON'
-			) {
-				field.focus();
-				break;
-			}
-		}
-	}
+	field.focus();
 }
 
 export function getSubmissionType(name: string): string | null {
@@ -497,6 +494,11 @@ export interface ListCommandButtonBuilder {
 	): CommandButtonProps<'list'>;
 }
 
+/**
+ * Helpers to configure a command button for modifying a list
+ *
+ * @see https://conform.guide/api/react#list
+ */
 export const list = new Proxy({} as ListCommandButtonBuilder, {
 	get(_target, type: any) {
 		switch (type) {

@@ -10,14 +10,15 @@ import {
 	getFormElement,
 	getName,
 	getPaths,
-	getSubmissionType,
 	isFieldElement,
 	parse,
 	parseListCommand,
-	requestValidate,
 	updateList,
 	hasError,
 	reportSubmission,
+	validate,
+	requestCommand,
+	shouldValidate,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -139,12 +140,18 @@ export function useForm<Schema extends Record<string, any>>(
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
 	>(() => {
-		const error = config.state?.error ?? [];
+		const submission = config.state;
+
+		if (!submission) {
+			return {
+				defaultValue: config.defaultValue,
+			};
+		}
 
 		return {
-			defaultValue: config.state?.value ?? config.defaultValue,
-			initialError: error.filter(
-				([name]) => name !== '' && getSubmissionType(name) === null,
+			defaultValue: submission.value,
+			initialError: submission.error.filter(
+				([name]) => name !== '' && shouldValidate(submission, name),
 			),
 		};
 	});
@@ -187,12 +194,11 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
-			if (formConfig.initialReport === 'onChange') {
-				field.dataset.conformTouched = 'true';
-			}
-
-			if (field.dataset.conformTouched) {
-				requestValidate(form, field.name);
+			if (
+				field.dataset.conformTouched ||
+				formConfig.initialReport === 'onChange'
+			) {
+				requestCommand(form, validate(field.name));
 			}
 		};
 		const handleBlur = (event: FocusEvent) => {
@@ -208,9 +214,7 @@ export function useForm<Schema extends Record<string, any>>(
 				formConfig.initialReport === 'onBlur' &&
 				!field.dataset.conformTouched
 			) {
-				field.dataset.conformTouched = 'true';
-
-				requestValidate(form, field.name);
+				requestCommand(form, validate(field.name));
 			}
 		};
 		const handleInvalid = (event: Event) => {
@@ -328,16 +332,6 @@ export function useForm<Schema extends Record<string, any>>(
 										element.validationMessage,
 									]);
 								}
-							}
-						}
-					}
-
-					// Touch all fields only if the submitter is not a command button
-					if (submission.type === 'submit') {
-						for (const field of form.elements) {
-							if (isFieldElement(field)) {
-								// Mark the field as touched
-								field.dataset.conformTouched = 'true';
 							}
 						}
 					}
