@@ -188,11 +188,10 @@ export function useForm<Schema extends Record<string, any>>(
 				return;
 			}
 
-			if (formConfig.initialReport === 'onChange') {
-				field.dataset.conformTouched = 'true';
-			}
-
-			if (field.dataset.conformTouched) {
+			if (
+				field.dataset.conformTouched ||
+				formConfig.initialReport === 'onChange'
+			) {
 				requestCommand(form, validate(field.name));
 			}
 		};
@@ -209,8 +208,6 @@ export function useForm<Schema extends Record<string, any>>(
 				formConfig.initialReport === 'onBlur' &&
 				!field.dataset.conformTouched
 			) {
-				field.dataset.conformTouched = 'true';
-
 				requestCommand(form, validate(field.name));
 			}
 		};
