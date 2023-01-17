@@ -4,7 +4,7 @@ A progressive enhancement first form validation library for [Remix](https://remi
 
 ### Highlights
 
-- Make your form progressively enhanced by default [[?]](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/todos&file=/app/routes/todos.tsx "Try it with JS disabled")
+- Make your form progressively enhanced by default [[?]](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/nested-list?file=/app/routes/index.tsx "Try it with JS disabled")
 - Simplifed intergration through event delegation [[?]](https://conform.guide/integrations "Learn more")
 - Server first validation [[?]](https://conform.guide/validation "Learn more")
 - Field name inference with type checking [[?]](https://conform.guide/configuration "Learn more")
