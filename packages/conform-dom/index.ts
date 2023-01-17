@@ -141,7 +141,6 @@ export function reportSubmission(
 	submission: Submission,
 ): void {
 	const messageByName: Map<string, string> = new Map();
-	const nameByInput: Map<FieldElement, string> = new Map();
 
 	for (const [name, message] of submission.error) {
 		if (!messageByName.has(name)) {
@@ -154,7 +153,11 @@ export function reportSubmission(
 			let item = form.elements.namedItem(elementName);
 
 			if (item instanceof RadioNodeList) {
-				throw new Error('Repeated field name is not supported');
+				for (const field of item) {
+					if ((field as FieldElement).type !== 'radio') {
+						throw new Error('Repeated field name is not supported');
+					}
+				}
 			}
 
 			if (item === null) {
@@ -168,16 +171,14 @@ export function reportSubmission(
 
 				form.appendChild(button);
 			}
-
-			nameByInput.set(item as FieldElement, name);
 		}
 	}
 
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
-			const name = nameByInput.get(element) ?? element.name;
-			const message = messageByName.get(name);
-			const elementShouldValidate = shouldValidate(submission, name);
+			const elementName = element.name !== '__form__' ? element.name : '';
+			const message = messageByName.get(elementName);
+			const elementShouldValidate = shouldValidate(submission, elementName);
 
 			if (elementShouldValidate) {
 				element.dataset.conformTouched = 'true';
