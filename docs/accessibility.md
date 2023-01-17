@@ -12,7 +12,7 @@ Building an accessible form is critical. This includes providing unique IDs to l
 
 ## Configuration
 
-The [useForm](../packages/conform-react/README.md#useform) hook accepts an `id` as part of the config. This enables Conform to infer an id which you can assign to the label and error element. The [conform](../packages/conform-react/README.md#conform) helpers will also return the _id_, _aria-describedby_ and _aria-invalid_ attributes.
+The [useForm](/packages/conform-react/README.md#useform) hook accepts an `id` as part of the config. This enables Conform to infer an id which you can assign to the label and error element. The [conform](/packages/conform-react/README.md#conform) helpers will also return the _id_, _aria-describedby_ and _aria-invalid_ attributes.
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';

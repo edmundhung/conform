@@ -96,7 +96,7 @@ By this point, we have a basic login form working already. It validates the fiel
 
 ## Introducing Conform
 
-Then, it's time to introduce the [parse](../packages/conform-react/README.md#parse) helper function and the [useForm](../packages/conform-react/README.md#useform) hook:
+Then, it's time to introduce the [parse](/packages/conform-react/README.md#parse) helper function and the [useForm](/packages/conform-react/README.md#useform) hook:
 
 ```tsx
 import { parse, useForm } from '@conform-to/react';
@@ -260,7 +260,7 @@ export default function LoginForm() {
 
 ## Removing boilerplates
 
-Configuring each input is tedious especially when dealing with a complex form. The [conform](../packages/conform-react/README.md#conform) helpers can be used to remove these boilerplates.
+Configuring each input is tedious especially when dealing with a complex form. The [conform](/packages/conform-react/README.md#conform) helpers can be used to remove these boilerplates.
 
 It also derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
 

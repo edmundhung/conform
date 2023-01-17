@@ -70,7 +70,7 @@ function Product() {
 
 ### Modifying a list
 
-Conform provides built-in [list](../packages/conform-react/README.md#list) command button builder for you to modify a list of fields.
+Conform provides built-in [list](/packages/conform-react/README.md#list) command button builder for you to modify a list of fields.
 
 ```tsx
 import { useForm, useFieldList, conform, list } from '@conform-to/react';
@@ -102,7 +102,7 @@ export default function Todos() {
 
 ## Validation
 
-A validation can be triggered by configuring a button with the [validate](../packages/conform-react/README.md#validate) command button builder.
+A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) command button builder.
 
 ```tsx
 import { useForm, conform, validate } from '@conform-to/react';
@@ -164,7 +164,7 @@ export default function Todos() {
 }
 ```
 
-However, if the command button can not be pre-configured easily, like drag and drop an item on the list with dynamic `from` / `to` index, a command can be triggered by using the [requestCommand](../packages/conform-react/README.md#requestCommand) helper.
+However, if the command button can not be pre-configured easily, like drag and drop an item on the list with dynamic `from` / `to` index, a command can be triggered by using the [requestCommand](/packages/conform-react/README.md#requestCommand) helper.
 
 ```tsx
 import {

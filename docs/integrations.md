@@ -50,7 +50,7 @@ function Example() {
 
 When integrating with a UI components library, it is important to think about how it is different from a native input. For example, most of these libraries will provide an `<Input />` component which is simply a wrapper on top of native input and they will be supported by Conform out of the box too.
 
-However, for custom input like `<Select />` or `<DatePicker />`, you can make it progressivly enhanced with the [useControlledInput](../packages/conform-react/README.md#usecontrolledinput) hook:
+However, for custom input like `<Select />` or `<DatePicker />`, you can make it progressivly enhanced with the [useControlledInput](/packages/conform-react/README.md#usecontrolledinput) hook:
 
 ```tsx
 import { useForm, useControlledInput } from '@conform-to/react';
