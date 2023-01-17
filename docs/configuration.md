@@ -31,9 +31,9 @@ console.log(submission.error); // e.g. []
 
 ## Nested Object
 
-When you need to set up fields as nested object, you can pass the parent field config to [useFieldset](../packages/conform-react/README.md#usefieldset) to get access to its child fields.
+When you need to set up fields as nested object, you can pass the parent field config to [useFieldset](/packages/conform-react/README.md#usefieldset) to get access to its child fields.
 
-Each field will come with name infered based on the config and will be set to the form control with the [conform](../packages/conform-react/README.md#conform) helper.
+Each field will come with name infered based on the config and will be set to the form control with the [conform](/packages/conform-react/README.md#conform) helper.
 
 ```tsx
 import { useForm, useFieldset, conform } from '@conform-to/react';
@@ -74,9 +74,9 @@ function Example() {
 
 ## Array
 
-When you need to setup fields as an array, you can pass the parent field config to [useFieldlist](../packages/conform-react/README.md#usefieldlist) to get access to its item fields.
+When you need to setup fields as an array, you can pass the parent field config to [useFieldlist](/packages/conform-react/README.md#usefieldlist) to get access to its item fields.
 
-Each field will also come with name infered based on the config and will be set to the form control with the [conform](../packages/conform-react/README.md#conform) helper.
+Each field will also come with name infered based on the config and will be set to the form control with the [conform](/packages/conform-react/README.md#conform) helper.
 
 ```tsx
 import { useForm, useFieldList, conform } from '@conform-to/react';
@@ -111,7 +111,7 @@ For information about modifying list (e.g. append / remove / reorder), see the [
 
 ## Nested List
 
-You can also set up fields as nested list by using a combination of [useFieldset](../packages/conform-react/README.md#usefieldset) and [useFieldList](../packages/conform-react/README.md#usefieldlist).
+You can also set up fields as nested list by using a combination of [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist).
 
 ```tsx
 import type { FieldConfig } from '@conform-to/react';

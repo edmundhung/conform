@@ -127,8 +127,6 @@ export default function Signup() {
 }
 ```
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/server-validation&file=/app/routes/server-validation.tsx).
-
 ### Validate with a schema
 
 Writing validation logic manually could be cumbersome. You can also use a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
@@ -172,8 +170,6 @@ export async function action({ request }: ActionArgs) {
   return json(submission);
 }
 ```
-
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix-run?initialpath=/zod&file=/app/routes/zod.tsx).
 
 ## Client Validation
 
