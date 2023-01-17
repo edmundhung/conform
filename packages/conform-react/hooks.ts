@@ -125,7 +125,7 @@ interface Form<Schema extends Record<string, any>> {
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.4.1/packages/conform-react/README.md#useform
+ * @see https://conform.guide/api/react#useform
  */
 export function useForm<Schema extends Record<string, any>>(
 	config: FormConfig<Schema> = {},
@@ -407,7 +407,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 /**
  * Returns all the information about the fieldset.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.4.1/packages/conform-react/README.md#usefieldset
+ * @see https://conform.guide/api/react#usefieldset
  */
 export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
@@ -591,7 +591,7 @@ export function useFieldset<Schema extends Record<string, any>>(
  * Returns a list of key and config, with a group of helpers
  * configuring buttons for list manipulation
  *
- * @see https://github.com/edmundhung/conform/tree/v0.4.1/packages/conform-react/README.md#usefieldlist
+ * @see https://conform.guide/api/react#usefieldlist
  */
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
@@ -802,7 +802,7 @@ interface InputControl<Element extends { focus: () => void }> {
  * This is particular useful when integrating dropdown and datepicker whichs
  * introduces custom input mode.
  *
- * @see https://github.com/edmundhung/conform/tree/v0.4.1/packages/conform-react/README.md#usecontrolledinput
+ * @see https://conform.guide/api/react#usecontrolledinput
  */
 export function useControlledInput<
 	Element extends { focus: () => void } = HTMLInputElement,
