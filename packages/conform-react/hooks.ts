@@ -10,7 +10,6 @@ import {
 	getFormElement,
 	getName,
 	getPaths,
-	getSubmissionType,
 	isFieldElement,
 	parse,
 	parseListCommand,
@@ -19,6 +18,7 @@ import {
 	reportSubmission,
 	validate,
 	requestCommand,
+	shouldValidate,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -140,12 +140,18 @@ export function useForm<Schema extends Record<string, any>>(
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
 	>(() => {
-		const error = config.state?.error ?? [];
+		const submission = config.state;
+
+		if (!submission) {
+			return {
+				defaultValue: config.defaultValue,
+			};
+		}
 
 		return {
-			defaultValue: config.state?.value ?? config.defaultValue,
-			initialError: error.filter(
-				([name]) => name !== '' && getSubmissionType(name) === null,
+			defaultValue: submission.value,
+			initialError: submission.error.filter(
+				([name]) => name !== '' && shouldValidate(submission, name),
 			),
 		};
 	});
