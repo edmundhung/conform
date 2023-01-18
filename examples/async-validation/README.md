@@ -1,5 +1,7 @@
 # Async Validation Example
 
+> Please fork the sandbox if it is stuck in the `Initializing Sandbox Container` stage
+
 This example shows you how to how to implement async valdation with Conform.
 
 <!-- sandbox src="/examples/async-validation?module=/app/routes/index.tsx" -->

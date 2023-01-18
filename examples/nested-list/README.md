@@ -1,5 +1,7 @@
 # Nested List Example
 
+> Please fork the sandbox if it is stuck in the `Initializing Sandbox Container` stage
+
 This example shows you how to build a todo list with a dynamic list of tasks.
 
 <!-- sandbox src="/examples/nested-list?module=/app/routes/index.tsx" -->
