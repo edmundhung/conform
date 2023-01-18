@@ -1,6 +1,6 @@
 # Zod Example
 
-> Please fork the sandbox if it is stuck in the `Initializing Sandbox Container` stage
+> Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
 
 This example shows you how to validate formData with [zod](https://github.com/colinhacks/zod) schema using the [validate](/packages/conform-zod/README.md#validate) helper.
 
