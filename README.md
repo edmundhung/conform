@@ -79,12 +79,16 @@ export default function LoginForm() {
       <div>
         <label htmlFor={email.config.id}>Email</label>
         <input {...conform.input(email.config)} />
-        <div id={email.config.errorId}>{email.error}</div>
+        <div id={email.config.errorId} role="alert">
+          {email.error}
+        </div>
       </div>
       <div>
         <label htmlFor={password.config.id}>Password</label>
         <input {...conform.input(password.config)} />
-        <div id={password.config.errorId}>{password.error}</div>
+        <div id={password.config.errorId} role="alert">
+          {password.error}
+        </div>
       </div>
       <button>Login</button>
     </Form>
