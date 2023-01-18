@@ -291,7 +291,6 @@ export default function LoginForm() {
     initialReport: 'onBlur',
     state: result,
     onValidate({ formData }) {
-      // Run the same validation logic on client side
       return validate(formData);
     },
   });
