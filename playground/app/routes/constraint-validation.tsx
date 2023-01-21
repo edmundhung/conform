@@ -11,25 +11,41 @@ interface Schema {
 }
 
 function getErrorMessages(validity: ValidityState) {
-	const constraints: Array<keyof ValidityState> = [
-		'valueMissing',
-		'typeMismatch',
-		'tooShort',
-		'rangeUnderflow',
-		'stepMismatch',
-		'tooLong',
-		'rangeOverflow',
-		'patternMismatch',
-		'badInput',
-	];
+	const error: Array<string> = [];
 
-	return constraints.reduce<string[]>((result, name) => {
-		if (validity[name]) {
-			result.push(name);
-		}
+	if (validity.valueMissing) {
+		error.push('required');
+	}
 
-		return result;
-	}, []);
+	if (validity.typeMismatch || validity.badInput) {
+		error.push('type');
+	}
+
+	if (validity.tooShort) {
+		error.push('minLength');
+	}
+
+	if (validity.rangeUnderflow) {
+		error.push('min');
+	}
+
+	if (validity.stepMismatch) {
+		error.push('step');
+	}
+
+	if (validity.tooLong) {
+		error.push('maxLength');
+	}
+
+	if (validity.rangeOverflow) {
+		error.push('max');
+	}
+
+	if (validity.patternMismatch) {
+		error.push('pattern');
+	}
+
+	return error;
 }
 
 function validateConstraint(
