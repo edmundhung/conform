@@ -20,7 +20,7 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
-import { useRef } from 'react';
+import { useState } from 'react';
 
 interface Schema {
 	email: string;
@@ -172,16 +172,25 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 }
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
-	const inputRef = useRef<{ node: HTMLInputElement; focus: () => void }>(null);
-	const control = useInputControl(() => inputRef.current?.node);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputControl<{
+		node: HTMLInputElement;
+		focus: () => void;
+	}>({
+		getElement: (ref) => ref?.node,
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 
 	return (
 		<TextField
 			label={label}
 			inputRef={inputRef}
 			name={config.name}
-			defaultValue={config.defaultValue ?? ''}
-			onChange={control.onChange}
+			value={value}
+			onChange={(event) => {
+				control.onChange(event);
+				setValue(event.target.value);
+			}}
 			onFocus={control.onFocus}
 			onBlur={control.onBlur}
 			error={Boolean(error)}
@@ -198,8 +207,7 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputControl(() => inputRef.current);
+	const [inputRef, control] = useInputControl();
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
@@ -226,8 +234,13 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputControl(() => inputRef.current);
+	const [value, setValue] = useState(
+		config.defaultValue ? Number(config.defaultValue) : null,
+	);
+	const [inputRef, control] = useInputControl({
+		onReset: () =>
+			setValue(config.defaultValue ? Number(config.defaultValue) : null),
+	});
 
 	return (
 		<FormControl variant="standard" error={Boolean(error)} required>
@@ -240,11 +253,13 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 				})}
 			/>
 			<Rating
-				defaultValue={
-					config.defaultValue ? Number(config.defaultValue) : undefined
-				}
+				value={value}
 				onFocus={control.onFocus}
-				onChange={(_, value) => control.onChange(`${value ?? ''}`)}
+				onChange={(_, value) => {
+					control.onChange(`${value ?? ''}`);
+					console.log('rating', value);
+					setValue(value);
+				}}
 				onBlur={control.onBlur}
 			/>
 			<FormHelperText>{error}</FormHelperText>
@@ -253,8 +268,13 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 }
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputControl(() => inputRef.current);
+	const [value, setValue] = useState(
+		config.defaultValue ? Number(config.defaultValue) : undefined,
+	);
+	const [inputRef, control] = useInputControl<HTMLInputElement>({
+		onReset: () =>
+			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
+	});
 
 	return (
 		<FormControl variant="standard" error={Boolean(error)} required>
@@ -264,10 +284,15 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 				{...conform.input(config as FieldConfig<number>, { hidden: true })}
 			/>
 			<Slider
-				defaultValue={
-					config.defaultValue ? Number(config.defaultValue) : undefined
-				}
-				onChange={(_, value) => control.onChange(`${value}`)}
+				value={value}
+				onChange={(_, value) => {
+					if (Array.isArray(value)) {
+						return;
+					}
+
+					control.onChange(`${value}`);
+					setValue(value);
+				}}
 			/>
 			<FormHelperText>{error}</FormHelperText>
 		</FormControl>
