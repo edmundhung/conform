@@ -27,6 +27,9 @@ import {
 	useRef,
 	useState,
 	useEffect,
+	useLayoutEffect,
+	useCallback,
+	useMemo,
 } from 'react';
 import { input } from './helpers';
 
@@ -869,23 +872,10 @@ export function useControlledInput<
 	return [
 		{
 			ref,
-			style: {
-				position: 'absolute',
-				width: '1px',
-				height: '1px',
-				padding: 0,
-				margin: '-1px',
-				overflow: 'hidden',
-				clip: 'rect(0,0,0,0)',
-				whiteSpace: 'nowrap',
-				borderWidth: 0,
-			},
-			tabIndex: -1,
-			'aria-hidden': true,
 			onFocus() {
 				inputRef.current?.focus();
 			},
-			...input({ ...config, ...uncontrolledState }),
+			...input({ ...config, ...uncontrolledState }, { hidden: true }),
 		},
 		{
 			ref: inputRef,
@@ -895,4 +885,167 @@ export function useControlledInput<
 			onInvalid: handleInvalid,
 		},
 	];
+}
+
+/**
+ * Triggering react custom change event
+ * Solution based on dom-testing-library
+ * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+ * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+ */
+function setNativeValue(element: FieldElement, value: string) {
+	if (element.value === value) {
+		// It will not trigger a change event if `element.value` is the same as the set value
+		return;
+	}
+
+	const { set: valueSetter } =
+		Object.getOwnPropertyDescriptor(element, 'value') || {};
+	const prototype = Object.getPrototypeOf(element);
+	const { set: prototypeValueSetter } =
+		Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+	if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+		prototypeValueSetter.call(element, value);
+	} else {
+		if (valueSetter) {
+			valueSetter.call(element, value);
+		} else {
+			throw new Error('The given element does not have a value setter');
+		}
+	}
+}
+
+/**
+ * useLayoutEffect is client-only.
+ * This basically makes it a no-op on server
+ */
+const useSafeLayoutEffect =
+	typeof document === 'undefined' ? useEffect : useLayoutEffect;
+
+export function useInputControl(ref: () => FieldElement | null | undefined) {
+	const inputRef = useRef(ref);
+	const changeDispatched = useRef(false);
+	const focusDispatched = useRef(false);
+	const blurDispatched = useRef(false);
+
+	useSafeLayoutEffect(() => {
+		inputRef.current = ref;
+	});
+
+	useSafeLayoutEffect(() => {
+		const inputHandler = (event: Event) => {
+			if (event.target === inputRef.current()) {
+				changeDispatched.current = true;
+			}
+		};
+		const focusHandler = (event: FocusEvent) => {
+			if (event.target === inputRef.current()) {
+				focusDispatched.current = true;
+			}
+		};
+		const blurHandler = (event: FocusEvent) => {
+			if (event.target === inputRef.current()) {
+				blurDispatched.current = true;
+			}
+		};
+
+		document.addEventListener('input', inputHandler, true);
+		document.addEventListener('focus', focusHandler, true);
+		document.addEventListener('blur', blurHandler, true);
+
+		return () => {
+			document.removeEventListener('input', inputHandler, true);
+			document.removeEventListener('focus', focusHandler, true);
+			document.removeEventListener('blur', blurHandler, true);
+		};
+	}, []);
+
+	return useMemo(
+		() => ({
+			onChange(eventOrValue: { target: { value: string } } | string) {
+				console.log('control.onChange', eventOrValue);
+				const $input = inputRef.current();
+
+				if (!$input) {
+					console.warn(
+						'Missing input ref; No change-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (changeDispatched.current) {
+					changeDispatched.current = false;
+					return;
+				}
+
+				const previousValue = $input.value;
+				const nextValue =
+					typeof eventOrValue === 'string'
+						? eventOrValue
+						: eventOrValue.target.value;
+
+				// This make sure no event is dispatched on the first effect run
+				if (nextValue === previousValue) {
+					return;
+				}
+
+				// Dispatch beforeinput event before updating the input value
+				$input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+				// Update the input value to trigger a change event
+				setNativeValue($input, nextValue);
+				// Dispatch input event with the updated input value
+				$input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+			},
+			onFocus() {
+				console.log('control.onFocus');
+				const $input = inputRef.current();
+
+				if (!$input) {
+					console.warn(
+						'Missing input ref; No focus-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (focusDispatched.current) {
+					focusDispatched.current = false;
+					return;
+				}
+
+				const focusinEvent = new FocusEvent('focusin', {
+					bubbles: true,
+				});
+				const focusEvent = new FocusEvent('focus');
+
+				$input.dispatchEvent(focusinEvent);
+				$input.dispatchEvent(focusEvent);
+			},
+			onBlur() {
+				console.log('control.onBlur');
+				const $input = inputRef.current();
+
+				if (!$input) {
+					console.warn(
+						'Missing input ref; No blur-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (blurDispatched.current) {
+					blurDispatched.current = false;
+					return;
+				}
+
+				const focusoutEvent = new FocusEvent('focusout', {
+					bubbles: true,
+				});
+				const blurEvent = new FocusEvent('blur');
+
+				$input.dispatchEvent(focusoutEvent);
+				$input.dispatchEvent(blurEvent);
+			},
+		}),
+		[],
+	);
 }

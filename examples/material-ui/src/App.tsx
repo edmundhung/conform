@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useControlledInput } from '@conform-to/react';
+import { useForm, conform, useInputControl } from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -20,6 +20,7 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
+import { useRef } from 'react';
 
 interface Schema {
 	email: string;
@@ -34,7 +35,7 @@ interface Schema {
 }
 
 export default function ArticleForm() {
-	const [form, fieldset] = useForm<Schema>();
+	const [form, fieldset] = useForm<Schema>({ initialReport: 'onBlur' });
 
 	return (
 		<Container maxWidth="sm">
@@ -171,113 +172,104 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 }
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
-	/**
-	 * MUI Select is a non-native input and does not dispatch any DOM events (e.g. input / focus / blur).
-	 * This hooks works by dispatching DOM events manually on the shadow input and thus validated once
-	 * it is hooked up with the controlled component.
-	 */
-	const [shadowInput, control] = useControlledInput(config);
+	const inputRef = useRef<{ node: HTMLInputElement; focus: () => void }>(null);
+	const control = useInputControl(() => inputRef.current?.node);
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<TextField
-				label={label}
-				inputRef={control.ref}
-				value={control.value}
-				onChange={control.onChange}
-				onBlur={control.onBlur}
-				error={Boolean(error)}
-				helperText={error}
-				inputProps={{
-					// To disable error bubble caused by the constraint
-					// attribute set by mui input, e.g. `required`
-					onInvalid: control.onInvalid,
-				}}
-				select
-				required={config.required}
-			>
-				<MenuItem value="">Please select</MenuItem>
-				<MenuItem value="english">English</MenuItem>
-				<MenuItem value="deutsch">Deutsch</MenuItem>
-				<MenuItem value="japanese">Japanese</MenuItem>
-			</TextField>
-		</>
+		<TextField
+			label={label}
+			inputRef={inputRef}
+			name={config.name}
+			defaultValue={config.defaultValue ?? ''}
+			onChange={control.onChange}
+			onFocus={control.onFocus}
+			onBlur={control.onBlur}
+			error={Boolean(error)}
+			helperText={error}
+			select
+			required={config.required}
+		>
+			<MenuItem value="">Please select</MenuItem>
+			<MenuItem value="english">English</MenuItem>
+			<MenuItem value="deutsch">Deutsch</MenuItem>
+			<MenuItem value="japanese">Japanese</MenuItem>
+		</TextField>
 	);
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [shadowInput, control] = useControlledInput(config);
-	const options = [
-		{ label: 'The Godfather', id: 1 },
-		{ label: 'Pulp Fiction', id: 2 },
-	];
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputControl(() => inputRef.current);
+	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<Autocomplete
-				disablePortal
-				options={options}
-				value={
-					options.find((option) => control.value === `${option.id}`) ?? null
-				}
-				onChange={(_, option) => control.onChange(`${option?.id ?? ''}`)}
-				renderInput={(params) => (
-					<TextField
-						{...params}
-						label={label}
-						onBlur={control.onBlur}
-						error={Boolean(error)}
-						helperText={error}
-						required={config.required}
-						inputProps={{
-							...params.inputProps,
-							// To disable error bubble caused by the constraint
-							// attribute set by mui input, e.g. `required`
-							onInvalid: control.onInvalid,
-						}}
-					/>
-				)}
-			/>
-		</>
+		<Autocomplete
+			disablePortal
+			options={options}
+			defaultValue={options.find((option) => option === config.defaultValue)}
+			onChange={(_, option) => control.onChange(`${option ?? ''}`)}
+			onFocus={control.onFocus}
+			onBlur={control.onBlur}
+			renderInput={(params) => (
+				<TextField
+					{...params}
+					inputRef={inputRef}
+					label={label}
+					name={config.name}
+					error={Boolean(error)}
+					helperText={error}
+					required={config.required}
+				/>
+			)}
+		/>
 	);
 }
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputControl(() => inputRef.current);
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<FormControl variant="standard" error={Boolean(error)} required>
-				<FormLabel>{label}</FormLabel>
-				<Rating
-					ref={control.ref}
-					value={control.value ? Number(control.value) : null}
-					onChange={(_, value) => control.onChange(`${value ?? ''}`)}
-				/>
-				<FormHelperText>{error}</FormHelperText>
-			</FormControl>
-		</>
+		<FormControl variant="standard" error={Boolean(error)} required>
+			<FormLabel>{label}</FormLabel>
+			<input
+				ref={inputRef}
+				{...conform.input(config as FieldConfig<number>, {
+					type: 'number',
+					hidden: true,
+				})}
+			/>
+			<Rating
+				defaultValue={
+					config.defaultValue ? Number(config.defaultValue) : undefined
+				}
+				onFocus={control.onFocus}
+				onChange={(_, value) => control.onChange(`${value ?? ''}`)}
+				onBlur={control.onBlur}
+			/>
+			<FormHelperText>{error}</FormHelperText>
+		</FormControl>
 	);
 }
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputControl(() => inputRef.current);
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<FormControl variant="standard" error={Boolean(error)} required>
-				<FormLabel>{label}</FormLabel>
-				<Slider
-					ref={control.ref}
-					value={control.value ? Number(control.value) : 0}
-					onChange={(_, value) => control.onChange(`${value}`)}
-				/>
-				<FormHelperText>{error}</FormHelperText>
-			</FormControl>
-		</>
+		<FormControl variant="standard" error={Boolean(error)} required>
+			<FormLabel>{label}</FormLabel>
+			<input
+				ref={inputRef}
+				{...conform.input(config as FieldConfig<number>, { hidden: true })}
+			/>
+			<Slider
+				defaultValue={
+					config.defaultValue ? Number(config.defaultValue) : undefined
+				}
+				onChange={(_, value) => control.onChange(`${value}`)}
+			/>
+			<FormHelperText>{error}</FormHelperText>
+		</FormControl>
 	);
 }
