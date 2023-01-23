@@ -34,7 +34,7 @@ interface Schema {
 	progress: number;
 }
 
-export default function ArticleForm() {
+export default function ExampleForm() {
 	const [form, fieldset] = useForm<Schema>({ initialReport: 'onBlur' });
 
 	return (
@@ -247,7 +247,7 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 			<FormLabel>{label}</FormLabel>
 			<input
 				ref={inputRef}
-				{...conform.input(config as FieldConfig<number>, {
+				{...conform.input(config, {
 					type: 'number',
 					hidden: true,
 				})}
@@ -279,10 +279,7 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 	return (
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
-			<input
-				ref={inputRef}
-				{...conform.input(config as FieldConfig<number>, { hidden: true })}
-			/>
+			<input ref={inputRef} {...conform.input(config, { hidden: true })} />
 			<Slider
 				value={value}
 				onChange={(_, value) => {

@@ -951,34 +951,45 @@ export function useInputControl<RefShape>(options?: {
 	});
 
 	useSafeLayoutEffect(() => {
-		const createFormEventListener =
-			<FormEvent extends Event>(handler: (event: FormEvent) => void) =>
-			(event: FormEvent) => {
-				const $input = (optionsRef.current?.getElement?.(ref.current) ??
-					ref.current) as FieldElement;
+		const getInputElement = () =>
+			(optionsRef.current?.getElement?.(ref.current) ?? ref.current) as
+				| FieldElement
+				| undefined;
+		const inputHandler = (event: Event) => {
+			const input = getInputElement();
 
-				if (!$input || event.target !== $input) {
-					return;
-				}
+			if (input && event.target === input) {
+				changeDispatched.current = true;
+			}
+		};
+		const focusHandler = (event: FocusEvent) => {
+			const input = getInputElement();
 
-				handler(event);
-			};
+			if (input && event.target === input) {
+				focusDispatched.current = true;
+			}
+		};
+		const blurHandler = (event: FocusEvent) => {
+			const input = getInputElement();
 
-		const inputHandler = createFormEventListener((e) => {
-			changeDispatched.current = true;
-		});
-		const focusHandler = createFormEventListener(() => {
-			focusDispatched.current = true;
-		});
-		const blurHandler = createFormEventListener(() => {
-			blurDispatched.current = true;
-		});
-		const submitHandler = createFormEventListener<SubmitEvent>((event) => {
-			optionsRef.current?.onSubmit?.(event);
-		});
-		const resetHandler = createFormEventListener((event) => {
-			optionsRef.current?.onReset?.(event);
-		});
+			if (input && event.target === input) {
+				blurDispatched.current = true;
+			}
+		};
+		const submitHandler = (event: SubmitEvent) => {
+			const input = getInputElement();
+
+			if (input?.form && event.target === input.form) {
+				optionsRef.current?.onSubmit?.(event);
+			}
+		};
+		const resetHandler = (event: Event) => {
+			const input = getInputElement();
+
+			if (input?.form && event.target === input.form) {
+				optionsRef.current?.onReset?.(event);
+			}
+		};
 
 		document.addEventListener('input', inputHandler, true);
 		document.addEventListener('focus', focusHandler, true);

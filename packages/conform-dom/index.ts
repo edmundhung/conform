@@ -29,9 +29,9 @@ export type FieldConstraint<Schema = any> = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;
-	min?: Schema extends number ? number : string;
-	max?: Schema extends number ? number : string;
-	step?: Schema extends number ? number : string;
+	min?: Schema extends number ? number : string | number;
+	max?: Schema extends number ? number : string | number;
+	step?: Schema extends number ? number : string | number;
 	multiple?: boolean;
 	pattern?: string;
 };
