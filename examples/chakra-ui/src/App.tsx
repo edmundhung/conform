@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useControlledInput } from '@conform-to/react';
+import { useForm, useInputControl, conform } from '@conform-to/react';
 import {
 	Stack,
 	FormControl,
@@ -31,6 +31,7 @@ import {
 	Heading,
 	Text,
 } from '@chakra-ui/react';
+import { useRef, useState } from 'react';
 
 interface Schema {
 	email: string;
@@ -184,17 +185,29 @@ export default function Example() {
 }
 
 function ExampleNumberInput(config: FieldConfig<number>) {
-	const [shadowInputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputControl({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
+	const ref = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
-			<input {...shadowInputProps} />
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onFocus={() => inputRef.current?.focus()}
+			/>
 			<NumberInput
+				ref={ref}
 				isRequired={config.required}
-				value={control.value}
-				onChange={control.onChange}
+				value={value}
+				onChange={(value) => {
+					control.onChange(value);
+					setValue(value);
+				}}
 			>
-				<NumberInputField ref={control.ref} />
+				<NumberInputField ref={ref} />
 				<NumberInputStepper>
 					<NumberIncrementStepper />
 					<NumberDecrementStepper />
@@ -208,18 +221,29 @@ function ExamplePinInput({
 	isInvalid,
 	...config
 }: FieldConfig<string> & { isInvalid: boolean }) {
-	const [shadowInputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputControl({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
+	const ref = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
-			<input {...shadowInputProps} />
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onFocus={() => inputRef.current?.focus()}
+			/>
 			<PinInput
 				type="alphanumeric"
-				value={control.value}
-				onChange={control.onChange}
+				value={value}
+				onChange={(value) => {
+					control.onChange(value);
+					setValue(value);
+				}}
 				isInvalid={isInvalid}
 			>
-				<PinInputField ref={control.ref} />
+				<PinInputField ref={ref} />
 				<PinInputField />
 				<PinInputField />
 				<PinInputField />
@@ -229,14 +253,27 @@ function ExamplePinInput({
 }
 
 function ExampleSlider(config: FieldConfig<number>) {
-	const [shadowInputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(
+		config.defaultValue ? Number(config.defaultValue) : undefined,
+	);
+	const [inputRef, control] = useInputControl({
+		onReset: () =>
+			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
+	});
 
 	return (
 		<>
-			<input {...shadowInputProps} />
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onFocus={() => inputRef.current?.focus()}
+			/>
 			<Slider
-				value={control.value ? Number(control.value) : undefined}
-				onChange={(value) => control.onChange(`${value}`)}
+				value={value}
+				onChange={(value) => {
+					control.onChange(`${value}`);
+					setValue(value);
+				}}
 				onBlur={control.onBlur}
 			>
 				<SliderTrack>
