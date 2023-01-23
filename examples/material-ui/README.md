@@ -6,18 +6,21 @@
 
 > Based on @mui/material@5.10
 
-| Component             | Native support | Integration required |
-| --------------------- | :------------: | :------------------: |
-| Text Field (input)    |      Yes       |                      |
-| Text Field (textarea) |      Yes       |                      |
-| Select (native)       |      Yes       |                      |
-| Select (default)      |                |         Yes          |
-| Autocomplete          |      Yes       |                      |
-| Checkbox              |      Yes       |                      |
-| Radio Group           |      Yes       |                      |
-| Rating                |                |         Yes          |
-| Slider                |                |         Yes          |
-| Switch                |                |         Yes          |
+**Native support**
+
+- Text Field (default)
+- Text Field (multiline)
+- NativeSelect
+- Checkbox
+- Radio Group
+- Switch
+
+**Integration required**
+
+- Autocomplete
+- Select
+- Rating
+- Slider
 
 ## Demo
 

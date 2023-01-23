@@ -6,12 +6,12 @@
 
 > Based on @headless-ui/react@1.7.4
 
-| Component  | Native support | Integration required |
-| ---------- | :------------: | :------------------: |
-| ListBox    |                |         Yes          |
-| Combobox   |                |         Yes          |
-| Switch     |                |         Yes          |
-| RadioGroup |                |         Yes          |
+**Integration required**
+
+- ListBox
+- Combobox
+- Switch
+- RadioGroup
 
 ## Demo
 
