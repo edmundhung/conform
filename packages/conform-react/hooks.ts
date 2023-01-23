@@ -791,7 +791,7 @@ interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {
 	ref: RefObject<HTMLInputElement>;
 }
 
-interface InputControl<Element extends { focus: () => void }> {
+interface LegacyInputControl<Element extends { focus: () => void }> {
 	ref: RefObject<Element>;
 	value: string;
 	onChange: (eventOrValue: { target: { value: string } } | string) => void;
@@ -809,7 +809,9 @@ interface InputControl<Element extends { focus: () => void }> {
 export function useControlledInput<
 	Element extends { focus: () => void } = HTMLInputElement,
 	Schema extends Primitive = Primitive,
->(config: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
+>(
+	config: FieldConfig<Schema>,
+): [ShadowInputProps, LegacyInputControl<Element>] {
 	const ref = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<Element>(null);
 	const configRef = useRef(config);
@@ -821,7 +823,9 @@ export function useControlledInput<
 		initialError: config.initialError,
 	});
 	const [value, setValue] = useState<string>(`${config.defaultValue ?? ''}`);
-	const handleChange: InputControl<Element>['onChange'] = (eventOrValue) => {
+	const handleChange: LegacyInputControl<Element>['onChange'] = (
+		eventOrValue,
+	) => {
 		if (!ref.current) {
 			return;
 		}
@@ -835,10 +839,10 @@ export function useControlledInput<
 		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
 		setValue(newValue);
 	};
-	const handleBlur: InputControl<Element>['onBlur'] = () => {
+	const handleBlur: LegacyInputControl<Element>['onBlur'] = () => {
 		ref.current?.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 	};
-	const handleInvalid: InputControl<Element>['onInvalid'] = (event) => {
+	const handleInvalid: LegacyInputControl<Element>['onInvalid'] = (event) => {
 		event.preventDefault();
 	};
 
@@ -922,24 +926,30 @@ function setNativeValue(element: FieldElement, value: string) {
 const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-export function useInputControl<
+interface InputControl {
+	change: (eventOrValue: { target: { value: string } } | string) => void;
+	focus: () => void;
+	blur: () => void;
+}
+
+export function useInputEvent<
 	RefShape extends FieldElement = HTMLInputElement,
 >(options?: {
 	onSubmit?: (event: SubmitEvent) => void;
 	onReset?: (event: Event) => void;
-}): [RefObject<RefShape>, any];
-export function useInputControl<
+}): [RefObject<RefShape>, InputControl];
+export function useInputEvent<
 	RefShape extends Exclude<any, FieldElement>,
 >(options: {
 	getElement: (ref: RefShape | null) => FieldElement | null | undefined;
 	onSubmit?: (event: SubmitEvent) => void;
 	onReset?: (event: Event) => void;
-}): [RefObject<RefShape>, any];
-export function useInputControl<RefShape>(options?: {
+}): [RefObject<RefShape>, InputControl];
+export function useInputEvent<RefShape>(options?: {
 	getElement?: (ref: RefShape | null) => FieldElement | null | undefined;
 	onSubmit?: (event: SubmitEvent) => void;
 	onReset?: (event: Event) => void;
-}) {
+}): [RefObject<RefShape>, InputControl] {
 	const ref = useRef<RefShape>(null);
 	const optionsRef = useRef(options);
 	const changeDispatched = useRef(false);
@@ -1012,11 +1022,7 @@ export function useInputControl<RefShape>(options?: {
 				ref.current) as FieldElement;
 
 		return {
-			onChange(eventOrValue: { target: { value: string } } | string) {
-				console.log('control.onChange', {
-					eventOrValue,
-					dispatched: changeDispatched.current,
-				});
+			change(eventOrValue: { target: { value: string } } | string) {
 				const input = getInputElement();
 
 				if (!input) {
@@ -1051,10 +1057,7 @@ export function useInputControl<RefShape>(options?: {
 				// Reset the dispatched flag
 				changeDispatched.current = false;
 			},
-			onFocus() {
-				console.log('control.onFocus', {
-					dispatched: focusDispatched.current,
-				});
+			focus() {
 				const input = getInputElement();
 
 				if (!input) {
@@ -1080,10 +1083,7 @@ export function useInputControl<RefShape>(options?: {
 				// Reset the dispatched flag
 				focusDispatched.current = false;
 			},
-			onBlur() {
-				console.log('control.onBlur', {
-					dispatched: blurDispatched.current,
-				});
+			blur() {
 				const input = getInputElement();
 
 				if (!input) {

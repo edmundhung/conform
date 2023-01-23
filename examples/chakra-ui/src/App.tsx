@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useInputControl, conform } from '@conform-to/react';
+import { useForm, useInputEvent, conform } from '@conform-to/react';
 import {
 	Stack,
 	FormControl,
@@ -186,7 +186,7 @@ export default function Example() {
 
 function ExampleNumberInput(config: FieldConfig<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputControl({
+	const [inputRef, control] = useInputEvent({
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const ref = useRef<HTMLInputElement>(null);
@@ -203,7 +203,7 @@ function ExampleNumberInput(config: FieldConfig<number>) {
 				isRequired={config.required}
 				value={value}
 				onChange={(value) => {
-					control.onChange(value);
+					control.change(value);
 					setValue(value);
 				}}
 			>
@@ -222,7 +222,7 @@ function ExamplePinInput({
 	...config
 }: FieldConfig<string> & { isInvalid: boolean }) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputControl({
+	const [inputRef, control] = useInputEvent({
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const ref = useRef<HTMLInputElement>(null);
@@ -238,7 +238,7 @@ function ExamplePinInput({
 				type="alphanumeric"
 				value={value}
 				onChange={(value) => {
-					control.onChange(value);
+					control.change(value);
 					setValue(value);
 				}}
 				isInvalid={isInvalid}
@@ -256,7 +256,7 @@ function ExampleSlider(config: FieldConfig<number>) {
 	const [value, setValue] = useState(
 		config.defaultValue ? Number(config.defaultValue) : undefined,
 	);
-	const [inputRef, control] = useInputControl({
+	const [inputRef, control] = useInputEvent({
 		onReset: () =>
 			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
 	});
@@ -271,10 +271,11 @@ function ExampleSlider(config: FieldConfig<number>) {
 			<Slider
 				value={value}
 				onChange={(value) => {
-					control.onChange(`${value}`);
+					control.change(`${value}`);
 					setValue(value);
 				}}
-				onBlur={control.onBlur}
+				onFocus={control.focus}
+				onBlur={control.blur}
 			>
 				<SliderTrack>
 					<SliderFilledTrack />

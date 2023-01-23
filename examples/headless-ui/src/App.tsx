@@ -1,7 +1,7 @@
 import {
 	type FieldConfig,
 	useForm,
-	useInputControl,
+	useInputEvent,
 	conform,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
@@ -120,7 +120,7 @@ function classNames(...classes: Array<string | boolean>): string {
 
 function ExampleListBox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputControl({
+	const [inputRef, control] = useInputEvent({
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const buttonRef = useRef<HTMLButtonElement>(null);
@@ -135,8 +135,7 @@ function ExampleListBox(config: FieldConfig<string>) {
 			<Listbox
 				value={value}
 				onChange={(value) => {
-					console.log({ value });
-					control.onChange(value);
+					control.change(value);
 					setValue(value);
 				}}
 			>
@@ -202,7 +201,7 @@ function ExampleListBox(config: FieldConfig<string>) {
 function ExampleCombobox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [query, setQuery] = useState('');
-	const [ref, control] = useInputControl({
+	const [ref, control] = useInputEvent({
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -224,7 +223,7 @@ function ExampleCombobox(config: FieldConfig<string>) {
 				as="div"
 				value={value}
 				onChange={(value) => {
-					control.onChange(value ?? '');
+					control.change(value ?? '');
 					setValue(value ?? '');
 				}}
 				nullable
@@ -293,7 +292,7 @@ function ExampleCombobox(config: FieldConfig<string>) {
 
 function ExampleSwitch(config: FieldConfig<boolean>) {
 	const [checked, setChecked] = useState(config.defaultValue === 'on');
-	const [ref, control] = useInputControl({
+	const [ref, control] = useInputEvent({
 		onReset: () => setChecked(config.defaultValue === 'on'),
 	});
 	const inputRef = useRef<HTMLButtonElement>(null);
@@ -309,7 +308,7 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 				ref={inputRef}
 				checked={checked}
 				onChange={(checked: boolean) => {
-					control.onChange(checked ? 'on' : '');
+					control.change(checked ? 'on' : '');
 					setChecked(checked);
 				}}
 				className={classNames(
@@ -332,11 +331,8 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 
 function ExampleRadioGroup(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [ref, control] = useInputControl({
-		onReset: () => {
-			console.log('reset');
-			setValue(config.defaultValue ?? '');
-		},
+	const [ref, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
@@ -362,7 +358,7 @@ function ExampleRadioGroup(config: FieldConfig<string>) {
 			<RadioGroup
 				value={value}
 				onChange={(value) => {
-					control.onChange(value);
+					control.change(value);
 					setValue(value);
 				}}
 			>

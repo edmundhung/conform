@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, conform, useInputControl } from '@conform-to/react';
+import { useForm, conform, useInputEvent } from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -173,7 +173,7 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputControl<{
+	const [inputRef, control] = useInputEvent<{
 		node: HTMLInputElement;
 		focus: () => void;
 	}>({
@@ -188,11 +188,11 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 			name={config.name}
 			value={value}
 			onChange={(event) => {
-				control.onChange(event);
+				control.change(event);
 				setValue(event.target.value);
 			}}
-			onFocus={control.onFocus}
-			onBlur={control.onBlur}
+			onFocus={control.focus}
+			onBlur={control.blur}
 			error={Boolean(error)}
 			helperText={error}
 			select
@@ -207,7 +207,7 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [inputRef, control] = useInputControl();
+	const [inputRef, control] = useInputEvent();
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
@@ -215,9 +215,9 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 			disablePortal
 			options={options}
 			defaultValue={options.find((option) => option === config.defaultValue)}
-			onChange={(_, option) => control.onChange(`${option ?? ''}`)}
-			onFocus={control.onFocus}
-			onBlur={control.onBlur}
+			onChange={(_, option) => control.change(`${option ?? ''}`)}
+			onFocus={control.focus}
+			onBlur={control.blur}
 			renderInput={(params) => (
 				<TextField
 					{...params}
@@ -237,7 +237,7 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(
 		config.defaultValue ? Number(config.defaultValue) : null,
 	);
-	const [inputRef, control] = useInputControl({
+	const [inputRef, control] = useInputEvent({
 		onReset: () =>
 			setValue(config.defaultValue ? Number(config.defaultValue) : null),
 	});
@@ -254,13 +254,13 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 			/>
 			<Rating
 				value={value}
-				onFocus={control.onFocus}
 				onChange={(_, value) => {
-					control.onChange(`${value ?? ''}`);
+					control.change(`${value ?? ''}`);
 					console.log('rating', value);
 					setValue(value);
 				}}
-				onBlur={control.onBlur}
+				onFocus={control.focus}
+				onBlur={control.blur}
 			/>
 			<FormHelperText>{error}</FormHelperText>
 		</FormControl>
@@ -271,7 +271,7 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(
 		config.defaultValue ? Number(config.defaultValue) : undefined,
 	);
-	const [inputRef, control] = useInputControl<HTMLInputElement>({
+	const [inputRef, control] = useInputEvent<HTMLInputElement>({
 		onReset: () =>
 			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
 	});
@@ -287,7 +287,7 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 						return;
 					}
 
-					control.onChange(`${value}`);
+					control.change(`${value}`);
 					setValue(value);
 				}}
 			/>
