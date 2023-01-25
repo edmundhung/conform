@@ -9,6 +9,7 @@
 - [useForm](#useform)
 - [useFieldset](#usefieldset)
 - [useFieldList](#usefieldlist)
+- [useInputEvent](#useinputevent)
 - [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
 - [list](#list)
@@ -304,6 +305,7 @@ function MuiForm() {
       <input
         ref={ref}
         {...conform.input(category.config, { hidden: true })}
+        onChange={(e) => setValue(e.target.value)}
         onFocus={() => inputRef.current?.focus()}
       />
 
@@ -312,10 +314,7 @@ function MuiForm() {
         label="Category"
         inputRef={inputRef}
         value={value}
-        onChange={(event) => {
-          control.change(event.target.value);
-          setValue(event.target.value);
-        }}
+        onChange={control.change}
         onBlur={control.blur}
         select
       >

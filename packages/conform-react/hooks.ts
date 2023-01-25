@@ -804,6 +804,7 @@ interface LegacyInputControl<Element extends { focus: () => void }> {
  * This is particular useful when integrating dropdown and datepicker whichs
  * introduces custom input mode.
  *
+ * @deprecated Please use the `useInputEvent` hook instead
  * @see https://conform.guide/api/react#usecontrolledinput
  */
 export function useControlledInput<
@@ -932,6 +933,11 @@ interface InputControl {
 	blur: () => void;
 }
 
+/**
+ * Returns a ref object and a set of helpers that dispatch corresponding dom event.
+ *
+ * @see https://conform.guide/api/react#useinputevent
+ */
 export function useInputEvent<
 	RefShape extends FieldElement = HTMLInputElement,
 >(options?: {
