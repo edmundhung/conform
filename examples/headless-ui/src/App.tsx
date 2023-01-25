@@ -130,15 +130,10 @@ function ExampleListBox(config: FieldConfig<string>) {
 			<input
 				ref={inputRef}
 				{...conform.input(config, { hidden: true })}
-				onFocus={() => buttonRef.current?.click()}
+				onChange={(e) => setValue(e.target.value)}
+				onFocus={() => buttonRef.current?.focus()}
 			/>
-			<Listbox
-				value={value}
-				onChange={(value) => {
-					control.change(value);
-					setValue(value);
-				}}
-			>
+			<Listbox value={value} onChange={control.change}>
 				<div className="relative mt-1">
 					<Listbox.Button
 						className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -217,17 +212,10 @@ function ExampleCombobox(config: FieldConfig<string>) {
 			<input
 				ref={ref}
 				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
 			/>
-			<Combobox
-				as="div"
-				value={value}
-				onChange={(value) => {
-					control.change(value ?? '');
-					setValue(value ?? '');
-				}}
-				nullable
-			>
+			<Combobox as="div" value={value} onChange={control.change} nullable>
 				<div className="relative mt-1">
 					<Combobox.Input
 						ref={inputRef}
@@ -302,6 +290,7 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 			<input
 				ref={ref}
 				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setChecked(e.target.value === 'on')}
 				onFocus={() => inputRef.current?.focus()}
 			/>
 			<Switch
@@ -309,7 +298,6 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 				checked={checked}
 				onChange={(checked: boolean) => {
 					control.change(checked ? 'on' : '');
-					setChecked(checked);
 				}}
 				className={classNames(
 					checked ? 'bg-indigo-600' : 'bg-gray-200',
@@ -350,18 +338,14 @@ function ExampleRadioGroup(config: FieldConfig<string>) {
 		},
 	];
 
-	console.log({ value });
-
 	return (
 		<>
-			<input ref={ref} {...conform.input(config, { hidden: true })} />
-			<RadioGroup
-				value={value}
-				onChange={(value) => {
-					control.change(value);
-					setValue(value);
-				}}
-			>
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+			<RadioGroup value={value} onChange={control.change}>
 				<div className="mt-4 flex items-center space-x-3">
 					{colors.map((color) => (
 						<RadioGroup.Option

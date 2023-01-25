@@ -196,16 +196,14 @@ function ExampleNumberInput(config: FieldConfig<number>) {
 			<input
 				ref={inputRef}
 				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
 			/>
 			<NumberInput
 				ref={ref}
 				isRequired={config.required}
 				value={value}
-				onChange={(value) => {
-					control.change(value);
-					setValue(value);
-				}}
+				onChange={control.change}
 			>
 				<NumberInputField ref={ref} />
 				<NumberInputStepper>
@@ -232,15 +230,13 @@ function ExamplePinInput({
 			<input
 				ref={inputRef}
 				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
 			/>
 			<PinInput
 				type="alphanumeric"
 				value={value}
-				onChange={(value) => {
-					control.change(value);
-					setValue(value);
-				}}
+				onChange={control.change}
 				isInvalid={isInvalid}
 			>
 				<PinInputField ref={ref} />
@@ -253,12 +249,9 @@ function ExamplePinInput({
 }
 
 function ExampleSlider(config: FieldConfig<number>) {
-	const [value, setValue] = useState(
-		config.defaultValue ? Number(config.defaultValue) : undefined,
-	);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [inputRef, control] = useInputEvent({
-		onReset: () =>
-			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
+		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
@@ -266,14 +259,12 @@ function ExampleSlider(config: FieldConfig<number>) {
 			<input
 				ref={inputRef}
 				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
 			/>
 			<Slider
-				value={value}
-				onChange={(value) => {
-					control.change(`${value}`);
-					setValue(value);
-				}}
+				value={value ? Number(value) : undefined}
+				onChange={(value) => control.change(`${value}`)}
 				onFocus={control.focus}
 				onBlur={control.blur}
 			>

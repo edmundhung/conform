@@ -20,7 +20,7 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface Schema {
 	email: string;
@@ -173,36 +173,36 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent<{
-		node: HTMLInputElement;
-		focus: () => void;
-	}>({
-		getElement: (ref) => ref?.node,
+	const [ref, control] = useInputEvent({
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
+	const inputRef = useRef<HTMLInputElement>(null);
 
 	return (
-		<TextField
-			label={label}
-			inputRef={inputRef}
-			name={config.name}
-			value={value}
-			onChange={(event) => {
-				control.change(event);
-				setValue(event.target.value);
-			}}
-			onFocus={control.focus}
-			onBlur={control.blur}
-			error={Boolean(error)}
-			helperText={error}
-			select
-			required={config.required}
-		>
-			<MenuItem value="">Please select</MenuItem>
-			<MenuItem value="english">English</MenuItem>
-			<MenuItem value="deutsch">Deutsch</MenuItem>
-			<MenuItem value="japanese">Japanese</MenuItem>
-		</TextField>
+		<>
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+				onFocus={() => inputRef.current?.focus()}
+			/>
+			<TextField
+				label={label}
+				inputRef={inputRef}
+				value={value}
+				onChange={control.change}
+				onFocus={control.focus}
+				onBlur={control.blur}
+				error={Boolean(error)}
+				helperText={error}
+				select
+			>
+				<MenuItem value="">Please select</MenuItem>
+				<MenuItem value="english">English</MenuItem>
+				<MenuItem value="deutsch">Deutsch</MenuItem>
+				<MenuItem value="japanese">Japanese</MenuItem>
+			</TextField>
+		</>
 	);
 }
 
@@ -234,12 +234,9 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const [value, setValue] = useState(
-		config.defaultValue ? Number(config.defaultValue) : null,
-	);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [inputRef, control] = useInputEvent({
-		onReset: () =>
-			setValue(config.defaultValue ? Number(config.defaultValue) : null),
+		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
@@ -251,13 +248,12 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 					type: 'number',
 					hidden: true,
 				})}
+				onChange={(e) => setValue(e.target.value)}
 			/>
 			<Rating
-				value={value}
+				value={value ? Number(value) : null}
 				onChange={(_, value) => {
 					control.change(`${value ?? ''}`);
-					console.log('rating', value);
-					setValue(value);
 				}}
 				onFocus={control.focus}
 				onBlur={control.blur}
@@ -268,27 +264,27 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 }
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const [value, setValue] = useState(
-		config.defaultValue ? Number(config.defaultValue) : undefined,
-	);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [inputRef, control] = useInputEvent<HTMLInputElement>({
-		onReset: () =>
-			setValue(config.defaultValue ? Number(config.defaultValue) : undefined),
+		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
-			<input ref={inputRef} {...conform.input(config, { hidden: true })} />
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+			/>
 			<Slider
-				value={value}
+				value={value ? Number(value) : undefined}
 				onChange={(_, value) => {
 					if (Array.isArray(value)) {
 						return;
 					}
 
 					control.change(`${value}`);
-					setValue(value);
 				}}
 			/>
 			<FormHelperText>{error}</FormHelperText>
