@@ -2,7 +2,7 @@
 	"name": "@conform-to/dom",
 	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
 	"license": "MIT",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
