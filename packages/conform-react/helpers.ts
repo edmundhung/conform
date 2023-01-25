@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/dom';
-import type { HTMLInputTypeAttribute } from 'react';
+import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
 interface FieldProps {
 	id?: string;
@@ -7,8 +7,11 @@ interface FieldProps {
 	form?: string;
 	required?: boolean;
 	autoFocus?: boolean;
+	tabIndex?: number;
+	style?: CSSProperties;
 	'aria-invalid': boolean;
 	'aria-describedby'?: string;
+	'aria-hidden'?: boolean;
 }
 
 interface InputProps<Schema> extends FieldProps {
@@ -39,19 +42,30 @@ interface TextareaProps extends FieldProps {
 type InputOptions =
 	| {
 			type: 'checkbox' | 'radio';
+			hidden?: boolean;
 			value?: string;
 	  }
 	| {
-			type: 'file';
-			value?: never;
-	  }
-	| {
-			type?: Exclude<
-				HTMLInputTypeAttribute,
-				'button' | 'submit' | 'hidden' | 'file'
-			>;
+			type?: Exclude<HTMLInputTypeAttribute, 'button' | 'submit' | 'hidden'>;
+			hidden?: boolean;
 			value?: never;
 	  };
+
+/**
+ * Style to make the input element visually hidden
+ * Based on the `sr-only` class from tailwindcss
+ */
+const hiddenStyle: CSSProperties = {
+	position: 'absolute',
+	width: '1px',
+	height: '1px',
+	padding: 0,
+	margin: '-1px',
+	overflow: 'hidden',
+	clip: 'rect(0,0,0,0)',
+	whiteSpace: 'nowrap',
+	border: 0,
+};
 
 export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
@@ -82,6 +96,12 @@ export function input<Schema>(
 		'aria-describedby': config.errorId,
 	};
 
+	if (options?.hidden) {
+		attributes.style = hiddenStyle;
+		attributes.tabIndex = -1;
+		attributes['aria-hidden'] = true;
+	}
+
 	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;
 	}
@@ -96,7 +116,10 @@ export function input<Schema>(
 	return attributes;
 }
 
-export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
+export function select<Schema>(
+	config: FieldConfig<Schema>,
+	options?: { hidden?: boolean },
+): SelectProps {
 	const attributes: SelectProps = {
 		id: config.id,
 		name: config.name,
@@ -112,6 +135,12 @@ export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 		'aria-describedby': config.errorId,
 	};
 
+	if (options?.hidden) {
+		attributes.style = hiddenStyle;
+		attributes.tabIndex = -1;
+		attributes['aria-hidden'] = true;
+	}
+
 	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;
 	}
@@ -119,7 +148,10 @@ export function select<Schema>(config: FieldConfig<Schema>): SelectProps {
 	return attributes;
 }
 
-export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
+export function textarea<Schema>(
+	config: FieldConfig<Schema>,
+	options?: { hidden?: boolean },
+): TextareaProps {
 	const attributes: TextareaProps = {
 		id: config.id,
 		name: config.name,
@@ -132,6 +164,12 @@ export function textarea<Schema>(config: FieldConfig<Schema>): TextareaProps {
 		'aria-invalid': Boolean(config.initialError?.length),
 		'aria-describedby': config.errorId,
 	};
+
+	if (options?.hidden) {
+		attributes.style = hiddenStyle;
+		attributes.tabIndex = -1;
+		attributes['aria-hidden'] = true;
+	}
 
 	if (config.initialError && config.initialError.length > 0) {
 		attributes.autoFocus = true;

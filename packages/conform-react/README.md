@@ -9,6 +9,7 @@
 - [useForm](#useform)
 - [useFieldset](#usefieldset)
 - [useFieldList](#usefieldlist)
+- [useInputEvent](#useinputevent)
 - [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
 - [list](#list)
@@ -281,14 +282,63 @@ function Example() {
 
 ---
 
+### useInputEvent
+
+It returns a ref object and a set of helpers that dispatch corresponding dom event.
+
+```tsx
+import { useForm, useInputEvent } from '@conform-to/react';
+import { Select, MenuItem } from '@mui/material';
+import { useState, useRef } from 'react';
+
+function MuiForm() {
+  const [form, { category }] = useForm();
+  const [value, setValue] = useState(category.config.defaultValue ?? '');
+  const [ref, control] = useInputEvent({
+    onReset: () => setValue(category.config.defaultValue ?? ''),
+  });
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <form {...form.props}>
+      {/* Render a shadow input somewhere */}
+      <input
+        ref={ref}
+        {...conform.input(category.config, { hidden: true })}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={() => inputRef.current?.focus()}
+      />
+
+      {/* MUI Select is a controlled component */}
+      <TextField
+        label="Category"
+        inputRef={inputRef}
+        value={value}
+        onChange={control.change}
+        onBlur={control.blur}
+        select
+      >
+        <MenuItem value="">Please select</MenuItem>
+        <MenuItem value="a">Category A</MenuItem>
+        <MenuItem value="b">Category B</MenuItem>
+        <MenuItem value="c">Category C</MenuItem>
+      </TextField>
+    </form>
+  );
+}
+```
+
+---
+
 ### useControlledInput
+
+> This API is deprecated and replaced with the [useInputEvent](#useinputevent) hook.
 
 It returns the properties required to configure a shadow input for validation and helper to integrate it. This is particularly useful when [integrating custom input components](/docs/integrations.md#custom-input-component) like dropdown and datepicker.
 
 ```tsx
 import { useForm, useControlledInput } from '@conform-to/react';
 import { Select, MenuItem } from '@mui/material';
-import { useRef } from 'react';
 
 function MuiForm() {
   const [form, { category }] = useForm();

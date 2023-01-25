@@ -1,5 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useControlledInput } from '@conform-to/react';
+import { useForm, conform, useInputEvent } from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -20,6 +20,7 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
+import { useRef, useState } from 'react';
 
 interface Schema {
 	email: string;
@@ -33,8 +34,8 @@ interface Schema {
 	progress: number;
 }
 
-export default function ArticleForm() {
-	const [form, fieldset] = useForm<Schema>();
+export default function ExampleForm() {
+	const [form, fieldset] = useForm<Schema>({ initialReport: 'onBlur' });
 
 	return (
 		<Container maxWidth="sm">
@@ -171,31 +172,30 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 }
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
-	/**
-	 * MUI Select is a non-native input and does not dispatch any DOM events (e.g. input / focus / blur).
-	 * This hooks works by dispatching DOM events manually on the shadow input and thus validated once
-	 * it is hooked up with the controlled component.
-	 */
-	const [shadowInput, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [ref, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
+	const inputRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
-			<input {...shadowInput} />
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+				onFocus={() => inputRef.current?.focus()}
+			/>
 			<TextField
 				label={label}
-				inputRef={control.ref}
-				value={control.value}
-				onChange={control.onChange}
-				onBlur={control.onBlur}
+				inputRef={inputRef}
+				value={value}
+				onChange={control.change}
+				onFocus={control.focus}
+				onBlur={control.blur}
 				error={Boolean(error)}
 				helperText={error}
-				inputProps={{
-					// To disable error bubble caused by the constraint
-					// attribute set by mui input, e.g. `required`
-					onInvalid: control.onInvalid,
-				}}
 				select
-				required={config.required}
 			>
 				<MenuItem value="">Please select</MenuItem>
 				<MenuItem value="english">English</MenuItem>
@@ -207,77 +207,87 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [shadowInput, control] = useControlledInput(config);
-	const options = [
-		{ label: 'The Godfather', id: 1 },
-		{ label: 'Pulp Fiction', id: 2 },
-	];
+	const [inputRef, control] = useInputEvent();
+	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<Autocomplete
-				disablePortal
-				options={options}
-				value={
-					options.find((option) => control.value === `${option.id}`) ?? null
-				}
-				onChange={(_, option) => control.onChange(`${option?.id ?? ''}`)}
-				renderInput={(params) => (
-					<TextField
-						{...params}
-						label={label}
-						onBlur={control.onBlur}
-						error={Boolean(error)}
-						helperText={error}
-						required={config.required}
-						inputProps={{
-							...params.inputProps,
-							// To disable error bubble caused by the constraint
-							// attribute set by mui input, e.g. `required`
-							onInvalid: control.onInvalid,
-						}}
-					/>
-				)}
-			/>
-		</>
+		<Autocomplete
+			disablePortal
+			options={options}
+			defaultValue={options.find((option) => option === config.defaultValue)}
+			onChange={(_, option) => control.change(`${option ?? ''}`)}
+			onFocus={control.focus}
+			onBlur={control.blur}
+			renderInput={(params) => (
+				<TextField
+					{...params}
+					inputRef={inputRef}
+					label={label}
+					name={config.name}
+					error={Boolean(error)}
+					helperText={error}
+					required={config.required}
+				/>
+			)}
+		/>
 	);
 }
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<FormControl variant="standard" error={Boolean(error)} required>
-				<FormLabel>{label}</FormLabel>
-				<Rating
-					ref={control.ref}
-					value={control.value ? Number(control.value) : null}
-					onChange={(_, value) => control.onChange(`${value ?? ''}`)}
-				/>
-				<FormHelperText>{error}</FormHelperText>
-			</FormControl>
-		</>
+		<FormControl variant="standard" error={Boolean(error)} required>
+			<FormLabel>{label}</FormLabel>
+			<input
+				ref={inputRef}
+				{...conform.input(config, {
+					type: 'number',
+					hidden: true,
+				})}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+			<Rating
+				value={value ? Number(value) : null}
+				onChange={(_, value) => {
+					control.change(`${value ?? ''}`);
+				}}
+				onFocus={control.focus}
+				onBlur={control.blur}
+			/>
+			<FormHelperText>{error}</FormHelperText>
+		</FormControl>
 	);
 }
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const [shadowInput, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputEvent<HTMLInputElement>({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 
 	return (
-		<>
-			<input {...shadowInput} />
-			<FormControl variant="standard" error={Boolean(error)} required>
-				<FormLabel>{label}</FormLabel>
-				<Slider
-					ref={control.ref}
-					value={control.value ? Number(control.value) : 0}
-					onChange={(_, value) => control.onChange(`${value}`)}
-				/>
-				<FormHelperText>{error}</FormHelperText>
-			</FormControl>
-		</>
+		<FormControl variant="standard" error={Boolean(error)} required>
+			<FormLabel>{label}</FormLabel>
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+			<Slider
+				value={value ? Number(value) : undefined}
+				onChange={(_, value) => {
+					if (Array.isArray(value)) {
+						return;
+					}
+
+					control.change(`${value}`);
+				}}
+			/>
+			<FormHelperText>{error}</FormHelperText>
+		</FormControl>
 	);
 }

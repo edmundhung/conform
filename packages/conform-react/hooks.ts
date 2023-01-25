@@ -27,6 +27,8 @@ import {
 	useRef,
 	useState,
 	useEffect,
+	useLayoutEffect,
+	useMemo,
 } from 'react';
 import { input } from './helpers';
 
@@ -789,7 +791,7 @@ interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {
 	ref: RefObject<HTMLInputElement>;
 }
 
-interface InputControl<Element extends { focus: () => void }> {
+interface LegacyInputControl<Element extends { focus: () => void }> {
 	ref: RefObject<Element>;
 	value: string;
 	onChange: (eventOrValue: { target: { value: string } } | string) => void;
@@ -802,12 +804,15 @@ interface InputControl<Element extends { focus: () => void }> {
  * This is particular useful when integrating dropdown and datepicker whichs
  * introduces custom input mode.
  *
+ * @deprecated Please use the `useInputEvent` hook instead
  * @see https://conform.guide/api/react#usecontrolledinput
  */
 export function useControlledInput<
 	Element extends { focus: () => void } = HTMLInputElement,
 	Schema extends Primitive = Primitive,
->(config: FieldConfig<Schema>): [ShadowInputProps, InputControl<Element>] {
+>(
+	config: FieldConfig<Schema>,
+): [ShadowInputProps, LegacyInputControl<Element>] {
 	const ref = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<Element>(null);
 	const configRef = useRef(config);
@@ -819,7 +824,9 @@ export function useControlledInput<
 		initialError: config.initialError,
 	});
 	const [value, setValue] = useState<string>(`${config.defaultValue ?? ''}`);
-	const handleChange: InputControl<Element>['onChange'] = (eventOrValue) => {
+	const handleChange: LegacyInputControl<Element>['onChange'] = (
+		eventOrValue,
+	) => {
 		if (!ref.current) {
 			return;
 		}
@@ -833,10 +840,10 @@ export function useControlledInput<
 		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
 		setValue(newValue);
 	};
-	const handleBlur: InputControl<Element>['onBlur'] = () => {
+	const handleBlur: LegacyInputControl<Element>['onBlur'] = () => {
 		ref.current?.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 	};
-	const handleInvalid: InputControl<Element>['onInvalid'] = (event) => {
+	const handleInvalid: LegacyInputControl<Element>['onInvalid'] = (event) => {
 		event.preventDefault();
 	};
 
@@ -869,23 +876,10 @@ export function useControlledInput<
 	return [
 		{
 			ref,
-			style: {
-				position: 'absolute',
-				width: '1px',
-				height: '1px',
-				padding: 0,
-				margin: '-1px',
-				overflow: 'hidden',
-				clip: 'rect(0,0,0,0)',
-				whiteSpace: 'nowrap',
-				borderWidth: 0,
-			},
-			tabIndex: -1,
-			'aria-hidden': true,
 			onFocus() {
 				inputRef.current?.focus();
 			},
-			...input({ ...config, ...uncontrolledState }),
+			...input({ ...config, ...uncontrolledState }, { hidden: true }),
 		},
 		{
 			ref: inputRef,
@@ -895,4 +889,234 @@ export function useControlledInput<
 			onInvalid: handleInvalid,
 		},
 	];
+}
+
+/**
+ * Triggering react custom change event
+ * Solution based on dom-testing-library
+ * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+ * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+ */
+function setNativeValue(element: FieldElement, value: string) {
+	if (element.value === value) {
+		// It will not trigger a change event if `element.value` is the same as the set value
+		return;
+	}
+
+	const { set: valueSetter } =
+		Object.getOwnPropertyDescriptor(element, 'value') || {};
+	const prototype = Object.getPrototypeOf(element);
+	const { set: prototypeValueSetter } =
+		Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+	if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+		prototypeValueSetter.call(element, value);
+	} else {
+		if (valueSetter) {
+			valueSetter.call(element, value);
+		} else {
+			throw new Error('The given element does not have a value setter');
+		}
+	}
+}
+
+/**
+ * useLayoutEffect is client-only.
+ * This basically makes it a no-op on server
+ */
+const useSafeLayoutEffect =
+	typeof document === 'undefined' ? useEffect : useLayoutEffect;
+
+interface InputControl {
+	change: (eventOrValue: { target: { value: string } } | string) => void;
+	focus: () => void;
+	blur: () => void;
+}
+
+/**
+ * Returns a ref object and a set of helpers that dispatch corresponding dom event.
+ *
+ * @see https://conform.guide/api/react#useinputevent
+ */
+export function useInputEvent<
+	RefShape extends FieldElement = HTMLInputElement,
+>(options?: {
+	onSubmit?: (event: SubmitEvent) => void;
+	onReset?: (event: Event) => void;
+}): [RefObject<RefShape>, InputControl];
+export function useInputEvent<
+	RefShape extends Exclude<any, FieldElement>,
+>(options: {
+	getElement: (ref: RefShape | null) => FieldElement | null | undefined;
+	onSubmit?: (event: SubmitEvent) => void;
+	onReset?: (event: Event) => void;
+}): [RefObject<RefShape>, InputControl];
+export function useInputEvent<RefShape>(options?: {
+	getElement?: (ref: RefShape | null) => FieldElement | null | undefined;
+	onSubmit?: (event: SubmitEvent) => void;
+	onReset?: (event: Event) => void;
+}): [RefObject<RefShape>, InputControl] {
+	const ref = useRef<RefShape>(null);
+	const optionsRef = useRef(options);
+	const changeDispatched = useRef(false);
+	const focusDispatched = useRef(false);
+	const blurDispatched = useRef(false);
+
+	useSafeLayoutEffect(() => {
+		optionsRef.current = options;
+	});
+
+	useSafeLayoutEffect(() => {
+		const getInputElement = () =>
+			(optionsRef.current?.getElement?.(ref.current) ?? ref.current) as
+				| FieldElement
+				| undefined;
+		const inputHandler = (event: Event) => {
+			const input = getInputElement();
+
+			if (input && event.target === input) {
+				changeDispatched.current = true;
+			}
+		};
+		const focusHandler = (event: FocusEvent) => {
+			const input = getInputElement();
+
+			if (input && event.target === input) {
+				focusDispatched.current = true;
+			}
+		};
+		const blurHandler = (event: FocusEvent) => {
+			const input = getInputElement();
+
+			if (input && event.target === input) {
+				blurDispatched.current = true;
+			}
+		};
+		const submitHandler = (event: SubmitEvent) => {
+			const input = getInputElement();
+
+			if (input?.form && event.target === input.form) {
+				optionsRef.current?.onSubmit?.(event);
+			}
+		};
+		const resetHandler = (event: Event) => {
+			const input = getInputElement();
+
+			if (input?.form && event.target === input.form) {
+				optionsRef.current?.onReset?.(event);
+			}
+		};
+
+		document.addEventListener('input', inputHandler, true);
+		document.addEventListener('focus', focusHandler, true);
+		document.addEventListener('blur', blurHandler, true);
+		document.addEventListener('submit', submitHandler);
+		document.addEventListener('reset', resetHandler);
+
+		return () => {
+			document.removeEventListener('input', inputHandler, true);
+			document.removeEventListener('focus', focusHandler, true);
+			document.removeEventListener('blur', blurHandler, true);
+			document.removeEventListener('submit', submitHandler);
+			document.removeEventListener('reset', resetHandler);
+		};
+	}, []);
+
+	const control = useMemo(() => {
+		const getInputElement = () =>
+			(optionsRef.current?.getElement?.(ref.current) ??
+				ref.current) as FieldElement;
+
+		return {
+			change(eventOrValue: { target: { value: string } } | string) {
+				const input = getInputElement();
+
+				if (!input) {
+					console.warn(
+						'Missing input ref; No change-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (changeDispatched.current) {
+					changeDispatched.current = false;
+					return;
+				}
+
+				const previousValue = input.value;
+				const nextValue =
+					typeof eventOrValue === 'string'
+						? eventOrValue
+						: eventOrValue.target.value;
+
+				// This make sure no event is dispatched on the first effect run
+				if (nextValue === previousValue) {
+					return;
+				}
+
+				// Dispatch beforeinput event before updating the input value
+				input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+				// Update the input value to trigger a change event
+				setNativeValue(input, nextValue);
+				// Dispatch input event with the updated input value
+				input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+				// Reset the dispatched flag
+				changeDispatched.current = false;
+			},
+			focus() {
+				const input = getInputElement();
+
+				if (!input) {
+					console.warn(
+						'Missing input ref; No focus-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (focusDispatched.current) {
+					focusDispatched.current = false;
+					return;
+				}
+
+				const focusinEvent = new FocusEvent('focusin', {
+					bubbles: true,
+				});
+				const focusEvent = new FocusEvent('focus');
+
+				input.dispatchEvent(focusinEvent);
+				input.dispatchEvent(focusEvent);
+
+				// Reset the dispatched flag
+				focusDispatched.current = false;
+			},
+			blur() {
+				const input = getInputElement();
+
+				if (!input) {
+					console.warn(
+						'Missing input ref; No blur-related events will be dispatched',
+					);
+					return;
+				}
+
+				if (blurDispatched.current) {
+					blurDispatched.current = false;
+					return;
+				}
+
+				const focusoutEvent = new FocusEvent('focusout', {
+					bubbles: true,
+				});
+				const blurEvent = new FocusEvent('blur');
+
+				input.dispatchEvent(focusoutEvent);
+				input.dispatchEvent(blurEvent);
+
+				// Reset the dispatched flag
+				blurDispatched.current = false;
+			},
+		};
+	}, []);
+
+	return [ref, control];
 }

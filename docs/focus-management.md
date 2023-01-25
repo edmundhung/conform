@@ -33,41 +33,30 @@ function Example() {
 
 ## Focusing on Custom Control
 
-Conform can also focus on custom control if it exposes the inner ref property, where you can pass `control.ref` provided by [useControlledInput](/packages/conform-react/README.md#usecontrolledinput). e.g. `inputRef` on `<TextField />` from Material UI.
+Conform can also focus on custom control if it exposes a ref for you to focus manually. Here is an example snippet integrating with **react-select**:
 
 ```tsx
-import { useForm, useControlledInput } from '@conform-to/react';
-import { TextField, MenuItem, Button } from '@mui/material';
-
-function Example() {
-  const [form, { language }] = useForm();
-  const [shadowInputProps, control] = useControlledInput(language.config);
+function Select({ options, ...config }: SelectProps) {
+  const [inputRef, control] = useInputEvent();
+  const ref = useRef<HTMLInputElement>(null);
 
   return (
-    <form {...form.props}>
-      <div>
-        <input {...shadowInputProps} />
-        <TextField
-          label={label}
-          inputRef={control.ref}
-          value={control.value}
-          onChange={control.onChange}
-          onBlur={control.onBlur}
-          error={Boolean(language.error)}
-          helperText={language.error}
-          select
-        >
-          <MenuItem value="">Please select</MenuItem>
-          <MenuItem value="english">English</MenuItem>
-          <MenuItem value="deutsch">Deutsch</MenuItem>
-          <MenuItem value="japanese">Japanese</MenuItem>
-        </TextField>
-        <div>{language.error}</div>
-      </div>
-      <Button>Submit</Button>
-    </form>
+    <>
+      <input
+        ref={inputRef}
+        {...conform.input(config, { hidden: true })}
+        onFocus={() => ref.current?.focus()}
+      />
+      <Select
+        innerRef={ref}
+        options={options}
+        defaultValue={config.defaultValue ?? ''}
+        onChange={control.change}
+        onBlur={control.blur}
+      />
+    </>
   );
 }
 ```
 
-Check the [integration](/docs/integrations.md) guide for more details.
+Please check the [integration](/docs/integrations.md) guide for more details.

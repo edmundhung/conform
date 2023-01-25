@@ -1,11 +1,12 @@
 import {
 	type FieldConfig,
 	useForm,
-	useControlledInput,
+	useInputEvent,
+	conform,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface Schema {
 	owner: string;
@@ -118,20 +119,28 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function ExampleListBox(config: FieldConfig<string>) {
-	const [inputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [inputRef, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
+	const buttonRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<>
-			<input {...inputProps} />
-			<Listbox value={control.value} onChange={control.onChange}>
+			<input
+				ref={inputRef}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+				onFocus={() => buttonRef.current?.focus()}
+			/>
+			<Listbox value={value} onChange={control.change}>
 				<div className="relative mt-1">
 					<Listbox.Button
 						className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
-						ref={control.ref as any}
+						ref={buttonRef}
 					>
 						<span className="block truncate">
-							{people.find((p) => control.value === `${p.id}`)?.name ??
-								'Please select'}
+							{people.find((p) => value === `${p.id}`)?.name ?? 'Please select'}
 						</span>
 						<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
 							<ChevronUpDownIcon
@@ -185,27 +194,31 @@ function ExampleListBox(config: FieldConfig<string>) {
 }
 
 function ExampleCombobox(config: FieldConfig<string>) {
-	const [inputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [query, setQuery] = useState('');
+	const [ref, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
+	const inputRef = useRef<HTMLInputElement>(null);
 	const filteredPeople =
-		query === ''
+		value === ''
 			? people
-			: people.filter((person) => {
-					return person.name.toLowerCase().includes(query.toLowerCase());
-			  });
+			: people.filter((person) =>
+					person.name.toLowerCase().includes(query.toLowerCase()),
+			  );
 
 	return (
 		<>
-			<input {...inputProps} />
-			<Combobox
-				as="div"
-				value={control.value}
-				onChange={(value) => control.onChange(value ?? '')}
-				nullable
-			>
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+				onFocus={() => inputRef.current?.focus()}
+			/>
+			<Combobox as="div" value={value} onChange={control.change} nullable>
 				<div className="relative mt-1">
 					<Combobox.Input
-						ref={control.ref}
+						ref={inputRef}
 						className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
 						onChange={(event) => setQuery(event.target.value)}
 						displayValue={(personId: string) =>
@@ -266,17 +279,28 @@ function ExampleCombobox(config: FieldConfig<string>) {
 }
 
 function ExampleSwitch(config: FieldConfig<boolean>) {
-	const [inputProps, control] = useControlledInput(config);
+	const [checked, setChecked] = useState(config.defaultValue === 'on');
+	const [ref, control] = useInputEvent({
+		onReset: () => setChecked(config.defaultValue === 'on'),
+	});
+	const inputRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<>
-			<input {...inputProps} />
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setChecked(e.target.value === 'on')}
+				onFocus={() => inputRef.current?.focus()}
+			/>
 			<Switch
-				ref={control.ref as any}
-				checked={control.value === 'on'}
-				onChange={(checked: boolean) => control.onChange(checked ? 'on' : '')}
+				ref={inputRef}
+				checked={checked}
+				onChange={(checked: boolean) => {
+					control.change(checked ? 'on' : '');
+				}}
 				className={classNames(
-					control.value === 'on' ? 'bg-indigo-600' : 'bg-gray-200',
+					checked ? 'bg-indigo-600' : 'bg-gray-200',
 					'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
 				)}
 			>
@@ -284,7 +308,7 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 				<span
 					aria-hidden="true"
 					className={classNames(
-						control.value === 'on' ? 'translate-x-5' : 'translate-x-0',
+						checked ? 'translate-x-5' : 'translate-x-0',
 						'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
 					)}
 				/>
@@ -294,7 +318,10 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 }
 
 function ExampleRadioGroup(config: FieldConfig<string>) {
-	const [inputProps, control] = useControlledInput(config);
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const [ref, control] = useInputEvent({
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{
@@ -313,8 +340,12 @@ function ExampleRadioGroup(config: FieldConfig<string>) {
 
 	return (
 		<>
-			<input {...inputProps} />
-			<RadioGroup value={control.value} onChange={control.onChange}>
+			<input
+				ref={ref}
+				{...conform.input(config, { hidden: true })}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+			<RadioGroup value={value} onChange={control.change}>
 				<div className="mt-4 flex items-center space-x-3">
 					{colors.map((color) => (
 						<RadioGroup.Option

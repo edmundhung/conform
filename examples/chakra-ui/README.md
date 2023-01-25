@@ -2,18 +2,25 @@
 
 This example shows you how to integrate [chakra-ui](https://chakra-ui.com/docs/components) forms components with Conform.
 
-| Component   | Native support | Integration required |
-| ----------- | :------------: | :------------------: |
-| Input       |      Yes       |                      |
-| Select      |      Yes       |                      |
-| Textarea    |      Yes       |                      |
-| NumberInput |                |         Yes          |
-| PinInput    |                |         Yes          |
-| Editable    |                |         Yes          |
-| Checkbox    |      Yes       |                      |
-| Switch      |      Yes       |                      |
-| Slider      |                |         Yes          |
-| Radio       |      Yes       |                      |
+## Compatibility
+
+> Based on @chakra-ui/react@2.4.2
+
+**Native support**
+
+- Input
+- Select
+- Textarea
+- Checkbox
+- Switch
+- Radio
+- Editable
+
+**Integration required**
+
+- NumberInput
+- PinInput
+- Slider
 
 <!-- sandbox src="/examples/chakra-ui" -->
 
