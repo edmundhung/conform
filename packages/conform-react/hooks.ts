@@ -681,20 +681,15 @@ export function useFieldList<Payload = any>(
 				event.preventDefault();
 			}
 		};
-		const submitHandler = (event: SubmitEvent) => {
+		const listHandler = (event: CustomEvent) => {
 			const form = getFormElement(ref.current);
 
-			if (
-				!form ||
-				event.target !== form ||
-				!(event.submitter instanceof HTMLButtonElement) ||
-				event.submitter.name !== 'conform/list'
-			) {
+			if (!form || event.target !== form) {
 				return;
 			}
 
 			const command = parseListCommand<ListCommand<FieldValue<Payload>>>(
-				event.submitter.value,
+				event.detail,
 			);
 
 			if (command.scope !== configRef.current.name) {
@@ -754,12 +749,14 @@ export function useFieldList<Payload = any>(
 			setError([]);
 		};
 
-		document.addEventListener('submit', submitHandler, true);
+		// @ts-expect-error Custom event: conform/list
+		document.addEventListener('conform/list', listHandler);
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			document.removeEventListener('submit', submitHandler, true);
+			// @ts-expect-error Custom event: conform/list
+			document.removeEventListener('conform/list', listHandler);
 			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};

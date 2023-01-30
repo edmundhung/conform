@@ -1,11 +1,4 @@
-import { handleList } from '@conform-to/dom';
-import {
-	conform,
-	parse,
-	useFieldList,
-	useForm,
-	list,
-} from '@conform-to/react';
+import { conform, parse, useFieldList, useForm, list } from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -38,14 +31,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.type) {
-			case 'list':
-				return handleList(submission);
-			case 'validate':
-			case 'submit':
-				schema.parse(submission.value);
-				break;
-		}
+		schema.parse(submission.value);
 	} catch (error) {
 		submission.error.push(...formatError(error));
 	}
@@ -69,6 +55,7 @@ export default function SimpleList() {
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
 				<Alert message={form.error} />
+				<Alert message={items.error ?? ''} />
 				<ol>
 					{itemsList.map((item, index) => (
 						<li key={item.key} className="border rounded-md p-4 mb-4">

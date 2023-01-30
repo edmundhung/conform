@@ -1,4 +1,3 @@
-import { handleList } from '@conform-to/dom';
 import type { FieldsetConfig } from '@conform-to/react';
 import {
 	conform,
@@ -46,10 +45,6 @@ export let action = async ({ request }: ActionArgs) => {
 	let submission = parse<Schema>(formData);
 
 	try {
-		if (submission.type === 'list') {
-			submission = handleList(submission);
-		}
-
 		schema.parse(submission.value);
 	} catch (error) {
 		submission.error.push(...formatError(error));
