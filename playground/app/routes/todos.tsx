@@ -1,4 +1,4 @@
-import type { FieldsetConfig } from '@conform-to/react';
+import type { FieldsetConfig, Submission } from '@conform-to/react';
 import {
 	conform,
 	useFieldList,
@@ -7,7 +7,7 @@ import {
 	parse,
 	list,
 } from '@conform-to/react';
-import { validate, formatError, getFieldsetConstraint } from '@conform-to/zod';
+import { formatError, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
@@ -17,24 +17,30 @@ import { parseConfig } from '~/config';
 
 const schema = z.object({
 	title: z.string().min(1, 'Title is required'),
-	tasks: z.preprocess(
-		(value) => (typeof value !== 'undefined' ? value : []),
-		z
-			.array(
-				z.object({
-					content: z.string().min(1, 'Content is required'),
-					completed: z.preprocess(
-						(value) => value === 'yes',
-						z.boolean().optional(),
-					),
-				}),
-			)
-			.min(1, 'At least one task is required')
-			.max(3, 'Only 3 tasks are allowed'),
+	tasks: z.array(
+		z.object({
+			content: z.string().min(1, 'Content is required'),
+			completed: z.preprocess(
+				(value) => value === 'yes',
+				z.boolean().optional(),
+			),
+		}),
 	),
 });
 
 type Schema = z.infer<typeof schema>;
+
+function validate(formData: FormData): Submission<Schema> {
+	const submission = parse<Schema>(formData);
+
+	try {
+		schema.parse(submission.value);
+	} catch (error) {
+		submission.error.push(...formatError(error));
+	}
+
+	return submission;
+}
 
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
@@ -42,13 +48,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	let submission = parse<Schema>(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = validate(formData);
 
 	return submission;
 };
@@ -60,7 +60,7 @@ export default function TodosForm() {
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => validate(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'
@@ -80,11 +80,13 @@ export default function TodosForm() {
 		</Form>
 	);
 }
-export function TaskFieldset(config: FieldsetConfig<Schema['tasks']>) {
+export function TaskFieldset(
+	config: FieldsetConfig<z.infer<typeof schema.shape.tasks.element>>,
+) {
 	const ref = useRef<HTMLFieldSetElement>(null);
-	const { content, completed } = useFieldset<Schema['tasks']>(ref, {
+	const { content, completed } = useFieldset(ref, {
 		...config,
-		constraint: getFieldsetConstraint(schema.shape.tasks),
+		constraint: getFieldsetConstraint(schema.shape.tasks.element),
 	});
 	return (
 		<fieldset ref={ref} form={config.form}>
@@ -141,7 +143,6 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 					</li>
 				))}
 			</ol>
-			<div className="my-1 text-pink-600 text-sm">{tasks.error}</div>
 			<div className="flex flex-row gap-2">
 				<button
 					className="rounded-md border p-2 hover:border-black"
