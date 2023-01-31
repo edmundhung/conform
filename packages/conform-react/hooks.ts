@@ -153,7 +153,7 @@ export function useForm<Schema extends Record<string, any>>(
 		return {
 			defaultValue: submission.value,
 			initialError: submission.error.filter(
-				([name]) => name !== '' && shouldValidate(submission, name),
+				([name]) => name !== '' && shouldValidate(submission.intent, name),
 			),
 		};
 	});
@@ -342,7 +342,8 @@ export function useForm<Schema extends Record<string, any>>(
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						((submission.type === 'validate' || submission.type === 'list') &&
+						((submission.intent?.startsWith('validate/') ||
+							submission.intent?.startsWith('list/')) &&
 							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();
@@ -692,7 +693,7 @@ export function useFieldList<Payload = any>(
 				event.detail,
 			);
 
-			if (command.scope !== configRef.current.name) {
+			if (command?.scope !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}

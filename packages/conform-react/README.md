@@ -624,20 +624,15 @@ This helper checks if the scope of validation includes a specific field by check
 import { shouldValidate } from '@conform-to/react';
 
 /**
- * The submission type and intent give us hint on what should be valdiated.
- * If the type is 'validate', only the field with name matching the metadata must be validated.
- * If the type is 'submit', everything should be validated (Default submission)
+ * The submission intent give us hint on what should be valdiated.
+ * If the intent is 'validate/:field', only the field with name matching must be validated.
+ * If the intent is undefined, everything should be validated (Default submission)
  */
-const submission = {
-  context: 'validate',
-  intent: 'email',
-  value: {},
-  error: [],
-};
+const intent = 'validate/email';
 
 // This will log 'true'
-console.log(shouldValidate(submission, 'email'));
+console.log(shouldValidate(intent, 'email'));
 
 // This will log 'false'
-console.log(shouldValidate(submission, 'password'));
+console.log(shouldValidate(intent, 'password'));
 ```

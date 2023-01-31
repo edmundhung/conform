@@ -65,7 +65,7 @@ export default function TodosForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.type === 'validate') {
+						if (submission.intent?.startsWith('validate/')) {
 							event.preventDefault();
 						}
 				  }

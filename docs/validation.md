@@ -281,33 +281,26 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData);
 
   try {
-    switch (submission.type) {
-      case 'validate':
-      case 'submit': {
-        const data = await schema
-          .refine(
-            async ({ username }) => {
-              // Continue checking only if necessary
-              if (!shouldValidate(submission, 'username')) {
-                return true;
-              }
+    const data = await schema
+      .refine(
+        async ({ username }) => {
+          // Continue checking only if necessary
+          if (!shouldValidate(submission.intent, 'username')) {
+            return true;
+          }
 
-              // Verifying if the username is already registed
-              return await isUsernameUnique(username);
-            },
-            {
-              message: 'Username is already used',
-              path: ['username'],
-            },
-          )
-          .parseAsync(submission.value);
+          // Verifying if the username is already registed
+          return await isUsernameUnique(username);
+        },
+        {
+          message: 'Username is already used',
+          path: ['username'],
+        },
+      )
+      .parseAsync(submission.value);
 
-        if (submission.type === 'submit') {
-          return await signup(data);
-        }
-
-        break;
-      }
+    if (!submission.intent) {
+      return await signup(data);
     }
   } catch (error) {
     submission.error.push(...formatError(error));

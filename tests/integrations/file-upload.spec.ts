@@ -81,7 +81,6 @@ async function runValidationScenario(page: Page) {
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	expect(JSON.parse(await playground.submission.innerText())).toMatchObject({
-		type: 'submit',
 		value: {
 			file: {
 				_name: 'test.json',
