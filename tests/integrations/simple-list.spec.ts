@@ -28,6 +28,14 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.items).toHaveCount(1);
 	await expect(playground.error).toHaveText(['', '']);
 
+	// Delete the first row
+	await item0.delete.click();
+	await expect(playground.error).toHaveText(['At least one item is required']);
+
+	// Insert back first row
+	await fieldset.insertBottom.click();
+	await expect(playground.error).toHaveText(['', '']);
+
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', 'The field is required']);
 
@@ -50,6 +58,12 @@ async function runValidationScenario(page: Page) {
 
 	// Insert a new row at the bottom
 	await fieldset.insertBottom.click();
+	await expect(playground.error).toHaveText([
+		'Maximum 2 items are allowed',
+		'The field is required',
+		'',
+		'',
+	]);
 	await expect(fieldset.items).toHaveCount(3);
 	await expect(item0.content).toHaveValue('');
 	await expect(item1.content).toHaveValue('First item');
@@ -57,7 +71,7 @@ async function runValidationScenario(page: Page) {
 
 	await playground.submit.click();
 	await expect(playground.error).toHaveText([
-		'',
+		'Maximum 2 items are allowed',
 		'The field is required',
 		'',
 		'The field is required',

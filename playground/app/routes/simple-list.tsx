@@ -8,14 +8,12 @@ import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
 	items: z
-		.array(
-			z
-				.string()
-				.min(1, 'The field is required')
-				.regex(/^[^0-9]+$/, 'Number is not allowed'),
-		)
+		.string()
+		.min(1, 'The field is required')
+		.regex(/^[^0-9]+$/, 'Number is not allowed')
+		.array()
 		.min(1, 'At least one item is required')
-		.max(5, 'Only five items are allowed in maximum'),
+		.max(2, 'Maximum 2 items are allowed'),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -54,7 +52,6 @@ export default function SimpleList() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
-				<Alert message={form.error} />
 				<Alert message={items.error ?? ''} />
 				<ol>
 					{itemsList.map((item, index) => (
