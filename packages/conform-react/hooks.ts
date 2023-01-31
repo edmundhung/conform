@@ -750,13 +750,13 @@ export function useFieldList<Payload = any>(
 		};
 
 		// @ts-expect-error Custom event: conform/list
-		document.addEventListener('conform/list', listHandler);
+		document.addEventListener('conform/list', listHandler, true);
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			// @ts-expect-error Custom event: conform/list
-			document.removeEventListener('conform/list', listHandler);
+			document.removeEventListener('conform/list', listHandler, true);
 			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};

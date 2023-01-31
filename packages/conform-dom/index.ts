@@ -151,7 +151,6 @@ export function reportSubmission(
 		form.dispatchEvent(
 			new CustomEvent('conform/list', {
 				detail: submission.intent,
-				bubbles: true,
 			}),
 		);
 	}
