@@ -14,7 +14,7 @@
 - [conform](#conform)
 - [list](#list)
 - [validate](#validate)
-- [requestCommand](#requestcommand)
+- [requestIntent](#requestintent)
 - [getFormElements](#getformelements)
 - [hasError](#haserror)
 - [parse](#parse)
@@ -499,9 +499,9 @@ function Example() {
 
 ---
 
-### requestCommand
+### requestIntent
 
-It lets you [trigger a command](/docs/commands.md#triggering-a-command) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) command.
+It lets you [trigger an intent](/docs/commands.md#triggering-an-intent) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) intent.
 
 ```tsx
 import {
@@ -509,7 +509,7 @@ import {
   useFieldList,
   conform,
   list,
-  requestCommand,
+  requestIntent,
 } from '@conform-to/react';
 import DragAndDrop from 'awesome-dnd-example';
 
@@ -518,7 +518,7 @@ export default function Todos() {
   const taskList = useFieldList(form.ref, tasks.config);
 
   const handleDrop = (from, to) =>
-    requestCommand(form.ref.current, list.reorder({ from, to }));
+    requestIntent(form.ref.current, list.reorder({ from, to }));
 
   return (
     <form {...form.props}>

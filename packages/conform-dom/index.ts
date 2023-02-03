@@ -260,11 +260,14 @@ export function requestSubmit(
 }
 
 /**
- * Creates a command button on demand and trigger a form submit by clicking it.
+ * Creates an intent button on demand and trigger a form submit by clicking it.
  */
-export function requestCommand(
+export function requestIntent(
 	form: HTMLFormElement | undefined,
-	buttonProps: IntentButtonProps,
+	buttonProps: {
+		value: string;
+		formNoValidate?: boolean;
+	},
 ): void {
 	if (!form) {
 		console.warn('No form element is provided');
@@ -273,7 +276,7 @@ export function requestCommand(
 
 	const button = document.createElement('button');
 
-	button.name = buttonProps.name;
+	button.name = '__intent__';
 	button.value = buttonProps.value;
 	button.hidden = true;
 

@@ -6,7 +6,7 @@ export {
 	hasError,
 	list,
 	validate,
-	requestCommand,
+	requestIntent,
 	requestSubmit,
 	parse,
 	shouldValidate,

@@ -24,7 +24,7 @@ const navigations: Navigation[] = [
 			{ title: 'Validation', to: '/validation' },
 			{ title: 'Integrations', to: '/integrations' },
 			{ title: 'Nested object and Array', to: '/configuration' },
-			{ title: 'Commands', to: '/commands' },
+			{ title: 'Intent button', to: '/intent-button' },
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
 			{ title: 'Accessibility', to: '/accessibility' },
