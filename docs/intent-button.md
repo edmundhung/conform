@@ -45,10 +45,10 @@ function Product() {
 }
 ```
 
-In **Conform**, if the name of a button is configured with `conform.intent`, its value will be treated as the intent of the submission (`submission.intent`) instead.
+In **Conform**, if the name of a button is configured with `conform.intent`, its value will be treated as the intent of the submission instead.
 
 ```tsx
-import { useForm } from '@conform-to/react';
+import { useForm, conform } from '@conform-to/react';
 
 function Product() {
   const [form] = useForm({
