@@ -1,10 +1,4 @@
-import {
-	conform,
-	parse,
-	useFieldList,
-	useForm,
-	list,
-} from '@conform-to/react';
+import { conform, parse, useFieldList, useForm, list } from '@conform-to/react';
 import { formatError, validate } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -14,14 +8,12 @@ import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
 	items: z
-		.array(
-			z
-				.string()
-				.min(1, 'The field is required')
-				.regex(/^[^0-9]+$/, 'Number is not allowed'),
-		)
+		.string()
+		.min(1, 'The field is required')
+		.regex(/^[^0-9]+$/, 'Number is not allowed')
+		.array()
 		.min(1, 'At least one item is required')
-		.max(5, 'Only five items are allowed in maximum'),
+		.max(2, 'Maximum 2 items are allowed'),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -37,12 +29,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.type) {
-			case 'validate':
-			case 'submit':
-				schema.parse(submission.value);
-				break;
-		}
+		schema.parse(submission.value);
 	} catch (error) {
 		submission.error.push(...formatError(error));
 	}
@@ -65,7 +52,7 @@ export default function SimpleList() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
-				<Alert message={form.error} />
+				<Alert message={items.error ?? ''} />
 				<ol>
 					{itemsList.map((item, index) => (
 						<li key={item.key} className="border rounded-md p-4 mb-4">

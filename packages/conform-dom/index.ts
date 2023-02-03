@@ -120,7 +120,10 @@ export function shouldValidate(submission: Submission, name: string): boolean {
 	return (
 		submission.type === 'submit' ||
 		(submission.type === 'validate' &&
-			(submission.intent === '' || submission.intent === name))
+			(submission.intent === '' || submission.intent === name)) ||
+		(submission.type === 'list' &&
+			typeof submission.intent !== 'undefined' &&
+			parseListCommand(submission.intent).scope === name)
 	);
 }
 
@@ -141,8 +144,23 @@ export function reportSubmission(
 	submission: Submission,
 ): void {
 	const messageByName: Map<string, string> = new Map();
+	let scope: string | null = null;
+
+	if (submission.type === 'list' && typeof submission.intent !== 'undefined') {
+		scope = parseListCommand(submission.intent).scope;
+		form.dispatchEvent(
+			new CustomEvent('conform/list', {
+				detail: submission.intent,
+			}),
+		);
+	}
 
 	for (const [name, message] of submission.error) {
+		if (scope !== null && name !== scope) {
+			// Skip if not matching the scope
+			continue;
+		}
+
 		if (!messageByName.has(name)) {
 			// Only keep the first error message (for now)
 			messageByName.set(name, message);
@@ -368,10 +386,8 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		switch (submission.type) {
-			case 'list':
-				submission = handleList(submission);
-				break;
+		if (submission.type === 'list') {
+			submission = handleList(submission);
 		}
 	} catch (e) {
 		submission.error.push([
