@@ -11,7 +11,7 @@ interface Signup {
 	confirmPassword: string;
 }
 
-function validate(formData: FormData): Submission<Signup> {
+function parseSignupForm(formData: FormData): Submission<Signup> {
 	const submission = parse<Signup>(formData);
 	const { email, password, confirmPassword } = submission.value;
 
@@ -45,7 +45,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parseSignupForm(formData);
 
 	return {
 		...submission,
@@ -64,7 +64,7 @@ export default function SignupForm() {
 		id: 'signup',
 		state,
 		onValidate: config.validate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parseSignupForm(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

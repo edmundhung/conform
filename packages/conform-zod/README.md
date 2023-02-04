@@ -6,82 +6,10 @@
 
 ## API Reference
 
-- [formatError](#formatError)
 - [getFieldsetConstraint](#getfieldsetconstraint)
-- [validate](#validate)
+- [parse](#parse)
 
 <!-- /aside -->
-
-### formatError
-
-This formats **ZodError** to conform's error structure (i.e. A set of key/value pairs).
-
-If an error is received instead of the ZodError, it will be treated as a form level error with message set to **error.messages**.
-
-```tsx
-import { useForm, parse } from '@conform-to/react';
-import { formatError } from '@conform-to/zod';
-import { z } from 'zod';
-
-// Define the schema with zod
-const schema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-function ExampleForm() {
-  const [form] = useForm<z.infer<typeof schema>>({
-    onValidate({ formData }) {
-      // Only sync validation is allowed on the client side
-      const submission = parse(formData);
-
-      try {
-        schema.parse(submission.value);
-      } catch (error) {
-        /**
-         * The `formatError` helper simply resolves the ZodError to
-         * a set of key/value pairs which refers to the name and
-         * error of each field.
-         */
-        submission.error.push(...formatError(error));
-      }
-
-      return submission;
-    },
-  });
-
-  // ...
-}
-```
-
-Or when validating the formData on server side (e.g. Remix):
-
-```tsx
-import { useForm, parse } from '@conform-to/react';
-import { formatError } from '@conform-to/zod';
-import { z } from 'zod';
-
-const schema = z.object({
-  // Define the schema with zod
-});
-
-export let action = async ({ request }) => {
-  const formData = await request.formData();
-  const submission = parse(formData);
-
-  try {
-    const data = await schema.parseAsync(submission.value);
-
-    if (submission.intent === 'submit') {
-      return await handleFormData(data);
-    }
-  } catch (error) {
-    submission.error.push(...formatError(error));
-  }
-
-  return submission;
-};
-```
 
 ### getFieldsetConstraint
 
@@ -109,9 +37,9 @@ function Example() {
 }
 ```
 
-### validate
+### parse
 
-It parses the formData and returns a [submission](/docs/submission.md) object with the validation error, which removes the boilerplate code shown on the [formatError](#formaterror) example.
+It parses the formData and returns a submission result with the validation error. If no error is found, the parsed data will also be populated as `submission.data`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -126,10 +54,39 @@ const schema = z.object({
 function ExampleForm() {
   const [form, { email, password }] = useForm({
     onValidate({ formData }) {
-      return validate(formData, schema);
+      return parse(formData, { schema });
     },
   });
 
   // ...
 }
+```
+
+Or when parsing the formData on server side (e.g. Remix):
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  // Define the schema with zod
+});
+
+export let action = async ({ request }) => {
+  const formData = await request.formData();
+  const submission = await parse(formData, {
+    // If you need extra validation on server side
+    schema: schema.refine(/* ... */),
+
+    // If the schema definition includes async validation
+    async: true,
+  });
+
+  if (!submission.data || submission.intent !== 'submit') {
+    return submission;
+  }
+
+  // ...
+};
 ```

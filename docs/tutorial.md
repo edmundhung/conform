@@ -198,7 +198,7 @@ import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
 
 // Refactor the validation logic to a standalone function
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
   const submission = parse(formData);
 
   if (!submission.value.email) {
@@ -218,7 +218,7 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
 
   // Parse and validate the formData
-  const submission = validate(formData);
+  const submission = parseForm(formData);
 
   if (submission.error.length === 0) {
     await authenticate(email, password);
@@ -246,7 +246,7 @@ export default function LoginForm() {
     state: result,
     onValidate({ formData }) {
       // Run the same validation logic on client side
-      return validate(formData);
+      return parseForm(formData);
     },
   });
 
@@ -275,7 +275,7 @@ interface Schema {
   password: string;
 }
 
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
   // as shown before
 }
 
@@ -291,7 +291,7 @@ export default function LoginForm() {
     initialReport: 'onBlur',
     state: result,
     onValidate({ formData }) {
-      return validate(formData);
+      return parseForm(formData);
     },
   });
 

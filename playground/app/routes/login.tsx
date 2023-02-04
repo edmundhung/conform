@@ -10,7 +10,7 @@ interface Login {
 	password: string;
 }
 
-function validate(formData: FormData): Submission<Login> {
+function parseLoginForm(formData: FormData): Submission<Login> {
 	const submission = parse<Login>(formData);
 
 	if (!submission.value.email) {
@@ -30,7 +30,7 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parseLoginForm(formData);
 
 	if (
 		submission.error.length === 0 &&
@@ -58,7 +58,7 @@ export default function LoginForm() {
 		id: formId,
 		state,
 		onValidate: config.validate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parseLoginForm(formData)
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

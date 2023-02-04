@@ -7,7 +7,7 @@ interface Schema {
 	answer: string;
 }
 
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
 	const submission = parse(formData);
 
 	if (!submission.value.answer) {
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parseForm(formData);
 
 	return json(submission);
 }
@@ -38,7 +38,7 @@ export default function Example() {
 	const [form, { answer }] = useForm<Schema>({
 		state,
 		onValidate: !noClientValidate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parseForm(formData)
 			: undefined,
 	});
 

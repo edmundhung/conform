@@ -23,7 +23,7 @@ import { json, redirect } from '@remix-run/node';
 import { useId } from 'react';
 import { authenticate } from '~/auth';
 
-function validate(formData: FormData) {
+function parseLoginForm(formData: FormData) {
   const submission = parse(formData);
 
   if (!submission.value.email) {
@@ -41,7 +41,7 @@ function validate(formData: FormData) {
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = validate(formData);
+  const submission = parseLoginForm(formData);
 
   try {
     if (submission.error.length === 0 && submission.intent === 'submit') {
@@ -69,7 +69,7 @@ export default function LoginForm() {
     id,
     state,
     onValidate({ formData }) {
-      return validate(formData);
+      return parseLoginForm(formData);
     },
   });
 
