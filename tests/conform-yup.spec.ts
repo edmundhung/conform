@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { formatError, getFieldsetConstraint, validate } from '@conform-to/yup';
+import { parse, getFieldsetConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
-import { parse } from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
@@ -79,21 +78,6 @@ test.describe('conform-yup', () => {
 		['', 'error'],
 	];
 
-	test('formatError', () => {
-		expect(formatError(null)).toEqual([['', 'Oops! Something went wrong.']]);
-		expect(formatError(null, 'Error found')).toEqual([['', 'Error found']]);
-		expect(formatError(new Error('Test error'))).toEqual([['', 'Test error']]);
-
-		try {
-			schema.validateSync(value, {
-				abortEarly: false,
-			});
-			throw new Error('Validation should be failed');
-		} catch (exception) {
-			expect(formatError(exception)).toEqual(error);
-		}
-	});
-
 	test('getFieldsetConstraint', () => {
 		expect(getFieldsetConstraint(schema)).toEqual({
 			text: {
@@ -117,7 +101,7 @@ test.describe('conform-yup', () => {
 		});
 	});
 
-	test('validate', () => {
+	test('parse', () => {
 		const formData = createFormData([
 			['text', value.text],
 			['tag', value.tag],
@@ -128,15 +112,10 @@ test.describe('conform-yup', () => {
 			['nested.key', value.nested.key],
 			['list[0].key', value.list[0].key],
 		]);
-		const submission = parse(formData);
+		const submission = parse(formData, { schema });
 
 		expect(submission.value).toEqual(value);
-		expect(validate(formData, schema)).toEqual({
-			...submission,
-			error,
-		});
-
-		// TODO: Fallback to server validation when non zod error is caught on client validation
-		// expect(() => validate(formData, undefined as any)).toThrow();
+		expect(submission.error).toEqual(error);
+		expect(submission.data).not.toBeDefined();
 	});
 });

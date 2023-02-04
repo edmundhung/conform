@@ -1,8 +1,8 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type Submission,
-	parse,
+	type Submission as ConformSubmission,
+	parse as baseParse,
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
@@ -87,35 +87,73 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	) as FieldsetConstraint<yup.InferType<Source>>;
 }
 
-export function formatError(
-	error: unknown,
-	fallbackMessage = 'Oops! Something went wrong.',
-): Array<[string, string]> {
-	if (error instanceof yup.ValidationError) {
-		return error.inner.reduce<Array<[string, string]>>((result, e) => {
-			result.push([e.path ?? '', e.message]);
-
-			return result;
-		}, []);
-	}
-
-	return [['', error instanceof Error ? error.message : fallbackMessage]];
+interface Submission<Output, Input = Output> extends ConformSubmission<Input> {
+	data?: Output;
 }
 
-export function validate<Schema extends yup.AnyObjectSchema>(
-	formData: FormData,
-	schema: Schema,
-	options: { fallbackMessage?: string } = {},
-): Submission<yup.InferType<Schema>> {
-	const submission = parse<yup.InferType<Schema>>(formData);
+export function parse<Schema extends yup.AnyObjectSchema>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async?: false;
+	},
+): Submission<yup.InferType<Schema>>;
+export function parse<Schema extends yup.AnyObjectSchema>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async: true;
+	},
+): Promise<Submission<yup.InferType<Schema>>>;
+export function parse<Schema extends yup.AnyObjectSchema>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async?: boolean;
+	},
+):
+	| Submission<yup.InferType<Schema>>
+	| Promise<Submission<yup.InferType<Schema>>> {
+	const submission = baseParse<yup.InferType<Schema>>(payload);
+	const schema =
+		typeof config.schema === 'function'
+			? config.schema(submission.intent)
+			: config.schema;
+	const resolveData = (data: yup.InferType<Schema>) => ({
+		...submission,
+		data,
+	});
+	const resolveError = (error: unknown) => {
+		if (error instanceof yup.ValidationError) {
+			return {
+				...submission,
+				error: submission.error.concat(
+					error.inner.reduce<Array<[string, string]>>((result, e) => {
+						result.push([e.path ?? '', e.message]);
 
-	try {
-		schema.validateSync(submission.value, {
-			abortEarly: false,
-		});
-	} catch (error) {
-		submission.error.push(...formatError(error, options.fallbackMessage));
+						return result;
+					}, []),
+				),
+			};
+		}
+
+		throw error;
+	};
+
+	if (!config.async) {
+		try {
+			const data = schema.validateSync(submission.value, {
+				abortEarly: false,
+			});
+
+			return resolveData(data);
+		} catch (error) {
+			return resolveError(error);
+		}
 	}
 
-	return submission;
+	return schema
+		.validate(submission.value, { abortEarly: false })
+		.then(resolveData)
+		.catch(resolveError);
 }

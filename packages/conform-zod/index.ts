@@ -1,9 +1,9 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type Submission,
+	type Submission as ConformSubmission,
 	getName,
-	parse,
+	parse as baseParse,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -110,34 +110,63 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	return result;
 }
 
-export function formatError(
-	error: unknown,
-	fallbackMessage = 'Oops! Something went wrong.',
-): Array<[string, string]> {
-	if (error instanceof z.ZodError) {
-		return error.errors.reduce<Array<[string, string]>>((result, e) => {
-			result.push([getName(e.path), e.message]);
-
-			return result;
-		}, []);
-	} else
-		return [['', error instanceof Error ? error.message : fallbackMessage]];
+interface Submission<Output, Input = Output> extends ConformSubmission<Input> {
+	data?: Output;
 }
 
-export function validate<Schema extends z.ZodTypeAny>(
-	formData: FormData,
-	schema: Schema,
-	options: { fallbackMessage?: string } = {},
-): Submission<z.infer<Schema>> {
-	const submission = parse<z.infer<Schema>>(formData);
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async?: false;
+	},
+): Submission<z.output<Schema>, z.input<Schema>>;
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async: true;
+	},
+): Promise<Submission<z.output<Schema>, z.input<Schema>>>;
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		async?: boolean;
+	},
+):
+	| Submission<z.output<Schema>, z.input<Schema>>
+	| Promise<Submission<z.output<Schema>, z.input<Schema>>> {
+	const submission = baseParse<z.input<Schema>>(payload);
+	const schema =
+		typeof config.schema === 'function'
+			? config.schema(submission.intent)
+			: config.schema;
+	const resolve = (
+		result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
+	) => {
+		if (result.success) {
+			return {
+				...submission,
+				data: result.data,
+			};
+		} else {
+			return {
+				...submission,
+				error: submission.error.concat(
+					result.error.errors.reduce<Array<[string, string]>>((result, e) => {
+						result.push([getName(e.path), e.message]);
 
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error, options.fallbackMessage));
-	}
+						return result;
+					}, []),
+				),
+			};
+		}
+	};
 
-	return submission;
+	return config.async
+		? schema.safeParseAsync(submission.value).then(resolve)
+		: resolve(schema.safeParse(submission.value));
 }
 
 export function ifNonEmptyString(

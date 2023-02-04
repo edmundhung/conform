@@ -1,5 +1,5 @@
-import { conform, parse, useForm } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -47,13 +47,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
@@ -64,7 +58,7 @@ export default function FileUpload() {
 	const [form, { file, files }] = useForm<Schema>({
 		state,
 		onValidate: !noClientValidate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 

@@ -19,7 +19,7 @@ When the browser constructs a form data set with an empty file input, a default 
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -30,8 +30,8 @@ const schema = z.object({
 
 function Example() {
   const [form, { file }] = useForm({
-    validate({ formData }) {
-      return validate(formData, schema);
+    onValidate({ formData }) {
+      return parse(formData, { schema });
     },
   });
 
@@ -79,7 +79,7 @@ There are some caveats when validating a multiple file input:
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -104,8 +104,8 @@ const schema = z.object({
 
 function Example() {
   const [form, { files }] = useForm({
-    validate({ formData }) {
-      return validate(formData, schema);
+    onValidate({ formData }) {
+      return parse(formData, { schema });
     },
   });
 

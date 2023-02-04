@@ -1,11 +1,5 @@
-import {
-	conform,
-	parse,
-	useForm,
-	hasError,
-	shouldValidate,
-} from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, useForm, hasError, shouldValidate } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -43,13 +37,11 @@ async function signup(data: z.infer<typeof schema>): Promise<Response> {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		const data = await schema
-			.refine(
+	const submission = await parse(formData, {
+		schema: (intent) =>
+			schema.refine(
 				async ({ username }) => {
-					if (!shouldValidate(submission.intent, 'username')) {
+					if (!shouldValidate(intent, 'username')) {
 						return true;
 					}
 
@@ -59,22 +51,20 @@ export async function action({ request }: ActionArgs) {
 					message: 'Username is already used',
 					path: ['username'],
 				},
-			)
-			.parseAsync(submission.value);
+			),
+		async: true,
+	});
 
-		if (submission.intent === 'submit') {
-			return await signup(data);
-		}
-	} catch (error) {
-		submission.error.push(...formatError(error));
+	if (!submission.data || submission.intent !== 'submit') {
+		return json({
+			...submission,
+			value: {
+				email: submission.value.email,
+			},
+		});
 	}
 
-	return json({
-		...submission,
-		value: {
-			email: submission.value.email,
-		},
-	});
+	return await signup(submission.data);
 }
 
 export default function Signup() {
@@ -84,7 +74,7 @@ export default function Signup() {
 		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
-			return validate(formData, schema);
+			return parse(formData, { schema });
 		},
 		onSubmit(event, { submission }) {
 			// Only the email field requires additional validation from the server

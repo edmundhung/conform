@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
 import {
-	formatError,
 	getFieldsetConstraint,
-	validate,
+	parse,
 	ifNonEmptyString,
 } from '@conform-to/zod';
 import { z } from 'zod';
-import { parse } from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
@@ -94,19 +92,6 @@ test.describe('conform-zod', () => {
 		['', 'refine'],
 	];
 
-	test('formatError', () => {
-		const result = schema.safeParse(value);
-
-		if (result.success) {
-			throw new Error('Validation should be failed');
-		}
-
-		expect(formatError(null)).toEqual([['', 'Oops! Something went wrong.']]);
-		expect(formatError(null, 'Error found')).toEqual([['', 'Error found']]);
-		expect(formatError(new Error('Test error'))).toEqual([['', 'Test error']]);
-		expect(formatError(result.error)).toEqual(error);
-	});
-
 	test('getFieldsetConstraint', () => {
 		expect(getFieldsetConstraint(schema)).toEqual({
 			text: {
@@ -152,15 +137,10 @@ test.describe('conform-zod', () => {
 			['nested.key', value.nested.key],
 			['list[0].key', value.list[0].key],
 		]);
-		const submission = parse(formData);
+		const submission = parse(formData, { schema });
 
 		expect(submission.value).toEqual(value);
-		expect(validate(formData, schema)).toEqual({
-			...submission,
-			error,
-		});
-
-		// TODO: Fallback to server validation when non zod error is caught on client validation
-		// expect(() => validate(formData, undefined as any)).toThrow();
+		expect(submission.error).toEqual(error);
+		expect(submission.data).not.toBeDefined();
 	});
 });

@@ -1,5 +1,5 @@
-import { conform, parse, useForm, validate } from '@conform-to/react';
-import { formatError, validate as validateSchema } from '@conform-to/zod';
+import { conform, useForm, validate } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -21,13 +21,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
@@ -39,7 +33,7 @@ export default function Validate() {
 		mode: noClientValidate ? 'server-validation' : 'client-only',
 		state,
 		onValidate: !noClientValidate
-			? ({ formData }) => validateSchema(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 

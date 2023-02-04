@@ -244,6 +244,15 @@ test.describe('Client Validation', () => {
 				timestamp,
 				verified: 'Yes',
 			},
+			data: {
+				iban: 'DE89 3704 0044 0532 0130 00',
+				amount: {
+					currency: 'EUR',
+					value: 1,
+				},
+				timestamp,
+				verified: true,
+			},
 			error: [],
 		});
 	});

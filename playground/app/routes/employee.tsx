@@ -1,11 +1,5 @@
-import {
-	conform,
-	hasError,
-	parse,
-	shouldValidate,
-	useForm,
-} from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, hasError, shouldValidate, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -27,30 +21,27 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
-	const serverSchema = schema.refine(
-		async (employee) => {
-			if (!shouldValidate(submission.intent, 'email')) {
-				return true;
-			}
+	const submission = await parse(formData, {
+		schema: (intent) =>
+			schema.refine(
+				async (employee) => {
+					if (!shouldValidate(intent, 'email')) {
+						return true;
+					}
 
-			return new Promise((resolve) => {
-				setTimeout(() => {
-					resolve(employee.email === 'hey@conform.guide');
-				}, Math.random() * 500);
-			});
-		},
-		{
-			message: 'Email is already used',
-			path: ['email'],
-		},
-	);
-
-	try {
-		await serverSchema.parseAsync(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(employee.email === 'hey@conform.guide');
+						}, Math.random() * 500);
+					});
+				},
+				{
+					message: 'Email is already used',
+					path: ['email'],
+				},
+			),
+		async: true,
+	});
 
 	return json(submission);
 };
@@ -62,7 +53,7 @@ export default function EmployeeForm() {
 		...config,
 		state,
 		onValidate({ formData }) {
-			return validate(formData, schema);
+			return parse(formData, { schema });
 		},
 		onSubmit:
 			config.mode === 'server-validation'
