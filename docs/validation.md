@@ -257,8 +257,9 @@ export default function Signup() {
        * the username field and no error found on the client
        */
       if (
-        submission.type === 'validate' &&
-        (submission.intent !== 'username' || hasError(error, 'username'))
+        submission.intent !== 'submit' &&
+        (submission.intent !== 'validate/username' ||
+          hasError(submission.error, 'username'))
       ) {
         event.preventDefault();
       }
@@ -299,7 +300,7 @@ export async function action({ request }: ActionArgs) {
       )
       .parseAsync(submission.value);
 
-    if (!submission.intent) {
+    if (submission.intent === 'submit') {
       return await signup(data);
     }
   } catch (error) {

@@ -50,6 +50,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
@@ -126,6 +127,7 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				title: 'The Matrix',
 				description:
@@ -162,6 +164,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
+			intent: 'submit',
 			value: {
 				email: 'me@edmund.dev',
 			},
@@ -231,6 +234,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				iban: 'DE89 3704 0044 0532 0130 00',
 				amount: {
@@ -302,6 +306,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				email: '',
 			},
@@ -316,6 +321,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				email: 'invalid email',
 			},
@@ -649,6 +655,7 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				title: 'My schedule',
 				tasks: [
@@ -715,6 +722,7 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
+			intent: 'submit',
 			value: {
 				title: 'Testing plan',
 				tasks: [

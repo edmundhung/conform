@@ -63,7 +63,7 @@ export default function LoginForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						if (submission.intent?.startsWith('validate/')) {
+						if (submission.intent.startsWith('validate/')) {
 							event.preventDefault();
 						}
 				  }

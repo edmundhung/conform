@@ -41,7 +41,7 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 };
 
 export type Submission<Schema = unknown> = {
-	intent?: string;
+	intent: string;
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
 };
@@ -115,12 +115,9 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(
-	intent: string | undefined,
-	name: string,
-): boolean {
+export function shouldValidate(intent: string, name: string): boolean {
 	return (
-		typeof intent === 'undefined' ||
+		intent === 'submit' ||
 		intent === 'validate' ||
 		intent === `validate/${name}` ||
 		parseListCommand(intent)?.scope === name
@@ -338,8 +335,8 @@ export function focus(field: FieldElement): void {
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
 ): Submission<Schema> {
-	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
+		intent: 'submit',
 		value: {},
 		error: [],
 	};
@@ -347,15 +344,11 @@ export function parse<Schema extends Record<string, any>>(
 	try {
 		for (let [name, value] of payload.entries()) {
 			if (name === '__intent__') {
-				if (typeof value !== 'string' || hasCommand) {
+				if (typeof value !== 'string' || submission.intent !== 'submit') {
 					throw new Error('The intent could only be set on a button');
 				}
 
-				submission = {
-					...submission,
-					intent: value,
-				};
-				hasCommand = true;
+				submission.intent = value;
 			} else {
 				const paths = getPaths(name);
 
@@ -394,10 +387,10 @@ export type ListCommand<Schema = unknown> =
 	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
 
 export function parseListCommand<Schema = unknown>(
-	intent: string | undefined,
+	intent: string,
 ): ListCommand<Schema> | null {
 	try {
-		const [group, type, scope, json] = intent?.split('/') ?? [];
+		const [group, type, scope, json] = intent.split('/');
 
 		if (
 			group !== 'list' ||

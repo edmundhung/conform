@@ -62,7 +62,7 @@ export async function action({ request }: ActionArgs) {
 			)
 			.parseAsync(submission.value);
 
-		if (!submission.intent) {
+		if (submission.intent === 'submit') {
 			return await signup(data);
 		}
 	} catch (error) {
@@ -90,8 +90,8 @@ export default function Signup() {
 			// Only the email field requires additional validation from the server
 			// We trust the client result otherwise
 			if (
-				submission.type === 'validate' &&
-				(submission.intent !== 'username' ||
+				submission.intent !== 'submit' &&
+				(submission.intent !== 'validate/username' ||
 					hasError(submission.error, 'username'))
 			) {
 				event.preventDefault();

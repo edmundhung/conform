@@ -342,8 +342,8 @@ export function useForm<Schema extends Record<string, any>>(
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						((submission.intent?.startsWith('validate/') ||
-							submission.intent?.startsWith('list/')) &&
+						((submission.intent.startsWith('validate/') ||
+							submission.intent.startsWith('list/')) &&
 							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();

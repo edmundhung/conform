@@ -67,11 +67,10 @@ export default function EmployeeForm() {
 		onSubmit:
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
-						const [type, scope] = submission.intent?.split('/') ?? [];
-
 						if (
-							type === 'validate' &&
-							(scope !== 'email' || hasError(submission.error, 'email'))
+							submission.intent !== 'submit' &&
+							(submission.intent !== 'validate/email' ||
+								hasError(submission.error, 'email'))
 						) {
 							event.preventDefault();
 						}

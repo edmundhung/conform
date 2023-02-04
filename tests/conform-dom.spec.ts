@@ -27,6 +27,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				intent: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -43,6 +44,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				intent: 'submit',
 				value: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -63,6 +65,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				intent: 'submit',
 				value: {
 					title: '',
 					tasks: [
@@ -83,6 +86,7 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
+				intent: 'submit',
 				value: {
 					title: 'The cat',
 					description: 'Once upon a time...',
