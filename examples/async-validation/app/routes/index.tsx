@@ -46,31 +46,24 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.type) {
-			case 'validate':
-			case 'submit': {
-				const data = await schema
-					.refine(
-						async ({ username }) => {
-							if (!shouldValidate(submission, 'username')) {
-								return true;
-							}
+		const data = await schema
+			.refine(
+				async ({ username }) => {
+					if (!shouldValidate(submission.intent, 'username')) {
+						return true;
+					}
 
-							return await isUsernameUnique(username);
-						},
-						{
-							message: 'Username is already used',
-							path: ['username'],
-						},
-					)
-					.parseAsync(submission.value);
+					return await isUsernameUnique(username);
+				},
+				{
+					message: 'Username is already used',
+					path: ['username'],
+				},
+			)
+			.parseAsync(submission.value);
 
-				if (submission.type === 'submit') {
-					return await signup(data);
-				}
-
-				break;
-			}
+		if (submission.intent === 'submit') {
+			return await signup(data);
 		}
 	} catch (error) {
 		submission.error.push(...formatError(error));
@@ -97,8 +90,8 @@ export default function Signup() {
 			// Only the email field requires additional validation from the server
 			// We trust the client result otherwise
 			if (
-				submission.type === 'validate' &&
-				(submission.intent !== 'username' ||
+				submission.intent !== 'submit' &&
+				(submission.intent !== 'validate/username' ||
 					hasError(submission.error, 'username'))
 			) {
 				event.preventDefault();

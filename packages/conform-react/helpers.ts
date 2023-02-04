@@ -177,3 +177,5 @@ export function textarea<Schema>(
 
 	return attributes;
 }
+
+export const intent = '__intent__';

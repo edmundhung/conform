@@ -17,7 +17,7 @@ import {
 	hasError,
 	reportSubmission,
 	validate,
-	requestCommand,
+	requestIntent,
 	shouldValidate,
 } from '@conform-to/dom';
 import {
@@ -153,7 +153,7 @@ export function useForm<Schema extends Record<string, any>>(
 		return {
 			defaultValue: submission.value,
 			initialError: submission.error.filter(
-				([name]) => name !== '' && shouldValidate(submission, name),
+				([name]) => name !== '' && shouldValidate(submission.intent, name),
 			),
 		};
 	});
@@ -200,7 +200,7 @@ export function useForm<Schema extends Record<string, any>>(
 				field.dataset.conformTouched ||
 				formConfig.initialReport === 'onChange'
 			) {
-				requestCommand(form, validate(field.name));
+				requestIntent(form, validate(field.name));
 			}
 		};
 		const handleBlur = (event: FocusEvent) => {
@@ -216,7 +216,7 @@ export function useForm<Schema extends Record<string, any>>(
 				formConfig.initialReport === 'onBlur' &&
 				!field.dataset.conformTouched
 			) {
-				requestCommand(form, validate(field.name));
+				requestIntent(form, validate(field.name));
 			}
 		};
 		const handleInvalid = (event: Event) => {
@@ -342,7 +342,8 @@ export function useForm<Schema extends Record<string, any>>(
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						((submission.type === 'validate' || submission.type === 'list') &&
+						((submission.intent.startsWith('validate/') ||
+							submission.intent.startsWith('list/')) &&
 							config.mode !== 'server-validation')
 					) {
 						event.preventDefault();
@@ -692,7 +693,7 @@ export function useFieldList<Payload = any>(
 				event.detail,
 			);
 
-			if (command.scope !== configRef.current.name) {
+			if (command?.scope !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}

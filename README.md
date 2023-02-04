@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
   const submission = validate(formData);
 
   try {
-    if (submission.error.length === 0 && submission.type === 'submit') {
+    if (submission.error.length === 0 && submission.intent === 'submit') {
       const user = await authenticate(submission.value);
 
       if (!user) {

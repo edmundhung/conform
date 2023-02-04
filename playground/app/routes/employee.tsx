@@ -30,7 +30,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse(formData);
 	const serverSchema = schema.refine(
 		async (employee) => {
-			if (!shouldValidate(submission, 'email')) {
+			if (!shouldValidate(submission.intent, 'email')) {
 				return true;
 			}
 
@@ -68,8 +68,8 @@ export default function EmployeeForm() {
 			config.mode === 'server-validation'
 				? (event, { submission }) => {
 						if (
-							submission.type === 'validate' &&
-							(submission.intent !== 'email' ||
+							submission.intent !== 'submit' &&
+							(submission.intent !== 'validate/email' ||
 								hasError(submission.error, 'email'))
 						) {
 							event.preventDefault();

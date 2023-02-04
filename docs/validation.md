@@ -53,60 +53,41 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse<SignupForm>(formData);
 
-  try {
-    switch (submission.type) {
-      // The type will be `submit` by default
-      case 'submit':
-      // The type will be `validate` for validation
-      case 'validate':
-        if (!submission.value.email) {
-          submission.error.push(['email', 'Email is required']);
-        } else if (!submission.value.email.includes('@')) {
-          submission.error.push(['email', 'Email is invalid']);
-        }
-
-        if (!submission.value.password) {
-          submission.error.push(['password', 'Password is required']);
-        }
-
-        if (!submission.value.confirmPassword) {
-          submission.error.push([
-            'confirmPassword',
-            'Confirm password is required',
-          ]);
-        } else if (
-          submission.value.confirmPassword !== submission.value.password
-        ) {
-          submission.error.push(['confirmPassword', 'Password does not match']);
-        }
-
-        /**
-         * Signup only when the user click on the submit button
-         * and no error found
-         */
-        if (submission.type === 'submit' && !hasError(submission.error)) {
-          return await signup(submission.value);
-        }
-
-        break;
-    }
-  } catch (error) {
-    /**
-     * By specifying the key as '', the message will be
-     * treated as a form-level error and populated
-     * on the client side as `form.error`
-     */
-    submission.error.push(['', 'Oops! Something went wrong.']);
+  if (!submission.value.email) {
+    submission.error.push(['email', 'Email is required']);
+  } else if (!submission.value.email.includes('@')) {
+    submission.error.push(['email', 'Email is invalid']);
   }
 
-  // Always sends the submission state back to client until the user is signed up
-  return json({
-    ...submission,
-    value: {
-      // Never send the password back to client
-      email: submission.value.email,
-    },
-  });
+  if (!submission.value.password) {
+    submission.error.push(['password', 'Password is required']);
+  }
+
+  if (!submission.value.confirmPassword) {
+    submission.error.push(['confirmPassword', 'Confirm password is required']);
+  } else if (submission.value.confirmPassword !== submission.value.password) {
+    submission.error.push(['confirmPassword', 'Password does not match']);
+  }
+
+  if (hasError(submission.error) || submission.intent !== 'submit') {
+    return json(submission);
+  }
+
+  try {
+    return await signup(submission.value);
+  } catch (error) {
+    return json({
+      ...submission,
+      error: [
+        /**
+         * By specifying the key as '', the message will be
+         * treated as a form-level error and populated
+         * on the client side as `form.error`
+         */
+        ['', 'Oops! Something went wrong.'],
+      ],
+    });
+  }
 }
 
 export default function Signup() {
@@ -151,17 +132,10 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData);
 
   try {
-    switch (submission.type) {
-      case 'validate':
-      case 'submit': {
-        const data = schema.parse(submission.value);
+    const data = schema.parse(submission.value);
 
-        if (submission.type === 'submit') {
-          return await signup(data);
-        }
-
-        break;
-      }
+    if (submission.intent === 'submit') {
+      return await signup(data);
     }
   } catch (error) {
     submission.error.push(...formatError(error));
@@ -257,8 +231,9 @@ export default function Signup() {
        * the username field and no error found on the client
        */
       if (
-        submission.type === 'validate' &&
-        (submission.intent !== 'username' || hasError(error, 'username'))
+        submission.intent !== 'submit' &&
+        (submission.intent !== 'validate/username' ||
+          hasError(submission.error, 'username'))
       ) {
         event.preventDefault();
       }
@@ -281,33 +256,26 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData);
 
   try {
-    switch (submission.type) {
-      case 'validate':
-      case 'submit': {
-        const data = await schema
-          .refine(
-            async ({ username }) => {
-              // Continue checking only if necessary
-              if (!shouldValidate(submission, 'username')) {
-                return true;
-              }
+    const data = await schema
+      .refine(
+        async ({ username }) => {
+          // Continue checking only if necessary
+          if (!shouldValidate(submission.intent, 'username')) {
+            return true;
+          }
 
-              // Verifying if the username is already registed
-              return await isUsernameUnique(username);
-            },
-            {
-              message: 'Username is already used',
-              path: ['username'],
-            },
-          )
-          .parseAsync(submission.value);
+          // Verifying if the username is already registed
+          return await isUsernameUnique(username);
+        },
+        {
+          message: 'Username is already used',
+          path: ['username'],
+        },
+      )
+      .parseAsync(submission.value);
 
-        if (submission.type === 'submit') {
-          return await signup(data);
-        }
-
-        break;
-      }
+    if (submission.intent === 'submit') {
+      return await signup(data);
     }
   } catch (error) {
     submission.error.push(...formatError(error));

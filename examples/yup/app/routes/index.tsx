@@ -29,7 +29,7 @@ export async function action({ request }: ActionArgs) {
 			abortEarly: false,
 		});
 
-		if (submission.type === 'submit') {
+		if (submission.intent === 'submit') {
 			console.log(data);
 			throw new Error('Not implemented');
 		}

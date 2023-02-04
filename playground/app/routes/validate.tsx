@@ -24,12 +24,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData);
 
 	try {
-		switch (submission.type) {
-			case 'validate':
-			case 'submit':
-				schema.parse(submission.value);
-				break;
-		}
+		schema.parse(submission.value);
 	} catch (error) {
 		submission.error.push(...formatError(error));
 	}

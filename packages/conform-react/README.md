@@ -14,7 +14,7 @@
 - [conform](#conform)
 - [list](#list)
 - [validate](#validate)
-- [requestCommand](#requestcommand)
+- [requestIntent](#requestintent)
 - [getFormElements](#getformelements)
 - [hasError](#haserror)
 - [parse](#parse)
@@ -499,9 +499,9 @@ function Example() {
 
 ---
 
-### requestCommand
+### requestIntent
 
-It lets you [trigger a command](/docs/commands.md#triggering-a-command) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) command.
+It lets you [trigger an intent](/docs/commands.md#triggering-an-intent) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) intent.
 
 ```tsx
 import {
@@ -509,7 +509,7 @@ import {
   useFieldList,
   conform,
   list,
-  requestCommand,
+  requestIntent,
 } from '@conform-to/react';
 import DragAndDrop from 'awesome-dnd-example';
 
@@ -518,7 +518,7 @@ export default function Todos() {
   const taskList = useFieldList(form.ref, tasks.config);
 
   const handleDrop = (from, to) =>
-    requestCommand(form.ref.current, list.reorder({ from, to }));
+    requestIntent(form.ref.current, list.reorder({ from, to }));
 
   return (
     <form {...form.props}>
@@ -624,20 +624,15 @@ This helper checks if the scope of validation includes a specific field by check
 import { shouldValidate } from '@conform-to/react';
 
 /**
- * The submission type and intent give us hint on what should be valdiated.
- * If the type is 'validate', only the field with name matching the metadata must be validated.
- * If the type is 'submit', everything should be validated (Default submission)
+ * The submission intent give us hint on what should be valdiated.
+ * If the intent is 'validate/:field', only the field with name matching must be validated.
+ * If the intent is undefined, everything should be validated (Default submission)
  */
-const submission = {
-  context: 'validate',
-  intent: 'email',
-  value: {},
-  error: [],
-};
+const intent = 'validate/email';
 
 // This will log 'true'
-console.log(shouldValidate(submission, 'email'));
+console.log(shouldValidate(intent, 'email'));
 
 // This will log 'false'
-console.log(shouldValidate(submission, 'password'));
+console.log(shouldValidate(intent, 'password'));
 ```

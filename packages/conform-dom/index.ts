@@ -41,14 +41,13 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 };
 
 export type Submission<Schema = unknown> = {
-	type: string;
-	intent?: string;
+	intent: string;
 	value: FieldValue<Schema>;
 	error: Array<[string, string]>;
 };
 
-export interface CommandButtonProps<Name extends string = string> {
-	name: `conform/${Name}`;
+export interface IntentButtonProps {
+	name: '__intent__';
 	value: string;
 	formNoValidate?: boolean;
 }
@@ -116,14 +115,12 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name: string): boolean {
+export function shouldValidate(intent: string, name: string): boolean {
 	return (
-		submission.type === 'submit' ||
-		(submission.type === 'validate' &&
-			(submission.intent === '' || submission.intent === name)) ||
-		(submission.type === 'list' &&
-			typeof submission.intent !== 'undefined' &&
-			parseListCommand(submission.intent).scope === name)
+		intent === 'submit' ||
+		intent === 'validate' ||
+		intent === `validate/${name}` ||
+		parseListCommand(intent)?.scope === name
 	);
 }
 
@@ -144,10 +141,9 @@ export function reportSubmission(
 	submission: Submission,
 ): void {
 	const messageByName: Map<string, string> = new Map();
-	let scope: string | null = null;
+	const listCommand = parseListCommand(submission.intent);
 
-	if (submission.type === 'list' && typeof submission.intent !== 'undefined') {
-		scope = parseListCommand(submission.intent).scope;
+	if (listCommand) {
 		form.dispatchEvent(
 			new CustomEvent('conform/list', {
 				detail: submission.intent,
@@ -156,7 +152,7 @@ export function reportSubmission(
 	}
 
 	for (const [name, message] of submission.error) {
-		if (scope !== null && name !== scope) {
+		if (listCommand !== null && name !== listCommand.scope) {
 			// Skip if not matching the scope
 			continue;
 		}
@@ -196,7 +192,10 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
 			const message = messageByName.get(elementName);
-			const elementShouldValidate = shouldValidate(submission, elementName);
+			const elementShouldValidate = shouldValidate(
+				submission.intent,
+				elementName,
+			);
 
 			if (elementShouldValidate) {
 				element.dataset.conformTouched = 'true';
@@ -258,11 +257,14 @@ export function requestSubmit(
 }
 
 /**
- * Creates a command button on demand and trigger a form submit by clicking it.
+ * Creates an intent button on demand and trigger a form submit by clicking it.
  */
-export function requestCommand(
+export function requestIntent(
 	form: HTMLFormElement | undefined,
-	buttonProps: CommandButtonProps,
+	buttonProps: {
+		value: string;
+		formNoValidate?: boolean;
+	},
 ): void {
 	if (!form) {
 		console.warn('No form element is provided');
@@ -271,7 +273,7 @@ export function requestCommand(
 
 	const button = document.createElement('button');
 
-	button.name = buttonProps.name;
+	button.name = '__intent__';
 	button.value = buttonProps.value;
 	button.hidden = true;
 
@@ -289,10 +291,10 @@ export function requestCommand(
  *
  * @see https://conform.guide/api/react#validate
  */
-export function validate(field?: string): CommandButtonProps<'validate'> {
+export function validate(field?: string): IntentButtonProps {
 	return {
-		name: 'conform/validate',
-		value: field ?? '',
+		name: '__intent__',
+		value: field ? `validate/${field}` : 'validate',
 		formNoValidate: true,
 	};
 }
@@ -330,47 +332,23 @@ export function focus(field: FieldElement): void {
 	field.focus();
 }
 
-export function getSubmissionType(name: string): string | null {
-	const prefix = 'conform/';
-
-	if (!name.startsWith(prefix) || name.length <= prefix.length) {
-		return null;
-	}
-
-	return name.slice(prefix.length);
-}
-
 export function parse<Schema extends Record<string, any>>(
 	payload: FormData | URLSearchParams,
 ): Submission<Schema> {
-	let hasCommand = false;
 	let submission: Submission<Record<string, unknown>> = {
-		type: 'submit',
+		intent: 'submit',
 		value: {},
 		error: [],
 	};
 
 	try {
 		for (let [name, value] of payload.entries()) {
-			const submissionType = getSubmissionType(name);
-
-			if (submissionType) {
-				if (typeof value !== 'string') {
-					throw new Error(
-						'The conform command could not be used on a file input',
-					);
+			if (name === '__intent__') {
+				if (typeof value !== 'string' || submission.intent !== 'submit') {
+					throw new Error('The intent could only be set on a button');
 				}
 
-				if (hasCommand) {
-					throw new Error('The conform command could only be set on a button');
-				}
-
-				submission = {
-					...submission,
-					type: submissionType,
-					intent: value,
-				};
-				hasCommand = true;
+				submission.intent = value;
 			} else {
 				const paths = getPaths(name);
 
@@ -386,9 +364,7 @@ export function parse<Schema extends Record<string, any>>(
 			}
 		}
 
-		if (submission.type === 'list') {
-			submission = handleList(submission);
-		}
+		submission = handleList(submission);
 	} catch (e) {
 		submission.error.push([
 			'',
@@ -411,28 +387,29 @@ export type ListCommand<Schema = unknown> =
 	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
 
 export function parseListCommand<Schema = unknown>(
-	data: string,
-): ListCommand<Schema> {
+	intent: string,
+): ListCommand<Schema> | null {
 	try {
-		const command = JSON.parse(data);
+		const [group, type, scope, json] = intent.split('/');
 
 		if (
-			typeof command.type !== 'string' ||
-			![
-				'prepend',
-				'append',
-				'replace',
-				'remove',
-				'reorder',
-				'combine',
-			].includes(command.type)
+			group !== 'list' ||
+			!['prepend', 'append', 'replace', 'remove', 'reorder'].includes(type) ||
+			!scope
 		) {
-			throw new Error(`Unknown list command received: ${command.type}`);
+			return null;
 		}
 
-		return command;
+		const payload = JSON.parse(json);
+
+		return {
+			// @ts-expect-error
+			type,
+			scope,
+			payload,
+		};
 	} catch (error) {
-		throw new Error(`Invalid list command: "${data}"; ${error}`);
+		return null;
 	}
 }
 
@@ -473,11 +450,12 @@ export function updateList<Schema>(
 export function handleList<Schema>(
 	submission: Submission<Schema>,
 ): Submission<Schema> {
-	if (submission.type !== 'list') {
+	const command = parseListCommand(submission.intent);
+
+	if (!command) {
 		return submission;
 	}
 
-	const command = parseListCommand(submission.intent ?? '');
 	const paths = getPaths(command.scope);
 
 	setValue(submission.value, paths, (list) => {
@@ -495,20 +473,20 @@ export interface ListCommandButtonBuilder {
 	append<Schema>(
 		name: string,
 		payload?: { defaultValue: Schema },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 	prepend<Schema>(
 		name: string,
 		payload?: { defaultValue: Schema },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 	replace<Schema>(
 		name: string,
 		payload: { defaultValue: Schema; index: number },
-	): CommandButtonProps<'list'>;
-	remove(name: string, payload: { index: number }): CommandButtonProps<'list'>;
+	): IntentButtonProps;
+	remove(name: string, payload: { index: number }): IntentButtonProps;
 	reorder(
 		name: string,
 		payload: { from: number; to: number },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 }
 
 /**
@@ -524,10 +502,10 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 			case 'replace':
 			case 'remove':
 			case 'reorder':
-				return (scope: string, payload = {}) => {
+				return (scope: string, payload = {}): IntentButtonProps => {
 					return {
-						name: 'conform/list',
-						value: JSON.stringify({ type, scope, payload }),
+						name: '__intent__',
+						value: `list/${type}/${scope}/${JSON.stringify(payload)}`,
 						formNoValidate: true,
 					};
 				};
