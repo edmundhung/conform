@@ -29,7 +29,7 @@ export async function action({ request }: ActionArgs) {
 	try {
 		const data = schema.parse(submission.value);
 
-		if (submission.type === 'submit') {
+		if (submission.intent === 'submit') {
 			console.log(data);
 			throw new Error('Not implemented');
 		}

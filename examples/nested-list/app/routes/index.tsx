@@ -31,15 +31,10 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parse<Schema>(formData);
 
 	try {
-		switch (submission.type) {
-			case 'submit':
-			case 'validate': {
-				todosSchema.parse(submission.value);
+		todosSchema.parse(submission.value);
 
-				if (submission.type === 'submit') {
-					throw new Error('Not implemented');
-				}
-			}
+		if (submission.intent === 'submit') {
+			throw new Error('Not implemented');
 		}
 	} catch (error) {
 		submission.error.push(...formatError(error));

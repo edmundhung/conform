@@ -13,42 +13,29 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse<SignupForm>(formData);
 
+	if (!submission.value.email) {
+		submission.error.push(['email', 'Email is required']);
+	} else if (!submission.value.email.includes('@')) {
+		submission.error.push(['email', 'Email is invalid']);
+	}
+
+	if (!submission.value.password) {
+		submission.error.push(['password', 'Password is required']);
+	}
+
+	if (!submission.value.confirmPassword) {
+		submission.error.push(['confirmPassword', 'Confirm password is required']);
+	} else if (submission.value.confirmPassword !== submission.value.password) {
+		submission.error.push(['confirmPassword', 'Password does not match']);
+	}
+
 	try {
-		switch (submission.type) {
-			// The type will be `submit` by default
-			case 'submit':
-			// The type will be `validate` on validation
-			case 'validate':
-				if (!submission.value.email) {
-					submission.error.push(['email', 'Email is required']);
-				} else if (!submission.value.email.includes('@')) {
-					submission.error.push(['email', 'Email is invalid']);
-				}
-
-				if (!submission.value.password) {
-					submission.error.push(['password', 'Password is required']);
-				}
-
-				if (!submission.value.confirmPassword) {
-					submission.error.push([
-						'confirmPassword',
-						'Confirm password is required',
-					]);
-				} else if (
-					submission.value.confirmPassword !== submission.value.password
-				) {
-					submission.error.push(['confirmPassword', 'Password does not match']);
-				}
-
-				/**
-				 * Signup only when the user click on the submit button
-				 * and no error found
-				 */
-				if (submission.type === 'submit' && !hasError(submission.error)) {
-					throw new Error('Not implemented');
-				}
-
-				break;
+		/**
+		 * Signup only when the user click on the submit button
+		 * and no error found
+		 */
+		if (submission.intent === 'submit' && !hasError(submission.error)) {
+			throw new Error('Not implemented');
 		}
 	} catch (error) {
 		/**
