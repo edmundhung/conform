@@ -341,10 +341,45 @@ export function focus(field: FieldElement): void {
 }
 
 export function parse(payload: FormData | URLSearchParams): Submission {
-	const submission: Submission = {
+	let submission: Submission = {
 		intent: 'submit',
 		payload: {},
 		error: [],
+	};
+
+	try {
+		for (let [name, value] of payload.entries()) {
+			if (name === '__intent__') {
+				if (typeof value !== 'string' || submission.intent !== 'submit') {
+					throw new Error('The intent could only be set on a button');
+				}
+
+				submission.intent = value;
+			} else {
+				const paths = getPaths(name);
+
+				setValue(submission.payload, paths, (prev) => {
+					if (!prev) {
+						return value;
+					} else if (Array.isArray(prev)) {
+						return prev.concat(value);
+					} else {
+						return [prev, value];
+					}
+				});
+			}
+		}
+
+		submission = handleList(submission);
+	} catch (e) {
+		submission.error.push([
+			'',
+			e instanceof Error ? e.message : 'Invalid payload received',
+		]);
+	}
+
+	return {
+		...submission,
 
 		// @ts-expect-error This should be hidden from user
 		toJSON(): Submission {
@@ -355,30 +390,6 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 			};
 		},
 	};
-
-	for (let [name, value] of payload.entries()) {
-		if (name === '__intent__') {
-			if (typeof value !== 'string' || submission.intent !== 'submit') {
-				throw new Error('The intent could only be set on a button');
-			}
-
-			submission.intent = value;
-		} else {
-			const paths = getPaths(name);
-
-			setValue(submission.payload, paths, (prev) => {
-				if (!prev) {
-					return value;
-				} else if (Array.isArray(prev)) {
-					return prev.concat(value);
-				} else {
-					return [prev, value];
-				}
-			});
-		}
-	}
-
-	return handleList(submission);
 }
 
 export type ListCommand<Schema = unknown> =
