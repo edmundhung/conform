@@ -1,5 +1,11 @@
-import { conform, getFormElements, parse, useForm } from '@conform-to/react';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import {
+	conform,
+	getFormElements,
+	parse,
+	report,
+	useForm,
+} from '@conform-to/react';
+import { ActionArgs, LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
@@ -40,7 +46,7 @@ export let action = async ({ request }: ActionArgs) => {
 		submission.error.push(['rating', 'The provided rating is invalid']);
 	}
 
-	return submission;
+	return json(report(submission));
 };
 
 export default function MovieForm() {

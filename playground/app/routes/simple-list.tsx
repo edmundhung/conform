@@ -1,4 +1,10 @@
-import { conform, useFieldList, useForm, list } from '@conform-to/react';
+import {
+	conform,
+	useFieldList,
+	useForm,
+	list,
+	report,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -27,8 +33,8 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
-
-	return json(submission);
+	console.log('reporting', report(submission));
+	return json(report(submission));
 }
 
 export default function SimpleList() {
@@ -42,7 +48,7 @@ export default function SimpleList() {
 			: undefined,
 	});
 	const itemsList = useFieldList(form.ref, items.config);
-
+	console.log('state', state);
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>

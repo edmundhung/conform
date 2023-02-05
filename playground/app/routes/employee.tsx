@@ -1,4 +1,10 @@
-import { conform, hasError, shouldValidate, useForm } from '@conform-to/react';
+import {
+	conform,
+	hasError,
+	shouldValidate,
+	report,
+	useForm,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -41,7 +47,7 @@ export let action = async ({ request }: ActionArgs) => {
 		async: true,
 	});
 
-	return json(submission);
+	return json(report(submission));
 };
 
 export default function EmployeeForm() {

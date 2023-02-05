@@ -41,7 +41,7 @@ Conform unifies validation and submission as one single flow by utilizing the fo
 **Conform** enables you to validate a form **fully server side**.
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { parse, report, useForm } from '@conform-to/react';
 
 interface SignupForm {
   email: string;
@@ -70,7 +70,7 @@ export async function action({ request }: ActionArgs) {
   }
 
   if (hasError(submission.error) || submission.intent !== 'submit') {
-    return json(submission);
+    return json(report(submission));
   }
 
   try {
@@ -132,7 +132,7 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, { schema });
 
   if (!submission.data || submission.intent !== 'submit') {
-    return json(submission);
+    return json(report(submission));
   }
 
   return await signup(data);
@@ -269,7 +269,7 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (!submission.data || submission.intent !== 'submit') {
-    return json(submission);
+    return json(report(submission));
   }
 
   return await signup(data);

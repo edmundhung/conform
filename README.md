@@ -17,7 +17,7 @@ A progressive enhancement first form validation library for [Remix](https://remi
 Here is a real world example built with [Remix](https://remix.run).
 
 ```tsx
-import { useForm, parse } from '@conform-to/react';
+import { useForm, parse, report } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 import { json, redirect } from '@remix-run/node';
 import { useId } from 'react';
@@ -59,7 +59,7 @@ export async function action({ request }: ActionArgs) {
     submission.error.push(['', error.message]);
   }
 
-  return json(submission);
+  return json(report(submission));
 }
 
 export default function LoginForm() {

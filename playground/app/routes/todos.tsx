@@ -1,4 +1,4 @@
-import type { FieldsetConfig } from '@conform-to/react';
+import { FieldsetConfig, report } from '@conform-to/react';
 import {
 	conform,
 	useFieldList,
@@ -8,6 +8,7 @@ import {
 } from '@conform-to/react';
 import { parse, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -35,7 +36,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return submission;
+	return json(report(submission));
 };
 
 export default function TodosForm() {

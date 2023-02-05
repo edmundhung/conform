@@ -1,6 +1,6 @@
-import type { Submission } from '@conform-to/react';
+import { Submission, report } from '@conform-to/react';
 import { conform, parse, useForm } from '@conform-to/react';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { ActionArgs, LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
@@ -47,13 +47,15 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parseSignupForm(formData);
 
-	return {
-		...submission,
-		value: {
-			email: submission.value.email,
-			// Never send the password back to the client
-		},
-	};
+	return json(
+		report({
+			...submission,
+			value: {
+				email: submission.value.email,
+				// Never send the password back to the client
+			},
+		}),
+	);
 };
 
 export default function SignupForm() {

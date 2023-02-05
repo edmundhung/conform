@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { conform, report, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -35,8 +35,6 @@ const schema = z.object({
 		),
 });
 
-type Schema = z.infer<typeof schema>;
-
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
@@ -49,13 +47,13 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const [form, { file, files }] = useForm<Schema>({
+	const [form, { file, files }] = useForm({
 		state,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })

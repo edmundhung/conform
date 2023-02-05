@@ -244,15 +244,6 @@ test.describe('Client Validation', () => {
 				timestamp,
 				verified: 'Yes',
 			},
-			data: {
-				iban: 'DE89 3704 0044 0532 0130 00',
-				amount: {
-					currency: 'EUR',
-					value: 1,
-				},
-				timestamp,
-				verified: true,
-			},
 			error: [],
 		});
 	});
@@ -674,14 +665,6 @@ test.describe('Field list', () => {
 				],
 			},
 			error: [],
-			data: {
-				title: 'My schedule',
-				tasks: [
-					{ content: 'Urgent task', completed: false },
-					{ content: 'Daily task', completed: false },
-					{ content: 'Ad hoc task', completed: false },
-				],
-			},
 		});
 	});
 
@@ -748,13 +731,6 @@ test.describe('Field list', () => {
 				],
 			},
 			error: [],
-			data: {
-				title: 'Testing plan',
-				tasks: [
-					{ content: 'Write even more tests', completed: false },
-					{ content: 'Write tests for nested list', completed: true },
-				],
-			},
 		});
 	});
 

@@ -513,3 +513,11 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 		}
 	},
 });
+
+export function report<Payload>(
+	submission: Submission<Payload, any>,
+): Submission<Payload> {
+	const { intent, value, error } = submission;
+
+	return { intent, value, error };
+}
