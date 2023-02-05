@@ -17,7 +17,7 @@ A progressive enhancement first form validation library for [Remix](https://remi
 Here is a real world example built with [Remix](https://remix.run).
 
 ```tsx
-import { useForm, parse, report } from '@conform-to/react';
+import { useForm, parse } from '@conform-to/react';
 import { Form } from '@remix-run/react';
 import { json, redirect } from '@remix-run/node';
 import { useId } from 'react';
@@ -26,7 +26,7 @@ import { authenticate } from '~/auth';
 function parseLoginForm(formData: FormData) {
   const submission = parse(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
@@ -45,7 +45,7 @@ export async function action({ request }: ActionArgs) {
 
   try {
     if (submission.error.length === 0 && submission.intent === 'submit') {
-      const user = await authenticate(submission.value);
+      const user = await authenticate(submission.payload);
 
       if (!user) {
         throw new Error(
@@ -59,7 +59,7 @@ export async function action({ request }: ActionArgs) {
     submission.error.push(['', error.message]);
   }
 
-  return json(report(submission));
+  return json(submission);
 }
 
 export default function LoginForm() {

@@ -8,7 +8,6 @@ export {
 	validate,
 	requestIntent,
 	requestSubmit,
-	report,
 	parse,
 	shouldValidate,
 } from '@conform-to/dom';

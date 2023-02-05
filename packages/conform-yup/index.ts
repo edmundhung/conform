@@ -93,14 +93,14 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		schema: Schema | ((intent: string) => Schema);
 		async?: false;
 	},
-): Submission<yup.InferType<Schema>, yup.InferType<Schema>>;
+): Submission<yup.InferType<Schema>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
 		async: true;
 	},
-): Promise<Submission<yup.InferType<Schema>, yup.InferType<Schema>>>;
+): Promise<Submission<yup.InferType<Schema>>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
@@ -108,16 +108,16 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		async?: boolean;
 	},
 ):
-	| Submission<yup.InferType<Schema>, yup.InferType<Schema>>
-	| Promise<Submission<yup.InferType<Schema>, yup.InferType<Schema>>> {
-	const submission = baseParse<yup.InferType<Schema>>(payload);
+	| Submission<yup.InferType<Schema>>
+	| Promise<Submission<yup.InferType<Schema>>> {
+	const submission = baseParse(payload);
 	const schema =
 		typeof config.schema === 'function'
 			? config.schema(submission.intent)
 			: config.schema;
-	const resolveData = (data: yup.InferType<Schema>) => ({
+	const resolveData = (value: yup.InferType<Schema>) => ({
 		...submission,
-		data,
+		value,
 	});
 	const resolveError = (error: unknown) => {
 		if (error instanceof yup.ValidationError) {
@@ -138,7 +138,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 
 	if (!config.async) {
 		try {
-			const data = schema.validateSync(submission.value, {
+			const data = schema.validateSync(submission.payload, {
 				abortEarly: false,
 			});
 
@@ -149,7 +149,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 	}
 
 	return schema
-		.validate(submission.value, { abortEarly: false })
+		.validate(submission.payload, { abortEarly: false })
 		.then(resolveData)
 		.catch(resolveError);
 }

@@ -55,16 +55,16 @@ export async function action({ request }: ActionArgs) {
 		async: true,
 	});
 
-	if (!submission.data || submission.intent !== 'submit') {
+	if (!submission.value || submission.intent !== 'submit') {
 		return json({
 			...submission,
-			value: {
-				email: submission.value.email,
+			payload: {
+				email: submission.payload.email,
 			},
 		});
 	}
 
-	return await signup(submission.data);
+	return await signup(submission.value);
 }
 
 export default function Signup() {

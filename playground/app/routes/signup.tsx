@@ -1,6 +1,5 @@
-import { Submission, report } from '@conform-to/react';
 import { conform, parse, useForm } from '@conform-to/react';
-import { ActionArgs, LoaderArgs, json } from '@remix-run/node';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
@@ -11,19 +10,22 @@ interface Signup {
 	confirmPassword: string;
 }
 
-function parseSignupForm(formData: FormData): Submission<Signup> {
-	const submission = parse<Signup>(formData);
-	const { email, password, confirmPassword } = submission.value;
+function parseSignupForm(formData: FormData) {
+	const submission = parse(formData);
+	const { email, password, confirmPassword } = submission.payload;
 
 	if (!email) {
 		submission.error.push(['email', 'Email is required']);
-	} else if (!email.match(/^[^()@\s]+@[\w\d.]+$/)) {
+	} else if (
+		typeof email !== 'string' ||
+		!email.match(/^[^()@\s]+@[\w\d.]+$/)
+	) {
 		submission.error.push(['email', 'Email is invalid']);
 	}
 
 	if (!password) {
 		submission.error.push(['password', 'Password is required']);
-	} else if (password.length < 8) {
+	} else if (typeof password === 'string' && password.length < 8) {
 		submission.error.push(['password', 'Password is too short']);
 	}
 
@@ -47,15 +49,13 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parseSignupForm(formData);
 
-	return json(
-		report({
-			...submission,
-			value: {
-				email: submission.value.email,
-				// Never send the password back to the client
-			},
-		}),
-	);
+	return json({
+		...submission,
+		payload: {
+			email: submission.payload.email,
+			// Never send the password back to the client
+		},
+	});
 };
 
 export default function SignupForm() {

@@ -41,7 +41,7 @@ Conform unifies validation and submission as one single flow by utilizing the fo
 **Conform** enables you to validate a form **fully server side**.
 
 ```tsx
-import { parse, report, useForm } from '@conform-to/react';
+import { parse, useForm } from '@conform-to/react';
 
 interface SignupForm {
   email: string;
@@ -53,28 +53,30 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse<SignupForm>(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
-  } else if (!submission.value.email.includes('@')) {
+  } else if (!submission.payload.email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
   }
 
-  if (!submission.value.password) {
+  if (!submission.payload.password) {
     submission.error.push(['password', 'Password is required']);
   }
 
-  if (!submission.value.confirmPassword) {
+  if (!submission.payload.confirmPassword) {
     submission.error.push(['confirmPassword', 'Confirm password is required']);
-  } else if (submission.value.confirmPassword !== submission.value.password) {
+  } else if (
+    submission.payload.confirmPassword !== submission.payload.password
+  ) {
     submission.error.push(['confirmPassword', 'Password does not match']);
   }
 
   if (hasError(submission.error) || submission.intent !== 'submit') {
-    return json(report(submission));
+    return json(submission);
   }
 
   try {
-    return await signup(submission.value);
+    return await signup(submission.payload);
   } catch (error) {
     return json({
       ...submission,
@@ -131,8 +133,8 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse(formData, { schema });
 
-  if (!submission.data || submission.intent !== 'submit') {
-    return json(report(submission));
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(submission);
   }
 
   return await signup(data);
@@ -268,10 +270,10 @@ export async function action({ request }: ActionArgs) {
     async: true,
   });
 
-  if (!submission.data || submission.intent !== 'submit') {
-    return json(report(submission));
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(submission);
   }
 
-  return await signup(data);
+  return await signup(submission.value);
 }
 ```

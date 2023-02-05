@@ -32,7 +32,7 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-export interface FormConfig<Payload extends Record<string, any>, Schema> {
+export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * If the form id is provided, Id for label,
 	 * input and error elements will be derived.
@@ -55,17 +55,17 @@ export interface FormConfig<Payload extends Record<string, any>, Schema> {
 	/**
 	 * An object representing the initial value of the form.
 	 */
-	defaultValue?: FieldValue<Payload>;
+	defaultValue?: FieldValue<Schema>;
 
 	/**
 	 * An object describing the state from the last submission
 	 */
-	state?: Submission<Payload, Schema>;
+	state?: Submission;
 
 	/**
 	 * An object describing the constraint of each field
 	 */
-	constraint?: FieldsetConstraint<Payload>;
+	constraint?: FieldsetConstraint<Schema>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -90,7 +90,7 @@ export interface FormConfig<Payload extends Record<string, any>, Schema> {
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => Submission<Payload, Schema>;
+	}) => Submission<Schema>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -100,7 +100,7 @@ export interface FormConfig<Payload extends Record<string, any>, Schema> {
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: Submission<Payload, Schema>;
+			submission: Submission<Schema>;
 		},
 	) => void;
 }
@@ -129,12 +129,9 @@ interface Form<Schema extends Record<string, any>> {
  *
  * @see https://conform.guide/api/react#useform
  */
-export function useForm<
-	Payload extends Record<string, any>,
-	Schema extends Record<string, any> = never,
->(
-	config: FormConfig<Payload, Schema> = {},
-): [Form<Payload>, Fieldset<Payload>] {
+export function useForm<Schema extends Record<string, any>>(
+	config: FormConfig<Schema> = {},
+): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
@@ -143,7 +140,7 @@ export function useForm<
 		return message ?? '';
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
-		FieldsetConfig<Payload>
+		FieldsetConfig<Schema>
 	>(() => {
 		const submission = config.state;
 
@@ -154,7 +151,7 @@ export function useForm<
 		}
 
 		return {
-			defaultValue: submission.value,
+			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
 				([name]) => name !== '' && shouldValidate(submission.intent, name),
 			),
@@ -285,7 +282,7 @@ export function useForm<
 		};
 	}, []);
 
-	const form: Form<Payload> = {
+	const form: Form<Schema> = {
 		id: config.id,
 		ref,
 		error,
@@ -309,8 +306,8 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const onValidate =
 						config.onValidate ??
-						(({ form, formData }): Submission<Payload, Schema> => {
-							const submission = parse<Payload>(formData);
+						(({ form, formData }) => {
+							const submission = parse(formData);
 
 							if (config.mode !== 'server-validation') {
 								/**
@@ -331,7 +328,7 @@ export function useForm<
 								}
 							}
 
-							return submission;
+							return submission as Submission<Schema>;
 						});
 					const submission = onValidate({ form, formData });
 
@@ -704,9 +701,13 @@ export function useFieldList<Payload = any>(
 							...command,
 							payload: {
 								...command.payload,
-								defaultValue: [`${Date.now()}`, command.payload.defaultValue],
+								defaultValue: [
+									`${Date.now()}`,
+									// @ts-expect-error unknown type as it is sent through network
+									command.payload.defaultValue,
+								],
 							},
-						} as ListCommand<[string, FieldValue<Payload> | undefined]>);
+						});
 					default: {
 						return updateList([...(entries ?? [])], command);
 					}

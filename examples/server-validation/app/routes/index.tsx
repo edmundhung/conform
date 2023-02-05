@@ -11,21 +11,23 @@ interface SignupForm {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse<SignupForm>(formData);
+	const submission = parse(formData);
 
-	if (!submission.value.email) {
+	if (!submission.payload.email) {
 		submission.error.push(['email', 'Email is required']);
-	} else if (!submission.value.email.includes('@')) {
+	} else if (!submission.payload.email.includes('@')) {
 		submission.error.push(['email', 'Email is invalid']);
 	}
 
-	if (!submission.value.password) {
+	if (!submission.payload.password) {
 		submission.error.push(['password', 'Password is required']);
 	}
 
-	if (!submission.value.confirmPassword) {
+	if (!submission.payload.confirmPassword) {
 		submission.error.push(['confirmPassword', 'Confirm password is required']);
-	} else if (submission.value.confirmPassword !== submission.value.password) {
+	} else if (
+		submission.payload.confirmPassword !== submission.payload.password
+	) {
 		submission.error.push(['confirmPassword', 'Password does not match']);
 	}
 
@@ -49,9 +51,9 @@ export async function action({ request }: ActionArgs) {
 	// Always sends the submission state back to client until the user is signed up
 	return json({
 		...submission,
-		value: {
+		payload: {
 			// Never send the password back to client
-			email: submission.value.email,
+			email: submission.payload.email,
 		},
 	});
 }

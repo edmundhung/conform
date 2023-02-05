@@ -116,24 +116,22 @@ export function parse<Schema extends z.ZodTypeAny>(
 		schema: Schema | ((intent: string) => Schema);
 		async?: false;
 	},
-): Submission<z.output<Schema>, z.input<Schema>>;
+): Submission<z.output<Schema>>;
 export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
 		async: true;
 	},
-): Promise<Submission<z.output<Schema>, z.input<Schema>>>;
+): Promise<Submission<z.output<Schema>>>;
 export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
 		async?: boolean;
 	},
-):
-	| Submission<z.output<Schema>, z.input<Schema>>
-	| Promise<Submission<z.output<Schema>, z.input<Schema>>> {
-	const submission = baseParse<z.input<Schema>>(payload);
+): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
+	const submission = baseParse(payload);
 	const schema =
 		typeof config.schema === 'function'
 			? config.schema(submission.intent)
@@ -144,7 +142,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 		if (result.success) {
 			return {
 				...submission,
-				data: result.data,
+				value: result.data,
 			};
 		} else {
 			return {
@@ -161,8 +159,8 @@ export function parse<Schema extends z.ZodTypeAny>(
 	};
 
 	return config.async
-		? schema.safeParseAsync(submission.value).then(resolve)
-		: resolve(schema.safeParse(submission.value));
+		? schema.safeParseAsync(submission.payload).then(resolve)
+		: resolve(schema.safeParse(submission.payload));
 }
 
 export function ifNonEmptyString(

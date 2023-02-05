@@ -26,11 +26,11 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	if (!submission.data || submission.intent !== 'submit') {
+	if (!submission.value || submission.intent !== 'submit') {
 		return json({
 			...submission,
-			value: {
-				email: submission.value.email,
+			payload: {
+				email: submission.payload.email,
 			},
 		});
 	}
@@ -48,7 +48,7 @@ export default function SignupForm() {
 				return parse(formData, { schema });
 			},
 			onSubmit(event, { submission }) {
-				console.log(submission.data);
+				console.log(submission.value);
 			},
 		});
 

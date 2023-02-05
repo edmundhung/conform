@@ -23,7 +23,7 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
-	: unknown;
+	: any;
 
 export type FieldConstraint<Schema = any> = {
 	required?: boolean;
@@ -40,12 +40,19 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
-export type Submission<Payload = unknown, Schema = never> = {
-	intent: string;
-	value: FieldValue<Payload>;
-	error: Array<[string, string]>;
-	data?: Schema;
-};
+export type Submission<Schema extends Record<string, any> | unknown = unknown> =
+	unknown extends Schema
+		? {
+				intent: string;
+				payload: FieldValue<Record<string, any>>;
+				error: Array<[string, string]>;
+		  }
+		: {
+				intent: string;
+				payload: FieldValue<Record<string, any>>;
+				value?: Schema;
+				error: Array<[string, string]>;
+		  };
 
 export interface IntentButtonProps {
 	name: '__intent__';
@@ -137,9 +144,9 @@ export function hasError(
 	);
 }
 
-export function reportSubmission<Payload, Schema>(
+export function reportSubmission(
 	form: HTMLFormElement,
-	submission: Submission<Payload, Schema>,
+	submission: Submission,
 ): void {
 	const messageByName: Map<string, string> = new Map();
 	const listCommand = parseListCommand(submission.intent);
@@ -333,47 +340,45 @@ export function focus(field: FieldElement): void {
 	field.focus();
 }
 
-export function parse<Schema extends Record<string, any>>(
-	payload: FormData | URLSearchParams,
-): Submission<Schema> {
-	let submission: Submission<Record<string, unknown>> = {
+export function parse(payload: FormData | URLSearchParams): Submission {
+	const submission: Submission = {
 		intent: 'submit',
-		value: {},
+		payload: {},
 		error: [],
+
+		// @ts-expect-error This should be hidden from user
+		toJSON(): Submission {
+			return {
+				intent: this.intent,
+				payload: this.payload,
+				error: this.error,
+			};
+		},
 	};
 
-	try {
-		for (let [name, value] of payload.entries()) {
-			if (name === '__intent__') {
-				if (typeof value !== 'string' || submission.intent !== 'submit') {
-					throw new Error('The intent could only be set on a button');
-				}
-
-				submission.intent = value;
-			} else {
-				const paths = getPaths(name);
-
-				setValue(submission.value, paths, (prev) => {
-					if (!prev) {
-						return value;
-					} else if (Array.isArray(prev)) {
-						return prev.concat(value);
-					} else {
-						return [prev, value];
-					}
-				});
+	for (let [name, value] of payload.entries()) {
+		if (name === '__intent__') {
+			if (typeof value !== 'string' || submission.intent !== 'submit') {
+				throw new Error('The intent could only be set on a button');
 			}
-		}
 
-		submission = handleList(submission);
-	} catch (e) {
-		submission.error.push([
-			'',
-			e instanceof Error ? e.message : 'Invalid payload received',
-		]);
+			submission.intent = value;
+		} else {
+			const paths = getPaths(name);
+
+			setValue(submission.payload, paths, (prev) => {
+				if (!prev) {
+					return value;
+				} else if (Array.isArray(prev)) {
+					return prev.concat(value);
+				} else {
+					return [prev, value];
+				}
+			});
+		}
 	}
 
-	return submission as Submission<Schema>;
+	return handleList(submission);
 }
 
 export type ListCommand<Schema = unknown> =
@@ -448,9 +453,7 @@ export function updateList<Schema>(
 	return list;
 }
 
-export function handleList<Schema>(
-	submission: Submission<Schema>,
-): Submission<Schema> {
+export function handleList(submission: Submission): Submission {
 	const command = parseListCommand(submission.intent);
 
 	if (!command) {
@@ -459,7 +462,7 @@ export function handleList<Schema>(
 
 	const paths = getPaths(command.scope);
 
-	setValue(submission.value, paths, (list) => {
+	setValue(submission.payload, paths, (list) => {
 		if (typeof list !== 'undefined' && !Array.isArray(list)) {
 			throw new Error('The list command can only be applied to a list');
 		}
@@ -513,11 +516,3 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 		}
 	},
 });
-
-export function report<Payload>(
-	submission: Submission<Payload, any>,
-): Submission<Payload> {
-	const { intent, value, error } = submission;
-
-	return { intent, value, error };
-}

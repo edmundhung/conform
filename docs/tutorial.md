@@ -110,8 +110,8 @@ export async function action({ request }: ActionArgs) {
   // Replace `Object.fromEntries()` with parse()
   const submission = parse(formData);
 
-  // The value will now be available as `submission.value`
-  if (!submission.value.email) {
+  // The value will now be available as `submission.payload`
+  if (!submission.payload.email) {
     // Define the error as key-value pair instead
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
@@ -133,8 +133,8 @@ export async function action({ request }: ActionArgs) {
   return json(
     {
       ...submission,
-      value: {
-        email: submission.value.email,
+      payload: {
+        email: submission.payload.email,
       },
     },
     {
@@ -201,7 +201,7 @@ import { authenticate } from '~/auth';
 function parseForm(formData: FormData) {
   const submission = parse(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
@@ -229,8 +229,8 @@ export async function action({ request }: ActionArgs) {
   return json(
     {
       ...submission,
-      value: {
-        email: submission.value.email,
+      payload: {
+        email: submission.payload.email,
       },
     },
     {

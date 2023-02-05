@@ -39,7 +39,7 @@ function Example() {
 
 ### parse
 
-It parses the formData and returns a submission result with the validation error. If no error is found, the parsed data will also be populated as `submission.data`.
+It parses the formData and returns a submission result with the validation error. If no error is found, the parsed data will also be populated as `submission.value`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -83,7 +83,7 @@ export let action = async ({ request }) => {
     async: true,
   });
 
-  if (!submission.data || submission.intent !== 'submit') {
+  if (!submission.value || submission.intent !== 'submit') {
     return submission;
   }
 

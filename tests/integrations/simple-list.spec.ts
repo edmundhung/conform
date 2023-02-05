@@ -120,7 +120,7 @@ async function runValidationScenario(page: Page) {
 		JSON.stringify(
 			{
 				intent: 'submit',
-				value: {
+				payload: {
 					items: ['Top item', 'First item'],
 				},
 				error: [],

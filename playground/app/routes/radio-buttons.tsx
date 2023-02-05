@@ -1,4 +1,4 @@
-import { conform, parse, report, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -10,7 +10,7 @@ interface Schema {
 function parseForm(formData: FormData) {
 	const submission = parse(formData);
 
-	if (!submission.value.answer) {
+	if (!submission.payload.answer) {
 		submission.error.push(['answer', 'Required']);
 	}
 
@@ -29,7 +29,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseForm(formData);
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function Example() {

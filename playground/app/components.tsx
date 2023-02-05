@@ -6,7 +6,7 @@ interface PlaygroundProps {
 	title: string;
 	description?: string;
 	form?: string;
-	state?: Submission<Record<string, unknown>>;
+	state?: Submission;
 	children: ReactNode;
 }
 

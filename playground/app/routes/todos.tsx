@@ -1,5 +1,5 @@
-import { FieldsetConfig, report } from '@conform-to/react';
 import {
+	type FieldsetConfig,
 	conform,
 	useFieldList,
 	useFieldset,
@@ -36,7 +36,7 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission);
 };
 
 export default function TodosForm() {

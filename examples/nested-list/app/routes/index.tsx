@@ -1,4 +1,4 @@
-import { FieldsetConfig, report } from '@conform-to/react';
+import type { FieldsetConfig } from '@conform-to/react';
 import {
 	useForm,
 	useFieldset,
@@ -31,8 +31,8 @@ export let action = async ({ request }: ActionArgs) => {
 		schema: todosSchema,
 	});
 
-	if (!submission.data || submission.intent !== 'submit') {
-		return json(report(submission));
+	if (!submission.value || submission.intent !== 'submit') {
+		return json(submission);
 	}
 
 	throw new Error('Not implemented');

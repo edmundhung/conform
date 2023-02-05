@@ -114,8 +114,8 @@ test.describe('conform-yup', () => {
 		]);
 		const submission = parse(formData, { schema });
 
-		expect(submission.value).toEqual(value);
+		expect(submission.payload).toEqual(value);
 		expect(submission.error).toEqual(error);
-		expect(submission.data).not.toBeDefined();
+		expect(submission.value).not.toBeDefined();
 	});
 });

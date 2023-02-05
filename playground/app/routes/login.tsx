@@ -5,7 +5,7 @@ import {
 	parse,
 	report,
 } from '@conform-to/react';
-import { ActionArgs, LoaderArgs, json } from '@remix-run/node';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useId } from 'react';
 import { Playground, Field, Alert } from '~/components';
@@ -16,14 +16,14 @@ interface Login {
 	password: string;
 }
 
-function parseLoginForm(formData: FormData): Submission<Login> {
-	const submission = parse<Login>(formData);
+function parseLoginForm(formData: FormData): Submission {
+	const submission = parse(formData);
 
-	if (!submission.value.email) {
+	if (!submission.payload.email) {
 		submission.error.push(['email', 'Email is required']);
 	}
 
-	if (!submission.value.password) {
+	if (!submission.payload.password) {
 		submission.error.push(['password', 'Password is required']);
 	}
 
@@ -40,21 +40,19 @@ export let action = async ({ request }: ActionArgs) => {
 
 	if (
 		submission.error.length === 0 &&
-		(submission.value.email !== 'me@edmund.dev' ||
-			submission.value.password !== '$eCreTP@ssWord')
+		(submission.payload.email !== 'me@edmund.dev' ||
+			submission.payload.password !== '$eCreTP@ssWord')
 	) {
 		submission.error.push(['', 'The provided email or password is not valid']);
 	}
 
-	return json(
-		report({
-			...submission,
-			value: {
-				email: submission.value.email,
-				// Never send the password back to the client
-			},
-		}),
-	);
+	return json({
+		...submission,
+		payload: {
+			email: submission.payload.email,
+			// Never send the password back to the client
+		},
+	});
 };
 
 export default function LoginForm() {
