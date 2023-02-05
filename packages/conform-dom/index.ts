@@ -44,12 +44,12 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 	unknown extends Schema
 		? {
 				intent: string;
-				payload: FieldValue<Record<string, any>>;
+				payload: Record<string, any>;
 				error: Array<[string, string]>;
 		  }
 		: {
 				intent: string;
-				payload: FieldValue<Record<string, any>>;
+				payload: Record<string, any>;
 				value?: Schema;
 				error: Array<[string, string]>;
 		  };

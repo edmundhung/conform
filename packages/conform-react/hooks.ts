@@ -32,7 +32,10 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-export interface FormConfig<Schema extends Record<string, any>> {
+export interface FormConfig<
+	Schema extends Record<string, any>,
+	SubmissionResult extends Submission | Submission<Schema> = Submission,
+> {
 	/**
 	 * If the form id is provided, Id for label,
 	 * input and error elements will be derived.
@@ -90,7 +93,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => Submission<Schema>;
+	}) => SubmissionResult;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -100,7 +103,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: Submission<Schema>;
+			submission: SubmissionResult;
 		},
 	) => void;
 }
@@ -129,8 +132,11 @@ interface Form<Schema extends Record<string, any>> {
  *
  * @see https://conform.guide/api/react#useform
  */
-export function useForm<Schema extends Record<string, any>>(
-	config: FormConfig<Schema> = {},
+export function useForm<
+	Schema extends Record<string, any>,
+	SubmissionResult extends Submission | Submission<Schema> = Submission,
+>(
+	config: FormConfig<Schema, SubmissionResult> = {},
 ): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
@@ -328,7 +334,7 @@ export function useForm<Schema extends Record<string, any>>(
 								}
 							}
 
-							return submission as Submission<Schema>;
+							return submission as SubmissionResult;
 						});
 					const submission = onValidate({ form, formData });
 
