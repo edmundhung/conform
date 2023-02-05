@@ -51,7 +51,7 @@ test.describe('Client Validation', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
 				genre: 'action',
@@ -128,7 +128,7 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				title: 'The Matrix',
 				description:
 					'When a beautiful stranger leads computer hacker Neo to...',
@@ -165,7 +165,7 @@ test.describe('Client Validation', () => {
 
 		expect(await getSubmission(playground)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				email: 'me@edmund.dev',
 			},
 			error: [],
@@ -235,7 +235,7 @@ test.describe('Client Validation', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				iban: 'DE89 3704 0044 0532 0130 00',
 				amount: {
 					currency: 'EUR',
@@ -307,7 +307,7 @@ test.describe('Client Validation', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				email: '',
 			},
 			error: [
@@ -322,7 +322,7 @@ test.describe('Client Validation', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				email: 'invalid email',
 			},
 			error: [['password', 'Password is required']],
@@ -422,7 +422,7 @@ test.describe('Server Validation', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify({
-					value: {},
+					payload: {},
 					error: [['', 'Request forbidden']],
 				}),
 			});
@@ -656,7 +656,7 @@ test.describe('Field list', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				title: 'My schedule',
 				tasks: [
 					{ content: 'Urgent task' },
@@ -723,7 +723,7 @@ test.describe('Field list', () => {
 
 		expect(await getSubmission(form)).toEqual({
 			intent: 'submit',
-			value: {
+			payload: {
 				title: 'Testing plan',
 				tasks: [
 					{ content: 'Write even more tests' },

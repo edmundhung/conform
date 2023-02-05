@@ -53,19 +53,21 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse<SignupForm>(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
-  } else if (!submission.value.email.includes('@')) {
+  } else if (!submission.payload.email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
   }
 
-  if (!submission.value.password) {
+  if (!submission.payload.password) {
     submission.error.push(['password', 'Password is required']);
   }
 
-  if (!submission.value.confirmPassword) {
+  if (!submission.payload.confirmPassword) {
     submission.error.push(['confirmPassword', 'Confirm password is required']);
-  } else if (submission.value.confirmPassword !== submission.value.password) {
+  } else if (
+    submission.payload.confirmPassword !== submission.payload.password
+  ) {
     submission.error.push(['confirmPassword', 'Password does not match']);
   }
 
@@ -74,7 +76,7 @@ export async function action({ request }: ActionArgs) {
   }
 
   try {
-    return await signup(submission.value);
+    return await signup(submission.payload);
   } catch (error) {
     return json({
       ...submission,
@@ -113,7 +115,7 @@ export default function Signup() {
 Writing validation logic manually could be cumbersome. You can also use a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
 
 ```tsx
-import { formatError } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z
@@ -129,19 +131,13 @@ const schema = z
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse(formData);
+  const submission = parse(formData, { schema });
 
-  try {
-    const data = schema.parse(submission.value);
-
-    if (submission.intent === 'submit') {
-      return await signup(data);
-    }
-  } catch (error) {
-    submission.error.push(...formatError(error));
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(submission);
   }
 
-  return json(submission);
+  return await signup(data);
 }
 ```
 
@@ -151,7 +147,7 @@ Server validation works well generally. However, network latency would be a conc
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 
 const schema = z
   .object({
@@ -190,7 +186,7 @@ export default function Signup() {
        * and return the submission state with the validation
        * error
        */
-      return validate(formData, schema);
+      return parse(formData, { schema });
     },
   });
 
@@ -249,18 +245,17 @@ export default function Signup() {
 Some validation rules could be expensive especially when they require querying from database or 3rd party services. This can be minimized by checking the submission type and intent, or using the `shouldValidate()` helper.
 
 ```tsx
-import { parse, shouldValidate } from '@conform-to/react';
+import { shouldValidate } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse(formData);
-
-  try {
-    const data = await schema
-      .refine(
+  const submission = parse(formData, {
+    schema: (intent) =>
+      schema.refine(
         async ({ username }) => {
           // Continue checking only if necessary
-          if (!shouldValidate(submission.intent, 'username')) {
+          if (!shouldValidate(intent, 'username')) {
             return true;
           }
 
@@ -271,16 +266,14 @@ export async function action({ request }: ActionArgs) {
           message: 'Username is already used',
           path: ['username'],
         },
-      )
-      .parseAsync(submission.value);
+      ),
+    async: true,
+  });
 
-    if (submission.intent === 'submit') {
-      return await signup(data);
-    }
-  } catch (error) {
-    submission.error.push(...formatError(error));
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(submission);
   }
 
-  return json(submission);
+  return await signup(submission.value);
 }
 ```

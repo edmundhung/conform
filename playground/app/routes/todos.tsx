@@ -1,14 +1,14 @@
-import type { FieldsetConfig, Submission } from '@conform-to/react';
 import {
+	type FieldsetConfig,
 	conform,
 	useFieldList,
 	useFieldset,
 	useForm,
-	parse,
 	list,
 } from '@conform-to/react';
-import { formatError, getFieldsetConstraint } from '@conform-to/zod';
+import { parse, getFieldsetConstraint } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -21,26 +21,12 @@ const schema = z.object({
 		z.object({
 			content: z.string().min(1, 'Content is required'),
 			completed: z.preprocess(
-				(value) => value === 'yes',
+				(value) => value === 'on',
 				z.boolean().optional(),
 			),
 		}),
 	),
 });
-
-type Schema = z.infer<typeof schema>;
-
-function validate(formData: FormData): Submission<Schema> {
-	const submission = parse<Schema>(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
-
-	return submission;
-}
 
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
@@ -48,19 +34,19 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parse(formData, { schema });
 
-	return submission;
+	return json(submission);
 };
 
 export default function TodosForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const [form] = useForm<z.infer<typeof schema>>({
+	const [form] = useForm({
 		...config,
 		state,
 		onValidate: config.validate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

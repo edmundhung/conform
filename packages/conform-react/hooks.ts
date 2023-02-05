@@ -32,7 +32,10 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-export interface FormConfig<Schema extends Record<string, any>> {
+export interface FormConfig<
+	Schema extends Record<string, any>,
+	SubmissionResult extends Submission | Submission<Schema> = Submission,
+> {
 	/**
 	 * If the form id is provided, Id for label,
 	 * input and error elements will be derived.
@@ -60,7 +63,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the state from the last submission
 	 */
-	state?: Submission<Schema>;
+	state?: Submission;
 
 	/**
 	 * An object describing the constraint of each field
@@ -90,7 +93,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => Submission<Schema>;
+	}) => SubmissionResult;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -100,7 +103,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: Submission<Schema>;
+			submission: SubmissionResult;
 		},
 	) => void;
 }
@@ -129,8 +132,11 @@ interface Form<Schema extends Record<string, any>> {
  *
  * @see https://conform.guide/api/react#useform
  */
-export function useForm<Schema extends Record<string, any>>(
-	config: FormConfig<Schema> = {},
+export function useForm<
+	Schema extends Record<string, any>,
+	SubmissionResult extends Submission | Submission<Schema> = Submission,
+>(
+	config: FormConfig<Schema, SubmissionResult> = {},
 ): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
@@ -151,7 +157,7 @@ export function useForm<Schema extends Record<string, any>>(
 		}
 
 		return {
-			defaultValue: submission.value,
+			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
 				([name]) => name !== '' && shouldValidate(submission.intent, name),
 			),
@@ -298,45 +304,39 @@ export function useForm<Schema extends Record<string, any>>(
 					| HTMLInputElement
 					| null;
 
-				/**
-				 * It checks defaultPrevented to confirm if the submission is intentional
-				 * This is utilized by `useFieldList` to modify the list state when the submit
-				 * event is captured and revalidate the form with new fields without triggering
-				 * a form submission at the same time.
-				 */
 				if (event.defaultPrevented) {
 					return;
 				}
 
 				try {
-					let submission: Submission<Schema>;
-
 					const formData = getFormData(form, submitter);
+					const onValidate =
+						config.onValidate ??
+						(({ form, formData }) => {
+							const submission = parse(formData);
 
-					if (typeof config.onValidate === 'function') {
-						submission = config.onValidate({ form, formData });
-					} else {
-						submission = parse(formData);
-
-						if (config.mode !== 'server-validation') {
-							/**
-							 * As there is no custom logic defined,
-							 * removing the custom validity state will allow us
-							 * finding the latest validation message.
-							 *
-							 * This is mainly used to showcase the constraint validation API.
-							 */
-							for (const element of form.elements) {
-								if (isFieldElement(element) && element.willValidate) {
-									element.setCustomValidity('');
-									submission.error.push([
-										element.name,
-										element.validationMessage,
-									]);
+							if (config.mode !== 'server-validation') {
+								/**
+								 * As there is no custom logic defined,
+								 * removing the custom validity state will allow us
+								 * finding the latest validation message.
+								 *
+								 * This is mainly used to showcase the constraint validation API.
+								 */
+								for (const element of form.elements) {
+									if (isFieldElement(element) && element.willValidate) {
+										element.setCustomValidity('');
+										submission.error.push([
+											element.name,
+											element.validationMessage,
+										]);
+									}
 								}
 							}
-						}
-					}
+
+							return submission as SubmissionResult;
+						});
+					const submission = onValidate({ form, formData });
 
 					if (
 						(!config.noValidate &&
@@ -707,9 +707,13 @@ export function useFieldList<Payload = any>(
 							...command,
 							payload: {
 								...command.payload,
-								defaultValue: [`${Date.now()}`, command.payload.defaultValue],
+								defaultValue: [
+									`${Date.now()}`,
+									// @ts-expect-error unknown type as it is sent through network
+									command.payload.defaultValue,
+								],
 							},
-						} as ListCommand<[string, FieldValue<Payload> | undefined]>);
+						});
 					default: {
 						return updateList([...(entries ?? [])], command);
 					}

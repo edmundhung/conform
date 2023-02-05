@@ -28,11 +28,12 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'submit',
-				value: {
+				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -45,7 +46,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'submit',
-				value: {
+				payload: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
 						currency: 'EUR',
@@ -54,6 +55,7 @@ test.describe('conform-dom', () => {
 					reference: '',
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -66,7 +68,7 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'submit',
-				value: {
+				payload: {
 					title: '',
 					tasks: [
 						{ content: 'Test some stuffs', completed: 'Yes' },
@@ -74,6 +76,7 @@ test.describe('conform-dom', () => {
 					],
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 		});
 
@@ -87,11 +90,12 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'submit',
-				value: {
+				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 		});
 
@@ -105,10 +109,11 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'command value',
-				value: {
+				payload: {
 					title: 'Test command',
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -119,10 +124,11 @@ test.describe('conform-dom', () => {
 				),
 			).toEqual({
 				intent: 'list/helloworld',
-				value: {
+				payload: {
 					title: '',
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			});
 		});
 
@@ -132,10 +138,11 @@ test.describe('conform-dom', () => {
 				['tasks[0].completed', 'Yes'],
 			];
 			const result = {
-				value: {
+				payload: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
 				error: [],
+				toJSON: expect.any(Function),
 			};
 
 			const command1 = list.prepend('tasks');
@@ -145,8 +152,8 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command1.value,
-				value: {
-					tasks: [undefined, ...result.value.tasks],
+				payload: {
+					tasks: [undefined, ...result.payload.tasks],
 				},
 			});
 
@@ -159,8 +166,8 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command2.value,
-				value: {
-					tasks: [{ content: 'Something' }, ...result.value.tasks],
+				payload: {
+					tasks: [{ content: 'Something' }, ...result.payload.tasks],
 				},
 			});
 
@@ -171,8 +178,8 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command3.value,
-				value: {
-					tasks: [...result.value.tasks, undefined],
+				payload: {
+					tasks: [...result.payload.tasks, undefined],
 				},
 			});
 
@@ -185,8 +192,8 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command4.value,
-				value: {
-					tasks: [...result.value.tasks, { content: 'Something' }],
+				payload: {
+					tasks: [...result.payload.tasks, { content: 'Something' }],
 				},
 			});
 
@@ -200,7 +207,7 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command5.value,
-				value: {
+				payload: {
 					tasks: [{ content: 'Something' }],
 				},
 			});
@@ -212,7 +219,7 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command6.value,
-				value: {
+				payload: {
 					tasks: [],
 				},
 			});
@@ -230,8 +237,8 @@ test.describe('conform-dom', () => {
 			).toEqual({
 				...result,
 				intent: command7.value,
-				value: {
-					tasks: [{ content: 'Test more stuffs' }, ...result.value.tasks],
+				payload: {
+					tasks: [{ content: 'Test more stuffs' }, ...result.payload.tasks],
 				},
 			});
 		});

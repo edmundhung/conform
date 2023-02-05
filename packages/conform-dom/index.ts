@@ -23,7 +23,7 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
-	: unknown;
+	: any;
 
 export type FieldConstraint<Schema = any> = {
 	required?: boolean;
@@ -40,11 +40,19 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
-export type Submission<Schema = unknown> = {
-	intent: string;
-	value: FieldValue<Schema>;
-	error: Array<[string, string]>;
-};
+export type Submission<Schema extends Record<string, any> | unknown = unknown> =
+	unknown extends Schema
+		? {
+				intent: string;
+				payload: Record<string, any>;
+				error: Array<[string, string]>;
+		  }
+		: {
+				intent: string;
+				payload: Record<string, any>;
+				value?: Schema;
+				error: Array<[string, string]>;
+		  };
 
 export interface IntentButtonProps {
 	name: '__intent__';
@@ -332,12 +340,10 @@ export function focus(field: FieldElement): void {
 	field.focus();
 }
 
-export function parse<Schema extends Record<string, any>>(
-	payload: FormData | URLSearchParams,
-): Submission<Schema> {
-	let submission: Submission<Record<string, unknown>> = {
+export function parse(payload: FormData | URLSearchParams): Submission {
+	let submission: Submission = {
 		intent: 'submit',
-		value: {},
+		payload: {},
 		error: [],
 	};
 
@@ -352,7 +358,7 @@ export function parse<Schema extends Record<string, any>>(
 			} else {
 				const paths = getPaths(name);
 
-				setValue(submission.value, paths, (prev) => {
+				setValue(submission.payload, paths, (prev) => {
 					if (!prev) {
 						return value;
 					} else if (Array.isArray(prev)) {
@@ -372,7 +378,18 @@ export function parse<Schema extends Record<string, any>>(
 		]);
 	}
 
-	return submission as Submission<Schema>;
+	return {
+		...submission,
+
+		// @ts-expect-error This should be hidden from user
+		toJSON(): Submission {
+			return {
+				intent: this.intent,
+				payload: this.payload,
+				error: this.error,
+			};
+		},
+	};
 }
 
 export type ListCommand<Schema = unknown> =
@@ -447,9 +464,7 @@ export function updateList<Schema>(
 	return list;
 }
 
-export function handleList<Schema>(
-	submission: Submission<Schema>,
-): Submission<Schema> {
+export function handleList(submission: Submission): Submission {
 	const command = parseListCommand(submission.intent);
 
 	if (!command) {
@@ -458,7 +473,7 @@ export function handleList<Schema>(
 
 	const paths = getPaths(command.scope);
 
-	setValue(submission.value, paths, (list) => {
+	setValue(submission.payload, paths, (list) => {
 		if (typeof list !== 'undefined' && !Array.isArray(list)) {
 			throw new Error('The list command can only be applied to a list');
 		}

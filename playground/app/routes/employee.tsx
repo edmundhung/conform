@@ -1,11 +1,5 @@
-import {
-	conform,
-	hasError,
-	parse,
-	shouldValidate,
-	useForm,
-} from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, hasError, shouldValidate, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -19,38 +13,33 @@ const schema = z.object({
 	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
 });
 
-type Schema = z.infer<typeof schema>;
-
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
 };
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
-	const serverSchema = schema.refine(
-		async (employee) => {
-			if (!shouldValidate(submission.intent, 'email')) {
-				return true;
-			}
+	const submission = await parse(formData, {
+		schema: (intent) =>
+			schema.refine(
+				async (employee) => {
+					if (!shouldValidate(intent, 'email')) {
+						return true;
+					}
 
-			return new Promise((resolve) => {
-				setTimeout(() => {
-					resolve(employee.email === 'hey@conform.guide');
-				}, Math.random() * 500);
-			});
-		},
-		{
-			message: 'Email is already used',
-			path: ['email'],
-		},
-	);
-
-	try {
-		await serverSchema.parseAsync(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(employee.email === 'hey@conform.guide');
+						}, Math.random() * 500);
+					});
+				},
+				{
+					message: 'Email is already used',
+					path: ['email'],
+				},
+			),
+		async: true,
+	});
 
 	return json(submission);
 };
@@ -58,11 +47,11 @@ export let action = async ({ request }: ActionArgs) => {
 export default function EmployeeForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const [form, { name, email, title }] = useForm<Schema>({
+	const [form, { name, email, title }] = useForm({
 		...config,
 		state,
 		onValidate({ formData }) {
-			return validate(formData, schema);
+			return parse(formData, { schema });
 		},
 		onSubmit:
 			config.mode === 'server-validation'

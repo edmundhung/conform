@@ -4,10 +4,9 @@ import {
 	useFieldset,
 	useFieldList,
 	conform,
-	parse,
 	list,
 } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -28,19 +27,15 @@ type Schema = z.infer<typeof todosSchema>;
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse<Schema>(formData);
+	const submission = parse(formData, {
+		schema: todosSchema,
+	});
 
-	try {
-		todosSchema.parse(submission.value);
-
-		if (submission.intent === 'submit') {
-			throw new Error('Not implemented');
-		}
-	} catch (error) {
-		submission.error.push(...formatError(error));
+	if (!submission.value || submission.intent !== 'submit') {
+		return json(submission);
 	}
 
-	return json(submission);
+	throw new Error('Not implemented');
 };
 
 export default function TodoForm() {
@@ -49,7 +44,7 @@ export default function TodoForm() {
 		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
-			return validate(formData, todosSchema);
+			return parse(formData, { schema: todosSchema });
 		},
 	});
 	const taskList = useFieldList(form.ref, tasks.config);

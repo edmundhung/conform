@@ -1,5 +1,5 @@
-import { conform, parse, useForm } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/yup';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/yup';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -22,37 +22,28 @@ const schema = yup.object({
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, { schema });
 
-	try {
-		const data = schema.validateSync(submission.value, {
-			abortEarly: false,
+	if (!submission.value || submission.intent !== 'submit') {
+		return json({
+			...submission,
+			payload: {
+				email: submission.payload.email,
+			},
 		});
-
-		if (submission.intent === 'submit') {
-			console.log(data);
-			throw new Error('Not implemented');
-		}
-	} catch (error) {
-		submission.error.push(...formatError(error));
 	}
 
-	return json({
-		...submission,
-		value: {
-			email: submission.value.email,
-		},
-	});
+	throw new Error('Not implemented');
 }
 
 export default function SignupForm() {
 	const state = useActionData<typeof action>();
 	const [form, { email, password, 'confirm-password': confirmPassword }] =
-		useForm<yup.InferType<typeof schema>>({
+		useForm({
 			state,
 			initialReport: 'onBlur',
 			onValidate({ formData }) {
-				return validate(formData, schema);
+				return parse(formData, { schema });
 			},
 		});
 

@@ -1,5 +1,5 @@
 import { conform, getFormElements, parse, useForm } from '@conform-to/react';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
@@ -17,30 +17,33 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse<Movie>(formData);
+	const submission = parse(formData);
 
-	if (!submission.value.title) {
+	if (!submission.payload.title) {
 		submission.error.push(['title', 'Title is required']);
-	} else if (!submission.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
+	} else if (!submission.payload.title.match(/[0-9a-zA-Z ]{1,20}/)) {
 		submission.error.push(['title', 'Please enter a valid title']);
 	}
 
 	if (
-		submission.value.description &&
-		submission.value.description.length < 30
+		submission.payload.description &&
+		submission.payload.description.length < 30
 	) {
 		submission.error.push(['description', 'Please provides more details']);
 	}
 
-	if (submission.value.genre === '') {
+	if (submission.payload.genre === '') {
 		submission.error.push(['genre', 'Genre is required']);
 	}
 
-	if (submission.value.rating && Number(submission.value.rating) % 0.5 !== 0) {
+	if (
+		submission.payload.rating &&
+		Number(submission.payload.rating) % 0.5 !== 0
+	) {
 		submission.error.push(['rating', 'The provided rating is invalid']);
 	}
 
-	return submission;
+	return json(submission);
 };
 
 export default function MovieForm() {

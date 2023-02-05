@@ -23,10 +23,10 @@ import { json, redirect } from '@remix-run/node';
 import { useId } from 'react';
 import { authenticate } from '~/auth';
 
-function validate(formData: FormData) {
+function parseLoginForm(formData: FormData) {
   const submission = parse(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
@@ -41,11 +41,11 @@ function validate(formData: FormData) {
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = validate(formData);
+  const submission = parseLoginForm(formData);
 
   try {
     if (submission.error.length === 0 && submission.intent === 'submit') {
-      const user = await authenticate(submission.value);
+      const user = await authenticate(submission.payload);
 
       if (!user) {
         throw new Error(
@@ -69,7 +69,7 @@ export default function LoginForm() {
     id,
     state,
     onValidate({ formData }) {
-      return validate(formData);
+      return parseLoginForm(formData);
     },
   });
 

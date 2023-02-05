@@ -110,8 +110,8 @@ export async function action({ request }: ActionArgs) {
   // Replace `Object.fromEntries()` with parse()
   const submission = parse(formData);
 
-  // The value will now be available as `submission.value`
-  if (!submission.value.email) {
+  // The value will now be available as `submission.payload`
+  if (!submission.payload.email) {
     // Define the error as key-value pair instead
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
@@ -133,8 +133,8 @@ export async function action({ request }: ActionArgs) {
   return json(
     {
       ...submission,
-      value: {
-        email: submission.value.email,
+      payload: {
+        email: submission.payload.email,
       },
     },
     {
@@ -198,10 +198,10 @@ import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
 
 // Refactor the validation logic to a standalone function
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
   const submission = parse(formData);
 
-  if (!submission.value.email) {
+  if (!submission.payload.email) {
     submission.error.push(['email', 'Email is required']);
   } else if (!email.includes('@')) {
     submission.error.push(['email', 'Email is invalid']);
@@ -218,7 +218,7 @@ export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
 
   // Parse and validate the formData
-  const submission = validate(formData);
+  const submission = parseForm(formData);
 
   if (submission.error.length === 0) {
     await authenticate(email, password);
@@ -229,8 +229,8 @@ export async function action({ request }: ActionArgs) {
   return json(
     {
       ...submission,
-      value: {
-        email: submission.value.email,
+      payload: {
+        email: submission.payload.email,
       },
     },
     {
@@ -246,7 +246,7 @@ export default function LoginForm() {
     state: result,
     onValidate({ formData }) {
       // Run the same validation logic on client side
-      return validate(formData);
+      return parseForm(formData);
     },
   });
 
@@ -275,7 +275,7 @@ interface Schema {
   password: string;
 }
 
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
   // as shown before
 }
 
@@ -291,7 +291,7 @@ export default function LoginForm() {
     initialReport: 'onBlur',
     state: result,
     onValidate({ formData }) {
-      return validate(formData);
+      return parseForm(formData);
     },
   });
 

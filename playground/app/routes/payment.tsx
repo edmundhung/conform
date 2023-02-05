@@ -2,9 +2,9 @@ import { conform, useFieldset, useForm } from '@conform-to/react';
 import {
 	getFieldsetConstraint,
 	ifNonEmptyString,
-	validate,
+	parse,
 } from '@conform-to/zod';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { Playground, Field } from '~/components';
@@ -41,9 +41,9 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData, schema);
+	const submission = parse(formData, { schema });
 
-	return submission;
+	return json(submission);
 };
 
 export default function PaymentForm() {
@@ -54,7 +54,7 @@ export default function PaymentForm() {
 		state,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 		onSubmit:
 			config.mode === 'server-validation'

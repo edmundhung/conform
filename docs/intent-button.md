@@ -27,7 +27,7 @@ function Product() {
 
       // This will log `{ productId: 'rf23g43', intent: 'add-to-cart' }`
       // or `{ productId: 'rf23g43', intent: 'buy-now' }`
-      console.log(submission.value);
+      console.log(submission.payload);
     },
   });
 
@@ -59,7 +59,7 @@ function Product() {
       console.log(submission.intent);
 
       // This will log `{ productId: 'rf23g43' }`
-      console.log(submission.value);
+      console.log(submission.payload);
     },
   });
 

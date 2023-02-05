@@ -17,7 +17,7 @@ Conform has support for nested object and array by introducing a naming conventi
 
 **Conform** uses `object.property` and `array[index]` to structure data. These notations could be combined for nest list as well. e.g. `tasks[0].content`.
 
-You can [parse](/packages/conform-react/README.md#parse) the form data and access its value in the defined structure through `submission.value`. If some entries in the form data violate the naming convention, a form error will be set as well.
+You can [parse](/packages/conform-react/README.md#parse) the form data and access its payload in the defined structure through `submission.payload`. If some entries in the form data violate the naming convention, a form error will be set as well.
 
 ```ts
 import { parse } from '@conform-to/react';
@@ -25,7 +25,7 @@ import { parse } from '@conform-to/react';
 const formData = new FormData();
 const submission = parse(formData);
 
-console.log(submission.value); // e.g. { tasks: [{ content: '' }] }
+console.log(submission.payload); // e.g. { tasks: [{ content: '' }] }
 console.log(submission.error); // e.g. []
 ```
 

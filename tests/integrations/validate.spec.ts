@@ -38,7 +38,7 @@ async function runValidationScenario(page: Page) {
 		JSON.stringify(
 			{
 				intent: 'submit',
-				value: {
+				payload: {
 					name: 'Conform',
 					message: 'A form validation library',
 				},
