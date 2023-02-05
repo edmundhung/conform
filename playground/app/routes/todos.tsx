@@ -20,7 +20,7 @@ const schema = z.object({
 		z.object({
 			content: z.string().min(1, 'Content is required'),
 			completed: z.preprocess(
-				(value) => value === 'yes',
+				(value) => value === 'on',
 				z.boolean().optional(),
 			),
 		}),

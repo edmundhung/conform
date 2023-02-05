@@ -674,6 +674,14 @@ test.describe('Field list', () => {
 				],
 			},
 			error: [],
+			data: {
+				title: 'My schedule',
+				tasks: [
+					{ content: 'Urgent task', completed: false },
+					{ content: 'Daily task', completed: false },
+					{ content: 'Ad hoc task', completed: false },
+				],
+			},
 		});
 	});
 
@@ -740,6 +748,13 @@ test.describe('Field list', () => {
 				],
 			},
 			error: [],
+			data: {
+				title: 'Testing plan',
+				tasks: [
+					{ content: 'Write even more tests', completed: false },
+					{ content: 'Write tests for nested list', completed: true },
+				],
+			},
 		});
 	});
 
