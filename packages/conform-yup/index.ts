@@ -1,7 +1,7 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type Submission as ConformSubmission,
+	type Submission,
 	parse as baseParse,
 } from '@conform-to/dom';
 import * as yup from 'yup';
@@ -87,24 +87,20 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	) as FieldsetConstraint<yup.InferType<Source>>;
 }
 
-interface Submission<Output, Input = Output> extends ConformSubmission<Input> {
-	data?: Output;
-}
-
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
 		async?: false;
 	},
-): Submission<yup.InferType<Schema>>;
+): Submission<yup.InferType<Schema>, yup.InferType<Schema>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
 		async: true;
 	},
-): Promise<Submission<yup.InferType<Schema>>>;
+): Promise<Submission<yup.InferType<Schema>, yup.InferType<Schema>>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
@@ -112,8 +108,8 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		async?: boolean;
 	},
 ):
-	| Submission<yup.InferType<Schema>>
-	| Promise<Submission<yup.InferType<Schema>>> {
+	| Submission<yup.InferType<Schema>, yup.InferType<Schema>>
+	| Promise<Submission<yup.InferType<Schema>, yup.InferType<Schema>>> {
 	const submission = baseParse<yup.InferType<Schema>>(payload);
 	const schema =
 		typeof config.schema === 'function'

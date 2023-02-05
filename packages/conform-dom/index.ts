@@ -40,10 +40,11 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
-export type Submission<Schema = unknown> = {
+export type Submission<Payload = unknown, Schema = never> = {
 	intent: string;
-	value: FieldValue<Schema>;
+	value: FieldValue<Payload>;
 	error: Array<[string, string]>;
+	data?: Schema;
 };
 
 export interface IntentButtonProps {
@@ -136,9 +137,9 @@ export function hasError(
 	);
 }
 
-export function reportSubmission(
+export function reportSubmission<Payload, Schema>(
 	form: HTMLFormElement,
-	submission: Submission,
+	submission: Submission<Payload, Schema>,
 ): void {
 	const messageByName: Map<string, string> = new Map();
 	const listCommand = parseListCommand(submission.intent);

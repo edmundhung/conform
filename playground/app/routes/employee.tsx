@@ -13,8 +13,6 @@ const schema = z.object({
 	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
 });
 
-type Schema = z.infer<typeof schema>;
-
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
 };
@@ -49,7 +47,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function EmployeeForm() {
 	const config = useLoaderData();
 	const state = useActionData();
-	const [form, { name, email, title }] = useForm<Schema>({
+	const [form, { name, email, title }] = useForm({
 		...config,
 		state,
 		onValidate({ formData }) {

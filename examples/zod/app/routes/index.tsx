@@ -41,11 +41,14 @@ export async function action({ request }: ActionArgs) {
 export default function SignupForm() {
 	const state = useActionData<typeof action>();
 	const [form, { email, password, 'confirm-password': confirmPassword }] =
-		useForm<z.infer<typeof schema>>({
+		useForm({
 			state,
 			initialReport: 'onBlur',
 			onValidate({ formData }) {
 				return parse(formData, { schema });
+			},
+			onSubmit(event, { submission }) {
+				console.log(submission.data);
 			},
 		});
 

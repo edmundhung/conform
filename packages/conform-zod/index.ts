@@ -1,7 +1,7 @@
 import {
 	type FieldConstraint,
 	type FieldsetConstraint,
-	type Submission as ConformSubmission,
+	type Submission,
 	getName,
 	parse as baseParse,
 } from '@conform-to/dom';
@@ -108,10 +108,6 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	}
 
 	return result;
-}
-
-interface Submission<Output, Input = Output> extends ConformSubmission<Input> {
-	data?: Output;
 }
 
 export function parse<Schema extends z.ZodTypeAny>(

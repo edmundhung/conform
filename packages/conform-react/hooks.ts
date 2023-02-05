@@ -32,7 +32,7 @@ import {
 } from 'react';
 import { input } from './helpers';
 
-export interface FormConfig<Schema extends Record<string, any>> {
+export interface FormConfig<Payload extends Record<string, any>, Schema> {
 	/**
 	 * If the form id is provided, Id for label,
 	 * input and error elements will be derived.
@@ -55,17 +55,17 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object representing the initial value of the form.
 	 */
-	defaultValue?: FieldValue<Schema>;
+	defaultValue?: FieldValue<Payload>;
 
 	/**
 	 * An object describing the state from the last submission
 	 */
-	state?: Submission<Schema>;
+	state?: Submission<Payload, Schema>;
 
 	/**
 	 * An object describing the constraint of each field
 	 */
-	constraint?: FieldsetConstraint<Schema>;
+	constraint?: FieldsetConstraint<Payload>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -90,7 +90,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => Submission<Schema>;
+	}) => Submission<Payload, Schema>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -100,7 +100,7 @@ export interface FormConfig<Schema extends Record<string, any>> {
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: Submission<Schema>;
+			submission: Submission<Payload, Schema>;
 		},
 	) => void;
 }
@@ -129,9 +129,12 @@ interface Form<Schema extends Record<string, any>> {
  *
  * @see https://conform.guide/api/react#useform
  */
-export function useForm<Schema extends Record<string, any>>(
-	config: FormConfig<Schema> = {},
-): [Form<Schema>, Fieldset<Schema>] {
+export function useForm<
+	Payload extends Record<string, any>,
+	Schema extends Record<string, any> = never,
+>(
+	config: FormConfig<Payload, Schema> = {},
+): [Form<Payload>, Fieldset<Payload>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
@@ -140,7 +143,7 @@ export function useForm<Schema extends Record<string, any>>(
 		return message ?? '';
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
-		FieldsetConfig<Schema>
+		FieldsetConfig<Payload>
 	>(() => {
 		const submission = config.state;
 
@@ -282,7 +285,7 @@ export function useForm<Schema extends Record<string, any>>(
 		};
 	}, []);
 
-	const form: Form<Schema> = {
+	const form: Form<Payload> = {
 		id: config.id,
 		ref,
 		error,
@@ -298,45 +301,39 @@ export function useForm<Schema extends Record<string, any>>(
 					| HTMLInputElement
 					| null;
 
-				/**
-				 * It checks defaultPrevented to confirm if the submission is intentional
-				 * This is utilized by `useFieldList` to modify the list state when the submit
-				 * event is captured and revalidate the form with new fields without triggering
-				 * a form submission at the same time.
-				 */
 				if (event.defaultPrevented) {
 					return;
 				}
 
 				try {
-					let submission: Submission<Schema>;
-
 					const formData = getFormData(form, submitter);
+					const onValidate =
+						config.onValidate ??
+						(({ form, formData }): Submission<Payload, Schema> => {
+							const submission = parse<Payload>(formData);
 
-					if (typeof config.onValidate === 'function') {
-						submission = config.onValidate({ form, formData });
-					} else {
-						submission = parse(formData);
-
-						if (config.mode !== 'server-validation') {
-							/**
-							 * As there is no custom logic defined,
-							 * removing the custom validity state will allow us
-							 * finding the latest validation message.
-							 *
-							 * This is mainly used to showcase the constraint validation API.
-							 */
-							for (const element of form.elements) {
-								if (isFieldElement(element) && element.willValidate) {
-									element.setCustomValidity('');
-									submission.error.push([
-										element.name,
-										element.validationMessage,
-									]);
+							if (config.mode !== 'server-validation') {
+								/**
+								 * As there is no custom logic defined,
+								 * removing the custom validity state will allow us
+								 * finding the latest validation message.
+								 *
+								 * This is mainly used to showcase the constraint validation API.
+								 */
+								for (const element of form.elements) {
+									if (isFieldElement(element) && element.willValidate) {
+										element.setCustomValidity('');
+										submission.error.push([
+											element.name,
+											element.validationMessage,
+										]);
+									}
 								}
 							}
-						}
-					}
+
+							return submission;
+						});
+					const submission = onValidate({ form, formData });
 
 					if (
 						(!config.noValidate &&

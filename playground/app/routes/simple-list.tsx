@@ -34,7 +34,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const [form, { items }] = useForm<z.infer<typeof schema>>({
+	const [form, { items }] = useForm({
 		mode: noClientValidate ? 'server-validation' : 'client-only',
 		state,
 		onValidate: !noClientValidate
