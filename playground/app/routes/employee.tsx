@@ -50,21 +50,12 @@ export default function EmployeeForm() {
 	const [form, { name, email, title }] = useForm({
 		...config,
 		state,
+		shouldServerValidate(intent, name) {
+			return intent === 'validate/email' && name === 'email';
+		},
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (
-							submission.intent !== 'submit' &&
-							(submission.intent !== 'validate/email' ||
-								hasError(submission.error, 'email'))
-						) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (

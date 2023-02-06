@@ -43,11 +43,6 @@ export interface FormConfig<
 	id?: string;
 
 	/**
-	 * Validation mode. Default to `client-only`.
-	 */
-	mode?: 'client-only' | 'server-validation';
-
-	/**
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
@@ -83,6 +78,10 @@ export interface FormConfig<
 	 * Default to `false`.
 	 */
 	noValidate?: boolean;
+
+	shouldClientValidate?: (intent: string, name: string) => boolean;
+	shouldServerValidate?: (intent: string, name: string) => boolean;
+	shouldAcceptSubmission?: (submission: SubmissionResult) => boolean;
 
 	/**
 	 * A function to be called when the form should be (re)validated.
@@ -149,6 +148,7 @@ export function useForm<
 		FieldsetConfig<Schema>
 	>(() => {
 		const submission = config.state;
+		const shouldServerValidate = config.shouldServerValidate ?? shouldValidate;
 
 		if (!submission) {
 			return {
@@ -159,7 +159,8 @@ export function useForm<
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
-				([name]) => name !== '' && shouldValidate(submission.intent, name),
+				([name]) =>
+					name !== '' && shouldServerValidate(submission.intent, name),
 			),
 		};
 	});
@@ -183,12 +184,23 @@ export function useForm<
 
 	useEffect(() => {
 		const form = ref.current;
+		const submission = config.state;
+		const shouldClientValidate =
+			configRef.current.shouldClientValidate ?? shouldValidate;
+		const shouldServerValidate =
+			configRef.current.shouldServerValidate ?? (() => false);
 
-		if (!form || !config.state) {
+		if (!form || !submission) {
 			return;
 		}
 
-		reportSubmission(form, config.state);
+		reportSubmission(
+			form,
+			submission,
+			(name) =>
+				shouldClientValidate(submission.intent, name) ||
+				shouldServerValidate(submission.intent, name),
+		);
 	}, [config.state]);
 
 	useEffect(() => {
@@ -312,39 +324,23 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const onValidate =
 						config.onValidate ??
-						(({ form, formData }) => {
-							const submission = parse(formData);
-
-							if (config.mode !== 'server-validation') {
-								/**
-								 * As there is no custom logic defined,
-								 * removing the custom validity state will allow us
-								 * finding the latest validation message.
-								 *
-								 * This is mainly used to showcase the constraint validation API.
-								 */
-								for (const element of form.elements) {
-									if (isFieldElement(element) && element.willValidate) {
-										element.setCustomValidity('');
-										submission.error.push([
-											element.name,
-											element.validationMessage,
-										]);
-									}
-								}
-							}
-
-							return submission as SubmissionResult;
-						});
+						((context) => parse(context.formData) as SubmissionResult);
 					const submission = onValidate({ form, formData });
+					const shouldServerValidate =
+						config.shouldServerValidate ?? (() => false);
+					const shouldClientValidate =
+						config.shouldClientValidate ?? shouldValidate;
 
 					if (
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						((submission.intent.startsWith('validate/') ||
-							submission.intent.startsWith('list/')) &&
-							config.mode !== 'server-validation')
+						Array.from(form.elements).every(
+							(element) =>
+								!isFieldElement(element) ||
+								!shouldServerValidate(submission.intent, element.name) ||
+								hasError(submission.error, element.name),
+						)
 					) {
 						event.preventDefault();
 					} else {
@@ -352,7 +348,9 @@ export function useForm<
 					}
 
 					if (event.defaultPrevented) {
-						reportSubmission(form, submission);
+						reportSubmission(form, submission, (name) =>
+							shouldClientValidate(submission.intent, name),
+						);
 					}
 				} catch (e) {
 					console.warn(e);

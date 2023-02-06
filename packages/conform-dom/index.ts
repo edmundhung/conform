@@ -147,6 +147,7 @@ export function hasError(
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
+	wasValidated: (name: string) => boolean,
 ): void {
 	const messageByName: Map<string, string> = new Map();
 	const listCommand = parseListCommand(submission.intent);
@@ -200,23 +201,20 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
 			const message = messageByName.get(elementName);
-			const elementShouldValidate = shouldValidate(
-				submission.intent,
-				elementName,
-			);
+			const elementWasValidate = wasValidated(elementName);
 
-			if (elementShouldValidate) {
+			if (elementWasValidate) {
 				element.dataset.conformTouched = 'true';
 			}
 
-			if (typeof message !== 'undefined' || elementShouldValidate) {
+			if (typeof message !== 'undefined' || elementWasValidate) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
 				element.setCustomValidity(message ?? '');
 				element.dispatchEvent(invalidEvent);
 			}
 
-			if (elementShouldValidate && !element.validity.valid) {
+			if (elementWasValidate && !element.validity.valid) {
 				focus(element);
 			}
 		}
