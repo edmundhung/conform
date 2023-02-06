@@ -31,8 +31,13 @@ export default function Validate() {
 	const state = useActionData();
 	const [form, { name, message }] = useForm({
 		state,
-		shouldServerValidate(intent) {
-			return intent === 'submit' || noClientValidate;
+		shouldServerValidate(intent, name) {
+			return (
+				intent === 'submit' ||
+				(noClientValidate &&
+					(intent === 'validate' ||
+						(intent === 'validate/name' && name === 'name')))
+			);
 		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
