@@ -81,7 +81,6 @@ export interface FormConfig<
 
 	shouldClientValidate?: (intent: string, name: string) => boolean;
 	shouldServerValidate?: (intent: string, name: string) => boolean;
-	shouldAcceptSubmission?: (submission: SubmissionResult) => boolean;
 
 	/**
 	 * A function to be called when the form should be (re)validated.
@@ -148,7 +147,9 @@ export function useForm<
 		FieldsetConfig<Schema>
 	>(() => {
 		const submission = config.state;
-		const shouldServerValidate = config.shouldServerValidate ?? shouldValidate;
+		const shouldClientValidate = config.shouldClientValidate ?? shouldValidate;
+		const shouldServerValidate =
+			config.shouldServerValidate ?? ((intent) => intent === 'submit');
 
 		if (!submission) {
 			return {
@@ -160,7 +161,9 @@ export function useForm<
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
 				([name]) =>
-					name !== '' && shouldServerValidate(submission.intent, name),
+					name !== '' &&
+					(shouldClientValidate(submission.intent, name) ||
+						shouldServerValidate(submission.intent, name)),
 			),
 		};
 	});
@@ -188,7 +191,8 @@ export function useForm<
 		const shouldClientValidate =
 			configRef.current.shouldClientValidate ?? shouldValidate;
 		const shouldServerValidate =
-			configRef.current.shouldServerValidate ?? (() => false);
+			configRef.current.shouldServerValidate ??
+			((intent) => intent === 'submit');
 
 		if (!form || !submission) {
 			return;
@@ -327,7 +331,7 @@ export function useForm<
 						((context) => parse(context.formData) as SubmissionResult);
 					const submission = onValidate({ form, formData });
 					const shouldServerValidate =
-						config.shouldServerValidate ?? (() => false);
+						config.shouldServerValidate ?? ((intent) => intent === 'submit');
 					const shouldClientValidate =
 						config.shouldClientValidate ?? shouldValidate;
 

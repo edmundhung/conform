@@ -51,7 +51,9 @@ export default function EmployeeForm() {
 		...config,
 		state,
 		shouldServerValidate(intent, name) {
-			return intent === 'validate/email' && name === 'email';
+			return (
+				intent === 'submit' || (intent === 'validate/email' && name === 'email')
+			);
 		},
 		onValidate({ formData }) {
 			return parse(formData, { schema });

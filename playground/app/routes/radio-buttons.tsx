@@ -37,6 +37,9 @@ export default function Example() {
 	const state = useActionData<typeof action>();
 	const [form, { answer }] = useForm<Schema>({
 		state,
+		shouldServerValidate(intent) {
+			return intent === 'submit' || noClientValidate;
+		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData)
 			: undefined,

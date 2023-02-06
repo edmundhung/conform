@@ -36,6 +36,9 @@ export default function SimpleList() {
 	const state = useActionData();
 	const [form, { items }] = useForm({
 		state,
+		shouldServerValidate(intent) {
+			return intent === 'submit' || noClientValidate;
+		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,

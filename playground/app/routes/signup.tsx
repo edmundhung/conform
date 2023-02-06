@@ -68,14 +68,6 @@ export default function SignupForm() {
 		onValidate: config.validate
 			? ({ formData }) => parseSignupForm(formData)
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.intent.startsWith('validate/')) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (

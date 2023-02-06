@@ -56,14 +56,6 @@ export default function PaymentForm() {
 		onValidate: config.validate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.intent.startsWith('validate/')) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 	const { currency, value } = useFieldset(form.ref, {
 		...amount.config,

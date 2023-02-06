@@ -55,6 +55,9 @@ export default function FileUpload() {
 	const state = useActionData();
 	const [form, { file, files }] = useForm({
 		state,
+		shouldServerValidate(intent) {
+			return intent === 'submit' || noClientValidate;
+		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,

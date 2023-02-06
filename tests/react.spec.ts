@@ -378,9 +378,7 @@ test.describe('Server Validation', () => {
 	});
 
 	test('Async validation', async ({ page }) => {
-		const form = await gotoForm(page, '/employee', {
-			mode: 'server-validation',
-		});
+		const form = await gotoForm(page, '/employee');
 		const { name, email, title } = getEmployeeFieldset(form);
 
 		await page.route('**', (route) => {
