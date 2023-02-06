@@ -224,7 +224,7 @@ export default function Signup() {
 }
 ```
 
-## Async valdiation
+## Async Validation
 
 If you want to have some parts of the validation done on the server, while the rest of the validations are still handled on the client side. All you need is to setup a **passthrough**.
 
