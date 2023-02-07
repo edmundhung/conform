@@ -201,9 +201,9 @@ export function useForm<
 		reportSubmission(
 			form,
 			submission,
-			(name) =>
-				shouldClientValidate(submission.intent, name) ||
-				shouldServerValidate(submission.intent, name),
+			(intent, name) =>
+				shouldClientValidate(intent, name) ||
+				shouldServerValidate(intent, name),
 		);
 	}, [config.state]);
 
@@ -352,9 +352,7 @@ export function useForm<
 					}
 
 					if (event.defaultPrevented) {
-						reportSubmission(form, submission, (name) =>
-							shouldClientValidate(submission.intent, name),
-						);
+						reportSubmission(form, submission, shouldClientValidate);
 					}
 				} catch (e) {
 					console.warn(e);
