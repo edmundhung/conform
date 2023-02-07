@@ -124,12 +124,14 @@ export function getName(paths: Array<string | number>): string {
 }
 
 export function shouldValidate(intent: string, name: string): boolean {
-	return (
-		intent === 'submit' ||
-		intent === 'validate' ||
-		intent === `validate/${name}` ||
-		parseListCommand(intent)?.scope === name
-	);
+	switch (intent) {
+		case 'submit':
+		case 'validate':
+		case `validate/${name}`:
+			return true;
+		default:
+			return parseListCommand(intent)?.scope === name;
+	}
 }
 
 export function hasError(

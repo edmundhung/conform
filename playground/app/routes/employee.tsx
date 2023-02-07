@@ -1,4 +1,4 @@
-import { conform, hasError, shouldValidate, useForm } from '@conform-to/react';
+import { conform, shouldValidate, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -51,9 +51,14 @@ export default function EmployeeForm() {
 		...config,
 		state,
 		shouldServerValidate(intent, name) {
-			return (
-				intent === 'submit' || (intent === 'validate/email' && name === 'email')
-			);
+			switch (intent) {
+				case 'submit':
+					return true;
+				case `validate/${name}`:
+					return name === 'email';
+				default:
+					return false;
+			}
 		},
 		onValidate({ formData }) {
 			return parse(formData, { schema });
