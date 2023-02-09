@@ -46,12 +46,14 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 				intent: string;
 				payload: Record<string, any>;
 				error: Array<[string, string]>;
+				scope?: Array<string>;
 		  }
 		: {
 				intent: string;
 				payload: Record<string, any>;
 				value?: Schema;
 				error: Array<[string, string]>;
+				scope?: Array<string>;
 		  };
 
 export interface IntentButtonProps {
@@ -149,7 +151,6 @@ export function hasError(
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
-	shouldValidate: (intent: string, name: string) => boolean,
 ): void {
 	const messageByName: Map<string, string> = new Map();
 	const listCommand = parseListCommand(submission.intent);
@@ -203,10 +204,8 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
 			const message = messageByName.get(elementName);
-			const elementShouldValidate = shouldValidate(
-				submission.intent,
-				elementName,
-			);
+			const elementShouldValidate =
+				!submission.scope || submission.scope.includes(elementName);
 
 			if (elementShouldValidate) {
 				element.dataset.conformTouched = 'true';
@@ -373,7 +372,32 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 			}
 		}
 
-		submission = handleList(submission);
+		const [type, scope] = submission.intent.split('/');
+
+		switch (type) {
+			case 'validate':
+				if (scope) {
+					submission.scope = [scope];
+				}
+				break;
+			case 'list':
+				const command = parseListCommand(submission.intent);
+
+				if (command) {
+					const paths = getPaths(command.scope);
+
+					setValue(submission.payload, paths, (list) => {
+						if (typeof list !== 'undefined' && !Array.isArray(list)) {
+							throw new Error('The list command can only be applied to a list');
+						}
+
+						return updateList(list ?? [], command);
+					});
+
+					submission.scope = [command.scope];
+				}
+				break;
+		}
 	} catch (e) {
 		submission.error.push([
 			'',
@@ -390,6 +414,7 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 				intent: this.intent,
 				payload: this.payload,
 				error: this.error,
+				scope: this.scope,
 			};
 		},
 	};
@@ -465,26 +490,6 @@ export function updateList<Schema>(
 	}
 
 	return list;
-}
-
-export function handleList(submission: Submission): Submission {
-	const command = parseListCommand(submission.intent);
-
-	if (!command) {
-		return submission;
-	}
-
-	const paths = getPaths(command.scope);
-
-	setValue(submission.payload, paths, (list) => {
-		if (typeof list !== 'undefined' && !Array.isArray(list)) {
-			throw new Error('The list command can only be applied to a list');
-		}
-
-		return updateList(list ?? [], command);
-	});
-
-	return submission;
 }
 
 export interface ListCommandButtonBuilder {

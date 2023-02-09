@@ -36,15 +36,9 @@ export default function SimpleList() {
 	const state = useActionData();
 	const [form, { items }] = useForm({
 		state,
-		shouldServerValidate(intent) {
-			return intent === 'submit' || noClientValidate;
-		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
-		onSubmit(event, context) {
-			console.log('submit');
-		},
 	});
 	const itemsList = useFieldList(form.ref, items.config);
 

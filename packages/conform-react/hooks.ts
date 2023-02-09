@@ -34,7 +34,7 @@ import { input } from './helpers';
 
 export interface FormConfig<
 	Schema extends Record<string, any>,
-	SubmissionResult extends Submission | Submission<Schema> = Submission,
+	ClientSubmission extends Submission | Submission<Schema> = Submission,
 > {
 	/**
 	 * If the form id is provided, Id for label,
@@ -79,8 +79,17 @@ export interface FormConfig<
 	 */
 	noValidate?: boolean;
 
-	shouldClientValidate?: (intent: string, name: string) => boolean;
-	shouldServerValidate?: (intent: string, name: string) => boolean;
+	shouldServerValidate?: ({
+		form,
+		formData,
+		submission,
+		defaultShouldValidate,
+	}: {
+		form: HTMLFormElement;
+		formData: FormData;
+		submission: ClientSubmission;
+		defaultShouldValidate: boolean;
+	}) => boolean;
 
 	/**
 	 * A function to be called when the form should be (re)validated.
@@ -91,7 +100,7 @@ export interface FormConfig<
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => SubmissionResult;
+	}) => ClientSubmission;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -101,7 +110,7 @@ export interface FormConfig<
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: SubmissionResult;
+			submission: ClientSubmission;
 		},
 	) => void;
 }
@@ -132,9 +141,9 @@ interface Form<Schema extends Record<string, any>> {
  */
 export function useForm<
 	Schema extends Record<string, any>,
-	SubmissionResult extends Submission | Submission<Schema> = Submission,
+	ClientSubmission extends Submission | Submission<Schema> = Submission,
 >(
-	config: FormConfig<Schema, SubmissionResult> = {},
+	config: FormConfig<Schema, ClientSubmission> = {},
 ): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
@@ -147,9 +156,6 @@ export function useForm<
 		FieldsetConfig<Schema>
 	>(() => {
 		const submission = config.state;
-		const shouldClientValidate = config.shouldClientValidate ?? shouldValidate;
-		const shouldServerValidate =
-			config.shouldServerValidate ?? ((intent) => intent === 'submit');
 
 		if (!submission) {
 			return {
@@ -161,9 +167,7 @@ export function useForm<
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
 				([name]) =>
-					name !== '' &&
-					(shouldClientValidate(submission.intent, name) ||
-						shouldServerValidate(submission.intent, name)),
+					name !== '' && (!submission.scope || submission.scope.includes(name)),
 			),
 		};
 	});
@@ -188,23 +192,12 @@ export function useForm<
 	useEffect(() => {
 		const form = ref.current;
 		const submission = config.state;
-		const shouldClientValidate =
-			configRef.current.shouldClientValidate ?? shouldValidate;
-		const shouldServerValidate =
-			configRef.current.shouldServerValidate ??
-			((intent) => intent === 'submit');
 
 		if (!form || !submission) {
 			return;
 		}
 
-		reportSubmission(
-			form,
-			submission,
-			(intent, name) =>
-				shouldClientValidate(intent, name) ||
-				shouldServerValidate(intent, name),
-		);
+		reportSubmission(form, submission);
 	}, [config.state]);
 
 	useEffect(() => {
@@ -328,22 +321,24 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const onValidate =
 						config.onValidate ??
-						((context) => parse(context.formData) as SubmissionResult);
+						((context) => parse(context.formData) as ClientSubmission);
 					const submission = onValidate({ form, formData });
-					const shouldServerValidate =
-						config.shouldServerValidate ?? ((intent) => intent === 'submit');
-					const shouldClientValidate =
-						config.shouldClientValidate ?? shouldValidate;
+					const defaultShouldValidate =
+						typeof config.onValidate !== 'function' ||
+						(!submission.intent.startsWith('validate/') &&
+							!submission.intent.startsWith('list/'));
 
 					if (
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
-						Array.from(form.elements).every(
-							(element) =>
-								!isFieldElement(element) ||
-								!shouldServerValidate(submission.intent, element.name) ||
-								hasError(submission.error, element.name),
+						!(
+							config.shouldServerValidate?.({
+								form,
+								formData,
+								submission,
+								defaultShouldValidate,
+							}) ?? defaultShouldValidate
 						)
 					) {
 						event.preventDefault();
@@ -352,7 +347,7 @@ export function useForm<
 					}
 
 					if (event.defaultPrevented) {
-						reportSubmission(form, submission, shouldClientValidate);
+						reportSubmission(form, submission);
 					}
 				} catch (e) {
 					console.warn(e);

@@ -1,4 +1,4 @@
-import { conform, shouldValidate, useForm, validate } from '@conform-to/react';
+import { conform, useForm, validate } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -31,7 +31,6 @@ export default function Validate() {
 	const state = useActionData();
 	const [form, { name, message }] = useForm({
 		state,
-		shouldServerValidate: noClientValidate ? shouldValidate : undefined,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
