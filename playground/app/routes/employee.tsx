@@ -51,12 +51,11 @@ export default function EmployeeForm() {
 		...config,
 		state,
 		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
-			switch (submission.intent) {
-				case 'validate/email':
-					return !hasError(submission.error, 'email');
-				default:
-					return defaultShouldPassthrough;
+			if (submission.intent === 'validate/email') {
+				return !hasError(submission.error, 'email');
 			}
+
+			return defaultShouldPassthrough;
 		},
 		onValidate({ formData }) {
 			return parse(formData, { schema });
