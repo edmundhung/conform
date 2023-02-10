@@ -50,21 +50,16 @@ export default function EmployeeForm() {
 	const [form, { name, email, title }] = useForm({
 		...config,
 		state,
+		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
+			if (submission.intent === 'validate/email') {
+				return !hasError(submission.error, 'email');
+			}
+
+			return defaultShouldPassthrough;
+		},
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (
-							submission.intent !== 'submit' &&
-							(submission.intent !== 'validate/email' ||
-								hasError(submission.error, 'email'))
-						) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (

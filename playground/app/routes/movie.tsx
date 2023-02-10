@@ -121,14 +121,6 @@ export default function MovieForm() {
 					return submission;
 			  }
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.intent.startsWith('validate/')) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (

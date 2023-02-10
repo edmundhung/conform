@@ -44,14 +44,6 @@ function LoginForm() {
     id: undefined,
 
     /**
-     * Validation mode.
-     * Support "client-only" or "server-validation".
-     *
-     * Default to `client-only`.
-     */
-    mode: 'client-only',
-
-    /**
      * Define when the error should be reported initially.
      * Support "onSubmit", "onChange", "onBlur".
      *

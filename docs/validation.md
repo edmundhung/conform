@@ -96,9 +96,6 @@ export default function Signup() {
   // Last submission returned by the server
   const state = useActionData<typeof action>();
   const [form] = useForm<SignupForm>({
-    // Enable server validation mode
-    mode: 'server-validation',
-
     // Begin validating on blur
     initialReport: 'onBlur',
 
@@ -167,16 +164,6 @@ export async function action({ request }: ActionArgs) {
 export default function Signup() {
   const state = useActionData();
   const [form] = useForm({
-    /**
-     * Changing the mode to `client-only` as the client
-     * validation does exactly the same checks as the
-     * server now. There is no need to confirm with the
-     * server again.
-     *
-     * This can be omitted directly as it is the default mode
-     */
-    mode: 'client-only',
-
     state,
 
     // Setup client validation
@@ -212,11 +199,6 @@ export function action() {
 export default function Signup() {
   const state = useActionData();
   const [form] = useForm({
-    /**
-     * Changing the mode back to `server-validation`
-     * as you want to confirm with the server now.
-     */
-    mode: 'server-validation',
     state,
     onValidate({ formData }) {
       // ...

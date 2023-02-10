@@ -60,14 +60,6 @@ export default function LoginForm() {
 		onValidate: config.validate
 			? ({ formData }) => parseLoginForm(formData)
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.intent.startsWith('validate/')) {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (

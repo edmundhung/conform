@@ -124,12 +124,14 @@ export function getName(paths: Array<string | number>): string {
 }
 
 export function shouldValidate(intent: string, name: string): boolean {
-	return (
-		intent === 'submit' ||
-		intent === 'validate' ||
-		intent === `validate/${name}` ||
-		parseListCommand(intent)?.scope === name
-	);
+	switch (intent) {
+		case 'submit':
+		case 'validate':
+		case `validate/${name}`:
+			return true;
+		default:
+			return parseListCommand(intent)?.scope === name;
+	}
 }
 
 export function hasError(
@@ -370,7 +372,19 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 			}
 		}
 
-		submission = handleList(submission);
+		const command = parseListCommand(submission.intent);
+
+		if (command) {
+			const paths = getPaths(command.scope);
+
+			setValue(submission.payload, paths, (list) => {
+				if (typeof list !== 'undefined' && !Array.isArray(list)) {
+					throw new Error('The list command can only be applied to a list');
+				}
+
+				return updateList(list ?? [], command);
+			});
+		}
 	} catch (e) {
 		submission.error.push([
 			'',
@@ -462,26 +476,6 @@ export function updateList<Schema>(
 	}
 
 	return list;
-}
-
-export function handleList(submission: Submission): Submission {
-	const command = parseListCommand(submission.intent);
-
-	if (!command) {
-		return submission;
-	}
-
-	const paths = getPaths(command.scope);
-
-	setValue(submission.payload, paths, (list) => {
-		if (typeof list !== 'undefined' && !Array.isArray(list)) {
-			throw new Error('The list command can only be applied to a list');
-		}
-
-		return updateList(list ?? [], command);
-	});
-
-	return submission;
 }
 
 export interface ListCommandButtonBuilder {

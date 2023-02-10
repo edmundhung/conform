@@ -30,7 +30,6 @@ export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
 	const [form, { name, message }] = useForm({
-		mode: noClientValidate ? 'server-validation' : 'client-only',
 		state,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })

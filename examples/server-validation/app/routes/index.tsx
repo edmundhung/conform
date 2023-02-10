@@ -62,9 +62,6 @@ export default function Signup() {
 	// Last submission returned by the server
 	const state = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm<SignupForm>({
-		// Enable server validation mode
-		mode: 'server-validation',
-
 		// Begin validating on blur
 		initialReport: 'onBlur',
 
