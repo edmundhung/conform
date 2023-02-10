@@ -166,8 +166,7 @@ export function useForm<
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: submission.error.filter(
-				([name]) =>
-					name !== '' && (!submission.scope || submission.scope.includes(name)),
+				([name]) => name !== '' && shouldValidate(submission.intent, name),
 			),
 		};
 	});

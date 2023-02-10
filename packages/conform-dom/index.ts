@@ -46,14 +46,12 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 				intent: string;
 				payload: Record<string, any>;
 				error: Array<[string, string]>;
-				scope?: Array<string>;
 		  }
 		: {
 				intent: string;
 				payload: Record<string, any>;
 				value?: Schema;
 				error: Array<[string, string]>;
-				scope?: Array<string>;
 		  };
 
 export interface IntentButtonProps {
@@ -204,8 +202,10 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
 			const message = messageByName.get(elementName);
-			const elementShouldValidate =
-				!submission.scope || submission.scope.includes(elementName);
+			const elementShouldValidate = shouldValidate(
+				submission.intent,
+				elementName,
+			);
 
 			if (elementShouldValidate) {
 				element.dataset.conformTouched = 'true';
@@ -372,31 +372,18 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 			}
 		}
 
-		const [type, scope] = submission.intent.split('/');
+		const command = parseListCommand(submission.intent);
 
-		switch (type) {
-			case 'validate':
-				if (scope) {
-					submission.scope = [scope];
+		if (command) {
+			const paths = getPaths(command.scope);
+
+			setValue(submission.payload, paths, (list) => {
+				if (typeof list !== 'undefined' && !Array.isArray(list)) {
+					throw new Error('The list command can only be applied to a list');
 				}
-				break;
-			case 'list':
-				const command = parseListCommand(submission.intent);
 
-				if (command) {
-					const paths = getPaths(command.scope);
-
-					setValue(submission.payload, paths, (list) => {
-						if (typeof list !== 'undefined' && !Array.isArray(list)) {
-							throw new Error('The list command can only be applied to a list');
-						}
-
-						return updateList(list ?? [], command);
-					});
-
-					submission.scope = [command.scope];
-				}
-				break;
+				return updateList(list ?? [], command);
+			});
 		}
 	} catch (e) {
 		submission.error.push([
@@ -414,7 +401,6 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 				intent: this.intent,
 				payload: this.payload,
 				error: this.error,
-				scope: this.scope,
 			};
 		},
 	};

@@ -142,7 +142,6 @@ test.describe('conform-dom', () => {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
 				error: [],
-				scope: ['tasks'],
 				toJSON: expect.any(Function),
 			};
 
