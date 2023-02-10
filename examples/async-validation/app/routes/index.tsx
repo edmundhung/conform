@@ -70,22 +70,19 @@ export async function action({ request }: ActionArgs) {
 export default function Signup() {
 	const state = useActionData<typeof action>();
 	const [form, { email, username, password, confirmPassword }] = useForm({
-		mode: 'server-validation',
 		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
-		onSubmit(event, { submission }) {
+		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
 			// Only the email field requires additional validation from the server
-			// We trust the client result otherwise
-			if (
-				submission.intent !== 'submit' &&
-				(submission.intent !== 'validate/username' ||
-					hasError(submission.error, 'username'))
-			) {
-				event.preventDefault();
+			// We trust the client submission result otherwise
+			if (submission.intent === 'validate/username') {
+				return !hasError(submission.error, 'username');
 			}
+
+			return defaultShouldPassthrough;
 		},
 	});
 

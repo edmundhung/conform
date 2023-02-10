@@ -150,7 +150,6 @@ export default function LoginForm() {
   // including the error and config of each field
   const [form, { email, password }] = useForm({
     initialReport: 'onBlur',
-    mode: 'server-validation',
     state: result,
   });
 

@@ -79,16 +79,16 @@ export interface FormConfig<
 	 */
 	noValidate?: boolean;
 
-	shouldServerValidate?: ({
+	shouldSubmissionPassthrough?: ({
 		form,
 		formData,
 		submission,
-		defaultShouldValidate,
+		defaultShouldPassthrough,
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
 		submission: ClientSubmission;
-		defaultShouldValidate: boolean;
+		defaultShouldPassthrough: boolean;
 	}) => boolean;
 
 	/**
@@ -322,7 +322,7 @@ export function useForm<
 						config.onValidate ??
 						((context) => parse(context.formData) as ClientSubmission);
 					const submission = onValidate({ form, formData });
-					const defaultShouldValidate =
+					const defaultShouldPassthrough =
 						typeof config.onValidate !== 'function' ||
 						(!submission.intent.startsWith('validate/') &&
 							!submission.intent.startsWith('list/'));
@@ -332,12 +332,12 @@ export function useForm<
 							!submitter?.formNoValidate &&
 							hasError(submission.error)) ||
 						!(
-							config.shouldServerValidate?.({
+							config.shouldSubmissionPassthrough?.({
 								form,
 								formData,
 								submission,
-								defaultShouldValidate,
-							}) ?? defaultShouldValidate
+								defaultShouldPassthrough,
+							}) ?? defaultShouldPassthrough
 						)
 					) {
 						event.preventDefault();
