@@ -1,4 +1,4 @@
-import { conform, parse, hasError, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -11,51 +11,51 @@ interface SignupForm {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, {
+		resolve({ email, password, confirmPassword }) {
+			const error: Array<[string, string]> = [];
 
-	if (!submission.payload.email) {
-		submission.error.push(['email', 'Email is required']);
-	} else if (!submission.payload.email.includes('@')) {
-		submission.error.push(['email', 'Email is invalid']);
-	}
+			if (!email) {
+				error.push(['email', 'Email is required']);
+			} else if (!email.includes('@')) {
+				error.push(['email', 'Email is invalid']);
+			}
 
-	if (!submission.payload.password) {
-		submission.error.push(['password', 'Password is required']);
-	}
+			if (!password) {
+				error.push(['password', 'Password is required']);
+			}
 
-	if (!submission.payload.confirmPassword) {
-		submission.error.push(['confirmPassword', 'Confirm password is required']);
-	} else if (
-		submission.payload.confirmPassword !== submission.payload.password
-	) {
-		submission.error.push(['confirmPassword', 'Password does not match']);
-	}
+			if (!confirmPassword) {
+				error.push(['confirmPassword', 'Confirm password is required']);
+			} else if (confirmPassword !== password) {
+				error.push(['confirmPassword', 'Password does not match']);
+			}
 
-	try {
-		/**
-		 * Signup only when the user click on the submit button
-		 * and no error found
-		 */
-		if (submission.intent === 'submit' && !hasError(submission.error)) {
-			throw new Error('Not implemented');
-		}
-	} catch (error) {
-		/**
-		 * By specifying the key as '', the message will be
-		 * treated as a form-level error and populated
-		 * on the client side as `form.error`
-		 */
-		submission.error.push(['', 'Oops! Something went wrong.']);
-	}
+			if (error.length > 0) {
+				return { error };
+			}
 
-	// Always sends the submission state back to client until the user is signed up
-	return json({
-		...submission,
-		payload: {
-			// Never send the password back to client
-			email: submission.payload.email,
+			return {
+				value: { email, password, confirmPassword },
+			};
 		},
 	});
+
+	/**
+	 * Signup only when the user click on the submit button and no error found
+	 */
+	if (!submission.value || submission.intent !== 'submit') {
+		// Always sends the submission state back to client until the user is signed up
+		return json({
+			...submission,
+			payload: {
+				// Never send the password back to client
+				email: submission.payload.email,
+			},
+		});
+	}
+
+	throw new Error('Not implemented');
 }
 
 export default function Signup() {

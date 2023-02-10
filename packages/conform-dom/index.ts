@@ -46,12 +46,22 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 				intent: string;
 				payload: Record<string, any>;
 				error: Array<[string, string]>;
+				toJSON(): {
+					intent: string;
+					payload: Record<string, any>;
+					error: Array<[string, string]>;
+				};
 		  }
 		: {
 				intent: string;
 				payload: Record<string, any>;
 				value?: Schema;
 				error: Array<[string, string]>;
+				toJSON(): {
+					intent: string;
+					payload: Record<string, any>;
+					error: Array<[string, string]>;
+				};
 		  };
 
 export interface IntentButtonProps {
@@ -342,61 +352,51 @@ export function focus(field: FieldElement): void {
 	field.focus();
 }
 
-export function parse(payload: FormData | URLSearchParams): Submission {
-	let submission: Submission = {
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options: {
+		resolve: (
+			payload: Record<string, any>,
+			intent: string,
+		) => { value: Schema } | { error: Array<[string, string]> };
+	},
+): Submission<Schema>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options: {
+		resolve: (
+			payload: Record<string, any>,
+			intent: string,
+		) => Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+	},
+): Promise<Submission<Schema>>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options: {
+		resolve: (
+			payload: Record<string, any>,
+			intent: string,
+		) =>
+			| ({ value: Schema } | { error: Array<[string, string]> })
+			| Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+	},
+): Submission<Schema> | Promise<Submission<Schema>>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options: {
+		resolve: (
+			payload: Record<string, any>,
+			intent: string,
+		) =>
+			| ({ value: Schema } | { error: Array<[string, string]> })
+			| Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+	},
+): Submission<Schema> | Promise<Submission<Schema>> {
+	const submission: Submission = {
 		intent: 'submit',
 		payload: {},
 		error: [],
-	};
-
-	try {
-		for (let [name, value] of payload.entries()) {
-			if (name === '__intent__') {
-				if (typeof value !== 'string' || submission.intent !== 'submit') {
-					throw new Error('The intent could only be set on a button');
-				}
-
-				submission.intent = value;
-			} else {
-				const paths = getPaths(name);
-
-				setValue(submission.payload, paths, (prev) => {
-					if (!prev) {
-						return value;
-					} else if (Array.isArray(prev)) {
-						return prev.concat(value);
-					} else {
-						return [prev, value];
-					}
-				});
-			}
-		}
-
-		const command = parseListCommand(submission.intent);
-
-		if (command) {
-			const paths = getPaths(command.scope);
-
-			setValue(submission.payload, paths, (list) => {
-				if (typeof list !== 'undefined' && !Array.isArray(list)) {
-					throw new Error('The list command can only be applied to a list');
-				}
-
-				return updateList(list ?? [], command);
-			});
-		}
-	} catch (e) {
-		submission.error.push([
-			'',
-			e instanceof Error ? e.message : 'Invalid payload received',
-		]);
-	}
-
-	return {
-		...submission,
-
-		// @ts-expect-error This should be hidden from user
-		toJSON(): Submission {
+		toJSON() {
 			return {
 				intent: this.intent,
 				payload: this.payload,
@@ -404,6 +404,52 @@ export function parse(payload: FormData | URLSearchParams): Submission {
 			};
 		},
 	};
+
+	for (let [name, value] of payload.entries()) {
+		if (name === '__intent__') {
+			if (typeof value !== 'string' || submission.intent !== 'submit') {
+				throw new Error('The intent could only be set on a button');
+			}
+
+			submission.intent = value;
+		} else {
+			const paths = getPaths(name);
+
+			setValue(submission.payload, paths, (prev) => {
+				if (!prev) {
+					return value;
+				} else if (Array.isArray(prev)) {
+					return prev.concat(value);
+				} else {
+					return [prev, value];
+				}
+			});
+		}
+	}
+
+	const command = parseListCommand(submission.intent);
+
+	if (command) {
+		const paths = getPaths(command.scope);
+
+		setValue(submission.payload, paths, (list) => {
+			if (typeof list !== 'undefined' && !Array.isArray(list)) {
+				throw new Error('The list command can only be applied to a list');
+			}
+
+			return updateList(list ?? [], command);
+		});
+	}
+
+	const result = options.resolve(submission.payload, submission.intent);
+
+	if (result instanceof Promise) {
+		return result.then<Submission<Schema>>((resolved) =>
+			Object.assign(submission, resolved),
+		);
+	}
+
+	return Object.assign(submission, result) as Submission<Schema>;
 }
 
 export type ListCommand<Schema = unknown> =

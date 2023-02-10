@@ -11,17 +11,30 @@ interface Login {
 }
 
 function parseLoginForm(formData: FormData): Submission {
-	const submission = parse(formData);
+	return parse(formData, {
+		resolve({ email, password }) {
+			const error: Array<[string, string]> = [];
 
-	if (!submission.payload.email) {
-		submission.error.push(['email', 'Email is required']);
-	}
+			if (!email) {
+				error.push(['email', 'Email is required']);
+			}
 
-	if (!submission.payload.password) {
-		submission.error.push(['password', 'Password is required']);
-	}
+			if (!password) {
+				error.push(['password', 'Password is required']);
+			}
 
-	return submission;
+			if (error.length > 0) {
+				return { error };
+			}
+
+			return {
+				value: {
+					email,
+					password,
+				},
+			};
+		},
+	});
 }
 
 export let loader = async ({ request }: LoaderArgs) => {

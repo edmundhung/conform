@@ -320,7 +320,10 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const onValidate =
 						config.onValidate ??
-						((context) => parse(context.formData) as ClientSubmission);
+						((context) =>
+							parse(context.formData, {
+								resolve: () => ({ error: [] }),
+							}) as ClientSubmission);
 					const submission = onValidate({ form, formData });
 					const defaultShouldPassthrough =
 						typeof config.onValidate !== 'function' ||

@@ -110,46 +110,43 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 ):
 	| Submission<yup.InferType<Schema>>
 	| Promise<Submission<yup.InferType<Schema>>> {
-	const submission = baseParse(payload);
-	const schema =
-		typeof config.schema === 'function'
-			? config.schema(submission.intent)
-			: config.schema;
-	const resolveData = (value: yup.InferType<Schema>) => ({
-		...submission,
-		value,
-	});
-	const resolveError = (error: unknown) => {
-		if (error instanceof yup.ValidationError) {
-			return {
-				...submission,
-				error: submission.error.concat(
-					error.inner.reduce<Array<[string, string]>>((result, e) => {
-						result.push([e.path ?? '', e.message]);
+	return baseParse<Submission<yup.InferType<Schema>>>(payload, {
+		resolve(payload, intent) {
+			const schema =
+				typeof config.schema === 'function'
+					? config.schema(intent)
+					: config.schema;
+			const resolveData = (value: yup.InferType<Schema>) => ({ value });
+			const resolveError = (error: unknown) => {
+				if (error instanceof yup.ValidationError) {
+					return {
+						error: error.inner.reduce<Array<[string, string]>>((result, e) => {
+							result.push([e.path ?? '', e.message]);
 
-						return result;
-					}, []),
-				),
+							return result;
+						}, []),
+					};
+				}
+
+				throw error;
 			};
-		}
 
-		throw error;
-	};
+			if (!config.async) {
+				try {
+					const data = schema.validateSync(payload, {
+						abortEarly: false,
+					});
 
-	if (!config.async) {
-		try {
-			const data = schema.validateSync(submission.payload, {
-				abortEarly: false,
-			});
+					return resolveData(data);
+				} catch (error) {
+					return resolveError(error);
+				}
+			}
 
-			return resolveData(data);
-		} catch (error) {
-			return resolveError(error);
-		}
-	}
-
-	return schema
-		.validate(submission.payload, { abortEarly: false })
-		.then(resolveData)
-		.catch(resolveError);
+			return schema
+				.validate(payload, { abortEarly: false })
+				.then(resolveData)
+				.catch(resolveError);
+		},
+	});
 }
