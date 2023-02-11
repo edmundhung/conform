@@ -17,7 +17,8 @@ import {
 	reportSubmission,
 	validate,
 	requestIntent,
-	shouldValidate,
+	getValidationMessage,
+	getErrors,
 } from '@conform-to/dom';
 import {
 	type InputHTMLAttributes,
@@ -153,7 +154,7 @@ export function useForm<
 
 		const message = config.state.error[''];
 
-		return ([] as string[]).concat(message).join(String.fromCharCode(31));
+		return getValidationMessage(message);
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
@@ -166,16 +167,11 @@ export function useForm<
 			};
 		}
 
+		const { '': formError, ...initialError } = submission.error;
+
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
-			initialError: Object.entries(submission.error)
-				.filter(
-					([name]) => name !== '' && shouldValidate(submission.intent, name),
-				)
-				.map(([name, message]) => [
-					name,
-					([] as string[]).concat(message).join(String.fromCharCode(31)),
-				]),
+			initialError,
 		};
 	});
 	const fieldsetConfig = {
@@ -280,7 +276,6 @@ export function useForm<
 			setError('');
 			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
-				initialError: [],
 			});
 		};
 
@@ -378,6 +373,7 @@ export function useForm<
 export type Field<Schema> = {
 	config: FieldConfig<Schema>;
 	error?: string;
+	errors?: string[];
 };
 
 /**
@@ -401,7 +397,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the initial error of each field
 	 */
-	initialError?: Array<[string, string]>;
+	initialError?: Record<string, string | string[]>;
 
 	/**
 	 * An object describing the constraint of each field
@@ -434,25 +430,27 @@ export function useFieldset<Schema extends Record<string, any>>(
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Schema>;
-		initialError: Record<string, Array<[string, string]> | undefined>;
+		initialError: Record<string, Record<string, string | string[]> | undefined>;
 	}>(
 		// @ts-expect-error
 		() => {
-			const initialError: Record<string, Array<[string, string]> | undefined> =
-				{};
+			const initialError: Record<
+				string,
+				Record<string, string | string[]> | undefined
+			> = {};
 
-			for (const [name, message] of config?.initialError ?? []) {
+			for (const [name, message] of Object.entries(
+				config?.initialError ?? {},
+			)) {
 				const [key, ...paths] = getPaths(name);
 
 				if (typeof key === 'string') {
 					const scopedName = getName(paths);
-					const entries = initialError[key] ?? [];
 
-					if (scopedName === '' && entries.length > 0 && entries[0][0] !== '') {
-						initialError[key] = [[scopedName, message], ...entries];
-					} else {
-						initialError[key] = [...entries, [scopedName, message]];
-					}
+					initialError[key] = {
+						...initialError[key],
+						[scopedName]: message,
+					};
 				}
 			}
 
@@ -462,21 +460,19 @@ export function useFieldset<Schema extends Record<string, any>>(
 			};
 		},
 	);
-	const [error, setError] = useState<Record<string, string | undefined>>(() => {
-		const result: Record<string, string> = {};
+	const [error, setError] = useState<Record<string, string[] | undefined>>(
+		() => {
+			const result: Record<string, string[]> = {};
 
-		for (const [key, entries] of Object.entries(
-			uncontrolledState.initialError,
-		)) {
-			const [name, message] = entries?.[0] ?? [];
-
-			if (name === '') {
-				result[key] = message ?? '';
+			for (const [key, error] of Object.entries(
+				uncontrolledState.initialError,
+			)) {
+				result[key] = getErrors(getValidationMessage(error?.['']));
 			}
-		}
 
-		return result;
-	});
+			return result;
+		},
+	);
 
 	useEffect(() => {
 		configRef.current = config;
@@ -515,7 +511,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 					}
 
 					setError((prev) => {
-						const prevMessage = prev?.[key] ?? '';
+						const prevMessage = getValidationMessage(prev?.[key]);
 
 						if (prevMessage === field.validationMessage) {
 							return prev;
@@ -523,7 +519,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 						return {
 							...prev,
-							[key]: field.validationMessage,
+							[key]: getErrors(field.validationMessage),
 						};
 					});
 				}
@@ -575,6 +571,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
+				const errors = error?.[key];
 				const field: Field<any> = {
 					config: {
 						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
@@ -582,7 +579,8 @@ export function useFieldset<Schema extends Record<string, any>>(
 						initialError: uncontrolledState.initialError[key],
 						...constraint,
 					},
-					error: error?.[key] ?? '',
+					error: errors?.[0],
+					errors,
 				};
 
 				if (fieldsetConfig.form) {
@@ -614,22 +612,21 @@ export function useFieldList<Payload = any>(
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Array<Payload>>;
-		initialError: Array<Array<[string, string]> | undefined>;
+		initialError: Array<Record<string, string | string[]> | undefined>;
 	}>(() => {
-		const initialError: Array<Array<[string, string]> | undefined> = [];
+		const initialError: Array<Record<string, string | string[]> | undefined> =
+			[];
 
-		for (const [name, message] of config?.initialError ?? []) {
+		for (const [name, message] of Object.entries(config?.initialError ?? {})) {
 			const [index, ...paths] = getPaths(name);
 
 			if (typeof index === 'number') {
 				const scopedName = getName(paths);
-				const entries = initialError[index] ?? [];
 
-				if (scopedName === '' && entries.length > 0 && entries[0][0] !== '') {
-					initialError[index] = [[scopedName, message], ...entries];
-				} else {
-					initialError[index] = [...entries, [scopedName, message]];
-				}
+				initialError[index] = {
+					...initialError[index],
+					[scopedName]: message,
+				};
 			}
 		}
 
@@ -638,8 +635,10 @@ export function useFieldList<Payload = any>(
 			initialError,
 		};
 	});
-	const [error, setError] = useState(() =>
-		uncontrolledState.initialError.map((error) => error?.[0][1]),
+	const [error, setError] = useState<Array<string[] | undefined>>(() =>
+		uncontrolledState.initialError.map((error) =>
+			getErrors(getValidationMessage(error?.[''])),
+		),
 	);
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
@@ -672,7 +671,7 @@ export function useFieldList<Payload = any>(
 			if (typeof index === 'number' && paths.length === 0) {
 				if (field.dataset.conformTouched) {
 					setError((prev) => {
-						const prevMessage = prev?.[index] ?? '';
+						const prevMessage = getValidationMessage(prev?.[index]);
 
 						if (prevMessage === field.validationMessage) {
 							return prev;
@@ -680,7 +679,7 @@ export function useFieldList<Payload = any>(
 
 						return [
 							...prev.slice(0, index),
-							field.validationMessage,
+							getErrors(field.validationMessage),
 							...prev.slice(index + 1),
 						];
 					});
@@ -737,7 +736,7 @@ export function useFieldList<Payload = any>(
 								...command.payload,
 								defaultValue: undefined,
 							},
-						} as ListCommand<string | undefined>);
+						} as ListCommand<string[] | undefined>);
 					default: {
 						return updateList([...error], command);
 					}
@@ -775,6 +774,7 @@ export function useFieldList<Payload = any>(
 	}, [ref]);
 
 	return entries.map(([key, defaultValue], index) => {
+		const errors = error[index];
 		const fieldConfig: FieldConfig<any> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
@@ -789,7 +789,8 @@ export function useFieldList<Payload = any>(
 
 		return {
 			key,
-			error: error[index],
+			error: errors?.[0],
+			errors,
 			config: fieldConfig,
 		};
 	});
@@ -826,7 +827,7 @@ export function useControlledInput<
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue?: FieldValue<Schema>;
-		initialError?: Array<[string, string]>;
+		initialError?: Record<string, string | string[]>;
 	}>({
 		defaultValue: config.defaultValue,
 		initialError: config.initialError,

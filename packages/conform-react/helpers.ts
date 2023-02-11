@@ -102,7 +102,7 @@ export function input<Schema>(
 		attributes['aria-hidden'] = true;
 	}
 
-	if (config.initialError && config.initialError.length > 0) {
+	if (config.initialError && Object.entries(config.initialError).length > 0) {
 		attributes.autoFocus = true;
 	}
 
@@ -141,7 +141,7 @@ export function select<Schema>(
 		attributes['aria-hidden'] = true;
 	}
 
-	if (config.initialError && config.initialError.length > 0) {
+	if (config.initialError && Object.entries(config.initialError).length > 0) {
 		attributes.autoFocus = true;
 	}
 
@@ -171,7 +171,7 @@ export function textarea<Schema>(
 		attributes['aria-hidden'] = true;
 	}
 
-	if (config.initialError && config.initialError.length > 0) {
+	if (config.initialError && Object.entries(config.initialError).length > 0) {
 		attributes.autoFocus = true;
 	}
 

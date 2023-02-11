@@ -10,7 +10,7 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
-	initialError?: Array<[string, string]>;
+	initialError?: Record<string, string | string[]>;
 	form?: string;
 	errorId?: string;
 }
@@ -150,6 +150,14 @@ export function shouldValidate(intent: string, name: string): boolean {
 	}
 }
 
+export function getValidationMessage(errors?: string | string[]): string {
+	return ([] as string[]).concat(errors ?? []).join(String.fromCharCode(31));
+}
+
+export function getErrors(message: string | undefined): string[] {
+	return message?.split(String.fromCharCode(31)) ?? [];
+}
+
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
@@ -207,9 +215,7 @@ export function reportSubmission(
 			if (typeof message !== 'undefined' || elementShouldValidate) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
-				element.setCustomValidity(
-					([] as string[]).concat(message ?? []).join(String.fromCharCode(31)),
-				);
+				element.setCustomValidity(getValidationMessage(message));
 				element.dispatchEvent(invalidEvent);
 			}
 
