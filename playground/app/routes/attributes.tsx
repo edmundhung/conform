@@ -12,7 +12,7 @@ interface Schema {
 }
 
 export default function Example() {
-	const [state, setState] = useState<Submission<Schema> | undefined>();
+	const [state, setState] = useState<Submission | undefined>();
 	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
 		id: 'test',
 		constraint: {

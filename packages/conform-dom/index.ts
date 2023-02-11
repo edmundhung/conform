@@ -165,11 +165,6 @@ export function reportSubmission(
 	}
 
 	for (const name of Object.keys(submission.error)) {
-		if (listCommand !== null && name !== listCommand.scope) {
-			// Skip if not matching the scope
-			continue;
-		}
-
 		// We can't use empty string as button name
 		// As `form.element.namedItem('')` will always returns null
 		const elementName = name ? name : '__form__';
@@ -199,10 +194,7 @@ export function reportSubmission(
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
-			const message =
-				listCommand !== null && elementName !== listCommand.scope
-					? undefined
-					: submission.error[elementName];
+			const message = submission.error[elementName];
 			const elementShouldValidate = shouldValidate(
 				submission.intent,
 				elementName,
@@ -435,18 +427,44 @@ export function parse<Schema>(
 
 	const result = options.resolve(submission.payload, submission.intent);
 	const mergeResolveResult = (
-		result: { error: Record<string, string | string[]> } | { value: Schema },
-	) => ({
-		...submission,
-		...result,
-		toJSON() {
-			return {
-				intent: this.intent,
-				payload: this.payload,
-				error: this.error,
-			};
-		},
-	});
+		resolved: { error: Record<string, string | string[]> } | { value: Schema },
+	) => {
+		const result = {
+			...submission,
+			...resolved,
+			toJSON() {
+				return {
+					intent: this.intent,
+					payload: this.payload,
+					error: this.error,
+				};
+			},
+		};
+
+		// Cleanup
+		result.error = Object.fromEntries(
+			Object.entries(result.error).reduce<Array<[string, string | string[]]>>(
+				(entries, [name, message]) => {
+					if (shouldValidate(result.intent, name)) {
+						if (Array.isArray(message)) {
+							if (message.length > 0) {
+								entries.push([name, message]);
+							} else {
+								entries.push([name, '']);
+							}
+						} else {
+							entries.push([name, message]);
+						}
+					}
+
+					return entries;
+				},
+				[],
+			),
+		);
+
+		return result;
+	};
 
 	if (result instanceof Promise) {
 		return result.then<Submission<Schema>>(mergeResolveResult);
