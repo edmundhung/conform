@@ -42,7 +42,7 @@ async function runValidationScenario(page: Page) {
 					name: 'Conform',
 					message: 'A form validation library',
 				},
-				error: [],
+				error: {},
 			},
 			null,
 			2,

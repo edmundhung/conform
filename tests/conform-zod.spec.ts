@@ -75,22 +75,20 @@ test.describe('conform-zod', () => {
 		nested: { key: '' },
 		list: [{ key: '' }],
 	};
-	const error = [
-		['text', 'min'],
-		['text', 'regex'],
-		['text', 'refine'],
-		['number', 'step'],
-		['timestamp', 'min'],
-		['options', 'min'],
-		['options[0]', 'refine'],
-		['options[1]', 'refine'],
-		['nested.key', 'refine'],
-		['nested', 'refine'],
-		['list', 'max'],
-		['list[0].key', 'refine'],
-		['list[0]', 'refine'],
-		['', 'refine'],
-	];
+	const error = {
+		text: 'min',
+		number: 'step',
+		timestamp: 'min',
+		options: 'min',
+		'options[0]': 'refine',
+		'options[1]': 'refine',
+		'nested.key': 'refine',
+		nested: 'refine',
+		list: 'max',
+		'list[0].key': 'refine',
+		'list[0]': 'refine',
+		'': 'refine',
+	};
 
 	test('getFieldsetConstraint', () => {
 		expect(getFieldsetConstraint(schema)).toEqual({

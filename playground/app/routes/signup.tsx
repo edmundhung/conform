@@ -13,30 +13,30 @@ interface Signup {
 function parseSignupForm(formData: FormData) {
 	return parse(formData, {
 		resolve({ email, password, confirmPassword }) {
-			const error: Array<[string, string]> = [];
+			const error: Record<string, string> = {};
 
 			if (!email) {
-				error.push(['email', 'Email is required']);
+				error.email = 'Email is required';
 			} else if (
 				typeof email !== 'string' ||
 				!email.match(/^[^()@\s]+@[\w\d.]+$/)
 			) {
-				error.push(['email', 'Email is invalid']);
+				error.email = 'Email is invalid';
 			}
 
 			if (!password) {
-				error.push(['password', 'Password is required']);
+				error.password = 'Password is required';
 			} else if (typeof password === 'string' && password.length < 8) {
-				error.push(['password', 'Password is too short']);
+				error.password = 'Password is too short';
 			}
 
 			if (!confirmPassword) {
-				error.push(['confirmPassword', 'Confirm password is required']);
+				error.confirmPassword = 'Confirm password is required';
 			} else if (confirmPassword !== password) {
-				error.push(['confirmPassword', 'The password provided does not match']);
+				error.confirmPassword = 'The password provided does not match';
 			}
 
-			if (error.length > 0) {
+			if (error.email || error.password || error.confirmPassword) {
 				return { error };
 			}
 

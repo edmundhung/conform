@@ -1,4 +1,4 @@
-import { conform, hasError, shouldValidate, useForm } from '@conform-to/react';
+import { conform, shouldValidate, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -52,7 +52,7 @@ export default function EmployeeForm() {
 		state,
 		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
 			if (submission.intent === 'validate/email') {
-				return !hasError(submission.error, 'email');
+				return !submission.error.email;
 			}
 
 			return defaultShouldPassthrough;

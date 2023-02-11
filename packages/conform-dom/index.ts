@@ -40,28 +40,34 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
+// type Join<K, P> = P extends string | number ?
+//     K extends string | number ?
+//     `${K}${"" extends P ? "" : "."}${P}`
+//     : never : never;
+
+// type DottedPaths<T> = T extends object ?
+//     { [K in keyof T]-?: K extends string | number ?
+//         `${K}` | Join<K, DottedPaths<T[K]>>
+//         : never
+//     }[keyof T] : ""
+
+// type Pathfix<T> = T extends `${infer Prefix}.${number}${infer Postfix}` ? `${Prefix}[${number}]${Pathfix<Postfix>}` : T;
+
+// type Path<Schema> = Pathfix<DottedPaths<Schema>> | '';
+
 export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 	unknown extends Schema
 		? {
 				intent: string;
 				payload: Record<string, any>;
-				error: Array<[string, string]>;
-				toJSON(): {
-					intent: string;
-					payload: Record<string, any>;
-					error: Array<[string, string]>;
-				};
+				error: Record<string, string | string[]>;
 		  }
 		: {
 				intent: string;
 				payload: Record<string, any>;
 				value?: Schema;
-				error: Array<[string, string]>;
-				toJSON(): {
-					intent: string;
-					payload: Record<string, any>;
-					error: Array<[string, string]>;
-				};
+				error: Record<string, string | string[]>;
+				toJSON(): Submission;
 		  };
 
 export interface IntentButtonProps {
@@ -144,23 +150,10 @@ export function shouldValidate(intent: string, name: string): boolean {
 	}
 }
 
-export function hasError(
-	error: Array<[string, string]>,
-	name?: string,
-): boolean {
-	return (
-		typeof error.find(
-			([fieldName, message]) =>
-				(typeof name === 'undefined' || name === fieldName) && message !== '',
-		) !== 'undefined'
-	);
-}
-
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	const messageByName: Map<string, string> = new Map();
 	const listCommand = parseListCommand(submission.intent);
 
 	if (listCommand) {
@@ -171,47 +164,45 @@ export function reportSubmission(
 		);
 	}
 
-	for (const [name, message] of submission.error) {
+	for (const name of Object.keys(submission.error)) {
 		if (listCommand !== null && name !== listCommand.scope) {
 			// Skip if not matching the scope
 			continue;
 		}
 
-		if (!messageByName.has(name)) {
-			// Only keep the first error message (for now)
-			messageByName.set(name, message);
+		// We can't use empty string as button name
+		// As `form.element.namedItem('')` will always returns null
+		const elementName = name ? name : '__form__';
+		let item = form.elements.namedItem(elementName);
 
-			// We can't use empty string as button name
-			// As `form.element.namedItem('')` will always returns null
-			const elementName = name ? name : '__form__';
-			let item = form.elements.namedItem(elementName);
-
-			if (item instanceof RadioNodeList) {
-				for (const field of item) {
-					if ((field as FieldElement).type !== 'radio') {
-						throw new Error('Repeated field name is not supported');
-					}
+		if (item instanceof RadioNodeList) {
+			for (const field of item) {
+				if ((field as FieldElement).type !== 'radio') {
+					throw new Error('Repeated field name is not supported');
 				}
 			}
+		}
 
-			if (item === null) {
-				// Create placeholder button to keep the error without contributing to the form data
-				const button = document.createElement('button');
+		if (item === null) {
+			// Create placeholder button to keep the error without contributing to the form data
+			const button = document.createElement('button');
 
-				button.name = elementName;
-				button.hidden = true;
-				button.dataset.conformTouched = 'true';
-				item = button;
+			button.name = elementName;
+			button.hidden = true;
+			button.dataset.conformTouched = 'true';
+			item = button;
 
-				form.appendChild(button);
-			}
+			form.appendChild(button);
 		}
 	}
 
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
-			const message = messageByName.get(elementName);
+			const message =
+				listCommand !== null && elementName !== listCommand.scope
+					? undefined
+					: submission.error[elementName];
 			const elementShouldValidate = shouldValidate(
 				submission.intent,
 				elementName,
@@ -224,7 +215,9 @@ export function reportSubmission(
 			if (typeof message !== 'undefined' || elementShouldValidate) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
-				element.setCustomValidity(message ?? '');
+				element.setCustomValidity(
+					([] as string[]).concat(message ?? []).join(String.fromCharCode(31)),
+				);
 				element.dispatchEvent(invalidEvent);
 			}
 
@@ -358,7 +351,7 @@ export function parse<Schema>(
 		resolve: (
 			payload: Record<string, any>,
 			intent: string,
-		) => { value: Schema } | { error: Array<[string, string]> };
+		) => { value: Schema } | { error: Record<string, string | string[]> };
 	},
 ): Submission<Schema>;
 export function parse<Schema>(
@@ -367,7 +360,9 @@ export function parse<Schema>(
 		resolve: (
 			payload: Record<string, any>,
 			intent: string,
-		) => Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+		) => Promise<
+			{ value: Schema } | { error: Record<string, string | string[]> }
+		>;
 	},
 ): Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -377,8 +372,10 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| ({ value: Schema } | { error: Array<[string, string]> })
-			| Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+			| ({ value: Schema } | { error: Record<string, string | string[]> })
+			| Promise<
+					{ value: Schema } | { error: Record<string, string | string[]> }
+			  >;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -388,21 +385,16 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| ({ value: Schema } | { error: Array<[string, string]> })
-			| Promise<{ value: Schema } | { error: Array<[string, string]> }>;
+			| ({ value: Schema } | { error: Record<string, string | string[]> })
+			| Promise<
+					{ value: Schema } | { error: Record<string, string | string[]> }
+			  >;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
 		intent: 'submit',
 		payload: {},
-		error: [],
-		toJSON() {
-			return {
-				intent: this.intent,
-				payload: this.payload,
-				error: this.error,
-			};
-		},
+		error: {},
 	};
 
 	for (let [name, value] of payload.entries()) {
@@ -442,14 +434,25 @@ export function parse<Schema>(
 	}
 
 	const result = options.resolve(submission.payload, submission.intent);
+	const mergeResolveResult = (
+		result: { error: Record<string, string | string[]> } | { value: Schema },
+	) => ({
+		...submission,
+		...result,
+		toJSON() {
+			return {
+				intent: this.intent,
+				payload: this.payload,
+				error: this.error,
+			};
+		},
+	});
 
 	if (result instanceof Promise) {
-		return result.then<Submission<Schema>>((resolved) =>
-			Object.assign(submission, resolved),
-		);
+		return result.then<Submission<Schema>>(mergeResolveResult);
 	}
 
-	return Object.assign(submission, result) as Submission<Schema>;
+	return mergeResolveResult(result);
 }
 
 export type ListCommand<Schema = unknown> =

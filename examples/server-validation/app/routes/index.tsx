@@ -13,30 +13,34 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		resolve({ email, password, confirmPassword }) {
-			const error: Array<[string, string]> = [];
+			const error: Record<string, string> = {};
 
 			if (!email) {
-				error.push(['email', 'Email is required']);
+				error.email = 'Email is required';
 			} else if (!email.includes('@')) {
-				error.push(['email', 'Email is invalid']);
+				error.email = 'Email is invalid';
 			}
 
 			if (!password) {
-				error.push(['password', 'Password is required']);
+				error.password = 'Password is required';
 			}
 
 			if (!confirmPassword) {
-				error.push(['confirmPassword', 'Confirm password is required']);
+				error.confirmPassword = 'Confirm password is required';
 			} else if (confirmPassword !== password) {
-				error.push(['confirmPassword', 'Password does not match']);
+				error.confirmPassword = 'Password does not match';
 			}
 
-			if (error.length > 0) {
+			if (error.email || error.password || error.confirmPassword) {
 				return { error };
 			}
 
 			return {
-				value: { email, password, confirmPassword },
+				value: {
+					email,
+					password,
+					confirmPassword,
+				},
 			};
 		},
 	});

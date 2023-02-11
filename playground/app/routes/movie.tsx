@@ -19,27 +19,27 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		resolve({ title, description, genre, rating }) {
-			const error: Array<[string, string]> = [];
+			const error: Record<string, string> = {};
 
 			if (!title) {
-				error.push(['title', 'Title is required']);
+				error.title = 'Title is required';
 			} else if (!title.match(/[0-9a-zA-Z ]{1,20}/)) {
-				error.push(['title', 'Please enter a valid title']);
+				error.title = 'Please enter a valid title';
 			}
 
 			if (description && description.length < 30) {
-				error.push(['description', 'Please provides more details']);
+				error.description = 'Please provides more details';
 			}
 
 			if (genre === '') {
-				error.push(['genre', 'Genre is required']);
+				error.genre = 'Genre is required';
 			}
 
 			if (rating && Number(rating) % 0.5 !== 0) {
-				error.push(['rating', 'The provided rating is invalid']);
+				error.rating = 'The provided rating is invalid';
 			}
 
-			if (error.length > 0) {
+			if (error.title || error.description || error.genre || error.rating) {
 				return { error };
 			}
 
@@ -93,42 +93,41 @@ export default function MovieForm() {
 			? ({ form, formData }) => {
 					const submission = parse(formData, {
 						resolve({ title, description, genre, rating }) {
-							const error: Array<[string, string]> = [];
+							const error: Record<string, string> = {};
 
 							for (const element of getFormElements(form)) {
 								switch (element.name) {
 									case 'title':
 										if (element.validity.valueMissing) {
-											error.push([element.name, 'Title is required']);
+											error[element.name] = 'Title is required';
 										} else if (element.validity.patternMismatch) {
-											error.push([element.name, 'Please enter a valid title']);
+											error[element.name] = 'Please enter a valid title';
 										}
 										break;
 									case 'description':
 										if (element.validity.tooShort) {
-											error.push([
-												element.name,
-												'Please provides more details',
-											]);
+											error[element.name] = 'Please provides more details';
 										}
 										break;
 									case 'genre':
 										if (element.validity.valueMissing) {
-											error.push([element.name, 'Genre is required']);
+											error[element.name] = 'Genre is required';
 										}
 										break;
 									case 'rating':
 										if (element.validity.stepMismatch) {
-											error.push([
-												element.name,
-												'The provided rating is invalid',
-											]);
+											error[element.name] = 'The provided rating is invalid';
 										}
 										break;
 								}
 							}
 
-							if (error.length > 0) {
+							if (
+								error.title ||
+								error.description ||
+								error.genre ||
+								error.rating
+							) {
 								return { error };
 							}
 

@@ -120,11 +120,18 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 			const resolveError = (error: unknown) => {
 				if (error instanceof yup.ValidationError) {
 					return {
-						error: error.inner.reduce<Array<[string, string]>>((result, e) => {
-							result.push([e.path ?? '', e.message]);
+						error: error.inner.reduce<Record<string, string | string[]>>(
+							(result, e) => {
+								const name = e.path ?? '';
 
-							return result;
-						}, []),
+								if (typeof result[name] === 'undefined') {
+									result[name] = e.message;
+								}
+
+								return result;
+							},
+							{},
+						),
 					};
 				}
 

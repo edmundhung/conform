@@ -92,7 +92,7 @@ async function runValidationScenario(page: Page) {
 				_lastModified: expect.anything(),
 			},
 		},
-		error: [],
+		error: {},
 	});
 }
 

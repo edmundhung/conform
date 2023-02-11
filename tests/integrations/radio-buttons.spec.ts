@@ -19,7 +19,7 @@ async function runValidationScenario(page: Page) {
 				payload: {
 					answer: 'b',
 				},
-				error: [],
+				error: {},
 			},
 			null,
 			2,

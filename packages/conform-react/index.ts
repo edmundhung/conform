@@ -3,7 +3,6 @@ export {
 	type FieldsetConstraint,
 	type Submission,
 	getFormElements,
-	hasError,
 	list,
 	validate,
 	requestIntent,

@@ -61,22 +61,20 @@ test.describe('conform-yup', () => {
 		nested: { key: '' },
 		list: [{ key: '' }],
 	};
-	const error = [
-		['text', 'min'],
-		['text', 'regex'],
-		['tag', 'required'],
-		['tag', 'invalid'],
-		['number', 'max'],
-		['timestamp', 'min'],
-		['options[1]', 'invalid'],
-		['options', 'min'],
-		['nested.key', 'required'],
-		['nested', 'error'],
-		['list[0].key', 'required'],
-		['list[0]', 'error'],
-		['list', 'max'],
-		['', 'error'],
-	];
+	const error = {
+		text: 'min',
+		tag: 'required',
+		number: 'max',
+		timestamp: 'min',
+		'options[1]': 'invalid',
+		options: 'min',
+		'nested.key': 'required',
+		nested: 'error',
+		'list[0].key': 'required',
+		'list[0]': 'error',
+		list: 'max',
+		'': 'error',
+	};
 
 	test('getFieldsetConstraint', () => {
 		expect(getFieldsetConstraint(schema)).toEqual({

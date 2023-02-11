@@ -14,7 +14,6 @@ import {
 	parse,
 	parseListCommand,
 	updateList,
-	hasError,
 	reportSubmission,
 	validate,
 	requestIntent,
@@ -148,9 +147,13 @@ export function useForm<
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [error, setError] = useState<string>(() => {
-		const [, message] = config.state?.error?.find(([key]) => key === '') ?? [];
+		if (!config.state) {
+			return '';
+		}
 
-		return message ?? '';
+		const message = config.state.error[''];
+
+		return ([] as string[]).concat(message).join(String.fromCharCode(31));
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
@@ -165,9 +168,14 @@ export function useForm<
 
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
-			initialError: submission.error.filter(
-				([name]) => name !== '' && shouldValidate(submission.intent, name),
-			),
+			initialError: Object.entries(submission.error)
+				.filter(
+					([name]) => name !== '' && shouldValidate(submission.intent, name),
+				)
+				.map(([name, message]) => [
+					name,
+					([] as string[]).concat(message).join(String.fromCharCode(31)),
+				]),
 		};
 	});
 	const fieldsetConfig = {
@@ -322,7 +330,7 @@ export function useForm<
 						config.onValidate ??
 						((context) =>
 							parse(context.formData, {
-								resolve: () => ({ error: [] }),
+								resolve: () => ({ error: {} }),
 							}) as ClientSubmission);
 					const submission = onValidate({ form, formData });
 					const defaultShouldPassthrough =
@@ -333,7 +341,9 @@ export function useForm<
 					if (
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
-							hasError(submission.error)) ||
+							Object.entries(submission.error).some(
+								([, message]) => message !== '',
+							)) ||
 						!(
 							config.shouldSubmissionPassthrough?.({
 								form,

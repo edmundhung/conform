@@ -139,7 +139,9 @@ export function parse<Schema extends z.ZodTypeAny>(
 					: config.schema;
 			const resolveResult = (
 				result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
-			): { value: z.output<Schema> } | { error: Array<[string, string]> } => {
+			):
+				| { value: z.output<Schema> }
+				| { error: Record<string, string | string[]> } => {
 				if (result.success) {
 					return {
 						value: result.data,
@@ -147,13 +149,17 @@ export function parse<Schema extends z.ZodTypeAny>(
 				}
 
 				return {
-					error: result.error.errors.reduce<Array<[string, string]>>(
+					error: result.error.errors.reduce<Record<string, string | string[]>>(
 						(result, e) => {
-							result.push([getName(e.path), e.message]);
+							const name = getName(e.path);
+
+							if (typeof result[name] === 'undefined') {
+								result[name] = e.message;
+							}
 
 							return result;
 						},
-						[],
+						{},
 					),
 				};
 			};
