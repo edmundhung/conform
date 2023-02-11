@@ -83,7 +83,7 @@ export default function PaymentForm() {
 					<Field label="Timestamp" {...timestamp}>
 						<input {...conform.input(timestamp.config, { type: 'text' })} />
 					</Field>
-					<Field label="Verified" error={verified.error} inline>
+					<Field label="Verified" {...verified} inline>
 						<input
 							{...conform.input(verified.config, {
 								type: 'checkbox',

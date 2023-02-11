@@ -155,7 +155,11 @@ export function getValidationMessage(errors?: string | string[]): string {
 }
 
 export function getErrors(message: string | undefined): string[] {
-	return message?.split(String.fromCharCode(31)) ?? [];
+	if (!message) {
+		return [];
+	}
+
+	return message.split(String.fromCharCode(31));
 }
 
 export function reportSubmission(
