@@ -68,7 +68,7 @@ async function runValidationScenario(page: Page) {
 	);
 }
 
-test.describe('With JS', () => {
+test.describe('Custom Validation', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/multiple-errors');
 		await runValidationScenario(page);
@@ -78,32 +78,66 @@ test.describe('With JS', () => {
 		await page.goto('/multiple-errors?noClientValidate=yes');
 		await runValidationScenario(page);
 	});
+});
 
-	test('Form reset', async ({ page }) => {
-		await page.goto('/multiple-errors');
-
-		const playground = getPlayground(page);
-		const username = getUsernameInput(playground.container);
-
-		await username.type('?');
-		await playground.submit.click();
-		await expect(playground.error).toHaveText([
-			'Min. 5 characters',
-			'At least 1 lowercase character',
-			'At least 1 uppercase character',
-			'At least 1 number',
-		]);
-
-		await playground.reset.click();
-		await expect(playground.error).toHaveText(['']);
+test.describe('Zod', () => {
+	test('Client Validation', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=zod');
+		await runValidationScenario(page);
 	});
+
+	test('Server Validation', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=zod&noClientValidate=yes');
+		await runValidationScenario(page);
+	});
+});
+
+test.describe('Yup', () => {
+	test('Client Validation', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=yup');
+		await runValidationScenario(page);
+	});
+
+	test('Server Validation', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=yup&noClientValidate=yes');
+		await runValidationScenario(page);
+	});
+});
+
+test('Form reset', async ({ page }) => {
+	await page.goto('/multiple-errors');
+
+	const playground = getPlayground(page);
+	const username = getUsernameInput(playground.container);
+
+	await username.type('?');
+	await playground.submit.click();
+	await expect(playground.error).toHaveText([
+		'Min. 5 characters',
+		'At least 1 lowercase character',
+		'At least 1 uppercase character',
+		'At least 1 number',
+	]);
+
+	await playground.reset.click();
+	await expect(playground.error).toHaveText(['']);
 });
 
 test.describe('No JS', () => {
 	test.use({ javaScriptEnabled: false });
 
-	test('Validation', async ({ page }) => {
+	test('Custom Validation', async ({ page }) => {
 		await page.goto('/multiple-errors');
+		await runValidationScenario(page);
+	});
+
+	test('Zod', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=zod');
+		await runValidationScenario(page);
+	});
+
+	test('Yup', async ({ page }) => {
+		await page.goto('/multiple-errors?validator=yup');
 		await runValidationScenario(page);
 	});
 });

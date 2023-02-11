@@ -114,6 +114,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: (name: string) => boolean;
 		async?: false;
 	},
 ): Submission<z.output<Schema>>;
@@ -121,6 +122,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: (name: string) => boolean;
 		async: true;
 	},
 ): Promise<Submission<z.output<Schema>>>;
@@ -128,6 +130,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: (name: string) => boolean;
 		async?: boolean;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
@@ -155,6 +158,8 @@ export function parse<Schema extends z.ZodTypeAny>(
 
 							if (typeof result[name] === 'undefined') {
 								result[name] = e.message;
+							} else if (config.acceptMultipleErrors?.(name)) {
+								result[name] = ([] as string[]).concat(result[name], e.message);
 							}
 
 							return result;
