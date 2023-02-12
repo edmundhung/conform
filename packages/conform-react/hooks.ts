@@ -108,6 +108,8 @@ export interface FormConfig<
 		context: {
 			formData: FormData;
 			submission: ClientSubmission;
+			method: 'get' | 'post';
+			action: string;
 		},
 	) => void;
 }
@@ -347,7 +349,14 @@ export function useForm<
 					) {
 						event.preventDefault();
 					} else {
-						config.onSubmit?.(event, { formData, submission });
+						config.onSubmit?.(event, {
+							formData,
+							submission,
+							method: (submitter?.getAttribute('formmethod') ?? form.method) as
+								| 'get'
+								| 'post',
+							action: submitter?.getAttribute('formaction') ?? form.action,
+						});
 					}
 
 					if (event.defaultPrevented) {
