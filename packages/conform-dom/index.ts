@@ -61,12 +61,14 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 				intent: string;
 				payload: Record<string, any>;
 				error: Record<string, string | string[]>;
+				validated?: string[];
 		  }
 		: {
 				intent: string;
 				payload: Record<string, any>;
 				value?: Schema;
 				error: Record<string, string | string[]>;
+				validated?: string[];
 				toJSON(): Submission;
 		  };
 
@@ -139,17 +141,6 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(intent: string, name: string): boolean {
-	switch (intent) {
-		case 'submit':
-		case 'validate':
-		case `validate/${name}`:
-			return true;
-		default:
-			return parseListCommand(intent)?.scope === name;
-	}
-}
-
 export function getValidationMessage(errors?: string | string[]): string {
 	return ([] as string[]).concat(errors ?? []).join(String.fromCharCode(31));
 }
@@ -207,10 +198,9 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
 			const message = submission.error[elementName];
-			const elementShouldValidate = shouldValidate(
-				submission.intent,
-				elementName,
-			);
+			const elementShouldValidate =
+				typeof submission.validated === 'undefined' ||
+				submission.validated.includes(elementName);
 
 			if (elementShouldValidate) {
 				element.dataset.conformTouched = 'true';
@@ -349,48 +339,108 @@ export function focus(field: FieldElement): void {
 
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
+	config: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			{
+				intent,
+				shouldValidate,
+			}: {
+				intent: string;
+				shouldValidate: (name: string) => boolean;
+			},
 		) => { value: Schema } | { error: Record<string, string | string[]> };
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 	},
 ): Submission<Schema>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
+	config: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			{
+				intent,
+				shouldValidate,
+			}: {
+				intent: string;
+				shouldValidate: (name: string) => boolean;
+			},
 		) => Promise<
 			{ value: Schema } | { error: Record<string, string | string[]> }
 		>;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 	},
 ): Promise<Submission<Schema>>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
+	config: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			{
+				intent,
+				shouldValidate,
+			}: {
+				intent: string;
+				shouldValidate: (name: string) => boolean;
+			},
 		) =>
 			| ({ value: Schema } | { error: Record<string, string | string[]> })
 			| Promise<
 					{ value: Schema } | { error: Record<string, string | string[]> }
 			  >;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
+	config: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			{
+				intent,
+				shouldValidate,
+			}: {
+				intent: string;
+				shouldValidate: (name: string) => boolean;
+			},
 		) =>
 			| ({ value: Schema } | { error: Record<string, string | string[]> })
 			| Promise<
 					{ value: Schema } | { error: Record<string, string | string[]> }
 			  >;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
@@ -421,32 +471,59 @@ export function parse<Schema>(
 		}
 	}
 
-	const command = parseListCommand(submission.intent);
+	const [type, scope] = submission.intent.split('/');
 
-	if (command) {
-		const paths = getPaths(command.scope);
-
-		setValue(submission.payload, paths, (list) => {
-			if (typeof list !== 'undefined' && !Array.isArray(list)) {
-				throw new Error('The list command can only be applied to a list');
+	switch (type) {
+		case 'validate':
+			if (scope) {
+				submission.validated = [scope];
 			}
+			break;
+		case 'list': {
+			const command = parseListCommand(submission.intent);
 
-			return updateList(list ?? [], command);
-		});
+			if (command) {
+				const paths = getPaths(command.scope);
+
+				setValue(submission.payload, paths, (list) => {
+					if (typeof list !== 'undefined' && !Array.isArray(list)) {
+						throw new Error('The list command can only be applied to a list');
+					}
+
+					return updateList(list ?? [], command);
+				});
+
+				submission.validated = [command.scope];
+			}
+			break;
+		}
 	}
 
-	const result = options.resolve(submission.payload, submission.intent);
+	const validated =
+		config.shouldBeValidated?.({
+			intent: submission.intent,
+			payload: submission.payload,
+			defaultValidated: submission.validated,
+		}) ?? submission.validated;
+	const result = config.resolve(submission.payload, {
+		intent: submission.intent,
+		shouldValidate: (name) =>
+			typeof validated === 'undefined' || validated.includes(name),
+	});
+
 	const mergeResolveResult = (
 		resolved: { error: Record<string, string | string[]> } | { value: Schema },
 	) => {
 		const result = {
 			...submission,
 			...resolved,
+			validated,
 			toJSON() {
 				return {
 					intent: this.intent,
 					payload: this.payload,
 					error: this.error,
+					validated: this.validated,
 				};
 			},
 		};
@@ -455,7 +532,7 @@ export function parse<Schema>(
 		result.error = Object.fromEntries(
 			Object.entries(result.error).reduce<Array<[string, string | string[]]>>(
 				(entries, [name, message]) => {
-					if (shouldValidate(result.intent, name)) {
+					if (typeof validated === 'undefined' || validated.includes(name)) {
 						if (Array.isArray(message)) {
 							if (message.length > 0) {
 								entries.push([name, message]);

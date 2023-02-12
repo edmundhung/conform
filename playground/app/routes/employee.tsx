@@ -1,4 +1,4 @@
-import { conform, shouldValidate, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -20,10 +20,10 @@ export let loader = async ({ request }: LoaderArgs) => {
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
-		schema: (intent) =>
+		schema: ({ shouldValidate }) =>
 			schema.refine(
 				async (employee) => {
-					if (!shouldValidate(intent, 'email')) {
+					if (!shouldValidate('email')) {
 						return true;
 					}
 

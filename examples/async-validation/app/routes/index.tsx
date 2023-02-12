@@ -1,4 +1,4 @@
-import { conform, useForm, hasError, shouldValidate } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -38,10 +38,10 @@ async function signup(data: z.infer<typeof schema>): Promise<Response> {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
-		schema: (intent) =>
+		schema: ({ shouldValidate }) =>
 			schema.refine(
 				async ({ username }) => {
-					if (!shouldValidate(intent, 'username')) {
+					if (!shouldValidate('username')) {
 						return true;
 					}
 

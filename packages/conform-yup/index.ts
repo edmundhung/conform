@@ -90,7 +90,13 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -100,13 +106,28 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async?: false;
 	},
 ): Submission<yup.InferType<Schema>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -116,13 +137,28 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async: true;
 	},
 ): Promise<Submission<yup.InferType<Schema>>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -132,16 +168,25 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async?: boolean;
 	},
 ):
 	| Submission<yup.InferType<Schema>>
 	| Promise<Submission<yup.InferType<Schema>>> {
 	return baseParse<Submission<yup.InferType<Schema>>>(payload, {
-		resolve(payload, intent) {
+		resolve(payload, { intent, shouldValidate }) {
 			const schema =
 				typeof config.schema === 'function'
-					? config.schema(intent)
+					? config.schema({ shouldValidate })
 					: config.schema;
 			const resolveData = (value: yup.InferType<Schema>) => ({ value });
 			const resolveError = (error: unknown) => {

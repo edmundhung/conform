@@ -224,20 +224,19 @@ export default function Signup() {
 
 ### Validate on-demand
 
-Some validation rules could be expensive especially when they require querying from database or 3rd party services. This can be minimized by checking the submission type and intent, or using the `shouldValidate()` helper.
+Some validation rules could be expensive especially when they require querying from database or 3rd party services. This can be minimized with the `shouldValidate()` helper.
 
 ```tsx
-import { shouldValidate } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse(formData, {
-    schema: (intent) =>
+    schema: ({ shouldValidate }) =>
       schema.refine(
         async ({ username }) => {
           // Continue checking only if necessary
-          if (!shouldValidate(intent, 'username')) {
+          if (!shouldValidate('username')) {
             return true;
           }
 

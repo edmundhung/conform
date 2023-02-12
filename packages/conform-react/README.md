@@ -15,9 +15,7 @@
 - [validate](#validate)
 - [requestIntent](#requestintent)
 - [getFormElements](#getformelements)
-- [hasError](#haserror)
 - [parse](#parse)
-- [shouldValidate](#shouldvalidate)
 
 <!-- /aside -->
 
@@ -539,27 +537,4 @@ const formData = new FormData();
 const submission = parse(formData);
 
 console.log(submission);
-```
-
----
-
-### shouldValidate
-
-This helper checks if the scope of validation includes a specific field by checking the submission:
-
-```tsx
-import { shouldValidate } from '@conform-to/react';
-
-/**
- * The submission intent give us hint on what should be valdiated.
- * If the intent is 'validate/:field', only the field with name matching must be validated.
- * If the intent is undefined, everything should be validated (Default submission)
- */
-const intent = 'validate/email';
-
-// This will log 'true'
-console.log(shouldValidate(intent, 'email'));
-
-// This will log 'false'
-console.log(shouldValidate(intent, 'password'));
 ```

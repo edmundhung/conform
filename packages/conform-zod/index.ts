@@ -113,7 +113,13 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -123,13 +129,28 @@ export function parse<Schema extends z.ZodTypeAny>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async?: false;
 	},
 ): Submission<z.output<Schema>>;
 export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -139,13 +160,28 @@ export function parse<Schema extends z.ZodTypeAny>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async: true;
 	},
 ): Promise<Submission<z.output<Schema>>>;
 export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intent: string) => Schema);
+		schema:
+			| Schema
+			| (({
+					shouldValidate,
+			  }: {
+					shouldValidate: (name: string) => boolean;
+			  }) => Schema);
 		acceptMultipleErrors?: ({
 			name,
 			intent,
@@ -155,14 +191,23 @@ export function parse<Schema extends z.ZodTypeAny>(
 			intent: string;
 			payload: Record<string, any>;
 		}) => boolean;
+		shouldBeValidated?: ({
+			intent,
+			payload,
+			defaultValidated,
+		}: {
+			intent: string;
+			payload: Record<string, any>;
+			defaultValidated: string[] | undefined;
+		}) => string[] | undefined;
 		async?: boolean;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
 	return baseParse<z.output<Schema>>(payload, {
-		resolve(payload, intent) {
+		resolve(payload, { intent, shouldValidate }) {
 			const schema =
 				typeof config.schema === 'function'
-					? config.schema(intent)
+					? config.schema({ shouldValidate })
 					: config.schema;
 			const resolveResult = (
 				result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
@@ -199,6 +244,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 				? schema.safeParseAsync(payload).then(resolveResult)
 				: resolveResult(schema.safeParse(payload));
 		},
+		shouldBeValidated: config.shouldBeValidated,
 	});
 }
 
