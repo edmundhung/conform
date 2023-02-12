@@ -572,27 +572,6 @@ export default function LoginForm() {
 
 ---
 
-### hasError
-
-This helper checks if there is any message defined in error array with the provided name.
-
-```ts
-import { hasError } from '@conform-to/react';
-
-/**
- * Assume the error looks like this:
- */
-const error = [['email', 'Email is required']];
-
-// This will log `true`
-console.log(hasError(error, 'email'));
-
-// This will log `false`
-console.log(hasError(error, 'password'));
-```
-
----
-
 ### parse
 
 It parses the formData based on the [naming convention](/docs/submission).

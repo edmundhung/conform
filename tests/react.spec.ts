@@ -57,7 +57,7 @@ test.describe('Client Validation', () => {
 				genre: 'action',
 				rating: '4.5',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -135,7 +135,7 @@ test.describe('Client Validation', () => {
 				genre: 'sci-fi',
 				rating: '4.0',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -168,7 +168,7 @@ test.describe('Client Validation', () => {
 			payload: {
 				email: 'me@edmund.dev',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -244,7 +244,7 @@ test.describe('Client Validation', () => {
 				timestamp,
 				verified: 'Yes',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -310,10 +310,10 @@ test.describe('Client Validation', () => {
 			payload: {
 				email: '',
 			},
-			error: [
-				['email', 'Email is required'],
-				['password', 'Password is required'],
-			],
+			error: {
+				email: 'Email is required',
+				password: 'Password is required',
+			},
 		});
 
 		await email.type('invalid email');
@@ -325,7 +325,9 @@ test.describe('Client Validation', () => {
 			payload: {
 				email: 'invalid email',
 			},
-			error: [['password', 'Password is required']],
+			error: {
+				password: 'Password is required',
+			},
 		});
 	});
 
@@ -662,7 +664,7 @@ test.describe('Field list', () => {
 					{ content: 'Ad hoc task' },
 				],
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -728,7 +730,7 @@ test.describe('Field list', () => {
 					{ content: 'Write tests for nested list', completed: 'on' },
 				],
 			},
-			error: [],
+			error: {},
 		});
 	});
 

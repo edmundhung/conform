@@ -1,4 +1,4 @@
-import { type Submission, conform, useForm, parse } from '@conform-to/react';
+import { conform, useForm, parse } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useId } from 'react';
@@ -10,18 +10,31 @@ interface Login {
 	password: string;
 }
 
-function parseLoginForm(formData: FormData): Submission {
-	const submission = parse(formData);
+function parseLoginForm(formData: FormData) {
+	return parse(formData, {
+		resolve({ email, password }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.payload.email) {
-		submission.error.push(['email', 'Email is required']);
-	}
+			if (!email) {
+				error.email = 'Email is required';
+			}
 
-	if (!submission.payload.password) {
-		submission.error.push(['password', 'Password is required']);
-	}
+			if (!password) {
+				error.password = 'Password is required';
+			}
 
-	return submission;
+			if (error.email || error.password) {
+				return { error };
+			}
+
+			return {
+				value: {
+					email,
+					password,
+				},
+			};
+		},
+	});
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -33,11 +46,11 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = parseLoginForm(formData);
 
 	if (
-		submission.error.length === 0 &&
-		(submission.payload.email !== 'me@edmund.dev' ||
-			submission.payload.password !== '$eCreTP@ssWord')
+		submission.value &&
+		(submission.value.email !== 'me@edmund.dev' ||
+			submission.value.password !== '$eCreTP@ssWord')
 	) {
-		submission.error.push(['', 'The provided email or password is not valid']);
+		submission.error[''] = 'The provided email or password is not valid';
 	}
 
 	return json({

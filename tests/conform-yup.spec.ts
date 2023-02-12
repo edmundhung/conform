@@ -52,7 +52,7 @@ test.describe('conform-yup', () => {
 		})
 		.test('root', 'error', () => false);
 
-	const value = {
+	const payload = {
 		text: '',
 		tag: '',
 		number: '99',
@@ -61,22 +61,20 @@ test.describe('conform-yup', () => {
 		nested: { key: '' },
 		list: [{ key: '' }],
 	};
-	const error = [
-		['text', 'min'],
-		['text', 'regex'],
-		['tag', 'required'],
-		['tag', 'invalid'],
-		['number', 'max'],
-		['timestamp', 'min'],
-		['options[1]', 'invalid'],
-		['options', 'min'],
-		['nested.key', 'required'],
-		['nested', 'error'],
-		['list[0].key', 'required'],
-		['list[0]', 'error'],
-		['list', 'max'],
-		['', 'error'],
-	];
+	const error = {
+		text: 'min',
+		tag: 'required',
+		number: 'max',
+		timestamp: 'min',
+		'options[1]': 'invalid',
+		options: 'min',
+		'nested.key': 'required',
+		nested: 'error',
+		'list[0].key': 'required',
+		'list[0]': 'error',
+		list: 'max',
+		'': 'error',
+	};
 
 	test('getFieldsetConstraint', () => {
 		expect(getFieldsetConstraint(schema)).toEqual({
@@ -103,19 +101,47 @@ test.describe('conform-yup', () => {
 
 	test('parse', () => {
 		const formData = createFormData([
-			['text', value.text],
-			['tag', value.tag],
-			['number', value.number],
-			['timestamp', value.timestamp],
-			['options[0]', value.options[0]],
-			['options[1]', value.options[1]],
-			['nested.key', value.nested.key],
-			['list[0].key', value.list[0].key],
+			['text', payload.text],
+			['tag', payload.tag],
+			['number', payload.number],
+			['timestamp', payload.timestamp],
+			['options[0]', payload.options[0]],
+			['options[1]', payload.options[1]],
+			['nested.key', payload.nested.key],
+			['list[0].key', payload.list[0].key],
 		]);
-		const submission = parse(formData, { schema });
 
-		expect(submission.payload).toEqual(value);
-		expect(submission.error).toEqual(error);
-		expect(submission.value).not.toBeDefined();
+		expect(parse(formData, { schema })).toEqual({
+			intent: 'submit',
+			payload,
+			error,
+			toJSON: expect.any(Function),
+		});
+		expect(
+			parse(formData, { schema, acceptMultipleErrors: () => true }),
+		).toEqual({
+			intent: 'submit',
+			payload,
+			error: {
+				...error,
+				text: ['min', 'regex'],
+				tag: ['required', 'invalid'],
+			},
+			toJSON: expect.any(Function),
+		});
+		expect(
+			parse(formData, {
+				schema,
+				acceptMultipleErrors: ({ name }) => name === 'tag',
+			}),
+		).toEqual({
+			intent: 'submit',
+			payload,
+			error: {
+				...error,
+				tag: ['required', 'invalid'],
+			},
+			toJSON: expect.any(Function),
+		});
 	});
 });

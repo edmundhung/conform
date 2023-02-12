@@ -123,7 +123,7 @@ async function runValidationScenario(page: Page) {
 				payload: {
 					items: ['Top item', 'First item'],
 				},
-				error: [],
+				error: {},
 			},
 			null,
 			2,

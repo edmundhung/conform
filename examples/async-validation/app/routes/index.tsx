@@ -79,7 +79,7 @@ export default function Signup() {
 			// Only the email field requires additional validation from the server
 			// We trust the client submission result otherwise
 			if (submission.intent === 'validate/username') {
-				return !hasError(submission.error, 'username');
+				return !submission.error.username;
 			}
 
 			return defaultShouldPassthrough;

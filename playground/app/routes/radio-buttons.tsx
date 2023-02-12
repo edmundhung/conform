@@ -8,13 +8,25 @@ interface Schema {
 }
 
 function parseForm(formData: FormData) {
-	const submission = parse(formData);
+	return parse(formData, {
+		resolve({ answer }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.payload.answer) {
-		submission.error.push(['answer', 'Required']);
-	}
+			if (!answer) {
+				error.answer = 'Required';
+			}
 
-	return submission;
+			if (error.answer) {
+				return { error };
+			}
+
+			return {
+				value: {
+					answer,
+				},
+			};
+		},
+	});
 }
 
 export async function loader({ request }: LoaderArgs) {

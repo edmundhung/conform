@@ -27,13 +27,13 @@ function parseLoginForm(formData: FormData) {
   const submission = parse(formData);
 
   if (!submission.payload.email) {
-    submission.error.push(['email', 'Email is required']);
+    submission.error.email = 'Email is required';
   } else if (!email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
+    submission.error.email = 'Email is invalid';
   }
 
   if (!password) {
-    submission.error.push(['password', 'Password is required']);
+    submission.error.password = 'Password is required';
   }
 
   return submission;

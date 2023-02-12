@@ -11,34 +11,44 @@ interface Signup {
 }
 
 function parseSignupForm(formData: FormData) {
-	const submission = parse(formData);
-	const { email, password, confirmPassword } = submission.payload;
+	return parse(formData, {
+		resolve({ email, password, confirmPassword }) {
+			const error: Record<string, string> = {};
 
-	if (!email) {
-		submission.error.push(['email', 'Email is required']);
-	} else if (
-		typeof email !== 'string' ||
-		!email.match(/^[^()@\s]+@[\w\d.]+$/)
-	) {
-		submission.error.push(['email', 'Email is invalid']);
-	}
+			if (!email) {
+				error.email = 'Email is required';
+			} else if (
+				typeof email !== 'string' ||
+				!email.match(/^[^()@\s]+@[\w\d.]+$/)
+			) {
+				error.email = 'Email is invalid';
+			}
 
-	if (!password) {
-		submission.error.push(['password', 'Password is required']);
-	} else if (typeof password === 'string' && password.length < 8) {
-		submission.error.push(['password', 'Password is too short']);
-	}
+			if (!password) {
+				error.password = 'Password is required';
+			} else if (typeof password === 'string' && password.length < 8) {
+				error.password = 'Password is too short';
+			}
 
-	if (!confirmPassword) {
-		submission.error.push(['confirmPassword', 'Confirm password is required']);
-	} else if (confirmPassword !== password) {
-		submission.error.push([
-			'confirmPassword',
-			'The password provided does not match',
-		]);
-	}
+			if (!confirmPassword) {
+				error.confirmPassword = 'Confirm password is required';
+			} else if (confirmPassword !== password) {
+				error.confirmPassword = 'The password provided does not match';
+			}
 
-	return submission;
+			if (error.email || error.password || error.confirmPassword) {
+				return { error };
+			}
+
+			return {
+				value: {
+					email,
+					password,
+					confirmPassword,
+				},
+			};
+		},
+	});
 }
 
 export let loader = async ({ request }: LoaderArgs) => {

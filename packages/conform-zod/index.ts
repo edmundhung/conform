@@ -114,6 +114,15 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async?: false;
 	},
 ): Submission<z.output<Schema>>;
@@ -121,6 +130,15 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async: true;
 	},
 ): Promise<Submission<z.output<Schema>>>;
@@ -128,39 +146,60 @@ export function parse<Schema extends z.ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async?: boolean;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
-	const submission = baseParse(payload);
-	const schema =
-		typeof config.schema === 'function'
-			? config.schema(submission.intent)
-			: config.schema;
-	const resolve = (
-		result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
-	) => {
-		if (result.success) {
-			return {
-				...submission,
-				value: result.data,
-			};
-		} else {
-			return {
-				...submission,
-				error: submission.error.concat(
-					result.error.errors.reduce<Array<[string, string]>>((result, e) => {
-						result.push([getName(e.path), e.message]);
+	return baseParse<z.output<Schema>>(payload, {
+		resolve(payload, intent) {
+			const schema =
+				typeof config.schema === 'function'
+					? config.schema(intent)
+					: config.schema;
+			const resolveResult = (
+				result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
+			):
+				| { value: z.output<Schema> }
+				| { error: Record<string, string | string[]> } => {
+				if (result.success) {
+					return {
+						value: result.data,
+					};
+				}
 
-						return result;
-					}, []),
-				),
-			};
-		}
-	};
+				return {
+					error: result.error.errors.reduce<Record<string, string | string[]>>(
+						(result, e) => {
+							const name = getName(e.path);
 
-	return config.async
-		? schema.safeParseAsync(submission.payload).then(resolve)
-		: resolve(schema.safeParse(submission.payload));
+							if (typeof result[name] === 'undefined') {
+								result[name] = e.message;
+							} else if (
+								config.acceptMultipleErrors?.({ name, intent, payload })
+							) {
+								result[name] = ([] as string[]).concat(result[name], e.message);
+							}
+
+							return result;
+						},
+						{},
+					),
+				};
+			};
+
+			return config.async
+				? schema.safeParseAsync(payload).then(resolveResult)
+				: resolveResult(schema.safeParse(payload));
+		},
+	});
 }
 
 export function ifNonEmptyString(

@@ -54,21 +54,21 @@ export async function action({ request }: ActionArgs) {
   const submission = parse<SignupForm>(formData);
 
   if (!submission.payload.email) {
-    submission.error.push(['email', 'Email is required']);
+    submission.error.email = 'Email is required';
   } else if (!submission.payload.email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
+    submission.error.email = 'Email is invalid';
   }
 
   if (!submission.payload.password) {
-    submission.error.push(['password', 'Password is required']);
+    submission.error.password = 'Password is required';
   }
 
   if (!submission.payload.confirmPassword) {
-    submission.error.push(['confirmPassword', 'Confirm password is required']);
+    submission.error.confirmPassword = 'Confirm password is required';
   } else if (
     submission.payload.confirmPassword !== submission.payload.password
   ) {
-    submission.error.push(['confirmPassword', 'Password does not match']);
+    submission.error.confirmPassword = 'Password does not match';
   }
 
   if (hasError(submission.error) || submission.intent !== 'submit') {

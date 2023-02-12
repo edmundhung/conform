@@ -17,31 +17,42 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, {
+		resolve({ title, description, genre, rating }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.payload.title) {
-		submission.error.push(['title', 'Title is required']);
-	} else if (!submission.payload.title.match(/[0-9a-zA-Z ]{1,20}/)) {
-		submission.error.push(['title', 'Please enter a valid title']);
-	}
+			if (!title) {
+				error.title = 'Title is required';
+			} else if (!title.match(/[0-9a-zA-Z ]{1,20}/)) {
+				error.title = 'Please enter a valid title';
+			}
 
-	if (
-		submission.payload.description &&
-		submission.payload.description.length < 30
-	) {
-		submission.error.push(['description', 'Please provides more details']);
-	}
+			if (description && description.length < 30) {
+				error.description = 'Please provides more details';
+			}
 
-	if (submission.payload.genre === '') {
-		submission.error.push(['genre', 'Genre is required']);
-	}
+			if (genre === '') {
+				error.genre = 'Genre is required';
+			}
 
-	if (
-		submission.payload.rating &&
-		Number(submission.payload.rating) % 0.5 !== 0
-	) {
-		submission.error.push(['rating', 'The provided rating is invalid']);
-	}
+			if (rating && Number(rating) % 0.5 !== 0) {
+				error.rating = 'The provided rating is invalid';
+			}
+
+			if (error.title || error.description || error.genre || error.rating) {
+				return { error };
+			}
+
+			return {
+				value: {
+					title,
+					description,
+					genre,
+					rating,
+				},
+			};
+		},
+	});
 
 	return json(submission);
 };
@@ -80,43 +91,56 @@ export default function MovieForm() {
 		},
 		onValidate: config.validate
 			? ({ form, formData }) => {
-					const submission = parse(formData);
+					const submission = parse(formData, {
+						resolve({ title, description, genre, rating }) {
+							const error: Record<string, string> = {};
 
-					for (const element of getFormElements(form)) {
-						switch (element.name) {
-							case 'title':
-								if (element.validity.valueMissing) {
-									submission.error.push([element.name, 'Title is required']);
-								} else if (element.validity.patternMismatch) {
-									submission.error.push([
-										element.name,
-										'Please enter a valid title',
-									]);
+							for (const element of getFormElements(form)) {
+								switch (element.name) {
+									case 'title':
+										if (element.validity.valueMissing) {
+											error[element.name] = 'Title is required';
+										} else if (element.validity.patternMismatch) {
+											error[element.name] = 'Please enter a valid title';
+										}
+										break;
+									case 'description':
+										if (element.validity.tooShort) {
+											error[element.name] = 'Please provides more details';
+										}
+										break;
+									case 'genre':
+										if (element.validity.valueMissing) {
+											error[element.name] = 'Genre is required';
+										}
+										break;
+									case 'rating':
+										if (element.validity.stepMismatch) {
+											error[element.name] = 'The provided rating is invalid';
+										}
+										break;
 								}
-								break;
-							case 'description':
-								if (element.validity.tooShort) {
-									submission.error.push([
-										element.name,
-										'Please provides more details',
-									]);
-								}
-								break;
-							case 'genre':
-								if (element.validity.valueMissing) {
-									submission.error.push([element.name, 'Genre is required']);
-								}
-								break;
-							case 'rating':
-								if (element.validity.stepMismatch) {
-									submission.error.push([
-										element.name,
-										'The provided rating is invalid',
-									]);
-								}
-								break;
-						}
-					}
+							}
+
+							if (
+								error.title ||
+								error.description ||
+								error.genre ||
+								error.rating
+							) {
+								return { error };
+							}
+
+							return {
+								value: {
+									title,
+									description,
+									genre,
+									rating,
+								},
+							};
+						},
+					});
 
 					return submission;
 			  }
