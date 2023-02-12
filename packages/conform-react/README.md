@@ -10,7 +10,6 @@
 - [useFieldset](#usefieldset)
 - [useFieldList](#usefieldlist)
 - [useInputEvent](#useinputevent)
-- [useControlledInput](#usecontrolledinput)
 - [conform](#conform)
 - [list](#list)
 - [validate](#validate)
@@ -308,49 +307,6 @@ function MuiForm() {
         value={value}
         onChange={control.change}
         onBlur={control.blur}
-        select
-      >
-        <MenuItem value="">Please select</MenuItem>
-        <MenuItem value="a">Category A</MenuItem>
-        <MenuItem value="b">Category B</MenuItem>
-        <MenuItem value="c">Category C</MenuItem>
-      </TextField>
-    </form>
-  );
-}
-```
-
----
-
-### useControlledInput
-
-> This API is deprecated and replaced with the [useInputEvent](#useinputevent) hook.
-
-It returns the properties required to configure a shadow input for validation and helper to integrate it. This is particularly useful when [integrating custom input components](/docs/integrations.md#custom-input-component) like dropdown and datepicker.
-
-```tsx
-import { useForm, useControlledInput } from '@conform-to/react';
-import { Select, MenuItem } from '@mui/material';
-
-function MuiForm() {
-  const [form, { category }] = useForm();
-  const [inputProps, control] = useControlledInput(category.config);
-
-  return (
-    <form {...form.props}>
-      {/* Render a shadow input somewhere */}
-      <input {...inputProps} />
-
-      {/* MUI Select is a controlled component */}
-      <TextField
-        label="Category"
-        inputRef={control.ref}
-        value={control.value}
-        onChange={control.onChange}
-        onBlur={control.onBlur}
-        inputProps={{
-          onInvalid: control.onInvalid,
-        }}
         select
       >
         <MenuItem value="">Please select</MenuItem>

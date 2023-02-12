@@ -4,7 +4,6 @@ import {
 	type FieldValue,
 	type FieldsetConstraint,
 	type ListCommand,
-	type Primitive,
 	type Submission,
 	getFormData,
 	getFormElement,
@@ -21,7 +20,6 @@ import {
 	getErrors,
 } from '@conform-to/dom';
 import {
-	type InputHTMLAttributes,
 	type FormEvent,
 	type RefObject,
 	useRef,
@@ -30,7 +28,6 @@ import {
 	useLayoutEffect,
 	useMemo,
 } from 'react';
-import { input } from './helpers';
 
 export interface FormConfig<
 	Schema extends Record<string, any>,
@@ -794,110 +791,6 @@ export function useFieldList<Payload = any>(
 			config: fieldConfig,
 		};
 	});
-}
-
-interface ShadowInputProps extends InputHTMLAttributes<HTMLInputElement> {
-	ref: RefObject<HTMLInputElement>;
-}
-
-interface LegacyInputControl<Element extends { focus: () => void }> {
-	ref: RefObject<Element>;
-	value: string;
-	onChange: (eventOrValue: { target: { value: string } } | string) => void;
-	onBlur: () => void;
-	onInvalid: (event: FormEvent<FieldElement>) => void;
-}
-
-/**
- * Returns the properties required to configure a shadow input for validation.
- * This is particular useful when integrating dropdown and datepicker whichs
- * introduces custom input mode.
- *
- * @deprecated Please use the `useInputEvent` hook instead
- * @see https://conform.guide/api/react#usecontrolledinput
- */
-export function useControlledInput<
-	Element extends { focus: () => void } = HTMLInputElement,
-	Schema extends Primitive = Primitive,
->(
-	config: FieldConfig<Schema>,
-): [ShadowInputProps, LegacyInputControl<Element>] {
-	const ref = useRef<HTMLInputElement>(null);
-	const inputRef = useRef<Element>(null);
-	const configRef = useRef(config);
-	const [uncontrolledState, setUncontrolledState] = useState<{
-		defaultValue?: FieldValue<Schema>;
-		initialError?: Record<string, string | string[]>;
-	}>({
-		defaultValue: config.defaultValue,
-		initialError: config.initialError,
-	});
-	const [value, setValue] = useState<string>(`${config.defaultValue ?? ''}`);
-	const handleChange: LegacyInputControl<Element>['onChange'] = (
-		eventOrValue,
-	) => {
-		if (!ref.current) {
-			return;
-		}
-
-		const newValue =
-			typeof eventOrValue === 'string'
-				? eventOrValue
-				: eventOrValue.target.value;
-
-		ref.current.value = newValue;
-		ref.current.dispatchEvent(new InputEvent('input', { bubbles: true }));
-		setValue(newValue);
-	};
-	const handleBlur: LegacyInputControl<Element>['onBlur'] = () => {
-		ref.current?.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
-	};
-	const handleInvalid: LegacyInputControl<Element>['onInvalid'] = (event) => {
-		event.preventDefault();
-	};
-
-	useEffect(() => {
-		configRef.current = config;
-	});
-
-	useEffect(() => {
-		const resetHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-
-			if (!form || event.target !== form) {
-				return;
-			}
-
-			setUncontrolledState({
-				defaultValue: configRef.current.defaultValue,
-				initialError: configRef.current.initialError,
-			});
-			setValue(`${configRef.current.defaultValue ?? ''}`);
-		};
-
-		document.addEventListener('reset', resetHandler);
-
-		return () => {
-			document.removeEventListener('reset', resetHandler);
-		};
-	}, []);
-
-	return [
-		{
-			ref,
-			onFocus() {
-				inputRef.current?.focus();
-			},
-			...input({ ...config, ...uncontrolledState }, { hidden: true }),
-		},
-		{
-			ref: inputRef,
-			value,
-			onChange: handleChange,
-			onBlur: handleBlur,
-			onInvalid: handleInvalid,
-		},
-	];
 }
 
 /**
