@@ -126,6 +126,7 @@ interface Form<Schema extends Record<string, any>> {
 	id?: string;
 	ref: RefObject<HTMLFormElement>;
 	error: string;
+	errors: string[];
 	props: FormProps;
 	config: FieldsetConfig<Schema>;
 }
@@ -144,14 +145,14 @@ export function useForm<
 ): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
-	const [error, setError] = useState<string>(() => {
+	const [errors, setErrors] = useState<string[]>(() => {
 		if (!config.state) {
-			return '';
+			return [];
 		}
 
 		const message = config.state.error[''];
 
-		return getValidationMessage(message);
+		return getErrors(getValidationMessage(message));
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
@@ -250,7 +251,15 @@ export function useForm<
 			event.preventDefault();
 
 			if (field.dataset.conformTouched) {
-				setError(field.validationMessage);
+				setErrors((error) => {
+					const message = getValidationMessage(error);
+
+					if (message === field.validationMessage) {
+						return error;
+					}
+
+					return getErrors(field.validationMessage);
+				});
 			}
 		};
 		const handleReset = (event: Event) => {
@@ -270,7 +279,7 @@ export function useForm<
 				}
 			}
 
-			setError('');
+			setErrors([]);
 			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
 			});
@@ -299,7 +308,8 @@ export function useForm<
 	const form: Form<Schema> = {
 		id: config.id,
 		ref,
-		error,
+		error: errors[0] ?? '',
+		errors,
 		props: {
 			ref,
 			id: config.id,
