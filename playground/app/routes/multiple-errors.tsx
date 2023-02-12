@@ -40,7 +40,7 @@ function parseForm(formData: FormData, validator: string | null) {
 							(username) => !username || username.match(/[0-9]/) !== null,
 						),
 				}),
-				acceptMultipleErrors(name) {
+				acceptMultipleErrors({ name }) {
 					return name === 'username';
 				},
 			});
@@ -68,7 +68,7 @@ function parseForm(formData: FormData, validator: string | null) {
 							'At least 1 number',
 						),
 				}),
-				acceptMultipleErrors(name) {
+				acceptMultipleErrors({ name }) {
 					return name === 'username';
 				},
 			});

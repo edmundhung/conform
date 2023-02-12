@@ -91,7 +91,15 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
-		acceptMultipleErrors?: (name: string) => boolean;
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async?: false;
 	},
 ): Submission<yup.InferType<Schema>>;
@@ -99,7 +107,15 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
-		acceptMultipleErrors?: (name: string) => boolean;
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async: true;
 	},
 ): Promise<Submission<yup.InferType<Schema>>>;
@@ -107,7 +123,15 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: string) => Schema);
-		acceptMultipleErrors?: (name: string) => boolean;
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
 		async?: boolean;
 	},
 ):
@@ -129,7 +153,9 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 
 								if (typeof result[name] === 'undefined') {
 									result[name] = e.message;
-								} else if (config.acceptMultipleErrors?.(name)) {
+								} else if (
+									config.acceptMultipleErrors?.({ name, intent, payload })
+								) {
 									result[name] = ([] as string[]).concat(
 										result[name],
 										e.message,
