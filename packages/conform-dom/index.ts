@@ -125,6 +125,47 @@ export function getFormData(
 	return payload;
 }
 
+export type FormMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type FormEncType =
+	| 'application/x-www-form-urlencoded'
+	| 'multipart/form-data';
+
+export function getFormAttributes(
+	form: HTMLFormElement,
+	submitter?: HTMLInputElement | HTMLButtonElement | null,
+): {
+	action: string;
+	encType: FormEncType;
+	method: FormMethod;
+} {
+	const enforce = <Type extends string>(value: string, list: Type[]): Type =>
+		list.includes(value as Type) ? (value as Type) : list[0];
+	const action =
+		submitter?.getAttribute('formaction') ??
+		form.getAttribute('action') ??
+		`${location.pathname}${location.search}`;
+	const method =
+		submitter?.getAttribute('formmethod') ??
+		form.getAttribute('method') ??
+		'get';
+	const encType = submitter?.getAttribute('formenctype') ?? form.enctype;
+
+	return {
+		action,
+		encType: enforce<FormEncType>(encType, [
+			'application/x-www-form-urlencoded',
+			'multipart/form-data',
+		]),
+		method: enforce<FormMethod>(method, [
+			'get',
+			'post',
+			'put',
+			'patch',
+			'delete',
+		]),
+	};
+}
+
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
