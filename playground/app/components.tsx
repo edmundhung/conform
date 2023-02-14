@@ -7,6 +7,9 @@ interface PlaygroundProps {
 	description?: string;
 	form?: string;
 	state?: Submission;
+	formAction?: string;
+	formMethod?: string;
+	formEncType?: string;
 	children: ReactNode;
 }
 
@@ -15,6 +18,9 @@ export function Playground({
 	description,
 	form,
 	state,
+	formAction,
+	formMethod,
+	formEncType,
 	children,
 }: PlaygroundProps) {
 	const [submission, setSubmission] = useState(state ?? null);
@@ -40,7 +46,7 @@ export function Playground({
 						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 overflow-x-scroll ${
-								submission.error.length > 0
+								Object.entries(submission.error).length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
@@ -69,6 +75,9 @@ export function Playground({
 							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 							onClick={() => setSubmission(null)}
 							form={form}
+							formAction={formAction}
+							formMethod={formMethod}
+							formEncType={formEncType}
 						>
 							Submit
 						</button>

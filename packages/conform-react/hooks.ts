@@ -3,6 +3,8 @@ import {
 	type FieldElement,
 	type FieldValue,
 	type FieldsetConstraint,
+	type FormMethod,
+	type FormEncType,
 	type ListCommand,
 	type Submission,
 	getFormData,
@@ -18,6 +20,7 @@ import {
 	requestIntent,
 	getValidationMessage,
 	getErrors,
+	getFormAttributes,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -108,6 +111,9 @@ export interface FormConfig<
 		context: {
 			formData: FormData;
 			submission: ClientSubmission;
+			action: string;
+			encType: FormEncType;
+			method: FormMethod;
 		},
 	) => void;
 }
@@ -347,7 +353,11 @@ export function useForm<
 					) {
 						event.preventDefault();
 					} else {
-						config.onSubmit?.(event, { formData, submission });
+						config.onSubmit?.(event, {
+							formData,
+							submission,
+							...getFormAttributes(form, submitter),
+						});
 					}
 
 					if (event.defaultPrevented) {

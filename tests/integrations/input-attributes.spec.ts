@@ -12,7 +12,7 @@ function getFieldset(form: Locator) {
 }
 
 test.beforeEach(async ({ page }) => {
-	await page.goto('/attributes');
+	await page.goto('/input-attributes');
 });
 
 test('setup validation attributes', async ({ page }) => {
