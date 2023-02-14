@@ -212,7 +212,12 @@ export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	for (const name of Object.keys(submission.error)) {
+	for (const [name, message] of Object.entries(submission.error)) {
+		// There is no need to create a placeholder button if all we want is to reset the error
+		if (message === '') {
+			continue;
+		}
+
 		// We can't use empty string as button name
 		// As `form.element.namedItem('')` will always returns null
 		const elementName = name ? name : '__form__';
@@ -615,3 +620,107 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 		}
 	},
 });
+
+export function validateConstraint(options: {
+	form: HTMLFormElement;
+	formData?: FormData;
+	constraints?: Record<
+		Lowercase<string>,
+		(
+			value: string,
+			context: { formData: FormData; attributeValue: string },
+		) => boolean
+	>;
+	acceptMultipleErrors?: ({
+		name,
+		intent,
+		payload,
+	}: {
+		name: string;
+		intent: string;
+		payload: Record<string, any>;
+	}) => boolean;
+	formatMessages?: (validity: ValidityState) => string[];
+	shouldValidate?: ({
+		intent,
+		name,
+		defaultShouldValidate,
+	}: {
+		intent: string;
+		name: string;
+		defaultShouldValidate: boolean;
+	}) => boolean;
+}) {
+	const formData = options?.formData ?? new FormData(options.form);
+	const formatMessages =
+		options?.formatMessages ??
+		((validity) => {
+			const error: Array<string> = [];
+
+			if (validity.valueMissing) error.push('required');
+			if (validity.typeMismatch || validity.badInput) error.push('type');
+			if (validity.tooShort) error.push('minLength');
+			if (validity.rangeUnderflow) error.push('min');
+			if (validity.stepMismatch) error.push('step');
+			if (validity.tooLong) error.push('maxLength');
+			if (validity.rangeOverflow) error.push('max');
+			if (validity.patternMismatch) error.push('pattern');
+
+			return error;
+		});
+
+	return parse(formData, {
+		resolve(payload, intent) {
+			const error: Record<string, string | string[]> = {};
+
+			for (const element of options.form.elements) {
+				if (isFieldElement(element)) {
+					const name = element.name === '__form__' ? '' : element.name;
+					const errors = formatMessages(element.validity);
+					const shouldAcceptMultipleErrors =
+						options?.acceptMultipleErrors?.({
+							name,
+							payload,
+							intent,
+						}) ?? false;
+
+					if (
+						(errors.length === 0 || shouldAcceptMultipleErrors) &&
+						options?.constraints
+					) {
+						for (const [name, validate] of Object.entries(
+							options.constraints,
+						)) {
+							const key = `constraint${name.slice(0, 1).toUpperCase()}${name
+								.slice(1)
+								.toLowerCase()}`;
+							const attributeValue = element.dataset[key];
+
+							if (
+								typeof attributeValue !== 'undefined' &&
+								!validate(element.value, { formData, attributeValue })
+							) {
+								errors.push(name);
+							}
+						}
+					}
+
+					if (errors.length > 0) {
+						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
+					} else if (
+						options?.shouldValidate?.({
+							intent,
+							name,
+							defaultShouldValidate: shouldValidate(intent, name),
+						}) ??
+						shouldValidate(intent, name)
+					) {
+						error[name] = '';
+					}
+				}
+			}
+
+			return { error };
+		},
+	});
+}
