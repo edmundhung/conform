@@ -21,6 +21,7 @@ import {
 	getValidationMessage,
 	getErrors,
 	getFormAttributes,
+	shouldValidate,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -78,18 +79,6 @@ export interface FormConfig<
 	 * Default to `false`.
 	 */
 	noValidate?: boolean;
-
-	shouldSubmissionPassthrough?: ({
-		form,
-		formData,
-		submission,
-		defaultShouldPassthrough,
-	}: {
-		form: HTMLFormElement;
-		formData: FormData;
-		submission: ClientSubmission;
-		defaultShouldPassthrough: boolean;
-	}) => boolean;
 
 	/**
 	 * A function to be called when the form should be (re)validated.
@@ -170,11 +159,17 @@ export function useForm<
 			};
 		}
 
-		const { '': formError, ...initialError } = submission.error;
-
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
-			initialError,
+			initialError: Object.entries(submission.error).reduce<
+				Record<string, string | string[]>
+			>((result, [name, message]) => {
+				if (name !== '' && shouldValidate(submission.intent, name)) {
+					result[name] = message;
+				}
+
+				return result;
+			}, {}),
 		};
 	});
 	const fieldsetConfig = {
@@ -324,32 +319,29 @@ export function useForm<
 
 				try {
 					const formData = getFormData(form, submitter);
-					const onValidate =
+					const getSubmission =
 						config.onValidate ??
 						((context) =>
 							parse(context.formData, {
 								resolve: () => ({ error: {} }),
 							}) as ClientSubmission);
-					const submission = onValidate({ form, formData });
-					const defaultShouldPassthrough =
-						typeof config.onValidate !== 'function' ||
-						(!submission.intent.startsWith('validate/') &&
-							!submission.intent.startsWith('list/'));
+					const submission = getSubmission({ form, formData });
 
 					if (
 						(!config.noValidate &&
 							!submitter?.formNoValidate &&
 							Object.entries(submission.error).some(
-								([, message]) => message !== '',
+								([, message]) =>
+									message !== '' &&
+									!([] as string[]).concat(message).includes('__UNDEFINED__'),
 							)) ||
-						!(
-							config.shouldSubmissionPassthrough?.({
-								form,
-								formData,
-								submission,
-								defaultShouldPassthrough,
-							}) ?? defaultShouldPassthrough
-						)
+						(typeof config.onValidate !== 'undefined' &&
+							(submission.intent.startsWith('validate') ||
+								submission.intent.startsWith('list')) &&
+							Object.entries(submission.error).every(
+								([, message]) =>
+									!([] as string[]).concat(message).includes('__UNDEFINED__'),
+							))
 					) {
 						event.preventDefault();
 					} else {

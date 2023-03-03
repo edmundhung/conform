@@ -1,4 +1,4 @@
-import { conform, shouldValidate, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -7,11 +7,48 @@ import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 import { parseConfig } from '~/config';
 
-const schema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	email: z.string().min(1, 'Email is required').email('Email is invalid'),
-	title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
-});
+function createSchema(
+	intent: string,
+	constraints: {
+		isEmailUsed?: (email: string) => Promise<boolean>;
+	} = {},
+) {
+	return z.object({
+		name: z.string().min(1, 'Name is required'),
+		email: z
+			.string()
+			.min(1, 'Email is required')
+			.email('Email is invalid')
+			.superRefine((value, ctx) => {
+				let message = '';
+
+				if (intent !== 'validate/email' && intent !== 'submit') {
+					message = '__SKIPPED__';
+				} else if (typeof constraints.isEmailUsed === 'undefined') {
+					message = '__UNDEFINED__';
+				} else {
+					return constraints.isEmailUsed(value).then((valid) => {
+						if (!valid) {
+							return;
+						}
+
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							message: 'Email is already used',
+						});
+					});
+				}
+
+				if (message) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message,
+					});
+				}
+			}),
+		title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
+	});
+}
 
 export let loader = async ({ request }: LoaderArgs) => {
 	return parseConfig(request);
@@ -21,23 +58,15 @@ export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
 		schema: (intent) =>
-			schema.refine(
-				async (employee) => {
-					if (!shouldValidate(intent, 'email')) {
-						return true;
-					}
-
+			createSchema(intent, {
+				isEmailUsed(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
-							resolve(employee.email === 'hey@conform.guide');
+							resolve(email !== 'hey@conform.guide');
 						}, Math.random() * 500);
 					});
 				},
-				{
-					message: 'Email is already used',
-					path: ['email'],
-				},
-			),
+			}),
 		async: true,
 	});
 
@@ -50,15 +79,10 @@ export default function EmployeeForm() {
 	const [form, { name, email, title }] = useForm({
 		...config,
 		state,
-		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
-			if (submission.intent === 'validate/email') {
-				return !submission.error.email;
-			}
-
-			return defaultShouldPassthrough;
-		},
 		onValidate({ formData }) {
-			return parse(formData, { schema });
+			return parse(formData, {
+				schema: (intent) => createSchema(intent),
+			});
 		},
 	});
 
