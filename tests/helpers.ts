@@ -176,4 +176,4 @@ export function getPlayground(page: Page) {
 	};
 }
 
-export const expectNonEmptyString = expect.stringMatching(/\w+/);
+export const expectNonEmptyString = /\w+/;

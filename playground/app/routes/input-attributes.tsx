@@ -1,6 +1,6 @@
-import { type Submission, conform, useForm } from '@conform-to/react';
-import { Form } from '@remix-run/react';
-import { useState } from 'react';
+import { conform, useForm, parse } from '@conform-to/react';
+import { json, type ActionArgs } from '@remix-run/node';
+import { Form, useActionData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 
 interface Schema {
@@ -11,10 +11,18 @@ interface Schema {
 	tags: string[];
 }
 
+export async function action({ request }: ActionArgs) {
+	const formData = await request.formData();
+	const submission = parse(formData, { resolve: () => ({ error: {} }) });
+
+	return json(submission);
+}
+
 export default function Example() {
-	const [state, setState] = useState<Submission>();
+	const state = useActionData<typeof action>();
 	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
 		id: 'test',
+		state,
 		constraint: {
 			title: {
 				required: true,
@@ -41,10 +49,6 @@ export default function Example() {
 				required: true,
 				multiple: true,
 			},
-		},
-		onSubmit(event, { submission }) {
-			event.preventDefault();
-			setState(submission);
 		},
 	});
 
