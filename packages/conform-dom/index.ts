@@ -209,73 +209,63 @@ export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	const listCommand = parseListCommand(submission.intent);
+	for (const name of Object.keys(submission.error)) {
+		// We can't use empty string as button name
+		// As `form.element.namedItem('')` will always returns null
+		const elementName = name ? name : '__form__';
+		let item = form.elements.namedItem(elementName);
 
-	if (listCommand) {
-		form.dispatchEvent(
-			new CustomEvent('conform/list', {
-				detail: submission.intent,
-			}),
-		);
+		if (item instanceof RadioNodeList) {
+			for (const field of item) {
+				if ((field as FieldElement).type !== 'radio') {
+					console.warn('Repeated field name is not supported.');
+					continue;
+				}
+			}
+		}
+
+		if (item === null) {
+			// Create placeholder button to keep the error without contributing to the form data
+			const button = document.createElement('button');
+
+			button.name = elementName;
+			button.hidden = true;
+			button.dataset.conformTouched = 'true';
+			button.dataset.conformManaged = 'true';
+			item = button;
+
+			form.appendChild(button);
+		}
 	}
 
-	setTimeout(() => {
-		for (const name of Object.keys(submission.error)) {
-			// We can't use empty string as button name
-			// As `form.element.namedItem('')` will always returns null
-			const elementName = name ? name : '__form__';
-			let item = form.elements.namedItem(elementName);
+	for (const element of form.elements) {
+		if (isFieldElement(element) && element.willValidate) {
+			const elementName = element.name !== '__form__' ? element.name : '';
+			const message = submission.error[elementName];
+			const elementShouldValidate = shouldValidate(
+				submission.intent,
+				elementName,
+			);
 
-			if (item instanceof RadioNodeList) {
-				for (const field of item) {
-					if ((field as FieldElement).type !== 'radio') {
-						throw new Error('Repeated field name is not supported');
-					}
-				}
+			if (elementShouldValidate) {
+				element.dataset.conformTouched = 'true';
 			}
 
-			if (item === null) {
-				// Create placeholder button to keep the error without contributing to the form data
-				const button = document.createElement('button');
+			if (
+				typeof message === 'undefined' ||
+				!([] as string[]).concat(message).includes('__SKIPPED__')
+			) {
+				const invalidEvent = new Event('invalid', { cancelable: true });
 
-				button.name = elementName;
-				button.hidden = true;
-				button.dataset.conformTouched = 'true';
-				item = button;
-
-				form.appendChild(button);
+				element.setCustomValidity(getValidationMessage(message));
+				element.dispatchEvent(invalidEvent);
 			}
-		}
 
-		for (const element of form.elements) {
-			if (isFieldElement(element) && element.willValidate) {
-				const elementName = element.name !== '__form__' ? element.name : '';
-				const message = submission.error[elementName];
-				const elementShouldValidate = shouldValidate(
-					submission.intent,
-					elementName,
-				);
-
-				if (elementShouldValidate) {
-					element.dataset.conformTouched = 'true';
-				}
-
-				if (
-					typeof message === 'undefined' ||
-					!([] as string[]).concat(message).includes('__SKIPPED__')
-				) {
-					const invalidEvent = new Event('invalid', { cancelable: true });
-
-					element.setCustomValidity(getValidationMessage(message));
-					element.dispatchEvent(invalidEvent);
-				}
-
-				if (elementShouldValidate && !element.validity.valid) {
-					focus(element);
-				}
+			if (elementShouldValidate && !element.validity.valid) {
+				focus(element);
 			}
 		}
-	}, 0);
+	}
 }
 
 export function setValue<T>(

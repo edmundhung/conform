@@ -139,6 +139,7 @@ export function useForm<
 ): [Form<Schema>, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
+	const [lastSubmission, setLastSubmission] = useState(config.state ?? null);
 	const [error, setError] = useState<string>(() => {
 		if (!config.state) {
 			return '';
@@ -198,8 +199,28 @@ export function useForm<
 			return;
 		}
 
-		reportSubmission(form, submission);
+		const listCommand = parseListCommand(submission.intent);
+
+		if (listCommand) {
+			form.dispatchEvent(
+				new CustomEvent('conform/list', {
+					detail: submission.intent,
+				}),
+			);
+		}
+
+		setLastSubmission(submission);
 	}, [config.state]);
+
+	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !lastSubmission) {
+			return;
+		}
+
+		reportSubmission(ref.current, lastSubmission);
+	}, [lastSubmission]);
 
 	useEffect(() => {
 		// Revalidate the form when input value is changed
@@ -343,6 +364,17 @@ export function useForm<
 									!([] as string[]).concat(message).includes('__UNDEFINED__'),
 							))
 					) {
+						const listCommand = parseListCommand(submission.intent);
+
+						if (listCommand) {
+							form.dispatchEvent(
+								new CustomEvent('conform/list', {
+									detail: submission.intent,
+								}),
+							);
+						}
+
+						setLastSubmission(submission);
 						event.preventDefault();
 					} else {
 						config.onSubmit?.(event, {
@@ -350,10 +382,6 @@ export function useForm<
 							submission,
 							...getFormAttributes(form, submitter),
 						});
-					}
-
-					if (event.defaultPrevented) {
-						reportSubmission(form, submission);
 					}
 				} catch (e) {
 					console.warn(e);

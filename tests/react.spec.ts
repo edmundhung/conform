@@ -25,15 +25,14 @@ test.describe('Client Validation', () => {
 		const { title, description, genre, rating } = getMovieFieldset(form);
 
 		async function expectErrorMessagesEqualsToValidationMessages() {
-			const [actualMessages, ...expectedMessages] = await Promise.all([
-				getErrorMessages(form),
+			const expectedMessages = await Promise.all([
 				getValidationMessage(title),
 				getValidationMessage(description),
 				getValidationMessage(genre),
 				getValidationMessage(rating),
 			]);
 
-			expect(actualMessages).toEqual(expectedMessages);
+			await expect(form.locator('main p')).toHaveText(expectedMessages);
 		}
 
 		await clickSubmitButton(form);
