@@ -22,6 +22,7 @@ import {
 	getErrors,
 	getFormAttributes,
 	shouldValidate,
+	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -354,14 +355,18 @@ export function useForm<
 							Object.entries(submission.error).some(
 								([, message]) =>
 									message !== '' &&
-									!([] as string[]).concat(message).includes('__UNDEFINED__'),
+									!([] as string[])
+										.concat(message)
+										.includes(VALIDATION_UNDEFINED),
 							)) ||
 						(typeof config.onValidate !== 'undefined' &&
 							(submission.intent.startsWith('validate') ||
 								submission.intent.startsWith('list')) &&
 							Object.entries(submission.error).every(
 								([, message]) =>
-									!([] as string[]).concat(message).includes('__UNDEFINED__'),
+									!([] as string[])
+										.concat(message)
+										.includes(VALIDATION_UNDEFINED),
 							))
 					) {
 						const listCommand = parseListCommand(submission.intent);

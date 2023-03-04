@@ -205,6 +205,9 @@ export function getErrors(message: string | undefined): string[] {
 	return message.split(String.fromCharCode(31));
 }
 
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
+
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
@@ -253,7 +256,7 @@ export function reportSubmission(
 
 			if (
 				typeof message === 'undefined' ||
-				!([] as string[]).concat(message).includes('__SKIPPED__')
+				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED)
 			) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 

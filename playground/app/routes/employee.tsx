@@ -10,7 +10,7 @@ import { parseConfig } from '~/config';
 function createSchema(
 	intent: string,
 	constraints: {
-		isEmailUsed?: (email: string) => Promise<boolean>;
+		isEmailUnique?: (email: string) => Promise<boolean>;
 	} = {},
 ) {
 	return z.object({
@@ -20,15 +20,21 @@ function createSchema(
 			.min(1, 'Email is required')
 			.email('Email is invalid')
 			.superRefine((value, ctx) => {
-				let message = '';
-
 				if (intent !== 'validate/email' && intent !== 'submit') {
-					message = '__SKIPPED__';
-				} else if (typeof constraints.isEmailUsed === 'undefined') {
-					message = '__UNDEFINED__';
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: conform.VALIDATION_SKIPPED,
+					});
+				} else if (typeof constraints.isEmailUnique === 'undefined') {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: conform.VALIDATION_UNDEFINED,
+					});
 				} else {
-					return constraints.isEmailUsed(value).then((valid) => {
-						if (!valid) {
+					// when the constraint is defined, we must return a promise
+					// to declare it as an async validation
+					return constraints.isEmailUnique(value).then((isUnique) => {
+						if (isUnique) {
 							return;
 						}
 
@@ -36,13 +42,6 @@ function createSchema(
 							code: z.ZodIssueCode.custom,
 							message: 'Email is already used',
 						});
-					});
-				}
-
-				if (message) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						message,
 					});
 				}
 			}),
@@ -59,10 +58,11 @@ export let action = async ({ request }: ActionArgs) => {
 	const submission = await parse(formData, {
 		schema: (intent) =>
 			createSchema(intent, {
-				isEmailUsed(email) {
+				isEmailUnique(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
-							resolve(email !== 'hey@conform.guide');
+							// Only `hey@conform.guide` is unique
+							resolve(email === 'hey@conform.guide');
 						}, Math.random() * 500);
 					});
 				},
