@@ -216,7 +216,7 @@ export function reportSubmission(
 		// We can't use empty string as button name
 		// As `form.element.namedItem('')` will always returns null
 		const elementName = name ? name : '__form__';
-		let item = form.elements.namedItem(elementName);
+		const item = form.elements.namedItem(elementName);
 
 		if (item instanceof RadioNodeList) {
 			for (const field of item) {
@@ -234,8 +234,6 @@ export function reportSubmission(
 			button.name = elementName;
 			button.hidden = true;
 			button.dataset.conformTouched = 'true';
-			button.dataset.conformManaged = 'true';
-			item = button;
 
 			form.appendChild(button);
 		}
