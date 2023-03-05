@@ -4,7 +4,7 @@
 	"scripts": {
 		"build": "run-s build:*",
 		"build:remix": "remix build",
-		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.js",
+		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./function/[[path]].ts",
 		"dev:remix": "cross-env NODE_ENV=development remix dev",
 		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development",
 		"dev": "run-p dev:*",
