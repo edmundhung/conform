@@ -391,10 +391,11 @@ export function focus(field: FieldElement): void {
 	field.focus();
 }
 
+export function parse(payload: FormData | URLSearchParams): Submission;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
-		resolve: (
+	options?: {
+		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
 		) => { value: Schema } | { error: Record<string, string | string[]> };
@@ -402,8 +403,8 @@ export function parse<Schema>(
 ): Submission<Schema>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
-		resolve: (
+	options?: {
+		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
 		) => Promise<
@@ -413,8 +414,8 @@ export function parse<Schema>(
 ): Promise<Submission<Schema>>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
-		resolve: (
+	options?: {
+		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
 		) =>
@@ -426,8 +427,8 @@ export function parse<Schema>(
 ): Submission<Schema> | Promise<Submission<Schema>>;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-	options: {
-		resolve: (
+	options?: {
+		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
 		) =>
@@ -436,7 +437,7 @@ export function parse<Schema>(
 					{ value: Schema } | { error: Record<string, string | string[]> }
 			  >;
 	},
-): Submission<Schema> | Promise<Submission<Schema>> {
+): Submission | Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
 		intent: 'submit',
 		payload: {},
@@ -477,6 +478,10 @@ export function parse<Schema>(
 
 			return updateList(list ?? [], command);
 		});
+	}
+
+	if (typeof options?.resolve === 'undefined') {
+		return submission;
 	}
 
 	const result = options.resolve(submission.payload, submission.intent);

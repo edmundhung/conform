@@ -25,7 +25,6 @@ test.describe('conform-dom', () => {
 						['title', 'The cat'],
 						['description', 'Once upon a time...'],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'submit',
@@ -44,7 +43,6 @@ test.describe('conform-dom', () => {
 						['amount.value', '99.9'],
 						['reference', ''],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'submit',
@@ -67,7 +65,6 @@ test.describe('conform-dom', () => {
 						['tasks[0].completed', 'Yes'],
 						['tasks[1].content', 'Test integration'],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'submit',
@@ -90,7 +87,6 @@ test.describe('conform-dom', () => {
 						['title', 'The cat'],
 						['description', 'Once upon a time...'],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'submit',
@@ -110,7 +106,6 @@ test.describe('conform-dom', () => {
 						['title', 'Test command'],
 						['__intent__', 'command value'],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'command value',
@@ -126,7 +121,6 @@ test.describe('conform-dom', () => {
 						['title', ''],
 						['__intent__', 'list/helloworld'],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				intent: 'list/helloworld',
@@ -154,9 +148,7 @@ test.describe('conform-dom', () => {
 			const command1 = list.prepend('tasks');
 
 			expect(
-				parse(createFormData([...entries, [command1.name, command1.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command1.name, command1.value]])),
 			).toEqual({
 				...result,
 				intent: command1.value,
@@ -170,9 +162,7 @@ test.describe('conform-dom', () => {
 			});
 
 			expect(
-				parse(createFormData([...entries, [command2.name, command2.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command2.name, command2.value]])),
 			).toEqual({
 				...result,
 				intent: command2.value,
@@ -184,9 +174,7 @@ test.describe('conform-dom', () => {
 			const command3 = list.append('tasks');
 
 			expect(
-				parse(createFormData([...entries, [command3.name, command3.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command3.name, command3.value]])),
 			).toEqual({
 				...result,
 				intent: command3.value,
@@ -200,9 +188,7 @@ test.describe('conform-dom', () => {
 			});
 
 			expect(
-				parse(createFormData([...entries, [command4.name, command4.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command4.name, command4.value]])),
 			).toEqual({
 				...result,
 				intent: command4.value,
@@ -217,9 +203,7 @@ test.describe('conform-dom', () => {
 			});
 
 			expect(
-				parse(createFormData([...entries, [command5.name, command5.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command5.name, command5.value]])),
 			).toEqual({
 				...result,
 				intent: command5.value,
@@ -231,9 +215,7 @@ test.describe('conform-dom', () => {
 			const command6 = list.remove('tasks', { index: 0 });
 
 			expect(
-				parse(createFormData([...entries, [command6.name, command6.value]]), {
-					resolve: () => ({ error: {} }),
-				}),
+				parse(createFormData([...entries, [command6.name, command6.value]])),
 			).toEqual({
 				...result,
 				intent: command6.value,
@@ -251,7 +233,6 @@ test.describe('conform-dom', () => {
 						['tasks[1].content', 'Test more stuffs'],
 						[command7.name, command7.value],
 					]),
-					{ resolve: () => ({ error: {} }) },
 				),
 			).toEqual({
 				...result,

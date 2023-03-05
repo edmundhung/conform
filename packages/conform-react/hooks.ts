@@ -343,10 +343,7 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const getSubmission =
 						config.onValidate ??
-						((context) =>
-							parse(context.formData, {
-								resolve: () => ({ error: {} }),
-							}) as ClientSubmission);
+						((context) => parse(context.formData) as ClientSubmission);
 					const submission = getSubmission({ form, formData });
 
 					if (
