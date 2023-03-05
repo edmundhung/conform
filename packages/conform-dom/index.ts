@@ -621,10 +621,14 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 	},
 });
 
+/**
+ * Validate the form with the Constraint Validation API
+ * @see https://conform.guide/api/react#validateconstraint
+ */
 export function validateConstraint(options: {
 	form: HTMLFormElement;
 	formData?: FormData;
-	constraints?: Record<
+	constraint?: Record<
 		Lowercase<string>,
 		(
 			value: string,
@@ -640,43 +644,81 @@ export function validateConstraint(options: {
 		intent: string;
 		payload: Record<string, any>;
 	}) => boolean;
-	formatMessages?: (validity: ValidityState) => string[];
-	shouldValidate?: ({
-		intent,
+	formatMessages?: ({
 		name,
-		defaultShouldValidate,
+		validity,
+		constraint,
+		defaultErrors,
 	}: {
-		intent: string;
 		name: string;
-		defaultShouldValidate: boolean;
-	}) => boolean;
-}) {
+		validity: ValidityState;
+		constraint: Record<string, boolean>;
+		defaultErrors: string[];
+	}) => string[];
+}): Submission {
 	const formData = options?.formData ?? new FormData(options.form);
+	const getDefaultErrors = (
+		validity: ValidityState,
+		result: Record<string, boolean>,
+	) => {
+		const errors: Array<string> = [];
+
+		if (validity.valueMissing) errors.push('required');
+		if (validity.typeMismatch || validity.badInput) errors.push('type');
+		if (validity.tooShort) errors.push('minLength');
+		if (validity.rangeUnderflow) errors.push('min');
+		if (validity.stepMismatch) errors.push('step');
+		if (validity.tooLong) errors.push('maxLength');
+		if (validity.rangeOverflow) errors.push('max');
+		if (validity.patternMismatch) errors.push('pattern');
+
+		for (const [constraintName, valid] of Object.entries(result)) {
+			if (!valid) {
+				errors.push(constraintName);
+			}
+		}
+
+		return errors;
+	};
 	const formatMessages =
-		options?.formatMessages ??
-		((validity) => {
-			const error: Array<string> = [];
-
-			if (validity.valueMissing) error.push('required');
-			if (validity.typeMismatch || validity.badInput) error.push('type');
-			if (validity.tooShort) error.push('minLength');
-			if (validity.rangeUnderflow) error.push('min');
-			if (validity.stepMismatch) error.push('step');
-			if (validity.tooLong) error.push('maxLength');
-			if (validity.rangeOverflow) error.push('max');
-			if (validity.patternMismatch) error.push('pattern');
-
-			return error;
-		});
+		options?.formatMessages ?? (({ defaultErrors }) => defaultErrors);
 
 	return parse(formData, {
 		resolve(payload, intent) {
 			const error: Record<string, string | string[]> = {};
-
+			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
 			for (const element of options.form.elements) {
 				if (isFieldElement(element)) {
 					const name = element.name === '__form__' ? '' : element.name;
-					const errors = formatMessages(element.validity);
+					const constraint = Object.entries(element.dataset).reduce<
+						Record<string, boolean>
+					>((result, [name, attributeValue = '']) => {
+						if (constraintPattern.test(name)) {
+							const constraintName = name
+								.slice(10)
+								.toLowerCase() as Lowercase<string>;
+							const validate = options.constraint?.[constraintName];
+
+							if (typeof validate === 'function') {
+								result[constraintName] = validate(element.value, {
+									formData,
+									attributeValue,
+								});
+							} else {
+								console.warn(
+									`Found an "${constraintName}" constraint with undefined definition; Please specify it on the validateConstraint API.`,
+								);
+							}
+						}
+
+						return result;
+					}, {});
+					const errors = formatMessages({
+						name,
+						validity: element.validity,
+						constraint,
+						defaultErrors: getDefaultErrors(element.validity, constraint),
+					});
 					const shouldAcceptMultipleErrors =
 						options?.acceptMultipleErrors?.({
 							name,
@@ -684,38 +726,8 @@ export function validateConstraint(options: {
 							intent,
 						}) ?? false;
 
-					if (
-						(errors.length === 0 || shouldAcceptMultipleErrors) &&
-						options?.constraints
-					) {
-						for (const [name, validate] of Object.entries(
-							options.constraints,
-						)) {
-							const key = `constraint${name.slice(0, 1).toUpperCase()}${name
-								.slice(1)
-								.toLowerCase()}`;
-							const attributeValue = element.dataset[key];
-
-							if (
-								typeof attributeValue !== 'undefined' &&
-								!validate(element.value, { formData, attributeValue })
-							) {
-								errors.push(name);
-							}
-						}
-					}
-
 					if (errors.length > 0) {
 						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
-					} else if (
-						options?.shouldValidate?.({
-							intent,
-							name,
-							defaultShouldValidate: shouldValidate(intent, name),
-						}) ??
-						shouldValidate(intent, name)
-					) {
-						error[name] = '';
 					}
 				}
 			}

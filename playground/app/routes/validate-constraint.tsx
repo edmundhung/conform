@@ -1,6 +1,7 @@
 import { validateConstraint } from '@conform-to/dom';
-import { conform, useForm, type Submission } from '@conform-to/react';
-import { Form } from '@remix-run/react';
+import { type Submission, useForm } from '@conform-to/react';
+import { type LoaderArgs } from '@remix-run/node';
+import { Form, useLoaderData } from '@remix-run/react';
 import { useState } from 'react';
 import { Playground, Field } from '~/components';
 
@@ -10,35 +11,67 @@ interface Schema {
 	confirmPassword: string;
 }
 
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
+
+	return {
+		multiplePasswordError:
+			url.searchParams.get('multiplePasswordError') === 'yes',
+		enableCustomMessage: url.searchParams.get('enableCustomMessage') === 'yes',
+	};
+}
+
 export default function Example() {
 	const [state, setState] = useState<Submission | undefined>();
+	const { multiplePasswordError, enableCustomMessage } =
+		useLoaderData<typeof loader>();
 	const [form, { email, password, confirmPassword }] = useForm<Schema>({
-		constraint: {
-			email: {
-				required: true,
-				pattern: '[^@]+@[^@]+\\.[^@]+',
-			},
-			password: {
-				required: true,
-			},
-			confirmPassword: {
-				required: true,
-			},
-		},
+		fallbackNative: true,
 		onValidate(context) {
 			return validateConstraint({
 				...context,
-				constraints: {
-					match(value, context) {
-						return value === context.formData.get(context.attributeValue);
+				constraint: {
+					match(value, { formData, attributeValue }) {
+						return value === formData.get(attributeValue);
 					},
 				},
-				shouldValidate({ intent, name, defaultShouldValidate }) {
-					if (intent === 'validate/password' && name === 'confirmPassword') {
-						return true;
+				acceptMultipleErrors({ name }) {
+					return multiplePasswordError && name === 'password';
+				},
+				formatMessages({ name, defaultErrors }) {
+					if (!enableCustomMessage) {
+						return defaultErrors;
 					}
 
-					return defaultShouldValidate;
+					return defaultErrors.map((error) => {
+						switch (name) {
+							case 'email':
+								return (
+									{
+										required: 'Email is required',
+										type: 'Email is invalid',
+										pattern: 'Email domain is not supported',
+									}[error] ?? error
+								);
+							case 'password':
+								return (
+									{
+										required: 'Password is required',
+										minLength: 'Password is too short',
+										pattern: 'Password is too weak',
+									}[error] ?? error
+								);
+							case 'confirmPassword':
+								return (
+									{
+										required: 'Confirm password is required',
+										match: 'Password does not match',
+									}[error] ?? error
+								);
+							default:
+								return error;
+						}
+					});
 				},
 			});
 		},
@@ -46,7 +79,6 @@ export default function Example() {
 			event.preventDefault();
 			setState(submission);
 		},
-		noValidate: true,
 	});
 
 	return (
@@ -54,15 +86,28 @@ export default function Example() {
 			<Playground title="Validate Constraint" state={state}>
 				<fieldset>
 					<Field label="Email" {...email}>
-						<input {...conform.input(email.config, { type: 'email' })} />
+						<input
+							name="email"
+							type="email"
+							required
+							pattern="[^@]+@example.com"
+						/>
 					</Field>
 					<Field label="Password" {...password}>
-						<input {...conform.input(password.config, { type: 'password' })} />
+						<input
+							name="password"
+							type="password"
+							required
+							minLength={5}
+							pattern="(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[1-9]).*"
+						/>
 					</Field>
 					<Field label="Confirm Password" {...confirmPassword}>
 						<input
-							{...conform.input(confirmPassword.config, { type: 'password' })}
-							data-constraint-match={password.config.name}
+							name="confirmPassword"
+							type="password"
+							required
+							data-constraint-match="password"
 						/>
 					</Field>
 				</fieldset>
