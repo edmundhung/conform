@@ -33,7 +33,6 @@ test.describe('conform-dom', () => {
 					description: 'Once upon a time...',
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -55,7 +54,6 @@ test.describe('conform-dom', () => {
 					reference: '',
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -76,7 +74,6 @@ test.describe('conform-dom', () => {
 					],
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 		});
 
@@ -95,7 +92,6 @@ test.describe('conform-dom', () => {
 					description: 'Once upon a time...',
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 		});
 
@@ -113,7 +109,6 @@ test.describe('conform-dom', () => {
 					title: 'Test command',
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 			expect(
 				parse(
@@ -128,7 +123,6 @@ test.describe('conform-dom', () => {
 					title: '',
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			});
 		});
 
@@ -142,7 +136,6 @@ test.describe('conform-dom', () => {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
 				error: {},
-				toJSON: expect.any(Function),
 			};
 
 			const command1 = list.prepend('tasks');
