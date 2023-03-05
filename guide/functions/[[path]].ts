@@ -1,30 +1,25 @@
-import { createPagesFunctionHandler } from '@remix-run/cloudflare-pages';
+import { createRequestHandler } from '@remix-run/cloudflare';
 import * as build from '../build';
 
-let handleRequest: ReturnType<typeof createPagesFunctionHandler>;
+let handleRequest: ReturnType<typeof createRequestHandler>;
 
 export const onRequest: PagesFunction<Env> = (context) => {
 	if (!handleRequest) {
-		handleRequest = createPagesFunctionHandler({
+		handleRequest = createRequestHandler(
 			// @ts-expect-error
 			build,
-			// eslint-disable-next-line no-undef
-			mode: context.env.ENVIRONMENT,
-			getLoadContext: (context) => {
-				const env = {
-					...context.env,
-					CF_PAGES_BRANCH: 'main',
-				};
-
-				return {
-					env,
-					waitUntil(promise: Promise<unknown>) {
-						context.waitUntil(promise);
-					},
-				};
-			},
-		});
+			context.env.ENVIRONMENT,
+		);
 	}
 
-	return handleRequest(context);
+	// This is where you can pass a custom load context to your app
+	return handleRequest(context.request, {
+		env: {
+			...context.env,
+			CF_PAGES_BRANCH: 'main',
+		},
+		waitUntil(promise: Promise<unknown>) {
+			context.waitUntil(promise);
+		},
+	});
 };
