@@ -2,14 +2,13 @@
 	"private": true,
 	"sideEffects": false,
 	"scripts": {
-		"build": "run-s \"build:*\"",
-		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
+		"build": "run-s build:*",
 		"build:remix": "remix build",
-		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.js",
-		"dev:remix": "remix watch",
-		"dev:style": "tailwindcss -i ./styles.css -o ./app/styles.css --watch",
-		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev ./public --kv CACHE",
-		"dev": "remix build && run-p \"dev:*\"",
+		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./functions/[[path]].ts",
+		"dev:remix": "cross-env NODE_ENV=development remix dev",
+		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development",
+		"dev": "run-p dev:*",
+		"predev": "remix build",
 		"start": "cross-env NODE_ENV=production npm run dev:wrangler"
 	},
 	"dependencies": {
@@ -34,10 +33,9 @@
 		"@types/react-syntax-highlighter": "^15.5.5",
 		"eslint": "^8.35.0",
 		"npm-run-all": "^4.1.5",
-		"remix-flat-routes": "^0.5.1",
 		"tailwindcss": "^3.2.7",
 		"typescript": "^4.9.5",
-		"wrangler": "^2.0.27"
+		"wrangler": "^2.12.0"
 	},
 	"engines": {
 		"node": ">=16.13"
