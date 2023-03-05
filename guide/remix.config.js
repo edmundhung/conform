@@ -2,19 +2,17 @@ const { flatRoutes } = require('remix-flat-routes');
 
 /** @type {import('@remix-run/dev').AppConfig} */
 module.exports = {
-	serverBuildTarget: 'cloudflare-pages',
-	server: './server.js',
-	devServerBroadcastDelay: 1500,
-	// ignore all files in routes folder
+	serverModuleFormat: 'esm',
+	serverDependenciesToBundle: ['@remix-run/react'],
 	ignoredRouteFiles: ['**/*'],
 	future: {
+		unstable_dev: {
+			appServerPort: 3000,
+			rebuildPollIntervalMs: 500,
+		},
 		unstable_tailwind: true,
 	},
 	routes: async (defineRoutes) => {
 		return flatRoutes('routes', defineRoutes);
 	},
-	// appDirectory: "app",
-	// assetsBuildDirectory: "public/build",
-	// serverBuildPath: "functions/[[path]].js",
-	// publicPath: "/build/",
 };
