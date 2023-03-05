@@ -4,9 +4,12 @@ const { flatRoutes } = require('remix-flat-routes');
 module.exports = {
 	serverBuildTarget: 'cloudflare-pages',
 	server: './server.js',
-	devServerBroadcastDelay: 1000,
+	devServerBroadcastDelay: 1500,
 	// ignore all files in routes folder
 	ignoredRouteFiles: ['**/*'],
+	future: {
+		unstable_tailwind: true,
+	},
 	routes: async (defineRoutes) => {
 		return flatRoutes('routes', defineRoutes);
 	},
