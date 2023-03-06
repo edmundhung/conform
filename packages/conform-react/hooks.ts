@@ -636,6 +636,7 @@ export function useFieldList<Payload = any>(
 ): Array<{
 	key: string;
 	error: string | undefined;
+	errors: string[] | undefined;
 	config: FieldConfig<Payload>;
 }> {
 	const configRef = useRef(config);
