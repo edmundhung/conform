@@ -4,20 +4,24 @@
 
 ## On this page
 
-- [Features](#features)
-- [Integrations](#integrations)
+- [Remix Integration](#remix-integration)
+- [Schema Validation](#schema-validation)
+- [UI Components](#ui-components)
 
 <!-- /aside -->
 
-## Features
+## Remix Integration
 
-- [Async Validation](/examples/async-validation)
-- [Nested List](/examples/nested-list)
-- [Server Validation](/examples/server-validation)
+- [Basic](/examples/remix)
+- [Nested List](/examples/remix-nested-list)
+- [Async Validation](/examples/remix-async-validation)
+
+## Schema Validation
+
 - [Yup](/examples/yup)
 - [Zod](/examples/zod)
 
-## Integrations
+## UI Components
 
 - [Chakra UI](/examples/chakra-ui)
 - [Headless UI](/examples/headless-ui)

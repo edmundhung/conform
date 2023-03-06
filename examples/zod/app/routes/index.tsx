@@ -15,11 +15,11 @@ const schema = z
 			.string()
 			.min(1, 'Password is required')
 			.min(10, 'The password should be at least 10 characters long'),
-		'confirm-password': z.string().min(1, 'Confirm Password is required'),
+		confirmPassword: z.string().min(1, 'Confirm Password is required'),
 	})
-	.refine((value) => value.password === value['confirm-password'], {
+	.refine((value) => value.password === value.confirmPassword, {
 		message: 'Password does not match',
-		path: ['confirm-password'],
+		path: ['confirmPassword'],
 	});
 
 export async function action({ request }: ActionArgs) {
@@ -40,17 +40,18 @@ export async function action({ request }: ActionArgs) {
 
 export default function SignupForm() {
 	const state = useActionData<typeof action>();
-	const [form, { email, password, 'confirm-password': confirmPassword }] =
-		useForm({
-			state,
-			initialReport: 'onBlur',
-			onValidate({ formData }) {
-				return parse(formData, { schema });
-			},
-			onSubmit(event, { submission }) {
-				console.log(submission.value);
-			},
-		});
+	const [form, { email, password, confirmPassword }] = useForm<
+		z.input<typeof schema>
+	>({
+		// To handle server error and enable full progressive enhancement
+		state,
+
+		// Validation are done on the server if `onValidate` is not specified
+		// Uncomment the code below to enable client validation
+		// onValidate({ formData }) {
+		// 	return parse(formData, { schema });
+		// },
+	});
 
 	return (
 		<Form method="post" {...form.props}>

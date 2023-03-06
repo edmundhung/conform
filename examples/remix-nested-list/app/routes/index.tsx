@@ -15,15 +15,13 @@ import { z } from 'zod';
 
 const taskSchema = z.object({
 	content: z.string().min(1, 'Content is required'),
-	completed: z.preprocess((value) => value === 'yes', z.boolean().optional()),
+	completed: z.string().transform((value) => value === 'yes'),
 });
 
 const todosSchema = z.object({
 	title: z.string().min(1, 'Title is required'),
 	tasks: z.array(taskSchema).min(1),
 });
-
-type Schema = z.infer<typeof todosSchema>;
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
@@ -40,8 +38,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function TodoForm() {
 	const state = useActionData<typeof action>();
-	const [form, { title, tasks }] = useForm<Schema>({
-		initialReport: 'onBlur',
+	const [form, { title, tasks }] = useForm<z.input<typeof todosSchema>>({
 		state,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
@@ -91,7 +88,7 @@ export default function TodoForm() {
 	);
 }
 
-interface TaskFieldsetProps extends FieldsetConfig<z.infer<typeof taskSchema>> {
+interface TaskFieldsetProps extends FieldsetConfig<z.input<typeof taskSchema>> {
 	title: string;
 }
 

@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/nested-list",
+	"name": "@conform-example/remix",
 	"private": true,
 	"license": "MIT",
 	"sideEffects": false,
@@ -16,8 +16,7 @@
 		"@remix-run/serve": "^1.14.0",
 		"clsx": "^1.2.0",
 		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
-		"zod": "^3.21.0"
+		"react-dom": "^18.2.0"
 	},
 	"devDependencies": {
 		"@remix-run/dev": "^1.14.0",

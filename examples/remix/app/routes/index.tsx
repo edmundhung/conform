@@ -9,9 +9,8 @@ interface SignupForm {
 	confirmPassword: string;
 }
 
-export async function action({ request }: ActionArgs) {
-	const formData = await request.formData();
-	const submission = parse(formData, {
+function parseFormData(formData: FormData) {
+	return parse(formData, {
 		resolve({ email, password, confirmPassword }) {
 			const error: Record<string, string> = {};
 
@@ -35,6 +34,7 @@ export async function action({ request }: ActionArgs) {
 				return { error };
 			}
 
+			// Return the value only if no error
 			return {
 				value: {
 					email,
@@ -44,6 +44,11 @@ export async function action({ request }: ActionArgs) {
 			};
 		},
 	});
+}
+
+export async function action({ request }: ActionArgs) {
+	const formData = await request.formData();
+	const submission = parseFormData(formData);
 
 	/**
 	 * Signup only when the user click on the submit button and no error found
@@ -66,11 +71,13 @@ export default function Signup() {
 	// Last submission returned by the server
 	const state = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm<SignupForm>({
-		// Begin validating on blur
-		initialReport: 'onBlur',
-
 		// Sync the result of last submission
 		state,
+
+		// Reuse the validation logic on the client
+		onValidate({ formData }) {
+			return parseFormData(formData);
+		},
 	});
 
 	return (
