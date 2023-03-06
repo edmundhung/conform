@@ -39,7 +39,6 @@ export let action = async ({ request }: ActionArgs) => {
 export default function TodoForm() {
 	const state = useActionData<typeof action>();
 	const [form, { title, tasks }] = useForm<z.input<typeof todosSchema>>({
-		initialReport: 'onBlur',
 		state,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
