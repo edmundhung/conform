@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from '@remix-run/react';
+import { Link, Outlet, useLocation } from '@remix-run/react';
 import {
 	useEffect,
 	useState,
@@ -155,7 +155,7 @@ export function Button({
 	arrow,
 	...props
 }) {
-	let Component = props.href ? 'a' : 'button';
+	let Component = props.to ? Link : 'button';
 
 	className = clsx(
 		'inline-flex gap-0.5 justify-center overflow-hidden text-sm font-medium transition',
@@ -411,20 +411,20 @@ function useInitialValue(value, condition = true) {
 function TopLevelNavItem({ href, children }) {
 	return (
 		<li className="md:hidden">
-			<a
-				href={href}
+			<Link
+				to={href}
 				className="block py-1 text-sm text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
 			>
 				{children}
-			</a>
+			</Link>
 		</li>
 	);
 }
 
 function NavLink({ href, tag, active, isAnchorLink = false, children }) {
 	return (
-		<a
-			href={href}
+		<Link
+			to={href}
 			aria-current={active ? 'page' : undefined}
 			className={clsx(
 				'flex justify-between gap-2 py-1 pr-3 text-sm transition',
@@ -440,7 +440,7 @@ function NavLink({ href, tag, active, isAnchorLink = false, children }) {
 					{tag}
 				</Tag>
 			)}
-		</a>
+		</Link>
 	);
 }
 
@@ -592,7 +592,7 @@ export function Navigation(props) {
 					/>
 				))}
 				<li className="sticky bottom-0 z-10 mt-6 min-[416px]:hidden">
-					<Button href="#" variant="filled" className="w-full">
+					<Button to="#" variant="filled" className="w-full">
 						Sign in
 					</Button>
 				</li>
@@ -619,9 +619,9 @@ export default function Guide() {
 					<header className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex">
 						<div className="contents lg:pointer-events-auto lg:block lg:w-72 lg:overflow-y-auto lg:border-r lg:border-zinc-900/10 lg:px-6 lg:pt-4 lg:pb-8 lg:dark:border-white/10 xl:w-80">
 							<div className="hidden lg:flex">
-								<a aria-label="Home" href="/">
+								<Link aria-label="Home" to="/">
 									Conform
-								</a>
+								</Link>
 								{/* <Header /> */}
 								<Navigation className="hidden lg:mt-10 lg:block" />
 							</div>
