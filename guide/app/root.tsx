@@ -59,12 +59,12 @@ export function CatchBoundary() {
 
 export default function App() {
 	return (
-		<html lang="en">
+		<html lang="en" className="dark js-focus-visible">
 			<head>
 				<Meta />
 				<Links />
 			</head>
-			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
+			<body className="bg-white antialiased dark:bg-zinc-900">
 				<Outlet />
 				<ScrollRestoration />
 				<Scripts />
