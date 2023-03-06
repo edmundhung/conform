@@ -5,15 +5,16 @@ import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 
+// Instead of sharing a schema, prepare a schema creator
 function createSchema(
 	intent: string,
+	// Note: the constraints parameter is optional
 	constarint?: {
 		isUsernameUnique: (username: string) => Promise<boolean>;
 	},
 ) {
 	return z
 		.object({
-			email: z.string().min(1, 'Email is required').email('Email is invalid'),
 			username: z
 				.string()
 				.min(1, 'Username is required')
@@ -21,18 +22,22 @@ function createSchema(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
 				)
+				// We use `.superRefine` instead of `.refine` for better control
 				.superRefine((value, ctx) => {
 					if (intent !== 'submit' && intent !== 'validate/username') {
+						// Validate only when necessary
 						ctx.addIssue({
 							code: z.ZodIssueCode.custom,
 							message: conform.VALIDATION_SKIPPED,
 						});
 					} else if (typeof constarint?.isUsernameUnique === 'undefined') {
+						// Validate only if the constraint is defined
 						ctx.addIssue({
 							code: z.ZodIssueCode.custom,
 							message: conform.VALIDATION_UNDEFINED,
 						});
 					} else {
+						// Tell zod it is an async validation by returning a promise
 						return constarint.isUsernameUnique(value).then((valid) => {
 							if (valid) {
 								return;
@@ -54,22 +59,19 @@ function createSchema(
 		});
 }
 
-type Schema = z.input<ReturnType<typeof createSchema>>;
-
-async function signup(data: Schema): Promise<Response> {
-	throw new Error('Not implemented');
-}
-
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
 		schema: (intent) =>
+			// create the zod schema with the intent and constraint
 			createSchema(intent, {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
-							resolve(username !== 'edmundhung');
-						}, Math.random() * 200);
+							resolve(
+								!['edmundhung', 'conform', 'administrator'].includes(username),
+							);
+						}, Math.random() * 300);
 					});
 				},
 			}),
@@ -80,37 +82,32 @@ export async function action({ request }: ActionArgs) {
 		return json({
 			...submission,
 			payload: {
-				email: submission.payload.email,
+				username: submission.payload.username,
 			},
 		});
 	}
 
-	return await signup(submission.value);
+	throw new Error('Not implemented');
 }
 
 export default function Signup() {
 	const state = useActionData<typeof action>();
-	const [form, { email, username, password, confirmPassword }] =
-		useForm<Schema>({
-			initialReport: 'onBlur',
-			state,
-			onValidate({ formData }) {
-				return parse(formData, { schema: (intent) => createSchema(intent) });
-			},
-		});
+	const [form, { username, password, confirmPassword }] = useForm<
+		z.input<ReturnType<typeof createSchema>>
+	>({
+		state,
+		onValidate({ formData }) {
+			return parse(formData, {
+				// Create the schema without any constraint defined
+				schema: (intent) => createSchema(intent),
+			});
+		},
+	});
 
 	return (
 		<Form method="post" {...form.props}>
 			<fieldset>
 				<legend>{form.error}</legend>
-				<label>
-					<div>Email</div>
-					<input
-						className={email.error ? 'error' : ''}
-						{...conform.input(email.config)}
-					/>
-					<div>{email.error}</div>
-				</label>
 				<label>
 					<div>Username</div>
 					<input

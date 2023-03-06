@@ -43,11 +43,14 @@ export default function SignupForm() {
 	const [form, { email, password, confirmPassword }] = useForm<
 		z.input<typeof schema>
 	>({
+		// To handle server error and enable full progressive enhancement
 		state,
-		initialReport: 'onBlur',
-		onValidate({ formData }) {
-			return parse(formData, { schema });
-		},
+
+		// Validation are done on the server if `onValidate` is not specified
+		// Uncomment the code below to enable client validation
+		// onValidate({ formData }) {
+		// 	return parse(formData, { schema });
+		// },
 	});
 
 	return (

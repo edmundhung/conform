@@ -39,11 +39,14 @@ export async function action({ request }: ActionArgs) {
 export default function SignupForm() {
 	const state = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm({
+		// To handle server error and enable full progressive enhancement
 		state,
-		initialReport: 'onBlur',
-		onValidate({ formData }) {
-			return parse(formData, { schema });
-		},
+
+		// Validation are done on the server if `onValidate` is not specified
+		// Uncomment the code below to enable client validation
+		// onValidate({ formData }) {
+		// 	return parse(formData, { schema });
+		// },
 	});
 
 	return (
