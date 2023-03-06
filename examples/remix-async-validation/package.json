@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/async-validation",
+	"name": "@conform-example/remix-async-validation",
 	"private": true,
 	"license": "MIT",
 	"sideEffects": false,
