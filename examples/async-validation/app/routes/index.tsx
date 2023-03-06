@@ -1,37 +1,62 @@
-import { conform, useForm, hasError, shouldValidate } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 
-const schema = z
-	.object({
-		email: z.string().min(1, 'Email is required').email('Email is invalid'),
-		username: z
-			.string()
-			.min(1, 'Username is required')
-			.regex(
-				/^[a-zA-Z0-9]+$/,
-				'Invalid username: only letters or numbers are allowed',
-			),
-		password: z.string().min(1, 'Password is required'),
-		confirmPassword: z.string().min(1, 'Confirm Password is required'),
-	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: 'Password does not match',
-		path: ['confirmPassword'],
-	});
+function createSchema(
+	intent: string,
+	constarint?: {
+		isUsernameUnique: (username: string) => Promise<boolean>;
+	},
+) {
+	return z
+		.object({
+			email: z.string().min(1, 'Email is required').email('Email is invalid'),
+			username: z
+				.string()
+				.min(1, 'Username is required')
+				.regex(
+					/^[a-zA-Z0-9]+$/,
+					'Invalid username: only letters or numbers are allowed',
+				)
+				.superRefine((value, ctx) => {
+					if (intent !== 'submit' && intent !== 'validate/username') {
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							message: conform.VALIDATION_SKIPPED,
+						});
+					} else if (typeof constarint?.isUsernameUnique === 'undefined') {
+						ctx.addIssue({
+							code: z.ZodIssueCode.custom,
+							message: conform.VALIDATION_UNDEFINED,
+						});
+					} else {
+						return constarint.isUsernameUnique(value).then((valid) => {
+							if (valid) {
+								return;
+							}
 
-async function isUsernameUnique(username: string): Promise<boolean> {
-	return new Promise((resolve) => {
-		setTimeout(() => {
-			resolve(username !== 'edmundhung');
-		}, Math.random() * 200);
-	});
+							ctx.addIssue({
+								code: z.ZodIssueCode.custom,
+								message: 'Username is already used',
+							});
+						});
+					}
+				}),
+			password: z.string().min(1, 'Password is required'),
+			confirmPassword: z.string().min(1, 'Confirm Password is required'),
+		})
+		.refine((data) => data.password === data.confirmPassword, {
+			message: 'Password does not match',
+			path: ['confirmPassword'],
+		});
 }
 
-async function signup(data: z.infer<typeof schema>): Promise<Response> {
+type Schema = z.input<ReturnType<typeof createSchema>>;
+
+async function signup(data: Schema): Promise<Response> {
 	throw new Error('Not implemented');
 }
 
@@ -39,19 +64,15 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
 		schema: (intent) =>
-			schema.refine(
-				async ({ username }) => {
-					if (!shouldValidate(intent, 'username')) {
-						return true;
-					}
-
-					return await isUsernameUnique(username);
+			createSchema(intent, {
+				isUsernameUnique(username) {
+					return new Promise((resolve) => {
+						setTimeout(() => {
+							resolve(username !== 'edmundhung');
+						}, Math.random() * 200);
+					});
 				},
-				{
-					message: 'Username is already used',
-					path: ['username'],
-				},
-			),
+			}),
 		async: true,
 	});
 
@@ -69,22 +90,14 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const state = useActionData<typeof action>();
-	const [form, { email, username, password, confirmPassword }] = useForm({
-		initialReport: 'onBlur',
-		state,
-		onValidate({ formData }) {
-			return parse(formData, { schema });
-		},
-		shouldSubmissionPassthrough({ submission, defaultShouldPassthrough }) {
-			// Only the email field requires additional validation from the server
-			// We trust the client submission result otherwise
-			if (submission.intent === 'validate/username') {
-				return !submission.error.username;
-			}
-
-			return defaultShouldPassthrough;
-		},
-	});
+	const [form, { email, username, password, confirmPassword }] =
+		useForm<Schema>({
+			initialReport: 'onBlur',
+			state,
+			onValidate({ formData }) {
+				return parse(formData, { schema: (intent) => createSchema(intent) });
+			},
+		});
 
 	return (
 		<Form method="post" {...form.props}>

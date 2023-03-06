@@ -35,6 +35,7 @@ export async function action({ request }: ActionArgs) {
 				return { error };
 			}
 
+			// Return the value only if no error
 			return {
 				value: {
 					email,

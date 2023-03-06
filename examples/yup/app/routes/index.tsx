@@ -14,7 +14,7 @@ const schema = yup.object({
 		.string()
 		.required('Password is required')
 		.min(10, 'The password should be at least 10 characters long'),
-	'confirm-password': yup
+	confirmPassword: yup
 		.string()
 		.required('Confirm Password is required')
 		.equals([yup.ref('password')], 'Password does not match'),
@@ -38,14 +38,13 @@ export async function action({ request }: ActionArgs) {
 
 export default function SignupForm() {
 	const state = useActionData<typeof action>();
-	const [form, { email, password, 'confirm-password': confirmPassword }] =
-		useForm({
-			state,
-			initialReport: 'onBlur',
-			onValidate({ formData }) {
-				return parse(formData, { schema });
-			},
-		});
+	const [form, { email, password, confirmPassword }] = useForm({
+		state,
+		initialReport: 'onBlur',
+		onValidate({ formData }) {
+			return parse(formData, { schema });
+		},
+	});
 
 	return (
 		<Form method="post" {...form.props}>
