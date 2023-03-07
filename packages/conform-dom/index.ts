@@ -240,6 +240,8 @@ export function reportSubmission(
 		}
 	}
 
+	let focusedFirstInvalidField = false;
+
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName = element.name !== '__form__' ? element.name : '';
@@ -263,8 +265,14 @@ export function reportSubmission(
 				element.dispatchEvent(invalidEvent);
 			}
 
-			if (elementShouldValidate && !element.validity.valid) {
-				focus(element);
+			if (
+				!focusedFirstInvalidField &&
+				elementShouldValidate &&
+				element.tagName !== 'BUTTON' &&
+				!element.validity.valid
+			) {
+				element.focus();
+				focusedFirstInvalidField = true;
 			}
 		}
 	}
@@ -353,20 +361,6 @@ export function getFormElement(
 	}
 
 	return form;
-}
-
-export function focus(field: FieldElement): void {
-	const currentFocus = document.activeElement;
-
-	if (
-		!isFieldElement(currentFocus) ||
-		currentFocus.tagName !== 'BUTTON' ||
-		currentFocus.form !== field.form
-	) {
-		return;
-	}
-
-	field.focus();
 }
 
 export function parse(payload: FormData | URLSearchParams): Submission;
