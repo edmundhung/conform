@@ -189,6 +189,27 @@ export function shouldValidate(intent: string, name: string): boolean {
 	}
 }
 
+export function isSubmitting(intent: string) {
+	const [type, ...rest] = intent.split('/');
+
+	switch (type) {
+		case 'validate':
+			return rest.length > 1;
+		case 'list':
+			return parseListCommand(intent) === null;
+		default:
+			return true;
+	}
+}
+
+export function isFocusedOnButton(form: HTMLFormElement) {
+	return (
+		isFieldElement(document.activeElement) &&
+		document.activeElement.tagName === 'BUTTON' &&
+		document.activeElement.form === form
+	);
+}
+
 export function getValidationMessage(errors?: string | string[]): string {
 	return ([] as string[]).concat(errors ?? []).join(String.fromCharCode(31));
 }
@@ -267,6 +288,7 @@ export function reportSubmission(
 
 			if (
 				!focusedFirstInvalidField &&
+				(isSubmitting(submission.intent) || isFocusedOnButton(form)) &&
 				elementShouldValidate &&
 				element.tagName !== 'BUTTON' &&
 				!element.validity.valid
