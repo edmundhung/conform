@@ -86,10 +86,6 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
-export function getFormElements(form: HTMLFormElement): FieldElement[] {
-	return Array.from(form.elements).filter(isFieldElement);
-}
-
 export function getPaths(name: string): Array<string | number> {
 	const pattern = /(\w*)\[(\d+)\]/;
 
@@ -298,24 +294,6 @@ export function setValue<T>(
 }
 
 /**
- * The ponyfill of `HTMLFormElement.requestSubmit()`
- * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit
- * @see https://caniuse.com/?search=requestSubmit
- */
-export function requestSubmit(
-	form: HTMLFormElement,
-	submitter?: HTMLButtonElement | HTMLInputElement,
-): void {
-	const submitEvent = new SubmitEvent('submit', {
-		bubbles: true,
-		cancelable: true,
-		submitter,
-	});
-
-	form.dispatchEvent(submitEvent);
-}
-
-/**
  * Creates an intent button on demand and trigger a form submit by clicking it.
  */
 export function requestIntent(
@@ -346,7 +324,7 @@ export function requestIntent(
 }
 
 /**
- * Returns the properties required to configure a command button for validation
+ * Returns the properties required to configure an intent button for validation
  *
  * @see https://conform.guide/api/react#validate
  */
@@ -603,7 +581,7 @@ export interface ListCommandButtonBuilder {
 }
 
 /**
- * Helpers to configure a command button for modifying a list
+ * Helpers to configure an intent button for modifying a list
  *
  * @see https://conform.guide/api/react#list
  */
