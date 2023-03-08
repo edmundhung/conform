@@ -71,7 +71,7 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 		  };
 
 export interface IntentButtonProps {
-	name: '__intent__';
+	name: typeof INTENT_BUTTON_NAME;
 	value: string;
 	formNoValidate?: boolean;
 }
@@ -176,37 +176,31 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(intent: string, name: string): boolean {
-	const [type] = intent.split('/', 1);
-
-	switch (type) {
-		case 'validate':
-			return intent === 'validate' || intent === `validate/${name}`;
-		case 'list':
-			return parseListCommand(intent)?.scope === name;
-		default:
-			return true;
-	}
-}
-
-export function isSubmitting(intent: string) {
+export function getScope(intent: string): string | null {
 	const [type, ...rest] = intent.split('/');
 
 	switch (type) {
 		case 'validate':
-			return rest.length > 1;
+			return rest.length > 0 ? rest.join('/') : null;
 		case 'list':
-			return parseListCommand(intent) === null;
+			return parseListCommand(intent)?.scope ?? null;
 		default:
-			return true;
+			return null;
 	}
 }
 
-export function isFocusedOnButton(form: HTMLFormElement) {
+export function isFocusedOnIntentButton(
+	form: HTMLFormElement,
+	intent: string,
+): boolean {
+	const element = document.activeElement;
+
 	return (
-		isFieldElement(document.activeElement) &&
-		document.activeElement.tagName === 'BUTTON' &&
-		document.activeElement.form === form
+		isFieldElement(element) &&
+		element.tagName === 'BUTTON' &&
+		element.form === form &&
+		element.name === INTENT_BUTTON_NAME &&
+		element.value === intent
 	);
 }
 
@@ -222,8 +216,10 @@ export function getErrors(message: string | undefined): string[] {
 	return message.split(String.fromCharCode(31));
 }
 
-export const VALIDATION_UNDEFINED = '__undefined__';
-export const VALIDATION_SKIPPED = '__skipped__';
+export const FORM_ERROR_ELEMENT_NAME = '__form__';
+export const INTENT_BUTTON_NAME = '__intent__';
+export const VALIDATION_UNDEFINED_MESSAGE = '__undefined__';
+export const VALIDATION_SKIPPED_MESSAGE = '__skipped__';
 
 export function reportSubmission(
 	form: HTMLFormElement,
@@ -237,7 +233,7 @@ export function reportSubmission(
 
 		// We can't use empty string as button name
 		// As `form.element.namedItem('')` will always returns null
-		const elementName = name ? name : '__form__';
+		const elementName = name ? name : FORM_ERROR_ELEMENT_NAME;
 		const item = form.elements.namedItem(elementName);
 
 		if (item instanceof RadioNodeList) {
@@ -262,23 +258,25 @@ export function reportSubmission(
 	}
 
 	let focusedFirstInvalidField = false;
+	const scope = getScope(submission.intent);
+	const isSubmitting =
+		submission.intent.slice(0, submission.intent.indexOf('/')) !== 'validate' &&
+		parseListCommand(submission.intent) === null;
 
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
-			const elementName = element.name !== '__form__' ? element.name : '';
+			const elementName =
+				element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
 			const message = submission.error[elementName];
-			const elementShouldValidate = shouldValidate(
-				submission.intent,
-				elementName,
-			);
+			const shouldValidate = scope === null || scope === elementName;
 
-			if (elementShouldValidate) {
+			if (shouldValidate) {
 				element.dataset.conformTouched = 'true';
 			}
 
 			if (
 				typeof message === 'undefined' ||
-				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED)
+				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED_MESSAGE)
 			) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
@@ -288,8 +286,8 @@ export function reportSubmission(
 
 			if (
 				!focusedFirstInvalidField &&
-				(isSubmitting(submission.intent) || isFocusedOnButton(form)) &&
-				elementShouldValidate &&
+				(isSubmitting || isFocusedOnIntentButton(form, submission.intent)) &&
+				shouldValidate &&
 				element.tagName !== 'BUTTON' &&
 				!element.validity.valid
 			) {
@@ -340,7 +338,7 @@ export function requestIntent(
 
 	const button = document.createElement('button');
 
-	button.name = '__intent__';
+	button.name = INTENT_BUTTON_NAME;
 	button.value = buttonProps.value;
 	button.hidden = true;
 
@@ -360,7 +358,7 @@ export function requestIntent(
  */
 export function validate(field?: string): IntentButtonProps {
 	return {
-		name: '__intent__',
+		name: INTENT_BUTTON_NAME,
 		value: field ? `validate/${field}` : 'validate',
 		formNoValidate: true,
 	};
@@ -439,7 +437,7 @@ export function parse<Schema>(
 	};
 
 	for (let [name, value] of payload.entries()) {
-		if (name === '__intent__') {
+		if (name === INTENT_BUTTON_NAME) {
 			if (typeof value !== 'string' || submission.intent !== 'submit') {
 				throw new Error('The intent could only be set on a button');
 			}
@@ -611,7 +609,7 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 			case 'reorder':
 				return (scope: string, payload = {}): IntentButtonProps => {
 					return {
-						name: '__intent__',
+						name: INTENT_BUTTON_NAME,
 						value: `list/${type}/${scope}/${JSON.stringify(payload)}`,
 						formNoValidate: true,
 					};
@@ -688,7 +686,8 @@ export function validateConstraint(options: {
 			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
 			for (const element of options.form.elements) {
 				if (isFieldElement(element)) {
-					const name = element.name === '__form__' ? '' : element.name;
+					const name =
+						element.name === FORM_ERROR_ELEMENT_NAME ? '' : element.name;
 					const constraint = Object.entries(element.dataset).reduce<
 						Record<string, boolean>
 					>((result, [name, attributeValue = '']) => {
