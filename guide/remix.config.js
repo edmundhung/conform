@@ -8,6 +8,7 @@ module.exports = {
 			appServerPort: 3000,
 			rebuildPollIntervalMs: 500,
 		},
+		unstable_postcss: true,
 		unstable_tailwind: true,
 	},
 };

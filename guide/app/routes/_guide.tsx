@@ -64,6 +64,80 @@ export const navigation = [
 	},
 ];
 
+// from GridPattern.jsx
+export function GridPattern({ width, height, x, y, squares, ...props }) {
+	let patternId = useId();
+
+	return (
+		<svg aria-hidden="true" {...props}>
+			<defs>
+				<pattern
+					id={patternId}
+					width={width}
+					height={height}
+					patternUnits="userSpaceOnUse"
+					x={x}
+					y={y}
+				>
+					<path d={`M.5 ${height}V.5H${width}`} fill="none" />
+				</pattern>
+			</defs>
+			<rect
+				width="100%"
+				height="100%"
+				strokeWidth={0}
+				fill={`url(#${patternId})`}
+			/>
+			{squares && (
+				<svg x={x} y={y} className="overflow-visible">
+					{squares.map(([x, y]) => (
+						<rect
+							strokeWidth="0"
+							key={`${x}-${y}`}
+							width={width + 1}
+							height={height + 1}
+							x={x * width}
+							y={y * height}
+						/>
+					))}
+				</svg>
+			)}
+		</svg>
+	);
+}
+
+// from HeroPattern.jsx
+export function HeroPattern() {
+	return (
+		<div className="absolute inset-0 -z-10 mx-0 max-w-none overflow-hidden">
+			<div className="absolute left-1/2 top-0 ml-[-38rem] h-[25rem] w-[81.25rem] dark:[mask-image:linear-gradient(white,transparent)]">
+				<div className="absolute inset-0 bg-gradient-to-r from-[#36b49f] to-[#DBFF75] opacity-40 [mask-image:radial-gradient(farthest-side_at_top,white,transparent)] dark:from-[#36b49f]/30 dark:to-[#DBFF75]/30 dark:opacity-100">
+					<GridPattern
+						width={72}
+						height={56}
+						x="-12"
+						y="4"
+						squares={[
+							[4, 3],
+							[2, 1],
+							[7, 3],
+							[10, 6],
+						]}
+						className="absolute inset-x-0 inset-y-[-50%] h-[200%] w-full skew-y-[-18deg] fill-black/40 stroke-black/50 mix-blend-overlay dark:fill-white/2.5 dark:stroke-white/5"
+					/>
+				</div>
+				<svg
+					viewBox="0 0 1113 440"
+					aria-hidden="true"
+					className="absolute top-0 left-1/2 ml-[-19rem] w-[69.5625rem] fill-white blur-[26px] dark:hidden"
+				>
+					<path d="M.016 439.5s-9.5-300 434-300S882.516 20 882.516 20V0h230.004v439.5H.016Z" />
+				</svg>
+			</div>
+		</div>
+	);
+}
+
 // from remToPx.js
 export function remToPx(remValue) {
 	let rootFontSize =
@@ -906,7 +980,6 @@ export const Header = forwardRef(function Header({ className }, ref) {
 			<div className="flex items-center gap-5 lg:hidden">
 				<MobileNavigation />
 				<Link className="text-zinc-400" to="/" aria-label="Home">
-					{/* <Logo className="h-6" /> */}
 					Conform
 				</Link>
 			</div>
@@ -1265,15 +1338,19 @@ export default function Guide() {
 								<Link className="text-zinc-400" aria-label="Home" to="/">
 									Conform
 								</Link>
-								<Header />
-								<Navigation className="hidden lg:mt-10 lg:block" />
 							</div>
+							<Header />
+							<Navigation className="hidden lg:mt-10 lg:block" />
 						</div>
 					</header>
 				</motion.header>
 				<div className="relative px-4 pt-14 sm:px-6 lg:px-8">
 					<main className="py-16">
-						{/* <Prose as="article">{children}</Prose> */}
+						<article className="prose dark:prose-invert">
+							<HeroPattern />
+							<Outlet />
+							{/* <div>test</div> */}
+						</article>
 					</main>
 					{/* <Footer /> */}
 				</div>
