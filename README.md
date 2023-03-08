@@ -4,91 +4,63 @@ A progressive enhancement first form validation library for [Remix](https://remi
 
 ### Highlights
 
-- Progressively enhanced by default
+- Focused on progressive enhancment by default
 - Simplifed intergration through event delegation
 - Server first validation with Zod / Yup schema support
 - Field name inference with type checking
 - Focus management
 - Accessibility support
-- About 4kb compressed
+- About 5kb compressed
 
 ### Quick Start
 
 Here is a real world example built with [Remix](https://remix.run).
 
 ```tsx
-import { useForm, parse } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import { Form } from '@remix-run/react';
 import { json, redirect } from '@remix-run/node';
-import { useId } from 'react';
+import { z } from 'zod';
 import { authenticate } from '~/auth';
 
-function parseLoginForm(formData: FormData) {
-  const submission = parse(formData);
-
-  if (!submission.payload.email) {
-    submission.error.email = 'Email is required';
-  } else if (!email.includes('@')) {
-    submission.error.email = 'Email is invalid';
-  }
-
-  if (!password) {
-    submission.error.password = 'Password is required';
-  }
-
-  return submission;
-}
+const schema = z.object({
+  email: z.string().min(1, 'Email is required').email('Email is invalid'),
+  password: z.string().min(1, 'Password is required'),
+});
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parseLoginForm(formData);
+  const submission = parse(formData, { schema });
 
-  try {
-    if (submission.error.length === 0 && submission.intent === 'submit') {
-      const user = await authenticate(submission.payload);
-
-      if (!user) {
-        throw new Error(
-          'Sign-in failed. The email or password provided is not correct.',
-        );
-      }
-
-      return redirect('/');
-    }
-  } catch (error) {
-    submission.error.push(['', error.message]);
+  if (!submission.value || submission.intent === 'submit') {
+    return json(submission);
   }
 
-  return json(submission);
+  return await authenticate(submission.value);
 }
 
 export default function LoginForm() {
-  const id = useId();
   const state = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
     id,
     state,
     onValidate({ formData }) {
-      return parseLoginForm(formData);
+      return parse(formData, { schema });
     },
   });
 
   return (
     <Form method="post" {...form.props}>
-      <div>{form.error}</div>
       <div>
-        <label htmlFor={email.config.id}>Email</label>
+        <label>Email</label>
         <input {...conform.input(email.config)} />
-        <div id={email.config.errorId} role="alert">
-          {email.error}
-        </div>
+        <div>{email.error}</div>
       </div>
       <div>
-        <label htmlFor={password.config.id}>Password</label>
+        <label>Password</label>
         <input {...conform.input(password.config)} />
-        <div id={password.config.errorId} role="alert">
-          {password.error}
-        </div>
+        <div>{password.error}</div>
       </div>
       <button>Login</button>
     </Form>

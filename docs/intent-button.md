@@ -45,7 +45,7 @@ function Product() {
 }
 ```
 
-In **Conform**, if the name of a button is configured with `conform.intent`, its value will be treated as the intent of the submission instead.
+In **Conform**, if the name of a button is configured with `conform.intent`, its value will be treated as the intent of the submission instead. Otherwise, the intent would be `submit` by default.
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';
