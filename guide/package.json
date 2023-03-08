@@ -12,12 +12,15 @@
 		"start": "cross-env NODE_ENV=production npm run dev:wrangler"
 	},
 	"dependencies": {
+		"@algolia/autocomplete-core": "^1.8.3",
+		"@algolia/autocomplete-preset-algolia": "^1.8.3",
 		"@headlessui/react": "^1.7.13",
 		"@markdoc/markdoc": "^0.1.7",
 		"@octokit/core": "^4.0.5",
 		"@remix-run/cloudflare": "^1.14.0",
 		"@remix-run/cloudflare-pages": "^1.14.0",
 		"@remix-run/react": "^1.14.0",
+		"algoliasearch": "^4.15.0",
 		"clsx": "^1.2.1",
 		"cross-env": "^7.0.3",
 		"framer-motion": "^7.8.1",
