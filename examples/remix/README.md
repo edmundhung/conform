@@ -2,7 +2,7 @@
 
 > Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
 
-This example shows you how to implement server validation with Conform.
+This example shows you how to implement validation with Remix.
 
 <!-- sandbox src="/examples/server-validation?module=/app/routes/index.tsx" -->
 
