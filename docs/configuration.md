@@ -17,7 +17,7 @@ Conform has support for nested object and array by introducing a naming conventi
 
 **Conform** uses `object.property` and `array[index]` to structure data. These notations could be combined for nest list as well. e.g. `tasks[0].content`.
 
-You can [parse](/packages/conform-react/README.md#parse) the form data and access its payload in the defined structure through `submission.payload`. If some entries in the form data violate the naming convention, a form error will be set as well.
+This is handled by the [parse](/packages/conform-react/README.md#parse) helper, which returns a submission object when provided a form data.
 
 ```ts
 import { parse } from '@conform-to/react';
@@ -26,14 +26,14 @@ const formData = new FormData();
 const submission = parse(formData);
 
 console.log(submission.payload); // e.g. { tasks: [{ content: '' }] }
-console.log(submission.error); // e.g. []
+console.log(submission.error); // e.g. { 'tasks[0].content': 'Required' }
 ```
 
 ## Nested Object
 
 When you need to set up fields as nested object, you can pass the parent field config to [useFieldset](/packages/conform-react/README.md#usefieldset) to get access to its child fields.
 
-Each field will come with name infered based on the config and will be set to the form control with the [conform](/packages/conform-react/README.md#conform) helper.
+Each field will come with name infered based on the config and you could have it set on the form control using the [conform](/packages/conform-react/README.md#conform) helper.
 
 ```tsx
 import { useForm, useFieldset, conform } from '@conform-to/react';

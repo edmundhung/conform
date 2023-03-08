@@ -43,7 +43,7 @@ It parses the formData and returns a submission result with the validation error
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({

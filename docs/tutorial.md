@@ -51,24 +51,21 @@ export async function action({ request }: ActionArgs) {
   }
 
   // Authenticate the user only if no error
-  if (!error.email && !error.password) {
-    await authenticate(email, password);
-
-    // Simply redirect the user to another page after authentication
-    return redirect('/');
+  if (error.email || error.password) {
+    // Send the last submission result back to client
+    return json(
+      {
+        // Never send the password back to client
+        value: { email },
+        error,
+      },
+      {
+        status: 400,
+      },
+    );
   }
 
-  // Send the last submission result back to client
-  return json(
-    {
-      // Never send the password back to client
-      value: { email },
-      error,
-    },
-    {
-      status: 400,
-    },
-  );
+  return await authenticate(email, password);
 }
 
 export default function LoginForm() {
@@ -106,51 +103,61 @@ import { authenticate } from '~/auth';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-
   // Replace `Object.fromEntries()` with parse()
-  const submission = parse(formData);
+  const submission = parse(formData, {
+    resolve({ email, password }) {
+      const error: Record<String, string> = {};
 
-  // The value will now be available as `submission.payload`
-  if (!submission.payload.email) {
-    // Define the error as key-value pair instead
-    submission.error.email = 'Email is required';
-  } else if (!email.includes('@')) {
-    submission.error.email = 'Email is invalid';
-  }
+      if (!email) {
+        // Define the error as key-value pair instead
+        error.email = 'Email is required';
+      } else if (!email.includes('@')) {
+        error.email = 'Email is invalid';
+      }
 
-  if (!password) {
-    submission.error.password = 'Password is required';
-  }
+      if (!password) {
+        error.password = 'Password is required';
+      }
 
-  // Just check if any error exists
-  if (submission.error.length === 0) {
-    await authenticate(email, password);
+      if (error.email || error.password) {
+        return { error };
+      }
 
-    return redirect('/');
-  }
+      // Resolve it with a value only if no error
+      return {
+        value: { email, password },
+      };
+    },
+  });
 
-  // Send the last submission back to client
-  return json(
-    {
-      ...submission,
-      payload: {
-        email: submission.payload.email,
+  // Send the last submission result back to client if there is any error
+  // or if the intent is not `submit`.
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(
+      {
+        ...submission,
+        // The payload will be used as the default value if the document is reloaded on submit
+        payload: {
+          email: submission.payload.email,
+        },
       },
-    },
-    {
-      status: 400,
-    },
-  );
+      {
+        status: 400,
+      },
+    );
+  }
+
+  return await authenticate(submission.value.email, submission.value.password);
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const state = useActionData<typeof action>();
 
   // The useForm hook will return everything you need to setup a form
   // including the error and config of each field
   const [form, { email, password }] = useForm({
+    state,
     initialReport: 'onBlur',
-    state: result,
   });
 
   return (
@@ -181,10 +188,10 @@ The login form is getting even better! In addition to the features we mentioned 
 - Revalidates it once the value is changed
 - Auto focuses on the first invalid field
 
-Note that all the validation are done on server side, which means:
+Note that all the validation are currently done on server side, which means:
 
-- There is not need to introduce another package to the client bundle for validation (e.g. zod / yup)
-- You can have one single place defining all the validation logic
+- It is not a must to bring in another package to the client bundle for validation (e.g. zod / yup)
+- You will have one single place defining all the validation logic
 
 ## Sharing validation
 
@@ -197,55 +204,65 @@ import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
 
 // Refactor the validation logic to a standalone function
-function parseForm(formData: FormData) {
-  const submission = parse(formData);
+function parseLoginForm(formData: FormData) {
+  return parse(formData, {
+    resolve({ email, password }) {
+      const error: Record<String, string> = {};
 
-  if (!submission.payload.email) {
-    submission.error.email = 'Email is required';
-  } else if (!email.includes('@')) {
-    submission.error.email = 'Email is invalid';
-  }
+      // You can access the structured payload
+      if (!email) {
+        // Define the error as key-value pair instead
+        error.email = 'Email is required';
+      } else if (!email.includes('@')) {
+        error.email = 'Email is invalid';
+      }
 
-  if (!password) {
-    submission.error.password = 'Password is required';
-  }
+      if (!password) {
+        error.password = 'Password is required';
+      }
 
-  return submission;
+      if (error.email || error.password) {
+        return { error };
+      }
+
+      // Resolve it with a value only if no error
+      return {
+        value: { email, password },
+      };
+    },
+  });
 }
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-
   // Parse and validate the formData
-  const submission = parseForm(formData);
+  const submission = parseLoginForm(formData);
 
-  if (submission.error.length === 0) {
-    await authenticate(email, password);
-
-    return redirect('/');
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(
+      {
+        ...submission,
+        payload: {
+          email: submission.payload.email,
+        },
+      },
+      {
+        status: 400,
+      },
+    );
   }
 
-  return json(
-    {
-      ...submission,
-      payload: {
-        email: submission.payload.email,
-      },
-    },
-    {
-      status: 400,
-    },
-  );
+  return await authenticate(submission.value.email, submission.value.password);
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const state = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
+    state,
     initialReport: 'onBlur',
-    state: result,
     onValidate({ formData }) {
       // Run the same validation logic on client side
-      return parseForm(formData);
+      return parseFormData(formData);
     },
   });
 

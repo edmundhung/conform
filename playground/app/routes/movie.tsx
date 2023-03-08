@@ -1,4 +1,4 @@
-import { conform, getFormElements, parse, useForm } from '@conform-to/react';
+import { conform, isFieldElement, parse, useForm } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -95,7 +95,11 @@ export default function MovieForm() {
 						resolve({ title, description, genre, rating }) {
 							const error: Record<string, string> = {};
 
-							for (const element of getFormElements(form)) {
+							for (const element of form.elements) {
+								if (!isFieldElement(element)) {
+									continue;
+								}
+
 								switch (element.name) {
 									case 'title':
 										if (element.validity.valueMissing) {
