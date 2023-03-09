@@ -1,7 +1,7 @@
 import {
 	type FieldConfig,
-	VALIDATION_UNDEFINED_MESSAGE,
-	VALIDATION_SKIPPED_MESSAGE,
+	VALIDATION_UNDEFINED,
+	VALIDATION_SKIPPED,
 	INTENT_BUTTON_NAME,
 } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
@@ -184,5 +184,5 @@ export function textarea<Schema>(
 }
 
 export const intent = INTENT_BUTTON_NAME;
-export const VALIDATION_UNDEFINED = VALIDATION_UNDEFINED_MESSAGE;
-export const VALIDATION_SKIPPED = VALIDATION_SKIPPED_MESSAGE;
+
+export { VALIDATION_UNDEFINED, VALIDATION_SKIPPED };

@@ -21,8 +21,8 @@ import {
 	getValidationMessage,
 	getErrors,
 	getFormAttributes,
-	VALIDATION_UNDEFINED_MESSAGE,
 	getScope,
+	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -356,7 +356,7 @@ export function useForm<
 									message !== '' &&
 									!([] as string[])
 										.concat(message)
-										.includes(VALIDATION_UNDEFINED_MESSAGE),
+										.includes(VALIDATION_UNDEFINED),
 							)) ||
 						(typeof config.onValidate !== 'undefined' &&
 							(submission.intent.startsWith('validate') ||
@@ -365,7 +365,7 @@ export function useForm<
 								([, message]) =>
 									!([] as string[])
 										.concat(message)
-										.includes(VALIDATION_UNDEFINED_MESSAGE),
+										.includes(VALIDATION_UNDEFINED),
 							))
 					) {
 						const listCommand = parseListCommand(submission.intent);

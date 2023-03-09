@@ -203,8 +203,8 @@ export function getErrors(message: string | undefined): string[] {
 
 export const FORM_ERROR_ELEMENT_NAME = '__form__';
 export const INTENT_BUTTON_NAME = '__intent__';
-export const VALIDATION_UNDEFINED_MESSAGE = '__undefined__';
-export const VALIDATION_SKIPPED_MESSAGE = '__skipped__';
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
 
 export function reportSubmission(
 	form: HTMLFormElement,
@@ -261,7 +261,7 @@ export function reportSubmission(
 
 			if (
 				typeof message === 'undefined' ||
-				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED_MESSAGE)
+				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED)
 			) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
