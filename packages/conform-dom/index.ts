@@ -56,7 +56,7 @@ export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 		  };
 
 export interface IntentButtonProps {
-	name: typeof INTENT_BUTTON_NAME;
+	name: typeof INTENT;
 	value: string;
 	formNoValidate?: boolean;
 }
@@ -184,7 +184,7 @@ export function isFocusedOnIntentButton(
 		isFieldElement(element) &&
 		element.tagName === 'BUTTON' &&
 		element.form === form &&
-		element.name === INTENT_BUTTON_NAME &&
+		element.name === INTENT &&
 		element.value === intent
 	);
 }
@@ -201,8 +201,8 @@ export function getErrors(message: string | undefined): string[] {
 	return message.split(String.fromCharCode(31));
 }
 
-export const FORM_ERROR_ELEMENT_NAME = '__form__';
-export const INTENT_BUTTON_NAME = '__intent__';
+const FORM_ERROR_ELEMENT_NAME = '__form__';
+export const INTENT = '__intent__';
 export const VALIDATION_UNDEFINED = '__undefined__';
 export const VALIDATION_SKIPPED = '__skipped__';
 
@@ -323,7 +323,7 @@ export function requestIntent(
 
 	const button = document.createElement('button');
 
-	button.name = INTENT_BUTTON_NAME;
+	button.name = INTENT;
 	button.value = buttonProps.value;
 	button.hidden = true;
 
@@ -343,7 +343,7 @@ export function requestIntent(
  */
 export function validate(field?: string): IntentButtonProps {
 	return {
-		name: INTENT_BUTTON_NAME,
+		name: INTENT,
 		value: field ? `validate/${field}` : 'validate',
 		formNoValidate: true,
 	};
@@ -422,7 +422,7 @@ export function parse<Schema>(
 	};
 
 	for (let [name, value] of payload.entries()) {
-		if (name === INTENT_BUTTON_NAME) {
+		if (name === INTENT) {
 			if (typeof value !== 'string' || submission.intent !== 'submit') {
 				throw new Error('The intent could only be set on a button');
 			}
@@ -594,7 +594,7 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 			case 'reorder':
 				return (scope: string, payload = {}): IntentButtonProps => {
 					return {
-						name: INTENT_BUTTON_NAME,
+						name: INTENT,
 						value: `list/${type}/${scope}/${JSON.stringify(payload)}`,
 						formNoValidate: true,
 					};
@@ -672,7 +672,7 @@ export function validateConstraint(options: {
 			for (const element of options.form.elements) {
 				if (isFieldElement(element)) {
 					const name =
-						element.name === FORM_ERROR_ELEMENT_NAME ? '' : element.name;
+						element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
 					const constraint = Object.entries(element.dataset).reduce<
 						Record<string, boolean>
 					>((result, [name, attributeValue = '']) => {

@@ -2,7 +2,7 @@ import {
 	type FieldConfig,
 	VALIDATION_UNDEFINED,
 	VALIDATION_SKIPPED,
-	INTENT_BUTTON_NAME,
+	INTENT,
 } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
@@ -183,6 +183,4 @@ export function textarea<Schema>(
 	return attributes;
 }
 
-export const intent = INTENT_BUTTON_NAME;
-
-export { VALIDATION_UNDEFINED, VALIDATION_SKIPPED };
+export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };
