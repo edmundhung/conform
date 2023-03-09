@@ -9,5 +9,14 @@ export {
 	requestIntent,
 	isFieldElement,
 } from '@conform-to/dom';
-export { useForm, useFieldset, useFieldList, useInputEvent } from './hooks';
+export {
+	type Field,
+	type Fieldset,
+	type FieldsetConfig,
+	type FormConfig,
+	useForm,
+	useFieldset,
+	useFieldList,
+	useInputEvent,
+} from './hooks';
 export * as conform from './helpers';

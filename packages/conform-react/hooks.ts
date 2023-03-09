@@ -21,7 +21,7 @@ import {
 	getValidationMessage,
 	getErrors,
 	getFormAttributes,
-	shouldValidate,
+	getScope,
 	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import {
@@ -161,12 +161,14 @@ export function useForm<
 			};
 		}
 
+		const scope = getScope(submission.intent);
+
 		return {
 			defaultValue: submission.payload as FieldValue<Schema> | undefined,
 			initialError: Object.entries(submission.error).reduce<
 				Record<string, string | string[]>
 			>((result, [name, message]) => {
-				if (name !== '' && shouldValidate(submission.intent, name)) {
+				if (name !== '' && (scope === null || scope === name)) {
 					result[name] = message;
 				}
 
