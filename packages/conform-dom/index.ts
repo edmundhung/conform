@@ -252,7 +252,9 @@ export function reportSubmission(
 		if (isFieldElement(element) && element.willValidate) {
 			const elementName =
 				element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
-			const message = submission.error[elementName];
+			const messages = ([] as string[]).concat(
+				submission.error[elementName] ?? [],
+			);
 			const shouldValidate = scope === null || scope === elementName;
 
 			if (shouldValidate) {
@@ -260,12 +262,12 @@ export function reportSubmission(
 			}
 
 			if (
-				typeof message === 'undefined' ||
-				!([] as string[]).concat(message).includes(VALIDATION_SKIPPED)
+				!messages.includes(VALIDATION_SKIPPED) &&
+				!messages.includes(VALIDATION_UNDEFINED)
 			) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
-				element.setCustomValidity(getValidationMessage(message));
+				element.setCustomValidity(getValidationMessage(messages));
 				element.dispatchEvent(invalidEvent);
 			}
 
