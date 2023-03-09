@@ -40,21 +40,6 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
-// type Join<K, P> = P extends string | number ?
-//     K extends string | number ?
-//     `${K}${"" extends P ? "" : "."}${P}`
-//     : never : never;
-
-// type DottedPaths<T> = T extends object ?
-//     { [K in keyof T]-?: K extends string | number ?
-//         `${K}` | Join<K, DottedPaths<T[K]>>
-//         : never
-//     }[keyof T] : ""
-
-// type Pathfix<T> = T extends `${infer Prefix}.${number}${infer Postfix}` ? `${Prefix}[${number}]${Pathfix<Postfix>}` : T;
-
-// type Path<Schema> = Pathfix<DottedPaths<Schema>> | '';
-
 export type Submission<Schema extends Record<string, any> | unknown = unknown> =
 	unknown extends Schema
 		? {
