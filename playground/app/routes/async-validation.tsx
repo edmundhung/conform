@@ -4,8 +4,7 @@ import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
-import { Playground, Field, Alert } from '~/components';
-import { parseConfig } from '~/config';
+import { Playground, Field } from '~/components';
 
 function createSchema(
 	intent: string,
@@ -14,7 +13,6 @@ function createSchema(
 	} = {},
 ) {
 	return z.object({
-		name: z.string().min(1, 'Name is required'),
 		email: z
 			.string()
 			.min(1, 'Email is required')
@@ -49,9 +47,13 @@ function createSchema(
 	});
 }
 
-export let loader = async ({ request }: LoaderArgs) => {
-	return parseConfig(request);
-};
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
+
+	return {
+		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
+	};
+}
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
@@ -74,28 +76,21 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function EmployeeForm() {
-	const config = useLoaderData();
+	const { noClientValidate } = useLoaderData<typeof loader>();
 	const state = useActionData();
-	const [form, { name, email, title }] = useForm({
-		...config,
+	const [form, { email, title }] = useForm({
 		state,
-		onValidate({ formData }) {
-			return parse(formData, {
-				schema: (intent) => createSchema(intent),
-			});
-		},
+		onValidate: !noClientValidate
+			? ({ formData }) =>
+					parse(formData, {
+						schema: (intent) => createSchema(intent),
+					})
+			: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Employee Form" state={state}>
-				<Alert message={form.error} />
-				<Field label="Name" {...name}>
-					<input
-						{...conform.input(name.config, { type: 'text' })}
-						autoComplete="off"
-					/>
-				</Field>
 				<Field label="Email" {...email}>
 					<input
 						{...conform.input(email.config, { type: 'email' })}
