@@ -399,19 +399,10 @@ export function useForm<
 }
 
 /**
- * All the information of the field, including state and config.
- */
-export type Field<Schema> = {
-	config: FieldConfig<Schema>;
-	error?: string;
-	errors?: string[];
-};
-
-/**
- * A set of field information.
+ * A set of field configuration
  */
 export type Fieldset<Schema extends Record<string, any>> = {
-	[Key in keyof Schema]-?: Field<Schema[Key]>;
+	[Key in keyof Schema]-?: FieldConfig<Schema[Key]>;
 };
 
 export interface FieldsetConfig<Schema extends Record<string, any>> {
@@ -436,7 +427,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	constraint?: FieldsetConstraint<Schema>;
 
 	/**
-	 * The id of the form, connecting each field to a form remotely.
+	 * The id of the form, connecting each field to a form remotely
 	 */
 	form?: string;
 }
@@ -603,21 +594,19 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
 				const errors = error?.[key];
-				const field: Field<any> = {
-					config: {
-						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
-						defaultValue: uncontrolledState.defaultValue[key],
-						initialError: uncontrolledState.initialError[key],
-						...constraint,
-					},
+				const field: FieldConfig<any> = {
+					...constraint,
+					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
+					defaultValue: uncontrolledState.defaultValue[key],
+					initialError: uncontrolledState.initialError[key],
 					error: errors?.[0],
 					errors,
 				};
 
 				if (fieldsetConfig.form) {
-					field.config.form = fieldsetConfig.form;
-					field.config.id = `${fieldsetConfig.form}-${field.config.name}`;
-					field.config.errorId = `${field.config.id}-error`;
+					field.form = fieldsetConfig.form;
+					field.id = `${fieldsetConfig.form}-${field.name}`;
+					field.errorId = `${field.id}-error`;
 				}
 
 				return field;
@@ -635,12 +624,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
-): Array<{
-	key: string;
-	error: string | undefined;
-	errors: string[] | undefined;
-	config: FieldConfig<Payload>;
-}> {
+): Array<{ key: string } & FieldConfig<Payload>> {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Array<Payload>>;
@@ -807,10 +791,12 @@ export function useFieldList<Payload = any>(
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
-		const fieldConfig: FieldConfig<any> = {
+		const fieldConfig: FieldConfig<Payload> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
 			initialError: uncontrolledState.initialError[index],
+			error: errors?.[0],
+			errors,
 		};
 
 		if (config.form) {
@@ -821,9 +807,7 @@ export function useFieldList<Payload = any>(
 
 		return {
 			key,
-			error: errors?.[0],
-			errors,
-			config: fieldConfig,
+			...fieldConfig,
 		};
 	});
 }

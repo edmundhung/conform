@@ -147,8 +147,8 @@ export default function Example() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Mutliple Errors" state={state}>
-				<Field label="Username" {...username}>
-					<input {...conform.input(username.config, { type: 'text' })} />
+				<Field label="Username" config={username}>
+					<input {...conform.input(username, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

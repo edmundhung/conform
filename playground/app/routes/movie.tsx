@@ -155,14 +155,14 @@ export default function MovieForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Movie Form" state={state}>
 				<fieldset>
-					<Field label="Title" {...title}>
-						<input {...conform.input(title.config, { type: 'text' })} />
+					<Field label="Title" config={title}>
+						<input {...conform.input(title, { type: 'text' })} />
 					</Field>
-					<Field label="Description" {...description}>
-						<textarea {...conform.textarea(description.config)} />
+					<Field label="Description" config={description}>
+						<textarea {...conform.textarea(description)} />
 					</Field>
-					<Field label="Genre" {...genre}>
-						<select {...conform.select(genre.config)}>
+					<Field label="Genre" config={genre}>
+						<select {...conform.select(genre)}>
 							<option value="">Please select</option>
 							<option value="action">Action</option>
 							<option value="adventure">Adventure</option>
@@ -173,8 +173,8 @@ export default function MovieForm() {
 							<option value="romance">Romance</option>
 						</select>
 					</Field>
-					<Field label="Rating" {...rating}>
-						<input {...conform.input(rating.config, { type: 'number' })} />
+					<Field label="Rating" config={rating}>
+						<input {...conform.input(rating, { type: 'number' })} />
 					</Field>
 				</fieldset>
 			</Playground>

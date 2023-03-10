@@ -51,21 +51,18 @@ function Example() {
   // By providing a schema to useForm
   const [form, { address }] = useForm<Schema>();
   // All the field name will be checked with TypeScript
-  const { city, zipcode, street, country } = useFieldset(
-    form.ref,
-    address.config,
-  );
+  const { city, zipcode, street, country } = useFieldset(form.ref, address);
 
   return (
     <form {...form.props}>
       {/* These set the name to `address.street`, `address.zipcode` etc. */}
-      <input {...conform.input(street.config)} />
+      <input {...conform.input(street)} />
       <div>{street.error}</div>
-      <input {...conform.input(zipcode.config)} />
+      <input {...conform.input(zipcode)} />
       <div>{zipcode.error}</div>
-      <input {...conform.input(city.config)} />
+      <input {...conform.input(city)} />
       <div>{city.error}</div>
-      <input {...conform.input(country.config)} />
+      <input {...conform.input(country)} />
       <div>{country.error}</div>
     </form>
   );
@@ -89,7 +86,7 @@ function Example() {
   // By providing a schema to useForm
   const [form, { tasks }] = useForm<Schema>();
   // All the field name will be checked with TypeScript
-  const list = useFieldList(form.ref, tasks.config);
+  const list = useFieldList(form.ref, tasks);
 
   return (
     <form {...form.props}>
@@ -97,7 +94,7 @@ function Example() {
         {list.map((task) => (
           <li key={task.key}>
             {/* These set the name to `task[0]`, `tasks[1]` etc */}
-            <input {...conform.input(task.config)} />
+            <input {...conform.input(task)} />
             <div>{task.error}</div>
           </li>
         ))}
@@ -128,7 +125,7 @@ interface Schema {
 
 function Example() {
   const [form, { todos }] = useForm<Schema>();
-  const list = useFieldList(form.ref, todos.config);
+  const list = useFieldList(form.ref, todos);
 
   return (
     <form {...form.props}>
@@ -136,7 +133,7 @@ function Example() {
         {list.map((todo) => (
           <li key={todo.key}>
             {/* Pass the config to TodoFieldset */}
-            <TodoFieldset {...todo.config} />
+            <TodoFieldset {...todo} />
           </li>
         ))}
       </ul>
@@ -151,9 +148,9 @@ function TodoFieldset(config: FieldConfig<Todo>) {
 
   return (
     <fieldset ref={ref}>
-      <input {...conform.input(title.config)} />
+      <input {...conform.input(title)} />
       <div>{title.error}</div>
-      <input {...conform.input(notes.config)} />
+      <input {...conform.input(notes)} />
       <div>{notes.error}</div>
     </fieldset>
   );

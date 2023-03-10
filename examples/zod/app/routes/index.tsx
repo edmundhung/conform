@@ -59,7 +59,7 @@ export default function SignupForm() {
 				<div>Email</div>
 				<input
 					className={email.error ? 'error' : ''}
-					{...conform.input(email.config)}
+					{...conform.input(email)}
 				/>
 				<div>{email.error}</div>
 			</label>
@@ -67,7 +67,7 @@ export default function SignupForm() {
 				<label>Password</label>
 				<input
 					className={password.error ? 'error' : ''}
-					{...conform.input(password.config, { type: 'password' })}
+					{...conform.input(password, { type: 'password' })}
 				/>
 				<div>{password.error}</div>
 			</div>
@@ -75,7 +75,7 @@ export default function SignupForm() {
 				<label>Confirm Password</label>
 				<input
 					className={confirmPassword.error ? 'error' : ''}
-					{...conform.input(confirmPassword.config, { type: 'password' })}
+					{...conform.input(confirmPassword, { type: 'password' })}
 				/>
 				<div>{confirmPassword.error}</div>
 			</div>

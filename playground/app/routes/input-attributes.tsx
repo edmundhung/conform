@@ -55,17 +55,17 @@ export default function Example() {
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
 			<Playground title="Input attributes" state={state}>
-				<Field label="Title" {...title}>
-					<input {...conform.input(title.config, { type: 'text' })} />
+				<Field label="Title" config={title}>
+					<input {...conform.input(title, { type: 'text' })} />
 				</Field>
-				<Field label="Description" {...description}>
-					<textarea {...conform.textarea(description.config)} />
+				<Field label="Description" config={description}>
+					<textarea {...conform.textarea(description)} />
 				</Field>
-				<Field label="Image" {...images}>
-					<input {...conform.input(images.config, { type: 'file' })} />
+				<Field label="Image" config={images}>
+					<input {...conform.input(images, { type: 'file' })} />
 				</Field>
-				<Field label="Tags" {...tags}>
-					<select {...conform.select(tags.config)}>
+				<Field label="Tags" config={tags}>
+					<select {...conform.select(tags)}>
 						<option value="">Please select</option>
 						<option value="action">Action</option>
 						<option value="adventure">Adventure</option>
@@ -76,8 +76,8 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" {...rating}>
-					<input {...conform.input(rating.config, { type: 'number' })} />
+				<Field label="Rating" config={rating}>
+					<input {...conform.input(rating, { type: 'number' })} />
 				</Field>
 			</Playground>
 		</Form>

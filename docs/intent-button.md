@@ -86,22 +86,20 @@ import { useForm, useFieldList, conform, list } from '@conform-to/react';
 
 export default function Todos() {
   const [form, { tasks }] = useForm();
-  const taskList = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks);
 
   return (
     <form {...form.props}>
       <ul>
         {taskList.map((task, index) => (
           <li key={task.key}>
-            <input {...conform.input(task.config)} />
-            <button {...list.remove(tasks.config.name, { index })}>
-              Delete
-            </button>
+            <input {...conform.input(task)} />
+            <button {...list.remove(tasks.name, { index })}>Delete</button>
           </li>
         ))}
       </ul>
       <div>
-        <button {...list.append(tasks.config.name)}>Add task</button>
+        <button {...list.append(tasks.name)}>Add task</button>
       </div>
       <button>Save</button>
     </form>
@@ -121,9 +119,9 @@ export default function Todos() {
 
   return (
     <form {...form.props}>
-      <input {...conform.input(email.config)} />
+      <input {...conform.input(email)} />
       {/* Validating field by name */}
-      <button {...validate(email.config.name)}>Validate email</button>
+      <button {...validate(email.name)}>Validate email</button>
       {/* Validating the whole form */}
       <button {...validate()}>Validate</button>
       <button>Send</button>
@@ -143,7 +141,7 @@ import { useEffect } from 'react';
 export default function Todos() {
   const [form, { tasks }] = useForm();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const taskList = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks);
 
   useEffect(() => {
     if (taskList.length === 0) {
@@ -158,12 +156,12 @@ export default function Todos() {
       <ul>
         {taskList.map((task, index) => (
           <li key={task.key}>
-            <input {...conform.input(task.config)} />
+            <input {...conform.input(task)} />
           </li>
         ))}
       </ul>
       <div>
-        <button {...list.append(tasks.config.name)} ref={buttonRef}>
+        <button {...list.append(tasks.name)} ref={buttonRef}>
           Add task
         </button>
       </div>
@@ -187,7 +185,7 @@ import DragAndDrop from 'awesome-dnd-example';
 
 export default function Todos() {
   const [form, { tasks }] = useForm();
-  const taskList = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks);
 
   const handleDrop = (from, to) =>
     requestIntent(form.ref.current, list.reorder({ from, to }));
@@ -197,7 +195,7 @@ export default function Todos() {
       <DragAndDrop onDrop={handleDrop}>
         {taskList.map((task, index) => (
           <div key={task.key}>
-            <input {...conform.input(task.config)} />
+            <input {...conform.input(task)} />
           </div>
         ))}
       </DragAndDrop>

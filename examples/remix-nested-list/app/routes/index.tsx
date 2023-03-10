@@ -44,7 +44,7 @@ export default function TodoForm() {
 			return parse(formData, { schema: todosSchema });
 		},
 	});
-	const taskList = useFieldList(form.ref, tasks.config);
+	const taskList = useFieldList(form.ref, tasks);
 
 	return (
 		<Form method="post" {...form.props}>
@@ -53,24 +53,20 @@ export default function TodoForm() {
 				<label>Title</label>
 				<input
 					className={title.error ? 'error' : ''}
-					{...conform.input(title.config)}
+					{...conform.input(title)}
 				/>
 				<div>{title.error}</div>
 			</div>
 			<ul>
 				{taskList.map((task, index) => (
 					<li key={task.key}>
-						<TaskFieldset title={`Task #${index + 1}`} {...task.config} />
-						<button {...list.remove(tasks.config.name, { index })}>
-							Delete
-						</button>
-						<button
-							{...list.reorder(tasks.config.name, { from: index, to: 0 })}
-						>
+						<TaskFieldset title={`Task #${index + 1}`} {...task} />
+						<button {...list.remove(tasks.name, { index })}>Delete</button>
+						<button {...list.reorder(tasks.name, { from: index, to: 0 })}>
 							Move to top
 						</button>
 						<button
-							{...list.replace(tasks.config.name, {
+							{...list.replace(tasks.name, {
 								index,
 								defaultValue: { content: '' },
 							})}
@@ -81,7 +77,7 @@ export default function TodoForm() {
 				))}
 			</ul>
 			<div>
-				<button {...list.append(tasks.config.name)}>Add task</button>
+				<button {...list.append(tasks.name)}>Add task</button>
 			</div>
 			<button type="submit">Save</button>
 		</Form>
@@ -102,7 +98,7 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 				<label>{title}</label>
 				<input
 					className={content.error ? 'error' : ''}
-					{...conform.input(content.config)}
+					{...conform.input(content)}
 				/>
 				<div>{content.error}</div>
 			</div>
@@ -111,7 +107,7 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 					<span>Completed</span>
 					<input
 						className={completed.error ? 'error' : ''}
-						{...conform.input(completed.config, {
+						{...conform.input(completed, {
 							type: 'checkbox',
 							value: 'yes',
 						})}

@@ -13,6 +13,16 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	initialError?: Record<string, string | string[]>;
 	form?: string;
 	errorId?: string;
+
+	/**
+	 * The frist error of the field
+	 */
+	error?: string;
+
+	/**
+	 * All of the field errors
+	 */
+	errors?: string[];
 }
 
 export type FieldValue<Schema> = Schema extends Primitive
@@ -61,6 +71,9 @@ export interface IntentButtonProps {
 	formNoValidate?: boolean;
 }
 
+/**
+ * Check if the provided reference is a form element (_input_ / _select_ / _textarea_ or _button_)
+ */
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -71,6 +84,11 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
+/**
+ * Find the corresponding paths based on the formatted name
+ * @param name formatted name
+ * @returns paths
+ */
 export function getPaths(name: string): Array<string | number> {
 	const pattern = /(\w*)\[(\d+)\]/;
 

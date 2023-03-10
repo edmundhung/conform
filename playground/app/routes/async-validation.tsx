@@ -91,14 +91,14 @@ export default function EmployeeForm() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Employee Form" state={state}>
-				<Field label="Email" {...email}>
+				<Field label="Email" config={email}>
 					<input
-						{...conform.input(email.config, { type: 'email' })}
+						{...conform.input(email, { type: 'email' })}
 						autoComplete="off"
 					/>
 				</Field>
-				<Field label="Title" {...title}>
-					<input {...conform.input(title.config, { type: 'text' })} />
+				<Field label="Title" config={title}>
+					<input {...conform.input(title, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

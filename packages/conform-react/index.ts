@@ -10,7 +10,6 @@ export {
 	isFieldElement,
 } from '@conform-to/dom';
 export {
-	type Field,
 	type Fieldset,
 	type FieldsetConfig,
 	type FormConfig,

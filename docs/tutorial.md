@@ -164,11 +164,7 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input
-          type="email"
-          name="email"
-          defaultValue={email.config.defaultValue}
-        />
+        <input type="email" name="email" defaultValue={email.defaultValue} />
         <div>{email.error}</div>
       </div>
       <div>
@@ -315,12 +311,12 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input {...conform.input(email.config, { type: 'email' })} />
+        <input {...conform.input(email, { type: 'email' })} />
         <div>{email.error}</div>
       </div>
       <div>
         <label>Password</label>
-        <input {...conform.input(password.config, { type: 'password' })} />
+        <input {...conform.input(password, { type: 'password' })} />
         <div>{password.error}</div>
       </div>
       <button type="submit">Login</button>

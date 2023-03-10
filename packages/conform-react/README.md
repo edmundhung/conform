@@ -164,20 +164,20 @@ function Example() {
   const [form, { address }] = useForm<{ address: Address }>();
   const { city, zipcode, street, country } = useFieldset(
     form.ref,
-    address.config,
+    address,
   );
 
   return (
     <form {...form.props}>
       <fieldset>
         <legned>Address</legend>
-        <input {...conform.input(street.config)} />
+        <input {...conform.input(street)} />
         <div>{street.error}</div>
-        <input {...conform.input(zipcode.config)} />
+        <input {...conform.input(zipcode)} />
         <div>{zipcode.error}</div>
-        <input {...conform.input(city.config)} />
+        <input {...conform.input(city)} />
         <div>{city.error}</div>
-        <input {...conform.input(country.config)} />
+        <input {...conform.input(country)} />
         <div>{country.error}</div>
       </fieldset>
       <button>Submit</button>
@@ -244,27 +244,25 @@ type Schema = {
 
 function Example() {
   const [form, { items }] = useForm<Schema>();
-  const itemsList = useFieldList(form.ref, items.config);
+  const itemsList = useFieldList(form.ref, items);
 
   return (
     <fieldset ref={ref}>
       {itemsList.map((item, index) => (
         <div key={item.key}>
           {/* Setup an input per item */}
-          <input {...conform.input(item.config)} />
+          <input {...conform.input(item)} />
 
           {/* Error of each item */}
           <span>{item.error}</span>
 
           {/* Setup a delete button (Note: It is `items` not `item`) */}
-          <button {...list.remove(items.config.name, { index })}>Delete</button>
+          <button {...list.remove(items.name, { index })}>Delete</button>
         </div>
       ))}
 
       {/* Setup a button that can append a new row with optional default value */}
-      <button {...list.append(items.config.name, { defaultValue: '' })}>
-        add
-      </button>
+      <button {...list.append(items.name, { defaultValue: '' })}>add</button>
     </fieldset>
   );
 }
@@ -283,9 +281,9 @@ import { useState, useRef } from 'react';
 
 function MuiForm() {
   const [form, { category }] = useForm();
-  const [value, setValue] = useState(category.config.defaultValue ?? '');
+  const [value, setValue] = useState(category.defaultValue ?? '');
   const [ref, control] = useInputEvent({
-    onReset: () => setValue(category.config.defaultValue ?? ''),
+    onReset: () => setValue(category.defaultValue ?? ''),
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -294,7 +292,7 @@ function MuiForm() {
       {/* Render a shadow input somewhere */}
       <input
         ref={ref}
-        {...conform.input(category.config, { hidden: true })}
+        {...conform.input(category, { hidden: true })}
         onChange={(e) => setValue(e.target.value)}
         onFocus={() => inputRef.current?.focus()}
       />
@@ -338,31 +336,31 @@ function Example() {
     <form {...form.props}>
       <input
         type="text"
-        name={title.config.name}
-        form={title.config.form}
-        defaultValue={title.config.defaultValue}
-        requried={title.config.required}
-        minLength={title.config.minLength}
-        maxLength={title.config.maxLength}
-        min={title.config.min}
-        max={title.config.max}
-        multiple={title.config.multiple}
-        pattern={title.config.pattern}
+        name={title.name}
+        form={title.form}
+        defaultValue={title.defaultValue}
+        requried={title.required}
+        minLength={title.minLength}
+        maxLength={title.maxLength}
+        min={title.min}
+        max={title.max}
+        multiple={title.multiple}
+        pattern={title.pattern}
       />
       <textarea
-        name={description.config.name}
-        form={description.config.form}
-        defaultValue={description.config.defaultValue}
-        requried={description.config.required}
-        minLength={description.config.minLength}
-        maxLength={description.config.maxLength}
+        name={description.name}
+        form={description.form}
+        defaultValue={description.defaultValue}
+        requried={description.required}
+        minLength={description.minLength}
+        maxLength={description.maxLength}
       />
       <select
-        name={category.config.name}
-        form={category.config.form}
-        defaultValue={category.config.defaultValue}
-        requried={category.config.required}
-        multiple={category.config.multiple}
+        name={category.name}
+        form={category.form}
+        defaultValue={category.defaultValue}
+        requried={category.required}
+        multiple={category.multiple}
       >
         {/* ... */}
       </select>
@@ -381,9 +379,9 @@ function Example() {
 
   return (
     <form {...form.props}>
-      <input {...conform.input(title.config, { type: 'text' })} />
-      <textarea {...conform.textarea(description.config)} />
-      <select {...conform.select(category.config)}>{/* ... */}</select>
+      <input {...conform.input(title, { type: 'text' })} />
+      <textarea {...conform.textarea(description)} />
+      <select {...conform.select(category)}>{/* ... */}</select>
     </form>
   );
 }
@@ -570,7 +568,7 @@ import DragAndDrop from 'awesome-dnd-example';
 
 export default function Todos() {
   const [form, { tasks }] = useForm();
-  const taskList = useFieldList(form.ref, tasks.config);
+  const taskList = useFieldList(form.ref, tasks);
 
   const handleDrop = (from, to) =>
     requestIntent(form.ref.current, list.reorder({ from, to }));
@@ -580,7 +578,7 @@ export default function Todos() {
       <DragAndDrop onDrop={handleDrop}>
         {taskList.map((task, index) => (
           <div key={task.key}>
-            <input {...conform.input(task.config)} />
+            <input {...conform.input(task)} />
           </div>
         ))}
       </DragAndDrop>

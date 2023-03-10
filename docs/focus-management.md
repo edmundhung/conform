@@ -23,7 +23,7 @@ function Example() {
 
   return (
     <form {...form.props}>
-      <input {...conform.input(message.config)} />
+      <input {...conform.input(message)} />
       <div>{message.error}</div>
       <button>Send</button>
     </form>
@@ -36,7 +36,7 @@ function Example() {
 Conform can also focus on custom control if it exposes a ref for you to focus manually. Here is an example snippet integrating with **react-select**:
 
 ```tsx
-function Select({ options, ...config }: SelectProps) {
+function Select({ options, .. }: SelectProps) {
   const [inputRef, control] = useInputEvent();
   const ref = useRef<HTMLInputElement>(null);
 

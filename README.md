@@ -54,12 +54,12 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input {...conform.input(email.config)} />
+        <input {...conform.input(email)} />
         <div>{email.error}</div>
       </div>
       <div>
         <label>Password</label>
-        <input {...conform.input(password.config)} />
+        <input {...conform.input(password)} />
         <div>{password.error}</div>
       </div>
       <button>Login</button>

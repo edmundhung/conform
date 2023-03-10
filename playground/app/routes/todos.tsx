@@ -68,11 +68,11 @@ export function TaskFieldset(
 	});
 	return (
 		<fieldset ref={ref} form={config.form}>
-			<Field label="Content" {...content}>
-				<input {...conform.input(content.config, { type: 'text' })} />
+			<Field label="Content" config={content}>
+				<input {...conform.input(content, { type: 'text' })} />
 			</Field>
-			<Field label="Completed" error={completed.error} inline>
-				<input {...conform.input(completed.config, { type: 'checkbox' })} />
+			<Field label="Completed" config={completed} inline>
+				<input {...conform.input(completed, { type: 'checkbox' })} />
 			</Field>
 		</fieldset>
 	);
@@ -84,33 +84,33 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 		...config,
 		constraint: getFieldsetConstraint(schema),
 	});
-	const taskList = useFieldList(ref, tasks.config);
+	const taskList = useFieldList(ref, tasks);
 
 	return (
 		<fieldset ref={ref} form={config.form}>
-			<Field label="Title" {...title}>
-				<input {...conform.input(title.config, { type: 'text' })} />
+			<Field label="Title" config={title}>
+				<input {...conform.input(title, { type: 'text' })} />
 			</Field>
 			<ol>
 				{taskList.map((task, index) => (
 					<li key={task.key} className="border rounded-md p-4 mb-4">
-						<TaskFieldset {...task.config} />
+						<TaskFieldset {...task} />
 						<div className="flex flex-row gap-2">
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...list.remove(tasks.config.name, { index })}
+								{...list.remove(tasks.name, { index })}
 							>
 								Delete
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...list.reorder(tasks.config.name, { from: index, to: 0 })}
+								{...list.reorder(tasks.name, { from: index, to: 0 })}
 							>
 								Move to top
 							</button>
 							<button
 								className="rounded-md border p-2 hover:border-black"
-								{...list.replace(tasks.config.name, {
+								{...list.replace(tasks.name, {
 									index,
 									defaultValue: { content: '' },
 								})}
@@ -124,13 +124,13 @@ export function TodosFieldset(config: FieldsetConfig<z.infer<typeof schema>>) {
 			<div className="flex flex-row gap-2">
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...list.prepend(tasks.config.name)}
+					{...list.prepend(tasks.name)}
 				>
 					Insert top
 				</button>
 				<button
 					className="rounded-md border p-2 hover:border-black"
-					{...list.append(tasks.config.name)}
+					{...list.append(tasks.name)}
 				>
 					Insert bottom
 				</button>

@@ -91,12 +91,11 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	errors?: string[];
 	config?: FieldConfig<any>;
 	children: ReactNode;
 }
 
-export function Field({ label, inline, errors, config, children }: FieldProps) {
+export function Field({ label, inline, config, children }: FieldProps) {
 	return (
 		<div className="mb-4">
 			<div
@@ -115,10 +114,10 @@ export function Field({ label, inline, errors, config, children }: FieldProps) {
 				{children}
 			</div>
 			<div id={config?.errorId} className="my-1 space-y-0.5">
-				{!errors || errors.length === 0 ? (
+				{!config?.errors?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					errors.map((message) => (
+					config.errors.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>
