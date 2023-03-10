@@ -14,7 +14,7 @@ interface FieldProps {
 	autoFocus?: boolean;
 	tabIndex?: number;
 	style?: CSSProperties;
-	'aria-invalid': boolean;
+	'aria-invalid'?: string;
 	'aria-describedby'?: string;
 	'aria-hidden'?: boolean;
 }
@@ -97,9 +97,12 @@ export function input<Schema>(
 		step: config.step,
 		pattern: config.pattern,
 		multiple: config.multiple,
-		'aria-invalid': Boolean(config.initialError?.length),
 		'aria-describedby': config.errorId,
 	};
+
+	if (config.errors?.length) {
+		attributes['aria-invalid'] = 'true';
+	}
 
 	if (options?.hidden) {
 		attributes.style = hiddenStyle;
@@ -136,9 +139,12 @@ export function select<Schema>(
 			: `${config.defaultValue ?? ''}`,
 		required: config.required,
 		multiple: config.multiple,
-		'aria-invalid': Boolean(config.initialError?.length),
 		'aria-describedby': config.errorId,
 	};
+
+	if (config.errors?.length) {
+		attributes['aria-invalid'] = 'true';
+	}
 
 	if (options?.hidden) {
 		attributes.style = hiddenStyle;
@@ -166,9 +172,12 @@ export function textarea<Schema>(
 		minLength: config.minLength,
 		maxLength: config.maxLength,
 		autoFocus: Boolean(config.initialError),
-		'aria-invalid': Boolean(config.initialError?.length),
 		'aria-describedby': config.errorId,
 	};
+
+	if (config.errors?.length) {
+		attributes['aria-invalid'] = 'true';
+	}
 
 	if (options?.hidden) {
 		attributes.style = hiddenStyle;

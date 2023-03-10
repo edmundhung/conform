@@ -290,7 +290,6 @@ export function useForm<
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
-					field.setAttribute('aria-invalid', 'false');
 					field.setCustomValidity('');
 				}
 			}
@@ -524,14 +523,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 			// Update the error only if the field belongs to the fieldset
 			if (typeof key === 'string' && paths.length === 0) {
 				if (field.dataset.conformTouched) {
-					// Update the aria attribute only if it is set
-					if (field.getAttribute('aria-invalid')) {
-						field.setAttribute(
-							'aria-invalid',
-							field.validationMessage !== '' ? 'true' : 'false',
-						);
-					}
-
 					setError((prev) => {
 						const prevMessage = getValidationMessage(prev?.[key]);
 
