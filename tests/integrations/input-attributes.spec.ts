@@ -73,6 +73,10 @@ test('setup aria-attributes', async ({ page }) => {
 	const fieldset = getFieldset(playground.container);
 
 	await expect(playground.form).toHaveAttribute('id', 'test');
+	await expect(playground.form).toHaveAttribute(
+		'aria-describedby',
+		'test-error',
+	);
 	await expect(fieldset.title).toHaveAttribute('id', 'test-title');
 	await expect(fieldset.title).toHaveAttribute(
 		'aria-describedby',
@@ -108,6 +112,7 @@ test('setup aria-attributes', async ({ page }) => {
 	await expect(fieldset.rating).not.toHaveAttribute('aria-invalid', 'true');
 
 	await playground.submit.click();
+	await expect(playground.form).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.title).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.description).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.images).toHaveAttribute('aria-invalid', 'true');
@@ -115,6 +120,7 @@ test('setup aria-attributes', async ({ page }) => {
 	await expect(fieldset.rating).toHaveAttribute('aria-invalid', 'true');
 
 	await playground.reset.click();
+	await expect(playground.form).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.title).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.description).not.toHaveAttribute(
 		'aria-invalid',

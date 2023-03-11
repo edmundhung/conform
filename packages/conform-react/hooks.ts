@@ -113,14 +113,17 @@ export interface FormConfig<
  * Properties to be applied to the form element
  */
 interface FormProps {
-	ref: RefObject<HTMLFormElement>;
 	id?: string;
+	ref: RefObject<HTMLFormElement>;
 	onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 	noValidate: boolean;
+	'aria-invalid'?: 'true';
+	'aria-describedby'?: string;
 }
 
 interface Form {
 	id?: string;
+	errorId?: string;
 	error: string;
 	errors: string[];
 	ref: RefObject<HTMLFormElement>;
@@ -391,7 +394,13 @@ export function useForm<
 
 	if (config.id) {
 		form.id = config.id;
+		form.errorId = `${config.id}-error`;
 		form.props.id = form.id;
+		form.props['aria-describedby'] = form.errorId;
+	}
+
+	if (form.errorId && form.errors.length > 0) {
+		form.props['aria-invalid'] = 'true';
 	}
 
 	return [form, fieldset];
