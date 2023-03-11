@@ -130,7 +130,7 @@ export function Field({ label, inline, config, children }: FieldProps) {
 
 interface AlertProps {
 	id?: string;
-	errors: string[];
+	errors: string[] | undefined;
 }
 
 export function Alert({ id, errors }: AlertProps) {
@@ -138,15 +138,15 @@ export function Alert({ id, errors }: AlertProps) {
 		<div
 			id={id}
 			className={
-				errors.length > 0
+				errors?.length
 					? 'flex gap-4 bg-red-100 text-red-500 text-sm p-4 mb-4 rounded align-top'
 					: 'hidden'
 			}
 		>
 			<span>❌</span>
 			<div className="space-y-1">
-				{errors.length === 0 ? (
-					<p />
+				{!errors?.length ? (
+					<p></p>
 				) : (
 					errors.map((message, index) => <p key={index}>{message}</p>)
 				)}
