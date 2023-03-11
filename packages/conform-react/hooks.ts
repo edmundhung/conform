@@ -23,6 +23,7 @@ import {
 	getFormAttributes,
 	getScope,
 	VALIDATION_UNDEFINED,
+	FORM_ERROR_ELEMENT_NAME,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -118,12 +119,12 @@ interface FormProps {
 	noValidate: boolean;
 }
 
-interface Form<Schema extends Record<string, any>> {
+interface Form {
 	id?: string;
-	ref: RefObject<HTMLFormElement>;
 	error: string;
+	errors: string[];
+	ref: RefObject<HTMLFormElement>;
 	props: FormProps;
-	config: FieldsetConfig<Schema>;
 }
 
 /**
@@ -135,20 +136,16 @@ interface Form<Schema extends Record<string, any>> {
 export function useForm<
 	Schema extends Record<string, any>,
 	ClientSubmission extends Submission | Submission<Schema> = Submission,
->(
-	config: FormConfig<Schema, ClientSubmission> = {},
-): [Form<Schema>, Fieldset<Schema>] {
+>(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [lastSubmission, setLastSubmission] = useState(config.state ?? null);
-	const [error, setError] = useState<string>(() => {
+	const [errors, setErrors] = useState<string[]>(() => {
 		if (!config.state) {
-			return '';
+			return [];
 		}
 
-		const message = config.state.error[''];
-
-		return getValidationMessage(message);
+		return ([] as string[]).concat(config.state.error['']);
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
@@ -267,7 +264,7 @@ export function useForm<
 				!form ||
 				!isFieldElement(field) ||
 				field.form !== form ||
-				field.name !== '__form__'
+				field.name !== FORM_ERROR_ELEMENT_NAME
 			) {
 				return;
 			}
@@ -275,7 +272,7 @@ export function useForm<
 			event.preventDefault();
 
 			if (field.dataset.conformTouched) {
-				setError(field.validationMessage);
+				setErrors(getErrors(field.validationMessage));
 			}
 		};
 		const handleReset = (event: Event) => {
@@ -294,7 +291,7 @@ export function useForm<
 				}
 			}
 
-			setError('');
+			setErrors([]);
 			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
 			});
@@ -320,13 +317,12 @@ export function useForm<
 		};
 	}, []);
 
-	const form: Form<Schema> = {
-		id: config.id,
+	const form: Form = {
 		ref,
-		error,
+		error: errors[0],
+		errors,
 		props: {
 			ref,
-			id: config.id,
 			noValidate,
 			onSubmit(event) {
 				const form = event.currentTarget;
@@ -391,8 +387,12 @@ export function useForm<
 				}
 			},
 		},
-		config: fieldsetConfig,
 	};
+
+	if (config.id) {
+		form.id = config.id;
+		form.props.id = form.id;
+	}
 
 	return [form, fieldset];
 }

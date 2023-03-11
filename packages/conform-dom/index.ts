@@ -219,7 +219,7 @@ export function getErrors(message: string | undefined): string[] {
 	return message.split(String.fromCharCode(31));
 }
 
-const FORM_ERROR_ELEMENT_NAME = '__form__';
+export const FORM_ERROR_ELEMENT_NAME = '__form__';
 export const INTENT = '__intent__';
 export const VALIDATION_UNDEFINED = '__undefined__';
 export const VALIDATION_SKIPPED = '__skipped__';
