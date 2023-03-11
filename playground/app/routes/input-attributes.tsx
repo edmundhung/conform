@@ -60,7 +60,7 @@ export default function Example() {
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
 			<Playground title="Input attributes" state={state}>
-				<Alert message={form.error} />
+				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={title}>
 					<input {...conform.input(title, { type: 'text' })} />
 				</Field>
