@@ -488,7 +488,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			for (const [key, error] of Object.entries(
 				uncontrolledState.initialError,
 			)) {
-				result[key] = getErrors(getValidationMessage(error?.['']));
+				result[key] = ([] as string[]).concat(error?.[''] ?? []);
 			}
 
 			return result;
@@ -644,7 +644,7 @@ export function useFieldList<Payload = any>(
 	});
 	const [error, setError] = useState<Array<string[] | undefined>>(() =>
 		uncontrolledState.initialError.map((error) =>
-			getErrors(getValidationMessage(error?.[''])),
+			([] as string[]).concat(error?.[''] ?? []),
 		),
 	);
 	const [entries, setEntries] = useState<
