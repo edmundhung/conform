@@ -22,7 +22,9 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function Example() {
-	const [state, setState] = useState<Submission | undefined>();
+	const [lastSubmission, setLastSubmission] = useState<
+		Submission | undefined
+	>();
 	const { multiplePasswordError, enableCustomMessage } =
 		useLoaderData<typeof loader>();
 	const [form, { email, password, confirmPassword }] = useForm<Schema>({
@@ -77,13 +79,13 @@ export default function Example() {
 		},
 		onSubmit(event, { submission }) {
 			event.preventDefault();
-			setState(submission);
+			setLastSubmission(submission);
 		},
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Validate Constraint" state={state}>
+			<Playground title="Validate Constraint" lastSubmission={lastSubmission}>
 				<fieldset>
 					<Field label="Email" config={email}>
 						<input

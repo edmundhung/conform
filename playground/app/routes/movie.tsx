@@ -58,11 +58,11 @@ export let action = async ({ request }: ActionArgs) => {
 };
 
 export default function MovieForm() {
-	const config = useLoaderData();
-	const state = useActionData();
+	const config = useLoaderData<typeof loader>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { title, description, genre, rating }] = useForm<Movie>({
 		...config,
-		state,
+		lastSubmission,
 		constraint: {
 			title: {
 				required: true,
@@ -153,7 +153,7 @@ export default function MovieForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Movie Form" state={state}>
+			<Playground title="Movie Form" lastSubmission={lastSubmission}>
 				<fieldset>
 					<Field label="Title" config={title}>
 						<input {...conform.input(title, { type: 'text' })} />

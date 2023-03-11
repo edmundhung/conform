@@ -28,9 +28,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { name, message }] = useForm({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -38,7 +38,7 @@ export default function Validate() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Validate" state={state}>
+			<Playground title="Validate" lastSubmission={lastSubmission}>
 				<Field label="Name" config={name}>
 					<input {...conform.input(name, { type: 'text' })} />
 				</Field>

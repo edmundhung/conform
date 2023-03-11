@@ -41,10 +41,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function TodosForm() {
 	const config = useLoaderData();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { title, tasks }] = useForm<z.infer<typeof schema>>({
 		...config,
-		state,
+		lastSubmission,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
 			? ({ formData }) => parse(formData, { schema })
@@ -54,7 +54,7 @@ export default function TodosForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Todos Form" state={state}>
+			<Playground title="Todos Form" lastSubmission={lastSubmission}>
 				<fieldset>
 					<Field label="Title" config={title}>
 						<input {...conform.input(title, { type: 'text' })} />

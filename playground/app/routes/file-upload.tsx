@@ -52,9 +52,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { file, files }] = useForm({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -62,7 +62,7 @@ export default function FileUpload() {
 
 	return (
 		<Form method="post" {...form.props} encType="multipart/form-data">
-			<Playground title="Employee Form" state={state}>
+			<Playground title="Employee Form" lastSubmission={lastSubmission}>
 				<Alert errors={form.errors} />
 				<Field label="Single file" config={file}>
 					<input {...conform.input(file, { type: 'file' })} />

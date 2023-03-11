@@ -136,9 +136,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function Example() {
 	const { validator, noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { username }] = useForm<Schema>({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData, validator)
 			: undefined,
@@ -146,7 +146,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Mutliple Errors" state={state}>
+			<Playground title="Mutliple Errors" lastSubmission={lastSubmission}>
 				<Field label="Username" config={username}>
 					<input {...conform.input(username, { type: 'text' })} />
 				</Field>

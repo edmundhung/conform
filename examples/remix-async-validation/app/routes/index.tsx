@@ -91,11 +91,11 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { username, password, confirmPassword }] = useForm<
 		z.input<ReturnType<typeof createSchema>>
 	>({
-		state,
+		lastSubmission,
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined

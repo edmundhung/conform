@@ -59,9 +59,9 @@ export interface FormConfig<
 	defaultValue?: FieldValue<Schema>;
 
 	/**
-	 * An object describing the state from the last submission
+	 * An object describing the result of the last submission
 	 */
-	state?: Submission;
+	lastSubmission?: Submission;
 
 	/**
 	 * An object describing the constraint of each field
@@ -142,18 +142,20 @@ export function useForm<
 >(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
-	const [lastSubmission, setLastSubmission] = useState(config.state ?? null);
+	const [lastSubmission, setLastSubmission] = useState(
+		config.lastSubmission ?? null,
+	);
 	const [errors, setErrors] = useState<string[]>(() => {
-		if (!config.state) {
+		if (!config.lastSubmission) {
 			return [];
 		}
 
-		return ([] as string[]).concat(config.state.error['']);
+		return ([] as string[]).concat(config.lastSubmission.error['']);
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
 	>(() => {
-		const submission = config.state;
+		const submission = config.lastSubmission;
 
 		if (!submission) {
 			return {
@@ -196,7 +198,7 @@ export function useForm<
 
 	useEffect(() => {
 		const form = ref.current;
-		const submission = config.state;
+		const submission = config.lastSubmission;
 
 		if (!form || !submission) {
 			return;
@@ -213,7 +215,7 @@ export function useForm<
 		}
 
 		setLastSubmission(submission);
-	}, [config.state]);
+	}, [config.lastSubmission]);
 
 	useEffect(() => {
 		const form = ref.current;

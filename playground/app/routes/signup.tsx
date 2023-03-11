@@ -70,18 +70,22 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function SignupForm() {
 	const config = useLoaderData();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm<Signup>({
 		...config,
 		id: 'signup',
-		state,
+		lastSubmission,
 		onValidate: config.validate
 			? ({ formData }) => parseSignupForm(formData)
 			: undefined,
 	});
 
 	return (
-		<Playground title="Signup Form" form={form.id} state={state}>
+		<Playground
+			title="Signup Form"
+			form={form.id}
+			lastSubmission={lastSubmission}
+		>
 			<Form method="post" {...form.props} />
 			<Field label="Email" config={email}>
 				<input

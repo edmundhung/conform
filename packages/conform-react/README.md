@@ -57,7 +57,7 @@ function LoginForm() {
     /**
      * The last submission result from the server
      */
-    state: undefined,
+    lastSubmission: undefined,
 
     /**
      * An object describing the constraint of each field
@@ -437,7 +437,7 @@ export default function SignupForm() {
         onValidate(context) {
             // This enables validating each field based on the validity state and custom cosntraint if defined
             return validateConstraint(
-              ...,context,
+              ...context,
               constraint: {
                 // Define custom constraint
                 match(value, { formData, attributeValue }) {

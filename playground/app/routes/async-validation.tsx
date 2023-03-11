@@ -77,9 +77,9 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function EmployeeForm() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { email, title }] = useForm({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parse(formData, {
@@ -90,7 +90,7 @@ export default function EmployeeForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Employee Form" state={state}>
+			<Playground title="Employee Form" lastSubmission={lastSubmission}>
 				<Field label="Email" config={email}>
 					<input
 						{...conform.input(email, { type: 'email' })}

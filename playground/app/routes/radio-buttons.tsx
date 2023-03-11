@@ -46,9 +46,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { answer }] = useForm<Schema>({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData)
 			: undefined,
@@ -56,7 +56,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Attributes" state={state}>
+			<Playground title="Attributes" lastSubmission={lastSubmission}>
 				<Field label="Multiple Choice" config={answer}>
 					<label>
 						<input {...conform.input(answer, { type: 'radio', value: 'a' })} />

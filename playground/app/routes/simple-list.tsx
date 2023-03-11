@@ -33,9 +33,9 @@ export async function action({ request }: ActionArgs) {
 
 export default function SimpleList() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { items }] = useForm({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -44,7 +44,7 @@ export default function SimpleList() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Simple list" state={state}>
+			<Playground title="Simple list" lastSubmission={lastSubmission}>
 				<Alert errors={items.errors} />
 				<ol>
 					{itemsList.map((item, index) => (

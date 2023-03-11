@@ -222,7 +222,7 @@ function createSchema(
 export function action() {
   const formData = await request.formData();
   const submission = await parse(formData, {
-    // create the zod schema with the intent and constraint
+    // create the zod schema with the constraint
     schema: createSchema({
       async isEmailUnique(email) {
         // ...
@@ -312,7 +312,7 @@ export default function Signup() {
     state,
     onValidate({ formData }) {
       return parse(formData, {
-        // Similar to the action
+        // Similar to the action above
         schema: (intent) => createSchema(intent),
       });
     },
