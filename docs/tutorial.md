@@ -157,6 +157,9 @@ export default function LoginForm() {
   // including the error and config of each field
   const [form, { email, password }] = useForm({
     state,
+
+    // Now Conform will start validating once user leave the field and
+    // revalidate for any changes triggered later
     initialReport: 'onBlur',
   });
 
@@ -205,9 +208,7 @@ function parseLoginForm(formData: FormData) {
     resolve({ email, password }) {
       const error: Record<String, string> = {};
 
-      // You can access the structured payload
       if (!email) {
-        // Define the error as key-value pair instead
         error.email = 'Email is required';
       } else if (!email.includes('@')) {
         error.email = 'Email is invalid';
@@ -221,7 +222,6 @@ function parseLoginForm(formData: FormData) {
         return { error };
       }
 
-      // Resolve it with a value only if no error
       return {
         value: { email, password },
       };
@@ -274,7 +274,7 @@ export default function LoginForm() {
 
 Configuring each input is tedious especially when dealing with a complex form. The [conform](/packages/conform-react/README.md#conform) helpers can be used to remove these boilerplates.
 
-It also derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
+It will set the name of the input and also derive attributes for [accessibility](/docs/accessibility.md#configuration) concerns with helps on [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
 
 ```tsx
 import { parse, useForm, conform } from '@conform-to/react';
@@ -296,12 +296,14 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
 
   // By providing the schema, it will type check all the fields name
   const [form, { email, password }] = useForm<Schema>({
+    // By providing a form ID, you will enable Conform to generate all necessary ids for aria-attributes
+    id: 'login',
     initialReport: 'onBlur',
-    state: result,
+    lastSubmission,
     onValidate({ formData }) {
       return parseForm(formData);
     },

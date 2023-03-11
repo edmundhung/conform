@@ -64,12 +64,12 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function LoginForm() {
 	const formId = useId();
-	const config = useLoaderData();
-	const state = useActionData();
+	const config = useLoaderData<typeof loader>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { email, password }] = useForm<Login>({
 		...config,
 		id: formId,
-		state,
+		lastSubmission,
 		onValidate: config.validate
 			? ({ formData }) => parseLoginForm(formData)
 			: undefined,
@@ -77,7 +77,7 @@ export default function LoginForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Login Form" state={state}>
+			<Playground title="Login Form" lastSubmission={lastSubmission}>
 				<Alert errors={form.errors} />
 				<Field label="Email" config={email}>
 					<input

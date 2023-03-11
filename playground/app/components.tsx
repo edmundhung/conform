@@ -6,7 +6,7 @@ interface PlaygroundProps {
 	title: string;
 	description?: string;
 	form?: string;
-	state?: Submission;
+	lastSubmission?: Submission;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
@@ -17,17 +17,17 @@ export function Playground({
 	title,
 	description,
 	form,
-	state,
+	lastSubmission,
 	formAction,
 	formMethod,
 	formEncType,
 	children,
 }: PlaygroundProps) {
-	const [submission, setSubmission] = useState(state ?? null);
+	const [submission, setSubmission] = useState(lastSubmission ?? null);
 
 	useEffect(() => {
-		setSubmission(state ?? null);
-	}, [state]);
+		setSubmission(lastSubmission ?? null);
+	}, [lastSubmission]);
 
 	return (
 		<section

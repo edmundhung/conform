@@ -48,10 +48,10 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function PaymentForm() {
 	const config = useLoaderData();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { iban, amount, timestamp, verified }] = useForm({
 		...config,
-		state,
+		lastSubmission,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
 			? ({ formData }) => parse(formData, { schema })
@@ -64,7 +64,7 @@ export default function PaymentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Payment Form" state={state}>
+			<Playground title="Payment Form" lastSubmission={lastSubmission}>
 				<fieldset>
 					<Field label="IBAN" config={iban}>
 						<input {...conform.input(iban, { type: 'text' })} />

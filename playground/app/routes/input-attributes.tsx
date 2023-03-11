@@ -24,10 +24,10 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Example() {
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
 		id: 'test',
-		state,
+		lastSubmission,
 		constraint: {
 			title: {
 				required: true,
@@ -59,7 +59,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
-			<Playground title="Input attributes" state={state}>
+			<Playground title="Input attributes" lastSubmission={lastSubmission}>
 				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={title}>
 					<input {...conform.input(title, { type: 'text' })} />

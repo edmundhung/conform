@@ -69,10 +69,10 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	// Last submission returned by the server
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm<SignupForm>({
 		// Sync the result of last submission
-		state,
+		lastSubmission,
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {

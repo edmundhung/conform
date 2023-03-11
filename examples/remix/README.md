@@ -1,4 +1,4 @@
-# Server Validation Example
+# Remix Example
 
 > Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
 
