@@ -39,7 +39,7 @@ function Example() {
     <form encType="multipart/form-data" {...form.props}>
       <div>
         <label>File</label>
-        <input {...conform.input(file.config, { type: 'file' })} />
+        <input {...conform.input(file, { type: 'file' })} />
         <div>{file.error}</div>
       </div>
       <button>Upload</button>
@@ -113,7 +113,7 @@ function Example() {
     <form encType="multipart/form-data" {...form.props}>
       <div>
         <label>Mutliple Files</label>
-        <input {...conform.input(files.config, { type: 'file' })} multiple />
+        <input {...conform.input(files, { type: 'file' })} multiple />
         <div>{files.error}</div>
       </div>
       <button>Upload</button>

@@ -69,10 +69,7 @@ function Example() {
         {/*
           This is a shadow input which will be validated by Conform
         */}
-        <input
-          ref={inputRef}
-          {...conform.input(currency.config, { hidden: true })}
-        />
+        <input ref={inputRef} {...conform.input(currency, { hidden: true })} />
         {/*
           This makes the corresponding events to be dispatched
           from the element that the `inputRef` is set to.
@@ -84,7 +81,7 @@ function Example() {
               /*...*/
             ]
           }
-          defaultValue={currency.config.defaultValue ?? ''}
+          defaultValue={currency.defaultValue ?? ''}
           onChange={control.change}
           onBlur={control.blur}
         />
@@ -117,7 +114,7 @@ function Example() {
               /*...*/
             ]
           }
-          {...currency.config}
+          {...currency}
         />
         <div>{currency.error}</div>
       </div>
@@ -132,7 +129,7 @@ interface SelectProps extends FieldConfig<string> {
   options: Array<{ label: string; value: string }>;
 }
 
-function Select({ options, ...config }: SelectProps) {
+function Select({ options, .. }: SelectProps) {
   const [inputRef, control] = useInputEvent();
 
   return (
@@ -152,7 +149,7 @@ function Select({ options, ...config }: SelectProps) {
 If the custom control support manual focus, you can also hook it with the shadow input and let Conform focus on it when there is any error:
 
 ```tsx
-function Select({ options, ...config }: SelectProps) {
+function Select({ options, .. }: SelectProps) {
   const [inputRef, control] = useInputEvent();
   // The type of the ref might be different depends on the UI library
   const ref = useRef<HTMLInputElement>(null);
@@ -183,7 +180,7 @@ function Select({ options, ...config }: SelectProps) {
 The hook also provides support for the **reset** event if needed:
 
 ```tsx
-function Select({ options, ...config }: SelectProps) {
+function Select({ options, .. }: SelectProps) {
   const [value, setValue] = useState(config.defaultValue ?? '');
   const [inputRef, control] = useInputEvent({
     onReset: () => setValue(config.defaultValue ?? ''),

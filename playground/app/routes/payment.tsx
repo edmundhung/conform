@@ -58,7 +58,7 @@ export default function PaymentForm() {
 			: undefined,
 	});
 	const { currency, value } = useFieldset(form.ref, {
-		...amount.config,
+		...amount,
 		constraint: getFieldsetConstraint(schema.shape.amount),
 	});
 
@@ -66,26 +66,26 @@ export default function PaymentForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Payment Form" state={state}>
 				<fieldset>
-					<Field label="IBAN" {...iban}>
-						<input {...conform.input(iban.config, { type: 'text' })} />
+					<Field label="IBAN" config={iban}>
+						<input {...conform.input(iban, { type: 'text' })} />
 					</Field>
-					<Field label="Currency" {...currency}>
-						<select {...conform.select(currency.config)}>
+					<Field label="Currency" config={currency}>
+						<select {...conform.select(currency)}>
 							<option value="">Please specify</option>
 							<option value="USD">USD</option>
 							<option value="EUR">EUR</option>
 							<option value="GBP">GBP</option>
 						</select>
 					</Field>
-					<Field label="Value" {...value}>
-						<input {...conform.input(value.config, { type: 'number' })} />
+					<Field label="Value" config={value}>
+						<input {...conform.input(value, { type: 'number' })} />
 					</Field>
-					<Field label="Timestamp" {...timestamp}>
-						<input {...conform.input(timestamp.config, { type: 'text' })} />
+					<Field label="Timestamp" config={timestamp}>
+						<input {...conform.input(timestamp, { type: 'text' })} />
 					</Field>
-					<Field label="Verified" {...verified} inline>
+					<Field label="Verified" config={verified} inline>
 						<input
-							{...conform.input(verified.config, {
+							{...conform.input(verified, {
 								type: 'checkbox',
 								value: 'Yes',
 							})}

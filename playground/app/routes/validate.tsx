@@ -39,16 +39,16 @@ export default function Validate() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Validate" state={state}>
-				<Field label="Name" {...name}>
-					<input {...conform.input(name.config, { type: 'text' })} />
+				<Field label="Name" config={name}>
+					<input {...conform.input(name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" {...message}>
-					<textarea {...conform.textarea(message.config)} />
+				<Field label="Message" config={message}>
+					<textarea {...conform.textarea(message)} />
 				</Field>
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...validate(name.config.name)}
+						{...validate(name.name)}
 					>
 						Validate Name
 					</button>

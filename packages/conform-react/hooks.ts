@@ -23,6 +23,7 @@ import {
 	getFormAttributes,
 	getScope,
 	VALIDATION_UNDEFINED,
+	FORM_ERROR_ELEMENT_NAME,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -118,12 +119,12 @@ interface FormProps {
 	noValidate: boolean;
 }
 
-interface Form<Schema extends Record<string, any>> {
+interface Form {
 	id?: string;
-	ref: RefObject<HTMLFormElement>;
 	error: string;
+	errors: string[];
+	ref: RefObject<HTMLFormElement>;
 	props: FormProps;
-	config: FieldsetConfig<Schema>;
 }
 
 /**
@@ -135,20 +136,16 @@ interface Form<Schema extends Record<string, any>> {
 export function useForm<
 	Schema extends Record<string, any>,
 	ClientSubmission extends Submission | Submission<Schema> = Submission,
->(
-	config: FormConfig<Schema, ClientSubmission> = {},
-): [Form<Schema>, Fieldset<Schema>] {
+>(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
 	const configRef = useRef(config);
 	const ref = useRef<HTMLFormElement>(null);
 	const [lastSubmission, setLastSubmission] = useState(config.state ?? null);
-	const [error, setError] = useState<string>(() => {
+	const [errors, setErrors] = useState<string[]>(() => {
 		if (!config.state) {
-			return '';
+			return [];
 		}
 
-		const message = config.state.error[''];
-
-		return getValidationMessage(message);
+		return ([] as string[]).concat(config.state.error['']);
 	});
 	const [uncontrolledState, setUncontrolledState] = useState<
 		FieldsetConfig<Schema>
@@ -267,7 +264,7 @@ export function useForm<
 				!form ||
 				!isFieldElement(field) ||
 				field.form !== form ||
-				field.name !== '__form__'
+				field.name !== FORM_ERROR_ELEMENT_NAME
 			) {
 				return;
 			}
@@ -275,7 +272,7 @@ export function useForm<
 			event.preventDefault();
 
 			if (field.dataset.conformTouched) {
-				setError(field.validationMessage);
+				setErrors(getErrors(field.validationMessage));
 			}
 		};
 		const handleReset = (event: Event) => {
@@ -290,12 +287,11 @@ export function useForm<
 			for (const field of form.elements) {
 				if (isFieldElement(field)) {
 					delete field.dataset.conformTouched;
-					field.setAttribute('aria-invalid', 'false');
 					field.setCustomValidity('');
 				}
 			}
 
-			setError('');
+			setErrors([]);
 			setUncontrolledState({
 				defaultValue: formConfig.defaultValue,
 			});
@@ -321,13 +317,12 @@ export function useForm<
 		};
 	}, []);
 
-	const form: Form<Schema> = {
-		id: config.id,
+	const form: Form = {
 		ref,
-		error,
+		error: errors[0],
+		errors,
 		props: {
 			ref,
-			id: config.id,
 			noValidate,
 			onSubmit(event) {
 				const form = event.currentTarget;
@@ -392,26 +387,21 @@ export function useForm<
 				}
 			},
 		},
-		config: fieldsetConfig,
 	};
+
+	if (config.id) {
+		form.id = config.id;
+		form.props.id = form.id;
+	}
 
 	return [form, fieldset];
 }
 
 /**
- * All the information of the field, including state and config.
- */
-export type Field<Schema> = {
-	config: FieldConfig<Schema>;
-	error?: string;
-	errors?: string[];
-};
-
-/**
- * A set of field information.
+ * A set of field configuration
  */
 export type Fieldset<Schema extends Record<string, any>> = {
-	[Key in keyof Schema]-?: Field<Schema[Key]>;
+	[Key in keyof Schema]-?: FieldConfig<Schema[Key]>;
 };
 
 export interface FieldsetConfig<Schema extends Record<string, any>> {
@@ -436,7 +426,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	constraint?: FieldsetConstraint<Schema>;
 
 	/**
-	 * The id of the form, connecting each field to a form remotely.
+	 * The id of the form, connecting each field to a form remotely
 	 */
 	form?: string;
 }
@@ -498,7 +488,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 			for (const [key, error] of Object.entries(
 				uncontrolledState.initialError,
 			)) {
-				result[key] = getErrors(getValidationMessage(error?.['']));
+				result[key] = ([] as string[]).concat(error?.[''] ?? []);
 			}
 
 			return result;
@@ -533,14 +523,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 			// Update the error only if the field belongs to the fieldset
 			if (typeof key === 'string' && paths.length === 0) {
 				if (field.dataset.conformTouched) {
-					// Update the aria attribute only if it is set
-					if (field.getAttribute('aria-invalid')) {
-						field.setAttribute(
-							'aria-invalid',
-							field.validationMessage !== '' ? 'true' : 'false',
-						);
-					}
-
 					setError((prev) => {
 						const prevMessage = getValidationMessage(prev?.[key]);
 
@@ -603,21 +585,19 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
 				const errors = error?.[key];
-				const field: Field<any> = {
-					config: {
-						name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
-						defaultValue: uncontrolledState.defaultValue[key],
-						initialError: uncontrolledState.initialError[key],
-						...constraint,
-					},
+				const field: FieldConfig<any> = {
+					...constraint,
+					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
+					defaultValue: uncontrolledState.defaultValue[key],
+					initialError: uncontrolledState.initialError[key],
 					error: errors?.[0],
 					errors,
 				};
 
 				if (fieldsetConfig.form) {
-					field.config.form = fieldsetConfig.form;
-					field.config.id = `${fieldsetConfig.form}-${field.config.name}`;
-					field.config.errorId = `${field.config.id}-error`;
+					field.form = fieldsetConfig.form;
+					field.id = `${fieldsetConfig.form}-${field.name}`;
+					field.errorId = `${field.id}-error`;
 				}
 
 				return field;
@@ -635,12 +615,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
-): Array<{
-	key: string;
-	error: string | undefined;
-	errors: string[] | undefined;
-	config: FieldConfig<Payload>;
-}> {
+): Array<{ key: string } & FieldConfig<Payload>> {
 	const configRef = useRef(config);
 	const [uncontrolledState, setUncontrolledState] = useState<{
 		defaultValue: FieldValue<Array<Payload>>;
@@ -669,7 +644,7 @@ export function useFieldList<Payload = any>(
 	});
 	const [error, setError] = useState<Array<string[] | undefined>>(() =>
 		uncontrolledState.initialError.map((error) =>
-			getErrors(getValidationMessage(error?.[''])),
+			([] as string[]).concat(error?.[''] ?? []),
 		),
 	);
 	const [entries, setEntries] = useState<
@@ -807,10 +782,12 @@ export function useFieldList<Payload = any>(
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
-		const fieldConfig: FieldConfig<any> = {
+		const fieldConfig: FieldConfig<Payload> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
 			initialError: uncontrolledState.initialError[index],
+			error: errors?.[0],
+			errors,
 		};
 
 		if (config.form) {
@@ -821,9 +798,7 @@ export function useFieldList<Payload = any>(
 
 		return {
 			key,
-			error: errors?.[0],
-			errors,
-			config: fieldConfig,
+			...fieldConfig,
 		};
 	});
 }

@@ -79,14 +79,14 @@ export default function LoginForm() {
 		<Form method="post" {...form.props}>
 			<Playground title="Login Form" state={state}>
 				<Alert message={form.error} />
-				<Field label="Email" {...email}>
+				<Field label="Email" config={email}>
 					<input
-						{...conform.input(email.config, { type: 'email' })}
+						{...conform.input(email, { type: 'email' })}
 						autoComplete="off"
 					/>
 				</Field>
-				<Field label="Password" {...password}>
-					<input {...conform.input(password.config, { type: 'password' })} />
+				<Field label="Password" config={password}>
+					<input {...conform.input(password, { type: 'password' })} />
 				</Field>
 			</Playground>
 		</Form>

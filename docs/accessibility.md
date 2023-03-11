@@ -27,9 +27,9 @@ function Example() {
 
     return (
         <form {...form.props}>
-            <label htmlFor={message.config.id}>
-            <input {...conform.input(message.config)}>
-            <div id={message.config.errorId} role="alert">
+            <label htmlFor={message.id}>
+            <input {...conform.input(message)}>
+            <div id={message.errorId} role="alert">
                 {message.error}
             </div>
             <button>Send</button>

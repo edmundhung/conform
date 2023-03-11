@@ -85,7 +85,7 @@ export default function Example() {
 		<Form method="post" {...form.props}>
 			<Playground title="Validate Constraint" state={state}>
 				<fieldset>
-					<Field label="Email" {...email}>
+					<Field label="Email" config={email}>
 						<input
 							name="email"
 							type="email"
@@ -93,7 +93,7 @@ export default function Example() {
 							pattern="[^@]+@example.com"
 						/>
 					</Field>
-					<Field label="Password" {...password}>
+					<Field label="Password" config={password}>
 						<input
 							name="password"
 							type="password"
@@ -102,7 +102,7 @@ export default function Example() {
 							pattern="(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[1-9]).*"
 						/>
 					</Field>
-					<Field label="Confirm Password" {...confirmPassword}>
+					<Field label="Confirm Password" config={confirmPassword}>
 						<input
 							name="confirmPassword"
 							type="password"

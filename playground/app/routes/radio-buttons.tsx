@@ -57,29 +57,21 @@ export default function Example() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Attributes" state={state}>
-				<Field label="Multiple Choice" {...answer}>
+				<Field label="Multiple Choice" config={answer}>
 					<label>
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'a' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'a' })} />
 						<span className="p-2">A</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'b' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'b' })} />
 						<span className="p-2">B</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'c' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'c' })} />
 						<span className="p-2">C</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'd' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'd' })} />
 						<span className="p-2">D</span>
 					</label>
 				</Field>

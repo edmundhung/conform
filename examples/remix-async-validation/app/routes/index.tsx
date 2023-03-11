@@ -112,7 +112,7 @@ export default function Signup() {
 					<div>Username</div>
 					<input
 						className={username.error ? 'error' : ''}
-						{...conform.input(username.config)}
+						{...conform.input(username)}
 					/>
 					<div>{username.error}</div>
 				</label>
@@ -120,7 +120,7 @@ export default function Signup() {
 					<div>Password</div>
 					<input
 						className={password.error ? 'error' : ''}
-						{...conform.input(password.config, { type: 'password' })}
+						{...conform.input(password, { type: 'password' })}
 					/>
 					<div>{password.error}</div>
 				</label>
@@ -128,7 +128,7 @@ export default function Signup() {
 					<div>Confirm Password</div>
 					<input
 						className={confirmPassword.error ? 'error' : ''}
-						{...conform.input(confirmPassword.config, { type: 'password' })}
+						{...conform.input(confirmPassword, { type: 'password' })}
 					/>
 					<div>{confirmPassword.error}</div>
 				</label>
