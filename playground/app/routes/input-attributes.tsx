@@ -1,7 +1,7 @@
 import { conform, useForm, parse } from '@conform-to/react';
 import { json, type ActionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { Playground, Field } from '~/components';
+import { Playground, Field, Alert } from '~/components';
 
 interface Schema {
 	title: string;
@@ -15,7 +15,12 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData);
 
-	return json(submission);
+	return json({
+		...submission,
+		error: {
+			'': 'Submitted',
+		},
+	});
 }
 
 export default function Example() {
@@ -55,6 +60,7 @@ export default function Example() {
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
 			<Playground title="Input attributes" state={state}>
+				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={title}>
 					<input {...conform.input(title, { type: 'text' })} />
 				</Field>

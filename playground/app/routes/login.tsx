@@ -78,7 +78,7 @@ export default function LoginForm() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Login Form" state={state}>
-				<Alert message={form.error} />
+				<Alert errors={form.errors} />
 				<Field label="Email" config={email}>
 					<input
 						{...conform.input(email, { type: 'email' })}

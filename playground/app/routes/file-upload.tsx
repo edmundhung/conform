@@ -63,7 +63,7 @@ export default function FileUpload() {
 	return (
 		<Form method="post" {...form.props} encType="multipart/form-data">
 			<Playground title="Employee Form" state={state}>
-				<Alert message={form.error} />
+				<Alert errors={form.errors} />
 				<Field label="Single file" config={file}>
 					<input {...conform.input(file, { type: 'file' })} />
 				</Field>

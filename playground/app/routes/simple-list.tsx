@@ -45,7 +45,7 @@ export default function SimpleList() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" state={state}>
-				<Alert message={items.error ?? ''} />
+				<Alert errors={items.errors} />
 				<ol>
 					{itemsList.map((item, index) => (
 						<li key={item.key} className="border rounded-md p-4 mb-4">
