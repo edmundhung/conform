@@ -14,9 +14,7 @@ import {
 	getSignupFieldset,
 	hasFocus,
 	getTaskFieldset,
-	waitForDataResponse,
 	getTodosFieldset,
-	getEmployeeFieldset,
 } from './helpers';
 
 test.describe('Client Validation', () => {
@@ -25,15 +23,14 @@ test.describe('Client Validation', () => {
 		const { title, description, genre, rating } = getMovieFieldset(form);
 
 		async function expectErrorMessagesEqualsToValidationMessages() {
-			const [actualMessages, ...expectedMessages] = await Promise.all([
-				getErrorMessages(form),
+			const expectedMessages = await Promise.all([
 				getValidationMessage(title),
 				getValidationMessage(description),
 				getValidationMessage(genre),
 				getValidationMessage(rating),
 			]);
 
-			expect(actualMessages).toEqual(expectedMessages);
+			await expect(form.locator('main p')).toHaveText(expectedMessages);
 		}
 
 		await clickSubmitButton(form);
@@ -50,14 +47,14 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				title: 'The Dark Knight',
 				description: 'When the menace known as the Joker wreaks havoc...',
 				genre: 'action',
 				rating: '4.5',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -67,7 +64,7 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'Title is required',
 			'',
 			'Genre is required',
@@ -75,7 +72,7 @@ test.describe('Client Validation', () => {
 		]);
 
 		await title.type('What?');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'Please enter a valid title',
 			'',
 			'Genre is required',
@@ -84,7 +81,7 @@ test.describe('Client Validation', () => {
 
 		await title.fill('');
 		await title.type('The Matrix');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'Genre is required',
@@ -92,7 +89,7 @@ test.describe('Client Validation', () => {
 		]);
 
 		await description.type('When a beautiful stranger...');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Please provides more details',
 			'Genre is required',
@@ -103,7 +100,7 @@ test.describe('Client Validation', () => {
 		await description.type(
 			'When a beautiful stranger leads computer hacker Neo to...',
 		);
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'Genre is required',
@@ -111,10 +108,10 @@ test.describe('Client Validation', () => {
 		]);
 
 		await genre.selectOption({ label: 'Science Fiction' });
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '', '']);
 
 		await rating.type('3.9');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'',
@@ -123,19 +120,19 @@ test.describe('Client Validation', () => {
 
 		await rating.fill('');
 		await rating.type('4.0');
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '', '']);
 
 		await clickSubmitButton(form);
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				title: 'The Matrix',
 				description:
 					'When a beautiful stranger leads computer hacker Neo to...',
 				genre: 'sci-fi',
 				rating: '4.0',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -147,7 +144,7 @@ test.describe('Client Validation', () => {
 		await password.type('1234');
 		await clickSubmitButton(playground);
 
-		expect(await getErrorMessages(playground)).toEqual([
+		await expect(playground.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			expectNonEmptyString,
@@ -159,16 +156,16 @@ test.describe('Client Validation', () => {
 		await password.type('secretpassword');
 		await confirmPassword.type('secretpassword');
 
-		expect(await getErrorMessages(playground)).toEqual(['', '', '']);
+		await expect(playground.locator('main p')).toHaveText(['', '', '']);
 
 		await clickSubmitButton(playground);
 
 		expect(await getSubmission(playground)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				email: 'me@edmund.dev',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -179,7 +176,7 @@ test.describe('Client Validation', () => {
 
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'IBAN is required',
 			'Please select a currency',
 			'Value is required',
@@ -189,7 +186,7 @@ test.describe('Client Validation', () => {
 
 		await fieldset.iban.type('DE89 3704 0044 0532 0130 00');
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Please select a currency',
 			'Value is required',
@@ -199,7 +196,7 @@ test.describe('Client Validation', () => {
 
 		await fieldset.currency.selectOption('EUR');
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'Value is required',
@@ -209,7 +206,7 @@ test.describe('Client Validation', () => {
 
 		await fieldset.value.type('1');
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'',
@@ -219,7 +216,7 @@ test.describe('Client Validation', () => {
 
 		await fieldset.timestamp.type(timestamp);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'',
 			'',
@@ -229,13 +226,13 @@ test.describe('Client Validation', () => {
 
 		await fieldset.verified.check();
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '', '', '']);
 
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				iban: 'DE89 3704 0044 0532 0130 00',
 				amount: {
 					currency: 'EUR',
@@ -244,7 +241,7 @@ test.describe('Client Validation', () => {
 				timestamp,
 				verified: 'Yes',
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -263,24 +260,20 @@ test.describe('Client Validation', () => {
 		const currentValidationMessages = await getErrorMessages(form);
 
 		expect(currentValidationMessages).not.toEqual(initialValidationMessages);
-		expect(
-			await Promise.all([
-				isTouched(title),
-				isTouched(description),
-				isTouched(genre),
-				isTouched(rating),
-			]),
-		).not.toContain(false);
+		await expect(title).toHaveAttribute('data-conform-touched', 'true');
+		await expect(description).toHaveAttribute('data-conform-touched', 'true');
+		await expect(genre).toHaveAttribute('data-conform-touched', 'true');
+		await expect(rating).toHaveAttribute('data-conform-touched', 'true');
 
 		await title.type('Up');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			...currentValidationMessages.slice(1),
 		]);
 
 		await clickResetButton(form);
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '', '']);
 		expect(
 			await Promise.all([
 				getValidationMessage(title),
@@ -306,14 +299,14 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				email: '',
 			},
-			error: [
-				['email', 'Email is required'],
-				['password', 'Password is required'],
-			],
+			error: {
+				email: 'Email is required',
+				password: 'Password is required',
+			},
 		});
 
 		await email.type('invalid email');
@@ -321,11 +314,13 @@ test.describe('Client Validation', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				email: 'invalid email',
 			},
-			error: [['password', 'Password is required']],
+			error: {
+				password: 'Password is required',
+			},
 		});
 	});
 
@@ -354,144 +349,33 @@ test.describe('Server Validation', () => {
 
 		await clickSubmitButton(form);
 
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', 'Email is required', 'Password is required']);
+		await expect(form.locator('main p')).toHaveText([
+			'',
+			'Email is required',
+			'Password is required',
+		]);
 
 		await email.type('me@edmund.dev');
 		await clickSubmitButton(form);
 
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', 'Password is required']);
+		await expect(form.locator('main p')).toHaveText([
+			'',
+			'',
+			'Password is required',
+		]);
 
 		await password.type('SecretPassword');
 		await clickSubmitButton(form);
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['The provided email or password is not valid', '', '']);
+		await expect(form.locator('main p')).toHaveText([
+			'The provided email or password is not valid',
+			'',
+			'',
+		]);
 
 		await password.press('Control+a');
 		await password.type('$eCreTP@ssWord');
 		await clickSubmitButton(form);
-		await expect.poll(() => getErrorMessages(form)).toEqual(['', '', '']);
-	});
-
-	test('Async validation', async ({ page }) => {
-		const form = await gotoForm(page, '/employee', {
-			mode: 'server-validation',
-		});
-		const { name, email, title } = getEmployeeFieldset(form);
-
-		await page.route('**', (route) => {
-			const request = route.request();
-			const url = new URL(request.url());
-			const body = request.postData();
-			const headers = request.headers();
-
-			if (
-				request.method() !== 'POST' ||
-				!url.searchParams.has('_data') ||
-				!body ||
-				headers['content-type'] !== 'application/x-www-form-urlencoded'
-			) {
-				return route.continue();
-			}
-
-			const value = Object.fromEntries(new URLSearchParams(body));
-
-			// When validting the email field
-			if (
-				value['conform/validate'] === 'email' &&
-				[
-					'hey@conform.gu',
-					'hey@conform.gui',
-					'hey@conform.guid',
-					'hey@conform.guide',
-				].includes(value.email)
-			) {
-				return route.continue();
-			}
-
-			// When clicking on the submit button
-			if (typeof value['conform/validate'] === 'undefined') {
-				return route.continue();
-			}
-
-			return route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					type: 'submit',
-					value: {},
-					error: [['', 'Request forbidden']],
-				}),
-			});
-		});
-
-		await clickSubmitButton(form);
-
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'Name is required',
-			'Email is required',
-			'Title is required',
-		]);
-
-		await name.type('Edmund Hung');
-
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'',
-			'Email is required',
-			'Title is required',
-		]);
-
-		await email.type('hey@conform.g');
-
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'',
-			'Email is invalid',
-			'Title is required',
-		]);
-
-		await email.type('u');
-
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', 'Email is already used', 'Title is required']);
-
-		await email.type('i');
-
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', 'Email is already used', 'Title is required']);
-
-		await email.type('d');
-
-		await expect
-			.poll(() => getErrorMessages(form))
-			.toEqual(['', '', 'Email is already used', 'Title is required']);
-
-		await title.type('Software Developer');
-
-		expect(await getErrorMessages(form)).toEqual([
-			'',
-			'',
-			'Email is already used',
-			'',
-		]);
-
-		await email.type('e');
-
-		await expect
-			.poll(() => getErrorMessages(form), { timeout: 10000 })
-			.toEqual(['', '', '', '']);
-
-		await Promise.all([waitForDataResponse(page), clickSubmitButton(form)]);
-
-		expect(await getErrorMessages(form)).toEqual(['', '', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '']);
 	});
 
 	test('Autofocus invalid field', async ({ page }) => {
@@ -524,11 +408,11 @@ test.describe('Error Reporting', () => {
 		// To ensure it leaves the last field
 		await form.press('Tab');
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '']);
 
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			expectNonEmptyString,
@@ -540,21 +424,21 @@ test.describe('Error Reporting', () => {
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			'',
 			'',
 		]);
 
 		await password.type('1234');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
 		]);
 
 		await confirmPassword.type('5678');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			expectNonEmptyString,
@@ -566,38 +450,38 @@ test.describe('Error Reporting', () => {
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');
-		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '']);
 
 		await form.press('Tab');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			'',
 			'',
 		]);
 
 		await password.type('1234');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			'',
 			'',
 		]);
 
 		await form.press('Tab');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
 		]);
 
 		await confirmPassword.type('5678');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
 		]);
 
 		await form.press('Tab');
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			expectNonEmptyString,
@@ -612,7 +496,7 @@ test.describe('Field list', () => {
 
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
@@ -621,7 +505,7 @@ test.describe('Field list', () => {
 		await form.locator('button:text("Insert top")').click();
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
@@ -632,7 +516,7 @@ test.describe('Field list', () => {
 		await form.locator('button:text("Insert bottom")').click();
 		await clickSubmitButton(form);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			expectNonEmptyString,
 			expectNonEmptyString,
 			'',
@@ -656,8 +540,8 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				title: 'My schedule',
 				tasks: [
 					{ content: 'Urgent task' },
@@ -665,7 +549,7 @@ test.describe('Field list', () => {
 					{ content: 'Ad hoc task' },
 				],
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -723,15 +607,15 @@ test.describe('Field list', () => {
 		await clickSubmitButton(form);
 
 		expect(await getSubmission(form)).toEqual({
-			type: 'submit',
-			value: {
+			intent: 'submit',
+			payload: {
 				title: 'Testing plan',
 				tasks: [
 					{ content: 'Write even more tests' },
 					{ content: 'Write tests for nested list', completed: 'on' },
 				],
 			},
-			error: [],
+			error: {},
 		});
 	});
 
@@ -760,7 +644,7 @@ test.describe('No JS', () => {
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Email is required',
 			'Password is required',
@@ -769,7 +653,7 @@ test.describe('No JS', () => {
 		await email.type('me@edmund.dev');
 		await password.type('SecretPassword');
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Email is required',
 			'Password is required',
@@ -777,7 +661,7 @@ test.describe('No JS', () => {
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'The provided email or password is not valid',
 			'',
 			'',
@@ -786,7 +670,7 @@ test.describe('No JS', () => {
 		await password.type('$eCreTP@ssWord');
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual(['', '', '']);
+		await expect(form.locator('main p')).toHaveText(['', '', '']);
 	});
 
 	test('List Command', async ({ page }) => {
@@ -856,7 +740,7 @@ test.describe('No JS', () => {
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
-		expect(await getErrorMessages(form)).toEqual([
+		await expect(form.locator('main p')).toHaveText([
 			'',
 			expectNonEmptyString,
 			'',

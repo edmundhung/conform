@@ -63,14 +63,14 @@ export default function Example() {
 
 					<FormControl isInvalid={Boolean(fieldset.email.error)}>
 						<FormLabel>Email (Input)</FormLabel>
-						<Input type="email" name={fieldset.email.config.name} required />
+						<Input type="email" name={fieldset.email.name} required />
 						<FormErrorMessage>{fieldset.email.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={Boolean(fieldset.language.error)}>
 						<FormLabel>Language (Select)</FormLabel>
 						<Select
-							name={fieldset.language.config.name}
+							name={fieldset.language.name}
 							placeholder="Select option"
 							required
 						>
@@ -83,14 +83,14 @@ export default function Example() {
 
 					<FormControl isInvalid={Boolean(fieldset.description.error)}>
 						<FormLabel>Description (Textarea)</FormLabel>
-						<Textarea name={fieldset.description.config.name} required />
+						<Textarea name={fieldset.description.name} required />
 						<FormErrorMessage>{fieldset.description.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={Boolean(fieldset.quantity.error)}>
 						<FormLabel>Quantity (NumberInput)</FormLabel>
 						<ExampleNumberInput
-							name={fieldset.quantity.config.name}
+							name={fieldset.quantity.name}
 							required
 							min={1}
 							max={10}
@@ -102,7 +102,7 @@ export default function Example() {
 					<FormControl isInvalid={Boolean(fieldset.pin.error)}>
 						<FormLabel>PIN (PinInput)</FormLabel>
 						<ExamplePinInput
-							name={fieldset.pin.config.name}
+							name={fieldset.pin.name}
 							isInvalid={Boolean(fieldset.pin.error)}
 							required
 							pattern="[0-9]{4}"
@@ -113,22 +113,18 @@ export default function Example() {
 					<FormControl isInvalid={Boolean(fieldset.title.error)}>
 						<FormLabel>Title (Editable)</FormLabel>
 						<Editable
-							defaultValue={fieldset.title.config.defaultValue}
+							defaultValue={fieldset.title.defaultValue}
 							placeholder="No content"
 						>
 							<EditablePreview />
-							<EditableInput name={fieldset.title.config.name} required />
+							<EditableInput name={fieldset.title.name} required />
 						</Editable>
 						<FormErrorMessage>{fieldset.title.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={Boolean(fieldset.subscribe.error)}>
 						<FormLabel>Subscribe (Checkbox)</FormLabel>
-						<Checkbox
-							name={fieldset.subscribe.config.name}
-							value="yes"
-							required
-						>
+						<Checkbox name={fieldset.subscribe.name} value="yes" required>
 							Newsletter
 						</Checkbox>
 						<FormErrorMessage>{fieldset.subscribe.error}</FormErrorMessage>
@@ -136,33 +132,30 @@ export default function Example() {
 
 					<FormControl isInvalid={Boolean(fieldset.enabled.error)}>
 						<FormLabel>Enabled (Switch)</FormLabel>
-						<Switch name={fieldset.enabled.config.name} required />
+						<Switch name={fieldset.enabled.name} required />
 						<FormErrorMessage>{fieldset.enabled.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={Boolean(fieldset.progress.error)}>
 						<FormLabel>Progress (Slider)</FormLabel>
-						<ExampleSlider name={fieldset.progress.config.name} required />
+						<ExampleSlider name={fieldset.progress.name} required />
 						<FormErrorMessage>{fieldset.progress.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={Boolean(fieldset.active.error)}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<RadioGroup
-							name={fieldset.active.config.name}
-							defaultValue={fieldset.active.config.defaultValue}
+							name={fieldset.active.name}
+							defaultValue={fieldset.active.defaultValue}
 						>
 							<Stack spacing={5} direction="row">
 								<Radio
 									value="yes"
-									isRequired={fieldset.active.config.required ?? true}
+									isRequired={fieldset.active.required ?? true}
 								>
 									Yes
 								</Radio>
-								<Radio
-									value="no"
-									isRequired={fieldset.active.config.required ?? true}
-								>
+								<Radio value="no" isRequired={fieldset.active.required ?? true}>
 									No
 								</Radio>
 							</Stack>

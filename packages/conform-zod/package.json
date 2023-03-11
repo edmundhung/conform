@@ -2,7 +2,7 @@
 	"name": "@conform-to/zod",
 	"description": "Conform helpers for integrating with Zod",
 	"license": "MIT",
-	"version": "0.5.1",
+	"version": "0.6.0-pre.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -14,11 +14,11 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"peerDependencies": {
-		"@conform-to/dom": "0.5.1",
-		"zod": "^3.0.0"
+		"@conform-to/dom": "0.6.0-pre.0",
+		"zod": "^3.21.0"
 	},
 	"devDependencies": {
-		"zod": "^3.17.3"
+		"zod": "^3.21.0"
 	},
 	"sideEffects": false
 }

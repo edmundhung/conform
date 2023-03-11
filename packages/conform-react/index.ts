@@ -2,14 +2,20 @@ export {
 	type FieldConfig,
 	type FieldsetConstraint,
 	type Submission,
-	getFormElements,
-	hasError,
+	parse,
+	validateConstraint,
 	list,
 	validate,
-	requestCommand,
-	requestSubmit,
-	parse,
-	shouldValidate,
+	requestIntent,
+	isFieldElement,
 } from '@conform-to/dom';
-export * from './hooks';
+export {
+	type Fieldset,
+	type FieldsetConfig,
+	type FormConfig,
+	useForm,
+	useFieldset,
+	useFieldList,
+	useInputEvent,
+} from './hooks';
 export * as conform from './helpers';

@@ -7,14 +7,26 @@ interface Schema {
 	answer: string;
 }
 
-function validate(formData: FormData) {
-	const submission = parse(formData);
+function parseForm(formData: FormData) {
+	return parse(formData, {
+		resolve({ answer }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.value.answer) {
-		submission.error.push(['answer', 'Required']);
-	}
+			if (!answer) {
+				error.answer = 'Required';
+			}
 
-	return submission;
+			if (error.answer) {
+				return { error };
+			}
+
+			return {
+				value: {
+					answer,
+				},
+			};
+		},
+	});
 }
 
 export async function loader({ request }: LoaderArgs) {
@@ -27,47 +39,39 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parseForm(formData);
 
 	return json(submission);
 }
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { answer }] = useForm<Schema>({
-		state,
+		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parseForm(formData)
 			: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Attributes" state={state}>
-				<Field label="Multiple Choice" {...answer}>
+			<Playground title="Attributes" lastSubmission={lastSubmission}>
+				<Field label="Multiple Choice" config={answer}>
 					<label>
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'a' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'a' })} />
 						<span className="p-2">A</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'b' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'b' })} />
 						<span className="p-2">B</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'c' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'c' })} />
 						<span className="p-2">C</span>
 					</label>
 					<label className="inline-block">
-						<input
-							{...conform.input(answer.config, { type: 'radio', value: 'd' })}
-						/>
+						<input {...conform.input(answer, { type: 'radio', value: 'd' })} />
 						<span className="p-2">D</span>
 					</label>
 				</Field>

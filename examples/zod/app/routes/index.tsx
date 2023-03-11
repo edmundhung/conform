@@ -1,5 +1,5 @@
-import { conform, parse, useForm } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -15,46 +15,43 @@ const schema = z
 			.string()
 			.min(1, 'Password is required')
 			.min(10, 'The password should be at least 10 characters long'),
-		'confirm-password': z.string().min(1, 'Confirm Password is required'),
+		confirmPassword: z.string().min(1, 'Confirm Password is required'),
 	})
-	.refine((value) => value.password === value['confirm-password'], {
+	.refine((value) => value.password === value.confirmPassword, {
 		message: 'Password does not match',
-		path: ['confirm-password'],
+		path: ['confirmPassword'],
 	});
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse<z.infer<typeof schema>>(formData);
+	const submission = parse(formData, { schema });
 
-	try {
-		const data = schema.parse(submission.value);
-
-		if (submission.type === 'submit') {
-			console.log(data);
-			throw new Error('Not implemented');
-		}
-	} catch (error) {
-		submission.error.push(...formatError(error));
+	if (!submission.value || submission.intent !== 'submit') {
+		return json({
+			...submission,
+			payload: {
+				email: submission.payload.email,
+			},
+		});
 	}
 
-	return json({
-		...submission,
-		value: {
-			email: submission.value.email,
-		},
-	});
+	throw new Error('Not implemented');
 }
 
 export default function SignupForm() {
-	const state = useActionData<typeof action>();
-	const [form, { email, password, 'confirm-password': confirmPassword }] =
-		useForm<z.infer<typeof schema>>({
-			state,
-			initialReport: 'onBlur',
-			onValidate({ formData }) {
-				return validate(formData, schema);
-			},
-		});
+	const lastSubmission = useActionData<typeof action>();
+	const [form, { email, password, confirmPassword }] = useForm<
+		z.input<typeof schema>
+	>({
+		// To handle server error and enable full progressive enhancement
+		lastSubmission,
+
+		// Validation are done on the server if `onValidate` is not specified
+		// Uncomment the code below to enable client validation
+		// onValidate({ formData }) {
+		// 	return parse(formData, { schema });
+		// },
+	});
 
 	return (
 		<Form method="post" {...form.props}>
@@ -62,7 +59,7 @@ export default function SignupForm() {
 				<div>Email</div>
 				<input
 					className={email.error ? 'error' : ''}
-					{...conform.input(email.config)}
+					{...conform.input(email)}
 				/>
 				<div>{email.error}</div>
 			</label>
@@ -70,7 +67,7 @@ export default function SignupForm() {
 				<label>Password</label>
 				<input
 					className={password.error ? 'error' : ''}
-					{...conform.input(password.config, { type: 'password' })}
+					{...conform.input(password, { type: 'password' })}
 				/>
 				<div>{password.error}</div>
 			</div>
@@ -78,7 +75,7 @@ export default function SignupForm() {
 				<label>Confirm Password</label>
 				<input
 					className={confirmPassword.error ? 'error' : ''}
-					{...conform.input(confirmPassword.config, { type: 'password' })}
+					{...conform.input(confirmPassword, { type: 'password' })}
 				/>
 				<div>{confirmPassword.error}</div>
 			</div>

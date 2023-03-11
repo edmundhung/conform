@@ -2,9 +2,9 @@ import { conform, useFieldset, useForm } from '@conform-to/react';
 import {
 	getFieldsetConstraint,
 	ifNonEmptyString,
-	validate,
+	parse,
 } from '@conform-to/zod';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { Playground, Field } from '~/components';
@@ -41,59 +41,51 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData, schema);
+	const submission = parse(formData, { schema });
 
-	return submission;
+	return json(submission);
 };
 
 export default function PaymentForm() {
 	const config = useLoaderData();
-	const state = useActionData();
+	const lastSubmission = useActionData();
 	const [form, { iban, amount, timestamp, verified }] = useForm({
 		...config,
-		state,
+		lastSubmission,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.type === 'validate') {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 	const { currency, value } = useFieldset(form.ref, {
-		...amount.config,
+		...amount,
 		constraint: getFieldsetConstraint(schema.shape.amount),
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Payment Form" state={state}>
+			<Playground title="Payment Form" lastSubmission={lastSubmission}>
 				<fieldset>
-					<Field label="IBAN" {...iban}>
-						<input {...conform.input(iban.config, { type: 'text' })} />
+					<Field label="IBAN" config={iban}>
+						<input {...conform.input(iban, { type: 'text' })} />
 					</Field>
-					<Field label="Currency" {...currency}>
-						<select {...conform.select(currency.config)}>
+					<Field label="Currency" config={currency}>
+						<select {...conform.select(currency)}>
 							<option value="">Please specify</option>
 							<option value="USD">USD</option>
 							<option value="EUR">EUR</option>
 							<option value="GBP">GBP</option>
 						</select>
 					</Field>
-					<Field label="Value" {...value}>
-						<input {...conform.input(value.config, { type: 'number' })} />
+					<Field label="Value" config={value}>
+						<input {...conform.input(value, { type: 'number' })} />
 					</Field>
-					<Field label="Timestamp" {...timestamp}>
-						<input {...conform.input(timestamp.config, { type: 'text' })} />
+					<Field label="Timestamp" config={timestamp}>
+						<input {...conform.input(timestamp, { type: 'text' })} />
 					</Field>
-					<Field label="Verified" error={verified.error} inline>
+					<Field label="Verified" config={verified} inline>
 						<input
-							{...conform.input(verified.config, {
+							{...conform.input(verified, {
 								type: 'checkbox',
 								value: 'Yes',
 							})}

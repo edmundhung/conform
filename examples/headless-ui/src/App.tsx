@@ -39,7 +39,7 @@ export default function Example() {
 									Owner (List box)
 								</label>
 								<div className="mt-1">
-									<ExampleListBox {...fieldset.owner.config} required />
+									<ExampleListBox {...fieldset.owner} required />
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fieldset.owner.error}
@@ -51,7 +51,7 @@ export default function Example() {
 									Assigned to (Combobox)
 								</label>
 								<div className="mt-1">
-									<ExampleCombobox {...fieldset.assignee.config} required />
+									<ExampleCombobox {...fieldset.assignee} required />
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fieldset.assignee.error}
@@ -63,7 +63,7 @@ export default function Example() {
 									Enabled (Switch)
 								</label>
 								<div className="mt-1">
-									<ExampleSwitch {...fieldset.enabled.config} required />
+									<ExampleSwitch {...fieldset.enabled} required />
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fieldset.enabled.error}
@@ -75,7 +75,7 @@ export default function Example() {
 									Color (Radio Group)
 								</label>
 								<div className="mt-1">
-									<ExampleRadioGroup {...fieldset.color.config} required />
+									<ExampleRadioGroup {...fieldset.color} required />
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fieldset.color.error}

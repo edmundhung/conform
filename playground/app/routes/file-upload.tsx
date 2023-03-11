@@ -1,5 +1,5 @@
-import { conform, parse, useForm } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -35,8 +35,6 @@ const schema = z.object({
 		),
 });
 
-type Schema = z.infer<typeof schema>;
-
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
@@ -47,36 +45,30 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
-	const [form, { file, files }] = useForm<Schema>({
-		state,
+	const lastSubmission = useActionData<typeof action>();
+	const [form, { file, files }] = useForm({
+		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props} encType="multipart/form-data">
-			<Playground title="Employee Form" state={state}>
-				<Alert message={form.error} />
-				<Field label="Single file" {...file}>
-					<input {...conform.input(file.config, { type: 'file' })} />
+			<Playground title="Employee Form" lastSubmission={lastSubmission}>
+				<Alert errors={form.errors} />
+				<Field label="Single file" config={file}>
+					<input {...conform.input(file, { type: 'file' })} />
 				</Field>
-				<Field label="Multiple files" {...files}>
-					<input {...conform.input(files.config, { type: 'file' })} multiple />
+				<Field label="Multiple files" config={files}>
+					<input {...conform.input(files, { type: 'file' })} multiple />
 				</Field>
 			</Playground>
 		</Form>

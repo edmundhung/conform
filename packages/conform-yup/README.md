@@ -6,91 +6,10 @@
 
 ## API Reference
 
-- [formatError](#formatError)
 - [getFieldsetConstraint](#getfieldsetconstraint)
-- [validate](#validate)
+- [parse](#parse)
 
 <!-- /aside -->
-
-### formatError
-
-This formats Yup **ValidationError** to conform's error structure (i.e. A set of key/value pairs).
-
-If an error is received instead of the Yup **ValidationError**, it will be treated as a form level error with message set to **error.messages**.
-
-```tsx
-import { useForm, parse } from '@conform-to/react';
-import { formatError } from '@conform-to/yup';
-import * as yup from 'yup';
-
-const schema = yup.object({
-  email: yup.string().required(),
-  password: yup.string().required(),
-});
-
-function ExampleForm() {
-  const [form] = useForm<yup.InferType<typeof schema>>({
-    onValidate({ formData }) {
-      const submission = parse(formData);
-
-      try {
-        // Only sync validation is allowed on the client side
-        schema.validateSync(submission.value, {
-          abortEarly: false,
-        });
-      } catch (error) {
-        submission.error.push(...formatError(error));
-      }
-
-      return submission;
-    },
-  });
-
-  // ...
-}
-```
-
-Or when validating the formData on server side (e.g. Remix):
-
-```tsx
-import { useForm, parse } from '@conform-to/react';
-import { formatError } from '@conform-to/yup';
-import * as yup from 'yup';
-
-const schema = yup.object({
-  // Define the schema with yup
-});
-
-export let action = async ({ request }) => {
-  const formData = await request.formData();
-  const submission = parse(formData);
-
-  try {
-    // You can extends the schema with async validation as well
-    const data = await schema.validate(submission.value, {
-      abortEarly: false,
-    });
-
-    if (submission.type !== 'validate') {
-      return await handleFormData(data);
-    }
-  } catch (error) {
-    submission.error.push(...formatError(error));
-  }
-
-  return submission;
-};
-
-export default function ExampleRoute() {
-  const state = useActionData();
-  const [form] = useForm({
-    mode: 'server-validation',
-    state,
-  });
-
-  // ...
-}
-```
 
 ### getFieldsetConstraint
 
@@ -118,13 +37,13 @@ function Example() {
 }
 ```
 
-### validate
+### parse
 
-It parses the formData and returns a [submission](/docs/submission.md) object with the validation error, which removes the boilerplate code shown on the [formatError](#formaterror) example.
+It parses the formData and returns a submission result with the validation error. If no error is found, the parsed data will also be populated as `submission.value`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/yup';
+import { parse } from '@conform-to/yup';
 import * as yup from 'yup';
 
 const schema = yup.object({
@@ -135,10 +54,39 @@ const schema = yup.object({
 function ExampleForm() {
   const [form] = useForm({
     onValidate({ formData }) {
-      return validate(formData, schema);
+      return parse(formData, { schema });
     },
   });
 
   // ...
 }
+```
+
+Or when parsing the formData on server side (e.g. Remix):
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/yup';
+import * as yup from 'yup';
+
+const schema = yup.object({
+  // Define the schema with yup
+});
+
+export let action = async ({ request }) => {
+  const formData = await request.formData();
+  const submission = parse(formData, {
+    // If you need extra validation on server side
+    schema: schema.test(/* ... */),
+
+    // If the schema definition includes async validation
+    async: true,
+  });
+
+  if (!submission.value || submission.intent !== 'submit') {
+    return submission;
+  }
+
+  // ...
+};
 ```

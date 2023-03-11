@@ -1,5 +1,5 @@
-import { conform, parse, useFieldList, useForm, list } from '@conform-to/react';
-import { formatError, validate } from '@conform-to/zod';
+import { conform, useFieldList, useForm, list } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -26,55 +26,48 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
 
 export default function SimpleList() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
-	const [form, { items }] = useForm<z.infer<typeof schema>>({
-		mode: noClientValidate ? 'server-validation' : 'client-only',
-		state,
+	const lastSubmission = useActionData();
+	const [form, { items }] = useForm({
+		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => validate(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
-	const itemsList = useFieldList(form.ref, items.config);
+	const itemsList = useFieldList(form.ref, items);
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Simple list" state={state}>
-				<Alert message={items.error ?? ''} />
+			<Playground title="Simple list" lastSubmission={lastSubmission}>
+				<Alert errors={items.errors} />
 				<ol>
 					{itemsList.map((item, index) => (
 						<li key={item.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} {...item}>
-								<input {...conform.input(item.config, { type: 'text' })} />
+							<Field label={`Item #${index + 1}`} config={item}>
+								<input {...conform.input(item, { type: 'text' })} />
 							</Field>
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...list.remove(items.config.name, { index })}
+									{...list.remove(items.name, { index })}
 								>
 									Delete
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...list.reorder(items.config.name, { from: index, to: 0 })}
+									{...list.reorder(items.name, { from: index, to: 0 })}
 								>
 									Move to top
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...list.replace(items.config.name, {
+									{...list.replace(items.name, {
 										index,
 										defaultValue: '',
 									})}
@@ -88,13 +81,13 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.prepend(items.config.name, { defaultValue: '' })}
+						{...list.prepend(items.name, { defaultValue: '' })}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.append(items.config.name, { defaultValue: '' })}
+						{...list.append(items.name, { defaultValue: '' })}
 					>
 						Insert bottom
 					</button>

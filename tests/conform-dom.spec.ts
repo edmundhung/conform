@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { parse, getPaths, getName } from '@conform-to/dom';
+import { parse, getPaths, getName, list } from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
@@ -27,12 +27,12 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'submit',
-				value: {
+				intent: 'submit',
+				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
 				},
-				error: [],
+				error: {},
 			});
 			expect(
 				parse(
@@ -44,8 +44,8 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'submit',
-				value: {
+				intent: 'submit',
+				payload: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
 						currency: 'EUR',
@@ -53,7 +53,7 @@ test.describe('conform-dom', () => {
 					},
 					reference: '',
 				},
-				error: [],
+				error: {},
 			});
 			expect(
 				parse(
@@ -65,15 +65,15 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'submit',
-				value: {
+				intent: 'submit',
+				payload: {
 					title: '',
 					tasks: [
 						{ content: 'Test some stuffs', completed: 'Yes' },
 						{ content: 'Test integration' },
 					],
 				},
-				error: [],
+				error: {},
 			});
 		});
 
@@ -86,12 +86,12 @@ test.describe('conform-dom', () => {
 					]),
 				),
 			).toEqual({
-				type: 'submit',
-				value: {
+				intent: 'submit',
+				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
 				},
-				error: [],
+				error: {},
 			});
 		});
 
@@ -100,36 +100,29 @@ test.describe('conform-dom', () => {
 				parse(
 					createFormData([
 						['title', 'Test command'],
-						['conform/test', 'command value'],
+						['__intent__', 'command value'],
 					]),
 				),
 			).toEqual({
-				type: 'test',
 				intent: 'command value',
-				value: {
+				payload: {
 					title: 'Test command',
 				},
-				error: [],
+				error: {},
 			});
 			expect(
 				parse(
 					createFormData([
 						['title', ''],
-						['conform/list', JSON.stringify({ greeting: 'Hello World' })],
+						['__intent__', 'list/helloworld'],
 					]),
 				),
 			).toEqual({
-				type: 'list',
-				intent: JSON.stringify({ greeting: 'Hello World' }),
-				value: {
+				intent: 'list/helloworld',
+				payload: {
 					title: '',
 				},
-				error: [
-					[
-						'',
-						'Invalid list command: "{"greeting":"Hello World"}"; Error: Unknown list command received: undefined',
-					],
-				],
+				error: {},
 			});
 		});
 
@@ -139,179 +132,106 @@ test.describe('conform-dom', () => {
 				['tasks[0].completed', 'Yes'],
 			];
 			const result = {
-				type: 'list',
-				value: {
+				payload: {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
-				error: [],
+				error: {},
 			};
+
+			const command1 = list.prepend('tasks');
+
+			expect(
+				parse(createFormData([...entries, [command1.name, command1.value]])),
+			).toEqual({
+				...result,
+				intent: command1.value,
+				payload: {
+					tasks: [undefined, ...result.payload.tasks],
+				},
+			});
+
+			const command2 = list.prepend('tasks', {
+				defaultValue: { content: 'Something' },
+			});
+
+			expect(
+				parse(createFormData([...entries, [command2.name, command2.value]])),
+			).toEqual({
+				...result,
+				intent: command2.value,
+				payload: {
+					tasks: [{ content: 'Something' }, ...result.payload.tasks],
+				},
+			});
+
+			const command3 = list.append('tasks');
+
+			expect(
+				parse(createFormData([...entries, [command3.name, command3.value]])),
+			).toEqual({
+				...result,
+				intent: command3.value,
+				payload: {
+					tasks: [...result.payload.tasks, undefined],
+				},
+			});
+
+			const command4 = list.append('tasks', {
+				defaultValue: { content: 'Something' },
+			});
+
+			expect(
+				parse(createFormData([...entries, [command4.name, command4.value]])),
+			).toEqual({
+				...result,
+				intent: command4.value,
+				payload: {
+					tasks: [...result.payload.tasks, { content: 'Something' }],
+				},
+			});
+
+			const command5 = list.replace('tasks', {
+				defaultValue: { content: 'Something' },
+				index: 0,
+			});
+
+			expect(
+				parse(createFormData([...entries, [command5.name, command5.value]])),
+			).toEqual({
+				...result,
+				intent: command5.value,
+				payload: {
+					tasks: [{ content: 'Something' }],
+				},
+			});
+
+			const command6 = list.remove('tasks', { index: 0 });
+
+			expect(
+				parse(createFormData([...entries, [command6.name, command6.value]])),
+			).toEqual({
+				...result,
+				intent: command6.value,
+				payload: {
+					tasks: [],
+				},
+			});
+
+			const command7 = list.reorder('tasks', { from: 0, to: 1 });
 
 			expect(
 				parse(
 					createFormData([
 						...entries,
-						[
-							'conform/list',
-							JSON.stringify({ type: 'prepend', scope: 'tasks', payload: {} }),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'prepend',
-					scope: 'tasks',
-					payload: {},
-				}),
-				value: {
-					tasks: [undefined, ...result.value.tasks],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						[
-							'conform/list',
-							JSON.stringify({
-								type: 'prepend',
-								scope: 'tasks',
-								payload: { defaultValue: { content: 'Something' } },
-							}),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'prepend',
-					scope: 'tasks',
-					payload: { defaultValue: { content: 'Something' } },
-				}),
-				value: {
-					tasks: [{ content: 'Something' }, ...result.value.tasks],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						[
-							'conform/list',
-							JSON.stringify({ type: 'append', scope: 'tasks', payload: {} }),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'append',
-					scope: 'tasks',
-					payload: {},
-				}),
-				value: {
-					tasks: [...result.value.tasks, undefined],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						[
-							'conform/list',
-							JSON.stringify({
-								type: 'append',
-								scope: 'tasks',
-								payload: { defaultValue: { content: 'Something' } },
-							}),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'append',
-					scope: 'tasks',
-					payload: { defaultValue: { content: 'Something' } },
-				}),
-				value: {
-					tasks: [...result.value.tasks, { content: 'Something' }],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						[
-							'conform/list',
-							JSON.stringify({
-								type: 'replace',
-								scope: 'tasks',
-								payload: { defaultValue: { content: 'Something' }, index: 0 },
-							}),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'replace',
-					scope: 'tasks',
-					payload: { defaultValue: { content: 'Something' }, index: 0 },
-				}),
-				value: {
-					tasks: [{ content: 'Something' }],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						[
-							'conform/list',
-							JSON.stringify({
-								type: 'remove',
-								scope: 'tasks',
-								payload: { index: 0 },
-							}),
-						],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: JSON.stringify({
-					type: 'remove',
-					scope: 'tasks',
-					payload: { index: 0 },
-				}),
-				value: {
-					tasks: [],
-				},
-			});
-			expect(
-				parse(
-					createFormData([
-						...entries,
 						['tasks[1].content', 'Test more stuffs'],
-						[
-							'conform/list',
-							JSON.stringify({
-								type: 'reorder',
-								scope: 'tasks',
-								payload: { from: 0, to: 1 },
-							}),
-						],
+						[command7.name, command7.value],
 					]),
 				),
 			).toEqual({
 				...result,
-				intent: JSON.stringify({
-					type: 'reorder',
-					scope: 'tasks',
-					payload: { from: 0, to: 1 },
-				}),
-				value: {
-					tasks: [{ content: 'Test more stuffs' }, ...result.value.tasks],
+				intent: command7.value,
+				payload: {
+					tasks: [{ content: 'Test more stuffs' }, ...result.payload.tasks],
 				},
 			});
 		});

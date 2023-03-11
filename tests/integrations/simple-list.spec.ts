@@ -119,11 +119,11 @@ async function runValidationScenario(page: Page) {
 	await expect(playground.submission).toHaveText(
 		JSON.stringify(
 			{
-				type: 'submit',
-				value: {
+				intent: 'submit',
+				payload: {
 					items: ['Top item', 'First item'],
 				},
-				error: [],
+				error: {},
 			},
 			null,
 			2,

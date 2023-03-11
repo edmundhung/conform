@@ -1,5 +1,5 @@
-import { conform, getFormElements, parse, useForm } from '@conform-to/react';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { conform, isFieldElement, parse, useForm } from '@conform-to/react';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
@@ -17,38 +17,52 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = parse<Movie>(formData);
+	const submission = parse(formData, {
+		resolve({ title, description, genre, rating }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.value.title) {
-		submission.error.push(['title', 'Title is required']);
-	} else if (!submission.value.title.match(/[0-9a-zA-Z ]{1,20}/)) {
-		submission.error.push(['title', 'Please enter a valid title']);
-	}
+			if (!title) {
+				error.title = 'Title is required';
+			} else if (!title.match(/[0-9a-zA-Z ]{1,20}/)) {
+				error.title = 'Please enter a valid title';
+			}
 
-	if (
-		submission.value.description &&
-		submission.value.description.length < 30
-	) {
-		submission.error.push(['description', 'Please provides more details']);
-	}
+			if (description && description.length < 30) {
+				error.description = 'Please provides more details';
+			}
 
-	if (submission.value.genre === '') {
-		submission.error.push(['genre', 'Genre is required']);
-	}
+			if (genre === '') {
+				error.genre = 'Genre is required';
+			}
 
-	if (submission.value.rating && Number(submission.value.rating) % 0.5 !== 0) {
-		submission.error.push(['rating', 'The provided rating is invalid']);
-	}
+			if (rating && Number(rating) % 0.5 !== 0) {
+				error.rating = 'The provided rating is invalid';
+			}
 
-	return submission;
+			if (error.title || error.description || error.genre || error.rating) {
+				return { error };
+			}
+
+			return {
+				value: {
+					title,
+					description,
+					genre,
+					rating,
+				},
+			};
+		},
+	});
+
+	return json(submission);
 };
 
 export default function MovieForm() {
-	const config = useLoaderData();
-	const state = useActionData();
+	const config = useLoaderData<typeof loader>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { title, description, genre, rating }] = useForm<Movie>({
 		...config,
-		state,
+		lastSubmission,
 		constraint: {
 			title: {
 				required: true,
@@ -77,69 +91,78 @@ export default function MovieForm() {
 		},
 		onValidate: config.validate
 			? ({ form, formData }) => {
-					const submission = parse(formData);
+					const submission = parse(formData, {
+						resolve({ title, description, genre, rating }) {
+							const error: Record<string, string> = {};
 
-					for (const element of getFormElements(form)) {
-						switch (element.name) {
-							case 'title':
-								if (element.validity.valueMissing) {
-									submission.error.push([element.name, 'Title is required']);
-								} else if (element.validity.patternMismatch) {
-									submission.error.push([
-										element.name,
-										'Please enter a valid title',
-									]);
+							for (const element of form.elements) {
+								if (!isFieldElement(element)) {
+									continue;
 								}
-								break;
-							case 'description':
-								if (element.validity.tooShort) {
-									submission.error.push([
-										element.name,
-										'Please provides more details',
-									]);
+
+								switch (element.name) {
+									case 'title':
+										if (element.validity.valueMissing) {
+											error[element.name] = 'Title is required';
+										} else if (element.validity.patternMismatch) {
+											error[element.name] = 'Please enter a valid title';
+										}
+										break;
+									case 'description':
+										if (element.validity.tooShort) {
+											error[element.name] = 'Please provides more details';
+										}
+										break;
+									case 'genre':
+										if (element.validity.valueMissing) {
+											error[element.name] = 'Genre is required';
+										}
+										break;
+									case 'rating':
+										if (element.validity.stepMismatch) {
+											error[element.name] = 'The provided rating is invalid';
+										}
+										break;
 								}
-								break;
-							case 'genre':
-								if (element.validity.valueMissing) {
-									submission.error.push([element.name, 'Genre is required']);
-								}
-								break;
-							case 'rating':
-								if (element.validity.stepMismatch) {
-									submission.error.push([
-										element.name,
-										'The provided rating is invalid',
-									]);
-								}
-								break;
-						}
-					}
+							}
+
+							if (
+								error.title ||
+								error.description ||
+								error.genre ||
+								error.rating
+							) {
+								return { error };
+							}
+
+							return {
+								value: {
+									title,
+									description,
+									genre,
+									rating,
+								},
+							};
+						},
+					});
 
 					return submission;
 			  }
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.type === 'validate') {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Movie Form" state={state}>
+			<Playground title="Movie Form" lastSubmission={lastSubmission}>
 				<fieldset>
-					<Field label="Title" {...title}>
-						<input {...conform.input(title.config, { type: 'text' })} />
+					<Field label="Title" config={title}>
+						<input {...conform.input(title, { type: 'text' })} />
 					</Field>
-					<Field label="Description" {...description}>
-						<textarea {...conform.textarea(description.config)} />
+					<Field label="Description" config={description}>
+						<textarea {...conform.textarea(description)} />
 					</Field>
-					<Field label="Genre" {...genre}>
-						<select {...conform.select(genre.config)}>
+					<Field label="Genre" config={genre}>
+						<select {...conform.select(genre)}>
 							<option value="">Please select</option>
 							<option value="action">Action</option>
 							<option value="adventure">Adventure</option>
@@ -150,8 +173,8 @@ export default function MovieForm() {
 							<option value="romance">Romance</option>
 						</select>
 					</Field>
-					<Field label="Rating" {...rating}>
-						<input {...conform.input(rating.config, { type: 'number' })} />
+					<Field label="Rating" config={rating}>
+						<input {...conform.input(rating, { type: 'number' })} />
 					</Field>
 				</fieldset>
 			</Playground>

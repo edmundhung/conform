@@ -6,7 +6,10 @@ interface PlaygroundProps {
 	title: string;
 	description?: string;
 	form?: string;
-	state?: Submission<Record<string, unknown>>;
+	lastSubmission?: Submission;
+	formAction?: string;
+	formMethod?: string;
+	formEncType?: string;
 	children: ReactNode;
 }
 
@@ -14,14 +17,17 @@ export function Playground({
 	title,
 	description,
 	form,
-	state,
+	lastSubmission,
+	formAction,
+	formMethod,
+	formEncType,
 	children,
 }: PlaygroundProps) {
-	const [submission, setSubmission] = useState(state ?? null);
+	const [submission, setSubmission] = useState(lastSubmission ?? null);
 
 	useEffect(() => {
-		setSubmission(state ?? null);
-	}, [state]);
+		setSubmission(lastSubmission ?? null);
+	}, [lastSubmission]);
 
 	return (
 		<section
@@ -40,7 +46,7 @@ export function Playground({
 						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 overflow-x-scroll ${
-								submission.error.length > 0
+								Object.entries(submission.error).length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
@@ -69,6 +75,9 @@ export function Playground({
 							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
 							onClick={() => setSubmission(null)}
 							form={form}
+							formAction={formAction}
+							formMethod={formMethod}
+							formEncType={formEncType}
 						>
 							Submit
 						</button>
@@ -82,12 +91,11 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	error?: string;
 	config?: FieldConfig<any>;
 	children: ReactNode;
 }
 
-export function Field({ label, inline, error, config, children }: FieldProps) {
+export function Field({ label, inline, config, children }: FieldProps) {
 	return (
 		<div className="mb-4">
 			<div
@@ -105,28 +113,44 @@ export function Field({ label, inline, error, config, children }: FieldProps) {
 				</label>
 				{children}
 			</div>
-			<p id={config?.errorId} className="my-1 text-pink-600 text-sm">
-				{error}
-			</p>
+			<div id={config?.errorId} className="my-1 space-y-0.5">
+				{!config?.errors?.length ? (
+					<p className="text-pink-600 text-sm" />
+				) : (
+					config.errors.map((message) => (
+						<p className="text-pink-600 text-sm" key={message}>
+							{message}
+						</p>
+					))
+				)}
+			</div>
 		</div>
 	);
 }
 
 interface AlertProps {
-	message: string;
+	id?: string;
+	errors: string[] | undefined;
 }
 
-export function Alert({ message }: AlertProps) {
+export function Alert({ id, errors }: AlertProps) {
 	return (
-		<label
+		<div
+			id={id}
 			className={
-				message
-					? 'flex gap-4 bg-red-100 text-red-500 text-sm p-4 mb-4 rounded'
+				errors?.length
+					? 'flex gap-4 bg-red-100 text-red-500 text-sm p-4 mb-4 rounded align-top'
 					: 'hidden'
 			}
 		>
 			<span>❌</span>
-			<p>{message}</p>
-		</label>
+			<div className="space-y-1">
+				{!errors?.length ? (
+					<p></p>
+				) : (
+					errors.map((message, index) => <p key={index}>{message}</p>)
+				)}
+			</div>
+		</div>
 	);
 }

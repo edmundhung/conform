@@ -19,7 +19,7 @@ When the browser constructs a form data set with an empty file input, a default 
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -30,8 +30,8 @@ const schema = z.object({
 
 function Example() {
   const [form, { file }] = useForm({
-    validate({ formData }) {
-      return validate(formData, schema);
+    onValidate({ formData }) {
+      return parse(formData, { schema });
     },
   });
 
@@ -39,7 +39,7 @@ function Example() {
     <form encType="multipart/form-data" {...form.props}>
       <div>
         <label>File</label>
-        <input {...conform.input(file.config, { type: 'file' })} />
+        <input {...conform.input(file, { type: 'file' })} />
         <div>{file.error}</div>
       </div>
       <button>Upload</button>
@@ -79,7 +79,7 @@ There are some caveats when validating a multiple file input:
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { validate } from '@conform-to/zod';
+import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -104,8 +104,8 @@ const schema = z.object({
 
 function Example() {
   const [form, { files }] = useForm({
-    validate({ formData }) {
-      return validate(formData, schema);
+    onValidate({ formData }) {
+      return parse(formData, { schema });
     },
   });
 
@@ -113,7 +113,7 @@ function Example() {
     <form encType="multipart/form-data" {...form.props}>
       <div>
         <label>Mutliple Files</label>
-        <input {...conform.input(files.config, { type: 'file' })} multiple />
+        <input {...conform.input(files, { type: 'file' })} multiple />
         <div>{files.error}</div>
       </div>
       <button>Upload</button>

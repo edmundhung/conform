@@ -3,7 +3,7 @@ import {
 	type FieldsetConstraint,
 	type Submission,
 	getName,
-	parse,
+	parse as baseParse,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -110,34 +110,96 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	return result;
 }
 
-export function formatError(
-	error: unknown,
-	fallbackMessage = 'Oops! Something went wrong.',
-): Array<[string, string]> {
-	if (error instanceof z.ZodError) {
-		return error.errors.reduce<Array<[string, string]>>((result, e) => {
-			result.push([getName(e.path), e.message]);
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
+		async?: false;
+	},
+): Submission<z.output<Schema>>;
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
+		async: true;
+	},
+): Promise<Submission<z.output<Schema>>>;
+export function parse<Schema extends z.ZodTypeAny>(
+	payload: FormData | URLSearchParams,
+	config: {
+		schema: Schema | ((intent: string) => Schema);
+		acceptMultipleErrors?: ({
+			name,
+			intent,
+			payload,
+		}: {
+			name: string;
+			intent: string;
+			payload: Record<string, any>;
+		}) => boolean;
+		async?: boolean;
+	},
+): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
+	return baseParse<z.output<Schema>>(payload, {
+		resolve(payload, intent) {
+			const schema =
+				typeof config.schema === 'function'
+					? config.schema(intent)
+					: config.schema;
+			const resolveResult = (
+				result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
+			):
+				| { value: z.output<Schema> }
+				| { error: Record<string, string | string[]> } => {
+				if (result.success) {
+					return {
+						value: result.data,
+					};
+				}
 
-			return result;
-		}, []);
-	} else
-		return [['', error instanceof Error ? error.message : fallbackMessage]];
-}
+				return {
+					error: result.error.errors.reduce<Record<string, string | string[]>>(
+						(result, e) => {
+							const name = getName(e.path);
 
-export function validate<Schema extends z.ZodTypeAny>(
-	formData: FormData,
-	schema: Schema,
-	options: { fallbackMessage?: string } = {},
-): Submission<z.infer<Schema>> {
-	const submission = parse<z.infer<Schema>>(formData);
+							if (typeof result[name] === 'undefined') {
+								result[name] = e.message;
+							} else if (
+								config.acceptMultipleErrors?.({ name, intent, payload })
+							) {
+								result[name] = ([] as string[]).concat(result[name], e.message);
+							}
 
-	try {
-		schema.parse(submission.value);
-	} catch (error) {
-		submission.error.push(...formatError(error, options.fallbackMessage));
-	}
+							return result;
+						},
+						{},
+					),
+				};
+			};
 
-	return submission;
+			return config.async
+				? schema.safeParseAsync(payload).then(resolveResult)
+				: resolveResult(schema.safeParse(payload));
+		},
+	});
 }
 
 export function ifNonEmptyString(

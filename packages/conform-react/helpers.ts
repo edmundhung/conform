@@ -1,7 +1,13 @@
-import type { FieldConfig } from '@conform-to/dom';
+import {
+	type FieldConfig,
+	type Primitive,
+	VALIDATION_UNDEFINED,
+	VALIDATION_SKIPPED,
+	INTENT,
+} from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
-interface FieldProps {
+interface FormControlProps {
 	id?: string;
 	name: string;
 	form?: string;
@@ -9,12 +15,12 @@ interface FieldProps {
 	autoFocus?: boolean;
 	tabIndex?: number;
 	style?: CSSProperties;
-	'aria-invalid': boolean;
 	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
 	'aria-hidden'?: boolean;
 }
 
-interface InputProps<Schema> extends FieldProps {
+interface InputProps<Schema> extends FormControlProps {
 	type?: HTMLInputTypeAttribute;
 	minLength?: number;
 	maxLength?: number;
@@ -28,12 +34,12 @@ interface InputProps<Schema> extends FieldProps {
 	defaultValue?: string;
 }
 
-interface SelectProps extends FieldProps {
+interface SelectProps extends FormControlProps {
 	defaultValue?: string | number | readonly string[] | undefined;
 	multiple?: boolean;
 }
 
-interface TextareaProps extends FieldProps {
+interface TextareaProps extends FormControlProps {
 	minLength?: number;
 	maxLength?: number;
 	defaultValue?: string;
@@ -67,24 +73,54 @@ const hiddenStyle: CSSProperties = {
 	border: 0,
 };
 
+function getFormControlProps(
+	config: FieldConfig<any>,
+	options?: { hidden?: boolean },
+): FormControlProps {
+	const props: FormControlProps = {
+		id: config.id,
+		name: config.name,
+		form: config.form,
+		required: config.required,
+	};
+
+	if (config.id) {
+		props.id = config.id;
+		props['aria-describedby'] = config.errorId;
+	}
+
+	if (config.errorId && config.error?.length) {
+		props['aria-invalid'] = true;
+	}
+
+	if (config.initialError && Object.entries(config.initialError).length > 0) {
+		props.autoFocus = true;
+	}
+
+	if (options?.hidden) {
+		props.style = hiddenStyle;
+		props.tabIndex = -1;
+		props['aria-hidden'] = true;
+	}
+
+	return props;
+}
+
 export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
 	options: { type: 'file' },
 ): InputProps<Schema>;
-export function input<Schema extends any>(
+export function input<Schema extends Primitive>(
 	config: FieldConfig<Schema>,
 	options?: InputOptions,
 ): InputProps<Schema>;
-export function input<Schema>(
+export function input<Schema extends Primitive | File | File[]>(
 	config: FieldConfig<Schema>,
 	options: InputOptions = {},
 ): InputProps<Schema> {
-	const attributes: InputProps<Schema> = {
-		id: config.id,
+	const props: InputProps<Schema> = {
+		...getFormControlProps(config, options),
 		type: options.type,
-		name: config.name,
-		form: config.form,
-		required: config.required,
 		minLength: config.minLength,
 		maxLength: config.maxLength,
 		min: config.min,
@@ -92,88 +128,43 @@ export function input<Schema>(
 		step: config.step,
 		pattern: config.pattern,
 		multiple: config.multiple,
-		'aria-invalid': Boolean(config.initialError?.length),
-		'aria-describedby': config.errorId,
 	};
-
-	if (options?.hidden) {
-		attributes.style = hiddenStyle;
-		attributes.tabIndex = -1;
-		attributes['aria-hidden'] = true;
-	}
-
-	if (config.initialError && config.initialError.length > 0) {
-		attributes.autoFocus = true;
-	}
 
 	if (options.type === 'checkbox' || options.type === 'radio') {
-		attributes.value = options.value ?? 'on';
-		attributes.defaultChecked = config.defaultValue === attributes.value;
+		props.value = options.value ?? 'on';
+		props.defaultChecked = config.defaultValue === props.value;
 	} else if (options.type !== 'file') {
-		attributes.defaultValue = config.defaultValue as string | undefined;
+		props.defaultValue = config.defaultValue as string | undefined;
 	}
 
-	return attributes;
+	return props;
 }
 
-export function select<Schema>(
-	config: FieldConfig<Schema>,
+export function select(
+	config: FieldConfig<Primitive | Primitive[]>,
 	options?: { hidden?: boolean },
 ): SelectProps {
-	const attributes: SelectProps = {
-		id: config.id,
-		name: config.name,
-		form: config.form,
-		defaultValue: config.multiple
-			? Array.isArray(config.defaultValue)
-				? config.defaultValue
-				: []
-			: `${config.defaultValue ?? ''}`,
-		required: config.required,
+	const props: SelectProps = {
+		...getFormControlProps(config, options),
+		defaultValue: config.defaultValue,
 		multiple: config.multiple,
-		'aria-invalid': Boolean(config.initialError?.length),
-		'aria-describedby': config.errorId,
 	};
 
-	if (options?.hidden) {
-		attributes.style = hiddenStyle;
-		attributes.tabIndex = -1;
-		attributes['aria-hidden'] = true;
-	}
-
-	if (config.initialError && config.initialError.length > 0) {
-		attributes.autoFocus = true;
-	}
-
-	return attributes;
+	return props;
 }
 
-export function textarea<Schema>(
-	config: FieldConfig<Schema>,
+export function textarea(
+	config: FieldConfig<Primitive>,
 	options?: { hidden?: boolean },
 ): TextareaProps {
-	const attributes: TextareaProps = {
-		id: config.id,
-		name: config.name,
-		form: config.form,
-		defaultValue: `${config.defaultValue ?? ''}`,
-		required: config.required,
+	const props: TextareaProps = {
+		...getFormControlProps(config, options),
+		defaultValue: config.defaultValue,
 		minLength: config.minLength,
 		maxLength: config.maxLength,
-		autoFocus: Boolean(config.initialError),
-		'aria-invalid': Boolean(config.initialError?.length),
-		'aria-describedby': config.errorId,
 	};
 
-	if (options?.hidden) {
-		attributes.style = hiddenStyle;
-		attributes.tabIndex = -1;
-		attributes['aria-hidden'] = true;
-	}
-
-	if (config.initialError && config.initialError.length > 0) {
-		attributes.autoFocus = true;
-	}
-
-	return attributes;
+	return props;
 }
+
+export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };

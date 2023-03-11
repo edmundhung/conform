@@ -10,9 +10,19 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
-	initialError?: Array<[string, string]>;
+	initialError?: Record<string, string | string[]>;
 	form?: string;
 	errorId?: string;
+
+	/**
+	 * The frist error of the field
+	 */
+	error?: string;
+
+	/**
+	 * All of the field errors
+	 */
+	errors?: string[];
 }
 
 export type FieldValue<Schema> = Schema extends Primitive
@@ -23,7 +33,7 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
-	: unknown;
+	: any;
 
 export type FieldConstraint<Schema = any> = {
 	required?: boolean;
@@ -40,19 +50,30 @@ export type FieldsetConstraint<Schema extends Record<string, any>> = {
 	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
 };
 
-export type Submission<Schema = unknown> = {
-	type: string;
-	intent?: string;
-	value: FieldValue<Schema>;
-	error: Array<[string, string]>;
-};
+export type Submission<Schema extends Record<string, any> | unknown = unknown> =
+	unknown extends Schema
+		? {
+				intent: string;
+				payload: Record<string, any>;
+				error: Record<string, string | string[]>;
+		  }
+		: {
+				intent: string;
+				payload: Record<string, any>;
+				value?: Schema;
+				error: Record<string, string | string[]>;
+				toJSON(): Submission;
+		  };
 
-export interface CommandButtonProps<Name extends string = string> {
-	name: `conform/${Name}`;
+export interface IntentButtonProps {
+	name: typeof INTENT;
 	value: string;
 	formNoValidate?: boolean;
 }
 
+/**
+ * Check if the provided reference is a form element (_input_ / _select_ / _textarea_ or _button_)
+ */
 export function isFieldElement(element: unknown): element is FieldElement {
 	return (
 		element instanceof Element &&
@@ -63,10 +84,11 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	);
 }
 
-export function getFormElements(form: HTMLFormElement): FieldElement[] {
-	return Array.from(form.elements).filter(isFieldElement);
-}
-
+/**
+ * Find the corresponding paths based on the formatted name
+ * @param name formatted name
+ * @returns paths
+ */
 export function getPaths(name: string): Array<string | number> {
 	const pattern = /(\w*)\[(\d+)\]/;
 
@@ -102,6 +124,47 @@ export function getFormData(
 	return payload;
 }
 
+export type FormMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type FormEncType =
+	| 'application/x-www-form-urlencoded'
+	| 'multipart/form-data';
+
+export function getFormAttributes(
+	form: HTMLFormElement,
+	submitter?: HTMLInputElement | HTMLButtonElement | null,
+): {
+	action: string;
+	encType: FormEncType;
+	method: FormMethod;
+} {
+	const enforce = <Type extends string>(value: string, list: Type[]): Type =>
+		list.includes(value as Type) ? (value as Type) : list[0];
+	const action =
+		submitter?.getAttribute('formaction') ??
+		form.getAttribute('action') ??
+		`${location.pathname}${location.search}`;
+	const method =
+		submitter?.getAttribute('formmethod') ??
+		form.getAttribute('method') ??
+		'get';
+	const encType = submitter?.getAttribute('formenctype') ?? form.enctype;
+
+	return {
+		action,
+		encType: enforce<FormEncType>(encType, [
+			'application/x-www-form-urlencoded',
+			'multipart/form-data',
+		]),
+		method: enforce<FormMethod>(method, [
+			'get',
+			'post',
+			'put',
+			'patch',
+			'delete',
+		]),
+	};
+}
+
 export function getName(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
@@ -116,101 +179,125 @@ export function getName(paths: Array<string | number>): string {
 	}, '');
 }
 
-export function shouldValidate(submission: Submission, name: string): boolean {
+export function getScope(intent: string): string | null {
+	const [type, ...rest] = intent.split('/');
+
+	switch (type) {
+		case 'validate':
+			return rest.length > 0 ? rest.join('/') : null;
+		case 'list':
+			return parseListCommand(intent)?.scope ?? null;
+		default:
+			return null;
+	}
+}
+
+export function isFocusedOnIntentButton(
+	form: HTMLFormElement,
+	intent: string,
+): boolean {
+	const element = document.activeElement;
+
 	return (
-		submission.type === 'submit' ||
-		(submission.type === 'validate' &&
-			(submission.intent === '' || submission.intent === name)) ||
-		(submission.type === 'list' &&
-			typeof submission.intent !== 'undefined' &&
-			parseListCommand(submission.intent).scope === name)
+		isFieldElement(element) &&
+		element.tagName === 'BUTTON' &&
+		element.form === form &&
+		element.name === INTENT &&
+		element.value === intent
 	);
 }
 
-export function hasError(
-	error: Array<[string, string]>,
-	name?: string,
-): boolean {
-	return (
-		typeof error.find(
-			([fieldName, message]) =>
-				(typeof name === 'undefined' || name === fieldName) && message !== '',
-		) !== 'undefined'
-	);
+export function getValidationMessage(errors?: string | string[]): string {
+	return ([] as string[]).concat(errors ?? []).join(String.fromCharCode(31));
 }
+
+export function getErrors(message: string | undefined): string[] {
+	if (!message) {
+		return [];
+	}
+
+	return message.split(String.fromCharCode(31));
+}
+
+export const FORM_ERROR_ELEMENT_NAME = '__form__';
+export const INTENT = '__intent__';
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
 
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: Submission,
 ): void {
-	const messageByName: Map<string, string> = new Map();
-	let scope: string | null = null;
-
-	if (submission.type === 'list' && typeof submission.intent !== 'undefined') {
-		scope = parseListCommand(submission.intent).scope;
-		form.dispatchEvent(
-			new CustomEvent('conform/list', {
-				detail: submission.intent,
-			}),
-		);
-	}
-
-	for (const [name, message] of submission.error) {
-		if (scope !== null && name !== scope) {
-			// Skip if not matching the scope
+	for (const [name, message] of Object.entries(submission.error)) {
+		// There is no need to create a placeholder button if all we want is to reset the error
+		if (message === '') {
 			continue;
 		}
 
-		if (!messageByName.has(name)) {
-			// Only keep the first error message (for now)
-			messageByName.set(name, message);
+		// We can't use empty string as button name
+		// As `form.element.namedItem('')` will always returns null
+		const elementName = name ? name : FORM_ERROR_ELEMENT_NAME;
+		const item = form.elements.namedItem(elementName);
 
-			// We can't use empty string as button name
-			// As `form.element.namedItem('')` will always returns null
-			const elementName = name ? name : '__form__';
-			let item = form.elements.namedItem(elementName);
-
-			if (item instanceof RadioNodeList) {
-				for (const field of item) {
-					if ((field as FieldElement).type !== 'radio') {
-						throw new Error('Repeated field name is not supported');
-					}
+		if (item instanceof RadioNodeList) {
+			for (const field of item) {
+				if ((field as FieldElement).type !== 'radio') {
+					console.warn('Repeated field name is not supported.');
+					continue;
 				}
 			}
+		}
 
-			if (item === null) {
-				// Create placeholder button to keep the error without contributing to the form data
-				const button = document.createElement('button');
+		if (item === null) {
+			// Create placeholder button to keep the error without contributing to the form data
+			const button = document.createElement('button');
 
-				button.name = elementName;
-				button.hidden = true;
-				button.dataset.conformTouched = 'true';
-				item = button;
+			button.name = elementName;
+			button.hidden = true;
+			button.dataset.conformTouched = 'true';
 
-				form.appendChild(button);
-			}
+			form.appendChild(button);
 		}
 	}
 
+	let focusedFirstInvalidField = false;
+	const scope = getScope(submission.intent);
+	const isSubmitting =
+		submission.intent.slice(0, submission.intent.indexOf('/')) !== 'validate' &&
+		parseListCommand(submission.intent) === null;
+
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.willValidate) {
-			const elementName = element.name !== '__form__' ? element.name : '';
-			const message = messageByName.get(elementName);
-			const elementShouldValidate = shouldValidate(submission, elementName);
+			const elementName =
+				element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+			const messages = ([] as string[]).concat(
+				submission.error[elementName] ?? [],
+			);
+			const shouldValidate = scope === null || scope === elementName;
 
-			if (elementShouldValidate) {
+			if (shouldValidate) {
 				element.dataset.conformTouched = 'true';
 			}
 
-			if (typeof message !== 'undefined' || elementShouldValidate) {
+			if (
+				!messages.includes(VALIDATION_SKIPPED) &&
+				!messages.includes(VALIDATION_UNDEFINED)
+			) {
 				const invalidEvent = new Event('invalid', { cancelable: true });
 
-				element.setCustomValidity(message ?? '');
+				element.setCustomValidity(getValidationMessage(messages));
 				element.dispatchEvent(invalidEvent);
 			}
 
-			if (elementShouldValidate && !element.validity.valid) {
-				focus(element);
+			if (
+				!focusedFirstInvalidField &&
+				(isSubmitting || isFocusedOnIntentButton(form, submission.intent)) &&
+				shouldValidate &&
+				element.tagName !== 'BUTTON' &&
+				!element.validity.valid
+			) {
+				element.focus();
+				focusedFirstInvalidField = true;
 			}
 		}
 	}
@@ -240,29 +327,14 @@ export function setValue<T>(
 }
 
 /**
- * The ponyfill of `HTMLFormElement.requestSubmit()`
- * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/requestSubmit
- * @see https://caniuse.com/?search=requestSubmit
+ * Creates an intent button on demand and trigger a form submit by clicking it.
  */
-export function requestSubmit(
-	form: HTMLFormElement,
-	submitter?: HTMLButtonElement | HTMLInputElement,
-): void {
-	const submitEvent = new SubmitEvent('submit', {
-		bubbles: true,
-		cancelable: true,
-		submitter,
-	});
-
-	form.dispatchEvent(submitEvent);
-}
-
-/**
- * Creates a command button on demand and trigger a form submit by clicking it.
- */
-export function requestCommand(
+export function requestIntent(
 	form: HTMLFormElement | undefined,
-	buttonProps: CommandButtonProps,
+	buttonProps: {
+		value: string;
+		formNoValidate?: boolean;
+	},
 ): void {
 	if (!form) {
 		console.warn('No form element is provided');
@@ -271,7 +343,7 @@ export function requestCommand(
 
 	const button = document.createElement('button');
 
-	button.name = buttonProps.name;
+	button.name = INTENT;
 	button.value = buttonProps.value;
 	button.hidden = true;
 
@@ -285,14 +357,14 @@ export function requestCommand(
 }
 
 /**
- * Returns the properties required to configure a command button for validation
+ * Returns the properties required to configure an intent button for validation
  *
  * @see https://conform.guide/api/react#validate
  */
-export function validate(field?: string): CommandButtonProps<'validate'> {
+export function validate(field?: string): IntentButtonProps {
 	return {
-		name: 'conform/validate',
-		value: field ?? '',
+		name: INTENT,
+		value: field ? `validate/${field}` : 'validate',
 		formNoValidate: true,
 	};
 }
@@ -316,87 +388,123 @@ export function getFormElement(
 	return form;
 }
 
-export function focus(field: FieldElement): void {
-	const currentFocus = document.activeElement;
-
-	if (
-		!isFieldElement(currentFocus) ||
-		currentFocus.tagName !== 'BUTTON' ||
-		currentFocus.form !== field.form
-	) {
-		return;
-	}
-
-	field.focus();
-}
-
-export function getSubmissionType(name: string): string | null {
-	const prefix = 'conform/';
-
-	if (!name.startsWith(prefix) || name.length <= prefix.length) {
-		return null;
-	}
-
-	return name.slice(prefix.length);
-}
-
-export function parse<Schema extends Record<string, any>>(
+export function parse(payload: FormData | URLSearchParams): Submission;
+export function parse<Schema>(
 	payload: FormData | URLSearchParams,
-): Submission<Schema> {
-	let hasCommand = false;
-	let submission: Submission<Record<string, unknown>> = {
-		type: 'submit',
-		value: {},
-		error: [],
+	options?: {
+		resolve?: (
+			payload: Record<string, any>,
+			intent: string,
+		) => { value: Schema } | { error: Record<string, string | string[]> };
+	},
+): Submission<Schema>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options?: {
+		resolve?: (
+			payload: Record<string, any>,
+			intent: string,
+		) => Promise<
+			{ value: Schema } | { error: Record<string, string | string[]> }
+		>;
+	},
+): Promise<Submission<Schema>>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options?: {
+		resolve?: (
+			payload: Record<string, any>,
+			intent: string,
+		) =>
+			| ({ value: Schema } | { error: Record<string, string | string[]> })
+			| Promise<
+					{ value: Schema } | { error: Record<string, string | string[]> }
+			  >;
+	},
+): Submission<Schema> | Promise<Submission<Schema>>;
+export function parse<Schema>(
+	payload: FormData | URLSearchParams,
+	options?: {
+		resolve?: (
+			payload: Record<string, any>,
+			intent: string,
+		) =>
+			| ({ value: Schema } | { error: Record<string, string | string[]> })
+			| Promise<
+					{ value: Schema } | { error: Record<string, string | string[]> }
+			  >;
+	},
+): Submission | Submission<Schema> | Promise<Submission<Schema>> {
+	const submission: Submission = {
+		intent: 'submit',
+		payload: {},
+		error: {},
 	};
 
-	try {
-		for (let [name, value] of payload.entries()) {
-			const submissionType = getSubmissionType(name);
-
-			if (submissionType) {
-				if (typeof value !== 'string') {
-					throw new Error(
-						'The conform command could not be used on a file input',
-					);
-				}
-
-				if (hasCommand) {
-					throw new Error('The conform command could only be set on a button');
-				}
-
-				submission = {
-					...submission,
-					type: submissionType,
-					intent: value,
-				};
-				hasCommand = true;
-			} else {
-				const paths = getPaths(name);
-
-				setValue(submission.value, paths, (prev) => {
-					if (!prev) {
-						return value;
-					} else if (Array.isArray(prev)) {
-						return prev.concat(value);
-					} else {
-						return [prev, value];
-					}
-				});
+	for (let [name, value] of payload.entries()) {
+		if (name === INTENT) {
+			if (typeof value !== 'string' || submission.intent !== 'submit') {
+				throw new Error('The intent could only be set on a button');
 			}
-		}
 
-		if (submission.type === 'list') {
-			submission = handleList(submission);
+			submission.intent = value;
+		} else {
+			const paths = getPaths(name);
+
+			setValue(submission.payload, paths, (prev) => {
+				if (!prev) {
+					return value;
+				} else if (Array.isArray(prev)) {
+					return prev.concat(value);
+				} else {
+					return [prev, value];
+				}
+			});
 		}
-	} catch (e) {
-		submission.error.push([
-			'',
-			e instanceof Error ? e.message : 'Invalid payload received',
-		]);
 	}
 
-	return submission as Submission<Schema>;
+	const command = parseListCommand(submission.intent);
+
+	if (command) {
+		const paths = getPaths(command.scope);
+
+		setValue(submission.payload, paths, (list) => {
+			if (typeof list !== 'undefined' && !Array.isArray(list)) {
+				throw new Error('The list command can only be applied to a list');
+			}
+
+			return updateList(list ?? [], command);
+		});
+	}
+
+	if (typeof options?.resolve === 'undefined') {
+		return submission;
+	}
+
+	const result = options.resolve(submission.payload, submission.intent);
+	const mergeResolveResult = (
+		resolved: { error: Record<string, string | string[]> } | { value: Schema },
+	) => {
+		const result = {
+			...submission,
+			...resolved,
+			toJSON() {
+				return {
+					intent: this.intent,
+					payload: this.payload,
+					error: this.error,
+				};
+			},
+		};
+
+		return result;
+	};
+
+	if (result instanceof Promise) {
+		return result.then<Submission<Schema>>(mergeResolveResult);
+	}
+
+	return mergeResolveResult(result);
 }
 
 export type ListCommand<Schema = unknown> =
@@ -411,28 +519,29 @@ export type ListCommand<Schema = unknown> =
 	| { type: 'reorder'; scope: string; payload: { from: number; to: number } };
 
 export function parseListCommand<Schema = unknown>(
-	data: string,
-): ListCommand<Schema> {
+	intent: string,
+): ListCommand<Schema> | null {
 	try {
-		const command = JSON.parse(data);
+		const [group, type, scope, json] = intent.split('/');
 
 		if (
-			typeof command.type !== 'string' ||
-			![
-				'prepend',
-				'append',
-				'replace',
-				'remove',
-				'reorder',
-				'combine',
-			].includes(command.type)
+			group !== 'list' ||
+			!['prepend', 'append', 'replace', 'remove', 'reorder'].includes(type) ||
+			!scope
 		) {
-			throw new Error(`Unknown list command received: ${command.type}`);
+			return null;
 		}
 
-		return command;
+		const payload = JSON.parse(json);
+
+		return {
+			// @ts-expect-error
+			type,
+			scope,
+			payload,
+		};
 	} catch (error) {
-		throw new Error(`Invalid list command: "${data}"; ${error}`);
+		return null;
 	}
 }
 
@@ -470,49 +579,28 @@ export function updateList<Schema>(
 	return list;
 }
 
-export function handleList<Schema>(
-	submission: Submission<Schema>,
-): Submission<Schema> {
-	if (submission.type !== 'list') {
-		return submission;
-	}
-
-	const command = parseListCommand(submission.intent ?? '');
-	const paths = getPaths(command.scope);
-
-	setValue(submission.value, paths, (list) => {
-		if (typeof list !== 'undefined' && !Array.isArray(list)) {
-			throw new Error('The list command can only be applied to a list');
-		}
-
-		return updateList(list ?? [], command);
-	});
-
-	return submission;
-}
-
 export interface ListCommandButtonBuilder {
 	append<Schema>(
 		name: string,
 		payload?: { defaultValue: Schema },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 	prepend<Schema>(
 		name: string,
 		payload?: { defaultValue: Schema },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 	replace<Schema>(
 		name: string,
 		payload: { defaultValue: Schema; index: number },
-	): CommandButtonProps<'list'>;
-	remove(name: string, payload: { index: number }): CommandButtonProps<'list'>;
+	): IntentButtonProps;
+	remove(name: string, payload: { index: number }): IntentButtonProps;
 	reorder(
 		name: string,
 		payload: { from: number; to: number },
-	): CommandButtonProps<'list'>;
+	): IntentButtonProps;
 }
 
 /**
- * Helpers to configure a command button for modifying a list
+ * Helpers to configure an intent button for modifying a list
  *
  * @see https://conform.guide/api/react#list
  */
@@ -524,13 +612,130 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 			case 'replace':
 			case 'remove':
 			case 'reorder':
-				return (scope: string, payload = {}) => {
+				return (scope: string, payload = {}): IntentButtonProps => {
 					return {
-						name: 'conform/list',
-						value: JSON.stringify({ type, scope, payload }),
+						name: INTENT,
+						value: `list/${type}/${scope}/${JSON.stringify(payload)}`,
 						formNoValidate: true,
 					};
 				};
 		}
 	},
 });
+
+/**
+ * Validate the form with the Constraint Validation API
+ * @see https://conform.guide/api/react#validateconstraint
+ */
+export function validateConstraint(options: {
+	form: HTMLFormElement;
+	formData?: FormData;
+	constraint?: Record<
+		Lowercase<string>,
+		(
+			value: string,
+			context: { formData: FormData; attributeValue: string },
+		) => boolean
+	>;
+	acceptMultipleErrors?: ({
+		name,
+		intent,
+		payload,
+	}: {
+		name: string;
+		intent: string;
+		payload: Record<string, any>;
+	}) => boolean;
+	formatMessages?: ({
+		name,
+		validity,
+		constraint,
+		defaultErrors,
+	}: {
+		name: string;
+		validity: ValidityState;
+		constraint: Record<string, boolean>;
+		defaultErrors: string[];
+	}) => string[];
+}): Submission {
+	const formData = options?.formData ?? new FormData(options.form);
+	const getDefaultErrors = (
+		validity: ValidityState,
+		result: Record<string, boolean>,
+	) => {
+		const errors: Array<string> = [];
+
+		if (validity.valueMissing) errors.push('required');
+		if (validity.typeMismatch || validity.badInput) errors.push('type');
+		if (validity.tooShort) errors.push('minLength');
+		if (validity.rangeUnderflow) errors.push('min');
+		if (validity.stepMismatch) errors.push('step');
+		if (validity.tooLong) errors.push('maxLength');
+		if (validity.rangeOverflow) errors.push('max');
+		if (validity.patternMismatch) errors.push('pattern');
+
+		for (const [constraintName, valid] of Object.entries(result)) {
+			if (!valid) {
+				errors.push(constraintName);
+			}
+		}
+
+		return errors;
+	};
+	const formatMessages =
+		options?.formatMessages ?? (({ defaultErrors }) => defaultErrors);
+
+	return parse(formData, {
+		resolve(payload, intent) {
+			const error: Record<string, string | string[]> = {};
+			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
+			for (const element of options.form.elements) {
+				if (isFieldElement(element)) {
+					const name =
+						element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+					const constraint = Object.entries(element.dataset).reduce<
+						Record<string, boolean>
+					>((result, [name, attributeValue = '']) => {
+						if (constraintPattern.test(name)) {
+							const constraintName = name
+								.slice(10)
+								.toLowerCase() as Lowercase<string>;
+							const validate = options.constraint?.[constraintName];
+
+							if (typeof validate === 'function') {
+								result[constraintName] = validate(element.value, {
+									formData,
+									attributeValue,
+								});
+							} else {
+								console.warn(
+									`Found an "${constraintName}" constraint with undefined definition; Please specify it on the validateConstraint API.`,
+								);
+							}
+						}
+
+						return result;
+					}, {});
+					const errors = formatMessages({
+						name,
+						validity: element.validity,
+						constraint,
+						defaultErrors: getDefaultErrors(element.validity, constraint),
+					});
+					const shouldAcceptMultipleErrors =
+						options?.acceptMultipleErrors?.({
+							name,
+							payload,
+							intent,
+						}) ?? false;
+
+					if (errors.length > 0) {
+						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
+					}
+				}
+			}
+
+			return { error };
+		},
+	});
+}

@@ -51,24 +51,21 @@ export async function action({ request }: ActionArgs) {
   }
 
   // Authenticate the user only if no error
-  if (!error.email && !error.password) {
-    await authenticate(email, password);
-
-    // Simply redirect the user to another page after authentication
-    return redirect('/');
+  if (error.email || error.password) {
+    // Send the last submission result back to client
+    return json(
+      {
+        // Never send the password back to client
+        value: { email },
+        error,
+      },
+      {
+        status: 400,
+      },
+    );
   }
 
-  // Send the last submission result back to client
-  return json(
-    {
-      // Never send the password back to client
-      value: { email },
-      error,
-    },
-    {
-      status: 400,
-    },
-  );
+  return await authenticate(email, password);
 }
 
 export default function LoginForm() {
@@ -106,63 +103,71 @@ import { authenticate } from '~/auth';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-
   // Replace `Object.fromEntries()` with parse()
-  const submission = parse(formData);
+  const submission = parse(formData, {
+    resolve({ email, password }) {
+      const error: Record<String, string> = {};
 
-  // The value will now be available as `submission.value`
-  if (!submission.value.email) {
-    // Define the error as key-value pair instead
-    submission.error.push(['email', 'Email is required']);
-  } else if (!email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
-  }
+      if (!email) {
+        // Define the error as key-value pair instead
+        error.email = 'Email is required';
+      } else if (!email.includes('@')) {
+        error.email = 'Email is invalid';
+      }
 
-  if (!password) {
-    submission.error.push(['password', 'Password is required']);
-  }
+      if (!password) {
+        error.password = 'Password is required';
+      }
 
-  // Just check if any error exists
-  if (submission.error.length === 0) {
-    await authenticate(email, password);
+      if (error.email || error.password) {
+        return { error };
+      }
 
-    return redirect('/');
-  }
+      // Resolve it with a value only if no error
+      return {
+        value: { email, password },
+      };
+    },
+  });
 
-  // Send the last submission back to client
-  return json(
-    {
-      ...submission,
-      value: {
-        email: submission.value.email,
+  // Send the last submission result back to client if there is any error
+  // or if the intent is not `submit`.
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(
+      {
+        ...submission,
+        // The payload will be used as the default value if the document is reloaded on submit
+        payload: {
+          email: submission.payload.email,
+        },
       },
-    },
-    {
-      status: 400,
-    },
-  );
+      {
+        status: 400,
+      },
+    );
+  }
+
+  return await authenticate(submission.value.email, submission.value.password);
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const state = useActionData<typeof action>();
 
   // The useForm hook will return everything you need to setup a form
   // including the error and config of each field
   const [form, { email, password }] = useForm({
+    state,
+
+    // Now Conform will start validating once user leave the field and
+    // revalidate for any changes triggered later
     initialReport: 'onBlur',
-    mode: 'server-validation',
-    state: result,
   });
 
   return (
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input
-          type="email"
-          name="email"
-          defaultValue={email.config.defaultValue}
-        />
+        <input type="email" name="email" defaultValue={email.defaultValue} />
         <div>{email.error}</div>
       </div>
       <div>
@@ -182,10 +187,10 @@ The login form is getting even better! In addition to the features we mentioned 
 - Revalidates it once the value is changed
 - Auto focuses on the first invalid field
 
-Note that all the validation are done on server side, which means:
+Note that all the validation are currently done on server side, which means:
 
-- There is not need to introduce another package to the client bundle for validation (e.g. zod / yup)
-- You can have one single place defining all the validation logic
+- It is not a must to bring in another package to the client bundle for validation (e.g. zod / yup)
+- You will have one single place defining all the validation logic
 
 ## Sharing validation
 
@@ -198,55 +203,62 @@ import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
 
 // Refactor the validation logic to a standalone function
-function validate(formData: FormData) {
-  const submission = parse(formData);
+function parseLoginForm(formData: FormData) {
+  return parse(formData, {
+    resolve({ email, password }) {
+      const error: Record<String, string> = {};
 
-  if (!submission.value.email) {
-    submission.error.push(['email', 'Email is required']);
-  } else if (!email.includes('@')) {
-    submission.error.push(['email', 'Email is invalid']);
-  }
+      if (!email) {
+        error.email = 'Email is required';
+      } else if (!email.includes('@')) {
+        error.email = 'Email is invalid';
+      }
 
-  if (!password) {
-    submission.error.push(['password', 'Password is required']);
-  }
+      if (!password) {
+        error.password = 'Password is required';
+      }
 
-  return submission;
+      if (error.email || error.password) {
+        return { error };
+      }
+
+      return {
+        value: { email, password },
+      };
+    },
+  });
 }
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-
   // Parse and validate the formData
-  const submission = validate(formData);
+  const submission = parseLoginForm(formData);
 
-  if (submission.error.length === 0) {
-    await authenticate(email, password);
-
-    return redirect('/');
+  if (!submission.value || submission.intent !== 'submit') {
+    return json(
+      {
+        ...submission,
+        payload: {
+          email: submission.payload.email,
+        },
+      },
+      {
+        status: 400,
+      },
+    );
   }
 
-  return json(
-    {
-      ...submission,
-      value: {
-        email: submission.value.email,
-      },
-    },
-    {
-      status: 400,
-    },
-  );
+  return await authenticate(submission.value.email, submission.value.password);
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const state = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
+    state,
     initialReport: 'onBlur',
-    state: result,
     onValidate({ formData }) {
       // Run the same validation logic on client side
-      return validate(formData);
+      return parseFormData(formData);
     },
   });
 
@@ -262,7 +274,7 @@ export default function LoginForm() {
 
 Configuring each input is tedious especially when dealing with a complex form. The [conform](/packages/conform-react/README.md#conform) helpers can be used to remove these boilerplates.
 
-It also derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
+It will set the name of the input and also derive attributes for [accessibility](/docs/accessibility.md#configuration) concerns with helps on [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded) before JS is loaded.
 
 ```tsx
 import { parse, useForm, conform } from '@conform-to/react';
@@ -275,7 +287,7 @@ interface Schema {
   password: string;
 }
 
-function validate(formData: FormData) {
+function parseForm(formData: FormData) {
   // as shown before
 }
 
@@ -284,14 +296,16 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
-  const result = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
 
   // By providing the schema, it will type check all the fields name
   const [form, { email, password }] = useForm<Schema>({
+    // By providing a form ID, you will enable Conform to generate all necessary ids for aria-attributes
+    id: 'login',
     initialReport: 'onBlur',
-    state: result,
+    lastSubmission,
     onValidate({ formData }) {
-      return validate(formData);
+      return parseForm(formData);
     },
   });
 
@@ -299,12 +313,12 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input {...conform.input(email.config, { type: 'email' })} />
+        <input {...conform.input(email, { type: 'email' })} />
         <div>{email.error}</div>
       </div>
       <div>
         <label>Password</label>
-        <input {...conform.input(password.config, { type: 'password' })} />
+        <input {...conform.input(password, { type: 'password' })} />
         <div>{password.error}</div>
       </div>
       <button type="submit">Login</button>

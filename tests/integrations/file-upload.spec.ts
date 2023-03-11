@@ -81,8 +81,8 @@ async function runValidationScenario(page: Page) {
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	expect(JSON.parse(await playground.submission.innerText())).toMatchObject({
-		type: 'submit',
-		value: {
+		intent: 'submit',
+		payload: {
 			file: {
 				_name: 'test.json',
 				_lastModified: expect.anything(),
@@ -92,7 +92,7 @@ async function runValidationScenario(page: Page) {
 				_lastModified: expect.anything(),
 			},
 		},
-		error: [],
+		error: {},
 	});
 }
 

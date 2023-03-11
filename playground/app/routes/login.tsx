@@ -1,5 +1,5 @@
-import { type Submission, conform, useForm, parse } from '@conform-to/react';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import { conform, useForm, parse } from '@conform-to/react';
+import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useId } from 'react';
 import { Playground, Field, Alert } from '~/components';
@@ -10,18 +10,31 @@ interface Login {
 	password: string;
 }
 
-function validate(formData: FormData): Submission<Login> {
-	const submission = parse<Login>(formData);
+function parseLoginForm(formData: FormData) {
+	return parse(formData, {
+		resolve({ email, password }) {
+			const error: Record<string, string> = {};
 
-	if (!submission.value.email) {
-		submission.error.push(['email', 'Email is required']);
-	}
+			if (!email) {
+				error.email = 'Email is required';
+			}
 
-	if (!submission.value.password) {
-		submission.error.push(['password', 'Password is required']);
-	}
+			if (!password) {
+				error.password = 'Password is required';
+			}
 
-	return submission;
+			if (error.email || error.password) {
+				return { error };
+			}
+
+			return {
+				value: {
+					email,
+					password,
+				},
+			};
+		},
+	});
 }
 
 export let loader = async ({ request }: LoaderArgs) => {
@@ -30,58 +43,50 @@ export let loader = async ({ request }: LoaderArgs) => {
 
 export let action = async ({ request }: ActionArgs) => {
 	const formData = await request.formData();
-	const submission = validate(formData);
+	const submission = parseLoginForm(formData);
 
 	if (
-		submission.error.length === 0 &&
+		submission.value &&
 		(submission.value.email !== 'me@edmund.dev' ||
 			submission.value.password !== '$eCreTP@ssWord')
 	) {
-		submission.error.push(['', 'The provided email or password is not valid']);
+		submission.error[''] = 'The provided email or password is not valid';
 	}
 
-	return {
+	return json({
 		...submission,
-		value: {
-			email: submission.value.email,
+		payload: {
+			email: submission.payload.email,
 			// Never send the password back to the client
 		},
-	};
+	});
 };
 
 export default function LoginForm() {
 	const formId = useId();
-	const config = useLoaderData();
-	const state = useActionData();
+	const config = useLoaderData<typeof loader>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, { email, password }] = useForm<Login>({
 		...config,
 		id: formId,
-		state,
+		lastSubmission,
 		onValidate: config.validate
-			? ({ formData }) => validate(formData)
+			? ({ formData }) => parseLoginForm(formData)
 			: undefined,
-		onSubmit:
-			config.mode === 'server-validation'
-				? (event, { submission }) => {
-						if (submission.type === 'validate') {
-							event.preventDefault();
-						}
-				  }
-				: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Login Form" state={state}>
-				<Alert message={form.error} />
-				<Field label="Email" {...email}>
+			<Playground title="Login Form" lastSubmission={lastSubmission}>
+				<Alert errors={form.errors} />
+				<Field label="Email" config={email}>
 					<input
-						{...conform.input(email.config, { type: 'email' })}
+						{...conform.input(email, { type: 'email' })}
 						autoComplete="off"
 					/>
 				</Field>
-				<Field label="Password" {...password}>
-					<input {...conform.input(password.config, { type: 'password' })} />
+				<Field label="Password" config={password}>
+					<input {...conform.input(password, { type: 'password' })} />
 				</Field>
 			</Playground>
 		</Form>

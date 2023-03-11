@@ -1,5 +1,5 @@
-import { conform, parse, useForm, validate } from '@conform-to/react';
-import { formatError, validate as validateSchema } from '@conform-to/zod';
+import { conform, useForm, validate } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -21,46 +21,34 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
-
-	try {
-		switch (submission.type) {
-			case 'validate':
-			case 'submit':
-				schema.parse(submission.value);
-				break;
-		}
-	} catch (error) {
-		submission.error.push(...formatError(error));
-	}
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
 
 export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const state = useActionData();
-	const [form, { name, message }] = useForm<z.infer<typeof schema>>({
-		mode: noClientValidate ? 'server-validation' : 'client-only',
-		state,
+	const lastSubmission = useActionData();
+	const [form, { name, message }] = useForm({
+		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => validateSchema(formData, schema)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Validate" state={state}>
-				<Field label="Name" {...name}>
-					<input {...conform.input(name.config, { type: 'text' })} />
+			<Playground title="Validate" lastSubmission={lastSubmission}>
+				<Field label="Name" config={name}>
+					<input {...conform.input(name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" {...message}>
-					<textarea {...conform.textarea(message.config)} />
+				<Field label="Message" config={message}>
+					<textarea {...conform.textarea(message)} />
 				</Field>
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...validate(name.config.name)}
+						{...validate(name.name)}
 					>
 						Validate Name
 					</button>
