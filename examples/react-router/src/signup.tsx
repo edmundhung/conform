@@ -104,7 +104,7 @@ export function Component() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<div className={form.error ? 'form-error' : ''}>{form.error}</div>
+			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>
 				<input
