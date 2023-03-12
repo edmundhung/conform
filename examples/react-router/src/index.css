@@ -8,6 +8,10 @@ hr {
 	color: gainsboro;
 }
 
+label {
+	display: block;
+}
+
 .form-error {
 	color: red;
 }

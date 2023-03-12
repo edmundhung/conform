@@ -9,7 +9,7 @@ import {
 
 const router = createBrowserRouter(
 	createRoutesFromElements(
-		<Route path="/" Component={Home}>
+		<Route path="/" Component={Example}>
 			<Route path="login" lazy={() => import('./login')} />
 			<Route path="todos" lazy={() => import('./todos')} />
 			<Route path="signup" lazy={() => import('./signup')} />
@@ -17,15 +17,15 @@ const router = createBrowserRouter(
 	),
 );
 
-function Home() {
+function Example() {
 	return (
 		<main>
 			<h1>React Router Example</h1>
 
 			<p>
 				This example demonstrates some of the features of Conform including{' '}
-				<code>constraint validation</code>, <code>nested list</code>, and{' '}
-				<code>async validation</code> setup.
+				<strong>constraint validation</strong>, <strong>nested list</strong>,
+				and <strong>async validation with zod</strong>.
 			</p>
 
 			<ul>
