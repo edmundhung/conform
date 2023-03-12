@@ -10,11 +10,10 @@
 
 <!-- /aside -->
 
-## Remix Integration
+## Integration
 
-- [Basic](/examples/remix)
-- [Nested List](/examples/remix-nested-list)
-- [Async Validation](/examples/remix-async-validation)
+- [Remix](/examples/remix)
+- [React Router](/examples/react-router)
 
 ## Schema Validation
 

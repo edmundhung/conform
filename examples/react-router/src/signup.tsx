@@ -1,8 +1,8 @@
+import type { Submission } from '@conform-to/react';
 import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
-import { json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import type { ActionFunctionArgs } from 'react-router-dom';
+import { Form, useActionData, json } from 'react-router-dom';
 import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
@@ -59,7 +59,7 @@ function createSchema(
 		});
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
 		schema: (intent) =>
@@ -68,9 +68,7 @@ export async function action({ request }: ActionArgs) {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
-							resolve(
-								!['edmundhung', 'conform', 'administrator'].includes(username),
-							);
+							resolve(username !== 'admin');
 						}, Math.random() * 300);
 					});
 				},
@@ -90,8 +88,8 @@ export async function action({ request }: ActionArgs) {
 	throw new Error('Not implemented');
 }
 
-export default function Signup() {
-	const lastSubmission = useActionData<typeof action>();
+export function Component() {
+	const lastSubmission = useActionData() as Submission;
 	const [form, { username, password, confirmPassword }] = useForm<
 		z.input<ReturnType<typeof createSchema>>
 	>({
@@ -106,33 +104,35 @@ export default function Signup() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<fieldset>
-				<legend>{form.error}</legend>
-				<label>
-					<div>Username</div>
-					<input
-						className={username.error ? 'error' : ''}
-						{...conform.input(username)}
-					/>
-					<div>{username.error}</div>
-				</label>
-				<label>
-					<div>Password</div>
-					<input
-						className={password.error ? 'error' : ''}
-						{...conform.input(password, { type: 'password' })}
-					/>
-					<div>{password.error}</div>
-				</label>
-				<label>
-					<div>Confirm Password</div>
-					<input
-						className={confirmPassword.error ? 'error' : ''}
-						{...conform.input(confirmPassword, { type: 'password' })}
-					/>
-					<div>{confirmPassword.error}</div>
-				</label>
-			</fieldset>
+			<div className="form-error">{form.error}</div>
+			<label>
+				<div>Username</div>
+				<input
+					className={username.error ? 'error' : ''}
+					type="text"
+					name="username"
+				/>
+				<div>{username.error}</div>
+			</label>
+			<label>
+				<div>Password</div>
+				<input
+					className={password.error ? 'error' : ''}
+					type="password"
+					name="password"
+				/>
+				<div>{password.error}</div>
+			</label>
+			<label>
+				<div>Confirm Password</div>
+				<input
+					className={confirmPassword.error ? 'error' : ''}
+					type="password"
+					name="confirmPassword"
+				/>
+				<div>{confirmPassword.error}</div>
+			</label>
+			<hr />
 			<button type="submit">Signup</button>
 		</Form>
 	);

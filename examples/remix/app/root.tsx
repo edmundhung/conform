@@ -1,5 +1,6 @@
 import type { MetaFunction, LinksFunction } from '@remix-run/node';
 import {
+	Link,
 	Links,
 	LiveReload,
 	Meta,
@@ -27,7 +28,31 @@ export default function App() {
 				<Links />
 			</head>
 			<body>
-				<Outlet />
+				<main>
+					<h1>Remix Example</h1>
+
+					<p>
+						This example demonstrates some of the features of Conform including{' '}
+						<strong>manual validation</strong>, <strong>nested list</strong>,
+						and <strong>async validation with zod</strong>.
+					</p>
+
+					<ul>
+						<li>
+							<Link to="login">Login</Link>
+						</li>
+						<li>
+							<Link to="todos">Todo list</Link>
+						</li>
+						<li>
+							<Link to="signup">Signup</Link>
+						</li>
+					</ul>
+
+					<hr />
+
+					<Outlet />
+				</main>
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />
