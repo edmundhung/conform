@@ -4,8 +4,8 @@
 
 This example shows you how to implement validation with Remix.
 
-<!-- sandbox src="/examples/server-validation?module=/app/routes/index.tsx" -->
+<!-- sandbox src="/examples/remix?module=/app/routes/index.tsx" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/server-validation?file=/app/routes/index.tsx).
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix?file=/app/routes/index.tsx).
 
 <!-- /sandbox -->
