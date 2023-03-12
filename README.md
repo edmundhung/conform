@@ -41,10 +41,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
-  const state = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
-    id,
-    state,
+    lastSubmission,
     onValidate({ formData }) {
       return parse(formData, { schema });
     },

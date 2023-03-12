@@ -151,12 +151,12 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
-  const state = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
 
   // The useForm hook will return everything you need to setup a form
   // including the error and config of each field
   const [form, { email, password }] = useForm({
-    state,
+    lastSubmission,
 
     // Now Conform will start validating once user leave the field and
     // revalidate for any changes triggered later
@@ -252,9 +252,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
-  const state = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
-    state,
+    lastSubmission,
     initialReport: 'onBlur',
     onValidate({ formData }) {
       // Run the same validation logic on client side

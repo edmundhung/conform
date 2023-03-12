@@ -78,10 +78,10 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
   // Last submission returned by the server
-  const state = useActionData<typeof action>();
+  const lastSubmission = useActionData<typeof action>();
   const [form] = useForm<SignupForm>({
     // Sync the result of last submission
-    state,
+    lastSubmission,
   });
 
   // ...
@@ -158,9 +158,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  const state = useActionData();
+  const lastSubmission = useActionData();
   const [form] = useForm({
-    state,
+    lastSubmission,
 
     // Setup client validation
     onValidate({ formData }) {
@@ -237,9 +237,9 @@ export function action() {
 }
 
 export default function Signup() {
-  const state = useActionData();
+  const lastSubmission = useActionData();
   const [form] = useForm({
-    state,
+    lastSubmission,
     onValidate({ formData }) {
       return parse(formData, {
         // Create the schema without any constraint defined
@@ -307,9 +307,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  const state = useActionData();
+  const lastSubmission = useActionData();
   const [form] = useForm({
-    state,
+    lastSubmission,
     onValidate({ formData }) {
       return parse(formData, {
         // Similar to the action above
