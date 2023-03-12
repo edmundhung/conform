@@ -80,6 +80,7 @@ export function Component() {
 					<input name="remember" type="checkbox" value="yes" />
 				</div>
 			</label>
+			<hr />
 			<button>Login</button>
 		</Form>
 	);
