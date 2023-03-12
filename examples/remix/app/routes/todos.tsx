@@ -48,7 +48,7 @@ export default function TodoForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<div>{form.error}</div>
+			<div className="form-error">{form.error}</div>
 			<div>
 				<label>Title</label>
 				<input
@@ -57,28 +57,25 @@ export default function TodoForm() {
 				/>
 				<div>{title.error}</div>
 			</div>
-			<ul>
-				{taskList.map((task, index) => (
-					<li key={task.key}>
-						<TaskFieldset title={`Task #${index + 1}`} {...task} />
-						<button {...list.remove(tasks.name, { index })}>Delete</button>
-						<button {...list.reorder(tasks.name, { from: index, to: 0 })}>
-							Move to top
-						</button>
-						<button
-							{...list.replace(tasks.name, {
-								index,
-								defaultValue: { content: '' },
-							})}
-						>
-							Clear
-						</button>
-					</li>
-				))}
-			</ul>
-			<div>
-				<button {...list.append(tasks.name)}>Add task</button>
-			</div>
+			{taskList.map((task, index) => (
+				<p key={task.key}>
+					<TaskFieldset title={`Task #${index + 1}`} {...task} />
+					<button {...list.remove(tasks.name, { index })}>Delete</button>
+					<button {...list.reorder(tasks.name, { from: index, to: 0 })}>
+						Move to top
+					</button>
+					<button
+						{...list.replace(tasks.name, {
+							index,
+							defaultValue: { content: '' },
+						})}
+					>
+						Clear
+					</button>
+				</p>
+			))}
+			<button {...list.append(tasks.name)}>Add task</button>
+			<hr />
 			<button type="submit">Save</button>
 		</Form>
 	);

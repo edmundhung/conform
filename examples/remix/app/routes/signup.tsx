@@ -68,9 +68,7 @@ export async function action({ request }: ActionArgs) {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
-							resolve(
-								!['edmundhung', 'conform', 'administrator'].includes(username),
-							);
+							resolve(username !== 'admin');
 						}, Math.random() * 300);
 					});
 				},
@@ -106,33 +104,32 @@ export default function Signup() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<fieldset>
-				<legend>{form.error}</legend>
-				<label>
-					<div>Username</div>
-					<input
-						className={username.error ? 'error' : ''}
-						{...conform.input(username)}
-					/>
-					<div>{username.error}</div>
-				</label>
-				<label>
-					<div>Password</div>
-					<input
-						className={password.error ? 'error' : ''}
-						{...conform.input(password, { type: 'password' })}
-					/>
-					<div>{password.error}</div>
-				</label>
-				<label>
-					<div>Confirm Password</div>
-					<input
-						className={confirmPassword.error ? 'error' : ''}
-						{...conform.input(confirmPassword, { type: 'password' })}
-					/>
-					<div>{confirmPassword.error}</div>
-				</label>
-			</fieldset>
+			<div className="form-error">{form.error}</div>
+			<label>
+				<div>Username</div>
+				<input
+					className={username.error ? 'error' : ''}
+					{...conform.input(username)}
+				/>
+				<div>{username.error}</div>
+			</label>
+			<label>
+				<div>Password</div>
+				<input
+					className={password.error ? 'error' : ''}
+					{...conform.input(password, { type: 'password' })}
+				/>
+				<div>{password.error}</div>
+			</label>
+			<label>
+				<div>Confirm Password</div>
+				<input
+					className={confirmPassword.error ? 'error' : ''}
+					{...conform.input(confirmPassword, { type: 'password' })}
+				/>
+				<div>{confirmPassword.error}</div>
+			</label>
+			<hr />
 			<button type="submit">Signup</button>
 		</Form>
 	);

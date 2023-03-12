@@ -82,7 +82,7 @@ export default function Signup() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<div>{form.error}</div>
+			<div className="form-error">{form.error}</div>
 			<div>
 				<label>Email</label>
 				<input
@@ -107,6 +107,7 @@ export default function Signup() {
 				/>
 				<div>{confirmPassword.error}</div>
 			</div>
+			<hr />
 			<button type="submit">Signup</button>
 		</Form>
 	);

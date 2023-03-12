@@ -1,28 +1,25 @@
-form {
-	padding: 10px 0;
+main {
+	max-width: 600px;
+	margin: 0 auto;
 }
 
-form > div:first-child {
+hr {
+	margin: 30px 0;
+	color: gainsboro;
+}
+
+label {
+	display: block;
+}
+
+.form-error {
 	color: red;
 }
 
-ul {
-	border: 1px dotted gray;
-	list-style: none;
-	margin: 10px 0;
-	padding: 10px;
-}
-
-input {
-	margin: 2px 0;
-}
-
-input[type='checkbox'] {
-	margin: 0 10px;
-}
-
 input.error {
-	border-color: red;
+	outline: red;
+	color: red;
+	border: 1px solid red;
 }
 
 input.error + div {
