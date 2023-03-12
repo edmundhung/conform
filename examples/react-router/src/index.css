@@ -1,0 +1,13 @@
+.form-error {
+	color: red;
+}
+
+input.error {
+	outline: red;
+	color: red;
+	border: 1px solid red;
+}
+
+input.error + div {
+	color: red;
+}
