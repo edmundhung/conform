@@ -17,6 +17,9 @@ import {
 	useIsPresent,
 	useScroll,
 	useTransform,
+	useInView,
+	useMotionTemplate,
+	useMotionValue,
 } from 'framer-motion';
 import { Dialog, Transition } from '@headlessui/react';
 import { create, createStore, useStore } from 'zustand';
@@ -32,8 +35,7 @@ interface Navigation2 {
 	}>;
 }
 
-// const navigations: Navigation[] = [
-export const navigation = [
+const navigation: Navigation2[] = [
 	{
 		title: 'Get Started',
 		menus: [
@@ -999,7 +1001,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
 					<ModeToggle />
 				</div>
 				<div className="hidden min-[416px]:contents">
-					<Button href="#">Sign in</Button>
+					<Button to="#">Sign in</Button>
 				</div>
 			</div>
 		</motion.div>
@@ -1317,6 +1319,708 @@ export function Navigation(props) {
 	);
 }
 
+// from Footer.jsx
+function CheckIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<circle cx="10" cy="10" r="10" strokeWidth="0" />
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				strokeWidth="1.5"
+				d="m6.75 10.813 2.438 2.437c1.218-4.469 4.062-6.5 4.062-6.5"
+			/>
+		</svg>
+	);
+}
+
+function FeedbackButton(props) {
+	return (
+		<button
+			type="submit"
+			className="px-3 text-sm font-medium text-zinc-600 transition hover:bg-zinc-900/2.5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
+			{...props}
+		/>
+	);
+}
+
+const FeedbackForm = forwardRef(function FeedbackForm({ onSubmit }, ref) {
+	return (
+		<form
+			ref={ref}
+			onSubmit={onSubmit}
+			className="absolute inset-0 flex items-center justify-center gap-6 md:justify-start"
+		>
+			<p className="text-sm text-zinc-600 dark:text-zinc-400">
+				Was this page helpful?
+			</p>
+			<div className="group grid h-8 grid-cols-[1fr,1px,1fr] overflow-hidden rounded-full border border-zinc-900/10 dark:border-white/10">
+				<FeedbackButton data-response="yes">Yes</FeedbackButton>
+				<div className="bg-zinc-900/10 dark:bg-white/10" />
+				<FeedbackButton data-response="no">No</FeedbackButton>
+			</div>
+		</form>
+	);
+});
+
+const FeedbackThanks = forwardRef(function FeedbackThanks(_props, ref) {
+	return (
+		<div
+			ref={ref}
+			className="absolute inset-0 flex justify-center md:justify-start"
+		>
+			<div className="flex items-center gap-3 rounded-full bg-emerald-50/50 py-1 pr-3 pl-1.5 text-sm text-emerald-900 ring-1 ring-inset ring-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-200 dark:ring-emerald-500/30">
+				<CheckIcon className="h-5 w-5 flex-none fill-emerald-500 stroke-white dark:fill-emerald-200/20 dark:stroke-emerald-200" />
+				Thanks for your feedback!
+			</div>
+		</div>
+	);
+});
+
+function Feedback() {
+	let [submitted, setSubmitted] = useState(false);
+
+	function onSubmit(event) {
+		event.preventDefault();
+
+		// event.nativeEvent.submitter.dataset.response
+		// => "yes" or "no"
+
+		setSubmitted(true);
+	}
+
+	return (
+		<div className="relative h-8">
+			<Transition
+				show={!submitted}
+				as={Fragment}
+				leaveFrom="opacity-100"
+				leaveTo="opacity-0"
+				leave="pointer-events-none duration-300"
+			>
+				<FeedbackForm onSubmit={onSubmit} />
+			</Transition>
+			<Transition
+				show={submitted}
+				as={Fragment}
+				enterFrom="opacity-0"
+				enterTo="opacity-100"
+				enter="delay-150 duration-300"
+			>
+				<FeedbackThanks />
+			</Transition>
+		</div>
+	);
+}
+
+function PageLink({ label, page, previous = false }) {
+	return (
+		<>
+			<Button
+				to={page.to}
+				aria-label={`${label}: ${page.title}`}
+				variant="secondary"
+				arrow={previous ? 'left' : 'right'}
+			>
+				{label}
+			</Button>
+			<Link
+				to={page.to}
+				tabIndex={-1}
+				aria-hidden="true"
+				className="text-base font-semibold text-zinc-900 transition hover:text-zinc-600 dark:text-white dark:hover:text-zinc-300"
+			>
+				{page.title}
+			</Link>
+		</>
+	);
+}
+
+function PageNavigation() {
+	let location = useLocation();
+	let allPages = navigation.flatMap((group) => group.menus);
+	let currentPageIndex = allPages.findIndex(
+		(page) => page.to === location.pathname,
+	);
+
+	if (currentPageIndex === -1) {
+		return null;
+	}
+
+	let previousPage = allPages[currentPageIndex - 1];
+	let nextPage = allPages[currentPageIndex + 1];
+
+	if (!previousPage && !nextPage) {
+		return null;
+	}
+
+	return (
+		<div className="flex">
+			{previousPage && (
+				<div className="flex flex-col items-start gap-3">
+					<PageLink label="Previous" page={previousPage} previous />
+				</div>
+			)}
+			{nextPage && (
+				<div className="ml-auto flex flex-col items-end gap-3">
+					<PageLink label="Next" page={nextPage} />
+				</div>
+			)}
+		</div>
+	);
+}
+
+function GitHubIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M10 1.667c-4.605 0-8.334 3.823-8.334 8.544 0 3.78 2.385 6.974 5.698 8.106.417.075.573-.182.573-.406 0-.203-.011-.875-.011-1.592-2.093.397-2.635-.522-2.802-1.002-.094-.246-.5-1.005-.854-1.207-.291-.16-.708-.556-.01-.567.656-.01 1.124.62 1.281.876.75 1.292 1.948.93 2.427.705.073-.555.291-.93.531-1.143-1.854-.213-3.791-.95-3.791-4.218 0-.929.322-1.698.854-2.296-.083-.214-.375-1.09.083-2.265 0 0 .698-.224 2.292.876a7.576 7.576 0 0 1 2.083-.288c.709 0 1.417.096 2.084.288 1.593-1.11 2.291-.875 2.291-.875.459 1.174.167 2.05.084 2.263.53.599.854 1.357.854 2.297 0 3.278-1.948 4.005-3.802 4.219.302.266.563.78.563 1.58 0 1.143-.011 2.061-.011 2.35 0 .224.156.491.573.405a8.365 8.365 0 0 0 4.11-3.116 8.707 8.707 0 0 0 1.567-4.99c0-4.721-3.73-8.545-8.334-8.545Z"
+			/>
+		</svg>
+	);
+}
+
+function SocialLink({ href, icon: Icon, children }) {
+	return (
+		<Link to={href} className="group">
+			<span className="sr-only">{children}</span>
+			<Icon className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500" />
+		</Link>
+	);
+}
+
+function SmallPrint() {
+	return (
+		<div className="flex flex-col items-center justify-between gap-5 border-t border-zinc-900/5 pt-8 dark:border-white/5 sm:flex-row">
+			<p className="text-xs text-zinc-600 dark:text-zinc-400">
+				&copy; Copyright {new Date().getFullYear()}. All rights reserved.
+			</p>
+			<div className="flex gap-4">
+				<SocialLink href="#" icon={GitHubIcon}>
+					Follow us on GitHub
+				</SocialLink>
+			</div>
+		</div>
+	);
+}
+
+export function Footer() {
+	let location = useLocation();
+
+	return (
+		<footer className="mx-auto max-w-2xl space-y-10 pb-16 lg:max-w-5xl">
+			<Feedback key={location.pathname} />
+			<PageNavigation />
+			<SmallPrint />
+		</footer>
+	);
+}
+
+// from Heading.jsx
+function AnchorIcon(props) {
+	return (
+		<svg
+			viewBox="0 0 20 20"
+			fill="none"
+			strokeLinecap="round"
+			aria-hidden="true"
+			{...props}
+		>
+			<path d="m6.5 11.5-.964-.964a3.535 3.535 0 1 1 5-5l.964.964m2 2 .964.964a3.536 3.536 0 0 1-5 5L8.5 13.5m0-5 3 3" />
+		</svg>
+	);
+}
+
+function Eyebrow({ tag, label }) {
+	if (!tag && !label) {
+		return null;
+	}
+
+	return (
+		<div className="flex items-center gap-x-3">
+			{tag && <Tag>{tag}</Tag>}
+			{tag && label && (
+				<span className="h-0.5 w-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+			)}
+			{label && (
+				<span className="font-mono text-xs text-zinc-400">{label}</span>
+			)}
+		</div>
+	);
+}
+
+function Anchor({ id, inView, children }) {
+	return (
+		<Link
+			to={`#${id}`}
+			className="group text-inherit no-underline hover:text-inherit"
+		>
+			{inView && (
+				<div className="absolute mt-1 ml-[calc(-1*var(--width))] hidden w-[var(--width)] opacity-0 transition [--width:calc(2.625rem+0.5px+50%-min(50%,calc(theme(maxWidth.lg)+theme(spacing.8))))] group-hover:opacity-100 group-focus:opacity-100 md:block lg:z-50 2xl:[--width:theme(spacing.10)]">
+					<div className="group/anchor block h-5 w-5 rounded-lg bg-zinc-50 ring-1 ring-inset ring-zinc-300 transition hover:ring-zinc-500 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:bg-zinc-700 dark:hover:ring-zinc-600">
+						<AnchorIcon className="h-5 w-5 stroke-zinc-500 transition dark:stroke-zinc-400 dark:group-hover/anchor:stroke-white" />
+					</div>
+				</div>
+			)}
+			{children}
+		</Link>
+	);
+}
+
+export function Heading({
+	level = 2,
+	children,
+	id,
+	tag,
+	label,
+	anchor = true,
+	...props
+}) {
+	let Component = `h${level}`;
+	let ref = useRef();
+	let registerHeading = useSectionStore((s) => s.registerHeading);
+
+	let inView = useInView(ref, {
+		margin: `${remToPx(-3.5)}px 0px 0px 0px`,
+		amount: 'all',
+	});
+
+	useEffect(() => {
+		if (level === 2) {
+			registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 });
+		}
+	});
+
+	return (
+		<>
+			<Eyebrow tag={tag} label={label} />
+			<Component
+				ref={ref}
+				id={anchor ? id : undefined}
+				className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
+				{...props}
+			>
+				{anchor ? (
+					<Anchor id={id} inView={inView}>
+						{children}
+					</Anchor>
+				) : (
+					children
+				)}
+			</Component>
+		</>
+	);
+}
+
+// from ChatBubbleIcon.jsx
+export function ChatBubbleIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M10 16.5c4.142 0 7.5-3.134 7.5-7s-3.358-7-7.5-7c-4.142 0-7.5 3.134-7.5 7 0 1.941.846 3.698 2.214 4.966L3.5 17.5c2.231 0 3.633-.553 4.513-1.248A8.014 8.014 0 0 0 10 16.5Z"
+			/>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M7.5 8.5h5M8.5 11.5h3"
+			/>
+		</svg>
+	);
+}
+
+// from EnvelopeIcon,jsx
+export function EnvelopeIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M2.5 5.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-8Z"
+			/>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M10 10 4.526 5.256c-.7-.607-.271-1.756.655-1.756h9.638c.926 0 1.355 1.15.655 1.756L10 10Z"
+			/>
+		</svg>
+	);
+}
+
+// from UserIcon.jsx
+export function UserIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<path
+				strokeWidth="0"
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M10 .5a9.5 9.5 0 0 1 5.598 17.177C14.466 15.177 12.383 13.5 10 13.5s-4.466 1.677-5.598 4.177A9.5 9.5 0 0 1 10 .5ZM12.5 8a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"
+			/>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M10 .5a9.5 9.5 0 0 1 5.598 17.177A9.458 9.458 0 0 1 10 19.5a9.458 9.458 0 0 1-5.598-1.823A9.5 9.5 0 0 1 10 .5Z"
+			/>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M4.402 17.677C5.534 15.177 7.617 13.5 10 13.5s4.466 1.677 5.598 4.177M10 5.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"
+			/>
+		</svg>
+	);
+}
+
+// from UsersIcon.jsx
+export function UsersIcon(props) {
+	return (
+		<svg viewBox="0 0 20 20" aria-hidden="true" {...props}>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M10.046 16H1.955a.458.458 0 0 1-.455-.459C1.5 13.056 3.515 11 6 11h.5"
+			/>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M7.5 15.454C7.5 12.442 9.988 10 13 10s5.5 2.442 5.5 5.454a.545.545 0 0 1-.546.546H8.045a.545.545 0 0 1-.545-.546Z"
+			/>
+			<path
+				fill="none"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M6.5 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4Z"
+			/>
+			<path
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="M13 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z"
+			/>
+		</svg>
+	);
+}
+
+// from Guides.jsx for guides in Overview page
+const guides = [
+	{
+		to: '/validation',
+		name: 'Validation',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/integrations',
+		name: 'Integrations????',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/configuration',
+		name: 'Nested object and Array',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/intent-button',
+		name: 'Intent button',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/file-upload',
+		name: 'File upload',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/focus-management',
+		name: 'Focus management',
+		description: 'bla bla bla.',
+	},
+	{
+		to: '/accessibility',
+		name: 'Accessibility',
+		description: 'bla bla bla.',
+	},
+];
+
+export function Guides() {
+	return (
+		<div className="my-16 xl:max-w-none">
+			<Heading level={2} id="guides">
+				Guides
+			</Heading>
+			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+				{guides.map((guide) => (
+					<div key={guide.to}>
+						<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+							{guide.name}
+						</h3>
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+							{guide.description}
+						</p>
+						<p className="mt-4">
+							<Button to={guide.to} variant="text" arrow="right">
+								Read more
+							</Button>
+						</p>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// from Resources.jsx
+const resources = [
+	{
+		to: '/api/react',
+		name: '@conform-to/react',
+		description: 'bla bla bla.',
+		icon: UserIcon,
+		pattern: {
+			y: 16,
+			squares: [
+				[0, 1],
+				[1, 3],
+			],
+		},
+	},
+	{
+		to: '/api/yup',
+		name: '@conform-to/yup',
+		description: 'bla bla bla.',
+		icon: ChatBubbleIcon,
+		pattern: {
+			y: -6,
+			squares: [
+				[-1, 2],
+				[1, 3],
+			],
+		},
+	},
+	{
+		to: '/api/zod',
+		name: '@conform-to/zod',
+		description: 'bla bla bla.',
+		icon: EnvelopeIcon,
+		pattern: {
+			y: 32,
+			squares: [
+				[0, 2],
+				[1, 4],
+			],
+		},
+	},
+	// {
+	//   to: '/api/react',
+	//   name: '@conform-to/react',
+	//   description:
+	//     'bla bla bla.',
+	//   icon: UsersIcon,
+	//   pattern: {
+	//     y: 22,
+	//     squares: [[0, 1]],
+	//   },
+	// },
+];
+
+function ResourceIcon({ icon: Icon }) {
+	return (
+		<div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
+			<Icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" />
+		</div>
+	);
+}
+
+function ResourcePattern({ mouseX, mouseY, ...gridProps }) {
+	let maskImage = useMotionTemplate`radial-gradient(180px at ${mouseX}px ${mouseY}px, white, transparent)`;
+	let style = { maskImage, WebkitMaskImage: maskImage };
+
+	return (
+		<div className="pointer-events-none">
+			<div className="absolute inset-0 rounded-2xl transition duration-300 [mask-image:linear-gradient(white,transparent)] group-hover:opacity-50">
+				<GridPattern
+					width={72}
+					height={56}
+					x="50%"
+					className="absolute inset-x-0 inset-y-[-30%] h-[160%] w-full skew-y-[-18deg] fill-black/[0.02] stroke-black/5 dark:fill-white/1 dark:stroke-white/2.5"
+					{...gridProps}
+				/>
+			</div>
+			<motion.div
+				className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#D7EDEA] to-[#F4FBDF] opacity-0 transition duration-300 group-hover:opacity-100 dark:from-[#202D2E] dark:to-[#303428]"
+				style={style}
+			/>
+			<motion.div
+				className="absolute inset-0 rounded-2xl opacity-0 mix-blend-overlay transition duration-300 group-hover:opacity-100"
+				style={style}
+			>
+				<GridPattern
+					width={72}
+					height={56}
+					x="50%"
+					className="absolute inset-x-0 inset-y-[-30%] h-[160%] w-full skew-y-[-18deg] fill-black/50 stroke-black/70 dark:fill-white/2.5 dark:stroke-white/10"
+					{...gridProps}
+				/>
+			</motion.div>
+		</div>
+	);
+}
+
+function Resource({ resource }) {
+	let mouseX = useMotionValue(0);
+	let mouseY = useMotionValue(0);
+
+	function onMouseMove({ currentTarget, clientX, clientY }) {
+		let { left, top } = currentTarget.getBoundingClientRect();
+		mouseX.set(clientX - left);
+		mouseY.set(clientY - top);
+	}
+
+	return (
+		<div
+			key={resource.to}
+			onMouseMove={onMouseMove}
+			className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
+		>
+			<ResourcePattern {...resource.pattern} mouseX={mouseX} mouseY={mouseY} />
+			<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
+			<div className="relative rounded-2xl px-4 pt-16 pb-4">
+				<ResourceIcon icon={resource.icon} />
+				<h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
+					<Link to={resource.to}>
+						<span className="absolute inset-0 rounded-2xl" />
+						{resource.name}
+					</Link>
+				</h3>
+				<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+					{resource.description}
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export function Resources() {
+	return (
+		<div className="my-16 xl:max-w-none">
+			<Heading level={2} id="resources">
+				API references
+			</Heading>
+			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+				{resources.map((resource) => (
+					<Resource key={resource.to} resource={resource} />
+				))}
+			</div>
+		</div>
+	);
+}
+
+// from Libaraies.jsx
+const libraries = [
+	{
+		to: '#',
+		name: 'Remix',
+		description: 'bla bla bla.',
+		logo: '',
+	},
+	{
+		to: '#',
+		name: 'React',
+		description: 'bla bla bla.',
+		logo: '',
+	},
+	{
+		to: '#',
+		name: 'Node.js',
+		description: 'bla bla bla.',
+		logo: '',
+	},
+];
+
+export function Libraries() {
+	return (
+		<div className="my-16 xl:max-w-none">
+			<Heading level={2} id="official-libraries">
+				Official libraries
+			</Heading>
+			<div className="not-prose mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3">
+				{libraries.map((library) => (
+					<div key={library.name} className="flex flex-row-reverse gap-6">
+						<div className="flex-auto">
+							<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+								{library.name}
+							</h3>
+							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+								{library.description}
+							</p>
+							<p className="mt-4">
+								<Button to={library.to} variant="text" arrow="right">
+									Read more
+								</Button>
+							</p>
+						</div>
+						<img src={library.logo} alt="" className="h-12 w-12" unoptimized />
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// for Overview page
+export function Overview() {
+	return (
+		<div>
+			{/* for Overview page */}
+			<h1>Overview</h1>
+			<p class="lead">bla bla bla</p>
+			<div className="not-prose mb-16 mt-6 flex gap-3">
+				<Button to="/tutorial" arrow="right" children="Tutorial" />
+				<Button
+					to="/integrations"
+					variant="outline"
+					children="Explore Integrations"
+				/>
+			</div>
+			<h2 class="scroll-mt-24">Getting started</h2>
+			<p class="lead">
+				bla bla bla <a href="/#">developer settings</a>, bla bla bla{' '}
+				<a href="/#">integrations directory</a> .
+			</p>
+			<div className="not-prose">
+				<Button
+					to="/integrations"
+					variant="text"
+					arrow="right"
+					children="Get your pension xD"
+				/>
+			</div>
+			<Guides />
+			<Resources />
+		</div>
+	);
+}
+
+// for Integrations page
+export function Integrations() {
+	const description = 'bla bla bla.';
+	const sections = [{ title: 'Integrations', id: 'integrations' }];
+
+	return (
+		<div>
+			<h1>Integrations</h1>
+			<p class="lead">bla bla bla</p>
+			<Libraries />
+		</div>
+	);
+}
+
 export default function Guide() {
 	const [navOpen, setNavOpen] = useState(false);
 	const location = useLocation();
@@ -1348,11 +2052,12 @@ export default function Guide() {
 					<main className="py-16">
 						<article className="prose dark:prose-invert">
 							<HeroPattern />
-							<Outlet />
-							{/* <div>test</div> */}
+							{/* <Overview /> */}
+							<Integrations />
+							{/* <Outlet /> */}
 						</article>
 					</main>
-					{/* <Footer /> */}
+					<Footer />
 				</div>
 			</div>
 		</SectionProvider>
