@@ -2053,8 +2053,8 @@ export default function Guide() {
 						<article className="prose dark:prose-invert">
 							<HeroPattern />
 							{/* <Overview /> */}
-							<Integrations />
-							{/* <Outlet /> */}
+							{/* <Integrations /> */}
+							<Outlet />
 						</article>
 					</main>
 					<Footer />

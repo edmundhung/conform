@@ -67,12 +67,63 @@ export function Aside({ children }: { children: React.ReactNode }) {
 			className={`
 				-ml-4 xl:ml-0 mb-8 xl:float-right xl:sticky xl:top-16 xl:w-72 xl:-mr-72 xl:pl-4 xl:py-8 xl:-mt-48 xl:max-h-[calc(100vh-4rem)] overflow-y-auto
 				prose-ul:list-none prose-ul:m-0 prose-ul:pl-4 prose-li:m-0 prose-li:pl-0 prose-headings:pl-4
-				prose-a:block prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400 
-				hover:prose-a:text-white  
+				prose-a:block prose-a:py-2 prose-a:no-underline prose-a:font-normal prose-a:text-zinc-400
+				hover:prose-a:text-white
 			`}
 		>
 			{children}
 		</aside>
+	);
+}
+
+export function Lead({ children }: { children: React.ReactNode }) {
+	return (
+		<div
+			className={`
+				lead
+			`}
+		>
+			{children}
+		</div>
+	);
+}
+
+export function Grid({ children }: { children: React.ReactNode }) {
+	return (
+		<div
+			className={`
+			  mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3
+			`}
+		>
+			{children}
+		</div>
+	);
+}
+
+export function Cell({
+	image,
+	children,
+}: {
+	image: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div
+			className={`
+				prose-h3:text-sm prose-h3:font-semibold prose-h3:text-zinc-900 dark:prose-h3:text-white
+				prose-p:mt-1 prose-p:text-sm prose-p:text-zinc-600 dark:prose-p:text-zinc-400
+				prose-a:inline-flex prose-a:gap-0.5 prose-a:justify-center prose-a:overflow-hidden prose-a:text-sm prose-a:font-medium prose-a:transition prose-a:text-emerald-500 hover:prose-a:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500
+			`}
+		>
+			<div className="flex flex-row-reverse gap-6">
+				<div className="flex-auto">{children}</div>
+				<img
+					className="h-12 w-12"
+					src="https://protocol.tailwindui.com/_next/static/media/go.135b57cb.svg"
+					alt={image}
+				/>
+			</div>
+		</div>
 	);
 }
 
@@ -187,6 +238,9 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 		>
 			{renderers.react(content, React, {
 				components: {
+					Lead,
+					Grid,
+					Cell,
 					Aside,
 					Sandbox,
 					Details,

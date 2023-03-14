@@ -6,7 +6,10 @@ export function parse(markdown: string) {
 			/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
 			'{% details summary="$1" %}$2{% /details %}',
 		)
-		.replace(/<!-- (\/?(aside|sandbox)( \w+=".+")*) -->/g, '{% $1 %}');
+		.replace(
+			/<!-- (\/?(lead|grid|cell|aside|sandbox)( \w+=".+")*) -->/g,
+			'{% $1 %}',
+		);
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
@@ -35,6 +38,25 @@ export function parse(markdown: string) {
 			},
 		},
 		tags: {
+			lead: {
+				render: 'Lead',
+				description: 'Lead paragraph',
+			},
+			grid: {
+				render: 'Grid',
+				description: 'Grid',
+			},
+			cell: {
+				render: 'Cell',
+				description: 'Cell in a grid',
+				attributes: {
+					image: {
+						type: String,
+						description: 'Additional image to be included in a cell',
+						default: '',
+					},
+				},
+			},
 			aside: {
 				render: 'Aside',
 				description: 'Side notes',
