@@ -71,11 +71,14 @@ In order to have a more easy understanding, examples with important featuers are
 <!-- /cell -->
 <!-- /grid -->
 
-- `Property` _string_ proerty description
+<!-- attributes -->
+
+- `Property` _string_ proerty description proerty description proerty description proerty description proerty description
 - `Property` _string_
-  proerty description
+  proerty description proerty description proerty description
 - `Property` _string_
-  proerty description
+proerty description
+<!-- /attributes -->
 
 ## Integrations
 

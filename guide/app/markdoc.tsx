@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|aside|sandbox)( \w+=".+")*) -->/g,
+			/<!-- (\/?(lead|grid|cell|attributes|aside|sandbox)( \w+=".+")*) -->/g,
 			'{% $1 %}',
 		);
 	const ast = markdoc.parse(content);
@@ -56,6 +56,11 @@ export function parse(markdown: string) {
 						default: '',
 					},
 				},
+			},
+			attributes: {
+				render: 'Attributes',
+				description:
+					'To list attributes with their names, data types and descriptions',
 			},
 			aside: {
 				render: 'Aside',
