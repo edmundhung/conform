@@ -131,10 +131,9 @@ export function Attributes({ children }: { children: React.ReactNode }) {
 	return (
 		<div
 			className={`
-				prose-ul:list-none prose-ul:m-0 prose-ul:pl-0
-				prose-li:m-0 prose-li:flex prose-li:flex-wrap prose-li:items-center prose-li:gap-x-3 prose-li:gap-y-2
-				prose-em:font-mono prose-em:text-xs prose-em:text-zinc-400 prose-em:dark:text-zinc-500
-				prose-li:w-full prose-li:flex-none prose-li:[&>:first-child]:mt-0 prose-li:[&>:last-child]:mb-0
+				m-0 flex flex-wrap items-center gap-x-3 gap-y-2
+				prose-em:inline prose-em:font-mono prose-em:text-xs prose-em:text-zinc-400 dark:prose-em:text-zinc-500 prose-em:block
+				prose-p:w-full prose-p:flex-none prose-p:mt-4 prose-p:[&>:first-child]:mt-0 prose-p:[&>:first-child]:mb-0
 			`}
 		>
 			{children}
