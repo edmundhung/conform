@@ -8,6 +8,8 @@ import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 import { getChildren, isTag } from './markdoc';
 import clsx from 'clsx';
+import { useInView } from 'framer-motion';
+import { remToPx } from './util';
 
 const style = {
 	...darcula,
@@ -236,26 +238,155 @@ export function Details({
 	);
 }
 
+interface HeaderProps
+	extends React.DetailedHTMLProps<
+		React.HTMLAttributes<HTMLHeadingElement>,
+		HTMLHeadingElement
+	> {
+	level?: 1 | 2 | 3 | 4 | 5 | 6;
+	tag?: string;
+	label?: string;
+	anchor?: boolean;
+}
+
 export function Heading({
-	level,
+	level = 2,
 	children,
-}: {
-	level: number;
-	children: React.ReactNode;
-}) {
-	const HeadingTag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-	const id =
-		typeof children === 'string'
+	id,
+	tag,
+	label,
+	anchor = true,
+	...props
+}: HeaderProps) {
+	const Component = `h${level}` as const;
+	const ref = React.useRef<HTMLHeadingElement>(null);
+	// const registerHeading = useSectionStore((s) => s.registerHeading);
+	const inView = useInView(ref, {
+		margin: `${remToPx(-3.5)}px 0px 0px 0px`,
+		amount: 'all',
+	});
+	const hash =
+		id ??
+		(typeof children === 'string'
 			? children.replace(/[?]/g, '').replace(/\s+/g, '-').toLowerCase()
-			: '';
+			: '');
+
+	// useEffect(() => {
+	// 	if (level === 2) {
+	// 		registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 });
+	// 	}
+	// }, [level, registerHeading]);
 
 	return (
-		<HeadingTag
-			id={id}
-			className="-mt-20 pt-20 lg:-mt-24 lg:pt-24 prose-a:inline-block prose-img:m-0"
+		<>
+			{tag || label ? (
+				<div className="flex items-center gap-x-3">
+					{tag && <Tag>{tag}</Tag>}
+					{tag && label && (
+						<span className="h-0.5 w-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+					)}
+					{label && (
+						<span className="font-mono text-xs text-zinc-400">{label}</span>
+					)}
+				</div>
+			) : null}
+			<Component
+				ref={ref}
+				id={anchor ? hash : undefined}
+				className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
+				{...props}
+			>
+				{anchor ? (
+					<RouterLink
+						to={`#${hash}`}
+						className="group text-inherit no-underline hover:text-inherit"
+					>
+						{inView && (
+							<div className="absolute mt-1 ml-[calc(-1*var(--width))] hidden w-[var(--width)] opacity-0 transition [--width:calc(2.625rem+0.5px+50%-min(50%,calc(theme(maxWidth.lg)+theme(spacing.8))))] group-hover:opacity-100 group-focus:opacity-100 md:block lg:z-50 2xl:[--width:theme(spacing.10)]">
+								<div className="group/anchor block h-5 w-5 rounded-lg bg-zinc-50 ring-1 ring-inset ring-zinc-300 transition hover:ring-zinc-500 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:bg-zinc-700 dark:hover:ring-zinc-600">
+									<svg
+										className="h-5 w-5 stroke-zinc-500 transition dark:stroke-zinc-400 dark:group-hover/anchor:stroke-white"
+										viewBox="0 0 20 20"
+										fill="none"
+										strokeLinecap="round"
+										aria-hidden="true"
+									>
+										<path d="m6.5 11.5-.964-.964a3.535 3.535 0 1 1 5-5l.964.964m2 2 .964.964a3.536 3.536 0 0 1-5 5L8.5 13.5m0-5 3 3" />
+									</svg>
+								</div>
+							</div>
+						)}
+						{children}
+					</RouterLink>
+				) : (
+					children
+				)}
+			</Component>
+		</>
+	);
+}
+
+interface TagProps {
+	variant?: keyof typeof variantStyles;
+	color?: keyof typeof colorStyles;
+	children: string;
+}
+
+const variantStyles = {
+	small: '',
+	medium: 'rounded-lg px-1.5 ring-1 ring-inset',
+};
+
+const colorStyles = {
+	emerald: {
+		small: 'text-emerald-500 dark:text-emerald-400',
+		medium:
+			'ring-emerald-300 dark:ring-emerald-400/30 bg-emerald-400/10 text-emerald-500 dark:text-emerald-400',
+	},
+	sky: {
+		small: 'text-sky-500',
+		medium:
+			'ring-sky-300 bg-sky-400/10 text-sky-500 dark:ring-sky-400/30 dark:bg-sky-400/10 dark:text-sky-400',
+	},
+	amber: {
+		small: 'text-amber-500',
+		medium:
+			'ring-amber-300 bg-amber-400/10 text-amber-500 dark:ring-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400',
+	},
+	rose: {
+		small: 'text-red-500 dark:text-rose-500',
+		medium:
+			'ring-rose-200 bg-rose-50 text-red-500 dark:ring-rose-500/20 dark:bg-rose-400/10 dark:text-rose-400',
+	},
+	zinc: {
+		small: 'text-zinc-400 dark:text-zinc-500',
+		medium:
+			'ring-zinc-200 bg-zinc-50 text-zinc-500 dark:ring-zinc-500/20 dark:bg-zinc-400/10 dark:text-zinc-400',
+	},
+};
+
+const valueColorMap: Record<string, keyof typeof colorStyles> = {
+	get: 'emerald',
+	post: 'sky',
+	put: 'amber',
+	delete: 'rose',
+};
+
+export function Tag({
+	children,
+	variant = 'medium',
+	color = valueColorMap[children.toLowerCase()] ?? 'emerald',
+}: TagProps) {
+	return (
+		<span
+			className={clsx(
+				'font-mono text-[0.625rem] font-semibold leading-6',
+				variantStyles[variant],
+				colorStyles[color][variant],
+			)}
 		>
 			{children}
-		</HeadingTag>
+		</span>
 	);
 }
 

@@ -17,7 +17,6 @@ import {
 	useIsPresent,
 	useScroll,
 	useTransform,
-	useInView,
 	useMotionTemplate,
 	useMotionValue,
 } from 'framer-motion';
@@ -26,7 +25,8 @@ import { create, createStore, useStore } from 'zustand';
 import { createAutocomplete } from '@algolia/autocomplete-core';
 import { getAlgoliaResults } from '@algolia/autocomplete-preset-algolia';
 import algoliasearch from 'algoliasearch/lite';
-import { ButtonLink } from '~/components';
+import { ButtonLink, Heading, Tag } from '~/components';
+import { remToPx } from '~/util';
 
 interface Navigation2 {
 	title: string;
@@ -138,74 +138,6 @@ export function HeroPattern() {
 				</svg>
 			</div>
 		</div>
-	);
-}
-
-// from remToPx.js
-export function remToPx(remValue) {
-	let rootFontSize =
-		typeof window === 'undefined'
-			? 16
-			: parseFloat(window.getComputedStyle(document.documentElement).fontSize);
-
-	return parseFloat(remValue) * rootFontSize;
-}
-
-// from Tag.jsx
-const variantStyles = {
-	medium: 'rounded-lg px-1.5 ring-1 ring-inset',
-};
-
-const colorStyles = {
-	emerald: {
-		small: 'text-emerald-500 dark:text-emerald-400',
-		medium:
-			'ring-emerald-300 dark:ring-emerald-400/30 bg-emerald-400/10 text-emerald-500 dark:text-emerald-400',
-	},
-	sky: {
-		small: 'text-sky-500',
-		medium:
-			'ring-sky-300 bg-sky-400/10 text-sky-500 dark:ring-sky-400/30 dark:bg-sky-400/10 dark:text-sky-400',
-	},
-	amber: {
-		small: 'text-amber-500',
-		medium:
-			'ring-amber-300 bg-amber-400/10 text-amber-500 dark:ring-amber-400/30 dark:bg-amber-400/10 dark:text-amber-400',
-	},
-	rose: {
-		small: 'text-red-500 dark:text-rose-500',
-		medium:
-			'ring-rose-200 bg-rose-50 text-red-500 dark:ring-rose-500/20 dark:bg-rose-400/10 dark:text-rose-400',
-	},
-	zinc: {
-		small: 'text-zinc-400 dark:text-zinc-500',
-		medium:
-			'ring-zinc-200 bg-zinc-50 text-zinc-500 dark:ring-zinc-500/20 dark:bg-zinc-400/10 dark:text-zinc-400',
-	},
-};
-
-const valueColorMap = {
-	get: 'emerald',
-	post: 'sky',
-	put: 'amber',
-	delete: 'rose',
-};
-
-export function Tag({
-	children,
-	variant = 'medium',
-	color = valueColorMap[children.toLowerCase()] ?? 'emerald',
-}) {
-	return (
-		<span
-			className={clsx(
-				'font-mono text-[0.625rem] font-semibold leading-6',
-				variantStyles[variant],
-				colorStyles[color][variant],
-			)}
-		>
-			{children}
-		</span>
 	);
 }
 
@@ -1073,29 +1005,6 @@ function TopLevelNavItem({ href, children }) {
 	);
 }
 
-function NavLink({ href, tag, active, isAnchorLink = false, children }) {
-	return (
-		<Link
-			to={href}
-			aria-current={active ? 'page' : undefined}
-			className={clsx(
-				'flex justify-between gap-2 py-1 pr-3 text-sm transition',
-				isAnchorLink ? 'pl-7' : 'pl-4',
-				active
-					? 'text-zinc-900 dark:text-white'
-					: 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
-			)}
-		>
-			<span className="truncate">{children}</span>
-			{tag && (
-				<Tag variant="small" color="zinc">
-					{tag}
-				</Tag>
-			)}
-		</Link>
-	);
-}
-
 function VisibleSectionHighlight({ group, pathname }) {
 	let [sections, visibleSections] = useInitialValue(
 		[
@@ -1193,9 +1102,20 @@ function NavigationGroup({ group, className }) {
 				<ul className="border-l border-transparent">
 					{group.menus.map((link) => (
 						<motion.li key={link.to} layout="position" className="relative">
-							<NavLink href={link.to} active={link.to === location.pathname}>
-								{link.title}
-							</NavLink>
+							<Link
+								to={link.to}
+								aria-current={
+									link.to === location.pathname ? 'page' : undefined
+								}
+								className={clsx(
+									'flex justify-between gap-2 py-1 pr-3 text-sm transition pl-4',
+									link.to === location.pathname
+										? 'text-zinc-900 dark:text-white'
+										: 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
+								)}
+							>
+								<span className="truncate">{link.title}</span>
+							</Link>
 							<AnimatePresence mode="popLayout" initial={false}>
 								{link.to === location.pathname && sections.length > 0 && (
 									<motion.ul
@@ -1212,13 +1132,17 @@ function NavigationGroup({ group, className }) {
 									>
 										{sections.map((section) => (
 											<li key={section.id}>
-												<NavLink
-													href={`${link.to}#${section.id}`}
-													tag={section.tag}
-													isAnchorLink
+												<Link
+													to={`${link.to}#${section.id}`}
+													className="flex justify-between gap-2 py-1 pr-3 text-sm transition pl-7 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
 												>
-													{section.title}
-												</NavLink>
+													<span className="truncate">{section.title}</span>
+													{section.tag && (
+														<Tag variant="small" color="zinc">
+															{section.tag}
+														</Tag>
+													)}
+												</Link>
 											</li>
 										))}
 									</motion.ul>
@@ -1260,7 +1184,13 @@ export function Navigation(props) {
 	);
 }
 
-function PageLink({ label, page, previous = false }) {
+interface PageLinkProps {
+	label: string;
+	page: Navigation2['menus'][0];
+	previous?: boolean;
+}
+
+function PageLink({ label, page, previous = false }: PageLinkProps) {
 	return (
 		<>
 			<ButtonLink
@@ -1332,102 +1262,6 @@ export function Footer() {
 				</div>
 			</div>
 		</footer>
-	);
-}
-
-// from Heading.jsx
-function AnchorIcon(props) {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			strokeLinecap="round"
-			aria-hidden="true"
-			{...props}
-		>
-			<path d="m6.5 11.5-.964-.964a3.535 3.535 0 1 1 5-5l.964.964m2 2 .964.964a3.536 3.536 0 0 1-5 5L8.5 13.5m0-5 3 3" />
-		</svg>
-	);
-}
-
-function Eyebrow({ tag, label }) {
-	if (!tag && !label) {
-		return null;
-	}
-
-	return (
-		<div className="flex items-center gap-x-3">
-			{tag && <Tag>{tag}</Tag>}
-			{tag && label && (
-				<span className="h-0.5 w-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-			)}
-			{label && (
-				<span className="font-mono text-xs text-zinc-400">{label}</span>
-			)}
-		</div>
-	);
-}
-
-function Anchor({ id, inView, children }) {
-	return (
-		<Link
-			to={`#${id}`}
-			className="group text-inherit no-underline hover:text-inherit"
-		>
-			{inView && (
-				<div className="absolute mt-1 ml-[calc(-1*var(--width))] hidden w-[var(--width)] opacity-0 transition [--width:calc(2.625rem+0.5px+50%-min(50%,calc(theme(maxWidth.lg)+theme(spacing.8))))] group-hover:opacity-100 group-focus:opacity-100 md:block lg:z-50 2xl:[--width:theme(spacing.10)]">
-					<div className="group/anchor block h-5 w-5 rounded-lg bg-zinc-50 ring-1 ring-inset ring-zinc-300 transition hover:ring-zinc-500 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:bg-zinc-700 dark:hover:ring-zinc-600">
-						<AnchorIcon className="h-5 w-5 stroke-zinc-500 transition dark:stroke-zinc-400 dark:group-hover/anchor:stroke-white" />
-					</div>
-				</div>
-			)}
-			{children}
-		</Link>
-	);
-}
-
-export function Heading({
-	level = 2,
-	children,
-	id,
-	tag,
-	label,
-	anchor = true,
-	...props
-}) {
-	let Component = `h${level}`;
-	let ref = useRef();
-	let registerHeading = useSectionStore((s) => s.registerHeading);
-
-	let inView = useInView(ref, {
-		margin: `${remToPx(-3.5)}px 0px 0px 0px`,
-		amount: 'all',
-	});
-
-	useEffect(() => {
-		if (level === 2) {
-			registerHeading({ id, ref, offsetRem: tag || label ? 8 : 6 });
-		}
-	});
-
-	return (
-		<>
-			<Eyebrow tag={tag} label={label} />
-			<Component
-				ref={ref}
-				id={anchor ? id : undefined}
-				className={tag || label ? 'mt-2 scroll-mt-32' : 'scroll-mt-24'}
-				{...props}
-			>
-				{anchor ? (
-					<Anchor id={id} inView={inView}>
-						{children}
-					</Anchor>
-				) : (
-					children
-				)}
-			</Component>
-		</>
 	);
 }
 
@@ -1564,33 +1398,6 @@ const guides = [
 	},
 ];
 
-export function Guides() {
-	return (
-		<div className="my-16 xl:max-w-none">
-			<Heading level={2} id="guides">
-				Guides
-			</Heading>
-			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
-				{guides.map((guide) => (
-					<div key={guide.to}>
-						<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
-							{guide.name}
-						</h3>
-						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-							{guide.description}
-						</p>
-						<p className="mt-4">
-							<ButtonLink to={guide.to} variant="text" arrow="right">
-								Read more
-							</ButtonLink>
-						</p>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
-
 // from Resources.jsx
 const resources = [
 	{
@@ -1722,80 +1529,13 @@ function Resource({ resource }) {
 	);
 }
 
-export function Resources() {
-	return (
-		<div className="my-16 xl:max-w-none">
-			<Heading level={2} id="resources">
-				API references
-			</Heading>
-			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
-				{resources.map((resource) => (
-					<Resource key={resource.to} resource={resource} />
-				))}
-			</div>
-		</div>
-	);
-}
-
-// from Libaraies.jsx
-const libraries = [
-	{
-		to: '#',
-		name: 'Remix',
-		description: 'bla bla bla.',
-		logo: '',
-	},
-	{
-		to: '#',
-		name: 'React',
-		description: 'bla bla bla.',
-		logo: '',
-	},
-	{
-		to: '#',
-		name: 'Node.js',
-		description: 'bla bla bla.',
-		logo: '',
-	},
-];
-
-export function Libraries() {
-	return (
-		<div className="my-16 xl:max-w-none">
-			<Heading level={2} id="official-libraries">
-				Official libraries
-			</Heading>
-			<div className="not-prose mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3">
-				{libraries.map((library) => (
-					<div key={library.name} className="flex flex-row-reverse gap-6">
-						<div className="flex-auto">
-							<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
-								{library.name}
-							</h3>
-							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-								{library.description}
-							</p>
-							<p className="mt-4">
-								<ButtonLink to={library.to} variant="text" arrow="right">
-									Read more
-								</ButtonLink>
-							</p>
-						</div>
-						<img src={library.logo} alt="" className="h-12 w-12" unoptimized />
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
-
 // for Overview page
 export function Overview() {
 	return (
 		<div>
 			{/* for Overview page */}
 			<h1>Overview</h1>
-			<p class="lead">bla bla bla</p>
+			<p className="lead">bla bla bla</p>
 			<div className="not-prose mb-16 mt-6 flex gap-3">
 				<ButtonLink to="/tutorial" arrow="right" children="Tutorial" />
 				<ButtonLink
@@ -1804,8 +1544,8 @@ export function Overview() {
 					children="Explore Integrations"
 				/>
 			</div>
-			<h2 class="scroll-mt-24">Getting started</h2>
-			<p class="lead">
+			<h2 className="scroll-mt-24">Getting started</h2>
+			<p className="lead">
 				bla bla bla <a href="/#">developer settings</a>, bla bla bla{' '}
 				<a href="/#">integrations directory</a> .
 			</p>
@@ -1817,22 +1557,38 @@ export function Overview() {
 					children="Get your pension xD"
 				/>
 			</div>
-			<Guides />
-			<Resources />
-		</div>
-	);
-}
-
-// for Integrations page
-export function Integrations() {
-	const description = 'bla bla bla.';
-	const sections = [{ title: 'Integrations', id: 'integrations' }];
-
-	return (
-		<div>
-			<h1>Integrations</h1>
-			<p class="lead">bla bla bla</p>
-			<Libraries />
+			<div className="my-16 xl:max-w-none">
+				<Heading level={2} id="guides">
+					Guides
+				</Heading>
+				<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+					{guides.map((guide) => (
+						<div key={guide.to}>
+							<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+								{guide.name}
+							</h3>
+							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+								{guide.description}
+							</p>
+							<p className="mt-4">
+								<ButtonLink to={guide.to} variant="text" arrow="right">
+									Read more
+								</ButtonLink>
+							</p>
+						</div>
+					))}
+				</div>
+			</div>
+			<div className="my-16 xl:max-w-none">
+				<Heading level={2} id="resources">
+					API references
+				</Heading>
+				<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+					{resources.map((resource) => (
+						<Resource key={resource.to} resource={resource} />
+					))}
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -1861,8 +1617,6 @@ export default function Guide() {
 					<main className="py-16">
 						<article className="prose dark:prose-invert">
 							<HeroPattern />
-							{/* <Overview /> */}
-							{/* <Integrations /> */}
 							<Outlet />
 						</article>
 					</main>
