@@ -19,7 +19,7 @@ import {
 	useTransform,
 } from 'framer-motion';
 import { Dialog, Transition } from '@headlessui/react';
-import { create, createStore, useStore } from 'zustand';
+import { createStore, useStore } from 'zustand';
 import { createAutocomplete } from '@algolia/autocomplete-core';
 import { getAlgoliaResults } from '@algolia/autocomplete-preset-algolia';
 import algoliasearch from 'algoliasearch/lite';
@@ -776,11 +776,11 @@ function TopLevelNavItemHeader({ href, children }) {
 }
 
 export const Header = forwardRef<HTMLDivElement>((props, ref) => {
-	let { isOpen: mobileNavIsOpen } = useMobileNavigationStore();
-	let isInsideMobileNavigation = useIsInsideMobileNavigation();
-	let { scrollY } = useScroll();
-	let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
-	let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
+	const { isOpen: mobileNavIsOpen } = useMobileNavigation();
+	const isInsideMobileNavigation = useIsInsideMobileNavigation();
+	const { scrollY } = useScroll();
+	const bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
+	const bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
 
 	return (
 		<motion.div
@@ -815,9 +815,6 @@ export const Header = forwardRef<HTMLDivElement>((props, ref) => {
 			<div className="flex items-center gap-5">
 				<nav className="hidden md:block">
 					<ul className="flex items-center gap-8">
-						<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/issues">
-							Issues
-						</TopLevelNavItemHeader>
 						<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/discussion">
 							Discussion
 						</TopLevelNavItemHeader>
@@ -832,7 +829,7 @@ export const Header = forwardRef<HTMLDivElement>((props, ref) => {
 					<ModeToggle />
 				</div>
 				<div className="hidden min-[416px]:contents">
-					<ButtonLink to="https://github.com/edmundhung/conform/issues">
+					<ButtonLink to="https://github.com/edmundhung/conform">
 						GitHub
 					</ButtonLink>
 				</div>
@@ -872,35 +869,57 @@ function XIcon(props) {
 
 const IsInsideMobileNavigationContext = createContext(false);
 
-export function useIsInsideMobileNavigation() {
+function useIsInsideMobileNavigation() {
 	return useContext(IsInsideMobileNavigationContext);
 }
 
-export const useMobileNavigationStore = create((set) => ({
-	isOpen: false,
-	open: () => set({ isOpen: true }),
-	close: () => set({ isOpen: false }),
-	toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-}));
+function useMobileNavigation() {
+	const location = useLocation();
+	const searchParams = new URLSearchParams(location.search);
+	const openSearchParams = new URLSearchParams(
+		Array.from(searchParams.entries()).concat([['open', 'navigation']]),
+	).toString();
+	const closeSearchParams = new URLSearchParams(
+		Array.from(searchParams.entries()).filter(
+			([key, value]) => key !== 'open' && value !== 'navigation',
+		),
+	).toString();
 
-export function MobileNavigation() {
-	let isInsideMobileNavigation = useIsInsideMobileNavigation();
-	let { isOpen, toggle, close } = useMobileNavigationStore();
-	let ToggleIcon = isOpen ? XIcon : MenuIcon;
+	return {
+		isOpen: searchParams.get('open') === 'navigation',
+		openNavigationLink: `?${openSearchParams}`,
+		closeNavigationLink: `?${closeSearchParams}`,
+	};
+}
+
+function MobileNavigation() {
+	const isInsideMobileNavigation = useIsInsideMobileNavigation();
+	const { isOpen, openNavigationLink, closeNavigationLink } =
+		useMobileNavigation();
+	const navigate = useNavigate();
+	const ToggleIcon = isOpen ? XIcon : MenuIcon;
 
 	return (
 		<IsInsideMobileNavigationContext.Provider value={true}>
-			<button
-				type="button"
+			<Link
+				to={isOpen ? closeNavigationLink : openNavigationLink}
 				className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-zinc-900/5 dark:hover:bg-white/5"
 				aria-label="Toggle navigation"
-				onClick={toggle}
+				preventScrollReset
 			>
 				<ToggleIcon className="w-2.5 stroke-zinc-900 dark:stroke-white" />
-			</button>
+			</Link>
 			{!isInsideMobileNavigation && (
 				<Transition.Root show={isOpen} as={Fragment}>
-					<Dialog onClose={close} className="fixed inset-0 z-50 lg:hidden">
+					<Dialog
+						className="fixed inset-0 z-50 lg:hidden"
+						onClose={() =>
+							navigate(closeNavigationLink, {
+								replace: true,
+								preventScrollReset: true,
+							})
+						}
+					>
 						<Transition.Child
 							as={Fragment}
 							enter="duration-300 ease-out"
@@ -1077,6 +1096,7 @@ function NavigationGroup({ group, className }) {
 										? 'text-zinc-900 dark:text-white'
 										: 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
 								)}
+								replace={isInsideMobileNavigation}
 							>
 								<span className="truncate">{link.title}</span>
 							</Link>
@@ -1099,6 +1119,7 @@ function NavigationGroup({ group, className }) {
 												<Link
 													to={`${link.to}#${section.id}`}
 													className="flex justify-between gap-2 py-1 pr-3 text-sm transition pl-7 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+													replace={isInsideMobileNavigation}
 												>
 													<span className="truncate">{section.title}</span>
 													{section.tag && (
@@ -1120,13 +1141,21 @@ function NavigationGroup({ group, className }) {
 	);
 }
 
-export function Navigation(props) {
+export function Navigation(
+	props: React.DetailedHTMLProps<
+		React.HTMLAttributes<HTMLElement>,
+		HTMLElement
+	>,
+) {
 	return (
 		<nav {...props}>
 			<ul>
-				<TopLevelNavItem href="/">API</TopLevelNavItem>
-				<TopLevelNavItem href="#">Documentation</TopLevelNavItem>
-				<TopLevelNavItem href="#">Support</TopLevelNavItem>
+				<TopLevelNavItem href="https://github.com/edmundhung/conform/discussion">
+					Discussion
+				</TopLevelNavItem>
+				<TopLevelNavItem href="https://github.com/edmundhung/conform/releases">
+					Changelog
+				</TopLevelNavItem>
 				{navigation.map((group, groupIndex) => (
 					<NavigationGroup
 						key={group.title}
