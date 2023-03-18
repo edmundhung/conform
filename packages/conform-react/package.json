@@ -1,6 +1,7 @@
 {
 	"name": "@conform-to/react",
 	"description": "Conform view adapter for react",
+	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "0.6.0",
 	"main": "index.js",
@@ -28,8 +29,11 @@
 		"constraint-validation",
 		"form",
 		"form-validation",
+		"html",
+		"progressive-enhancement",
 		"validation",
-		"react"
+		"react",
+		"remix"
 	],
 	"sideEffects": false
 }

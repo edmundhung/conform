@@ -1,6 +1,7 @@
 {
 	"name": "@conform-to/dom",
 	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
+	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "0.6.0",
 	"main": "index.js",
@@ -22,6 +23,8 @@
 		"constraint-validation",
 		"form",
 		"form-validation",
+		"html",
+		"progressive-enhancement",
 		"validation",
 		"dom"
 	],
