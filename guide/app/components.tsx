@@ -7,6 +7,7 @@ import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 import { getChildren, isTag } from './markdoc';
+import clsx from 'clsx';
 
 const style = {
 	...darcula,
@@ -58,6 +59,67 @@ export function Sandbox({
 			className="min-h-[70vh] my-6 w-full aspect-[16/9] outline outline-1 outline-zinc-800 outline-offset-4 rounded"
 			sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
 		/>
+	);
+}
+
+interface ButtonLinkProps extends React.ComponentProps<typeof RouterLink> {
+	variant?: keyof typeof variantStylesForButton;
+	arrow?: 'left' | 'right';
+}
+
+const variantStylesForButton = {
+	primary:
+		'rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-emerald-400/10 dark:text-emerald-400 dark:ring-1 dark:ring-inset dark:ring-emerald-400/20 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-300 dark:hover:ring-emerald-300',
+	secondary:
+		'rounded-full bg-zinc-100 py-1 px-3 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-300',
+	filled:
+		'rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400',
+	outline:
+		'rounded-full py-1 px-3 text-zinc-700 ring-1 ring-inset ring-zinc-900/10 hover:bg-zinc-900/2.5 hover:text-zinc-900 dark:text-zinc-400 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white',
+	text: 'text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500',
+};
+
+export function ButtonLink({
+	variant = 'primary',
+	className,
+	children,
+	arrow,
+	...props
+}: ButtonLinkProps) {
+	const arrowIcon = (
+		<svg
+			className={clsx(
+				'mt-0.5 h-5 w-5',
+				variant === 'text' && 'relative top-px',
+				arrow === 'left' && '-ml-1 rotate-180',
+				arrow === 'right' && '-mr-1',
+			)}
+			viewBox="0 0 20 20"
+			fill="none"
+			aria-hidden="true"
+		>
+			<path
+				stroke="currentColor"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				d="m11.5 6.5 3 3.5m0 0-3 3.5m3-3.5h-9"
+			/>
+		</svg>
+	);
+
+	return (
+		<RouterLink
+			className={clsx(
+				'inline-flex gap-0.5 justify-center overflow-hidden text-sm font-medium transition',
+				variantStylesForButton[variant],
+				className,
+			)}
+			{...props}
+		>
+			{arrow === 'left' ? arrowIcon : null}
+			{children}
+			{arrow === 'right' ? arrowIcon : null}
+		</RouterLink>
 	);
 }
 
@@ -197,15 +259,13 @@ export function Heading({
 	);
 }
 
-export function Link({
-	href,
-	title,
-	children,
-}: {
+interface LinkProps {
 	href: string;
 	title: string;
 	children: React.ReactNode;
-}) {
+}
+
+export function Link({ href, title, children }: LinkProps) {
 	const origin = 'https://conform.guide';
 	const url = href.startsWith(origin) ? href.replace(origin, '') : href;
 

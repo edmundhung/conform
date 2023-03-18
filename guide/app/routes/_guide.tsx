@@ -26,6 +26,7 @@ import { create, createStore, useStore } from 'zustand';
 import { createAutocomplete } from '@algolia/autocomplete-core';
 import { getAlgoliaResults } from '@algolia/autocomplete-preset-algolia';
 import algoliasearch from 'algoliasearch/lite';
+import { ButtonLink } from '~/components';
 
 interface Navigation2 {
 	title: string;
@@ -205,67 +206,6 @@ export function Tag({
 		>
 			{children}
 		</span>
-	);
-}
-
-// from Button.jsx
-function ArrowIcon(props) {
-	return (
-		<svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
-			<path
-				stroke="currentColor"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				d="m11.5 6.5 3 3.5m0 0-3 3.5m3-3.5h-9"
-			/>
-		</svg>
-	);
-}
-
-const variantStylesForButton = {
-	primary:
-		'rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-emerald-400/10 dark:text-emerald-400 dark:ring-1 dark:ring-inset dark:ring-emerald-400/20 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-300 dark:hover:ring-emerald-300',
-	secondary:
-		'rounded-full bg-zinc-100 py-1 px-3 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-300',
-	filled:
-		'rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400',
-	outline:
-		'rounded-full py-1 px-3 text-zinc-700 ring-1 ring-inset ring-zinc-900/10 hover:bg-zinc-900/2.5 hover:text-zinc-900 dark:text-zinc-400 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white',
-	text: 'text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500',
-};
-
-export function Button({
-	variant = 'primary',
-	className,
-	children,
-	arrow,
-	...props
-}) {
-	let Component = props.to ? Link : 'button';
-
-	className = clsx(
-		'inline-flex gap-0.5 justify-center overflow-hidden text-sm font-medium transition',
-		variantStylesForButton[variant],
-		className,
-	);
-
-	let arrowIcon = (
-		<ArrowIcon
-			className={clsx(
-				'mt-0.5 h-5 w-5',
-				variant === 'text' && 'relative top-px',
-				arrow === 'left' && '-ml-1 rotate-180',
-				arrow === 'right' && '-mr-1',
-			)}
-		/>
-	);
-
-	return (
-		<Component className={className} {...props}>
-			{arrow === 'left' && arrowIcon}
-			{children}
-			{arrow === 'right' && arrowIcon}
-		</Component>
 	);
 }
 
@@ -946,19 +886,16 @@ function TopLevelNavItemHeader({ href, children }) {
 	);
 }
 
-export const Header = forwardRef(function Header({ className }, ref) {
+export function Header() {
 	let { isOpen: mobileNavIsOpen } = useMobileNavigationStore();
 	let isInsideMobileNavigation = useIsInsideMobileNavigation();
-
 	let { scrollY } = useScroll();
 	let bgOpacityLight = useTransform(scrollY, [0, 72], [0.5, 0.9]);
 	let bgOpacityDark = useTransform(scrollY, [0, 72], [0.2, 0.8]);
 
 	return (
 		<motion.div
-			ref={ref}
 			className={clsx(
-				className,
 				'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:left-72 lg:z-30 lg:px-8 xl:left-80',
 				!isInsideMobileNavigation &&
 					'backdrop-blur-sm dark:backdrop-blur lg:left-72 xl:left-80',
@@ -987,7 +924,7 @@ export const Header = forwardRef(function Header({ className }, ref) {
 			</div>
 			<div className="flex items-center gap-5">
 				<nav className="hidden md:block">
-					<ul role="list" className="flex items-center gap-8">
+					<ul className="flex items-center gap-8">
 						<TopLevelNavItemHeader href="/">API</TopLevelNavItemHeader>
 						<TopLevelNavItemHeader href="#">
 							Documentation
@@ -1001,12 +938,12 @@ export const Header = forwardRef(function Header({ className }, ref) {
 					<ModeToggle />
 				</div>
 				<div className="hidden min-[416px]:contents">
-					<Button to="#">Sign in</Button>
+					<ButtonLink to="#">Sign in</ButtonLink>
 				</div>
 			</div>
 		</motion.div>
 	);
-});
+}
 
 // from MobileNavigation.jsx
 function MenuIcon(props) {
@@ -1310,13 +1247,13 @@ export function Navigation(props) {
 					/>
 				))}
 				<li className="sticky bottom-0 z-10 mt-6 min-[416px]:hidden">
-					<Button
+					<ButtonLink
 						to="https://github.com/edmundhung/conform"
 						variant="filled"
 						className="w-full"
 					>
 						GitHub
-					</Button>
+					</ButtonLink>
 				</li>
 			</ul>
 		</nav>
@@ -1326,14 +1263,14 @@ export function Navigation(props) {
 function PageLink({ label, page, previous = false }) {
 	return (
 		<>
-			<Button
+			<ButtonLink
 				to={page.to}
 				aria-label={`${label}: ${page.title}`}
 				variant="secondary"
 				arrow={previous ? 'left' : 'right'}
 			>
 				{label}
-			</Button>
+			</ButtonLink>
 			<Link
 				to={page.to}
 				tabIndex={-1}
@@ -1643,9 +1580,9 @@ export function Guides() {
 							{guide.description}
 						</p>
 						<p className="mt-4">
-							<Button to={guide.to} variant="text" arrow="right">
+							<ButtonLink to={guide.to} variant="text" arrow="right">
 								Read more
-							</Button>
+							</ButtonLink>
 						</p>
 					</div>
 				))}
@@ -1839,9 +1776,9 @@ export function Libraries() {
 								{library.description}
 							</p>
 							<p className="mt-4">
-								<Button to={library.to} variant="text" arrow="right">
+								<ButtonLink to={library.to} variant="text" arrow="right">
 									Read more
-								</Button>
+								</ButtonLink>
 							</p>
 						</div>
 						<img src={library.logo} alt="" className="h-12 w-12" unoptimized />
@@ -1860,8 +1797,8 @@ export function Overview() {
 			<h1>Overview</h1>
 			<p class="lead">bla bla bla</p>
 			<div className="not-prose mb-16 mt-6 flex gap-3">
-				<Button to="/tutorial" arrow="right" children="Tutorial" />
-				<Button
+				<ButtonLink to="/tutorial" arrow="right" children="Tutorial" />
+				<ButtonLink
 					to="/integrations"
 					variant="outline"
 					children="Explore Integrations"
@@ -1873,7 +1810,7 @@ export function Overview() {
 				<a href="/#">integrations directory</a> .
 			</p>
 			<div className="not-prose">
-				<Button
+				<ButtonLink
 					to="/integrations"
 					variant="text"
 					arrow="right"
@@ -1901,13 +1838,6 @@ export function Integrations() {
 }
 
 export default function Guide() {
-	const [navOpen, setNavOpen] = useState(false);
-	const location = useLocation();
-
-	useEffect(() => {
-		setNavOpen(false);
-	}, [location]);
-
 	return (
 		<SectionProvider sections={[]}>
 			<div className="lg:ml-72 xl:ml-80">
