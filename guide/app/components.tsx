@@ -6,7 +6,6 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-ligh
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
-import { getChildren, isTag } from './markdoc';
 import clsx from 'clsx';
 import { useInView } from 'framer-motion';
 import { remToPx } from './util';
@@ -430,17 +429,8 @@ export function Link({ href, title, children }: LinkProps) {
 }
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
-	const hasSidebar =
-		typeof getChildren(content).find(
-			(node) => isTag(node) && node.name === 'Aside',
-		) !== 'undefined';
-
 	return (
-		<section
-			className={`prose prose-invert max-w-none prose-pre:!mt-6 prose-pre:!mb-8 prose-img:inline-block prose-img:m-0 ${
-				hasSidebar ? 'xl:pr-72' : ''
-			}`}
-		>
+		<div className="prose dark:prose-invert max-w-none">
 			{renderers.react(content, React, {
 				components: {
 					Lead,
@@ -455,6 +445,6 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Link,
 				},
 			})}
-		</section>
+		</div>
 	);
 }

@@ -195,7 +195,7 @@ function Resource({ resource }: { resource: (typeof resources)[0] }) {
 
 export default function Index() {
 	return (
-		<div>
+		<div className="prose dark:prose-invert">
 			<h1>Overview</h1>
 			<p className="lead">bla bla bla</p>
 			<div className="not-prose mb-16 mt-6 flex gap-3">

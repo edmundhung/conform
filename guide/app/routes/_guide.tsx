@@ -775,7 +775,7 @@ function TopLevelNavItemHeader({ href, children }) {
 	);
 }
 
-export function Header() {
+export const Header = forwardRef<HTMLDivElement>((props, ref) => {
 	let { isOpen: mobileNavIsOpen } = useMobileNavigationStore();
 	let isInsideMobileNavigation = useIsInsideMobileNavigation();
 	let { scrollY } = useScroll();
@@ -784,6 +784,7 @@ export function Header() {
 
 	return (
 		<motion.div
+			ref={ref}
 			className={clsx(
 				'fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between gap-12 px-4 transition sm:px-6 lg:left-72 lg:z-30 lg:px-8 xl:left-80',
 				!isInsideMobileNavigation &&
@@ -814,11 +815,15 @@ export function Header() {
 			<div className="flex items-center gap-5">
 				<nav className="hidden md:block">
 					<ul className="flex items-center gap-8">
-						<TopLevelNavItemHeader href="/">API</TopLevelNavItemHeader>
-						<TopLevelNavItemHeader href="#">
-							Documentation
+						<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/issues">
+							Issues
 						</TopLevelNavItemHeader>
-						<TopLevelNavItemHeader href="#">Support</TopLevelNavItemHeader>
+						<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/discussion">
+							Discussion
+						</TopLevelNavItemHeader>
+						<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/releases">
+							Changelog
+						</TopLevelNavItemHeader>
 					</ul>
 				</nav>
 				<div className="hidden md:block md:h-5 md:w-px md:bg-zinc-900/10 md:dark:bg-white/15" />
@@ -827,12 +832,14 @@ export function Header() {
 					<ModeToggle />
 				</div>
 				<div className="hidden min-[416px]:contents">
-					<ButtonLink to="#">Sign in</ButtonLink>
+					<ButtonLink to="https://github.com/edmundhung/conform/issues">
+						GitHub
+					</ButtonLink>
 				</div>
 			</div>
 		</motion.div>
 	);
-}
+});
 
 // from MobileNavigation.jsx
 function MenuIcon(props) {
@@ -1244,10 +1251,8 @@ export default function Guide() {
 				</motion.header>
 				<div className="relative px-4 pt-14 sm:px-6 lg:px-8">
 					<main className="py-16">
-						<article className="prose dark:prose-invert">
-							<HeroPattern />
-							<Outlet />
-						</article>
+						<HeroPattern />
+						<Outlet />
 					</main>
 					<Footer />
 				</div>
