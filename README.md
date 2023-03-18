@@ -1,6 +1,6 @@
 # CONFORM [![latest release](https://img.shields.io/github/v/release/edmundhung/conform?display_name=tag&sort=semver&style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/releases) [![GitHub license](https://img.shields.io/github/license/edmundhung/conform?style=flat-square&labelColor=000&color=2a4233)](https://github.com/edmundhung/conform/blob/main/LICENSE)
 
-A progressive enhancement first form validation library for [Remix](https://remix.run)
+A progressive enhancement first form validation library for Remix and React Router
 
 ### Highlights
 
@@ -14,13 +14,13 @@ A progressive enhancement first form validation library for [Remix](https://remi
 
 ### Quick Start
 
-Here is a real world example built with [Remix](https://remix.run).
+Here is an example built with Remix:
 
 ```tsx
 import { useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { Form } from '@remix-run/react';
-import { json, redirect } from '@remix-run/node';
+import { json } from '@remix-run/node';
 import { z } from 'zod';
 import { authenticate } from '~/auth';
 
@@ -34,7 +34,7 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, { schema });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return json(submission);
+    return json(submission, { status: 400 });
   }
 
   return await authenticate(submission.value);
@@ -53,12 +53,12 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label>Email</label>
-        <input {...conform.input(email)} />
+        <input type="email" name={email.name} />
         <div>{email.error}</div>
       </div>
       <div>
         <label>Password</label>
-        <input {...conform.input(password)} />
+        <input type="password" name={password.name} />
         <div>{password.error}</div>
       </div>
       <button>Login</button>
