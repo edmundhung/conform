@@ -1,3 +1,5 @@
+import { useLayoutEffect } from 'react';
+
 export function formatTitle(text: string): string {
 	return `${text.slice(0, 1).toUpperCase()}${text.slice(1).toLowerCase()}`;
 }
@@ -14,3 +16,6 @@ export function remToPx(remValue: number) {
 
 	return remValue * rootFontSize;
 }
+
+export const useSSRSafeLayoutEffect =
+	typeof document === 'undefined' ? () => {} : useLayoutEffect;

@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from '@remix-run/react';
+import { Form, Link, Outlet, useLocation, useNavigate } from '@remix-run/react';
 import {
 	useEffect,
 	useState,
@@ -8,7 +8,6 @@ import {
 	createContext,
 	Fragment,
 	useContext,
-	useLayoutEffect,
 } from 'react';
 import clsx from 'clsx';
 import {
@@ -24,7 +23,7 @@ import { createAutocomplete } from '@algolia/autocomplete-core';
 import { getAlgoliaResults } from '@algolia/autocomplete-preset-algolia';
 import algoliasearch from 'algoliasearch/lite';
 import { ButtonLink, Tag } from '~/components';
-import { remToPx } from '~/util';
+import { remToPx, useSSRSafeLayoutEffect } from '~/util';
 import { GridPattern } from '~/pattern';
 
 interface Navigation2 {
@@ -182,15 +181,12 @@ function useVisibleSections(sectionStore) {
 
 const SectionStoreContext = createContext();
 
-const useIsomorphicLayoutEffect =
-	typeof window === 'undefined' ? useEffect : useLayoutEffect;
-
 export function SectionProvider({ sections, children }) {
 	let [sectionStore] = useState(() => createSectionStore(sections));
 
 	useVisibleSections(sectionStore);
 
-	useIsomorphicLayoutEffect(() => {
+	useSSRSafeLayoutEffect(() => {
 		sectionStore.setState({ sections });
 	}, [sectionStore, sections]);
 
@@ -228,37 +224,32 @@ function MoonIcon(props) {
 }
 
 export function ModeToggle() {
-	function disableTransitionsTemporarily() {
-		document.documentElement.classList.add('[&_*]:!transition-none');
-		window.setTimeout(() => {
-			document.documentElement.classList.remove('[&_*]:!transition-none');
-		}, 0);
-	}
-
-	function toggleMode() {
-		disableTransitionsTemporarily();
-
-		let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		let isSystemDarkMode = darkModeMediaQuery.matches;
-		let isDarkMode = document.documentElement.classList.toggle('dark');
-
-		if (isDarkMode === isSystemDarkMode) {
-			delete window.localStorage.isDarkMode;
-		} else {
-			window.localStorage.isDarkMode = isDarkMode;
-		}
-	}
+	const location = useLocation();
 
 	return (
-		<button
-			type="button"
-			className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-zinc-900/5 dark:hover:bg-white/5"
-			aria-label="Toggle dark mode"
-			onClick={toggleMode}
-		>
-			<SunIcon className="h-5 w-5 stroke-zinc-900 dark:hidden" />
-			<MoonIcon className="hidden h-5 w-5 stroke-white dark:block" />
-		</button>
+		<Form method="post" action="/color-scheme" replace>
+			<input
+				type="hidden"
+				name="returnTo"
+				value={location.pathname + location.search}
+			/>
+			<button
+				className="dark:hidden flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-zinc-900/5 dark:hover:bg-white/5"
+				aria-label="Toggle dark mode"
+				name="colorScheme"
+				value="dark"
+			>
+				<SunIcon className="h-5 w-5 stroke-zinc-900" />
+			</button>
+			<button
+				className="hidden dark:flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-zinc-900/5 dark:hover:bg-white/5"
+				aria-label="Toggle dark mode"
+				name="colorScheme"
+				value="light"
+			>
+				<MoonIcon className="h-5 w-5 stroke-white" />
+			</button>
+		</Form>
 	);
 }
 
@@ -544,41 +535,6 @@ function AlgoliaLogo(props) {
 			/>
 			<path d="M8.725.001C4.356.001.795 3.523.732 7.877c-.064 4.422 3.524 8.085 7.946 8.111a7.94 7.94 0 0 0 3.849-.96.187.187 0 0 0 .034-.305l-.748-.663a.528.528 0 0 0-.555-.094 6.461 6.461 0 0 1-2.614.513c-3.574-.043-6.46-3.016-6.404-6.59a6.493 6.493 0 0 1 6.485-6.38h6.485v11.527l-3.68-3.269a.271.271 0 0 0-.397.042 3.014 3.014 0 0 1-5.416-1.583 3.02 3.02 0 0 1 3.008-3.248 3.02 3.02 0 0 1 3.005 2.75.537.537 0 0 0 .176.356l.958.85a.187.187 0 0 0 .308-.106c.07-.37.094-.755.067-1.15a4.536 4.536 0 0 0-4.23-4.2A4.53 4.53 0 0 0 4.203 7.87c-.067 2.467 1.954 4.593 4.421 4.648a4.498 4.498 0 0 0 2.756-.863l4.808 4.262a.32.32 0 0 0 .531-.239V.304a.304.304 0 0 0-.303-.303h-7.69Z" />
 		</svg>
-	);
-}
-
-function SearchButton(props) {
-	let [modifierKey, setModifierKey] = useState();
-
-	useEffect(() => {
-		setModifierKey(
-			/(Mac|iPhone|iPod|iPad)/i.test(navigator.platform) ? '⌘' : 'Ctrl ',
-		);
-	}, []);
-
-	return (
-		<>
-			<button
-				type="button"
-				className="hidden h-8 w-full items-center gap-2 rounded-full bg-white pl-2 pr-3 text-sm text-zinc-500 ring-1 ring-zinc-900/10 transition hover:ring-zinc-900/20 dark:bg-white/5 dark:text-zinc-400 dark:ring-inset dark:ring-white/10 dark:hover:ring-white/20 lg:flex focus:[&:not(:focus-visible)]:outline-none"
-				{...props}
-			>
-				<SearchIcon className="h-5 w-5 stroke-current" />
-				Find something...
-				<kbd className="ml-auto text-2xs text-zinc-400 dark:text-zinc-500">
-					<kbd className="font-sans">{modifierKey}</kbd>
-					<kbd className="font-sans">K</kbd>
-				</kbd>
-			</button>
-			<button
-				type="button"
-				className="flex h-6 w-6 items-center justify-center rounded-md transition hover:bg-zinc-900/5 dark:hover:bg-white/5 lg:hidden focus:[&:not(:focus-visible)]:outline-none"
-				aria-label="Find something..."
-				{...props}
-			>
-				<SearchIcon className="h-5 w-5 stroke-zinc-900 dark:stroke-white" />
-			</button>
-		</>
 	);
 }
 

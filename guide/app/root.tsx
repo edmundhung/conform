@@ -1,7 +1,7 @@
-import type {
-	MetaFunction,
-	LinksFunction,
-	LoaderArgs,
+import {
+	type MetaFunction,
+	type LinksFunction,
+	type LoaderArgs,
 } from '@remix-run/cloudflare';
 import {
 	Links,
@@ -13,28 +13,34 @@ import {
 	useCatch,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
+import { parseColorScheme } from '~/services/color-scheme/server';
+import {
+	ColorSchemeScript,
+	useColorScheme,
+} from '~/services/color-scheme/components';
 import stylesUrl from '~/styles.css';
-import { getBranch } from './context';
+import { getBranch } from '~/context';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export let loader = ({ context }: LoaderArgs) => {
+export async function loader({ request, context }: LoaderArgs) {
+	const colorScheme = await parseColorScheme(request);
 	const repository = 'edmundhung/conform';
 	const branch = getBranch(context);
 
 	return json({
+		colorScheme,
 		repository,
 		branch,
 	});
-};
+}
 
 export const meta: MetaFunction = () => ({
-	charset: 'utf-8',
 	title: 'Conform Guide',
-	description: 'Make your form conform to the dom',
-	viewport: 'width=device-width,initial-scale=1',
+	description:
+		'Progressive enhancement first form validaition library for Remix and React Router',
 });
 
 export function CatchBoundary() {
@@ -58,9 +64,18 @@ export function CatchBoundary() {
 }
 
 export default function App() {
+	const colorScheme = useColorScheme();
+
 	return (
-		<html lang="en" className="dark js-focus-visible">
+		<html
+			lang="en"
+			className={colorScheme === 'dark' ? 'dark' : ''}
+			suppressHydrationWarning
+		>
 			<head>
+				<ColorSchemeScript />
+				<meta charSet="utf-8" />
+				<meta name="viewport" content="width=device-width,initial-scale=1" />
 				<Meta />
 				<Links />
 			</head>
