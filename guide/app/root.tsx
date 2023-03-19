@@ -13,13 +13,19 @@ import {
 	useCatch,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
+import clsx from 'clsx';
+import { getBranch } from '~/context';
 import { parseColorScheme } from '~/services/color-scheme/server';
 import {
 	ColorSchemeScript,
 	useColorScheme,
 } from '~/services/color-scheme/components';
+import {
+	useMobileNavigation,
+	MobileNavigation,
+	SectionProvider,
+} from '~/services/navigation/components';
 import stylesUrl from '~/styles.css';
-import { getBranch } from '~/context';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
@@ -65,11 +71,15 @@ export function CatchBoundary() {
 
 export default function App() {
 	const colorScheme = useColorScheme();
+	const mobileNavigation = useMobileNavigation();
 
 	return (
 		<html
 			lang="en"
-			className={colorScheme === 'dark' ? 'dark' : ''}
+			className={clsx({
+				dark: colorScheme === 'dark',
+				'overflow-hidden': mobileNavigation.isOpen,
+			})}
 			suppressHydrationWarning
 		>
 			<head>
@@ -80,7 +90,10 @@ export default function App() {
 				<Links />
 			</head>
 			<body className="bg-white antialiased dark:bg-zinc-900">
-				<Outlet />
+				<SectionProvider sections={[]}>
+					<Outlet />
+					<MobileNavigation />
+				</SectionProvider>
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />
