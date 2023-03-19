@@ -71,18 +71,21 @@ In order to have a more easy understanding, examples with important featuers are
 <!-- /cell -->
 <!-- /grid -->
 
+### Properties
+
 <!-- attributes -->
 
-1. `Property` _string_
+#### `id` _string_
 
-   - proerty description proerty description proerty description proerty description proerty description
+proerty description proerty description proerty description proerty description proerty description
 
-2. `Property` _string_
+#### `is_muted` _boolean_
 
-   - proerty description proerty description proerty description
+proerty description proerty description proerty description
 
-3. `Property` _string_
-   - proerty description
+#### `lastSubmission` _Submission_
+
+proerty description
 
 <!-- /attributes -->
 <!--
