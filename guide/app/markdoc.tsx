@@ -10,6 +10,7 @@ export function parse(markdown: string) {
 			/<!-- (\/?(lead|grid|cell|attributes|codegroup|aside|sandbox)( \w+=".+")*) -->/g,
 			'{% $1 %}',
 		);
+
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
@@ -68,19 +69,19 @@ export function parse(markdown: string) {
 				attributes: {
 					title: {
 						type: String,
-						default: '',
+						default: 'Title',
 						description: 'Title of the code group',
 					},
-					tag: {
-						type: String,
-						default: '',
-						description: '.......',
-					},
-					label: {
-						type: String,
-						default: '',
-						description: '.....',
-					},
+					// tag: {
+					// 	type: String,
+					// 	default: 'Tag',
+					// 	description: '.......',
+					// },
+					// label: {
+					// 	type: String,
+					// 	default: 'Label',
+					// 	description: '.....',
+					// },
 				},
 			},
 			aside: {

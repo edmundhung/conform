@@ -443,9 +443,12 @@ function useTabGroupProps(availableLanguages) {
 const CodeGroupContext = React.createContext(false);
 
 export function CodeGroup({ children, title, ...props }) {
+	console.log('title', title);
+	console.log(children);
 	let languages = React.Children.map(children, (child) =>
 		getPanelTitle(child.props),
 	);
+	languages = ['TypeScript1', 'TypeScript2'];
 	let tabGroupProps = useTabGroupProps(languages);
 	let hasTabs = React.Children.count(children) > 1;
 	let Container = hasTabs ? Tab.Group : 'div';
