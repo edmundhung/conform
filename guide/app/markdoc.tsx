@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|attributes|aside|sandbox)( \w+=".+")*) -->/g,
+			/<!-- (\/?(lead|grid|cell|attributes|codegroup|aside|sandbox)( \w+=".+")*) -->/g,
 			'{% $1 %}',
 		);
 	const ast = markdoc.parse(content);
@@ -61,6 +61,27 @@ export function parse(markdown: string) {
 				render: 'Attributes',
 				description:
 					'To list attributes with their names, data types and descriptions',
+			},
+			codegroup: {
+				render: 'CodeGroup',
+				description: 'A group of code snippets',
+				attributes: {
+					title: {
+						type: String,
+						default: '',
+						description: 'Title of the code group',
+					},
+					tag: {
+						type: String,
+						default: '',
+						description: '.......',
+					},
+					label: {
+						type: String,
+						default: '',
+						description: '.....',
+					},
+				},
 			},
 			aside: {
 				render: 'Aside',

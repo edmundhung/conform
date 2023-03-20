@@ -14,9 +14,33 @@ Building an accessible form is critical. This includes providing unique IDs to l
 
 The [useForm](/packages/conform-react/README.md#useform) hook accepts an `id` as part of the config. This enables Conform to infer an id which you can assign to the label and error element. The [conform](/packages/conform-react/README.md#conform) helpers will also return the _id_, _aria-describedby_ and _aria-invalid_ attributes.
 
-<!-- codegroup -->
+<!-- codegroup title="CODEGROUP"-->
 
 ```tsx
+import { useForm, conform } from '@conform-to/react';
+// Note: only available on react 18
+import { useId } from 'react';
+
+function Example() {
+    const id = useId()
+    const [form, { message }] = useForm({
+        id, // You can also provide a hardcoded id
+    });
+
+    return (
+        <form {...form.props}>
+            <label htmlFor={message.id}>
+            <input {...conform.input(message)}>
+            <div id={message.errorId} role="alert">
+                {message.error}
+            </div>
+            <button>Send</button>
+        </form>
+    );
+}
+```
+
+```ts
 import { useForm, conform } from '@conform-to/react';
 // Note: only available on react 18
 import { useId } from 'react';
