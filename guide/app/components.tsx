@@ -5,7 +5,6 @@ import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
-import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 import clsx from 'clsx';
 import { useInView } from 'framer-motion';
 import { remToPx } from './util';
@@ -13,10 +12,157 @@ import { Tab } from '@headlessui/react';
 import { create } from 'zustand';
 
 const style = {
-	...darcula,
+	'code[class*="language-"]': {
+		color: '#f8f8f2',
+		background: 'none',
+		textShadow: '0 1px rgba(0, 0, 0, 0.3)',
+		fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+		textAlign: 'left',
+		whiteSpace: 'pre',
+		wordSpacing: 'normal',
+		wordBreak: 'normal',
+		wordWrap: 'normal',
+		lineHeight: '1.5',
+		MozTabSize: '4',
+		OTabSize: '4',
+		tabSize: '4',
+		WebkitHyphens: 'none',
+		MozHyphens: 'none',
+		msHyphens: 'none',
+		hyphens: 'none',
+	},
 	'pre[class*="language-"]': {
-		...darcula['pre[class*="language-"]'],
-		background: '#111',
+		color: 'var(--syntax-color-text)',
+		background: 'dark:bg-white/2.5',
+		textShadow: '0 1px rgba(0, 0, 0, 0.3)',
+		fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+		textAlign: 'left',
+		whiteSpace: 'pre',
+		wordSpacing: 'normal',
+		wordBreak: 'normal',
+		wordWrap: 'normal',
+		lineHeight: '1.5',
+		MozTabSize: '4',
+		OTabSize: '4',
+		tabSize: '4',
+		WebkitHyphens: 'none',
+		MozHyphens: 'none',
+		msHyphens: 'none',
+		hyphens: 'none',
+		padding: '1em',
+		margin: '.5em 0',
+		overflow: 'auto',
+		borderRadius: '0.3em',
+	},
+	':not(pre) > code[class*="language-"]': {
+		background: '#282a36',
+		padding: '.1em',
+		borderRadius: '.3em',
+		whiteSpace: 'normal',
+	},
+	comment: {
+		color: 'var(--syntax-token-comment)',
+	},
+	prolog: {
+		color: '#6272a4',
+	},
+	doctype: {
+		color: '#6272a4',
+	},
+	cdata: {
+		color: '#6272a4',
+	},
+	punctuation: {
+		color: 'var(--syntax-token-punctuation)',
+	},
+	'.namespace': {
+		Opacity: '.7',
+	},
+	property: {
+		color: 'var(--syntax-token-parameter)',
+	},
+	tag: {
+		color: 'var(--syntax-token-parameter)',
+	},
+	constant: {
+		color: 'var(--syntax-token-constant)',
+	},
+	symbol: {
+		color: 'var(--syntax-token-parameter)',
+	},
+	deleted: {
+		color: 'var(--syntax-token-parameter)',
+	},
+	boolean: {
+		color: '#bd93f9',
+	},
+	number: {
+		color: '#bd93f9',
+	},
+	selector: {
+		color: 'var(--syntax-token-string)',
+	},
+	'attr-name': {
+		color: 'var(--syntax-token-string)',
+	},
+	string: {
+		color: 'var(--syntax-token-string)',
+	},
+	char: {
+		color: 'var(--syntax-token-string)',
+	},
+	builtin: {
+		color: 'var(--syntax-token-string)',
+	},
+	inserted: {
+		color: 'var(--syntax-token-string)',
+	},
+	operator: {
+		color: 'var(--syntax-color-text)',
+	},
+	entity: {
+		color: 'var(--syntax-color-text)',
+		cursor: 'help',
+	},
+	url: {
+		color: 'var(--syntax-color-text)',
+	},
+	'.language-css .token.string': {
+		color: 'var(--syntax-color-text)',
+	},
+	'.style .token.string': {
+		color: 'var(--syntax-color-text)',
+	},
+	variable: {
+		color: 'var(--syntax-color-text)',
+	},
+	atrule: {
+		color: '#faa0ac',
+	},
+	'attr-value': {
+		color: '#fac88c',
+	},
+	function: {
+		color: 'var(--syntax-token-function)',
+	},
+	'class-name': {
+		color: '#faa0a0',
+	},
+	keyword: {
+		color: 'var(--syntax-token-keyword)',
+	},
+	regex: {
+		color: '#fac88c',
+	},
+	important: {
+		color: '#fac88c',
+		fontWeight: 'bold',
+	},
+	bold: {
+		fontWeight: 'bold',
+	},
+	italic: {
+		fontStyle: 'italic',
 	},
 };
 
@@ -208,9 +354,9 @@ export function Attributes({ children }: { children: React.ReactNode }) {
 
 // from Code.jsx
 const languageNames = {
-	tsx: 'TypeScript',
-	ts: 'TypeScript',
-	typescript: 'TypeScript',
+	tsx: 'TypeScript1',
+	ts: 'TypeScript2',
+	typescript: 'TypeScript3',
 };
 
 function getPanelTitle({ title, language }) {
@@ -443,12 +589,9 @@ function useTabGroupProps(availableLanguages) {
 const CodeGroupContext = React.createContext(false);
 
 export function CodeGroup({ children, title, ...props }) {
-	console.log('title', title);
-	console.log(children);
 	let languages = React.Children.map(children, (child) =>
 		getPanelTitle(child.props),
 	);
-	languages = ['TypeScript1', 'TypeScript2'];
 	let tabGroupProps = useTabGroupProps(languages);
 	let hasTabs = React.Children.count(children) > 1;
 	let Container = hasTabs ? Tab.Group : 'div';
