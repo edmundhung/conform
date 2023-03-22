@@ -64,13 +64,13 @@ const style = {
 		color: 'var(--syntax-token-comment)',
 	},
 	prolog: {
-		color: '#6272a4',
+		color: 'var(--syntax-token-keyword)',
 	},
 	doctype: {
-		color: '#6272a4',
+		color: 'var(--syntax-token-keyword)',
 	},
 	cdata: {
-		color: '#6272a4',
+		color: 'var(--syntax-token-keyword)',
 	},
 	punctuation: {
 		color: 'var(--syntax-token-punctuation)',
@@ -94,16 +94,16 @@ const style = {
 		color: 'var(--syntax-token-parameter)',
 	},
 	boolean: {
-		color: '#bd93f9',
+		color: 'var(--syntax-token-constant)',
 	},
 	number: {
-		color: '#bd93f9',
+		color: 'var(--syntax-token-constant)',
 	},
 	selector: {
 		color: 'var(--syntax-token-string)',
 	},
 	'attr-name': {
-		color: 'var(--syntax-token-string)',
+		color: 'var(--syntax-color-text)',
 	},
 	string: {
 		color: 'var(--syntax-token-string)',
@@ -137,25 +137,25 @@ const style = {
 		color: 'var(--syntax-color-text)',
 	},
 	atrule: {
-		color: '#faa0ac',
+		color: 'var(--syntax-token-function)',
 	},
 	'attr-value': {
-		color: '#fac88c',
+		color: 'var(--syntax-token-string)',
 	},
 	function: {
 		color: 'var(--syntax-token-function)',
 	},
 	'class-name': {
-		color: '#faa0a0',
+		color: 'var(--syntax-token-function)',
 	},
 	keyword: {
 		color: 'var(--syntax-token-keyword)',
 	},
 	regex: {
-		color: '#fac88c',
+		color: 'var(--syntax-token-string)',
 	},
 	important: {
-		color: '#fac88c',
+		color: 'var(--syntax-token-string)',
 		fontWeight: 'bold',
 	},
 	bold: {

@@ -3,9 +3,9 @@
 	--syntax-token-constant: theme('colors.emerald.300');
 	--syntax-token-string: theme('colors.emerald.300');
 	--syntax-token-comment: theme('colors.zinc.500');
-	--syntax-token-keyword: theme('colors.sky.300');
-	--syntax-token-parameter: theme('colors.pink.300');
-	--syntax-token-function: theme('colors.violet.300');
+	--syntax-token-keyword: theme('colors.purple.400');
+	--syntax-token-parameter: theme('colors.blue.300');
+	--syntax-token-function: theme('colors.orange.300');
 	--syntax-token-string-expression: theme('colors.emerald.300');
 	--syntax-token-punctuation: theme('colors.zinc.200');
 }
