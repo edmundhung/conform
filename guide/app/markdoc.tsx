@@ -85,7 +85,7 @@ export function parse(markdown: string) {
 				attributes: {
 					title: {
 						type: String,
-						default: 'Title',
+						default: '',
 						description: 'Title of the code group',
 					},
 					// tag: {

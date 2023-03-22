@@ -641,7 +641,7 @@ export function CodeGroup({ children, title, ...props }) {
 }
 
 export function Code({ children, ...props }) {
-	let isGrouped = useContext(CodeGroupContext);
+	let isGrouped = React.useContext(CodeGroupContext);
 
 	if (isGrouped) {
 		return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />;
@@ -651,7 +651,7 @@ export function Code({ children, ...props }) {
 }
 
 export function Pre({ children, ...props }) {
-	let isGrouped = useContext(CodeGroupContext);
+	let isGrouped = React.useContext(CodeGroupContext);
 
 	if (isGrouped) {
 		return children;
