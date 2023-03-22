@@ -7,10 +7,11 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=".+")*) -->/g,
+			/<!-- (\/?(lead|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
 			'{% $1 %}',
 		);
 
+	console.log(content);
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
