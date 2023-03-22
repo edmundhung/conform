@@ -27,6 +27,8 @@ This is handled by the [parse](/packages/conform-react/README.md#parse) helper, 
 
 <!-- col sticky=true -->
 
+<!-- code -->
+
 ```ts
 import { parse } from '@conform-to/react';
 
@@ -36,6 +38,8 @@ const submission = parse(formData);
 console.log(submission.payload); // e.g. { tasks: [{ content: '' }] }
 console.log(submission.error); // e.g. { 'tasks[0].content': 'Required' }
 ```
+
+<!-- /code -->
 
 <!-- /col -->
 
@@ -54,6 +58,8 @@ Each field will come with name infered based on the config and you could have it
 <!-- /col -->
 
 <!-- col sticky=true -->
+
+<!-- code -->
 
 ```tsx
 import { useForm, useFieldset, conform } from '@conform-to/react';
@@ -89,6 +95,8 @@ function Example() {
 }
 ```
 
+<!-- /code -->
+
 <!-- /col -->
 
 <!-- /row -->
@@ -103,9 +111,13 @@ When you need to setup fields as an array, you can pass the parent field config 
 
 Each field will also come with name infered based on the config and will be set to the form control with the [conform](/packages/conform-react/README.md#conform) helper.
 
+For information about modifying list (e.g. append / remove / reorder), see the [command](/docs/commands.md) section.
+
 <!-- /col -->
 
 <!-- col sticky=true -->
+
+<!-- code -->
 
 ```tsx
 import { useForm, useFieldList, conform } from '@conform-to/react';
@@ -136,11 +148,7 @@ function Example() {
 }
 ```
 
-<!-- /col -->
-
-<!-- col -->
-
-For information about modifying list (e.g. append / remove / reorder), see the [command](/docs/commands.md) section.
+<!-- /code -->
 
 <!-- /col -->
 
@@ -157,6 +165,8 @@ You can also set up fields as nested list by using a combination of [useFieldset
 <!-- /col -->
 
 <!-- col sticky=true -->
+
+<!-- code -->
 
 ```tsx
 import type { FieldConfig } from '@conform-to/react';
@@ -204,6 +214,8 @@ function TodoFieldset(config: FieldConfig<Todo>) {
   );
 }
 ```
+
+<!-- code -->
 
 <!-- /col -->
 

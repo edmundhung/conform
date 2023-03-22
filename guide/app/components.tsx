@@ -640,6 +640,25 @@ export function CodeGroup({ children, title, ...props }) {
 	);
 }
 
+export function Code({ children, ...props }) {
+	let isGrouped = useContext(CodeGroupContext);
+
+	if (isGrouped) {
+		return <code {...props} dangerouslySetInnerHTML={{ __html: children }} />;
+	}
+
+	return <code {...props}>{children}</code>;
+}
+
+export function Pre({ children, ...props }) {
+	let isGrouped = useContext(CodeGroupContext);
+
+	if (isGrouped) {
+		return children;
+	}
+
+	return <CodeGroup {...props}>{children}</CodeGroup>;
+}
 // end from Code.jsx
 
 export function Fence({
@@ -878,6 +897,7 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Row,
 					Col,
 					CodeGroup,
+					Code,
 					Aside,
 					Sandbox,
 					Details,
