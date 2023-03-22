@@ -45,6 +45,8 @@ console.log(submission.error); // e.g. { 'tasks[0].content': 'Required' }
 
 <!-- /row -->
 
+---
+
 <!-- row -->
 
 <!-- col -->
@@ -101,6 +103,8 @@ function Example() {
 
 <!-- /row -->
 
+---
+
 <!-- row -->
 
 <!-- col -->
@@ -153,6 +157,8 @@ function Example() {
 <!-- /col -->
 
 <!-- /row -->
+
+---
 
 <!-- row -->
 
