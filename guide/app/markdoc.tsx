@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|attributes|codegroup|aside|sandbox)( \w+=".+")*) -->/g,
+			/<!-- (\/?(lead|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=".+")*) -->/g,
 			'{% $1 %}',
 		);
 
@@ -62,6 +62,21 @@ export function parse(markdown: string) {
 				render: 'Attributes',
 				description:
 					'To list attributes with their names, data types and descriptions',
+			},
+			row: {
+				render: 'Row',
+				description: 'A row for two-column display',
+			},
+			col: {
+				render: 'Col',
+				description: 'A column in two-column display',
+				attributes: {
+					sticky: {
+						type: Boolean,
+						description: 'use sticky for sticky positioning element',
+						default: false,
+					},
+				},
 			},
 			codegroup: {
 				render: 'CodeGroup',

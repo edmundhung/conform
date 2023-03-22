@@ -20,7 +20,7 @@ The [useForm](/packages/conform-react/README.md#useform) hook accepts an `id` as
 
 <!-- /col -->
 
-<!-- col sticky -->
+<!-- col sticky=true -->
 
 <!-- codegroup title="CODEGROUP" tag="imTag" label="imLabel" -->
 

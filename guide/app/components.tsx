@@ -352,6 +352,31 @@ export function Attributes({ children }: { children: React.ReactNode }) {
 	);
 }
 
+export function Row({ children }: { children: React.ReactNode }) {
+	return (
+		<div
+			className={`
+				grid grid-cols-1 items-start gap-x-16 gap-y-10 xl:max-w-none xl:grid-cols-2
+			`}
+		>
+			{children}
+		</div>
+	);
+}
+
+export function Col({ children, sticky = false }) {
+	return (
+		<div
+			className={clsx(
+				'[&>:first-child]:mt-0 [&>:last-child]:mb-0',
+				sticky && 'xl:sticky xl:top-24',
+			)}
+		>
+			{children}
+		</div>
+	);
+}
+
 // from Code.jsx
 const languageNames = {
 	tsx: 'TypeScript1',
@@ -850,6 +875,8 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Grid,
 					Cell,
 					Attributes,
+					Row,
+					Col,
 					CodeGroup,
 					Aside,
 					Sandbox,
