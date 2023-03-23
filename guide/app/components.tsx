@@ -916,6 +916,7 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 			{renderers.react(content, React, {
 				components: {
 					Lead,
+					Note,
 					Grid,
 					Cell,
 					Attributes,
