@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
+			/<!-- (\/?(lead|note|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
 			'{% $1 %}',
 		);
 
@@ -43,6 +43,10 @@ export function parse(markdown: string) {
 			lead: {
 				render: 'Lead',
 				description: 'Lead paragraph',
+			},
+			note: {
+				render: 'Note',
+				description: 'Note to be highlighted',
 			},
 			grid: {
 				render: 'Grid',

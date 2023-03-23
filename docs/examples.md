@@ -21,6 +21,12 @@ In order to have a more easy understanding, examples with important featuers are
 - [Remix](/examples/remix)
 - [React Router](/examples/react-router)
 
+<!-- note -->
+
+Here is the note!! What on earth for!!!
+
+<!-- /note -->
+
 <!-- cell -->
 
 ### Async Validation
@@ -86,28 +92,6 @@ proerty description proerty description proerty description
 #### `lastSubmission` _Submission_
 
 proerty description
-
-<!-- /attributes -->
-<!--
-<div>
-    <ol>
-        <li>
-					<code>att</code>
-					<em>string</em>
-					<ul>
-						<li>description bla bla bla .... jufsjtrfyg guhf ghvghtr tdyhc ygfj yfusry o9u09n </li>
-					</ul>
-				</li>
-        <li>
-					<code>att2</code>
-					<em>integer</em>
-					<ul>
-						<li>description bla bla bla .... jufsjtrfyg guhf ghvghtr tdyhc ygfj yfusry o9u09n </li>
-					</ul>
-				</li>
-    </ol>
-</div>
--->
 
 ## Integrations
 
