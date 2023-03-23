@@ -649,26 +649,18 @@ export function Code({ children, ...props }) {
 
 	return <code {...props}>{children}</code>;
 }
-
-export function Pre({ children, ...props }) {
-	let isGrouped = React.useContext(CodeGroupContext);
-
-	if (isGrouped) {
-		return children;
-	}
-
-	return <CodeGroup {...props}>{children}</CodeGroup>;
-}
 // end from Code.jsx
 
 export function Fence({
 	language,
 	children,
+	...props
 }: {
 	language: string;
 	children: string;
 }): React.ReactElement {
-	return (
+	const isGrouped = React.useContext(CodeGroupContext);
+	const code = (
 		<ReactSyntaxHighlighter
 			language={language}
 			style={style}
@@ -677,6 +669,12 @@ export function Fence({
 			{children}
 		</ReactSyntaxHighlighter>
 	);
+
+	if (isGrouped) {
+		return code;
+	}
+
+	return <CodeGroup {...props}>{code}</CodeGroup>;
 }
 
 export function Details({
@@ -897,7 +895,6 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Row,
 					Col,
 					CodeGroup,
-					Code,
 					Aside,
 					Sandbox,
 					Details,
