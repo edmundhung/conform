@@ -1,6 +1,7 @@
 import { conform, useForm, parse } from '@conform-to/react';
 import { json, type ActionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { useRef } from 'react';
 import { Playground, Field, Alert } from '~/components';
 
 interface Schema {
@@ -25,8 +26,10 @@ export async function action({ request }: ActionArgs) {
 
 export default function Example() {
 	const lastSubmission = useActionData<typeof action>();
+	const ref = useRef<HTMLFormElement>(null);
 	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
 		id: 'test',
+		ref,
 		lastSubmission,
 		constraint: {
 			title: {
@@ -56,6 +59,10 @@ export default function Example() {
 			},
 		},
 	});
+
+	if (form.ref !== ref || form.props.ref !== ref) {
+		throw new Error('Invalid ref object');
+	}
 
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>

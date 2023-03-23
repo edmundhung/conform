@@ -46,6 +46,11 @@ export interface FormConfig<
 	id?: string;
 
 	/**
+	 * A form ref object. Conform will fallback to its own ref object if it is not provided.
+	 */
+	ref?: RefObject<HTMLFormElement>;
+
+	/**
 	 * Define when the error should be reported initially.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
@@ -141,7 +146,7 @@ export function useForm<
 	ClientSubmission extends Submission | Submission<Schema> = Submission,
 >(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
 	const configRef = useRef(config);
-	const ref = useRef<HTMLFormElement>(null);
+	const formRef = useRef<HTMLFormElement>(null);
 	const [lastSubmission, setLastSubmission] = useState(
 		config.lastSubmission ?? null,
 	);
@@ -183,6 +188,7 @@ export function useForm<
 		constraint: config.constraint,
 		form: config.id,
 	};
+	const ref = config.ref ?? formRef;
 	const fieldset = useFieldset(ref, fieldsetConfig);
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
@@ -215,7 +221,7 @@ export function useForm<
 		}
 
 		setLastSubmission(submission);
-	}, [config.lastSubmission]);
+	}, [ref, config.lastSubmission]);
 
 	useEffect(() => {
 		const form = ref.current;
@@ -224,8 +230,8 @@ export function useForm<
 			return;
 		}
 
-		reportSubmission(ref.current, lastSubmission);
-	}, [lastSubmission]);
+		reportSubmission(form, lastSubmission);
+	}, [ref, lastSubmission]);
 
 	useEffect(() => {
 		// Revalidate the form when input value is changed
@@ -262,7 +268,7 @@ export function useForm<
 			}
 		};
 		const handleInvalid = (event: Event) => {
-			const form = getFormElement(ref.current);
+			const form = ref.current;
 			const field = event.target;
 
 			if (
@@ -320,7 +326,7 @@ export function useForm<
 			document.removeEventListener('invalid', handleInvalid, true);
 			document.removeEventListener('reset', handleReset);
 		};
-	}, []);
+	}, [ref]);
 
 	const form: Form = {
 		ref,
