@@ -93,6 +93,8 @@ proerty description proerty description proerty description
 
 proerty description
 
+<!-- /attributes -->
+
 ## Integrations
 
 - ![image](image.svg)[Chakra UI](/examples/chakra-ui)......description......
