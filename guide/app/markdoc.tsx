@@ -15,6 +15,9 @@ export function parse(markdown: string) {
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
+			blockquote: {
+				render: 'BlockQuote',
+			},
 			fence: {
 				render: 'Fence',
 				attributes: {
