@@ -46,7 +46,7 @@ Here is the note!! What on earth for!!!
 
 ......description......
 
-[Read more](/examples/nested-list)
+[Read more &raquo;](/examples/nested-list)
 
 <!-- /cell -->
 
