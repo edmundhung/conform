@@ -36,7 +36,7 @@ Here is the note!! What on earth for!!!
 
 ......description......
 
-[Read more :arrow_forward:](/examples/async-validation)
+[Read more &raquo;](/examples/async-validation)
 
 <!-- /cell -->
 
@@ -56,7 +56,7 @@ Here is the note!! What on earth for!!!
 
 ......description......
 
-[Read more](/examples/server-validation)
+[Read more &raquo;](/examples/server-validation)
 
 <!-- /cell -->
 
@@ -66,7 +66,7 @@ Here is the note!! What on earth for!!!
 
 ......description......
 
-[Read more](/examples/yup)
+[Read more &raquo;](/examples/yup)
 
 <!-- /cell -->
 
@@ -75,7 +75,7 @@ Here is the note!! What on earth for!!!
 ### Zod
 
 ......description......
-[Read more](/examples/zod)
+[Read more &raquo;](/examples/zod)
 
 <!-- /cell -->
 <!-- /grid -->
