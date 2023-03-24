@@ -45,17 +45,22 @@ interface TextareaProps extends FormControlProps {
 	defaultValue?: string;
 }
 
-type InputOptions =
-	| {
-			type: 'checkbox' | 'radio';
-			hidden?: boolean;
-			value?: string;
-	  }
-	| {
-			type?: Exclude<HTMLInputTypeAttribute, 'button' | 'submit' | 'hidden'>;
-			hidden?: boolean;
-			value?: never;
-	  };
+type BaseOptions = {
+	description?: boolean;
+	hidden?: boolean;
+};
+
+type InputOptions = BaseOptions &
+	(
+		| {
+				type: 'checkbox' | 'radio';
+				value?: string;
+		  }
+		| {
+				type?: Exclude<HTMLInputTypeAttribute, 'button' | 'submit' | 'hidden'>;
+				value?: never;
+		  }
+	);
 
 /**
  * Style to make the input element visually hidden
@@ -75,7 +80,7 @@ const hiddenStyle: CSSProperties = {
 
 function getFormControlProps(
 	config: FieldConfig<any>,
-	options?: { hidden?: boolean },
+	options?: BaseOptions,
 ): FormControlProps {
 	const props: FormControlProps = {
 		id: config.id,
@@ -86,11 +91,18 @@ function getFormControlProps(
 
 	if (config.id) {
 		props.id = config.id;
-		props['aria-describedby'] = config.errorId;
+	}
+
+	if (config.descriptionId && options?.description) {
+		props['aria-describedby'] = config.descriptionId;
 	}
 
 	if (config.errorId && config.error?.length) {
 		props['aria-invalid'] = true;
+		props['aria-describedby'] =
+			config.descriptionId && options?.description
+				? `${config.errorId} ${config.descriptionId}`
+				: config.errorId;
 	}
 
 	if (config.initialError && Object.entries(config.initialError).length > 0) {
@@ -108,7 +120,7 @@ function getFormControlProps(
 
 export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
-	options: { type: 'file' },
+	options: InputOptions & { type: 'file' },
 ): InputProps<Schema>;
 export function input<Schema extends Primitive>(
 	config: FieldConfig<Schema>,
@@ -142,7 +154,7 @@ export function input<Schema extends Primitive | File | File[]>(
 
 export function select(
 	config: FieldConfig<Primitive | Primitive[]>,
-	options?: { hidden?: boolean },
+	options?: BaseOptions,
 ): SelectProps {
 	const props: SelectProps = {
 		...getFormControlProps(config, options),
@@ -155,7 +167,7 @@ export function select(
 
 export function textarea(
 	config: FieldConfig<Primitive>,
-	options?: { hidden?: boolean },
+	options?: BaseOptions,
 ): TextareaProps {
 	const props: TextareaProps = {
 		...getFormControlProps(config, options),
