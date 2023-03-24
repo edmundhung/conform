@@ -397,8 +397,10 @@ test.describe('Server Validation', () => {
 });
 
 test.describe('Error Reporting', () => {
-	test('initialReport: onSubmit', async ({ page }) => {
-		const form = await gotoForm(page, '/signup', { initialReport: 'onSubmit' });
+	test('shouldValidate: onSubmit', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', {
+			shouldValidate: 'onSubmit',
+		});
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');
@@ -419,8 +421,10 @@ test.describe('Error Reporting', () => {
 		]);
 	});
 
-	test('initialReport: onChange', async ({ page }) => {
-		const form = await gotoForm(page, '/signup', { initialReport: 'onChange' });
+	test('shouldValidate: onChange', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', {
+			shouldValidate: 'onChange',
+		});
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');
@@ -445,8 +449,8 @@ test.describe('Error Reporting', () => {
 		]);
 	});
 
-	test('initialReport: onBlur', async ({ page }) => {
-		const form = await gotoForm(page, '/signup', { initialReport: 'onBlur' });
+	test('shouldValidate: onBlur', async ({ page }) => {
+		const form = await gotoForm(page, '/signup', { shouldValidate: 'onBlur' });
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');

@@ -2,7 +2,7 @@ import type { Page, Locator, Response } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 interface FormConfig {
-	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
+	shouldValidate?: 'onSubmit' | 'onChange' | 'onBlur';
 	defaultValue?: any;
 	fallbackNative?: boolean;
 	noValidate?: boolean;
@@ -16,8 +16,8 @@ export async function gotoForm(
 ): Promise<Locator> {
 	const searchParams = new URLSearchParams();
 
-	if (typeof config?.initialReport !== 'undefined') {
-		searchParams.set('initialReport', config.initialReport);
+	if (typeof config?.shouldValidate !== 'undefined') {
+		searchParams.set('shouldValidate', config.shouldValidate);
 	}
 
 	if (typeof config?.defaultValue !== 'undefined') {

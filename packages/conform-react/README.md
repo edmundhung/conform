@@ -47,7 +47,7 @@ function LoginForm() {
      *
      * Default to `onSubmit`.
      */
-    initialReport: 'onBlur',
+    shouldValidate: 'onBlur',
 
     /**
      * An object representing the initial value of the form.

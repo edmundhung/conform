@@ -51,12 +51,20 @@ export interface FormConfig<
 	ref?: RefObject<HTMLFormElement>;
 
 	/**
-	 * Define when the error should be reported initially.
+	 * Define when conform should start validation.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
 	 * Default to `onSubmit`.
 	 */
-	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
+	shouldValidate?: 'onSubmit' | 'onChange' | 'onBlur';
+
+	/**
+	 * Define when conform should revalidate again.
+	 * Support "onSubmit", "onChange", "onBlur".
+	 *
+	 * Default to `onSubmit`.
+	 */
+	shouldRevalidate?: 'onSubmit' | 'onChange' | 'onBlur';
 
 	/**
 	 * An object representing the initial value of the form.
@@ -234,14 +242,17 @@ export function useForm<
 			const field = event.target;
 			const form = ref.current;
 			const formConfig = configRef.current;
+			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onChange' } =
+				formConfig;
 
 			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
 			}
 
 			if (
-				field.dataset.conformTouched ||
-				formConfig.initialReport === 'onChange'
+				field.dataset.conformTouched
+					? shouldRevalidate === 'onChange'
+					: shouldValidate === 'onChange'
 			) {
 				requestIntent(form, validate(field.name));
 			}
@@ -250,14 +261,17 @@ export function useForm<
 			const field = event.target;
 			const form = ref.current;
 			const formConfig = configRef.current;
+			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onChange' } =
+				formConfig;
 
 			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
 			}
 
 			if (
-				formConfig.initialReport === 'onBlur' &&
-				!field.dataset.conformTouched
+				field.dataset.conformTouched
+					? shouldRevalidate === 'onBlur'
+					: shouldValidate === 'onBlur'
 			) {
 				requestIntent(form, validate(field.name));
 			}
