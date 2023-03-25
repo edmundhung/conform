@@ -51,20 +51,25 @@ export interface FormConfig<
 	ref?: RefObject<HTMLFormElement>;
 
 	/**
+	 * @deprecated Use `shouldValidate` and `shouldRevalidate` instead.
+	 */
+	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
+
+	/**
 	 * Define when conform should start validation.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
 	 * Default to `onSubmit`.
 	 */
-	shouldValidate?: 'onSubmit' | 'onChange' | 'onBlur';
+	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
 	 * Define when conform should revalidate again.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
-	 * Default to `onSubmit`.
+	 * Default to `onInput`.
 	 */
-	shouldRevalidate?: 'onSubmit' | 'onChange' | 'onBlur';
+	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
 	 * An object representing the initial value of the form.
@@ -242,8 +247,13 @@ export function useForm<
 			const field = event.target;
 			const form = ref.current;
 			const formConfig = configRef.current;
-			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onChange' } =
-				formConfig;
+			const {
+				initialReport = 'onSubmit',
+				shouldValidate = initialReport !== 'onChange'
+					? initialReport
+					: 'onInput',
+				shouldRevalidate = 'onInput',
+			} = formConfig;
 
 			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
@@ -251,8 +261,8 @@ export function useForm<
 
 			if (
 				field.dataset.conformTouched
-					? shouldRevalidate === 'onChange'
-					: shouldValidate === 'onChange'
+					? shouldRevalidate === 'onInput'
+					: shouldValidate === 'onInput'
 			) {
 				requestIntent(form, validate(field.name));
 			}
@@ -261,8 +271,13 @@ export function useForm<
 			const field = event.target;
 			const form = ref.current;
 			const formConfig = configRef.current;
-			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onChange' } =
-				formConfig;
+			const {
+				initialReport = 'onSubmit',
+				shouldValidate = initialReport !== 'onChange'
+					? initialReport
+					: 'onInput',
+				shouldRevalidate = 'onInput',
+			} = formConfig;
 
 			if (!form || !isFieldElement(field) || field.form !== form) {
 				return;
