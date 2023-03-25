@@ -249,9 +249,9 @@ export function useForm<
 			const formConfig = configRef.current;
 			const {
 				initialReport = 'onSubmit',
-				shouldValidate = initialReport !== 'onChange'
-					? initialReport
-					: 'onInput',
+				shouldValidate = initialReport === 'onChange'
+					? 'onInput'
+					: initialReport,
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 
@@ -273,9 +273,9 @@ export function useForm<
 			const formConfig = configRef.current;
 			const {
 				initialReport = 'onSubmit',
-				shouldValidate = initialReport !== 'onChange'
-					? initialReport
-					: 'onInput',
+				shouldValidate = initialReport === 'onChange'
+					? 'onInput'
+					: initialReport,
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 

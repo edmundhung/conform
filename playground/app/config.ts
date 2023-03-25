@@ -2,7 +2,7 @@ import { ifNonEmptyString } from '@conform-to/zod';
 import { z } from 'zod';
 
 const formConfig = z.object({
-	shouldValidate: z.enum(['onSubmit', 'onChange', 'onBlur']).optional(),
+	initialReport: z.enum(['onSubmit', 'onChange', 'onBlur']).optional(),
 	defaultValue: z
 		.preprocess((value) => (value ? JSON.stringify(value) : undefined), z.any())
 		.optional(),
