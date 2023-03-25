@@ -133,7 +133,7 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
-## <!-- /resource -->
+<!-- /resource -->
 
 # Examples
 

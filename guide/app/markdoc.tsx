@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
+			/<!-- (\/?(lead|grid|cell|resource|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
 			'{% $1 %}',
 		);
 
@@ -61,6 +61,10 @@ export function parse(markdown: string) {
 						default: '',
 					},
 				},
+			},
+			resource: {
+				render: 'Resource',
+				description: 'Card for linking to a resource',
 			},
 			attributes: {
 				render: 'Attributes',
