@@ -45,6 +45,15 @@ export type Schema<
 							step?: string;
 					  }
 					| {
+							type: 'select';
+							multiple?: false;
+					  }
+					| {
+							type: 'textarea';
+							minLength?: number;
+							maxLength?: number;
+					  }
+					| {
 							type: 'radio' | 'color';
 					  }
 				)
@@ -405,6 +414,40 @@ export function validate<Shape extends Record<string, any>>(
 				payload.set(name, text);
 				break;
 			}
+			case 'select': {
+				const text = ensureSingleTextValue(data, name);
+
+				if (constraint.required && text === '') {
+					messages.add('required');
+				}
+
+				// TODO: implement multiple select validation
+
+				value.set(name, text);
+				payload.set(name, text);
+				break;
+			}
+			case 'textarea': {
+				const text = ensureSingleTextValue(data, name);
+
+				if (constraint.required && text === '') {
+					messages.add('required');
+				}
+
+				if (text) {
+					if (constraint.minLength && text.length < constraint.minLength) {
+						messages.add('minlength');
+					}
+
+					if (constraint.maxLength && text.length > constraint.maxLength) {
+						messages.add('maxlength');
+					}
+				}
+
+				value.set(name, text);
+				payload.set(name, text);
+				break;
+			}
 			case 'file': {
 				const files = data.getAll(name);
 
@@ -460,41 +503,41 @@ export function getMessages(
 
 	if (validity.valueMissing) {
 		messages.push('required');
-	}
+	} else {
+		if (validity.typeMismatch || validity.badInput) {
+			messages.push('type');
+		}
 
-	if (validity.typeMismatch || validity.badInput) {
-		messages.push('type');
-	}
+		if (validity.rangeOverflow) {
+			messages.push('max');
+		}
 
-	if (validity.rangeOverflow) {
-		messages.push('max');
-	}
+		if (validity.rangeUnderflow) {
+			messages.push('min');
+		}
 
-	if (validity.rangeUnderflow) {
-		messages.push('min');
-	}
+		if (validity.stepMismatch) {
+			messages.push('step');
+		}
 
-	if (validity.stepMismatch) {
-		messages.push('step');
-	}
+		if (validity.tooShort) {
+			messages.push('minlength');
+		}
 
-	if (validity.tooShort) {
-		messages.push('minlength');
-	}
+		if (validity.tooLong) {
+			messages.push('maxlength');
+		}
 
-	if (validity.tooLong) {
-		messages.push('maxlength');
-	}
+		if (validity.patternMismatch) {
+			messages.push('pattern');
+		}
 
-	if (validity.patternMismatch) {
-		messages.push('pattern');
-	}
-
-	if (validity.customError && validationMessage) {
-		if (delimiter) {
-			messages.push(...validationMessage.split(delimiter));
-		} else {
-			messages.push(validationMessage);
+		if (validity.customError && validationMessage) {
+			if (delimiter) {
+				messages.push(...validationMessage.split(delimiter));
+			} else {
+				messages.push(validationMessage);
+			}
 		}
 	}
 

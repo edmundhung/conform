@@ -581,6 +581,57 @@ function runTests(javaScriptEnabled: boolean) {
 			});
 	});
 
+	test('select', async ({ page }) => {
+		const { submit, error, field, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'select',
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await field.selectOption('a');
+		await submit.click();
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: 'a' },
+				value: { field: 'a' },
+				error: null,
+			});
+	});
+
+	test('textarea', async ({ page }) => {
+		const { submit, error, type, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'textarea',
+				minLength: 10,
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await type('hello');
+		await expect(error).toHaveText(['minlength']);
+
+		await type('This is a long paragraph');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: 'This is a long paragraph' },
+				value: { field: 'This is a long paragraph' },
+				error: null,
+			});
+	});
+
 	test('file input', async ({ page }) => {
 		const { submit, error, field, getSubmission, updateSchema } =
 			await setupField(page, {
