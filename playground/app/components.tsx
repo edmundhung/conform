@@ -1,8 +1,12 @@
-import type { FieldConfig, Submission } from '@conform-to/react';
+import type { FieldConfig } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
-interface PlaygroundProps {
+interface PlaygroundProps<
+	Submission extends {
+		error: Record<string, string | string[]> | null;
+	},
+> {
 	title: string;
 	description?: ReactNode;
 	form?: string;
@@ -22,7 +26,7 @@ export function Playground({
 	formMethod,
 	formEncType,
 	children,
-}: PlaygroundProps) {
+}: PlaygroundProps<any>) {
 	const [submission, setSubmission] = useState(lastSubmission ?? null);
 
 	useEffect(() => {
@@ -46,7 +50,7 @@ export function Playground({
 						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 overflow-x-scroll ${
-								Object.entries(submission.error).length > 0
+								!submission.error || Object.entries(submission.error).length > 0
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}

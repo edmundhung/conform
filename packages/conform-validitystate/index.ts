@@ -131,8 +131,18 @@ export function matchPattern(pattern: string, text: string): boolean {
 		return text === '';
 	}
 
+	let patternString = pattern;
+
+	if (!pattern.startsWith('^')) {
+		patternString = `^${patternString}`;
+	}
+
+	if (!pattern.endsWith('$')) {
+		patternString = `${patternString}$`;
+	}
+
 	// TODO: ensure pattern will match the whole text
-	return new RegExp(pattern).test(text);
+	return new RegExp(patternString).test(text);
 }
 
 export function validate<Shape extends Record<string, any>>(
@@ -232,7 +242,7 @@ export function validate<Shape extends Record<string, any>>(
 
 						if (
 							typeof constraint.step !== 'undefined' &&
-							number % constraint.step !== 0
+							(number - (constraint.min ?? 0)) % constraint.step !== 0
 						) {
 							messages.add('step');
 						}
@@ -257,6 +267,10 @@ export function validate<Shape extends Record<string, any>>(
 					);
 				}
 
+				if (item) {
+					payload.set(name, item);
+				}
+
 				const flag = typeof item !== 'undefined';
 
 				if (constraint.required && !flag) {
@@ -264,7 +278,6 @@ export function validate<Shape extends Record<string, any>>(
 				}
 
 				value.set(name, flag);
-				payload.set(name, item);
 				break;
 			}
 			case 'datetime-local': {
