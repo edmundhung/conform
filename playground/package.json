@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@conform-to/react": "*",
+		"@conform-to/validitystate": "*",
 		"@conform-to/zod": "*",
 		"@remix-run/node": "^1.14.0",
 		"@remix-run/react": "^1.14.0",

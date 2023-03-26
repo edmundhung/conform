@@ -91,7 +91,7 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	config?: FieldConfig<any>;
+	config?: Partial<FieldConfig<any>>;
 	children: ReactNode;
 }
 
