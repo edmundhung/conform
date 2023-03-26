@@ -3,10 +3,7 @@ type Required<T> = undefined extends T
 	: { required: true };
 
 export type Schema<
-	Shape extends Record<
-		string,
-		string | number | boolean | Date | File | File[]
-	>,
+	Shape extends Record<string, string | number | boolean | File | File[]>,
 > = {
 	[Key in keyof Shape]: File[] extends Shape[Key]
 		? Required<Shape[Key]> & {
@@ -17,13 +14,6 @@ export type Schema<
 		? Required<Shape[Key]> & {
 				type: 'file';
 				multiple?: false;
-		  }
-		: Date extends Shape[Key]
-		? Required<Shape[Key]> & {
-				type: 'datetime-local';
-				min?: string;
-				max?: string;
-				step?: number;
 		  }
 		: number extends Shape[Key]
 		? Required<Shape[Key]> & {
@@ -49,7 +39,7 @@ export type Schema<
 							pattern?: string;
 					  }
 					| {
-							type: 'date' | 'month' | 'week' | 'time';
+							type: 'datetime-local' | 'date' | 'month' | 'week' | 'time';
 							min?: string;
 							max?: string;
 							step?: string;
@@ -280,7 +270,11 @@ export function validate<Shape extends Record<string, any>>(
 				value.set(name, flag);
 				break;
 			}
-			case 'datetime-local': {
+			case 'datetime-local':
+			case 'date':
+			case 'month':
+			case 'week':
+			case 'time': {
 				const text = ensureSingleTextValue(data, name);
 
 				// TODO: validate text format
@@ -290,28 +284,82 @@ export function validate<Shape extends Record<string, any>>(
 				}
 
 				if (text !== '') {
-					const date = new Date(text);
+					let date: Date,
+						min: Date | null,
+						max: Date | null,
+						step: number | null;
+
+					switch (constraint.type) {
+						case 'datetime-local': {
+							date = new Date(text);
+							min = constraint.min ? new Date(constraint.min) : null;
+							max = constraint.max ? new Date(constraint.max) : null;
+							step =
+								typeof constraint.step !== 'undefined'
+									? constraint.step * 1000
+									: null;
+							break;
+						}
+						case 'date': {
+							date = new Date(`${text}T00:00:00`);
+							min = constraint.min
+								? new Date(`${constraint.min}T00:00:00`)
+								: null;
+							max = constraint.max
+								? new Date(`${constraint.max}T00:00:00`)
+								: null;
+							step =
+								typeof constraint.step !== 'undefined'
+									? constraint.step * 86400000
+									: null;
+							break;
+						}
+						case 'time': {
+							date = new Date(
+								`${new Date().toISOString().slice(0, 10)}T${text}`,
+							);
+							min = constraint.min
+								? new Date(
+										`${new Date().toISOString().slice(0, 10)}T${
+											constraint.min
+										}`,
+								  )
+								: null;
+							max = constraint.max
+								? new Date(
+										`${new Date().toISOString().slice(0, 10)}T${
+											constraint.max
+										}`,
+								  )
+								: null;
+							step =
+								typeof constraint.step !== 'undefined'
+									? constraint.step * 1000
+									: null;
+							break;
+						}
+						default: {
+							// TODO: implement month and week validation
+							payload.set(name, text);
+							value.set(name, text);
+							continue;
+						}
+					}
 
 					if (Number.isNaN(date.valueOf())) {
 						messages.add('type');
 					} else {
-						if (
-							typeof constraint.min !== 'undefined' &&
-							date < new Date(constraint.min)
-						) {
+						if (min !== null && date < min) {
 							messages.add('min');
 						}
 
-						if (
-							typeof constraint.max !== 'undefined' &&
-							date > new Date(constraint.max)
-						) {
+						if (max !== null && date > max) {
 							messages.add('max');
 						}
 
 						if (
-							typeof constraint.step !== 'undefined' &&
-							date.valueOf() % (constraint.step * 1000) !== 0
+							step !== null &&
+							(date.valueOf() - (min?.valueOf() ?? 0)) % step !== 0
 						) {
 							messages.add('step');
 						}
@@ -323,23 +371,27 @@ export function validate<Shape extends Record<string, any>>(
 				payload.set(name, text);
 				break;
 			}
-			case 'date':
-			case 'month':
-			case 'week':
-			case 'time': {
-				const text = ensureSingleTextValue(data, name);
+			case 'radio': {
+				const [text, ...rest] = data.getAll(name);
 
-				if (constraint.required && text === '') {
+				if (rest.length > 0) {
+					throw new Error(`${name} is not configured for multiple values`);
+				}
+
+				if (constraint.required && typeof text === 'undefined') {
 					messages.add('required');
 				}
 
-				// TODO: handle each text format
+				if (text) {
+					if (typeof text !== 'string') {
+						throw new Error(`${name} is not a string`);
+					}
 
-				value.set(name, text);
-				payload.set(name, text);
+					value.set(name, text);
+					payload.set(name, text);
+				}
 				break;
 			}
-			case 'radio':
 			case 'color': {
 				const text = ensureSingleTextValue(data, name);
 

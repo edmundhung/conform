@@ -15,13 +15,8 @@ async function setupField(page: Page, schema: object) {
 			await field.type(value);
 			await playground.submit.click();
 		},
-		async setRequired(flag = true) {
-			await page.goto(
-				`/validitystate?schema=${JSON.stringify({
-					...schema,
-					required: flag,
-				})}`,
-			);
+		async fill(value: string) {
+			await field.fill(value);
 			await playground.submit.click();
 		},
 		async updateSchema(changed: object) {
@@ -355,6 +350,307 @@ function runTests(javaScriptEnabled: boolean) {
 			.toEqual({
 				payload: { field: 'ok' },
 				value: { field: true },
+				error: null,
+			});
+	});
+
+	test('radio input', async ({ page }) => {
+		const { submit, error, field, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'radio',
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await field.check();
+		await submit.click();
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: 'on' },
+				value: { field: 'on' },
+				error: null,
+			});
+	});
+
+	test('color input', async ({ page }) => {
+		const { submit, error, fill, getSubmission } = await setupField(page, {
+			type: 'color',
+		});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		// color input will always have a default value
+
+		await fill('#000000');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '#000000' },
+				value: { field: '#000000' },
+				error: null,
+			});
+	});
+
+	test('datetime-local input', async ({ page }) => {
+		const { submit, error, fill, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'datetime-local',
+				min: '2023-01-01T00:00',
+				max: '2023-12-31T23:59',
+				step: 60 * 30, // 30 minutes
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await fill('2022-06-01T00:01');
+		await expect(error).toHaveText(['min', 'step']);
+
+		await fill('2022-09-10T14:30');
+		await expect(error).toHaveText(['min']);
+
+		await fill('2024-02-14T18:00');
+		await expect(error).toHaveText(['max']);
+
+		await fill('2023-03-26T12:30');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '2023-03-26T12:30' },
+				value: { field: '2023-03-26T12:30' },
+				error: null,
+			});
+	});
+
+	test('date input', async ({ page }) => {
+		const { submit, error, fill, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'date',
+				min: '2023-01-01',
+				max: '2023-12-31',
+				step: 7, // 7 days
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await fill('2022-06-01');
+		await expect(error).toHaveText(['min', 'step']);
+
+		await fill('2024-02-14');
+		await expect(error).toHaveText(['max', 'step']);
+
+		await fill('2023-01-08');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '2023-01-08' },
+				value: { field: '2023-01-08' },
+				error: null,
+			});
+	});
+
+	test('month input', async ({ page }) => {
+		const { submit, error, fill, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'month',
+				min: '2023-01',
+				max: '2023-12',
+				step: 2, // 2 months
+			});
+
+		if (!javaScriptEnabled) {
+			// Skip test until month input is implemented
+			return;
+		}
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await fill('2022-06');
+		await expect(error).toHaveText(['min', 'step']);
+
+		await fill('2024-02');
+		await expect(error).toHaveText(['max', 'step']);
+
+		await fill('2023-02');
+		await expect(error).toHaveText(['step']);
+
+		await fill('2023-03');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '2023-03' },
+				value: { field: '2023-03' },
+				error: null,
+			});
+	});
+
+	test('week input', async ({ page }) => {
+		const { submit, error, fill, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'week',
+				min: '2023-W01',
+				max: '2023-W52',
+				step: 2, // 2 weeks
+			});
+
+		if (!javaScriptEnabled) {
+			// Skip test until week input is implemented
+			return;
+		}
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await fill('2022-W28');
+		await expect(error).toHaveText(['min', 'step']);
+
+		await fill('2024-W02');
+		await expect(error).toHaveText(['max', 'step']);
+
+		await fill('2023-W02');
+		await expect(error).toHaveText(['step']);
+
+		await fill('2023-W03');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '2023-W03' },
+				value: { field: '2023-W03' },
+				error: null,
+			});
+	});
+
+	test('time input', async ({ page }) => {
+		const { submit, error, fill, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'time',
+				min: '09:00',
+				max: '18:00',
+				step: 60 * 3, // 3 minutes
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await fill('08:55');
+		await expect(error).toHaveText(['min', 'step']);
+
+		await fill('23:59');
+		await expect(error).toHaveText(['max', 'step']);
+
+		await fill('12:14');
+		await expect(error).toHaveText(['step']);
+
+		await fill('15:30');
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: '15:30' },
+				value: { field: '15:30' },
+				error: null,
+			});
+	});
+
+	test('file input', async ({ page }) => {
+		const { submit, error, field, getSubmission, updateSchema } =
+			await setupField(page, {
+				type: 'file',
+			});
+
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true });
+		await expect(error).toHaveText(['required']);
+
+		await field.setInputFiles({
+			name: 'example.json',
+			mimeType: 'application/json',
+			buffer: Buffer.from('{}'),
+		});
+		await submit.click();
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: {},
+				value: {
+					field: {
+						_lastModified: expect.any(Number),
+						_name: 'example.json',
+					},
+				},
+				error: null,
+			});
+
+		await updateSchema({ multiple: true });
+		await submit.click();
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ required: true, multiple: true });
+		await submit.click();
+		await expect(error).toHaveText(['required']);
+
+		await field.setInputFiles([
+			{
+				name: 'example.json',
+				mimeType: 'application/json',
+				buffer: Buffer.from('{}'),
+			},
+			{
+				name: 'example.txt',
+				mimeType: 'text/plain',
+				buffer: Buffer.from('Hello World!'),
+			},
+		]);
+		await submit.click();
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: {},
+				value: {
+					field: [
+						{
+							_lastModified: expect.any(Number),
+							_name: 'example.json',
+						},
+						{
+							_lastModified: expect.any(Number),
+							_name: 'example.txt',
+						},
+					],
+				},
 				error: null,
 			});
 	});

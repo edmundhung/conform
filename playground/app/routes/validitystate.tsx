@@ -68,7 +68,38 @@ export default function Example() {
 		>
 			<Playground title="Validity State" lastSubmission={submission}>
 				<Field label="Field" config={{ errors: error.field }}>
-					<input name="field" {...schema} />
+					{schema.type === 'checkbox' || schema.type === 'radio' ? (
+						<input
+							name="field"
+							defaultChecked={
+								(schema.value ?? 'on') === submission?.payload.field
+							}
+							{...schema}
+						/>
+					) : schema.type === 'select' ? (
+						<select
+							name="field"
+							defaultValue={submission?.payload.field ?? ''}
+							{...schema}
+						>
+							<option value="">Select an option</option>
+							<option value="a">Option A</option>
+							<option value="b">Option B</option>
+							<option value="c">Option C</option>
+						</select>
+					) : schema.type === 'textarea' ? (
+						<textarea
+							name="field"
+							defaultValue={submission?.payload.field ?? ''}
+							{...schema}
+						/>
+					) : (
+						<input
+							name="field"
+							defaultValue={submission?.payload.field ?? ''}
+							{...schema}
+						/>
+					)}
 				</Field>
 			</Playground>
 		</Form>
