@@ -42,12 +42,20 @@ function LoginForm() {
     id: undefined,
 
     /**
-     * Define when the error should be reported initially.
+     * Define when conform should start validation.
      * Support "onSubmit", "onChange", "onBlur".
      *
      * Default to `onSubmit`.
      */
-    shouldValidate: 'onBlur',
+    shouldValidate: 'onSubmit',
+
+    /**
+     * Define when conform should revalidate again.
+     * Support "onSubmit", "onChange", "onBlur".
+     *
+     * Default to `onInput`.
+     */
+    shouldRevalidate: 'onInput',
 
     /**
      * An object representing the initial value of the form.
