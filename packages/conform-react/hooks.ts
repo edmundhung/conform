@@ -157,39 +157,34 @@ export function useForm<
 
 		return ([] as string[]).concat(config.lastSubmission.error['']);
 	});
-	const [uncontrolledState, setUncontrolledState] = useState<
-		FieldsetConfig<Schema>
-	>(() => {
+	const initialError = useMemo(() => {
 		const submission = config.lastSubmission;
 
 		if (!submission) {
-			return {
-				defaultValue: config.defaultValue,
-			};
+			return {};
 		}
 
 		const scope = getScope(submission.intent);
 
-		return {
-			defaultValue: submission.payload as FieldValue<Schema> | undefined,
-			initialError: Object.entries(submission.error).reduce<
-				Record<string, string | string[]>
-			>((result, [name, message]) => {
-				if (name !== '' && (scope === null || scope === name)) {
-					result[name] = message;
-				}
+		return Object.entries(submission.error).reduce<
+			Record<string, string | string[]>
+		>((result, [name, message]) => {
+			if (name !== '' && (scope === null || scope === name)) {
+				result[name] = message;
+			}
 
-				return result;
-			}, {}),
-		};
-	});
-	const fieldsetConfig = {
-		...uncontrolledState,
+			return result;
+		}, {});
+	}, [config.lastSubmission]);
+	const ref = config.ref ?? formRef;
+	const fieldset = useFieldset(ref, {
+		defaultValue:
+			(config.lastSubmission?.payload as FieldValue<Schema>) ??
+			config.defaultValue,
+		initialError,
 		constraint: config.constraint,
 		form: config.id,
-	};
-	const ref = config.ref ?? formRef;
-	const fieldset = useFieldset(ref, fieldsetConfig);
+	});
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
 	);
@@ -288,7 +283,6 @@ export function useForm<
 		};
 		const handleReset = (event: Event) => {
 			const form = ref.current;
-			const formConfig = configRef.current;
 
 			if (!form || event.target !== form) {
 				return;
@@ -303,18 +297,8 @@ export function useForm<
 			}
 
 			setErrors([]);
-			setUncontrolledState({
-				defaultValue: formConfig.defaultValue,
-			});
 		};
 
-		/**
-		 * The input event handler will be triggered in capturing phase in order to
-		 * allow follow-up action in the bubble phase based on the latest validity
-
-		 * E.g. `useFieldset` reset the error of valid field after checking the
-		 * validity in the bubble phase.
-		 */
 		document.addEventListener('input', handleInput, true);
 		document.addEventListener('blur', handleBlur, true);
 		document.addEventListener('invalid', handleInvalid, true);

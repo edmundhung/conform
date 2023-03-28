@@ -3,7 +3,6 @@ import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react';
-import { useEffect } from 'react';
 import { z } from 'zod';
 import { Field, Playground } from '~/components';
 
@@ -51,17 +50,13 @@ export let action = async ({ request }: ActionArgs) => {
 export default function TodoForm() {
 	const { defaultValue } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { name, code }] = useForm<z.input<typeof schema>>({
+	const [form, fieldset] = useForm<z.input<typeof schema>>({
 		defaultValue,
 		lastSubmission,
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
 	});
-
-	useEffect(() => {
-		form.ref.current?.reset();
-	}, [defaultValue, form.ref]);
 
 	return (
 		<Form method="post" {...form.props}>
@@ -91,16 +86,16 @@ export default function TodoForm() {
 				}
 				lastSubmission={lastSubmission}
 			>
-				<Field label="Name" config={name}>
+				<Field label="Name" config={fieldset.name}>
 					<input
-						key={name.defaultValue}
-						{...conform.input(name, { type: 'text' })}
+						key={fieldset.name.defaultValue}
+						{...conform.input(fieldset.name, { type: 'text' })}
 					/>
 				</Field>
-				<Field label="Code" config={code}>
+				<Field label="Code" config={fieldset.code}>
 					<input
-						key={code.defaultValue}
-						{...conform.input(code, { type: 'color' })}
+						key={fieldset.code.defaultValue}
+						{...conform.input(fieldset.code, { type: 'color' })}
 					/>
 				</Field>
 			</Playground>
