@@ -157,44 +157,39 @@ export function useForm<
 
 		return ([] as string[]).concat(config.lastSubmission.error['']);
 	});
-	const [uncontrolledState, setUncontrolledState] = useState<
-		FieldsetConfig<Schema>
-	>(() => {
+	const initialError = useMemo(() => {
 		const submission = config.lastSubmission;
 
 		if (!submission) {
-			return {
-				defaultValue: config.defaultValue,
-			};
+			return {};
 		}
 
 		const scope = getScope(submission.intent);
 
-		return {
-			defaultValue: submission.payload as FieldValue<Schema> | undefined,
-			initialError: Object.entries(submission.error).reduce<
-				Record<string, string | string[]>
-			>((result, [name, message]) => {
-				if (name !== '' && (scope === null || scope === name)) {
-					result[name] = message;
-				}
+		return Object.entries(submission.error).reduce<
+			Record<string, string | string[]>
+		>((result, [name, message]) => {
+			if (name !== '' && (scope === null || scope === name)) {
+				result[name] = message;
+			}
 
-				return result;
-			}, {}),
-		};
-	});
-	const fieldsetConfig = {
-		...uncontrolledState,
+			return result;
+		}, {});
+	}, [config.lastSubmission]);
+	const ref = config.ref ?? formRef;
+	const fieldset = useFieldset(ref, {
+		defaultValue:
+			(config.lastSubmission?.payload as FieldValue<Schema>) ??
+			config.defaultValue,
+		initialError,
 		constraint: config.constraint,
 		form: config.id,
-	};
-	const ref = config.ref ?? formRef;
-	const fieldset = useFieldset(ref, fieldsetConfig);
+	});
 	const [noValidate, setNoValidate] = useState(
 		config.noValidate || !config.fallbackNative,
 	);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		configRef.current = config;
 	});
 
@@ -288,7 +283,6 @@ export function useForm<
 		};
 		const handleReset = (event: Event) => {
 			const form = ref.current;
-			const formConfig = configRef.current;
 
 			if (!form || event.target !== form) {
 				return;
@@ -303,18 +297,8 @@ export function useForm<
 			}
 
 			setErrors([]);
-			setUncontrolledState({
-				defaultValue: formConfig.defaultValue,
-			});
 		};
 
-		/**
-		 * The input event handler will be triggered in capturing phase in order to
-		 * allow follow-up action in the bubble phase based on the latest validity
-
-		 * E.g. `useFieldset` reset the error of valid field after checking the
-		 * validity in the bubble phase.
-		 */
 		document.addEventListener('input', handleInput, true);
 		document.addEventListener('blur', handleBlur, true);
 		document.addEventListener('invalid', handleInvalid, true);
@@ -466,53 +450,29 @@ export function useFieldset<Schema extends Record<string, any>>(
 	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
 	const configRef = useRef(config);
-	const [uncontrolledState, setUncontrolledState] = useState<{
-		defaultValue: FieldValue<Schema>;
-		initialError: Record<string, Record<string, string | string[]> | undefined>;
-	}>(
-		// @ts-expect-error
-		() => {
-			const initialError: Record<
-				string,
-				Record<string, string | string[]> | undefined
-			> = {};
-
-			for (const [name, message] of Object.entries(
-				config?.initialError ?? {},
-			)) {
-				const [key, ...paths] = getPaths(name);
-
-				if (typeof key === 'string') {
-					const scopedName = getName(paths);
-
-					initialError[key] = {
-						...initialError[key],
-						[scopedName]: message,
-					};
-				}
-			}
-
-			return {
-				defaultValue: config?.defaultValue ?? {},
-				initialError,
-			};
-		},
-	);
 	const [error, setError] = useState<Record<string, string[] | undefined>>(
 		() => {
+			const initialError = config?.initialError;
+
+			if (!initialError) {
+				return {};
+			}
+
 			const result: Record<string, string[]> = {};
 
-			for (const [key, error] of Object.entries(
-				uncontrolledState.initialError,
-			)) {
-				result[key] = ([] as string[]).concat(error?.[''] ?? []);
+			for (const [name, message] of Object.entries(initialError)) {
+				const [key, ...paths] = getPaths(name);
+
+				if (typeof key === 'string' && paths.length === 0) {
+					result[key] = ([] as string[]).concat(message ?? []);
+				}
 			}
 
 			return result;
 		},
 	);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		configRef.current = config;
 	});
 
@@ -564,15 +524,6 @@ export function useFieldset<Schema extends Record<string, any>>(
 				return;
 			}
 
-			const fieldsetConfig = configRef.current as
-				| FieldsetConfig<Schema>
-				| undefined;
-
-			setUncontrolledState({
-				// @ts-expect-error
-				defaultValue: fieldsetConfig?.defaultValue ?? {},
-				initialError: {},
-			});
 			setError({});
 		};
 
@@ -599,14 +550,25 @@ export function useFieldset<Schema extends Record<string, any>>(
 					return;
 				}
 
-				const fieldsetConfig = (config ?? {}) as FieldsetConfig<Schema>;
+				const fieldsetConfig = config as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
 				const errors = error?.[key];
+				const initialError = Object.entries(
+					fieldsetConfig.initialError ?? {},
+				).reduce((result, [name, message]) => {
+					const [field, ...paths] = getPaths(name);
+
+					if (field === key) {
+						result[getName(paths)] = message;
+					}
+
+					return result;
+				}, {} as Record<string, string | string[]>);
 				const field: FieldConfig<any> = {
 					...constraint,
 					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
-					defaultValue: uncontrolledState.defaultValue[key],
-					initialError: uncontrolledState.initialError[key],
+					defaultValue: fieldsetConfig.defaultValue?.[key],
+					initialError,
 					error: errors?.[0],
 					errors,
 				};
@@ -634,41 +596,24 @@ export function useFieldList<Payload = any>(
 	config: FieldConfig<Array<Payload>>,
 ): Array<{ key: string } & FieldConfig<Payload>> {
 	const configRef = useRef(config);
-	const [uncontrolledState, setUncontrolledState] = useState<{
-		defaultValue: FieldValue<Array<Payload>>;
-		initialError: Array<Record<string, string | string[]> | undefined>;
-	}>(() => {
-		const initialError: Array<Record<string, string | string[]> | undefined> =
-			[];
+	const [error, setError] = useState(() => {
+		const initialError: Array<string[] | undefined> = [];
 
 		for (const [name, message] of Object.entries(config?.initialError ?? {})) {
 			const [index, ...paths] = getPaths(name);
 
-			if (typeof index === 'number') {
-				const scopedName = getName(paths);
-
-				initialError[index] = {
-					...initialError[index],
-					[scopedName]: message,
-				};
+			if (typeof index === 'number' && paths.length === 0) {
+				initialError[index] = ([] as string[]).concat(message ?? []);
 			}
 		}
 
-		return {
-			defaultValue: config.defaultValue ?? [],
-			initialError,
-		};
+		return initialError;
 	});
-	const [error, setError] = useState<Array<string[] | undefined>>(() =>
-		uncontrolledState.initialError.map((error) =>
-			([] as string[]).concat(error?.[''] ?? []),
-		),
-	);
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		configRef.current = config;
 	});
 
@@ -774,13 +719,7 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			const fieldConfig = configRef.current;
-
-			setUncontrolledState({
-				defaultValue: fieldConfig.defaultValue ?? [],
-				initialError: [],
-			});
-			setEntries(Object.entries(fieldConfig.defaultValue ?? [undefined]));
+			setEntries(Object.entries(configRef.current.defaultValue ?? [undefined]));
 			setError([]);
 		};
 
@@ -799,10 +738,22 @@ export function useFieldList<Payload = any>(
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
+		const initialError = Object.entries(config.initialError ?? {}).reduce(
+			(result, [name, message]) => {
+				const [field, ...paths] = getPaths(name);
+
+				if (field === index) {
+					result[getName(paths)] = message;
+				}
+
+				return result;
+			},
+			{} as Record<string, string | string[]>,
+		);
 		const fieldConfig: FieldConfig<Payload> = {
 			name: `${config.name}[${index}]`,
-			defaultValue: defaultValue ?? uncontrolledState.defaultValue[index],
-			initialError: uncontrolledState.initialError[index],
+			defaultValue: defaultValue ?? config.defaultValue?.[index],
+			initialError,
 			error: errors?.[0],
 			errors,
 		};
