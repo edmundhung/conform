@@ -358,6 +358,13 @@ export function Cell({
 export function Resource({ children }: { children: React.ReactNode }) {
 	const mouseX = useMotionValue(0);
 	const mouseY = useMotionValue(0);
+	const pattern = {
+		y: 16,
+		squares: [
+			[0, 1],
+			[1, 3],
+		] as Array<[number, number]>,
+	};
 
 	return (
 		<div
@@ -368,7 +375,7 @@ export function Resource({ children }: { children: React.ReactNode }) {
 				mouseY.set(event.clientY - top);
 			}}
 		>
-			{/* <ResourcePattern {...resource.pattern} mouseX={mouseX} mouseY={mouseY} /> */}
+			<ResourcePattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
 			<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
 			<div
 				className={`relative rounded-2xl px-4 pt-16 pb-4
@@ -376,9 +383,9 @@ export function Resource({ children }: { children: React.ReactNode }) {
 				prose-p:mt-1 prose-p:text-sm prose-p:text-zinc-600 dark:prose-p:text-zinc-400
 			`}
 			>
-				<div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
-					{/* <resource.icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" /> */}
-				</div>
+				{/* <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
+					<resource.icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" />
+				</div> */}
 				{/* <h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
 					<Link to={resource.to}>
 						<span className="absolute inset-0 rounded-2xl" />
