@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface PlaygroundProps {
 	title: string;
-	description?: string;
+	description?: ReactNode;
 	form?: string;
 	lastSubmission?: Submission;
 	formAction?: string;
