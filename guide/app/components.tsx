@@ -401,16 +401,35 @@ export function Resource({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export function Attributes({ children }: { children: React.ReactNode }) {
+interface Attribute {
+	name: string;
+	type: string;
+	description: string;
+}
+
+export function Attributes({ attributes }: { attributes: Attribute[] }) {
 	return (
-		<div
-			className={`
-				m-0 flex flex-wrap items-center gap-x-3 gap-y-2
-				prose-em:inline prose-em:font-mono prose-em:text-xs prose-em:text-zinc-400 dark:prose-em:text-zinc-500 prose-em:block
-				prose-p:w-full prose-p:flex-none prose-p:mt-4 prose-p:[&>:first-child]:mt-0 prose-p:[&>:first-child]:mb-0
-			`}
-		>
-			{children}
+		<div className="my-6">
+			<ul className="m-0 max-w-[calc(theme(maxWidth.lg)-theme(spacing.8))] list-none divide-y divide-zinc-900/5 p-0 dark:divide-white/5">
+				{attributes.map((attr) => (
+					<li key={attr.name} className="m-0 px-0 py-4 first:pt-0 last:pb-0">
+						<dl className="m-0 flex flex-wrap items-center gap-x-3 gap-y-2">
+							<dt className="sr-only">Name</dt>
+							<dd>
+								<code>{attr.name}</code>
+							</dd>
+							<dt className="sr-only">Type</dt>
+							<dd className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
+								{attr.type}
+							</dd>
+							<dt className="sr-only">Description</dt>
+							<dd className="w-full flex-none [&amp;>:first-child]:mt-0 [&amp;>:last-child]:mb-0">
+								{attr.description}
+							</dd>
+						</dl>
+					</li>
+				))}
+			</ul>
 		</div>
 	);
 }

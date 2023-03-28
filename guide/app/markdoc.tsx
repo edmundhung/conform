@@ -11,7 +11,7 @@ export function parse(markdown: string) {
 			'{% $1 %}',
 		);
 
-	console.log(content);
+	// console.log(content);
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
@@ -70,6 +70,33 @@ export function parse(markdown: string) {
 				render: 'Attributes',
 				description:
 					'To list attributes with their names, data types and descriptions',
+				transform(node, config) {
+					console.log({ node: JSON.stringify(node) });
+					const attributes = [];
+					let attr = {};
+					for (const child of node.children) {
+						if (child.type == 'heading' && child.children[0].type == 'inline') {
+							for (const grandchild of child.children[0].children) {
+								if (grandchild.type == 'code') {
+									attr.name = grandchild.attributes.content;
+								} else if (grandchild.type == 'em') {
+									attr.type = grandchild.children[0].attributes.content;
+								}
+							}
+						}
+
+						if (child.type == 'paragraph') {
+							attr.description =
+								child.children[0].children[0].attributes.content;
+							attributes.push(attr);
+							attr = {};
+						}
+					}
+
+					return new markdoc.Tag('Attributes', {
+						attributes,
+					});
+				},
 			},
 			row: {
 				render: 'Row',
