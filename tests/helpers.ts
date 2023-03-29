@@ -1,5 +1,4 @@
 import type { Page, Locator, Response } from '@playwright/test';
-import { expect } from '@playwright/test';
 
 interface FormConfig {
 	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';

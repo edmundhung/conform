@@ -398,7 +398,9 @@ test.describe('Server Validation', () => {
 
 test.describe('Error Reporting', () => {
 	test('initialReport: onSubmit', async ({ page }) => {
-		const form = await gotoForm(page, '/signup', { initialReport: 'onSubmit' });
+		const form = await gotoForm(page, '/signup', {
+			initialReport: 'onSubmit',
+		});
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');
@@ -420,7 +422,9 @@ test.describe('Error Reporting', () => {
 	});
 
 	test('initialReport: onChange', async ({ page }) => {
-		const form = await gotoForm(page, '/signup', { initialReport: 'onChange' });
+		const form = await gotoForm(page, '/signup', {
+			initialReport: 'onChange',
+		});
 		const { email, password, confirmPassword } = getSignupFieldset(form);
 
 		await email.type('Invalid email');

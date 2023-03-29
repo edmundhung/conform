@@ -164,7 +164,7 @@ export default function LoginForm() {
 
     // Now Conform will start validating once user leave the field and
     // revalidate for any changes triggered later
-    initialReport: 'onBlur',
+    shouldValidate: 'onBlur',
 
     // Run the same validation logic on client
     onValidate({ formData }) {

@@ -35,7 +35,7 @@ interface Schema {
 }
 
 export default function ExampleForm() {
-	const [form, fieldset] = useForm<Schema>({ initialReport: 'onBlur' });
+	const [form, fieldset] = useForm<Schema>({ shouldValidate: 'onBlur' });
 
 	return (
 		<Container maxWidth="sm">

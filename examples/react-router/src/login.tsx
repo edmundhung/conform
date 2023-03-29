@@ -40,7 +40,7 @@ export function Component() {
 	const lastSubmission = useActionData() as Submission;
 	const [form, { email, password }] = useForm<Login>({
 		lastSubmission,
-		initialReport: 'onBlur',
+		shouldValidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);
 		},
