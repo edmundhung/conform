@@ -39,7 +39,7 @@ export type Schema<
 							pattern?: string;
 					  }
 					| {
-							type: 'datetime-local' | 'date' | 'month' | 'week' | 'time';
+							type: 'datetime-local' | 'date' | 'time';
 							min?: string;
 							max?: string;
 							step?: string;
@@ -281,8 +281,6 @@ export function validate<Shape extends Record<string, any>>(
 			}
 			case 'datetime-local':
 			case 'date':
-			case 'month':
-			case 'week':
 			case 'time': {
 				const text = ensureSingleTextValue(data, name);
 
@@ -346,12 +344,6 @@ export function validate<Shape extends Record<string, any>>(
 									? constraint.step * 1000
 									: null;
 							break;
-						}
-						default: {
-							// TODO: implement month and week validation
-							payload.set(name, text);
-							value.set(name, text);
-							continue;
 						}
 					}
 
