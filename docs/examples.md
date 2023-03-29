@@ -113,27 +113,21 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 ---
 
-<!-- resource -->
+<!-- resources -->
 
 ### [@conform-to/react](/api/react)
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
-<!-- /resource -->
-<!-- resource -->
-
 ### [@conform-to/yup](/api/yup)
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
-
-<!-- /resource -->
-<!-- resource -->
 
 ### [@conform-to/zod](/api/zod)
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
-<!-- /resource -->
+<!-- /resources -->
 
 # Examples
 
