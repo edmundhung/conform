@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|resource|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
+			/<!-- (\/?(lead|grid|cell|resources|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
 			'{% $1 %}',
 		);
 
@@ -62,16 +62,66 @@ export function parse(markdown: string) {
 					},
 				},
 			},
-			resource: {
-				render: 'Resource',
-				description: 'Card for linking to a resource',
+			resources: {
+				render: 'Resources',
+				description: 'Cards for linking to resources',
+				transform(node, config) {
+					const resources = [];
+					let resource = {};
+					let count = 0;
+					const patterns = [
+						{
+							y: 16,
+							squares: [
+								[0, 1],
+								[1, 3],
+							],
+						},
+						{
+							y: -6,
+							squares: [
+								[-1, 2],
+								[1, 3],
+							],
+						},
+						{
+							y: 32,
+							squares: [
+								[0, 2],
+								[1, 4],
+							],
+						},
+						{
+							y: 22,
+							squares: [[0, 1]],
+						},
+					];
+
+					for (const child of node.children) {
+						if (child.type == 'heading') {
+							resource.to = child.children[0].children[0].attributes.href;
+							resource.name =
+								child.children[0].children[0].children[0].attributes.content;
+						} else if (child.type == 'paragraph') {
+							resource.description =
+								child.children[0].children[0].attributes.content;
+							resource.pattern = patterns[count % 4];
+							count = count + 1;
+							resources.push(resource);
+							resource = {};
+						}
+					}
+
+					return new markdoc.Tag('Resources', {
+						resources,
+					});
+				},
 			},
 			attributes: {
 				render: 'Attributes',
 				description:
 					'To list attributes with their names, data types and descriptions',
 				transform(node, config) {
-					console.log({ node: JSON.stringify(node) });
 					const attributes = [];
 					let attr = {};
 					for (const child of node.children) {

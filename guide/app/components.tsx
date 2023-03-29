@@ -6,7 +6,7 @@ import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-ligh
 import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
 import clsx from 'clsx';
-import { useInView, useMotionValue } from 'framer-motion';
+import { MotionValue, useInView, useMotionValue } from 'framer-motion';
 import { remToPx } from './util';
 import { Tab } from '@headlessui/react';
 import { create } from 'zustand';
@@ -355,52 +355,60 @@ export function Cell({
 	);
 }
 
-export function Resource({ children }: { children: React.ReactNode }) {
+interface Resource {
+	name: String;
+	to: String;
+	description: String;
+	pattern: {
+		y: number;
+		squares: Array<[number, number]>;
+	};
+}
+
+export function Resources({ resources }: { resources: Resource[] }) {
 	const mouseX = useMotionValue(0);
 	const mouseY = useMotionValue(0);
-	const pattern = {
-		y: 16,
-		squares: [
-			[0, 1],
-			[1, 3],
-		] as Array<[number, number]>,
-	};
 
 	return (
-		<div
-			className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
-			onMouseMove={(event) => {
-				const { left, top } = event.currentTarget.getBoundingClientRect();
-				mouseX.set(event.clientX - left);
-				mouseY.set(event.clientY - top);
-			}}
-		>
-			<ResourcePattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
-			<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-			<div
-				className={`relative rounded-2xl px-4 pt-16 pb-4
-				prose-h3:mt-4 prose-h3:text-sm prose-h3:font-semibold prose-h3:leading-7 prose-h3:text-zinc-900 prose-h3:dark:text-white
-				prose-p:mt-1 prose-p:text-sm prose-p:text-zinc-600 dark:prose-p:text-zinc-400
-			`}
-			>
-				{/* <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-emerald-300/10 dark:group-hover:ring-emerald-400">
-					<resource.icon className="h-5 w-5 fill-zinc-700/10 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:fill-white/10 dark:stroke-zinc-400 dark:group-hover:fill-emerald-300/10 dark:group-hover:stroke-emerald-400" />
-				</div> */}
-				{/* <h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
-					<Link to={resource.to}>
-						<span className="absolute inset-0 rounded-2xl" />
-						{resource.name}
-					</Link>
-				</h3>
-				<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-					{resource.description}
-				</p> */}
-				{children}
+		<div className="my-16 xl:max-w-none">
+			<Heading level={2} id="resources">
+				Resources
+			</Heading>
+			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+				{resources.map((resource) => (
+					<div
+						key={resource.to}
+						className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
+						onMouseMove={(event) => {
+							const { left, top } = event.currentTarget.getBoundingClientRect();
+							mouseX.set(event.clientX - left);
+							mouseY.set(event.clientY - top);
+						}}
+					>
+						<ResourcePattern
+							{...resource.pattern}
+							mouseX={mouseX}
+							mouseY={mouseY}
+						/>
+						<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
+						<div className="relative rounded-2xl px-4 pt-16 pb-4">
+							{/* <ResourceIcon icon={resource.icon} /> */}
+							<h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
+								<a href={resource.to}>
+									<span className="absolute inset-0 rounded-2xl" />
+									{resource.name}
+								</a>
+							</h3>
+							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+								{resource.description}
+							</p>
+						</div>
+					</div>
+				))}
 			</div>
 		</div>
 	);
 }
-
 interface Attribute {
 	name: string;
 	type: string;
@@ -984,7 +992,7 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Lead,
 					Grid,
 					Cell,
-					Resource,
+					Resources,
 					Attributes,
 					Row,
 					Col,
