@@ -1,6 +1,6 @@
 import { conform, useForm, parse } from '@conform-to/react';
-import { json, type ActionArgs } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
+import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
 import { Playground, Field, Alert } from '~/components';
 
@@ -10,6 +10,14 @@ interface Schema {
 	rating: number;
 	images: File[];
 	tags: string[];
+}
+
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
+
+	return json({
+		enableDescription: url.searchParams.get('enableDescription') === 'yes',
+	});
 }
 
 export async function action({ request }: ActionArgs) {
@@ -25,6 +33,7 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Example() {
+	const { enableDescription } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
 	const ref = useRef<HTMLFormElement>(null);
 	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
@@ -69,16 +78,30 @@ export default function Example() {
 			<Playground title="Input attributes" lastSubmission={lastSubmission}>
 				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={title}>
-					<input {...conform.input(title, { type: 'text' })} />
+					<input
+						{...conform.input(title, {
+							type: 'text',
+							description: enableDescription,
+						})}
+					/>
 				</Field>
 				<Field label="Description" config={description}>
-					<textarea {...conform.textarea(description)} />
+					<textarea
+						{...conform.textarea(description, {
+							description: enableDescription,
+						})}
+					/>
 				</Field>
 				<Field label="Image" config={images}>
-					<input {...conform.input(images, { type: 'file' })} />
+					<input
+						{...conform.input(images, {
+							type: 'file',
+							description: enableDescription,
+						})}
+					/>
 				</Field>
 				<Field label="Tags" config={tags}>
-					<select {...conform.select(tags)}>
+					<select {...conform.select(tags, { description: enableDescription })}>
 						<option value="">Please select</option>
 						<option value="action">Action</option>
 						<option value="adventure">Adventure</option>
@@ -90,7 +113,12 @@ export default function Example() {
 					</select>
 				</Field>
 				<Field label="Rating" config={rating}>
-					<input {...conform.input(rating, { type: 'number' })} />
+					<input
+						{...conform.input(rating, {
+							type: 'number',
+							description: enableDescription,
+						})}
+					/>
 				</Field>
 			</Playground>
 		</Form>

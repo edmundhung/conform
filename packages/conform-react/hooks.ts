@@ -417,11 +417,11 @@ export function useForm<
 		form.id = config.id;
 		form.errorId = `${config.id}-error`;
 		form.props.id = form.id;
-		form.props['aria-describedby'] = form.errorId;
 	}
 
 	if (form.errorId && form.errors.length > 0) {
 		form.props['aria-invalid'] = 'true';
+		form.props['aria-describedby'] = form.errorId;
 	}
 
 	return [form, fieldset];
@@ -606,6 +606,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 					field.form = fieldsetConfig.form;
 					field.id = `${fieldsetConfig.form}-${field.name}`;
 					field.errorId = `${field.id}-error`;
+					field.descriptionId = `${field.id}-description`;
 				}
 
 				return field;
@@ -791,6 +792,7 @@ export function useFieldList<Payload = any>(
 			fieldConfig.form = config.form;
 			fieldConfig.id = `${config.form}-${config.name}`;
 			fieldConfig.errorId = `${fieldConfig.id}-error`;
+			fieldConfig.descriptionId = `${fieldConfig.id}-description`;
 		}
 
 		return {

@@ -11,11 +11,9 @@ function getFieldset(form: Locator) {
 	};
 }
 
-test.beforeEach(async ({ page }) => {
-	await page.goto('/input-attributes');
-});
-
 test('setup validation attributes', async ({ page }) => {
+	await page.goto('/input-attributes');
+
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
@@ -68,47 +66,49 @@ test('setup validation attributes', async ({ page }) => {
 	await expect(fieldset.rating).toHaveJSProperty('step', '0.5');
 });
 
-test('setup aria-attributes', async ({ page }) => {
+test('setup field id correctly', async ({ page }) => {
+	await page.goto('/input-attributes');
+
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
 	await expect(playground.form).toHaveAttribute('id', 'test');
-	await expect(playground.form).toHaveAttribute(
-		'aria-describedby',
-		'test-error',
-	);
 	await expect(fieldset.title).toHaveAttribute('id', 'test-title');
-	await expect(fieldset.title).toHaveAttribute(
-		'aria-describedby',
-		'test-title-error',
-	);
-	await expect(fieldset.title).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.description).toHaveAttribute('id', 'test-description');
-	await expect(fieldset.description).toHaveAttribute(
-		'aria-describedby',
-		'test-description-error',
-	);
+	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
+	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
+	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+
+	await playground.submit.click();
+	await expect(playground.form).toHaveAttribute('id', 'test');
+	await expect(fieldset.title).toHaveAttribute('id', 'test-title');
+	await expect(fieldset.description).toHaveAttribute('id', 'test-description');
+	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
+	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
+	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+
+	await playground.reset.click();
+	await expect(playground.form).toHaveAttribute('id', 'test');
+	await expect(fieldset.title).toHaveAttribute('id', 'test-title');
+	await expect(fieldset.description).toHaveAttribute('id', 'test-description');
+	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
+	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
+	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+});
+
+test('setup aria-invalid correctly', async ({ page }) => {
+	await page.goto('/input-attributes');
+
+	const playground = getPlayground(page);
+	const fieldset = getFieldset(playground.container);
+
+	await expect(fieldset.title).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.description).not.toHaveAttribute(
 		'aria-invalid',
 		'true',
 	);
-	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
-	await expect(fieldset.images).toHaveAttribute(
-		'aria-describedby',
-		'test-images-error',
-	);
 	await expect(fieldset.images).not.toHaveAttribute('aria-invalid', 'true');
-	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
-	await expect(fieldset.tags).toHaveAttribute(
-		'aria-describedby',
-		'test-tags-error',
-	);
 	await expect(fieldset.tags).not.toHaveAttribute('aria-invalid', 'true');
-	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
-	await expect(fieldset.rating).toHaveAttribute(
-		'aria-describedby',
-		'test-rating-error',
-	);
 	await expect(fieldset.rating).not.toHaveAttribute('aria-invalid', 'true');
 
 	await playground.submit.click();
@@ -129,4 +129,162 @@ test('setup aria-attributes', async ({ page }) => {
 	await expect(fieldset.images).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.tags).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.rating).not.toHaveAttribute('aria-invalid', 'true');
+});
+
+test('setup aria-describedby without description correctly', async ({
+	page,
+}) => {
+	await page.goto('/input-attributes');
+
+	const playground = getPlayground(page);
+	const fieldset = getFieldset(playground.container);
+
+	await expect(playground.form).not.toHaveAttribute(
+		'aria-describedby',
+		'test-error',
+	);
+	await expect(fieldset.title).not.toHaveAttribute(
+		'aria-describedby',
+		'test-title-error',
+	);
+	await expect(fieldset.description).not.toHaveAttribute(
+		'aria-describedby',
+		'test-description-error',
+	);
+	await expect(fieldset.images).not.toHaveAttribute(
+		'aria-describedby',
+		'test-images-error',
+	);
+	await expect(fieldset.tags).not.toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error',
+	);
+	await expect(fieldset.rating).not.toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error',
+	);
+
+	await playground.submit.click();
+
+	await expect(fieldset.description).toHaveAttribute(
+		'aria-describedby',
+		'test-description-error',
+	);
+	await expect(fieldset.title).toHaveAttribute(
+		'aria-describedby',
+		'test-title-error',
+	);
+	await expect(fieldset.images).toHaveAttribute(
+		'aria-describedby',
+		'test-images-error',
+	);
+	await expect(fieldset.tags).toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error',
+	);
+	await expect(fieldset.rating).toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error',
+	);
+
+	await playground.reset.click();
+
+	await expect(fieldset.title).not.toHaveAttribute(
+		'aria-describedby',
+		'test-title-error',
+	);
+	await expect(fieldset.description).not.toHaveAttribute(
+		'aria-describedby',
+		'test-description-error',
+	);
+	await expect(fieldset.images).not.toHaveAttribute(
+		'aria-describedby',
+		'test-images-error',
+	);
+	await expect(fieldset.tags).not.toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error',
+	);
+	await expect(fieldset.rating).not.toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error',
+	);
+});
+
+test('setup aria-describedby with description correctly', async ({ page }) => {
+	await page.goto('/input-attributes?enableDescription=yes');
+
+	const playground = getPlayground(page);
+	const fieldset = getFieldset(playground.container);
+
+	await expect(playground.form).not.toHaveAttribute(
+		'aria-describedby',
+		'test-error',
+	);
+	await expect(fieldset.title).not.toHaveAttribute(
+		'aria-describedby',
+		'test-title-error test-title-description',
+	);
+	await expect(fieldset.description).not.toHaveAttribute(
+		'aria-describedby',
+		'test-description-error test-description-description',
+	);
+	await expect(fieldset.images).not.toHaveAttribute(
+		'aria-describedby',
+		'test-images-error test-image-description',
+	);
+	await expect(fieldset.tags).not.toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error text-tags-description',
+	);
+	await expect(fieldset.rating).not.toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error text-rating-description',
+	);
+
+	await playground.submit.click();
+
+	await expect(fieldset.description).toHaveAttribute(
+		'aria-describedby',
+		'test-description-error test-description-description',
+	);
+	await expect(fieldset.title).toHaveAttribute(
+		'aria-describedby',
+		'test-title-error test-title-description',
+	);
+	await expect(fieldset.images).toHaveAttribute(
+		'aria-describedby',
+		'test-images-error test-images-description',
+	);
+	await expect(fieldset.tags).toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error test-tags-description',
+	);
+	await expect(fieldset.rating).toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error test-rating-description',
+	);
+
+	await playground.reset.click();
+
+	await expect(fieldset.title).not.toHaveAttribute(
+		'aria-describedby',
+		'test-title-error test-title-description',
+	);
+	await expect(fieldset.description).not.toHaveAttribute(
+		'aria-describedby',
+		'test-description-error test-description-description',
+	);
+	await expect(fieldset.images).not.toHaveAttribute(
+		'aria-describedby',
+		'test-images-error test-images-description',
+	);
+	await expect(fieldset.tags).not.toHaveAttribute(
+		'aria-describedby',
+		'test-tags-error test-tags-description',
+	);
+	await expect(fieldset.rating).not.toHaveAttribute(
+		'aria-describedby',
+		'test-rating-error test-rating-description',
+	);
 });

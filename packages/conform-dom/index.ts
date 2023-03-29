@@ -12,6 +12,7 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	defaultValue?: FieldValue<Schema>;
 	initialError?: Record<string, string | string[]>;
 	form?: string;
+	descriptionId?: string;
 	errorId?: string;
 
 	/**
