@@ -446,9 +446,15 @@ export function validate<Shape extends Record<string, any>>(
 				break;
 			}
 			case 'file': {
-				const files = constraint.multiple
+				let files = constraint.multiple
 					? data.getAll(name)
 					: [ensureSingleValue(data, name)];
+
+				// This is a workaround for a bug on @remix-run/web-fetch
+				// @see https://github.com/remix-run/web-std-io/pull/28
+				if (files.length === 1 && files[0] === '') {
+					files = [new File([], '')];
+				}
 
 				invariant(
 					files.every((file): file is File => file instanceof File),
