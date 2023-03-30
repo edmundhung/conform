@@ -380,13 +380,18 @@ export function Grid({ gridcells, type }: { gridcells: Gridcell[]; string }) {
 							{cell.description}
 						</p>
 						<p className="mt-4">
-							<a href={cell.to}>{cell.tocontent}</a>
+							<a
+								className="inline-flex gap-0.5 justify-center overflow-hidden text-sm font-medium transition text-emerald-500 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500"
+								href={cell.to}
+							>
+								{cell.tocontent}
+							</a>
 						</p>
 					</div>
 					{type === 'sdk' ? (
 						<img
-							href={cell.image}
-							alt={cell.image}
+							href="/docs/images/remixlogo.svg"
+							alt="/docs/images/remixlogo.svg"
 							className="h-12 w-12"
 							unoptimized
 						/>
