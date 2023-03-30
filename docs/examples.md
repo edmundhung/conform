@@ -27,8 +27,7 @@ I'm a normal paragraph with smaller font size than that in lead paragraph. bla b
 
 ---
 
-<!-- grid -->
-<!-- cell -->
+<!-- grid images=[ "/docs/images/remixlogo.svg", "/docs/images/remixlogo.svg", "", "", "", "", "", "", ] -->
 
 ### Validation
 
@@ -36,39 +35,23 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 [Read more &raquo;](/docs/validation.md)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Integrations???
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
 [Read more &raquo;](/docs/integrations.md)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Nested object and Array
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
 [Read more &raquo;](/docs/configuration.md)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Nested object and Array
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
 [Read more &raquo;](/docs/configuration.md)
-
-<!-- /cell -->
-
-<!-- cell -->
 
 ### Intent button
 
@@ -76,19 +59,11 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 [Read more &raquo;](/docs/intent-button.md)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### File upload
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
 [Read more &raquo;](/docs/file-upload.md)
-
-<!-- /cell -->
-
-<!-- cell -->
 
 ### Focus management
 
@@ -96,17 +71,12 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 [Read more &raquo;](/docs/focus-management.md)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Accessibility
 
 bla bla bla... if case you want a loop for other cells... then I have to think...
 
 [Read more &raquo;](/docs/accessibility.md)
 
-<!-- /cell -->
 <!-- /grid -->
 
 ## API references
