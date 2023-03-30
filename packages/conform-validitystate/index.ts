@@ -2,9 +2,15 @@ type Required<T> = undefined extends T
 	? { required?: false }
 	: { required: true };
 
-export type Schema<
-	Shape extends Record<string, string | number | boolean | File | File[]>,
-> = {
+export type SupportedTypes =
+	| string
+	| string[]
+	| File
+	| File[]
+	| number
+	| boolean;
+
+export type Schema<Shape extends Record<string, SupportedTypes>> = {
 	[Key in keyof Shape]: File[] extends Shape[Key]
 		? Required<Shape[Key]> & {
 				type: 'file';
@@ -28,6 +34,11 @@ export type Schema<
 				type: 'checkbox';
 				required?: boolean;
 				value?: string;
+		  }
+		: string[] extends Shape[Key]
+		? Required<Shape[Key]> & {
+				type: 'select';
+				multiple: true;
 		  }
 		: string extends Shape[Key]
 		? Required<Shape[Key]> &
@@ -62,11 +73,11 @@ export type Schema<
 
 export type SchemaValidity<Shape extends Record<string, string[]>> =
 	| {
-			payload: Record<string, string | undefined>;
+			payload: Record<string, string | string[] | undefined>;
 			error: Record<string, string[]>;
 	  }
 	| {
-			payload: Record<string, string | undefined>;
+			payload: Record<string, string | string[] | undefined>;
 			error: null;
 			value: Shape;
 	  };
@@ -145,7 +156,6 @@ export function matchPattern(pattern: string, text: string): boolean {
 		patternString = `${patternString}$`;
 	}
 
-	// TODO: ensure pattern will match the whole text
 	return new RegExp(patternString).test(text);
 }
 
@@ -162,16 +172,22 @@ export function getDateConstraint(
 
 	switch (constraint.type) {
 		case 'date':
-			const today = new Date().toISOString().slice(0, 10);
-			format = (text) => `${today}T${text}`;
+			invariant(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(text), 'Invalid date');
+			format = (date) => `${date}T00:00:00`;
 			baseStep = 86400000;
 			break;
 		case 'time':
-			format = (text) => `${text}T00:00:00`;
+			invariant(/^[0-9]{2}:[0-9]{2}$/.test(text), 'Invalid time');
+			const today = new Date().toISOString().slice(0, 10);
+			format = (time) => `${today}T${time}`;
 			baseStep = 1000;
 			break;
 		case 'datetime-local':
-			format = (text) => text;
+			invariant(
+				/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(text),
+				'Invalid datetime',
+			);
+			format = (datetime) => datetime;
 			baseStep = 1000;
 			break;
 	}
@@ -191,9 +207,9 @@ export function validate<Shape extends Record<string, any>>(
 	data: FormData | URLSearchParams,
 	schema: Schema<Shape>,
 ): SchemaValidity<Shape> {
-	const payload = new Map<keyof Shape, string | undefined>();
+	const payload = new Map<keyof Shape, string | string[] | undefined>();
 	const error = new Map<keyof Shape, string[]>();
-	const value = new Map<keyof Shape, any>();
+	const value = new Map<keyof Shape, SupportedTypes>();
 
 	for (const name in schema) {
 		const constraint = schema[name];
@@ -228,7 +244,10 @@ export function validate<Shape extends Record<string, any>>(
 						'maxlength',
 						text.length <= (constraint.maxLength ?? Infinity),
 					);
-					validate('pattern', matchPattern(constraint.pattern ?? '', text));
+					validate(
+						'pattern',
+						!constraint.pattern || matchPattern(constraint.pattern ?? '', text),
+					);
 				}
 				break;
 			}
@@ -249,11 +268,12 @@ export function validate<Shape extends Record<string, any>>(
 					validate('type', isNumber);
 
 					if (isNumber) {
+						const { min = 0, max = Infinity, step = 1 } = constraint;
 						value.set(name, number);
 
-						validate('min', number >= (constraint.min ?? 0));
-						validate('max', number <= (constraint.max ?? Infinity));
-						validate('step', number % (constraint.step ?? 1) === 0);
+						validate('min', number >= min);
+						validate('max', number <= max);
+						validate('step', (number - min) % step === 0);
 					}
 				}
 				break;
@@ -284,7 +304,6 @@ export function validate<Shape extends Record<string, any>>(
 				const text = ensureSingleValue(data, name);
 
 				invariant(typeof text === 'string', `${name} is not a string`);
-				// TODO: validate text format
 
 				payload.set(name, text);
 
@@ -340,15 +359,32 @@ export function validate<Shape extends Record<string, any>>(
 				break;
 			}
 			case 'select': {
-				// TODO: implement multiple select validation
-				const text = ensureSingleValue(data, name);
+				const options = constraint.multiple
+					? data.getAll(name)
+					: ensureSingleValue(data, name);
+				const isArray = Array.isArray(options);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
+				if (isArray) {
+					invariant(
+						options.every(
+							(option): option is string => typeof option === 'string',
+						),
+						`${name} is not a string`,
+					);
+				} else {
+					invariant(typeof options === 'string', `${name} is not a string`);
+				}
 
-				value.set(name, text);
-				payload.set(name, text);
+				payload.set(name, options);
+				value.set(name, options);
 
-				validate('required', !constraint.required || text !== '');
+				if (constraint.required) {
+					if (isArray) {
+						validate('required', options.length > 0);
+					} else {
+						validate('required', options !== '');
+					}
+				}
 				break;
 			}
 			case 'textarea': {

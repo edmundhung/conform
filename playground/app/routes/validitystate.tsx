@@ -82,7 +82,9 @@ export default function Example() {
 							defaultValue={submission?.payload.field ?? ''}
 							{...schema}
 						>
-							<option value="">Select an option</option>
+							{schema.multiple ? null : (
+								<option value="">Select an option</option>
+							)}
 							<option value="a">Option A</option>
 							<option value="b">Option B</option>
 							<option value="c">Option C</option>

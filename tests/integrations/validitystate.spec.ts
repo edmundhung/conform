@@ -597,6 +597,23 @@ function runTests(javaScriptEnabled: boolean) {
 				value: { field: 'a' },
 				error: null,
 			});
+
+		await updateSchema({ multiple: true });
+		await expect(error).toHaveText(['']);
+
+		await updateSchema({ multiple: true, required: true });
+		await expect(error).toHaveText(['required']);
+
+		await field.selectOption(['b', 'c']);
+		await submit.click();
+		await expect(error).toHaveText(['']);
+		await expect
+			.poll(() => getSubmission())
+			.toEqual({
+				payload: { field: ['b', 'c'] },
+				value: { field: ['b', 'c'] },
+				error: null,
+			});
 	});
 
 	test('textarea', async ({ page }) => {
