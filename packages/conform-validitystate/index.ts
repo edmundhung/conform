@@ -184,7 +184,7 @@ export function getDateConstraint(
 			break;
 		case 'datetime-local':
 			invariant(
-				/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$/.test(text),
+				/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/.test(text),
 				'Invalid datetime',
 			);
 			format = (datetime) => datetime;
