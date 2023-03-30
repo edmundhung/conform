@@ -149,6 +149,44 @@ export function matchPattern(pattern: string, text: string): boolean {
 	return new RegExp(patternString).test(text);
 }
 
+export function getDateConstraint(
+	text: string,
+	constraint: {
+		type: 'datetime-local' | 'date' | 'time';
+		min?: string;
+		max?: string;
+		step?: number;
+	},
+) {
+	let format: (text: string) => string, baseStep: number;
+
+	switch (constraint.type) {
+		case 'date':
+			const today = new Date().toISOString().slice(0, 10);
+			format = (text) => `${today}T${text}`;
+			baseStep = 86400000;
+			break;
+		case 'time':
+			format = (text) => `${text}T00:00:00`;
+			baseStep = 1000;
+			break;
+		case 'datetime-local':
+			format = (text) => text;
+			baseStep = 1000;
+			break;
+	}
+
+	return {
+		date: new Date(format(text)),
+		min: constraint.min ? new Date(format(constraint.min)) : null,
+		max: constraint.max ? new Date(format(constraint.max)) : null,
+		step:
+			typeof constraint.step !== 'undefined'
+				? constraint.step * baseStep
+				: null,
+	};
+}
+
 export function validate<Shape extends Record<string, any>>(
 	data: FormData | URLSearchParams,
 	schema: Schema<Shape>,
@@ -160,6 +198,11 @@ export function validate<Shape extends Record<string, any>>(
 	for (const name in schema) {
 		const constraint = schema[name];
 		const messages = new Set<string>();
+		const validate = (message: string, condition: boolean) => {
+			if (!condition) {
+				messages.add(message);
+			}
+		};
 
 		switch (constraint.type) {
 			case 'text':
@@ -175,44 +218,17 @@ export function validate<Shape extends Record<string, any>>(
 				payload.set(name, text);
 				value.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
+				validate('required', !constraint.required || text !== '');
 
 				if (text !== '') {
-					switch (constraint.type) {
-						case 'email':
-							if (!isValidEmail(text)) {
-								messages.add('type');
-							}
-							break;
-						case 'url':
-							if (!isValidURL(text)) {
-								messages.add('type');
-							}
-							break;
-					}
-
-					if (
-						typeof constraint.minLength !== 'undefined' &&
-						text.length < constraint.minLength
-					) {
-						messages.add('minlength');
-					}
-
-					if (
-						typeof constraint.maxLength !== 'undefined' &&
-						text.length > constraint.maxLength
-					) {
-						messages.add('maxlength');
-					}
-
-					if (
-						typeof constraint.pattern !== 'undefined' &&
-						!matchPattern(constraint.pattern, text)
-					) {
-						messages.add('pattern');
-					}
+					validate('type', constraint.type !== 'email' || isValidEmail(text));
+					validate('type', constraint.type !== 'url' || isValidURL(text));
+					validate('minlength', text.length >= (constraint.minLength ?? 0));
+					validate(
+						'maxlength',
+						text.length <= (constraint.maxLength ?? Infinity),
+					);
+					validate('pattern', matchPattern(constraint.pattern ?? '', text));
 				}
 				break;
 			}
@@ -224,38 +240,20 @@ export function validate<Shape extends Record<string, any>>(
 
 				payload.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
+				validate('required', !constraint.required || text !== '');
 
 				if (text !== '') {
 					const number = Number(text);
+					const isNumber = !Number.isNaN(number);
 
-					if (Number.isNaN(number)) {
-						messages.add('type');
-					} else {
+					validate('type', isNumber);
+
+					if (isNumber) {
 						value.set(name, number);
 
-						if (
-							typeof constraint.min !== 'undefined' &&
-							number < constraint.min
-						) {
-							messages.add('min');
-						}
-
-						if (
-							typeof constraint.max !== 'undefined' &&
-							number > constraint.max
-						) {
-							messages.add('max');
-						}
-
-						if (
-							typeof constraint.step !== 'undefined' &&
-							(number - (constraint.min ?? 0)) % constraint.step !== 0
-						) {
-							messages.add('step');
-						}
+						validate('min', number >= (constraint.min ?? 0));
+						validate('max', number <= (constraint.max ?? Infinity));
+						validate('step', number % (constraint.step ?? 1) === 0);
 					}
 				}
 				break;
@@ -277,10 +275,7 @@ export function validate<Shape extends Record<string, any>>(
 
 				value.set(name, flag);
 
-				if (constraint.required && !flag) {
-					messages.add('required');
-				}
-
+				validate('required', !constraint.required || flag);
 				break;
 			}
 			case 'datetime-local':
@@ -293,86 +288,25 @@ export function validate<Shape extends Record<string, any>>(
 
 				payload.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
+				validate('required', !constraint.required || text !== '');
 
 				if (text !== '') {
-					let date: Date,
-						min: Date | null,
-						max: Date | null,
-						step: number | null;
+					const { date, min, max, step } = getDateConstraint(text, constraint);
 
-					switch (constraint.type) {
-						case 'datetime-local': {
-							date = new Date(text);
-							min = constraint.min ? new Date(constraint.min) : null;
-							max = constraint.max ? new Date(constraint.max) : null;
-							step =
-								typeof constraint.step !== 'undefined'
-									? constraint.step * 1000
-									: null;
-							break;
-						}
-						case 'date': {
-							date = new Date(`${text}T00:00:00`);
-							min = constraint.min
-								? new Date(`${constraint.min}T00:00:00`)
-								: null;
-							max = constraint.max
-								? new Date(`${constraint.max}T00:00:00`)
-								: null;
-							step =
-								typeof constraint.step !== 'undefined'
-									? constraint.step * 86400000
-									: null;
-							break;
-						}
-						case 'time': {
-							date = new Date(
-								`${new Date().toISOString().slice(0, 10)}T${text}`,
-							);
-							min = constraint.min
-								? new Date(
-										`${new Date().toISOString().slice(0, 10)}T${
-											constraint.min
-										}`,
-								  )
-								: null;
-							max = constraint.max
-								? new Date(
-										`${new Date().toISOString().slice(0, 10)}T${
-											constraint.max
-										}`,
-								  )
-								: null;
-							step =
-								typeof constraint.step !== 'undefined'
-									? constraint.step * 1000
-									: null;
-							break;
-						}
-					}
+					const isValidDate = !Number.isNaN(date.valueOf());
 
-					if (Number.isNaN(date.valueOf())) {
-						messages.add('type');
-					} else {
+					validate('type', isValidDate);
+
+					if (isValidDate) {
 						value.set(name, text);
 
-						if (min !== null && date < min) {
-							messages.add('min');
-						}
-
-						if (max !== null && date > max) {
-							messages.add('max');
-						}
-
-						if (
-							step !== null &&
-							(date.valueOf() - (min?.valueOf() ?? 0)) % step !== 0
-						) {
-							messages.add('step');
-						}
+						validate('min', min === null || date >= min);
+						validate('max', max === null || date <= max);
+						validate(
+							'step',
+							step === null ||
+								(date.valueOf() - (min?.valueOf() ?? 0)) % step === 0,
+						);
 					}
 				}
 				break;
@@ -387,27 +321,26 @@ export function validate<Shape extends Record<string, any>>(
 					payload.set(name, text);
 				}
 
-				if (constraint.required && typeof text === 'undefined') {
-					messages.add('required');
-				}
+				validate(
+					'required',
+					!constraint.required || typeof text !== 'undefined',
+				);
 				break;
 			}
 			case 'color': {
 				const text = ensureSingleValue(data, name);
 
 				invariant(typeof text === 'string', `${name} is not a string`);
+				invariant(/^#[0-9a-f]{6}$/i.test(text), `${name} is not a valid color`);
 
 				value.set(name, text);
 				payload.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
-
-				// TODO: handle color format
+				validate('required', !constraint.required || text !== '');
 				break;
 			}
 			case 'select': {
+				// TODO: implement multiple select validation
 				const text = ensureSingleValue(data, name);
 
 				invariant(typeof text === 'string', `${name} is not a string`);
@@ -415,11 +348,7 @@ export function validate<Shape extends Record<string, any>>(
 				value.set(name, text);
 				payload.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
-
-				// TODO: implement multiple select validation
+				validate('required', !constraint.required || text !== '');
 				break;
 			}
 			case 'textarea': {
@@ -430,18 +359,14 @@ export function validate<Shape extends Record<string, any>>(
 				value.set(name, text);
 				payload.set(name, text);
 
-				if (constraint.required && text === '') {
-					messages.add('required');
-				}
+				validate('required', !constraint.required || text !== '');
 
 				if (text) {
-					if (constraint.minLength && text.length < constraint.minLength) {
-						messages.add('minlength');
-					}
-
-					if (constraint.maxLength && text.length > constraint.maxLength) {
-						messages.add('maxlength');
-					}
+					validate('minlength', text.length >= (constraint.minLength ?? 0));
+					validate(
+						'maxlength',
+						text.length <= (constraint.maxLength ?? Infinity),
+					);
 				}
 				break;
 			}
@@ -463,9 +388,7 @@ export function validate<Shape extends Record<string, any>>(
 
 				const nonEmptyFiles = files.filter((file) => !isEmptyFile(file));
 
-				if (constraint.required && nonEmptyFiles.length === 0) {
-					messages.add('required');
-				}
+				validate('required', !constraint.required || nonEmptyFiles.length > 0);
 
 				if (constraint.multiple || nonEmptyFiles.length > 0) {
 					value.set(
