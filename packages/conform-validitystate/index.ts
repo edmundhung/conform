@@ -71,10 +71,10 @@ export type SchemaValidity<Shape extends Record<string, string[]>> =
 			value: Shape;
 	  };
 
-export function ensureSingleTextValue(
+export function ensureSingleValue(
 	data: FormData | URLSearchParams,
 	name: string,
-): string {
+): FormDataEntryValue {
 	if (!data.has(name)) {
 		throw new Error(`${name} is missing`);
 	}
@@ -85,11 +85,16 @@ export function ensureSingleTextValue(
 		throw new Error(`${name} is not configured for multiple values`);
 	}
 
-	if (typeof text !== 'string') {
-		throw new Error(`${name} is not a string`);
-	}
-
 	return text;
+}
+
+export function invariant(
+	condition: boolean,
+	message: string,
+): asserts condition {
+	if (!condition) {
+		throw new Error(message);
+	}
 }
 
 /**
@@ -163,7 +168,12 @@ export function validate<Shape extends Record<string, any>>(
 			case 'url':
 			case 'tel':
 			case 'search': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
+
+				invariant(typeof text === 'string', `${name} is not a string`);
+
+				payload.set(name, text);
+				value.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
@@ -183,37 +193,36 @@ export function validate<Shape extends Record<string, any>>(
 							break;
 					}
 
-					if (text !== '') {
-						if (
-							typeof constraint.minLength !== 'undefined' &&
-							text.length < constraint.minLength
-						) {
-							messages.add('minlength');
-						}
-
-						if (
-							typeof constraint.maxLength !== 'undefined' &&
-							text.length > constraint.maxLength
-						) {
-							messages.add('maxlength');
-						}
-
-						if (
-							typeof constraint.pattern !== 'undefined' &&
-							!matchPattern(constraint.pattern, text)
-						) {
-							messages.add('pattern');
-						}
+					if (
+						typeof constraint.minLength !== 'undefined' &&
+						text.length < constraint.minLength
+					) {
+						messages.add('minlength');
 					}
 
-					payload.set(name, text);
-					value.set(name, text);
+					if (
+						typeof constraint.maxLength !== 'undefined' &&
+						text.length > constraint.maxLength
+					) {
+						messages.add('maxlength');
+					}
+
+					if (
+						typeof constraint.pattern !== 'undefined' &&
+						!matchPattern(constraint.pattern, text)
+					) {
+						messages.add('pattern');
+					}
 				}
 				break;
 			}
 			case 'number':
 			case 'range': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
+
+				invariant(typeof text === 'string', `${name} is not a string`);
+
+				payload.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
@@ -225,6 +234,8 @@ export function validate<Shape extends Record<string, any>>(
 					if (Number.isNaN(number)) {
 						messages.add('type');
 					} else {
+						value.set(name, number);
+
 						if (
 							typeof constraint.min !== 'undefined' &&
 							number < constraint.min
@@ -245,46 +256,42 @@ export function validate<Shape extends Record<string, any>>(
 						) {
 							messages.add('step');
 						}
-
-						value.set(name, number);
 					}
 				}
-
-				payload.set(name, text);
 				break;
 			}
 			case 'checkbox': {
-				const [item, ...rest] = data.getAll(name);
+				const item = data.has(name) ? ensureSingleValue(data, name) : undefined;
+				const checkboxValue = constraint.value ?? 'on';
 
-				if (rest.length > 0) {
-					throw new Error(`${name} is not configured for multiple values`);
-				}
-
-				if (item && item !== (constraint.value ?? 'on')) {
-					throw new Error(
-						`${name} is not configured with value ${constraint.value}`,
+				if (typeof item !== 'undefined') {
+					invariant(typeof item === 'string', `${name} is not a string`);
+					invariant(
+						item === checkboxValue,
+						`Expect ${name} to be configured with ${checkboxValue} but recevied ${item}`,
 					);
-				}
-
-				if (item) {
 					payload.set(name, item);
 				}
 
 				const flag = typeof item !== 'undefined';
 
+				value.set(name, flag);
+
 				if (constraint.required && !flag) {
 					messages.add('required');
 				}
 
-				value.set(name, flag);
 				break;
 			}
 			case 'datetime-local':
 			case 'date':
 			case 'time': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
 
+				invariant(typeof text === 'string', `${name} is not a string`);
 				// TODO: validate text format
+
+				payload.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
@@ -350,6 +357,8 @@ export function validate<Shape extends Record<string, any>>(
 					if (Number.isNaN(date.valueOf())) {
 						messages.add('type');
 					} else {
+						value.set(name, text);
+
 						if (min !== null && date < min) {
 							messages.add('min');
 						}
@@ -364,63 +373,62 @@ export function validate<Shape extends Record<string, any>>(
 						) {
 							messages.add('step');
 						}
-
-						value.set(name, text);
 					}
 				}
-
-				payload.set(name, text);
 				break;
 			}
 			case 'radio': {
-				const [text, ...rest] = data.getAll(name);
+				const text = data.has(name) ? ensureSingleValue(data, name) : undefined;
 
-				if (rest.length > 0) {
-					throw new Error(`${name} is not configured for multiple values`);
+				if (typeof text !== 'undefined') {
+					invariant(typeof text === 'string', `${name} is not a string`);
+
+					value.set(name, text);
+					payload.set(name, text);
 				}
 
 				if (constraint.required && typeof text === 'undefined') {
 					messages.add('required');
 				}
-
-				if (text) {
-					if (typeof text !== 'string') {
-						throw new Error(`${name} is not a string`);
-					}
-
-					value.set(name, text);
-					payload.set(name, text);
-				}
 				break;
 			}
 			case 'color': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
+
+				invariant(typeof text === 'string', `${name} is not a string`);
+
+				value.set(name, text);
+				payload.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
 				}
 
 				// TODO: handle color format
-
-				value.set(name, text);
-				payload.set(name, text);
 				break;
 			}
 			case 'select': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
+
+				invariant(typeof text === 'string', `${name} is not a string`);
+
+				value.set(name, text);
+				payload.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
 				}
 
 				// TODO: implement multiple select validation
-
-				value.set(name, text);
-				payload.set(name, text);
 				break;
 			}
 			case 'textarea': {
-				const text = ensureSingleTextValue(data, name);
+				const text = ensureSingleValue(data, name);
+
+				invariant(typeof text === 'string', `${name} is not a string`);
+
+				value.set(name, text);
+				payload.set(name, text);
 
 				if (constraint.required && text === '') {
 					messages.add('required');
@@ -435,21 +443,17 @@ export function validate<Shape extends Record<string, any>>(
 						messages.add('maxlength');
 					}
 				}
-
-				value.set(name, text);
-				payload.set(name, text);
 				break;
 			}
 			case 'file': {
-				const files = data.getAll(name);
+				const files = constraint.multiple
+					? data.getAll(name)
+					: [ensureSingleValue(data, name)];
 
-				if (!constraint.multiple && files.length > 1) {
-					throw new Error(`${name} is not configured for multiple files`);
-				}
-
-				if (!files.every((file): file is File => file instanceof File)) {
-					throw new Error(`${name} is not a file`);
-				}
+				invariant(
+					files.every((file): file is File => file instanceof File),
+					`${name} is not a file`,
+				);
 
 				const nonEmptyFiles = files.filter((file) => !isEmptyFile(file));
 
