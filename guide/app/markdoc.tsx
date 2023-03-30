@@ -7,7 +7,7 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(
-			/<!-- (\/?(lead|grid|cell|resources|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
+			/<!-- (\/?(lead|grid|resources|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
 			'{% $1 %}',
 		);
 
@@ -50,16 +50,38 @@ export function parse(markdown: string) {
 			grid: {
 				render: 'Grid',
 				description: 'Grid',
-			},
-			cell: {
-				render: 'Cell',
-				description: 'Cell in a grid',
 				attributes: {
-					image: {
+					type: {
 						type: String,
-						description: 'Additional image to be included in a cell',
-						default: '',
+						description: 'To determine icons to be included',
 					},
+				},
+				transform(node, config) {
+					// console.log(JSON.stringify(node));
+					const type = node.attributes.type;
+					const gridcells = [];
+					let cell = {};
+
+					for (const child of node.children) {
+						if (child.type == 'heading') {
+							cell.name = child.children[0].children[0].attributes.content;
+						} else if (child.type == 'paragraph') {
+							const offspring = child.children[0].children[0];
+							if (offspring.type == 'text') {
+								cell.description = offspring.attributes.content;
+							} else if (offspring.type == 'link') {
+								cell.to = offspring.attributes.href;
+								cell.tocontent = offspring.children[0].attributes.content;
+								gridcells.push(cell);
+								cell = {};
+							}
+						}
+					}
+
+					return new markdoc.Tag('Grid', {
+						gridcells,
+						type,
+					});
 				},
 			},
 			resources: {

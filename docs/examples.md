@@ -27,7 +27,7 @@ I'm a normal paragraph with smaller font size than that in lead paragraph. bla b
 
 ---
 
-<!-- grid images=[ "/docs/images/remixlogo.svg", "/docs/images/remixlogo.svg", "", "", "", "", "", "", ] -->
+<!-- grid type="sdk" -->
 
 ### Validation
 
@@ -125,7 +125,6 @@ In order to have a more easy understanding, examples with important featuers are
 > Here is the note!! What on earth for!!!
 
 <!-- grid -->
-<!-- cell -->
 
 ### Async Validation
 
@@ -133,19 +132,11 @@ In order to have a more easy understanding, examples with important featuers are
 
 [Read more &raquo;](/examples/async-validation)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Nested List
 
 ......description......
 
 [Read more &raquo;](/examples/nested-list)
-
-<!-- /cell -->
-
-<!-- cell -->
 
 ### Server Validation
 
@@ -153,26 +144,17 @@ In order to have a more easy understanding, examples with important featuers are
 
 [Read more &raquo;](/examples/server-validation)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Yup
 
 ......description......
 
 [Read more &raquo;](/examples/yup)
 
-<!-- /cell -->
-
-<!-- cell -->
-
 ### Zod
 
 ......description......
 [Read more &raquo;](/examples/zod)
 
-<!-- /cell -->
 <!-- /grid -->
 
 ### Properties

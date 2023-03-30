@@ -316,42 +316,85 @@ function InfoIcon(props) {
 	);
 }
 
-export function Grid({ children }: { children: React.ReactNode }) {
-	return (
-		<div
-			className={`
-			  mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3
-			`}
-		>
-			{children}
-		</div>
-	);
+// export function Grid({ children }: { children: React.ReactNode }) {
+// 	return (
+// 		<div
+// 			className={`
+// 			  mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3
+// 			`}
+// 		>
+// 			{children}
+// 		</div>
+// 	);
+// }
+
+// export function Cell({
+// 	image,
+// 	children,
+// }: {
+// 	image: string;
+// 	children: React.ReactNode;
+// }) {
+// 	return (
+// 		<div
+// 			className={`
+// 				prose-h3:text-sm prose-h3:font-semibold prose-h3:text-zinc-900 dark:prose-h3:text-white
+// 				prose-p:mt-1 prose-p:text-sm prose-p:text-zinc-600 dark:prose-p:text-zinc-400
+// 				prose-a:inline-flex prose-a:gap-0.5 prose-a:justify-center prose-a:overflow-hidden prose-a:text-sm prose-a:font-medium prose-a:transition prose-a:text-emerald-500 hover:prose-a:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500
+// 			`}
+// 		>
+// 			<div className="flex flex-row-reverse gap-6">
+// 				<div className="flex-auto">{children}</div>
+// 				<img
+// 					className="h-12 w-12"
+// 					src="https://protocol.tailwindui.com/_next/static/media/go.135b57cb.svg"
+// 					alt={image}
+// 				/>
+// 			</div>
+// 		</div>
+// 	);
+// }
+
+interface Gridcell {
+	name: String;
+	to: String;
+	tocontent: String;
+	description: String;
 }
 
-export function Cell({
-	image,
-	children,
-}: {
-	image: string;
-	children: React.ReactNode;
-}) {
+export function Grid({ gridcells, type }: { gridcells: Gridcell[]; string }) {
 	return (
-		<div
-			className={`
-				prose-h3:text-sm prose-h3:font-semibold prose-h3:text-zinc-900 dark:prose-h3:text-white
-				prose-p:mt-1 prose-p:text-sm prose-p:text-zinc-600 dark:prose-p:text-zinc-400
-				prose-a:inline-flex prose-a:gap-0.5 prose-a:justify-center prose-a:overflow-hidden prose-a:text-sm prose-a:font-medium prose-a:transition prose-a:text-emerald-500 hover:prose-a:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500
-			`}
-		>
-			<div className="flex flex-row-reverse gap-6">
-				<div className="flex-auto">{children}</div>
-				<img
-					className="h-12 w-12"
-					src="https://protocol.tailwindui.com/_next/static/media/go.135b57cb.svg"
-					alt={image}
-				/>
-			</div>
+		// <div className="my-16 xl:max-w-none">
+		//   <Heading level={2} id="official-libraries">
+		//     Official libraries
+		//   </Heading>
+		<div className="not-prose mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3">
+			{/* <div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4"> */}
+			{gridcells.map((cell) => (
+				<div key={cell.name} className="flex flex-row-reverse gap-6">
+					<div className="flex-auto">
+						<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+							{cell.name}
+						</h3>
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+							{cell.description}
+						</p>
+						<p className="mt-4">
+							<a href={cell.to}>{cell.tocontent}</a>
+						</p>
+					</div>
+					{type === 'sdk' ? (
+						<img
+							href={cell.image}
+							alt={cell.image}
+							className="h-12 w-12"
+							unoptimized
+						/>
+					) : null}
+				</div>
+			))}
 		</div>
+		// </div>
 	);
 }
 
@@ -991,7 +1034,6 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 				components: {
 					Lead,
 					Grid,
-					Cell,
 					Resources,
 					Attributes,
 					Row,
