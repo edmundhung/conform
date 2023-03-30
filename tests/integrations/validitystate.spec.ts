@@ -334,7 +334,6 @@ function runTests(javaScriptEnabled: boolean) {
 			});
 
 		await updateSchema({ value: 'ok' });
-		await submit.click();
 		await expect(error).toHaveText(['']);
 		await expect
 			.poll(() => getSubmission())
@@ -660,11 +659,9 @@ function runTests(javaScriptEnabled: boolean) {
 			});
 
 		await updateSchema({ multiple: true });
-		await submit.click();
 		await expect(error).toHaveText(['']);
 
 		await updateSchema({ required: true, multiple: true });
-		await submit.click();
 		await expect(error).toHaveText(['required']);
 
 		await field.setInputFiles([
