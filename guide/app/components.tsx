@@ -418,43 +418,43 @@ export function Resources({ resources }: { resources: Resource[] }) {
 	const mouseY = useMotionValue(0);
 
 	return (
-		<div className="my-16 xl:max-w-none">
-			<Heading level={2} id="resources">
-				Resources
-			</Heading>
-			<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
-				{resources.map((resource) => (
-					<div
-						key={resource.to}
-						className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
-						onMouseMove={(event) => {
-							const { left, top } = event.currentTarget.getBoundingClientRect();
-							mouseX.set(event.clientX - left);
-							mouseY.set(event.clientY - top);
-						}}
-					>
-						<ResourcePattern
-							{...resource.pattern}
-							mouseX={mouseX}
-							mouseY={mouseY}
-						/>
-						<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-						<div className="relative rounded-2xl px-4 pt-16 pb-4">
-							{/* <ResourceIcon icon={resource.icon} /> */}
-							<h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
-								<a href={resource.to}>
-									<span className="absolute inset-0 rounded-2xl" />
-									{resource.name}
-								</a>
-							</h3>
-							<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-								{resource.description}
-							</p>
-						</div>
+		// <div className="my-16 xl:max-w-none">
+		// 	<Heading level={2} id="resources">
+		// 		Resources
+		// 	</Heading>
+		<div className="not-prose mt-4 grid grid-cols-1 gap-8 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:grid-cols-4">
+			{resources.map((resource) => (
+				<div
+					key={resource.to}
+					className="group relative flex rounded-2xl bg-zinc-50 transition-shadow hover:shadow-md hover:shadow-zinc-900/5 dark:bg-white/2.5 dark:hover:shadow-black/5"
+					onMouseMove={(event) => {
+						const { left, top } = event.currentTarget.getBoundingClientRect();
+						mouseX.set(event.clientX - left);
+						mouseY.set(event.clientY - top);
+					}}
+				>
+					<ResourcePattern
+						{...resource.pattern}
+						mouseX={mouseX}
+						mouseY={mouseY}
+					/>
+					<div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-zinc-900/7.5 group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
+					<div className="relative rounded-2xl px-4 pt-16 pb-4">
+						{/* <ResourceIcon icon={resource.icon} /> */}
+						<h3 className="mt-4 text-sm font-semibold leading-7 text-zinc-900 dark:text-white">
+							<a href={resource.to}>
+								<span className="absolute inset-0 rounded-2xl" />
+								{resource.name}
+							</a>
+						</h3>
+						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+							{resource.description}
+						</p>
 					</div>
-				))}
-			</div>
+				</div>
+			))}
 		</div>
+		// </div>
 	);
 }
 interface Attribute {

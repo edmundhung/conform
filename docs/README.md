@@ -90,8 +90,6 @@ export default function LoginForm() {
 
 ## Guides
 
----
-
 <!-- grid -->
 
 ### Validation
@@ -146,9 +144,7 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 ## Integration
 
----
-
-<!-- grid type="sdk"-->
+<!-- grid type="sdk" -->
 
 ### Remix
 
@@ -165,8 +161,6 @@ Do re mi fa so :3 so fa me ra do do do
 <!-- /grid -->
 
 ## API references
-
----
 
 <!-- resources -->
 
@@ -186,8 +180,6 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 
 ## UI components
 
----
-
 <!-- resources -->
 
 ### [Chakra UI](/examples/chakra-ui)
@@ -197,8 +189,6 @@ bla bla bla... if case you want a loop for other cells... then I have to think..
 ### [Headless UI](/examples/headless-ui)
 
 ......description......
-
-[Read more &raquo;
 
 ### [Material UI](/examples/material-ui)
 
