@@ -74,10 +74,10 @@ export type FormSchema = Record<
 	RequiredField<FieldConstraint> | OptionalField<FieldConstraint>
 >;
 
-export type Submission<Schema extends FormSchema> =
+export type Submission<Schema extends FormSchema, ErrorType> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
-			error: Record<string, string[]>;
+			error: Record<string, ErrorType | undefined>;
 	  }
 	| {
 			payload: Record<string, string | string[] | undefined>;
@@ -232,17 +232,19 @@ export function getDateConstraint(
 	};
 }
 
-export function parse<Schema extends FormSchema>(
+export function parse<Schema extends FormSchema, ErrorType = string[]>(
 	data: FormData | URLSearchParams,
 	config: {
 		schema: Schema;
-		formatValidity?: (validity: ValidityState) => string[];
+		formatValidity?: (validity: ValidityState) => ErrorType;
 	},
-): Submission<Schema> {
+): Submission<Schema, ErrorType> {
 	const payload = new Map<keyof Schema, string | string[] | undefined>();
-	const error = new Map<keyof Schema, string[]>();
+	const error = new Map<keyof Schema, ErrorType>();
 	const value = new Map<keyof Schema, any>();
-	const format = config.formatValidity ?? formatValidity;
+	// @ts-expect-error FIXME: handle default error type
+	const format: (validity: ValidityState) => ErrorType =
+		config.formatValidity ?? formatValidity;
 
 	for (const name in config.schema) {
 		const constraint = config.schema[name];
@@ -494,7 +496,7 @@ export function parse<Schema extends FormSchema>(
 		}
 
 		if (!validity.valid) {
-			error.set(name, [...format(validity)]);
+			error.set(name, format(validity));
 		}
 	}
 
