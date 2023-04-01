@@ -111,7 +111,7 @@ export type Submission<Schema extends FormSchema, ErrorType> =
 			};
 	  };
 
-export function ensureSingleValue(
+function ensureSingleValue(
 	data: FormData | URLSearchParams,
 	name: string,
 ): FormDataEntryValue {
@@ -128,10 +128,7 @@ export function ensureSingleValue(
 	return text;
 }
 
-export function invariant(
-	condition: boolean,
-	message: string,
-): asserts condition {
+function invariant(condition: boolean, message: string): asserts condition {
 	if (!condition) {
 		throw new Error(message);
 	}
@@ -140,14 +137,14 @@ export function invariant(
 /**
  * Check if the file is empty
  */
-export function isEmptyFile(file: File): boolean {
+function isEmptyFile(file: File): boolean {
 	return file.name === '' && file.size === 0;
 }
 
 /**
  * Check URL validity as if url input type
  */
-export function isValidURL(url: string): boolean {
+function isValidURL(url: string): boolean {
 	try {
 		new URL(url);
 	} catch (e) {
@@ -161,7 +158,7 @@ export function isValidURL(url: string): boolean {
  * Check email validity as if email input type
  * @see https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
  */
-export function isValidEmail(email: string): boolean {
+function isValidEmail(email: string): boolean {
 	return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(
 		email,
 	);
@@ -170,7 +167,7 @@ export function isValidEmail(email: string): boolean {
 /**
  * Check if the text matches the pattern as if pattern input attribute
  */
-export function matchPattern(pattern: string, text: string): boolean {
+function matchPattern(pattern: string, text: string): boolean {
 	if (pattern === '') {
 		return text === '';
 	}
@@ -188,7 +185,7 @@ export function matchPattern(pattern: string, text: string): boolean {
 	return new RegExp(patternString).test(text);
 }
 
-export function getDateConstraint(
+function getDateConstraint(
 	text: string,
 	constraint: {
 		type: 'datetime-local' | 'date' | 'time';
