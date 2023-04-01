@@ -115,15 +115,11 @@ function ensureSingleValue(
 	data: FormData | URLSearchParams,
 	name: string,
 ): FormDataEntryValue {
-	if (!data.has(name)) {
-		throw new Error(`${name} is missing`);
-	}
+	invariant(data.has(name), `${name} is missing`);
 
 	const [text, ...rest] = data.getAll(name);
 
-	if (rest.length > 1) {
-		throw new Error(`${name} is not configured for multiple values`);
-	}
+	invariant(rest.length === 0, `${name} is not configured for multiple values`);
 
 	return text;
 }
