@@ -203,20 +203,41 @@ export function getDateConstraint(
 	};
 }
 
+type ValidityKey = Exclude<keyof ValidityState, 'customError' | 'valid'>;
+
 export function validate<Shape extends Record<string, any>>(
 	data: FormData | URLSearchParams,
-	schema: Schema<Shape>,
+	config: {
+		schema: Schema<Shape>;
+		formatValidity?: (validity: ValidityState) => string[];
+	},
 ): SchemaValidity<Shape> {
 	const payload = new Map<keyof Shape, string | string[] | undefined>();
 	const error = new Map<keyof Shape, string[]>();
 	const value = new Map<keyof Shape, SupportedTypes>();
+	const format = config.formatValidity ?? formatValidity;
 
-	for (const name in schema) {
-		const constraint = schema[name];
-		const messages = new Set<string>();
-		const validate = (message: string, condition: boolean) => {
+	for (const name in config.schema) {
+		const constraint = config.schema[name];
+		const validity: ValidityState = {
+			valueMissing: false,
+			badInput: false,
+			typeMismatch: false,
+			patternMismatch: false,
+			tooShort: false,
+			tooLong: false,
+			rangeUnderflow: false,
+			rangeOverflow: false,
+			stepMismatch: false,
+			customError: false,
+			valid: true,
+		};
+		const validate = (key: ValidityKey, condition: boolean) => {
 			if (!condition) {
-				messages.add(message);
+				// @ts-expect-error - ValidityState is immutable
+				validity[key] = true;
+				// @ts-expect-error - ValidityState is immutable
+				validity.valid = false;
 			}
 		};
 
@@ -234,18 +255,24 @@ export function validate<Shape extends Record<string, any>>(
 				payload.set(name, text);
 				value.set(name, text);
 
-				validate('required', !constraint.required || text !== '');
+				validate('valueMissing', !constraint.required || text !== '');
 
 				if (text !== '') {
-					validate('type', constraint.type !== 'email' || isValidEmail(text));
-					validate('type', constraint.type !== 'url' || isValidURL(text));
-					validate('minlength', text.length >= (constraint.minLength ?? 0));
 					validate(
-						'maxlength',
+						'typeMismatch',
+						constraint.type !== 'email' || isValidEmail(text),
+					);
+					validate(
+						'typeMismatch',
+						constraint.type !== 'url' || isValidURL(text),
+					);
+					validate('tooShort', text.length >= (constraint.minLength ?? 0));
+					validate(
+						'tooLong',
 						text.length <= (constraint.maxLength ?? Infinity),
 					);
 					validate(
-						'pattern',
+						'patternMismatch',
 						!constraint.pattern || matchPattern(constraint.pattern ?? '', text),
 					);
 				}
@@ -259,21 +286,21 @@ export function validate<Shape extends Record<string, any>>(
 
 				payload.set(name, text);
 
-				validate('required', !constraint.required || text !== '');
+				validate('valueMissing', !constraint.required || text !== '');
 
 				if (text !== '') {
 					const number = Number(text);
 					const isNumber = !Number.isNaN(number);
 
-					validate('type', isNumber);
+					validate('badInput', isNumber);
 
 					if (isNumber) {
 						const { min = 0, max = Infinity, step = 1 } = constraint;
 						value.set(name, number);
 
-						validate('min', number >= min);
-						validate('max', number <= max);
-						validate('step', (number - min) % step === 0);
+						validate('rangeUnderflow', number >= min);
+						validate('rangeOverflow', number <= max);
+						validate('stepMismatch', (number - min) % step === 0);
 					}
 				}
 				break;
@@ -295,7 +322,7 @@ export function validate<Shape extends Record<string, any>>(
 
 				value.set(name, flag);
 
-				validate('required', !constraint.required || flag);
+				validate('valueMissing', !constraint.required || flag);
 				break;
 			}
 			case 'datetime-local':
@@ -307,22 +334,22 @@ export function validate<Shape extends Record<string, any>>(
 
 				payload.set(name, text);
 
-				validate('required', !constraint.required || text !== '');
+				validate('valueMissing', !constraint.required || text !== '');
 
 				if (text !== '') {
 					const { date, min, max, step } = getDateConstraint(text, constraint);
 
 					const isValidDate = !Number.isNaN(date.valueOf());
 
-					validate('type', isValidDate);
+					validate('typeMismatch', isValidDate);
 
 					if (isValidDate) {
 						value.set(name, text);
 
-						validate('min', min === null || date >= min);
-						validate('max', max === null || date <= max);
+						validate('rangeUnderflow', min === null || date >= min);
+						validate('rangeOverflow', max === null || date <= max);
 						validate(
-							'step',
+							'stepMismatch',
 							step === null ||
 								(date.valueOf() - (min?.valueOf() ?? 0)) % step === 0,
 						);
@@ -341,7 +368,7 @@ export function validate<Shape extends Record<string, any>>(
 				}
 
 				validate(
-					'required',
+					'valueMissing',
 					!constraint.required || typeof text !== 'undefined',
 				);
 				break;
@@ -355,7 +382,7 @@ export function validate<Shape extends Record<string, any>>(
 				value.set(name, text);
 				payload.set(name, text);
 
-				validate('required', !constraint.required || text !== '');
+				validate('valueMissing', !constraint.required || text !== '');
 				break;
 			}
 			case 'select': {
@@ -380,9 +407,9 @@ export function validate<Shape extends Record<string, any>>(
 
 				if (constraint.required) {
 					if (isArray) {
-						validate('required', options.length > 0);
+						validate('valueMissing', options.length > 0);
 					} else {
-						validate('required', options !== '');
+						validate('valueMissing', options !== '');
 					}
 				}
 				break;
@@ -395,12 +422,12 @@ export function validate<Shape extends Record<string, any>>(
 				value.set(name, text);
 				payload.set(name, text);
 
-				validate('required', !constraint.required || text !== '');
+				validate('valueMissing', !constraint.required || text !== '');
 
 				if (text) {
-					validate('minlength', text.length >= (constraint.minLength ?? 0));
+					validate('tooShort', text.length >= (constraint.minLength ?? 0));
 					validate(
-						'maxlength',
+						'tooLong',
 						text.length <= (constraint.maxLength ?? Infinity),
 					);
 				}
@@ -424,7 +451,10 @@ export function validate<Shape extends Record<string, any>>(
 
 				const nonEmptyFiles = files.filter((file) => !isEmptyFile(file));
 
-				validate('required', !constraint.required || nonEmptyFiles.length > 0);
+				validate(
+					'valueMissing',
+					!constraint.required || nonEmptyFiles.length > 0,
+				);
 
 				if (constraint.multiple || nonEmptyFiles.length > 0) {
 					value.set(
@@ -436,8 +466,8 @@ export function validate<Shape extends Record<string, any>>(
 			}
 		}
 
-		if (messages.size > 0) {
-			error.set(name, [...messages]);
+		if (!validity.valid) {
+			error.set(name, [...format(validity)]);
 		}
 	}
 
@@ -455,11 +485,7 @@ export function validate<Shape extends Record<string, any>>(
 	};
 }
 
-export function getMessages(
-	validity: ValidityState,
-	validationMessage?: string,
-	delimiter?: string,
-): string[] {
+export function formatValidity(validity: ValidityState): string[] {
 	const messages = [] as string[];
 
 	if (validity.valueMissing) {
@@ -491,14 +517,6 @@ export function getMessages(
 
 		if (validity.patternMismatch) {
 			messages.push('pattern');
-		}
-
-		if (validity.customError && validationMessage) {
-			if (delimiter) {
-				messages.push(...validationMessage.split(delimiter));
-			} else {
-				messages.push(validationMessage);
-			}
 		}
 	}
 
