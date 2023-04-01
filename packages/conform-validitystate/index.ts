@@ -516,34 +516,34 @@ export function formatValidity(validity: ValidityState): string[] {
 
 	if (validity.valueMissing) {
 		messages.push('required');
-	} else {
-		if (validity.typeMismatch || validity.badInput) {
-			messages.push('type');
-		}
+	}
 
-		if (validity.rangeOverflow) {
-			messages.push('max');
-		}
+	if (validity.typeMismatch || validity.badInput) {
+		messages.push('type');
+	}
 
-		if (validity.rangeUnderflow) {
-			messages.push('min');
-		}
+	if (validity.rangeOverflow) {
+		messages.push('max');
+	}
 
-		if (validity.stepMismatch) {
-			messages.push('step');
-		}
+	if (validity.rangeUnderflow) {
+		messages.push('min');
+	}
 
-		if (validity.tooShort) {
-			messages.push('minlength');
-		}
+	if (validity.stepMismatch) {
+		messages.push('step');
+	}
 
-		if (validity.tooLong) {
-			messages.push('maxlength');
-		}
+	if (validity.tooShort) {
+		messages.push('minlength');
+	}
 
-		if (validity.patternMismatch) {
-			messages.push('pattern');
-		}
+	if (validity.tooLong) {
+		messages.push('maxlength');
+	}
+
+	if (validity.patternMismatch) {
+		messages.push('pattern');
 	}
 
 	return messages;
