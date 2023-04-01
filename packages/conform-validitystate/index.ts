@@ -1,77 +1,80 @@
-type Required<T> = undefined extends T
-	? { required?: false }
-	: { required: true };
+type ValidityKey = Exclude<keyof ValidityState, 'customError' | 'valid'>;
 
-export type SupportedTypes =
-	| string
-	| string[]
-	| File
-	| File[]
-	| number
-	| boolean;
-
-export type Schema<Shape extends Record<string, SupportedTypes>> = {
-	[Key in keyof Shape]: File[] extends Shape[Key]
-		? Required<Shape[Key]> & {
-				type: 'file';
-				multiple: true;
-		  }
-		: File extends Shape[Key]
-		? Required<Shape[Key]> & {
-				type: 'file';
-				multiple?: false;
-		  }
-		: number extends Shape[Key]
-		? Required<Shape[Key]> & {
-				type: 'number' | 'range';
-				required?: boolean;
-				min?: number;
-				max?: number;
-				step?: number;
-		  }
-		: boolean extends Shape[Key]
-		? {
-				type: 'checkbox';
-				required?: boolean;
-				value?: string;
-		  }
-		: string[] extends Shape[Key]
-		? Required<Shape[Key]> & {
-				type: 'select';
-				multiple: true;
-		  }
-		: string extends Shape[Key]
-		? Required<Shape[Key]> &
-				(
-					| {
-							type: 'text' | 'email' | 'password' | 'url' | 'tel' | 'search';
-							minLength?: number;
-							maxLength?: number;
-							pattern?: string;
-					  }
-					| {
-							type: 'datetime-local' | 'date' | 'time';
-							min?: string;
-							max?: string;
-							step?: string;
-					  }
-					| {
-							type: 'select';
-							multiple?: false;
-					  }
-					| {
-							type: 'textarea';
-							minLength?: number;
-							maxLength?: number;
-					  }
-					| {
-							type: 'radio' | 'color';
-					  }
-				)
-		: never;
+type RequiredField<Schema extends { type: string }> = Schema & {
+	required: true;
 };
 
-export type SchemaValidity<Shape extends Record<string, string[]>> =
+type OptionalField<Schema extends { type: string }> = Schema & {
+	required?: false;
+};
+
+type StringConstraint =
+	| {
+			type: 'text' | 'email' | 'password' | 'url' | 'tel' | 'search';
+			minLength?: number;
+			maxLength?: number;
+			pattern?: string;
+	  }
+	| {
+			type: 'datetime-local' | 'date' | 'time';
+			min?: string;
+			max?: string;
+			step?: number;
+	  }
+	| {
+			type: 'select';
+			multiple?: false;
+	  }
+	| {
+			type: 'textarea';
+			minLength?: number;
+			maxLength?: number;
+	  }
+	| {
+			type: 'radio' | 'color';
+	  };
+
+type StringArrayConstraint = {
+	type: 'select';
+	multiple: true;
+};
+
+type BooleanConstraint = {
+	type: 'checkbox';
+	value?: string;
+};
+
+type NumberConstraint = {
+	type: 'number' | 'range';
+	min?: number;
+	max?: number;
+	step?: number;
+};
+
+type FileConstraint = {
+	type: 'file';
+	multiple?: false;
+};
+
+type FileArrayConstraint = {
+	type: 'file';
+	multiple: true;
+};
+
+type FieldConstraint =
+	| StringConstraint
+	| StringArrayConstraint
+	| BooleanConstraint
+	| NumberConstraint
+	| FileConstraint
+	| FileArrayConstraint;
+
+export type FormSchema = Record<
+	string,
+	RequiredField<FieldConstraint> | OptionalField<FieldConstraint>
+>;
+
+export type Submission<Schema extends FormSchema> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
 			error: Record<string, string[]>;
@@ -79,7 +82,33 @@ export type SchemaValidity<Shape extends Record<string, string[]>> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
 			error: null;
-			value: Shape;
+			value: {
+				[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
+					? string
+					: Schema[Key] extends OptionalField<StringConstraint>
+					? string | undefined
+					: Schema[Key] extends RequiredField<StringArrayConstraint>
+					? string[]
+					: Schema[Key] extends OptionalField<StringArrayConstraint>
+					? string[] | undefined
+					: Schema[Key] extends RequiredField<NumberConstraint>
+					? number
+					: Schema[Key] extends OptionalField<NumberConstraint>
+					? number | undefined
+					: Schema[Key] extends RequiredField<FileConstraint>
+					? File
+					: Schema[Key] extends OptionalField<BooleanConstraint>
+					? File | undefined
+					: Schema[Key] extends RequiredField<FileArrayConstraint>
+					? File[]
+					: Schema[Key] extends OptionalField<FileArrayConstraint>
+					? File[] | undefined
+					: Schema[Key] extends RequiredField<BooleanConstraint>
+					? boolean
+					: Schema[Key] extends OptionalField<BooleanConstraint>
+					? boolean | undefined
+					: any;
+			};
 	  };
 
 export function ensureSingleValue(
@@ -203,18 +232,16 @@ export function getDateConstraint(
 	};
 }
 
-type ValidityKey = Exclude<keyof ValidityState, 'customError' | 'valid'>;
-
-export function validate<Shape extends Record<string, any>>(
+export function parse<Schema extends FormSchema>(
 	data: FormData | URLSearchParams,
 	config: {
-		schema: Schema<Shape>;
+		schema: Schema;
 		formatValidity?: (validity: ValidityState) => string[];
 	},
-): SchemaValidity<Shape> {
-	const payload = new Map<keyof Shape, string | string[] | undefined>();
-	const error = new Map<keyof Shape, string[]>();
-	const value = new Map<keyof Shape, SupportedTypes>();
+): Submission<Schema> {
+	const payload = new Map<keyof Schema, string | string[] | undefined>();
+	const error = new Map<keyof Schema, string[]>();
+	const value = new Map<keyof Schema, any>();
 	const format = config.formatValidity ?? formatValidity;
 
 	for (const name in config.schema) {
@@ -481,7 +508,7 @@ export function validate<Shape extends Record<string, any>>(
 	return {
 		payload: Object.fromEntries(payload),
 		error: null,
-		value: Object.fromEntries(value) as Shape,
+		value: Object.fromEntries(value) as any,
 	};
 }
 

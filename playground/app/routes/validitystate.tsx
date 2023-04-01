@@ -1,4 +1,4 @@
-import { validate, formatValidity } from '@conform-to/validitystate';
+import { parse, formatValidity } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = validate(formData, {
+	const submission = parse(formData, {
 		schema: { field: getSchema(request) },
 	});
 
