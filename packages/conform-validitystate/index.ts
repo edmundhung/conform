@@ -103,10 +103,10 @@ export type Submission<Schema extends FormSchema, ErrorType> =
 					? File[]
 					: Schema[Key] extends OptionalField<FileArrayConstraint>
 					? File[] | undefined
-					: Schema[Key] extends RequiredField<BooleanConstraint>
+					: Schema[Key] extends
+							| RequiredField<BooleanConstraint>
+							| OptionalField<BooleanConstraint>
 					? boolean
-					: Schema[Key] extends OptionalField<BooleanConstraint>
-					? boolean | undefined
 					: any;
 			};
 	  };
