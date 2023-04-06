@@ -74,6 +74,34 @@ export type FormSchema = Record<
 	RequiredField<FieldConstraint> | OptionalField<FieldConstraint>
 >;
 
+export type InferType<Schema extends FormSchema> = {
+	[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
+		? string
+		: Schema[Key] extends OptionalField<StringConstraint>
+		? string | undefined
+		: Schema[Key] extends RequiredField<StringArrayConstraint>
+		? string[]
+		: Schema[Key] extends OptionalField<StringArrayConstraint>
+		? string[] | undefined
+		: Schema[Key] extends RequiredField<NumberConstraint>
+		? number
+		: Schema[Key] extends OptionalField<NumberConstraint>
+		? number | undefined
+		: Schema[Key] extends RequiredField<FileConstraint>
+		? File
+		: Schema[Key] extends OptionalField<BooleanConstraint>
+		? File | undefined
+		: Schema[Key] extends RequiredField<FileArrayConstraint>
+		? File[]
+		: Schema[Key] extends OptionalField<FileArrayConstraint>
+		? File[] | undefined
+		: Schema[Key] extends
+				| RequiredField<BooleanConstraint>
+				| OptionalField<BooleanConstraint>
+		? boolean
+		: any;
+};
+
 export type Submission<Schema extends FormSchema, ErrorType> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
@@ -82,33 +110,7 @@ export type Submission<Schema extends FormSchema, ErrorType> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
 			error: null;
-			value: {
-				[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
-					? string
-					: Schema[Key] extends OptionalField<StringConstraint>
-					? string | undefined
-					: Schema[Key] extends RequiredField<StringArrayConstraint>
-					? string[]
-					: Schema[Key] extends OptionalField<StringArrayConstraint>
-					? string[] | undefined
-					: Schema[Key] extends RequiredField<NumberConstraint>
-					? number
-					: Schema[Key] extends OptionalField<NumberConstraint>
-					? number | undefined
-					: Schema[Key] extends RequiredField<FileConstraint>
-					? File
-					: Schema[Key] extends OptionalField<BooleanConstraint>
-					? File | undefined
-					: Schema[Key] extends RequiredField<FileArrayConstraint>
-					? File[]
-					: Schema[Key] extends OptionalField<FileArrayConstraint>
-					? File[] | undefined
-					: Schema[Key] extends
-							| RequiredField<BooleanConstraint>
-							| OptionalField<BooleanConstraint>
-					? boolean
-					: any;
-			};
+			value: InferType<Schema>;
 	  };
 
 function ensureSingleValue(
@@ -225,19 +227,209 @@ function getDateConstraint(
 	};
 }
 
-export function parse<Schema extends FormSchema, ErrorType = string[]>(
+interface Control {
+	name: string;
+	value: string | string[];
+	validity: ValidityState;
+	type: string;
+	required?: boolean;
+	min?: number | string;
+	max?: number | string;
+	minLength?: number;
+	maxLength?: number;
+	pattern?: string;
+	multiple?: boolean;
+}
+
+function parseField(
+	data: FormData,
+	name: string,
+	constraint: RequiredField<StringConstraint> | OptionalField<StringConstraint>,
+): { payload: string; value: string };
+function parseField(
+	data: FormData,
+	name: string,
+	constraint:
+		| RequiredField<StringConstraint | StringArrayConstraint>
+		| OptionalField<StringConstraint | StringArrayConstraint>,
+): { payload: string | string[]; value: string | string[] };
+function parseField(
+	data: FormData,
+	name: string,
+	constraint:
+		| RequiredField<BooleanConstraint>
+		| OptionalField<BooleanConstraint>,
+): { payload: string | undefined; value: boolean };
+function parseField(
+	data: FormData,
+	name: string,
+	constraint: RequiredField<NumberConstraint> | OptionalField<NumberConstraint>,
+): { payload: string; value: number | undefined };
+function parseField(
+	data: FormData,
+	name: string,
+	constraint:
+		| RequiredField<FileConstraint | FileArrayConstraint>
+		| OptionalField<FileConstraint | FileArrayConstraint>,
+): { payload: File[] | File | undefined; value: File[] | File | undefined };
+function parseField(
+	data: FormData,
+	name: string,
+	constraint: RequiredField<FieldConstraint> | OptionalField<FieldConstraint>,
+): {
+	payload: string | string[] | File[] | File | undefined;
+	value: string | string[] | number | boolean | File[] | File | undefined;
+};
+function parseField(
+	data: FormData,
+	name: string,
+	constraint: RequiredField<FieldConstraint> | OptionalField<FieldConstraint>,
+) {
+	switch (constraint.type) {
+		case 'text':
+		case 'email':
+		case 'password':
+		case 'url':
+		case 'tel':
+		case 'search':
+		case 'datetime-local':
+		case 'date':
+		case 'time':
+		case 'textarea': {
+			const text = ensureSingleValue(data, name);
+
+			invariant(typeof text === 'string', `${name} is not a string`);
+
+			return {
+				payload: text,
+				value: text,
+			};
+		}
+		case 'number':
+		case 'range': {
+			const text = ensureSingleValue(data, name);
+
+			invariant(typeof text === 'string', `${name} is not a string`);
+
+			return {
+				payload: text,
+				value: text !== '' && !isNaN(Number(text)) ? Number(text) : undefined,
+			};
+		}
+		case 'checkbox': {
+			const item = data.has(name) ? ensureSingleValue(data, name) : undefined;
+			const checkboxValue = constraint.value ?? 'on';
+
+			if (typeof item !== 'undefined') {
+				invariant(typeof item === 'string', `${name} is not a string`);
+				invariant(
+					item === checkboxValue,
+					`Expect ${name} to be configured with ${checkboxValue} but recevied ${item}`,
+				);
+			}
+
+			return {
+				payload: item,
+				value: typeof item !== 'undefined',
+			};
+		}
+		case 'radio': {
+			const text = data.has(name) ? ensureSingleValue(data, name) : undefined;
+
+			if (typeof text !== 'undefined') {
+				invariant(typeof text === 'string', `${name} is not a string`);
+			}
+
+			return {
+				payload: text,
+				value: text,
+			};
+		}
+		case 'color': {
+			const text = ensureSingleValue(data, name);
+
+			invariant(typeof text === 'string', `${name} is not a string`);
+			invariant(/^#[0-9a-f]{6}$/i.test(text), `${name} is not a valid color`);
+
+			return {
+				payload: text,
+				value: text,
+			};
+		}
+		case 'select': {
+			const options = constraint.multiple
+				? data.getAll(name)
+				: ensureSingleValue(data, name);
+
+			if (Array.isArray(options)) {
+				invariant(
+					options.every(
+						(option): option is string => typeof option === 'string',
+					),
+					`${name} is not a string`,
+				);
+			} else {
+				invariant(typeof options === 'string', `${name} is not a string`);
+			}
+
+			return {
+				payload: options,
+				value: options,
+			};
+		}
+		case 'file': {
+			let files = constraint.multiple
+				? data.getAll(name)
+				: [ensureSingleValue(data, name)];
+
+			// This is a workaround for a bug on @remix-run/web-fetch
+			// @see https://github.com/remix-run/web-std-io/pull/28
+			if (files.length === 1 && files[0] === '') {
+				files = [new File([], '')];
+			}
+
+			invariant(
+				files.every((file): file is File => file instanceof File),
+				`${name} is not a file`,
+			);
+
+			const nonEmptyFiles = files.filter((file) => !isEmptyFile(file));
+			// This ensures both payload and value to be undefined if no file is provided
+			const result =
+				constraint.multiple && nonEmptyFiles.length > 0
+					? nonEmptyFiles
+					: nonEmptyFiles.at(0);
+
+			return {
+				payload: result,
+				value: result,
+			};
+		}
+	}
+}
+
+export function parse<
+	Schema extends FormSchema,
+	ErrorType extends string | string[] = string[],
+>(
 	data: FormData | URLSearchParams,
 	config: {
 		schema: Schema;
-		formatValidity?: (validity: ValidityState) => ErrorType;
+		formatValidity?: (
+			control: Control,
+			value: Partial<InferType<Schema>>,
+		) => ErrorType;
 	},
 ): Submission<Schema, ErrorType> {
-	const payload = new Map<keyof Schema, string | string[] | undefined>();
-	const error = new Map<keyof Schema, ErrorType>();
-	const value = new Map<keyof Schema, any>();
+	const payloadMap = new Map<keyof Schema, string | string[]>();
+	const controlMap = new Map<keyof Schema, Control>();
+	const errorMap = new Map<keyof Schema, ErrorType>();
+	const valueMap = new Map<keyof Schema, any>();
 	// @ts-expect-error FIXME: handle default error type
-	const format: (validity: ValidityState) => ErrorType =
-		config.formatValidity ?? formatValidity;
+	const format: (
+		control: Control,
+		value: Partial<InferType<Schema>>,
+	) => ErrorType = config.formatValidity ?? formatValidity;
 
 	for (const name in config.schema) {
 		const constraint = config.schema[name];
@@ -254,7 +446,7 @@ export function parse<Schema extends FormSchema, ErrorType = string[]>(
 			customError: false,
 			valid: true,
 		};
-		const validate = (key: ValidityKey, condition: boolean) => {
+		const report = (key: ValidityKey, condition: boolean) => {
 			if (!condition) {
 				// @ts-expect-error - ValidityState is immutable
 				validity[key] = true;
@@ -270,107 +462,95 @@ export function parse<Schema extends FormSchema, ErrorType = string[]>(
 			case 'url':
 			case 'tel':
 			case 'search': {
-				const text = ensureSingleValue(data, name);
+				const { payload, value } = parseField(data, name, constraint);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
+				payloadMap.set(name, payload);
+				valueMap.set(name, value);
 
-				payload.set(name, text);
-				value.set(name, text);
+				report('valueMissing', !constraint.required || payload !== '');
 
-				validate('valueMissing', !constraint.required || text !== '');
-
-				if (text !== '') {
-					validate(
+				if (payload !== '') {
+					report(
 						'typeMismatch',
-						constraint.type !== 'email' || isValidEmail(text),
+						constraint.type !== 'email' || isValidEmail(payload),
 					);
-					validate(
+					report(
 						'typeMismatch',
-						constraint.type !== 'url' || isValidURL(text),
+						constraint.type !== 'url' || isValidURL(payload),
 					);
-					validate('tooShort', text.length >= (constraint.minLength ?? 0));
-					validate(
+					report('tooShort', payload.length >= (constraint.minLength ?? 0));
+					report(
 						'tooLong',
-						text.length <= (constraint.maxLength ?? Infinity),
+						payload.length <= (constraint.maxLength ?? Infinity),
 					);
-					validate(
+					report(
 						'patternMismatch',
-						!constraint.pattern || matchPattern(constraint.pattern ?? '', text),
+						!constraint.pattern ||
+							matchPattern(constraint.pattern ?? '', payload),
 					);
 				}
 				break;
 			}
 			case 'number':
 			case 'range': {
-				const text = ensureSingleValue(data, name);
+				const { payload, value } = parseField(data, name, constraint);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
+				payloadMap.set(name, payload);
 
-				payload.set(name, text);
+				report('valueMissing', !constraint.required || payload !== '');
 
-				validate('valueMissing', !constraint.required || text !== '');
+				if (payload !== '') {
+					const isNumber = typeof value !== 'undefined';
 
-				if (text !== '') {
-					const number = Number(text);
-					const isNumber = !Number.isNaN(number);
-
-					validate('badInput', isNumber);
+					report('badInput', isNumber);
 
 					if (isNumber) {
 						const { min = 0, max = Infinity, step = 1 } = constraint;
-						value.set(name, number);
+						valueMap.set(name, value);
 
-						validate('rangeUnderflow', number >= min);
-						validate('rangeOverflow', number <= max);
-						validate('stepMismatch', (number - min) % step === 0);
+						report('rangeUnderflow', value >= min);
+						report('rangeOverflow', value <= max);
+						report('stepMismatch', (value - min) % step === 0);
 					}
 				}
 				break;
 			}
 			case 'checkbox': {
-				const item = data.has(name) ? ensureSingleValue(data, name) : undefined;
-				const checkboxValue = constraint.value ?? 'on';
+				const { payload, value } = parseField(data, name, constraint);
 
-				if (typeof item !== 'undefined') {
-					invariant(typeof item === 'string', `${name} is not a string`);
-					invariant(
-						item === checkboxValue,
-						`Expect ${name} to be configured with ${checkboxValue} but recevied ${item}`,
-					);
-					payload.set(name, item);
+				if (typeof payload !== 'undefined') {
+					payloadMap.set(name, payload);
 				}
 
-				const flag = typeof item !== 'undefined';
+				valueMap.set(name, value);
 
-				value.set(name, flag);
-
-				validate('valueMissing', !constraint.required || flag);
+				report('valueMissing', !constraint.required || value);
 				break;
 			}
 			case 'datetime-local':
 			case 'date':
 			case 'time': {
-				const text = ensureSingleValue(data, name);
+				const { payload, value } = parseField(data, name, constraint);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
+				payloadMap.set(name, payload);
 
-				payload.set(name, text);
+				report('valueMissing', !constraint.required || payload !== '');
 
-				validate('valueMissing', !constraint.required || text !== '');
-
-				if (text !== '') {
-					const { date, min, max, step } = getDateConstraint(text, constraint);
-
+				if (payload !== '') {
+					const { date, min, max, step } = getDateConstraint(
+						payload,
+						constraint,
+					);
 					const isValidDate = !Number.isNaN(date.valueOf());
 
-					validate('typeMismatch', isValidDate);
+					report('typeMismatch', isValidDate);
 
 					if (isValidDate) {
-						value.set(name, text);
+						valueMap.set(name, value);
 
-						validate('rangeUnderflow', min === null || date >= min);
-						validate('rangeOverflow', max === null || date <= max);
-						validate(
+						report('rangeUnderflow', min === null || date >= min);
+						report('rangeOverflow', max === null || date <= max);
+						report(
 							'stepMismatch',
 							step === null ||
 								(date.valueOf() - (min?.valueOf() ?? 0)) % step === 0,
@@ -380,134 +560,153 @@ export function parse<Schema extends FormSchema, ErrorType = string[]>(
 				break;
 			}
 			case 'radio': {
-				const text = data.has(name) ? ensureSingleValue(data, name) : undefined;
+				const { payload, value } = parseField(data, name, constraint);
 
-				if (typeof text !== 'undefined') {
-					invariant(typeof text === 'string', `${name} is not a string`);
-
-					value.set(name, text);
-					payload.set(name, text);
+				if (typeof payload !== 'undefined') {
+					payloadMap.set(name, payload);
+					valueMap.set(name, value);
 				}
 
-				validate(
+				report(
 					'valueMissing',
-					!constraint.required || typeof text !== 'undefined',
+					!constraint.required || typeof payload !== 'undefined',
 				);
 				break;
 			}
 			case 'color': {
-				const text = ensureSingleValue(data, name);
+				const { payload, value } = parseField(data, name, constraint);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
-				invariant(/^#[0-9a-f]{6}$/i.test(text), `${name} is not a valid color`);
+				invariant(typeof payload === 'string', `${name} is not a string`);
+				invariant(
+					/^#[0-9a-f]{6}$/i.test(payload),
+					`${name} is not a valid color`,
+				);
 
-				value.set(name, text);
-				payload.set(name, text);
+				payloadMap.set(name, payload);
+				valueMap.set(name, value);
 
-				validate('valueMissing', !constraint.required || text !== '');
+				report('valueMissing', !constraint.required || payload !== '');
 				break;
 			}
 			case 'select': {
-				const options = constraint.multiple
-					? data.getAll(name)
-					: ensureSingleValue(data, name);
-				const isArray = Array.isArray(options);
+				const { payload, value } = parseField(data, name, constraint);
 
-				if (isArray) {
-					invariant(
-						options.every(
-							(option): option is string => typeof option === 'string',
-						),
-						`${name} is not a string`,
-					);
-				} else {
-					invariant(typeof options === 'string', `${name} is not a string`);
-				}
-
-				payload.set(name, options);
-				value.set(name, options);
+				payloadMap.set(name, payload);
+				valueMap.set(name, value);
 
 				if (constraint.required) {
-					if (isArray) {
-						validate('valueMissing', options.length > 0);
+					if (Array.isArray(value)) {
+						report('valueMissing', value.length > 0);
 					} else {
-						validate('valueMissing', options !== '');
+						report('valueMissing', value !== '');
 					}
 				}
 				break;
 			}
 			case 'textarea': {
-				const text = ensureSingleValue(data, name);
+				const { payload, value } = parseField(data, name, constraint);
 
-				invariant(typeof text === 'string', `${name} is not a string`);
+				payloadMap.set(name, payload);
+				valueMap.set(name, value);
 
-				value.set(name, text);
-				payload.set(name, text);
+				report('valueMissing', !constraint.required || payload !== '');
 
-				validate('valueMissing', !constraint.required || text !== '');
-
-				if (text) {
-					validate('tooShort', text.length >= (constraint.minLength ?? 0));
-					validate(
+				if (payload) {
+					report('tooShort', payload.length >= (constraint.minLength ?? 0));
+					report(
 						'tooLong',
-						text.length <= (constraint.maxLength ?? Infinity),
+						payload.length <= (constraint.maxLength ?? Infinity),
 					);
 				}
 				break;
 			}
 			case 'file': {
-				let files = constraint.multiple
-					? data.getAll(name)
-					: [ensureSingleValue(data, name)];
+				const { payload, value } = parseField(data, name, constraint);
 
-				// This is a workaround for a bug on @remix-run/web-fetch
-				// @see https://github.com/remix-run/web-std-io/pull/28
-				if (files.length === 1 && files[0] === '') {
-					files = [new File([], '')];
-				}
-
-				invariant(
-					files.every((file): file is File => file instanceof File),
-					`${name} is not a file`,
-				);
-
-				const nonEmptyFiles = files.filter((file) => !isEmptyFile(file));
-
-				validate(
+				report(
 					'valueMissing',
-					!constraint.required || nonEmptyFiles.length > 0,
+					!constraint.required || typeof payload !== 'undefined',
 				);
 
-				if (constraint.multiple || nonEmptyFiles.length > 0) {
-					value.set(
-						name,
-						constraint.multiple ? nonEmptyFiles : nonEmptyFiles[0],
-					);
+				if (value) {
+					valueMap.set(name, value);
 				}
 				break;
 			}
 		}
 
-		if (!validity.valid) {
-			error.set(name, format(validity));
+		controlMap.set(name, {
+			name,
+			value: payloadMap.get(name) ?? '',
+			validity,
+			...constraint,
+		});
+	}
+
+	const value = Object.fromEntries(valueMap) as any;
+
+	for (const [name, control] of controlMap) {
+		const messages = ([] as string[]).concat(format(control, value));
+
+		if (messages.length > 0) {
+			errorMap.set(name, format(control, value));
 		}
 	}
 
-	if (error.size > 0) {
+	if (errorMap.size > 0) {
 		return {
-			payload: Object.fromEntries(payload),
-			error: Object.fromEntries(error),
+			payload: Object.fromEntries(payloadMap),
+			error: Object.fromEntries(errorMap),
 		};
 	}
 
 	return {
-		payload: Object.fromEntries(payload),
+		payload: Object.fromEntries(payloadMap),
 		error: null,
-		value: Object.fromEntries(value) as any,
+		value,
 	};
 }
 
-export function formatValidity(validity: ValidityState): string[] {
+export function validate<Schema extends FormSchema>(
+	form: HTMLFormElement,
+	config: {
+		schema: Schema;
+		formatValidity?: (
+			control: Control,
+			value: Partial<InferType<Schema>>,
+		) => string | string[];
+	},
+): void {
+	const formData = new FormData(form);
+	const value = Object.keys(config.schema).reduce((result, name) => {
+		const constraint = config.schema[name];
+		const field = parseField(formData, name, constraint);
+
+		if (typeof field.value !== 'undefined') {
+			// @ts-expect-error Tests will prove that the type is valid :)
+			result[name] = field.value;
+		}
+
+		return result;
+	}, {} as Partial<InferType<Schema>>);
+	const format = config.formatValidity ?? formatValidity;
+
+	for (const element of form.elements) {
+		const control = element as
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLButtonElement;
+
+		if (control.willValidate) {
+			const messages = ([] as string[]).concat(format(control, value));
+
+			control.setCustomValidity(messages.join(String.fromCharCode(31)));
+		}
+	}
+}
+
+export function formatValidity({ validity }: Control): string[] {
 	const messages = [] as string[];
 
 	if (validity.valueMissing) {
@@ -543,4 +742,8 @@ export function formatValidity(validity: ValidityState): string[] {
 	}
 
 	return messages;
+}
+
+export function formatValidationMessage(message: string): string[] {
+	return message ? message.split(String.fromCharCode(31)) : [];
 }

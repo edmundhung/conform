@@ -1,4 +1,8 @@
-import { parse, formatValidity } from '@conform-to/validitystate';
+import {
+	parse,
+	validate,
+	formatValidationMessage,
+} from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
@@ -49,6 +53,10 @@ export default function Example() {
 				// Reset all error
 				setError({});
 
+				validate(event.currentTarget, {
+					schema: { field: schema },
+				});
+
 				if (!event.currentTarget.reportValidity()) {
 					event.preventDefault();
 				}
@@ -58,11 +66,10 @@ export default function Example() {
 					| HTMLInputElement
 					| HTMLSelectElement
 					| HTMLTextAreaElement;
-				const messages = formatValidity(input.validity);
 
 				setError((error) => ({
 					...error,
-					[input.name]: messages,
+					[input.name]: formatValidationMessage(input.validationMessage),
 				}));
 				event.preventDefault();
 			}}
