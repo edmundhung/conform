@@ -1,16 +1,16 @@
 import {
+	type Control,
 	parse,
 	validate,
 	formatValidationMessage,
+	formatValidity as defaultFormat,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 import { Playground, Field } from '~/components';
 
-function getSchema(request: Request) {
-	const url = new URL(request.url);
-
+function getSchema(url: URL) {
 	if (url.searchParams.has('schema')) {
 		return JSON.parse(url.searchParams.get('schema') as string);
 	}
@@ -18,25 +18,60 @@ function getSchema(request: Request) {
 	return {};
 }
 
+function getSecret(url: URL) {
+	return url.searchParams.get('secret');
+}
+
+function createFormatValidity(secret: string | null) {
+	return (control: Control, value: Partial<{ field: any }>): string[] => {
+		const messages = defaultFormat(control);
+
+		if (
+			secret !== null &&
+			((value.field instanceof File &&
+				value.field.name === JSON.parse(secret)) ||
+				JSON.stringify(value.field) === secret)
+		) {
+			messages.push('secret');
+		}
+
+		return messages;
+	};
+}
+
 export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
+
 	return json({
-		schema: getSchema(request),
+		schema: getSchema(url),
+		secret: getSecret(url),
 	});
 }
 
 export async function action({ request }: ActionArgs) {
+	const url = new URL(request.url);
+	const secret = getSecret(url);
 	const formData = await request.formData();
+	const formatValidity = createFormatValidity(secret);
 	const submission = parse(formData, {
-		schema: { field: getSchema(request) },
+		schema: { field: getSchema(url) },
+		formatValidity,
 	});
 
 	return json(submission);
 }
 
 export default function Example() {
-	const { schema } = useLoaderData();
+	const { schema, secret } = useLoaderData<typeof loader>();
 	const submission = useActionData<typeof action>();
 	const [error, setError] = useState(submission?.error ?? {});
+	const searchParams = new URLSearchParams([
+		['schema', JSON.stringify(schema)],
+	]);
+
+	if (secret !== null) {
+		searchParams.set('secret', secret);
+	}
 
 	useEffect(() => {
 		if (submission?.error) {
@@ -48,13 +83,14 @@ export default function Example() {
 		<Form
 			method="post"
 			encType={schema.type === 'file' ? 'multipart/form-data' : undefined}
-			action={`?schema=${JSON.stringify(schema)}`}
+			action={`?${searchParams}`}
 			onSubmit={(event) => {
 				// Reset all error
 				setError({});
 
 				validate(event.currentTarget, {
 					schema: { field: schema },
+					formatValidity: createFormatValidity(secret),
 				});
 
 				if (!event.currentTarget.reportValidity()) {

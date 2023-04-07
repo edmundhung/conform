@@ -197,13 +197,13 @@ function getDateConstraint(
 	switch (constraint.type) {
 		case 'date':
 			invariant(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(text), 'Invalid date');
-			format = (date) => `${date}T00:00:00`;
-			baseStep = 86400000;
+			format = (date) => `${date}T00:00:00Z`;
+			baseStep = 24 * 60 * 60 * 1000;
 			break;
 		case 'time':
 			invariant(/^[0-9]{2}:[0-9]{2}$/.test(text), 'Invalid time');
 			const today = new Date().toISOString().slice(0, 10);
-			format = (time) => `${today}T${time}`;
+			format = (time) => `${today}T${time}Z`;
 			baseStep = 1000;
 			break;
 		case 'datetime-local':
@@ -211,7 +211,7 @@ function getDateConstraint(
 				/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/.test(text),
 				'Invalid datetime',
 			);
-			format = (datetime) => datetime;
+			format = (datetime) => `${datetime}Z`;
 			baseStep = 1000;
 			break;
 	}
@@ -227,7 +227,7 @@ function getDateConstraint(
 	};
 }
 
-interface Control {
+export interface Control {
 	name: string;
 	value: string | string[];
 	validity: ValidityState;
@@ -698,7 +698,7 @@ export function validate<Schema extends FormSchema>(
 			| HTMLTextAreaElement
 			| HTMLButtonElement;
 
-		if (control.willValidate) {
+		if (control.name && control.willValidate) {
 			const messages = ([] as string[]).concat(format(control, value));
 
 			control.setCustomValidity(messages.join(String.fromCharCode(31)));

@@ -1,11 +1,18 @@
 import { type Page, test, expect } from '@playwright/test';
 import { getPlayground } from '../helpers';
 
-async function setupField(page: Page, schema: object) {
+async function setupField(page: Page, schema: object, secret?: any) {
 	const playground = getPlayground(page);
 	const field = playground.container.locator('[name="field"]');
+	const searchParams = new URLSearchParams([
+		['schema', JSON.stringify(schema)],
+	]);
 
-	await page.goto(`/validitystate?schema=${JSON.stringify(schema)}`);
+	if (typeof secret !== 'undefined') {
+		searchParams.set('secret', JSON.stringify(secret));
+	}
+
+	await page.goto(`/validitystate?${searchParams}`);
 
 	return {
 		...playground,
@@ -19,10 +26,25 @@ async function setupField(page: Page, schema: object) {
 			await field.fill(value);
 			await playground.submit.click();
 		},
+		async updateSecret(secret: any) {
+			const searchParams = new URLSearchParams([
+				['schema', JSON.stringify(schema)],
+				['secret', JSON.stringify(secret)],
+			]);
+
+			await page.goto(`/validitystate?${searchParams}`);
+			await playground.submit.click();
+		},
 		async updateSchema(changed: object) {
-			await page.goto(
-				`/validitystate?schema=${JSON.stringify({ ...schema, ...changed })}`,
-			);
+			const searchParams = new URLSearchParams([
+				['schema', JSON.stringify({ ...schema, ...changed })],
+			]);
+
+			if (typeof secret !== 'undefined') {
+				searchParams.set('secret', JSON.stringify(secret));
+			}
+
+			await page.goto(`/validitystate?${searchParams}`);
 			await playground.submit.click();
 		},
 		async getSubmission() {
@@ -36,11 +58,15 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('text input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'text',
-				minLength: 3,
-				pattern: '[A-Za-z]{3,10}',
-			});
+			await setupField(
+				page,
+				{
+					type: 'text',
+					minLength: 3,
+					pattern: '[A-Za-z]{3,10}',
+				},
+				'abc',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -53,6 +79,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('123');
 		await expect(error).toHaveText(['pattern']);
+
+		await type('abc');
+		await expect(error).toHaveText(['secret']);
 
 		await type('Abc');
 		await expect(error).toHaveText(['']);
@@ -67,11 +96,15 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('password input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'password',
-				minLength: 5,
-				pattern: '(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*',
-			});
+			await setupField(
+				page,
+				{
+					type: 'password',
+					minLength: 5,
+					pattern: '(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*',
+				},
+				'A12345z',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -84,6 +117,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('12345');
 		await expect(error).toHaveText(['pattern']);
+
+		await type('A12345z');
+		await expect(error).toHaveText(['secret']);
 
 		await type('ABC1234z');
 		await expect(error).toHaveText(['']);
@@ -98,9 +134,13 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('email input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'email',
-			});
+			await setupField(
+				page,
+				{
+					type: 'email',
+				},
+				'test@secret',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -113,6 +153,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('test@');
 		await expect(error).toHaveText(['type']);
+
+		await type('test@secret');
+		await expect(error).toHaveText(['secret']);
 
 		await type('test@example');
 		await expect(error).toHaveText(['']);
@@ -127,11 +170,15 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('url input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'url',
-				minLength: 2,
-				pattern: 'https://.*',
-			});
+			await setupField(
+				page,
+				{
+					type: 'url',
+					minLength: 2,
+					pattern: 'https://.*',
+				},
+				'https://example',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -148,6 +195,9 @@ function runTests(javaScriptEnabled: boolean) {
 		await type('http://example');
 		await expect(error).toHaveText(['pattern']);
 
+		await type('https://example');
+		await expect(error).toHaveText(['secret']);
+
 		await type('https://test');
 		await expect(error).toHaveText(['']);
 		await expect
@@ -161,11 +211,15 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('tel input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'tel',
-				minLength: 3,
-				pattern: '[0-9]{3,10}',
-			});
+			await setupField(
+				page,
+				{
+					type: 'tel',
+					minLength: 3,
+					pattern: '[0-9]{3,10}',
+				},
+				'1234',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -178,6 +232,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('test');
 		await expect(error).toHaveText(['pattern']);
+
+		await type('1234');
+		await expect(error).toHaveText(['secret']);
 
 		await type('0123456');
 		await expect(error).toHaveText(['']);
@@ -192,11 +249,15 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('search input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'search',
-				minLength: 3,
-				pattern: '[A-Za-z0-9]{3,10}',
-			});
+			await setupField(
+				page,
+				{
+					type: 'search',
+					minLength: 3,
+					pattern: '[A-Za-z0-9]{3,10}',
+				},
+				'abc',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -209,6 +270,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('hellow world');
 		await expect(error).toHaveText(['pattern']);
+
+		await type('abc');
+		await expect(error).toHaveText(['secret']);
 
 		await type('anything');
 		await expect(error).toHaveText(['']);
@@ -223,12 +287,16 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('number input', async ({ page }) => {
 		const { submit, error, type, updateSchema, getSubmission } =
-			await setupField(page, {
-				type: 'number',
-				min: 1,
-				max: 5,
-				step: 0.5,
-			});
+			await setupField(
+				page,
+				{
+					type: 'number',
+					min: 1,
+					max: 5,
+					step: 0.5,
+				},
+				2.5,
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -268,6 +336,9 @@ function runTests(javaScriptEnabled: boolean) {
 		// 		error: null,
 		// 	});
 
+		await type('2.5');
+		await expect(error).toHaveText(['secret']);
+
 		await type('5.0');
 		await expect(error).toHaveText(['']);
 		await expect
@@ -304,7 +375,7 @@ function runTests(javaScriptEnabled: boolean) {
 	});
 
 	test('checkbox input', async ({ page }) => {
-		const { submit, error, field, getSubmission, updateSchema } =
+		const { submit, error, field, getSubmission, updateSchema, updateSecret } =
 			await setupField(page, {
 				type: 'checkbox',
 			});
@@ -318,6 +389,9 @@ function runTests(javaScriptEnabled: boolean) {
 				value: { field: false },
 				error: null,
 			});
+
+		await updateSecret(false);
+		await expect(error).toHaveText(['secret']);
 
 		await updateSchema({ required: true });
 		await expect(error).toHaveText(['required']);
@@ -357,13 +431,18 @@ function runTests(javaScriptEnabled: boolean) {
 	});
 
 	test('radio input', async ({ page }) => {
-		const { submit, error, field, getSubmission, updateSchema } =
+		const { submit, error, field, getSubmission, updateSchema, updateSecret } =
 			await setupField(page, {
 				type: 'radio',
 			});
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
+
+		await updateSecret('on');
+		await field.check();
+		await submit.click();
+		await expect(error).toHaveText(['secret']);
 
 		await updateSchema({ required: true });
 		await expect(error).toHaveText(['required']);
@@ -381,14 +460,21 @@ function runTests(javaScriptEnabled: boolean) {
 	});
 
 	test('color input', async ({ page }) => {
-		const { submit, error, fill, getSubmission } = await setupField(page, {
-			type: 'color',
-		});
+		const { submit, error, fill, getSubmission } = await setupField(
+			page,
+			{
+				type: 'color',
+			},
+			'#123456',
+		);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
 
 		// color input will always have a default value
+
+		await fill('#123456');
+		await expect(error).toHaveText(['secret']);
 
 		await fill('#000000');
 		await expect(error).toHaveText(['']);
@@ -403,12 +489,16 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('datetime-local input', async ({ page }) => {
 		const { submit, error, fill, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'datetime-local',
-				min: '2023-01-01T00:00',
-				max: '2023-12-31T23:59',
-				step: 60 * 30, // 30 minutes
-			});
+			await setupField(
+				page,
+				{
+					type: 'datetime-local',
+					min: '2023-01-01T00:00',
+					max: '2023-12-31T23:59',
+					step: 60 * 30, // 30 minutes
+				},
+				'2023-04-07T15:00',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -425,6 +515,9 @@ function runTests(javaScriptEnabled: boolean) {
 		await fill('2024-02-14T18:00');
 		await expect(error).toHaveText(['max']);
 
+		await fill('2023-04-07T15:00');
+		await expect(error).toHaveText(['secret']);
+
 		await fill('2023-03-26T12:30');
 		await expect(error).toHaveText(['']);
 		await expect
@@ -438,12 +531,16 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('date input', async ({ page }) => {
 		const { submit, error, fill, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'date',
-				min: '2023-01-01',
-				max: '2023-12-31',
-				step: 7, // 7 days
-			});
+			await setupField(
+				page,
+				{
+					type: 'date',
+					min: '2023-01-01',
+					max: '2023-12-31',
+					step: 7, // 7 days
+				},
+				'2023-05-07',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -456,6 +553,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await fill('2024-02-14');
 		await expect(error).toHaveText(['max', 'step']);
+
+		await fill('2023-05-07');
+		await expect(error).toHaveText(['secret']);
 
 		await fill('2023-01-08');
 		await expect(error).toHaveText(['']);
@@ -542,12 +642,16 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('time input', async ({ page }) => {
 		const { submit, error, fill, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'time',
-				min: '09:00',
-				max: '18:00',
-				step: 60 * 3, // 3 minutes
-			});
+			await setupField(
+				page,
+				{
+					type: 'time',
+					min: '09:00',
+					max: '18:00',
+					step: 60 * 3, // 3 minutes
+				},
+				'15:15',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -564,6 +668,9 @@ function runTests(javaScriptEnabled: boolean) {
 		await fill('12:14');
 		await expect(error).toHaveText(['step']);
 
+		await fill('15:15');
+		await expect(error).toHaveText(['secret']);
+
 		await fill('15:30');
 		await expect(error).toHaveText(['']);
 		await expect
@@ -577,9 +684,13 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('select', async ({ page }) => {
 		const { submit, error, field, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'select',
-			});
+			await setupField(
+				page,
+				{
+					type: 'select',
+				},
+				['a', 'b', 'c'],
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -604,6 +715,10 @@ function runTests(javaScriptEnabled: boolean) {
 		await updateSchema({ multiple: true, required: true });
 		await expect(error).toHaveText(['required']);
 
+		await field.selectOption(['a', 'b', 'c']);
+		await submit.click();
+		await expect(error).toHaveText(['secret']);
+
 		await field.selectOption(['b', 'c']);
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -618,10 +733,14 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('textarea', async ({ page }) => {
 		const { submit, error, type, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'textarea',
-				minLength: 10,
-			});
+			await setupField(
+				page,
+				{
+					type: 'textarea',
+					minLength: 10,
+				},
+				'This is a secret',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -631,6 +750,9 @@ function runTests(javaScriptEnabled: boolean) {
 
 		await type('hello');
 		await expect(error).toHaveText(['minlength']);
+
+		await type('This is a secret');
+		await expect(error).toHaveText(['secret']);
 
 		await type('This is a long paragraph');
 		await expect(error).toHaveText(['']);
@@ -645,9 +767,13 @@ function runTests(javaScriptEnabled: boolean) {
 
 	test('file input', async ({ page }) => {
 		const { submit, error, field, getSubmission, updateSchema } =
-			await setupField(page, {
-				type: 'file',
-			});
+			await setupField(
+				page,
+				{
+					type: 'file',
+				},
+				'secret.json',
+			);
 
 		await submit.click();
 		await expect(error).toHaveText(['']);
@@ -674,6 +800,16 @@ function runTests(javaScriptEnabled: boolean) {
 				},
 				error: null,
 			});
+
+		await field.setInputFiles([
+			{
+				name: 'secret.json',
+				mimeType: 'application/json',
+				buffer: Buffer.from('{}'),
+			},
+		]);
+		await submit.click();
+		await expect(error).toHaveText(['secret']);
 
 		await updateSchema({ multiple: true });
 		await expect(error).toHaveText(['']);
