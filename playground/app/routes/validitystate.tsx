@@ -3,7 +3,7 @@ import {
 	parse,
 	validate,
 	formatValidationMessage,
-	formatValidity as defaultFormat,
+	formatMessage,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -22,9 +22,9 @@ function getSecret(url: URL) {
 	return url.searchParams.get('secret');
 }
 
-function createFormatValidity(secret: string | null) {
+function createFormatMessage(secret: string | null) {
 	return (control: Control, value: Partial<{ field: any }>): string[] => {
-		const messages = defaultFormat(control);
+		const messages = formatMessage(control);
 
 		if (
 			secret !== null &&
@@ -52,10 +52,10 @@ export async function action({ request }: ActionArgs) {
 	const url = new URL(request.url);
 	const secret = getSecret(url);
 	const formData = await request.formData();
-	const formatValidity = createFormatValidity(secret);
+	const formatMessage = createFormatMessage(secret);
 	const submission = parse(formData, {
 		schema: { field: getSchema(url) },
-		formatValidity,
+		formatMessage,
 	});
 
 	return json(submission);
@@ -90,7 +90,7 @@ export default function Example() {
 
 				validate(event.currentTarget, {
 					schema: { field: schema },
-					formatValidity: createFormatValidity(secret),
+					formatMessage: createFormatMessage(secret),
 				});
 
 				if (!event.currentTarget.reportValidity()) {

@@ -415,7 +415,7 @@ export function parse<
 	data: FormData | URLSearchParams,
 	config: {
 		schema: Schema;
-		formatValidity?: (
+		formatMessage?: (
 			control: Control,
 			value: Partial<InferType<Schema>>,
 		) => ErrorType;
@@ -429,7 +429,7 @@ export function parse<
 	const format: (
 		control: Control,
 		value: Partial<InferType<Schema>>,
-	) => ErrorType = config.formatValidity ?? formatValidity;
+	) => ErrorType = config.formatMessage ?? formatMessage;
 
 	for (const name in config.schema) {
 		const constraint = config.schema[name];
@@ -671,7 +671,7 @@ export function validate<Schema extends FormSchema>(
 	form: HTMLFormElement,
 	config: {
 		schema: Schema;
-		formatValidity?: (
+		formatMessage: (
 			control: Control,
 			value: Partial<InferType<Schema>>,
 		) => string | string[];
@@ -689,7 +689,6 @@ export function validate<Schema extends FormSchema>(
 
 		return result;
 	}, {} as Partial<InferType<Schema>>);
-	const format = config.formatValidity ?? formatValidity;
 
 	for (const element of form.elements) {
 		const control = element as
@@ -699,14 +698,16 @@ export function validate<Schema extends FormSchema>(
 			| HTMLButtonElement;
 
 		if (control.name && control.willValidate) {
-			const messages = ([] as string[]).concat(format(control, value));
+			const messages = ([] as string[]).concat(
+				config.formatMessage(control, value),
+			);
 
 			control.setCustomValidity(messages.join(String.fromCharCode(31)));
 		}
 	}
 }
 
-export function formatValidity({ validity }: Control): string[] {
+export function formatMessage({ validity }: Control): string[] {
 	const messages = [] as string[];
 
 	if (validity.valueMissing) {
