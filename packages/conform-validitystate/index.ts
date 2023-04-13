@@ -242,38 +242,38 @@ export interface Control {
 }
 
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint: RequiredField<StringConstraint> | OptionalField<StringConstraint>,
 ): { payload: string; value: string };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint:
 		| RequiredField<StringConstraint | StringArrayConstraint>
 		| OptionalField<StringConstraint | StringArrayConstraint>,
 ): { payload: string | string[]; value: string | string[] };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint:
 		| RequiredField<BooleanConstraint>
 		| OptionalField<BooleanConstraint>,
 ): { payload: string | undefined; value: boolean };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint: RequiredField<NumberConstraint> | OptionalField<NumberConstraint>,
 ): { payload: string; value: number | undefined };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint:
 		| RequiredField<FileConstraint | FileArrayConstraint>
 		| OptionalField<FileConstraint | FileArrayConstraint>,
 ): { payload: File[] | File | undefined; value: File[] | File | undefined };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint: RequiredField<FieldConstraint> | OptionalField<FieldConstraint>,
 ): {
@@ -281,7 +281,7 @@ function parseField(
 	value: string | string[] | number | boolean | File[] | File | undefined;
 };
 function parseField(
-	data: FormData,
+	data: FormData | URLSearchParams,
 	name: string,
 	constraint: RequiredField<FieldConstraint> | OptionalField<FieldConstraint>,
 ) {
