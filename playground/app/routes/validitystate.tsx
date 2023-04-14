@@ -1,9 +1,9 @@
 import {
-	type Control,
+	type Input,
 	parse,
 	validate,
-	formatValidationMessage,
-	formatMessage,
+	formatError,
+	getError,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -22,9 +22,9 @@ function getSecret(url: URL) {
 	return url.searchParams.get('secret');
 }
 
-function createFormatMessage(secret: string | null) {
-	return (control: Control, value: Partial<{ field: any }>): string[] => {
-		const messages = formatMessage(control);
+function configureFormatError(secret: string | null) {
+	return (input: Input, value: Partial<{ field: any }>): string[] => {
+		const error = formatError(input);
 
 		if (
 			secret !== null &&
@@ -32,10 +32,10 @@ function createFormatMessage(secret: string | null) {
 				value.field.name === JSON.parse(secret)) ||
 				JSON.stringify(value.field) === secret)
 		) {
-			messages.push('secret');
+			error.push('secret');
 		}
 
-		return messages;
+		return error;
 	};
 }
 
@@ -52,10 +52,9 @@ export async function action({ request }: ActionArgs) {
 	const url = new URL(request.url);
 	const secret = getSecret(url);
 	const formData = await request.formData();
-	const formatMessage = createFormatMessage(secret);
 	const submission = parse(formData, {
 		schema: { field: getSchema(url) },
-		formatMessage,
+		formatError: configureFormatError(secret),
 	});
 
 	return json(submission);
@@ -85,15 +84,17 @@ export default function Example() {
 			encType={schema.type === 'file' ? 'multipart/form-data' : undefined}
 			action={`?${searchParams}`}
 			onSubmit={(event) => {
+				const form = event.currentTarget;
+
 				// Reset all error
 				setError({});
 
-				validate(event.currentTarget, {
+				validate(form, {
 					schema: { field: schema },
-					formatMessage: createFormatMessage(secret),
+					formatError: configureFormatError(secret),
 				});
 
-				if (!event.currentTarget.reportValidity()) {
+				if (!form.reportValidity()) {
 					event.preventDefault();
 				}
 			}}
@@ -105,7 +106,7 @@ export default function Example() {
 
 				setError((error) => ({
 					...error,
-					[input.name]: formatValidationMessage(input.validationMessage),
+					[input.name]: getError(input.validationMessage),
 				}));
 				event.preventDefault();
 			}}

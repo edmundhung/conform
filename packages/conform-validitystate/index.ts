@@ -227,7 +227,7 @@ function getDateConstraint(
 	};
 }
 
-export interface Control {
+export interface Input {
 	name: string;
 	value: string | string[];
 	validity: ValidityState;
@@ -415,21 +415,19 @@ export function parse<
 	data: FormData | URLSearchParams,
 	config: {
 		schema: Schema;
-		formatMessage?: (
-			control: Control,
+		formatError?: (
+			input: Input,
 			value: Partial<InferType<Schema>>,
 		) => ErrorType;
 	},
 ): Submission<Schema, ErrorType> {
 	const payloadMap = new Map<keyof Schema, string | string[]>();
-	const controlMap = new Map<keyof Schema, Control>();
+	const controlMap = new Map<keyof Schema, Input>();
 	const errorMap = new Map<keyof Schema, ErrorType>();
 	const valueMap = new Map<keyof Schema, any>();
 	// @ts-expect-error FIXME: handle default error type
-	const format: (
-		control: Control,
-		value: Partial<InferType<Schema>>,
-	) => ErrorType = config.formatMessage ?? formatMessage;
+	const format: (input: Input, value: Partial<InferType<Schema>>) => ErrorType =
+		config.formatError ?? formatError;
 
 	for (const name in config.schema) {
 		const constraint = config.schema[name];
@@ -645,11 +643,11 @@ export function parse<
 
 	const value = Object.fromEntries(valueMap) as any;
 
-	for (const [name, control] of controlMap) {
-		const messages = ([] as string[]).concat(format(control, value));
+	for (const [name, input] of controlMap) {
+		const messages = ([] as string[]).concat(format(input, value));
 
 		if (messages.length > 0) {
-			errorMap.set(name, format(control, value));
+			errorMap.set(name, format(input, value));
 		}
 	}
 
@@ -671,8 +669,8 @@ export function validate<Schema extends FormSchema>(
 	form: HTMLFormElement,
 	config: {
 		schema: Schema;
-		formatMessage: (
-			control: Control,
+		formatError: (
+			input: Input,
 			value: Partial<InferType<Schema>>,
 		) => string | string[];
 	},
@@ -691,23 +689,21 @@ export function validate<Schema extends FormSchema>(
 	}, {} as Partial<InferType<Schema>>);
 
 	for (const element of form.elements) {
-		const control = element as
+		const input = element as
 			| HTMLInputElement
 			| HTMLSelectElement
 			| HTMLTextAreaElement
 			| HTMLButtonElement;
 
-		if (control.name && control.willValidate) {
-			const messages = ([] as string[]).concat(
-				config.formatMessage(control, value),
-			);
+		if (input.name && input.willValidate) {
+			const error = ([] as string[]).concat(config.formatError(input, value));
 
-			control.setCustomValidity(messages.join(String.fromCharCode(31)));
+			input.setCustomValidity(error.join(String.fromCharCode(31, 32)));
 		}
 	}
 }
 
-export function formatMessage({ validity }: Control): string[] {
+export function formatError({ validity }: Input): string[] {
 	const messages = [] as string[];
 
 	if (validity.valueMissing) {
@@ -745,6 +741,6 @@ export function formatMessage({ validity }: Control): string[] {
 	return messages;
 }
 
-export function formatValidationMessage(message: string): string[] {
-	return message ? message.split(String.fromCharCode(31)) : [];
+export function getError(message: string): string[] {
+	return message ? message.split(String.fromCharCode(31, 32)) : [];
 }
