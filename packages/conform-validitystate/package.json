@@ -1,0 +1,32 @@
+{
+	"name": "@conform-to/validitystate",
+	"description": "Validate on the server using the same rules as the browser",
+	"homepage": "https://conform.guide",
+	"license": "MIT",
+	"version": "0.0.1",
+	"main": "index.js",
+	"module": "module/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conform",
+		"directory": "packages/conform-validitystate"
+	},
+	"author": {
+		"name": "Edmund Hung",
+		"email": "me@edmund.dev",
+		"url": "https://edmund.dev"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conform/issues"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"html",
+		"progressive-enhancement",
+		"validation",
+		"dom"
+	],
+	"sideEffects": false
+}

@@ -65,6 +65,7 @@ export default function rollup() {
 	const packages = [
 		// Base
 		'conform-dom',
+		'conform-validitystate',
 
 		// Schema resolver
 		'conform-zod',
