@@ -3,7 +3,7 @@
 	"description": "Validate on the server using the same rules as the browser",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
