@@ -3,7 +3,7 @@
 	"description": "Validate on the server using the same rules as the browser",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.0.2",
+	"version": "0.1.0",
 	"main": "index.js",
 	"module": "module/index.js",
 	"repository": {
@@ -23,9 +23,9 @@
 		"constraint-validation",
 		"form",
 		"form-validation",
-		"html",
 		"progressive-enhancement",
 		"validation",
+		"validitystate",
 		"dom"
 	],
 	"sideEffects": false

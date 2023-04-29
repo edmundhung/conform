@@ -1,5 +1,5 @@
 import {
-	type Input,
+	type FormatErrorArgs,
 	parse,
 	validate,
 	formatError,
@@ -23,14 +23,14 @@ function getSecret(url: URL) {
 }
 
 function configureFormatError(secret: string | null) {
-	return (input: Input, value: Partial<{ field: any }>): string[] => {
-		const error = formatError(input);
+	return (args: FormatErrorArgs<{ field: any }>): string[] => {
+		const error = formatError(args);
 
 		if (
 			secret !== null &&
-			((value.field instanceof File &&
-				value.field.name === JSON.parse(secret)) ||
-				JSON.stringify(value.field) === secret)
+			((args.value.field instanceof File &&
+				args.value.field.name === JSON.parse(secret)) ||
+				JSON.stringify(args.value.field) === secret)
 		) {
 			error.push('secret');
 		}

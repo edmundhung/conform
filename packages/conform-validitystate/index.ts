@@ -69,11 +69,61 @@ type FieldConstraint =
 	| FileConstraint
 	| FileArrayConstraint;
 
+/**
+ * A dictionary of field names and corresponding constraints
+ *
+ * @example
+ * ```ts
+ * const schema = {
+ *   email: {
+ *     type: 'email',
+ *     required: true,
+ *   },
+ *   "password": {
+ *     type: 'password',
+ *     required: true,
+ *   },
+ * } satisfies FormSchema
+ * ```
+ */
 export type FormSchema = Record<
 	string,
 	RequiredField<FieldConstraint> | OptionalField<FieldConstraint>
 >;
 
+/**
+ * Function Arguments of the `formatError` function
+ *
+ * @example
+ * ```ts
+ * const formatError = ({ input, formData, value }: FormatErrorArgs) => {
+ *   if (input.validity.valueMissing) {
+ *     return 'This field is required';
+ *   }
+ *
+ *   return '';
+ * };
+ * ```
+ */
+export type FormatErrorArgs<Schema extends FormSchema = any> = {
+	input: Input;
+	formData: FormData;
+	value: Partial<InferType<Schema>>;
+};
+
+/**
+ * A function that derives the error message for a field
+ * based on the ValditiyState, FormData or parsed value. Multiple
+ * errors are also supported.
+ */
+export type FormatErrorFunction<
+	Schema extends FormSchema = any,
+	FormError extends string | string[] = string | string[],
+> = ({ input, formData, value }: FormatErrorArgs<Schema>) => FormError;
+
+/**
+ * Infer the type of the parsed value based on the schema
+ */
 export type InferType<Schema extends FormSchema> = {
 	[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
 		? string
@@ -102,10 +152,14 @@ export type InferType<Schema extends FormSchema> = {
 		: any;
 };
 
-export type Submission<Schema extends FormSchema, ErrorType> =
+/**
+ * A summary of the submission including payload and errors.
+ * If there is no error, the parsed value is also included.
+ */
+export type Submission<Schema extends FormSchema, FormError> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
-			error: Record<string, ErrorType | undefined>;
+			error: Record<string, FormError | undefined>;
 	  }
 	| {
 			payload: Record<string, string | string[] | undefined>;
@@ -408,25 +462,54 @@ function parseField(
 	}
 }
 
+/**
+ * A function to parse FormData or URLSearchParams based on
+ * the schema and error formatter
+ *
+ * @example
+ * ```ts
+ * const submission = parse(formData, {
+ *   schema: {
+ *     email: { type: 'email', required: true },
+ *     password: { type: 'password', required: true },
+ *   },
+ *   formatError({ input }) {
+ *     switch (input.name) {
+ *       case 'email': {
+ *         if (input.validity.valueMissing) {
+ *           return 'Email is required';
+ *         } else if (input.validity.typeMismatch) {
+ *           return 'Email is invalid';
+ *         }
+ *       }
+ *       case 'password': {
+ *         if (input.validity.valueMissing) {
+ *           return 'Password is required';
+ *         }
+ *       }
+ *     }
+ *
+ *     return '';
+ *   },
+ * });
+ * ```
+ */
 export function parse<
 	Schema extends FormSchema,
-	ErrorType extends string | string[] = string[],
+	FormError extends string | string[] = string[],
 >(
 	data: FormData | URLSearchParams,
 	config: {
 		schema: Schema;
-		formatError?: (
-			input: Input,
-			value: Partial<InferType<Schema>>,
-		) => ErrorType;
+		formatError?: FormatErrorFunction<Schema, FormError>;
 	},
-): Submission<Schema, ErrorType> {
+): Submission<Schema, FormError> {
 	const payloadMap = new Map<keyof Schema, string | string[]>();
 	const controlMap = new Map<keyof Schema, Input>();
-	const errorMap = new Map<keyof Schema, ErrorType>();
+	const errorMap = new Map<keyof Schema, FormError>();
 	const valueMap = new Map<keyof Schema, any>();
 	// @ts-expect-error FIXME: handle default error type
-	const format: (input: Input, value: Partial<InferType<Schema>>) => ErrorType =
+	const format: FormatErrorFunction<Schema, FormError> =
 		config.formatError ?? formatError;
 
 	for (const name in config.schema) {
@@ -644,10 +727,10 @@ export function parse<
 	const value = Object.fromEntries(valueMap) as any;
 
 	for (const [name, input] of controlMap) {
-		const messages = ([] as string[]).concat(format(input, value));
+		const error = format({ input, formData: data as FormData, value });
 
-		if (messages.length > 0) {
-			errorMap.set(name, format(input, value));
+		if (Array.isArray(error) ? error.length > 0 : error !== '') {
+			errorMap.set(name, error);
 		}
 	}
 
@@ -665,28 +748,32 @@ export function parse<
 	};
 }
 
+/**
+ * Validate a form based on the given schema and error formatter.
+ * Error will be set to the form element using the `setCustomValidity` method.
+ */
 export function validate<Schema extends FormSchema>(
 	form: HTMLFormElement,
 	config: {
 		schema: Schema;
-		formatError: (
-			input: Input,
-			value: Partial<InferType<Schema>>,
-		) => string | string[];
+		formatError: FormatErrorFunction<Schema>;
 	},
 ): void {
 	const formData = new FormData(form);
-	const value = Object.keys(config.schema).reduce((result, name) => {
-		const constraint = config.schema[name];
-		const field = parseField(formData, name, constraint);
+	const value = Object.keys(config.schema).reduce<Partial<InferType<Schema>>>(
+		(result, name) => {
+			const constraint = config.schema[name];
+			const field = parseField(formData, name, constraint);
 
-		if (typeof field.value !== 'undefined') {
-			// @ts-expect-error Tests will prove that the type is valid :)
-			result[name] = field.value;
-		}
+			if (typeof field.value !== 'undefined') {
+				// @ts-expect-error Tests will prove that the type is valid :)
+				result[name] = field.value;
+			}
 
-		return result;
-	}, {} as Partial<InferType<Schema>>);
+			return result;
+		},
+		{},
+	);
 
 	for (const element of form.elements) {
 		const input = element as
@@ -696,51 +783,71 @@ export function validate<Schema extends FormSchema>(
 			| HTMLButtonElement;
 
 		if (input.name && input.willValidate) {
-			const error = ([] as string[]).concat(config.formatError(input, value));
+			const error = ([] as string[]).concat(
+				config.formatError({ input, value, formData }),
+			);
 
 			input.setCustomValidity(error.join(String.fromCharCode(31, 32)));
 		}
 	}
 }
 
-export function formatError({ validity }: Input): string[] {
+/**
+ * A default error formatter that represent error with name of the validation attributes.
+ *
+ * @example
+ * ```json
+ * ["required", "type", "min", "max", "step", "minlength", "maxlength", "pattern"]
+ * ```
+ */
+export function formatError({ input }: FormatErrorArgs<any>): string[] {
 	const messages = [] as string[];
 
-	if (validity.valueMissing) {
+	if (input.validity.valueMissing) {
 		messages.push('required');
 	}
 
-	if (validity.typeMismatch || validity.badInput) {
+	if (input.validity.typeMismatch || input.validity.badInput) {
 		messages.push('type');
 	}
 
-	if (validity.rangeOverflow) {
+	if (input.validity.rangeOverflow) {
 		messages.push('max');
 	}
 
-	if (validity.rangeUnderflow) {
+	if (input.validity.rangeUnderflow) {
 		messages.push('min');
 	}
 
-	if (validity.stepMismatch) {
+	if (input.validity.stepMismatch) {
 		messages.push('step');
 	}
 
-	if (validity.tooShort) {
+	if (input.validity.tooShort) {
 		messages.push('minlength');
 	}
 
-	if (validity.tooLong) {
+	if (input.validity.tooLong) {
 		messages.push('maxlength');
 	}
 
-	if (validity.patternMismatch) {
+	if (input.validity.patternMismatch) {
 		messages.push('pattern');
 	}
 
 	return messages;
 }
 
-export function getError(message: string): string[] {
-	return message ? message.split(String.fromCharCode(31, 32)) : [];
+/**
+ * Get the actual error messages stored on the `validationMessage` property.
+ *
+ * @example
+ * ```ts
+ * const error = getError(input.validationMessage);
+ * ```
+ */
+export function getError(validationMessage: string): string[] {
+	return validationMessage
+		? validationMessage.split(String.fromCharCode(31, 32))
+		: [];
 }
