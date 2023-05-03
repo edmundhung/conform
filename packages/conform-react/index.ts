@@ -1,9 +1,7 @@
 export {
-	type FieldConfig,
 	type FieldsetConstraint,
 	type Submission,
 	parse,
-	validateConstraint,
 	list,
 	validate,
 	requestIntent,
@@ -11,11 +9,13 @@ export {
 } from '@conform-to/dom';
 export {
 	type Fieldset,
+	type FieldConfig,
 	type FieldsetConfig,
 	type FormConfig,
 	useForm,
 	useFieldset,
 	useFieldList,
 	useInputEvent,
+	validateConstraint,
 } from './hooks';
 export * as conform from './helpers';

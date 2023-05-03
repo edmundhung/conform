@@ -1,10 +1,7 @@
 import {
-	type FieldConfig,
+	type FieldConstraint,
 	type FieldElement,
-	type FieldValue,
 	type FieldsetConstraint,
-	type FormMethod,
-	type FormEncType,
 	type ListCommand,
 	type Submission,
 	getFormData,
@@ -15,15 +12,19 @@ import {
 	parse,
 	parseListCommand,
 	updateList,
-	reportSubmission,
 	validate,
 	requestIntent,
 	getValidationMessage,
 	getErrors,
-	getFormAttributes,
 	getScope,
-	VALIDATION_UNDEFINED,
-	FORM_ERROR_ELEMENT_NAME,
+	getFormAction,
+	getFormEncType,
+	getFormMethod,
+	getFormControls,
+	focusFirstInvalidControl,
+	isSubmitting,
+	isFocusedOnIntentButton,
+	focusFormControl,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -34,6 +35,38 @@ import {
 	useLayoutEffect,
 	useMemo,
 } from 'react';
+
+export type Primitive = null | undefined | string | number | boolean | Date;
+
+export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
+	id?: string;
+	name: string;
+	defaultValue?: FieldValue<Schema>;
+	initialError?: Record<string, string | string[]>;
+	form?: string;
+	descriptionId?: string;
+	errorId?: string;
+
+	/**
+	 * The frist error of the field
+	 */
+	error?: string;
+
+	/**
+	 * All of the field errors
+	 */
+	errors?: string[];
+}
+
+export type FieldValue<Schema> = Schema extends Primitive
+	? string
+	: Schema extends File
+	? File
+	: Schema extends Array<infer InnerType>
+	? Array<FieldValue<InnerType>>
+	: Schema extends Record<string, any>
+	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
+	: any;
 
 export interface FormConfig<
 	Schema extends Record<string, any>,
@@ -121,8 +154,8 @@ export interface FormConfig<
 			formData: FormData;
 			submission: ClientSubmission;
 			action: string;
-			encType: FormEncType;
-			method: FormMethod;
+			encType: ReturnType<typeof getFormEncType>;
+			method: ReturnType<typeof getFormMethod>;
 		},
 	) => void;
 }
@@ -403,7 +436,9 @@ export function useForm<
 						config.onSubmit?.(event, {
 							formData,
 							submission,
-							...getFormAttributes(form, submitter),
+							action: getFormAction(nativeEvent),
+							encType: getFormEncType(nativeEvent),
+							method: getFormMethod(nativeEvent),
 						});
 					}
 				} catch (e) {
@@ -1030,4 +1065,197 @@ export function useInputEvent<RefShape>(options?: {
 	}, []);
 
 	return [ref, control];
+}
+
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
+export const FORM_ERROR_ELEMENT_NAME = '__form__';
+
+/**
+ * Validate the form with the Constraint Validation API
+ * @see https://conform.guide/api/react#validateconstraint
+ */
+export function validateConstraint(options: {
+	form: HTMLFormElement;
+	formData?: FormData;
+	constraint?: Record<
+		Lowercase<string>,
+		(
+			value: string,
+			context: { formData: FormData; attributeValue: string },
+		) => boolean
+	>;
+	acceptMultipleErrors?: ({
+		name,
+		intent,
+		payload,
+	}: {
+		name: string;
+		intent: string;
+		payload: Record<string, any>;
+	}) => boolean;
+	formatMessages?: ({
+		name,
+		validity,
+		constraint,
+		defaultErrors,
+	}: {
+		name: string;
+		validity: ValidityState;
+		constraint: Record<string, boolean>;
+		defaultErrors: string[];
+	}) => string[];
+}): Submission {
+	const formData = options?.formData ?? new FormData(options.form);
+	const getDefaultErrors = (
+		validity: ValidityState,
+		result: Record<string, boolean>,
+	) => {
+		const errors: Array<string> = [];
+
+		if (validity.valueMissing) errors.push('required');
+		if (validity.typeMismatch || validity.badInput) errors.push('type');
+		if (validity.tooShort) errors.push('minLength');
+		if (validity.rangeUnderflow) errors.push('min');
+		if (validity.stepMismatch) errors.push('step');
+		if (validity.tooLong) errors.push('maxLength');
+		if (validity.rangeOverflow) errors.push('max');
+		if (validity.patternMismatch) errors.push('pattern');
+
+		for (const [constraintName, valid] of Object.entries(result)) {
+			if (!valid) {
+				errors.push(constraintName);
+			}
+		}
+
+		return errors;
+	};
+	const formatMessages =
+		options?.formatMessages ?? (({ defaultErrors }) => defaultErrors);
+
+	return parse(formData, {
+		resolve(payload, intent) {
+			const error: Record<string, string | string[]> = {};
+			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
+			for (const element of options.form.elements) {
+				if (isFieldElement(element)) {
+					const name =
+						element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+					const constraint = Object.entries(element.dataset).reduce<
+						Record<string, boolean>
+					>((result, [name, attributeValue = '']) => {
+						if (constraintPattern.test(name)) {
+							const constraintName = name
+								.slice(10)
+								.toLowerCase() as Lowercase<string>;
+							const validate = options.constraint?.[constraintName];
+
+							if (typeof validate === 'function') {
+								result[constraintName] = validate(element.value, {
+									formData,
+									attributeValue,
+								});
+							} else {
+								console.warn(
+									`Found an "${constraintName}" constraint with undefined definition; Please specify it on the validateConstraint API.`,
+								);
+							}
+						}
+
+						return result;
+					}, {});
+					const errors = formatMessages({
+						name,
+						validity: element.validity,
+						constraint,
+						defaultErrors: getDefaultErrors(element.validity, constraint),
+					});
+					const shouldAcceptMultipleErrors =
+						options?.acceptMultipleErrors?.({
+							name,
+							payload,
+							intent,
+						}) ?? false;
+
+					if (errors.length > 0) {
+						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
+					}
+				}
+			}
+
+			return { error };
+		},
+	});
+}
+
+export function reportSubmission(
+	form: HTMLFormElement,
+	submission: Submission,
+): void {
+	for (const [name, message] of Object.entries(submission.error)) {
+		// There is no need to create a placeholder button if all we want is to reset the error
+		if (message === '') {
+			continue;
+		}
+
+		// We can't use empty string as button name
+		// As `form.element.namedItem('')` will always returns null
+		const elementName = name ? name : FORM_ERROR_ELEMENT_NAME;
+		const item = form.elements.namedItem(elementName);
+
+		if (item instanceof RadioNodeList) {
+			for (const field of item) {
+				if ((field as FieldElement).type !== 'radio') {
+					console.warn('Repeated field name is not supported.');
+					continue;
+				}
+			}
+		}
+
+		if (item === null) {
+			// Create placeholder button to keep the error without contributing to the form data
+			const button = document.createElement('button');
+
+			button.name = elementName;
+			button.hidden = true;
+			button.dataset.conformTouched = 'true';
+
+			form.appendChild(button);
+		}
+	}
+
+	const scope = getScope(submission.intent);
+
+	for (const element of getFormControls(form)) {
+		const elementName =
+			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+		const messages = ([] as string[]).concat(
+			submission.error[elementName] ?? [],
+		);
+
+		if (scope === null || scope === elementName) {
+			element.dataset.conformTouched = 'true';
+		}
+
+		if (
+			!messages.includes(VALIDATION_SKIPPED) &&
+			!messages.includes(VALIDATION_UNDEFINED)
+		) {
+			const invalidEvent = new Event('invalid', { cancelable: true });
+
+			element.setCustomValidity(getValidationMessage(messages));
+			element.dispatchEvent(invalidEvent);
+		}
+	}
+
+	if (
+		isSubmitting(submission.intent) ||
+		isFocusedOnIntentButton(form, submission.intent)
+	) {
+		if (scope) {
+			focusFormControl(form, scope);
+		} else {
+			focusFirstInvalidControl(form);
+		}
+	}
 }

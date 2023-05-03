@@ -1,5 +1,8 @@
-import { validateConstraint } from '@conform-to/dom';
-import { type Submission, useForm } from '@conform-to/react';
+import {
+	type Submission,
+	useForm,
+	validateConstraint,
+} from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
 import { useState } from 'react';
