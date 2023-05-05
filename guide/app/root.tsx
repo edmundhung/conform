@@ -63,6 +63,11 @@ export default function App() {
 			<head>
 				<Meta />
 				<Links />
+				<script
+					defer
+					data-domain="conform.guide"
+					src="https://plausible.io/js/script.js"
+				/>
 			</head>
 			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
 				<Outlet />
