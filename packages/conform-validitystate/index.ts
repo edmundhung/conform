@@ -492,35 +492,9 @@ function parseField(
 
 /**
  * A function to parse FormData or URLSearchParams based on
- * the schema and error formatter
+ * the constraints and an optional error formatter
  *
- * @example
- * ```ts
- * const submission = parse(formData, {
- *   constraints: {
- *     email: { type: 'email', required: true },
- *     password: { type: 'password', required: true },
- *   },
- *   formatError({ input }) {
- *     switch (input.name) {
- *       case 'email': {
- *         if (input.validity.valueMissing) {
- *           return 'Email is required';
- *         } else if (input.validity.typeMismatch) {
- *           return 'Email is invalid';
- *         }
- *       }
- *       case 'password': {
- *         if (input.validity.valueMissing) {
- *           return 'Password is required';
- *         }
- *       }
- *     }
- *
- *     return '';
- *   },
- * });
- * ```
+ * @see https://conform.guide/api/validitystate#parse
  */
 export function parse<
 	Constraints extends FormConstraints,
@@ -538,7 +512,7 @@ export function parse<
 	const valueMap = new Map<keyof Constraints, any>();
 	// @ts-expect-error FIXME: handle default error type
 	const format: FormatErrorFunction<Constraints, FormError> =
-		schema.formatError ?? formatError;
+		schema.formatError ?? defaultFormatError;
 
 	for (const name in schema.constraints) {
 		const constraint = schema.constraints[name];
@@ -778,6 +752,8 @@ export function parse<
 /**
  * Validate a form based on the given schema and error formatter.
  * Error will be set to the form element using the `setCustomValidity` method.
+ *
+ * @see https://conform.guide/api/validitystate#validate
  */
 export function validate<Constraints extends FormConstraints>(
 	form: HTMLFormElement,
@@ -819,14 +795,15 @@ export function validate<Constraints extends FormConstraints>(
 }
 
 /**
- * A default error formatter that represent error with name of the validation attributes.
+ * The default error formatter used by parse to represent error by all failed validation attributes.
  *
+ * @see https://conform.guide/api/validitystate#defaultformaterror
  * @example
  * ```json
  * ["required", "type", "min", "max", "step", "minlength", "maxlength", "pattern"]
  * ```
  */
-export function formatError({ input }: FormatErrorArgs<any>): string[] {
+export function defaultFormatError({ input }: FormatErrorArgs<any>): string[] {
 	const messages = [] as string[];
 
 	if (input.validity.valueMissing) {
@@ -867,6 +844,7 @@ export function formatError({ input }: FormatErrorArgs<any>): string[] {
 /**
  * Get the actual error messages stored on the `validationMessage` property.
  *
+ * @see https://conform.guide/api/validitystate#geterror
  * @example
  * ```ts
  * const error = getError(input.validationMessage);
