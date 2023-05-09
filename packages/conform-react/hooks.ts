@@ -288,7 +288,13 @@ export function useForm<
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 
-			if (!form || !isFieldElement(field) || field.form !== form) {
+			if (
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				field.type === 'submit' ||
+				!field.willValidate
+			) {
 				return;
 			}
 
@@ -312,7 +318,13 @@ export function useForm<
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 
-			if (!form || !isFieldElement(field) || field.form !== form) {
+			if (
+				!form ||
+				!isFieldElement(field) ||
+				field.form !== form ||
+				field.type === 'submit' ||
+				!field.willValidate
+			) {
 				return;
 			}
 
