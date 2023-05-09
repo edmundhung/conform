@@ -1,6 +1,6 @@
 # @conform-to/validitystate
 
-> The current version is not compatible with the react package.
+> The current version is not compatible with conform react adapter.
 
 [Conform](https://github.com/edmundhung/conform) helpers for server validation based on the validation attributes.
 
