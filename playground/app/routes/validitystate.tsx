@@ -2,7 +2,7 @@ import {
 	type FormatErrorArgs,
 	parse,
 	validate,
-	formatError,
+	defaultFormatError,
 	getError,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
@@ -24,7 +24,7 @@ function getSecret(url: URL) {
 
 function configureFormatError(secret: string | null) {
 	return (args: FormatErrorArgs<{ field: any }>): string[] => {
-		const error = formatError(args);
+		const error = defaultFormatError(args);
 
 		if (
 			secret !== null &&
