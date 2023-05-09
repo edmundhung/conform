@@ -295,34 +295,6 @@ export interface Input {
 	multiple?: boolean;
 }
 
-function valueMissing(
-	type: FieldConstraint['type'],
-	value: string | File,
-): boolean {
-	if (type !== 'file') {
-		return typeof value !== 'string' || value === '';
-	} else {
-		return typeof value === 'string' || isEmptyFile(value);
-	}
-}
-
-function typeMismatch(
-	type: FieldConstraint['type'],
-	value: string | File,
-): boolean {
-	if (valueMissing(type, value)) {
-		return false;
-	}
-
-	if (type === 'email') {
-		return typeof value !== 'string' || !isValidEmail(value);
-	} else if (type === 'url') {
-		return typeof value !== 'string' || !isValidURL(value);
-	} else {
-		return false;
-	}
-}
-
 function parseField(
 	data: FormData | URLSearchParams,
 	name: string,
