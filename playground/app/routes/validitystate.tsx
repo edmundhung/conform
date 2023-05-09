@@ -2,7 +2,7 @@ import {
 	type FormatErrorArgs,
 	parse,
 	validate,
-	formatError,
+	defaultFormatError,
 	getError,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
@@ -10,9 +10,9 @@ import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 import { Playground, Field } from '~/components';
 
-function getSchema(url: URL) {
-	if (url.searchParams.has('schema')) {
-		return JSON.parse(url.searchParams.get('schema') as string);
+function getConstraint(url: URL) {
+	if (url.searchParams.has('constraint')) {
+		return JSON.parse(url.searchParams.get('constraint') as string);
 	}
 
 	return {};
@@ -24,7 +24,7 @@ function getSecret(url: URL) {
 
 function configureFormatError(secret: string | null) {
 	return (args: FormatErrorArgs<{ field: any }>): string[] => {
-		const error = formatError(args);
+		const error = defaultFormatError(args);
 
 		if (
 			secret !== null &&
@@ -43,7 +43,7 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
 	return json({
-		schema: getSchema(url),
+		constraint: getConstraint(url),
 		secret: getSecret(url),
 	});
 }
@@ -53,7 +53,7 @@ export async function action({ request }: ActionArgs) {
 	const secret = getSecret(url);
 	const formData = await request.formData();
 	const submission = parse(formData, {
-		schema: { field: getSchema(url) },
+		constraints: { field: getConstraint(url) },
 		formatError: configureFormatError(secret),
 	});
 
@@ -61,11 +61,11 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Example() {
-	const { schema, secret } = useLoaderData<typeof loader>();
+	const { constraint, secret } = useLoaderData<typeof loader>();
 	const submission = useActionData<typeof action>();
 	const [error, setError] = useState(submission?.error ?? {});
 	const searchParams = new URLSearchParams([
-		['schema', JSON.stringify(schema)],
+		['constraint', JSON.stringify(constraint)],
 	]);
 
 	if (secret !== null) {
@@ -81,7 +81,7 @@ export default function Example() {
 	return (
 		<Form
 			method="post"
-			encType={schema.type === 'file' ? 'multipart/form-data' : undefined}
+			encType={constraint.type === 'file' ? 'multipart/form-data' : undefined}
 			action={`?${searchParams}`}
 			onSubmit={(event) => {
 				const form = event.currentTarget;
@@ -90,7 +90,7 @@ export default function Example() {
 				setError({});
 
 				validate(form, {
-					schema: { field: schema },
+					constraints: { field: constraint },
 					formatError: configureFormatError(secret),
 				});
 
@@ -114,38 +114,38 @@ export default function Example() {
 		>
 			<Playground title="Validity State" lastSubmission={submission}>
 				<Field label="Field" config={{ errors: error.field }}>
-					{schema.type === 'checkbox' || schema.type === 'radio' ? (
+					{constraint.type === 'checkbox' || constraint.type === 'radio' ? (
 						<input
 							name="field"
 							defaultChecked={
-								(schema.value ?? 'on') === submission?.payload.field
+								(constraint.value ?? 'on') === submission?.payload.field
 							}
-							{...schema}
+							{...constraint}
 						/>
-					) : schema.type === 'select' ? (
+					) : constraint.type === 'select' ? (
 						<select
 							name="field"
 							defaultValue={submission?.payload.field ?? ''}
-							{...schema}
+							{...constraint}
 						>
-							{schema.multiple ? null : (
+							{constraint.multiple ? null : (
 								<option value="">Select an option</option>
 							)}
 							<option value="a">Option A</option>
 							<option value="b">Option B</option>
 							<option value="c">Option C</option>
 						</select>
-					) : schema.type === 'textarea' ? (
+					) : constraint.type === 'textarea' ? (
 						<textarea
 							name="field"
 							defaultValue={submission?.payload.field ?? ''}
-							{...schema}
+							{...constraint}
 						/>
 					) : (
 						<input
 							name="field"
 							defaultValue={submission?.payload.field ?? ''}
-							{...schema}
+							{...constraint}
 						/>
 					)}
 				</Field>

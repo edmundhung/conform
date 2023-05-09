@@ -34,6 +34,7 @@ const navigations: Navigation[] = [
 		title: 'API Reference',
 		menus: [
 			{ title: '@conform-to/react', to: '/api/react' },
+			{ title: '@conform-to/validitystate', to: '/api/validitystate' },
 			{ title: '@conform-to/yup', to: '/api/yup' },
 			{ title: '@conform-to/zod', to: '/api/zod' },
 		],

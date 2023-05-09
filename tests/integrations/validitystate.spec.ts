@@ -1,11 +1,11 @@
 import { type Page, test, expect } from '@playwright/test';
 import { getPlayground } from '../helpers';
 
-async function setupField(page: Page, schema: object, secret?: any) {
+async function setupField(page: Page, constraint: object, secret?: any) {
 	const playground = getPlayground(page);
 	const field = playground.container.locator('[name="field"]');
 	const searchParams = new URLSearchParams([
-		['schema', JSON.stringify(schema)],
+		['constraint', JSON.stringify(constraint)],
 	]);
 
 	if (typeof secret !== 'undefined') {
@@ -28,7 +28,7 @@ async function setupField(page: Page, schema: object, secret?: any) {
 		},
 		async updateSecret(secret: any) {
 			const searchParams = new URLSearchParams([
-				['schema', JSON.stringify(schema)],
+				['constraint', JSON.stringify(constraint)],
 				['secret', JSON.stringify(secret)],
 			]);
 
@@ -37,7 +37,7 @@ async function setupField(page: Page, schema: object, secret?: any) {
 		},
 		async updateSchema(changed: object) {
 			const searchParams = new URLSearchParams([
-				['schema', JSON.stringify({ ...schema, ...changed })],
+				['constraint', JSON.stringify({ ...constraint, ...changed })],
 			]);
 
 			if (typeof secret !== 'undefined') {

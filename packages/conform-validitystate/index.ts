@@ -1,10 +1,10 @@
 type ValidityKey = Exclude<keyof ValidityState, 'customError' | 'valid'>;
 
-type RequiredField<Schema extends { type: string }> = Schema & {
+type RequiredField<Constraint extends { type: string }> = Constraint & {
 	required: true;
 };
 
-type OptionalField<Schema extends { type: string }> = Schema & {
+type OptionalField<Constraint extends { type: string }> = Constraint & {
 	required?: false;
 };
 
@@ -74,7 +74,7 @@ type FieldConstraint =
  *
  * @example
  * ```ts
- * const schema = {
+ * const constraints = {
  *   email: {
  *     type: 'email',
  *     required: true,
@@ -83,10 +83,10 @@ type FieldConstraint =
  *     type: 'password',
  *     required: true,
  *   },
- * } satisfies FormSchema
+ * } satisfies FormConstraints
  * ```
  */
-export type FormSchema = Record<
+export type FormConstraints = Record<
 	string,
 	RequiredField<FieldConstraint> | OptionalField<FieldConstraint>
 >;
@@ -105,7 +105,7 @@ export type FormSchema = Record<
  * };
  * ```
  */
-export type FormatErrorArgs<Schema extends FormSchema = any> = {
+export type FormatErrorArgs<Schema extends FormConstraints = any> = {
 	input: Input;
 	formData: FormData;
 	value: Partial<InferType<Schema>>;
@@ -117,14 +117,14 @@ export type FormatErrorArgs<Schema extends FormSchema = any> = {
  * errors are also supported.
  */
 export type FormatErrorFunction<
-	Schema extends FormSchema = any,
+	Constraints extends FormConstraints = any,
 	FormError extends string | string[] = string | string[],
-> = ({ input, formData, value }: FormatErrorArgs<Schema>) => FormError;
+> = ({ input, formData, value }: FormatErrorArgs<Constraints>) => FormError;
 
 /**
  * Infer the type of the parsed value based on the schema
  */
-export type InferType<Schema extends FormSchema> = {
+export type InferType<Schema extends FormConstraints> = {
 	[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
 		? string
 		: Schema[Key] extends OptionalField<StringConstraint>
@@ -156,7 +156,7 @@ export type InferType<Schema extends FormSchema> = {
  * A summary of the submission including payload and errors.
  * If there is no error, the parsed value is also included.
  */
-export type Submission<Schema extends FormSchema, FormError> =
+export type Submission<Schema extends FormConstraints, FormError> =
 	| {
 			payload: Record<string, string | string[] | undefined>;
 			error: Record<string, FormError | undefined>;
@@ -464,56 +464,30 @@ function parseField(
 
 /**
  * A function to parse FormData or URLSearchParams based on
- * the schema and error formatter
+ * the constraints and an optional error formatter
  *
- * @example
- * ```ts
- * const submission = parse(formData, {
- *   schema: {
- *     email: { type: 'email', required: true },
- *     password: { type: 'password', required: true },
- *   },
- *   formatError({ input }) {
- *     switch (input.name) {
- *       case 'email': {
- *         if (input.validity.valueMissing) {
- *           return 'Email is required';
- *         } else if (input.validity.typeMismatch) {
- *           return 'Email is invalid';
- *         }
- *       }
- *       case 'password': {
- *         if (input.validity.valueMissing) {
- *           return 'Password is required';
- *         }
- *       }
- *     }
- *
- *     return '';
- *   },
- * });
- * ```
+ * @see https://conform.guide/api/validitystate#parse
  */
 export function parse<
-	Schema extends FormSchema,
+	Constraints extends FormConstraints,
 	FormError extends string | string[] = string[],
 >(
 	data: FormData | URLSearchParams,
-	config: {
-		schema: Schema;
-		formatError?: FormatErrorFunction<Schema, FormError>;
+	schema: {
+		constraints: Constraints;
+		formatError?: FormatErrorFunction<Constraints, FormError>;
 	},
-): Submission<Schema, FormError> {
-	const payloadMap = new Map<keyof Schema, string | string[]>();
-	const controlMap = new Map<keyof Schema, Input>();
-	const errorMap = new Map<keyof Schema, FormError>();
-	const valueMap = new Map<keyof Schema, any>();
+): Submission<Constraints, FormError> {
+	const payloadMap = new Map<keyof Constraints, string | string[]>();
+	const controlMap = new Map<keyof Constraints, Input>();
+	const errorMap = new Map<keyof Constraints, FormError>();
+	const valueMap = new Map<keyof Constraints, any>();
 	// @ts-expect-error FIXME: handle default error type
-	const format: FormatErrorFunction<Schema, FormError> =
-		config.formatError ?? formatError;
+	const format: FormatErrorFunction<Constraints, FormError> =
+		schema.formatError ?? defaultFormatError;
 
-	for (const name in config.schema) {
-		const constraint = config.schema[name];
+	for (const name in schema.constraints) {
+		const constraint = schema.constraints[name];
 		const validity: ValidityState = {
 			valueMissing: false,
 			badInput: false,
@@ -553,11 +527,11 @@ export function parse<
 				if (payload !== '') {
 					report(
 						'typeMismatch',
-						constraint.type !== 'email' || isValidEmail(payload),
-					);
-					report(
-						'typeMismatch',
-						constraint.type !== 'url' || isValidURL(payload),
+						constraint.type === 'email'
+							? isValidEmail(payload)
+							: constraint.type === 'url'
+							? isValidURL(payload)
+							: true,
 					);
 					report('tooShort', payload.length >= (constraint.minLength ?? 0));
 					report(
@@ -566,8 +540,7 @@ export function parse<
 					);
 					report(
 						'patternMismatch',
-						!constraint.pattern ||
-							matchPattern(constraint.pattern ?? '', payload),
+						!constraint.pattern || matchPattern(constraint.pattern, payload),
 					);
 				}
 				break;
@@ -751,29 +724,30 @@ export function parse<
 /**
  * Validate a form based on the given schema and error formatter.
  * Error will be set to the form element using the `setCustomValidity` method.
+ *
+ * @see https://conform.guide/api/validitystate#validate
  */
-export function validate<Schema extends FormSchema>(
+export function validate<Constraints extends FormConstraints>(
 	form: HTMLFormElement,
-	config: {
-		schema: Schema;
-		formatError: FormatErrorFunction<Schema>;
+	schema: {
+		constraints: Constraints;
+		formatError: FormatErrorFunction<Constraints>;
 	},
 ): void {
 	const formData = new FormData(form);
-	const value = Object.keys(config.schema).reduce<Partial<InferType<Schema>>>(
-		(result, name) => {
-			const constraint = config.schema[name];
-			const field = parseField(formData, name, constraint);
+	const value = Object.keys(schema.constraints).reduce<
+		Partial<InferType<Constraints>>
+	>((result, name) => {
+		const constraint = schema.constraints[name];
+		const field = parseField(formData, name, constraint);
 
-			if (typeof field.value !== 'undefined') {
-				// @ts-expect-error Tests will prove that the type is valid :)
-				result[name] = field.value;
-			}
+		if (typeof field.value !== 'undefined') {
+			// @ts-expect-error Tests will prove that the type is valid :)
+			result[name] = field.value;
+		}
 
-			return result;
-		},
-		{},
-	);
+		return result;
+	}, {});
 
 	for (const element of form.elements) {
 		const input = element as
@@ -784,7 +758,7 @@ export function validate<Schema extends FormSchema>(
 
 		if (input.name && input.willValidate) {
 			const error = ([] as string[]).concat(
-				config.formatError({ input, value, formData }),
+				schema.formatError({ input, value, formData }),
 			);
 
 			input.setCustomValidity(error.join(String.fromCharCode(31, 32)));
@@ -793,14 +767,15 @@ export function validate<Schema extends FormSchema>(
 }
 
 /**
- * A default error formatter that represent error with name of the validation attributes.
+ * The default error formatter used by parse to represent error by all failed validation attributes.
  *
+ * @see https://conform.guide/api/validitystate#defaultformaterror
  * @example
  * ```json
  * ["required", "type", "min", "max", "step", "minlength", "maxlength", "pattern"]
  * ```
  */
-export function formatError({ input }: FormatErrorArgs<any>): string[] {
+export function defaultFormatError({ input }: FormatErrorArgs<any>): string[] {
 	const messages = [] as string[];
 
 	if (input.validity.valueMissing) {
@@ -841,6 +816,7 @@ export function formatError({ input }: FormatErrorArgs<any>): string[] {
 /**
  * Get the actual error messages stored on the `validationMessage` property.
  *
+ * @see https://conform.guide/api/validitystate#geterror
  * @example
  * ```ts
  * const error = getError(input.validationMessage);
