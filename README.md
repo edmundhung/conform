@@ -4,8 +4,8 @@ A progressive enhancement first form validation library for Remix and React Rout
 
 ### Highlights
 
-- Focused on progressive enhancment by default
-- Simplifed intergration through event delegation
+- Focused on progressive enhancement by default
+- Simplifed integration through event delegation
 - Server first validation with Zod / Yup schema support
 - Field name inference with type checking
 - Focus management
