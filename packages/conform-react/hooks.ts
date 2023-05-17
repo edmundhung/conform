@@ -22,9 +22,10 @@ import {
 	getFormMethod,
 	getFormControls,
 	focusFirstInvalidControl,
+	isFocusableFormControl,
 	isSubmitting,
-	isFocusedOnIntentButton,
 	focusFormControl,
+	INTENT,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -288,13 +289,7 @@ export function useForm<
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				field.type === 'submit' ||
-				!field.willValidate
-			) {
+			if (!form || !isFocusableFormControl(field) || field.form !== form) {
 				return;
 			}
 
@@ -318,13 +313,7 @@ export function useForm<
 				shouldRevalidate = 'onInput',
 			} = formConfig;
 
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				field.type === 'submit' ||
-				!field.willValidate
-			) {
+			if (!form || !isFocusableFormControl(field) || field.form !== form) {
 				return;
 			}
 
@@ -1270,4 +1259,22 @@ export function reportSubmission(
 			focusFirstInvalidControl(form);
 		}
 	}
+}
+
+/**
+ * Check if the current focus is on a intent button.
+ */
+export function isFocusedOnIntentButton(
+	form: HTMLFormElement,
+	intent: string,
+): boolean {
+	const element = document.activeElement;
+
+	return (
+		isFieldElement(element) &&
+		element.type === 'submit' &&
+		element.form === form &&
+		element.name === INTENT &&
+		element.value === intent
+	);
 }

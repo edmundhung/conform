@@ -21,14 +21,6 @@ export function isFormControl(element: unknown): element is FormControl {
 }
 
 /**
- * A type guard to check if the provided reference is a submitter element.
- * Only `input` or `button` with type `submit` is accepted.
- */
-export function isSubmitter(element: unknown): element is Submitter {
-	return isFormControl(element) && element.type === 'submit';
-}
-
-/**
  * A type guard to check if the provided reference is a focusable form control element.
  */
 export function isFocusableFormControl(

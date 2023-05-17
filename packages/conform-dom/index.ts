@@ -1,6 +1,7 @@
 export {
 	type FormControl as FieldElement,
 	isFormControl as isFieldElement,
+	isFocusableFormControl,
 	getFormAction,
 	getFormControls,
 	getFormElement,
@@ -25,7 +26,6 @@ export {
 	INTENT,
 	getScope,
 	isSubmitting,
-	isFocusedOnIntentButton,
 	validate,
 	list,
 	parseListCommand,

@@ -1,4 +1,4 @@
-import { createSubmitter, isSubmitter, requestSubmit } from './dom';
+import { createSubmitter, requestSubmit } from './dom';
 
 export interface IntentButtonProps {
 	name: typeof INTENT;
@@ -114,23 +114,6 @@ export function isSubmitting(intent: string): boolean {
 	return (
 		intent.slice(0, intent.indexOf('/')) !== 'validate' &&
 		parseListCommand(intent) === null
-	);
-}
-
-/**
- * Check if the current focus is on a intent button.
- */
-export function isFocusedOnIntentButton(
-	form: HTMLFormElement,
-	intent: string,
-): boolean {
-	const element = document.activeElement;
-
-	return (
-		isSubmitter(element) &&
-		element.form === form &&
-		element.name === INTENT &&
-		element.value === intent
 	);
 }
 
