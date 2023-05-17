@@ -396,30 +396,25 @@ export function useForm<
 
 				try {
 					const formData = getFormData(form, submitter);
-					const getSubmission =
-						config.onValidate ??
-						((context) => parse(context.formData) as ClientSubmission);
-					const submission = getSubmission({ form, formData });
+					const submission =
+						config.onValidate?.({ form, formData }) ??
+						(parse(formData) as ClientSubmission);
+					const messages = Object.entries(submission.error).reduce<string[]>(
+						(messages, [, message]) => messages.concat(message),
+						[],
+					);
+					const shouldValidate =
+						!config.noValidate && !submitter?.formNoValidate;
+					const shouldFallbackToServer =
+						messages.includes(VALIDATION_UNDEFINED);
+					const hasClientValidation = typeof config.onValidate !== 'undefined';
+					const isValid = !messages.some((message) => message !== '');
 
 					if (
-						(!config.noValidate &&
-							!submitter?.formNoValidate &&
-							Object.entries(submission.error).some(
-								([, message]) =>
-									message !== '' &&
-									!([] as string[])
-										.concat(message)
-										.includes(VALIDATION_UNDEFINED),
-							)) ||
-						(typeof config.onValidate !== 'undefined' &&
-							(submission.intent.startsWith('validate') ||
-								submission.intent.startsWith('list')) &&
-							Object.entries(submission.error).every(
-								([, message]) =>
-									!([] as string[])
-										.concat(message)
-										.includes(VALIDATION_UNDEFINED),
-							))
+						hasClientValidation &&
+						(isSubmitting(submission.intent)
+							? shouldValidate && !isValid
+							: !shouldFallbackToServer)
 					) {
 						const listCommand = parseListCommand(submission.intent);
 
