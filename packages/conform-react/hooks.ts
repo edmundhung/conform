@@ -252,15 +252,11 @@ export function useForm<
 			return;
 		}
 
-		const listCommand = parseListCommand(submission.intent);
-
-		if (listCommand) {
-			form.dispatchEvent(
-				new CustomEvent('conform/list', {
-					detail: submission.intent,
-				}),
-			);
-		}
+		form.dispatchEvent(
+			new CustomEvent('conform', {
+				detail: submission.intent,
+			}),
+		);
 
 		setLastSubmission(submission);
 	}, [ref, config.lastSubmission]);
@@ -416,15 +412,11 @@ export function useForm<
 							? shouldValidate && !isValid
 							: !shouldFallbackToServer)
 					) {
-						const listCommand = parseListCommand(submission.intent);
-
-						if (listCommand) {
-							form.dispatchEvent(
-								new CustomEvent('conform/list', {
-									detail: submission.intent,
-								}),
-							);
-						}
+						form.dispatchEvent(
+							new CustomEvent('conform', {
+								detail: submission.intent,
+							}),
+						);
 
 						setLastSubmission(submission);
 						event.preventDefault();
@@ -718,7 +710,7 @@ export function useFieldList<Payload = any>(
 				event.preventDefault();
 			}
 		};
-		const listHandler = (event: CustomEvent) => {
+		const conformHandler = (event: CustomEvent) => {
 			const form = getFormElement(ref.current);
 
 			if (!form || event.target !== form) {
@@ -784,14 +776,14 @@ export function useFieldList<Payload = any>(
 			setError([]);
 		};
 
-		// @ts-expect-error Custom event: conform/list
-		document.addEventListener('conform/list', listHandler, true);
+		// @ts-expect-error Custom event: conform
+		document.addEventListener('conform', conformHandler, true);
 		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			// @ts-expect-error Custom event: conform/list
-			document.removeEventListener('conform/list', listHandler, true);
+			// @ts-expect-error Custom event: conform
+			document.removeEventListener('conform', conformHandler, true);
 			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
