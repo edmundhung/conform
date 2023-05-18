@@ -35,6 +35,7 @@ import {
 	useEffect,
 	useLayoutEffect,
 	useMemo,
+	useCallback,
 } from 'react';
 
 export type Primitive = null | undefined | string | number | boolean | Date;
@@ -194,6 +195,166 @@ function normalizeError(error: string | string[] | undefined): string[] {
 	return ([] as string[]).concat(error);
 }
 
+function useNoValidate(
+	defaultNoValidate: boolean | undefined,
+	validateBeforeHydrate: boolean | undefined,
+): boolean {
+	const [noValidate, setNoValidate] = useState(
+		defaultNoValidate || !validateBeforeHydrate,
+	);
+
+	useEffect(() => {
+		setNoValidate(true);
+	}, []);
+
+	return noValidate;
+}
+
+function useFormRef(userProvidedRef: RefObject<HTMLFormElement> | undefined) {
+	const formRef = useRef<HTMLFormElement>(null);
+
+	return userProvidedRef ?? formRef;
+}
+
+function useConfigRef<Config>(config: Config) {
+	const ref = useRef(config);
+
+	useSafeLayoutEffect(() => {
+		ref.current = config;
+	});
+
+	return ref;
+}
+
+function useFormReporter(
+	ref: RefObject<HTMLFormElement>,
+	lastSubmission: Submission | undefined,
+) {
+	const [submission, setSubmission] = useState(lastSubmission);
+	const report = useCallback(
+		(form: HTMLFormElement, submission: Submission) => {
+			const event = new CustomEvent('conform', { detail: submission.intent });
+
+			form.dispatchEvent(event);
+			setSubmission(submission);
+		},
+		[],
+	);
+
+	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !lastSubmission) {
+			return;
+		}
+
+		report(form, lastSubmission);
+	}, [ref, lastSubmission, report]);
+
+	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !submission) {
+			return;
+		}
+
+		reportSubmission(form, submission);
+	}, [ref, submission]);
+
+	return report;
+}
+
+function useFormError(
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
+	config: {
+		initialError: Record<string, string | string[] | undefined> | undefined;
+		name?: string;
+	},
+) {
+	const [error, setError] = useState(() => {
+		if (!config.initialError) {
+			return {};
+		}
+
+		const result: Record<string | number, string[] | undefined> = {};
+
+		for (const [name, message] of Object.entries(config.initialError)) {
+			const paths = getPaths(name);
+
+			if (paths.length === 1) {
+				result[paths[0]] = normalizeError(message);
+			}
+		}
+
+		return result;
+	});
+
+	useEffect(() => {
+		const handleInvalid = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const element = event.target;
+
+			if (
+				!isFieldElement(element) ||
+				element.form !== form ||
+				!element.dataset.conformTouched
+			) {
+				return;
+			}
+
+			let key: string | number = element.name;
+
+			if (config.name) {
+				const scopePaths = getPaths(config.name);
+				const fieldPaths = getPaths(element.name);
+
+				for (let i = 0; i <= scopePaths.length; i++) {
+					const path = fieldPaths[i];
+
+					if (i < scopePaths.length) {
+						// Skip if the field is not in the scope
+						if (path !== scopePaths[i]) {
+							return;
+						}
+					} else {
+						key = path;
+					}
+				}
+			}
+
+			setError((prev) => {
+				if (element.validationMessage === getValidationMessage(prev[key])) {
+					return prev;
+				}
+
+				return {
+					...prev,
+					[key]: getErrors(element.validationMessage),
+				};
+			});
+
+			event.preventDefault();
+		};
+		const handleReset = (event: Event) => {
+			const form = getFormElement(ref.current);
+
+			if (form && event.target === form) {
+				setError({});
+			}
+		};
+
+		document.addEventListener('reset', handleReset);
+		document.addEventListener('invalid', handleInvalid, true);
+
+		return () => {
+			document.removeEventListener('reset', handleReset);
+			document.removeEventListener('invalid', handleInvalid, true);
+		};
+	}, [ref, config.name]);
+
+	return [error, setError] as const;
+}
+
 /**
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
@@ -204,11 +365,10 @@ export function useForm<
 	Schema extends Record<string, any>,
 	ClientSubmission extends Submission | Submission<Schema> = Submission,
 >(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
-	const configRef = useRef(config);
-	const formRef = useRef<HTMLFormElement>(null);
-	const [lastSubmission, setLastSubmission] = useState(
-		config.lastSubmission ?? null,
-	);
+	const configRef = useConfigRef(config);
+	const ref = useFormRef(config.ref);
+	const noValidate = useNoValidate(config.noValidate, config.fallbackNative);
+	const report = useFormReporter(ref, config.lastSubmission);
 	const [errors, setErrors] = useState<string[]>(() =>
 		normalizeError(config.lastSubmission?.error['']),
 	);
@@ -224,7 +384,6 @@ export function useForm<
 			? submission.error
 			: { [scope]: submission.error[scope] };
 	}, [config.lastSubmission]);
-	const ref = config.ref ?? formRef;
 	const fieldset = useFieldset(ref, {
 		defaultValue:
 			(config.lastSubmission?.payload as FieldValue<Schema>) ??
@@ -233,58 +392,19 @@ export function useForm<
 		constraint: config.constraint,
 		form: config.id,
 	});
-	const [noValidate, setNoValidate] = useState(
-		config.noValidate || !config.fallbackNative,
-	);
-
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
-	});
-
-	useEffect(() => {
-		setNoValidate(true);
-	}, []);
-
-	useEffect(() => {
-		const form = ref.current;
-		const submission = config.lastSubmission;
-
-		if (!form || !submission) {
-			return;
-		}
-
-		form.dispatchEvent(
-			new CustomEvent('conform', {
-				detail: submission.intent,
-			}),
-		);
-
-		setLastSubmission(submission);
-	}, [ref, config.lastSubmission]);
-
-	useEffect(() => {
-		const form = ref.current;
-
-		if (!form || !lastSubmission) {
-			return;
-		}
-
-		reportSubmission(form, lastSubmission);
-	}, [ref, lastSubmission]);
 
 	useEffect(() => {
 		// custom validate handler
 		const createValidateHandler = (name: string) => (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
-			const formConfig = configRef.current;
 			const {
 				initialReport = 'onSubmit',
 				shouldValidate = initialReport === 'onChange'
 					? 'onInput'
 					: initialReport,
 				shouldRevalidate = 'onInput',
-			} = formConfig;
+			} = configRef.current;
 
 			if (!form || !isFocusableFormControl(field) || field.form !== form) {
 				return;
@@ -325,11 +445,9 @@ export function useForm<
 			}
 
 			// Reset all field state
-			for (const field of form.elements) {
-				if (isFieldElement(field)) {
-					delete field.dataset.conformTouched;
-					field.setCustomValidity('');
-				}
+			for (const element of getFormControls(form)) {
+				delete element.dataset.conformTouched;
+				element.setCustomValidity('');
 			}
 
 			setErrors([]);
@@ -349,7 +467,7 @@ export function useForm<
 			document.removeEventListener('invalid', handleInvalid, true);
 			document.removeEventListener('reset', handleReset);
 		};
-	}, [ref]);
+	}, [ref, configRef]);
 
 	const form: Form = {
 		ref,
@@ -392,13 +510,7 @@ export function useForm<
 							? shouldValidate && !isValid
 							: !shouldFallbackToServer)
 					) {
-						form.dispatchEvent(
-							new CustomEvent('conform', {
-								detail: submission.intent,
-							}),
-						);
-
-						setLastSubmission(submission);
+						report(form, submission);
 						event.preventDefault();
 					} else {
 						config.onSubmit?.(event, {
@@ -481,93 +593,10 @@ export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
-	const configRef = useRef(config);
-	const [error, setError] = useState<Record<string, string[] | undefined>>(
-		() => {
-			const initialError = config?.initialError;
-
-			if (!initialError) {
-				return {};
-			}
-
-			const result: Record<string, string[]> = {};
-
-			for (const [name, message] of Object.entries(initialError)) {
-				const [key, ...paths] = getPaths(name);
-
-				if (typeof key === 'string' && paths.length === 0) {
-					result[key] = normalizeError(message);
-				}
-			}
-
-			return result;
-		},
-	);
-
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
+	const [error] = useFormError(ref, {
+		initialError: config.initialError,
+		name: config.name,
 	});
-
-	useEffect(() => {
-		const invalidHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-			const fieldsetName = configRef.current.name ?? '';
-
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				!field.name.startsWith(fieldsetName)
-			) {
-				return;
-			}
-
-			const [key, ...paths] = getPaths(
-				fieldsetName.length > 0
-					? field.name.slice(fieldsetName.length + 1)
-					: field.name,
-			);
-
-			// Update the error only if the field belongs to the fieldset
-			if (typeof key === 'string' && paths.length === 0) {
-				if (field.dataset.conformTouched) {
-					setError((prev) => {
-						const prevMessage = getValidationMessage(prev?.[key]);
-
-						if (prevMessage === field.validationMessage) {
-							return prev;
-						}
-
-						return {
-							...prev,
-							[key]: getErrors(field.validationMessage),
-						};
-					});
-				}
-
-				event.preventDefault();
-			}
-		};
-		const resetHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-
-			if (!form || event.target !== form) {
-				return;
-			}
-
-			setError({});
-		};
-
-		// The invalid event does not bubble and so listening on the capturing pharse is needed
-		document.addEventListener('invalid', invalidHandler, true);
-		document.addEventListener('reset', resetHandler);
-
-		return () => {
-			document.removeEventListener('invalid', invalidHandler, true);
-			document.removeEventListener('reset', resetHandler);
-		};
-	}, [ref]);
 
 	/**
 	 * This allows us constructing the field at runtime as we have no information
@@ -628,68 +657,16 @@ export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
 ): Array<{ key: string } & FieldConfig<Payload>> {
-	const configRef = useRef(config);
-	const [error, setError] = useState(() => {
-		const initialError: Array<string[] | undefined> = [];
-
-		for (const [name, message] of Object.entries(config?.initialError ?? {})) {
-			const [index, ...paths] = getPaths(name);
-
-			if (typeof index === 'number' && paths.length === 0) {
-				initialError[index] = normalizeError(message);
-			}
-		}
-
-		return initialError;
+	const configRef = useConfigRef(config);
+	const [error, setError] = useFormError(ref, {
+		initialError: config.initialError,
+		name: config.name,
 	});
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
 
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
-	});
-
 	useEffect(() => {
-		const invalidHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-			const prefix = configRef.current.name ?? '';
-
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				!field.name.startsWith(prefix)
-			) {
-				return;
-			}
-
-			const [index, ...paths] = getPaths(
-				prefix.length > 0 ? field.name.slice(prefix.length) : field.name,
-			);
-
-			// Update the error only if the field belongs to the fieldset
-			if (typeof index === 'number' && paths.length === 0) {
-				if (field.dataset.conformTouched) {
-					setError((prev) => {
-						const prevMessage = getValidationMessage(prev?.[index]);
-
-						if (prevMessage === field.validationMessage) {
-							return prev;
-						}
-
-						return [
-							...prev.slice(0, index),
-							getErrors(field.validationMessage),
-							...prev.slice(index + 1),
-						];
-					});
-				}
-
-				event.preventDefault();
-			}
-		};
 		const conformHandler = (event: CustomEvent) => {
 			const form = getFormElement(ref.current);
 
@@ -728,21 +705,33 @@ export function useFieldList<Payload = any>(
 				}
 			});
 			setError((error) => {
+				let errorList: Array<string[] | undefined> = [];
+
+				for (const [key, messages] of Object.entries(error)) {
+					if (typeof key === 'number') {
+						errorList[key] = messages;
+					}
+				}
+
 				switch (command.type) {
 					case 'append':
 					case 'prepend':
 					case 'replace':
-						return updateList([...error], {
+						errorList = updateList(errorList, {
 							...command,
 							payload: {
 								...command.payload,
 								defaultValue: undefined,
 							},
 						} as ListCommand<string[] | undefined>);
+						break;
 					default: {
-						return updateList([...error], command);
+						errorList = updateList(errorList, command);
+						break;
 					}
 				}
+
+				return Object.assign({}, errorList) as any;
 			});
 		};
 		const resetHandler = (event: Event) => {
@@ -753,21 +742,18 @@ export function useFieldList<Payload = any>(
 			}
 
 			setEntries(Object.entries(configRef.current.defaultValue ?? [undefined]));
-			setError([]);
 		};
 
 		// @ts-expect-error Custom event: conform
 		document.addEventListener('conform', conformHandler, true);
-		document.addEventListener('invalid', invalidHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
 			// @ts-expect-error Custom event: conform
 			document.removeEventListener('conform', conformHandler, true);
-			document.removeEventListener('invalid', invalidHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref]);
+	}, [ref, configRef, setError]);
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
@@ -871,14 +857,10 @@ export function useInputEvent<RefShape>(options?: {
 	onReset?: (event: Event) => void;
 }): [RefObject<RefShape>, InputControl] {
 	const ref = useRef<RefShape>(null);
-	const optionsRef = useRef(options);
+	const optionsRef = useConfigRef(options);
 	const changeDispatched = useRef(false);
 	const focusDispatched = useRef(false);
 	const blurDispatched = useRef(false);
-
-	useSafeLayoutEffect(() => {
-		optionsRef.current = options;
-	});
 
 	useSafeLayoutEffect(() => {
 		const getInputElement = () =>
@@ -1030,7 +1012,7 @@ export function useInputEvent<RefShape>(options?: {
 				blurDispatched.current = false;
 			},
 		};
-	}, []);
+	}, [optionsRef]);
 
 	return [ref, control];
 }
