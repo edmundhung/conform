@@ -183,6 +183,18 @@ interface Form {
 }
 
 /**
+ * Normalize error to an array of string.
+ */
+function normalizeError(error: string | string[] | undefined): string[] {
+	if (!error) {
+		// This treat both empty string and undefined as no error.
+		return [];
+	}
+
+	return ([] as string[]).concat(error);
+}
+
+/**
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
  *
@@ -197,13 +209,9 @@ export function useForm<
 	const [lastSubmission, setLastSubmission] = useState(
 		config.lastSubmission ?? null,
 	);
-	const [errors, setErrors] = useState<string[]>(() => {
-		if (!config.lastSubmission) {
-			return [];
-		}
-
-		return ([] as string[]).concat(config.lastSubmission.error['']);
-	});
+	const [errors, setErrors] = useState<string[]>(() =>
+		normalizeError(config.lastSubmission?.error['']),
+	);
 	const initialError = useMemo(() => {
 		const submission = config.lastSubmission;
 
@@ -212,16 +220,9 @@ export function useForm<
 		}
 
 		const scope = getScope(submission.intent);
-
-		return Object.entries(submission.error).reduce<
-			Record<string, string | string[]>
-		>((result, [name, message]) => {
-			if (name !== '' && (scope === null || scope === name)) {
-				result[name] = message;
-			}
-
-			return result;
-		}, {});
+		return scope === null
+			? submission.error
+			: { [scope]: submission.error[scope] };
 	}, [config.lastSubmission]);
 	const ref = config.ref ?? formRef;
 	const fieldset = useFieldset(ref, {
@@ -272,8 +273,8 @@ export function useForm<
 	}, [ref, lastSubmission]);
 
 	useEffect(() => {
-		// Revalidate the form when input value is changed
-		const handleInput = (event: Event) => {
+		// custom validate handler
+		const createValidateHandler = (name: string) => (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
 			const formConfig = configRef.current;
@@ -291,32 +292,8 @@ export function useForm<
 
 			if (
 				field.dataset.conformTouched
-					? shouldRevalidate === 'onInput'
-					: shouldValidate === 'onInput'
-			) {
-				requestIntent(form, validate(field.name));
-			}
-		};
-		const handleBlur = (event: FocusEvent) => {
-			const field = event.target;
-			const form = ref.current;
-			const formConfig = configRef.current;
-			const {
-				initialReport = 'onSubmit',
-				shouldValidate = initialReport === 'onChange'
-					? 'onInput'
-					: initialReport,
-				shouldRevalidate = 'onInput',
-			} = formConfig;
-
-			if (!form || !isFocusableFormControl(field) || field.form !== form) {
-				return;
-			}
-
-			if (
-				field.dataset.conformTouched
-					? shouldRevalidate === 'onBlur'
-					: shouldValidate === 'onBlur'
+					? shouldRevalidate === name
+					: shouldValidate === name
 			) {
 				requestIntent(form, validate(field.name));
 			}
@@ -358,6 +335,9 @@ export function useForm<
 			setErrors([]);
 		};
 
+		const handleInput = createValidateHandler('onInput');
+		const handleBlur = createValidateHandler('onBlur');
+
 		document.addEventListener('input', handleInput, true);
 		document.addEventListener('blur', handleBlur, true);
 		document.addEventListener('invalid', handleInvalid, true);
@@ -396,7 +376,7 @@ export function useForm<
 						config.onValidate?.({ form, formData }) ??
 						(parse(formData) as ClientSubmission);
 					const messages = Object.entries(submission.error).reduce<string[]>(
-						(messages, [, message]) => messages.concat(message),
+						(messages, [, message]) => messages.concat(normalizeError(message)),
 						[],
 					);
 					const shouldValidate =
@@ -404,7 +384,7 @@ export function useForm<
 					const shouldFallbackToServer =
 						messages.includes(VALIDATION_UNDEFINED);
 					const hasClientValidation = typeof config.onValidate !== 'undefined';
-					const isValid = !messages.some((message) => message !== '');
+					const isValid = messages.length === 0;
 
 					if (
 						hasClientValidation &&
@@ -516,7 +496,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const [key, ...paths] = getPaths(name);
 
 				if (typeof key === 'string' && paths.length === 0) {
-					result[key] = ([] as string[]).concat(message ?? []);
+					result[key] = normalizeError(message);
 				}
 			}
 
@@ -656,7 +636,7 @@ export function useFieldList<Payload = any>(
 			const [index, ...paths] = getPaths(name);
 
 			if (typeof index === 'number' && paths.length === 0) {
-				initialError[index] = ([] as string[]).concat(message ?? []);
+				initialError[index] = normalizeError(message);
 			}
 		}
 
@@ -1217,9 +1197,7 @@ export function reportSubmission(
 	for (const element of getFormControls(form)) {
 		const elementName =
 			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
-		const messages = ([] as string[]).concat(
-			submission.error[elementName] ?? [],
-		);
+		const messages = normalizeError(submission.error[elementName]);
 
 		if (scope === null || scope === elementName) {
 			element.dataset.conformTouched = 'true';
