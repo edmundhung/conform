@@ -141,7 +141,7 @@ interface FormProps {
 
 interface Form {
 	id?: string;
-	errorId?: string;
+	errorid?: string;
 	error: string;
 	errors: string[];
 	ref: RefObject<HTMLFormElement>;
@@ -170,7 +170,7 @@ export function useForm<
 
 		return ([] as string[]).concat(config.lastSubmission.error['']);
 	});
-	const initialError = useMemo(() => {
+	const initialerror = useMemo(() => {
 		const submission = config.lastSubmission;
 
 		if (!submission) {
@@ -194,7 +194,7 @@ export function useForm<
 		defaultValue:
 			(config.lastSubmission?.payload as FieldValue<Schema>) ??
 			config.defaultValue,
-		initialError,
+		initialerror,
 		constraint: config.constraint,
 		form: config.id,
 	});
@@ -415,13 +415,13 @@ export function useForm<
 
 	if (config.id) {
 		form.id = config.id;
-		form.errorId = `${config.id}-error`;
+		form.errorid = `${config.id}-error`;
 		form.props.id = form.id;
 	}
 
-	if (form.errorId && form.errors.length > 0) {
+	if (form.errorid && form.errors.length > 0) {
 		form.props['aria-invalid'] = 'true';
-		form.props['aria-describedby'] = form.errorId;
+		form.props['aria-describedby'] = form.errorid;
 	}
 
 	return [form, fieldset];
@@ -448,7 +448,7 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
 	/**
 	 * An object describing the initial error of each field
 	 */
-	initialError?: Record<string, string | string[]>;
+	initialerror?: Record<string, string | string[]>;
 
 	/**
 	 * An object describing the constraint of each field
@@ -481,15 +481,15 @@ export function useFieldset<Schema extends Record<string, any>>(
 	const configRef = useRef(config);
 	const [error, setError] = useState<Record<string, string[] | undefined>>(
 		() => {
-			const initialError = config?.initialError;
+			const initialerror = config?.initialerror;
 
-			if (!initialError) {
+			if (!initialerror) {
 				return {};
 			}
 
 			const result: Record<string, string[]> = {};
 
-			for (const [name, message] of Object.entries(initialError)) {
+			for (const [name, message] of Object.entries(initialerror)) {
 				const [key, ...paths] = getPaths(name);
 
 				if (typeof key === 'string' && paths.length === 0) {
@@ -582,8 +582,8 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const fieldsetConfig = config as FieldsetConfig<Schema>;
 				const constraint = fieldsetConfig.constraint?.[key];
 				const errors = error?.[key];
-				const initialError = Object.entries(
-					fieldsetConfig.initialError ?? {},
+				const initialerror = Object.entries(
+					fieldsetConfig.initialerror ?? {},
 				).reduce((result, [name, message]) => {
 					const [field, ...paths] = getPaths(name);
 
@@ -597,7 +597,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 					...constraint,
 					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
 					defaultValue: fieldsetConfig.defaultValue?.[key],
-					initialError,
+					initialerror,
 					error: errors?.[0],
 					errors,
 				};
@@ -605,8 +605,8 @@ export function useFieldset<Schema extends Record<string, any>>(
 				if (fieldsetConfig.form) {
 					field.form = fieldsetConfig.form;
 					field.id = `${fieldsetConfig.form}-${field.name}`;
-					field.errorId = `${field.id}-error`;
-					field.descriptionId = `${field.id}-description`;
+					field.errorid = `${field.id}-error`;
+					field.descriptionid = `${field.id}-description`;
 				}
 
 				return field;
@@ -627,17 +627,17 @@ export function useFieldList<Payload = any>(
 ): Array<{ key: string } & FieldConfig<Payload>> {
 	const configRef = useRef(config);
 	const [error, setError] = useState(() => {
-		const initialError: Array<string[] | undefined> = [];
+		const initialerror: Array<string[] | undefined> = [];
 
-		for (const [name, message] of Object.entries(config?.initialError ?? {})) {
+		for (const [name, message] of Object.entries(config?.initialerror ?? {})) {
 			const [index, ...paths] = getPaths(name);
 
 			if (typeof index === 'number' && paths.length === 0) {
-				initialError[index] = ([] as string[]).concat(message ?? []);
+				initialerror[index] = ([] as string[]).concat(message ?? []);
 			}
 		}
 
-		return initialError;
+		return initialerror;
 	});
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
@@ -768,7 +768,7 @@ export function useFieldList<Payload = any>(
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
-		const initialError = Object.entries(config.initialError ?? {}).reduce(
+		const initialerror = Object.entries(config.initialerror ?? {}).reduce(
 			(result, [name, message]) => {
 				const [field, ...paths] = getPaths(name);
 
@@ -783,7 +783,7 @@ export function useFieldList<Payload = any>(
 		const fieldConfig: FieldConfig<Payload> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? config.defaultValue?.[index],
-			initialError,
+			initialerror,
 			error: errors?.[0],
 			errors,
 		};
@@ -791,8 +791,8 @@ export function useFieldList<Payload = any>(
 		if (config.form) {
 			fieldConfig.form = config.form;
 			fieldConfig.id = `${config.form}-${config.name}`;
-			fieldConfig.errorId = `${fieldConfig.id}-error`;
-			fieldConfig.descriptionId = `${fieldConfig.id}-description`;
+			fieldConfig.errorid = `${fieldConfig.id}-error`;
+			fieldConfig.descriptionid = `${fieldConfig.id}-description`;
 		}
 
 		return {

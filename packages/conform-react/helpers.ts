@@ -93,19 +93,19 @@ function getFormControlProps(
 		props.id = config.id;
 	}
 
-	if (config.descriptionId && options?.description) {
-		props['aria-describedby'] = config.descriptionId;
+	if (config.descriptionid && options?.description) {
+		props['aria-describedby'] = config.descriptionid;
 	}
 
-	if (config.errorId && config.error?.length) {
+	if (config.errorid && config.error?.length) {
 		props['aria-invalid'] = true;
 		props['aria-describedby'] =
-			config.descriptionId && options?.description
-				? `${config.errorId} ${config.descriptionId}`
-				: config.errorId;
+			config.descriptionid && options?.description
+				? `${config.errorid} ${config.descriptionid}`
+				: config.errorid;
 	}
 
-	if (config.initialError && Object.entries(config.initialError).length > 0) {
+	if (config.initialerror && Object.entries(config.initialerror).length > 0) {
 		props.autoFocus = true;
 	}
 

@@ -29,7 +29,7 @@ function Example() {
         <form {...form.props}>
             <label htmlFor={message.id}>
             <input {...conform.input(message)}>
-            <div id={message.errorId} role="alert">
+            <div id={message.errorid} role="alert">
                 {message.error}
             </div>
             <button>Send</button>

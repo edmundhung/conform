@@ -10,10 +10,10 @@ export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
 	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
-	initialError?: Record<string, string | string[]>;
+	initialerror?: Record<string, string | string[]>;
 	form?: string;
-	descriptionId?: string;
-	errorId?: string;
+	descriptionid?: string;
+	errorid?: string;
 
 	/**
 	 * The frist error of the field

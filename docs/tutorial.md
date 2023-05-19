@@ -231,11 +231,11 @@ export default function LoginForm() {
           type="email"
           name={email.name}
           defaultValue={email.defaultValue}
-          autoFocus={Boolean(email.initialError)}
+          autoFocus={Boolean(email.initialerror)}
           aria-invalid={email.error ? true : undefined}
-          aria-describedby={email.errorId}
+          aria-describedby={email.errorid}
         />
-        <div id={email.errorId}>{email.error}</div>
+        <div id={email.errorid}>{email.error}</div>
       </div>
       <div>
         <label htmlFor={password.id}>Password</label>
@@ -243,11 +243,11 @@ export default function LoginForm() {
           type="password"
           id={password.id}
           name={password.name}
-          autoFocus={Boolean(password.initialError)}
+          autoFocus={Boolean(password.initialerror)}
           aria-invalid={password.error ? true : undefined}
-          aria-describedby={password.errorId}
+          aria-describedby={password.errorid}
         />
-        <div id={password.errorId}>{password.error}</div>
+        <div id={password.errorid}>{password.error}</div>
       </div>
       <button>Login</button>
     </Form>
@@ -269,12 +269,12 @@ export default function LoginForm() {
       <div>
         <label htmlFor={email.id}>Email</label>
         <input {...conform.input(email, { type: 'email' })} />
-        <div id={email.errorId}>{email.error}</div>
+        <div id={email.errorid}>{email.error}</div>
       </div>
       <div>
         <label htmlFor={password.id}>Password</label>
         <input {...conform.input(password, { type: 'password' })} />
-        <div id={password.errorId}>{password.error}</div>
+        <div id={password.errorid}>{password.error}</div>
       </div>
       <button>Login</button>
     </Form>
