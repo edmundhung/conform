@@ -91,7 +91,7 @@ test.describe('conform-zod', () => {
 	};
 
 	test('getFieldsetConstraint', () => {
-		expect(getFieldsetConstraint(schema)).toEqual({
+		const constraint = {
 			text: {
 				required: true,
 				minLength: 1,
@@ -121,7 +121,31 @@ test.describe('conform-zod', () => {
 				required: true,
 				multiple: true,
 			},
+		};
+
+		expect(getFieldsetConstraint(schema)).toEqual(constraint);
+
+		// Non-object schemas will be ignored
+		expect(getFieldsetConstraint(z.string())).toEqual({});
+		expect(getFieldsetConstraint(z.string().array())).toEqual({});
+
+		// // Union is supported too
+		expect(
+			getFieldsetConstraint(schema.and(z.object({ something: z.string() }))),
+		).toEqual({
+			...constraint,
+			something: { required: true },
 		});
+
+		// Discriminated union is not supported at the moment
+		expect(
+			getFieldsetConstraint(
+				z.discriminatedUnion('type', [
+					z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
+					z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
+				]),
+			),
+		).toEqual({});
 	});
 
 	test('parse', () => {
