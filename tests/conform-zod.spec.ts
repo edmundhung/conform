@@ -169,7 +169,6 @@ test.describe('conform-zod', () => {
 			intent: 'submit',
 			payload,
 			error,
-			toJSON: expect.any(Function),
 		});
 		expect(
 			parse(formData, { schema, acceptMultipleErrors: () => false }),
@@ -177,7 +176,6 @@ test.describe('conform-zod', () => {
 			intent: 'submit',
 			payload,
 			error,
-			toJSON: expect.any(Function),
 		});
 		expect(
 			parse(formData, { schema, acceptMultipleErrors: () => true }),
@@ -188,7 +186,6 @@ test.describe('conform-zod', () => {
 				...error,
 				text: ['min', 'regex', 'refine'],
 			},
-			toJSON: expect.any(Function),
 		});
 	});
 });

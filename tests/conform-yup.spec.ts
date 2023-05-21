@@ -115,7 +115,6 @@ test.describe('conform-yup', () => {
 			intent: 'submit',
 			payload,
 			error,
-			toJSON: expect.any(Function),
 		});
 		expect(
 			parse(formData, { schema, acceptMultipleErrors: () => true }),
@@ -127,7 +126,6 @@ test.describe('conform-yup', () => {
 				text: ['min', 'regex'],
 				tag: ['required', 'invalid'],
 			},
-			toJSON: expect.any(Function),
 		});
 		expect(
 			parse(formData, {
@@ -141,7 +139,6 @@ test.describe('conform-yup', () => {
 				...error,
 				tag: ['required', 'invalid'],
 			},
-			toJSON: expect.any(Function),
 		});
 	});
 });

@@ -9,6 +9,12 @@ export type FieldConstraint<Schema = any> = {
 	pattern?: string;
 };
 
+export type KeysOf<T> = T extends any ? keyof T : never;
+
+export type ResolveType<T, K extends KeysOf<T>> = T extends { [k in K]?: any }
+	? T[K]
+	: undefined;
+
 export type FieldsetConstraint<Schema extends Record<string, any>> = {
-	[Key in keyof Schema]?: FieldConstraint<Schema[Key]>;
+	[Key in KeysOf<Schema>]?: FieldConstraint<ResolveType<Schema, Key>>;
 };

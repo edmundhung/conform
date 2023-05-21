@@ -9,7 +9,7 @@ import * as z from 'zod';
 
 export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	source: Source,
-): FieldsetConstraint<z.infer<Source>> {
+): FieldsetConstraint<z.input<Source>> {
 	function getSchemaShape<T extends Record<string, any>>(
 		schema: z.ZodType<T>,
 	): z.ZodRawShape | null {
@@ -103,7 +103,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	}
 
 	const shape = getSchemaShape(source);
-	const result: FieldsetConstraint<z.infer<Source>> = {};
+	const result: FieldsetConstraint<z.input<Source>> = {};
 
 	if (shape) {
 		for (const [key, def] of Object.entries(shape)) {

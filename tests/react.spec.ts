@@ -55,6 +55,12 @@ test.describe('Client Validation', () => {
 				rating: '4.5',
 			},
 			error: {},
+			value: {
+				title: 'The Dark Knight',
+				description: 'When the menace known as the Joker wreaks havoc...',
+				genre: 'action',
+				rating: '4.5',
+			},
 		});
 	});
 
@@ -133,6 +139,13 @@ test.describe('Client Validation', () => {
 				rating: '4.0',
 			},
 			error: {},
+			value: {
+				title: 'The Matrix',
+				description:
+					'When a beautiful stranger leads computer hacker Neo to...',
+				genre: 'sci-fi',
+				rating: '4.0',
+			},
 		});
 	});
 
@@ -166,6 +179,9 @@ test.describe('Client Validation', () => {
 				email: 'me@edmund.dev',
 			},
 			error: {},
+			value: {
+				email: 'me@edmund.dev',
+			},
 		});
 	});
 
@@ -242,6 +258,15 @@ test.describe('Client Validation', () => {
 				verified: 'Yes',
 			},
 			error: {},
+			value: {
+				iban: 'DE89 3704 0044 0532 0130 00',
+				amount: {
+					currency: 'EUR',
+					value: 1,
+				},
+				timestamp,
+				verified: true,
+			},
 		});
 	});
 
@@ -554,6 +579,14 @@ test.describe('Field list', () => {
 				],
 			},
 			error: {},
+			value: {
+				title: 'My schedule',
+				tasks: [
+					{ completed: false, content: 'Urgent task' },
+					{ completed: false, content: 'Daily task' },
+					{ completed: false, content: 'Ad hoc task' },
+				],
+			},
 		});
 	});
 
@@ -617,6 +650,13 @@ test.describe('Field list', () => {
 				tasks: [
 					{ content: 'Write even more tests' },
 					{ content: 'Write tests for nested list', completed: 'on' },
+				],
+			},
+			value: {
+				title: 'Testing plan',
+				tasks: [
+					{ content: 'Write even more tests', completed: false },
+					{ content: 'Write tests for nested list', completed: true },
 				],
 			},
 			error: {},

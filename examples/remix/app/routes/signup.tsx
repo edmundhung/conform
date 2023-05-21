@@ -90,9 +90,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { username, password, confirmPassword }] = useForm<
-		z.input<ReturnType<typeof createSchema>>
-	>({
+	const [form, { username, password, confirmPassword }] = useForm({
 		lastSubmission,
 		onValidate({ formData }) {
 			return parse(formData, {

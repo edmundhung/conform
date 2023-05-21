@@ -20,6 +20,9 @@ async function runValidationScenario(page: Page) {
 					answer: 'b',
 				},
 				error: {},
+				value: {
+					answer: 'b',
+				},
 			},
 			null,
 			2,
