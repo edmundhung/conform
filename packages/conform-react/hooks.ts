@@ -1,10 +1,7 @@
 import {
-	type FieldConfig,
+	type FieldConstraint,
 	type FieldElement,
-	type FieldValue,
 	type FieldsetConstraint,
-	type FormMethod,
-	type FormEncType,
 	type ListCommand,
 	type Submission,
 	getFormData,
@@ -15,15 +12,20 @@ import {
 	parse,
 	parseListCommand,
 	updateList,
-	reportSubmission,
 	validate,
 	requestIntent,
 	getValidationMessage,
 	getErrors,
-	getFormAttributes,
 	getScope,
-	VALIDATION_UNDEFINED,
-	FORM_ERROR_ELEMENT_NAME,
+	getFormAction,
+	getFormEncType,
+	getFormMethod,
+	getFormControls,
+	focusFirstInvalidControl,
+	isFocusableFormControl,
+	isSubmitting,
+	focusFormControl,
+	INTENT,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -33,7 +35,40 @@ import {
 	useEffect,
 	useLayoutEffect,
 	useMemo,
+	useCallback,
 } from 'react';
+
+export type Primitive = null | undefined | string | number | boolean | Date;
+
+export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
+	id?: string;
+	name: string;
+	defaultValue?: FieldValue<Schema>;
+	initialError?: Record<string, string | string[]>;
+	form?: string;
+	descriptionId?: string;
+	errorId?: string;
+
+	/**
+	 * The frist error of the field
+	 */
+	error?: string;
+
+	/**
+	 * All of the field errors
+	 */
+	errors?: string[];
+}
+
+export type FieldValue<Schema> = Schema extends Primitive
+	? string
+	: Schema extends File
+	? File
+	: Schema extends Array<infer InnerType>
+	? Array<FieldValue<InnerType>>
+	: Schema extends Record<string, any>
+	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
+	: any;
 
 export interface FormConfig<
 	Schema extends Record<string, any>,
@@ -121,8 +156,8 @@ export interface FormConfig<
 			formData: FormData;
 			submission: ClientSubmission;
 			action: string;
-			encType: FormEncType;
-			method: FormMethod;
+			encType: ReturnType<typeof getFormEncType>;
+			method: ReturnType<typeof getFormMethod>;
 		},
 	) => void;
 }
@@ -149,6 +184,178 @@ interface Form {
 }
 
 /**
+ * Normalize error to an array of string.
+ */
+function normalizeError(error: string | string[] | undefined): string[] {
+	if (!error) {
+		// This treat both empty string and undefined as no error.
+		return [];
+	}
+
+	return ([] as string[]).concat(error);
+}
+
+function useNoValidate(
+	defaultNoValidate: boolean | undefined,
+	validateBeforeHydrate: boolean | undefined,
+): boolean {
+	const [noValidate, setNoValidate] = useState(
+		defaultNoValidate || !validateBeforeHydrate,
+	);
+
+	useEffect(() => {
+		setNoValidate(true);
+	}, []);
+
+	return noValidate;
+}
+
+function useFormRef(userProvidedRef: RefObject<HTMLFormElement> | undefined) {
+	const formRef = useRef<HTMLFormElement>(null);
+
+	return userProvidedRef ?? formRef;
+}
+
+function useConfigRef<Config>(config: Config) {
+	const ref = useRef(config);
+
+	useSafeLayoutEffect(() => {
+		ref.current = config;
+	});
+
+	return ref;
+}
+
+function useFormReporter(
+	ref: RefObject<HTMLFormElement>,
+	lastSubmission: Submission | undefined,
+) {
+	const [submission, setSubmission] = useState(lastSubmission);
+	const report = useCallback(
+		(form: HTMLFormElement, submission: Submission) => {
+			const event = new CustomEvent('conform', { detail: submission.intent });
+
+			form.dispatchEvent(event);
+			setSubmission(submission);
+		},
+		[],
+	);
+
+	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !lastSubmission) {
+			return;
+		}
+
+		report(form, lastSubmission);
+	}, [ref, lastSubmission, report]);
+
+	useEffect(() => {
+		const form = ref.current;
+
+		if (!form || !submission) {
+			return;
+		}
+
+		reportSubmission(form, submission);
+	}, [ref, submission]);
+
+	return report;
+}
+
+function useFormError(
+	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
+	config: {
+		initialError: Record<string, string | string[] | undefined> | undefined;
+		name?: string;
+	},
+) {
+	const [error, setError] = useState(() => {
+		if (!config.initialError) {
+			return {};
+		}
+
+		const result: Record<string | number, string[] | undefined> = {};
+
+		for (const [name, message] of Object.entries(config.initialError)) {
+			const paths = getPaths(name);
+
+			if (paths.length === 1) {
+				result[paths[0]] = normalizeError(message);
+			}
+		}
+
+		return result;
+	});
+
+	useEffect(() => {
+		const handleInvalid = (event: Event) => {
+			const form = getFormElement(ref.current);
+			const element = event.target;
+
+			if (
+				!isFieldElement(element) ||
+				element.form !== form ||
+				!element.dataset.conformTouched
+			) {
+				return;
+			}
+
+			let key: string | number = element.name;
+
+			if (config.name) {
+				const scopePaths = getPaths(config.name);
+				const fieldPaths = getPaths(element.name);
+
+				for (let i = 0; i <= scopePaths.length; i++) {
+					const path = fieldPaths[i];
+
+					if (i < scopePaths.length) {
+						// Skip if the field is not in the scope
+						if (path !== scopePaths[i]) {
+							return;
+						}
+					} else {
+						key = path;
+					}
+				}
+			}
+
+			setError((prev) => {
+				if (element.validationMessage === getValidationMessage(prev[key])) {
+					return prev;
+				}
+
+				return {
+					...prev,
+					[key]: getErrors(element.validationMessage),
+				};
+			});
+
+			event.preventDefault();
+		};
+		const handleReset = (event: Event) => {
+			const form = getFormElement(ref.current);
+
+			if (form && event.target === form) {
+				setError({});
+			}
+		};
+
+		document.addEventListener('reset', handleReset);
+		document.addEventListener('invalid', handleInvalid, true);
+
+		return () => {
+			document.removeEventListener('reset', handleReset);
+			document.removeEventListener('invalid', handleInvalid, true);
+		};
+	}, [ref, config.name]);
+
+	return [error, setError] as const;
+}
+
+/**
  * Returns properties required to hook into form events.
  * Applied custom validation and define when error should be reported.
  *
@@ -158,18 +365,13 @@ export function useForm<
 	Schema extends Record<string, any>,
 	ClientSubmission extends Submission | Submission<Schema> = Submission,
 >(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
-	const configRef = useRef(config);
-	const formRef = useRef<HTMLFormElement>(null);
-	const [lastSubmission, setLastSubmission] = useState(
-		config.lastSubmission ?? null,
+	const configRef = useConfigRef(config);
+	const ref = useFormRef(config.ref);
+	const noValidate = useNoValidate(config.noValidate, config.fallbackNative);
+	const report = useFormReporter(ref, config.lastSubmission);
+	const [errors, setErrors] = useState<string[]>(() =>
+		normalizeError(config.lastSubmission?.error['']),
 	);
-	const [errors, setErrors] = useState<string[]>(() => {
-		if (!config.lastSubmission) {
-			return [];
-		}
-
-		return ([] as string[]).concat(config.lastSubmission.error['']);
-	});
 	const initialError = useMemo(() => {
 		const submission = config.lastSubmission;
 
@@ -178,18 +380,10 @@ export function useForm<
 		}
 
 		const scope = getScope(submission.intent);
-
-		return Object.entries(submission.error).reduce<
-			Record<string, string | string[]>
-		>((result, [name, message]) => {
-			if (name !== '' && (scope === null || scope === name)) {
-				result[name] = message;
-			}
-
-			return result;
-		}, {});
+		return scope === null
+			? submission.error
+			: { [scope]: submission.error[scope] };
 	}, [config.lastSubmission]);
-	const ref = config.ref ?? formRef;
 	const fieldset = useFieldset(ref, {
 		defaultValue:
 			(config.lastSubmission?.payload as FieldValue<Schema>) ??
@@ -198,95 +392,28 @@ export function useForm<
 		constraint: config.constraint,
 		form: config.id,
 	});
-	const [noValidate, setNoValidate] = useState(
-		config.noValidate || !config.fallbackNative,
-	);
-
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
-	});
 
 	useEffect(() => {
-		setNoValidate(true);
-	}, []);
-
-	useEffect(() => {
-		const form = ref.current;
-		const submission = config.lastSubmission;
-
-		if (!form || !submission) {
-			return;
-		}
-
-		const listCommand = parseListCommand(submission.intent);
-
-		if (listCommand) {
-			form.dispatchEvent(
-				new CustomEvent('conform/list', {
-					detail: submission.intent,
-				}),
-			);
-		}
-
-		setLastSubmission(submission);
-	}, [ref, config.lastSubmission]);
-
-	useEffect(() => {
-		const form = ref.current;
-
-		if (!form || !lastSubmission) {
-			return;
-		}
-
-		reportSubmission(form, lastSubmission);
-	}, [ref, lastSubmission]);
-
-	useEffect(() => {
-		// Revalidate the form when input value is changed
-		const handleInput = (event: Event) => {
+		// custom validate handler
+		const createValidateHandler = (name: string) => (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
-			const formConfig = configRef.current;
 			const {
 				initialReport = 'onSubmit',
 				shouldValidate = initialReport === 'onChange'
 					? 'onInput'
 					: initialReport,
 				shouldRevalidate = 'onInput',
-			} = formConfig;
+			} = configRef.current;
 
-			if (!form || !isFieldElement(field) || field.form !== form) {
+			if (!form || !isFocusableFormControl(field) || field.form !== form) {
 				return;
 			}
 
 			if (
 				field.dataset.conformTouched
-					? shouldRevalidate === 'onInput'
-					: shouldValidate === 'onInput'
-			) {
-				requestIntent(form, validate(field.name));
-			}
-		};
-		const handleBlur = (event: FocusEvent) => {
-			const field = event.target;
-			const form = ref.current;
-			const formConfig = configRef.current;
-			const {
-				initialReport = 'onSubmit',
-				shouldValidate = initialReport === 'onChange'
-					? 'onInput'
-					: initialReport,
-				shouldRevalidate = 'onInput',
-			} = formConfig;
-
-			if (!form || !isFieldElement(field) || field.form !== form) {
-				return;
-			}
-
-			if (
-				field.dataset.conformTouched
-					? shouldRevalidate === 'onBlur'
-					: shouldValidate === 'onBlur'
+					? shouldRevalidate === name
+					: shouldValidate === name
 			) {
 				requestIntent(form, validate(field.name));
 			}
@@ -318,15 +445,16 @@ export function useForm<
 			}
 
 			// Reset all field state
-			for (const field of form.elements) {
-				if (isFieldElement(field)) {
-					delete field.dataset.conformTouched;
-					field.setCustomValidity('');
-				}
+			for (const element of getFormControls(form)) {
+				delete element.dataset.conformTouched;
+				element.setCustomValidity('');
 			}
 
 			setErrors([]);
 		};
+
+		const handleInput = createValidateHandler('onInput');
+		const handleBlur = createValidateHandler('onBlur');
 
 		document.addEventListener('input', handleInput, true);
 		document.addEventListener('blur', handleBlur, true);
@@ -339,7 +467,7 @@ export function useForm<
 			document.removeEventListener('invalid', handleInvalid, true);
 			document.removeEventListener('reset', handleReset);
 		};
-	}, [ref]);
+	}, [ref, configRef]);
 
 	const form: Form = {
 		ref,
@@ -362,48 +490,35 @@ export function useForm<
 
 				try {
 					const formData = getFormData(form, submitter);
-					const getSubmission =
-						config.onValidate ??
-						((context) => parse(context.formData) as ClientSubmission);
-					const submission = getSubmission({ form, formData });
+					const submission =
+						config.onValidate?.({ form, formData }) ??
+						(parse(formData) as ClientSubmission);
+					const messages = Object.entries(submission.error).reduce<string[]>(
+						(messages, [, message]) => messages.concat(normalizeError(message)),
+						[],
+					);
+					const shouldValidate =
+						!config.noValidate && !submitter?.formNoValidate;
+					const shouldFallbackToServer =
+						messages.includes(VALIDATION_UNDEFINED);
+					const hasClientValidation = typeof config.onValidate !== 'undefined';
+					const isValid = messages.length === 0;
 
 					if (
-						(!config.noValidate &&
-							!submitter?.formNoValidate &&
-							Object.entries(submission.error).some(
-								([, message]) =>
-									message !== '' &&
-									!([] as string[])
-										.concat(message)
-										.includes(VALIDATION_UNDEFINED),
-							)) ||
-						(typeof config.onValidate !== 'undefined' &&
-							(submission.intent.startsWith('validate') ||
-								submission.intent.startsWith('list')) &&
-							Object.entries(submission.error).every(
-								([, message]) =>
-									!([] as string[])
-										.concat(message)
-										.includes(VALIDATION_UNDEFINED),
-							))
+						hasClientValidation &&
+						(isSubmitting(submission.intent)
+							? shouldValidate && !isValid
+							: !shouldFallbackToServer)
 					) {
-						const listCommand = parseListCommand(submission.intent);
-
-						if (listCommand) {
-							form.dispatchEvent(
-								new CustomEvent('conform/list', {
-									detail: submission.intent,
-								}),
-							);
-						}
-
-						setLastSubmission(submission);
+						report(form, submission);
 						event.preventDefault();
 					} else {
 						config.onSubmit?.(event, {
 							formData,
 							submission,
-							...getFormAttributes(form, submitter),
+							action: getFormAction(nativeEvent),
+							encType: getFormEncType(nativeEvent),
+							method: getFormMethod(nativeEvent),
 						});
 					}
 				} catch (e) {
@@ -478,93 +593,10 @@ export function useFieldset<Schema extends Record<string, any>>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
-	const configRef = useRef(config);
-	const [error, setError] = useState<Record<string, string[] | undefined>>(
-		() => {
-			const initialError = config?.initialError;
-
-			if (!initialError) {
-				return {};
-			}
-
-			const result: Record<string, string[]> = {};
-
-			for (const [name, message] of Object.entries(initialError)) {
-				const [key, ...paths] = getPaths(name);
-
-				if (typeof key === 'string' && paths.length === 0) {
-					result[key] = ([] as string[]).concat(message ?? []);
-				}
-			}
-
-			return result;
-		},
-	);
-
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
+	const [error] = useFormError(ref, {
+		initialError: config.initialError,
+		name: config.name,
 	});
-
-	useEffect(() => {
-		const invalidHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-			const fieldsetName = configRef.current.name ?? '';
-
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				!field.name.startsWith(fieldsetName)
-			) {
-				return;
-			}
-
-			const [key, ...paths] = getPaths(
-				fieldsetName.length > 0
-					? field.name.slice(fieldsetName.length + 1)
-					: field.name,
-			);
-
-			// Update the error only if the field belongs to the fieldset
-			if (typeof key === 'string' && paths.length === 0) {
-				if (field.dataset.conformTouched) {
-					setError((prev) => {
-						const prevMessage = getValidationMessage(prev?.[key]);
-
-						if (prevMessage === field.validationMessage) {
-							return prev;
-						}
-
-						return {
-							...prev,
-							[key]: getErrors(field.validationMessage),
-						};
-					});
-				}
-
-				event.preventDefault();
-			}
-		};
-		const resetHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-
-			if (!form || event.target !== form) {
-				return;
-			}
-
-			setError({});
-		};
-
-		// The invalid event does not bubble and so listening on the capturing pharse is needed
-		document.addEventListener('invalid', invalidHandler, true);
-		document.addEventListener('reset', resetHandler);
-
-		return () => {
-			document.removeEventListener('invalid', invalidHandler, true);
-			document.removeEventListener('reset', resetHandler);
-		};
-	}, [ref]);
 
 	/**
 	 * This allows us constructing the field at runtime as we have no information
@@ -625,69 +657,17 @@ export function useFieldList<Payload = any>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Array<Payload>>,
 ): Array<{ key: string } & FieldConfig<Payload>> {
-	const configRef = useRef(config);
-	const [error, setError] = useState(() => {
-		const initialError: Array<string[] | undefined> = [];
-
-		for (const [name, message] of Object.entries(config?.initialError ?? {})) {
-			const [index, ...paths] = getPaths(name);
-
-			if (typeof index === 'number' && paths.length === 0) {
-				initialError[index] = ([] as string[]).concat(message ?? []);
-			}
-		}
-
-		return initialError;
+	const configRef = useConfigRef(config);
+	const [error, setError] = useFormError(ref, {
+		initialError: config.initialError,
+		name: config.name,
 	});
 	const [entries, setEntries] = useState<
 		Array<[string, FieldValue<Payload> | undefined]>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
 
-	useSafeLayoutEffect(() => {
-		configRef.current = config;
-	});
-
 	useEffect(() => {
-		const invalidHandler = (event: Event) => {
-			const form = getFormElement(ref.current);
-			const field = event.target;
-			const prefix = configRef.current.name ?? '';
-
-			if (
-				!form ||
-				!isFieldElement(field) ||
-				field.form !== form ||
-				!field.name.startsWith(prefix)
-			) {
-				return;
-			}
-
-			const [index, ...paths] = getPaths(
-				prefix.length > 0 ? field.name.slice(prefix.length) : field.name,
-			);
-
-			// Update the error only if the field belongs to the fieldset
-			if (typeof index === 'number' && paths.length === 0) {
-				if (field.dataset.conformTouched) {
-					setError((prev) => {
-						const prevMessage = getValidationMessage(prev?.[index]);
-
-						if (prevMessage === field.validationMessage) {
-							return prev;
-						}
-
-						return [
-							...prev.slice(0, index),
-							getErrors(field.validationMessage),
-							...prev.slice(index + 1),
-						];
-					});
-				}
-
-				event.preventDefault();
-			}
-		};
-		const listHandler = (event: CustomEvent) => {
+		const conformHandler = (event: CustomEvent) => {
 			const form = getFormElement(ref.current);
 
 			if (!form || event.target !== form) {
@@ -725,21 +705,33 @@ export function useFieldList<Payload = any>(
 				}
 			});
 			setError((error) => {
+				let errorList: Array<string[] | undefined> = [];
+
+				for (const [key, messages] of Object.entries(error)) {
+					if (typeof key === 'number') {
+						errorList[key] = messages;
+					}
+				}
+
 				switch (command.type) {
 					case 'append':
 					case 'prepend':
 					case 'replace':
-						return updateList([...error], {
+						errorList = updateList(errorList, {
 							...command,
 							payload: {
 								...command.payload,
 								defaultValue: undefined,
 							},
 						} as ListCommand<string[] | undefined>);
+						break;
 					default: {
-						return updateList([...error], command);
+						errorList = updateList(errorList, command);
+						break;
 					}
 				}
+
+				return Object.assign({}, errorList) as any;
 			});
 		};
 		const resetHandler = (event: Event) => {
@@ -750,21 +742,18 @@ export function useFieldList<Payload = any>(
 			}
 
 			setEntries(Object.entries(configRef.current.defaultValue ?? [undefined]));
-			setError([]);
 		};
 
-		// @ts-expect-error Custom event: conform/list
-		document.addEventListener('conform/list', listHandler, true);
-		document.addEventListener('invalid', invalidHandler, true);
+		// @ts-expect-error Custom event: conform
+		document.addEventListener('conform', conformHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			// @ts-expect-error Custom event: conform/list
-			document.removeEventListener('conform/list', listHandler, true);
-			document.removeEventListener('invalid', invalidHandler, true);
+			// @ts-expect-error Custom event: conform
+			document.removeEventListener('conform', conformHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
-	}, [ref]);
+	}, [ref, configRef, setError]);
 
 	return entries.map(([key, defaultValue], index) => {
 		const errors = error[index];
@@ -868,14 +857,10 @@ export function useInputEvent<RefShape>(options?: {
 	onReset?: (event: Event) => void;
 }): [RefObject<RefShape>, InputControl] {
 	const ref = useRef<RefShape>(null);
-	const optionsRef = useRef(options);
+	const optionsRef = useConfigRef(options);
 	const changeDispatched = useRef(false);
 	const focusDispatched = useRef(false);
 	const blurDispatched = useRef(false);
-
-	useSafeLayoutEffect(() => {
-		optionsRef.current = options;
-	});
 
 	useSafeLayoutEffect(() => {
 		const getInputElement = () =>
@@ -1027,7 +1012,216 @@ export function useInputEvent<RefShape>(options?: {
 				blurDispatched.current = false;
 			},
 		};
-	}, []);
+	}, [optionsRef]);
 
 	return [ref, control];
+}
+
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
+export const FORM_ERROR_ELEMENT_NAME = '__form__';
+
+/**
+ * Validate the form with the Constraint Validation API
+ * @see https://conform.guide/api/react#validateconstraint
+ */
+export function validateConstraint(options: {
+	form: HTMLFormElement;
+	formData?: FormData;
+	constraint?: Record<
+		Lowercase<string>,
+		(
+			value: string,
+			context: { formData: FormData; attributeValue: string },
+		) => boolean
+	>;
+	acceptMultipleErrors?: ({
+		name,
+		intent,
+		payload,
+	}: {
+		name: string;
+		intent: string;
+		payload: Record<string, any>;
+	}) => boolean;
+	formatMessages?: ({
+		name,
+		validity,
+		constraint,
+		defaultErrors,
+	}: {
+		name: string;
+		validity: ValidityState;
+		constraint: Record<string, boolean>;
+		defaultErrors: string[];
+	}) => string[];
+}): Submission {
+	const formData = options?.formData ?? new FormData(options.form);
+	const getDefaultErrors = (
+		validity: ValidityState,
+		result: Record<string, boolean>,
+	) => {
+		const errors: Array<string> = [];
+
+		if (validity.valueMissing) errors.push('required');
+		if (validity.typeMismatch || validity.badInput) errors.push('type');
+		if (validity.tooShort) errors.push('minLength');
+		if (validity.rangeUnderflow) errors.push('min');
+		if (validity.stepMismatch) errors.push('step');
+		if (validity.tooLong) errors.push('maxLength');
+		if (validity.rangeOverflow) errors.push('max');
+		if (validity.patternMismatch) errors.push('pattern');
+
+		for (const [constraintName, valid] of Object.entries(result)) {
+			if (!valid) {
+				errors.push(constraintName);
+			}
+		}
+
+		return errors;
+	};
+	const formatMessages =
+		options?.formatMessages ?? (({ defaultErrors }) => defaultErrors);
+
+	return parse(formData, {
+		resolve(payload, intent) {
+			const error: Record<string, string | string[]> = {};
+			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
+			for (const element of options.form.elements) {
+				if (isFieldElement(element)) {
+					const name =
+						element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+					const constraint = Object.entries(element.dataset).reduce<
+						Record<string, boolean>
+					>((result, [name, attributeValue = '']) => {
+						if (constraintPattern.test(name)) {
+							const constraintName = name
+								.slice(10)
+								.toLowerCase() as Lowercase<string>;
+							const validate = options.constraint?.[constraintName];
+
+							if (typeof validate === 'function') {
+								result[constraintName] = validate(element.value, {
+									formData,
+									attributeValue,
+								});
+							} else {
+								console.warn(
+									`Found an "${constraintName}" constraint with undefined definition; Please specify it on the validateConstraint API.`,
+								);
+							}
+						}
+
+						return result;
+					}, {});
+					const errors = formatMessages({
+						name,
+						validity: element.validity,
+						constraint,
+						defaultErrors: getDefaultErrors(element.validity, constraint),
+					});
+					const shouldAcceptMultipleErrors =
+						options?.acceptMultipleErrors?.({
+							name,
+							payload,
+							intent,
+						}) ?? false;
+
+					if (errors.length > 0) {
+						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
+					}
+				}
+			}
+
+			return { error };
+		},
+	});
+}
+
+export function reportSubmission(
+	form: HTMLFormElement,
+	submission: Submission,
+): void {
+	for (const [name, message] of Object.entries(submission.error)) {
+		// There is no need to create a placeholder button if all we want is to reset the error
+		if (message === '') {
+			continue;
+		}
+
+		// We can't use empty string as button name
+		// As `form.element.namedItem('')` will always returns null
+		const elementName = name ? name : FORM_ERROR_ELEMENT_NAME;
+		const item = form.elements.namedItem(elementName);
+
+		if (item instanceof RadioNodeList) {
+			for (const field of item) {
+				if ((field as FieldElement).type !== 'radio') {
+					console.warn('Repeated field name is not supported.');
+					continue;
+				}
+			}
+		}
+
+		if (item === null) {
+			// Create placeholder button to keep the error without contributing to the form data
+			const button = document.createElement('button');
+
+			button.name = elementName;
+			button.hidden = true;
+			button.dataset.conformTouched = 'true';
+
+			form.appendChild(button);
+		}
+	}
+
+	const scope = getScope(submission.intent);
+
+	for (const element of getFormControls(form)) {
+		const elementName =
+			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
+		const messages = normalizeError(submission.error[elementName]);
+
+		if (scope === null || scope === elementName) {
+			element.dataset.conformTouched = 'true';
+		}
+
+		if (
+			!messages.includes(VALIDATION_SKIPPED) &&
+			!messages.includes(VALIDATION_UNDEFINED)
+		) {
+			const invalidEvent = new Event('invalid', { cancelable: true });
+
+			element.setCustomValidity(getValidationMessage(messages));
+			element.dispatchEvent(invalidEvent);
+		}
+	}
+
+	if (
+		isSubmitting(submission.intent) ||
+		isFocusedOnIntentButton(form, submission.intent)
+	) {
+		if (scope) {
+			focusFormControl(form, scope);
+		} else {
+			focusFirstInvalidControl(form);
+		}
+	}
+}
+
+/**
+ * Check if the current focus is on a intent button.
+ */
+export function isFocusedOnIntentButton(
+	form: HTMLFormElement,
+	intent: string,
+): boolean {
+	const element = document.activeElement;
+
+	return (
+		isFieldElement(element) &&
+		element.type === 'submit' &&
+		element.form === form &&
+		element.name === INTENT &&
+		element.value === intent
+	);
 }
