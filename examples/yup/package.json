@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/todos",
+	"name": "@conform-example/yup",
 	"private": true,
 	"license": "MIT",
 	"sideEffects": false,
@@ -9,8 +9,8 @@
 		"start": "remix-serve build"
 	},
 	"dependencies": {
-		"@conform-to/react": "0.6.1",
-		"@conform-to/yup": "0.6.1",
+		"@conform-to/react": "0.6.2",
+		"@conform-to/yup": "0.6.2",
 		"@remix-run/node": "^1.14.0",
 		"@remix-run/react": "^1.14.0",
 		"@remix-run/serve": "^1.14.0",
