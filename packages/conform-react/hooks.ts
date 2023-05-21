@@ -4,6 +4,8 @@ import {
 	type FieldsetConstraint,
 	type ListCommand,
 	type Submission,
+	type KeysOf,
+	type ResolveType,
 	getFormData,
 	getFormElement,
 	getName,
@@ -40,7 +42,7 @@ import {
 
 export type Primitive = null | undefined | string | number | boolean | Date;
 
-export interface FieldConfig<Schema = unknown> extends FieldConstraint<Schema> {
+export interface FieldConfig<Schema> extends FieldConstraint<Schema> {
 	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
@@ -67,12 +69,12 @@ export type FieldValue<Schema> = Schema extends Primitive
 	: Schema extends Array<infer InnerType>
 	? Array<FieldValue<InnerType>>
 	: Schema extends Record<string, any>
-	? { [Key in keyof Schema]?: FieldValue<Schema[Key]> }
+	? { [Key in KeysOf<Schema>]?: FieldValue<ResolveType<Schema, Key>> }
 	: any;
 
 export interface FormConfig<
-	Schema extends Record<string, any>,
-	ClientSubmission extends Submission | Submission<Schema> = Submission,
+	Output extends Record<string, any>,
+	Input extends Record<string, any> = Output,
 > {
 	/**
 	 * If the form id is provided, Id for label,
@@ -109,7 +111,7 @@ export interface FormConfig<
 	/**
 	 * An object representing the initial value of the form.
 	 */
-	defaultValue?: FieldValue<Schema>;
+	defaultValue?: FieldValue<Input>;
 
 	/**
 	 * An object describing the result of the last submission
@@ -119,7 +121,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the constraint of each field
 	 */
-	constraint?: FieldsetConstraint<Schema>;
+	constraint?: FieldsetConstraint<Input>;
 
 	/**
 	 * Enable native validation before hydation.
@@ -144,7 +146,7 @@ export interface FormConfig<
 	}: {
 		form: HTMLFormElement;
 		formData: FormData;
-	}) => ClientSubmission;
+	}) => Submission | Submission<Output>;
 
 	/**
 	 * The submit event handler of the form. It will be called
@@ -154,7 +156,7 @@ export interface FormConfig<
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: ClientSubmission;
+			submission: Submission;
 			action: string;
 			encType: ReturnType<typeof getFormEncType>;
 			method: ReturnType<typeof getFormMethod>;
@@ -362,9 +364,9 @@ function useFormError(
  * @see https://conform.guide/api/react#useform
  */
 export function useForm<
-	Schema extends Record<string, any>,
-	ClientSubmission extends Submission | Submission<Schema> = Submission,
->(config: FormConfig<Schema, ClientSubmission> = {}): [Form, Fieldset<Schema>] {
+	Output extends Record<string, any>,
+	Input extends Record<string, any> = Output,
+>(config: FormConfig<Output, Input> = {}): [Form, Fieldset<Input>] {
 	const configRef = useConfigRef(config);
 	const ref = useFormRef(config.ref);
 	const noValidate = useNoValidate(config.noValidate, config.fallbackNative);
@@ -386,7 +388,7 @@ export function useForm<
 	}, [config.lastSubmission]);
 	const fieldset = useFieldset(ref, {
 		defaultValue:
-			(config.lastSubmission?.payload as FieldValue<Schema>) ??
+			(config.lastSubmission?.payload as FieldValue<Input>) ??
 			config.defaultValue,
 		initialError,
 		constraint: config.constraint,
@@ -491,8 +493,7 @@ export function useForm<
 				try {
 					const formData = getFormData(form, submitter);
 					const submission =
-						config.onValidate?.({ form, formData }) ??
-						(parse(formData) as ClientSubmission);
+						config.onValidate?.({ form, formData }) ?? parse(formData);
 					const messages = Object.entries(submission.error).reduce<string[]>(
 						(messages, [, message]) => messages.concat(normalizeError(message)),
 						[],
@@ -546,7 +547,7 @@ export function useForm<
  * A set of field configuration
  */
 export type Fieldset<Schema extends Record<string, any>> = {
-	[Key in keyof Schema]-?: FieldConfig<Schema[Key]>;
+	[Key in KeysOf<Schema>]-?: FieldConfig<ResolveType<Schema, Key>>;
 };
 
 export interface FieldsetConfig<Schema extends Record<string, any>> {
@@ -606,7 +607,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 	return new Proxy(
 		{},
 		{
-			get(_target, key) {
+			get(_target, key: KeysOf<Schema>) {
 				if (typeof key !== 'string') {
 					return;
 				}
@@ -648,8 +649,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 }
 
 /**
- * Returns a list of key and config, with a group of helpers
- * configuring buttons for list manipulation
+ * Returns a list of key and field config.
  *
  * @see https://conform.guide/api/react#usefieldlist
  */

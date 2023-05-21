@@ -35,4 +35,9 @@ export {
 
 export { type Submission, parse } from './parse';
 
-export { type FieldConstraint, type FieldsetConstraint } from './types';
+export {
+	type FieldConstraint,
+	type FieldsetConstraint,
+	type ResolveType,
+	type KeysOf,
+} from './types';

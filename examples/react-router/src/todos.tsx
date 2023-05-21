@@ -1,4 +1,4 @@
-import type { FieldsetConfig, Submission } from '@conform-to/react';
+import type { FieldsetConfig } from '@conform-to/react';
 import { useForm, useFieldset, useFieldList, list } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
@@ -30,8 +30,8 @@ export let action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export function Component() {
-	const lastSubmission = useActionData() as Submission;
-	const [form, { title, tasks }] = useForm<z.input<typeof todosSchema>>({
+	const lastSubmission = useActionData() as any;
+	const [form, { title, tasks }] = useForm({
 		lastSubmission,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });

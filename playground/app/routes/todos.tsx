@@ -20,10 +20,10 @@ const schema = z.object({
 	tasks: z.array(
 		z.object({
 			content: z.string().min(1, 'Content is required'),
-			completed: z.preprocess(
-				(value) => value === 'on',
-				z.boolean().optional(),
-			),
+			completed: z
+				.string()
+				.optional()
+				.transform((value) => value === 'on'),
 		}),
 	),
 });

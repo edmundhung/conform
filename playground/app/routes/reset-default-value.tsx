@@ -50,7 +50,7 @@ export let action = async ({ request }: ActionArgs) => {
 export default function TodoForm() {
 	const { defaultValue } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
-	const [form, fieldset] = useForm<z.input<typeof schema>>({
+	const [form, fieldset] = useForm({
 		defaultValue,
 		lastSubmission,
 		onValidate({ formData }) {

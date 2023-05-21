@@ -43,8 +43,8 @@ function parseSignupForm(formData: FormData) {
 			return {
 				value: {
 					email,
-					password,
-					confirmPassword,
+					// password,
+					// confirmPassword,
 				},
 			};
 		},

@@ -38,7 +38,7 @@ export let action = async ({ request }: ActionArgs) => {
 
 export default function TodoForm() {
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { title, tasks }] = useForm<z.input<typeof todosSchema>>({
+	const [form, { title, tasks }] = useForm({
 		lastSubmission,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
