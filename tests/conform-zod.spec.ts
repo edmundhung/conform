@@ -131,9 +131,14 @@ test.describe('conform-zod', () => {
 
 		// // Union is supported too
 		expect(
-			getFieldsetConstraint(schema.and(z.object({ something: z.string() }))),
+			getFieldsetConstraint(
+				schema.and(
+					z.object({ text: z.string().optional(), something: z.string() }),
+				),
+			),
 		).toEqual({
 			...constraint,
+			text: { required: false },
 			something: { required: true },
 		});
 
