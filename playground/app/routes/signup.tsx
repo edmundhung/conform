@@ -72,7 +72,7 @@ export default function SignupForm() {
 	const config = useLoaderData();
 	const lastSubmission = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm<Signup>({
-		// ...config,
+		...config,
 		id: 'signup',
 		lastSubmission,
 		onValidate: config.validate
