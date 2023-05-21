@@ -19,6 +19,11 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 			return getSchemaShape(schema.innerType());
 		} else if (schema instanceof z.ZodOptional) {
 			return getSchemaShape(schema.unwrap());
+		} else if (schema instanceof z.ZodIntersection) {
+			return {
+				...getSchemaShape(schema._def.left),
+				...getSchemaShape(schema._def.right),
+			};
 		}
 
 		return null;
