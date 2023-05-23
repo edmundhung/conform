@@ -6,6 +6,7 @@ function getFieldset(form: Locator) {
 		email: form.locator('[name="email"]'),
 		password: form.locator('[name="password"]'),
 		confirmPassword: form.locator('[name="confirmPassword"]'),
+		inputWithNoName: form.locator('input[name=""]'),
 	};
 }
 
@@ -36,20 +37,27 @@ test('shouldValidate: onSubmit', async ({ page }) => {
 });
 
 test('shouldValidate: onInput', async ({ page }) => {
-	await page.goto('/validation-flow?shouldValidate=onInput');
+	await page.goto(
+		'/validation-flow?showInputWithNoName=yes&shouldValidate=onInput',
+	);
 
 	const playground = getPlayground(page);
-	const { email, password, confirmPassword } = getFieldset(
+	const { email, password, confirmPassword, inputWithNoName } = getFieldset(
 		playground.container,
 	);
 
+	// It should ignore input with no name
+	await inputWithNoName.type('hi');
+	await expect(playground.error).toHaveText(['', '', '', '']);
+
 	await email.type('Invalid email');
-	await expect(playground.error).toHaveText(['Email is invalid', '', '']);
+	await expect(playground.error).toHaveText(['Email is invalid', '', '', '']);
 
 	await password.type('1234');
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
+		'',
 		'',
 	]);
 
@@ -58,6 +66,7 @@ test('shouldValidate: onInput', async ({ page }) => {
 		'Email is invalid',
 		'Password is too short',
 		'Confirm password does not match',
+		'',
 	]);
 });
 

@@ -408,7 +408,12 @@ export function useForm<
 				shouldRevalidate = 'onInput',
 			} = configRef.current;
 
-			if (!form || !isFocusableFormControl(field) || field.form !== form) {
+			if (
+				!form ||
+				!isFocusableFormControl(field) ||
+				field.form !== form ||
+				!field.name
+			) {
 				return;
 			}
 
