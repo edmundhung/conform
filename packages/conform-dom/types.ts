@@ -15,6 +15,7 @@ export type ResolveType<T, K extends KeysOf<T>> = T extends { [k in K]?: any }
 	? T[K]
 	: undefined;
 
-export type FieldsetConstraint<Schema extends Record<string, any>> = {
-	[Key in KeysOf<Schema>]?: FieldConstraint<ResolveType<Schema, Key>>;
-};
+export type FieldsetConstraint<Schema extends Record<string, any> | undefined> =
+	{
+		[Key in KeysOf<Schema>]?: FieldConstraint<ResolveType<Schema, Key>>;
+	};
