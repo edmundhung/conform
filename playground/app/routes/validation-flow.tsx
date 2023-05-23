@@ -24,6 +24,7 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 	const search = z.object({
 		noClientValidate: z.preprocess((value) => value === 'yes', z.boolean()),
+		showInputWithNoName: z.preprocess((value) => value === 'yes', z.boolean()),
 		shouldValidate: z.enum(['onSubmit', 'onBlur', 'onInput']).optional(),
 		shouldRevalidate: z.enum(['onSubmit', 'onBlur', 'onInput']).optional(),
 	});
@@ -39,8 +40,12 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function ValidationFlow() {
-	const { noClientValidate, shouldValidate, shouldRevalidate } =
-		useLoaderData<typeof loader>();
+	const {
+		noClientValidate,
+		shouldValidate,
+		shouldRevalidate,
+		showInputWithNoName,
+	} = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm({
 		lastSubmission,
@@ -63,6 +68,11 @@ export default function ValidationFlow() {
 				<Field label="Confirm password" config={confirmPassword}>
 					<input {...conform.input(confirmPassword, { type: 'password' })} />
 				</Field>
+				{showInputWithNoName ? (
+					<Field label="Input with no name">
+						<input type="text" name="" />
+					</Field>
+				) : null}
 			</Playground>
 		</Form>
 	);

@@ -111,10 +111,9 @@ export const list = new Proxy({} as ListCommandButtonBuilder, {
 });
 
 export function isSubmitting(intent: string): boolean {
-	return (
-		intent.slice(0, intent.indexOf('/')) !== 'validate' &&
-		parseListCommand(intent) === null
-	);
+	const [type] = intent.split('/', 1);
+
+	return type !== 'validate' && type !== 'list';
 }
 
 export function getScope(intent: string): string | null {

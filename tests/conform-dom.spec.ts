@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { parse, getPaths, getName, list } from '@conform-to/dom';
+import {
+	parse,
+	getPaths,
+	getName,
+	list,
+	isSubmitting,
+	validate,
+} from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
@@ -256,6 +263,38 @@ test.describe('conform-dom', () => {
 			expect(getName(['amount', 'currency'])).toEqual('amount.currency');
 			expect(getName(['tasks', 0])).toEqual('tasks[0]');
 			expect(getName(['tasks', 1, 'completed'])).toEqual('tasks[1].completed');
+		});
+	});
+
+	test.describe('isSubmitting', () => {
+		test('default submission', () => {
+			expect(isSubmitting(parse(new FormData()).intent)).toBe(true);
+		});
+
+		test('validate intent', () => {
+			expect(isSubmitting(validate('something').value)).toBe(false);
+			expect(isSubmitting(validate().value)).toBe(false);
+		});
+
+		test('list intent', () => {
+			expect(isSubmitting(list.append('tasks').value)).toBe(false);
+			expect(isSubmitting(list.prepend('tasks').value)).toBe(false);
+			expect(isSubmitting(list.remove('tasks', { index: 0 }).value)).toBe(
+				false,
+			);
+			expect(
+				isSubmitting(list.reorder('tasks', { from: 1, to: 2 }).value),
+			).toBe(false);
+			expect(
+				isSubmitting(
+					list.replace('tasks', { defaultValue: '', index: 0 }).value,
+				),
+			).toBe(false);
+		});
+
+		test('custom intent', () => {
+			expect(isSubmitting('submit/something')).toBe(true);
+			expect(isSubmitting('testing')).toBe(true);
 		});
 	});
 });
