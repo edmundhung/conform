@@ -68,7 +68,9 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? File
 	: Schema extends Array<infer InnerType>
 	? Array<FieldValue<InnerType>>
-	: Schema extends Record<string, any>
+	: unknown extends Schema
+	? any
+	: Record<string, any> extends Schema
 	? { [Key in KeysOf<Schema>]?: FieldValue<ResolveType<Schema, Key>> }
 	: any;
 
@@ -551,11 +553,13 @@ export function useForm<
 /**
  * A set of field configuration
  */
-export type Fieldset<Schema extends Record<string, any>> = {
+export type Fieldset<Schema extends Record<string, any> | undefined> = {
 	[Key in KeysOf<Schema>]-?: FieldConfig<ResolveType<Schema, Key>>;
 };
 
-export interface FieldsetConfig<Schema extends Record<string, any>> {
+export interface FieldsetConfig<
+	Schema extends Record<string, any> | undefined,
+> {
 	/**
 	 * The prefix used to generate the name of nested fields.
 	 */
@@ -587,15 +591,15 @@ export interface FieldsetConfig<Schema extends Record<string, any>> {
  *
  * @see https://conform.guide/api/react#usefieldset
  */
-export function useFieldset<Schema extends Record<string, any>>(
+export function useFieldset<Schema extends Record<string, any> | undefined>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldsetConfig<Schema>,
 ): Fieldset<Schema>;
-export function useFieldset<Schema extends Record<string, any>>(
+export function useFieldset<Schema extends Record<string, any> | undefined>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Schema>,
 ): Fieldset<Schema>;
-export function useFieldset<Schema extends Record<string, any>>(
+export function useFieldset<Schema extends Record<string, any> | undefined>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldsetConfig<Schema> | FieldConfig<Schema>,
 ): Fieldset<Schema> {
@@ -634,6 +638,7 @@ export function useFieldset<Schema extends Record<string, any>>(
 				const field: FieldConfig<any> = {
 					...constraint,
 					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
+					// @ts-expect-error The FieldValue type might need a rework
 					defaultValue: fieldsetConfig.defaultValue?.[key],
 					initialError,
 					error: errors?.[0],
@@ -658,17 +663,24 @@ export function useFieldset<Schema extends Record<string, any>>(
  *
  * @see https://conform.guide/api/react#usefieldlist
  */
-export function useFieldList<Payload = any>(
+export function useFieldList<Schema extends Array<any> | undefined>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
-	config: FieldConfig<Array<Payload>>,
-): Array<{ key: string } & FieldConfig<Payload>> {
+	config: FieldConfig<Schema>,
+): Array<
+	{ key: string } & FieldConfig<Schema extends Array<infer Item> ? Item : never>
+> {
 	const configRef = useConfigRef(config);
 	const [error, setError] = useFormError(ref, {
 		initialError: config.initialError,
 		name: config.name,
 	});
 	const [entries, setEntries] = useState<
-		Array<[string, FieldValue<Payload> | undefined]>
+		Array<
+			[
+				string,
+				FieldValue<Schema extends Array<infer Item> ? Item : never> | undefined,
+			]
+		>
 	>(() => Object.entries(config.defaultValue ?? [undefined]));
 
 	useEffect(() => {
@@ -679,9 +691,9 @@ export function useFieldList<Payload = any>(
 				return;
 			}
 
-			const command = parseListCommand<ListCommand<FieldValue<Payload>>>(
-				event.detail,
-			);
+			const command = parseListCommand<
+				ListCommand<FieldValue<Schema extends Array<infer Item> ? Item : never>>
+			>(event.detail);
 
 			if (command?.scope !== configRef.current.name) {
 				// Ensure the scope of the listener are limited to specific field name
@@ -774,7 +786,9 @@ export function useFieldList<Payload = any>(
 			},
 			{} as Record<string, string | string[]>,
 		);
-		const fieldConfig: FieldConfig<Payload> = {
+		const fieldConfig: FieldConfig<
+			Schema extends Array<infer Item> ? Item : never
+		> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? config.defaultValue?.[index],
 			initialError,

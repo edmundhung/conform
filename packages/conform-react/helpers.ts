@@ -118,15 +118,15 @@ function getFormControlProps(
 	return props;
 }
 
+export function input<Schema extends Primitive | unknown>(
+	config: FieldConfig<Schema>,
+	options?: InputOptions,
+): InputProps<Schema>;
 export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
 	options: InputOptions & { type: 'file' },
 ): InputProps<Schema>;
-export function input<Schema extends Primitive>(
-	config: FieldConfig<Schema>,
-	options?: InputOptions,
-): InputProps<Schema>;
-export function input<Schema extends Primitive | File | File[]>(
+export function input<Schema extends Primitive | File | File[] | unknown>(
 	config: FieldConfig<Schema>,
 	options: InputOptions = {},
 ): InputProps<Schema> {
@@ -152,10 +152,9 @@ export function input<Schema extends Primitive | File | File[]>(
 	return props;
 }
 
-export function select(
-	config: FieldConfig<Primitive | Primitive[]>,
-	options?: BaseOptions,
-): SelectProps {
+export function select<
+	Schema extends Primitive | Primitive[] | undefined | unknown,
+>(config: FieldConfig<Schema>, options?: BaseOptions): SelectProps {
 	const props: SelectProps = {
 		...getFormControlProps(config, options),
 		defaultValue: config.defaultValue,
@@ -165,8 +164,8 @@ export function select(
 	return props;
 }
 
-export function textarea(
-	config: FieldConfig<Primitive>,
+export function textarea<Schema extends Primitive | undefined | unknown>(
+	config: FieldConfig<Schema>,
 	options?: BaseOptions,
 ): TextareaProps {
 	const props: TextareaProps = {
