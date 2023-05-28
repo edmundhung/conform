@@ -225,7 +225,7 @@ export default function LoginForm() {
   return (
     <Form method="post" {...form.props}>
       <div>
-        <label htmlFor={emai.id}>Email</label>
+        <label htmlFor={email.id}>Email</label>
         {/* The `autoFocus` attribute instruct browser to focus on the first invalid input before js is loaded */}
         <input
           type="email"
