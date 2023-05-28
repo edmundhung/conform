@@ -9,16 +9,15 @@ function configurePackage(name) {
 	let outputDir = `${sourceDir}`;
 
 	/** @type {import("rollup").RollupOptions} */
-	let CJS = {
+	let ESM = {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
 		input: `${sourceDir}/index.ts`,
 		output: {
 			dir: outputDir,
-			format: 'cjs',
+			format: 'esm',
 			preserveModules: true,
-			exports: 'auto',
 		},
 		plugins: [
 			babel({
@@ -36,15 +35,17 @@ function configurePackage(name) {
 	};
 
 	/** @type {import("rollup").RollupOptions} */
-	let ESM = {
+	let CJS = {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
 		input: `${sourceDir}/index.ts`,
 		output: {
-			dir: `${outputDir}/module`,
-			format: 'esm',
+			dir: outputDir,
+			format: 'cjs',
 			preserveModules: true,
+			entryFileNames: '[name].cjs',
+			exports: 'auto',
 		},
 		plugins: [
 			babel({
@@ -58,7 +59,7 @@ function configurePackage(name) {
 		],
 	};
 
-	return [CJS, ESM];
+	return [ESM, CJS];
 }
 
 export default function rollup() {

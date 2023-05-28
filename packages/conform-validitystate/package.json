@@ -4,8 +4,19 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "0.2.0",
-	"main": "index.js",
-	"module": "module/index.js",
+	"type": "module",
+	"main": "index.cjs",
+	"module": "index.js",
+	"types": "index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"module": "./index.js",
+			"import": "./index.js",
+			"require": "./index.cjs",
+			"default": "./index.js"
+		}
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/edmundhung/conform",

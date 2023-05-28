@@ -15,8 +15,8 @@ pids
 *.pid.lock
 
 # Build result
-/packages/*/module
 /packages/*/*.js
+/packages/*/*.cjs
 /packages/*/*.d.ts
 /packages/*/LICENSE
 /packages/*/_virtual
