@@ -54,9 +54,9 @@ export default function Validate() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...validate()}
+						{...validate(message.name)}
 					>
-						Validate Form
+						Validate Message
 					</button>
 				</div>
 			</Playground>
