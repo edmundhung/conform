@@ -11,7 +11,7 @@ export {
 	focusFormControl,
 	createSubmitter,
 	requestSubmit,
-} from './dom';
+} from './dom.js';
 
 export {
 	formatPaths as getName,
@@ -19,7 +19,7 @@ export {
 	getFormData,
 	getValidationMessage,
 	getErrors,
-} from './formdata';
+} from './formdata.js';
 
 export {
 	type ListCommand,
@@ -31,13 +31,13 @@ export {
 	parseListCommand,
 	updateList,
 	requestIntent,
-} from './intent';
+} from './intent.js';
 
-export { type Submission, parse } from './parse';
+export { type Submission, parse } from './parse.js';
 
 export {
 	type FieldConstraint,
 	type FieldsetConstraint,
 	type ResolveType,
 	type KeysOf,
-} from './types';
+} from './types.js';

@@ -1,4 +1,4 @@
-import { createSubmitter, requestSubmit } from './dom';
+import { createSubmitter, requestSubmit } from './dom.js';
 
 export interface IntentButtonProps {
 	name: typeof INTENT;

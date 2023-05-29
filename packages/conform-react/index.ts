@@ -17,5 +17,5 @@ export {
 	useFieldList,
 	useInputEvent,
 	validateConstraint,
-} from './hooks';
-export * as conform from './helpers';
+} from './hooks.js';
+export * as conform from './helpers.js';
