@@ -6,7 +6,7 @@ function getFieldset(form: Locator) {
 		name: form.locator('[name="name"]'),
 		message: form.locator('[name="message"]'),
 		validateName: form.locator('button:text("Validate Name")'),
-		validateForm: form.locator('button:text("Validate Form")'),
+		validateMessage: form.locator('button:text("Validate Message")'),
 	};
 }
 
@@ -24,12 +24,12 @@ async function runValidationScenario(page: Page) {
 	await fieldset.validateName.click();
 	await expect(playground.error).toHaveText(['', '']);
 
-	await fieldset.validateForm.click();
+	await fieldset.validateMessage.click();
 	await expect(playground.error).toHaveText(['', 'Message is required']);
 	await expect(fieldset.message).toBeFocused();
 
 	await fieldset.message.type('A form validation library');
-	await fieldset.validateForm.click();
+	await fieldset.validateMessage.click();
 	await expect(playground.error).toHaveText(['', '']);
 
 	await playground.submit.click();
@@ -77,11 +77,8 @@ test.describe('With JS', () => {
 		await playground.reset.click();
 		await expect(playground.error).toHaveText(['', '']);
 
-		await fieldset.validateForm.click();
-		await expect(playground.error).toHaveText([
-			'Name is required',
-			'Message is required',
-		]);
+		await fieldset.validateMessage.click();
+		await expect(playground.error).toHaveText(['', 'Message is required']);
 
 		await playground.reset.click();
 		await expect(playground.error).toHaveText(['', '']);

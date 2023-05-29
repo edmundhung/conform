@@ -381,20 +381,7 @@ export function useForm<
 		}
 
 		const intent = parseIntent(submission.intent);
-		const names: string[] = [];
-
-		switch (intent?.type) {
-			case 'validate':
-				names.push(intent.payload);
-				break;
-			case 'list':
-				names.push(
-					...(Array.isArray(intent.payload)
-						? intent.payload.map(({ name }) => name)
-						: [intent.payload.name]),
-				);
-				break;
-		}
+		const names = getNames(intent);
 
 		if (names.length === 0) {
 			return submission.error;

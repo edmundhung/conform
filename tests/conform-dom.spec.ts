@@ -4,7 +4,7 @@ import {
 	getPaths,
 	getName,
 	list,
-	isSubmitting,
+	parseIntent,
 	validate,
 } from '@conform-to/dom';
 import { installGlobals } from '@remix-run/node';
@@ -266,35 +266,73 @@ test.describe('conform-dom', () => {
 		});
 	});
 
-	test.describe('isSubmitting', () => {
+	test.describe('parseIntent', () => {
 		test('default submission', () => {
-			expect(isSubmitting(parse(new FormData()).intent)).toBe(true);
+			expect(parseIntent(parse(new FormData()).intent)).toEqual(null);
 		});
 
 		test('validate intent', () => {
-			expect(isSubmitting(validate('something').value)).toBe(false);
-			expect(isSubmitting(validate().value)).toBe(false);
+			expect(parseIntent(validate('something').value)).toEqual({
+				type: 'validate',
+				payload: 'something',
+			});
 		});
 
 		test('list intent', () => {
-			expect(isSubmitting(list.append('tasks').value)).toBe(false);
-			expect(isSubmitting(list.prepend('tasks').value)).toBe(false);
-			expect(isSubmitting(list.remove('tasks', { index: 0 }).value)).toBe(
-				false,
-			);
+			expect(parseIntent(list.append('items').value)).toEqual({
+				type: 'list',
+				payload: {
+					name: 'items',
+					operation: 'append',
+				},
+			});
 			expect(
-				isSubmitting(list.reorder('tasks', { from: 1, to: 2 }).value),
-			).toBe(false);
+				parseIntent(list.prepend('tasks', { defaultValue: 'testing' }).value),
+			).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'prepend',
+					defaultValue: 'testing',
+				},
+			});
+			expect(parseIntent(list.remove('tasks', { index: 0 }).value)).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'remove',
+					index: 0,
+				},
+			});
 			expect(
-				isSubmitting(
+				parseIntent(list.reorder('tasks', { from: 1, to: 2 }).value),
+			).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'reorder',
+					from: 1,
+					to: 2,
+				},
+			});
+			expect(
+				parseIntent(
 					list.replace('tasks', { defaultValue: '', index: 0 }).value,
 				),
-			).toBe(false);
+			).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'replace',
+					defaultValue: '',
+					index: 0,
+				},
+			});
 		});
 
 		test('custom intent', () => {
-			expect(isSubmitting('submit/something')).toBe(true);
-			expect(isSubmitting('testing')).toBe(true);
+			expect(parseIntent('submit/something')).toEqual(null);
+			expect(parseIntent('testing')).toEqual(null);
 		});
 	});
 });
