@@ -4,7 +4,7 @@ import {
 	type Primitive,
 	VALIDATION_UNDEFINED,
 	VALIDATION_SKIPPED,
-} from './hooks';
+} from './hooks.js';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
 interface FormControlProps {

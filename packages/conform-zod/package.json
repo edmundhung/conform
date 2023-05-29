@@ -4,17 +4,16 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "0.7.0-pre.0",
-	"type": "module",
-	"main": "index.cjs",
-	"module": "index.js",
+	"main": "index.js",
+	"module": "index.mjs",
 	"types": "index.d.ts",
 	"exports": {
 		".": {
 			"types": "./index.d.ts",
-			"module": "./index.js",
-			"import": "./index.js",
-			"require": "./index.cjs",
-			"default": "./index.js"
+			"module": "./index.mjs",
+			"import": "./index.mjs",
+			"require": "./index.js",
+			"default": "./index.mjs"
 		}
 	},
 	"repository": {

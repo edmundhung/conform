@@ -1,5 +1,5 @@
-import { resolve, setValue } from './formdata';
-import { getIntent, parseListCommand, updateList } from './intent';
+import { resolve, setValue } from './formdata.js';
+import { getIntent, parseListCommand, updateList } from './intent.js';
 
 export type Submission<Schema = any> = {
 	intent: string;

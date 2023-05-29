@@ -17,7 +17,7 @@
 		"watch:ts": "npm run build:ts -- --watch",
 		"guide": "npm run dev --workspace=guide",
 		"playground": "npm run dev --workspace=playground",
-		"prebuild": "rimraf --glob ./packages/**/*.{d.ts,cjs,js,tsbuildinfo}",
+		"prebuild": "rimraf --glob ./packages/**/*.{d.ts,cjs,mjs,js,tsbuildinfo}",
 		"pretest": "npm run build --workspace=playground",
 		"test": "playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",

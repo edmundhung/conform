@@ -18,6 +18,7 @@ function configurePackage(name) {
 			dir: outputDir,
 			format: 'esm',
 			preserveModules: true,
+			entryFileNames: '[name].mjs',
 		},
 		plugins: [
 			babel({
@@ -44,7 +45,6 @@ function configurePackage(name) {
 			dir: outputDir,
 			format: 'cjs',
 			preserveModules: true,
-			entryFileNames: '[name].cjs',
 			exports: 'auto',
 		},
 		plugins: [
