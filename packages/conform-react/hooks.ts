@@ -2,7 +2,6 @@ import {
 	type FieldConstraint,
 	type FieldElement,
 	type FieldsetConstraint,
-	type ListCommand,
 	type Submission,
 	type KeysOf,
 	type ResolveType,
@@ -12,22 +11,20 @@ import {
 	getPaths,
 	isFieldElement,
 	parse,
-	parseListCommand,
 	updateList,
 	validate,
 	requestIntent,
 	getValidationMessage,
 	getErrors,
-	getScope,
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
 	getFormControls,
 	focusFirstInvalidControl,
 	isFocusableFormControl,
-	isSubmitting,
 	focusFormControl,
 	INTENT,
+	parseIntent,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -383,10 +380,31 @@ export function useForm<
 			return {};
 		}
 
-		const scope = getScope(submission.intent);
-		return scope === null
-			? submission.error
-			: { [scope]: submission.error[scope] };
+		const intent = parseIntent(submission.intent);
+		const names: string[] = [];
+
+		switch (intent?.type) {
+			case 'validate':
+				names.push(intent.payload);
+				break;
+			case 'list':
+				names.push(
+					...(Array.isArray(intent.payload)
+						? intent.payload.map(({ name }) => name)
+						: [intent.payload.name]),
+				);
+				break;
+		}
+
+		if (names.length === 0) {
+			return submission.error;
+		}
+
+		return names.reduce<Record<string, string | string[]>>((result, name) => {
+			result[name] = submission.error[name];
+
+			return result;
+		}, {});
 	}, [config.lastSubmission]);
 	const fieldset = useFieldset(ref, {
 		defaultValue:
@@ -514,7 +532,7 @@ export function useForm<
 
 					if (
 						hasClientValidation &&
-						(isSubmitting(submission.intent)
+						(parseIntent(submission.intent) === null
 							? shouldValidate && !isValid
 							: !shouldFallbackToServer)
 					) {
@@ -691,35 +709,46 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				return;
 			}
 
-			const command = parseListCommand<
-				ListCommand<FieldValue<Schema extends Array<infer Item> ? Item : never>>
+			const intent = parseIntent<
+				FieldValue<Schema extends Array<infer Item> ? Item : never>
 			>(event.detail);
 
-			if (command?.scope !== configRef.current.name) {
+			if (intent?.type !== 'list') {
 				// Ensure the scope of the listener are limited to specific field name
 				return;
 			}
 
+			const changes = Array.isArray(intent.payload)
+				? intent.payload
+				: [intent.payload];
+			const intents = changes.filter(
+				(payload) => payload.name === configRef.current.name,
+			);
+
+			if (intents.length === 0) {
+				return;
+			}
+
 			setEntries((entries) => {
-				switch (command.type) {
-					case 'append':
-					case 'prepend':
-					case 'replace':
-						return updateList([...(entries ?? [])], {
-							...command,
-							payload: {
-								...command.payload,
-								defaultValue: [
-									`${Date.now()}`,
-									// @ts-expect-error unknown type as it is sent through network
-									command.payload.defaultValue,
-								],
-							},
-						});
-					default: {
-						return updateList([...(entries ?? [])], command);
+				let list = [...entries];
+
+				for (const payload of intents) {
+					switch (payload.operation) {
+						case 'append':
+						case 'prepend':
+						case 'replace':
+							list = updateList(list, {
+								...payload,
+								defaultValue: [`${Date.now()}`, payload.defaultValue],
+							});
+							break;
+						default:
+							list = updateList([...(entries ?? [])], payload);
+							break;
 					}
 				}
+
+				return list;
 			});
 			setError((error) => {
 				let errorList: Array<string[] | undefined> = [];
@@ -730,21 +759,19 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 					}
 				}
 
-				switch (command.type) {
-					case 'append':
-					case 'prepend':
-					case 'replace':
-						errorList = updateList(errorList, {
-							...command,
-							payload: {
-								...command.payload,
+				for (const payload of intents) {
+					switch (payload.operation) {
+						case 'append':
+						case 'prepend':
+						case 'replace':
+							errorList = updateList(errorList, {
+								...payload,
 								defaultValue: undefined,
-							},
-						} as ListCommand<string[] | undefined>);
-						break;
-					default: {
-						errorList = updateList(errorList, command);
-						break;
+							});
+							break;
+						default:
+							errorList = updateList(errorList, payload);
+							break;
 					}
 				}
 
@@ -1193,14 +1220,15 @@ export function reportSubmission(
 		}
 	}
 
-	const scope = getScope(submission.intent);
+	const intent = parseIntent(submission.intent);
+	const names = getNames(intent);
 
 	for (const element of getFormControls(form)) {
 		const elementName =
 			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
 		const messages = normalizeError(submission.error[elementName]);
 
-		if (scope === null || scope === elementName) {
+		if (names.length === 0 || names.includes(elementName)) {
 			element.dataset.conformTouched = 'true';
 		}
 
@@ -1215,15 +1243,10 @@ export function reportSubmission(
 		}
 	}
 
-	if (
-		isSubmitting(submission.intent) ||
-		isFocusedOnIntentButton(form, submission.intent)
-	) {
-		if (scope) {
-			focusFormControl(form, scope);
-		} else {
-			focusFirstInvalidControl(form);
-		}
+	if (!intent) {
+		focusFirstInvalidControl(form);
+	} else if (isFocusedOnIntentButton(form, submission.intent)) {
+		focusFormControl(form, names[0]);
 	}
 }
 
@@ -1243,4 +1266,23 @@ export function isFocusedOnIntentButton(
 		element.name === INTENT &&
 		element.value === intent
 	);
+}
+
+export function getNames(intent: ReturnType<typeof parseIntent>): string[] {
+	const names: string[] = [];
+
+	switch (intent?.type) {
+		case 'validate':
+			names.push(intent.payload);
+			break;
+		case 'list':
+			names.push(
+				...(Array.isArray(intent.payload)
+					? intent.payload.map(({ name }) => name)
+					: [intent.payload.name]),
+			);
+			break;
+	}
+
+	return names;
 }
