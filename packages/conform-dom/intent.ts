@@ -14,54 +14,6 @@ export type ListIntentPayload<Schema = unknown> =
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
 
-export interface ListCommandButtonBuilder {
-	append<Schema>(
-		name: string,
-		payload?: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'append' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	prepend<Schema>(
-		name: string,
-		payload?: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'prepend' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	replace<Schema>(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'replace' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	remove(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload, { operation: 'remove' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	reorder(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload, { operation: 'reorder' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-}
-
 export const INTENT = '__intent__';
 
 /**
@@ -91,11 +43,7 @@ export function getIntent(payload: FormData | URLSearchParams): string {
  * @see https://conform.guide/api/react#validate
  */
 export function validate(field: string): IntentButtonProps {
-	return {
-		name: INTENT,
-		value: `validate/${field}`,
-		formNoValidate: true,
-	};
+	return createIntent('validate', field);
 }
 
 export function requestIntent(
@@ -120,20 +68,106 @@ export function requestIntent(
 	requestSubmit(form, submitter);
 }
 
+export function createIntent(type: string, payload: string): IntentButtonProps {
+	return {
+		name: INTENT,
+		value: `${type}/${payload}`,
+		formNoValidate: true,
+	};
+}
+
 /**
  * Helpers to configure an intent button for modifying a list
  *
  * @see https://conform.guide/api/react#list
  */
-export const list = new Proxy({} as ListCommandButtonBuilder, {
-	get(_target, operation: any) {
-		return (name: string, payload = {}): IntentButtonProps => ({
-			name: INTENT,
-			value: `list/${JSON.stringify({ name, operation, ...payload })}`,
-			formNoValidate: true,
-		});
+export const list = {
+	combine(...intents: string[]): IntentButtonProps {
+		let payload: Array<ListIntentPayload> = [];
+
+		for (const intent of intents) {
+			const parsed = parseIntent(intent);
+
+			if (parsed?.type !== 'list') {
+				throw new Error('Only list intents can be combined');
+			}
+
+			payload = payload.concat(parsed.payload);
+		}
+
+		return createIntent('list', JSON.stringify(payload));
 	},
-});
+	append<Schema>(
+		name: string,
+		payload?: Pretty<
+			Omit<
+				Extract<ListIntentPayload<Schema>, { operation: 'append' }>,
+				'name' | 'operation'
+			>
+		>,
+	): IntentButtonProps {
+		return createIntent(
+			'list',
+			JSON.stringify({ name, operation: 'append', ...payload }),
+		);
+	},
+	prepend<Schema>(
+		name: string,
+		payload?: Pretty<
+			Omit<
+				Extract<ListIntentPayload<Schema>, { operation: 'prepend' }>,
+				'name' | 'operation'
+			>
+		>,
+	): IntentButtonProps {
+		return createIntent(
+			'list',
+			JSON.stringify({ name, operation: 'prepend', ...payload }),
+		);
+	},
+	replace<Schema>(
+		name: string,
+		payload: Pretty<
+			Omit<
+				Extract<ListIntentPayload<Schema>, { operation: 'replace' }>,
+				'name' | 'operation'
+			>
+		>,
+	): IntentButtonProps {
+		return createIntent(
+			'list',
+			JSON.stringify({ name, operation: 'replace', ...payload }),
+		);
+	},
+	remove(
+		name: string,
+		payload: Pretty<
+			Omit<
+				Extract<ListIntentPayload, { operation: 'remove' }>,
+				'name' | 'operation'
+			>
+		>,
+	): IntentButtonProps {
+		return createIntent(
+			'list',
+			JSON.stringify({ name, operation: 'remove', ...payload }),
+		);
+	},
+	reorder(
+		name: string,
+		payload: Pretty<
+			Omit<
+				Extract<ListIntentPayload, { operation: 'reorder' }>,
+				'name' | 'operation'
+			>
+		>,
+	): IntentButtonProps {
+		return createIntent(
+			'list',
+			JSON.stringify({ name, operation: 'reorder', ...payload }),
+		);
+	},
+};
 
 export function parseIntent<Schema>(intent: string):
 	| {
