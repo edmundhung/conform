@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.6.3",
+	"version": "0.7.0-pre.0",
 	"type": "module",
 	"main": "index.cjs",
 	"module": "index.js",
@@ -26,7 +26,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"peerDependencies": {
-		"@conform-to/dom": "0.6.3",
+		"@conform-to/dom": "0.7.0-pre.0",
 		"zod": "^3.21.0"
 	},
 	"devDependencies": {
