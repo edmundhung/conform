@@ -101,7 +101,7 @@ interface FieldProps {
 
 export function Field({ label, inline, config, children }: FieldProps) {
 	return (
-		<div className="mb-4">
+		<div className="flex-1 mb-4">
 			<div
 				className={
 					inline

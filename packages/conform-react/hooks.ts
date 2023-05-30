@@ -25,6 +25,8 @@ import {
 	focusFormControl,
 	INTENT,
 	parseIntent,
+	resolve,
+	getValue,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -716,6 +718,9 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				return;
 			}
 
+			const formData = new FormData(form);
+			const data = resolve(formData);
+
 			setEntries((entries) => {
 				let list = [...entries];
 
@@ -723,12 +728,21 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 					switch (payload.operation) {
 						case 'append':
 						case 'prepend':
-						case 'replace':
+						case 'replace': {
+							if (payload.defaultValueFrom) {
+								const value = getValue(data, payload.defaultValueFrom);
+
+								if (value) {
+									payload.defaultValue = value;
+								}
+							}
+
 							list = updateList(list, {
 								...payload,
 								defaultValue: [`${Date.now()}`, payload.defaultValue],
 							});
 							break;
+						}
 						default:
 							list = updateList([...(entries ?? [])], payload);
 							break;

@@ -19,6 +19,8 @@ export {
 	getFormData,
 	getValidationMessage,
 	getErrors,
+	getValue,
+	resolve,
 } from './formdata.js';
 
 export {

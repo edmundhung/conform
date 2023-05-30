@@ -8,9 +8,25 @@ export interface IntentButtonProps {
 }
 
 export type ListIntentPayload<Schema = unknown> =
-	| { name: string; operation: 'prepend'; defaultValue?: Schema }
-	| { name: string; operation: 'append'; defaultValue?: Schema }
-	| { name: string; operation: 'replace'; defaultValue: Schema; index: number }
+	| {
+			name: string;
+			operation: 'prepend';
+			defaultValue?: Schema;
+			defaultValueFrom?: string;
+	  }
+	| {
+			name: string;
+			operation: 'append';
+			defaultValue?: Schema;
+			defaultValueFrom?: string;
+	  }
+	| {
+			name: string;
+			operation: 'replace';
+			defaultValue: Schema;
+			defaultValueFrom?: string;
+			index: number;
+	  }
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
 
@@ -82,11 +98,11 @@ export function createIntent(type: string, payload: string): IntentButtonProps {
  * @see https://conform.guide/api/react#list
  */
 export const list = {
-	combine(...intents: string[]): IntentButtonProps {
+	combine(...intents: IntentButtonProps[]): IntentButtonProps {
 		let payload: Array<ListIntentPayload> = [];
 
 		for (const intent of intents) {
-			const parsed = parseIntent(intent);
+			const parsed = parseIntent(intent.value);
 
 			if (parsed?.type !== 'list') {
 				throw new Error('Only list intents can be combined');

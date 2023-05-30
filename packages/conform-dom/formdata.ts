@@ -68,6 +68,20 @@ export function formatPaths(paths: Array<string | number>): string {
 	}, '');
 }
 
+export function getValue(target: any, name: string): any {
+	let paths = getPaths(name);
+	let length = paths.length;
+	let index = -1;
+	let pointer = target;
+
+	while (pointer != null && ++index < length) {
+		let key = paths[index];
+		pointer = pointer[key];
+	}
+
+	return pointer;
+}
+
 /**
  * Assign a value to a target object by following the paths on the name
  */

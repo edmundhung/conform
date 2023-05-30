@@ -1,4 +1,4 @@
-import { resolve, setValue } from './formdata.js';
+import { getValue, resolve, setValue } from './formdata.js';
 import { getIntent, parseIntent, updateList } from './intent.js';
 
 export type Submission<Schema = any> = {
@@ -66,6 +66,19 @@ export function parse<Schema>(
 			setValue(submission.payload, payload.name, (list) => {
 				if (typeof list !== 'undefined' && !Array.isArray(list)) {
 					throw new Error('The list command can only be applied to a list');
+				}
+
+				if (
+					(payload.operation === 'append' ||
+						payload.operation === 'prepend' ||
+						payload.operation === 'replace') &&
+					payload.defaultValueFrom
+				) {
+					const value = getValue(submission.payload, payload.defaultValueFrom);
+
+					if (value) {
+						payload.defaultValue = value;
+					}
 				}
 
 				return updateList(list ?? [], payload);
