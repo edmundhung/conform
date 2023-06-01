@@ -381,17 +381,11 @@ export function useForm<
 		}
 
 		const intent = parseIntent(submission.intent);
-		const names = getNames(intent);
+		const scope = getScope(intent);
 
-		if (names.length === 0) {
-			return submission.error;
-		}
-
-		return names.reduce<Record<string, string | string[]>>((result, name) => {
-			result[name] = submission.error[name];
-
-			return result;
-		}, {});
+		return scope === null
+			? submission.error
+			: { [scope]: submission.error[scope] };
 	}, [config.lastSubmission]);
 	const fieldset = useFieldset(ref, {
 		defaultValue:
@@ -1195,14 +1189,14 @@ export function reportSubmission(
 	}
 
 	const intent = parseIntent(submission.intent);
-	const names = getNames(intent);
+	const scope = getScope(intent);
 
 	for (const element of getFormControls(form)) {
 		const elementName =
 			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
 		const messages = normalizeError(submission.error[elementName]);
 
-		if (names.length === 0 || names.includes(elementName)) {
+		if (scope === null || scope === elementName) {
 			element.dataset.conformTouched = 'true';
 		}
 
@@ -1217,10 +1211,10 @@ export function reportSubmission(
 		}
 	}
 
-	if (!intent) {
+	if (!scope) {
 		focusFirstInvalidControl(form);
 	} else if (isFocusedOnIntentButton(form, submission.intent)) {
-		focusFormControl(form, names[0]);
+		focusFormControl(form, scope);
 	}
 }
 
@@ -1242,21 +1236,15 @@ export function isFocusedOnIntentButton(
 	);
 }
 
-export function getNames(intent: ReturnType<typeof parseIntent>): string[] {
-	const names: string[] = [];
-
+export function getScope(
+	intent: ReturnType<typeof parseIntent>,
+): string | null {
 	switch (intent?.type) {
 		case 'validate':
-			names.push(intent.payload);
-			break;
+			return intent.payload;
 		case 'list':
-			names.push(
-				...(Array.isArray(intent.payload)
-					? intent.payload.map(({ name }) => name)
-					: [intent.payload.name]),
-			);
-			break;
+			return intent.payload.name;
 	}
 
-	return names;
+	return null;
 }
