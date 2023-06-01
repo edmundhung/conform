@@ -9,7 +9,7 @@ A submit button can contribute to the form data when it triggers the submission 
 - [Submission Intent](#submission-intent)
 - [Modifying a list](#modifying-a-list)
 - [Validation](#validation)
-- [Triggering a command](#triggering-a-command)
+- [Triggering an intent](#triggering-an-intent)
 
 <!-- /aside -->
 
@@ -122,8 +122,6 @@ export default function Todos() {
       <input {...conform.input(email)} />
       {/* Validating field by name */}
       <button {...validate(email.name)}>Validate email</button>
-      {/* Validating the whole form */}
-      <button {...validate()}>Validate</button>
       <button>Send</button>
     </form>
   );

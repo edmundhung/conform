@@ -102,18 +102,18 @@ test.describe('conform-dom', () => {
 			});
 		});
 
-		test('Command submission', () => {
+		test('Processing submission intent', () => {
 			expect(
 				parse(
 					createFormData([
-						['title', 'Test command'],
-						['__intent__', 'command value'],
+						['title', 'Test intent'],
+						['__intent__', 'intent value'],
 					]),
 				),
 			).toEqual({
-				intent: 'command value',
+				intent: 'intent value',
 				payload: {
-					title: 'Test command',
+					title: 'Test intent',
 				},
 				error: {},
 			});
@@ -133,7 +133,7 @@ test.describe('conform-dom', () => {
 			});
 		});
 
-		test('List command', () => {
+		test('List intent', () => {
 			const entries: Array<[string, string]> = [
 				['tasks[0].content', 'Test some stuffs'],
 				['tasks[0].completed', 'Yes'],
@@ -145,98 +145,98 @@ test.describe('conform-dom', () => {
 				error: {},
 			};
 
-			const command1 = list.prepend('tasks');
+			const intent1 = list.prepend('tasks');
 
 			expect(
-				parse(createFormData([...entries, [command1.name, command1.value]])),
+				parse(createFormData([...entries, [intent1.name, intent1.value]])),
 			).toEqual({
 				...result,
-				intent: command1.value,
+				intent: intent1.value,
 				payload: {
 					tasks: [undefined, ...result.payload.tasks],
 				},
 			});
 
-			const command2 = list.prepend('tasks', {
+			const intent2 = list.prepend('tasks', {
 				defaultValue: { content: 'Something' },
 			});
 
 			expect(
-				parse(createFormData([...entries, [command2.name, command2.value]])),
+				parse(createFormData([...entries, [intent2.name, intent2.value]])),
 			).toEqual({
 				...result,
-				intent: command2.value,
+				intent: intent2.value,
 				payload: {
 					tasks: [{ content: 'Something' }, ...result.payload.tasks],
 				},
 			});
 
-			const command3 = list.append('tasks');
+			const intent3 = list.append('tasks');
 
 			expect(
-				parse(createFormData([...entries, [command3.name, command3.value]])),
+				parse(createFormData([...entries, [intent3.name, intent3.value]])),
 			).toEqual({
 				...result,
-				intent: command3.value,
+				intent: intent3.value,
 				payload: {
 					tasks: [...result.payload.tasks, undefined],
 				},
 			});
 
-			const command4 = list.append('tasks', {
+			const intent4 = list.append('tasks', {
 				defaultValue: { content: 'Something' },
 			});
 
 			expect(
-				parse(createFormData([...entries, [command4.name, command4.value]])),
+				parse(createFormData([...entries, [intent4.name, intent4.value]])),
 			).toEqual({
 				...result,
-				intent: command4.value,
+				intent: intent4.value,
 				payload: {
 					tasks: [...result.payload.tasks, { content: 'Something' }],
 				},
 			});
 
-			const command5 = list.replace('tasks', {
+			const intent5 = list.replace('tasks', {
 				defaultValue: { content: 'Something' },
 				index: 0,
 			});
 
 			expect(
-				parse(createFormData([...entries, [command5.name, command5.value]])),
+				parse(createFormData([...entries, [intent5.name, intent5.value]])),
 			).toEqual({
 				...result,
-				intent: command5.value,
+				intent: intent5.value,
 				payload: {
 					tasks: [{ content: 'Something' }],
 				},
 			});
 
-			const command6 = list.remove('tasks', { index: 0 });
+			const intent6 = list.remove('tasks', { index: 0 });
 
 			expect(
-				parse(createFormData([...entries, [command6.name, command6.value]])),
+				parse(createFormData([...entries, [intent6.name, intent6.value]])),
 			).toEqual({
 				...result,
-				intent: command6.value,
+				intent: intent6.value,
 				payload: {
 					tasks: [],
 				},
 			});
 
-			const command7 = list.reorder('tasks', { from: 0, to: 1 });
+			const intent7 = list.reorder('tasks', { from: 0, to: 1 });
 
 			expect(
 				parse(
 					createFormData([
 						...entries,
 						['tasks[1].content', 'Test more stuffs'],
-						[command7.name, command7.value],
+						[intent7.name, intent7.value],
 					]),
 				),
 			).toEqual({
 				...result,
-				intent: command7.value,
+				intent: intent7.value,
 				payload: {
 					tasks: [{ content: 'Test more stuffs' }, ...result.payload.tasks],
 				},

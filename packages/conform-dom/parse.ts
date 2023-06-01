@@ -60,7 +60,7 @@ export function parse<Schema>(
 	if (intent && intent.type === 'list') {
 		setValue(submission.payload, intent.payload.name, (list) => {
 			if (typeof list !== 'undefined' && !Array.isArray(list)) {
-				throw new Error('The list command can only be applied to a list');
+				throw new Error('The list intent can only be applied to a list');
 			}
 
 			return updateList(list ?? [], intent.payload);

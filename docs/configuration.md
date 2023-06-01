@@ -104,7 +104,7 @@ function Example() {
 }
 ```
 
-For information about modifying list (e.g. append / remove / reorder), see the [command](/docs/commands.md) section.
+For information about modifying list (e.g. append / remove / reorder), see the [Modifying a list](/docs/intent-button.md#modifying-a-list) section.
 
 ## Nested List
 
