@@ -14,53 +14,37 @@ export type ListIntentPayload<Schema = unknown> =
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
 
-export interface ListCommandButtonBuilder {
-	append<Schema>(
-		name: string,
-		payload?: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'append' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	prepend<Schema>(
-		name: string,
-		payload?: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'prepend' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	replace<Schema>(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload<Schema>, { operation: 'replace' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	remove(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload, { operation: 'remove' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-	reorder(
-		name: string,
-		payload: Pretty<
-			Omit<
-				Extract<ListIntentPayload, { operation: 'reorder' }>,
-				'name' | 'operation'
-			>
-		>,
-	): IntentButtonProps;
-}
+type ExtractListIntentPayload<Operation, Schema = unknown> = Pretty<
+	Omit<
+		Extract<ListIntentPayload<Schema>, { operation: Operation }>,
+		'name' | 'operation'
+	>
+>;
+
+/**
+ * Helpers to configure an intent button for modifying a list
+ *
+ * @see https://conform.guide/api/react#list
+ */
+export const list = new Proxy<{
+	[Operation in ListIntentPayload['operation']]: {} extends ExtractListIntentPayload<Operation>
+		? <Schema>(
+				name: string,
+				payload?: ExtractListIntentPayload<Operation, Schema>,
+		  ) => IntentButtonProps
+		: <Schema>(
+				name: string,
+				payload: ExtractListIntentPayload<Operation, Schema>,
+		  ) => IntentButtonProps;
+}>({} as any, {
+	get(_target, operation: any) {
+		return (name: string, payload = {}): IntentButtonProps => ({
+			name: INTENT,
+			value: `list/${JSON.stringify({ name, operation, ...payload })}`,
+			formNoValidate: true,
+		});
+	},
+});
 
 export const INTENT = '__intent__';
 
@@ -120,21 +104,6 @@ export function requestIntent(
 	requestSubmit(form, submitter);
 }
 
-/**
- * Helpers to configure an intent button for modifying a list
- *
- * @see https://conform.guide/api/react#list
- */
-export const list = new Proxy({} as ListCommandButtonBuilder, {
-	get(_target, operation: any) {
-		return (name: string, payload = {}): IntentButtonProps => ({
-			name: INTENT,
-			value: `list/${JSON.stringify({ name, operation, ...payload })}`,
-			formNoValidate: true,
-		});
-	},
-});
-
 export function parseIntent<Schema>(intent: string):
 	| {
 			type: 'validate';
@@ -184,7 +153,7 @@ export function updateList<Schema>(
 			list.splice(payload.to, 0, ...list.splice(payload.from, 1));
 			break;
 		default:
-			throw new Error('Unknown list command received');
+			throw new Error('Unknown list intent received');
 	}
 
 	return list;
