@@ -8,7 +8,6 @@ export {
 	getFormEncType,
 	getFormMethod,
 	focusFirstInvalidControl,
-	focusFormControl,
 	createSubmitter,
 	requestSubmit,
 } from './dom.js';

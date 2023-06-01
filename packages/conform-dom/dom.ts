@@ -203,22 +203,3 @@ export function focusFirstInvalidControl(form: HTMLFormElement) {
 		}
 	}
 }
-
-/**
- * Focus on the first form control with the provided name
- */
-export function focusFormControl(form: HTMLFormElement, name: string): void {
-	let element: unknown = form.elements.namedItem(name);
-
-	if (!element) {
-		return;
-	}
-
-	if (element instanceof RadioNodeList) {
-		element = element.item(0);
-	}
-
-	if (isFocusableFormControl(element)) {
-		element.focus();
-	}
-}

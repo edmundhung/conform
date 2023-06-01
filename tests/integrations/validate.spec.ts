@@ -18,7 +18,6 @@ async function runValidationScenario(page: Page) {
 
 	await fieldset.validateName.click();
 	await expect(playground.error).toHaveText(['Name is required', '']);
-	await expect(fieldset.name).toBeFocused();
 
 	await fieldset.name.type('Conform');
 	await fieldset.validateName.click();
@@ -26,7 +25,6 @@ async function runValidationScenario(page: Page) {
 
 	await fieldset.validateMessage.click();
 	await expect(playground.error).toHaveText(['', 'Message is required']);
-	await expect(fieldset.message).toBeFocused();
 
 	await fieldset.message.type('A form validation library');
 	await fieldset.validateMessage.click();

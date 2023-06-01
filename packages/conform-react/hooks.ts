@@ -22,8 +22,6 @@ import {
 	getFormControls,
 	focusFirstInvalidControl,
 	isFocusableFormControl,
-	focusFormControl,
-	INTENT,
 	parseIntent,
 } from '@conform-to/dom';
 import {
@@ -1211,29 +1209,9 @@ export function reportSubmission(
 		}
 	}
 
-	if (!scope) {
+	if (!intent) {
 		focusFirstInvalidControl(form);
-	} else if (isFocusedOnIntentButton(form, submission.intent)) {
-		focusFormControl(form, scope);
 	}
-}
-
-/**
- * Check if the current focus is on a intent button.
- */
-export function isFocusedOnIntentButton(
-	form: HTMLFormElement,
-	intent: string,
-): boolean {
-	const element = document.activeElement;
-
-	return (
-		isFieldElement(element) &&
-		element.type === 'submit' &&
-		element.form === form &&
-		element.name === INTENT &&
-		element.value === intent
-	);
 }
 
 export function getScope(
