@@ -117,20 +117,14 @@ test.describe('conform-dom', () => {
 				},
 				error: {},
 			});
-			expect(
+			expect(() =>
 				parse(
 					createFormData([
 						['title', ''],
 						['__intent__', 'list/helloworld'],
 					]),
 				),
-			).toEqual({
-				intent: 'list/helloworld',
-				payload: {
-					title: '',
-				},
-				error: {},
-			});
+			).toThrow('Failed parsing intent: list/helloworld');
 		});
 
 		test('List intent', () => {
