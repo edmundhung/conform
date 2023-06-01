@@ -708,7 +708,11 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 					case 'replace':
 						return updateList(list, {
 							...intent.payload,
-							defaultValue: [`${Date.now()}`, intent.payload.defaultValue],
+							defaultValue: [
+								// Generate a random key to avoid conflicts
+								crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+								intent.payload.defaultValue,
+							],
 						});
 					default:
 						return updateList(list, intent.payload);

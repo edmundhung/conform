@@ -83,7 +83,7 @@ export function validate(field: string): IntentButtonProps {
 }
 
 export function requestIntent(
-	form: HTMLFormElement | undefined,
+	form: HTMLFormElement | null | undefined,
 	buttonProps: {
 		value: string;
 		formNoValidate?: boolean;
