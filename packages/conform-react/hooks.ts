@@ -694,7 +694,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 
 			if (
 				intent?.type !== 'list' ||
-				intent?.payload?.name !== configRef.current.name
+				intent?.payload.name !== configRef.current.name
 			) {
 				return;
 			}
@@ -706,17 +706,13 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 					case 'append':
 					case 'prepend':
 					case 'replace':
-						list = updateList(list, {
+						return updateList(list, {
 							...intent.payload,
 							defaultValue: [`${Date.now()}`, intent.payload.defaultValue],
 						});
-						break;
 					default:
-						list = updateList([...(entries ?? [])], intent.payload);
-						break;
+						return updateList(list, intent.payload);
 				}
-
-				return list;
 			});
 			setError((error) => {
 				let errorList: Array<string[] | undefined> = [];
