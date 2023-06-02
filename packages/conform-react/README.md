@@ -507,7 +507,7 @@ export default function SignupForm() {
 
 ### list
 
-It provides serveral helpers to configure an intent button for [modifying a list](/docs/commands.md#modifying-a-list).
+It provides serveral helpers to configure an intent button for [modifying a list](/docs/intent-button.md#modifying-a-list).
 
 ```tsx
 import { list } from '@conform-to/react';
@@ -540,7 +540,7 @@ function Example() {
 
 ### validate
 
-It returns the properties required to configure an intent button for [validation](/docs/commands.md#validation).
+It returns the properties required to configure an intent button for [validation](/docs/intent-button.md#validation).
 
 ```tsx
 import { validate } from '@conform-to/react';
@@ -562,7 +562,7 @@ function Example() {
 
 ### requestIntent
 
-It lets you [trigger an intent](/docs/commands.md#triggering-an-intent) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) intent.
+It lets you [trigger an intent](/docs/intent-button.md#triggering-an-intent) without requiring users to click on a button. It supports both [list](#list) and [validate](#validate) intent.
 
 ```tsx
 import {

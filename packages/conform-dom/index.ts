@@ -8,7 +8,6 @@ export {
 	getFormEncType,
 	getFormMethod,
 	focusFirstInvalidControl,
-	focusFormControl,
 	createSubmitter,
 	requestSubmit,
 } from './dom.js';
@@ -22,13 +21,10 @@ export {
 } from './formdata.js';
 
 export {
-	type ListCommand,
 	INTENT,
-	getScope,
-	isSubmitting,
+	parseIntent,
 	validate,
 	list,
-	parseListCommand,
 	updateList,
 	requestIntent,
 } from './intent.js';

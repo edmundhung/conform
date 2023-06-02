@@ -1,5 +1,5 @@
 import { resolve, setValue } from './formdata.js';
-import { getIntent, parseListCommand, updateList } from './intent.js';
+import { getIntent, parseIntent, updateList } from './intent.js';
 
 export type Submission<Schema = any> = {
 	intent: string;
@@ -55,15 +55,15 @@ export function parse<Schema>(
 		error: {},
 	};
 
-	const command = parseListCommand(submission.intent);
+	const intent = parseIntent(submission.intent);
 
-	if (command) {
-		setValue(submission.payload, command.scope, (list) => {
+	if (intent && intent.type === 'list') {
+		setValue(submission.payload, intent.payload.name, (list) => {
 			if (typeof list !== 'undefined' && !Array.isArray(list)) {
-				throw new Error('The list command can only be applied to a list');
+				throw new Error('The list intent can only be applied to a list');
 			}
 
-			return updateList(list ?? [], command);
+			return updateList(list ?? [], intent.payload);
 		});
 	}
 

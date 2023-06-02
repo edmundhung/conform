@@ -2,7 +2,6 @@ import {
 	type FieldConstraint,
 	type FieldElement,
 	type FieldsetConstraint,
-	type ListCommand,
 	type Submission,
 	type KeysOf,
 	type ResolveType,
@@ -12,22 +11,18 @@ import {
 	getPaths,
 	isFieldElement,
 	parse,
-	parseListCommand,
 	updateList,
 	validate,
 	requestIntent,
 	getValidationMessage,
 	getErrors,
-	getScope,
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
 	getFormControls,
 	focusFirstInvalidControl,
 	isFocusableFormControl,
-	isSubmitting,
-	focusFormControl,
-	INTENT,
+	parseIntent,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -383,7 +378,9 @@ export function useForm<
 			return {};
 		}
 
-		const scope = getScope(submission.intent);
+		const intent = parseIntent(submission.intent);
+		const scope = getScope(intent);
+
 		return scope === null
 			? submission.error
 			: { [scope]: submission.error[scope] };
@@ -514,7 +511,7 @@ export function useForm<
 
 					if (
 						hasClientValidation &&
-						(isSubmitting(submission.intent)
+						(parseIntent(submission.intent) === null
 							? shouldValidate && !isValid
 							: !shouldFallbackToServer)
 					) {
@@ -691,34 +688,34 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				return;
 			}
 
-			const command = parseListCommand<
-				ListCommand<FieldValue<Schema extends Array<infer Item> ? Item : never>>
+			const intent = parseIntent<
+				FieldValue<Schema extends Array<infer Item> ? Item : never>
 			>(event.detail);
 
-			if (command?.scope !== configRef.current.name) {
-				// Ensure the scope of the listener are limited to specific field name
+			if (
+				intent?.type !== 'list' ||
+				intent?.payload.name !== configRef.current.name
+			) {
 				return;
 			}
 
 			setEntries((entries) => {
-				switch (command.type) {
+				let list = [...entries];
+
+				switch (intent.payload.operation) {
 					case 'append':
 					case 'prepend':
 					case 'replace':
-						return updateList([...(entries ?? [])], {
-							...command,
-							payload: {
-								...command.payload,
-								defaultValue: [
-									`${Date.now()}`,
-									// @ts-expect-error unknown type as it is sent through network
-									command.payload.defaultValue,
-								],
-							},
+						return updateList(list, {
+							...intent.payload,
+							defaultValue: [
+								// Generate a random key to avoid conflicts
+								crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+								intent.payload.defaultValue,
+							],
 						});
-					default: {
-						return updateList([...(entries ?? [])], command);
-					}
+					default:
+						return updateList(list, intent.payload);
 				}
 			});
 			setError((error) => {
@@ -730,22 +727,18 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 					}
 				}
 
-				switch (command.type) {
+				switch (intent.payload.operation) {
 					case 'append':
 					case 'prepend':
 					case 'replace':
 						errorList = updateList(errorList, {
-							...command,
-							payload: {
-								...command.payload,
-								defaultValue: undefined,
-							},
-						} as ListCommand<string[] | undefined>);
+							...intent.payload,
+							defaultValue: undefined,
+						});
 						break;
-					default: {
-						errorList = updateList(errorList, command);
+					default:
+						errorList = updateList(errorList, intent.payload);
 						break;
-					}
 				}
 
 				return Object.assign({}, errorList) as any;
@@ -1193,7 +1186,8 @@ export function reportSubmission(
 		}
 	}
 
-	const scope = getScope(submission.intent);
+	const intent = parseIntent(submission.intent);
+	const scope = getScope(intent);
 
 	for (const element of getFormControls(form)) {
 		const elementName =
@@ -1215,32 +1209,20 @@ export function reportSubmission(
 		}
 	}
 
-	if (
-		isSubmitting(submission.intent) ||
-		isFocusedOnIntentButton(form, submission.intent)
-	) {
-		if (scope) {
-			focusFormControl(form, scope);
-		} else {
-			focusFirstInvalidControl(form);
-		}
+	if (!intent) {
+		focusFirstInvalidControl(form);
 	}
 }
 
-/**
- * Check if the current focus is on a intent button.
- */
-export function isFocusedOnIntentButton(
-	form: HTMLFormElement,
-	intent: string,
-): boolean {
-	const element = document.activeElement;
+export function getScope(
+	intent: ReturnType<typeof parseIntent>,
+): string | null {
+	switch (intent?.type) {
+		case 'validate':
+			return intent.payload;
+		case 'list':
+			return intent.payload.name;
+	}
 
-	return (
-		isFieldElement(element) &&
-		element.type === 'submit' &&
-		element.form === form &&
-		element.name === INTENT &&
-		element.value === intent
-	);
+	return null;
 }
