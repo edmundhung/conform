@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import {
+	INTENT,
 	parse,
 	getPaths,
 	getName,
 	list,
+	getIntent,
 	parseIntent,
 	validate,
 } from '@conform-to/dom';
@@ -257,6 +259,45 @@ test.describe('conform-dom', () => {
 			expect(getName(['amount', 'currency'])).toEqual('amount.currency');
 			expect(getName(['tasks', 0])).toEqual('tasks[0]');
 			expect(getName(['tasks', 1, 'completed'])).toEqual('tasks[1].completed');
+		});
+	});
+
+	test.describe('getIntent', () => {
+		test('Default value', () => {
+			expect(getIntent(createFormData([]))).toEqual('submit');
+			expect(getIntent(createFormData([['foo', 'bar']]))).toEqual('submit');
+		});
+
+		test('Normal result', () => {
+			expect(getIntent(createFormData([[INTENT, 'test']]))).toEqual('test');
+		});
+
+		test('Multiple intents', () => {
+			expect(
+				getIntent(
+					createFormData([
+						[INTENT, 'test'],
+						[INTENT, 'test'],
+					]),
+				),
+			).toEqual('test');
+			expect(() =>
+				getIntent(
+					createFormData([
+						[INTENT, 'test1'],
+						[INTENT, 'test2'],
+					]),
+				),
+			).toThrow();
+			expect(() =>
+				getIntent(
+					createFormData([
+						[INTENT, 'test'],
+						[INTENT, 'test'],
+						[INTENT, 'test'],
+					]),
+				),
+			).toThrow();
 		});
 	});
 

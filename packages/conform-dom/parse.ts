@@ -1,5 +1,5 @@
 import { resolve, setValue } from './formdata.js';
-import { getIntent, parseIntent, updateList } from './intent.js';
+import { INTENT, getIntent, parseIntent, updateList } from './intent.js';
 
 export type Submission<Schema = any> = {
 	intent: string;
@@ -51,7 +51,7 @@ export function parse<Schema>(
 ): Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
 		intent: getIntent(payload),
-		payload: resolve(payload),
+		payload: resolve(payload, [INTENT]),
 		error: {},
 	};
 

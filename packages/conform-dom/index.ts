@@ -22,6 +22,7 @@ export {
 
 export {
 	INTENT,
+	getIntent,
 	parseIntent,
 	validate,
 	list,

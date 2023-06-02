@@ -49,22 +49,26 @@ export const list = new Proxy<{
 export const INTENT = '__intent__';
 
 /**
- *
- * @param payload
- * @returns
+ * Returns the intent from the form data or search params.
+ * It throws an error if multiple intent is set.
  */
 export function getIntent(payload: FormData | URLSearchParams): string {
 	if (!payload.has(INTENT)) {
 		return 'submit';
 	}
 
-	const [intent, ...rest] = payload.getAll(INTENT);
+	const [intent, secondIntent, ...rest] = payload.getAll(INTENT);
 
-	if (typeof intent !== 'string' || rest.length > 0) {
+	// The submitter value is included in the formData directly on Safari 15.6.
+	// This causes the intent to be duplicated in the payload.
+	// We will ignore the second intent if it is the same as the first one.
+	if (
+		typeof intent !== 'string' ||
+		(secondIntent && intent !== secondIntent) ||
+		rest.length > 0
+	) {
 		throw new Error('The intent could only be set on a button');
 	}
-
-	payload.delete(INTENT);
 
 	return intent;
 }

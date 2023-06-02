@@ -98,11 +98,18 @@ export function setValue(
 /**
  * Resolves the payload into a plain object based on the JS syntax convention
  */
-export function resolve(payload: FormData | URLSearchParams) {
+export function resolve(
+	payload: FormData | URLSearchParams,
+	ignoreKeys?: string[],
+) {
 	const data = {};
 
-	for (let [name, value] of payload.entries()) {
-		setValue(data, name, (prev) => {
+	for (let [key, value] of payload.entries()) {
+		if (ignoreKeys?.includes(key)) {
+			continue;
+		}
+
+		setValue(data, key, (prev) => {
 			if (!prev) {
 				return value;
 			} else if (Array.isArray(prev)) {
