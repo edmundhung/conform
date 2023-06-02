@@ -49,9 +49,8 @@ export const list = new Proxy<{
 export const INTENT = '__intent__';
 
 /**
- *
- * @param payload
- * @returns
+ * Returns the intent from the form data or search params.
+ * It throws an error if multiple intent is set.
  */
 export function getIntent(payload: FormData | URLSearchParams): string {
 	if (!payload.has(INTENT)) {
@@ -70,8 +69,6 @@ export function getIntent(payload: FormData | URLSearchParams): string {
 	) {
 		throw new Error('The intent could only be set on a button');
 	}
-
-	payload.delete(INTENT);
 
 	return intent;
 }
