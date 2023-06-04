@@ -147,12 +147,20 @@ test.describe('conform-zod', () => {
 			getFieldsetConstraint(
 				z
 					.union([
-						z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
-						z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
+						z.object({
+							type: z.literal('a'),
+							foo: z.string().min(1, 'min'),
+							baz: z.string().min(1, 'min'),
+						}),
+						z.object({
+							type: z.literal('b'),
+							bar: z.string().min(1, 'min'),
+							baz: z.string().min(1, 'min'),
+						}),
 					])
 					.and(
 						z.object({
-							baz: z.string().min(1, 'min'),
+							qux: z.string().min(1, 'min'),
 						}),
 					),
 			),
@@ -161,6 +169,7 @@ test.describe('conform-zod', () => {
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
 			baz: { required: true, minLength: 1 },
+			qux: { required: true, minLength: 1 },
 		});
 
 		// Discriminated union is also supported
@@ -168,12 +177,20 @@ test.describe('conform-zod', () => {
 			getFieldsetConstraint(
 				z
 					.discriminatedUnion('type', [
-						z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
-						z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
+						z.object({
+							type: z.literal('a'),
+							foo: z.string().min(1, 'min'),
+							baz: z.string().min(1, 'min'),
+						}),
+						z.object({
+							type: z.literal('b'),
+							bar: z.string().min(1, 'min'),
+							baz: z.string().min(1, 'min'),
+						}),
 					])
 					.and(
 						z.object({
-							baz: z.string().min(1, 'min'),
+							qux: z.string().min(1, 'min'),
 						}),
 					),
 			),
@@ -182,6 +199,7 @@ test.describe('conform-zod', () => {
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
 			baz: { required: true, minLength: 1 },
+			qux: { required: true, minLength: 1 },
 		});
 	});
 
