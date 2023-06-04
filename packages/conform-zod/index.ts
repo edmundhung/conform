@@ -10,25 +10,6 @@ import * as z from 'zod';
 export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 	source: Source,
 ): FieldsetConstraint<z.input<Source>> {
-	function getSchemaShape<T extends Record<string, any>>(
-		schema: z.ZodType<T>,
-	): z.ZodRawShape | null {
-		if (schema instanceof z.ZodObject) {
-			return schema.shape;
-		} else if (schema instanceof z.ZodEffects) {
-			return getSchemaShape(schema.innerType());
-		} else if (schema instanceof z.ZodOptional) {
-			return getSchemaShape(schema.unwrap());
-		} else if (schema instanceof z.ZodIntersection) {
-			return {
-				...getSchemaShape(schema._def.left),
-				...getSchemaShape(schema._def.right),
-			};
-		}
-
-		return null;
-	}
-
 	function inferConstraint<T>(schema: z.ZodType<T>): FieldConstraint<T> {
 		let constraint: FieldConstraint = {};
 
@@ -102,17 +83,85 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		return constraint;
 	}
 
-	const shape = getSchemaShape(source);
-	const result: FieldsetConstraint<z.input<Source>> = {};
+	const keys: Array<keyof FieldConstraint> = [
+		'required',
+		'minLength',
+		'maxLength',
+		'min',
+		'max',
+		'step',
+		'multiple',
+		'pattern',
+	];
 
-	if (shape) {
-		for (const [key, def] of Object.entries(shape)) {
-			// @ts-expect-error
-			result[key] = inferConstraint(def);
+	function resolveFieldsetConstarint<T extends Record<string, any>>(
+		schema: z.ZodType<T>,
+	): FieldsetConstraint<z.input<Source>> {
+		if (schema instanceof z.ZodObject) {
+			const result: FieldsetConstraint<z.input<Source>> = {};
+
+			for (const [key, def] of Object.entries(schema.shape)) {
+				// @ts-expect-error
+				result[key] = inferConstraint(def);
+			}
+
+			return result;
 		}
+
+		if (schema instanceof z.ZodEffects) {
+			return resolveFieldsetConstarint(schema.innerType());
+		} else if (schema instanceof z.ZodOptional) {
+			return resolveFieldsetConstarint(schema.unwrap());
+		} else if (schema instanceof z.ZodIntersection) {
+			return {
+				...resolveFieldsetConstarint(schema._def.left),
+				...resolveFieldsetConstarint(schema._def.right),
+			};
+		} else if (
+			schema instanceof z.ZodUnion ||
+			schema instanceof z.ZodDiscriminatedUnion
+		) {
+			const options = schema.options as Array<z.ZodType<any>>;
+
+			return options.map(resolveFieldsetConstarint).reduce((prev, next) => {
+				const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
+				const result: Record<string, FieldConstraint> = {};
+
+				for (const name of list) {
+					// @ts-expect-error
+					const prevConstraint = prev[name];
+					// @ts-expect-error
+					const nextConstraint = next[name];
+
+					if (prevConstraint && nextConstraint) {
+						result[name] = {};
+
+						for (const key of keys) {
+							if (
+								typeof prevConstraint[key] !== 'undefined' &&
+								typeof nextConstraint[key] !== 'undefined' &&
+								prevConstraint[key] === nextConstraint[key]
+							) {
+								result[name][key] = prevConstraint[key];
+							}
+						}
+					} else {
+						result[name] = {
+							...prevConstraint,
+							...nextConstraint,
+							required: false,
+						};
+					}
+				}
+
+				return result;
+			});
+		}
+
+		return {};
 	}
 
-	return result;
+	return resolveFieldsetConstarint(source);
 }
 
 export function parse<Schema extends z.ZodTypeAny>(

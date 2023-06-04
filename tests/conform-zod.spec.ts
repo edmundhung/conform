@@ -129,7 +129,7 @@ test.describe('conform-zod', () => {
 		expect(getFieldsetConstraint(z.string())).toEqual({});
 		expect(getFieldsetConstraint(z.string().array())).toEqual({});
 
-		// // Union is supported too
+		// Intersection is supported
 		expect(
 			getFieldsetConstraint(
 				schema.and(
@@ -142,15 +142,47 @@ test.describe('conform-zod', () => {
 			something: { required: true },
 		});
 
-		// Discriminated union is not supported at the moment
+		// Union is supported
 		expect(
 			getFieldsetConstraint(
-				z.discriminatedUnion('type', [
-					z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
-					z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
-				]),
+				z
+					.union([
+						z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
+						z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
+					])
+					.and(
+						z.object({
+							baz: z.string().min(1, 'min'),
+						}),
+					),
 			),
-		).toEqual({});
+		).toEqual({
+			type: { required: true },
+			foo: { required: false, minLength: 1 },
+			bar: { required: false, minLength: 1 },
+			baz: { required: true, minLength: 1 },
+		});
+
+		// Discriminated union is also supported
+		expect(
+			getFieldsetConstraint(
+				z
+					.discriminatedUnion('type', [
+						z.object({ type: z.literal('a'), foo: z.string().min(1, 'min') }),
+						z.object({ type: z.literal('b'), bar: z.string().min(1, 'min') }),
+					])
+					.and(
+						z.object({
+							baz: z.string().min(1, 'min'),
+						}),
+					),
+			),
+		).toEqual({
+			type: { required: true },
+			foo: { required: false, minLength: 1 },
+			bar: { required: false, minLength: 1 },
+			baz: { required: true, minLength: 1 },
+		});
 	});
 
 	test('parse', () => {
