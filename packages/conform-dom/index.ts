@@ -30,7 +30,12 @@ export {
 	requestIntent,
 } from './intent.js';
 
-export { type Submission, parse } from './parse.js';
+export {
+	type Submission,
+	parse,
+	VALIDATION_SKIPPED,
+	VALIDATION_UNDEFINED,
+} from './parse.js';
 
 export {
 	type FieldConstraint,

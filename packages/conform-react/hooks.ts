@@ -23,6 +23,8 @@ import {
 	focusFirstInvalidControl,
 	isFocusableFormControl,
 	parseIntent,
+	VALIDATION_SKIPPED,
+	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -1028,9 +1030,6 @@ export function useInputEvent<RefShape>(options?: {
 
 	return [ref, control];
 }
-
-export const VALIDATION_UNDEFINED = '__undefined__';
-export const VALIDATION_SKIPPED = '__skipped__';
 export const FORM_ERROR_ELEMENT_NAME = '__form__';
 
 /**

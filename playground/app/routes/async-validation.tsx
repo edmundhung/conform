@@ -1,5 +1,5 @@
 import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -17,32 +17,13 @@ function createSchema(
 			.string()
 			.min(1, 'Email is required')
 			.email('Email is invalid')
-			.superRefine((value, ctx) => {
-				if (intent !== 'validate/email' && intent !== 'submit') {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						message: conform.VALIDATION_SKIPPED,
-					});
-				} else if (typeof constraints.isEmailUnique === 'undefined') {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						message: conform.VALIDATION_UNDEFINED,
-					});
-				} else {
-					// when the constraint is defined, we must return a promise
-					// to declare it as an async validation
-					return constraints.isEmailUnique(value).then((isUnique) => {
-						if (isUnique) {
-							return;
-						}
-
-						ctx.addIssue({
-							code: z.ZodIssueCode.custom,
-							message: 'Email is already used',
-						});
-					});
-				}
-			}),
+			.superRefine((email, ctx) =>
+				refine(ctx, {
+					validate: () => constraints.isEmailUnique?.(email),
+					skip: intent !== 'validate/email' && intent !== 'submit',
+					message: 'Email is already used',
+				}),
+			),
 		title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
 	});
 }

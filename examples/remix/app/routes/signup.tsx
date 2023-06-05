@@ -1,5 +1,5 @@
 import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -8,10 +8,10 @@ import { z } from 'zod';
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
 	intent: string,
-	// Note: the constraints parameter is optional
-	constarint?: {
-		isUsernameUnique: (username: string) => Promise<boolean>;
-	},
+	constarint: {
+		// isUsernameUnique is only defined on the server
+		isUsernameUnique?: (username: string) => Promise<boolean>;
+	} = {},
 ) {
 	return z
 		.object({
@@ -23,33 +23,13 @@ function createSchema(
 					'Invalid username: only letters or numbers are allowed',
 				)
 				// We use `.superRefine` instead of `.refine` for better control
-				.superRefine((value, ctx) => {
-					if (intent !== 'submit' && intent !== 'validate/username') {
-						// Validate only when necessary
-						ctx.addIssue({
-							code: z.ZodIssueCode.custom,
-							message: conform.VALIDATION_SKIPPED,
-						});
-					} else if (typeof constarint?.isUsernameUnique === 'undefined') {
-						// Validate only if the constraint is defined
-						ctx.addIssue({
-							code: z.ZodIssueCode.custom,
-							message: conform.VALIDATION_UNDEFINED,
-						});
-					} else {
-						// Tell zod it is an async validation by returning a promise
-						return constarint.isUsernameUnique(value).then((valid) => {
-							if (valid) {
-								return;
-							}
-
-							ctx.addIssue({
-								code: z.ZodIssueCode.custom,
-								message: 'Username is already used',
-							});
-						});
-					}
-				}),
+				.superRefine((username, ctx) =>
+					refine(ctx, {
+						validate: () => constarint.isUsernameUnique?.(username),
+						skip: intent !== 'submit' && intent !== 'validate/username',
+						message: 'Username is already used',
+					}),
+				),
 			password: z.string().min(1, 'Password is required'),
 			confirmPassword: z.string().min(1, 'Confirm Password is required'),
 		})

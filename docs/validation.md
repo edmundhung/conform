@@ -179,14 +179,14 @@ The usage of [server validation](#server-validation) might feels limited, but it
 Here is an example how you can do async validation with Zod:
 
 ```tsx
-import { hasError } from '@conform-to/react';
+import { refine } from '@conform-to/react';
 
 // Instead of reusing a schema, we prepare a schema creator
 function createSchema(
   // The constraints parameter is optional
   // as it is only implemented on the server
   constraints: {
-    isEmailUnique: (email) => Promise<boolean>;
+    isEmailUnique?: (email) => Promise<boolean>;
   } = {},
 ) {
   return z.object({
@@ -194,27 +194,12 @@ function createSchema(
       .string()
       .min(1, 'Email is required')
       .email('Email is invalid')
-      .superRefine((email, ctx) => {
-        if (typeof constraints.isEmailUnique === 'undefined') {
-          // Validate only if the constraint is defined
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: conform.VALIDATION_UNDEFINED,
-          });
-        } else {
-          // Tell zod this is an async validation by returning the promise
-          return constraints.isEmailUnique(value).then((isUnique) => {
-            if (isUnique) {
-              return;
-            }
-
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: 'Email is already used',
-            });
-          });
-        }
-      }),
+      .superRefine((email, ctx) =>
+        refine(ctx, {
+          validate: () => constraints.isEmailUnique?.(email),
+          message: 'Email is already used',
+        }),
+      ),
     // ...
   });
 }
@@ -271,19 +256,14 @@ function createSchema(
       .string()
       .min(1, 'Email is required')
       .email('Email is invalid')
-      .superRefine((email, ctx) => {
-        if (intent !== 'validate/email' && intent !== 'submit') {
+      .superRefine((email, ctx) =>
+        refine(ctx, {
+          validate: () => constraints.isEmailUnique?.(email),
           // Validate only when the email field is changed or when submitting
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: conform.VALIDATION_SKIPPED,
-          });
-        } else if (typeof constraints.isEmailUnique === 'undefined') {
-          // The same as the previous example
-        } else {
-          // The same as the previous example
-        }
-      }),
+          skip: intent !== 'validate/email' && intent !== 'submit',
+          message: 'Email is already used',
+        }),
+      ),
     // ...
   });
 }

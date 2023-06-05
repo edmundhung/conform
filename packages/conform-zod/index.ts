@@ -4,6 +4,8 @@ import {
 	type Submission,
 	getName,
 	parse as baseParse,
+	VALIDATION_SKIPPED,
+	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -254,6 +256,54 @@ export function parse<Schema extends z.ZodTypeAny>(
 				: resolveResult(schema.safeParse(payload));
 		},
 	});
+}
+
+export function refine(
+	ctx: z.RefinementCtx,
+	options: {
+		validate: () => boolean | Promise<boolean> | undefined;
+		skip?: boolean;
+		message: string;
+		path?: z.IssueData['path'];
+	},
+): void | Promise<void> {
+	if (options.skip) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: VALIDATION_SKIPPED,
+			path: options.path,
+		});
+		return;
+	}
+
+	// Run the validation
+	const result = options.validate();
+
+	if (typeof result === 'undefined') {
+		// Validate only if the constraint is defined
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: VALIDATION_UNDEFINED,
+			path: options.path,
+		});
+		return;
+	}
+
+	const reportInvalid = (valid: boolean) => {
+		if (valid) {
+			return;
+		}
+
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: options.message,
+			path: options.path,
+		});
+	};
+
+	return typeof result === 'boolean'
+		? reportInvalid(result)
+		: result.then(reportInvalid);
 }
 
 export function ifNonEmptyString(

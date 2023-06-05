@@ -1,10 +1,9 @@
-import { INTENT } from '@conform-to/dom';
 import {
-	type FieldConfig,
-	type Primitive,
+	INTENT,
 	VALIDATION_UNDEFINED,
 	VALIDATION_SKIPPED,
-} from './hooks.js';
+} from '@conform-to/dom';
+import type { FieldConfig, Primitive } from './hooks.js';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
 interface FormControlProps {
