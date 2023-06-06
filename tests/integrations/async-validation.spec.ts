@@ -113,6 +113,25 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 
 	await expect(playground.error).toHaveText(['', '']);
+
+	await expect(playground.submission).toHaveText(
+		JSON.stringify(
+			{
+				intent: 'submit',
+				payload: {
+					email: 'hey@conform.guide',
+					title: 'Software Developer',
+				},
+				error: {},
+				value: {
+					email: 'hey@conform.guide',
+					title: 'Software Developer',
+				},
+			},
+			null,
+			2,
+		),
+	);
 }
 
 test.describe('With JS', () => {
@@ -136,7 +155,10 @@ test.describe('With JS', () => {
 		await playground.submit.click();
 		// This check is intentional to verify how Conform
 		// handles VALIDATION_UNDEFINED on submit
-		await expect(playground.error).toHaveText(['', 'Title is required']);
+		await expect(playground.error).toHaveText([
+			'Email is already used',
+			'Title is required',
+		]);
 
 		await fieldset.email.type('abcd');
 		await expect(playground.error).toHaveText([

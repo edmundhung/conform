@@ -498,22 +498,36 @@ export function useForm<
 					const formData = getFormData(form, submitter);
 					const submission =
 						config.onValidate?.({ form, formData }) ?? parse(formData);
-					const messages = Object.entries(submission.error).reduce<string[]>(
-						(messages, [, message]) => messages.concat(normalizeError(message)),
-						[],
+					const { errors, shouldServerValidate } = Object.entries(
+						submission.error,
+					).reduce<{ errors: string[]; shouldServerValidate: boolean }>(
+						(result, [, error]) => {
+							for (const message of normalizeError(error)) {
+								if (message === VALIDATION_UNDEFINED) {
+									result.shouldServerValidate = true;
+								} else if (message !== VALIDATION_SKIPPED) {
+									result.errors.push(message);
+								}
+							}
+
+							return result;
+						},
+						{
+							errors: [],
+							shouldServerValidate: false,
+						},
 					);
-					const shouldValidate =
-						!config.noValidate && !submitter?.formNoValidate;
-					const shouldFallbackToServer =
-						messages.includes(VALIDATION_UNDEFINED);
-					const hasClientValidation = typeof config.onValidate !== 'undefined';
-					const isValid = messages.length === 0;
 
 					if (
-						hasClientValidation &&
-						(parseIntent(submission.intent) === null
-							? shouldValidate && !isValid
-							: !shouldFallbackToServer)
+						// has client validation
+						typeof config.onValidate !== 'undefined' &&
+						// not necessary to validate on the server
+						!shouldServerValidate &&
+						// client validation failed or non submit intent
+						((!config.noValidate &&
+							!submitter?.formNoValidate &&
+							errors.length > 0) ||
+							parseIntent(submission.intent) !== null)
 					) {
 						report(form, submission);
 						event.preventDefault();
