@@ -113,7 +113,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: Submission;
+	lastSubmission?: Submission | null;
 
 	/**
 	 * An object describing the constraint of each field
@@ -227,7 +227,7 @@ function useConfigRef<Config>(config: Config) {
 
 function useFormReporter(
 	ref: RefObject<HTMLFormElement>,
-	lastSubmission: Submission | undefined,
+	lastSubmission: Submission | null | undefined,
 ) {
 	const [submission, setSubmission] = useState(lastSubmission);
 	const report = useCallback(
@@ -385,14 +385,26 @@ export function useForm<
 			? submission.error
 			: { [scope]: submission.error[scope] };
 	}, [config.lastSubmission]);
+	// This payload from lastSubmission is only useful before hydration
+	// After hydration, any new payload on lastSubmission will be ignored
+	const [lastSubmissionPayload, setLastSubmissionPayload] = useState<
+		FieldValue<Input> | undefined
+	>(config.lastSubmission?.payload as FieldValue<Input> | undefined);
 	const fieldset = useFieldset(ref, {
-		defaultValue:
-			(config.lastSubmission?.payload as FieldValue<Input>) ??
-			config.defaultValue,
+		defaultValue: lastSubmissionPayload ?? config.defaultValue,
 		initialError,
 		constraint: config.constraint,
 		form: config.id,
 	});
+	const isHydrated = useRef(false);
+
+	useSafeLayoutEffect(() => {
+		if (isHydrated.current && !config.lastSubmission) {
+			ref.current?.reset();
+		}
+
+		isHydrated.current = true;
+	}, [ref, config.lastSubmission]);
 
 	useEffect(() => {
 		// custom validate handler
@@ -457,6 +469,7 @@ export function useForm<
 			}
 
 			setErrors([]);
+			setLastSubmissionPayload(undefined);
 		};
 
 		const handleInput = createValidateHandler('onInput');
