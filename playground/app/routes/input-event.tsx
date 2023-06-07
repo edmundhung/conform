@@ -1,28 +1,18 @@
-import { useInputEvent, conform } from '@conform-to/react';
+import { useInputEvent } from '@conform-to/react';
 import { useSearchParams } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
 
 export default function BaseInputText() {
 	const [searchParams] = useSearchParams();
-	const [baseRef, control] = useInputEvent({
-		onSubmit: (e) => {
-			const submitter = e.submitter as HTMLButtonElement | undefined;
-
-			e.preventDefault();
-
-			setLogsByName((prev) => {
-				const next: Record<string, string[]> = {};
-
-				if (submitter?.name === 'intent') {
-					for (const name of Object.keys(prev)) {
-						next[name] = [`--- ${submitter.value} ---`];
-					}
-				}
-
-				return next;
-			});
+	const controlRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
+		onFocus(event) {
+			inputRef.current?.focus();
 		},
-		onReset: () => setValue(searchParams.get('defaultValue') ?? ''),
+		onReset() {
+			setValue(searchParams.get('defaultValue') ?? '');
+		},
 	});
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [value, setValue] = useState(searchParams.get('defaultValue') ?? '');
@@ -55,16 +45,6 @@ export default function BaseInputText() {
 		>
 			<div className="sticky top-0 pt-4 pb-8 bg-gray-100 border-b">
 				<label>Type here</label>
-				<input
-					ref={baseRef}
-					{...conform.input(
-						{
-							name: 'base-input',
-							defaultValue: searchParams.get('defaultValue') ?? '',
-						},
-						{ hidden: true },
-					)}
-				/>
 				<div className="flex flex-row gap-4">
 					<input
 						className="p-2 flex-1"
@@ -91,6 +71,15 @@ export default function BaseInputText() {
 					>
 						Reset
 					</button>
+				</div>
+				<div className="pt-4">
+					<div>Hidden input</div>
+					<input
+						ref={controlRef}
+						name="base-input"
+						type="text"
+						defaultValue={searchParams.get('defaultValue') ?? ''}
+					/>
 				</div>
 			</div>
 			<div className="my-4 flex flex-row">

@@ -1,7 +1,8 @@
+import type { FieldConfig } from '@conform-to/react';
 import {
-	type FieldConfig,
 	useForm,
 	useInputEvent,
+	validateConstraint,
 	conform,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
@@ -16,7 +17,11 @@ interface Schema {
 }
 
 export default function Example() {
-	const [form, fieldset] = useForm<Schema>();
+	const [form, fieldset] = useForm<Schema>({
+		onValidate(context) {
+			return validateConstraint(context);
+		},
+	});
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">
@@ -120,17 +125,19 @@ function classNames(...classes: Array<string | boolean>): string {
 
 function ExampleListBox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const buttonRef = useRef<HTMLButtonElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const buttonRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<>
 			<input
-				ref={inputRef}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
+				onChange={(event) => setValue(event.currentTarget.value)}
 				onFocus={() => buttonRef.current?.focus()}
 			/>
 			<Listbox value={value} onChange={control.change}>
@@ -196,10 +203,12 @@ function ExampleListBox(config: FieldConfig<string>) {
 function ExampleCombobox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [query, setQuery] = useState('');
-	const [ref, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const inputRef = useRef<HTMLInputElement>(null);
 	const filteredPeople =
 		value === ''
 			? people
@@ -210,9 +219,11 @@ function ExampleCombobox(config: FieldConfig<string>) {
 	return (
 		<>
 			<input
-				ref={ref}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
+				onChange={(e) => {
+					setValue(e.target.value);
+				}}
 				onFocus={() => inputRef.current?.focus()}
 			/>
 			<Combobox as="div" value={value} onChange={control.change} nullable>
@@ -280,21 +291,23 @@ function ExampleCombobox(config: FieldConfig<string>) {
 
 function ExampleSwitch(config: FieldConfig<boolean>) {
 	const [checked, setChecked] = useState(config.defaultValue === 'on');
-	const [ref, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const buttonRef = useRef<HTMLButtonElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setChecked(config.defaultValue === 'on'),
 	});
-	const inputRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<>
 			<input
-				ref={ref}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setChecked(e.target.value === 'on')}
-				onFocus={() => inputRef.current?.focus()}
+				onFocus={() => buttonRef.current?.focus()}
 			/>
 			<Switch
-				ref={inputRef}
+				ref={buttonRef}
 				checked={checked}
 				onChange={(checked: boolean) => {
 					control.change(checked ? 'on' : '');
@@ -319,7 +332,9 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 
 function ExampleRadioGroup(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [ref, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const colors = [
@@ -341,7 +356,7 @@ function ExampleRadioGroup(config: FieldConfig<string>) {
 	return (
 		<>
 			<input
-				ref={ref}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 			/>

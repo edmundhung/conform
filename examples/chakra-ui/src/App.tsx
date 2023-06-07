@@ -1,5 +1,10 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, useInputEvent, conform } from '@conform-to/react';
+import {
+	useForm,
+	useInputEvent,
+	validateConstraint,
+	conform,
+} from '@conform-to/react';
 import {
 	Stack,
 	FormControl,
@@ -48,7 +53,11 @@ interface Schema {
 }
 
 export default function Example() {
-	const [form, fieldset] = useForm<Schema>();
+	const [form, fieldset] = useForm<Schema>({
+		onValidate(context) {
+			return validateConstraint(context);
+		},
+	});
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
@@ -179,32 +188,29 @@ export default function Example() {
 
 function ExampleNumberInput(config: FieldConfig<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: inputRef,
+		onFocus: () => inputRef.current?.focus(),
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const ref = useRef<HTMLInputElement>(null);
 
 	return (
-		<>
-			<input
-				ref={inputRef}
-				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
-				onFocus={() => inputRef.current?.focus()}
-			/>
-			<NumberInput
-				ref={ref}
-				isRequired={config.required}
-				value={value}
-				onChange={control.change}
-			>
-				<NumberInputField ref={ref} />
-				<NumberInputStepper>
-					<NumberIncrementStepper />
-					<NumberDecrementStepper />
-				</NumberInputStepper>
-			</NumberInput>
-		</>
+		<NumberInput
+			isRequired={config.required}
+			name={config.name}
+			value={value}
+			onChange={(value) => {
+				control.change(value);
+				setValue(value);
+			}}
+		>
+			<NumberInputField ref={inputRef} />
+			<NumberInputStepper>
+				<NumberIncrementStepper />
+				<NumberDecrementStepper />
+			</NumberInputStepper>
+		</NumberInput>
 	);
 }
 
@@ -213,15 +219,17 @@ function ExamplePinInput({
 	...config
 }: FieldConfig<string> & { isInvalid: boolean }) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const ref = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
 			<input
-				ref={inputRef}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
@@ -232,7 +240,7 @@ function ExamplePinInput({
 				onChange={control.change}
 				isInvalid={isInvalid}
 			>
-				<PinInputField ref={ref} />
+				<PinInputField ref={inputRef} />
 				<PinInputField />
 				<PinInputField />
 				<PinInputField />
@@ -243,17 +251,18 @@ function ExamplePinInput({
 
 function ExampleSlider(config: FieldConfig<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<>
 			<input
-				ref={inputRef}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
-				onFocus={() => inputRef.current?.focus()}
 			/>
 			<Slider
 				value={value ? Number(value) : undefined}

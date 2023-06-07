@@ -864,6 +864,7 @@ const useSafeLayoutEffect =
 
 interface InputControl {
 	change: (eventOrValue: { target: { value: string } } | string) => void;
+	click: () => void;
 	focus: () => void;
 	blur: () => void;
 }
@@ -873,61 +874,30 @@ interface InputControl {
  *
  * @see https://conform.guide/api/react#useinputevent
  */
-export function useInputEvent<
-	RefShape extends FieldElement = HTMLInputElement,
->(options?: {
-	onSubmit?: (event: SubmitEvent) => void;
+export function useInputEvent(options: {
+	ref:
+		| RefObject<FieldElement>
+		| (() => Element | RadioNodeList | FieldElement | null | undefined);
+	onFocus?: (event: FocusEvent) => void;
 	onReset?: (event: Event) => void;
-}): [RefObject<RefShape>, InputControl];
-export function useInputEvent<
-	RefShape extends Exclude<any, FieldElement>,
->(options: {
-	getElement: (ref: RefShape | null) => FieldElement | null | undefined;
-	onSubmit?: (event: SubmitEvent) => void;
-	onReset?: (event: Event) => void;
-}): [RefObject<RefShape>, InputControl];
-export function useInputEvent<RefShape>(options?: {
-	getElement?: (ref: RefShape | null) => FieldElement | null | undefined;
-	onSubmit?: (event: SubmitEvent) => void;
-	onReset?: (event: Event) => void;
-}): [RefObject<RefShape>, InputControl] {
-	const ref = useRef<RefShape>(null);
+}): InputControl {
 	const optionsRef = useConfigRef(options);
-	const changeDispatched = useRef(false);
-	const focusDispatched = useRef(false);
-	const blurDispatched = useRef(false);
+	const eventDispatching = useRef(false);
 
 	useSafeLayoutEffect(() => {
-		const getInputElement = () =>
-			(optionsRef.current?.getElement?.(ref.current) ?? ref.current) as
-				| FieldElement
-				| undefined;
-		const inputHandler = (event: Event) => {
-			const input = getInputElement();
+		const getInputElement = () => {
+			const element =
+				typeof optionsRef.current?.ref === 'function'
+					? optionsRef.current?.ref()
+					: optionsRef.current?.ref.current;
 
-			if (input && event.target === input) {
-				changeDispatched.current = true;
-			}
+			return isFieldElement(element) ? element : undefined;
 		};
 		const focusHandler = (event: FocusEvent) => {
 			const input = getInputElement();
 
 			if (input && event.target === input) {
-				focusDispatched.current = true;
-			}
-		};
-		const blurHandler = (event: FocusEvent) => {
-			const input = getInputElement();
-
-			if (input && event.target === input) {
-				blurDispatched.current = true;
-			}
-		};
-		const submitHandler = (event: SubmitEvent) => {
-			const input = getInputElement();
-
-			if (input?.form && event.target === input.form) {
-				optionsRef.current?.onSubmit?.(event);
+				optionsRef.current?.onFocus?.(event);
 			}
 		};
 		const resetHandler = (event: Event) => {
@@ -938,118 +908,86 @@ export function useInputEvent<RefShape>(options?: {
 			}
 		};
 
-		document.addEventListener('input', inputHandler, true);
+		// focus event does not bubble
 		document.addEventListener('focus', focusHandler, true);
-		document.addEventListener('blur', blurHandler, true);
-		document.addEventListener('submit', submitHandler);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
-			document.removeEventListener('input', inputHandler, true);
 			document.removeEventListener('focus', focusHandler, true);
-			document.removeEventListener('blur', blurHandler, true);
-			document.removeEventListener('submit', submitHandler);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, []);
 
 	const control = useMemo(() => {
-		const getInputElement = () =>
-			(optionsRef.current?.getElement?.(ref.current) ??
-				ref.current) as FieldElement;
+		const dispatch = (fn: (input: FieldElement) => void) => {
+			const element =
+				typeof optionsRef.current?.ref === 'function'
+					? optionsRef.current?.ref()
+					: optionsRef.current?.ref.current;
+			const input = isFieldElement(element) ? element : undefined;
+
+			if (eventDispatching.current) {
+				return;
+			}
+
+			if (!input) {
+				console.warn('Failed to dispatch event; is the input mounted?');
+				return;
+			}
+
+			eventDispatching.current = true;
+			fn(input);
+			eventDispatching.current = false;
+		};
 
 		return {
+			click() {
+				dispatch((input) => {
+					input.click();
+				});
+			},
 			change(eventOrValue: { target: { value: string } } | string) {
-				const input = getInputElement();
+				dispatch((input) => {
+					// const previousValue = input.value;
+					const nextValue =
+						typeof eventOrValue === 'string'
+							? eventOrValue
+							: eventOrValue.target.value;
 
-				if (!input) {
-					console.warn(
-						'Missing input ref; No change-related events will be dispatched',
-					);
-					return;
-				}
-
-				if (changeDispatched.current) {
-					changeDispatched.current = false;
-					return;
-				}
-
-				const previousValue = input.value;
-				const nextValue =
-					typeof eventOrValue === 'string'
-						? eventOrValue
-						: eventOrValue.target.value;
-
-				// This make sure no event is dispatched on the first effect run
-				if (nextValue === previousValue) {
-					return;
-				}
-
-				// Dispatch beforeinput event before updating the input value
-				input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
-				// Update the input value to trigger a change event
-				setNativeValue(input, nextValue);
-				// Dispatch input event with the updated input value
-				input.dispatchEvent(new InputEvent('input', { bubbles: true }));
-				// Reset the dispatched flag
-				changeDispatched.current = false;
+					// Dispatch beforeinput event before updating the input value
+					input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
+					// Update the input value to trigger a change event for input / textarea elements
+					setNativeValue(input, nextValue);
+					// Dispatch change event for select elements
+					input.dispatchEvent(new Event('change', { bubbles: true }));
+					// Dispatch input event with the updated input value
+					input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+				});
 			},
 			focus() {
-				const input = getInputElement();
-
-				if (!input) {
-					console.warn(
-						'Missing input ref; No focus-related events will be dispatched',
+				dispatch((input) => {
+					input.dispatchEvent(
+						new FocusEvent('focusin', {
+							bubbles: true,
+						}),
 					);
-					return;
-				}
-
-				if (focusDispatched.current) {
-					focusDispatched.current = false;
-					return;
-				}
-
-				const focusinEvent = new FocusEvent('focusin', {
-					bubbles: true,
+					input.dispatchEvent(new FocusEvent('focus'));
 				});
-				const focusEvent = new FocusEvent('focus');
-
-				input.dispatchEvent(focusinEvent);
-				input.dispatchEvent(focusEvent);
-
-				// Reset the dispatched flag
-				focusDispatched.current = false;
 			},
 			blur() {
-				const input = getInputElement();
-
-				if (!input) {
-					console.warn(
-						'Missing input ref; No blur-related events will be dispatched',
+				dispatch((input) => {
+					input.dispatchEvent(
+						new FocusEvent('focusout', {
+							bubbles: true,
+						}),
 					);
-					return;
-				}
-
-				if (blurDispatched.current) {
-					blurDispatched.current = false;
-					return;
-				}
-
-				const focusoutEvent = new FocusEvent('focusout', {
-					bubbles: true,
+					input.dispatchEvent(new FocusEvent('blur'));
 				});
-				const blurEvent = new FocusEvent('blur');
-
-				input.dispatchEvent(focusoutEvent);
-				input.dispatchEvent(blurEvent);
-
-				// Reset the dispatched flag
-				blurDispatched.current = false;
 			},
 		};
 	}, [optionsRef]);
 
-	return [ref, control];
+	return control;
 }
 export const FORM_ERROR_ELEMENT_NAME = '__form__';
 

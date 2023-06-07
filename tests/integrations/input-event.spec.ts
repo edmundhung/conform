@@ -207,19 +207,10 @@ test.describe('input event', () => {
 		await expect(form.baseLogs).toHaveText(logs);
 	});
 
-	test('works with submit event', async ({ page }) => {
+	test('works with focus event', async ({ page }) => {
 		const form = await getForm(page, 'abc');
-		const logs1 = [createLog('focus', 1), createLog('focus', 3)];
 
-		await form.nativeInput.focus();
-
-		await expect(form.nativeLogs).toHaveText(logs1);
-		await expect(form.baseLogs).toHaveText(logs1);
-
-		const logs2 = ['--- clear ---'];
-
-		await form.submit.click();
-		await expect(form.nativeLogs).toHaveText(logs2);
-		await expect(form.baseLogs).toHaveText(logs2);
+		await form.baseInput.focus();
+		await expect(form.baseInput).toBeFocused();
 	});
 });

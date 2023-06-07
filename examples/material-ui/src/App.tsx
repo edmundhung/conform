@@ -1,5 +1,10 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, conform, useInputEvent } from '@conform-to/react';
+import {
+	useForm,
+	conform,
+	useInputEvent,
+	validateConstraint,
+} from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -35,7 +40,11 @@ interface Schema {
 }
 
 export default function ExampleForm() {
-	const [form, fieldset] = useForm<Schema>({ shouldValidate: 'onBlur' });
+	const [form, fieldset] = useForm<Schema>({
+		onValidate(context) {
+			return validateConstraint(context);
+		},
+	});
 
 	return (
 		<Container maxWidth="sm">
@@ -173,15 +182,17 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [ref, control] = useInputEvent({
+	const controlRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
 			<input
-				ref={ref}
+				ref={controlRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
@@ -207,15 +218,24 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [inputRef, control] = useInputEvent();
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: inputRef,
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
 		<Autocomplete
 			disablePortal
 			options={options}
-			defaultValue={options.find((option) => option === config.defaultValue)}
-			onChange={(_, option) => control.change(`${option ?? ''}`)}
+			value={value}
+			onChange={(_, option) => {
+				const value = `${option ?? ''}`;
+				control.change(value);
+				setValue(value);
+			}}
 			onFocus={control.focus}
 			onBlur={control.blur}
 			renderInput={(params) => (
@@ -235,7 +255,9 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: inputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -265,7 +287,9 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent<HTMLInputElement>({
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: inputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
