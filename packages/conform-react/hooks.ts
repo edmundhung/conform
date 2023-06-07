@@ -510,12 +510,12 @@ export function useForm<
 					const shouldFallbackToServer =
 						messages.includes(VALIDATION_UNDEFINED);
 					const hasClientValidation = typeof config.onValidate !== 'undefined';
-					const isValid = messages.length === 0;
+					const isClientValid = messages.filter(m => m !== VALIDATION_UNDEFINED);
 
 					if (
 						hasClientValidation &&
 						(isSubmitting(submission.intent)
-							? shouldValidate && !isValid
+							? shouldValidate && !isClientValid
 							: !shouldFallbackToServer)
 					) {
 						report(form, submission);
