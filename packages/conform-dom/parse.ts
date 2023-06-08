@@ -8,6 +8,9 @@ export type Submission<Schema = any> = {
 	value?: Schema | null;
 };
 
+export const VALIDATION_UNDEFINED = '__undefined__';
+export const VALIDATION_SKIPPED = '__skipped__';
+
 export function parse(payload: FormData | URLSearchParams): Submission;
 export function parse<Schema>(
 	payload: FormData | URLSearchParams,

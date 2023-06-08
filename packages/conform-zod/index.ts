@@ -4,6 +4,8 @@ import {
 	type Submission,
 	getName,
 	parse as baseParse,
+	VALIDATION_SKIPPED,
+	VALIDATION_UNDEFINED,
 } from '@conform-to/dom';
 import * as z from 'zod';
 
@@ -254,6 +256,74 @@ export function parse<Schema extends z.ZodTypeAny>(
 				: resolveResult(schema.safeParse(payload));
 		},
 	});
+}
+
+/**
+ * A helper function to define a custom constraint on a superRefine check.
+ * Mainly used for async validation.
+ *
+ * @see https://conform.guide/api/zod#refine
+ */
+export function refine(
+	ctx: z.RefinementCtx,
+	options: {
+		/**
+		 * A validate function. If the function returns `undefined`,
+		 * it will fallback to server validation.
+		 */
+		validate: () => boolean | Promise<boolean> | undefined;
+		/**
+		 * Define when the validation should be run. If the value is `false`,
+		 * the validation will be skipped.
+		 */
+		when?: boolean;
+		/**
+		 * The message displayed when the validation fails.
+		 */
+		message: string;
+		/**
+		 * The path set to the zod issue.
+		 */
+		path?: z.IssueData['path'];
+	},
+): void | Promise<void> {
+	if (!options.when) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: VALIDATION_SKIPPED,
+			path: options.path,
+		});
+		return;
+	}
+
+	// Run the validation
+	const result = options.validate();
+
+	if (typeof result === 'undefined') {
+		// Validate only if the constraint is defined
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: VALIDATION_UNDEFINED,
+			path: options.path,
+		});
+		return;
+	}
+
+	const reportInvalid = (valid: boolean) => {
+		if (valid) {
+			return;
+		}
+
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: options.message,
+			path: options.path,
+		});
+	};
+
+	return typeof result === 'boolean'
+		? reportInvalid(result)
+		: result.then(reportInvalid);
 }
 
 export function ifNonEmptyString(
