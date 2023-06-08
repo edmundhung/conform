@@ -26,7 +26,7 @@ function createSchema(
 				.superRefine((username, ctx) =>
 					refine(ctx, {
 						validate: () => constarint.isUsernameUnique?.(username),
-						skip: intent !== 'submit' && intent !== 'validate/username',
+						when: intent === 'submit' || intent === 'validate/username',
 						message: 'Username is already used',
 					}),
 				),

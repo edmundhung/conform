@@ -90,3 +90,37 @@ export let action = async ({ request }) => {
   // ...
 };
 ```
+
+### refine
+
+A helper function to define a custom constraint on a superRefine check. This is mainly used to setup async validation.
+
+```tsx
+import { refine } from '@conform-to/zod';
+
+function createSchema(
+  intent: string,
+  constraints: {
+    // The validation will only be implemented on server side
+    isEmailUnique?: (email) => Promise<boolean>;
+  } = {},
+) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, 'Email is required')
+      .email('Email is invalid')
+      .superRefine((email, ctx) =>
+        refine(ctx, {
+          // It fallbacks to server validation when it returns an undefined value
+          validate: () => constraints.isEmailUnique?.(email),
+          // This makes it validate only when the user is submitting the form
+          // or updating the email
+          when: intent === 'submit' || intent === 'validate/email',
+          message: 'Email is already used',
+        }),
+      ),
+    // ...
+  });
+}
+```

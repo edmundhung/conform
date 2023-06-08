@@ -20,7 +20,7 @@ function createSchema(
 			.superRefine((email, ctx) =>
 				refine(ctx, {
 					validate: () => constraints.isEmailUnique?.(email),
-					skip: intent !== 'validate/email' && intent !== 'submit',
+					when: intent === 'validate/email' || intent === 'submit',
 					message: 'Email is already used',
 				}),
 			),

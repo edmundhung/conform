@@ -258,16 +258,36 @@ export function parse<Schema extends z.ZodTypeAny>(
 	});
 }
 
+/**
+ * A helper function to define a custom constraint on a superRefine check.
+ * Mainly used for async validation.
+ *
+ * @see https://conform.guide/api/zod#refine
+ */
 export function refine(
 	ctx: z.RefinementCtx,
 	options: {
+		/**
+		 * A validate function. If the function returns `undefined`,
+		 * it will fallback to server validation.
+		 */
 		validate: () => boolean | Promise<boolean> | undefined;
-		skip?: boolean;
+		/**
+		 * Define when the validation should be run. If the value is `false`,
+		 * the validation will be skipped.
+		 */
+		when?: boolean;
+		/**
+		 * The message displayed when the validation fails.
+		 */
 		message: string;
+		/**
+		 * The path set to the zod issue.
+		 */
 		path?: z.IssueData['path'];
 	},
 ): void | Promise<void> {
-	if (options.skip) {
+	if (!options.when) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: VALIDATION_SKIPPED,

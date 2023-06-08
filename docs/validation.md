@@ -260,7 +260,7 @@ function createSchema(
         refine(ctx, {
           validate: () => constraints.isEmailUnique?.(email),
           // Validate only when the email field is changed or when submitting
-          skip: intent !== 'validate/email' && intent !== 'submit',
+          when: intent === 'validate/email' || intent === 'submit',
           message: 'Email is already used',
         }),
       ),
