@@ -396,14 +396,18 @@ export function useForm<
 		constraint: config.constraint,
 		form: config.id,
 	});
-	const isHydrated = useRef(false);
+
+	const lastSubmissionRef = useRef(config.lastSubmission);
 
 	useSafeLayoutEffect(() => {
-		if (isHydrated.current && !config.lastSubmission) {
+		if (
+			lastSubmissionRef.current !== config.lastSubmission &&
+			config.lastSubmission === null
+		) {
 			ref.current?.reset();
 		}
 
-		isHydrated.current = true;
+		lastSubmissionRef.current = config.lastSubmission;
 	}, [ref, config.lastSubmission]);
 
 	useEffect(() => {
