@@ -26,6 +26,21 @@ async function runValidationScenario(page: Page) {
 
 	await expect(fieldset.name).toHaveValue('Blue');
 	await expect(fieldset.code).toHaveValue('#0000ff');
+
+	await fieldset.name.fill('Yellow');
+	await playground.submit.click();
+
+	await expect(playground.error).toHaveText(['', 'The color is invalid']);
+
+	await expect(fieldset.name).toHaveValue('Yellow');
+	await expect(fieldset.code).toHaveValue('#0000ff');
+
+	await fieldset.name.fill('Red');
+	await fieldset.code.fill('#ff0000');
+	await playground.submit.click();
+
+	await expect(fieldset.name).toHaveValue('Blue');
+	await expect(fieldset.code).toHaveValue('#0000ff');
 }
 
 test.beforeEach(async ({ page }) => {

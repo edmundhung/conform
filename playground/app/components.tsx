@@ -43,7 +43,7 @@ export function Playground({
 					<h3 className="text-lg font-medium leading-6 text-gray-900">
 						{title}
 					</h3>
-					<p className="mt-1 mb-2 text-sm text-gray-600">{description}</p>
+					<div className="mt-1 mb-2 text-sm text-gray-600">{description}</div>
 				</header>
 				{submission ? (
 					<details open={true}>
