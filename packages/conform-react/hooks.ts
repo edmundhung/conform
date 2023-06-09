@@ -958,10 +958,10 @@ export function useInputEvent(options: {
 					input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
 					// Update the input value to trigger a change event for input / textarea elements
 					setNativeValue(input, nextValue);
-					// Dispatch change event for select elements
-					input.dispatchEvent(new Event('change', { bubbles: true }));
 					// Dispatch input event with the updated input value
 					input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+					// Dispatch change event for select elements
+					input.dispatchEvent(new Event('change', { bubbles: true }));
 				});
 			},
 			focus() {

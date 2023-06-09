@@ -211,6 +211,6 @@ test.describe('input event', () => {
 		const form = await getForm(page, 'abc');
 
 		await form.baseInput.focus();
-		await expect(form.baseInput).toBeFocused();
+		await expect(form.nativeInput).toBeFocused();
 	});
 });
