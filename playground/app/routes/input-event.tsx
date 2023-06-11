@@ -1,21 +1,33 @@
 import { useInputEvent } from '@conform-to/react';
-import { useSearchParams } from '@remix-run/react';
+import { type LoaderArgs } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
 
-export default function BaseInputText() {
-	const [searchParams] = useSearchParams();
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
+
+	return {
+		delegateFocus: url.searchParams.get('delegateFocus') === 'yes',
+		defaultValue: url.searchParams.get('defaultValue'),
+	};
+}
+
+export default function Example() {
+	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
 	const controlRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
 		ref: controlRef,
-		onFocus(event) {
-			inputRef.current?.focus();
+		onFocus() {
+			if (delegateFocus) {
+				inputRef.current?.focus();
+			}
 		},
 		onReset() {
-			setValue(searchParams.get('defaultValue') ?? '');
+			setValue(defaultValue ?? '');
 		},
 	});
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [value, setValue] = useState(searchParams.get('defaultValue') ?? '');
+	const [value, setValue] = useState(defaultValue ?? '');
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
 		const input = event.target as HTMLInputElement;
@@ -49,6 +61,7 @@ export default function BaseInputText() {
 					<input
 						className="p-2 flex-1"
 						name="native-input"
+						type="text"
 						value={value}
 						ref={inputRef}
 						onChange={(e) => {
@@ -73,12 +86,15 @@ export default function BaseInputText() {
 					</button>
 				</div>
 				<div className="pt-4">
-					<div>Hidden input</div>
+					<div>Shadow input</div>
 					<input
 						ref={controlRef}
 						name="base-input"
 						type="text"
-						defaultValue={searchParams.get('defaultValue') ?? ''}
+						defaultValue={defaultValue ?? ''}
+						onChange={control.change}
+						onFocus={control.focus}
+						onBlur={control.blur}
 					/>
 				</div>
 			</div>

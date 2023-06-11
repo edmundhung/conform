@@ -827,35 +827,6 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 }
 
 /**
- * Triggering react custom change event
- * Solution based on dom-testing-library
- * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
- * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
- */
-function setNativeValue(element: FieldElement, value: string) {
-	if (element.value === value) {
-		// It will not trigger a change event if `element.value` is the same as the set value
-		return;
-	}
-
-	const { set: valueSetter } =
-		Object.getOwnPropertyDescriptor(element, 'value') || {};
-	const prototype = Object.getPrototypeOf(element);
-	const { set: prototypeValueSetter } =
-		Object.getOwnPropertyDescriptor(prototype, 'value') || {};
-
-	if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-		prototypeValueSetter.call(element, value);
-	} else {
-		if (valueSetter) {
-			valueSetter.call(element, value);
-		} else {
-			throw new Error('The given element does not have a value setter');
-		}
-	}
-}
-
-/**
  * useLayoutEffect is client-only.
  * This basically makes it a no-op on server
  */
@@ -863,10 +834,23 @@ const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
 interface InputControl {
-	change: (eventOrValue: { target: { value: string } } | string) => void;
-	click: () => void;
+	change: (
+		eventOrValue: { target: { value: string } } | string | boolean,
+	) => void;
 	focus: () => void;
 	blur: () => void;
+}
+
+export function useEventListeners(type: string, ref: RefObject<FieldElement>) {
+	useSafeLayoutEffect(() => {
+		const listener = (event: Event) => {};
+
+		document.addEventListener(type, listener);
+
+		return () => {
+			document.removeEventListener(type, listener);
+		};
+	}, [type, ref]);
 }
 
 /**
@@ -878,110 +862,169 @@ export function useInputEvent(options: {
 	ref:
 		| RefObject<FieldElement>
 		| (() => Element | RadioNodeList | FieldElement | null | undefined);
+	onInput?: (event: Event) => void;
 	onFocus?: (event: FocusEvent) => void;
+	onBlur?: (event: FocusEvent) => void;
 	onReset?: (event: Event) => void;
 }): InputControl {
 	const optionsRef = useConfigRef(options);
-	const eventDispatching = useRef(false);
+	const eventDispatched = useRef({
+		onInput: false,
+		onFocus: false,
+		onBlur: false,
+	});
 
 	useSafeLayoutEffect(() => {
-		const getInputElement = () => {
-			const element =
-				typeof optionsRef.current?.ref === 'function'
-					? optionsRef.current?.ref()
-					: optionsRef.current?.ref.current;
+		const createEventListner = (
+			listener: Exclude<keyof typeof options, 'ref'>,
+		) => {
+			return (event: any) => {
+				const element =
+					typeof optionsRef.current?.ref === 'function'
+						? optionsRef.current?.ref()
+						: optionsRef.current?.ref.current;
 
-			return isFieldElement(element) ? element : undefined;
+				if (
+					isFieldElement(element) &&
+					(listener === 'onReset'
+						? event.target === element.form
+						: event.target === element)
+				) {
+					if (listener !== 'onReset') {
+						console.log(listener, 'dispatched');
+						eventDispatched.current[listener] = true;
+					}
+
+					optionsRef.current?.[listener]?.(event);
+				}
+			};
 		};
-		const focusHandler = (event: FocusEvent) => {
-			const input = getInputElement();
+		const inputHandler = createEventListner('onInput');
+		const focusHandler = createEventListner('onFocus');
+		const blurHandler = createEventListner('onBlur');
+		const resetHandler = createEventListner('onReset');
 
-			if (input && event.target === input) {
-				optionsRef.current?.onFocus?.(event);
-			}
-		};
-		const resetHandler = (event: Event) => {
-			const input = getInputElement();
-
-			if (input?.form && event.target === input.form) {
-				optionsRef.current?.onReset?.(event);
-			}
-		};
-
-		// focus event does not bubble
+		// focus/blur event does not bubble
+		document.addEventListener('input', inputHandler, true);
 		document.addEventListener('focus', focusHandler, true);
+		document.addEventListener('blur', blurHandler, true);
 		document.addEventListener('reset', resetHandler);
 
 		return () => {
+			document.removeEventListener('input', inputHandler, true);
 			document.removeEventListener('focus', focusHandler, true);
+			document.removeEventListener('blur', blurHandler, true);
 			document.removeEventListener('reset', resetHandler);
 		};
 	}, []);
 
-	const control = useMemo(() => {
-		const dispatch = (fn: (input: FieldElement) => void) => {
-			const element =
-				typeof optionsRef.current?.ref === 'function'
-					? optionsRef.current?.ref()
-					: optionsRef.current?.ref.current;
-			const input = isFieldElement(element) ? element : undefined;
+	const control = useMemo<InputControl>(() => {
+		const dispatch = (
+			listener: Exclude<keyof typeof options, 'ref' | 'onReset'>,
+			fn: (element: FieldElement) => void,
+		) => {
+			console.log('try dispatching', listener);
+			if (!eventDispatched.current[listener]) {
+				const element =
+					typeof optionsRef.current?.ref === 'function'
+						? optionsRef.current?.ref()
+						: optionsRef.current?.ref.current;
 
-			if (eventDispatching.current) {
-				return;
+				if (!isFieldElement(element)) {
+					console.warn('Failed to dispatch event; is the input mounted?');
+					return;
+				}
+
+				// To avoid recursion
+				eventDispatched.current[listener] = true;
+				fn(element);
 			}
 
-			if (!input) {
-				console.warn('Failed to dispatch event; is the input mounted?');
-				return;
-			}
-
-			eventDispatching.current = true;
-			fn(input);
-			eventDispatching.current = false;
+			eventDispatched.current[listener] = false;
 		};
 
 		return {
-			click() {
-				dispatch((input) => {
-					input.click();
-				});
-			},
-			change(eventOrValue: { target: { value: string } } | string) {
-				dispatch((input) => {
-					// const previousValue = input.value;
-					const nextValue =
-						typeof eventOrValue === 'string'
-							? eventOrValue
-							: eventOrValue.target.value;
+			change(eventOrValue) {
+				dispatch('onInput', (element) => {
+					if (
+						element instanceof HTMLInputElement &&
+						(element.type === 'checkbox' || element.type === 'radio')
+					) {
+						if (typeof eventOrValue !== 'boolean') {
+							throw new Error(
+								'You should pass a boolean when changing a checkbox or radio input',
+							);
+						}
 
-					// Dispatch beforeinput event before updating the input value
-					input.dispatchEvent(new Event('beforeinput', { bubbles: true }));
-					// Update the input value to trigger a change event for input / textarea elements
-					setNativeValue(input, nextValue);
+						element.checked = eventOrValue;
+					} else {
+						if (typeof eventOrValue === 'boolean') {
+							throw new Error(
+								'You can pass a boolean only when changing a checkbox or radio input',
+							);
+						}
+
+						const value =
+							typeof eventOrValue === 'string'
+								? eventOrValue
+								: eventOrValue.target.value;
+
+						// No change event will triggered on React if `element.value` is updated
+						// before dispatching the event
+						if (element.value !== value) {
+							/**
+							 * Triggering react custom change event
+							 * Solution based on dom-testing-library
+							 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+							 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+							 */
+							const { set: valueSetter } =
+								Object.getOwnPropertyDescriptor(element, 'value') || {};
+							const prototype = Object.getPrototypeOf(element);
+							const { set: prototypeValueSetter } =
+								Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+							if (
+								prototypeValueSetter &&
+								valueSetter !== prototypeValueSetter
+							) {
+								prototypeValueSetter.call(element, value);
+							} else {
+								if (valueSetter) {
+									valueSetter.call(element, value);
+								} else {
+									throw new Error(
+										'The given element does not have a value setter',
+									);
+								}
+							}
+						}
+					}
+
 					// Dispatch input event with the updated input value
-					input.dispatchEvent(new InputEvent('input', { bubbles: true }));
-					// Dispatch change event for select elements
-					input.dispatchEvent(new Event('change', { bubbles: true }));
+					element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+					// Dispatch change event (necessary for select to update the selected option)
+					element.dispatchEvent(new Event('change', { bubbles: true }));
 				});
 			},
 			focus() {
-				dispatch((input) => {
-					input.dispatchEvent(
+				dispatch('onFocus', (element) => {
+					element.dispatchEvent(
 						new FocusEvent('focusin', {
 							bubbles: true,
 						}),
 					);
-					input.dispatchEvent(new FocusEvent('focus'));
+					element.dispatchEvent(new FocusEvent('focus'));
 				});
 			},
 			blur() {
-				dispatch((input) => {
-					input.dispatchEvent(
+				dispatch('onBlur', (element) => {
+					element.dispatchEvent(
 						new FocusEvent('focusout', {
 							bubbles: true,
 						}),
 					);
-					input.dispatchEvent(new FocusEvent('blur'));
+					element.dispatchEvent(new FocusEvent('blur'));
 				});
 			},
 		};
