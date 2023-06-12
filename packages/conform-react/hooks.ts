@@ -87,11 +87,6 @@ export interface FormConfig<
 	ref?: RefObject<HTMLFormElement>;
 
 	/**
-	 * @deprecated Use `shouldValidate` and `shouldRevalidate` instead.
-	 */
-	initialReport?: 'onSubmit' | 'onChange' | 'onBlur';
-
-	/**
 	 * Define when conform should start validation.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
@@ -414,16 +409,11 @@ export function useForm<
 
 	useEffect(() => {
 		// custom validate handler
-		const createValidateHandler = (name: string) => (event: Event) => {
+		const createValidateHandler = (type: string) => (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
-			const {
-				initialReport = 'onSubmit',
-				shouldValidate = initialReport === 'onChange'
-					? 'onInput'
-					: initialReport,
-				shouldRevalidate = 'onInput',
-			} = configRef.current;
+			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onInput' } =
+				configRef.current;
 
 			if (
 				!form ||
@@ -436,8 +426,8 @@ export function useForm<
 
 			if (
 				field.dataset.conformTouched
-					? shouldRevalidate === name
-					: shouldValidate === name
+					? shouldRevalidate === type
+					: shouldValidate === type
 			) {
 				requestIntent(form, validate(field.name));
 			}
