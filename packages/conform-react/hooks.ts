@@ -923,7 +923,6 @@ export function useInputEvent(options: {
 			listener: Exclude<keyof typeof options, 'ref' | 'onReset'>,
 			fn: (element: FieldElement) => void,
 		) => {
-			console.log('try dispatching', listener);
 			if (!eventDispatched.current[listener]) {
 				const element =
 					typeof optionsRef.current?.ref === 'function'

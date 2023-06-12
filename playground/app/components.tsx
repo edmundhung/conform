@@ -61,7 +61,7 @@ export function Playground({
 				) : null}
 			</aside>
 			<div>
-				<main className="shadow lg:rounded-md lg:overflow-hidden">
+				<main className="shadow lg:rounded-md">
 					<div className="mt-5 lg:mt-0 lg:col-span-2 px-4 py-5 bg-white lg:p-6">
 						{children}
 					</div>
