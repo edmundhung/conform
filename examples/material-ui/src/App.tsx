@@ -182,17 +182,17 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
@@ -219,9 +219,9 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const inputRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: inputRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const options = ['The Godfather', 'Pulp Fiction'];
@@ -241,7 +241,7 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 			renderInput={(params) => (
 				<TextField
 					{...params}
-					inputRef={inputRef}
+					inputRef={shadowInputRef}
 					label={label}
 					name={config.name}
 					error={Boolean(error)}
@@ -255,9 +255,9 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const inputRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: inputRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -265,7 +265,7 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
 			<input
-				ref={inputRef}
+				ref={shadowInputRef}
 				{...conform.input(config, {
 					type: 'number',
 					hidden: true,
@@ -287,9 +287,9 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const inputRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: inputRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -297,7 +297,7 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
 			<input
-				ref={inputRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 			/>

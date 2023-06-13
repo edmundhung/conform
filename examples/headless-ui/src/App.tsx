@@ -125,17 +125,17 @@ function classNames(...classes: Array<string | boolean>): string {
 
 function ExampleListBox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(event) => setValue(event.currentTarget.value)}
 				onFocus={() => buttonRef.current?.focus()}
@@ -203,10 +203,10 @@ function ExampleListBox(config: FieldConfig<string>) {
 function ExampleCombobox(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
 	const [query, setQuery] = useState('');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const filteredPeople =
@@ -219,7 +219,7 @@ function ExampleCombobox(config: FieldConfig<string>) {
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => {
 					setValue(e.target.value);
@@ -291,17 +291,17 @@ function ExampleCombobox(config: FieldConfig<string>) {
 
 function ExampleSwitch(config: FieldConfig<boolean>) {
 	const [checked, setChecked] = useState(config.defaultValue === 'on');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setChecked(config.defaultValue === 'on'),
 	});
 
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setChecked(e.target.value === 'on')}
 				onFocus={() => buttonRef.current?.focus()}
@@ -332,9 +332,9 @@ function ExampleSwitch(config: FieldConfig<boolean>) {
 
 function ExampleRadioGroup(config: FieldConfig<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 	const colors = [
@@ -356,7 +356,7 @@ function ExampleRadioGroup(config: FieldConfig<string>) {
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 			/>

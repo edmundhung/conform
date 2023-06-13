@@ -188,10 +188,10 @@ export default function Example() {
 
 function ExampleNumberInput(config: FieldConfig<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const inputRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: inputRef,
-		onFocus: () => inputRef.current?.focus(),
+		ref: shadowInputRef,
+		onFocus: () => shadowInputRef.current?.focus(),
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -205,7 +205,7 @@ function ExampleNumberInput(config: FieldConfig<number>) {
 				setValue(value);
 			}}
 		>
-			<NumberInputField ref={inputRef} />
+			<NumberInputField ref={shadowInputRef} />
 			<NumberInputStepper>
 				<NumberIncrementStepper />
 				<NumberDecrementStepper />
@@ -219,17 +219,17 @@ function ExamplePinInput({
 	...config
 }: FieldConfig<string> & { isInvalid: boolean }) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
@@ -251,16 +251,16 @@ function ExamplePinInput({
 
 function ExampleSlider(config: FieldConfig<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const controlRef = useRef<HTMLInputElement>(null);
+	const shadowInputRef = useRef<HTMLInputElement>(null);
 	const control = useInputEvent({
-		ref: controlRef,
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
 	return (
 		<>
 			<input
-				ref={controlRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 			/>
