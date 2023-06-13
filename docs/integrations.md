@@ -60,7 +60,10 @@ import Select from 'react-select';
 
 function Example() {
   const [form, { currency }] = useForm();
-  const [inputRef, control] = useInputEvent();
+  const shadowInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: shadowInputRef,
+  });
 
   return (
     <form {...form.props}>
@@ -69,7 +72,10 @@ function Example() {
         {/*
           This is a shadow input which will be validated by Conform
         */}
-        <input ref={inputRef} {...conform.input(currency, { hidden: true })} />
+        <input
+          ref={shadowInputRef}
+          {...conform.input(currency, { hidden: true })}
+        />
         {/*
           This makes the corresponding events to be dispatched
           from the element that the `inputRef` is set to.
@@ -83,6 +89,7 @@ function Example() {
           }
           defaultValue={currency.defaultValue ?? ''}
           onChange={control.change}
+          onFocus={control.focus}
           onBlur={control.blur}
         />
         <div>{currency.error}</div>
@@ -102,7 +109,6 @@ import ReactSelect from 'react-select';
 
 function Example() {
   const [form, { currency }] = useForm();
-  const [inputRef, control] = useInputEvent();
 
   return (
     <form {...form.props}>
@@ -130,15 +136,19 @@ interface SelectProps extends FieldConfig<string> {
 }
 
 function Select({ options, .. }: SelectProps) {
-  const [inputRef, control] = useInputEvent();
+  const shadowInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: shadowInputRef,
+  });
 
   return (
     <>
-      <input ref={inputRef} {...conform.input(config, { hidden: true })} />
+      <input ref={shadowInputRef} {...conform.input(config, { hidden: true })} />
       <ReactSelect
         options={options}
         defaultValue={config.defaultValue ?? ''}
         onChange={control.change}
+        onFocus={control.focus}
         onBlur={control.blur}
       />
     </>
@@ -150,9 +160,12 @@ If the custom control support manual focus, you can also hook it with the shadow
 
 ```tsx
 function Select({ options, .. }: SelectProps) {
-  const [inputRef, control] = useInputEvent();
+  const shadowInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: shadowInputRef,
+  });
   // The type of the ref might be different depends on the UI library
-  const ref = useRef<HTMLInputElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <>
@@ -161,12 +174,12 @@ function Select({ options, .. }: SelectProps) {
           to the Select component.
         */}
       <input
-        ref={inputRef}
+        ref={shadowInputRef}
         {...conform.input(config, { hidden: true })}
-        onFocus={() => ref.current?.focus()}
+        onFocus={() => customInputRef.current?.focus()}
       />
       <Select
-        innerRef={ref}
+        innerRef={customInputRef}
         options={options}
         defaultValue={config.defaultValue ?? ''}
         onChange={control.change}
@@ -182,14 +195,16 @@ The hook also provides support for the **reset** event if needed:
 ```tsx
 function Select({ options, .. }: SelectProps) {
   const [value, setValue] = useState(config.defaultValue ?? '');
-  const [inputRef, control] = useInputEvent({
+  const shadowInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: shadowInputRef,
     onReset: () => setValue(config.defaultValue ?? ''),
   });
 
   return (
     <>
       <input
-        ref={inputRef}
+        ref={shadowInputRef}
         {...conform.input(config, { hidden: true })}
         onChange={(e) => setValue(e.target.value)}
       />

@@ -280,7 +280,7 @@ function Example() {
 
 ### useInputEvent
 
-It returns a ref object and a set of helpers that dispatch corresponding dom event.
+It returns a set of helpers that dispatch corresponding dom event.
 
 ```tsx
 import { useForm, useInputEvent } from '@conform-to/react';
@@ -290,25 +290,28 @@ import { useState, useRef } from 'react';
 function MuiForm() {
   const [form, { category }] = useForm();
   const [value, setValue] = useState(category.defaultValue ?? '');
-  const [ref, control] = useInputEvent({
+  const baseInputRef = useRef<HTMLInputElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: baseInputRef,
+    // Reset the state on form reset
     onReset: () => setValue(category.defaultValue ?? ''),
   });
-  const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <form {...form.props}>
-      {/* Render a shadow input somewhere */}
+      {/* Render a base input somewhere */}
       <input
-        ref={ref}
+        ref={baseInputRef}
         {...conform.input(category, { hidden: true })}
         onChange={(e) => setValue(e.target.value)}
-        onFocus={() => inputRef.current?.focus()}
+        onFocus={() => customInputRef.current?.focus()}
       />
 
       {/* MUI Select is a controlled component */}
       <TextField
         label="Category"
-        inputRef={inputRef}
+        inputRef={customInputRef}
         value={value}
         onChange={control.change}
         onBlur={control.blur}

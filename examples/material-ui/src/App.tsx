@@ -1,5 +1,10 @@
 import type { FieldConfig } from '@conform-to/react';
-import { useForm, conform, useInputEvent } from '@conform-to/react';
+import {
+	useForm,
+	conform,
+	useInputEvent,
+	validateConstraint,
+} from '@conform-to/react';
 import {
 	TextField,
 	Button,
@@ -35,7 +40,11 @@ interface Schema {
 }
 
 export default function ExampleForm() {
-	const [form, fieldset] = useForm<Schema>({ shouldValidate: 'onBlur' });
+	const [form, fieldset] = useForm<Schema>({
+		onValidate(context) {
+			return validateConstraint(context);
+		},
+	});
 
 	return (
 		<Container maxWidth="sm">
@@ -173,15 +182,17 @@ interface FieldProps<Schema> extends FieldConfig<Schema> {
 
 function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [ref, control] = useInputEvent({
+	const shadowInputRef = useRef<HTMLInputElement>(null);
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	return (
 		<>
 			<input
-				ref={ref}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 				onFocus={() => inputRef.current?.focus()}
@@ -207,21 +218,30 @@ function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
 }
 
 function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [inputRef, control] = useInputEvent();
+	const [value, setValue] = useState(config.defaultValue ?? '');
+	const shadowInputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: shadowInputRef,
+		onReset: () => setValue(config.defaultValue ?? ''),
+	});
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
 		<Autocomplete
 			disablePortal
 			options={options}
-			defaultValue={options.find((option) => option === config.defaultValue)}
-			onChange={(_, option) => control.change(`${option ?? ''}`)}
+			value={value}
+			onChange={(_, option) => {
+				const value = `${option ?? ''}`;
+				control.change(value);
+				setValue(value);
+			}}
 			onFocus={control.focus}
 			onBlur={control.blur}
 			renderInput={(params) => (
 				<TextField
 					{...params}
-					inputRef={inputRef}
+					inputRef={shadowInputRef}
 					label={label}
 					name={config.name}
 					error={Boolean(error)}
@@ -235,7 +255,9 @@ function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
 
 function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent({
+	const shadowInputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -243,7 +265,7 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
 			<input
-				ref={inputRef}
+				ref={shadowInputRef}
 				{...conform.input(config, {
 					type: 'number',
 					hidden: true,
@@ -265,7 +287,9 @@ function ExampleRating({ label, error, ...config }: FieldProps<number>) {
 
 function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 	const [value, setValue] = useState(config.defaultValue ?? '');
-	const [inputRef, control] = useInputEvent<HTMLInputElement>({
+	const shadowInputRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: shadowInputRef,
 		onReset: () => setValue(config.defaultValue ?? ''),
 	});
 
@@ -273,7 +297,7 @@ function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
 		<FormControl variant="standard" error={Boolean(error)} required>
 			<FormLabel>{label}</FormLabel>
 			<input
-				ref={inputRef}
+				ref={shadowInputRef}
 				{...conform.input(config, { hidden: true })}
 				onChange={(e) => setValue(e.target.value)}
 			/>

@@ -1,31 +1,33 @@
-import { useInputEvent, conform } from '@conform-to/react';
-import { useSearchParams } from '@remix-run/react';
+import { useInputEvent } from '@conform-to/react';
+import { type LoaderArgs } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
 
-export default function BaseInputText() {
-	const [searchParams] = useSearchParams();
-	const [baseRef, control] = useInputEvent({
-		onSubmit: (e) => {
-			const submitter = e.submitter as HTMLButtonElement | undefined;
+export async function loader({ request }: LoaderArgs) {
+	const url = new URL(request.url);
 
-			e.preventDefault();
+	return {
+		delegateFocus: url.searchParams.get('delegateFocus') === 'yes',
+		defaultValue: url.searchParams.get('defaultValue'),
+	};
+}
 
-			setLogsByName((prev) => {
-				const next: Record<string, string[]> = {};
-
-				if (submitter?.name === 'intent') {
-					for (const name of Object.keys(prev)) {
-						next[name] = [`--- ${submitter.value} ---`];
-					}
-				}
-
-				return next;
-			});
+export default function Example() {
+	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
+	const controlRef = useRef<HTMLInputElement>(null);
+	const control = useInputEvent({
+		ref: controlRef,
+		onFocus() {
+			if (delegateFocus) {
+				inputRef.current?.focus();
+			}
 		},
-		onReset: () => setValue(searchParams.get('defaultValue') ?? ''),
+		onReset() {
+			setValue(defaultValue ?? '');
+		},
 	});
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [value, setValue] = useState(searchParams.get('defaultValue') ?? '');
+	const [value, setValue] = useState(defaultValue ?? '');
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
 		const input = event.target as HTMLInputElement;
@@ -55,20 +57,11 @@ export default function BaseInputText() {
 		>
 			<div className="sticky top-0 pt-4 pb-8 bg-gray-100 border-b">
 				<label>Type here</label>
-				<input
-					ref={baseRef}
-					{...conform.input(
-						{
-							name: 'base-input',
-							defaultValue: searchParams.get('defaultValue') ?? '',
-						},
-						{ hidden: true },
-					)}
-				/>
 				<div className="flex flex-row gap-4">
 					<input
 						className="p-2 flex-1"
 						name="native-input"
+						type="text"
 						value={value}
 						ref={inputRef}
 						onChange={(e) => {
@@ -91,6 +84,18 @@ export default function BaseInputText() {
 					>
 						Reset
 					</button>
+				</div>
+				<div className="pt-4">
+					<div>Shadow input</div>
+					<input
+						ref={controlRef}
+						name="base-input"
+						type="text"
+						defaultValue={defaultValue ?? ''}
+						onChange={control.change}
+						onFocus={control.focus}
+						onBlur={control.blur}
+					/>
 				</div>
 			</div>
 			<div className="my-4 flex flex-row">
