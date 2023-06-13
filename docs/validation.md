@@ -96,17 +96,6 @@ Writing validation logic manually could be cumbersome. You can also use a schema
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
-const schema = z
-  .object({
-    email: z.string().min(1, 'Email is required').email('Email is invalid'),
-    password: z.string().min(1, 'Password is required'),
-    confirmPassword: z.string().min(1, 'Confirm Password is required'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Password does not match',
-    path: ['confirmPassword'],
-  });
-
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
   const submission = parse(formData, {
@@ -174,7 +163,7 @@ export default function Signup() {
 
 ## Async Validation
 
-The usage of [server validation](#server-validation) might feels limited, but it set the foundation of async validation on Conform. Conform does validation as an submission, with client validation act as a middleware, if the client result says it has all the information it needs, Conform will block the submission. But if it needs something else, Conform will let it continue its journey to the server.
+The usage of [server validation](#server-validation) might feel limited, but it set the foundation of async validation on Conform. Conform does validation as a submission, with client validation act as a middleware, if the client result says it has all the information it needs, Conform will block the submission. But if it needs something else, Conform will let it continue its journey to the server.
 
 Here is an example how you can do async validation with Zod:
 
