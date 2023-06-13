@@ -11,7 +11,15 @@ async function runValidationScenario(page: Page) {
 		'Please accept the terms of service',
 	]);
 
+	await playground.reset.click();
+	await expect(playground.error).toHaveText(['', '']);
+
 	await playground.submit.click();
+
+	await expect(playground.error).toHaveText([
+		'Language is required',
+		'Please accept the terms of service',
+	]);
 
 	await playground.container.getByText('Please select').click();
 	await playground.container.getByText('Deutsch').click();
@@ -26,7 +34,6 @@ async function runValidationScenario(page: Page) {
 
 	await expect(playground.error).toHaveText(['', '']);
 
-	await expect(playground.error).toHaveText(['', '']);
 	await expect(playground.submission).toHaveText(
 		JSON.stringify(
 			{
@@ -45,9 +52,6 @@ async function runValidationScenario(page: Page) {
 			2,
 		),
 	);
-
-	await playground.reset.click();
-	await expect(playground.error).toHaveText(['', '']);
 }
 
 test('Client Validation', async ({ page }) => {
