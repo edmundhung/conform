@@ -15,7 +15,7 @@ A submit button can contribute to the form data when it triggers the submission 
 
 ### Submission Intent
 
-The submitter allows us to extend the form with different behaviour based on the intent. However, it pollutes the form value with data that are used to control form behaviour.
+The submitter is particular useful when you want to extend the form with different behaviour based on the intent. However, it also pollutes the form value with data that are used to control form behaviour.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -109,7 +109,7 @@ export default function Todos() {
 
 ## Validation
 
-A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) intent button builder.
+A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) intent.
 
 ```tsx
 import { useForm, conform, validate } from '@conform-to/react';
@@ -120,7 +120,7 @@ export default function Todos() {
   return (
     <form {...form.props}>
       <input {...conform.input(email)} />
-      {/* Validating field by name */}
+      {/* Validating field manually */}
       <button {...validate(email.name)}>Validate email</button>
       <button>Send</button>
     </form>
@@ -130,7 +130,7 @@ export default function Todos() {
 
 ## Triggering an intent
 
-Sometimes, it could be useful to trigger an intent without requiring users to click on the intent button. We can do this by capturing the button element with `useRef` and triggering the intent with `.click()`
+Sometimes, it could be useful to trigger an intent without requiring users to click on the intent button. We can achieve it by capturing the button element with `useRef` and triggering the intent with `button.click()`
 
 ```tsx
 import { useForm, useFieldList, conform, list } from '@conform-to/react';
@@ -145,7 +145,7 @@ export default function Todos() {
     if (taskList.length === 0) {
       // Ensure at least 1 task is shown
       // by clicking on the Add task button
-      buttonRef.click();
+      buttonRef.current?.click();
     }
   }, [taskList.length]);
 
@@ -203,4 +203,4 @@ export default function Todos() {
 }
 ```
 
-Conform also utilises this helper to trigger the validate intent based on the event received and its event target, e.g. blur / input event on each field.
+Conform is also utilizing the requestIntent helper to trigger the validate intent based on input and blur event.

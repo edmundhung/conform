@@ -16,7 +16,7 @@ Conform supports several validation modes. In this section, we will walk you thr
 
 ## Server Validation
 
-**Conform** enables you to validate a form **fully server side** even .
+**Conform** enables you to validate a form **fully server side**.
 
 ```tsx
 import { useForm, parse } from '@conform-to/react';
@@ -79,7 +79,7 @@ export async function action({ request }: ActionArgs) {
 export default function Signup() {
   // Last submission returned by the server
   const lastSubmission = useActionData<typeof action>();
-  const [form] = useForm<SignupForm>({
+  const [form] = useForm({
     // Sync the result of last submission
     lastSubmission,
   });
@@ -90,9 +90,10 @@ export default function Signup() {
 
 ### Schema Validation
 
-Writing validation logic manually could be cumbersome. You can also use a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
+You can also validate the form with a schema validation library like [yup](https://github.com/jquense/yup) or [zod](https://github.com/colinhacks/zod):
 
 ```tsx
+// Import the parse helper from @conform-to/zod instead
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -216,7 +217,7 @@ export default function Signup() {
     lastSubmission,
     onValidate({ formData }) {
       return parse(formData, {
-        // Create the schema without any constraint defined
+        // Create the schema without any constraint implemented
         schema: createSchema(),
       });
     },
@@ -228,7 +229,7 @@ export default function Signup() {
 
 ## Skipping Validation
 
-Some validation could be expensive, especially when they require querying from a 3rd party service. This can be minimized by checking the submission intent.
+By default, Conform validates all fields everytime. This could be expensive especially with async validation. One solution is to minimize the validation by checking the submission intent.
 
 ```tsx
 import { parse } from '@conform-to/zod';
