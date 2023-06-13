@@ -37,21 +37,25 @@ Conform can also focus on custom control if it exposes a ref for you to focus ma
 
 ```tsx
 function Select({ options, .. }: SelectProps) {
-  const [inputRef, control] = useInputEvent();
-  const ref = useRef<HTMLInputElement>(null);
+  const shadowInputRef = useRef<HTMLInputElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
+  const control = useInputEvent({
+    ref: shadowInputRef,
+  });
 
   return (
     <>
       <input
-        ref={inputRef}
+        ref={shadowInputRef}
         {...conform.input(config, { hidden: true })}
-        onFocus={() => ref.current?.focus()}
+        onFocus={() => customInputRef.current?.focus()}
       />
       <Select
-        innerRef={ref}
+        innerRef={customInputRef}
         options={options}
         defaultValue={config.defaultValue ?? ''}
         onChange={control.change}
+        onFocus={control.focus}
         onBlur={control.blur}
       />
     </>
