@@ -238,4 +238,33 @@ test.describe('conform-zod', () => {
 			},
 		});
 	});
+
+	test('parse with errorMap', () => {
+		const schema = z.object({
+			text: z.string().min(1),
+		});
+		const formData = createFormData([['text', '']]);
+
+		expect(
+			parse(formData, {
+				schema,
+				errorMap(error, ctx) {
+					if (error.code === 'too_small' && error.minimum === 1) {
+						return { message: 'The field is required' };
+					}
+
+					// fall back to default message!
+					return { message: ctx.defaultError };
+				},
+			}),
+		).toEqual({
+			intent: 'submit',
+			payload: {
+				text: '',
+			},
+			error: {
+				text: 'The field is required',
+			},
+		});
+	});
 });

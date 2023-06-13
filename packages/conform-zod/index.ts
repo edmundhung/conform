@@ -180,6 +180,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 			payload: Record<string, any>;
 		}) => boolean;
 		async?: false;
+		errorMap?: z.ZodErrorMap;
 	},
 ): Submission<z.output<Schema>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -196,6 +197,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 			payload: Record<string, any>;
 		}) => boolean;
 		async: true;
+		errorMap?: z.ZodErrorMap;
 	},
 ): Promise<Submission<z.output<Schema>>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -212,6 +214,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 			payload: Record<string, any>;
 		}) => boolean;
 		async?: boolean;
+		errorMap?: z.ZodErrorMap;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
 	return baseParse<z.output<Schema>>(payload, {
@@ -252,8 +255,12 @@ export function parse<Schema extends z.ZodTypeAny>(
 			};
 
 			return config.async
-				? schema.safeParseAsync(payload).then(resolveResult)
-				: resolveResult(schema.safeParse(payload));
+				? schema
+						.safeParseAsync(payload, { errorMap: config.errorMap })
+						.then(resolveResult)
+				: resolveResult(
+						schema.safeParse(payload, { errorMap: config.errorMap }),
+				  );
 		},
 	});
 }
