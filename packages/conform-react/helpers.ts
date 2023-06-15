@@ -77,12 +77,6 @@ export function errorId<Config extends { id?: string }>(
 	return config.id ? `${config.id}-error` : undefined;
 }
 
-export function ariaInvalid<Config extends { id?: string; error?: string }>(
-	config: Config,
-): boolean {
-	return Boolean(config.id && config.error?.length);
-}
-
 export function autoFocus(config: FieldConfig<any>): boolean {
 	return Object.entries(config.initialError ?? {}).length > 0;
 }
@@ -98,13 +92,6 @@ export function ariaDescribedBy<Config extends { id?: string; error?: string }>(
 	return descriptionId
 		? `${errorId(config)} ${descriptionId}`
 		: errorId(config);
-}
-
-export function defaultChecked(
-	config: FieldConfig<any>,
-	value = 'on',
-): boolean {
-	return config.defaultValue === value;
 }
 
 export const hiddenProps: HiddenProps = {
@@ -142,12 +129,21 @@ function getFormControlProps(
 		props.autoFocus = true;
 	}
 
-	if (options?.ariaAttributes) {
-		props['aria-describedby'] = ariaDescribedBy(
-			config,
-			options?.description ? descriptionId(config) : undefined,
-		);
-		props['aria-invalid'] = ariaInvalid(config);
+	const error = errorId(config);
+
+	if (error && options?.ariaAttributes) {
+		const description = options?.description
+			? descriptionId(config)
+			: undefined;
+
+		if (config.id && config.error) {
+			props['aria-invalid'] = true;
+			props['aria-describedby'] = description
+				? `${error} ${description}`
+				: `${error}`;
+		} else if (description) {
+			props['aria-describedby'] = description;
+		}
 	}
 
 	if (options?.hidden) {
