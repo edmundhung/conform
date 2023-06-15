@@ -6,17 +6,20 @@ import {
 import type { FieldConfig, Primitive } from './hooks.js';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
-interface FormControlProps {
+interface FormControlProps extends Partial<HiddenProps> {
 	id?: string;
 	name: string;
 	form?: string;
 	required?: boolean;
 	autoFocus?: boolean;
-	tabIndex?: number;
-	style?: CSSProperties;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-	'aria-hidden'?: boolean;
+}
+
+interface HiddenProps {
+	tabIndex: number;
+	style: CSSProperties;
+	'aria-hidden': boolean;
 }
 
 interface InputProps<Schema> extends FormControlProps {
@@ -46,6 +49,7 @@ interface TextareaProps extends FormControlProps {
 
 type BaseOptions = {
 	description?: boolean;
+	ariaAttributes?: boolean;
 	hidden?: boolean;
 };
 
@@ -61,20 +65,66 @@ type InputOptions = BaseOptions &
 		  }
 	);
 
-/**
- * Style to make the input element visually hidden
- * Based on the `sr-only` class from tailwindcss
- */
-const hiddenStyle: CSSProperties = {
-	position: 'absolute',
-	width: '1px',
-	height: '1px',
-	padding: 0,
-	margin: '-1px',
-	overflow: 'hidden',
-	clip: 'rect(0,0,0,0)',
-	whiteSpace: 'nowrap',
-	border: 0,
+export function descriptionId<Config extends { id?: string }>(
+	config: Config,
+): string | undefined {
+	return config.id ? `${config.id}-description` : undefined;
+}
+
+export function errorId<Config extends { id?: string }>(
+	config: Config,
+): string | undefined {
+	return config.id ? `${config.id}-error` : undefined;
+}
+
+export function ariaInvalid<Config extends { id?: string; error?: string }>(
+	config: Config,
+): boolean {
+	return Boolean(config.id && config.error?.length);
+}
+
+export function autoFocus(config: FieldConfig<any>): boolean {
+	return Object.entries(config.initialError ?? {}).length > 0;
+}
+
+export function ariaDescribedBy<Config extends { id?: string; error?: string }>(
+	config: Config,
+	descriptionId?: string,
+): string | undefined {
+	if (!config.id || !config.error?.length) {
+		return descriptionId;
+	}
+
+	return descriptionId
+		? `${errorId(config)} ${descriptionId}`
+		: errorId(config);
+}
+
+export function defaultChecked(
+	config: FieldConfig<any>,
+	value = 'on',
+): boolean {
+	return config.defaultValue === value;
+}
+
+export const hiddenProps: HiddenProps = {
+	/**
+	 * Style to make the input element visually hidden
+	 * Based on the `sr-only` class from tailwindcss
+	 */
+	style: {
+		position: 'absolute',
+		width: '1px',
+		height: '1px',
+		padding: 0,
+		margin: '-1px',
+		overflow: 'hidden',
+		clip: 'rect(0,0,0,0)',
+		whiteSpace: 'nowrap',
+		border: 0,
+	},
+	tabIndex: -1,
+	'aria-hidden': true,
 };
 
 function getFormControlProps(
@@ -88,30 +138,22 @@ function getFormControlProps(
 		required: config.required,
 	};
 
-	if (config.id) {
-		props.id = config.id;
-	}
-
-	if (config.descriptionId && options?.description) {
-		props['aria-describedby'] = config.descriptionId;
-	}
-
-	if (config.errorId && config.error?.length) {
-		props['aria-invalid'] = true;
-		props['aria-describedby'] =
-			config.descriptionId && options?.description
-				? `${config.errorId} ${config.descriptionId}`
-				: config.errorId;
-	}
-
-	if (config.initialError && Object.entries(config.initialError).length > 0) {
+	if (autoFocus(config)) {
 		props.autoFocus = true;
 	}
 
+	if (options?.ariaAttributes) {
+		props['aria-describedby'] = ariaDescribedBy(
+			config,
+			options?.description ? descriptionId(config) : undefined,
+		);
+		props['aria-invalid'] = ariaInvalid(config);
+	}
+
 	if (options?.hidden) {
-		props.style = hiddenStyle;
-		props.tabIndex = -1;
-		props['aria-hidden'] = true;
+		props.style = hiddenProps.style;
+		props.tabIndex = hiddenProps.tabIndex;
+		props['aria-hidden'] = hiddenProps['aria-hidden'];
 	}
 
 	return props;

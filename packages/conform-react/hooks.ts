@@ -45,7 +45,15 @@ export interface FieldConfig<Schema> extends FieldConstraint<Schema> {
 	defaultValue?: FieldValue<Schema>;
 	initialError?: Record<string, string | string[]>;
 	form?: string;
+
+	/**
+	 * @deprecated Please use `conform.descriptionId(field)` instead.
+	 */
 	descriptionId?: string;
+
+	/**
+	 * @deprecated Please use `conform.errorId(field)` instead.
+	 */
 	errorId?: string;
 
 	/**
@@ -172,6 +180,10 @@ interface FormProps {
 
 interface Form {
 	id?: string;
+
+	/**
+	 * @deprecated Please use `conform.errorId(form)` instead.
+	 */
 	errorId?: string;
 	error: string;
 	errors: string[];
