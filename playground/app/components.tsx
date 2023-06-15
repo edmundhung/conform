@@ -1,4 +1,5 @@
 import type { FieldConfig } from '@conform-to/react';
+import { conform } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -117,7 +118,10 @@ export function Field({ label, inline, config, children }: FieldProps) {
 				</label>
 				{children}
 			</div>
-			<div id={config?.errorId} className="my-1 space-y-0.5">
+			<div
+				id={config?.id ? conform.errorId(config) : undefined}
+				className="my-1 space-y-0.5"
+			>
 				{!config?.errors?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
