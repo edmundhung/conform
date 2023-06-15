@@ -30,13 +30,46 @@ function Example() {
         <form {...form.props}>
             <label htmlFor={message.id}>
             <input
+                type="text"
                 id={message.id}
                 name={message.name}
                 defaultValue={message.defaultValue}
-                aria-invalid={message.error ? true : undefined}
+                aria-invalid={message.error ? 'true' : undefined}
                 aria-describedby={message.error ? `${message.id}-error` : undefined}
             />
             <div id={`${message.id}-error`}>
+                {message.error}
+            </div>
+            <button>Send</button>
+        </form>
+    );
+}
+```
+
+Or you can use the [conform](/packages/conform-react/README.md#conform) helpers to configure the aria attributes together with all other attributes.
+
+```tsx
+import { useForm, conform } from '@conform-to/react';
+import { useId } from 'react';
+
+function Example() {
+    // If you are using react 18, you can generate
+    // an unique id with the useId hook
+    const id = useId()
+    const [form, { message }] = useForm({
+        id,
+    });
+
+    return (
+        <form {...form.props}>
+            <label htmlFor={message.id}>
+            <input
+                {...conform.input(message, {
+                    type: 'text',
+                    ariaAttributes: true,
+                })}
+            />
+            <div id={conform.errorId(message)}>
                 {message.error}
             </div>
             <button>Send</button>

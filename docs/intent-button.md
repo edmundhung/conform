@@ -93,7 +93,7 @@ export default function Todos() {
       <ul>
         {taskList.map((task, index) => (
           <li key={task.key}>
-            <input {...conform.input(task)} />
+            <input name={task.name} />
             <button {...list.remove(tasks.name, { index })}>Delete</button>
           </li>
         ))}
@@ -112,14 +112,14 @@ export default function Todos() {
 A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) intent.
 
 ```tsx
-import { useForm, conform, validate } from '@conform-to/react';
+import { useForm, validate } from '@conform-to/react';
 
 export default function Todos() {
   const [form, { email }] = useForm();
 
   return (
     <form {...form.props}>
-      <input {...conform.input(email)} />
+      <input name={email.name} />
       {/* Validating field manually */}
       <button {...validate(email.name)}>Validate email</button>
       <button>Send</button>
@@ -154,7 +154,7 @@ export default function Todos() {
       <ul>
         {taskList.map((task, index) => (
           <li key={task.key}>
-            <input {...conform.input(task)} />
+            <input name={task.name} />
           </li>
         ))}
       </ul>
@@ -193,7 +193,7 @@ export default function Todos() {
       <DragAndDrop onDrop={handleDrop}>
         {taskList.map((task, index) => (
           <div key={task.key}>
-            <input {...conform.input(task)} />
+            <input name={task.name} />
           </div>
         ))}
       </DragAndDrop>

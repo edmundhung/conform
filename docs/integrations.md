@@ -74,7 +74,10 @@ function Example() {
         */}
         <input
           ref={shadowInputRef}
-          {...conform.input(currency, { hidden: true })}
+          {...conform.input(currency, {
+            ariaAttributes: true,
+            hidden: true,
+          })}
         />
         {/*
           This makes the corresponding events to be dispatched
@@ -134,7 +137,7 @@ interface SelectProps extends FieldConfig<string> {
   options: Array<{ label: string; value: string }>;
 }
 
-function Select({ options, .. }: SelectProps) {
+function Select({ options, ...config }: SelectProps) {
   const shadowInputRef = useRef<HTMLInputElement>(null);
   const control = useInputEvent({
     ref: shadowInputRef,
@@ -142,10 +145,16 @@ function Select({ options, .. }: SelectProps) {
 
   return (
     <>
-      <input ref={shadowInputRef} {...conform.input(config, { hidden: true })} />
+      <input
+        ref={shadowInputRef}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
+      />
       <ReactSelect
         options={options}
-        defaultValue={config.defaultValue ?? ''}
+        defaultValue={config.defaultValue}
         onChange={control.change}
         onFocus={control.focus}
         onBlur={control.blur}
@@ -158,7 +167,7 @@ function Select({ options, .. }: SelectProps) {
 If the custom control support manual focus, you can also hook it with the shadow input and let Conform focus on it when there is any error:
 
 ```tsx
-function Select({ options, .. }: SelectProps) {
+function Select({ options, ...config }: SelectProps) {
   const shadowInputRef = useRef<HTMLInputElement>(null);
   const control = useInputEvent({
     ref: shadowInputRef,
@@ -174,13 +183,16 @@ function Select({ options, .. }: SelectProps) {
         */}
       <input
         ref={shadowInputRef}
-        {...conform.input(config, { hidden: true })}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
         onFocus={() => customInputRef.current?.focus()}
       />
       <Select
         innerRef={customInputRef}
         options={options}
-        defaultValue={config.defaultValue ?? ''}
+        defaultValue={config.defaultValue}
         onChange={control.change}
         onBlur={control.blur}
       />
@@ -204,7 +216,10 @@ function Select({ options, .. }: SelectProps) {
     <>
       <input
         ref={shadowInputRef}
-        {...conform.input(config, { hidden: true })}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
         onChange={(e) => setValue(e.target.value)}
       />
       <Select
