@@ -81,19 +81,6 @@ export function autoFocus(config: FieldConfig<any>): boolean {
 	return Object.entries(config.initialError ?? {}).length > 0;
 }
 
-export function ariaDescribedBy<Config extends { id?: string; error?: string }>(
-	config: Config,
-	descriptionId?: string,
-): string | undefined {
-	if (!config.id || !config.error?.length) {
-		return descriptionId;
-	}
-
-	return descriptionId
-		? `${errorId(config)} ${descriptionId}`
-		: errorId(config);
-}
-
 export const hiddenProps: HiddenProps = {
 	/**
 	 * Style to make the input element visually hidden
