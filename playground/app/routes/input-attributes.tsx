@@ -81,6 +81,7 @@ export default function Example() {
 					<input
 						{...conform.input(title, {
 							type: 'text',
+							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
@@ -88,6 +89,7 @@ export default function Example() {
 				<Field label="Description" config={description}>
 					<textarea
 						{...conform.textarea(description, {
+							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
@@ -96,12 +98,18 @@ export default function Example() {
 					<input
 						{...conform.input(images, {
 							type: 'file',
+							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
 				</Field>
 				<Field label="Tags" config={tags}>
-					<select {...conform.select(tags, { description: enableDescription })}>
+					<select
+						{...conform.select(tags, {
+							ariaAttributes: true,
+							description: enableDescription,
+						})}
+					>
 						<option value="">Please select</option>
 						<option value="action">Action</option>
 						<option value="adventure">Adventure</option>
@@ -116,6 +124,7 @@ export default function Example() {
 					<input
 						{...conform.input(rating, {
 							type: 'number',
+							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
