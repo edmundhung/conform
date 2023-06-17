@@ -159,7 +159,7 @@ function LoginForm() {
 This hook enables you to work with [nested object](/docs/configuration.md#nested-object) by monitoring the state of each nested field and prepraing the config required.
 
 ```tsx
-import { useForm, useFieldset, conform } from '@conform-to/react';
+import { useForm, useFieldset } from '@conform-to/react';
 
 interface Address {
   street: string;
@@ -179,13 +179,13 @@ function Example() {
     <form {...form.props}>
       <fieldset>
         <legned>Address</legend>
-        <input {...conform.input(street)} />
+        <input name={street.name} />
         <div>{street.error}</div>
-        <input {...conform.input(zipcode)} />
+        <input name={zipcode.name} />
         <div>{zipcode.error}</div>
-        <input {...conform.input(city)} />
+        <input name={city.name} />
         <div>{city.error}</div>
-        <input {...conform.input(country)} />
+        <input name={country.name} />
         <div>{country.error}</div>
       </fieldset>
       <button>Submit</button>
@@ -259,7 +259,7 @@ function Example() {
       {itemsList.map((item, index) => (
         <div key={item.key}>
           {/* Setup an input per item */}
-          <input {...conform.input(item)} />
+          <input name={item.name} />
 
           {/* Error of each item */}
           <span>{item.error}</span>
@@ -331,17 +331,16 @@ function MuiForm() {
 
 ### conform
 
-It provides several helpers to remove the boilerplate when configuring a form control and derives attributes for [accessibility](/docs/accessibility.md#configuration) concerns and helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded).
+It provides several helpers to:
 
-You can also create a wrapper on top if you need to integrate with custom input component.
-
-Before:
+- Minimize the boilerplate when configuring a form control
+- Derive aria attributes for [accessibility](/docs/accessibility.md#configuration)
+- Helps [focus management](/docs/focus-management.md#focusing-before-javascript-is-loaded)
 
 ```tsx
-import { useForm } from '@conform-to/react';
-
+// Before
 function Example() {
-  const [form, { title, description, category }] = useForm();
+  const [form, { title }] = useForm();
 
   return (
     <form {...form.props}>
@@ -350,6 +349,7 @@ function Example() {
         name={title.name}
         form={title.form}
         defaultValue={title.defaultValue}
+        autoFocus={title.initialError ? true : undefined}
         requried={title.required}
         minLength={title.minLength}
         maxLength={title.maxLength}
@@ -357,42 +357,25 @@ function Example() {
         max={title.max}
         multiple={title.multiple}
         pattern={title.pattern}
+        aria-invalid={title.error ? true : undefined}
+        aria-describedby={title.error ? `${title.name}-error` : undefined}
       />
-      <textarea
-        name={description.name}
-        form={description.form}
-        defaultValue={description.defaultValue}
-        requried={description.required}
-        minLength={description.minLength}
-        maxLength={description.maxLength}
-      />
-      <select
-        name={category.name}
-        form={category.form}
-        defaultValue={category.defaultValue}
-        requried={category.required}
-        multiple={category.multiple}
-      >
-        {/* ... */}
-      </select>
     </form>
   );
 }
-```
 
-After:
-
-```tsx
-import { useForm, conform } from '@conform-to/react';
-
+// After:
 function Example() {
   const [form, { title, description, category }] = useForm();
 
   return (
     <form {...form.props}>
-      <input {...conform.input(title, { type: 'text' })} />
-      <textarea {...conform.textarea(description)} />
-      <select {...conform.select(category)}>{/* ... */}</select>
+      <input
+        {...conform.input(title, {
+          type: 'text',
+          ariaAttributes: true,
+        })}
+      />
     </form>
   );
 }
@@ -436,6 +419,8 @@ const submission = parse(formData, {
 ---
 
 ### validateConstraint
+
+> This is a client only API
 
 This enable Constraint Validation with ability to enable custom constraint using data-attribute and customizing error messages. By default, the error message would be the attribute that triggered the error (e.g. `required` / `type` / 'minLength' etc).
 

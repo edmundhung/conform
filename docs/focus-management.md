@@ -13,7 +13,7 @@ Conform will focus on the first invalid field on submit.
 
 ## Focusing before JavaScript is loaded
 
-To enable error focus working in a progressive manner, Conform also utilises the [autofocus](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus) attribute. This will be set for you when using the [conform](/packages/conform-react/README.md#conform) helpers, which checks if there is any initial error from the previous submission.
+Conform utilises the [autofocus](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus) attribute to enable error focus working in a progressive manner. This is achieved by checking if there is any initial error from the previous submission using the [conform](/packages/conform-react/README.md#conform) helpers.
 
 ```tsx
 import { useForm, conform } from '@conform-to/react';
@@ -33,10 +33,10 @@ function Example() {
 
 ## Focusing on Custom Control
 
-Conform can also focus on custom control if it exposes a ref for you to focus manually. Here is an example snippet integrating with **react-select**:
+Conform can focus on custom control as well. Here is an example snippet integrating with **react-select**:
 
 ```tsx
-function Select({ options, .. }: SelectProps) {
+function Select({ options, ...config }: SelectProps) {
   const shadowInputRef = useRef<HTMLInputElement>(null);
   const customInputRef = useRef<HTMLInputElement>(null);
   const control = useInputEvent({

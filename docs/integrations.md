@@ -48,9 +48,9 @@ function Example() {
 
 ## Custom input component
 
-Integrating Conform with a UI components library might requires integration depends on how the input mode differs from a native form control. For example, an `<Input />` component could be just a styled input element. As the user will continue typing on the native input element, there is no additional integration needed.
+Integrating Conform with a UI components library, however, might requires integration depending on how it is implemented. For example, an `<Input />` component could be just a styled input element. As the user will continue typing on a native input element, there is no additional integration needed.
 
-However, custom control such as `<Select />` or `<DatePicker />` will likely require users to interact with custom elements instead with no focus / input / blur event will be dispatched from the native form control element. To solve this issue, you can use the helpers provided by the [useInputEvent](/packages/conform-react/README.md#useinputevent) hook.
+However, custom control such as `<Select />` or `<DatePicker />` will likely require users to interact with custom elements instead with no focus / input / blur event dispatched from the native form control element. This is where the [useInputEvent](/packages/conform-react/README.md#useinputevent) hook comes in handy.
 
 Here is an example integrating with **react-select**:
 
@@ -74,12 +74,14 @@ function Example() {
         */}
         <input
           ref={shadowInputRef}
-          {...conform.input(currency, { hidden: true })}
+          {...conform.input(currency, {
+            ariaAttributes: true,
+            hidden: true,
+          })}
         />
         {/*
           This makes the corresponding events to be dispatched
-          from the element that the `inputRef` is set to.
-          i.e. the shadow input
+          from the element that the `shadowInputRef` is assigned to.
         */}
         <Select
           options={
@@ -135,7 +137,7 @@ interface SelectProps extends FieldConfig<string> {
   options: Array<{ label: string; value: string }>;
 }
 
-function Select({ options, .. }: SelectProps) {
+function Select({ options, ...config }: SelectProps) {
   const shadowInputRef = useRef<HTMLInputElement>(null);
   const control = useInputEvent({
     ref: shadowInputRef,
@@ -143,10 +145,16 @@ function Select({ options, .. }: SelectProps) {
 
   return (
     <>
-      <input ref={shadowInputRef} {...conform.input(config, { hidden: true })} />
+      <input
+        ref={shadowInputRef}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
+      />
       <ReactSelect
         options={options}
-        defaultValue={config.defaultValue ?? ''}
+        defaultValue={config.defaultValue}
         onChange={control.change}
         onFocus={control.focus}
         onBlur={control.blur}
@@ -159,7 +167,7 @@ function Select({ options, .. }: SelectProps) {
 If the custom control support manual focus, you can also hook it with the shadow input and let Conform focus on it when there is any error:
 
 ```tsx
-function Select({ options, .. }: SelectProps) {
+function Select({ options, ...config }: SelectProps) {
   const shadowInputRef = useRef<HTMLInputElement>(null);
   const control = useInputEvent({
     ref: shadowInputRef,
@@ -175,13 +183,16 @@ function Select({ options, .. }: SelectProps) {
         */}
       <input
         ref={shadowInputRef}
-        {...conform.input(config, { hidden: true })}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
         onFocus={() => customInputRef.current?.focus()}
       />
       <Select
         innerRef={customInputRef}
         options={options}
-        defaultValue={config.defaultValue ?? ''}
+        defaultValue={config.defaultValue}
         onChange={control.change}
         onBlur={control.blur}
       />
@@ -205,7 +216,10 @@ function Select({ options, .. }: SelectProps) {
     <>
       <input
         ref={shadowInputRef}
-        {...conform.input(config, { hidden: true })}
+        {...conform.input(config, {
+          ariaAttributes: true,
+          hidden: true,
+        })}
         onChange={(e) => setValue(e.target.value)}
       />
       <Select

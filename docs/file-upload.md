@@ -1,6 +1,6 @@
 # File Upload
 
-Conform has support for validating file inputs as well.
+Conform support validating file input as well.
 
 <!-- aside -->
 
@@ -13,9 +13,7 @@ Conform has support for validating file inputs as well.
 
 ## Setting up a file input
 
-The setup is similar to normal inputs except the **encType** must be set to `multipart/form-data`.
-
-When the browser constructs a form data set with an empty file input, a default file entry would be created. To validate whether an file input is empty, you should check its filename and size.
+The setup is similar to other form controls except the **encType** must be set to `multipart/form-data`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -23,13 +21,18 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  file: z
+  profile: z
     .instanceof(File)
-    .refine((file) => file.name !== '' && file.size !== 0, 'File is required'),
+    // When browser constructs a form data from an empty file input, a default file
+    // entry would be created. we can validate this by checking the filename and size.
+    .refine(
+      (file) => file.name !== '' && file.size !== 0,
+      'Profile is required',
+    ),
 });
 
 function Example() {
-  const [form, { file }] = useForm({
+  const [form, { profile }] = useForm({
     onValidate({ formData }) {
       return parse(formData, { schema });
     },
@@ -38,9 +41,9 @@ function Example() {
   return (
     <form encType="multipart/form-data" {...form.props}>
       <div>
-        <label>File</label>
-        <input {...conform.input(file, { type: 'file' })} />
-        <div>{file.error}</div>
+        <label>Profile</label>
+        <input type="file" name={profile.name} />
+        <div>{profile.error}</div>
       </div>
       <button>Upload</button>
     </form>
@@ -74,8 +77,8 @@ const schema = z.object({
 
 There are some caveats when validating a multiple file input:
 
-- Conform will transform the value to an array only when there are more than one entry with the same name. To ensure a consistent data structure, you need to preprocess the data as shown in the snippet.
-- Conform is not able to populate indivdiual error of a particular file. Please ensure all error messages are assigned properly, e.g. `files` instead of `files[1]`.
+- Conform will transform the value to an array only when there are more than one files selected. To ensure a consistent data structure, you need to preprocess the data as shown in the snippet.
+- Conform will not populate individual error on each file. Please make sure all error messages are assigned properly, e.g. `files` instead of `files[1]`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -113,7 +116,7 @@ function Example() {
     <form encType="multipart/form-data" {...form.props}>
       <div>
         <label>Mutliple Files</label>
-        <input {...conform.input(files, { type: 'file' })} multiple />
+        <input type="file" name={files.name} multiple />
         <div>{files.error}</div>
       </div>
       <button>Upload</button>
