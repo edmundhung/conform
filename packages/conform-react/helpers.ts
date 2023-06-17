@@ -44,10 +44,16 @@ interface TextareaProps extends FormControlProps {
 	defaultValue?: string;
 }
 
-type BaseOptions = {
-	description?: boolean;
-	hidden?: boolean;
-};
+type BaseOptions =
+	| {
+			ariaAttributes?: false;
+			hidden?: boolean;
+	  }
+	| {
+			ariaAttributes: true;
+			description?: boolean;
+			hidden?: boolean;
+	  };
 
 type InputOptions = BaseOptions &
 	(
@@ -60,22 +66,6 @@ type InputOptions = BaseOptions &
 				value?: never;
 		  }
 	);
-
-/**
- * Style to make the input element visually hidden
- * Based on the `sr-only` class from tailwindcss
- */
-const hiddenStyle: CSSProperties = {
-	position: 'absolute',
-	width: '1px',
-	height: '1px',
-	padding: 0,
-	margin: '-1px',
-	overflow: 'hidden',
-	clip: 'rect(0,0,0,0)',
-	whiteSpace: 'nowrap',
-	border: 0,
-};
 
 function getFormControlProps(
 	config: FieldConfig<any>,
@@ -92,30 +82,50 @@ function getFormControlProps(
 		props.id = config.id;
 	}
 
-	if (config.descriptionId && options?.description) {
-		props['aria-describedby'] = config.descriptionId;
-	}
+	if (options?.ariaAttributes) {
+		if (config.descriptionId && options?.description) {
+			props['aria-describedby'] = config.descriptionId;
+		}
 
-	if (config.errorId && config.error?.length) {
-		props['aria-invalid'] = true;
-		props['aria-describedby'] =
-			config.descriptionId && options?.description
-				? `${config.errorId} ${config.descriptionId}`
-				: config.errorId;
+		if (config.errorId && config.error?.length) {
+			props['aria-invalid'] = true;
+			props['aria-describedby'] =
+				config.descriptionId && options?.description
+					? `${config.errorId} ${config.descriptionId}`
+					: config.errorId;
+		}
 	}
 
 	if (config.initialError && Object.entries(config.initialError).length > 0) {
 		props.autoFocus = true;
 	}
 
-	if (options?.hidden) {
-		props.style = hiddenStyle;
-		props.tabIndex = -1;
-		props['aria-hidden'] = true;
-	}
-
-	return props;
+	return options?.hidden ? { ...props, ...hiddenProps } : props;
 }
+
+export const hiddenProps: {
+	hiddenStyle: CSSProperties;
+	tabIndex: number;
+	'aria-hidden': boolean;
+} = {
+	/**
+	 * Style to make the input element visually hidden
+	 * Based on the `sr-only` class from tailwindcss
+	 */
+	hiddenStyle: {
+		position: 'absolute',
+		width: '1px',
+		height: '1px',
+		padding: 0,
+		margin: '-1px',
+		overflow: 'hidden',
+		clip: 'rect(0,0,0,0)',
+		whiteSpace: 'nowrap',
+		border: 0,
+	},
+	tabIndex: -1,
+	'aria-hidden': true,
+};
 
 export function input<Schema extends Primitive | unknown>(
 	config: FieldConfig<Schema>,
