@@ -34,6 +34,24 @@ test('shouldValidate: onSubmit', async ({ page }) => {
 		'Password is too short',
 		'Confirm password does not match',
 	]);
+
+	await email.clear();
+	await email.type('example@conform.guide');
+	await password.clear();
+	await password.type('secretpassword');
+	await confirmPassword.clear();
+	await confirmPassword.type('secretpassword');
+
+	// To check if revalidate defaults to onSubmit as well
+	await playground.form.press('Tab');
+	await expect(playground.error).toHaveText([
+		'Email is invalid',
+		'Password is too short',
+		'Confirm password does not match',
+	]);
+
+	await playground.submit.click();
+	await expect(playground.error).toHaveText(['', '', '']);
 });
 
 test('shouldValidate: onInput', async ({ page }) => {
@@ -68,6 +86,29 @@ test('shouldValidate: onInput', async ({ page }) => {
 		'Confirm password does not match',
 		'',
 	]);
+
+	// To check if revalidate defaults to onInput as well
+	await email.clear();
+	await email.type('example@conform.guide');
+	await expect(playground.error).toHaveText([
+		'',
+		'Password is too short',
+		'Confirm password does not match',
+		'',
+	]);
+
+	await password.clear();
+	await password.type('secretpassword');
+	await expect(playground.error).toHaveText([
+		'',
+		'',
+		'Confirm password does not match',
+		'',
+	]);
+
+	await confirmPassword.clear();
+	await confirmPassword.type('secretpassword');
+	await expect(playground.error).toHaveText(['', '', '', '']);
 });
 
 test('shouldValidate: onBlur', async ({ page }) => {
@@ -107,6 +148,47 @@ test('shouldValidate: onBlur', async ({ page }) => {
 		'Password is too short',
 		'Confirm password does not match',
 	]);
+
+	await email.clear();
+	await email.type('example@conform.guide');
+	await expect(playground.error).toHaveText([
+		'Email is invalid',
+		'Password is too short',
+		'Confirm password does not match',
+	]);
+
+	await playground.form.press('Tab');
+	await expect(playground.error).toHaveText([
+		'',
+		'Password is too short',
+		'Confirm password does not match',
+	]);
+
+	await password.clear();
+	await password.type('secretpassword');
+	await expect(playground.error).toHaveText([
+		'',
+		'Password is too short',
+		'Confirm password does not match',
+	]);
+
+	await playground.form.press('Tab');
+	await expect(playground.error).toHaveText([
+		'',
+		'',
+		'Confirm password does not match',
+	]);
+
+	await confirmPassword.clear();
+	await confirmPassword.type('secretpassword');
+	await expect(playground.error).toHaveText([
+		'',
+		'',
+		'Confirm password does not match',
+	]);
+
+	await playground.form.press('Tab');
+	await expect(playground.error).toHaveText(['', '', '']);
 });
 
 test('shouldRevalidate: onSubmit', async ({ page }) => {

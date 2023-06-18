@@ -78,6 +78,7 @@ export default function SignupForm() {
 		onValidate: config.validate
 			? ({ formData }) => parseSignupForm(formData)
 			: undefined,
+		shouldRevalidate: 'onInput',
 	});
 
 	return (

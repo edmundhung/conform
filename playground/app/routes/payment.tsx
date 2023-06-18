@@ -56,6 +56,7 @@ export default function PaymentForm() {
 		onValidate: config.validate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
+		shouldRevalidate: 'onInput',
 	});
 	const { currency, value } = useFieldset(form.ref, {
 		...amount,

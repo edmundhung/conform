@@ -53,7 +53,7 @@ function LoginForm() {
      * Define when conform should revalidate again.
      * Support "onSubmit", "onChange", "onBlur".
      *
-     * Default to `onInput`.
+     * Default based on `shouldValidate`
      */
     shouldRevalidate: 'onInput',
 
