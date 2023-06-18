@@ -32,6 +32,7 @@ export default function Example() {
 		useLoaderData<typeof loader>();
 	const [form, { email, password, confirmPassword }] = useForm<Schema>({
 		fallbackNative: true,
+		shouldRevalidate: 'onInput',
 		onValidate(context) {
 			return validateConstraint({
 				...context,

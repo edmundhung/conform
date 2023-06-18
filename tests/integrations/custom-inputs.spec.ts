@@ -23,6 +23,7 @@ async function runValidationScenario(page: Page) {
 
 	await playground.container.getByText('Please select').click();
 	await playground.container.getByText('Deutsch').click();
+	await playground.submit.click();
 
 	await expect(playground.error).toHaveText([
 		'',
