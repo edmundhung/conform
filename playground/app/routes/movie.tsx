@@ -149,6 +149,7 @@ export default function MovieForm() {
 					return submission;
 			  }
 			: undefined,
+		shouldRevalidate: 'onInput',
 	});
 
 	return (

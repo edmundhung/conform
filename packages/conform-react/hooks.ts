@@ -90,7 +90,7 @@ export interface FormConfig<
 	 * Define when conform should start validation.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
-	 * Default to `onSubmit`.
+	 * @default "onSubmit"
 	 */
 	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
@@ -98,7 +98,7 @@ export interface FormConfig<
 	 * Define when conform should revalidate again.
 	 * Support "onSubmit", "onChange", "onBlur".
 	 *
-	 * Default to `onInput`.
+	 * @default shouldValidate, or "onSubmit" if shouldValidate is not provided.
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
@@ -412,7 +412,7 @@ export function useForm<
 		const createValidateHandler = (type: string) => (event: Event) => {
 			const field = event.target;
 			const form = ref.current;
-			const { shouldValidate = 'onSubmit', shouldRevalidate = 'onInput' } =
+			const { shouldValidate = 'onSubmit', shouldRevalidate = shouldValidate } =
 				configRef.current;
 
 			if (
