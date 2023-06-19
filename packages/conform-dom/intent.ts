@@ -118,18 +118,23 @@ export function parseIntent<Schema>(intent: string):
 			payload: ListIntentPayload<Schema>;
 	  }
 	| null {
-	const [type, payload] = intent.split('/', 2);
+	const seperatorIndex = intent.indexOf('/');
 
-	if (typeof payload !== 'undefined') {
-		try {
-			switch (type) {
-				case 'validate':
-					return { type, payload };
-				case 'list':
-					return { type, payload: JSON.parse(payload) };
+	if (seperatorIndex > -1) {
+		const type = intent.slice(0, seperatorIndex);
+		const payload = intent.slice(seperatorIndex + 1);
+
+		if (typeof payload !== 'undefined') {
+			try {
+				switch (type) {
+					case 'validate':
+						return { type, payload };
+					case 'list':
+						return { type, payload: JSON.parse(payload) };
+				}
+			} catch (error) {
+				throw new Error(`Failed parsing intent: ${intent}`, { cause: error });
 			}
-		} catch (error) {
-			throw new Error(`Failed parsing intent: ${intent}`, { cause: error });
 		}
 	}
 

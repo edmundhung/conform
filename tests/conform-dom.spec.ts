@@ -322,13 +322,15 @@ test.describe('conform-dom', () => {
 				},
 			});
 			expect(
-				parseIntent(list.prepend('tasks', { defaultValue: 'testing' }).value),
+				parseIntent(
+					list.prepend('tasks', { defaultValue: 'testing/seperator' }).value,
+				),
 			).toEqual({
 				type: 'list',
 				payload: {
 					name: 'tasks',
 					operation: 'prepend',
-					defaultValue: 'testing',
+					defaultValue: 'testing/seperator',
 				},
 			});
 			expect(parseIntent(list.remove('tasks', { index: 0 }).value)).toEqual({
