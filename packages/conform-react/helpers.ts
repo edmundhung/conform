@@ -76,11 +76,11 @@ function getFormControlProps(
 		name: config.name,
 		form: config.form,
 		required: config.required,
+		autoFocus:
+			config.initialError && Object.entries(config.initialError).length > 0
+				? true
+				: undefined,
 	};
-
-	if (config.id) {
-		props.id = config.id;
-	}
 
 	if (options?.ariaAttributes) {
 		if (config.descriptionId && options?.description) {
@@ -96,15 +96,24 @@ function getFormControlProps(
 		}
 	}
 
-	if (config.initialError && Object.entries(config.initialError).length > 0) {
-		props.autoFocus = true;
+	return {
+		...props,
+		...(options?.hidden ? hiddenProps : {}),
+	};
+}
+
+function cleanup<Props extends Object>(props: Props): Props {
+	for (const key in props) {
+		if (props[key] === undefined) {
+			delete props[key];
+		}
 	}
 
-	return options?.hidden ? { ...props, ...hiddenProps } : props;
+	return props;
 }
 
 export const hiddenProps: {
-	hiddenStyle: CSSProperties;
+	style: CSSProperties;
 	tabIndex: number;
 	'aria-hidden': boolean;
 } = {
@@ -112,7 +121,7 @@ export const hiddenProps: {
 	 * Style to make the input element visually hidden
 	 * Based on the `sr-only` class from tailwindcss
 	 */
-	hiddenStyle: {
+	style: {
 		position: 'absolute',
 		width: '1px',
 		height: '1px',
@@ -158,7 +167,7 @@ export function input<Schema extends Primitive | File | File[] | unknown>(
 		props.defaultValue = config.defaultValue as string | undefined;
 	}
 
-	return props;
+	return cleanup(props);
 }
 
 export function select<
@@ -170,7 +179,7 @@ export function select<
 		multiple: config.multiple,
 	};
 
-	return props;
+	return cleanup(props);
 }
 
 export function textarea<Schema extends Primitive | undefined | unknown>(
@@ -184,7 +193,7 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 		maxLength: config.maxLength,
 	};
 
-	return props;
+	return cleanup(props);
 }
 
 export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };
