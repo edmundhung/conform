@@ -1,6 +1,9 @@
 {
 	"root": true,
 	"extends": ["@remix-run/eslint-config"],
+	"rules": {
+		"no-console": "error"
+	},
 	"plugins": [],
 	"overrides": []
 }
