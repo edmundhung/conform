@@ -549,8 +549,9 @@ export function useForm<
 							method: getFormMethod(nativeEvent),
 						});
 					}
-				} catch (e) {
-					console.warn(e);
+				} catch (error) {
+					// eslint-disable-next-line no-console
+					console.warn('Client validation failed', error);
 				}
 			},
 		},
@@ -891,7 +892,6 @@ export function useInputEvent(options: {
 						: event.target === element)
 				) {
 					if (listener !== 'onReset') {
-						console.log(listener, 'dispatched');
 						eventDispatched.current[listener] = true;
 					}
 
@@ -930,6 +930,7 @@ export function useInputEvent(options: {
 						: optionsRef.current?.ref.current;
 
 				if (!isFieldElement(element)) {
+					// eslint-disable-next-line no-console
 					console.warn('Failed to dispatch event; is the input mounted?');
 					return;
 				}
@@ -1118,6 +1119,7 @@ export function validateConstraint(options: {
 									attributeValue,
 								});
 							} else {
+								// eslint-disable-next-line no-console
 								console.warn(
 									`Found an "${constraintName}" constraint with undefined definition; Please specify it on the validateConstraint API.`,
 								);
@@ -1168,6 +1170,7 @@ export function reportSubmission(
 		if (item instanceof RadioNodeList) {
 			for (const field of item) {
 				if ((field as FieldElement).type !== 'radio') {
+					// eslint-disable-next-line no-console
 					console.warn('Repeated field name is not supported.');
 					continue;
 				}
