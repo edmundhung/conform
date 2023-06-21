@@ -110,7 +110,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: Submission | null;
+	lastSubmission?: Submission;
 
 	/**
 	 * An object describing the constraint of each field
@@ -191,6 +191,16 @@ function normalizeError(error: string | string[] | undefined): string[] {
 	return ([] as string[]).concat(error);
 }
 
+function getDefaultValueFromSubmission(
+	submission: Submission | undefined,
+): Record<string, any> | null {
+	if (!submission?.payload || Object.keys(submission.payload).length === 0) {
+		return null;
+	}
+
+	return submission.payload;
+}
+
 function useNoValidate(
 	defaultNoValidate: boolean | undefined,
 	validateBeforeHydrate: boolean | undefined,
@@ -241,6 +251,15 @@ function useFormReporter(
 		const form = ref.current;
 
 		if (!form || !lastSubmission) {
+			return;
+		}
+
+		if (getDefaultValueFromSubmission(lastSubmission) === null) {
+			// If the default value is empty, we can safely reset the form.
+			// This ensure the behavior is consistent with and without JS.
+			form.reset();
+
+			// There is no need to report the submission anymore.
 			return;
 		}
 
@@ -384,28 +403,17 @@ export function useForm<
 	}, [config.lastSubmission]);
 	// This payload from lastSubmission is only useful before hydration
 	// After hydration, any new payload on lastSubmission will be ignored
-	const [lastSubmissionPayload, setLastSubmissionPayload] = useState<
-		FieldValue<Input> | undefined
-	>(config.lastSubmission?.payload as FieldValue<Input> | undefined);
+	const [defaultValueFromLastSubmission, setDefaultValueFromLastSubmission] =
+		useState<FieldValue<Input> | null>(
+			// @ts-expect-error defaultValue is not in Submission type
+			() => getDefaultValueFromSubmission(config.lastSubmission),
+		);
 	const fieldset = useFieldset(ref, {
-		defaultValue: lastSubmissionPayload ?? config.defaultValue,
+		defaultValue: defaultValueFromLastSubmission ?? config.defaultValue,
 		initialError,
 		constraint: config.constraint,
 		form: config.id,
 	});
-
-	const lastSubmissionRef = useRef(config.lastSubmission);
-
-	useSafeLayoutEffect(() => {
-		if (
-			lastSubmissionRef.current !== config.lastSubmission &&
-			config.lastSubmission === null
-		) {
-			ref.current?.reset();
-		}
-
-		lastSubmissionRef.current = config.lastSubmission;
-	}, [ref, config.lastSubmission]);
 
 	useEffect(() => {
 		// custom validate handler
@@ -465,7 +473,7 @@ export function useForm<
 			}
 
 			setErrors([]);
-			setLastSubmissionPayload(undefined);
+			setDefaultValueFromLastSubmission(null);
 		};
 
 		const handleInput = createValidateHandler('onInput');

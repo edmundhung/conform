@@ -52,22 +52,23 @@ export let action = async ({ request }: ActionArgs) => {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json({ submission, success: false });
+		return json(submission);
 	}
 
 	// We can also skip sending the submission back to the client on success
 	// As the form value shuold be reset anyway
-	return json({ submission, success: true });
+	return json({
+		...submission,
+		payload: {},
+	});
 };
 
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
-	const actionData = useActionData<typeof action>();
+	const lastSubmission = useActionData<typeof action>();
 	const [form, fieldset] = useForm({
 		defaultValue,
-		// Avoid passing the last submission on success
-		// To ensure that the form is reset
-		lastSubmission: !actionData?.success ? actionData?.submission : null,
+		lastSubmission,
 	});
 
 	useEffect(() => {
@@ -100,7 +101,7 @@ export default function ExampleForm() {
 						</ul>
 					</div>
 				}
-				lastSubmission={actionData?.submission}
+				lastSubmission={lastSubmission}
 			>
 				<Field label="Name" config={fieldset.name}>
 					<input {...conform.input(fieldset.name, { type: 'text' })} />
