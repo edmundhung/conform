@@ -55,12 +55,8 @@ export function getFormEncType(
 	const submitter = event.submitter as Submitter | null;
 	const encType = submitter?.getAttribute('formenctype') ?? form.enctype;
 
-	if (
-		['application/x-www-form-urlencoded', 'multipart/form-data'].includes(
-			encType,
-		)
-	) {
-		return encType as any;
+	if  (encType === 'multipart/form-data') {
+		return encType;
 	}
 
 	return 'application/x-www-form-urlencoded';
