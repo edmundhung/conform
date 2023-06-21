@@ -656,7 +656,7 @@ export function useFieldset<Schema extends Record<string, any> | undefined>(
 
 					return result;
 				}, {} as Record<string, string | string[]>);
-				const field: FieldConfig<any> = {
+				const field: FieldConfig<unknown> = {
 					...constraint,
 					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
 					// @ts-expect-error The FieldValue type might need a rework
@@ -684,7 +684,7 @@ export function useFieldset<Schema extends Record<string, any> | undefined>(
  *
  * @see https://conform.guide/api/react#usefieldlist
  */
-export function useFieldList<Schema extends Array<any> | undefined>(
+export function useFieldList<Schema extends any[] | undefined>(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: FieldConfig<Schema>,
 ): Array<
@@ -765,7 +765,10 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 						break;
 				}
 
-				return Object.assign({}, errorList) as any;
+				return Object.assign({}, errorList) as unknown as Record<
+					string | number,
+					string[] | undefined
+				>;
 			});
 		};
 		const resetHandler = (event: Event) => {
@@ -804,7 +807,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 			{} as Record<string, string | string[]>,
 		);
 		const fieldConfig: FieldConfig<
-			Schema extends Array<infer Item> ? Item : never
+			Schema extends (infer Item)[] ? Item : never
 		> = {
 			name: `${config.name}[${index}]`,
 			defaultValue: defaultValue ?? config.defaultValue?.[index],
@@ -876,10 +879,22 @@ export function useInputEvent(options: {
 	});
 
 	useSafeLayoutEffect(() => {
-		const createEventListner = (
-			listener: Exclude<keyof typeof options, 'ref'>,
-		) => {
-			return (event: any) => {
+		type EventMap = {
+			[Key in keyof Required<
+				Pick<
+					React.DOMAttributes<FieldElement>,
+					'onBlur' | 'onReset' | 'onInput' | 'onFocus'
+				>
+			>]: Exclude<
+				Parameters<
+					Required<React.DOMAttributes<FieldElement>>[Key]
+				>[0]['nativeEvent'],
+				undefined
+			>;
+		};
+		const createEventListener =
+			<K extends keyof EventMap>(listener: K) =>
+			(event: EventMap[K]) => {
 				const element =
 					typeof optionsRef.current?.ref === 'function'
 						? optionsRef.current?.ref()
@@ -892,17 +907,18 @@ export function useInputEvent(options: {
 						: event.target === element)
 				) {
 					if (listener !== 'onReset') {
-						eventDispatched.current[listener] = true;
+						eventDispatched.current[
+							listener as Exclude<typeof listener, 'onReset'>
+						] = true;
 					}
 
-					optionsRef.current?.[listener]?.(event);
+					optionsRef.current?.[listener]?.(event as any);
 				}
 			};
-		};
-		const inputHandler = createEventListner('onInput');
-		const focusHandler = createEventListner('onFocus');
-		const blurHandler = createEventListner('onBlur');
-		const resetHandler = createEventListner('onReset');
+		const inputHandler = createEventListener('onInput');
+		const focusHandler = createEventListener('onFocus');
+		const blurHandler = createEventListener('onBlur');
+		const resetHandler = createEventListener('onReset');
 
 		// focus/blur event does not bubble
 		document.addEventListener('input', inputHandler, true);
@@ -1055,7 +1071,7 @@ export function validateConstraint(options: {
 	}: {
 		name: string;
 		intent: string;
-		payload: Record<string, any>;
+		payload: Record<string, unknown>;
 	}) => boolean;
 	formatMessages?: ({
 		name,

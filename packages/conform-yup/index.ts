@@ -63,7 +63,7 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 								case 'min':
 									if (
 										!constraint.min ||
-										constraint.min < Number(test.params?.min)
+										Number(constraint.min) < Number(test.params?.min)
 									) {
 										constraint.min = Number(test.params?.min);
 									}
@@ -71,7 +71,7 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 								case 'max':
 									if (
 										!constraint.max ||
-										constraint.max > Number(test.params?.max)
+										Number(constraint.max) > Number(test.params?.max)
 									) {
 										constraint.max = Number(test.params?.max);
 									}
@@ -98,7 +98,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		}: {
 			name: string;
 			intent: string;
-			payload: Record<string, any>;
+			payload: Record<string, unknown>;
 		}) => boolean;
 		async?: false;
 	},
@@ -114,7 +114,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		}: {
 			name: string;
 			intent: string;
-			payload: Record<string, any>;
+			payload: Record<string, unknown>;
 		}) => boolean;
 		async: true;
 	},
@@ -130,7 +130,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		}: {
 			name: string;
 			intent: string;
-			payload: Record<string, any>;
+			payload: Record<string, unknown>;
 		}) => boolean;
 		async?: boolean;
 	},

@@ -17,7 +17,9 @@ interface PlaygroundProps<
 	children: ReactNode;
 }
 
-export function Playground({
+export function Playground<
+	TSubmission extends { error: Record<string, string | string[]> | null },
+>({
 	title,
 	description,
 	form,
@@ -26,7 +28,7 @@ export function Playground({
 	formMethod,
 	formEncType,
 	children,
-}: PlaygroundProps<any>) {
+}: PlaygroundProps<TSubmission>) {
 	const [submission, setSubmission] = useState(lastSubmission ?? null);
 
 	useEffect(() => {
@@ -95,7 +97,7 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	config?: Partial<FieldConfig<any>>;
+	config?: Partial<FieldConfig<unknown>>;
 	children: ReactNode;
 }
 

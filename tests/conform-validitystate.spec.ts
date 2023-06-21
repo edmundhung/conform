@@ -1,7 +1,7 @@
 import { type Page, test, expect } from '@playwright/test';
 import { getPlayground } from './helpers';
 
-async function setupField(page: Page, constraint: object, secret?: any) {
+async function setupField(page: Page, constraint: object, secret?: unknown) {
 	const playground = getPlayground(page);
 	const field = playground.container.locator('[name="field"]');
 	const searchParams = new URLSearchParams([
@@ -26,7 +26,7 @@ async function setupField(page: Page, constraint: object, secret?: any) {
 			await field.fill(value);
 			await playground.submit.click();
 		},
-		async updateSecret(secret: any) {
+		async updateSecret(secret: unknown) {
 			const searchParams = new URLSearchParams([
 				['constraint', JSON.stringify(constraint)],
 				['secret', JSON.stringify(secret)],

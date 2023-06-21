@@ -67,8 +67,8 @@ type InputOptions = BaseOptions &
 		  }
 	);
 
-function getFormControlProps(
-	config: FieldConfig<any>,
+function getFormControlProps<T = unknown>(
+	config: FieldConfig<T>,
 	options?: BaseOptions,
 ): FormControlProps {
 	const props: FormControlProps = {

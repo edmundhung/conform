@@ -105,11 +105,12 @@ export type FormConstraints = Record<
  * };
  * ```
  */
-export type FormatErrorArgs<Schema extends FormConstraints = any> = {
-	input: Input;
-	formData: FormData;
-	value: Partial<InferType<Schema>>;
-};
+export type FormatErrorArgs<Schema extends FormConstraints = FormConstraints> =
+	{
+		input: Input;
+		formData: FormData;
+		value: Partial<InferType<Schema>>;
+	};
 
 /**
  * A function that derives the error message for a field
@@ -117,7 +118,7 @@ export type FormatErrorArgs<Schema extends FormConstraints = any> = {
  * errors are also supported.
  */
 export type FormatErrorFunction<
-	Constraints extends FormConstraints = any,
+	Constraints extends FormConstraints = FormConstraints,
 	FormError extends string | string[] = string | string[],
 > = ({ input, formData, value }: FormatErrorArgs<Constraints>) => FormError;
 
@@ -149,7 +150,7 @@ export type InferType<Schema extends FormConstraints> = {
 				| RequiredField<BooleanConstraint>
 				| OptionalField<BooleanConstraint>
 		? boolean
-		: any;
+		: never;
 };
 
 /**
@@ -481,10 +482,10 @@ export function parse<
 	const payloadMap = new Map<keyof Constraints, string | string[]>();
 	const controlMap = new Map<keyof Constraints, Input>();
 	const errorMap = new Map<keyof Constraints, FormError>();
-	const valueMap = new Map<keyof Constraints, any>();
-	// @ts-expect-error FIXME: handle default error type
-	const format: FormatErrorFunction<Constraints, FormError> =
-		schema.formatError ?? defaultFormatError;
+	const valueMap = new Map<keyof Constraints, unknown>();
+	const format =
+		schema.formatError ??
+		(defaultFormatError as FormatErrorFunction<Constraints, FormError>);
 
 	for (const name in schema.constraints) {
 		const constraint = schema.constraints[name];
@@ -697,7 +698,7 @@ export function parse<
 		});
 	}
 
-	const value = Object.fromEntries(valueMap) as any;
+	const value = Object.fromEntries(valueMap) as InferType<Constraints>;
 
 	for (const [name, input] of controlMap) {
 		const error = format({ input, formData: data as FormData, value });
@@ -775,7 +776,10 @@ export function validate<Constraints extends FormConstraints>(
  * ["required", "type", "min", "max", "step", "minlength", "maxlength", "pattern"]
  * ```
  */
-export function defaultFormatError({ input }: FormatErrorArgs<any>): string[] {
+
+export function defaultFormatError<
+	T extends FormConstraints = FormConstraints,
+>({ input }: FormatErrorArgs<T>): string[] {
 	const messages = [] as string[];
 
 	if (input.validity.valueMissing) {

@@ -35,8 +35,8 @@ export default function Example() {
 	return (
 		<form
 			action={options.formAction ?? undefined}
-			method={options.formMethod ?? (undefined as any)}
-			encType={options.formEncType ?? (undefined as any)}
+			method={options.formMethod ?? undefined}
+			encType={options.formEncType ?? undefined}
 			{...form.props}
 		>
 			<Playground

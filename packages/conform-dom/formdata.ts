@@ -71,16 +71,16 @@ export function formatPaths(paths: Array<string | number>): string {
 /**
  * Assign a value to a target object by following the paths on the name
  */
-export function setValue(
-	target: any,
-	name: string,
+export function setValue<T>(
+	target: T,
+	name: Extract<keyof T, string>,
 	valueFn: (prev?: unknown) => any,
 ): void {
 	let paths = getPaths(name);
 	let length = paths.length;
 	let lastIndex = length - 1;
 	let index = -1;
-	let pointer = target;
+	let pointer: any = target;
 
 	while (pointer != null && ++index < length) {
 		let key = paths[index];
@@ -102,7 +102,7 @@ export function resolve(
 	payload: FormData | URLSearchParams,
 	ignoreKeys?: string[],
 ) {
-	const data = {};
+	const data: Record<string | number, unknown> = {};
 
 	for (let [key, value] of payload.entries()) {
 		if (ignoreKeys?.includes(key)) {

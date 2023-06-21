@@ -1,6 +1,6 @@
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export type FieldConstraint<Schema = any> = {
+export type FieldConstraint<Schema = unknown> = {
 	required?: boolean;
 	minLength?: number;
 	maxLength?: number;

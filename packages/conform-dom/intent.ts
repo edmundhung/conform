@@ -21,12 +21,7 @@ type ExtractListIntentPayload<Operation, Schema = unknown> = Pretty<
 	>
 >;
 
-/**
- * Helpers to configure an intent button for modifying a list
- *
- * @see https://conform.guide/api/react#list
- */
-export const list = new Proxy<{
+type List = {
 	[Operation in ListIntentPayload['operation']]: {} extends ExtractListIntentPayload<Operation>
 		? <Schema>(
 				name: string,
@@ -36,8 +31,15 @@ export const list = new Proxy<{
 				name: string,
 				payload: ExtractListIntentPayload<Operation, Schema>,
 		  ) => IntentButtonProps;
-}>({} as any, {
-	get(_target, operation: any) {
+};
+
+/**
+ * Helpers to configure an intent button for modifying a list
+ *
+ * @see https://conform.guide/api/react#list
+ */
+export const list = new Proxy({} as List, {
+	get(_target, operation) {
 		return (name: string, payload = {}): IntentButtonProps => ({
 			name: INTENT,
 			value: `list/${JSON.stringify({ name, operation, ...payload })}`,
@@ -94,6 +96,7 @@ export function requestIntent(
 	},
 ): void {
 	if (!form) {
+		// eslint-disable-next-line no-console
 		console.warn('No form element is provided');
 		return;
 	}
@@ -142,15 +145,15 @@ export function parseIntent<Schema>(intent: string):
 }
 
 export function updateList<Schema>(
-	list: Array<Schema>,
+	list: Array<Schema | undefined>,
 	payload: ListIntentPayload<Schema>,
-): Array<Schema> {
+): Array<Schema | undefined> {
 	switch (payload.operation) {
 		case 'prepend':
-			list.unshift(payload.defaultValue as any);
+			list.unshift(payload.defaultValue);
 			break;
 		case 'append':
-			list.push(payload.defaultValue as any);
+			list.push(payload.defaultValue);
 			break;
 		case 'replace':
 			list.splice(payload.index, 1, payload.defaultValue);

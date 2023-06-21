@@ -1,7 +1,7 @@
 import type { Page, Locator, Response } from '@playwright/test';
 
 interface FormConfig {
-	defaultValue?: any;
+	defaultValue?: unknown;
 	fallbackNative?: boolean;
 	noValidate?: boolean;
 	validate?: boolean;
