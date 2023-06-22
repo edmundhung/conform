@@ -71,6 +71,12 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? { [Key in KeysOf<Schema>]?: FieldValue<ResolveType<Schema, Key>> }
 	: any;
 
+type SubmissionResult = {
+	intent: Submission['intent'];
+	payload: Submission['payload'] | null;
+	error: Submission['error'];
+};
+
 export interface FormConfig<
 	Output extends Record<string, any>,
 	Input extends Record<string, any> = Output,
@@ -110,7 +116,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: Submission;
+	lastSubmission?: SubmissionResult;
 
 	/**
 	 * An object describing the constraint of each field
@@ -191,16 +197,6 @@ function normalizeError(error: string | string[] | undefined): string[] {
 	return ([] as string[]).concat(error);
 }
 
-function getDefaultValueFromSubmission(
-	submission: Submission | undefined,
-): Record<string, any> | null {
-	if (!submission?.payload || Object.keys(submission.payload).length === 0) {
-		return null;
-	}
-
-	return submission.payload;
-}
-
 function useNoValidate(
 	defaultNoValidate: boolean | undefined,
 	validateBeforeHydrate: boolean | undefined,
@@ -234,11 +230,11 @@ function useConfigRef<Config>(config: Config) {
 
 function useFormReporter(
 	ref: RefObject<HTMLFormElement>,
-	lastSubmission: Submission | null | undefined,
+	lastSubmission: SubmissionResult | undefined,
 ) {
 	const [submission, setSubmission] = useState(lastSubmission);
 	const report = useCallback(
-		(form: HTMLFormElement, submission: Submission) => {
+		(form: HTMLFormElement, submission: SubmissionResult) => {
 			const event = new CustomEvent('conform', { detail: submission.intent });
 
 			form.dispatchEvent(event);
@@ -254,7 +250,7 @@ function useFormReporter(
 			return;
 		}
 
-		if (getDefaultValueFromSubmission(lastSubmission) === null) {
+		if (!lastSubmission.payload) {
 			// If the default value is empty, we can safely reset the form.
 			// This ensure the behavior is consistent with and without JS.
 			form.reset();
@@ -406,7 +402,7 @@ export function useForm<
 	const [defaultValueFromLastSubmission, setDefaultValueFromLastSubmission] =
 		useState<FieldValue<Input> | null>(
 			// @ts-expect-error defaultValue is not in Submission type
-			() => getDefaultValueFromSubmission(config.lastSubmission),
+			config.lastSubmission?.payload ?? null,
 		);
 	const fieldset = useFieldset(ref, {
 		defaultValue: defaultValueFromLastSubmission ?? config.defaultValue,
@@ -1162,7 +1158,7 @@ export function validateConstraint(options: {
 
 export function reportSubmission(
 	form: HTMLFormElement,
-	submission: Submission,
+	submission: SubmissionResult,
 ): void {
 	for (const [name, message] of Object.entries(submission.error)) {
 		// There is no need to create a placeholder button if all we want is to reset the error

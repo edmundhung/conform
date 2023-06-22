@@ -59,7 +59,7 @@ export let action = async ({ request }: ActionArgs) => {
 	// As the form value shuold be reset anyway
 	return json({
 		...submission,
-		payload: {},
+		payload: null,
 	});
 };
 
