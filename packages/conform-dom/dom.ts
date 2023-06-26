@@ -55,12 +55,8 @@ export function getFormEncType(
 	const submitter = event.submitter as Submitter | null;
 	const encType = submitter?.getAttribute('formenctype') ?? form.enctype;
 
-	if (
-		['application/x-www-form-urlencoded', 'multipart/form-data'].includes(
-			encType,
-		)
-	) {
-		return encType as any;
+	if (encType === 'multipart/form-data') {
+		return encType;
 	}
 
 	return 'application/x-www-form-urlencoded';
@@ -77,8 +73,12 @@ export function getFormMethod(
 	const method =
 		submitter?.getAttribute('formmethod') ?? form.getAttribute('method');
 
-	if (['get', 'post', 'put', 'patch', 'delete'].includes(method as string)) {
-		return method as any;
+	switch (method) {
+		case 'post':
+		case 'put':
+		case 'patch':
+		case 'delete':
+			return method;
 	}
 
 	return 'get';
@@ -97,28 +97,14 @@ export function getFormElement(
 		| HTMLButtonElement
 		| null,
 ): HTMLFormElement | null {
-	const form = element instanceof HTMLFormElement ? element : element?.form;
-
-	if (!form) {
-		return null;
-	}
-
-	return form;
+	return element instanceof HTMLFormElement ? element : element?.form ?? null;
 }
 
 /**
  * Returns a list of form control elements in the form
  */
 export function getFormControls(form: HTMLFormElement): FormControl[] {
-	const formControls: FormControl[] = [];
-
-	for (const element of form.elements) {
-		if (isFormControl(element)) {
-			formControls.push(element);
-		}
-	}
-
-	return formControls;
+	return Array.from(form.elements).filter(isFormControl);
 }
 
 /**
