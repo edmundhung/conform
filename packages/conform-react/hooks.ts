@@ -71,6 +71,12 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? { [Key in KeysOf<Schema>]?: FieldValue<ResolveType<Schema, Key>> }
 	: any;
 
+type SubmissionResult = {
+	intent: Submission['intent'];
+	payload: Submission['payload'] | null;
+	error: Submission['error'];
+};
+
 export interface FormConfig<
 	Output extends Record<string, any>,
 	Input extends Record<string, any> = Output,
@@ -110,7 +116,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: Submission | null;
+	lastSubmission?: SubmissionResult;
 
 	/**
 	 * An object describing the constraint of each field
@@ -224,11 +230,11 @@ function useConfigRef<Config>(config: Config) {
 
 function useFormReporter(
 	ref: RefObject<HTMLFormElement>,
-	lastSubmission: Submission | null | undefined,
+	lastSubmission: SubmissionResult | undefined,
 ) {
 	const [submission, setSubmission] = useState(lastSubmission);
 	const report = useCallback(
-		(form: HTMLFormElement, submission: Submission) => {
+		(form: HTMLFormElement, submission: SubmissionResult) => {
 			const event = new CustomEvent('conform', { detail: submission.intent });
 
 			form.dispatchEvent(event);
@@ -241,6 +247,15 @@ function useFormReporter(
 		const form = ref.current;
 
 		if (!form || !lastSubmission) {
+			return;
+		}
+
+		if (!lastSubmission.payload) {
+			// If the default value is empty, we can safely reset the form.
+			// This ensure the behavior is consistent with and without JS.
+			form.reset();
+
+			// There is no need to report the submission anymore.
 			return;
 		}
 
@@ -384,28 +399,17 @@ export function useForm<
 	}, [config.lastSubmission]);
 	// This payload from lastSubmission is only useful before hydration
 	// After hydration, any new payload on lastSubmission will be ignored
-	const [lastSubmissionPayload, setLastSubmissionPayload] = useState<
-		FieldValue<Input> | undefined
-	>(config.lastSubmission?.payload as FieldValue<Input> | undefined);
+	const [defaultValueFromLastSubmission, setDefaultValueFromLastSubmission] =
+		useState<FieldValue<Input> | null>(
+			// @ts-expect-error defaultValue is not in Submission type
+			config.lastSubmission?.payload ?? null,
+		);
 	const fieldset = useFieldset(ref, {
-		defaultValue: lastSubmissionPayload ?? config.defaultValue,
+		defaultValue: defaultValueFromLastSubmission ?? config.defaultValue,
 		initialError,
 		constraint: config.constraint,
 		form: config.id,
 	});
-
-	const lastSubmissionRef = useRef(config.lastSubmission);
-
-	useSafeLayoutEffect(() => {
-		if (
-			lastSubmissionRef.current !== config.lastSubmission &&
-			config.lastSubmission === null
-		) {
-			ref.current?.reset();
-		}
-
-		lastSubmissionRef.current = config.lastSubmission;
-	}, [ref, config.lastSubmission]);
 
 	useEffect(() => {
 		// custom validate handler
@@ -465,7 +469,7 @@ export function useForm<
 			}
 
 			setErrors([]);
-			setLastSubmissionPayload(undefined);
+			setDefaultValueFromLastSubmission(null);
 		};
 
 		const handleInput = createValidateHandler('onInput');
@@ -1154,7 +1158,7 @@ export function validateConstraint(options: {
 
 export function reportSubmission(
 	form: HTMLFormElement,
-	submission: Submission,
+	submission: SubmissionResult,
 ): void {
 	for (const [name, message] of Object.entries(submission.error)) {
 		// There is no need to create a placeholder button if all we want is to reset the error
