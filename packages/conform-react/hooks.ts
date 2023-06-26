@@ -880,7 +880,7 @@ export function useInputEvent(options: {
 	});
 
 	useSafeLayoutEffect(() => {
-		const createEventListner = (
+		const createEventListener = (
 			listener: Exclude<keyof typeof options, 'ref'>,
 		) => {
 			return (event: any) => {
@@ -903,10 +903,10 @@ export function useInputEvent(options: {
 				}
 			};
 		};
-		const inputHandler = createEventListner('onInput');
-		const focusHandler = createEventListner('onFocus');
-		const blurHandler = createEventListner('onBlur');
-		const resetHandler = createEventListner('onReset');
+		const inputHandler = createEventListener('onInput');
+		const focusHandler = createEventListener('onFocus');
+		const blurHandler = createEventListener('onBlur');
+		const resetHandler = createEventListener('onReset');
 
 		// focus/blur event does not bubble
 		document.addEventListener('input', inputHandler, true);

@@ -96,7 +96,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		'pattern',
 	];
 
-	function resolveFieldsetConstarint<T extends Record<string, any>>(
+	function resolveFieldsetConstraint<T extends Record<string, any>>(
 		schema: z.ZodType<T>,
 	): FieldsetConstraint<z.input<Source>> {
 		if (schema instanceof z.ZodObject) {
@@ -111,13 +111,13 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		}
 
 		if (schema instanceof z.ZodEffects) {
-			return resolveFieldsetConstarint(schema.innerType());
+			return resolveFieldsetConstraint(schema.innerType());
 		} else if (schema instanceof z.ZodOptional) {
-			return resolveFieldsetConstarint(schema.unwrap());
+			return resolveFieldsetConstraint(schema.unwrap());
 		} else if (schema instanceof z.ZodIntersection) {
 			return {
-				...resolveFieldsetConstarint(schema._def.left),
-				...resolveFieldsetConstarint(schema._def.right),
+				...resolveFieldsetConstraint(schema._def.left),
+				...resolveFieldsetConstraint(schema._def.right),
 			};
 		} else if (
 			schema instanceof z.ZodUnion ||
@@ -125,7 +125,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		) {
 			const options = schema.options as Array<z.ZodType<any>>;
 
-			return options.map(resolveFieldsetConstarint).reduce((prev, next) => {
+			return options.map(resolveFieldsetConstraint).reduce((prev, next) => {
 				const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
 				const result: Record<string, FieldConstraint> = {};
 
@@ -163,7 +163,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 		return {};
 	}
 
-	return resolveFieldsetConstarint(source);
+	return resolveFieldsetConstraint(source);
 }
 
 export function parse<Schema extends z.ZodTypeAny>(
