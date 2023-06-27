@@ -43,12 +43,14 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.code).toHaveValue('#0000ff');
 }
 
-test.beforeEach(async ({ page }) => {
-	await page.goto('/reset-default-value');
-});
-
 test.describe('With JS', () => {
 	test('Validation', async ({ page }) => {
+		await page.goto('/reset-default-value');
+		await runValidationScenario(page);
+	});
+
+	test('Validation with the submission cleared', async ({ page }) => {
+		await page.goto('/reset-default-value?shouldClearSubmission=yes');
 		await runValidationScenario(page);
 	});
 });
@@ -57,6 +59,12 @@ test.describe('No JS', () => {
 	test.use({ javaScriptEnabled: false });
 
 	test('Validation', async ({ page }) => {
+		await page.goto('/reset-default-value');
+		await runValidationScenario(page);
+	});
+
+	test('Validation with the submission cleared', async ({ page }) => {
+		await page.goto('/reset-default-value?shouldClearSubmission=yes');
 		await runValidationScenario(page);
 	});
 });
