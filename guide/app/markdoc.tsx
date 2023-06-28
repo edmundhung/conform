@@ -15,6 +15,15 @@ export function parse(markdown: string) {
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
+			document: {
+				transform(node, config) {
+					return new markdoc.Tag(
+						'article',
+						{ className: 'prose dark:prose-invert max-w-none' },
+						node.transformChildren(config),
+					);
+				},
+			},
 			blockquote: {
 				render: 'BlockQuote',
 			},
@@ -56,8 +65,7 @@ export function parse(markdown: string) {
 						description: 'To determine icons to be included',
 					},
 				},
-				transform(node, config) {
-					// console.log(JSON.stringify(node));
+				transform(node) {
 					const type = node.attributes.type;
 					const gridcells = [];
 					let cell = {};

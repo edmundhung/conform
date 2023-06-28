@@ -1008,26 +1008,22 @@ export function Link({ href, title, children }: LinkProps) {
 }
 
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
-	return (
-		<div className="prose dark:prose-invert max-w-none">
-			{renderers.react(content, React, {
-				components: {
-					Lead,
-					Grid,
-					Resources,
-					Attributes,
-					Row,
-					Col,
-					CodeGroup,
-					Aside,
-					Sandbox,
-					Details,
-					BlockQuote,
-					Fence,
-					Heading,
-					Link,
-				},
-			})}
-		</div>
-	);
+	return renderers.react(content, React, {
+		components: {
+			Lead,
+			Grid,
+			Resources,
+			Attributes,
+			Row,
+			Col,
+			CodeGroup,
+			Aside,
+			Sandbox,
+			Details,
+			BlockQuote,
+			Fence,
+			Heading,
+			Link,
+		},
+	});
 }
