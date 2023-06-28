@@ -2,22 +2,19 @@
 
 Conform support both nested object and array by leveraging a naming convention on the name attribute.
 
-<!-- aside -->
+<!-- row -->
 
-## On this page
-
-- [Naming convention](#naming-convention)
-- [Nested Object](#nested-object)
-- [Array](#array)
-- [Nested List](#nested-list)
-
-<!-- /aside -->
+<!-- col -->
 
 ## Naming Convention
 
 **Conform** uses the `object.property` and `array[index]` syntax to denote data structure. These notations could be combined for nest list as well. e.g. `tasks[0].content`.
 
 The form data should be parsed using the Conform [parse](/packages/conform-zod/README.md#parse) helper to resolve each data path and reconstruct the data structure accordingly.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```ts
 import { parse } from '@conform-to/zod';
@@ -31,9 +28,23 @@ const submission = parse(formData, {
 console.log(submission.payload);
 ```
 
+<!-- /col -->
+
+<!-- /row -->
+
+---
+
+<!-- row -->
+
+<!-- col -->
+
 ## Nested Object
 
 When you need to set up nested fields, you can pass the parent field config to the [useFieldset](/packages/conform-react/README.md#usefieldset) hook to get access to each child field with name infered automatically.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -73,9 +84,25 @@ function Example() {
 }
 ```
 
+<!-- /col -->
+
+<!-- /row -->
+
+---
+
+<!-- row -->
+
+<!-- col -->
+
 ## Array
 
 When you need to setup a list of fields, you can pass the parent field config to the [useFieldList](/packages/conform-react/README.md#usefieldlist) hook to get access to each item field with name infered automatically as well.
+
+For information about modifying list (e.g. insert / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 import { useForm, useFieldList } from '@conform-to/react';
@@ -112,9 +139,23 @@ function Example() {
 
 For information about modifying list (e.g. insert / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
 
+<!-- /col -->
+
+<!-- /row -->
+
+---
+
+<!-- row -->
+
+<!-- col -->
+
 ## Nested List
 
 You can also combine both [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist) hook for nested list.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 import type { FieldConfig } from '@conform-to/react';
@@ -168,3 +209,7 @@ function TodoFieldset({ config }: { config: FieldConfig<Todo> }) {
   );
 }
 ```
+
+<!-- /col -->
+
+<!-- /row -->
