@@ -1,19 +1,40 @@
 # File Upload
 
-Conform support validating a file input as well.
+Conform support validating file input as well.
 
-<!-- aside -->
+<!-- row -->
 
-## On this page
-
-- [Configuration](#configuration)
-- [Multiple files](#multiple-files)
-
-<!-- /aside -->
+<!-- col -->
 
 ## Configuration
 
 Setting up a file input is similar to other form controls except the form **encType** attribute must be set to `multipart/form-data`.
+
+<details>
+<summary>If you are running a Remix app on `node`:</summary>
+
+Currently, there is a [bug](https://github.com/remix-run/web-std-io/pull/28) on **@remix-run/web-fetch** which treats the default file entry as an empty string. If you want to share the same validation across client and server, you can preprocess it with zod like below:
+
+```tsx
+const schema = z.object({
+  file: z.preprocess(
+    // Transform the empty string to a default file entry
+    (value) => (value === '' ? new File([], '') : value),
+    z
+      .instanceof(File)
+      .refine(
+        (file) => file.name !== '' && file.size !== 0,
+        'File is required',
+      ),
+  ),
+});
+```
+
+</details>
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -44,9 +65,23 @@ function Example() {
 }
 ```
 
+<!-- /col -->
+
+<!-- /row -->
+
+---
+
+<!-- row -->
+
+<!-- col -->
+
 ## Multiple files
 
 The setup is no different for multiple files input.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -88,3 +123,7 @@ function Example() {
   );
 }
 ```
+
+<!-- /col -->
+
+<!-- /row -->
