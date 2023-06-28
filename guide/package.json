@@ -10,12 +10,18 @@
 		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development"
 	},
 	"dependencies": {
+		"@algolia/autocomplete-core": "^1.8.3",
+		"@algolia/autocomplete-preset-algolia": "^1.8.3",
+		"@headlessui/react": "^1.7.13",
 		"@markdoc/markdoc": "^0.1.7",
 		"@octokit/core": "^4.0.5",
 		"@remix-run/cloudflare": "^1.19.3",
 		"@remix-run/cloudflare-pages": "^1.19.3",
 		"@remix-run/react": "^1.19.3",
+		"algoliasearch": "^4.15.0",
+		"clsx": "^1.2.1",
 		"cross-env": "^7.0.3",
+		"framer-motion": "^7.8.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-syntax-highlighter": "^15.5.0"
@@ -29,6 +35,7 @@
 		"@types/react": "^18.0.28",
 		"@types/react-dom": "^18.0.11",
 		"@types/react-syntax-highlighter": "^15.5.5",
+		"autoprefixer": "^10.4.13",
 		"eslint": "^8.35.0",
 		"npm-run-all": "^4.1.5",
 		"tailwindcss": "^3.2.7",

@@ -1,6 +1,7 @@
 import {
 	type LoaderArgs,
 	type HeadersFunction,
+	type MetaFunction,
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
@@ -12,8 +13,14 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
 };
 
+export const meta: MetaFunction = ({ params }) => {
+	return {
+		title: 'Conform Guide',
+	};
+};
+
 export async function loader({ context }: LoaderArgs) {
-	const readme = await getFileContent(context, 'README.md');
+	const readme = await getFileContent(context, `docs/README.md`);
 
 	return json(
 		{
@@ -27,8 +34,8 @@ export async function loader({ context }: LoaderArgs) {
 	);
 }
 
-export default function Index() {
-	const { content } = useLoaderData<typeof loader>();
+export default function Page() {
+	let { content } = useLoaderData<typeof loader>();
 
 	return <Markdown content={content} />;
 }

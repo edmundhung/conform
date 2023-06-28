@@ -6,10 +6,18 @@ export function parse(markdown: string) {
 			/<details>\n?\s*<summary>(.+?)<\/summary>(.*?)<\/details>/gs,
 			'{% details summary="$1" %}$2{% /details %}',
 		)
-		.replace(/<!-- (\/?(aside|sandbox)( \w+=".+")*) -->/g, '{% $1 %}');
+		.replace(
+			/<!-- (\/?(lead|grid|resources|attributes|row|col|codegroup|aside|sandbox)( \w+=.+)*) -->/g,
+			'{% $1 %}',
+		);
+
+	// console.log(content);
 	const ast = markdoc.parse(content);
 	const node = markdoc.transform(ast, {
 		nodes: {
+			blockquote: {
+				render: 'BlockQuote',
+			},
 			fence: {
 				render: 'Fence',
 				attributes: {
@@ -35,6 +43,169 @@ export function parse(markdown: string) {
 			},
 		},
 		tags: {
+			lead: {
+				render: 'Lead',
+				description: 'Lead paragraph',
+			},
+			grid: {
+				render: 'Grid',
+				description: 'Grid',
+				attributes: {
+					type: {
+						type: String,
+						description: 'To determine icons to be included',
+					},
+				},
+				transform(node, config) {
+					// console.log(JSON.stringify(node));
+					const type = node.attributes.type;
+					const gridcells = [];
+					let cell = {};
+
+					for (const child of node.children) {
+						if (child.type == 'heading') {
+							cell.name = child.children[0].children[0].attributes.content;
+						} else if (child.type == 'paragraph') {
+							const offspring = child.children[0].children[0];
+							if (offspring.type == 'text') {
+								cell.description = offspring.attributes.content;
+							} else if (offspring.type == 'link') {
+								cell.to = offspring.attributes.href;
+								cell.tocontent = offspring.children[0].attributes.content;
+								gridcells.push(cell);
+								cell = {};
+							}
+						}
+					}
+
+					return new markdoc.Tag('Grid', {
+						gridcells,
+						type,
+					});
+				},
+			},
+			resources: {
+				render: 'Resources',
+				description: 'Cards for linking to resources',
+				transform(node, config) {
+					const resources = [];
+					let resource = {};
+					let count = 0;
+					const patterns = [
+						{
+							y: 16,
+							squares: [
+								[0, 1],
+								[1, 3],
+							],
+						},
+						{
+							y: -6,
+							squares: [
+								[-1, 2],
+								[1, 3],
+							],
+						},
+						{
+							y: 32,
+							squares: [
+								[0, 2],
+								[1, 4],
+							],
+						},
+						{
+							y: 22,
+							squares: [[0, 1]],
+						},
+					];
+
+					for (const child of node.children) {
+						if (child.type == 'heading') {
+							resource.to = child.children[0].children[0].attributes.href;
+							resource.name =
+								child.children[0].children[0].children[0].attributes.content;
+						} else if (child.type == 'paragraph') {
+							resource.description =
+								child.children[0].children[0].attributes.content;
+							resource.pattern = patterns[count % 4];
+							count = count + 1;
+							resources.push(resource);
+							resource = {};
+						}
+					}
+
+					return new markdoc.Tag('Resources', {
+						resources,
+					});
+				},
+			},
+			attributes: {
+				render: 'Attributes',
+				description:
+					'To list attributes with their names, data types and descriptions',
+				transform(node, config) {
+					const attributes = [];
+					let attr = {};
+					for (const child of node.children) {
+						if (child.type == 'heading' && child.children[0].type == 'inline') {
+							for (const grandchild of child.children[0].children) {
+								if (grandchild.type == 'code') {
+									attr.name = grandchild.attributes.content;
+								} else if (grandchild.type == 'em') {
+									attr.type = grandchild.children[0].attributes.content;
+								}
+							}
+						}
+
+						if (child.type == 'paragraph') {
+							attr.description =
+								child.children[0].children[0].attributes.content;
+							attributes.push(attr);
+							attr = {};
+						}
+					}
+
+					return new markdoc.Tag('Attributes', {
+						attributes,
+					});
+				},
+			},
+			row: {
+				render: 'Row',
+				description: 'A row for two-column display',
+			},
+			col: {
+				render: 'Col',
+				description: 'A column in two-column display',
+				attributes: {
+					sticky: {
+						type: Boolean,
+						description: 'use sticky for sticky positioning element',
+						default: false,
+					},
+				},
+			},
+			codegroup: {
+				render: 'CodeGroup',
+				description: 'A group of code snippets',
+				attributes: {
+					title: {
+						type: String,
+						default: '',
+						description: 'Title of the code group',
+					},
+					// tag: {
+					// 	type: String,
+					// 	default: 'Tag',
+					// 	description: '.......',
+					// },
+					// label: {
+					// 	type: String,
+					// 	default: 'Label',
+					// 	description: '.....',
+					// },
+				},
+			},
 			aside: {
 				render: 'Aside',
 				description: 'Side notes',

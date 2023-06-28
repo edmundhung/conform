@@ -1,7 +1,7 @@
-import type {
-	MetaFunction,
-	LinksFunction,
-	LoaderArgs,
+import {
+	type MetaFunction,
+	type LinksFunction,
+	type LoaderArgs,
 } from '@remix-run/cloudflare';
 import {
 	Links,
@@ -13,28 +13,39 @@ import {
 	useCatch,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
+import clsx from 'clsx';
+import { getBranch } from '~/context';
+import { parseColorScheme } from '~/services/color-scheme/server';
+import {
+	ColorSchemeScript,
+	useColorScheme,
+} from '~/services/color-scheme/components';
+import {
+	useMobileNavigation,
+	MobileNavigation,
+} from '~/services/navigation/components';
 import stylesUrl from '~/styles.css';
-import { getBranch } from './context';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export function loader({ context }: LoaderArgs) {
+export async function loader({ request, context }: LoaderArgs) {
+	const colorScheme = await parseColorScheme(request);
 	const repository = 'edmundhung/conform';
 	const branch = getBranch(context);
 
 	return json({
+		colorScheme,
 		repository,
 		branch,
 	});
 }
 
 export const meta: MetaFunction = () => ({
-	charset: 'utf-8',
 	title: 'Conform Guide',
-	description: 'Make your form conform to the dom',
-	viewport: 'width=device-width,initial-scale=1',
+	description:
+		'Progressive enhancement first form validaition library for Remix and React Router',
 });
 
 export function CatchBoundary() {
@@ -58,19 +69,28 @@ export function CatchBoundary() {
 }
 
 export default function App() {
+	const colorScheme = useColorScheme();
+	const mobileNavigation = useMobileNavigation();
+
 	return (
-		<html lang="en">
+		<html
+			lang="en"
+			className={clsx({
+				dark: colorScheme === 'dark',
+				'overflow-hidden': mobileNavigation.isOpen,
+			})}
+			suppressHydrationWarning
+		>
 			<head>
+				<ColorSchemeScript />
+				<meta charSet="utf-8" />
+				<meta name="viewport" content="width=device-width,initial-scale=1" />
 				<Meta />
 				<Links />
-				<script
-					defer
-					data-domain="conform.guide"
-					src="https://plausible.io/js/script.js"
-				/>
 			</head>
-			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
+			<body className="bg-white antialiased dark:bg-zinc-900">
 				<Outlet />
+				<MobileNavigation />
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />
