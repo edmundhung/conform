@@ -18,12 +18,12 @@ export async function loader({ request }: LoaderArgs) {
 	};
 }
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = await parse(formData, { schema });
+	const submission = parse(formData, { schema });
 
 	return json(submission);
-};
+}
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();

@@ -51,11 +51,11 @@ function parseSignupForm(formData: FormData) {
 	});
 }
 
-export let loader = async ({ request }: LoaderArgs) => {
+export async function loader({ request }: LoaderArgs) {
 	return parseConfig(request);
-};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseSignupForm(formData);
 
@@ -66,7 +66,7 @@ export let action = async ({ request }: ActionArgs) => {
 			// Never send the password back to the client
 		},
 	});
-};
+}
 
 export default function SignupForm() {
 	const config = useLoaderData();

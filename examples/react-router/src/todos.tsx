@@ -16,7 +16,7 @@ const todosSchema = z.object({
 	tasks: z.array(taskSchema).min(1),
 });
 
-export let action = async ({ request }: ActionFunctionArgs) => {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		schema: todosSchema,
@@ -27,7 +27,7 @@ export let action = async ({ request }: ActionFunctionArgs) => {
 	}
 
 	throw new Error('Not implemented');
-};
+}
 
 export function Component() {
 	const lastSubmission = useActionData() as any;
