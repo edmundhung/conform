@@ -370,6 +370,20 @@ function PageLink({ label, page, previous = false }: PageLinkProps) {
 	);
 }
 
+export function GitHubIcon(
+	props: Omit<React.ComponentProps<'svg'>, 'viewBox'>,
+) {
+	return (
+		<svg {...props} viewBox="0 0 20 20">
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M10 1.667c-4.605 0-8.334 3.823-8.334 8.544 0 3.78 2.385 6.974 5.698 8.106.417.075.573-.182.573-.406 0-.203-.011-.875-.011-1.592-2.093.397-2.635-.522-2.802-1.002-.094-.246-.5-1.005-.854-1.207-.291-.16-.708-.556-.01-.567.656-.01 1.124.62 1.281.876.75 1.292 1.948.93 2.427.705.073-.555.291-.93.531-1.143-1.854-.213-3.791-.95-3.791-4.218 0-.929.322-1.698.854-2.296-.083-.214-.375-1.09.083-2.265 0 0 .698-.224 2.292.876a7.576 7.576 0 0 1 2.083-.288c.709 0 1.417.096 2.084.288 1.593-1.11 2.291-.875 2.291-.875.459 1.174.167 2.05.084 2.263.53.599.854 1.357.854 2.297 0 3.278-1.948 4.005-3.802 4.219.302.266.563.78.563 1.58 0 1.143-.011 2.061-.011 2.35 0 .224.156.491.573.405a8.365 8.365 0 0 0 4.11-3.116 8.707 8.707 0 0 0 1.567-4.99c0-4.721-3.73-8.545-8.334-8.545Z"
+			/>
+		</svg>
+	);
+}
+
 export function Footer() {
 	const location = useLocation();
 	const allPages = navigation.flatMap((group) => group.menus);
@@ -404,17 +418,10 @@ export function Footer() {
 				<div className="flex gap-4">
 					<Link to="https://github.com/edmundhung/conform" className="group">
 						<span className="sr-only">Follow us on GitHub</span>
-						<svg
+						<GitHubIcon
 							className="h-5 w-5 fill-zinc-700 transition group-hover:fill-zinc-900 dark:group-hover:fill-zinc-500"
-							viewBox="0 0 20 20"
 							aria-hidden="true"
-						>
-							<path
-								fillRule="evenodd"
-								clipRule="evenodd"
-								d="M10 1.667c-4.605 0-8.334 3.823-8.334 8.544 0 3.78 2.385 6.974 5.698 8.106.417.075.573-.182.573-.406 0-.203-.011-.875-.011-1.592-2.093.397-2.635-.522-2.802-1.002-.094-.246-.5-1.005-.854-1.207-.291-.16-.708-.556-.01-.567.656-.01 1.124.62 1.281.876.75 1.292 1.948.93 2.427.705.073-.555.291-.93.531-1.143-1.854-.213-3.791-.95-3.791-4.218 0-.929.322-1.698.854-2.296-.083-.214-.375-1.09.083-2.265 0 0 .698-.224 2.292.876a7.576 7.576 0 0 1 2.083-.288c.709 0 1.417.096 2.084.288 1.593-1.11 2.291-.875 2.291-.875.459 1.174.167 2.05.084 2.263.53.599.854 1.357.854 2.297 0 3.278-1.948 4.005-3.802 4.219.302.266.563.78.563 1.58 0 1.143-.011 2.061-.011 2.35 0 .224.156.491.573.405a8.365 8.365 0 0 0 4.11-3.116 8.707 8.707 0 0 0 1.567-4.99c0-4.721-3.73-8.545-8.334-8.545Z"
-							/>
-						</svg>
+						/>
 					</Link>
 				</div>
 			</div>
@@ -425,45 +432,6 @@ export function Footer() {
 function useInitialValue<Value>(value: Value, condition = true): Value {
 	let initialValue = useRef(value).current;
 	return condition ? initialValue : value;
-}
-
-function VisibleSectionHighlight({
-	list,
-	visibleSectionIds,
-	index,
-}: {
-	list: Array<{ id: string }>;
-	visibleSectionIds: string[];
-	index: number;
-}) {
-	let [sections, visibleSections] = useInitialValue(
-		[list, visibleSectionIds],
-		useIsInsideMobileNavigation(),
-	);
-
-	let isPresent = useIsPresent();
-	let firstVisibleSectionIndex = Math.max(
-		0,
-		[{ id: '_top' }, ...sections].findIndex(
-			(section) => section.id === visibleSections[0],
-		),
-	);
-	let itemHeight = remToPx(2);
-	let height = isPresent
-		? Math.max(1, visibleSections.length) * itemHeight
-		: itemHeight;
-	let top = index * itemHeight + firstVisibleSectionIndex * itemHeight;
-
-	return (
-		<motion.div
-			layout
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1, transition: { delay: 0.2 } }}
-			exit={{ opacity: 0 }}
-			className="absolute inset-x-0 top-0 bg-zinc-800/2.5 will-change-transform dark:bg-white/2.5"
-			style={{ borderRadius: 8, height, top }}
-		/>
-	);
 }
 
 export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
@@ -501,7 +469,11 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
 			<div className="hidden lg:block lg:max-w-md lg:flex-auto" />
 			<div className="flex items-center gap-5 lg:hidden">
 				<MobileNavigationToggle />
-				<Link className="text-zinc-400" to="/" aria-label="Home">
+				<Link
+					className="font-['Ubuntu','sans-serif'] text-xl font-medium tracking-wider uppercase text-zinc-900 dark:text-white"
+					to="/"
+					aria-label="Home"
+				>
 					Conform
 				</Link>
 			</div>
@@ -509,13 +481,8 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
 				<nav className="hidden md:block">
 					<ul className="flex items-center gap-8">
 						<li>
-							<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/discussion">
-								Discussion
-							</TopLevelNavItemHeader>
-						</li>
-						<li>
-							<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/releases">
-								Changelog
+							<TopLevelNavItemHeader href="https://github.com/edmundhung/conform">
+								v0.7.2
 							</TopLevelNavItemHeader>
 						</li>
 					</ul>
@@ -523,11 +490,6 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
 				<div className="hidden md:block md:h-5 md:w-px md:bg-zinc-900/10 md:dark:bg-white/15" />
 				<div className="flex gap-4">
 					<ColorSchemeSwitcher />
-				</div>
-				<div className="hidden min-[416px]:contents">
-					<ButtonLink to="https://github.com/edmundhung/conform">
-						GitHub
-					</ButtonLink>
 				</div>
 			</div>
 		</motion.div>

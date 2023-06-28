@@ -16,7 +16,11 @@ export default function Guide() {
 				<header className="contents lg:pointer-events-none lg:fixed lg:inset-0 lg:z-40 lg:flex">
 					<div className="contents lg:pointer-events-auto lg:block lg:w-72 lg:overflow-y-auto lg:border-r lg:border-zinc-900/10 lg:px-6 lg:pt-4 lg:pb-8 lg:dark:border-white/10 xl:w-80">
 						<div className="hidden lg:flex">
-							<Link className="text-zinc-400" aria-label="Home" to="/">
+							<Link
+								className="font-['Ubuntu','sans-serif'] text-xl font-medium tracking-wider uppercase text-zinc-900 dark:text-white"
+								aria-label="Home"
+								to="/"
+							>
 								Conform
 							</Link>
 						</div>

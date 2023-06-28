@@ -75,7 +75,7 @@ export default function App() {
 	return (
 		<html
 			lang="en"
-			className={clsx({
+			className={clsx('text-[20px]', {
 				dark: colorScheme === 'dark',
 				'overflow-hidden': mobileNavigation.isOpen,
 			})}
