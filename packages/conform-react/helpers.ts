@@ -4,45 +4,55 @@ import {
 	VALIDATION_SKIPPED,
 } from '@conform-to/dom';
 import type { FieldConfig, Primitive } from './hooks.js';
-import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
+import type { CSSProperties } from 'react';
 
-interface FormControlProps {
-	id?: string;
-	name: string;
-	form?: string;
-	required?: boolean;
-	autoFocus?: boolean;
-	tabIndex?: number;
-	style?: CSSProperties;
-	'aria-describedby'?: string;
-	'aria-invalid'?: boolean;
-	'aria-hidden'?: boolean;
-}
+type FormControlOptionalKeys =
+	| 'id'
+	| 'form'
+	| 'required'
+	| 'autoFocus'
+	| 'tabIndex'
+	| 'style'
+	| 'aria-describedby'
+	| 'aria-invalid'
+	| 'aria-hidden';
 
-interface InputProps<Schema> extends FormControlProps {
-	type?: HTMLInputTypeAttribute;
-	minLength?: number;
-	maxLength?: number;
-	min?: Schema extends number ? number : string | number;
-	max?: Schema extends number ? number : string | number;
-	step?: Schema extends number ? number : string | number;
-	pattern?: string;
-	multiple?: boolean;
-	value?: string;
-	defaultChecked?: boolean;
-	defaultValue?: string;
-}
+type FormControlRequiredKeys = 'name';
 
-interface SelectProps extends FormControlProps {
-	defaultValue?: string | number | readonly string[] | undefined;
-	multiple?: boolean;
-}
+type InputProps = Pick<
+	React.ComponentPropsWithoutRef<'input'>,
+	| FormControlOptionalKeys
+	| 'type'
+	| 'minLength'
+	| 'maxLength'
+	| 'min'
+	| 'max'
+	| 'step'
+	| 'pattern'
+	| 'multiple'
+	| 'value'
+	| 'defaultChecked'
+	| 'defaultValue'
+> &
+	Required<
+		Pick<React.ComponentPropsWithoutRef<'input'>, FormControlRequiredKeys>
+	>;
 
-interface TextareaProps extends FormControlProps {
-	minLength?: number;
-	maxLength?: number;
-	defaultValue?: string;
-}
+type SelectProps = Pick<
+	React.ComponentPropsWithoutRef<'select'>,
+	FormControlOptionalKeys | 'defaultValue' | 'multiple'
+> &
+	Required<
+		Pick<React.ComponentPropsWithoutRef<'select'>, FormControlRequiredKeys>
+	>;
+
+type TextareaProps = Pick<
+	React.ComponentPropsWithoutRef<'textarea'>,
+	FormControlOptionalKeys | 'minLength' | 'maxLength' | 'defaultValue'
+> &
+	Required<
+		Pick<React.ComponentPropsWithoutRef<'textarea'>, FormControlRequiredKeys>
+	>;
 
 type BaseOptions =
 	| {
@@ -60,24 +70,37 @@ type InputOptions = BaseOptions &
 		| {
 				type: 'checkbox' | 'radio';
 				value?: string;
+				id?: string;
 		  }
 		| {
-				type?: Exclude<HTMLInputTypeAttribute, 'button' | 'submit' | 'hidden'>;
+				type?: Exclude<InputProps['type'], 'button' | 'submit' | 'hidden'>;
 				value?: never;
+				id?: never;
 		  }
 	);
 
-function getFormControlProps(
-	config: FieldConfig<any>,
+function getFormControlProps<
+	Schema,
+	Tag extends 'input' | 'select' | 'textarea',
+>(
+	config: FieldConfig<Schema>,
+	_tag: Tag,
 	options?: BaseOptions,
-): FormControlProps {
-	const props: FormControlProps = {
+): Pick<React.ComponentPropsWithoutRef<Tag>, FormControlOptionalKeys> &
+	Required<Pick<React.ComponentPropsWithoutRef<Tag>, FormControlRequiredKeys>> {
+	const props: Pick<
+		React.ComponentPropsWithoutRef<Tag>,
+		FormControlOptionalKeys
+	> &
+		Required<
+			Pick<React.ComponentPropsWithoutRef<Tag>, FormControlRequiredKeys>
+		> = {
 		id: config.id,
 		name: config.name,
 		form: config.form,
 		required: config.required,
 		autoFocus:
-			config.initialError && Object.entries(config.initialError).length > 0
+			config.initialError && Object.keys(config.initialError).length > 0
 				? true
 				: undefined,
 	};
@@ -98,11 +121,11 @@ function getFormControlProps(
 
 	return {
 		...props,
-		...(options?.hidden ? hiddenProps : {}),
+		...(options?.hidden ? hiddenProps : undefined),
 	};
 }
 
-function cleanup<Props extends Object>(props: Props): Props {
+function cleanup<Props extends object>(props: Props): Props {
 	for (const key in props) {
 		if (props[key] === undefined) {
 			delete props[key];
@@ -139,61 +162,82 @@ export const hiddenProps: {
 export function input<Schema extends Primitive | unknown>(
 	config: FieldConfig<Schema>,
 	options?: InputOptions,
-): InputProps<Schema>;
+): InputProps;
 export function input<Schema extends File | File[]>(
 	config: FieldConfig<Schema>,
 	options: InputOptions & { type: 'file' },
-): InputProps<Schema>;
+): InputProps;
 export function input<Schema extends Primitive | File | File[] | unknown>(
 	config: FieldConfig<Schema>,
 	options: InputOptions = {},
-): InputProps<Schema> {
-	const props: InputProps<Schema> = {
-		...getFormControlProps(config, options),
-		type: options.type,
-		minLength: config.minLength,
-		maxLength: config.maxLength,
-		min: config.min,
-		max: config.max,
-		step: config.step,
-		pattern: config.pattern,
-		multiple: config.multiple,
-	};
-
-	if (options.type === 'checkbox' || options.type === 'radio') {
-		props.value = options.value ?? 'on';
-		props.defaultChecked = config.defaultValue === props.value;
-	} else if (options.type !== 'file') {
-		props.defaultValue = config.defaultValue as string | undefined;
+): InputProps {
+	switch (options.type) {
+		case 'checkbox':
+		case 'radio': {
+			const value = options.value ?? 'on';
+			return cleanup({
+				...getFormControlProps(config, 'input', options),
+				id: options.id ?? config.id,
+				defaultChecked: config.defaultValue === value,
+				max: config.max,
+				maxLength: config.maxLength,
+				min: config.min,
+				minLength: config.minLength,
+				multiple: config.multiple,
+				pattern: config.pattern,
+				step: config.step,
+				type: options.type,
+				value,
+			});
+		}
+		case 'file':
+			return cleanup({
+				...getFormControlProps(config, 'input', options),
+				max: config.max,
+				maxLength: config.maxLength,
+				min: config.min,
+				minLength: config.minLength,
+				multiple: config.multiple,
+				pattern: config.pattern,
+				step: config.step,
+				type: options.type,
+			});
+		default:
+			return cleanup({
+				...getFormControlProps(config, 'input', options),
+				defaultValue: config.defaultValue,
+				max: config.max,
+				maxLength: config.maxLength,
+				min: config.min,
+				minLength: config.minLength,
+				multiple: config.multiple,
+				pattern: config.pattern,
+				step: config.step,
+				type: options.type,
+			});
 	}
-
-	return cleanup(props);
 }
 
 export function select<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
 >(config: FieldConfig<Schema>, options?: BaseOptions): SelectProps {
-	const props: SelectProps = {
-		...getFormControlProps(config, options),
+	return cleanup({
+		...getFormControlProps(config, 'select', options),
 		defaultValue: config.defaultValue,
 		multiple: config.multiple,
-	};
-
-	return cleanup(props);
+	});
 }
 
 export function textarea<Schema extends Primitive | undefined | unknown>(
 	config: FieldConfig<Schema>,
 	options?: BaseOptions,
 ): TextareaProps {
-	const props: TextareaProps = {
-		...getFormControlProps(config, options),
+	return cleanup({
+		...getFormControlProps(config, 'textarea', options),
 		defaultValue: config.defaultValue,
 		minLength: config.minLength,
 		maxLength: config.maxLength,
-	};
-
-	return cleanup(props);
+	});
 }
 
 export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };
