@@ -18,10 +18,12 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function Example() {
-	const [attributes, setAttributes] = useState({
-		method: null as string | null,
-		action: null as string | null,
-		encType: null as string | null,
+	const [attributes, setAttributes] = useState<
+		Record<'method' | 'action' | 'encType', null | string>
+	>({
+		method: null,
+		action: null,
+		encType: null,
 	});
 	const options = useLoaderData<typeof loader>();
 	const [form] = useForm({
@@ -35,8 +37,8 @@ export default function Example() {
 	return (
 		<form
 			action={options.formAction ?? undefined}
-			method={options.formMethod ?? (undefined as any)}
-			encType={options.formEncType ?? (undefined as any)}
+			method={options.formMethod ?? undefined}
+			encType={options.formEncType ?? undefined}
 			{...form.props}
 		>
 			<Playground

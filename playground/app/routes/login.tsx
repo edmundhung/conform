@@ -11,9 +11,9 @@ interface Login {
 }
 
 function parseLoginForm(formData: FormData) {
-	return parse(formData, {
+	return parse<Login>(formData, {
 		resolve({ email, password }) {
-			const error: Record<string, string> = {};
+			const error: Partial<Record<keyof Login, string>> = {};
 
 			if (!email) {
 				error.email = 'Email is required';
@@ -37,11 +37,11 @@ function parseLoginForm(formData: FormData) {
 	});
 }
 
-export let loader = async ({ request }: LoaderArgs) => {
+export async function loader({ request }: LoaderArgs) {
 	return parseConfig(request);
-};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseLoginForm(formData);
 
@@ -60,7 +60,7 @@ export let action = async ({ request }: ActionArgs) => {
 			// Never send the password back to the client
 		},
 	});
-};
+}
 
 export default function LoginForm() {
 	const formId = useId();

@@ -1,6 +1,6 @@
 import { useForm, conform } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
+import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect } from 'react';
@@ -35,7 +35,7 @@ const colors = [
 	},
 ];
 
-export let loader = async ({ request }: ActionArgs) => {
+export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 	const color = url.searchParams.get('color');
 
@@ -43,9 +43,9 @@ export let loader = async ({ request }: ActionArgs) => {
 		color,
 		defaultValue: colors.find((c) => color === c.name.toLowerCase()),
 	});
-};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		schema,
@@ -61,7 +61,7 @@ export let action = async ({ request }: ActionArgs) => {
 		...submission,
 		payload: null,
 	});
-};
+}
 
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();

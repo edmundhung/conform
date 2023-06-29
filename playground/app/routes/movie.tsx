@@ -11,11 +11,11 @@ interface Movie {
 	rating?: number;
 }
 
-export let loader = async ({ request }: LoaderArgs) => {
+export async function loader({ request }: LoaderArgs) {
 	return parseConfig(request);
-};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		resolve({ title, description, genre, rating }) {
@@ -55,7 +55,7 @@ export let action = async ({ request }: ActionArgs) => {
 	});
 
 	return json(submission);
-};
+}
 
 export default function MovieForm() {
 	const config = useLoaderData<typeof loader>();

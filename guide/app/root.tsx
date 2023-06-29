@@ -20,7 +20,7 @@ export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export let loader = ({ context }: LoaderArgs) => {
+export function loader({ context }: LoaderArgs) {
 	const repository = 'edmundhung/conform';
 	const branch = getBranch(context);
 
@@ -28,7 +28,7 @@ export let loader = ({ context }: LoaderArgs) => {
 		repository,
 		branch,
 	});
-};
+}
 
 export const meta: MetaFunction = () => ({
 	charset: 'utf-8',

@@ -73,7 +73,7 @@ const schema = yup.object({
   // Define the schema with yup
 });
 
-export let action = async ({ request }) => {
+export async function action({ request }) {
   const formData = await request.formData();
   const submission = parse(formData, {
     // If you need extra validation on server side
@@ -88,5 +88,5 @@ export let action = async ({ request }) => {
   }
 
   // ...
-};
+}
 ```

@@ -28,16 +28,16 @@ const schema = z.object({
 	),
 });
 
-export let loader = async ({ request }: LoaderArgs) => {
+export async function loader({ request }: LoaderArgs) {
 	return parseConfig(request);
-};
+}
 
-export let action = async ({ request }: ActionArgs) => {
+export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
 	return json(submission);
-};
+}
 
 export default function TodosForm() {
 	const config = useLoaderData();
