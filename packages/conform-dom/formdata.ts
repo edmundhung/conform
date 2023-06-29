@@ -25,26 +25,25 @@ export function getFormData(
  * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
  * ```
  */
-export function getPaths(name: string): Array<string | number> {
-	const pattern = /(\w*)\[(\d+)\]/;
+export function getPaths(input: string): (string | number)[] {
+	const regex = /(\w+|\[\d+\]|\[\])/g;
+	let matches = input.match(regex);
 
-	if (!name) {
-		return [];
+	if (matches) {
+		return matches.map((el) => {
+			if (el.includes('[')) {
+				let replaced = el.replace(/[[\]]/g, '');
+				return replaced === ''
+					? Infinity
+					: isNaN(Number(replaced))
+					? el
+					: Number(replaced);
+			}
+			return el;
+		});
 	}
 
-	return name.split('.').flatMap((key) => {
-		const matches = pattern.exec(key);
-
-		if (!matches) {
-			return key;
-		}
-
-		if (matches[1] === '') {
-			return Number(matches[2]);
-		}
-
-		return [matches[1], Number(matches[2])];
-	});
+	return [];
 }
 
 /**
@@ -84,14 +83,26 @@ export function setValue(
 
 	while (pointer != null && ++index < length) {
 		let key = paths[index];
+		const isDynamic = key === Infinity;
+		let prev = paths[index - 1];
 		let next = paths[index + 1];
 		let newValue =
 			index != lastIndex
 				? pointer[key] ?? (typeof next === 'number' ? [] : {})
 				: valueFn(pointer[key]);
 
-		pointer[key] = newValue;
-		pointer = pointer[key];
+		if (isDynamic) {
+			if (Array.isArray(pointer)) {
+				pointer.push(newValue);
+				pointer = pointer[pointer.length - 1];
+			} else {
+				pointer[prev] = newValue;
+				pointer = pointer[prev];
+			}
+		} else {
+			pointer[key] = newValue;
+			pointer = pointer[key];
+		}
 	}
 }
 

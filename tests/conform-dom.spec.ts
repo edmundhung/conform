@@ -43,6 +43,7 @@ test.describe('conform-dom', () => {
 				},
 				error: {},
 			});
+
 			expect(
 				parse(
 					createFormData([
@@ -64,6 +65,7 @@ test.describe('conform-dom', () => {
 				},
 				error: {},
 			});
+
 			expect(
 				parse(
 					createFormData([
@@ -81,6 +83,23 @@ test.describe('conform-dom', () => {
 						{ content: 'Test some stuffs', completed: 'Yes' },
 						{ content: 'Test integration' },
 					],
+				},
+				error: {},
+			});
+
+			expect(
+				parse(
+					createFormData([
+						['title', ''],
+						['tasks[]', 'Test some stuffs'],
+						['tasks[]', 'Test integration'],
+					]),
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					title: '',
+					tasks: ['Test some stuffs', 'Test integration'],
 				},
 				error: {},
 			});

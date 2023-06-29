@@ -819,7 +819,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 
 		if (config.form) {
 			fieldConfig.form = config.form;
-			fieldConfig.id = `${config.form}-${config.name}`;
+			fieldConfig.id = `${config.form}-${config.name}-${index}`;
 			fieldConfig.errorId = `${fieldConfig.id}-error`;
 			fieldConfig.descriptionId = `${fieldConfig.id}-description`;
 		}

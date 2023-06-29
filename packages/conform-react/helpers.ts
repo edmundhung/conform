@@ -196,4 +196,29 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 	return cleanup(props);
 }
 
+export function collection<Schema extends Primitive[] | undefined | unknown>(
+	config: FieldConfig<Schema>,
+	options: BaseOptions & {
+		type: 'checkbox' | 'radio';
+		values: string[];
+	},
+): (InputProps<Schema> & Required<Pick<InputProps<Schema>, 'type'>>)[] {
+	return options.values.map((value, index) =>
+		cleanup({
+			...getFormControlProps(config, options),
+			id: config.id ? `${config.id}-${index}` : undefined,
+			type: options.type,
+			name: options.type === 'checkbox' ? `${config.name}[]` : config.name,
+			value,
+			defaultChecked: config.defaultValue?.includes(value) ?? false,
+			minLength: config.minLength,
+			maxLength: config.maxLength,
+			min: config.min,
+			max: config.max,
+			step: config.step,
+			pattern: config.pattern,
+		}),
+	);
+}
+
 export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };

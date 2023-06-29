@@ -5,25 +5,25 @@ import { useId } from 'react';
 import { Playground, Field } from '~/components';
 
 interface Schema {
-	answer: string;
+	answers: string[];
 }
 
 function parseForm(formData: FormData) {
-	return parse(formData, {
-		resolve({ answer }) {
-			const error: Record<string, string> = {};
+	return parse<Schema>(formData, {
+		resolve({ answers }) {
+			const error: Partial<Record<keyof Schema, string>> = {};
 
-			if (!answer) {
-				error.answer = 'Required';
+			if (!answers) {
+				error.answers = 'Required';
 			}
 
-			if (error.answer) {
+			if (error.answers) {
 				return { error };
 			}
 
 			return {
 				value: {
-					answer,
+					answers,
 				},
 			};
 		},
@@ -56,9 +56,12 @@ export default function Example() {
 	const id = useId();
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { answer }] = useForm<Schema>({
+	const [form, fields] = useForm<Schema>({
 		id,
 		lastSubmission,
+		defaultValue: {
+			answers: [],
+		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData)
 			: undefined,
@@ -67,14 +70,14 @@ export default function Example() {
 	return (
 		<Form method="post" {...form.props}>
 			<Playground title="Attributes" lastSubmission={lastSubmission}>
-				<Field label="Multiple Choice" config={answer}>
+				<Field label="Multiple Choice" config={fields.answers}>
 					{conform
-						.collection(answer, {
-							type: 'radio',
+						.collection(fields.answers, {
+							type: 'checkbox',
 							values: Object.keys(options),
 						})
 						.map((option) => (
-							<label className="inline-block" key={option.id}>
+							<label key={option.value}>
 								<input {...option} />
 								<span className="p-2">
 									{options[option.value as keyof typeof options]}
