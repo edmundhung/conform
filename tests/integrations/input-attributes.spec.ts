@@ -8,6 +8,8 @@ function getFieldset(form: Locator) {
 		tags: form.locator('[name="tags"]'),
 		images: form.locator('[name="images"]'),
 		rating: form.locator('[name="rating"]'),
+		released: form.locator('[name="released"]'),
+		languages: form.locator('[name="languages"]'),
 	};
 }
 
@@ -64,6 +66,32 @@ test('setup validation attributes', async ({ page }) => {
 	await expect(fieldset.rating).toHaveJSProperty('min', '0.5');
 	await expect(fieldset.rating).toHaveJSProperty('max', '5');
 	await expect(fieldset.rating).toHaveJSProperty('step', '0.5');
+
+	expect(fieldset.released).toHaveCount(2);
+
+	for (const option of await fieldset.released.all()) {
+		await expect(option).toHaveJSProperty('required', true);
+		await expect(option).toHaveJSProperty('minLength', -1);
+		await expect(option).toHaveJSProperty('maxLength', -1);
+		await expect(option).toHaveJSProperty('pattern', '');
+		await expect(option).toHaveJSProperty('multiple', false);
+		await expect(option).toHaveJSProperty('min', '');
+		await expect(option).toHaveJSProperty('max', '');
+		await expect(option).toHaveJSProperty('step', '');
+	}
+
+	expect(fieldset.languages).toHaveCount(3);
+
+	for (const option of await fieldset.languages.all()) {
+		await expect(option).toHaveJSProperty('required', false);
+		await expect(option).toHaveJSProperty('minLength', -1);
+		await expect(option).toHaveJSProperty('maxLength', -1);
+		await expect(option).toHaveJSProperty('pattern', '');
+		await expect(option).toHaveJSProperty('multiple', false);
+		await expect(option).toHaveJSProperty('min', '');
+		await expect(option).toHaveJSProperty('max', '');
+		await expect(option).toHaveJSProperty('step', '');
+	}
 });
 
 test('setup field id correctly', async ({ page }) => {
@@ -78,6 +106,26 @@ test('setup field id correctly', async ({ page }) => {
 	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
 	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
 	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'id',
+		'test-released-yes',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'id',
+		'test-released-no',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'id',
+		'test-languages-en',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'id',
+		'test-languages-de',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'id',
+		'test-languages-jp',
+	);
 
 	await playground.submit.click();
 	await expect(playground.form).toHaveAttribute('id', 'test');
@@ -86,6 +134,26 @@ test('setup field id correctly', async ({ page }) => {
 	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
 	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
 	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'id',
+		'test-released-yes',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'id',
+		'test-released-no',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'id',
+		'test-languages-en',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'id',
+		'test-languages-de',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'id',
+		'test-languages-jp',
+	);
 
 	await playground.reset.click();
 	await expect(playground.form).toHaveAttribute('id', 'test');
@@ -94,6 +162,26 @@ test('setup field id correctly', async ({ page }) => {
 	await expect(fieldset.images).toHaveAttribute('id', 'test-images');
 	await expect(fieldset.tags).toHaveAttribute('id', 'test-tags');
 	await expect(fieldset.rating).toHaveAttribute('id', 'test-rating');
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'id',
+		'test-released-yes',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'id',
+		'test-released-no',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'id',
+		'test-languages-en',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'id',
+		'test-languages-de',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'id',
+		'test-languages-jp',
+	);
 });
 
 test('setup aria-invalid correctly', async ({ page }) => {
@@ -110,6 +198,26 @@ test('setup aria-invalid correctly', async ({ page }) => {
 	await expect(fieldset.images).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.tags).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.rating).not.toHaveAttribute('aria-invalid', 'true');
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
 
 	await playground.submit.click();
 	await expect(playground.form).toHaveAttribute('aria-invalid', 'true');
@@ -118,6 +226,26 @@ test('setup aria-invalid correctly', async ({ page }) => {
 	await expect(fieldset.images).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.tags).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.rating).toHaveAttribute('aria-invalid', 'true');
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
 
 	await playground.reset.click();
 	await expect(playground.form).not.toHaveAttribute('aria-invalid', 'true');
@@ -129,6 +257,26 @@ test('setup aria-invalid correctly', async ({ page }) => {
 	await expect(fieldset.images).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.tags).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.rating).not.toHaveAttribute('aria-invalid', 'true');
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-invalid',
+		'true',
+	);
 });
 
 test('setup aria-describedby without description correctly', async ({
@@ -163,6 +311,26 @@ test('setup aria-describedby without description correctly', async ({
 		'aria-describedby',
 		'test-rating-error',
 	);
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
 
 	await playground.submit.click();
 
@@ -186,6 +354,26 @@ test('setup aria-describedby without description correctly', async ({
 		'aria-describedby',
 		'test-rating-error',
 	);
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
 
 	await playground.reset.click();
 
@@ -208,6 +396,26 @@ test('setup aria-describedby without description correctly', async ({
 	await expect(fieldset.rating).not.toHaveAttribute(
 		'aria-describedby',
 		'test-rating-error',
+	);
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error',
 	);
 });
 
@@ -235,11 +443,31 @@ test('setup aria-describedby with description correctly', async ({ page }) => {
 	);
 	await expect(fieldset.tags).not.toHaveAttribute(
 		'aria-describedby',
-		'test-tags-error text-tags-description',
+		'test-tags-error test-tags-description',
 	);
 	await expect(fieldset.rating).not.toHaveAttribute(
 		'aria-describedby',
-		'test-rating-error text-rating-description',
+		'test-rating-error test-rating-description',
+	);
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
 	);
 
 	await playground.submit.click();
@@ -264,6 +492,26 @@ test('setup aria-describedby with description correctly', async ({ page }) => {
 		'aria-describedby',
 		'test-rating-error test-rating-description',
 	);
+	await expect(fieldset.released.nth(0)).toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.released.nth(1)).toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.languages.nth(0)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(1)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(2)).toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
 
 	await playground.reset.click();
 
@@ -286,5 +534,25 @@ test('setup aria-describedby with description correctly', async ({ page }) => {
 	await expect(fieldset.rating).not.toHaveAttribute(
 		'aria-describedby',
 		'test-rating-error test-rating-description',
+	);
+	await expect(fieldset.released.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.released.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-released-error test-released-description',
+	);
+	await expect(fieldset.languages.nth(0)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(1)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
+	);
+	await expect(fieldset.languages.nth(2)).not.toHaveAttribute(
+		'aria-describedby',
+		'test-languages-error test-languages-description',
 	);
 });

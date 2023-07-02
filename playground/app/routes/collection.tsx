@@ -1,29 +1,34 @@
 import { conform, parse, useForm } from '@conform-to/react';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
-import { useId } from 'react';
 import { Playground, Field } from '~/components';
 
 interface Schema {
-	answer: string;
+	singleChoice: string;
+	multipleChoice: string;
 }
 
 function parseForm(formData: FormData) {
 	return parse(formData, {
-		resolve({ answer }) {
+		resolve({ singleChoice, multipleChoice }) {
 			const error: Record<string, string> = {};
 
-			if (!answer) {
-				error.answer = 'Required';
+			if (!singleChoice) {
+				error.singleChoice = 'Required';
 			}
 
-			if (error.answer) {
+			if (!multipleChoice) {
+				error.multipleChoice = 'Required';
+			}
+
+			if (error.singleChoice || error.multipleChoice) {
 				return { error };
 			}
 
 			return {
 				value: {
-					answer,
+					singleChoice,
+					multipleChoice,
 				},
 			};
 		},
@@ -45,20 +50,13 @@ export async function action({ request }: ActionArgs) {
 	return json(submission);
 }
 
-const options = {
-	a: 'A',
-	b: 'B',
-	c: 'C',
-	d: 'D',
-};
-
 export default function Example() {
-	const id = useId();
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { answer }] = useForm<Schema>({
-		id,
+	const [form, { singleChoice, multipleChoice }] = useForm<Schema>({
+		id: 'collection',
 		lastSubmission,
+		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData)
 			: undefined,
@@ -66,19 +64,32 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Attributes" lastSubmission={lastSubmission}>
-				<Field label="Multiple Choice" config={answer}>
+			<Playground title="Collection" lastSubmission={lastSubmission}>
+				<Field label="Single choice" config={singleChoice}>
 					{conform
-						.collection(answer, {
+						.collection(singleChoice, {
 							type: 'radio',
-							values: Object.keys(options),
+							options: ['x', 'y', 'z'],
+							ariaAttributes: true,
 						})
-						.map((option) => (
-							<label className="inline-block" key={option.id}>
-								<input {...option} />
-								<span className="p-2">
-									{options[option.value as keyof typeof options]}
-								</span>
+						.map((props) => (
+							<label key={props.value} className="inline-block">
+								<input {...props} />
+								<span className="p-2">{props.value?.toUpperCase()}</span>
+							</label>
+						))}
+				</Field>
+				<Field label="Multiple choice" config={multipleChoice}>
+					{conform
+						.collection(multipleChoice, {
+							type: 'checkbox',
+							options: ['a', 'b', 'c', 'd'],
+							ariaAttributes: true,
+						})
+						.map((props) => (
+							<label key={props.value} className="inline-block">
+								<input {...props} />
+								<span className="p-2">{props.value?.toUpperCase()}</span>
 							</label>
 						))}
 				</Field>

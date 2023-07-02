@@ -86,23 +86,6 @@ test.describe('conform-dom', () => {
 				},
 				error: {},
 			});
-
-			expect(
-				parse(
-					createFormData([
-						['title', ''],
-						['tasks[]', 'Test some stuffs'],
-						['tasks[]', 'Test integration'],
-					]),
-				),
-			).toEqual({
-				intent: 'submit',
-				payload: {
-					title: '',
-					tasks: ['Test some stuffs', 'Test integration'],
-				},
-				error: {},
-			});
 		});
 
 		test('URLSearchParams', () => {
@@ -262,11 +245,19 @@ test.describe('conform-dom', () => {
 	test.describe('getPaths', () => {
 		test('Expected inputs', () => {
 			expect(getPaths('')).toEqual([]);
-			expect(getPaths('[0]')).toEqual([0]);
 			expect(getPaths('title')).toEqual(['title']);
+			expect(getPaths('123')).toEqual(['123']);
 			expect(getPaths('amount.currency')).toEqual(['amount', 'currency']);
+			expect(getPaths('[0]')).toEqual([0]);
 			expect(getPaths('tasks[0]')).toEqual(['tasks', 0]);
 			expect(getPaths('tasks[1].completed')).toEqual(['tasks', 1, 'completed']);
+			expect(getPaths('multiple[0][1][2]')).toEqual(['multiple', 0, 1, 2]);
+			expect(getPaths('books[0].chapters[1]')).toEqual([
+				'books',
+				0,
+				'chapters',
+				1,
+			]);
 		});
 	});
 

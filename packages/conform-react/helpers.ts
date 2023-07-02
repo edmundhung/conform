@@ -196,27 +196,37 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 	return cleanup(props);
 }
 
-export function collection<Schema extends Primitive[] | undefined | unknown>(
+export function collection<
+	Schema extends
+		| Array<string | boolean>
+		| string
+		| boolean
+		| undefined
+		| unknown,
+>(
 	config: FieldConfig<Schema>,
 	options: BaseOptions & {
 		type: 'checkbox' | 'radio';
-		values: string[];
+		options: string[];
 	},
-): (InputProps<Schema> & Required<Pick<InputProps<Schema>, 'type'>>)[] {
-	return options.values.map((value, index) =>
+): Array<
+	InputProps<Schema> & Pick<Required<InputProps<Schema>>, 'type' | 'value'>
+> {
+	return options.options.map((value) =>
 		cleanup({
 			...getFormControlProps(config, options),
-			id: config.id ? `${config.id}-${index}` : undefined,
+			id: config.id ? `${config.id}-${value}` : undefined,
 			type: options.type,
-			name: options.type === 'checkbox' ? `${config.name}[]` : config.name,
 			value,
-			defaultChecked: config.defaultValue?.includes(value) ?? false,
-			minLength: config.minLength,
-			maxLength: config.maxLength,
-			min: config.min,
-			max: config.max,
-			step: config.step,
-			pattern: config.pattern,
+			defaultChecked:
+				options.type === 'checkbox' && Array.isArray(config.defaultValue)
+					? config.defaultValue.includes(value)
+					: config.defaultValue === value,
+
+			// The required attribute doesn't make sense for checkbox group
+			// As it would require all checkboxes to be checked instead of at least one
+			// overriden with `undefiend` so it gets cleaned up
+			required: options.type === 'checkbox' ? undefined : config.required,
 		}),
 	);
 }

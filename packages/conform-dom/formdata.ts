@@ -25,25 +25,26 @@ export function getFormData(
  * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
  * ```
  */
-export function getPaths(input: string): (string | number)[] {
-	const regex = /(\w+|\[\d+\]|\[\])/g;
-	let matches = input.match(regex);
-
-	if (matches) {
-		return matches.map((el) => {
-			if (el.includes('[')) {
-				let replaced = el.replace(/[[\]]/g, '');
-				return replaced === ''
-					? Infinity
-					: isNaN(Number(replaced))
-					? el
-					: Number(replaced);
-			}
-			return el;
-		});
+export function getPaths(name: string): (string | number)[] {
+	if (!name) {
+		return [];
 	}
 
-	return [];
+	return name
+		.split(/\.|(\[\d*\])/)
+		.reduce<Array<string | number>>((result, segment) => {
+			if (typeof segment !== 'undefined' && segment !== '') {
+				if (segment.startsWith('[') && segment.endsWith(']')) {
+					const index = segment.slice(1, -1);
+
+					result.push(Number(index));
+				} else {
+					result.push(segment);
+				}
+			}
+
+			return result;
+		}, []);
 }
 
 /**
@@ -71,38 +72,27 @@ export function formatPaths(paths: Array<string | number>): string {
  * Assign a value to a target object by following the paths on the name
  */
 export function setValue(
-	target: any,
+	target: Record<string, any>,
 	name: string,
 	valueFn: (prev?: unknown) => any,
 ): void {
-	let paths = getPaths(name);
+	const paths = getPaths(name);
+
+	let index = -1;
 	let length = paths.length;
 	let lastIndex = length - 1;
-	let index = -1;
 	let pointer = target;
 
 	while (pointer != null && ++index < length) {
-		let key = paths[index];
-		const isDynamic = key === Infinity;
-		let prev = paths[index - 1];
-		let next = paths[index + 1];
-		let newValue =
+		const key = paths[index];
+		const nextKey = paths[index + 1];
+		const newValue =
 			index != lastIndex
-				? pointer[key] ?? (typeof next === 'number' ? [] : {})
+				? pointer[key] ?? (typeof nextKey === 'number' ? [] : {})
 				: valueFn(pointer[key]);
 
-		if (isDynamic) {
-			if (Array.isArray(pointer)) {
-				pointer.push(newValue);
-				pointer = pointer[pointer.length - 1];
-			} else {
-				pointer[prev] = newValue;
-				pointer = pointer[prev];
-			}
-		} else {
-			pointer[key] = newValue;
-			pointer = pointer[key];
-		}
+		pointer[key] = newValue;
+		pointer = pointer[key];
 	}
 }
 
