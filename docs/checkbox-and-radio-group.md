@@ -1,17 +1,17 @@
 # Checkbox and Radio Group
 
-Conform provides a [collection](/packages/conform-react/README.md#conform) helper to configure a checkbox or radio group.
+Conform provides a set of [conform](/packages/conform-react/README.md#conform) helper to configure each form control. For example, you can use the `collection` helper to setup a checkbox or radio group.
 
 <!-- aside -->
 
 ## On this page
 
-- [Radio buttons](#radio-group)
-- [Checkbox](#checkboxes)
+- [Radio button](#radio-button)
+- [Checkbox](#checkbox)
 
 <!-- /aside -->
 
-## Radio buttons
+## Radio button
 
 Setting up a radio group is no different from other inputs. You just need to pass the list of options to the helper and each option will be set as the value of the input. The helper will also derive the `defaultChecked` property and manage the `id` and aria attributes for you.
 
