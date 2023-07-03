@@ -21,19 +21,19 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-	color: z.string(),
+  color: z.string(),
 });
 
 function Example() {
-	const [form, { color }] = useForm({
-		onValidate({ formData }) {
-			return parse(formData, { schema });
-		},
-	});
+  const [form, { color }] = useForm({
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
 
-	return (
-		<form {...form.props}>
-			<fieldset>
+  return (
+    <form {...form.props}>
+      <fieldset>
         <lengend>Please select your favorite color</legend>
         {conform
           .collection(color, {
@@ -47,11 +47,11 @@ function Example() {
               <input {...props} />
             </div>
           )))}
-				<div>{color.error}</div>
-			</legend>
-			<button>Submit</button>
-		</form>
-	);
+        <div>{color.error}</div>
+      </legend>
+      <button>Submit</button>
+    </form>
+  );
 }
 ```
 
@@ -65,23 +65,23 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-	answer: z.preprocess(
-    // Transform the value to an array using concat
-    (value) => [].concat(value),
+  answer: z.preprocess(
+    // To ensure the value is always an array
+    (value) => !Array.isArray(value) ? [value] : value,
     z.string().array().nonEmpty('At least one answer is required')
   ),
 });
 
 function Example() {
-	const [form, { answer }] = useForm({
-		onValidate({ formData }) {
-			return parse(formData, { schema });
-		},
-	});
+  const [form, { answer }] = useForm({
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
 
-	return (
-		<form {...form.props}>
-			<fieldset>
+  return (
+    <form {...form.props}>
+      <fieldset>
         <lengend>Please select the correct answers</legend>
         {conform
           .collection(answer, {
@@ -95,10 +95,10 @@ function Example() {
               <input {...props} />
             </div>
           )))}
-				<div>{answer.error}</div>
-			</legend>
-			<button>Submit</button>
-		</form>
-	);
+        <div>{answer.error}</div>
+      </legend>
+      <button>Submit</button>
+    </form>
+  );
 }
 ```
