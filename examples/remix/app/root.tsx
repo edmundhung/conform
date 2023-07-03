@@ -39,13 +39,16 @@ export default function App() {
 
 					<ul>
 						<li>
-							<Link to="login">Login</Link>
+							<Link to="login">Login</Link> (
+							<Link to="login_useFetcher">with useFetcher</Link>)
 						</li>
 						<li>
-							<Link to="todos">Todo list</Link>
+							<Link to="todos">Todo list</Link> (
+							<Link to="todos_useFetcher">with useFetcher</Link>)
 						</li>
 						<li>
-							<Link to="signup">Signup</Link>
+							<Link to="signup">Signup</Link> (
+							<Link to="signup_useFetcher">with useFetcher</Link>)
 						</li>
 					</ul>
 
