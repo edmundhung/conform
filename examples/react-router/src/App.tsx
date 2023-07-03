@@ -11,8 +11,20 @@ const router = createBrowserRouter(
 	createRoutesFromElements(
 		<Route path="/" Component={Example}>
 			<Route path="login" lazy={() => import('./login')} />
+			<Route
+				path="login_useFetcher"
+				lazy={() => import('./login_useFetcher')}
+			/>
 			<Route path="todos" lazy={() => import('./todos')} />
+			<Route
+				path="todos_useFetcher"
+				lazy={() => import('./todos_useFetcher')}
+			/>
 			<Route path="signup" lazy={() => import('./signup')} />
+			<Route
+				path="signup_useFetcher"
+				lazy={() => import('./signup_useFetcher')}
+			/>
 		</Route>,
 	),
 );
@@ -30,13 +42,16 @@ function Example() {
 
 			<ul>
 				<li>
-					<Link to="login">Login</Link>
+					<Link to="login">Login</Link> (
+					<Link to="login_useFetcher">with useFetcher</Link>)
 				</li>
 				<li>
-					<Link to="todos">Todo list</Link>
+					<Link to="todos">Todo list</Link> (
+					<Link to="todos_useFetcher">with useFetcher</Link>)
 				</li>
 				<li>
-					<Link to="signup">Signup</Link>
+					<Link to="signup">Signup</Link> (
+					<Link to="signup_useFetcher">with useFetcher</Link>)
 				</li>
 			</ul>
 
