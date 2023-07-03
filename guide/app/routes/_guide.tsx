@@ -25,6 +25,7 @@ const navigations: Navigation[] = [
 			{ title: 'Integrations', to: '/integrations' },
 			{ title: 'Nested object and Array', to: '/configuration' },
 			{ title: 'Intent button', to: '/intent-button' },
+			{ title: 'Checkbox and Radio Group', to: '/checkbox-and-radio-group' },
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
 			{ title: 'Accessibility', to: '/accessibility' },
