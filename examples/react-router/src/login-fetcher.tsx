@@ -1,7 +1,7 @@
 import type { Submission } from '@conform-to/react';
 import { useForm, parse, validateConstraint } from '@conform-to/react';
-import { ActionFunctionArgs, useFetcher } from 'react-router-dom';
-import { json, redirect } from 'react-router-dom';
+import type { ActionFunctionArgs } from 'react-router-dom';
+import { useFetcher, json, redirect } from 'react-router-dom';
 
 interface Login {
 	email: string;
@@ -39,7 +39,7 @@ export function Component() {
 	const fetcher = useFetcher<Submission>();
 	const [form, { email, password }] = useForm<Login>({
 		lastSubmission: fetcher.data,
-		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);
 		},

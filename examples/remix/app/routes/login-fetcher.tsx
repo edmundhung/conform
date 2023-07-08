@@ -1,7 +1,7 @@
-import { conform, parse, Submission, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
-import { useActionData, useFetcher } from '@remix-run/react';
+import { useFetcher } from '@remix-run/react';
 
 interface SignupForm {
 	email: string;
@@ -69,14 +69,11 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const fetcher = useFetcher<typeof action>();
-	const actionData = useActionData<typeof action>();
 	// Last submission returned by the server
-	// Fallback to useActionData in case JavaScript is disabled in the browser
-	const lastSubmission = fetcher.data ?? actionData;
+	const lastSubmission = fetcher.data;
 	const [form, { email, password, confirmPassword }] = useForm({
 		// Sync the result of last submission
 		lastSubmission,
-		shouldValidate: 'onBlur',
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {

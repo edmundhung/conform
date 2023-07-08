@@ -1,8 +1,7 @@
 import type { Submission } from '@conform-to/react';
 import { useForm, parse, validateConstraint } from '@conform-to/react';
 import type { ActionFunctionArgs } from 'react-router-dom';
-import { Form, useActionData } from 'react-router-dom';
-import { json, redirect } from 'react-router-dom';
+import { Form, useActionData, json, redirect } from 'react-router-dom';
 
 interface Login {
 	email: string;
@@ -40,7 +39,7 @@ export function Component() {
 	const lastSubmission = useActionData() as Submission;
 	const [form, { email, password }] = useForm<Login>({
 		lastSubmission,
-		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);
 		},
