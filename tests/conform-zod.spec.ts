@@ -3,6 +3,7 @@ import {
 	getFieldsetConstraint,
 	parse,
 	ifNonEmptyString,
+	refine,
 } from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
@@ -266,5 +267,80 @@ test.describe('conform-zod', () => {
 				text: 'The field is required',
 			},
 		});
+	});
+
+	test('parse with refine', () => {
+		const createSchema = (
+			validate?: (email) => Promise<boolean> | boolean,
+			when?: boolean,
+		) =>
+			z.object({
+				email: z
+					.string()
+					.email()
+					.superRefine((email, ctx) =>
+						refine(ctx, {
+							validate: () => validate?.(email),
+							when,
+							message: 'Email is invalid',
+						}),
+					),
+			});
+		const formData = createFormData([['email', 'test@example.com']]);
+		const submission = {
+			intent: 'submit',
+			payload: {
+				email: 'test@example.com',
+			},
+		};
+
+		expect(parse(formData, { schema: createSchema() })).toEqual({
+			...submission,
+			error: {
+				email: '__undefined__',
+			},
+		});
+		expect(parse(formData, { schema: createSchema(() => false) })).toEqual({
+			...submission,
+			error: {
+				email: 'Email is invalid',
+			},
+		});
+		expect(parse(formData, { schema: createSchema(() => true) })).toEqual({
+			...submission,
+			error: {},
+			value: submission.payload,
+		});
+		expect(
+			parse(formData, { schema: createSchema(() => true, false) }),
+		).toEqual({
+			...submission,
+			error: {
+				email: '__skipped__',
+			},
+		});
+		expect(
+			parse(formData, { schema: createSchema(() => false, false) }),
+		).toEqual({
+			...submission,
+			error: {
+				email: '__skipped__',
+			},
+		});
+		expect(
+			parse(formData, { schema: createSchema(() => false, true) }),
+		).toEqual({
+			...submission,
+			error: {
+				email: 'Email is invalid',
+			},
+		});
+		expect(parse(formData, { schema: createSchema(() => true, true) })).toEqual(
+			{
+				...submission,
+				error: {},
+				value: submission.payload,
+			},
+		);
 	});
 });

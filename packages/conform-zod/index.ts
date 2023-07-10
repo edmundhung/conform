@@ -294,7 +294,7 @@ export function refine(
 		path?: z.IssueData['path'];
 	},
 ): void | Promise<void> {
-	if (!options.when) {
+	if (typeof options.when !== 'undefined' && !options.when) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: VALIDATION_SKIPPED,
