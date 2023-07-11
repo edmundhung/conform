@@ -1,7 +1,7 @@
 import type { Submission } from '@conform-to/react';
 import { useForm, parse, validateConstraint } from '@conform-to/react';
 import type { ActionFunctionArgs } from 'react-router-dom';
-import { Form, useActionData, json, redirect } from 'react-router-dom';
+import { useFetcher, json, redirect } from 'react-router-dom';
 
 interface Login {
 	email: string;
@@ -36,9 +36,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export function Component() {
-	const lastSubmission = useActionData() as Submission;
+	const fetcher = useFetcher<Submission>();
 	const [form, { email, password }] = useForm<Login>({
-		lastSubmission,
+		lastSubmission: fetcher.data,
 		shouldRevalidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);
@@ -46,7 +46,7 @@ export function Component() {
 	});
 
 	return (
-		<Form method="post" {...form.props}>
+		<fetcher.Form method="post" {...form.props}>
 			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Email</div>
@@ -81,6 +81,6 @@ export function Component() {
 			</label>
 			<hr />
 			<button>Login</button>
-		</Form>
+		</fetcher.Form>
 	);
 }

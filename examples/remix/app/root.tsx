@@ -39,7 +39,8 @@ export default function App() {
 
 					<ul>
 						<li>
-							<Link to="login">Login</Link>
+							<Link to="login">Login</Link> (
+							<Link to="login-fetcher">with useFetcher</Link>)
 						</li>
 						<li>
 							<Link to="todos">Todo list</Link>
