@@ -21,6 +21,7 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
 	return {
+		hasDefaultValue: url.searchParams.get('hasDefaultValue') === 'yes',
 		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
 	};
 }
@@ -33,10 +34,13 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function SimpleList() {
-	const { noClientValidate } = useLoaderData<typeof loader>();
+	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData();
 	const [form, { items }] = useForm({
 		lastSubmission,
+		defaultValue: hasDefaultValue
+			? { items: ['default item 0', 'default item 1'] }
+			: undefined,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -82,13 +86,13 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.prepend(items.name, { defaultValue: '' })}
+						{...list.prepend(items.name)}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.append(items.name, { defaultValue: '' })}
+						{...list.append(items.name)}
 					>
 						Insert bottom
 					</button>
