@@ -329,4 +329,63 @@ test.describe('conform-react', () => {
 			'aria-describedby': 'test-error test-description',
 		});
 	});
+
+	test('conform.fieldset', () => {
+		const config = {
+			id: 'test',
+			name: 'message',
+			form: 'example',
+		} as const;
+
+		expect(conform.fieldset({ name: config.name })).toEqual({
+			name: config.name,
+		});
+		expect(conform.fieldset(config)).toEqual(config);
+		expect(conform.fieldset(config, { ariaAttributes: true })).toEqual(config);
+		expect(
+			conform.fieldset(
+				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
+				{ ariaAttributes: true },
+			),
+		).toEqual(config);
+		expect(
+			conform.fieldset(
+				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
+				{ ariaAttributes: true, description: true },
+			),
+		).toEqual({
+			...config,
+			'aria-describedby': 'test-description',
+		});
+		expect(
+			conform.fieldset(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: true },
+			),
+		).toEqual({
+			...config,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error',
+		});
+		expect(
+			conform.fieldset(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: true, description: true },
+			),
+		).toEqual({
+			...config,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error test-description',
+		});
+	});
 });
