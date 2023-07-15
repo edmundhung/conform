@@ -156,7 +156,7 @@ function LoginForm() {
 
 ### useFieldset
 
-This hook enables you to work with [nested object](/docs/configuration.md#nested-object) by monitoring the state of each nested field and prepraing the config required.
+This hook enables you to work with [nested object](/docs/complex-structures.md#nested-object) by monitoring the state of each nested field and prepraing the config required.
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
@@ -238,7 +238,7 @@ function ExampleForm() {
 
 ### useFieldList
 
-This hook enables you to work with [array](/docs/configuration.md#array) and support the [list](#list) intent button builder to modify a list. It can also be used with [useFieldset](#usefieldset) for [nested list](/docs/configuration.md#nested-list) at the same time.
+This hook enables you to work with [array](/docs/complex-structures.md#array) and support the [list](#list) intent button builder to modify a list. It can also be used with [useFieldset](#usefieldset) for [nested list](/docs/complex-structures.md#nested-list) at the same time.
 
 ```tsx
 import { useForm, useFieldList, list } from '@conform-to/react';
@@ -385,7 +385,7 @@ function Example() {
 
 ### parse
 
-It parses the formData based on the [naming convention](/docs/configuration.md#naming-convention) with the validation result from the resolver.
+It parses the formData based on the [naming convention](/docs/complex-structures.md#naming-convention) with the validation result from the resolver.
 
 ```tsx
 import { parse } from '@conform-to/react';
