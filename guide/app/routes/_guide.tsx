@@ -23,7 +23,7 @@ const navigations: Navigation[] = [
 		menus: [
 			{ title: 'Validation', to: '/validation' },
 			{ title: 'Integrations', to: '/integrations' },
-			{ title: 'Nested object and Array', to: '/configuration' },
+			{ title: 'Nested object and Array', to: '/complex-structures' },
 			{ title: 'Intent button', to: '/intent-button' },
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
