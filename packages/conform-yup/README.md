@@ -65,7 +65,7 @@ function ExampleForm() {
 Or when parsing the formData on server side (e.g. Remix):
 
 ```tsx
-import { useForm } from '@conform-to/react';
+import { useForm, report } from '@conform-to/react';
 import { parse } from '@conform-to/yup';
 import * as yup from 'yup';
 
@@ -84,7 +84,7 @@ export async function action({ request }) {
   });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return submission;
+    return report(submission);
   }
 
   // ...

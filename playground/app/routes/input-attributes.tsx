@@ -1,4 +1,4 @@
-import { conform, useForm, parse } from '@conform-to/react';
+import { conform, useForm, parse, report } from '@conform-to/react';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
@@ -24,12 +24,11 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData);
 
-	return json({
-		...submission,
-		error: {
-			'': ['Submitted'],
-		},
-	});
+	return json(
+		report(submission, {
+			formError: 'Submitted',
+		}),
+	);
 }
 
 export default function Example() {

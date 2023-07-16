@@ -1,4 +1,4 @@
-import { useForm, useInputEvent } from '@conform-to/react';
+import { useForm, useInputEvent, report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -29,7 +29,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function Example() {

@@ -77,6 +77,29 @@ type SubmissionResult = {
 	error: Submission['error'];
 };
 
+interface ReportOptions {
+	formError?: string | string[];
+	resetForm?: boolean;
+}
+
+export function report(
+	submission: Submission,
+	options?: ReportOptions,
+): SubmissionResult {
+	return {
+		intent: submission.intent,
+		payload: options?.resetForm ? null : submission.payload,
+		error: options?.formError
+			? {
+					...submission.error,
+					'': normalizeError(options.formError).concat(
+						submission.error[''] ?? [],
+					),
+			  }
+			: submission.error,
+	};
+}
+
 export interface FormConfig<
 	Output extends Record<string, any>,
 	Input extends Record<string, any> = Output,
