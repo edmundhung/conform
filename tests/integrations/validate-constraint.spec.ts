@@ -25,10 +25,20 @@ test('Basic usage with constraint', async ({ page }) => {
 	]);
 
 	await email.type('a');
-	await expect(playground.error).toHaveText(['type', 'required', 'required']);
+	await expect(playground.error).toHaveText([
+		'type',
+		'pattern',
+		'required',
+		'required',
+	]);
 
 	await email.type('@');
-	await expect(playground.error).toHaveText(['type', 'required', 'required']);
+	await expect(playground.error).toHaveText([
+		'type',
+		'pattern',
+		'required',
+		'required',
+	]);
 
 	await email.type('e');
 	await expect(playground.error).toHaveText([
@@ -38,19 +48,35 @@ test('Basic usage with constraint', async ({ page }) => {
 	]);
 
 	await email.type('xample.');
-	await expect(playground.error).toHaveText(['type', 'required', 'required']);
+	await expect(playground.error).toHaveText([
+		'type',
+		'pattern',
+		'required',
+		'required',
+	]);
 
 	await email.type('com');
 	await expect(playground.error).toHaveText(['', 'required', 'required']);
 
 	await password.type('H');
-	await expect(playground.error).toHaveText(['', 'minLength', 'required']);
+	await expect(playground.error).toHaveText([
+		'',
+		'minLength',
+		'pattern',
+		'required',
+		'match',
+	]);
 
 	await password.type('ello');
-	await expect(playground.error).toHaveText(['', 'pattern', 'required']);
+	await expect(playground.error).toHaveText([
+		'',
+		'pattern',
+		'required',
+		'match',
+	]);
 
 	await password.type('123');
-	await expect(playground.error).toHaveText(['', '', 'required']);
+	await expect(playground.error).toHaveText(['', '', 'required', 'match']);
 
 	await confirmPassword.type('Hello123');
 	await expect(playground.error).toHaveText(['', '', '']);
@@ -82,7 +108,7 @@ test('Basic usage with constraint', async ({ page }) => {
 });
 
 test('Mutliple error support', async ({ page }) => {
-	await page.goto('/validate-constraint?multiplePasswordError=yes');
+	await page.goto('/validate-constraint');
 
 	const playground = getPlayground(page);
 	const { email, password, confirmPassword } = getFieldset(

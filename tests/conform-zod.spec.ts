@@ -212,7 +212,7 @@ test.describe('conform-zod', () => {
 			list: [{ key: undefined }],
 		};
 		const error = {
-			text: 'min',
+			text: ['min', 'regex', 'refine'],
 			number: 'step',
 			timestamp: 'min',
 			options: 'min',
@@ -229,31 +229,6 @@ test.describe('conform-zod', () => {
 			intent: 'submit',
 			payload,
 			error,
-		});
-		expect(
-			parse(formData, {
-				schema,
-				stripEmptyValue: true,
-				acceptMultipleErrors: () => false,
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error,
-		});
-		expect(
-			parse(formData, {
-				schema,
-				stripEmptyValue: true,
-				acceptMultipleErrors: () => true,
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				text: ['min', 'regex', 'refine'],
-			},
 		});
 	});
 
@@ -300,31 +275,6 @@ test.describe('conform-zod', () => {
 			intent: 'submit',
 			payload,
 			error,
-		});
-		expect(
-			parse(formData, {
-				schema,
-				stripEmptyValue: false,
-				acceptMultipleErrors: () => false,
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error,
-		});
-		expect(
-			parse(formData, {
-				schema,
-				stripEmptyValue: false,
-				acceptMultipleErrors: () => true,
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				text: ['min', 'regex', 'refine'],
-			},
 		});
 	});
 

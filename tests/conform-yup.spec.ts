@@ -62,8 +62,8 @@ test.describe('conform-yup', () => {
 		list: [{ key: '' }],
 	};
 	const error = {
-		text: 'min',
-		tag: 'required',
+		text: ['min', 'regex'],
+		tag: ['required', 'invalid'],
 		number: 'max',
 		timestamp: 'min',
 		'options[1]': 'invalid',
@@ -115,30 +115,6 @@ test.describe('conform-yup', () => {
 			intent: 'submit',
 			payload,
 			error,
-		});
-		expect(
-			parse(formData, { schema, acceptMultipleErrors: () => true }),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				text: ['min', 'regex'],
-				tag: ['required', 'invalid'],
-			},
-		});
-		expect(
-			parse(formData, {
-				schema,
-				acceptMultipleErrors: ({ name }) => name === 'tag',
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				tag: ['required', 'invalid'],
-			},
 		});
 	});
 });
