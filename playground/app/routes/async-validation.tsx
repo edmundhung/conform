@@ -51,7 +51,6 @@ export async function action({ request }: ActionArgs) {
 					});
 				},
 			}),
-		stripEmptyValue: true,
 		async: true,
 	});
 
@@ -67,7 +66,6 @@ export default function EmployeeForm() {
 			? ({ formData }) =>
 					parse(formData, {
 						schema: (intent) => createSchema(intent),
-						stripEmptyValue: true,
 					})
 			: undefined,
 	});
