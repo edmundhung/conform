@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema, stripEmptyValue: true });
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
@@ -39,7 +39,7 @@ export default function Example() {
 		id: 'example',
 		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
