@@ -56,7 +56,6 @@ function ExampleForm() {
     onValidate({ formData }) {
       return parse(formData, {
         schema,
-        stripEmptyValue: true,
       });
     },
   });
@@ -81,9 +80,6 @@ export async function action({ request }) {
   const submission = await parse(formData, {
     // If you need extra validation on server side
     schema: schema.refine(/* ... */),
-
-    // Recommended: this will be the default in the future
-    stripEmptyValue: true,
 
     // If the schema definition includes async validation
     async: true,
