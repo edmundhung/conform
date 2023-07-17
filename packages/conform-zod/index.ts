@@ -185,7 +185,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async?: false;
 		errorMap?: z.ZodErrorMap;
-		stripEmptyValues?: boolean;
+		stripEmptyValue?: boolean;
 	},
 ): Submission<z.output<Schema>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -203,7 +203,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async: true;
 		errorMap?: z.ZodErrorMap;
-		stripEmptyValues?: boolean;
+		stripEmptyValue?: boolean;
 	},
 ): Promise<Submission<z.output<Schema>>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -221,11 +221,11 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async?: boolean;
 		errorMap?: z.ZodErrorMap;
-		stripEmptyValues?: boolean;
+		stripEmptyValue?: boolean;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
 	return baseParse<z.output<Schema>>(payload, {
-		stripEmptyValues: config.stripEmptyValues ?? true,
+		stripEmptyValue: config.stripEmptyValue ?? true,
 		resolve(payload, intent) {
 			const schema =
 				typeof config.schema === 'function'

@@ -225,7 +225,7 @@ test.describe('conform-zod', () => {
 			'list[0].key': 'required',
 		};
 
-		expect(parse(formData, { schema, stripEmptyValues: true })).toEqual({
+		expect(parse(formData, { schema, stripEmptyValue: true })).toEqual({
 			intent: 'submit',
 			payload,
 			error,
@@ -233,7 +233,7 @@ test.describe('conform-zod', () => {
 		expect(
 			parse(formData, {
 				schema,
-				stripEmptyValues: true,
+				stripEmptyValue: true,
 				acceptMultipleErrors: () => false,
 			}),
 		).toEqual({
@@ -244,7 +244,7 @@ test.describe('conform-zod', () => {
 		expect(
 			parse(formData, {
 				schema,
-				stripEmptyValues: true,
+				stripEmptyValue: true,
 				acceptMultipleErrors: () => true,
 			}),
 		).toEqual({
@@ -296,7 +296,7 @@ test.describe('conform-zod', () => {
 			'': 'refine',
 		};
 
-		expect(parse(formData, { schema, stripEmptyValues: false })).toEqual({
+		expect(parse(formData, { schema, stripEmptyValue: false })).toEqual({
 			intent: 'submit',
 			payload,
 			error,
@@ -304,7 +304,7 @@ test.describe('conform-zod', () => {
 		expect(
 			parse(formData, {
 				schema,
-				stripEmptyValues: false,
+				stripEmptyValue: false,
 				acceptMultipleErrors: () => false,
 			}),
 		).toEqual({
@@ -315,7 +315,7 @@ test.describe('conform-zod', () => {
 		expect(
 			parse(formData, {
 				schema,
-				stripEmptyValues: false,
+				stripEmptyValue: false,
 				acceptMultipleErrors: () => true,
 			}),
 		).toEqual({

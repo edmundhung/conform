@@ -102,7 +102,7 @@ export function resolve(
 	payload: FormData | URLSearchParams,
 	options: {
 		ignoreKeys?: string[];
-		stripEmptyValues?: boolean;
+		stripEmptyValue?: boolean;
 	} = {},
 ) {
 	const data = {};
@@ -115,11 +115,13 @@ export function resolve(
 		let next: FormDataEntryValue | undefined = value;
 
 		if (
-			options.stripEmptyValues &&
+			options.stripEmptyValue &&
 			(typeof next === 'string'
 				? next === ''
 				: next.name === '' && next.size === 0)
 		) {
+			// Set the value to undefined instead of skipping it
+			// to maintain the data structure
 			next = undefined;
 		}
 
