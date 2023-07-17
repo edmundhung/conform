@@ -7,23 +7,19 @@ import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
 const JsonFile = z
-	.instanceof(File)
-	.refine((file) => file.name !== '' && file.size !== 0, 'File is required')
+	.instanceof(File, { message: 'File is required' })
 	.refine(
 		(file) => file.type === 'application/json',
 		'Only JSON file is accepted',
 	);
 
 const schema = z.object({
-	file: z.preprocess(
-		(value) => (value === '' ? new File([], '') : value),
-		JsonFile,
-	),
+	file: JsonFile,
 	files: z
 		.preprocess((value) => {
 			if (Array.isArray(value)) {
 				return value;
-			} else if (value instanceof File && value.name !== '' && value.size > 0) {
+			} else if (value instanceof File) {
 				return [value];
 			} else {
 				return [];

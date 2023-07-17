@@ -19,6 +19,10 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 			constraint = {
 				...inferConstraint(schema.innerType()),
 			};
+		} else if (schema instanceof z.ZodPipeline) {
+			constraint = {
+				...inferConstraint(schema._def.out),
+			};
 		} else if (schema instanceof z.ZodOptional) {
 			constraint = {
 				...inferConstraint(schema.unwrap()),
@@ -181,6 +185,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async?: false;
 		errorMap?: z.ZodErrorMap;
+		stripEmptyValues?: boolean;
 	},
 ): Submission<z.output<Schema>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -198,6 +203,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async: true;
 		errorMap?: z.ZodErrorMap;
+		stripEmptyValues?: boolean;
 	},
 ): Promise<Submission<z.output<Schema>>>;
 export function parse<Schema extends z.ZodTypeAny>(
@@ -215,9 +221,11 @@ export function parse<Schema extends z.ZodTypeAny>(
 		}) => boolean;
 		async?: boolean;
 		errorMap?: z.ZodErrorMap;
+		stripEmptyValues?: boolean;
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
 	return baseParse<z.output<Schema>>(payload, {
+		stripEmptyValues: config.stripEmptyValues ?? true,
 		resolve(payload, intent) {
 			const schema =
 				typeof config.schema === 'function'

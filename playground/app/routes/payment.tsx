@@ -12,14 +12,15 @@ import { parseConfig } from '~/config';
 
 const schema = z.object({
 	iban: z
-		.string()
-		.min(1, 'IBAN is required')
+		.string({ required_error: 'IBAN is required' })
 		.regex(
 			/^[A-Z]{2}[0-9]{2}(?:[ ]?[0-9]{4}){4}(?:[ ]?[0-9]{1,2})?$/,
 			'Please provide a valid IBAN',
 		),
 	amount: z.object({
-		currency: z.string().min(3, 'Please select a currency'),
+		currency: z
+			.string({ required_error: 'Please select a currency' })
+			.min(3, 'Please select a currency'),
 		value: z.preprocess(
 			ifNonEmptyString(Number),
 			z.number({ required_error: 'Value is required' }).min(1),

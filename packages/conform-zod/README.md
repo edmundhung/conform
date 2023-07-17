@@ -24,8 +24,8 @@ import { getFieldsetConstraint } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string({ required_error: 'Email is required' }),
+  password: z.string({ required_error: 'Password is required' }),
 });
 
 function Example() {
@@ -47,8 +47,8 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string({ required_error: 'Email is required' }),
+  password: z.string({ required_error: 'Password is required' }),
 });
 
 function ExampleForm() {
@@ -107,8 +107,7 @@ function createSchema(
 ) {
   return z.object({
     email: z
-      .string()
-      .min(1, 'Email is required')
+      .string({ required_error: 'Email is required' })
       .email('Email is invalid')
       .superRefine((email, ctx) =>
         refine(ctx, {

@@ -16,10 +16,10 @@ import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
 
 const schema = z.object({
-	title: z.string().min(1, 'Title is required'),
+	title: z.string({ required_error: 'Title is required' }),
 	tasks: z.array(
 		z.object({
-			content: z.string().min(1, 'Content is required'),
+			content: z.string({ required_error: 'Content is required' }),
 			completed: z
 				.string()
 				.optional()

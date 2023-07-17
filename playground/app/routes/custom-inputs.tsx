@@ -11,7 +11,7 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import * as Checkbox from '@radix-ui/react-checkbox';
 
 const schema = z.object({
-	language: z.string().min(1, 'Language is required'),
+	language: z.string({ required_error: 'Language is required' }),
 	tos: z
 		.string({ required_error: 'Please accept the terms of service' })
 		.transform((value) => value === 'on'),

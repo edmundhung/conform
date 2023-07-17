@@ -14,8 +14,7 @@ function createSchema(
 ) {
 	return z.object({
 		email: z
-			.string()
-			.min(1, 'Email is required')
+			.string({ required_error: 'Email is required' })
 			.email('Email is invalid')
 			.superRefine((email, ctx) =>
 				refine(ctx, {
@@ -24,7 +23,9 @@ function createSchema(
 					message: 'Email is already used',
 				}),
 			),
-		title: z.string().min(1, 'Title is required').max(20, 'Title is too long'),
+		title: z
+			.string({ required_error: 'Title is required' })
+			.max(20, 'Title is too long'),
 	});
 }
 
