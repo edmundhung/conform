@@ -9,7 +9,7 @@ import { Field, Playground } from '~/components';
 
 const schema = z
 	.object({
-		name: z.string().min(1, 'Name is required'),
+		name: z.string({ required_error: 'Name is required' }),
 		code: z.string().regex(/^#[A-Fa-f0-9]{6}$/, 'The code is invalid'),
 	})
 	.refine(
@@ -49,6 +49,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		schema,
+		stripEmptyValue: true,
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {

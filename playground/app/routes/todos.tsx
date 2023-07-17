@@ -16,10 +16,10 @@ import { Playground, Field } from '~/components';
 import { parseConfig } from '~/config';
 
 const schema = z.object({
-	title: z.string().min(1, 'Title is required'),
+	title: z.string({ required_error: 'Title is required' }),
 	tasks: z.array(
 		z.object({
-			content: z.string().min(1, 'Content is required'),
+			content: z.string({ required_error: 'Content is required' }),
 			completed: z
 				.string()
 				.optional()
@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -47,7 +47,7 @@ export default function TodosForm() {
 		lastSubmission,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 	const taskList = useFieldList(form.ref, tasks);

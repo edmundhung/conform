@@ -1,10 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-	getFieldsetConstraint,
-	parse,
-	ifNonEmptyString,
-	refine,
-} from '@conform-to/zod';
+import { getFieldsetConstraint, parse, refine } from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
 
@@ -18,35 +13,29 @@ function createFormData(entries: Array<[string, string | File]>): FormData {
 	return formData;
 }
 
-test.beforeAll(() => {
-	installGlobals();
-});
-
-test.describe('conform-zod', () => {
-	const schema = z
+function createSchema() {
+	return z
 		.object({
 			text: z
-				.string()
-				.min(1, 'min')
+				.string({ required_error: 'required' })
+				.min(10, 'min')
 				.max(100, 'max')
 				.regex(/^[A-Z]{1-100}$/, 'regex')
 				.refine(() => false, 'refine'),
-			number: z.preprocess(
-				ifNonEmptyString(Number),
-				z.number().min(1, 'min').max(10, 'max').step(2, 'step'),
-			),
-			timestamp: z.preprocess(
-				ifNonEmptyString((value) => new Date(value)),
-				z
-					.date()
-					.min(new Date(1), 'min')
-					.max(new Date(), 'max')
-					.default(new Date()),
-			),
-			flag: z.preprocess(
-				ifNonEmptyString((value) => value === 'Yes'),
-				z.boolean().optional(),
-			),
+			number: z
+				.string({ required_error: 'required' })
+				.pipe(z.coerce.number().min(1, 'min').max(10, 'max').step(2, 'step')),
+			timestamp: z
+				.string()
+				.optional()
+				.pipe(
+					z.coerce
+						.date()
+						.min(new Date(1), 'min')
+						.max(new Date(), 'max')
+						.default(new Date()),
+				),
+			flag: z.coerce.boolean().optional(),
 			options: z
 				.array(z.enum(['a', 'b', 'c']).refine(() => false, 'refine'))
 				.min(3, 'min'),
@@ -59,43 +48,34 @@ test.describe('conform-zod', () => {
 				.array(
 					z
 						.object({
-							key: z.string().refine(() => false, 'refine'),
+							key: z
+								.string({ required_error: 'required' })
+								.refine(() => false, 'refine'),
 						})
 						.refine(() => false, 'refine'),
 				)
 				.max(0, 'max'),
+			files: z.preprocess(
+				(value) => (!value || Array.isArray(value) ? value : [value]),
+				z.array(z.instanceof(File, { message: 'file message' }), {
+					required_error: 'required',
+				}),
+			),
 		})
 		.refine(() => false, 'refine');
+}
 
-	const payload = {
-		text: '',
-		number: '3',
-		timestamp: new Date(0).toISOString(),
-		flag: 'no',
-		options: ['a', 'b'],
-		nested: { key: '' },
-		list: [{ key: '' }],
-	};
-	const error = {
-		text: 'min',
-		number: 'step',
-		timestamp: 'min',
-		options: 'min',
-		'options[0]': 'refine',
-		'options[1]': 'refine',
-		'nested.key': 'refine',
-		nested: 'refine',
-		list: 'max',
-		'list[0].key': 'refine',
-		'list[0]': 'refine',
-		'': 'refine',
-	};
+test.beforeAll(() => {
+	installGlobals();
+});
 
+test.describe('conform-zod', () => {
 	test('getFieldsetConstraint', () => {
+		const schema = createSchema();
 		const constraint = {
 			text: {
 				required: true,
-				minLength: 1,
+				minLength: 10,
 				maxLength: 100,
 				pattern: '^[A-Z]{1-100}$',
 			},
@@ -113,6 +93,10 @@ test.describe('conform-zod', () => {
 			options: {
 				required: true,
 				pattern: 'a|b|c',
+				multiple: true,
+			},
+			files: {
+				required: true,
 				multiple: true,
 			},
 			nested: {
@@ -204,32 +188,136 @@ test.describe('conform-zod', () => {
 		});
 	});
 
-	test('parse', () => {
+	test('parse with empty value stripped', () => {
+		const schema = createSchema();
 		const formData = createFormData([
-			['text', payload.text],
-			['number', payload.number],
-			['timestamp', payload.timestamp],
-			['flag', payload.flag],
-			['options[0]', payload.options[0]],
-			['options[1]', payload.options[1]],
-			['nested.key', payload.nested.key],
-			['list[0].key', payload.list[0].key],
+			['text', 'xyz'],
+			['number', '3'],
+			['timestamp', new Date(0).toISOString()],
+			['flag', 'no'],
+			['options[0]', 'a'],
+			['options[1]', 'b'],
+			['nested.key', 'foobar'],
+			['list[0].key', ''],
+			['files', new File([''], '')],
 		]);
+		const payload = {
+			text: 'xyz',
+			number: '3',
+			timestamp: new Date(0).toISOString(),
+			flag: 'no',
+			options: ['a', 'b'],
+			files: undefined,
+			nested: { key: 'foobar' },
+			list: [{ key: undefined }],
+		};
+		const error = {
+			text: 'min',
+			number: 'step',
+			timestamp: 'min',
+			options: 'min',
+			'options[0]': 'refine',
+			'options[1]': 'refine',
+			'nested.key': 'refine',
+			files: 'required',
+			nested: 'refine',
+			list: 'max',
+			'list[0].key': 'required',
+		};
 
-		expect(parse(formData, { schema })).toEqual({
+		expect(parse(formData, { schema, stripEmptyValue: true })).toEqual({
 			intent: 'submit',
 			payload,
 			error,
 		});
 		expect(
-			parse(formData, { schema, acceptMultipleErrors: () => false }),
+			parse(formData, {
+				schema,
+				stripEmptyValue: true,
+				acceptMultipleErrors: () => false,
+			}),
 		).toEqual({
 			intent: 'submit',
 			payload,
 			error,
 		});
 		expect(
-			parse(formData, { schema, acceptMultipleErrors: () => true }),
+			parse(formData, {
+				schema,
+				stripEmptyValue: true,
+				acceptMultipleErrors: () => true,
+			}),
+		).toEqual({
+			intent: 'submit',
+			payload,
+			error: {
+				...error,
+				text: ['min', 'regex', 'refine'],
+			},
+		});
+	});
+
+	test('parse without empty value stripped', () => {
+		const schema = createSchema();
+		const emptyFile = new File([''], '');
+		const formData = createFormData([
+			['text', 'xyz'],
+			['number', '3'],
+			['timestamp', new Date(0).toISOString()],
+			['flag', 'no'],
+			['options[0]', 'a'],
+			['options[1]', 'b'],
+			['nested.key', 'foobar'],
+			['list[0].key', ''],
+			['files', emptyFile],
+		]);
+		const payload = {
+			text: 'xyz',
+			number: '3',
+			timestamp: new Date(0).toISOString(),
+			flag: 'no',
+			options: ['a', 'b'],
+			files: emptyFile,
+			nested: { key: 'foobar' },
+			list: [{ key: '' }],
+		};
+		const error = {
+			text: 'min',
+			number: 'step',
+			timestamp: 'min',
+			options: 'min',
+			'options[0]': 'refine',
+			'options[1]': 'refine',
+			'nested.key': 'refine',
+			nested: 'refine',
+			list: 'max',
+			'list[0].key': 'refine',
+			'list[0]': 'refine',
+			'': 'refine',
+		};
+
+		expect(parse(formData, { schema, stripEmptyValue: false })).toEqual({
+			intent: 'submit',
+			payload,
+			error,
+		});
+		expect(
+			parse(formData, {
+				schema,
+				stripEmptyValue: false,
+				acceptMultipleErrors: () => false,
+			}),
+		).toEqual({
+			intent: 'submit',
+			payload,
+			error,
+		});
+		expect(
+			parse(formData, {
+				schema,
+				stripEmptyValue: false,
+				acceptMultipleErrors: () => true,
+			}),
 		).toEqual({
 			intent: 'submit',
 			payload,
@@ -242,16 +330,16 @@ test.describe('conform-zod', () => {
 
 	test('parse with errorMap', () => {
 		const schema = z.object({
-			text: z.string().min(1),
+			text: z.string().min(5),
 		});
-		const formData = createFormData([['text', '']]);
+		const formData = createFormData([['text', 'abc']]);
 
 		expect(
 			parse(formData, {
 				schema,
 				errorMap(error, ctx) {
-					if (error.code === 'too_small' && error.minimum === 1) {
-						return { message: 'The field is required' };
+					if (error.code === 'too_small' && error.minimum === 5) {
+						return { message: 'The field is too short' };
 					}
 
 					// fall back to default message!
@@ -261,10 +349,10 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			intent: 'submit',
 			payload: {
-				text: '',
+				text: 'abc',
 			},
 			error: {
-				text: 'The field is required',
+				text: 'The field is too short',
 			},
 		});
 	});

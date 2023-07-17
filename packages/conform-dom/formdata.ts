@@ -100,22 +100,40 @@ export function setValue(
  */
 export function resolve(
 	payload: FormData | URLSearchParams,
-	ignoreKeys?: string[],
+	options: {
+		ignoreKeys?: string[];
+		stripEmptyValue?: boolean;
+	} = {},
 ) {
 	const data = {};
 
 	for (let [key, value] of payload.entries()) {
-		if (ignoreKeys?.includes(key)) {
+		if (options.ignoreKeys?.includes(key)) {
 			continue;
+		}
+
+		let next: FormDataEntryValue | undefined = value;
+
+		if (
+			options.stripEmptyValue &&
+			(typeof next === 'string'
+				? next === ''
+				: next.name === '' && next.size === 0)
+		) {
+			// Set the value to undefined instead of skipping it
+			// to maintain the data structure
+			next = undefined;
 		}
 
 		setValue(data, key, (prev) => {
 			if (!prev) {
-				return value;
+				return next;
+			} else if (!next) {
+				return prev;
 			} else if (Array.isArray(prev)) {
-				return prev.concat(value);
+				return prev.concat(next);
 			} else {
-				return [prev, value];
+				return [prev, next];
 			}
 		});
 	}

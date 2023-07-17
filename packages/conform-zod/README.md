@@ -24,8 +24,8 @@ import { getFieldsetConstraint } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string({ required_error: 'Email is required' }),
+  password: z.string({ required_error: 'Password is required' }),
 });
 
 function Example() {
@@ -47,14 +47,17 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  email: z.string().min(1, 'Email is required'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string({ required_error: 'Email is required' }),
+  password: z.string({ required_error: 'Password is required' }),
 });
 
 function ExampleForm() {
   const [form, { email, password }] = useForm({
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parse(formData, {
+        schema,
+        stripEmptyValue: true,
+      });
     },
   });
 
@@ -78,6 +81,9 @@ export async function action({ request }) {
   const submission = await parse(formData, {
     // If you need extra validation on server side
     schema: schema.refine(/* ... */),
+
+    // Recommended: this will be the default in the future
+    stripEmptyValue: true,
 
     // If the schema definition includes async validation
     async: true,
@@ -107,8 +113,7 @@ function createSchema(
 ) {
   return z.object({
     email: z
-      .string()
-      .min(1, 'Email is required')
+      .string({ required_error: 'Email is required' })
       .email('Email is invalid')
       .superRefine((email, ctx) =>
         refine(ctx, {

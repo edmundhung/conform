@@ -8,8 +8,7 @@ import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
 	items: z
-		.string()
-		.min(1, 'The field is required')
+		.string({ required_error: 'The field is required' })
 		.regex(/^[^0-9]+$/, 'Number is not allowed')
 		.array()
 		.min(1, 'At least one item is required')
@@ -28,7 +27,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -42,7 +41,7 @@ export default function SimpleList() {
 			? { items: ['default item 0', 'default item 1'] }
 			: undefined,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 	const itemsList = useFieldList(form.ref, items);

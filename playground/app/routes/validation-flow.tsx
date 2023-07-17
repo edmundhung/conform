@@ -8,12 +8,15 @@ import { Playground, Field } from '~/components';
 
 const schema = z
 	.object({
-		email: z.string().min(1, 'Email is required').email('Email is invalid'),
+		email: z
+			.string({ required_error: 'Email is required' })
+			.email('Email is invalid'),
 		password: z
-			.string()
-			.min(1, 'Password is required')
+			.string({ required_error: 'Password is required' })
 			.min(8, 'Password is too short'),
-		confirmPassword: z.string().min(1, 'Confirm password is required'),
+		confirmPassword: z.string({
+			required_error: 'Confirm password is required',
+		}),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: 'Confirm password does not match',
@@ -34,7 +37,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -52,7 +55,7 @@ export default function ValidationFlow() {
 		shouldValidate,
 		shouldRevalidate,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 
