@@ -51,28 +51,6 @@ function Example() {
 }
 ```
 
-<details>
-<summary>If you are running a Remix app on `node`:</summary>
-
-Currently, there is a [bug](https://github.com/remix-run/web-std-io/pull/28) on **@remix-run/web-fetch** which treats the default file entry as an empty string. If you want to share the same validation across client and server, you can preprocess it with zod like below:
-
-```tsx
-const schema = z.object({
-  file: z.preprocess(
-    // Transform the empty string to a default file entry
-    (value) => (value === '' ? new File([], '') : value),
-    z
-      .instanceof(File)
-      .refine(
-        (file) => file.name !== '' && file.size !== 0,
-        'File is required',
-      ),
-  ),
-});
-```
-
-</details>
-
 ## Multiple files
 
 There are some caveats when validating a multiple file input:
