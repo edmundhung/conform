@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -47,7 +47,7 @@ export default function TodosForm() {
 		lastSubmission,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 	const taskList = useFieldList(form.ref, tasks);

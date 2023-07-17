@@ -61,6 +61,7 @@ function parseForm(formData: FormData, validator: string | null) {
 						)
 						.refine((username) => username.match(/[0-9]/), 'At least 1 number'),
 				}),
+				stripEmptyValue: true,
 				acceptMultipleErrors({ name }) {
 					return name === 'username';
 				},

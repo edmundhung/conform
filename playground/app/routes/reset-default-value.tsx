@@ -49,6 +49,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		schema,
+		stripEmptyValue: true,
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {

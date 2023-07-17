@@ -225,7 +225,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 	},
 ): Submission<z.output<Schema>> | Promise<Submission<z.output<Schema>>> {
 	return baseParse<z.output<Schema>>(payload, {
-		stripEmptyValue: config.stripEmptyValue ?? true,
+		stripEmptyValue: config.stripEmptyValue,
 		resolve(payload, intent) {
 			const schema =
 				typeof config.schema === 'function'
