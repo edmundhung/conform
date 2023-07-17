@@ -373,7 +373,6 @@ function Example() {
       <input
         {...conform.input(title, {
           type: 'text',
-          ariaAttributes: true,
         })}
       />
     </form>

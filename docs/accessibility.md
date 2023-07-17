@@ -66,7 +66,6 @@ function Example() {
             <input
                 {...conform.input(message, {
                     type: 'text',
-                    ariaAttributes: true,
                 })}
             />
             <div id={conform.errorId(message)}>
