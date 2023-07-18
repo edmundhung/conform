@@ -257,7 +257,7 @@ test.describe('conform-zod', () => {
 			list: [{ key: '' }],
 		};
 		const error = {
-			text: 'min',
+			text: ['min', 'regex', 'refine'],
 			number: 'step',
 			timestamp: 'min',
 			options: 'min',
