@@ -40,9 +40,6 @@ function parseForm(formData: FormData, validator: string | null) {
 							(username) => !username || username.match(/[0-9]/) !== null,
 						),
 				}),
-				acceptMultipleErrors({ name }) {
-					return name === 'username';
-				},
 			});
 		}
 		case 'zod': {
@@ -61,9 +58,6 @@ function parseForm(formData: FormData, validator: string | null) {
 						)
 						.refine((username) => username.match(/[0-9]/), 'At least 1 number'),
 				}),
-				acceptMultipleErrors({ name }) {
-					return name === 'username';
-				},
 			});
 		}
 		default: {

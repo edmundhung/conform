@@ -1052,15 +1052,6 @@ export function validateConstraint(options: {
 			context: { formData: FormData; attributeValue: string },
 		) => boolean
 	>;
-	acceptMultipleErrors?: ({
-		name,
-		intent,
-		payload,
-	}: {
-		name: string;
-		intent: string;
-		payload: Record<string, any>;
-	}) => boolean;
 	formatMessages?: ({
 		name,
 		validity,
@@ -1138,15 +1129,9 @@ export function validateConstraint(options: {
 						constraint,
 						defaultErrors: getDefaultErrors(element.validity, constraint),
 					});
-					const shouldAcceptMultipleErrors =
-						options?.acceptMultipleErrors?.({
-							name,
-							payload,
-							intent,
-						}) ?? false;
 
 					if (errors.length > 0) {
-						error[name] = shouldAcceptMultipleErrors ? errors : errors[0];
+						error[name] = errors;
 					}
 				}
 			}
