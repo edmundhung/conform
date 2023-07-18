@@ -4,7 +4,7 @@ import { INTENT, getIntent, parseIntent, updateList } from './intent.js';
 export type Submission<Schema = any> = {
 	intent: string;
 	payload: Record<string, any>;
-	error: Record<string, string | string[]>;
+	error: Record<string, string[]>;
 	value?: Schema | null;
 };
 
@@ -18,7 +18,7 @@ export function parse<Schema>(
 		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
-		) => { value?: Schema; error?: Record<string, string | string[]> };
+		) => { value?: Schema; error?: Record<string, string[]> };
 		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema>;
@@ -28,7 +28,7 @@ export function parse<Schema>(
 		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
-		) => Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
+		) => Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 		stripEmptyValue?: boolean;
 	},
 ): Promise<Submission<Schema>>;
@@ -39,8 +39,8 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| { value?: Schema; error?: Record<string, string | string[]> }
-			| Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
+			| { value?: Schema; error?: Record<string, string[]> }
+			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>>;
@@ -51,8 +51,8 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| { value?: Schema; error?: Record<string, string | string[]> }
-			| Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
+			| { value?: Schema; error?: Record<string, string[]> }
+			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
@@ -83,7 +83,7 @@ export function parse<Schema>(
 
 	const result = options.resolve(submission.payload, submission.intent);
 	const mergeResolveResult = (resolved: {
-		error?: Record<string, string | string[]>;
+		error?: Record<string, string[]>;
 		value?: Schema;
 	}) => {
 		return {

@@ -64,16 +64,16 @@ test.describe('conform-yup', () => {
 	const error = {
 		text: ['min', 'regex'],
 		tag: ['required', 'invalid'],
-		number: 'max',
-		timestamp: 'min',
-		'options[1]': 'invalid',
-		options: 'min',
-		'nested.key': 'required',
-		nested: 'error',
-		'list[0].key': 'required',
-		'list[0]': 'error',
-		list: 'max',
-		'': 'error',
+		number: ['max'],
+		timestamp: ['min'],
+		'options[1]': ['invalid'],
+		options: ['min'],
+		'nested.key': ['required'],
+		nested: ['error'],
+		'list[0].key': ['required'],
+		'list[0]': ['error'],
+		list: ['max'],
+		'': ['error'],
 	};
 
 	test('getFieldsetConstraint', () => {

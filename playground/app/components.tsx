@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface PlaygroundProps<
 	Submission extends {
-		error: Record<string, string | string[]> | null;
+		error: Record<string, string[]> | null;
 	},
 > {
 	title: string;

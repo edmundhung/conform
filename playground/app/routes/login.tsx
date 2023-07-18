@@ -13,14 +13,14 @@ interface Login {
 function parseLoginForm(formData: FormData) {
 	return parse<Login>(formData, {
 		resolve({ email, password }) {
-			const error: Partial<Record<keyof Login, string>> = {};
+			const error: Partial<Record<keyof Login, string[]>> = {};
 
 			if (!email) {
-				error.email = 'Email is required';
+				error.email = ['Email is required'];
 			}
 
 			if (!password) {
-				error.password = 'Password is required';
+				error.password = ['Password is required'];
 			}
 
 			if (error.email || error.password) {
@@ -50,7 +50,7 @@ export async function action({ request }: ActionArgs) {
 		(submission.value.email !== 'me@edmund.dev' ||
 			submission.value.password !== '$eCreTP@ssWord')
 	) {
-		submission.error[''] = 'The provided email or password is not valid';
+		submission.error[''] = ['The provided email or password is not valid'];
 	}
 
 	return json({

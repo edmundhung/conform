@@ -213,16 +213,16 @@ test.describe('conform-zod', () => {
 		};
 		const error = {
 			text: ['min', 'regex', 'refine'],
-			number: 'step',
-			timestamp: 'min',
-			options: 'min',
-			'options[0]': 'refine',
-			'options[1]': 'refine',
-			'nested.key': 'refine',
-			files: 'required',
-			nested: 'refine',
-			list: 'max',
-			'list[0].key': 'required',
+			number: ['step'],
+			timestamp: ['min'],
+			options: ['min'],
+			'options[0]': ['refine'],
+			'options[1]': ['refine'],
+			'nested.key': ['refine'],
+			files: ['required'],
+			nested: ['refine'],
+			list: ['max'],
+			'list[0].key': ['required'],
 		};
 
 		expect(parse(formData, { schema, stripEmptyValue: true })).toEqual({
@@ -258,17 +258,17 @@ test.describe('conform-zod', () => {
 		};
 		const error = {
 			text: ['min', 'regex', 'refine'],
-			number: 'step',
-			timestamp: 'min',
-			options: 'min',
-			'options[0]': 'refine',
-			'options[1]': 'refine',
-			'nested.key': 'refine',
-			nested: 'refine',
-			list: 'max',
-			'list[0].key': 'refine',
-			'list[0]': 'refine',
-			'': 'refine',
+			number: ['step'],
+			timestamp: ['min'],
+			options: ['min'],
+			'options[0]': ['refine'],
+			'options[1]': ['refine'],
+			'nested.key': ['refine'],
+			nested: ['refine'],
+			list: ['max'],
+			'list[0].key': ['refine'],
+			'list[0]': ['refine'],
+			'': ['refine'],
 		};
 
 		expect(parse(formData, { schema, stripEmptyValue: false })).toEqual({
@@ -302,7 +302,7 @@ test.describe('conform-zod', () => {
 				text: 'abc',
 			},
 			error: {
-				text: 'The field is too short',
+				text: ['The field is too short'],
 			},
 		});
 	});
@@ -335,13 +335,13 @@ test.describe('conform-zod', () => {
 		expect(parse(formData, { schema: createSchema() })).toEqual({
 			...submission,
 			error: {
-				email: '__undefined__',
+				email: ['__undefined__'],
 			},
 		});
 		expect(parse(formData, { schema: createSchema(() => false) })).toEqual({
 			...submission,
 			error: {
-				email: 'Email is invalid',
+				email: ['Email is invalid'],
 			},
 		});
 		expect(parse(formData, { schema: createSchema(() => true) })).toEqual({
@@ -354,7 +354,7 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			...submission,
 			error: {
-				email: '__skipped__',
+				email: ['__skipped__'],
 			},
 		});
 		expect(
@@ -362,7 +362,7 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			...submission,
 			error: {
-				email: '__skipped__',
+				email: ['__skipped__'],
 			},
 		});
 		expect(
@@ -370,7 +370,7 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			...submission,
 			error: {
-				email: 'Email is invalid',
+				email: ['Email is invalid'],
 			},
 		});
 		expect(parse(formData, { schema: createSchema(() => true, true) })).toEqual(
