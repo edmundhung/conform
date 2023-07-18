@@ -43,7 +43,7 @@ export interface FieldConfig<Schema> extends FieldConstraint<Schema> {
 	id?: string;
 	name: string;
 	defaultValue?: FieldValue<Schema>;
-	initialError?: Record<string, string | string[]>;
+	initialError?: Record<string, string[]>;
 	form?: string;
 	descriptionId?: string;
 	errorId?: string;
@@ -179,22 +179,10 @@ interface FormProps {
 interface Form {
 	id?: string;
 	errorId?: string;
-	error: string;
+	error: string | undefined;
 	errors: string[];
 	ref: RefObject<HTMLFormElement>;
 	props: FormProps;
-}
-
-/**
- * Normalize error to an array of string.
- */
-function normalizeError(error: string | string[] | undefined): string[] {
-	if (!error) {
-		// This treat both empty string and undefined as no error.
-		return [];
-	}
-
-	return ([] as string[]).concat(error);
 }
 
 function useNoValidate(
@@ -278,7 +266,7 @@ function useFormReporter(
 function useFormError(
 	ref: RefObject<HTMLFormElement | HTMLFieldSetElement>,
 	config: {
-		initialError: Record<string, string | string[] | undefined> | undefined;
+		initialError: Record<string, string[] | undefined> | undefined;
 		name?: string;
 	},
 ) {
@@ -290,10 +278,10 @@ function useFormError(
 		const result: Record<string | number, string[] | undefined> = {};
 
 		for (const [name, message] of Object.entries(config.initialError)) {
-			const paths = getPaths(name);
+			const [path, ...restPaths] = getPaths(name);
 
-			if (paths.length === 1) {
-				result[paths[0]] = normalizeError(message);
+			if (typeof path !== 'undefined' && restPaths.length === 0) {
+				result[path] = message;
 			}
 		}
 
@@ -304,43 +292,32 @@ function useFormError(
 		const handleInvalid = (event: Event) => {
 			const form = getFormElement(ref.current);
 			const element = event.target;
+			const prefix = config.name ?? '';
 
 			if (
 				!isFieldElement(element) ||
 				element.form !== form ||
+				!element.name.startsWith(prefix) ||
 				!element.dataset.conformTouched
 			) {
 				return;
 			}
 
-			let key: string | number = element.name;
+			const name = element.name.slice(prefix.length);
+			const [path, ...restPaths] = getPaths(name);
 
-			if (config.name) {
-				const scopePaths = getPaths(config.name);
-				const fieldPaths = getPaths(element.name);
-
-				for (let i = 0; i <= scopePaths.length; i++) {
-					const path = fieldPaths[i];
-
-					if (i < scopePaths.length) {
-						// Skip if the field is not in the scope
-						if (path !== scopePaths[i]) {
-							return;
-						}
-					} else {
-						key = path;
-					}
-				}
+			if (typeof path === 'undefined' || restPaths.length > 0) {
+				return;
 			}
 
 			setError((prev) => {
-				if (element.validationMessage === getValidationMessage(prev[key])) {
+				if (element.validationMessage === getValidationMessage(prev[path])) {
 					return prev;
 				}
 
 				return {
 					...prev,
-					[key]: getErrors(element.validationMessage),
+					[path]: getErrors(element.validationMessage),
 				};
 			});
 
@@ -380,8 +357,8 @@ export function useForm<
 	const ref = useFormRef(config.ref);
 	const noValidate = useNoValidate(config.noValidate, config.fallbackNative);
 	const report = useFormReporter(ref, config.lastSubmission);
-	const [errors, setErrors] = useState<string[]>(() =>
-		normalizeError(config.lastSubmission?.error['']),
+	const [errors, setErrors] = useState<string[]>(
+		() => config.lastSubmission?.error[''] ?? [],
 	);
 	const initialError = useMemo(() => {
 		const submission = config.lastSubmission;
@@ -393,9 +370,11 @@ export function useForm<
 		const intent = parseIntent(submission.intent);
 		const scope = getScope(intent);
 
-		return scope === null
-			? submission.error
-			: { [scope]: submission.error[scope] };
+		if (typeof scope !== 'string') {
+			return submission.error;
+		}
+
+		return { [scope]: submission.error[scope] ?? [] };
 	}, [config.lastSubmission]);
 	// This payload from lastSubmission is only useful before hydration
 	// After hydration, any new payload on lastSubmission will be ignored
@@ -515,7 +494,7 @@ export function useForm<
 						submission.error,
 					).reduce<{ errors: string[]; shouldServerValidate: boolean }>(
 						(result, [, error]) => {
-							for (const message of normalizeError(error)) {
+							for (const message of error) {
 								if (message === VALIDATION_UNDEFINED) {
 									result.shouldServerValidate = true;
 								} else if (message !== VALIDATION_SKIPPED) {
@@ -598,7 +577,7 @@ export interface FieldsetConfig<
 	/**
 	 * An object describing the initial error of each field
 	 */
-	initialError?: Record<string, string | string[]>;
+	initialError?: Record<string, string[]>;
 
 	/**
 	 * An object describing the constraint of each field
@@ -659,7 +638,7 @@ export function useFieldset<Schema extends Record<string, any> | undefined>(
 					}
 
 					return result;
-				}, {} as Record<string, string | string[]>);
+				}, {} as Record<string, string[]>);
 				const field: FieldConfig<any> = {
 					...constraint,
 					name: fieldsetConfig.name ? `${fieldsetConfig.name}.${key}` : key,
@@ -728,7 +707,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 			}
 
 			setEntries((entries) => {
-				let list = [...entries];
+				const list = [...entries];
 
 				switch (intent.payload.operation) {
 					case 'append':
@@ -738,7 +717,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 							...intent.payload,
 							defaultValue: [
 								// Generate a random key to avoid conflicts
-								crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+								getUniqueKey(),
 								intent.payload.defaultValue,
 							],
 						});
@@ -805,7 +784,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 
 				return result;
 			},
-			{} as Record<string, string | string[]>,
+			{} as Record<string, string[]>,
 		);
 		const fieldConfig: FieldConfig<
 			Schema extends Array<infer Item> ? Item : never
@@ -844,18 +823,6 @@ interface InputControl {
 	) => void;
 	focus: () => void;
 	blur: () => void;
-}
-
-export function useEventListeners(type: string, ref: RefObject<FieldElement>) {
-	useSafeLayoutEffect(() => {
-		const listener = (event: Event) => {};
-
-		document.addEventListener(type, listener);
-
-		return () => {
-			document.removeEventListener(type, listener);
-		};
-	}, [type, ref]);
 }
 
 /**
@@ -1092,8 +1059,8 @@ export function validateConstraint(options: {
 		options?.formatMessages ?? (({ defaultErrors }) => defaultErrors);
 
 	return parse(formData, {
-		resolve(payload, intent) {
-			const error: Record<string, string | string[]> = {};
+		resolve() {
+			const error: Record<string, string[]> = {};
 			const constraintPattern = /^constraint[A-Z][^A-Z]*$/;
 			for (const element of options.form.elements) {
 				if (isFieldElement(element)) {
@@ -1141,13 +1108,23 @@ export function validateConstraint(options: {
 	});
 }
 
+export function getUniqueKey() {
+	const [value] = crypto.getRandomValues(new Uint32Array(1));
+
+	if (!value) {
+		throw new Error('Fail to generate an unique key');
+	}
+
+	return value.toString(36);
+}
+
 export function reportSubmission(
 	form: HTMLFormElement,
 	submission: SubmissionResult,
 ): void {
 	for (const [name, message] of Object.entries(submission.error)) {
 		// There is no need to create a placeholder button if all we want is to reset the error
-		if (message === '') {
+		if (message.length === 0) {
 			continue;
 		}
 
@@ -1184,7 +1161,7 @@ export function reportSubmission(
 	for (const element of getFormControls(form)) {
 		const elementName =
 			element.name !== FORM_ERROR_ELEMENT_NAME ? element.name : '';
-		const messages = normalizeError(submission.error[elementName]);
+		const messages = submission.error[elementName] ?? [];
 
 		if (scope === null || scope === elementName) {
 			element.dataset.conformTouched = 'true';

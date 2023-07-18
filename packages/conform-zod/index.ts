@@ -148,6 +148,7 @@ export function getFieldsetConstraint<Source extends z.ZodTypeAny>(
 								typeof nextConstraint[key] !== 'undefined' &&
 								prevConstraint[key] === nextConstraint[key]
 							) {
+								// @ts-expect-error
 								result[name][key] = prevConstraint[key];
 							}
 						}
@@ -206,9 +207,7 @@ export function parse<Schema extends z.ZodTypeAny>(
 					: config.schema;
 			const resolveResult = (
 				result: z.SafeParseReturnType<z.input<Schema>, z.output<Schema>>,
-			):
-				| { value: z.output<Schema> }
-				| { error: Record<string, string | string[]> } => {
+			): { value: z.output<Schema> } | { error: Record<string, string[]> } => {
 				if (result.success) {
 					return {
 						value: result.data,
@@ -216,15 +215,11 @@ export function parse<Schema extends z.ZodTypeAny>(
 				}
 
 				return {
-					error: result.error.errors.reduce<Record<string, string | string[]>>(
+					error: result.error.errors.reduce<Record<string, string[]>>(
 						(result, e) => {
 							const name = getName(e.path);
 
-							if (typeof result[name] === 'undefined') {
-								result[name] = e.message;
-							} else {
-								result[name] = ([] as string[]).concat(result[name], e.message);
-							}
+							result[name] = [...(result[name] ?? []), e.message];
 
 							return result;
 						},

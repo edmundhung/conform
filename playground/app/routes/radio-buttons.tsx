@@ -10,10 +10,10 @@ interface Schema {
 function parseForm(formData: FormData) {
 	return parse(formData, {
 		resolve({ answer }) {
-			const error: Record<string, string> = {};
+			const error: Record<string, string[]> = {};
 
 			if (!answer) {
-				error.answer = 'Required';
+				error.answer = ['Required'];
 			}
 
 			if (error.answer) {

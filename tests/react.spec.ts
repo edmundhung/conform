@@ -329,8 +329,8 @@ test.describe('Client Validation', () => {
 				email: '',
 			},
 			error: {
-				email: 'Email is required',
-				password: 'Password is required',
+				email: ['Email is required'],
+				password: ['Password is required'],
 			},
 		});
 
@@ -344,7 +344,7 @@ test.describe('Client Validation', () => {
 				email: 'invalid email',
 			},
 			error: {
-				password: 'Password is required',
+				password: ['Password is required'],
 			},
 		});
 	});

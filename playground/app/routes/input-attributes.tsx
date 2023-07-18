@@ -27,7 +27,7 @@ export async function action({ request }: ActionArgs) {
 	return json({
 		...submission,
 		error: {
-			'': 'Submitted',
+			'': ['Submitted'],
 		},
 	});
 }
