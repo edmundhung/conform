@@ -87,7 +87,7 @@ export default function LoginForm() {
 Now, it's time to enhance the login form using Conform.
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { parse, report, useForm } from '@conform-to/react';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
@@ -123,18 +123,11 @@ export async function action({ request }: ActionArgs) {
     },
   });
 
-  // Send the submission data back to client
+  // Report the submission to client
   // 1) if the intent is not `submit`, or
   // 2) if there is any error
   if (submission.intent !== 'submit' || !submission.value) {
-    return json({
-      ...submission,
-      // The payload will be used as the default value
-      // if the document is reloaded on form submit
-      payload: {
-        email: submission.payload.email,
-      },
-    });
+    return json(report(submission));
   }
 
   return await authenticate(submission.value.email, submission.value.password);
@@ -180,7 +173,7 @@ Conform will trigger a [server validation](./validation.md#server-validation) to
 Server validation might some time be too slow to provide a good user experience. We can also reuse the validation logic on the client for a instant feedback.
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { parse, report, useForm } from '@conform-to/react';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
@@ -218,12 +211,7 @@ export async function action({ request }: ActionArgs) {
   const submission = parseLoginForm(formData);
 
   if (submission.intent !== 'submit' || !submission.value) {
-    return json({
-      ...submission,
-      payload: {
-        email: submission.payload.email,
-      },
-    });
+    return json(report(submission));
   }
 
   return await authenticate(submission.value.email, submission.value.password);

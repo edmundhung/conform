@@ -19,7 +19,7 @@ Conform supports several validation modes. In this section, we will walk you thr
 **Conform** enables you to validate a form **fully server side**.
 
 ```tsx
-import { useForm, parse } from '@conform-to/react';
+import { useForm, parse, report } from '@conform-to/react';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
@@ -54,23 +54,17 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return json(submission);
+    return json(report(submission));
   }
 
   const user = await signup(submission.payload);
 
   if (!user) {
-    return json({
-      ...submission,
-      /**
-       * By specifying the error path as '' (root), the message will be
-       * treated as a form-level error and populated
-       * on the client side as `form.error`
-       */
-      error: {
-        '': 'Oops! Something went wrong.',
-      },
-    });
+    return json(
+      report(submission, {
+        formError: ['Oops! Something went wrong.'],
+      }),
+    );
   }
 
   return redirect('/');
@@ -94,6 +88,7 @@ You can also validate the form with a schema validation library like [yup](https
 
 ```tsx
 // Import the parse helper from @conform-to/zod instead
+import { report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -113,7 +108,7 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return json(submission);
+    return json(report(submission));
   }
 
   return await signup(data);

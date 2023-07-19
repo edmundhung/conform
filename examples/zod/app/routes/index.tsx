@@ -27,12 +27,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData, { schema });
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json({
-			...submission,
-			payload: {
-				email: submission.payload.email,
-			},
-		});
+		return json(report(submission));
 	}
 
 	throw new Error('Not implemented');

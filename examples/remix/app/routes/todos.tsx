@@ -4,6 +4,7 @@ import {
 	useFieldset,
 	useFieldList,
 	conform,
+	report,
 	list,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
@@ -30,7 +31,7 @@ export async function action({ request }: ActionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+		return json(report(submission));
 	}
 
 	throw new Error('Not implemented');

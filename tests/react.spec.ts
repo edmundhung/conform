@@ -55,12 +55,6 @@ test.describe('Client Validation', () => {
 				rating: '4.5',
 			},
 			error: {},
-			value: {
-				title: 'The Dark Knight',
-				description: 'When the menace known as the Joker wreaks havoc...',
-				genre: 'action',
-				rating: '4.5',
-			},
 		});
 	});
 
@@ -139,13 +133,6 @@ test.describe('Client Validation', () => {
 				rating: '4.0',
 			},
 			error: {},
-			value: {
-				title: 'The Matrix',
-				description:
-					'When a beautiful stranger leads computer hacker Neo to...',
-				genre: 'sci-fi',
-				rating: '4.0',
-			},
 		});
 	});
 
@@ -177,11 +164,10 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: 'me@edmund.dev',
+				password: 'secretpassword',
+				confirmPassword: 'secretpassword',
 			},
 			error: {},
-			value: {
-				email: 'me@edmund.dev',
-			},
 		});
 	});
 
@@ -258,15 +244,6 @@ test.describe('Client Validation', () => {
 				verified: 'Yes',
 			},
 			error: {},
-			value: {
-				iban: 'DE89 3704 0044 0532 0130 00',
-				amount: {
-					currency: 'EUR',
-					value: 1,
-				},
-				timestamp,
-				verified: true,
-			},
 		});
 	});
 
@@ -327,6 +304,7 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: '',
+				password: '',
 			},
 			error: {
 				email: ['Email is required'],
@@ -342,6 +320,7 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: 'invalid email',
+				password: '',
 			},
 			error: {
 				password: ['Password is required'],
@@ -482,14 +461,6 @@ test.describe('Field list', () => {
 				],
 			},
 			error: {},
-			value: {
-				title: 'My schedule',
-				tasks: [
-					{ completed: false, content: 'Urgent task' },
-					{ completed: false, content: 'Daily task' },
-					{ completed: false, content: 'Ad hoc task' },
-				],
-			},
 		});
 	});
 
@@ -547,13 +518,6 @@ test.describe('Field list', () => {
 					{ content: 'Write tests for nested list', completed: 'on' },
 				],
 			},
-			value: {
-				title: 'Testing plan',
-				tasks: [
-					{ content: 'Write even more tests', completed: false },
-					{ content: 'Write tests for nested list', completed: true },
-				],
-			},
 			error: {},
 		});
 	});
@@ -581,8 +545,7 @@ test.describe('No JS', () => {
 		const form = await gotoForm(page, '/login');
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
-
+		await clickSubmitButton(form);
 		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Email is required',
@@ -598,16 +561,16 @@ test.describe('No JS', () => {
 			'Password is required',
 		]);
 
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
-
+		await clickSubmitButton(form);
 		await expect(form.locator('main p')).toHaveText([
 			'The provided email or password is not valid',
 			'',
 			'',
 		]);
 
+		await password.dblclick();
 		await password.type('$eCreTP@ssWord');
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
 		await expect(form.locator('main p')).toHaveText(['', '', '']);
 	});
