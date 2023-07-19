@@ -1,9 +1,5 @@
 import { conform, useFieldset, useForm } from '@conform-to/react';
-import {
-	getFieldsetConstraint,
-	ifNonEmptyString,
-	parse,
-} from '@conform-to/zod';
+import { getFieldsetConstraint, parse } from '@conform-to/zod';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
@@ -21,19 +17,10 @@ const schema = z.object({
 		currency: z
 			.string({ required_error: 'Please select a currency' })
 			.min(3, 'Please select a currency'),
-		value: z.preprocess(
-			ifNonEmptyString(Number),
-			z.number({ required_error: 'Value is required' }).min(1),
-		),
+		value: z.number({ required_error: 'Value is required' }).min(1),
 	}),
-	timestamp: z.preprocess(
-		ifNonEmptyString((value) => new Date(value)),
-		z.date({ required_error: 'Timestamp is required' }),
-	),
-	verified: z.preprocess(
-		ifNonEmptyString((value) => value === 'Yes'),
-		z.boolean().optional().refine(Boolean, 'Please verify'),
-	),
+	timestamp: z.date({ required_error: 'Timestamp is required' }),
+	verified: z.boolean({ required_error: 'Please verify' }),
 });
 
 export async function loader({ request }: LoaderArgs) {
