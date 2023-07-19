@@ -13,62 +13,55 @@ function createFormData(entries: Array<[string, string | File]>): FormData {
 	return formData;
 }
 
-function createSchema() {
-	return z
-		.object({
-			text: z
-				.string({ required_error: 'required' })
-				.min(10, 'min')
-				.max(100, 'max')
-				.regex(/^[A-Z]{1-100}$/, 'regex')
-				.refine(() => false, 'refine'),
-			number: z
-				.string({ required_error: 'required' })
-				.pipe(z.coerce.number().min(1, 'min').max(10, 'max').step(2, 'step')),
-			timestamp: z
-				.string()
-				.optional()
-				.pipe(
-					z.coerce
-						.date()
-						.min(new Date(1), 'min')
-						.max(new Date(), 'max')
-						.default(new Date()),
-				),
-			flag: z.coerce.boolean().optional(),
-			options: z
-				.array(z.enum(['a', 'b', 'c']).refine(() => false, 'refine'))
-				.min(3, 'min'),
-			nested: z
-				.object({
-					key: z.string().refine(() => false, 'refine'),
-				})
-				.refine(() => false, 'refine'),
-			list: z
-				.array(
-					z
-						.object({
-							key: z
-								.string({ required_error: 'required' })
-								.refine(() => false, 'refine'),
-						})
-						.refine(() => false, 'refine'),
-				)
-				.max(0, 'max'),
-			files: z
-				.array(z.instanceof(File, { message: 'Invalid file' }))
-				.min(1, 'required'),
-		})
-		.refine(() => false, 'refine');
-}
-
 test.beforeAll(() => {
 	installGlobals();
 });
 
 test.describe('conform-zod', () => {
 	test('getFieldsetConstraint', () => {
-		const schema = createSchema();
+		const schema = z
+			.object({
+				text: z
+					.string({ required_error: 'required' })
+					.min(10, 'min')
+					.max(100, 'max')
+					.regex(/^[A-Z]{1-100}$/, 'regex')
+					.refine(() => false, 'refine'),
+				number: z
+					.number({ required_error: 'required' })
+					.min(1, 'min')
+					.max(10, 'max')
+					.step(2, 'step'),
+				timestamp: z
+					.date()
+					.min(new Date(1), 'min')
+					.max(new Date(), 'max')
+					.default(new Date()),
+				flag: z.boolean().optional(),
+				options: z
+					.array(z.enum(['a', 'b', 'c']).refine(() => false, 'refine'))
+					.min(3, 'min'),
+				nested: z
+					.object({
+						key: z.string().refine(() => false, 'refine'),
+					})
+					.refine(() => false, 'refine'),
+				list: z
+					.array(
+						z
+							.object({
+								key: z
+									.string({ required_error: 'required' })
+									.refine(() => false, 'refine'),
+							})
+							.refine(() => false, 'refine'),
+					)
+					.max(0, 'max'),
+				files: z
+					.array(z.instanceof(File, { message: 'Invalid file' }))
+					.min(1, 'required'),
+			})
+			.refine(() => false, 'refine');
 		const constraint = {
 			text: {
 				required: true,
@@ -185,48 +178,334 @@ test.describe('conform-zod', () => {
 		});
 	});
 
-	test('parse', () => {
-		const schema = createSchema();
-		const emptyFile = new File([''], '');
-		const formData = createFormData([
-			['text', 'xyz'],
-			['number', '3'],
-			['timestamp', new Date(0).toISOString()],
-			['flag', 'no'],
-			['options[0]', 'a'],
-			['options[1]', 'b'],
-			['nested.key', 'foobar'],
-			['list[0].key', ''],
-			['files', emptyFile],
-		]);
-		const payload = {
-			text: 'xyz',
-			number: '3',
-			timestamp: new Date(0).toISOString(),
-			flag: 'no',
-			options: ['a', 'b'],
-			files: emptyFile,
-			nested: { key: 'foobar' },
-			list: [{ key: '' }],
-		};
-		const error = {
-			text: ['min', 'regex', 'refine'],
-			number: ['step'],
-			timestamp: ['min'],
-			options: ['min'],
-			'options[0]': ['refine'],
-			'options[1]': ['refine'],
-			'nested.key': ['refine'],
-			files: ['required'],
-			nested: ['refine'],
-			list: ['max'],
-			'list[0].key': ['required'],
-		};
+	test.describe('parse', () => {
+		test('z.string', () => {
+			const schema = z.object({
+				test: z
+					.string({ required_error: 'required', invalid_type_error: 'invalid' })
+					.min(10, 'min')
+					.max(100, 'max')
+					.regex(/^[A-Z]{1-100}$/, 'regex')
+					.refine(() => false, 'refine'),
+			});
+			const file = new File([], '');
 
-		expect(parse(formData, { schema })).toEqual({
-			intent: 'submit',
-			payload,
-			error,
+			expect(parse(createFormData([]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', '']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '' },
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', file]]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: file },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', 'xyz']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'xyz' },
+				error: { test: ['min', 'regex', 'refine'] },
+			});
+		});
+
+		test('z.number', () => {
+			const schema = z.object({
+				test: z
+					.number({ required_error: 'required', invalid_type_error: 'invalid' })
+					.min(1, 'min')
+					.max(10, 'max')
+					.step(2, 'step'),
+			});
+			const file = new File([], '');
+
+			expect(parse(createFormData([]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', '']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '' },
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', 'abc']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'abc' },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', file]]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: file },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', '5']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '5' },
+				error: { test: ['step'] },
+			});
+		});
+
+		test('z.date', () => {
+			const schema = z.object({
+				test: z
+					.date({
+						required_error: 'required',
+						invalid_type_error: 'invalid',
+					})
+					.min(new Date(1), 'min')
+					.max(new Date(10), 'max'),
+			});
+			const file = new File([], '');
+
+			expect(parse(createFormData([]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', '']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '' },
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', 'abc']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'abc' },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', file]]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: file },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', new Date(0).toISOString()]]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: new Date(0).toISOString() },
+				error: { test: ['min'] },
+			});
+		});
+
+		test('z.boolean', () => {
+			const schema = z.object({
+				test: z.boolean({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+			});
+			const file = new File([], '');
+
+			expect(parse(createFormData([]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', '']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '' },
+				error: { test: ['required'] },
+			});
+			expect(
+				parse(createFormData([['test', file]]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: file },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', 'abc']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'abc' },
+				error: {},
+				value: {
+					test: true,
+				},
+			});
+		});
+
+		test('z.array', () => {
+			const createSchema = (
+				element: z.ZodTypeAny = z.string({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+			) =>
+				z.object({
+					test: z
+						.array(element, {
+							required_error: 'required',
+							invalid_type_error: 'invalid',
+						})
+						.min(1, 'min')
+						.max(1, 'max'),
+				});
+
+			expect(parse(createFormData([]), { schema: createSchema() })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['min'] },
+			});
+			// Scenario: Checkbox group (Checked only one item)
+			expect(
+				parse(createFormData([['test', 'a']]), {
+					schema: createSchema(),
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'a' },
+				error: {},
+				value: { test: ['a'] },
+			});
+			// Scenario: Checkbox group (Checked at least two items)
+			expect(
+				parse(
+					createFormData([
+						['test', 'a'],
+						['test', 'b'],
+					]),
+					{
+						schema: createSchema(),
+					},
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: ['a', 'b'] },
+				error: {
+					test: ['max'],
+				},
+			});
+			// Scenario: File upload (No file selected)
+			const emptyFile = new File([], '');
+			const textFile = new File(['helloword'], 'example.txt');
+
+			expect(
+				parse(createFormData([['test', emptyFile]]), {
+					schema: createSchema(z.instanceof(File)),
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: emptyFile },
+				error: {
+					test: ['min'],
+				},
+			});
+			// Scenario: File upload (Only one file selected)
+			expect(
+				parse(createFormData([['test', textFile]]), {
+					schema: createSchema(z.instanceof(File)),
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: textFile },
+				error: {},
+				value: {
+					test: [textFile],
+				},
+			});
+			// Scenario: File upload (At least two files selected)
+			expect(
+				parse(
+					createFormData([
+						['test', textFile],
+						['test', textFile],
+					]),
+					{
+						schema: createSchema(z.instanceof(File)),
+					},
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: [textFile, textFile] },
+				error: {
+					test: ['max'],
+				},
+			});
+			// Scenario: Only one input with the specific name
+			expect(
+				parse(createFormData([['test', '']]), {
+					schema: createSchema(),
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: '' },
+				error: {
+					'test[0]': ['required'],
+				},
+			});
+			// Scenario: Group of inputs with the same name
+			expect(
+				parse(
+					createFormData([
+						['test', 'foo'],
+						['test', ''],
+					]),
+					{
+						schema: createSchema(),
+					},
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: ['foo', ''] },
+				error: {
+					test: ['max'],
+					'test[1]': ['required'],
+				},
+			});
 		});
 	});
 

@@ -15,9 +15,11 @@ import {
 	ZodPipeline,
 	ZodEffects,
 	ZodAny,
+	ZodNullable,
 	ZodOptional,
 	ZodDefault,
 	preprocess,
+	ZodBigInt,
 } from 'zod';
 
 /**
@@ -87,9 +89,24 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 	} else if (schema instanceof ZodDate) {
 		// @ts-expect-error see message above
 		return preprocess(
-			(value) => coerceString(value, (timestamp) => new Date(timestamp)),
+			(value) =>
+				coerceString(value, (timestamp) => {
+					const date = new Date(timestamp);
+
+					// z.date() does not expose a quick way to set invalid_date error
+					// This gets around it by returning the original string if it's invalid
+					// See https://github.com/colinhacks/zod/issues/1526
+					if (isNaN(date.getTime())) {
+						return timestamp;
+					}
+
+					return date;
+				}),
 			schema,
 		);
+	} else if (schema instanceof ZodBigInt) {
+		// @ts-expect-error see message above
+		return preprocess((value) => coerceString(value, BigInt), schema);
 	} else if (schema instanceof ZodArray) {
 		// @ts-expect-error see message above
 		return preprocess(
@@ -101,7 +118,6 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 
 				if (
 					typeof value === 'undefined' ||
-					typeof coerceString(value) === 'undefined' ||
 					typeof coerceFile(value) === 'undefined'
 				) {
 					return [];
@@ -149,6 +165,12 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 		return new ZodTuple({
 			...schema._def,
 			items: schema.items.map(enhanceSchema),
+		});
+	} else if (schema instanceof ZodNullable) {
+		// @ts-expect-error see message above
+		return new ZodNullable({
+			...schema._def,
+			innerType: enhanceSchema(schema.unwrap()),
 		});
 	} else if (schema instanceof ZodPipeline) {
 		// @ts-expect-error see message above

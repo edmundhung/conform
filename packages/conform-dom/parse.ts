@@ -19,7 +19,6 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) => { value?: Schema; error?: Record<string, string[]> };
-		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema>;
 export function parse<Schema>(
@@ -29,7 +28,6 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) => Promise<{ value?: Schema; error?: Record<string, string[]> }>;
-		stripEmptyValue?: boolean;
 	},
 ): Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -41,7 +39,6 @@ export function parse<Schema>(
 		) =>
 			| { value?: Schema; error?: Record<string, string[]> }
 			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
-		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -53,14 +50,12 @@ export function parse<Schema>(
 		) =>
 			| { value?: Schema; error?: Record<string, string[]> }
 			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
-		stripEmptyValue?: boolean;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
 		intent: getIntent(payload),
 		payload: resolve(payload, {
 			ignoreKeys: [INTENT],
-			stripEmptyValue: options?.stripEmptyValue,
 		}),
 		error: {},
 	};
