@@ -507,6 +507,52 @@ test.describe('conform-zod', () => {
 				},
 			});
 		});
+
+		test('z.preprocess', () => {
+			const schemaWithNoPreprocess = z.object({
+				test: z.number({ invalid_type_error: 'invalid' }),
+			});
+			const schemaWithCustomPreprocess = z.object({
+				test: z.preprocess((value) => {
+					if (typeof value !== 'string') {
+						return value;
+					} else if (value === '') {
+						return undefined;
+					} else {
+						return value.replace(/,/g, '');
+					}
+				}, z.number({ invalid_type_error: 'invalid' })),
+			});
+			const formData = createFormData([['test', '1,234.5']]);
+
+			expect(
+				parse(formData, {
+					schema: schemaWithNoPreprocess,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					test: '1,234.5',
+				},
+				error: {
+					test: ['invalid'],
+				},
+			});
+			expect(
+				parse(formData, {
+					schema: schemaWithCustomPreprocess,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					test: '1,234.5',
+				},
+				error: {},
+				value: {
+					test: 1234.5,
+				},
+			});
+		});
 	});
 
 	test('parse with errorMap', () => {
