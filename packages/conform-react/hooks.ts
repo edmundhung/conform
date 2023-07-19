@@ -78,7 +78,7 @@ type SubmissionResult = {
 };
 
 interface ReportOptions {
-	formError?: string | string[];
+	formError?: string[];
 	resetForm?: boolean;
 }
 
@@ -92,9 +92,7 @@ export function report(
 		error: options?.formError
 			? {
 					...submission.error,
-					'': normalizeError(options.formError).concat(
-						submission.error[''] ?? [],
-					),
+					'': options.formError.concat(submission.error[''] ?? []),
 			  }
 			: submission.error,
 	};

@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	) {
 		return json(
 			report(submission, {
-				formError: 'Invalid credential',
+				formError: ['Invalid credential'],
 			}),
 		);
 	}

@@ -4,7 +4,6 @@ import {
 	validate,
 	defaultFormatError,
 	getError,
-	report,
 } from '@conform-to/validitystate';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -58,7 +57,7 @@ export async function action({ request }: ActionArgs) {
 		formatError: configureFormatError(secret),
 	});
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function Example() {

@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			submission.payload.password,
 		))
 	) {
-		return json(report(submission, { formError: 'Invalid credential' }));
+		return json(report(submission, { formError: ['Invalid credential'] }));
 	}
 
 	return redirect('/');

@@ -62,7 +62,7 @@ export async function action({ request }: ActionArgs) {
   if (!user) {
     return json(
       report(submission, {
-        formError: 'Oops! Something went wrong.',
+        formError: ['Oops! Something went wrong.'],
       }),
     );
   }
