@@ -1,19 +1,19 @@
 # File Upload
 
-Conform support validating file input as well.
+Conform support validating a file input as well.
 
 <!-- aside -->
 
 ## On this page
 
-- [Setting up a file input](#setting-up-a-file-input)
+- [Configuration](#configuration)
 - [Multiple files](#multiple-files)
 
 <!-- /aside -->
 
-## Setting up a file input
+## Configuration
 
-The setup is similar to other form controls except the **encType** must be set to `multipart/form-data`.
+Setting up a file input is similar to other form controls except the form **encType** attribute must be set to `multipart/form-data`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -21,14 +21,7 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  profile: z
-    .instanceof(File)
-    // When browser constructs a form data from an empty file input, a default file
-    // entry would be created. we can validate this by checking the filename and size.
-    .refine(
-      (file) => file.name !== '' && file.size !== 0,
-      'Profile is required',
-    ),
+  profile: z.instanceof(File, { message: 'Profile is required' }),
 });
 
 function Example() {
@@ -53,10 +46,7 @@ function Example() {
 
 ## Multiple files
 
-There are some caveats when validating a multiple file input:
-
-- Conform will transform the value to an array only when there are more than one files selected. To ensure a consistent data structure, you need to preprocess the data as shown in the snippet.
-- Conform will not populate individual error on each file. Please make sure all error messages are assigned properly, e.g. `files` instead of `files[1]`.
+The setup is no different for multiple files input.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -65,21 +55,17 @@ import { z } from 'zod';
 
 const schema = z.object({
   files: z
-    .preprocess((value) => {
-      if (Array.isArray(value)) {
-        // No preprocess needed if the value is already an array
-        return value;
-      } else if (value instanceof File && value.name !== '' && value.size > 0) {
-        // Wrap it in an array if the file is valid
-        return [value];
-      } else {
-        // Treat it as empty array otherwise
-        return [];
-      }
-    }, z.instanceof(File).array().min(1, 'At least 1 file is required'))
+    .array(
+      z
+        .instanceof(File)
+        // Don't validate individual file. The error below will be ignored.
+        .refine((file) => file.size < 1024, 'File size must be less than 1kb'),
+    )
+    .min(1, 'At least 1 file is required')
+    // Instead, please validate it on the array level
     .refine(
-      (files) => files.reduce((size, file) => size + file.size, 0) < 5 * 1024,
-      'Total file size must be less than 5kb',
+      (files) => files.every((file) => file.size < 1024),
+      'File size must be less than 1kb',
     ),
 });
 

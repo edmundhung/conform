@@ -507,40 +507,32 @@ test.describe('Field list', () => {
 
 		await form.locator('button:text("Insert top")').click();
 
-		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('');
+		await expect(task0.completed).toBeChecked({ checked: false });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked();
 
 		await tasks.nth(0).locator('button:text("Delete")').click();
 
-		expect(await task0.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task0.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('Write tests for nested list');
+		await expect(task0.completed).toBeChecked({ checked: true });
 
 		await form.locator('button:text("Insert bottom")').click();
 		await task1.content.type('Write more tests');
 		await task1.completed.check();
 		await tasks.nth(1).locator('button:text("Move to top")').click();
 
-		expect(await task0.content.inputValue()).toBe('Write more tests');
-		expect(await task0.completed.isChecked()).toBe(true);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('Write more tests');
+		await expect(task0.completed).toBeChecked({ checked: true });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked({ checked: true });
 
 		await tasks.nth(0).locator('button:text("Clear")').click();
 
-		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('');
+		await expect(task0.completed).toBeChecked({ checked: false });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked({ checked: true });
 
 		await task0.content.type('Write even more tests');
 		await form.locator('[name="title"]').type('Testing plan');
@@ -638,9 +630,9 @@ test.describe('No JS', () => {
 		expect(await task0.content.inputValue()).toBe(
 			'Write tests for nested list',
 		);
-		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task0.completed).toBeChecked({ checked: true });
 		expect(await task1.content.inputValue()).toBe('');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await task1.content.type('Write more tests');
 		await Promise.all([page.waitForNavigation(), todos.insertTop.click()]);
@@ -648,13 +640,13 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(3);
 
 		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe(
 			'Write tests for nested list',
 		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		expect(await task1.completed).toBeChecked({ checked: true });
 		expect(await task2.content.inputValue()).toBe('Write more tests');
-		expect(await task2.completed.isChecked()).toBe(false);
+		expect(await task2.completed).toBeChecked({ checked: false });
 
 		await task0.content.type('Cut a release');
 		await Promise.all([page.waitForNavigation(), task1.delete.click()]);
@@ -662,9 +654,9 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('Cut a release');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe('Write more tests');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await task1.completed.check();
 		await Promise.all([page.waitForNavigation(), task1.moveToTop.click()]);
@@ -672,18 +664,18 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('Write more tests');
-		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task0.completed).toBeChecked({ checked: true });
 		expect(await task1.content.inputValue()).toBe('Cut a release');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await Promise.all([page.waitForNavigation(), task0.clear.click()]);
 
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe('Cut a release');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 
