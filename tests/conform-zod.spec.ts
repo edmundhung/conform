@@ -55,12 +55,9 @@ function createSchema() {
 						.refine(() => false, 'refine'),
 				)
 				.max(0, 'max'),
-			files: z.preprocess(
-				(value) => (!value || Array.isArray(value) ? value : [value]),
-				z.array(z.instanceof(File, { message: 'file message' }), {
-					required_error: 'required',
-				}),
-			),
+			files: z
+				.array(z.instanceof(File, { message: 'Invalid file' }))
+				.min(1, 'required'),
 		})
 		.refine(() => false, 'refine');
 }
@@ -188,51 +185,7 @@ test.describe('conform-zod', () => {
 		});
 	});
 
-	test('parse with empty value stripped', () => {
-		const schema = createSchema();
-		const formData = createFormData([
-			['text', 'xyz'],
-			['number', '3'],
-			['timestamp', new Date(0).toISOString()],
-			['flag', 'no'],
-			['options[0]', 'a'],
-			['options[1]', 'b'],
-			['nested.key', 'foobar'],
-			['list[0].key', ''],
-			['files', new File([''], '')],
-		]);
-		const payload = {
-			text: 'xyz',
-			number: '3',
-			timestamp: new Date(0).toISOString(),
-			flag: 'no',
-			options: ['a', 'b'],
-			files: undefined,
-			nested: { key: 'foobar' },
-			list: [{ key: undefined }],
-		};
-		const error = {
-			text: ['min', 'regex', 'refine'],
-			number: ['step'],
-			timestamp: ['min'],
-			options: ['min'],
-			'options[0]': ['refine'],
-			'options[1]': ['refine'],
-			'nested.key': ['refine'],
-			files: ['required'],
-			nested: ['refine'],
-			list: ['max'],
-			'list[0].key': ['required'],
-		};
-
-		expect(parse(formData, { schema, stripEmptyValue: true })).toEqual({
-			intent: 'submit',
-			payload,
-			error,
-		});
-	});
-
-	test('parse without empty value stripped', () => {
+	test('parse', () => {
 		const schema = createSchema();
 		const emptyFile = new File([''], '');
 		const formData = createFormData([
@@ -264,14 +217,13 @@ test.describe('conform-zod', () => {
 			'options[0]': ['refine'],
 			'options[1]': ['refine'],
 			'nested.key': ['refine'],
+			files: ['required'],
 			nested: ['refine'],
 			list: ['max'],
-			'list[0].key': ['refine'],
-			'list[0]': ['refine'],
-			'': ['refine'],
+			'list[0].key': ['required'],
 		};
 
-		expect(parse(formData, { schema, stripEmptyValue: false })).toEqual({
+		expect(parse(formData, { schema })).toEqual({
 			intent: 'submit',
 			payload,
 			error,

@@ -16,15 +16,8 @@ const JsonFile = z
 const schema = z.object({
 	file: JsonFile,
 	files: z
-		.preprocess((value) => {
-			if (Array.isArray(value)) {
-				return value;
-			} else if (value instanceof File) {
-				return [value];
-			} else {
-				return [];
-			}
-		}, z.array(JsonFile).min(1, 'At least 1 file is required'))
+		.array(JsonFile)
+		.min(1, 'At least 1 file is required')
 		.refine(
 			(files) => files.reduce((size, file) => size + file.size, 0) < 5 * 1024,
 			'Total file size must be less than 5kb',
