@@ -6,16 +6,19 @@ import {
 import type { FieldConfig, Primitive } from './hooks.js';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 
-interface FormControlProps {
+interface FormElementProps {
 	id?: string;
 	name: string;
 	form?: string;
+	'aria-describedby'?: string;
+	'aria-invalid'?: boolean;
+}
+
+interface FormControlProps extends FormElementProps {
 	required?: boolean;
 	autoFocus?: boolean;
 	tabIndex?: number;
 	style?: CSSProperties;
-	'aria-describedby'?: string;
-	'aria-invalid'?: boolean;
 	'aria-hidden'?: boolean;
 }
 
@@ -47,15 +50,17 @@ interface TextareaProps extends FormControlProps {
 type BaseOptions =
 	| {
 			ariaAttributes?: false;
-			hidden?: boolean;
 	  }
 	| {
 			ariaAttributes: true;
 			description?: boolean;
-			hidden?: boolean;
 	  };
 
-type InputOptions = BaseOptions &
+type ControlOptions = BaseOptions & {
+	hidden?: boolean;
+};
+
+type InputOptions = ControlOptions &
 	(
 		| {
 				type: 'checkbox' | 'radio';
@@ -67,41 +72,10 @@ type InputOptions = BaseOptions &
 		  }
 	);
 
-function getFormControlProps(
-	config: FieldConfig<any>,
-	options?: BaseOptions,
-): FormControlProps {
-	const props: FormControlProps = {
-		id: config.id,
-		name: config.name,
-		form: config.form,
-		required: config.required,
-		autoFocus:
-			config.initialError && Object.entries(config.initialError).length > 0
-				? true
-				: undefined,
-	};
-
-	if (options?.ariaAttributes) {
-		if (config.descriptionId && options?.description) {
-			props['aria-describedby'] = config.descriptionId;
-		}
-
-		if (config.errorId && config.error?.length) {
-			props['aria-invalid'] = true;
-			props['aria-describedby'] =
-				config.descriptionId && options?.description
-					? `${config.errorId} ${config.descriptionId}`
-					: config.errorId;
-		}
-	}
-
-	return {
-		...props,
-		...(options?.hidden ? hiddenProps : {}),
-	};
-}
-
+/**
+ * Cleanup `undefined` from the dervied props
+ * To minimize conflicts when merging with user defined props
+ */
 function cleanup<Props extends Object>(props: Props): Props {
 	for (const key in props) {
 		if (props[key] === undefined) {
@@ -110,6 +84,54 @@ function cleanup<Props extends Object>(props: Props): Props {
 	}
 
 	return props;
+}
+
+function getFormElementProps(
+	config: FieldConfig<any>,
+	options?: BaseOptions,
+): FormElementProps {
+	return cleanup({
+		id: config.id,
+		name: config.name,
+		form: config.form,
+		'aria-invalid':
+			options?.ariaAttributes && config.errorId && config.error?.length
+				? true
+				: undefined,
+		'aria-describedby': options?.ariaAttributes
+			? [
+					config.errorId && config.error?.length ? config.errorId : undefined,
+					config.descriptionId && options?.description
+						? config.descriptionId
+						: undefined,
+			  ].reduce((result, id) => {
+					if (!result) {
+						return id;
+					}
+
+					if (!id) {
+						return result;
+					}
+
+					return `${result} ${id}`;
+			  })
+			: undefined,
+	});
+}
+
+function getFormControlProps(
+	config: FieldConfig<any>,
+	options?: ControlOptions,
+): FormControlProps {
+	return cleanup({
+		...getFormElementProps(config, options),
+		required: config.required,
+		autoFocus:
+			config.initialError && Object.entries(config.initialError).length > 0
+				? true
+				: undefined,
+		...(options?.hidden ? hiddenProps : undefined),
+	});
 }
 
 export const hiddenProps: {
@@ -172,28 +194,30 @@ export function input<Schema extends Primitive | File | File[] | unknown>(
 
 export function select<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
->(config: FieldConfig<Schema>, options?: BaseOptions): SelectProps {
-	const props: SelectProps = {
+>(config: FieldConfig<Schema>, options?: ControlOptions): SelectProps {
+	return cleanup({
 		...getFormControlProps(config, options),
 		defaultValue: config.defaultValue,
 		multiple: config.multiple,
-	};
-
-	return cleanup(props);
+	});
 }
 
 export function textarea<Schema extends Primitive | undefined | unknown>(
 	config: FieldConfig<Schema>,
-	options?: BaseOptions,
+	options?: ControlOptions,
 ): TextareaProps {
-	const props: TextareaProps = {
+	return cleanup({
 		...getFormControlProps(config, options),
 		defaultValue: config.defaultValue,
 		minLength: config.minLength,
 		maxLength: config.maxLength,
-	};
+	});
+}
 
-	return cleanup(props);
+export function fieldset<
+	Schema extends Record<string, any> | undefined | unknown,
+>(config: FieldConfig<Schema>, options?: BaseOptions): FormControlProps {
+	return getFormElementProps(config, options);
 }
 
 export function collection<

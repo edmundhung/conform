@@ -811,7 +811,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 			Schema extends Array<infer Item> ? Item : never
 		> = {
 			name: `${config.name}[${index}]`,
-			defaultValue: defaultValue ?? config.defaultValue?.[index],
+			defaultValue,
 			initialError,
 			error: errors?.[0],
 			errors,

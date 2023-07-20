@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 const schema = z.object({
-	name: z.string().min(1, 'Name is required'),
+	name: z.string({ required_error: 'Name is required' }),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -20,7 +20,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -31,7 +31,7 @@ export default function Example() {
 	const [form, { name }] = useForm({
 		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 

@@ -11,7 +11,7 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import * as Checkbox from '@radix-ui/react-checkbox';
 
 const schema = z.object({
-	language: z.string().min(1, 'Language is required'),
+	language: z.string({ required_error: 'Language is required' }),
 	tos: z
 		.string({ required_error: 'Please accept the terms of service' })
 		.transform((value) => value === 'on'),
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -39,7 +39,7 @@ export default function Example() {
 		id: 'example',
 		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 

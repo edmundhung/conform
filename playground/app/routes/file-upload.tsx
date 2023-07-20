@@ -7,23 +7,19 @@ import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
 const JsonFile = z
-	.instanceof(File)
-	.refine((file) => file.name !== '' && file.size !== 0, 'File is required')
+	.instanceof(File, { message: 'File is required' })
 	.refine(
 		(file) => file.type === 'application/json',
 		'Only JSON file is accepted',
 	);
 
 const schema = z.object({
-	file: z.preprocess(
-		(value) => (value === '' ? new File([], '') : value),
-		JsonFile,
-	),
+	file: JsonFile,
 	files: z
 		.preprocess((value) => {
 			if (Array.isArray(value)) {
 				return value;
-			} else if (value instanceof File && value.name !== '' && value.size > 0) {
+			} else if (value instanceof File) {
 				return [value];
 			} else {
 				return [];
@@ -45,7 +41,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
@@ -56,7 +52,7 @@ export default function FileUpload() {
 	const [form, { file, files }] = useForm({
 		lastSubmission,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 

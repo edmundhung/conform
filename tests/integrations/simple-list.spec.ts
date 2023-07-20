@@ -134,6 +134,42 @@ async function runValidationScenario(page: Page) {
 	);
 }
 
+async function testListDefaultValue(page: Page, shouldReset?: boolean) {
+	const playground = getPlayground(page);
+	const fieldset = getFieldset(playground.container);
+	const item0 = getItemFieldset(fieldset.items, 0);
+	const item1 = getItemFieldset(fieldset.items, 1);
+
+	await expect(fieldset.items).toHaveCount(2);
+	await expect(item0.content).toHaveValue('default item 0');
+	await expect(item1.content).toHaveValue('default item 1');
+
+	await item0.delete.click();
+	await expect(fieldset.items).toHaveCount(1);
+	await expect(item0.content).toHaveValue('default item 1');
+
+	await fieldset.insertTop.click();
+	await expect(fieldset.items).toHaveCount(2);
+	await expect(item0.content).toHaveValue('');
+	await expect(item1.content).toHaveValue('default item 1');
+
+	await item1.delete.click();
+	await expect(fieldset.items).toHaveCount(1);
+	await expect(item0.content).toHaveValue('');
+
+	await playground.submit.click();
+	await expect(fieldset.items).toHaveCount(1);
+	await expect(playground.error).toHaveText(['', 'The field is required']);
+
+	if (shouldReset) {
+		await playground.reset.click();
+		await expect(fieldset.items).toHaveCount(2);
+		await expect(item0.content).toHaveValue('default item 0');
+		await expect(item1.content).toHaveValue('default item 1');
+		await expect(playground.error).toHaveText(['', '', '']);
+	}
+}
+
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/simple-list');
@@ -145,7 +181,7 @@ test.describe('With JS', () => {
 		await runValidationScenario(page);
 	});
 
-	test('Form reset', async ({ page }) => {
+	test('Form reset without default value', async ({ page }) => {
 		await page.goto('/simple-list');
 
 		const playground = getPlayground(page);
@@ -168,13 +204,23 @@ test.describe('With JS', () => {
 		await expect(fieldset.items).toHaveCount(1);
 		await expect(playground.error).toHaveText(['', '']);
 	});
+
+	test('Form reset with default value', async ({ page }) => {
+		await page.goto('/simple-list?hasDefaultValue=yes');
+		await testListDefaultValue(page, true);
+	});
 });
 
 test.describe('No JS', () => {
 	test.use({ javaScriptEnabled: false });
 
-	test('Validation', async ({ page }) => {
+	test('Validation without default value', async ({ page }) => {
 		await page.goto('/simple-list');
 		await runValidationScenario(page);
+	});
+
+	test('Validation with default value', async ({ page }) => {
+		await page.goto('/simple-list?hasDefaultValue=yes');
+		await testListDefaultValue(page);
 	});
 });

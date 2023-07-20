@@ -9,8 +9,8 @@
 		"start": "remix-serve build"
 	},
 	"dependencies": {
-		"@conform-to/react": "0.7.2",
-		"@conform-to/yup": "0.7.2",
+		"@conform-to/react": "0.7.4",
+		"@conform-to/yup": "0.7.4",
 		"@remix-run/node": "^1.14.0",
 		"@remix-run/react": "^1.14.0",
 		"@remix-run/serve": "^1.14.0",

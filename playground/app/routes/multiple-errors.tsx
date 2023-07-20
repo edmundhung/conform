@@ -49,25 +49,19 @@ function parseForm(formData: FormData, validator: string | null) {
 			return parseWithZod(formData, {
 				schema: z.object({
 					username: z
-						.string()
-						.min(1, 'Username is required')
+						.string({ required_error: 'Username is required' })
+						.min(5, 'Min. 5 characters')
 						.refine(
-							(username) => !username || username.length > 5,
-							'Min. 5 characters',
-						)
-						.refine(
-							(username) => !username || username.toUpperCase() !== username,
+							(username) => username.toUpperCase() !== username,
 							'At least 1 lowercase character',
 						)
 						.refine(
-							(username) => !username || username.toLowerCase() !== username,
+							(username) => username.toLowerCase() !== username,
 							'At least 1 uppercase character',
 						)
-						.refine(
-							(username) => !username || username.match(/[0-9]/),
-							'At least 1 number',
-						),
+						.refine((username) => username.match(/[0-9]/), 'At least 1 number'),
 				}),
+				stripEmptyValue: true,
 				acceptMultipleErrors({ name }) {
 					return name === 'username';
 				},

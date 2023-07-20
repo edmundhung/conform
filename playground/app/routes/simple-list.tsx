@@ -8,8 +8,7 @@ import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
 	items: z
-		.string()
-		.min(1, 'The field is required')
+		.string({ required_error: 'The field is required' })
 		.regex(/^[^0-9]+$/, 'Number is not allowed')
 		.array()
 		.min(1, 'At least one item is required')
@@ -21,24 +20,28 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
 	return {
+		hasDefaultValue: url.searchParams.get('hasDefaultValue') === 'yes',
 		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
 	};
 }
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, { schema, stripEmptyValue: true });
 
 	return json(submission);
 }
 
 export default function SimpleList() {
-	const { noClientValidate } = useLoaderData<typeof loader>();
+	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData();
 	const [form, { items }] = useForm({
 		lastSubmission,
+		defaultValue: hasDefaultValue
+			? { items: ['default item 0', 'default item 1'] }
+			: undefined,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
 			: undefined,
 	});
 	const itemsList = useFieldList(form.ref, items);
@@ -82,13 +85,13 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.prepend(items.name, { defaultValue: '' })}
+						{...list.prepend(items.name)}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.append(items.name, { defaultValue: '' })}
+						{...list.append(items.name)}
 					>
 						Insert bottom
 					</button>
