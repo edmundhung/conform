@@ -196,10 +196,13 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 		});
 	} else if (schema instanceof ZodOptional) {
 		// @ts-expect-error see message above
-		return new ZodOptional({
-			...schema._def,
-			innerType: enhanceSchema(schema.unwrap()),
-		});
+		return preprocess(
+			(value) => coerceString(coerceFile(value)),
+			new ZodOptional({
+				...schema._def,
+				innerType: enhanceSchema(schema.unwrap()),
+			}),
+		);
 	} else if (schema instanceof ZodDefault) {
 		// @ts-expect-error see message above
 		return new ZodDefault({

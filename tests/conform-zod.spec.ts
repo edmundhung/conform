@@ -553,6 +553,58 @@ test.describe('conform-zod', () => {
 				},
 			});
 		});
+
+		test('z.optional', () => {
+			const schema = z.object({
+				a: z.string().optional(),
+				b: z.number().optional(),
+				c: z.boolean().optional(),
+				d: z.date().optional(),
+				e: z.instanceof(File).optional(),
+				f: z.array(z.string().optional()),
+				g: z.array(z.string()).optional(),
+			});
+			const emptyFile = new File([], '');
+
+			expect(
+				parse(
+					createFormData([
+						['a', ''],
+						['b', ''],
+						['c', ''],
+						['d', ''],
+						['e', emptyFile],
+						['f', ''],
+						['g', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					a: '',
+					b: '',
+					c: '',
+					d: '',
+					e: emptyFile,
+					f: '',
+					g: '',
+				},
+				value: {
+					a: undefined,
+					b: undefined,
+					c: undefined,
+					d: undefined,
+					e: undefined,
+					f: [undefined],
+					// Ideally, this should be `[undefined]` as well similar to `f` above.
+					// However, the preprocess on optional array casts it to undefined before the array preprocess is called
+					// As it is still unclear when we wants an optional array, we are not going to fix this for now.
+					g: undefined,
+				},
+				error: {},
+			});
+		});
 	});
 
 	test('parse with errorMap', () => {
