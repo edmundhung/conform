@@ -2,7 +2,7 @@
 	"name": "@conform-example/headless-ui",
 	"private": true,
 	"dependencies": {
-		"@conform-to/react": "0.8.0-pre.0",
+		"@conform-to/react": "0.8.0-pre.1",
 		"@headlessui/react": "^1.7.13",
 		"@heroicons/react": "^2.0.18",
 		"react": "^18.2.0",
