@@ -97,14 +97,23 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, {
     schema: z
       .object({
-        email: z.string().min(1, 'Email is required').email('Email is invalid'),
-        password: z.string().min(1, 'Password is required'),
-        confirmPassword: z.string().min(1, 'Confirm password is required'),
+        email: z
+          .string({ required_error: 'Email is required' })
+          .email('Email is invalid'),
       })
-      .refine((value) => value.password === value.confirmPassword, {
-        message: 'Password does not match',
-        path: ['confirmPassword'],
-      }),
+      .and(
+        z
+          .object({
+            password: z.string({ required_error: 'Password is required' }),
+            confirmPassword: z.string({
+              required_error: 'Confirm password is required',
+            }),
+          })
+          .refine((data) => data.password === data.confirmPassword, {
+            message: 'Password does not match',
+            path: ['confirmPassword'],
+          }),
+      ),
   });
 
   if (!submission.value || submission.intent !== 'submit') {
@@ -126,14 +135,23 @@ import { parse } from '@conform-to/zod';
 // Move the schema definition out of action
 const schema = z
   .object({
-    email: z.string().min(1, 'Email is required').email('Email is invalid'),
-    password: z.string().min(1, 'Password is required'),
-    confirmPassword: z.string().min(1, 'Confirm password is required'),
+    email: z
+      .string({ required_error: 'Email is required' })
+      .email('Email is invalid'),
   })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: 'Password does not match',
-    path: ['confirmPassword'],
-  });
+  .and(
+    z
+      .object({
+        password: z.string({ required_error: 'Password is required' }),
+        confirmPassword: z.string({
+          required_error: 'Confirm password is required',
+        }),
+      })
+      .refine((data) => data.password === data.confirmPassword, {
+        message: 'Password does not match',
+        path: ['confirmPassword'],
+      }),
+  );
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
@@ -176,14 +194,16 @@ function createSchema(
 ) {
   return z.object({
     email: z
-      .string()
-      .min(1, 'Email is required')
+      .string({ required_error: 'Email is required' })
       .email('Email is invalid')
-      .superRefine((email, ctx) =>
-        refine(ctx, {
-          validate: () => constraints.isEmailUnique?.(email),
-          message: 'Email is already used',
-        }),
+      // Pipe another schema so it runs only if the email is valid
+      .pipe(
+        z.string().superRefine((email, ctx) =>
+          refine(ctx, {
+            validate: () => constarint.isEmailUnique?.(email),
+            message: 'Username is already used',
+          }),
+        ),
       ),
     // ...
   });
@@ -238,16 +258,17 @@ function createSchema(
 ) {
   return z.object({
     email: z
-      .string()
-      .min(1, 'Email is required')
+      .string({ required_error: 'Email is required' })
       .email('Email is invalid')
-      .superRefine((email, ctx) =>
-        refine(ctx, {
-          validate: () => constraints.isEmailUnique?.(email),
-          // Validate only when the email field is changed or when submitting
-          when: intent === 'validate/email' || intent === 'submit',
-          message: 'Email is already used',
-        }),
+      .pipe(
+        z.string().superRefine((email, ctx) =>
+          refine(ctx, {
+            validate: () => constarint.isEmailUnique?.(email),
+            // Validate only when the email field is changed or when submitting
+            when: intent === 'validate/email' || intent === 'submit',
+            message: 'Username is already used',
+          }),
+        ),
       ),
     // ...
   });

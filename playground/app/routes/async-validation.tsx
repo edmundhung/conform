@@ -15,23 +15,17 @@ function createSchema(
 	return z.object({
 		email: z
 			.string({ required_error: 'Email is required' })
-			.superRefine((email, ctx) => {
-				const result = z.string().email().safeParse(email);
-
-				if (!result.success) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						message: 'Email is invalid',
-					});
-					return;
-				}
-
-				return refine(ctx, {
-					validate: () => constraints.isEmailUnique?.(email),
-					when: intent === 'validate/email' || intent === 'submit',
-					message: 'Email is already used',
-				});
-			}),
+			.email({ message: 'Email is invalid' })
+			// Pipe another schema so it runs only if it is a valid email
+			.pipe(
+				z.string().superRefine((email, ctx) =>
+					refine(ctx, {
+						validate: () => constraints.isEmailUnique?.(email),
+						when: intent === 'validate/email' || intent === 'submit',
+						message: 'Email is already used',
+					}),
+				),
+			),
 		title: z
 			.string({ required_error: 'Title is required' })
 			.max(20, 'Title is too long'),

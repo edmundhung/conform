@@ -13,12 +13,12 @@ import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
-	content: z.string().min(1, 'Content is required'),
-	completed: z.string().transform((value) => value === 'yes'),
+	content: z.string({ required_error: 'Content is required' }),
+	completed: z.boolean(),
 });
 
 const todosSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
+	title: z.string({ required_error: 'Title is required' }),
 	tasks: z.array(taskSchema).min(1),
 });
 
