@@ -15,7 +15,7 @@ import {
 	type IssueData,
 	ZodIssueCode,
 } from 'zod';
-import { enhanceSchema } from './coercion';
+import { enableTypeCoercion } from './coercion';
 
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
@@ -43,7 +43,7 @@ export function parse<Schema extends ZodTypeAny>(
 ): Submission<output<Schema>> | Promise<Submission<output<Schema>>> {
 	return baseParse<output<Schema>>(payload, {
 		resolve(payload, intent) {
-			const schema = enhanceSchema(
+			const schema = enableTypeCoercion(
 				typeof config.schema === 'function'
 					? config.schema(intent)
 					: config.schema,

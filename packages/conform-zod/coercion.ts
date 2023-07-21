@@ -68,7 +68,7 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
  */
-export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
+export function enableTypeCoercion<Type>(schema: ZodType<Type>): ZodType<Type> {
 	/**
 	 * We might be able to fix all type errors with function overloads
 	 * But I'm not sure if it's worth the effort
@@ -128,7 +128,7 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 			},
 			new ZodArray({
 				...schema._def,
-				type: enhanceSchema(schema.element),
+				type: enableTypeCoercion(schema.element),
 			}),
 		);
 	} else if (schema instanceof ZodObject) {
@@ -136,7 +136,7 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 			Object.entries(schema.shape).map(([key, def]) => [
 				key,
 				// @ts-expect-error see message above
-				enhanceSchema(def),
+				enableTypeCoercion(def),
 			]),
 		);
 		return new ZodObject({
@@ -147,36 +147,36 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 		// @ts-expect-error see message above
 		return new ZodIntersection({
 			...schema._def,
-			left: enhanceSchema(schema._def.left),
-			right: enhanceSchema(schema._def.right),
+			left: enableTypeCoercion(schema._def.left),
+			right: enableTypeCoercion(schema._def.right),
 		});
 	} else if (schema instanceof ZodUnion) {
 		return new ZodUnion({
 			...schema._def,
-			options: schema.options.map(enhanceSchema),
+			options: schema.options.map(enableTypeCoercion),
 		});
 	} else if (schema instanceof ZodDiscriminatedUnion) {
 		return new ZodDiscriminatedUnion({
 			...schema._def,
-			options: schema.options.map(enhanceSchema),
+			options: schema.options.map(enableTypeCoercion),
 		});
 	} else if (schema instanceof ZodTuple) {
 		// @ts-expect-error see message above
 		return new ZodTuple({
 			...schema._def,
-			items: schema.items.map(enhanceSchema),
+			items: schema.items.map(enableTypeCoercion),
 		});
 	} else if (schema instanceof ZodNullable) {
 		// @ts-expect-error see message above
 		return new ZodNullable({
 			...schema._def,
-			innerType: enhanceSchema(schema.unwrap()),
+			innerType: enableTypeCoercion(schema.unwrap()),
 		});
 	} else if (schema instanceof ZodPipeline) {
 		// @ts-expect-error see message above
 		return new ZodPipeline({
 			...schema._def,
-			in: enhanceSchema(schema._def.in),
+			in: enableTypeCoercion(schema._def.in),
 		});
 	} else if (schema instanceof ZodEffects) {
 		// A file schema is usually defined as `instanceOf(File)`
@@ -192,7 +192,7 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 
 		return new ZodEffects({
 			...schema._def,
-			schema: enhanceSchema(schema.innerType()),
+			schema: enableTypeCoercion(schema.innerType()),
 		});
 	} else if (schema instanceof ZodOptional) {
 		// @ts-expect-error see message above
@@ -200,14 +200,14 @@ export function enhanceSchema<Type>(schema: ZodType<Type>): ZodType<Type> {
 			(value) => coerceString(coerceFile(value)),
 			new ZodOptional({
 				...schema._def,
-				innerType: enhanceSchema(schema.unwrap()),
+				innerType: enableTypeCoercion(schema.unwrap()),
 			}),
 		);
 	} else if (schema instanceof ZodDefault) {
 		// @ts-expect-error see message above
 		return new ZodDefault({
 			...schema._def,
-			innerType: enhanceSchema(schema.removeDefault()),
+			innerType: enableTypeCoercion(schema.removeDefault()),
 		});
 	}
 

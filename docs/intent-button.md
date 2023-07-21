@@ -7,9 +7,9 @@ A submit button can contribute to the form data when it triggers the submission 
 ## On this page
 
 - [Submission Intent](#submission-intent)
-- [Modifying a list](#modifying-a-list)
-- [Validation](#validation)
-- [Triggering an intent](#triggering-an-intent)
+- [List intent](#list-intent)
+- [Validate intent](#validate-intent)
+- [Triggering intent](#triggering-intent)
 
 <!-- /aside -->
 
@@ -77,7 +77,7 @@ function Product() {
 }
 ```
 
-### Modifying a list
+### List intent
 
 Conform provides built-in [list](/packages/conform-react/README.md#list) intent button builder for you to modify a list of fields.
 
@@ -107,7 +107,7 @@ export default function Todos() {
 }
 ```
 
-## Validation
+## Validate intent
 
 A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) intent.
 
@@ -128,7 +128,7 @@ export default function Todos() {
 }
 ```
 
-## Triggering an intent
+## Triggering intent
 
 Sometimes, it could be useful to trigger an intent without requiring users to click on the intent button. We can achieve it by capturing the button element with `useRef` and triggering the intent with `button.click()`
 
@@ -203,4 +203,4 @@ export default function Todos() {
 }
 ```
 
-Conform is also utilizing the requestIntent helper to trigger the validate intent based on input and blur event.
+Conform is also utilizing the `requestIntent` helper to trigger the `validate` intent on input or blur event.

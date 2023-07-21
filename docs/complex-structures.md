@@ -17,29 +17,44 @@ Conform support both nested object and array by leveraging a naming convention o
 
 **Conform** uses the `object.property` and `array[index]` syntax to denote data structure. These notations could be combined for nest list as well. e.g. `tasks[0].content`.
 
-The form data should be parsed using the Conform [parse](/packages/conform-react/README.md#parse) helper to resolve each data path and reconstruct the data structure accordingly.
+The form data should be parsed using the Conform [parse](/packages/conform-zod/README.md#parse) helper to resolve each data path and reconstruct the data structure accordingly.
 
 ```ts
-import { parse } from '@conform-to/react';
-
-const formData = new FormData();
+import { parse } from '@conform-to/zod';
 
 // If the form data has an entry `['tasks[0].content', 'Hello World']`
-const submission = parse(formData);
+const submission = parse(formData, {
+  /* ... */
+});
 
-// The submission payload will be `{ tasks: [{ content: 'Hello World' }] }`
+// The submission payload will become `{ tasks: [{ content: 'Hello World' }] }`
 console.log(submission.payload);
 ```
 
 ## Nested Object
 
-When you need to set up nested fields, you can pass the parent field config to the[useFieldset](/packages/conform-react/README.md#usefieldset) hook to get access to each child field with name infered automatically.
+When you need to set up nested fields, you can pass the parent field config to the [useFieldset](/packages/conform-react/README.md#usefieldset) hook to get access to each child field with name infered automatically.
 
 ```tsx
 import { useForm, useFieldset } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  address: z.object({
+    street: z.string(),
+    zipcode: z.string(),
+    city: z.string(),
+    country: z.string(),
+  }),
+});
 
 function Example() {
-  const [form, { address }] = useForm<Schema>();
+  const [form, { address }] = useForm({
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
   const { city, zipcode, street, country } = useFieldset(form.ref, address);
 
   return (
@@ -60,13 +75,23 @@ function Example() {
 
 ## Array
 
-When you need to setup a list of fields, you can pass the parent field config to the[useFieldList](/packages/conform-react/README.md#usefieldlist) hook to get access to each item field with name infered automatically as well.
+When you need to setup a list of fields, you can pass the parent field config to the [useFieldList](/packages/conform-react/README.md#usefieldlist) hook to get access to each item field with name infered automatically as well.
 
 ```tsx
 import { useForm, useFieldList } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  tasks: z.array(z.string()),
+});
 
 function Example() {
-  const [form, { tasks }] = useForm();
+  const [form, { tasks }] = useForm({
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
   const list = useFieldList(form.ref, tasks);
 
   return (
@@ -85,7 +110,7 @@ function Example() {
 }
 ```
 
-For information about modifying list (e.g. append / remove / reorder), see the [Modifying a list](/docs/intent-button.md#modifying-a-list) section.
+For information about modifying list (e.g. append / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
 
 ## Nested List
 
@@ -94,18 +119,24 @@ You can also combine both [useFieldset](/packages/conform-react/README.md#usefie
 ```tsx
 import type { FieldConfig } from '@conform-to/react';
 import { useForm, useFieldset, useFieldList } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import { z } from 'zod';
 
-interface Todo {
-  title: string;
-  notes: string;
-}
-
-interface Schema {
-  todos: Todo[];
-}
+const schema = z.object({
+  todos: z.array(
+    z.object({
+      title: z.string(),
+      notes: z.string(),
+    }),
+  ),
+});
 
 function Example() {
-  const [form, { tasks }] = useForm();
+  const [form, { tasks }] = useForm({
+    onValidate({ formData }) {
+      return parse(formData, { schema });
+    },
+  });
   const todos = useFieldList(form.ref, tasks);
 
   return (
@@ -114,7 +145,7 @@ function Example() {
         {todos.map((todo) => (
           <li key={todo.key}>
             {/* Pass each item config to TodoFieldset */}
-            <TodoFieldset {...todo} />
+            <TodoFieldset config={todo} />
           </li>
         ))}
       </ul>
@@ -122,7 +153,7 @@ function Example() {
   );
 }
 
-function TodoFieldset(config: FieldConfig<Todo>) {
+function TodoFieldset(props: { config: FieldConfig<Todo> }) {
   const ref = useRef<HTMLFieldsetElement>(null);
   // Both useFieldset / useFieldList accept form or fieldset ref
   const { title, notes } = useFieldset(ref, config);
