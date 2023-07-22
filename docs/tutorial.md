@@ -9,7 +9,7 @@ In this tutoiral, we will show you how to enhance a login form with Conform.
 - [Installation](#installation)
 - [Initial setup](#initial-setup)
 - [Introducing Conform](#introducing-conform)
-- [Setting client validation](#setting-up-client-validation)
+- [Setting client validation](#setting-client-validation)
 - [Enhancing user experience](#enhancing-user-experience)
 
 <!-- /aside -->
