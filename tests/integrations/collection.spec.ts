@@ -28,7 +28,7 @@ async function runValidationScenario(page: Page) {
 				error: {},
 				value: {
 					singleChoice: 'y',
-					multipleChoice: 'c',
+					multipleChoice: ['c'],
 				},
 			},
 			null,

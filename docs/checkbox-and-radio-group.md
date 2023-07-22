@@ -39,7 +39,6 @@ function Example() {
           .collection(color, {
             type: 'radio',
             options: ['red', 'green', 'blue'],
-            ariaAttributes: true,
           })
           .map((props, index) => (
             <div key={index}>
@@ -57,7 +56,7 @@ function Example() {
 
 ## Checkbox
 
-Setting up a checkbox group would be similar to a radio group with `type` being set to `checkbox`. However, there is one caveat when validating a checkbox group: Conform will transform the value to an array only when there are more than one checkboxes selected. To ensure a consistent data structure, you need to preprocess the data as shown in the snippet.
+Setting up a checkbox group would be similar to a radio group except the `type` is set to `checkbox`.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -65,11 +64,10 @@ import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  answer: z.preprocess(
-    // To ensure the value is always an array
-    (value) => !Array.isArray(value) ? [value] : value,
-    z.string().array().nonEmpty('At least one answer is required')
-  ),
+  answer: z
+    .string()
+    .array()
+    .nonEmpty('At least one answer is required'),
 });
 
 function Example() {
@@ -87,7 +85,6 @@ function Example() {
           .collection(answer, {
             type: 'checkbox',
             options: ['a', 'b', 'c', 'd'],
-            ariaAttributes: true,
           })
           .map((props, index) => (
             <div key={index}>

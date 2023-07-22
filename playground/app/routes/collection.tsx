@@ -1,39 +1,14 @@
-import { conform, parse, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
+import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
-interface Schema {
-	singleChoice: string;
-	multipleChoice: string;
-}
-
-function parseForm(formData: FormData) {
-	return parse(formData, {
-		resolve({ singleChoice, multipleChoice }) {
-			const error: Record<string, string> = {};
-
-			if (!singleChoice) {
-				error.singleChoice = 'Required';
-			}
-
-			if (!multipleChoice) {
-				error.multipleChoice = 'Required';
-			}
-
-			if (error.singleChoice || error.multipleChoice) {
-				return { error };
-			}
-
-			return {
-				value: {
-					singleChoice,
-					multipleChoice,
-				},
-			};
-		},
-	});
-}
+const schema = z.object({
+	singleChoice: z.string({ required_error: 'Required' }),
+	multipleChoice: z.string().array().min(1, 'Required'),
+});
 
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
@@ -45,7 +20,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parseForm(formData);
+	const submission = parse(formData, { schema });
 
 	return json(submission);
 }
@@ -53,12 +28,12 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { singleChoice, multipleChoice }] = useForm<Schema>({
+	const [form, { singleChoice, multipleChoice }] = useForm({
 		id: 'collection',
 		lastSubmission,
 		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
-			? ({ formData }) => parseForm(formData)
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
