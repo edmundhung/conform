@@ -115,7 +115,7 @@ export interface FormConfig<
 
 	/**
 	 * Define when conform should start validation.
-	 * Support "onSubmit", "onChange", "onBlur".
+	 * Support "onSubmit", "onInput", "onBlur".
 	 *
 	 * @default "onSubmit"
 	 */
@@ -123,7 +123,7 @@ export interface FormConfig<
 
 	/**
 	 * Define when conform should revalidate again.
-	 * Support "onSubmit", "onChange", "onBlur".
+	 * Support "onSubmit", "onInput", "onBlur".
 	 *
 	 * @default shouldValidate, or "onSubmit" if shouldValidate is not provided.
 	 */
