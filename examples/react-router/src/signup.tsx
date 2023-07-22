@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { useForm } from '@conform-to/react';
+import { useForm, report } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json } from 'react-router-dom';
@@ -16,27 +16,35 @@ function createSchema(
 	return z
 		.object({
 			username: z
-				.string()
-				.min(1, 'Username is required')
+				.string({ required_error: 'Username is required' })
 				.regex(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
 				)
-				// We use `.superRefine` instead of `.refine` for better control
-				.superRefine((username, ctx) =>
-					refine(ctx, {
-						validate: () => constarint.isUsernameUnique?.(username),
-						when: intent === 'submit' || intent === 'validate/username',
-						message: 'Username is already used',
-					}),
+				// Pipe the schema so it runs only if the username is valid
+				.pipe(
+					z.string().superRefine((username, ctx) =>
+						refine(ctx, {
+							validate: () => constarint.isUsernameUnique?.(username),
+							when: intent === 'submit' || intent === 'validate/username',
+							message: 'Username is already used',
+						}),
+					),
 				),
-			password: z.string().min(1, 'Password is required'),
-			confirmPassword: z.string().min(1, 'Confirm Password is required'),
 		})
-		.refine((data) => data.password === data.confirmPassword, {
-			message: 'Password does not match',
-			path: ['confirmPassword'],
-		});
+		.and(
+			z
+				.object({
+					password: z.string({ required_error: 'Password is required' }),
+					confirmPassword: z.string({
+						required_error: 'Confirm password is required',
+					}),
+				})
+				.refine((data) => data.password === data.confirmPassword, {
+					message: 'Password does not match',
+					path: ['confirmPassword'],
+				}),
+		);
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -57,12 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json({
-			...submission,
-			payload: {
-				username: submission.payload.username,
-			},
-		});
+		return json(report(submission));
 	}
 
 	throw new Error('Not implemented');

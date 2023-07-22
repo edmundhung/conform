@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { conform, useForm, report } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -15,13 +15,16 @@ function createSchema(
 	return z.object({
 		email: z
 			.string({ required_error: 'Email is required' })
-			.email('Email is invalid')
-			.superRefine((email, ctx) =>
-				refine(ctx, {
-					validate: () => constraints.isEmailUnique?.(email),
-					when: intent === 'validate/email' || intent === 'submit',
-					message: 'Email is already used',
-				}),
+			.email({ message: 'Email is invalid' })
+			// Pipe another schema so it runs only if it is a valid email
+			.pipe(
+				z.string().superRefine((email, ctx) =>
+					refine(ctx, {
+						validate: () => constraints.isEmailUnique?.(email),
+						when: intent === 'validate/email' || intent === 'submit',
+						message: 'Email is already used',
+					}),
+				),
 			),
 		title: z
 			.string({ required_error: 'Title is required' })
@@ -51,11 +54,10 @@ export async function action({ request }: ActionArgs) {
 					});
 				},
 			}),
-		stripEmptyValue: true,
 		async: true,
 	});
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function EmployeeForm() {
@@ -67,7 +69,6 @@ export default function EmployeeForm() {
 			? ({ formData }) =>
 					parse(formData, {
 						schema: (intent) => createSchema(intent),
-						stripEmptyValue: true,
 					})
 			: undefined,
 	});

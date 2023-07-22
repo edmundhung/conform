@@ -1,4 +1,4 @@
-import { conform, parse, useForm } from '@conform-to/react';
+import { conform, parse, report, useForm } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -13,27 +13,27 @@ interface Signup {
 function parseSignupForm(formData: FormData) {
 	return parse(formData, {
 		resolve({ email, password, confirmPassword }) {
-			const error: Record<string, string> = {};
+			const error: Record<string, string[]> = {};
 
 			if (!email) {
-				error.email = 'Email is required';
+				error.email = ['Email is required'];
 			} else if (
 				typeof email !== 'string' ||
 				!email.match(/^[^()@\s]+@[\w\d.]+$/)
 			) {
-				error.email = 'Email is invalid';
+				error.email = ['Email is invalid'];
 			}
 
 			if (!password) {
-				error.password = 'Password is required';
+				error.password = ['Password is required'];
 			} else if (typeof password === 'string' && password.length < 8) {
-				error.password = 'Password is too short';
+				error.password = ['Password is too short'];
 			}
 
 			if (!confirmPassword) {
-				error.confirmPassword = 'Confirm password is required';
+				error.confirmPassword = ['Confirm password is required'];
 			} else if (confirmPassword !== password) {
-				error.confirmPassword = 'The password provided does not match';
+				error.confirmPassword = ['The password provided does not match'];
 			}
 
 			if (error.email || error.password || error.confirmPassword) {
@@ -59,13 +59,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseSignupForm(formData);
 
-	return json({
-		...submission,
-		payload: {
-			email: submission.payload.email,
-			// Never send the password back to the client
-		},
-	});
+	return json(report(submission));
 }
 
 export default function SignupForm() {

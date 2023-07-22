@@ -75,7 +75,6 @@ function Example() {
         <input
           ref={shadowInputRef}
           {...conform.input(currency, {
-            ariaAttributes: true,
             hidden: true,
           })}
         />
@@ -148,7 +147,6 @@ function Select({ options, ...config }: SelectProps) {
       <input
         ref={shadowInputRef}
         {...conform.input(config, {
-          ariaAttributes: true,
           hidden: true,
         })}
       />
@@ -184,7 +182,6 @@ function Select({ options, ...config }: SelectProps) {
       <input
         ref={shadowInputRef}
         {...conform.input(config, {
-          ariaAttributes: true,
           hidden: true,
         })}
         onFocus={() => customInputRef.current?.focus()}
@@ -217,7 +214,6 @@ function Select({ options, .. }: SelectProps) {
       <input
         ref={shadowInputRef}
         {...conform.input(config, {
-          ariaAttributes: true,
           hidden: true,
         })}
         onChange={(e) => setValue(e.target.value)}

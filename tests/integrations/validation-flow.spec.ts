@@ -32,7 +32,7 @@ test('shouldValidate: onSubmit', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await email.clear();
@@ -47,7 +47,7 @@ test('shouldValidate: onSubmit', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await playground.submit.click();
@@ -83,7 +83,7 @@ test('shouldValidate: onInput', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 		'',
 	]);
 
@@ -93,7 +93,7 @@ test('shouldValidate: onInput', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 		'',
 	]);
 
@@ -102,7 +102,7 @@ test('shouldValidate: onInput', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'',
 		'',
-		'Confirm password does not match',
+		'Password does not match',
 		'',
 	]);
 
@@ -146,7 +146,7 @@ test('shouldValidate: onBlur', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await email.clear();
@@ -154,14 +154,14 @@ test('shouldValidate: onBlur', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await playground.form.press('Tab');
 	await expect(playground.error).toHaveText([
 		'',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await password.clear();
@@ -169,14 +169,14 @@ test('shouldValidate: onBlur', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'',
 		'Password is too short',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await playground.form.press('Tab');
 	await expect(playground.error).toHaveText([
 		'',
 		'',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await confirmPassword.clear();
@@ -184,7 +184,7 @@ test('shouldValidate: onBlur', async ({ page }) => {
 	await expect(playground.error).toHaveText([
 		'',
 		'',
-		'Confirm password does not match',
+		'Password does not match',
 	]);
 
 	await playground.form.press('Tab');

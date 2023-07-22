@@ -1,5 +1,11 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import { useForm, useFieldset, useFieldList, list } from '@conform-to/react';
+import {
+	useForm,
+	useFieldset,
+	useFieldList,
+	report,
+	list,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json } from 'react-router-dom';
@@ -7,12 +13,12 @@ import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
-	content: z.string().min(1, 'Content is required'),
-	completed: z.string().transform((value) => value === 'yes'),
+	content: z.string({ required_error: 'Content is required' }),
+	completed: z.boolean(),
 });
 
 const todosSchema = z.object({
-	title: z.string().min(1, 'Title is required'),
+	title: z.string({ required_error: 'Title is required' }),
 	tasks: z.array(taskSchema).min(1),
 });
 
@@ -23,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+		return json(report(submission));
 	}
 
 	throw new Error('Not implemented');

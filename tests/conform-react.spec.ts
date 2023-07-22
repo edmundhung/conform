@@ -58,32 +58,30 @@ test.describe('conform-react', () => {
 			tabIndex: conform.hiddenProps.tabIndex,
 			'aria-hidden': conform.hiddenProps['aria-hidden'],
 		});
-		expect(conform.input(config, { ariaAttributes: true })).toEqual(config);
+		expect(conform.input(config)).toEqual(config);
 		expect(
-			conform.input(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true },
-			),
+			conform.input({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+			}),
 		).toEqual(config);
 		expect(
 			conform.input(
 				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.input(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ ariaAttributes: true },
-			),
+			conform.input({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+				error: 'Invalid',
+			}),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
@@ -97,13 +95,24 @@ test.describe('conform-react', () => {
 					descriptionId: 'test-description',
 					error: 'Invalid',
 				},
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
+		expect(
+			conform.input(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: false },
+			),
+		).toEqual(config);
 		expect(conform.input(config, { type: 'checkbox' })).toEqual({
 			...config,
 			type: 'checkbox',
@@ -193,32 +202,30 @@ test.describe('conform-react', () => {
 			tabIndex: conform.hiddenProps.tabIndex,
 			'aria-hidden': conform.hiddenProps['aria-hidden'],
 		});
-		expect(conform.textarea(config, { ariaAttributes: true })).toEqual(config);
+		expect(conform.textarea(config)).toEqual(config);
 		expect(
-			conform.textarea(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true },
-			),
+			conform.textarea({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+			}),
 		).toEqual(config);
 		expect(
 			conform.textarea(
 				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.textarea(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ ariaAttributes: true },
-			),
+			conform.textarea({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+				error: 'Invalid',
+			}),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
@@ -232,13 +239,24 @@ test.describe('conform-react', () => {
 					descriptionId: 'test-description',
 					error: 'Invalid',
 				},
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
+		expect(
+			conform.textarea(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: false },
+			),
+		).toEqual(config);
 	});
 
 	test('conform.select', () => {
@@ -282,32 +300,30 @@ test.describe('conform-react', () => {
 			tabIndex: conform.hiddenProps.tabIndex,
 			'aria-hidden': conform.hiddenProps['aria-hidden'],
 		});
-		expect(conform.select(config, { ariaAttributes: true })).toEqual(config);
+		expect(conform.select(config)).toEqual(config);
 		expect(
-			conform.select(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true },
-			),
+			conform.select({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+			}),
 		).toEqual(config);
 		expect(
 			conform.select(
 				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.select(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ ariaAttributes: true },
-			),
+			conform.select({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+				error: 'Invalid',
+			}),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
@@ -321,13 +337,24 @@ test.describe('conform-react', () => {
 					descriptionId: 'test-description',
 					error: 'Invalid',
 				},
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
+		expect(
+			conform.select(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: false },
+			),
+		).toEqual(config);
 	});
 
 	test('conform.fieldset', () => {
@@ -343,30 +370,28 @@ test.describe('conform-react', () => {
 		expect(conform.fieldset(config)).toEqual(config);
 		expect(conform.fieldset(config, { ariaAttributes: true })).toEqual(config);
 		expect(
-			conform.fieldset(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true },
-			),
+			conform.fieldset({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+			}),
 		).toEqual(config);
 		expect(
 			conform.fieldset(
 				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.fieldset(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ ariaAttributes: true },
-			),
+			conform.fieldset({
+				...config,
+				errorId: 'test-error',
+				descriptionId: 'test-description',
+				error: 'Invalid',
+			}),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
@@ -380,12 +405,24 @@ test.describe('conform-react', () => {
 					descriptionId: 'test-description',
 					error: 'Invalid',
 				},
-				{ ariaAttributes: true, description: true },
+				{ description: true },
 			),
 		).toEqual({
 			...config,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
+
+		expect(
+			conform.fieldset(
+				{
+					...config,
+					errorId: 'test-error',
+					descriptionId: 'test-description',
+					error: 'Invalid',
+				},
+				{ ariaAttributes: false },
+			),
+		).toEqual(config);
 	});
 });

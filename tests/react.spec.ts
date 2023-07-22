@@ -55,12 +55,6 @@ test.describe('Client Validation', () => {
 				rating: '4.5',
 			},
 			error: {},
-			value: {
-				title: 'The Dark Knight',
-				description: 'When the menace known as the Joker wreaks havoc...',
-				genre: 'action',
-				rating: '4.5',
-			},
 		});
 	});
 
@@ -139,13 +133,6 @@ test.describe('Client Validation', () => {
 				rating: '4.0',
 			},
 			error: {},
-			value: {
-				title: 'The Matrix',
-				description:
-					'When a beautiful stranger leads computer hacker Neo to...',
-				genre: 'sci-fi',
-				rating: '4.0',
-			},
 		});
 	});
 
@@ -177,11 +164,10 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: 'me@edmund.dev',
+				password: 'secretpassword',
+				confirmPassword: 'secretpassword',
 			},
 			error: {},
-			value: {
-				email: 'me@edmund.dev',
-			},
 		});
 	});
 
@@ -258,15 +244,6 @@ test.describe('Client Validation', () => {
 				verified: 'Yes',
 			},
 			error: {},
-			value: {
-				iban: 'DE89 3704 0044 0532 0130 00',
-				amount: {
-					currency: 'EUR',
-					value: 1,
-				},
-				timestamp,
-				verified: true,
-			},
 		});
 	});
 
@@ -327,10 +304,11 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: '',
+				password: '',
 			},
 			error: {
-				email: 'Email is required',
-				password: 'Password is required',
+				email: ['Email is required'],
+				password: ['Password is required'],
 			},
 		});
 
@@ -342,9 +320,10 @@ test.describe('Client Validation', () => {
 			intent: 'submit',
 			payload: {
 				email: 'invalid email',
+				password: '',
 			},
 			error: {
-				password: 'Password is required',
+				password: ['Password is required'],
 			},
 		});
 	});
@@ -482,14 +461,6 @@ test.describe('Field list', () => {
 				],
 			},
 			error: {},
-			value: {
-				title: 'My schedule',
-				tasks: [
-					{ completed: false, content: 'Urgent task' },
-					{ completed: false, content: 'Daily task' },
-					{ completed: false, content: 'Ad hoc task' },
-				],
-			},
 		});
 	});
 
@@ -507,40 +478,32 @@ test.describe('Field list', () => {
 
 		await form.locator('button:text("Insert top")').click();
 
-		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('');
+		await expect(task0.completed).toBeChecked({ checked: false });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked();
 
 		await tasks.nth(0).locator('button:text("Delete")').click();
 
-		expect(await task0.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task0.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('Write tests for nested list');
+		await expect(task0.completed).toBeChecked({ checked: true });
 
 		await form.locator('button:text("Insert bottom")').click();
 		await task1.content.type('Write more tests');
 		await task1.completed.check();
 		await tasks.nth(1).locator('button:text("Move to top")').click();
 
-		expect(await task0.content.inputValue()).toBe('Write more tests');
-		expect(await task0.completed.isChecked()).toBe(true);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('Write more tests');
+		await expect(task0.completed).toBeChecked({ checked: true });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked({ checked: true });
 
 		await tasks.nth(0).locator('button:text("Clear")').click();
 
-		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
-		expect(await task1.content.inputValue()).toBe(
-			'Write tests for nested list',
-		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		await expect(task0.content).toHaveValue('');
+		await expect(task0.completed).toBeChecked({ checked: false });
+		await expect(task1.content).toHaveValue('Write tests for nested list');
+		await expect(task1.completed).toBeChecked({ checked: true });
 
 		await task0.content.type('Write even more tests');
 		await form.locator('[name="title"]').type('Testing plan');
@@ -553,13 +516,6 @@ test.describe('Field list', () => {
 				tasks: [
 					{ content: 'Write even more tests' },
 					{ content: 'Write tests for nested list', completed: 'on' },
-				],
-			},
-			value: {
-				title: 'Testing plan',
-				tasks: [
-					{ content: 'Write even more tests', completed: false },
-					{ content: 'Write tests for nested list', completed: true },
 				],
 			},
 			error: {},
@@ -589,8 +545,7 @@ test.describe('No JS', () => {
 		const form = await gotoForm(page, '/login');
 		const { email, password } = getLoginFieldset(form);
 
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
-
+		await clickSubmitButton(form);
 		await expect(form.locator('main p')).toHaveText([
 			'',
 			'Email is required',
@@ -606,16 +561,16 @@ test.describe('No JS', () => {
 			'Password is required',
 		]);
 
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
-
+		await clickSubmitButton(form);
 		await expect(form.locator('main p')).toHaveText([
 			'The provided email or password is not valid',
 			'',
 			'',
 		]);
 
+		await password.dblclick();
 		await password.type('$eCreTP@ssWord');
-		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
+		await clickSubmitButton(form);
 
 		await expect(form.locator('main p')).toHaveText(['', '', '']);
 	});
@@ -638,9 +593,9 @@ test.describe('No JS', () => {
 		expect(await task0.content.inputValue()).toBe(
 			'Write tests for nested list',
 		);
-		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task0.completed).toBeChecked({ checked: true });
 		expect(await task1.content.inputValue()).toBe('');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await task1.content.type('Write more tests');
 		await Promise.all([page.waitForNavigation(), todos.insertTop.click()]);
@@ -648,13 +603,13 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(3);
 
 		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe(
 			'Write tests for nested list',
 		);
-		expect(await task1.completed.isChecked()).toBe(true);
+		expect(await task1.completed).toBeChecked({ checked: true });
 		expect(await task2.content.inputValue()).toBe('Write more tests');
-		expect(await task2.completed.isChecked()).toBe(false);
+		expect(await task2.completed).toBeChecked({ checked: false });
 
 		await task0.content.type('Cut a release');
 		await Promise.all([page.waitForNavigation(), task1.delete.click()]);
@@ -662,9 +617,9 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('Cut a release');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe('Write more tests');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await task1.completed.check();
 		await Promise.all([page.waitForNavigation(), task1.moveToTop.click()]);
@@ -672,18 +627,18 @@ test.describe('No JS', () => {
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('Write more tests');
-		expect(await task0.completed.isChecked()).toBe(true);
+		expect(await task0.completed).toBeChecked({ checked: true });
 		expect(await task1.content.inputValue()).toBe('Cut a release');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await Promise.all([page.waitForNavigation(), task0.clear.click()]);
 
 		await expect(todos.tasks).toHaveCount(2);
 
 		expect(await task0.content.inputValue()).toBe('');
-		expect(await task0.completed.isChecked()).toBe(false);
+		expect(await task0.completed).toBeChecked({ checked: false });
 		expect(await task1.content.inputValue()).toBe('Cut a release');
-		expect(await task1.completed.isChecked()).toBe(false);
+		expect(await task1.completed).toBeChecked({ checked: false });
 
 		await Promise.all([page.waitForNavigation(), clickSubmitButton(form)]);
 

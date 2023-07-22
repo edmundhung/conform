@@ -1,29 +1,16 @@
-import { ifNonEmptyString } from '@conform-to/zod';
 import { z } from 'zod';
 
 const formConfig = z.object({
-	defaultValue: z
-		.preprocess((value) => (value ? JSON.stringify(value) : undefined), z.any())
-		.optional(),
-	fallbackNative: z
-		.preprocess(
-			ifNonEmptyString((value) => value === 'true'),
-			z.boolean(),
-		)
-		.optional(),
-	noValidate: z
-		.preprocess(
-			ifNonEmptyString((value) => value === 'true'),
-			z.boolean(),
-		)
-		.optional(),
-	validate: z
-		.preprocess(
-			ifNonEmptyString((value) => value === 'true'),
-			z.boolean(),
-		)
-		.optional()
-		.default(true),
+	defaultValue: z.preprocess(
+		(value) => (value ? JSON.stringify(value) : undefined),
+		z.any(),
+	),
+	fallbackNative: z.preprocess((value) => value === 'true', z.boolean()),
+	noValidate: z.preprocess((value) => value === 'true', z.boolean()),
+	validate: z.preprocess(
+		(value) => (typeof value === 'string' ? value === 'true' : true),
+		z.boolean(),
+	),
 });
 
 export function parseConfig(request: Request) {

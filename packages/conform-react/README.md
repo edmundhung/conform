@@ -373,7 +373,6 @@ function Example() {
       <input
         {...conform.input(title, {
           type: 'text',
-          ariaAttributes: true,
         })}
       />
     </form>
@@ -393,16 +392,16 @@ import { parse } from '@conform-to/react';
 const formData = new FormData();
 const submission = parse(formData, {
   resolve({ email, password }) {
-    const error: Record<string, string> = {};
+    const error: Record<string, string[]> = {};
 
     if (typeof email !== 'string') {
-      error.email = 'Email is required';
+      error.email = ['Email is required'];
     } else if (!/^[^@]+@[^@]+$/.test(email)) {
-      error.email = 'Email is invalid';
+      error.email = ['Email is invalid'];
     }
 
     if (typeof password !== 'string') {
-      error.password = 'Password is required';
+      error.password = ['Password is required'];
     }
 
     if (error.email || error.password) {

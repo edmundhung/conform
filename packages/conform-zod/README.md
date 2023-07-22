@@ -56,7 +56,6 @@ function ExampleForm() {
     onValidate({ formData }) {
       return parse(formData, {
         schema,
-        stripEmptyValue: true,
       });
     },
   });
@@ -68,7 +67,7 @@ function ExampleForm() {
 Or when parsing the formData on server side (e.g. Remix):
 
 ```tsx
-import { useForm } from '@conform-to/react';
+import { useForm, report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -82,15 +81,12 @@ export async function action({ request }) {
     // If you need extra validation on server side
     schema: schema.refine(/* ... */),
 
-    // Recommended: this will be the default in the future
-    stripEmptyValue: true,
-
     // If the schema definition includes async validation
     async: true,
   });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return submission;
+    return report(submission);
   }
 
   // ...
@@ -115,16 +111,20 @@ function createSchema(
     email: z
       .string({ required_error: 'Email is required' })
       .email('Email is invalid')
-      .superRefine((email, ctx) =>
-        refine(ctx, {
-          // It fallbacks to server validation when it returns an undefined value
-          validate: () => constraints.isEmailUnique?.(email),
-          // This makes it validate only when the user is submitting the form
-          // or updating the email
-          when: intent === 'submit' || intent === 'validate/email',
-          message: 'Email is already used',
-        }),
+      // Pipe the schema so it runs only if the username is valid
+      .pipe(
+        z.string().superRefine((email, ctx) =>
+          refine(ctx, {
+            // It fallbacks to server validation when it returns an undefined value
+            validate: () => constraints.isEmailUnique?.(email),
+            // This makes it validate only when the user is submitting the form
+            // or updating the email
+            when: intent === 'submit' || intent === 'validate/email',
+            message: 'Email is already used',
+          }),
+        ),
       ),
+
     // ...
   });
 }

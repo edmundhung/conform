@@ -49,11 +49,11 @@ interface TextareaProps extends FormControlProps {
 
 type BaseOptions =
 	| {
-			ariaAttributes?: false;
+			ariaAttributes?: true;
+			description?: boolean;
 	  }
 	| {
-			ariaAttributes: true;
-			description?: boolean;
+			ariaAttributes: false;
 	  };
 
 type ControlOptions = BaseOptions & {
@@ -76,7 +76,7 @@ type InputOptions = ControlOptions &
  * Cleanup `undefined` from the dervied props
  * To minimize conflicts when merging with user defined props
  */
-function cleanup<Props extends Object>(props: Props): Props {
+function cleanup<Props>(props: Props): Props {
 	for (const key in props) {
 		if (props[key] === undefined) {
 			delete props[key];
@@ -87,21 +87,25 @@ function cleanup<Props extends Object>(props: Props): Props {
 }
 
 function getFormElementProps(
-	config: FieldConfig<any>,
-	options?: BaseOptions,
+	config: FieldConfig<unknown>,
+	options: BaseOptions = {},
 ): FormElementProps {
+	const hasAriaAttributes = options.ariaAttributes ?? true;
+
 	return cleanup({
 		id: config.id,
 		name: config.name,
 		form: config.form,
 		'aria-invalid':
-			options?.ariaAttributes && config.errorId && config.error?.length
+			hasAriaAttributes && config.errorId && config.error?.length
 				? true
 				: undefined,
-		'aria-describedby': options?.ariaAttributes
+		'aria-describedby': hasAriaAttributes
 			? [
 					config.errorId && config.error?.length ? config.errorId : undefined,
-					config.descriptionId && options?.description
+					config.descriptionId &&
+					options.ariaAttributes !== false &&
+					options.description
 						? config.descriptionId
 						: undefined,
 			  ].reduce((result, id) => {
@@ -120,7 +124,7 @@ function getFormElementProps(
 }
 
 function getFormControlProps(
-	config: FieldConfig<any>,
+	config: FieldConfig<unknown>,
 	options?: ControlOptions,
 ): FormControlProps {
 	return cleanup({
@@ -215,7 +219,7 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 }
 
 export function fieldset<
-	Schema extends Record<string, any> | undefined | unknown,
+	Schema extends Record<string, unknown> | undefined | unknown,
 >(config: FieldConfig<Schema>, options?: BaseOptions): FormControlProps {
 	return getFormElementProps(config, options);
 }

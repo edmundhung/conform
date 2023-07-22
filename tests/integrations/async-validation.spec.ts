@@ -123,10 +123,6 @@ async function runValidationScenario(page: Page) {
 					title: 'Software Developer',
 				},
 				error: {},
-				value: {
-					email: 'hey@conform.guide',
-					title: 'Software Developer',
-				},
 			},
 			null,
 			2,

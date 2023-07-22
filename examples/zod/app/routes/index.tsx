@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { conform, useForm, report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -8,31 +8,31 @@ import { z } from 'zod';
 const schema = z
 	.object({
 		email: z
-			.string()
-			.min(1, 'Email is required')
+			.string({ required_error: 'Email is required' })
 			.email('Please enter a valid email'),
-		password: z
-			.string()
-			.min(1, 'Password is required')
-			.min(10, 'The password should be at least 10 characters long'),
-		confirmPassword: z.string().min(1, 'Confirm Password is required'),
 	})
-	.refine((value) => value.password === value.confirmPassword, {
-		message: 'Password does not match',
-		path: ['confirmPassword'],
-	});
+	.and(
+		z
+			.object({
+				password: z
+					.string({ required_error: 'Password is required' })
+					.min(10, 'The password should be at least 10 characters long'),
+				confirmPassword: z.string({
+					required_error: 'Confirm password is required',
+				}),
+			})
+			.refine((data) => data.password === data.confirmPassword, {
+				message: 'Password does not match',
+				path: ['confirmPassword'],
+			}),
+	);
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json({
-			...submission,
-			payload: {
-				email: submission.payload.email,
-			},
-		});
+		return json(report(submission));
 	}
 
 	throw new Error('Not implemented');

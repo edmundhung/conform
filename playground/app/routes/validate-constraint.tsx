@@ -18,8 +18,6 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
 	return {
-		multiplePasswordError:
-			url.searchParams.get('multiplePasswordError') === 'yes',
 		enableCustomMessage: url.searchParams.get('enableCustomMessage') === 'yes',
 	};
 }
@@ -28,8 +26,7 @@ export default function Example() {
 	const [lastSubmission, setLastSubmission] = useState<
 		Submission | undefined
 	>();
-	const { multiplePasswordError, enableCustomMessage } =
-		useLoaderData<typeof loader>();
+	const { enableCustomMessage } = useLoaderData<typeof loader>();
 	const [form, { email, password, confirmPassword }] = useForm<Schema>({
 		fallbackNative: true,
 		shouldRevalidate: 'onInput',
@@ -40,9 +37,6 @@ export default function Example() {
 					match(value, { formData, attributeValue }) {
 						return value === formData.get(attributeValue);
 					},
-				},
-				acceptMultipleErrors({ name }) {
-					return multiplePasswordError && name === 'password';
 				},
 				formatMessages({ name, defaultErrors }) {
 					if (!enableCustomMessage) {

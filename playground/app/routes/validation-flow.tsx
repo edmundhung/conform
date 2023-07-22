@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { conform, useForm, report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -11,17 +11,22 @@ const schema = z
 		email: z
 			.string({ required_error: 'Email is required' })
 			.email('Email is invalid'),
-		password: z
-			.string({ required_error: 'Password is required' })
-			.min(8, 'Password is too short'),
-		confirmPassword: z.string({
-			required_error: 'Confirm password is required',
-		}),
 	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: 'Confirm password does not match',
-		path: ['confirmPassword'],
-	});
+	.and(
+		z
+			.object({
+				password: z
+					.string({ required_error: 'Password is required' })
+					.min(8, 'Password is too short'),
+				confirmPassword: z.string({
+					required_error: 'Confirm password is required',
+				}),
+			})
+			.refine((data) => data.password === data.confirmPassword, {
+				message: 'Password does not match',
+				path: ['confirmPassword'],
+			}),
+	);
 
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
@@ -37,9 +42,9 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema, stripEmptyValue: true });
+	const submission = parse(formData, { schema });
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function ValidationFlow() {
@@ -55,7 +60,7 @@ export default function ValidationFlow() {
 		shouldValidate,
 		shouldRevalidate,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 

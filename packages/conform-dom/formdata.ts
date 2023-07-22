@@ -42,7 +42,6 @@ export function getPaths(name: string): (string | number)[] {
 					result.push(segment);
 				}
 			}
-
 			return result;
 		}, []);
 }
@@ -77,14 +76,14 @@ export function setValue(
 	valueFn: (prev?: unknown) => any,
 ): void {
 	const paths = getPaths(name);
+	const length = paths.length;
+	const lastIndex = length - 1;
 
 	let index = -1;
-	let length = paths.length;
-	let lastIndex = length - 1;
 	let pointer = target;
 
 	while (pointer != null && ++index < length) {
-		const key = paths[index];
+		const key = paths[index] as string | number;
 		const nextKey = paths[index + 1];
 		const newValue =
 			index != lastIndex
@@ -103,38 +102,22 @@ export function resolve(
 	payload: FormData | URLSearchParams,
 	options: {
 		ignoreKeys?: string[];
-		stripEmptyValue?: boolean;
 	} = {},
 ) {
 	const data = {};
 
-	for (let [key, value] of payload.entries()) {
+	for (const [key, value] of payload.entries()) {
 		if (options.ignoreKeys?.includes(key)) {
 			continue;
 		}
 
-		let next: FormDataEntryValue | undefined = value;
-
-		if (
-			options.stripEmptyValue &&
-			(typeof next === 'string'
-				? next === ''
-				: next.name === '' && next.size === 0)
-		) {
-			// Set the value to undefined instead of skipping it
-			// to maintain the data structure
-			next = undefined;
-		}
-
 		setValue(data, key, (prev) => {
 			if (!prev) {
-				return next;
-			} else if (!next) {
-				return prev;
+				return value;
 			} else if (Array.isArray(prev)) {
-				return prev.concat(next);
+				return prev.concat(value);
 			} else {
-				return [prev, next];
+				return [prev, value];
 			}
 		});
 	}
@@ -145,17 +128,13 @@ export function resolve(
 /**
  * Format the error messages into a validation message
  */
-export function getValidationMessage(errors?: string | string[]): string {
-	return ([] as string[]).concat(errors ?? []).join(String.fromCharCode(31));
+export function getValidationMessage(errors?: string[]): string {
+	return errors?.join(String.fromCharCode(31)) ?? '';
 }
 
 /**
  * Retrieve the error messages from the validation message
  */
 export function getErrors(validationMessage: string | undefined): string[] {
-	if (!validationMessage) {
-		return [];
-	}
-
-	return validationMessage.split(String.fromCharCode(31));
+	return validationMessage?.split(String.fromCharCode(31)) ?? [];
 }

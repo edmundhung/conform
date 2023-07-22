@@ -4,7 +4,7 @@ import { INTENT, getIntent, parseIntent, updateList } from './intent.js';
 export type Submission<Schema = any> = {
 	intent: string;
 	payload: Record<string, any>;
-	error: Record<string, string | string[]>;
+	error: Record<string, string[]>;
 	value?: Schema | null;
 };
 
@@ -18,8 +18,7 @@ export function parse<Schema>(
 		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
-		) => { value?: Schema; error?: Record<string, string | string[]> };
-		stripEmptyValue?: boolean;
+		) => { value?: Schema; error?: Record<string, string[]> };
 	},
 ): Submission<Schema>;
 export function parse<Schema>(
@@ -28,8 +27,7 @@ export function parse<Schema>(
 		resolve?: (
 			payload: Record<string, any>,
 			intent: string,
-		) => Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
-		stripEmptyValue?: boolean;
+		) => Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 	},
 ): Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -39,9 +37,8 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| { value?: Schema; error?: Record<string, string | string[]> }
-			| Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
-		stripEmptyValue?: boolean;
+			| { value?: Schema; error?: Record<string, string[]> }
+			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>>;
 export function parse<Schema>(
@@ -51,16 +48,14 @@ export function parse<Schema>(
 			payload: Record<string, any>,
 			intent: string,
 		) =>
-			| { value?: Schema; error?: Record<string, string | string[]> }
-			| Promise<{ value?: Schema; error?: Record<string, string | string[]> }>;
-		stripEmptyValue?: boolean;
+			| { value?: Schema; error?: Record<string, string[]> }
+			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
 	const submission: Submission = {
 		intent: getIntent(payload),
 		payload: resolve(payload, {
 			ignoreKeys: [INTENT],
-			stripEmptyValue: options?.stripEmptyValue,
 		}),
 		error: {},
 	};
@@ -83,7 +78,7 @@ export function parse<Schema>(
 
 	const result = options.resolve(submission.payload, submission.intent);
 	const mergeResolveResult = (resolved: {
-		error?: Record<string, string | string[]>;
+		error?: Record<string, string[]>;
 		value?: Schema;
 	}) => {
 		return {

@@ -1,4 +1,4 @@
-import { conform, useForm, parse } from '@conform-to/react';
+import { conform, useForm, parse, report } from '@conform-to/react';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
@@ -30,7 +30,7 @@ export async function action({ request }: ActionArgs) {
 				return {
 					error: {
 						// Checkbox group cannot be validated with the required constraint
-						languages: 'Please select at least one language',
+						languages: ['Please select at least one language'],
 					},
 				};
 			}
@@ -41,13 +41,11 @@ export async function action({ request }: ActionArgs) {
 		},
 	});
 
-	return json({
-		...submission,
-		error: {
-			...submission.error,
-			'': 'Submitted',
-		},
-	});
+	return json(
+		report(submission, {
+			formError: ['Submitted'],
+		}),
+	);
 }
 
 export default function Example() {
@@ -108,7 +106,6 @@ export default function Example() {
 					<input
 						{...conform.input(title, {
 							type: 'text',
-							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
@@ -116,7 +113,6 @@ export default function Example() {
 				<Field label="Description" config={description}>
 					<textarea
 						{...conform.textarea(description, {
-							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
@@ -125,7 +121,6 @@ export default function Example() {
 					<input
 						{...conform.input(images, {
 							type: 'file',
-							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>
@@ -133,7 +128,6 @@ export default function Example() {
 				<Field label="Tags" config={tags}>
 					<select
 						{...conform.select(tags, {
-							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					>
@@ -151,7 +145,6 @@ export default function Example() {
 					<input
 						{...conform.input(rating, {
 							type: 'number',
-							ariaAttributes: true,
 							description: enableDescription,
 						})}
 					/>

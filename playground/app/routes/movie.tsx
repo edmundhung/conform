@@ -1,4 +1,10 @@
-import { conform, isFieldElement, parse, useForm } from '@conform-to/react';
+import {
+	conform,
+	isFieldElement,
+	parse,
+	useForm,
+	report,
+} from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -19,24 +25,24 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		resolve({ title, description, genre, rating }) {
-			const error: Record<string, string> = {};
+			const error: Record<string, string[]> = {};
 
 			if (!title) {
-				error.title = 'Title is required';
+				error.title = ['Title is required'];
 			} else if (!title.match(/[0-9a-zA-Z ]{1,20}/)) {
-				error.title = 'Please enter a valid title';
+				error.title = ['Please enter a valid title'];
 			}
 
 			if (description && description.length < 30) {
-				error.description = 'Please provides more details';
+				error.description = ['Please provides more details'];
 			}
 
 			if (genre === '') {
-				error.genre = 'Genre is required';
+				error.genre = ['Genre is required'];
 			}
 
 			if (rating && Number(rating) % 0.5 !== 0) {
-				error.rating = 'The provided rating is invalid';
+				error.rating = ['The provided rating is invalid'];
 			}
 
 			if (error.title || error.description || error.genre || error.rating) {
@@ -54,7 +60,7 @@ export async function action({ request }: ActionArgs) {
 		},
 	});
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function MovieForm() {
@@ -93,7 +99,7 @@ export default function MovieForm() {
 			? ({ form, formData }) => {
 					const submission = parse(formData, {
 						resolve({ title, description, genre, rating }) {
-							const error: Record<string, string> = {};
+							const error: Record<string, string[]> = {};
 
 							for (const element of form.elements) {
 								if (!isFieldElement(element)) {
@@ -103,24 +109,24 @@ export default function MovieForm() {
 								switch (element.name) {
 									case 'title':
 										if (element.validity.valueMissing) {
-											error[element.name] = 'Title is required';
+											error[element.name] = ['Title is required'];
 										} else if (element.validity.patternMismatch) {
-											error[element.name] = 'Please enter a valid title';
+											error[element.name] = ['Please enter a valid title'];
 										}
 										break;
 									case 'description':
 										if (element.validity.tooShort) {
-											error[element.name] = 'Please provides more details';
+											error[element.name] = ['Please provides more details'];
 										}
 										break;
 									case 'genre':
 										if (element.validity.valueMissing) {
-											error[element.name] = 'Genre is required';
+											error[element.name] = ['Genre is required'];
 										}
 										break;
 									case 'rating':
 										if (element.validity.stepMismatch) {
-											error[element.name] = 'The provided rating is invalid';
+											error[element.name] = ['The provided rating is invalid'];
 										}
 										break;
 								}

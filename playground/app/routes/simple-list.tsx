@@ -1,4 +1,10 @@
-import { conform, useFieldList, useForm, list } from '@conform-to/react';
+import {
+	conform,
+	useFieldList,
+	useForm,
+	list,
+	report,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -27,9 +33,9 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema, stripEmptyValue: true });
+	const submission = parse(formData, { schema });
 
-	return json(submission);
+	return json(report(submission));
 }
 
 export default function SimpleList() {
@@ -41,7 +47,7 @@ export default function SimpleList() {
 			? { items: ['default item 0', 'default item 1'] }
 			: undefined,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema, stripEmptyValue: true })
+			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 	const itemsList = useFieldList(form.ref, items);

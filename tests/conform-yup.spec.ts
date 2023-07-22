@@ -62,18 +62,18 @@ test.describe('conform-yup', () => {
 		list: [{ key: '' }],
 	};
 	const error = {
-		text: 'min',
-		tag: 'required',
-		number: 'max',
-		timestamp: 'min',
-		'options[1]': 'invalid',
-		options: 'min',
-		'nested.key': 'required',
-		nested: 'error',
-		'list[0].key': 'required',
-		'list[0]': 'error',
-		list: 'max',
-		'': 'error',
+		text: ['min', 'regex'],
+		tag: ['required', 'invalid'],
+		number: ['max'],
+		timestamp: ['min'],
+		'options[1]': ['invalid'],
+		options: ['min'],
+		'nested.key': ['required'],
+		nested: ['error'],
+		'list[0].key': ['required'],
+		'list[0]': ['error'],
+		list: ['max'],
+		'': ['error'],
 	};
 
 	test('getFieldsetConstraint', () => {
@@ -115,30 +115,6 @@ test.describe('conform-yup', () => {
 			intent: 'submit',
 			payload,
 			error,
-		});
-		expect(
-			parse(formData, { schema, acceptMultipleErrors: () => true }),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				text: ['min', 'regex'],
-				tag: ['required', 'invalid'],
-			},
-		});
-		expect(
-			parse(formData, {
-				schema,
-				acceptMultipleErrors: ({ name }) => name === 'tag',
-			}),
-		).toEqual({
-			intent: 'submit',
-			payload,
-			error: {
-				...error,
-				tag: ['required', 'invalid'],
-			},
 		});
 	});
 });

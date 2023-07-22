@@ -1,4 +1,4 @@
-import { useForm, conform } from '@conform-to/react';
+import { useForm, conform, report } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -49,19 +49,19 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, {
 		schema,
-		stripEmptyValue: true,
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+		return json(report(submission));
 	}
 
 	// We can also skip sending the submission back to the client on success
 	// As the form value shuold be reset anyway
-	return json({
-		...submission,
-		payload: null,
-	});
+	return json(
+		report(submission, {
+			resetForm: true,
+		}),
+	);
 }
 
 export default function ExampleForm() {
