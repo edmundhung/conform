@@ -1,5 +1,5 @@
 import { type Page, type Locator, test, expect } from '@playwright/test';
-import { getPlayground, waitForDataResponse } from '../helpers';
+import { getPlayground } from '../helpers';
 
 function getFieldset(form: Locator) {
 	return {

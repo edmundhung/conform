@@ -10,6 +10,8 @@ interface Schema {
 	rating: number;
 	images: File[];
 	tags: string[];
+	released: boolean;
+	languages: string[];
 }
 
 export async function loader({ request }: LoaderArgs) {
@@ -22,7 +24,22 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, {
+		resolve({ languages }) {
+			if (!languages) {
+				return {
+					error: {
+						// Checkbox group cannot be validated with the required constraint
+						languages: ['Please select at least one language'],
+					},
+				};
+			}
+
+			return {
+				value: {},
+			};
+		},
+	});
 
 	return json(
 		report(submission, {
@@ -35,7 +52,10 @@ export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
 	const lastSubmission = useActionData<typeof action>();
 	const ref = useRef<HTMLFormElement>(null);
-	const [form, { title, description, images, rating, tags }] = useForm<Schema>({
+	const [
+		form,
+		{ title, description, images, rating, tags, released, languages },
+	] = useForm<Schema>({
 		id: 'test',
 		ref,
 		lastSubmission,
@@ -64,6 +84,12 @@ export default function Example() {
 			tags: {
 				required: true,
 				multiple: true,
+			},
+			released: {
+				required: true,
+			},
+			languages: {
+				required: true,
 			},
 		},
 	});
@@ -122,6 +148,40 @@ export default function Example() {
 							description: enableDescription,
 						})}
 					/>
+				</Field>
+				<Field label="Released" config={released}>
+					{conform
+						.collection(released, {
+							type: 'radio',
+							options: ['yes', 'no'],
+							ariaAttributes: true,
+							description: enableDescription,
+						})
+						.map((props) => (
+							<label key={props.value} className="inline-block">
+								<input {...props} />
+								<span className="p-2">
+									{`${props.value?.slice(0, 1).toUpperCase()}${props.value
+										?.slice(1)
+										.toLowerCase()}`}
+								</span>
+							</label>
+						))}
+				</Field>
+				<Field label="Languages" config={languages}>
+					{conform
+						.collection(languages, {
+							type: 'checkbox',
+							options: ['en', 'de', 'jp'],
+							ariaAttributes: true,
+							description: enableDescription,
+						})
+						.map((props) => (
+							<label key={props.value} className="inline-block">
+								<input {...props} />
+								<span className="p-2">{props.value?.toUpperCase()}</span>
+							</label>
+						))}
 				</Field>
 			</Playground>
 		</Form>

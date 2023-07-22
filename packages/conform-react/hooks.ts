@@ -819,7 +819,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 
 		if (config.form) {
 			fieldConfig.form = config.form;
-			fieldConfig.id = `${config.form}-${config.name}`;
+			fieldConfig.id = `${config.form}-${config.name}-${index}`;
 			fieldConfig.errorId = `${fieldConfig.id}-error`;
 			fieldConfig.descriptionId = `${fieldConfig.id}-description`;
 		}
@@ -1153,16 +1153,6 @@ export function reportSubmission(
 		// As `form.element.namedItem('')` will always returns null
 		const elementName = name ? name : FORM_ERROR_ELEMENT_NAME;
 		const item = form.elements.namedItem(elementName);
-
-		if (item instanceof RadioNodeList) {
-			for (const field of item) {
-				if ((field as FieldElement).type !== 'radio') {
-					// eslint-disable-next-line no-console
-					console.warn('Repeated field name is not supported.');
-					continue;
-				}
-			}
-		}
 
 		if (item === null) {
 			// Create placeholder button to keep the error without contributing to the form data

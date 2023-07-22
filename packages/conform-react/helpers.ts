@@ -224,4 +224,39 @@ export function fieldset<
 	return getFormElementProps(config, options);
 }
 
+export function collection<
+	Schema extends
+		| Array<string | boolean>
+		| string
+		| boolean
+		| undefined
+		| unknown,
+>(
+	config: FieldConfig<Schema>,
+	options: BaseOptions & {
+		type: 'checkbox' | 'radio';
+		options: string[];
+	},
+): Array<
+	InputProps<Schema> & Pick<Required<InputProps<Schema>>, 'type' | 'value'>
+> {
+	return options.options.map((value) =>
+		cleanup({
+			...getFormControlProps(config, options),
+			id: config.id ? `${config.id}-${value}` : undefined,
+			type: options.type,
+			value,
+			defaultChecked:
+				options.type === 'checkbox' && Array.isArray(config.defaultValue)
+					? config.defaultValue.includes(value)
+					: config.defaultValue === value,
+
+			// The required attribute doesn't make sense for checkbox group
+			// As it would require all checkboxes to be checked instead of at least one
+			// overriden with `undefiend` so it gets cleaned up
+			required: options.type === 'checkbox' ? undefined : config.required,
+		}),
+	);
+}
+
 export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };
