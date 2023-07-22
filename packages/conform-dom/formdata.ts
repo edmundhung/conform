@@ -25,7 +25,7 @@ export function getFormData(
  * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
  * ```
  */
-export function getPaths(name: string): (string | number)[] {
+export function getPaths(name: string): Array<string | number> {
 	if (!name) {
 		return [];
 	}
