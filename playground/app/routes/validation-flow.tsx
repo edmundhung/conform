@@ -11,17 +11,22 @@ const schema = z
 		email: z
 			.string({ required_error: 'Email is required' })
 			.email('Email is invalid'),
-		password: z
-			.string({ required_error: 'Password is required' })
-			.min(8, 'Password is too short'),
-		confirmPassword: z.string({
-			required_error: 'Confirm password is required',
-		}),
 	})
-	.refine((data) => data.password === data.confirmPassword, {
-		message: 'Confirm password does not match',
-		path: ['confirmPassword'],
-	});
+	.and(
+		z
+			.object({
+				password: z
+					.string({ required_error: 'Password is required' })
+					.min(8, 'Password is too short'),
+				confirmPassword: z.string({
+					required_error: 'Confirm password is required',
+				}),
+			})
+			.refine((data) => data.password === data.confirmPassword, {
+				message: 'Password does not match',
+				path: ['confirmPassword'],
+			}),
+	);
 
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
