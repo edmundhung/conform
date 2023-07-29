@@ -1,5 +1,7 @@
 import {
 	type ZodType,
+	type ZodTypeAny,
+	type output,
 	ZodString,
 	ZodEnum,
 	ZodLiteral,
@@ -7,7 +9,10 @@ import {
 	ZodBoolean,
 	ZodDate,
 	ZodArray,
+	ZodBigInt,
+	ZodNativeEnum,
 	ZodObject,
+	ZodLazy,
 	ZodIntersection,
 	ZodUnion,
 	ZodDiscriminatedUnion,
@@ -18,8 +23,8 @@ import {
 	ZodNullable,
 	ZodOptional,
 	ZodDefault,
+	lazy,
 	preprocess,
-	ZodBigInt,
 } from 'zod';
 
 /**
@@ -58,6 +63,20 @@ export function coerceFile(file: unknown) {
 }
 
 /**
+ * A file schema is usually defined as `z.instanceof(File)`
+ * which is implemented based on ZodAny with `superRefine`
+ * Check the `instanceOfType` function on zod for more info
+ */
+export function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
+	return (
+		schema._def.effect.type === 'refinement' &&
+		schema.innerType() instanceof ZodAny &&
+		schema.safeParse(new File([], '')).success &&
+		!schema.safeParse('').success
+	);
+}
+
+/**
  * @deprecated Conform coerce empty strings to undefined by default
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
@@ -68,27 +87,33 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
  */
-export function enableTypeCoercion<Type>(schema: ZodType<Type>): ZodType<Type> {
-	/**
-	 * We might be able to fix all type errors with function overloads
-	 * But I'm not sure if it's worth the effort
-	 */
+export function enableTypeCoercion<Type extends ZodTypeAny>(
+	type: Type,
+	cache = new Map<ZodTypeAny, ZodTypeAny>(),
+): ZodType<output<Type>> {
+	const result = cache.get(type);
+
+	// Return the cached schema if it's already processed
+	// This is to prevent infinite recursion caused by z.lazy()
+	if (result) {
+		return result;
+	}
+
+	let schema: ZodTypeAny = type;
+
 	if (
-		schema instanceof ZodString ||
-		schema instanceof ZodEnum ||
-		schema instanceof ZodLiteral
+		type instanceof ZodString ||
+		type instanceof ZodLiteral ||
+		type instanceof ZodEnum ||
+		type instanceof ZodNativeEnum
 	) {
-		// @ts-expect-error see message above
-		return preprocess((value) => coerceString(value), schema);
-	} else if (schema instanceof ZodNumber) {
-		// @ts-expect-error see message above
-		return preprocess((value) => coerceString(value, Number), schema);
-	} else if (schema instanceof ZodBoolean) {
-		// @ts-expect-error see message above
-		return preprocess((value) => coerceString(value, Boolean), schema);
-	} else if (schema instanceof ZodDate) {
-		// @ts-expect-error see message above
-		return preprocess(
+		schema = preprocess((value) => coerceString(value), type);
+	} else if (type instanceof ZodNumber) {
+		schema = preprocess((value) => coerceString(value, Number), type);
+	} else if (type instanceof ZodBoolean) {
+		schema = preprocess((value) => coerceString(value, Boolean), type);
+	} else if (type instanceof ZodDate) {
+		schema = preprocess(
 			(value) =>
 				coerceString(value, (timestamp) => {
 					const date = new Date(timestamp);
@@ -102,14 +127,12 @@ export function enableTypeCoercion<Type>(schema: ZodType<Type>): ZodType<Type> {
 
 					return date;
 				}),
-			schema,
+			type,
 		);
-	} else if (schema instanceof ZodBigInt) {
-		// @ts-expect-error see message above
-		return preprocess((value) => coerceString(value, BigInt), schema);
-	} else if (schema instanceof ZodArray) {
-		// @ts-expect-error see message above
-		return preprocess(
+	} else if (type instanceof ZodBigInt) {
+		schema = preprocess((value) => coerceString(value, BigInt), type);
+	} else if (type instanceof ZodArray) {
+		schema = preprocess(
 			(value) => {
 				// No preprocess needed if the value is already an array
 				if (Array.isArray(value)) {
@@ -127,88 +150,88 @@ export function enableTypeCoercion<Type>(schema: ZodType<Type>): ZodType<Type> {
 				return [value];
 			},
 			new ZodArray({
-				...schema._def,
-				type: enableTypeCoercion(schema.element),
+				...type._def,
+				type: enableTypeCoercion(type.element, cache),
 			}),
 		);
-	} else if (schema instanceof ZodObject) {
+	} else if (type instanceof ZodObject) {
 		const shape = Object.fromEntries(
-			Object.entries(schema.shape).map(([key, def]) => [
+			Object.entries(type.shape).map(([key, def]) => [
 				key,
 				// @ts-expect-error see message above
-				enableTypeCoercion(def),
+				enableTypeCoercion(def, cache),
 			]),
 		);
-		return new ZodObject({
-			...schema._def,
+		schema = new ZodObject({
+			...type._def,
 			shape: () => shape,
 		});
-	} else if (schema instanceof ZodIntersection) {
-		// @ts-expect-error see message above
-		return new ZodIntersection({
-			...schema._def,
-			left: enableTypeCoercion(schema._def.left),
-			right: enableTypeCoercion(schema._def.right),
-		});
-	} else if (schema instanceof ZodUnion) {
-		return new ZodUnion({
-			...schema._def,
-			options: schema.options.map(enableTypeCoercion),
-		});
-	} else if (schema instanceof ZodDiscriminatedUnion) {
-		return new ZodDiscriminatedUnion({
-			...schema._def,
-			options: schema.options.map(enableTypeCoercion),
-		});
-	} else if (schema instanceof ZodTuple) {
-		// @ts-expect-error see message above
-		return new ZodTuple({
-			...schema._def,
-			items: schema.items.map(enableTypeCoercion),
-		});
-	} else if (schema instanceof ZodNullable) {
-		// @ts-expect-error see message above
-		return new ZodNullable({
-			...schema._def,
-			innerType: enableTypeCoercion(schema.unwrap()),
-		});
-	} else if (schema instanceof ZodPipeline) {
-		// @ts-expect-error see message above
-		return new ZodPipeline({
-			...schema._def,
-			in: enableTypeCoercion(schema._def.in),
-		});
-	} else if (schema instanceof ZodEffects) {
-		// A file schema is usually defined as `instanceOf(File)`
-		// which is implemented based on ZodAny with `superRefine`
-		// You can check the `instanceOfType` function on zod for more info
-		if (
-			schema._def.effect.type === 'refinement' &&
-			schema.innerType() instanceof ZodAny
-		) {
-			// @ts-expect-error see message above
-			return preprocess((value) => coerceFile(value), schema);
+	} else if (type instanceof ZodEffects) {
+		if (isFileSchema(type)) {
+			return preprocess((value) => coerceFile(value), type);
 		}
 
-		return new ZodEffects({
-			...schema._def,
-			schema: enableTypeCoercion(schema.innerType()),
+		schema = new ZodEffects({
+			...type._def,
+			schema: enableTypeCoercion(type.innerType(), cache),
 		});
-	} else if (schema instanceof ZodOptional) {
-		// @ts-expect-error see message above
-		return preprocess(
+	} else if (type instanceof ZodOptional) {
+		schema = preprocess(
 			(value) => coerceString(coerceFile(value)),
 			new ZodOptional({
-				...schema._def,
-				innerType: enableTypeCoercion(schema.unwrap()),
+				...type._def,
+				innerType: enableTypeCoercion(type.unwrap(), cache),
 			}),
 		);
-	} else if (schema instanceof ZodDefault) {
-		// @ts-expect-error see message above
-		return new ZodDefault({
-			...schema._def,
-			innerType: enableTypeCoercion(schema.removeDefault()),
+	} else if (type instanceof ZodDefault) {
+		schema = new ZodDefault({
+			...type._def,
+			innerType: enableTypeCoercion(type.removeDefault(), cache),
 		});
+	} else if (type instanceof ZodIntersection) {
+		schema = new ZodIntersection({
+			...type._def,
+			left: enableTypeCoercion(type._def.left, cache),
+			right: enableTypeCoercion(type._def.right, cache),
+		});
+	} else if (type instanceof ZodUnion) {
+		schema = new ZodUnion({
+			...type._def,
+			options: type.options.map((option: ZodTypeAny) =>
+				enableTypeCoercion(option, cache),
+			),
+		});
+	} else if (type instanceof ZodDiscriminatedUnion) {
+		schema = new ZodDiscriminatedUnion({
+			...type._def,
+			options: type.options.map((option: ZodTypeAny) =>
+				enableTypeCoercion(option, cache),
+			),
+		});
+	} else if (type instanceof ZodTuple) {
+		schema = new ZodTuple({
+			...type._def,
+			items: type.items.map((item: ZodTypeAny) =>
+				enableTypeCoercion(item, cache),
+			),
+		});
+	} else if (type instanceof ZodNullable) {
+		schema = new ZodNullable({
+			...type._def,
+			innerType: enableTypeCoercion(type.unwrap(), cache),
+		});
+	} else if (type instanceof ZodPipeline) {
+		schema = new ZodPipeline({
+			...type._def,
+			in: enableTypeCoercion(type._def.in, cache),
+			out: enableTypeCoercion(type._def.out, cache),
+		});
+	} else if (type instanceof ZodLazy) {
+		schema = lazy(() => enableTypeCoercion(type.schema, cache));
+	}
+
+	if (type !== schema) {
+		cache.set(type, schema);
 	}
 
 	return schema;
