@@ -25,17 +25,15 @@ async function runValidationScenario(page: Page) {
 	const item1 = getItemFieldset(fieldset.items, 1);
 	const item2 = getItemFieldset(fieldset.items, 2);
 
+	await expect(fieldset.items).toHaveCount(0);
+	await expect(playground.error).toHaveText(['']);
+
+	// Insert first row
+	await fieldset.insertBottom.click();
 	await expect(fieldset.items).toHaveCount(1);
 	await expect(playground.error).toHaveText(['', '']);
 
-	// Delete the first row
-	await item0.delete.click();
-	await expect(playground.error).toHaveText(['At least one item is required']);
-
-	// Insert back first row
-	await fieldset.insertBottom.click();
-	await expect(playground.error).toHaveText(['', '']);
-
+	// Submit form
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', 'The field is required']);
 
@@ -46,11 +44,24 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', '']);
 
+	// Delete the first row
+	await item0.delete.click();
+	await expect(fieldset.items).toHaveCount(0);
+	await expect(playground.error).toHaveText(['At least one item is required']);
+
+	// Insert a new row
+	await fieldset.insertTop.click();
+	await expect(fieldset.items).toHaveCount(1);
+	await expect(item0.content).toHaveValue('');
+
+	// Type `Another Item` on first row
+	await item0.content.type('Another item');
+
 	// Insert a new row on top
 	await fieldset.insertTop.click();
 	await expect(fieldset.items).toHaveCount(2);
 	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('First item');
+	await expect(item1.content).toHaveValue('Another item');
 
 	// Insert a new row at the bottom
 	await fieldset.insertBottom.click();
@@ -62,7 +73,7 @@ async function runValidationScenario(page: Page) {
 		'',
 	]);
 	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('First item');
+	await expect(item1.content).toHaveValue('Another item');
 	await expect(item2.content).toHaveValue('');
 
 	await playground.submit.click();
@@ -76,7 +87,7 @@ async function runValidationScenario(page: Page) {
 	// Delete the first row
 	await item0.delete.click();
 	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('First item');
+	await expect(item0.content).toHaveValue('Another item');
 	await expect(item1.content).toHaveValue('');
 
 	// Trigger revalidation
@@ -93,7 +104,7 @@ async function runValidationScenario(page: Page) {
 	// Clear 2nd row
 	await item1.clear.click();
 	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('First item');
+	await expect(item0.content).toHaveValue('Another item');
 	await expect(item1.content).toHaveValue('');
 	await expect(playground.error).toHaveText(['', '', '']);
 
@@ -105,7 +116,7 @@ async function runValidationScenario(page: Page) {
 	await item1.moveToTop.click();
 	await expect(fieldset.items).toHaveCount(2);
 	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('First item');
+	await expect(item1.content).toHaveValue('Another item');
 
 	// Trigger revalidation
 	await playground.submit.click();
@@ -121,7 +132,7 @@ async function runValidationScenario(page: Page) {
 			{
 				intent: 'submit',
 				payload: {
-					items: ['Top item', 'First item'],
+					items: ['Top item', 'Another item'],
 				},
 				error: {},
 			},
@@ -188,18 +199,14 @@ test.describe('With JS', () => {
 		await playground.submit.click();
 
 		// Before reset
-		await expect(fieldset.items).toHaveCount(2);
-		await expect(playground.error).toHaveText([
-			'',
-			'The field is required',
-			'The field is required',
-		]);
+		await expect(fieldset.items).toHaveCount(1);
+		await expect(playground.error).toHaveText(['', 'The field is required']);
 
 		await playground.reset.click();
 
 		// After reset
-		await expect(fieldset.items).toHaveCount(1);
-		await expect(playground.error).toHaveText(['', '']);
+		await expect(fieldset.items).toHaveCount(0);
+		await expect(playground.error).toHaveText(['']);
 	});
 
 	test('Form reset with default value', async ({ page }) => {

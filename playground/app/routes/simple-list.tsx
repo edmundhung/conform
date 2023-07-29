@@ -18,8 +18,7 @@ const schema = z.object({
 		.regex(/^[^0-9]+$/, 'Number is not allowed')
 		.array()
 		.min(1, 'At least one item is required')
-		.max(2, 'Maximum 2 items are allowed')
-		.optional(),
+		.max(2, 'Maximum 2 items are allowed'),
 });
 
 export async function loader({ request }: LoaderArgs) {

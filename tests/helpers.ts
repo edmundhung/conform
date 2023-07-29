@@ -130,33 +130,6 @@ export function getSignupFieldset(playground: Locator) {
 	};
 }
 
-export function getEmployeeFieldset(playground: Locator) {
-	return {
-		name: playground.locator('[name="name"]'),
-		email: playground.locator('[name="email"]'),
-		title: playground.locator('[name="title"]'),
-	};
-}
-
-export function getTodosFieldset(playground: Locator) {
-	return {
-		title: playground.locator('[name="title"]'),
-		tasks: playground.locator('ol > li'),
-		insertTop: playground.locator('button:text("Insert top")'),
-		insertBottom: playground.locator('button:text("Insert bottom")'),
-	};
-}
-
-export function getTaskFieldset(list: Locator, name: string, index: number) {
-	return {
-		content: list.nth(index).locator(`[name="${name}[${index}].content"]`),
-		completed: list.nth(index).locator(`[name="${name}[${index}].completed"]`),
-		delete: list.nth(index).locator('button:text("Delete")'),
-		clear: list.nth(index).locator('button:text("Clear")'),
-		moveToTop: list.nth(index).locator('button:text("Move to top")'),
-	};
-}
-
 export function getPlayground(page: Page) {
 	const container = page.locator('body');
 
