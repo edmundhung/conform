@@ -1,4 +1,4 @@
-import { conform, useFieldset, useForm, report } from '@conform-to/react';
+import { conform, useFieldset, useForm } from '@conform-to/react';
 import { getFieldsetConstraint, parse } from '@conform-to/zod';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -31,15 +31,15 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function PaymentForm() {
 	const config = useLoaderData();
-	const lastSubmission = useActionData();
+	const lastResult = useActionData();
 	const [form, { iban, amount, timestamp, verified }] = useForm({
 		...config,
-		lastSubmission,
+		lastResult,
 		constraint: getFieldsetConstraint(schema),
 		onValidate: config.validate
 			? ({ formData }) => parse(formData, { schema })
@@ -53,7 +53,7 @@ export default function PaymentForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Payment Form" lastSubmission={lastSubmission}>
+			<Playground title="Payment Form" lastResult={lastResult}>
 				<fieldset>
 					<Field label="IBAN" config={iban}>
 						<input {...conform.input(iban, { type: 'text' })} />

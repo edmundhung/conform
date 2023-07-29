@@ -1,4 +1,4 @@
-import { useForm, useInputEvent, report } from '@conform-to/react';
+import { useForm, useInputEvent } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -29,15 +29,15 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { language, tos }] = useForm({
 		id: 'example',
-		lastSubmission,
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -45,7 +45,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Custom Inputs Form" lastSubmission={lastSubmission}>
+			<Playground title="Custom Inputs Form" lastResult={lastResult}>
 				<Field label="Headless ListBox" config={language}>
 					<CustomSelect
 						id={language.id}

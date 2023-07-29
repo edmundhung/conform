@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { useForm, parse, report, validateConstraint } from '@conform-to/react';
+import { useForm, parse, validateConstraint } from '@conform-to/react';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { useFetcher, json, redirect } from 'react-router-dom';
 
@@ -26,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		))
 	) {
 		return json(
-			report(submission, {
+			submission.report({
 				formError: ['Invalid credential'],
 			}),
 		);
@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export function Component() {
 	const fetcher = useFetcher<Submission>();
 	const [form, { email, password }] = useForm<Login>({
-		lastSubmission: fetcher.data,
+		lastResult: fetcher.data,
 		shouldRevalidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);

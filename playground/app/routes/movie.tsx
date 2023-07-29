@@ -1,10 +1,4 @@
-import {
-	conform,
-	isFieldElement,
-	parse,
-	useForm,
-	report,
-} from '@conform-to/react';
+import { conform, isFieldElement, parse, useForm } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -60,15 +54,15 @@ export async function action({ request }: ActionArgs) {
 		},
 	});
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function MovieForm() {
 	const config = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { title, description, genre, rating }] = useForm<Movie>({
 		...config,
-		lastSubmission,
+		lastResult,
 		constraint: {
 			title: {
 				required: true,
@@ -160,7 +154,7 @@ export default function MovieForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Movie Form" lastSubmission={lastSubmission}>
+			<Playground title="Movie Form" lastResult={lastResult}>
 				<fieldset>
 					<Field label="Title" config={title}>
 						<input {...conform.input(title, { type: 'text' })} />

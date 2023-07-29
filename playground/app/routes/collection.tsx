@@ -27,10 +27,10 @@ export async function action({ request }: ActionArgs) {
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { singleChoice, multipleChoice }] = useForm({
 		id: 'collection',
-		lastSubmission,
+		lastResult,
 		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -39,7 +39,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Collection" lastSubmission={lastSubmission}>
+			<Playground title="Collection" lastResult={lastResult}>
 				<Field label="Single choice" config={singleChoice}>
 					{conform
 						.collection(singleChoice, {

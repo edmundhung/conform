@@ -1,4 +1,4 @@
-import { conform, useForm, parse, report } from '@conform-to/react';
+import { conform, useForm, parse } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useId } from 'react';
@@ -45,25 +45,26 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseLoginForm(formData);
 
-	if (
-		submission.value &&
-		(submission.value.email !== 'me@edmund.dev' ||
-			submission.value.password !== '$eCreTP@ssWord')
-	) {
-		submission.error[''] = ['The provided email or password is not valid'];
-	}
-
-	return json(report(submission));
+	return json(
+		submission.report({
+			formError:
+				submission.value &&
+				(submission.value.email !== 'me@edmund.dev' ||
+					submission.value.password !== '$eCreTP@ssWord')
+					? ['The provided email or password is not valid']
+					: [],
+		}),
+	);
 }
 
 export default function LoginForm() {
 	const formId = useId();
 	const config = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { email, password }] = useForm<Login>({
 		...config,
 		id: formId,
-		lastSubmission,
+		lastResult,
 		onValidate: config.validate
 			? ({ formData }) => parseLoginForm(formData)
 			: undefined,
@@ -71,7 +72,7 @@ export default function LoginForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Login Form" lastSubmission={lastSubmission}>
+			<Playground title="Login Form" lastResult={lastResult}>
 				<Alert errors={form.errors} />
 				<Field label="Email" config={email}>
 					<input

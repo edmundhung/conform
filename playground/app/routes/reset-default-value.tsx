@@ -1,4 +1,4 @@
-import { useForm, conform, report } from '@conform-to/react';
+import { useForm, conform } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -52,13 +52,13 @@ export async function action({ request }: ActionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	// We can also skip sending the submission back to the client on success
 	// As the form value shuold be reset anyway
 	return json(
-		report(submission, {
+		submission.report({
 			resetForm: true,
 		}),
 	);
@@ -66,10 +66,10 @@ export async function action({ request }: ActionArgs) {
 
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, fieldset] = useForm({
 		defaultValue,
-		lastSubmission,
+		lastResult,
 	});
 
 	useEffect(() => {
@@ -102,7 +102,7 @@ export default function ExampleForm() {
 						</ul>
 					</div>
 				}
-				lastSubmission={lastSubmission}
+				lastResult={lastResult}
 			>
 				<Field label="Name" config={fieldset.name}>
 					<input {...conform.input(fieldset.name, { type: 'text' })} />

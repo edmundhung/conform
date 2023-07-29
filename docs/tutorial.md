@@ -86,7 +86,7 @@ export default function LoginForm() {
 Now, it's time to enhance the login form using Conform.
 
 ```tsx
-import { report, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -106,26 +106,26 @@ export async function action({ request }: ActionArgs) {
   // Replace `Object.fromEntries()` with the parse function
   const submission = parse(formData, { schema });
 
-  // Report the submission to client
+  // Report submission result to client
   // 1) if the intent is not `submit`, or
   // 2) if there is any error
   if (submission.intent !== 'submit' || !submission.value) {
-    return json(report(submission));
+    return json(submission.report());
   }
 
   return await authenticate(submission.value);
 }
 
 export default function LoginForm() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
 
   // The `useForm` hook will return everything you need to setup a form
   // including the error and config of each field
   const [form, { email, password }] = useForm({
-    // The last submission will be used to report the error and
+    // The last submission result will be used to update the error and
     // served as the default value and initial error of the form
     // for progressive enhancement
-    lastSubmission,
+    lastResult,
   });
 
   return (
@@ -153,7 +153,7 @@ Conform will trigger a [server validation](./validation.md#server-validation) to
 Server validation might some time be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
 
 ```tsx
-import { parse, report, useForm } from '@conform-to/react';
+import { parse useForm } from '@conform-to/react';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
@@ -170,16 +170,16 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, { schema });
 
   if (submission.intent !== 'submit' || !submission.value) {
-    return json(report(submission));
+    return json(submission.report());
   }
 
   return await authenticate(submission.value);
 }
 
 export default function LoginForm() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
-    lastSubmission,
+    lastResult,
 
     // Run the same validation logic on client
     onValidate({ formData }) {
@@ -214,7 +214,7 @@ There is more we can do to enhance the user experience. For example:
 - Simplify setup using the `conform` helpers which derives all necessary attributes
 
 ```tsx
-import { parse, report, useForm } from '@conform-to/react';
+import { parse useForm } from '@conform-to/react';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { authenticate } from '~/auth';
@@ -231,16 +231,16 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, { schema });
 
   if (submission.intent !== 'submit' || !submission.value) {
-    return json(report(submission));
+    return json(submission.report());
   }
 
   return await authenticate(submission.value);
 }
 
 export default function LoginForm() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
-    lastSubmission,
+    lastResult,
     onValidate({ formData }) {
       return parse(formData, { schema });
     },

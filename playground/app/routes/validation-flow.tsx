@@ -1,4 +1,4 @@
-import { conform, useForm, report } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function ValidationFlow() {
@@ -54,9 +54,9 @@ export default function ValidationFlow() {
 		shouldRevalidate,
 		showInputWithNoName,
 	} = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData();
+	const lastResult = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm({
-		lastSubmission,
+		lastResult,
 		shouldValidate,
 		shouldRevalidate,
 		onValidate: !noClientValidate
@@ -66,7 +66,7 @@ export default function ValidationFlow() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Validation Flow" lastSubmission={lastSubmission}>
+			<Playground title="Validation Flow" lastResult={lastResult}>
 				<Field label="Email" config={email}>
 					<input {...conform.input(email, { type: 'email' })} />
 				</Field>

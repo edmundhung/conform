@@ -1,4 +1,4 @@
-import { conform, useForm, report } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -57,14 +57,14 @@ export async function action({ request }: ActionArgs) {
 		async: true,
 	});
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function EmployeeForm() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { email, title }] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parse(formData, {
@@ -75,7 +75,7 @@ export default function EmployeeForm() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Employee Form" lastSubmission={lastSubmission}>
+			<Playground title="Employee Form" lastResult={lastResult}>
 				<Field label="Email" config={email}>
 					<input
 						{...conform.input(email, { type: 'email' })}

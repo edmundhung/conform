@@ -1,4 +1,4 @@
-import { conform, parse, report, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -12,22 +12,22 @@ interface SignupForm {
 function parseFormData(formData: FormData) {
 	return parse<SignupForm>(formData, {
 		resolve({ email, password, confirmPassword }) {
-			const error: Record<string, string> = {};
+			const error: Record<string, string[]> = {};
 
 			if (!email) {
-				error.email = 'Email is required';
+				error.email = ['Email is required'];
 			} else if (!email.includes('@')) {
-				error.email = 'Email is invalid';
+				error.email = ['Email is invalid'];
 			}
 
 			if (!password) {
-				error.password = 'Password is required';
+				error.password = ['Password is required'];
 			}
 
 			if (!confirmPassword) {
-				error.confirmPassword = 'Confirm password is required';
+				error.confirmPassword = ['Confirm password is required'];
 			} else if (confirmPassword !== password) {
-				error.confirmPassword = 'Password does not match';
+				error.confirmPassword = ['Password does not match'];
 			}
 
 			if (error.email || error.password || error.confirmPassword) {
@@ -55,18 +55,17 @@ export async function action({ request }: ActionArgs) {
 	 */
 	if (!submission.value || submission.intent !== 'submit') {
 		// Always sends the submission state back to client until the user is signed up
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	throw new Error('Not implemented');
 }
 
 export default function Signup() {
-	// Last submission returned by the server
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm({
-		// Sync the result of last submission
-		lastSubmission,
+		// Sync last submission result
+		lastResult,
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {

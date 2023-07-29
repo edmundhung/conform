@@ -1,4 +1,4 @@
-import { conform, report, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -65,16 +65,16 @@ export async function action({ request }: ActionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	throw new Error('Not implemented');
 }
 
 export default function Signup() {
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { username, password, confirmPassword }] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined

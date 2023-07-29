@@ -1,4 +1,4 @@
-import { conform, parse, useForm, report } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { parse as parseWithZod } from '@conform-to/zod';
 import { parse as parseWithYup } from '@conform-to/yup';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
@@ -118,14 +118,14 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseForm(formData, url.searchParams.get('validator'));
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function Example() {
 	const { validator, noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { username }] = useForm<Schema>({
-		lastSubmission,
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData, validator)
 			: undefined,
@@ -133,7 +133,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<Playground title="Mutliple Errors" lastSubmission={lastSubmission}>
+			<Playground title="Mutliple Errors" lastResult={lastResult}>
 				<Field label="Username" config={username}>
 					<input {...conform.input(username, { type: 'text' })} />
 				</Field>

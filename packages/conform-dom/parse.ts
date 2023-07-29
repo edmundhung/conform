@@ -6,7 +6,45 @@ export type Submission<Schema = any> = {
 	payload: Record<string, any>;
 	error: Record<string, string[]>;
 	value?: Schema | null;
+	report(options?: ReportOptions): SubmissionResult;
 };
+
+export type SubmissionResult = {
+	intent: Submission['intent'];
+	payload: Submission['payload'] | null;
+	error: Submission['error'];
+};
+
+export interface ReportOptions {
+	formError?: string[];
+	resetForm?: boolean;
+}
+
+function createSubmission<Schema>(
+	intent: string,
+	payload: Record<string, any>,
+	error: Record<string, string[]>,
+	value?: Schema,
+): Submission {
+	return {
+		intent,
+		payload,
+		error,
+		value,
+		report(options?: ReportOptions) {
+			return {
+				intent: intent,
+				payload: options?.resetForm ? null : payload,
+				error: options?.formError
+					? {
+							...error,
+							'': options.formError.concat(error[''] ?? []),
+					  }
+					: error,
+			};
+		},
+	};
+}
 
 export const VALIDATION_UNDEFINED = '__undefined__';
 export const VALIDATION_SKIPPED = '__skipped__';
@@ -52,39 +90,33 @@ export function parse<Schema>(
 			| Promise<{ value?: Schema; error?: Record<string, string[]> }>;
 	},
 ): Submission<Schema> | Promise<Submission<Schema>> {
-	const submission: Submission = {
-		intent: getIntent(payload),
-		payload: resolve(payload, {
-			ignoreKeys: [INTENT],
-		}),
-		error: {},
-	};
+	const intent = getIntent(payload);
+	const data = resolve(payload, {
+		ignoreKeys: [INTENT],
+	});
 
-	const intent = parseIntent(submission.intent);
+	const command = parseIntent(intent);
 
-	if (intent && intent.type === 'list') {
-		setValue(submission.payload, intent.payload.name, (list) => {
+	if (command && command.type === 'list') {
+		setValue(data, command.payload.name, (list) => {
 			if (typeof list !== 'undefined' && !Array.isArray(list)) {
 				throw new Error('The list intent can only be applied to a list');
 			}
 
-			return updateList(list ?? [], intent.payload);
+			return updateList(list ?? [], command.payload);
 		});
 	}
 
 	if (typeof options?.resolve === 'undefined') {
-		return submission;
+		return createSubmission(intent, data, {});
 	}
 
-	const result = options.resolve(submission.payload, submission.intent);
+	const result = options.resolve(data, intent);
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, string[]>;
 		value?: Schema;
 	}) => {
-		return {
-			...submission,
-			...resolved,
-		};
+		return createSubmission(intent, data, resolved.error ?? {}, resolved.value);
 	};
 
 	if (result instanceof Promise) {

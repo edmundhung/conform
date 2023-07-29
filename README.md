@@ -17,7 +17,7 @@ A progressive enhancement first form validation library for Remix and React Rout
 Here is an example built with Remix:
 
 ```tsx
-import { useForm, report } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { Form } from '@remix-run/react';
 import { json } from '@remix-run/node';
@@ -36,16 +36,16 @@ export async function action({ request }: ActionArgs) {
   const submission = parse(formData, { schema });
 
   if (!submission.value || submission.intent !== 'submit') {
-    return json(report(submission));
+    return json(submission.report());
   }
 
   return await authenticate(submission.value);
 }
 
 export default function LoginForm() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form, { email, password }] = useForm({
-    lastSubmission,
+    lastResult,
     onValidate({ formData }) {
       return parse(formData, { schema });
     },

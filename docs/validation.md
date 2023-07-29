@@ -18,8 +18,7 @@ Conform supports several validation modes. In this section, we will walk you thr
 **Conform** enables you to validate a form **fully server side**.
 
 ```tsx
-import { useForm, parse, report } from '@conform-to/react';
-import { report } from '@conform-to/react';
+import { useForm, parse } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -37,18 +36,17 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (submission.intent !== 'submit' || !submission.value) {
-    return json(report(submission));
+    return json(submission.report());
   }
 
   return await signup(data);
 }
 
 export default function Signup() {
-  // Last submission returned by the server
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form] = useForm({
-    // Sync the result of last submission
-    lastSubmission,
+    // Sync last submission result
+    lastResult,
   });
 
   // ...
@@ -81,9 +79,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form] = useForm({
-    lastSubmission,
+    lastResult,
 
     // Setup client validation
     onValidate({ formData }) {
@@ -142,9 +140,9 @@ export function action() {
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData();
+  const lastResult = useActionData();
   const [form] = useForm({
-    lastSubmission,
+    lastResult,
     onValidate({ formData }) {
       return parse(formData, {
         // Create the schema without implementing `isEmailUnique()`
@@ -207,9 +205,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData();
+  const lastResult = useActionData();
   const [form] = useForm({
-    lastSubmission,
+    lastResult,
     onValidate({ formData }) {
       return parse(formData, {
         // Similar to the action above

@@ -1,4 +1,4 @@
-import { conform, report, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/yup';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -25,17 +25,17 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData, { schema });
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	throw new Error('Not implemented');
 }
 
 export default function SignupForm() {
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { email, password, confirmPassword }] = useForm({
 		// To handle server error and enable full progressive enhancement
-		lastSubmission,
+		lastResult,
 
 		// Validation are done on the server if `onValidate` is not specified
 		// Uncomment the code below to enable client validation

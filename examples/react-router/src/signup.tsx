@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { useForm, report } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json } from 'react-router-dom';
@@ -65,16 +65,16 @@ export async function action({ request }: ActionFunctionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	throw new Error('Not implemented');
 }
 
 export function Component() {
-	const lastSubmission = useActionData() as Submission;
+	const lastResult = useActionData() as Submission;
 	const [form, { username, password, confirmPassword }] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined

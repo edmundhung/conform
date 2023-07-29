@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { useForm, parse, validateConstraint, report } from '@conform-to/react';
+import { useForm, parse, validateConstraint } from '@conform-to/react';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json, redirect } from 'react-router-dom';
 
@@ -25,16 +25,16 @@ export async function action({ request }: ActionFunctionArgs) {
 			submission.payload.password,
 		))
 	) {
-		return json(report(submission, { formError: ['Invalid credential'] }));
+		return json(submission.report({ formError: ['Invalid credential'] }));
 	}
 
 	return redirect('/');
 }
 
 export function Component() {
-	const lastSubmission = useActionData() as Submission;
+	const lastResult = useActionData() as Submission;
 	const [form, { email, password }] = useForm<Login>({
-		lastSubmission,
+		lastResult,
 		shouldRevalidate: 'onBlur',
 		onValidate(context) {
 			return validateConstraint(context);

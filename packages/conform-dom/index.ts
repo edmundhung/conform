@@ -32,6 +32,7 @@ export {
 
 export {
 	type Submission,
+	type SubmissionResult,
 	parse,
 	VALIDATION_SKIPPED,
 	VALIDATION_UNDEFINED,

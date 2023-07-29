@@ -65,7 +65,7 @@ function LoginForm() {
     /**
      * The last submission result from the server
      */
-    lastSubmission: undefined,
+    lastResult: undefined,
 
     /**
      * An object describing the constraint of each field

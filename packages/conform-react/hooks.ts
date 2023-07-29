@@ -3,6 +3,7 @@ import {
 	type FieldElement,
 	type FieldsetConstraint,
 	type Submission,
+	type SubmissionResult,
 	type KeysOf,
 	type ResolveType,
 	getFormData,
@@ -71,33 +72,6 @@ export type FieldValue<Schema> = Schema extends Primitive
 	? { [Key in KeysOf<Schema>]?: FieldValue<ResolveType<Schema, Key>> }
 	: any;
 
-type SubmissionResult = {
-	intent: Submission['intent'];
-	payload: Submission['payload'] | null;
-	error: Submission['error'];
-};
-
-interface ReportOptions {
-	formError?: string[];
-	resetForm?: boolean;
-}
-
-export function report(
-	submission: Submission,
-	options?: ReportOptions,
-): SubmissionResult {
-	return {
-		intent: submission.intent,
-		payload: options?.resetForm ? null : submission.payload,
-		error: options?.formError
-			? {
-					...submission.error,
-					'': options.formError.concat(submission.error[''] ?? []),
-			  }
-			: submission.error,
-	};
-}
-
 export interface FormConfig<
 	Output extends Record<string, any>,
 	Input extends Record<string, any> = Output,
@@ -137,7 +111,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: SubmissionResult;
+	lastResult?: SubmissionResult;
 
 	/**
 	 * An object describing the constraint of each field
@@ -239,9 +213,9 @@ function useConfigRef<Config>(config: Config) {
 
 function useFormReporter(
 	ref: RefObject<HTMLFormElement>,
-	lastSubmission: SubmissionResult | undefined,
+	lastResult: SubmissionResult | undefined,
 ) {
-	const [submission, setSubmission] = useState(lastSubmission);
+	const [submission, setSubmission] = useState(lastResult);
 	const report = useCallback(
 		(form: HTMLFormElement, submission: SubmissionResult) => {
 			const event = new CustomEvent('conform', { detail: submission.intent });
@@ -255,11 +229,11 @@ function useFormReporter(
 	useEffect(() => {
 		const form = ref.current;
 
-		if (!form || !lastSubmission) {
+		if (!form || !lastResult) {
 			return;
 		}
 
-		if (!lastSubmission.payload) {
+		if (!lastResult.payload) {
 			// If the default value is empty, we can safely reset the form.
 			// This ensure the behavior is consistent with and without JS.
 			form.reset();
@@ -268,8 +242,8 @@ function useFormReporter(
 			return;
 		}
 
-		report(form, lastSubmission);
-	}, [ref, lastSubmission, report]);
+		report(form, lastResult);
+	}, [ref, lastResult, report]);
 
 	useEffect(() => {
 		const form = ref.current;
@@ -377,12 +351,12 @@ export function useForm<
 	const configRef = useConfigRef(config);
 	const ref = useFormRef(config.ref);
 	const noValidate = useNoValidate(config.noValidate, config.fallbackNative);
-	const report = useFormReporter(ref, config.lastSubmission);
+	const report = useFormReporter(ref, config.lastResult);
 	const [errors, setErrors] = useState<string[]>(
-		() => config.lastSubmission?.error[''] ?? [],
+		() => config.lastResult?.error[''] ?? [],
 	);
 	const initialError = useMemo(() => {
-		const submission = config.lastSubmission;
+		const submission = config.lastResult;
 
 		if (!submission) {
 			return {};
@@ -396,16 +370,16 @@ export function useForm<
 		}
 
 		return { [scope]: submission.error[scope] ?? [] };
-	}, [config.lastSubmission]);
-	// This payload from lastSubmission is only useful before hydration
-	// After hydration, any new payload on lastSubmission will be ignored
-	const [defaultValueFromLastSubmission, setDefaultValueFromLastSubmission] =
+	}, [config.lastResult]);
+	// This payload from lastResult is only useful before hydration
+	// After hydration, any new payload on lastResult will be ignored
+	const [defaultValueFromlastResult, setDefaultValueFromlastResult] =
 		useState<FieldValue<Input> | null>(
 			// @ts-expect-error defaultValue is not in Submission type
-			config.lastSubmission?.payload ?? null,
+			config.lastResult?.payload ?? null,
 		);
 	const fieldset = useFieldset(ref, {
-		defaultValue: defaultValueFromLastSubmission ?? config.defaultValue,
+		defaultValue: defaultValueFromlastResult ?? config.defaultValue,
 		initialError,
 		constraint: config.constraint,
 		form: config.id,
@@ -469,7 +443,7 @@ export function useForm<
 			}
 
 			setErrors([]);
-			setDefaultValueFromLastSubmission(null);
+			setDefaultValueFromlastResult(null);
 		};
 
 		const handleInput = createValidateHandler('onInput');

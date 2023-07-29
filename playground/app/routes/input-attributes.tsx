@@ -1,4 +1,4 @@
-import { conform, useForm, parse, report } from '@conform-to/react';
+import { conform, useForm, parse } from '@conform-to/react';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useRef } from 'react';
@@ -42,7 +42,7 @@ export async function action({ request }: ActionArgs) {
 	});
 
 	return json(
-		report(submission, {
+		submission.report({
 			formError: ['Submitted'],
 		}),
 	);
@@ -50,7 +50,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const ref = useRef<HTMLFormElement>(null);
 	const [
 		form,
@@ -58,7 +58,7 @@ export default function Example() {
 	] = useForm<Schema>({
 		id: 'test',
 		ref,
-		lastSubmission,
+		lastResult,
 		constraint: {
 			title: {
 				required: true,
@@ -100,7 +100,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
-			<Playground title="Input attributes" lastSubmission={lastSubmission}>
+			<Playground title="Input attributes" lastResult={lastResult}>
 				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={title}>
 					<input

@@ -1,4 +1,4 @@
-import { conform, parse, report, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -59,16 +59,16 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseSignupForm(formData);
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function SignupForm() {
 	const config = useLoaderData();
-	const lastSubmission = useActionData();
+	const lastResult = useActionData();
 	const [form, { email, password, confirmPassword }] = useForm<Signup>({
 		...config,
 		id: 'signup',
-		lastSubmission,
+		lastResult,
 		onValidate: config.validate
 			? ({ formData }) => parseSignupForm(formData)
 			: undefined,
@@ -76,11 +76,7 @@ export default function SignupForm() {
 	});
 
 	return (
-		<Playground
-			title="Signup Form"
-			form={form.id}
-			lastSubmission={lastSubmission}
-		>
+		<Playground title="Signup Form" form={form.id} lastResult={lastResult}>
 			<Form method="post" {...form.props} />
 			<Field label="Email" config={email}>
 				<input

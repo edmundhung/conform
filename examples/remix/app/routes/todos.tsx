@@ -4,7 +4,6 @@ import {
 	useFieldset,
 	useFieldList,
 	conform,
-	report,
 	list,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
@@ -31,16 +30,16 @@ export async function action({ request }: ActionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission.report());
 	}
 
 	throw new Error('Not implemented');
 }
 
 export default function TodoForm() {
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { title, tasks }] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
 		},

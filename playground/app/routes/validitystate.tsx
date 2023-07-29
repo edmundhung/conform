@@ -112,7 +112,7 @@ export default function Example() {
 			}}
 			noValidate
 		>
-			<Playground title="Validity State" lastSubmission={submission}>
+			<Playground title="Validity State" lastResult={submission}>
 				<Field label="Field" config={{ errors: error.field }}>
 					{constraint.type === 'checkbox' || constraint.type === 'radio' ? (
 						<input

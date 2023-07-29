@@ -1,4 +1,4 @@
-import { conform, useForm, report } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -36,14 +36,14 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission.report());
 }
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const [form, { file, files }] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
@@ -51,7 +51,7 @@ export default function FileUpload() {
 
 	return (
 		<Form method="post" {...form.props} encType="multipart/form-data">
-			<Playground title="Employee Form" lastSubmission={lastSubmission}>
+			<Playground title="Employee Form" lastResult={lastResult}>
 				<Alert errors={form.errors} />
 				<Field label="Single file" config={file}>
 					<input {...conform.input(file, { type: 'file' })} />

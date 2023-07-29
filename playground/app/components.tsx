@@ -10,7 +10,7 @@ interface PlaygroundProps<
 	title: string;
 	description?: ReactNode;
 	form?: string;
-	lastSubmission?: Submission;
+	lastResult?: Submission;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
@@ -21,17 +21,17 @@ export function Playground({
 	title,
 	description,
 	form,
-	lastSubmission,
+	lastResult,
 	formAction,
 	formMethod,
 	formEncType,
 	children,
 }: PlaygroundProps<any>) {
-	const [submission, setSubmission] = useState(lastSubmission ?? null);
+	const [submission, setSubmission] = useState(lastResult ?? null);
 
 	useEffect(() => {
-		setSubmission(lastSubmission ?? null);
-	}, [lastSubmission]);
+		setSubmission(lastResult ?? null);
+	}, [lastResult]);
 
 	return (
 		<section
