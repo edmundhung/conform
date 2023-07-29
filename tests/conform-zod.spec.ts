@@ -508,6 +508,53 @@ test.describe('conform-zod', () => {
 			});
 		});
 
+		test('z.instanceof(file)', () => {
+			const schema = z.object({
+				test: z.instanceof(File, { message: 'message' }),
+			});
+			const emptyFile = new File([], '');
+			const txtFile = new File(['hello', 'world'], 'example.txt');
+
+			expect(parse(createFormData([]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {},
+				error: { test: ['message'] },
+			});
+			expect(parse(createFormData([['test', '']]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {
+					test: '',
+				},
+				error: { test: ['message'] },
+			});
+			expect(
+				parse(createFormData([['test', 'helloworld']]), { schema }),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					test: 'helloworld',
+				},
+				error: { test: ['message'] },
+			});
+			expect(parse(createFormData([['test', emptyFile]]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {
+					test: emptyFile,
+				},
+				error: { test: ['message'] },
+			});
+			expect(parse(createFormData([['test', txtFile]]), { schema })).toEqual({
+				intent: 'submit',
+				payload: {
+					test: txtFile,
+				},
+				error: {},
+				value: {
+					test: txtFile,
+				},
+			});
+		});
+
 		test('z.preprocess', () => {
 			const schemaWithNoPreprocess = z.object({
 				test: z.number({ invalid_type_error: 'invalid' }),
@@ -603,6 +650,90 @@ test.describe('conform-zod', () => {
 					g: undefined,
 				},
 				error: {},
+			});
+		});
+
+		test('z.lazy', () => {
+			const category = z.object({
+				name: z.string({ required_error: 'required' }),
+				subcategories: z.lazy(() => z.array(category)),
+			});
+			const node = z.object({
+				name: z.string({ required_error: 'required' }),
+				left: z.lazy(() => node).optional(),
+				right: z.lazy(() => node.optional()),
+			});
+			const schema = z.object({
+				category,
+				node,
+			});
+
+			expect(
+				parse(
+					createFormData([
+						['category.name', ''],
+						['category.subcategories[0].name', ''],
+						['category.subcategories[0].subcategories[0].name', ''],
+						['category.subcategories[1].name', ''],
+						['node.name', ''],
+						['node.left.name', ''],
+						['node.left.left.name', ''],
+						['node.left.right.name', ''],
+						['node.right.name', ''],
+						['node.right.right.name', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					category: {
+						name: '',
+						subcategories: [
+							{
+								name: '',
+								subcategories: [
+									{
+										name: '',
+									},
+								],
+							},
+							{
+								name: '',
+							},
+						],
+					},
+					node: {
+						name: '',
+						left: {
+							name: '',
+							left: {
+								name: '',
+							},
+							right: {
+								name: '',
+							},
+						},
+						right: {
+							name: '',
+							right: {
+								name: '',
+							},
+						},
+					},
+				},
+				error: {
+					'category.name': ['required'],
+					'category.subcategories[0].name': ['required'],
+					'category.subcategories[0].subcategories[0].name': ['required'],
+					'category.subcategories[1].name': ['required'],
+					'node.name': ['required'],
+					'node.left.name': ['required'],
+					'node.left.left.name': ['required'],
+					'node.left.right.name': ['required'],
+					'node.right.name': ['required'],
+					'node.right.right.name': ['required'],
+				},
 			});
 		});
 	});
