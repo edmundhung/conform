@@ -1,6 +1,7 @@
 import {
 	type ZodType,
 	type ZodTypeAny,
+	type output,
 	ZodString,
 	ZodEnum,
 	ZodLiteral,
@@ -86,10 +87,10 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
  */
-export function enableTypeCoercion<Type>(
-	type: ZodType<Type>,
+export function enableTypeCoercion<Type extends ZodTypeAny>(
+	type: Type,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
-): ZodType<Type> {
+): ZodType<output<Type>> {
 	const result = cache.get(type);
 
 	// Return the cached schema if it's already processed
@@ -100,10 +101,6 @@ export function enableTypeCoercion<Type>(
 
 	let schema: ZodTypeAny = type;
 
-	/**
-	 * We might be able to fix all type errors with function overloads
-	 * But I'm not sure if it's worth the effort
-	 */
 	if (
 		type instanceof ZodString ||
 		type instanceof ZodLiteral ||
@@ -171,7 +168,6 @@ export function enableTypeCoercion<Type>(
 		});
 	} else if (type instanceof ZodEffects) {
 		if (isFileSchema(type)) {
-			// @ts-expect-error see message above
 			return preprocess((value) => coerceFile(value), type);
 		}
 
