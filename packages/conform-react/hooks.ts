@@ -706,7 +706,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				FieldValue<Schema extends Array<infer Item> ? Item : never> | undefined,
 			]
 		>
-	>(() => Object.entries(config.defaultValue ?? [undefined]));
+	>(() => Object.entries(config.defaultValue ?? []));
 
 	useEffect(() => {
 		const conformHandler = (event: CustomEvent) => {
@@ -779,7 +779,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				return;
 			}
 
-			setEntries(Object.entries(configRef.current.defaultValue ?? [undefined]));
+			setEntries(Object.entries(configRef.current.defaultValue ?? []));
 		};
 
 		// @ts-expect-error Custom event: conform

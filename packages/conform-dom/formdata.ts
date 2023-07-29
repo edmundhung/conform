@@ -136,5 +136,10 @@ export function getValidationMessage(errors?: string[]): string {
  * Retrieve the error messages from the validation message
  */
 export function getErrors(validationMessage: string | undefined): string[] {
-	return validationMessage?.split(String.fromCharCode(31)) ?? [];
+	// Empty string should be considered no error as well
+	if (!validationMessage) {
+		return [];
+	}
+
+	return validationMessage.split(String.fromCharCode(31));
 }
