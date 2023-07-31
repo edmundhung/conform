@@ -194,6 +194,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
@@ -203,6 +204,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
@@ -212,6 +214,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'xyz']]), {
@@ -221,6 +224,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: 'xyz' },
 				error: { test: ['min', 'regex', 'refine'] },
+				report: expect.any(Function),
 			});
 		});
 
@@ -238,6 +242,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
@@ -247,6 +252,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
@@ -256,6 +262,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: 'abc' },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
@@ -265,6 +272,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '5']]), {
@@ -274,6 +282,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: '5' },
 				error: { test: ['step'] },
+				report: expect.any(Function),
 			});
 		});
 
@@ -293,6 +302,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
@@ -302,6 +312,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
@@ -311,6 +322,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: 'abc' },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
@@ -320,6 +332,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', new Date(0).toISOString()]]), {
@@ -329,6 +342,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: new Date(0).toISOString() },
 				error: { test: ['min'] },
+				report: expect.any(Function),
 			});
 		});
 
@@ -345,6 +359,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
@@ -354,6 +369,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
@@ -363,6 +379,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
@@ -375,6 +392,7 @@ test.describe('conform-zod', () => {
 				value: {
 					test: true,
 				},
+				report: expect.any(Function),
 			});
 		});
 
@@ -399,6 +417,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['min'] },
+				report: expect.any(Function),
 			});
 			// Scenario: Checkbox group (Checked only one item)
 			expect(
@@ -410,6 +429,7 @@ test.describe('conform-zod', () => {
 				payload: { test: 'a' },
 				error: {},
 				value: { test: ['a'] },
+				report: expect.any(Function),
 			});
 			// Scenario: Checkbox group (Checked at least two items)
 			expect(
@@ -428,6 +448,7 @@ test.describe('conform-zod', () => {
 				error: {
 					test: ['max'],
 				},
+				report: expect.any(Function),
 			});
 			// Scenario: File upload (No file selected)
 			const emptyFile = new File([], '');
@@ -443,6 +464,7 @@ test.describe('conform-zod', () => {
 				error: {
 					test: ['min'],
 				},
+				report: expect.any(Function),
 			});
 			// Scenario: File upload (Only one file selected)
 			expect(
@@ -456,6 +478,7 @@ test.describe('conform-zod', () => {
 				value: {
 					test: [textFile],
 				},
+				report: expect.any(Function),
 			});
 			// Scenario: File upload (At least two files selected)
 			expect(
@@ -474,6 +497,7 @@ test.describe('conform-zod', () => {
 				error: {
 					test: ['max'],
 				},
+				report: expect.any(Function),
 			});
 			// Scenario: Only one input with the specific name
 			expect(
@@ -486,6 +510,7 @@ test.describe('conform-zod', () => {
 				error: {
 					'test[0]': ['required'],
 				},
+				report: expect.any(Function),
 			});
 			// Scenario: Group of inputs with the same name
 			expect(
@@ -505,6 +530,7 @@ test.describe('conform-zod', () => {
 					test: ['max'],
 					'test[1]': ['required'],
 				},
+				report: expect.any(Function),
 			});
 		});
 
@@ -519,6 +545,7 @@ test.describe('conform-zod', () => {
 				intent: 'submit',
 				payload: {},
 				error: { test: ['message'] },
+				report: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', '']]), { schema })).toEqual({
 				intent: 'submit',
@@ -526,6 +553,7 @@ test.describe('conform-zod', () => {
 					test: '',
 				},
 				error: { test: ['message'] },
+				report: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'helloworld']]), { schema }),
@@ -535,6 +563,7 @@ test.describe('conform-zod', () => {
 					test: 'helloworld',
 				},
 				error: { test: ['message'] },
+				report: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', emptyFile]]), { schema })).toEqual({
 				intent: 'submit',
@@ -542,6 +571,7 @@ test.describe('conform-zod', () => {
 					test: emptyFile,
 				},
 				error: { test: ['message'] },
+				report: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', txtFile]]), { schema })).toEqual({
 				intent: 'submit',
@@ -552,6 +582,7 @@ test.describe('conform-zod', () => {
 				value: {
 					test: txtFile,
 				},
+				report: expect.any(Function),
 			});
 		});
 
@@ -584,6 +615,7 @@ test.describe('conform-zod', () => {
 				error: {
 					test: ['invalid'],
 				},
+				report: expect.any(Function),
 			});
 			expect(
 				parse(formData, {
@@ -598,6 +630,7 @@ test.describe('conform-zod', () => {
 				value: {
 					test: 1234.5,
 				},
+				report: expect.any(Function),
 			});
 		});
 
@@ -650,6 +683,7 @@ test.describe('conform-zod', () => {
 					g: undefined,
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 		});
 
@@ -734,6 +768,7 @@ test.describe('conform-zod', () => {
 					'node.right.name': ['required'],
 					'node.right.right.name': ['required'],
 				},
+				report: expect.any(Function),
 			});
 		});
 	});
@@ -764,6 +799,7 @@ test.describe('conform-zod', () => {
 			error: {
 				text: ['The field is too short'],
 			},
+			report: expect.any(Function),
 		});
 	});
 
@@ -790,6 +826,7 @@ test.describe('conform-zod', () => {
 			payload: {
 				email: 'test@example.com',
 			},
+			report: expect.any(Function),
 		};
 
 		expect(parse(formData, { schema: createSchema() })).toEqual({

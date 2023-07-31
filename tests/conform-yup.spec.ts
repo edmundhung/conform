@@ -115,6 +115,7 @@ test.describe('conform-yup', () => {
 			intent: 'submit',
 			payload,
 			error,
+			report: expect.any(Function),
 		});
 	});
 });
