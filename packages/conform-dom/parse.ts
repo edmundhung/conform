@@ -17,6 +17,7 @@ export type SubmissionResult = {
 
 export interface ReportOptions {
 	formError?: string[];
+	fieldError?: Record<string, string[]>;
 	resetForm?: boolean;
 }
 
@@ -25,24 +26,39 @@ function createSubmission<Schema>(
 	payload: Record<string, any>,
 	error: Record<string, string[]>,
 	value?: Schema,
-): Submission {
-	return {
+): Submission<Schema> {
+	const submission = {
 		intent,
 		payload,
 		error,
-		value,
 		report(options?: ReportOptions) {
 			return {
-				intent: intent,
+				intent,
 				payload: options?.resetForm ? null : payload,
-				error: options?.formError
-					? {
-							...error,
-							'': options.formError.concat(error[''] ?? []),
-					  }
-					: error,
+				error: Object.entries({
+					...options?.fieldError,
+					'': options?.formError ?? ([] as string[]),
+				}).reduce(
+					(result, [name, messages]) => {
+						if (messages.length > 0) {
+							result[name] = (result[name] ?? []).concat(messages);
+						}
+
+						return result;
+					},
+					{ ...error },
+				),
 			};
 		},
+	};
+
+	if (!value) {
+		return submission;
+	}
+
+	return {
+		...submission,
+		value,
 	};
 }
 

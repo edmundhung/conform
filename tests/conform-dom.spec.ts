@@ -42,6 +42,7 @@ test.describe('conform-dom', () => {
 					description: 'Once upon a time...',
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 
 			expect(
@@ -64,6 +65,7 @@ test.describe('conform-dom', () => {
 					reference: '',
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 
 			expect(
@@ -85,6 +87,7 @@ test.describe('conform-dom', () => {
 					],
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 		});
 
@@ -103,6 +106,7 @@ test.describe('conform-dom', () => {
 					description: 'Once upon a time...',
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 		});
 
@@ -120,6 +124,7 @@ test.describe('conform-dom', () => {
 					title: 'Test intent',
 				},
 				error: {},
+				report: expect.any(Function),
 			});
 			expect(() =>
 				parse(
@@ -141,6 +146,7 @@ test.describe('conform-dom', () => {
 					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
 				},
 				error: {},
+				report: expect.any(Function),
 			};
 
 			const intent1 = list.prepend('tasks');
@@ -238,6 +244,92 @@ test.describe('conform-dom', () => {
 				payload: {
 					tasks: [{ content: 'Test more stuffs' }, ...result.payload.tasks],
 				},
+			});
+		});
+
+		test('report', () => {
+			const formData = createFormData([
+				['title', 'The cat'],
+				['description', 'Once upon a time...'],
+			]);
+			const result = {
+				intent: 'submit',
+				payload: {
+					title: 'The cat',
+					description: 'Once upon a time...',
+				},
+				error: {},
+			};
+
+			const submission1 = parse(formData, {
+				resolve: () => ({
+					error: {
+						'': ['Something went wrong'],
+						title: ['Meow'],
+					},
+				}),
+			});
+
+			expect(submission1.report()).toEqual({
+				...result,
+				error: {
+					'': ['Something went wrong'],
+					title: ['Meow'],
+				},
+			});
+			expect(
+				submission1.report({
+					formError: ['Test error'],
+				}),
+			).toEqual({
+				...result,
+				error: {
+					'': ['Something went wrong', 'Test error'],
+					title: ['Meow'],
+				},
+			});
+			expect(
+				submission1.report({
+					fieldError: {
+						description: ['Test error'],
+					},
+				}),
+			).toEqual({
+				...result,
+				error: {
+					'': ['Something went wrong'],
+					title: ['Meow'],
+					description: ['Test error'],
+				},
+			});
+
+			const submission2 = parse(formData, {
+				resolve: (payload) => ({
+					value: payload,
+				}),
+			});
+			expect(submission2.report()).toEqual(result);
+			expect(submission2.report({ formError: ['foo', 'bar'] })).toEqual({
+				...result,
+				error: {
+					'': ['foo', 'bar'],
+				},
+			});
+			expect(
+				submission2.report({
+					formError: ['foo'],
+					fieldError: { title: ['bar'] },
+				}),
+			).toEqual({
+				...result,
+				error: {
+					'': ['foo'],
+					title: ['bar'],
+				},
+			});
+			expect(submission2.report({ resetForm: true })).toEqual({
+				...result,
+				payload: null,
 			});
 		});
 	});
