@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🤔 Feature Requests & Questions 
-    url: https://github.com/edmundhung/remix-guide/discussions
+    url: https://github.com/edmundhung/conform/discussions
     about: You can ask questions and share your ideas here.
   - name: 💿 Remix support
     url: https://rmx.as/discord

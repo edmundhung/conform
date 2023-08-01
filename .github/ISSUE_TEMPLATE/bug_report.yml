@@ -6,21 +6,22 @@ body:
       value: |
         Thank you for reporting an issue :pray:.
 
-        If you have a question about how to achieve something, please post a question inside of the [Discussions](https://github.com/edmundhung/remix-guide/discussions)
+        If you have a question about how to achieve something, please post a question inside of the [Discussions](https://github.com/edmundhung/conform/discussions).
         Before submitting a new bug/issue, please also check if there is a solution or question posted already.
 
         The more information you fill in, the better the community can help you.
   - type: textarea
     id: description
     attributes:
-      label: Describe the bug
-      description: Provide a clear and concise description of the challenge you are running into.
+      label: Describe the bug and the expected behavior
+      description: Provide a clear and concise description of the challenge you are running into and what you expected to happen.
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: Conform version
+      placeholder: v1.0.0
     validations:
       required: true
   - type: textarea
@@ -29,21 +30,12 @@ body:
       label: Steps to Reproduce the Bug or Issue
       description: |
         Describe the steps we have to take to reproduce the behavior.
-        If possible, please also provide a repostiory or a link to a sandbox.   
+        If possible, please provide a repostiory or a link to a sandbox.   
       placeholder: |
-        1. Go to '...'
+        1. With this snippet '...'
         2. Click on '....'
         3. Scroll down to '....'
         4. See error
-    validations:
-      required: true
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      description: Provide a clear and concise description of what you expected to happen.
-      placeholder: |
-        As a user, I expected ___ behavior but i am seeing ___
     validations:
       required: true
   - type: dropdown
