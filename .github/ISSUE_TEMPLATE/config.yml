@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤔 Feature Requests & Questions 
+    url: https://github.com/edmundhung/remix-guide/discussions
+    about: You can ask questions and share your ideas here.
+  - name: 💿 Remix support
+    url: https://rmx.as/discord
+    about: Join the Remix discord channel if you need help integrating with Remix / React Router.
+  - name: 🌟 EpicStack support
+    url: https://kcd.im/discord
+    about: Join the KCD Discord channel if you need help with the EpicStack setup.
