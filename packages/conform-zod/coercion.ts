@@ -111,7 +111,10 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 	} else if (type instanceof ZodNumber) {
 		schema = preprocess((value) => coerceString(value, Number), type);
 	} else if (type instanceof ZodBoolean) {
-		schema = preprocess((value) => coerceString(value, Boolean), type);
+		schema = preprocess(
+			(value) => coerceString(value, (text) => (text === 'on' ? true : text)),
+			type,
+		);
 	} else if (type instanceof ZodDate) {
 		schema = preprocess(
 			(value) =>

@@ -76,7 +76,6 @@ export default function PaymentForm() {
 						<input
 							{...conform.input(verified, {
 								type: 'checkbox',
-								value: 'Yes',
 							})}
 						/>
 					</Field>
