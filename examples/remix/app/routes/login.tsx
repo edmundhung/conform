@@ -1,4 +1,4 @@
-import { conform, parse, report, useForm } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -55,7 +55,7 @@ export async function action({ request }: ActionArgs) {
 	 */
 	if (!submission.value || submission.intent !== 'submit') {
 		// Always sends the submission state back to client until the user is signed up
-		return json(report(submission));
+		return json(submission);
 	}
 
 	throw new Error('Not implemented');

@@ -135,6 +135,9 @@ async function runValidationScenario(page: Page) {
 					items: ['Top item', 'Another item'],
 				},
 				error: {},
+				value: {
+					items: ['Top item', 'Another item'],
+				},
 			},
 			null,
 			2,

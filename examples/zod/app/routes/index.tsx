@@ -1,4 +1,4 @@
-import { conform, useForm, report } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData, { schema });
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submissi);
 	}
 
 	throw new Error('Not implemented');

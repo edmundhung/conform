@@ -1,4 +1,4 @@
-import { conform, useFieldset, useForm, report } from '@conform-to/react';
+import { conform, useFieldset, useForm } from '@conform-to/react';
 import { getFieldsetConstraint, parse } from '@conform-to/zod';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -31,7 +31,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function PaymentForm() {

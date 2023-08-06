@@ -1,4 +1,4 @@
-import { conform, parse, useForm, report } from '@conform-to/react';
+import { conform, parse, useForm } from '@conform-to/react';
 import { parse as parseWithZod } from '@conform-to/zod';
 import { parse as parseWithYup } from '@conform-to/yup';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
@@ -118,7 +118,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseForm(formData, url.searchParams.get('validator'));
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function Example() {

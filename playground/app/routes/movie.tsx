@@ -1,10 +1,4 @@
-import {
-	conform,
-	isFieldElement,
-	parse,
-	useForm,
-	report,
-} from '@conform-to/react';
+import { conform, isFieldElement, parse, useForm } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
@@ -60,7 +54,7 @@ export async function action({ request }: ActionArgs) {
 		},
 	});
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function MovieForm() {

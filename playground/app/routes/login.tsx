@@ -1,4 +1,4 @@
-import { conform, useForm, parse, report } from '@conform-to/react';
+import { conform, useForm, parse } from '@conform-to/react';
 import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useId } from 'react';
@@ -53,7 +53,7 @@ export async function action({ request }: ActionArgs) {
 		submission.error[''] = ['The provided email or password is not valid'];
 	}
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function LoginForm() {
