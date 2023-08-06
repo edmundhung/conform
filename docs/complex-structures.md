@@ -153,7 +153,7 @@ function Example() {
   );
 }
 
-function TodoFieldset(props: { config: FieldConfig<Todo> }) {
+function TodoFieldset({ config }: { config: FieldConfig<Todo> }) {
   const ref = useRef<HTMLFieldsetElement>(null);
   // Both useFieldset / useFieldList accept form or fieldset ref
   const { title, notes } = useFieldset(ref, config);
