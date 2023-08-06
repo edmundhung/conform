@@ -1,5 +1,5 @@
 import type { Submission } from '@conform-to/react';
-import { useForm, parse, validateConstraint, report } from '@conform-to/react';
+import { useForm, parse, validateConstraint } from '@conform-to/react';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json, redirect } from 'react-router-dom';
 
@@ -25,7 +25,11 @@ export async function action({ request }: ActionFunctionArgs) {
 			submission.payload.password,
 		))
 	) {
-		return json(report(submission, { formError: ['Invalid credential'] }));
+		return json({
+			...submission,
+			// '' denote the root which is treated as form error
+			error: { '': 'Invalid credential' },
+		});
 	}
 
 	return redirect('/');

@@ -53,6 +53,12 @@ test.describe('Client Validation', () => {
 				rating: '4.5',
 			},
 			error: {},
+			value: {
+				title: 'The Dark Knight',
+				description: 'When the menace known as the Joker wreaks havoc...',
+				genre: 'action',
+				rating: '4.5',
+			},
 		});
 	});
 
@@ -131,6 +137,13 @@ test.describe('Client Validation', () => {
 				rating: '4.0',
 			},
 			error: {},
+			value: {
+				title: 'The Matrix',
+				description:
+					'When a beautiful stranger leads computer hacker Neo to...',
+				genre: 'sci-fi',
+				rating: '4.0',
+			},
 		});
 	});
 
@@ -166,6 +179,9 @@ test.describe('Client Validation', () => {
 				confirmPassword: 'secretpassword',
 			},
 			error: {},
+			value: {
+				email: 'me@edmund.dev',
+			},
 		});
 	});
 
@@ -242,6 +258,15 @@ test.describe('Client Validation', () => {
 				verified: 'Yes',
 			},
 			error: {},
+			value: {
+				iban: 'DE89 3704 0044 0532 0130 00',
+				amount: {
+					currency: 'EUR',
+					value: 1,
+				},
+				timestamp,
+				verified: true,
+			},
 		});
 	});
 

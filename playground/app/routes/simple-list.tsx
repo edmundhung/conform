@@ -1,10 +1,4 @@
-import {
-	conform,
-	useFieldList,
-	useForm,
-	list,
-	report,
-} from '@conform-to/react';
+import { conform, useFieldList, useForm, list } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -34,7 +28,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(report(submission));
+	return json(submission);
 }
 
 export default function SimpleList() {

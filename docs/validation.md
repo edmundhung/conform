@@ -18,8 +18,7 @@ Conform supports several validation modes. In this section, we will walk you thr
 **Conform** enables you to validate a form **fully server side**.
 
 ```tsx
-import { useForm, parse, report } from '@conform-to/react';
-import { report } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -37,7 +36,7 @@ export async function action({ request }: ActionArgs) {
   });
 
   if (submission.intent !== 'submit' || !submission.value) {
-    return json(report(submission));
+    return json(submission);
   }
 
   return await signup(data);

@@ -1,11 +1,5 @@
 import type { FieldsetConfig } from '@conform-to/react';
-import {
-	useForm,
-	useFieldset,
-	useFieldList,
-	report,
-	list,
-} from '@conform-to/react';
+import { useForm, useFieldset, useFieldList, list } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json } from 'react-router-dom';
@@ -29,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	});
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(report(submission));
+		return json(submission);
 	}
 
 	throw new Error('Not implemented');
