@@ -371,6 +371,15 @@ test.describe('conform-zod', () => {
 			).toEqual({
 				intent: 'submit',
 				payload: { test: 'abc' },
+				error: { test: ['invalid'] },
+			});
+			expect(
+				parse(createFormData([['test', 'on']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: 'on' },
 				error: {},
 				value: {
 					test: true,

@@ -255,7 +255,7 @@ test.describe('Client Validation', () => {
 					value: '1',
 				},
 				timestamp,
-				verified: 'Yes',
+				verified: 'on',
 			},
 			error: {},
 			value: {

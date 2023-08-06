@@ -97,7 +97,6 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 						className={completed.error ? 'error' : ''}
 						type="checkbox"
 						name={completed.name}
-						value="yes"
 					/>
 				</label>
 			</div>
