@@ -114,7 +114,7 @@ function Example() {
         {todos.map((todo) => (
           <li key={todo.key}>
             {/* Pass each item config to TodoFieldset */}
-            <TodoFieldset {...todo} />
+            <TodoFieldset config={todo} />
           </li>
         ))}
       </ul>
@@ -122,7 +122,7 @@ function Example() {
   );
 }
 
-function TodoFieldset(config: FieldConfig<Todo>) {
+function TodoFieldset({ config }: { config: FieldConfig<Todo> }) {
   const ref = useRef<HTMLFieldsetElement>(null);
   // Both useFieldset / useFieldList accept form or fieldset ref
   const { title, notes } = useFieldset(ref, config);
