@@ -3,7 +3,7 @@
 	"description": "Conform view adapter for react",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.8.0-pre.2",
+	"version": "0.8.0",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -30,7 +30,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "0.8.0-pre.2"
+		"@conform-to/dom": "0.8.0"
 	},
 	"peerDependencies": {
 		"react": ">=16.8"
