@@ -12,22 +12,22 @@ interface SignupForm {
 function parseFormData(formData: FormData) {
 	return parse<SignupForm>(formData, {
 		resolve({ email, password, confirmPassword }) {
-			const error: Record<string, string> = {};
+			const error: Record<string, string[]> = {};
 
 			if (!email) {
-				error.email = 'Email is required';
+				error.email = ['Email is required'];
 			} else if (!email.includes('@')) {
-				error.email = 'Email is invalid';
+				error.email = ['Email is invalid'];
 			}
 
 			if (!password) {
-				error.password = 'Password is required';
+				error.password = ['Password is required'];
 			}
 
 			if (!confirmPassword) {
-				error.confirmPassword = 'Confirm password is required';
+				error.confirmPassword = ['Confirm password is required'];
 			} else if (confirmPassword !== password) {
-				error.confirmPassword = 'Password does not match';
+				error.confirmPassword = ['Password does not match'];
 			}
 
 			if (error.email || error.password || error.confirmPassword) {
@@ -72,6 +72,9 @@ export default function Signup() {
 		onValidate({ formData }) {
 			return parseFormData(formData);
 		},
+
+		// Validate the form on blur event triggered
+		shouldValidate: 'onBlur',
 	});
 
 	return (

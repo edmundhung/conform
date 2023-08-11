@@ -81,6 +81,7 @@ export default function Signup() {
 				schema: (intent) => createSchema(intent),
 			});
 		},
+		shouldValidate: 'onBlur',
 	});
 
 	return (

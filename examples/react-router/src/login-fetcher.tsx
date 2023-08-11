@@ -1,13 +1,14 @@
-import type { Submission } from '@conform-to/react';
-import { useForm, parse, validateConstraint } from '@conform-to/react';
+import { useForm, conform } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { useFetcher, json, redirect } from 'react-router-dom';
+import { z } from 'zod';
 
-interface Login {
-	email: string;
-	password: string;
-	remember: string;
-}
+const schema = z.object({
+	email: z.string().email(),
+	password: z.string(),
+	remember: z.boolean().optional(),
+});
 
 async function isAuthenticated(email: string, password: string) {
 	return new Promise((resolve) => {
@@ -17,7 +18,7 @@ async function isAuthenticated(email: string, password: string) {
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, { schema });
 
 	if (
 		!(await isAuthenticated(
@@ -32,16 +33,16 @@ export async function action({ request }: ActionFunctionArgs) {
 		});
 	}
 
-	return redirect('/');
+	throw redirect('/');
 }
 
 export function Component() {
-	const fetcher = useFetcher<Submission>();
-	const [form, { email, password }] = useForm<Login>({
+	const fetcher = useFetcher();
+	const [form, fields] = useForm({
 		lastSubmission: fetcher.data,
 		shouldRevalidate: 'onBlur',
-		onValidate(context) {
-			return validateConstraint(context);
+		onValidate({ formData }) {
+			return parse(formData, { schema });
 		},
 	});
 
@@ -51,32 +52,23 @@ export function Component() {
 			<label>
 				<div>Email</div>
 				<input
-					className={email.error ? 'error' : ''}
-					name="email"
-					type="email"
-					required
-					pattern="[^@]+@[^@]+\.[^@]+"
+					className={fields.email.error ? 'error' : ''}
+					{...conform.input(fields.email, { type: 'email' })}
 				/>
-				{email.error === 'required' ? (
-					<div>Email is required</div>
-				) : email.error === 'type' || email.error === 'pattern' ? (
-					<div>Email is invalid</div>
-				) : null}
+				<div>{fields.email.error}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={password.error ? 'error' : ''}
-					name="password"
-					type="password"
-					required
+					className={fields.password.error ? 'error' : ''}
+					{...conform.input(fields.password, { type: 'password' })}
 				/>
-				{password.error === 'required' ? <div>Password is required</div> : null}
+				<div>{fields.password.error}</div>
 			</label>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input name="remember" type="checkbox" value="yes" />
+					<input {...conform.input(fields.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

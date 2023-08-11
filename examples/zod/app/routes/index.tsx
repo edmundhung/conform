@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 	const submission = parse(formData, { schema });
 
 	if (!submission.value || submission.intent !== 'submit') {
-		return json(submissi);
+		return json(submission);
 	}
 
 	throw new Error('Not implemented');
