@@ -10,65 +10,49 @@ const schema = z.object({
 	remember: z.boolean().optional(),
 });
 
-async function isAuthenticated(email: string, password: string) {
-	return new Promise((resolve) => {
-		resolve(email === 'conform@example.com' && password === '12345');
-	});
-}
-
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	if (
-		!(await isAuthenticated(
-			submission.payload.email,
-			submission.payload.password,
-		))
-	) {
-		return json({
-			...submission,
-			// '' denote the root which is treated as form error
-			error: { '': 'Invalid credential' },
-		});
+	if (submission.intent !== 'submit' || !submission.value) {
+		return json(submission);
 	}
 
-	throw redirect('/');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export function Component() {
 	const fetcher = useFetcher();
-	const [form, fields] = useForm({
+	const [form, { email, password, remember }] = useForm({
 		lastSubmission: fetcher.data,
-		shouldRevalidate: 'onBlur',
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
+		shouldRevalidate: 'onBlur',
 	});
 
 	return (
 		<fetcher.Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
-			<label>
-				<div>Email</div>
+			<div>
+				<label>Email</label>
 				<input
-					className={fields.email.error ? 'error' : ''}
-					{...conform.input(fields.email, { type: 'email' })}
+					className={email.error ? 'error' : ''}
+					{...conform.input(email)}
 				/>
-				<div>{fields.email.error}</div>
-			</label>
-			<label>
-				<div>Password</div>
+				<div>{email.error}</div>
+			</div>
+			<div>
+				<label>Password</label>
 				<input
-					className={fields.password.error ? 'error' : ''}
-					{...conform.input(fields.password, { type: 'password' })}
+					className={password.error ? 'error' : ''}
+					{...conform.input(password, { type: 'password' })}
 				/>
-				<div>{fields.password.error}</div>
-			</label>
+				<div>{password.error}</div>
+			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...conform.input(fields.remember, { type: 'checkbox' })} />
+					<input {...conform.input(remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

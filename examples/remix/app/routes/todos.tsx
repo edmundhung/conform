@@ -8,19 +8,19 @@ import {
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
-import { json } from '@remix-run/node';
+import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
-	content: z.string({ required_error: 'Content is required' }),
-	completed: z.string().transform((value) => value === 'yes'),
+	content: z.string(),
+	completed: z.boolean().optional(),
 });
 
 const todosSchema = z.object({
-	title: z.string({ required_error: 'Title is required' }),
-	tasks: z.array(taskSchema).min(1),
+	title: z.string(),
+	tasks: z.array(taskSchema).nonempty(),
 });
 
 export async function action({ request }: ActionArgs) {
@@ -33,7 +33,7 @@ export async function action({ request }: ActionArgs) {
 		return json(submission);
 	}
 
-	throw new Error('Not implemented');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export default function TodoForm() {
@@ -43,12 +43,12 @@ export default function TodoForm() {
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
 		},
+		shouldValidate: 'onBlur',
 	});
 	const taskList = useFieldList(form.ref, tasks);
 
 	return (
 		<Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
 			<div>
 				<label>Title</label>
 				<input
@@ -57,6 +57,8 @@ export default function TodoForm() {
 				/>
 				<div>{title.error}</div>
 			</div>
+			<hr />
+			<div className="form-error">{tasks.error}</div>
 			{taskList.map((task, index) => (
 				<p key={task.key}>
 					<TaskFieldset title={`Task #${index + 1}`} {...task} />
@@ -76,7 +78,7 @@ export default function TodoForm() {
 			))}
 			<button {...list.append(tasks.name)}>Add task</button>
 			<hr />
-			<button type="submit">Save</button>
+			<button>Save</button>
 		</Form>
 	);
 }
@@ -106,7 +108,6 @@ function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
 						className={completed.error ? 'error' : ''}
 						{...conform.input(completed, {
 							type: 'checkbox',
-							value: 'yes',
 						})}
 					/>
 				</label>

@@ -1,7 +1,7 @@
 import { conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
-import { json } from '@remix-run/node';
+import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 
@@ -68,7 +68,7 @@ export async function action({ request }: ActionArgs) {
 		return json(submission);
 	}
 
-	throw new Error('Not implemented');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export default function Signup() {
@@ -86,7 +86,6 @@ export default function Signup() {
 
 	return (
 		<Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>
 				<input
@@ -112,7 +111,7 @@ export default function Signup() {
 				<div>{confirmPassword.error}</div>
 			</label>
 			<hr />
-			<button type="submit">Signup</button>
+			<button>Signup</button>
 		</Form>
 	);
 }
