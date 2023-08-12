@@ -1,54 +1,19 @@
-import { conform, parse, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
-import { json } from '@remix-run/node';
+import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { z } from 'zod';
 
-interface SignupForm {
-	email: string;
-	password: string;
-	confirmPassword: string;
-}
-
-function parseFormData(formData: FormData) {
-	return parse<SignupForm>(formData, {
-		resolve({ email, password, confirmPassword }) {
-			const error: Record<string, string> = {};
-
-			if (!email) {
-				error.email = 'Email is required';
-			} else if (!email.includes('@')) {
-				error.email = 'Email is invalid';
-			}
-
-			if (!password) {
-				error.password = 'Password is required';
-			}
-
-			if (!confirmPassword) {
-				error.confirmPassword = 'Confirm password is required';
-			} else if (confirmPassword !== password) {
-				error.confirmPassword = 'Password does not match';
-			}
-
-			if (error.email || error.password || error.confirmPassword) {
-				return { error };
-			}
-
-			// Return the value only if no error
-			return {
-				value: {
-					email,
-					password,
-					confirmPassword,
-				},
-			};
-		},
-	});
-}
+const schema = z.object({
+	email: z.string().email(),
+	password: z.string(),
+	remember: z.boolean().optional(),
+});
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parseFormData(formData);
+	const submission = parse(formData, { schema });
 
 	/**
 	 * Signup only when the user click on the submit button and no error found
@@ -58,25 +23,27 @@ export async function action({ request }: ActionArgs) {
 		return json(submission);
 	}
 
-	throw new Error('Not implemented');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
-export default function Signup() {
+export default function Login() {
 	// Last submission returned by the server
 	const lastSubmission = useActionData<typeof action>();
-	const [form, { email, password, confirmPassword }] = useForm({
+	const [form, { email, password, remember }] = useForm({
 		// Sync the result of last submission
 		lastSubmission,
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {
-			return parseFormData(formData);
+			return parse(formData, { schema });
 		},
+
+		// Validate the form on blur event triggered
+		shouldValidate: 'onBlur',
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
 			<div>
 				<label>Email</label>
 				<input
@@ -93,16 +60,14 @@ export default function Signup() {
 				/>
 				<div>{password.error}</div>
 			</div>
-			<div>
-				<label>Confirm Password</label>
-				<input
-					className={confirmPassword.error ? 'error' : ''}
-					{...conform.input(confirmPassword, { type: 'password' })}
-				/>
-				<div>{confirmPassword.error}</div>
-			</div>
+			<label>
+				<div>
+					<span>Remember me</span>
+					<input {...conform.input(remember, { type: 'checkbox' })} />
+				</div>
+			</label>
 			<hr />
-			<button type="submit">Signup</button>
+			<button>Login</button>
 		</Form>
 	);
 }

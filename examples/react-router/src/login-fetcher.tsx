@@ -1,82 +1,58 @@
-import type { Submission } from '@conform-to/react';
-import { useForm, parse, validateConstraint } from '@conform-to/react';
+import { useForm, conform } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { useFetcher, json, redirect } from 'react-router-dom';
+import { z } from 'zod';
 
-interface Login {
-	email: string;
-	password: string;
-	remember: string;
-}
-
-async function isAuthenticated(email: string, password: string) {
-	return new Promise((resolve) => {
-		resolve(email === 'conform@example.com' && password === '12345');
-	});
-}
+const schema = z.object({
+	email: z.string().email(),
+	password: z.string(),
+	remember: z.boolean().optional(),
+});
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData);
+	const submission = parse(formData, { schema });
 
-	if (
-		!(await isAuthenticated(
-			submission.payload.email,
-			submission.payload.password,
-		))
-	) {
-		return json({
-			...submission,
-			// '' denote the root which is treated as form error
-			error: { '': 'Invalid credential' },
-		});
+	if (submission.intent !== 'submit' || !submission.value) {
+		return json(submission);
 	}
 
-	return redirect('/');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export function Component() {
-	const fetcher = useFetcher<Submission>();
-	const [form, { email, password }] = useForm<Login>({
+	const fetcher = useFetcher();
+	const [form, { email, password, remember }] = useForm({
 		lastSubmission: fetcher.data,
-		shouldRevalidate: 'onBlur',
-		onValidate(context) {
-			return validateConstraint(context);
+		onValidate({ formData }) {
+			return parse(formData, { schema });
 		},
+		shouldRevalidate: 'onBlur',
 	});
 
 	return (
 		<fetcher.Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
-			<label>
-				<div>Email</div>
+			<div>
+				<label>Email</label>
 				<input
 					className={email.error ? 'error' : ''}
-					name="email"
-					type="email"
-					required
-					pattern="[^@]+@[^@]+\.[^@]+"
+					{...conform.input(email)}
 				/>
-				{email.error === 'required' ? (
-					<div>Email is required</div>
-				) : email.error === 'type' || email.error === 'pattern' ? (
-					<div>Email is invalid</div>
-				) : null}
-			</label>
-			<label>
-				<div>Password</div>
+				<div>{email.error}</div>
+			</div>
+			<div>
+				<label>Password</label>
 				<input
 					className={password.error ? 'error' : ''}
-					name="password"
-					type="password"
-					required
+					{...conform.input(password, { type: 'password' })}
 				/>
-				{password.error === 'required' ? <div>Password is required</div> : null}
-			</label>
+				<div>{password.error}</div>
+			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input name="remember" type="checkbox" value="yes" />
+					<input {...conform.input(remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

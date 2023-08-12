@@ -10,6 +10,7 @@ import {
 const router = createBrowserRouter(
 	createRoutesFromElements(
 		<Route path="/" Component={Example}>
+			<Route index lazy={() => import('./_index')} />
 			<Route path="login" lazy={() => import('./login')} />
 			<Route path="login-fetcher" lazy={() => import('./login-fetcher')} />
 			<Route path="todos" lazy={() => import('./todos')} />

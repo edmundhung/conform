@@ -1,8 +1,8 @@
 import type { Submission } from '@conform-to/react';
-import { useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
-import { Form, useActionData, json } from 'react-router-dom';
+import { Form, useActionData, json, redirect } from 'react-router-dom';
 import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json(submission);
 	}
 
-	throw new Error('Not implemented');
+	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export function Component() {
@@ -81,17 +81,16 @@ export function Component() {
 				schema: (intent) => createSchema(intent),
 			});
 		},
+		shouldRevalidate: 'onBlur',
 	});
 
 	return (
 		<Form method="post" {...form.props}>
-			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>
 				<input
 					className={username.error ? 'error' : ''}
-					type="text"
-					name="username"
+					{...conform.input(username)}
 				/>
 				<div>{username.error}</div>
 			</label>
@@ -99,8 +98,7 @@ export function Component() {
 				<div>Password</div>
 				<input
 					className={password.error ? 'error' : ''}
-					type="password"
-					name="password"
+					{...conform.input(password, { type: 'password' })}
 				/>
 				<div>{password.error}</div>
 			</label>
@@ -108,13 +106,12 @@ export function Component() {
 				<div>Confirm Password</div>
 				<input
 					className={confirmPassword.error ? 'error' : ''}
-					type="password"
-					name="confirmPassword"
+					{...conform.input(confirmPassword, { type: 'password' })}
 				/>
 				<div>{confirmPassword.error}</div>
 			</label>
 			<hr />
-			<button type="submit">Signup</button>
+			<button>Signup</button>
 		</Form>
 	);
 }
