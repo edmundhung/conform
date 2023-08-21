@@ -49,36 +49,46 @@ export default function SimpleList() {
 		<Form method="post" {...form.props}>
 			<Playground title="Simple list" lastSubmission={lastSubmission}>
 				<Alert errors={items.errors} />
-				<ol>
+				<ol className="flex flex-col gap-2 mb-4">
 					{itemsList.map((item, index) => (
-						<li key={item.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} config={item}>
-								<input {...conform.input(item, { type: 'text' })} />
-							</Field>
-							<div className="flex flex-row gap-2">
+						<div key={item.key} className="flex flex-col gap-2">
+							{index > 0 && (
 								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.remove(items.name, { index })}
+									className="self-center rounded-md border p-2 hover:border-black"
+									{...list.insert(items.name, { index })}
 								>
-									Delete
+									Insert in between
 								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.reorder(items.name, { from: index, to: 0 })}
-								>
-									Move to top
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.replace(items.name, {
-										index,
-										defaultValue: '',
-									})}
-								>
-									Clear
-								</button>
-							</div>
-						</li>
+							)}
+							<li className="border rounded-md p-4">
+								<Field label={`Item #${index + 1}`} config={item}>
+									<input {...conform.input(item, { type: 'text' })} />
+								</Field>
+								<div className="flex flex-row gap-2">
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...list.remove(items.name, { index })}
+									>
+										Delete
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...list.reorder(items.name, { from: index, to: 0 })}
+									>
+										Move to top
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...list.replace(items.name, {
+											index,
+											defaultValue: '',
+										})}
+									>
+										Clear
+									</button>
+								</div>
+							</li>
+						</div>
 					))}
 				</ol>
 				<div className="flex flex-row gap-2">

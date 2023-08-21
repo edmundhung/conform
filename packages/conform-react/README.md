@@ -508,6 +508,9 @@ function Example() {
       {/* To prepend a new row with optional defaultValue */}
       <button {...list.prepend('name', { defaultValue })}>Prepend</button>
 
+      {/* To insert a new row with optional defaultValue at a given index */}
+      <button {...list.insert('name', { defaultValue, index })}>Insert</button>
+
       {/* To remove a row by index */}
       <button {...list.remove('name', { index })}>Remove</button>
 

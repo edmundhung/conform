@@ -8,6 +8,7 @@ export interface IntentButtonProps {
 }
 
 export type ListIntentPayload<Schema = unknown> =
+	| { name: string; operation: 'insert'; defaultValue?: Schema; index: number }
 	| { name: string; operation: 'prepend'; defaultValue?: Schema }
 	| { name: string; operation: 'append'; defaultValue?: Schema }
 	| { name: string; operation: 'replace'; defaultValue: Schema; index: number }
@@ -151,6 +152,9 @@ export function updateList<Schema>(
 			break;
 		case 'append':
 			list.push(payload.defaultValue as any);
+			break;
+		case 'insert':
+			list.splice(payload.index, 0, payload.defaultValue as any);
 			break;
 		case 'replace':
 			list.splice(payload.index, 1, payload.defaultValue);
