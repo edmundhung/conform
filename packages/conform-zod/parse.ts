@@ -122,7 +122,6 @@ export function refine(
 			code: ZodIssueCode.custom,
 			message: VALIDATION_SKIPPED,
 			path: options.path,
-			params: options.params,
 		});
 		return;
 	}
@@ -136,7 +135,6 @@ export function refine(
 			code: ZodIssueCode.custom,
 			message: VALIDATION_UNDEFINED,
 			path: options.path,
-			params: options.params,
 		});
 		return;
 	}
