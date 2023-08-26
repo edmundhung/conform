@@ -34,7 +34,7 @@ function Example() {
   return (
     <form {...form.props}>
       <fieldset>
-        <lengend>Please select your favorite color</legend>
+        <legend>Please select your favorite color</legend>
         {conform
           .collection(color, {
             type: 'radio',
@@ -45,9 +45,9 @@ function Example() {
               <label>{props.value}</label>
               <input {...props} />
             </div>
-          )))}
+          ))}
         <div>{color.error}</div>
-      </legend>
+      </fieldset>
       <button>Submit</button>
     </form>
   );
@@ -80,7 +80,7 @@ function Example() {
   return (
     <form {...form.props}>
       <fieldset>
-        <lengend>Please select the correct answers</legend>
+        <legend>Please select the correct answers</legend>
         {conform
           .collection(answer, {
             type: 'checkbox',
@@ -91,9 +91,9 @@ function Example() {
               <label>{props.value}</label>
               <input {...props} />
             </div>
-          )))}
+          ))}
         <div>{answer.error}</div>
-      </legend>
+      </fieldset>
       <button>Submit</button>
     </form>
   );
