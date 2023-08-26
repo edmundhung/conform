@@ -14,6 +14,7 @@ import {
 	type ZodErrorMap,
 	type IssueData,
 	ZodIssueCode,
+	ZodCustomIssue,
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
 
@@ -105,11 +106,15 @@ export function refine(
 		/**
 		 * The message displayed when the validation fails.
 		 */
-		message: string;
+		message?: string;
 		/**
 		 * The path set to the zod issue.
 		 */
 		path?: IssueData['path'];
+		/**
+		 * Custom parameters
+		 */
+		params?: ZodCustomIssue['params'];
 	},
 ): void | Promise<void> {
 	if (typeof options.when !== 'undefined' && !options.when) {
@@ -143,6 +148,7 @@ export function refine(
 			code: ZodIssueCode.custom,
 			message: options.message,
 			path: options.path,
+			params: options.params,
 		});
 	};
 
