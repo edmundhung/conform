@@ -143,7 +143,7 @@ test.describe('conform-dom', () => {
 				error: {},
 			};
 
-			const intent1 = list.prepend('tasks');
+			const intent1 = list.insert('tasks', { index: 0 });
 
 			expect(
 				parse(createFormData([...entries, [intent1.name, intent1.value]])),
@@ -155,8 +155,9 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent2 = list.prepend('tasks', {
+			const intent2 = list.insert('tasks', {
 				defaultValue: { content: 'Something' },
+				index: 0,
 			});
 
 			expect(
