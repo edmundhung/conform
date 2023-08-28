@@ -76,7 +76,7 @@ export default function TodoForm() {
 					</button>
 				</p>
 			))}
-			<button {...list.append(tasks.name)}>Add task</button>
+			<button {...list.insert(tasks.name)}>Add task</button>
 			<hr />
 			<button>Save</button>
 		</Form>

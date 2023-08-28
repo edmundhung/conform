@@ -110,7 +110,7 @@ function Example() {
 }
 ```
 
-For information about modifying list (e.g. append / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
+For information about modifying list (e.g. insert / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
 
 ## Nested List
 

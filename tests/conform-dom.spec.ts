@@ -169,7 +169,7 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent3 = list.append('tasks');
+			const intent3 = list.insert('tasks');
 
 			expect(
 				parse(createFormData([...entries, [intent3.name, intent3.value]])),
@@ -181,7 +181,7 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent4 = list.append('tasks', {
+			const intent4 = list.insert('tasks', {
 				defaultValue: { content: 'Something' },
 			});
 

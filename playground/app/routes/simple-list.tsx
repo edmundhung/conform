@@ -100,7 +100,7 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.append(items.name)}
+						{...list.insert(items.name)}
 					>
 						Insert bottom
 					</button>

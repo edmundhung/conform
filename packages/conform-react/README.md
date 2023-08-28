@@ -270,7 +270,7 @@ function Example() {
       ))}
 
       {/* Setup a button that can append a new row with optional default value */}
-      <button {...list.append(items.name, { defaultValue: '' })}>add</button>
+      <button {...list.insert(items.name, { defaultValue: '' })}>add</button>
     </fieldset>
   );
 }
@@ -502,13 +502,16 @@ import { list } from '@conform-to/react';
 function Example() {
   return (
     <form>
-      {/* To append a new row with optional defaultValue */}
+      {/* **@deprecated** Use `list.insert` instead.
+To append a new row with optional defaultValue */}
       <button {...list.append('name', { defaultValue })}>Append</button>
 
-      {/* To prepend a new row with optional defaultValue */}
+      {/* **@deprecated** Use `list.insert` instead.
+To prepend a new row with optional defaultValue */}
       <button {...list.prepend('name', { defaultValue })}>Prepend</button>
 
-      {/* To insert a new row with optional defaultValue at a given index */}
+      {/* To insert a new row with optional defaultValue at a given index.
+If no index is given, then the element will be appended at the end of the list. */}
       <button {...list.insert('name', { defaultValue, index })}>Insert</button>
 
       {/* To remove a row by index */}

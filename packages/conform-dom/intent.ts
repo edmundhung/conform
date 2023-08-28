@@ -8,7 +8,7 @@ export interface IntentButtonProps {
 }
 
 export type ListIntentPayload<Schema = unknown> =
-	| { name: string; operation: 'insert'; defaultValue?: Schema; index: number }
+	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
 	| { name: string; operation: 'prepend'; defaultValue?: Schema }
 	| { name: string; operation: 'append'; defaultValue?: Schema }
 	| { name: string; operation: 'replace'; defaultValue: Schema; index: number }
@@ -95,6 +95,7 @@ export function requestIntent(
 	},
 ): void {
 	if (!form) {
+		// eslint-disable-next-line no-console
 		console.warn('No form element is provided');
 		return;
 	}
@@ -154,7 +155,7 @@ export function updateList<Schema>(
 			list.push(payload.defaultValue as any);
 			break;
 		case 'insert':
-			list.splice(payload.index, 0, payload.defaultValue as any);
+			list.splice(payload.index ?? list.length, 0, payload.defaultValue as any);
 			break;
 		case 'replace':
 			list.splice(payload.index, 1, payload.defaultValue);
