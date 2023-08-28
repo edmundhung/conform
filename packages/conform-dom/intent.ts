@@ -8,6 +8,7 @@ export interface IntentButtonProps {
 }
 
 export type ListIntentPayload<Schema = unknown> =
+	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
 	| { name: string; operation: 'prepend'; defaultValue?: Schema }
 	| { name: string; operation: 'append'; defaultValue?: Schema }
 	| { name: string; operation: 'replace'; defaultValue: Schema; index: number }
@@ -21,21 +22,34 @@ type ExtractListIntentPayload<Operation, Schema = unknown> = Pretty<
 	>
 >;
 
+type ListIntent<Operation> = {} extends ExtractListIntentPayload<Operation>
+	? <Schema>(
+			name: string,
+			payload?: ExtractListIntentPayload<Operation, Schema>,
+	  ) => IntentButtonProps
+	: <Schema>(
+			name: string,
+			payload: ExtractListIntentPayload<Operation, Schema>,
+	  ) => IntentButtonProps;
+
 /**
  * Helpers to configure an intent button for modifying a list
  *
  * @see https://conform.guide/api/react#list
  */
 export const list = new Proxy<{
-	[Operation in ListIntentPayload['operation']]: {} extends ExtractListIntentPayload<Operation>
-		? <Schema>(
-				name: string,
-				payload?: ExtractListIntentPayload<Operation, Schema>,
-		  ) => IntentButtonProps
-		: <Schema>(
-				name: string,
-				payload: ExtractListIntentPayload<Operation, Schema>,
-		  ) => IntentButtonProps;
+	/**
+	 * @deprecated You can use `insert` without specifying an index instead
+	 */
+	append: ListIntent<'append'>;
+	/**
+	 * @deprecated You can use `insert` with zero index instead
+	 */
+	prepend: ListIntent<'prepend'>;
+	insert: ListIntent<'insert'>;
+	replace: ListIntent<'replace'>;
+	remove: ListIntent<'remove'>;
+	reorder: ListIntent<'reorder'>;
 }>({} as any, {
 	get(_target, operation: any) {
 		return (name: string, payload = {}): IntentButtonProps => ({
@@ -94,6 +108,7 @@ export function requestIntent(
 	},
 ): void {
 	if (!form) {
+		// eslint-disable-next-line no-console
 		console.warn('No form element is provided');
 		return;
 	}
@@ -151,6 +166,9 @@ export function updateList<Schema>(
 			break;
 		case 'append':
 			list.push(payload.defaultValue as any);
+			break;
+		case 'insert':
+			list.splice(payload.index ?? list.length, 0, payload.defaultValue as any);
 			break;
 		case 'replace':
 			list.splice(payload.index, 1, payload.defaultValue);

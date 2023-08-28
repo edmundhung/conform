@@ -99,7 +99,7 @@ export default function Todos() {
         ))}
       </ul>
       <div>
-        <button {...list.append(tasks.name)}>Add task</button>
+        <button {...list.insert(tasks.name)}>Add task</button>
       </div>
       <button>Save</button>
     </form>
@@ -159,7 +159,7 @@ export default function Todos() {
         ))}
       </ul>
       <div>
-        <button {...list.append(tasks.name)} ref={buttonRef}>
+        <button {...list.insert(tasks.name)} ref={buttonRef}>
           Add task
         </button>
       </div>

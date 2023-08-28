@@ -143,7 +143,7 @@ test.describe('conform-dom', () => {
 				error: {},
 			};
 
-			const intent1 = list.prepend('tasks');
+			const intent1 = list.insert('tasks', { index: 0 });
 
 			expect(
 				parse(createFormData([...entries, [intent1.name, intent1.value]])),
@@ -155,8 +155,9 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent2 = list.prepend('tasks', {
+			const intent2 = list.insert('tasks', {
 				defaultValue: { content: 'Something' },
+				index: 0,
 			});
 
 			expect(
@@ -169,7 +170,7 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent3 = list.append('tasks');
+			const intent3 = list.insert('tasks');
 
 			expect(
 				parse(createFormData([...entries, [intent3.name, intent3.value]])),
@@ -181,7 +182,7 @@ test.describe('conform-dom', () => {
 				},
 			});
 
-			const intent4 = list.append('tasks', {
+			const intent4 = list.insert('tasks', {
 				defaultValue: { content: 'Something' },
 			});
 
@@ -341,6 +342,20 @@ test.describe('conform-dom', () => {
 					name: 'tasks',
 					operation: 'prepend',
 					defaultValue: 'testing/seperator',
+				},
+			});
+			expect(
+				parseIntent(
+					list.insert('tasks', { index: 3, defaultValue: 'testing/seperator' })
+						.value,
+				),
+			).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'insert',
+					defaultValue: 'testing/seperator',
+					index: 3,
 				},
 			});
 			expect(parseIntent(list.remove('tasks', { index: 0 }).value)).toEqual({

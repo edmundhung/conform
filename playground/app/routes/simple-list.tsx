@@ -84,13 +84,13 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.prepend(items.name)}
+						{...list.insert(items.name, { index: 0 })}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.append(items.name)}
+						{...list.insert(items.name)}
 					>
 						Insert bottom
 					</button>
