@@ -344,6 +344,20 @@ test.describe('conform-dom', () => {
 					defaultValue: 'testing/seperator',
 				},
 			});
+			expect(
+				parseIntent(
+					list.insert('tasks', { index: 3, defaultValue: 'testing/seperator' })
+						.value,
+				),
+			).toEqual({
+				type: 'list',
+				payload: {
+					name: 'tasks',
+					operation: 'insert',
+					defaultValue: 'testing/seperator',
+					index: 3,
+				},
+			});
 			expect(parseIntent(list.remove('tasks', { index: 0 }).value)).toEqual({
 				type: 'list',
 				payload: {

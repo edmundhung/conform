@@ -502,17 +502,11 @@ import { list } from '@conform-to/react';
 function Example() {
   return (
     <form>
-      {/* **@deprecated** Use `list.insert` instead.
-To append a new row with optional defaultValue */}
-      <button {...list.append('name', { defaultValue })}>Append</button>
-
-      {/* **@deprecated** Use `list.insert` instead.
-To prepend a new row with optional defaultValue */}
-      <button {...list.prepend('name', { defaultValue })}>Prepend</button>
-
-      {/* To insert a new row with optional defaultValue at a given index.
-If no index is given, then the element will be appended at the end of the list. */}
-      <button {...list.insert('name', { defaultValue, index })}>Insert</button>
+      {/*
+        To insert a new row with optional defaultValue at a given index.
+        If no index is given, then the element will be appended at the end of the list.
+      */}
+      <button {...list.insert('name', { index, defaultValue })}>Insert</button>
 
       {/* To remove a row by index */}
       <button {...list.remove('name', { index })}>Remove</button>

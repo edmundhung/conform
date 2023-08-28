@@ -3,9 +3,8 @@ import { getPlayground } from '../helpers';
 
 function getFieldset(form: Locator) {
 	return {
-		items: form.locator('ol li'),
+		items: form.locator('ol > li'),
 		insertTop: form.locator('button:text("Insert top")'),
-		insertInBetween: form.locator('button:text("Insert in between")'),
 		insertBottom: form.locator('button:text("Insert bottom")'),
 	};
 }
@@ -51,7 +50,7 @@ async function runValidationScenario(page: Page) {
 	await expect(playground.error).toHaveText(['At least one item is required']);
 
 	// Insert a new row
-	await fieldset.insertBottom.click();
+	await fieldset.insertTop.click();
 	await expect(fieldset.items).toHaveCount(1);
 	await expect(item0.content).toHaveValue('');
 
@@ -64,8 +63,8 @@ async function runValidationScenario(page: Page) {
 	await expect(item0.content).toHaveValue('');
 	await expect(item1.content).toHaveValue('Another item');
 
-	// Insert a new row in between
-	await fieldset.insertInBetween.click();
+	// Insert a new row at the bottom
+	await fieldset.insertBottom.click();
 	await expect(fieldset.items).toHaveCount(3);
 	await expect(playground.error).toHaveText([
 		'Maximum 2 items are allowed',
@@ -74,47 +73,19 @@ async function runValidationScenario(page: Page) {
 		'',
 	]);
 	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('');
-	await expect(item2.content).toHaveValue('Another item');
+	await expect(item1.content).toHaveValue('Another item');
+	await expect(item2.content).toHaveValue('');
 
 	await playground.submit.click();
 	await expect(playground.error).toHaveText([
 		'Maximum 2 items are allowed',
 		'The field is required',
-		'The field is required',
 		'',
+		'The field is required',
 	]);
 
 	// Delete the first row
 	await item0.delete.click();
-	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('Another item');
-
-	// Trigger revalidation
-	await playground.submit.click();
-	await expect(playground.error).toHaveText(['', 'The field is required', '']);
-
-	// Type something on 1st item
-	await item0.content.type('1st item');
-
-	// Trigger revalidation
-	await playground.submit.click();
-	await expect(playground.error).toHaveText(['', 'Number is not allowed', '']);
-
-	// Clear 1st row
-	await item0.clear.click();
-	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('');
-	await expect(item1.content).toHaveValue('Another item');
-	await expect(playground.error).toHaveText(['', '', '']);
-
-	// Trigger revalidation
-	await playground.submit.click();
-	await expect(playground.error).toHaveText(['', 'The field is required', '']);
-
-	// Move 1st row to top
-	await item1.moveToTop.click();
 	await expect(fieldset.items).toHaveCount(2);
 	await expect(item0.content).toHaveValue('Another item');
 	await expect(item1.content).toHaveValue('');
@@ -123,7 +94,35 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', '', 'The field is required']);
 
-	await item1.content.type('Top item');
+	// Type something on 2nd item
+	await item1.content.type('2nd item');
+
+	// Trigger revalidation
+	await playground.submit.click();
+	await expect(playground.error).toHaveText(['', '', 'Number is not allowed']);
+
+	// Clear 2nd row
+	await item1.clear.click();
+	await expect(fieldset.items).toHaveCount(2);
+	await expect(item0.content).toHaveValue('Another item');
+	await expect(item1.content).toHaveValue('');
+	await expect(playground.error).toHaveText(['', '', '']);
+
+	// Trigger revalidation
+	await playground.submit.click();
+	await expect(playground.error).toHaveText(['', '', 'The field is required']);
+
+	// Move 2nd row to top
+	await item1.moveToTop.click();
+	await expect(fieldset.items).toHaveCount(2);
+	await expect(item0.content).toHaveValue('');
+	await expect(item1.content).toHaveValue('Another item');
+
+	// Trigger revalidation
+	await playground.submit.click();
+	await expect(playground.error).toHaveText(['', 'The field is required', '']);
+
+	await item0.content.type('Top item');
 
 	// Trigger revalidation
 	await playground.submit.click();
@@ -133,11 +132,11 @@ async function runValidationScenario(page: Page) {
 			{
 				intent: 'submit',
 				payload: {
-					items: ['Another item', 'Top item'],
+					items: ['Top item', 'Another item'],
 				},
 				error: {},
 				value: {
-					items: ['Another item', 'Top item'],
+					items: ['Top item', 'Another item'],
 				},
 			},
 			null,
