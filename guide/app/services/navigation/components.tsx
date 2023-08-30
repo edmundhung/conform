@@ -4,7 +4,6 @@ import clsx from 'clsx';
 import {
 	AnimatePresence,
 	motion,
-	useIsPresent,
 	useScroll,
 	useTransform,
 } from 'framer-motion';
@@ -42,8 +41,9 @@ const navigation: Navigation[] = [
 		menus: [
 			{ title: 'Validation', to: '/validation' },
 			{ title: 'Integrations', to: '/integrations' },
-			{ title: 'Nested object and Array', to: '/configuration' },
+			{ title: 'Nested object and Array', to: '/complex-structures' },
 			{ title: 'Intent button', to: '/intent-button' },
+			{ title: 'Checkbox and Radio Group', to: '/checkbox-and-radio-group' },
 			{ title: 'File Upload', to: '/file-upload' },
 			{ title: 'Focus management', to: '/focus-management' },
 			{ title: 'Accessibility', to: '/accessibility' },
@@ -96,13 +96,8 @@ export function NavigationList(
 		<nav {...props}>
 			<ul>
 				<li className="md:hidden">
-					<TopLevelNavItem href="https://github.com/edmundhung/conform/discussion">
-						Discussion
-					</TopLevelNavItem>
-				</li>
-				<li className="md:hidden">
 					<TopLevelNavItem href="https://github.com/edmundhung/conform/releases">
-						Changelog
+						Release notes
 					</TopLevelNavItem>
 				</li>
 				{navigation.map((group, groupIndex) => (
@@ -481,8 +476,8 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
 				<nav className="hidden md:block">
 					<ul className="flex items-center gap-8">
 						<li>
-							<TopLevelNavItemHeader href="https://github.com/edmundhung/conform">
-								v0.7.2
+							<TopLevelNavItemHeader href="https://github.com/edmundhung/conform/releases">
+								v0.8.0
 							</TopLevelNavItemHeader>
 						</li>
 					</ul>
