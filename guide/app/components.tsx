@@ -2,10 +2,10 @@ import type { RenderableTreeNodes } from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
 import { Link as RouterLink, useMatches } from '@remix-run/react';
 import * as React from 'react';
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/cjs/prism-light';
-import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
-import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
-import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
+import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
+import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
+import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
 import { getChildren, isTag } from './markdoc';
 
 const style = {

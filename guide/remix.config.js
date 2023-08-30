@@ -1,13 +1,25 @@
 /** @type {import('@remix-run/dev').AppConfig} */
-module.exports = {
+export default {
+	devServerBroadcastDelay: 1000,
+	ignoredRouteFiles: ['**/.*'],
+	server: './server.ts',
+	serverBuildPath: 'functions/[[path]].js',
+	serverConditions: ['workerd', 'worker', 'browser'],
+	serverDependenciesToBundle: 'all',
+	serverMainFields: ['browser', 'module', 'main'],
+	serverMinify: true,
 	serverModuleFormat: 'esm',
-	serverDependenciesToBundle: ['@remix-run/react'],
+	serverPlatform: 'neutral',
+	// appDirectory: "app",
+	// assetsBuildDirectory: "public/build",
+	// publicPath: "/build/",
 	future: {
+		v2_dev: true,
+		v2_errorBoundary: false,
+		v2_headers: false,
+		v2_meta: false,
+		v2_normalizeFormMethod: true,
 		v2_routeConvention: true,
-		unstable_dev: {
-			appServerPort: 3000,
-			rebuildPollIntervalMs: 500,
-		},
-		unstable_tailwind: true,
 	},
+	tailwind: true,
 };
