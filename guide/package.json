@@ -1,15 +1,13 @@
 {
 	"private": true,
 	"sideEffects": false,
+	"type": "module",
 	"scripts": {
-		"build": "run-s build:*",
-		"build:remix": "remix build",
-		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./functions/[[path]].ts",
-		"dev:remix": "cross-env NODE_ENV=development remix dev",
-		"dev:wrangler": "cross-env NODE_ENV=development wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development",
-		"dev": "run-p dev:*",
+		"build": "remix build",
+		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.ts",
+		"dev": "remix dev --manual -c \"npm run start\"",
 		"predev": "remix build",
-		"start": "cross-env NODE_ENV=production npm run dev:wrangler"
+		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development"
 	},
 	"dependencies": {
 		"@markdoc/markdoc": "^0.1.7",
