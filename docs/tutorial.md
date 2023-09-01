@@ -1,22 +1,10 @@
 # Tutorial
 
-In this tutoiral, we will show you how to enhance a contact form with Conform.
-
-<!-- aside -->
-
-## On this page
-
-- [Installation](#installation)
-- [Initial setup](#initial-setup)
-- [Introducing Conform](#introducing-conform)
-- [Setting client validation](#setting-client-validation)
-- [Making it accessible](#making-it-accessible)
-
-<!-- /aside -->
+In this tutoiral, we will start with a simple contact form built with just Remix and Zod. Then, we will show you how to enhance it using Conform.
 
 ## Installation
 
-Before start, please install conform on your project:
+Before start, please install conform on your project.
 
 ```sh
 npm install @conform-to/react @conform-to/zod --save
@@ -24,68 +12,31 @@ npm install @conform-to/react @conform-to/zod --save
 
 ## Initial setup
 
-Let's build a simple contact form with Remix.
+First, let's build a contact form with Remix and Zod. Here is a schema that we will use to validate the form data:
 
-```tsx
-import { type ActionArgs, json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+```ts
 import { z } from 'zod';
-import { sendMessage } from '~/message';
 
 const schema = z.object({
-  email: z
-    .string({ required_error: 'Email is required' })
-    .email('Email is invalid'),
-  message: z.string({ required_error: 'Message is required' }),
+  // The preprocess is necessary for zod to perform the required check correctly
+  // As the value of an empty input is an empty string
+  email: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z
+      .string({ required_error: 'Email is required' })
+      .email('Email is invalid'),
+  ),
+  message: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string({ required_error: 'Message is required' }),
+  ),
 });
-
-export async function action({ request }: ActionArgs) {
-  const formData = await request.formData();
-
-  // Parse the form data
-  const payload = Object.fromEntries(formData);
-  const result = schema.safeParse(payload);
-
-  if (!result.success) {
-    return json({
-      payload,
-      error: result.error.flatten().fieldErrors,
-    });
-  }
-
-  return await sendMessage(result.data);
-}
-
-export default function ContactUs() {
-  const result = useActionData<typeof action>();
-
-  return (
-    <Form method="post">
-      <div>
-        <label>Email</label>
-        <input type="email" name="email" defaultValue={result?.payload.email} />
-        <div>{result?.error.email}</div>
-      </div>
-      <div>
-        <label>Message</label>
-        <textarea name="message" defaultValue={result?.payload.message} />
-        <div>{result?.error.message}</div>
-      </div>
-      <button>Send</button>
-    </Form>
-  );
-}
 ```
 
-## Introducing Conform
-
-Now, it's time to enhance it using Conform.
+In the action, we will parse the form data and validate it with zod. If there is any error, we will return it to the client together with the submitted value.
 
 ```tsx
-import { useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
 
@@ -96,32 +47,152 @@ const schema = z.object({
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
 
-  // Replace `Object.fromEntries()` with the parse function
+  // Parse the form data with zod
+  const payload = Object.fromEntries(formData);
+  const result = schema.safeParse(payload);
+
+  if (!result.success) {
+    return json({
+      payload,
+      error: result.error.flatten().fieldErrors,
+    });
+  }
+
+  // Sends a message if the form is valid
+  // We will skip the implementation as it is not relevant to the tutorial
+  return await sendMessage(result.data);
+}
+```
+
+Lastly, we will render the contact form. If the last submission is returned from `useActionData()`, we will display the error message next to each field. The fields are also initialized with the submitted value to persist the form data in case the document is reloaded.
+
+```tsx
+import { type ActionArgs, json } from '@remix-run/node';
+import { Form, useActionData } from '@remix-run/react';
+import { z } from 'zod';
+import { sendMessage } from '~/message';
+
+const schema = z.object({
+  // ...
+});
+
+export async function action({ request }: ActionArgs) {
+  // ...
+}
+
+export default function ContactUs() {
+  const result = useActionData<typeof action>();
+
+  return (
+    <Form method="post">
+      <div>
+        <label>Email</label>
+        <input
+          type="email"
+          name="email"
+          defaultValue={result?.payload.email}
+        />
+        <div>{result?.error.email}</div>
+      </div>
+      <div>
+        <label>Message</label>
+        <textarea
+          name="message"
+          defaultValue={result?.payload.message}
+        />
+        <div>{result?.error.message}</div>
+      </div>
+      <button>Send</button>
+    </Form>
+  );
+}
+```
+
+## Introduce Conform
+
+Now, let's enhance it using Conform. To begin, we can remove the preprocess from the zod schema as Conform's zod integration will strip empty value for you.
+
+```tsx
+import { z } from 'zod';
+
+const schema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .email('Email is invalid'),
+  message: z.string({ required_error: 'Message is required' }),
+});
+```
+
+Then, we can simplify the action with the `parse()` helper function. It will parse the form data and return a submission object which has both the submitted value and error message returned by the schema.
+
+```tsx
+import { parse } from '@conform-to/zod';
+import { type ActionArgs, json } from '@remix-run/node';
+import { z } from 'zod';
+import { sendMessage } from '~/message';
+
+const schema = z.object({
+  // ...
+});
+
+export async function action({ request }: ActionArgs) {
+  const formData = await request.formData();
+
+  // Replace `Object.fromEntries()` with the parse helper
   const submission = parse(formData, { schema });
 
   // Report the submission to client
   // 1) if the intent is not `submit`, or
-  // 2) if there is any error
+  // 2) if there is any error (i.e. Failed to parse the value)
   if (submission.intent !== 'submit' || !submission.value) {
     return json(submission);
   }
 
   return await sendMessage(submission.value);
 }
+```
+
+Configuring a form could be messy and tedious. How about centralizing all config in a `useForm()` hook and let Conform manages them for you?
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import { type ActionArgs, json } from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
+import { z } from 'zod';
+import { sendMessage } from '~/message';
+import { getUser } from '~/session';
+
+const schema = z.object({
+  // ...
+});
+
+export async function loader({ request }: LoaderArgs) {
+  // Fetch user profile from the session
+  return json(await getUser(request));
+}
+
+export async function action({ request }: ActionArgs) {
+  // ...
+}
 
 export default function ContactUs() {
+  const user = useLoaderData<typeof loader>();
   const lastSubmission = useActionData<typeof action>();
-
-  // The `useForm` hook will return everything you need to setup a form
-  // including the error and config of each field
   const [form, fields] = useForm({
-    // The last submission will be used to report the error and
-    // served as the default value and initial error of the form
-    // for progressive enhancement
+    // To sync server error from the server
+    // It will also be used as the default value of the form
+    // if document is reloaded for progressive enhancement
     lastSubmission,
 
-    // Validate the field once a `blur` event is triggered
-    shouldValidate: 'onBlur',
+    // Setup default value for each field
+    defaultValue: {
+      email: user.email,
+    },
   });
 
   return (
@@ -137,7 +208,10 @@ export default function ContactUs() {
       </div>
       <div>
         <label>Message</label>
-        <textarea name="message" defaultValue={fields.message.defaultValue} />
+        <textarea
+          name="message"
+          defaultValue={fields.message.defaultValue}
+        />
         <div>{fields.message.errors}</div>
       </div>
       <button>Send</button>
@@ -146,31 +220,87 @@ export default function ContactUs() {
 }
 ```
 
-Conform will trigger a [server validation](./validation.md#server-validation) to validate each field whenever user leave the input (i.e. `onBlur`). It also focuses on the first invalid field on submit.
+## Improve validation experience
 
-## Setting client validation
-
-Server validation might some time be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
+Right now the contact form will be validated on the server when the user submit it. What if we want to have each field being validated whenever user leaves the field?
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
-import { type ActionArgs, json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import {
+  type ActionArgs,
+  type LoaderArgs,
+  json,
+} from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
 import { sendMessage } from '~/message';
+import { getUser } from '~/session';
 
 const schema = z.object({
   // ...
 });
+
+export async function loader({ request }: LoaderArgs) {
+  // ...
+}
 
 export async function action({ request }: ActionArgs) {
   // ...
 }
 
 export default function ContactUs() {
+  const user = useLoaderData<typeof loader>();
   const lastSubmission = useActionData<typeof action>();
   const [form, fields] = useForm({
-    lastSubmission,
+    // ... previous config
+
+    // Validate field once a `blur` event is triggered
     shouldValidate: 'onBlur',
+  });
+
+  // ...
+}
+```
+
+Server validation might some time be too slow for a good user experience. With Conform, we can reuse the zod schema on the client for a instant feedback.
+
+```tsx
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import {
+  type ActionArgs,
+  type LoaderArgs,
+  json,
+} from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
+import { sendMessage } from '~/message';
+import { getUser } from '~/session';
+
+const schema = z.object({
+  // ...
+});
+
+export async function loader({ request }: LoaderArgs) {
+  // ...
+}
+
+export async function action({ request }: ActionArgs) {
+  // ...
+}
+
+export default function ContactUs() {
+  const user = useLoaderData<typeof loader>();
+  const lastSubmission = useActionData<typeof action>();
+  const [form, fields] = useForm({
+    // ... previous config
 
     // Run the same validation logic on client
     onValidate({ formData }) {
@@ -182,7 +312,7 @@ export default function ContactUs() {
 }
 ```
 
-## Making it accessible
+## Make it accessible
 
 There is more we need do to make a form accessible. For example:
 
@@ -191,20 +321,35 @@ There is more we need do to make a form accessible. For example:
 - Set an `id` for the error message and use it as the `aria-describedby` attribute of the field when there is an error
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
-import { type ActionArgs, json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import {
+  type ActionArgs,
+  type LoaderArgs,
+  json,
+} from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
 import { sendMessage } from '~/message';
+import { getProfile } from '~/session';
 
 const schema = z.object({
   // ...
 });
+
+export async function loader({ request }: LoaderArgs) {
+  // ...
+}
 
 export async function action({ request }: ActionArgs) {
   // ...
 }
 
 export default function LoginForm() {
+  const user = useLoaderData<typeof loader>();
   const lastSubmission = useActionData<typeof action>();
   const [form, fields] = useForm({
     // ...
@@ -219,9 +364,13 @@ export default function LoginForm() {
           type="email"
           name="email"
           defaultValue={fields.email.defaultValue}
-          aria-invalid={fields.email.errors.length > 0 || undefined}
+          aria-invalid={
+            fields.email.errors.length > 0 || undefined
+          }
           aria-describedby={
-            fields.email.errors.length > 0 ? 'email-error' : undefined
+            fields.email.errors.length > 0
+              ? 'email-error'
+              : undefined
           }
         />
         <div id="email-error">{fields.email.errors}</div>
@@ -232,9 +381,13 @@ export default function LoginForm() {
           id="message"
           name="message"
           defaultValue={fields.message.defaultValue}
-          aria-invalid={fields.message.errors.length > 0 || undefined}
+          aria-invalid={
+            fields.message.errors.length > 0 || undefined
+          }
           aria-describedby={
-            fields.message.errors.length > 0 ? 'message-error' : undefined
+            fields.message.errors.length > 0
+              ? 'message-error'
+              : undefined
           }
         />
         <div id="message-error">{fields.message.error}</div>
@@ -245,15 +398,24 @@ export default function LoginForm() {
 }
 ```
 
-How about letting Conform manage all these ids for us?
+What if Conform can manage all these ids for us?
 
 ```tsx
 import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
-import { type ActionArgs, json } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+import {
+  type ActionArgs,
+  type LoaderArgs,
+  json,
+} from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
 import { useId } from 'react';
 import { sendMessage } from '~/message';
+import { getProfile } from '~/session';
 
 const schema = z.object({
   // ...
@@ -264,6 +426,7 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function LoginForm() {
+  const user = useLoaderData<typeof loader>();
   const lastSubmission = useActionData<typeof action>();
 
   // Generate a unique id for the form, or you can pass in your own
@@ -273,8 +436,86 @@ export default function LoginForm() {
     // Let Conform manage all ids for us
     id,
 
+    // ... previous config
+  });
+
+  return (
+    <Form method="post" {...form.props}>
+      <div>
+        <label htmlFor={fields.email.id}>Email</label>
+        {/* This derives attributes required by the input, such as type, name and default value */}
+        <input
+          {...conform.input(fields.email, { type: 'email' })}
+        />
+        <div id={fields.email.errorId}>
+          {fields.email.errors}
+        </div>
+      </div>
+      <div>
+        <label htmlFor={fields.message.id}>Message</label>
+        {/* It also manages id, aria attributes, autoFocus and validation attributes for us! */}
+        <textarea {...conform.textarea(fields.message)} />
+        <div id={fields.message.errorId}>
+          {fields.message.errors}
+        </div>
+      </div>
+      <button>Send</button>
+    </Form>
+  );
+}
+```
+
+That's it! Here is the complete example that we have built in this tutorial:
+
+```tsx
+import { conform, useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
+import {
+  type ActionArgs,
+  type LoaderArgs,
+  json,
+} from '@remix-run/node';
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+} from '@remix-run/react';
+import { useId } from 'react';
+import { sendMessage } from '~/message';
+import { getProfile } from '~/session';
+
+const schema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .email('Email is invalid'),
+  message: z.string({ required_error: 'Message is required' }),
+});
+
+export async function loader({ request }: LoaderArgs) {
+  return json(await getUser(request));
+}
+
+export async function action({ request }: ActionArgs) {
+  const formData = await request.formData();
+  const submission = parse(formData, { schema });
+
+  if (submission.intent !== 'submit' || !submission.value) {
+    return json(submission);
+  }
+
+  return await sendMessage(submission.value);
+}
+
+export default function LoginForm() {
+  const user = useLoaderData<typeof loader>();
+  const lastSubmission = useActionData<typeof action>();
+  const id = useId();
+  const [form, fields] = useForm({
+    id,
     lastSubmission,
-    shouldValidate: 'onBlur',
+    defaultValue: {
+      email: user.email,
+    },
     onValidate({ formData }) {
       return parse(formData, { schema });
     },
@@ -284,15 +525,19 @@ export default function LoginForm() {
     <Form method="post" {...form.props}>
       <div>
         <label htmlFor={fields.email.id}>Email</label>
-        {/* This derives attributes required by the input, such as type, name and default value */}
-        <input {...conform.input(fields.email, { type: 'email' })} />
-        <div id={fields.email.errorId}>{fields.email.errors}</div>
+        <input
+          {...conform.input(fields.email, { type: 'email' })}
+        />
+        <div id={fields.email.errorId}>
+          {fields.email.errors}
+        </div>
       </div>
       <div>
         <label htmlFor={fields.message.id}>Message</label>
-        {/* It also manages id, aria attributes, autoFocus and validation attributes for us! */}
         <textarea {...conform.textarea(fields.message)} />
-        <div id={fields.message.errorId}>{fields.message.errors}</div>
+        <div id={fields.message.errorId}>
+          {fields.message.errors}
+        </div>
       </div>
       <button>Send</button>
     </Form>
