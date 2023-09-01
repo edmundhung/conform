@@ -67,27 +67,39 @@ export function parse(markdown: string) {
 				},
 				transform(node) {
 					const type = node.attributes.type;
-					const gridcells = [];
-					let cell = {};
+					const nodes = node.children;
+					const cells: Array<{
+						name: string;
+						to: string;
+						tocontent: string;
+						description: string;
+					}> = [];
 
-					for (const child of node.children) {
-						if (child.type == 'heading') {
-							cell.name = child.children[0].children[0].attributes.content;
-						} else if (child.type == 'paragraph') {
-							const offspring = child.children[0].children[0];
-							if (offspring.type == 'text') {
-								cell.description = offspring.attributes.content;
-							} else if (offspring.type == 'link') {
-								cell.to = offspring.attributes.href;
-								cell.tocontent = offspring.children[0].attributes.content;
-								gridcells.push(cell);
-								cell = {};
-							}
+					while (nodes.length > 0) {
+						const [heading, description, link] = nodes.splice(0, 3);
+
+						if (
+							heading.type !== 'heading' ||
+							description.type !== 'paragraph' ||
+							description.children[0].children[0].type !== 'text' ||
+							link.type !== 'paragraph' ||
+							link.children[0].children[0].type !== 'link'
+						) {
+							throw new Error('Invalid grid');
 						}
+
+						cells.push({
+							name: heading.children[0].children[0].attributes.content,
+							description:
+								description.children[0].children[0].attributes.content,
+							to: link.children[0].children[0].attributes.href,
+							tocontent:
+								link.children[0].children[0].children[0].attributes.content,
+						});
 					}
 
 					return new markdoc.Tag('Grid', {
-						gridcells,
+						cells,
 						type,
 					});
 				},

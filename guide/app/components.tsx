@@ -300,13 +300,13 @@ export function Grid({
 }) {
 	return (
 		<div className="not-prose mt-4 grid grid-cols-1 gap-x-6 gap-y-10 border-t border-zinc-900/5 pt-10 dark:border-white/5 sm:grid-cols-2 xl:max-w-none xl:grid-cols-3">
-			{(cells ?? []).map((cell) => (
+			{cells.map((cell) => (
 				<div key={cell.name} className="flex flex-row-reverse gap-6">
-					<div className="flex-auto">
+					<div className="flex-auto flex flex-col">
 						<h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
 							{cell.name}
 						</h3>
-						<p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+						<p className="mt-1 flex-1 text-sm text-zinc-600 dark:text-zinc-400">
 							{cell.description}
 						</p>
 						<p className="mt-4">
@@ -318,13 +318,6 @@ export function Grid({
 							</a>
 						</p>
 					</div>
-					{type === 'sdk' ? (
-						<img
-							src="/docs/images/remixlogo.svg"
-							className="h-12 w-12"
-							alt="Remix logo"
-						/>
-					) : null}
 				</div>
 			))}
 		</div>
