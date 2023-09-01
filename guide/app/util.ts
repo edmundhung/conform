@@ -11,7 +11,7 @@ export function notFound() {
 export function remToPx(remValue: number) {
 	let rootFontSize =
 		typeof document === 'undefined'
-			? 16
+			? 20
 			: parseFloat(window.getComputedStyle(document.documentElement).fontSize);
 
 	return remValue * rootFontSize;
