@@ -1,35 +1,42 @@
 # Integrations
 
-In this guide, we will show you how Conform can works with different form controls, including custom input components.
+In this guide, we will show you the different approaches to integrate form controls with Conform.
 
-<!-- aside -->
+<!-- row -->
 
-## On this page
+<!-- col -->
 
-- [Native form controls](#native-form-controls)
-- [Custom input component](#custom-input-component)
+## Concept
 
-<!-- /aside -->
+Conform utilizes event delegation to remove the need of setting up event listeners on individual form control. Based on the [validation mode](/docs/validation.md#validation-mode), it triggers validation upon a certain event and read the value of the form through the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) API. Conform can validate any form control as long as it fullfills these requirements:
 
-## Native form controls
+- It has a `name` attribute set without being `disabled` or marked as `readonly`.
+- It is a descendant of the `<form>` element, or being associated using the [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) attribute.
+- It dispatches native form events, such as `input` and `blur`.
 
-Native form controls are supported out of the box. There is no need to setup any event handlers on `<input />`, `<select />` or `<textarea />` element, as Conform utilizes event delegation and listens to events on the form level instead.
+Conform can validate native form controls without any additional integration.
+
+<!-- /col -->
+
+<!-- col sticky=true -->
 
 ```tsx
 function Example() {
-    const [form, { title, description, color }] = useForm();
+    const [form, fields] = useForm({
+      // ...
+    });
 
     return (
         <form {...form.props}>
             <div>
                 <label>Title</label>
                 <input type="text" name="title" />
-                <div>{title.error}
+                <div>{fields.title.error}
             </div>
             <div>
                 <label>Description</label>
                 <textarea name="description" />
-                <div>{description.error}
+                <div>{fields.description.error}
             </div>
             <div>
                 <label>Color</label>
@@ -38,13 +45,19 @@ function Example() {
                     <option>Green</option>
                     <option>Blue</option>
                 </select>
-                <div>{color.error}</div>
+                <div>{fields.color.error}</div>
             </div>
             <button>Submit</button>
         </form>
     )
 }
 ```
+
+<!-- /col -->
+
+<!-- /row -->
+
+---
 
 ## Custom input component
 
