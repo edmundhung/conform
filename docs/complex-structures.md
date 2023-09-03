@@ -9,13 +9,13 @@ Conform support both nested object and array by leveraging a naming convention o
 - [Naming convention](#naming-convention)
 - [Nested Object](#nested-object)
 - [Array](#array)
-- [Nested List](#nested-list)
+- [Nested Array](#nested-array)
 
 <!-- /aside -->
 
 ## Naming Convention
 
-**Conform** uses the `object.property` and `array[index]` syntax to denote data structure. These notations could be combined for nest list as well. e.g. `tasks[0].content`.
+**Conform** uses the `object.property` and `array[index]` syntax to denote data structure. These notations could be combined for nested array as well. e.g. `tasks[0].content`.
 
 The form data should be parsed using the Conform [parse](/packages/conform-zod/README.md#parse) helper to resolve each data path and reconstruct the data structure accordingly.
 
@@ -112,9 +112,9 @@ function Example() {
 
 For information about modifying list (e.g. insert / remove / reorder), see the [list intent](/docs/intent-button.md#list-intent) section.
 
-## Nested List
+## Nested Array
 
-You can also combine both [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist) hook for nested list.
+You can also combine both [useFieldset](/packages/conform-react/README.md#usefieldset) and [useFieldList](/packages/conform-react/README.md#usefieldlist) hook for nested array.
 
 ```tsx
 import type { FieldConfig } from '@conform-to/react';

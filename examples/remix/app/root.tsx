@@ -35,7 +35,7 @@ export default function App() {
 
 					<p>
 						This example demonstrates some of the features of Conform including{' '}
-						<strong>manual validation</strong>, <strong>nested list</strong>,
+						<strong>client validation</strong>, <strong>nested list</strong>,
 						and <strong>async validation with zod</strong>.
 					</p>
 

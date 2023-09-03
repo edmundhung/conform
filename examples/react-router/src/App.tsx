@@ -26,8 +26,8 @@ function Example() {
 
 			<p>
 				This example demonstrates some of the features of Conform including{' '}
-				<strong>constraint validation</strong>, <strong>nested list</strong>,
-				and <strong>async validation with zod</strong>.
+				<strong>client validation</strong>, <strong>nested list</strong>, and{' '}
+				<strong>async validation with zod</strong>.
 			</p>
 
 			<ul>

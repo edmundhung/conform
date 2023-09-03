@@ -2,7 +2,7 @@
 
 > Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
 
-This example demonstrates some of the features of Conform including **manual validation**, **nested list**, and **async validation with zod** using Remix.
+This example demonstrates some of the features of Conform including **client validation**, **nested list**, and **async validation with zod** using Remix.
 
 <!-- sandbox src="/examples/remix?module=/app/root.tsx" -->
 
