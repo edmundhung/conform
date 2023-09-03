@@ -667,6 +667,53 @@ test.describe('conform-zod', () => {
 			expect(() => parse(createFormData([]), { schema })).not.toThrow();
 		});
 
+		test('z.default', () => {
+			const defaultFile = new File(['hello', 'world'], 'example.txt');
+			const defaultDate = new Date(0);
+			const schema = z.object({
+				a: z.string().default('text'),
+				b: z.number().default(123),
+				c: z.boolean().default(true),
+				d: z.date().default(defaultDate),
+				e: z.instanceof(File).default(defaultFile),
+				f: z.array(z.string()).default(['foo', 'bar']),
+			});
+			const emptyFile = new File([], '');
+
+			expect(
+				parse(
+					createFormData([
+						['a', ''],
+						['b', ''],
+						['c', ''],
+						['d', ''],
+						['e', emptyFile],
+						['f', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					a: '',
+					b: '',
+					c: '',
+					d: '',
+					e: emptyFile,
+					f: '',
+				},
+				value: {
+					a: 'text',
+					b: 123,
+					c: true,
+					d: defaultDate,
+					e: defaultFile,
+					f: ['foo', 'bar'],
+				},
+				error: {},
+			});
+		});
+
 		test('z.lazy', () => {
 			const category = z.object({
 				name: z.string({ required_error: 'required' }),

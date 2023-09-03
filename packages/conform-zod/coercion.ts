@@ -180,26 +180,29 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 		});
 	} else if (type instanceof ZodEffects) {
 		if (isFileSchema(type)) {
-			return preprocess((value) => coerceFile(value), type);
+			schema = preprocess((value) => coerceFile(value), type);
+		} else {
+			schema = new ZodEffects({
+				...type._def,
+				schema: enableTypeCoercion(type.innerType(), cache),
+			});
 		}
-
-		schema = new ZodEffects({
-			...type._def,
-			schema: enableTypeCoercion(type.innerType(), cache),
-		});
 	} else if (type instanceof ZodOptional) {
 		schema = preprocess(
-			(value) => coerceString(coerceFile(value)),
+			(value) => coerceFile(coerceString(value)),
 			new ZodOptional({
 				...type._def,
 				innerType: enableTypeCoercion(type.unwrap(), cache),
 			}),
 		);
 	} else if (type instanceof ZodDefault) {
-		schema = new ZodDefault({
-			...type._def,
-			innerType: enableTypeCoercion(type.removeDefault(), cache),
-		});
+		schema = preprocess(
+			(value) => coerceFile(coerceString(value)),
+			new ZodDefault({
+				...type._def,
+				innerType: enableTypeCoercion(type.removeDefault(), cache),
+			}),
+		);
 	} else if (type instanceof ZodIntersection) {
 		schema = new ZodIntersection({
 			...type._def,

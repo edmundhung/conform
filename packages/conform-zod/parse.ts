@@ -10,11 +10,11 @@ import {
 	type output,
 	type RefinementCtx,
 	type SafeParseReturnType,
+	type ZodCustomIssue,
 	type ZodTypeAny,
 	type ZodErrorMap,
 	type IssueData,
 	ZodIssueCode,
-	ZodCustomIssue,
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
 
