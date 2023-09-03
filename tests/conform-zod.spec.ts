@@ -13,7 +13,7 @@ function createFormData(entries: Array<[string, string | File]>): FormData {
 	return formData;
 }
 
-test.beforeAll(() => {
+test.beforeEach(() => {
 	installGlobals();
 });
 
@@ -660,6 +660,11 @@ test.describe('conform-zod', () => {
 				},
 				error: {},
 			});
+
+			// @ts-expect-error To test if File is not defined in certain environment
+			delete global.File;
+
+			expect(() => parse(createFormData([]), { schema })).not.toThrow();
 		});
 
 		test('z.lazy', () => {
