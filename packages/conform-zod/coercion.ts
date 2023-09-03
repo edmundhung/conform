@@ -55,7 +55,12 @@ export function coerceString(
  * Modify the value only if it's a file, otherwise return the value as-is
  */
 export function coerceFile(file: unknown) {
-	if (file instanceof File && file.name === '' && file.size === 0) {
+	if (
+		typeof File !== 'undefined' &&
+		file instanceof File &&
+		file.name === '' &&
+		file.size === 0
+	) {
 		return undefined;
 	}
 
@@ -68,6 +73,10 @@ export function coerceFile(file: unknown) {
  * Check the `instanceOfType` function on zod for more info
  */
 export function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
+	if (typeof File === 'undefined') {
+		return false;
+	}
+
 	return (
 		schema._def.effect.type === 'refinement' &&
 		schema.innerType() instanceof ZodAny &&
