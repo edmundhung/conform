@@ -2,7 +2,7 @@
 
 > Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
 
-This example demonstrates some of the features of Conform including **manual validation**, **nested list**, and **async validation with zod** using React Router
+This example demonstrates some of the features of Conform including **client validation**, **nested list**, and **async validation with zod** using React Router
 
 <!-- sandbox src="/examples/react-router?module=/src/login.tsx" -->
 
