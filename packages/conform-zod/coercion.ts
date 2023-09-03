@@ -24,7 +24,7 @@ import {
 	ZodOptional,
 	ZodDefault,
 	lazy,
-	preprocess,
+	any,
 } from 'zod';
 
 /**
@@ -116,17 +116,22 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 		type instanceof ZodEnum ||
 		type instanceof ZodNativeEnum
 	) {
-		schema = preprocess((value) => coerceString(value), type);
+		schema = any()
+			.transform((value) => coerceString(value))
+			.pipe(type);
 	} else if (type instanceof ZodNumber) {
-		schema = preprocess((value) => coerceString(value, Number), type);
+		schema = any()
+			.transform((value) => coerceString(value, Number))
+			.pipe(type);
 	} else if (type instanceof ZodBoolean) {
-		schema = preprocess(
-			(value) => coerceString(value, (text) => (text === 'on' ? true : text)),
-			type,
-		);
+		schema = any()
+			.transform((value) =>
+				coerceString(value, (text) => (text === 'on' ? true : text)),
+			)
+			.pipe(type);
 	} else if (type instanceof ZodDate) {
-		schema = preprocess(
-			(value) =>
+		schema = any()
+			.transform((value) =>
 				coerceString(value, (timestamp) => {
 					const date = new Date(timestamp);
 
@@ -139,13 +144,15 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 
 					return date;
 				}),
-			type,
-		);
+			)
+			.pipe(type);
 	} else if (type instanceof ZodBigInt) {
-		schema = preprocess((value) => coerceString(value, BigInt), type);
+		schema = any()
+			.transform((value) => coerceString(value, BigInt))
+			.pipe(type);
 	} else if (type instanceof ZodArray) {
-		schema = preprocess(
-			(value) => {
+		schema = any()
+			.transform((value) => {
 				// No preprocess needed if the value is already an array
 				if (Array.isArray(value)) {
 					return value;
@@ -160,12 +167,13 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 
 				// Wrap it in an array otherwise
 				return [value];
-			},
-			new ZodArray({
-				...type._def,
-				type: enableTypeCoercion(type.element, cache),
-			}),
-		);
+			})
+			.pipe(
+				new ZodArray({
+					...type._def,
+					type: enableTypeCoercion(type.element, cache),
+				}),
+			);
 	} else if (type instanceof ZodObject) {
 		const shape = Object.fromEntries(
 			Object.entries(type.shape).map(([key, def]) => [
@@ -180,7 +188,9 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 		});
 	} else if (type instanceof ZodEffects) {
 		if (isFileSchema(type)) {
-			schema = preprocess((value) => coerceFile(value), type);
+			schema = any()
+				.transform((value) => coerceFile(value))
+				.pipe(type);
 		} else {
 			schema = new ZodEffects({
 				...type._def,
@@ -188,21 +198,23 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 			});
 		}
 	} else if (type instanceof ZodOptional) {
-		schema = preprocess(
-			(value) => coerceFile(coerceString(value)),
-			new ZodOptional({
-				...type._def,
-				innerType: enableTypeCoercion(type.unwrap(), cache),
-			}),
-		);
+		schema = any()
+			.transform((value) => coerceFile(coerceString(value)))
+			.pipe(
+				new ZodOptional({
+					...type._def,
+					innerType: enableTypeCoercion(type.unwrap(), cache),
+				}),
+			);
 	} else if (type instanceof ZodDefault) {
-		schema = preprocess(
-			(value) => coerceFile(coerceString(value)),
-			new ZodDefault({
-				...type._def,
-				innerType: enableTypeCoercion(type.removeDefault(), cache),
-			}),
-		);
+		schema = any()
+			.transform((value) => coerceFile(coerceString(value)))
+			.pipe(
+				new ZodDefault({
+					...type._def,
+					innerType: enableTypeCoercion(type.removeDefault(), cache),
+				}),
+			);
 	} else if (type instanceof ZodIntersection) {
 		schema = new ZodIntersection({
 			...type._def,
