@@ -738,6 +738,7 @@ export function useFieldList<Schema extends Array<any> | undefined>(
 				switch (intent.payload.operation) {
 					case 'append':
 					case 'prepend':
+					case 'insert':
 					case 'replace':
 						errorList = updateList(errorList, {
 							...intent.payload,
