@@ -52,15 +52,15 @@ async function runValidationScenario(page: Page) {
 	// Insert a new row
 	await fieldset.insertTop.click();
 	await expect(fieldset.items).toHaveCount(1);
-	await expect(item0.content).toHaveValue('');
+	await expect(item0.content).toHaveValue('Top item');
 
 	// Type `Another Item` on first row
-	await item0.content.type('Another item');
+	await item0.content.fill('Another item');
 
 	// Insert a new row on top
 	await fieldset.insertTop.click();
 	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('');
+	await expect(item0.content).toHaveValue('Top item');
 	await expect(item1.content).toHaveValue('Another item');
 
 	// Insert a new row at the bottom
@@ -72,14 +72,14 @@ async function runValidationScenario(page: Page) {
 		'',
 		'',
 	]);
-	await expect(item0.content).toHaveValue('');
+	await expect(item0.content).toHaveValue('Top item');
 	await expect(item1.content).toHaveValue('Another item');
 	await expect(item2.content).toHaveValue('');
 
 	await playground.submit.click();
 	await expect(playground.error).toHaveText([
 		'Maximum 2 items are allowed',
-		'The field is required',
+		'',
 		'',
 		'The field is required',
 	]);
@@ -122,7 +122,7 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', 'The field is required', '']);
 
-	await item0.content.type('Top item');
+	await item0.content.type('Last item');
 
 	// Trigger revalidation
 	await playground.submit.click();
@@ -132,11 +132,11 @@ async function runValidationScenario(page: Page) {
 			{
 				intent: 'submit',
 				payload: {
-					items: ['Top item', 'Another item'],
+					items: ['Last item', 'Another item'],
 				},
 				error: {},
 				value: {
-					items: ['Top item', 'Another item'],
+					items: ['Last item', 'Another item'],
 				},
 			},
 			null,
@@ -161,12 +161,14 @@ async function testListDefaultValue(page: Page, shouldReset?: boolean) {
 
 	await fieldset.insertTop.click();
 	await expect(fieldset.items).toHaveCount(2);
-	await expect(item0.content).toHaveValue('');
+	await expect(item0.content).toHaveValue('Top item');
 	await expect(item1.content).toHaveValue('default item 1');
 
 	await item1.delete.click();
 	await expect(fieldset.items).toHaveCount(1);
-	await expect(item0.content).toHaveValue('');
+	await expect(item0.content).toHaveValue('Top item');
+
+	await item0.content.fill('');
 
 	await playground.submit.click();
 	await expect(fieldset.items).toHaveCount(1);
