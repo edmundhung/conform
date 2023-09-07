@@ -84,7 +84,7 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...list.insert(items.name, { index: 0 })}
+						{...list.insert(items.name, { defaultValue: 'Top item', index: 0 })}
 					>
 						Insert top
 					</button>
