@@ -3,7 +3,7 @@ import { INTENT, getIntent, parseIntent, updateList } from './intent.js';
 
 export type Submission<Schema = any> = {
 	intent: string;
-	payload: Record<string, any>;
+	payload: Record<string, unknown>;
 	error: Record<string, string[]>;
 	value?: Schema | null;
 };
