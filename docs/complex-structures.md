@@ -120,16 +120,19 @@ You can also combine both [useFieldset](/packages/conform-react/README.md#usefie
 import type { FieldConfig } from '@conform-to/react';
 import { useForm, useFieldset, useFieldList } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
+import { useRef } from 'react';
 import { z } from 'zod';
 
 const schema = z.object({
-  todos: z.array(
+  tasks: z.array(
     z.object({
       title: z.string(),
       notes: z.string(),
-    }),
+    })
   ),
 });
+
+type Todo = z.infer<typeof schema>['tasks'][number];
 
 function Example() {
   const [form, { tasks }] = useForm({
@@ -154,7 +157,7 @@ function Example() {
 }
 
 function TodoFieldset({ config }: { config: FieldConfig<Todo> }) {
-  const ref = useRef<HTMLFieldsetElement>(null);
+  const ref = useRef<HTMLFieldSetElement>(null);
   // Both useFieldset / useFieldList accept form or fieldset ref
   const { title, notes } = useFieldset(ref, config);
 
@@ -167,4 +170,5 @@ function TodoFieldset({ config }: { config: FieldConfig<Todo> }) {
     </fieldset>
   );
 }
+
 ```
