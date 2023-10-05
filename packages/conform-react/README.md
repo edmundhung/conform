@@ -350,7 +350,7 @@ function Example() {
         form={title.form}
         defaultValue={title.defaultValue}
         autoFocus={title.initialError ? true : undefined}
-        requried={title.required}
+        required={title.required}
         minLength={title.minLength}
         maxLength={title.maxLength}
         min={title.min}
