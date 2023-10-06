@@ -24,12 +24,12 @@ function Example() {
             <div>
                 <label>Title</label>
                 <input type="text" name="title" />
-                <div>{title.error}
+                <div>{title.error}</div>
             </div>
             <div>
                 <label>Description</label>
                 <textarea name="description" />
-                <div>{description.error}
+                <div>{description.error}</div>
             </div>
             <div>
                 <label>Color</label>
