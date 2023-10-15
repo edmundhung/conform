@@ -8,7 +8,7 @@ import { z } from 'zod';
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
 	intent: string,
-	constarint: {
+	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
 	} = {},
@@ -25,7 +25,7 @@ function createSchema(
 				.pipe(
 					z.string().superRefine((username, ctx) =>
 						refine(ctx, {
-							validate: () => constarint.isUsernameUnique?.(username),
+							validate: () => constraint.isUsernameUnique?.(username),
 							when: intent === 'submit' || intent === 'validate/username',
 							message: 'Username is already used',
 						}),
