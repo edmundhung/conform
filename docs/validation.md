@@ -102,7 +102,7 @@ Here is an example how you can do async validation with zod:
 import { refine } from '@conform-to/react';
 
 // Instead of reusing a schema, let's prepare a schema creator
-function createSchema(options?: {
+function createSchema(constraint?: {
   isEmailUnique?: (email) => Promise<boolean>;
 }) {
   return z.object({
@@ -114,7 +114,7 @@ function createSchema(options?: {
         z.string().superRefine((email, ctx) =>
           // Using the `refine` helper from Conform
           refine(ctx, {
-            validate: () => constarint.isEmailUnique?.(email),
+            validate: () => constraint.isEmailUnique?.(email),
             message: 'Username is already used',
           }),
         ),
@@ -177,7 +177,7 @@ function createSchema(
       .pipe(
         z.string().superRefine((email, ctx) =>
           refine(ctx, {
-            validate: () => constarint.isEmailUnique?.(email),
+            validate: () => constraint.isEmailUnique?.(email),
             // Check only when it is validating the email field or submitting
             when: intent === 'submit' || intent === 'validate/email',
             message: 'Username is already used',
