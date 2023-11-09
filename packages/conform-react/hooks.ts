@@ -116,7 +116,7 @@ export interface FormConfig<
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastSubmission?: SubmissionResult;
+	lastSubmission?: SubmissionResult | null;
 
 	/**
 	 * An object describing the constraint of each field
@@ -218,7 +218,7 @@ function useConfigRef<Config>(config: Config) {
 
 function useFormReporter(
 	ref: RefObject<HTMLFormElement>,
-	lastSubmission: SubmissionResult | undefined,
+	lastSubmission: SubmissionResult | undefined | null,
 ) {
 	const [submission, setSubmission] = useState(lastSubmission);
 	const report = useCallback(
