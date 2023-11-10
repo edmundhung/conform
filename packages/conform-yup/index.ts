@@ -1,20 +1,20 @@
 import {
-	type FieldConstraint,
-	type FieldsetConstraint,
+	type Constraint,
 	type Submission,
 	parse as baseParse,
+	invariant,
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
 export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	source: Source,
-): FieldsetConstraint<yup.InferType<Source>> {
+): Record<string, Constraint> {
 	const description = source.describe();
 
 	return Object.fromEntries(
-		Object.entries(description.fields).map<[string, FieldConstraint]>(
+		Object.entries(description.fields).map<[string, Constraint]>(
 			([key, def]) => {
-				const constraint: FieldConstraint = {};
+				const constraint: Constraint = {};
 
 				switch (def.type) {
 					case 'string': {
@@ -61,6 +61,11 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 									constraint.required = true;
 									break;
 								case 'min':
+									invariant(
+										typeof constraint.min !== 'string',
+										'min is not a number',
+									);
+
 									if (
 										!constraint.min ||
 										constraint.min < Number(test.params?.min)
@@ -69,6 +74,10 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 									}
 									break;
 								case 'max':
+									invariant(
+										typeof constraint.max !== 'string',
+										'max is not a number',
+									);
 									if (
 										!constraint.max ||
 										constraint.max > Number(test.params?.max)
@@ -84,7 +93,7 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 				return [key, constraint];
 			},
 		),
-	) as FieldsetConstraint<yup.InferType<Source>>;
+	);
 }
 
 export function parse<Schema extends yup.AnyObjectSchema>(

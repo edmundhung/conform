@@ -1,6 +1,5 @@
-import { type FieldConstraint, type FieldsetConstraint } from '@conform-to/dom';
+import { type Constraint, invariant } from '@conform-to/dom';
 import {
-	type input,
 	type ZodType,
 	type ZodTypeAny,
 	ZodArray,
@@ -17,11 +16,9 @@ import {
 	ZodUnion,
 } from 'zod';
 
-export function getConstraint<Schema extends ZodTypeAny>(
-	schema: Schema,
-): FieldsetConstraint<input<Schema>> {
-	function inferConstraint<T>(schema: ZodType<T>): FieldConstraint<T> {
-		let constraint: FieldConstraint = {};
+export function getConstraint(schema: ZodTypeAny): Record<string, Constraint> {
+	function inferConstraint(schema: ZodTypeAny): Constraint {
+		let constraint: Constraint = {};
 
 		if (schema instanceof ZodEffects) {
 			constraint = {
@@ -70,12 +67,28 @@ export function getConstraint<Schema extends ZodTypeAny>(
 			for (let check of schema._def.checks) {
 				switch (check.kind) {
 					case 'min':
-						if (!constraint.min || constraint.min < check.value) {
+						invariant(
+							typeof constraint.min !== 'string',
+							'min is not a number',
+						);
+
+						if (
+							typeof constraint.min === 'undefined' ||
+							constraint.min < check.value
+						) {
 							constraint.min = check.value;
 						}
 						break;
 					case 'max':
-						if (!constraint.max || constraint.max > check.value) {
+						invariant(
+							typeof constraint.max !== 'string',
+							'max is not a number',
+						);
+
+						if (
+							typeof constraint.max === 'undefined' ||
+							constraint.max > check.value
+						) {
 							constraint.max = check.value;
 						}
 						break;
@@ -97,7 +110,7 @@ export function getConstraint<Schema extends ZodTypeAny>(
 		return constraint;
 	}
 
-	const keys: Array<keyof FieldConstraint> = [
+	const keys: Array<keyof Constraint> = [
 		'required',
 		'minLength',
 		'maxLength',
@@ -110,9 +123,9 @@ export function getConstraint<Schema extends ZodTypeAny>(
 
 	function resolveFieldsetConstraint<T extends Record<string, any>>(
 		schema: ZodType<T>,
-	): FieldsetConstraint<input<Schema>> {
+	): Record<string, Constraint> {
 		if (schema instanceof ZodObject) {
-			const result: FieldsetConstraint<input<Schema>> = {};
+			const result: Record<string, Constraint> = {};
 
 			for (const [key, def] of Object.entries(schema.shape)) {
 				// @ts-expect-error
@@ -139,12 +152,10 @@ export function getConstraint<Schema extends ZodTypeAny>(
 
 			return options.map(resolveFieldsetConstraint).reduce((prev, next) => {
 				const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
-				const result: Record<string, FieldConstraint> = {};
+				const result: Record<string, Constraint> = {};
 
 				for (const name of list) {
-					// @ts-expect-error
 					const prevConstraint = prev[name];
-					// @ts-expect-error
 					const nextConstraint = next[name];
 
 					if (prevConstraint && nextConstraint) {
