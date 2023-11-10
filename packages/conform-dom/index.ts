@@ -11,9 +11,9 @@ export {
 	type SubscriptionSubject,
 	type SubscriptionScope,
 	createForm,
-} from './form.js';
-export { type FieldElement, isFieldElement } from './dom.js';
-export { invariant } from './util.js';
+} from './form';
+export { type FieldElement, isFieldElement } from './dom';
+export { invariant } from './util';
 export {
 	type Submission,
 	type SubmissionResult,
@@ -24,5 +24,5 @@ export {
 	validate,
 	requestIntent,
 	parse,
-} from './submission.js';
-export { getPaths, formatPaths, isSubpath } from './formdata.js';
+} from './submission';
+export { getPaths, formatPaths, isSubpath } from './formdata';

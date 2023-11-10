@@ -1,4 +1,4 @@
-import { invariant } from './util.js';
+import { invariant } from './util';
 
 /**
  * Element that user can interact with,

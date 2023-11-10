@@ -13,7 +13,7 @@ import {
 	type ZodErrorMap,
 	ZodIssueCode,
 } from 'zod';
-import { enableTypeCoercion } from './coercion.js';
+import { enableTypeCoercion } from './coercion';
 
 function getError({ errors }: ZodError): Record<string, string[]> {
 	return errors.reduce<Record<string, string[]>>((result, error) => {

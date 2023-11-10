@@ -6,22 +6,22 @@ import {
 	isSubpath,
 	isPlainObject,
 	setValue,
-} from './formdata.js';
+} from './formdata';
 import {
 	type FieldElement,
 	isFieldElement,
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
-} from './dom.js';
-import { invariant } from './util.js';
+} from './dom';
+import { invariant } from './util';
 import {
 	type Submission,
 	type SubmissionResult,
 	requestIntent,
 	resolve,
 	validate,
-} from './submission.js';
+} from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
 

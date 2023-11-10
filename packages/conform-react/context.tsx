@@ -9,12 +9,12 @@ import {
 	formatPaths,
 	getPaths,
 	isSubpath,
+	STATE,
 } from '@conform-to/dom';
 import {
 	type ReactNode,
 	type MutableRefObject,
 	createContext,
-	createElement,
 	useMemo,
 	useCallback,
 	useContext,
@@ -84,22 +84,16 @@ export function ConformBoundary(props: { context: Form; children: ReactNode }) {
 		[context, props.context],
 	);
 
-	return createElement(
-		Context.Provider,
-		{ value },
-		createElement(
-			'div',
-			{
-				onInput(event: React.ChangeEvent<HTMLDivElement>) {
-					props.context.input(event.nativeEvent);
-				},
-				onBlur(event: React.FocusEvent<HTMLDivElement>) {
-					props.context.blur(event.nativeEvent);
-				},
-			},
-			createElement(FormStateInput, { formId: props.context.id }),
-			props.children,
-		),
+	return (
+		<Context.Provider value={value}>
+			<div
+				onInput={(event) => props.context.input(event.nativeEvent)}
+				onBlur={(event) => props.context.blur(event.nativeEvent)}
+			>
+				<FormStateInput formId={props.context.id} />
+				{props.children}
+			</div>
+		</Context.Provider>
 	);
 }
 
@@ -109,15 +103,17 @@ export function FormStateInput(props: {
 }): React.ReactElement {
 	const context = useFormContext(props.formId, props.context);
 
-	return createElement('input', {
-		type: 'hidden',
-		form: props.formId,
-		name: '__state__',
-		value: JSON.stringify({
-			key: context.state.key,
-			validated: context.state.validated,
-		}),
-	});
+	return (
+		<input
+			type="hidden"
+			name={STATE}
+			value={JSON.stringify({
+				key: context.state.key,
+				validated: context.state.validated,
+			})}
+			form={props.formId}
+		/>
+	);
 }
 
 export function useSubjectRef(

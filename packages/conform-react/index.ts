@@ -9,8 +9,8 @@ export {
 	type FieldConfig,
 	ConformBoundary,
 	FormStateInput,
-} from './context.js';
-export { useForm, useFieldset, useFieldList, useField } from './hooks.js';
-export { useInputEvent } from './integrations.js';
-export * as conform from './helpers.js';
-export * as intent from './intent.js';
+} from './context';
+export { useForm, useFieldset, useFieldList, useField } from './hooks';
+export { useInputEvent } from './integrations';
+export * as conform from './helpers';
+export * as intent from './intent';

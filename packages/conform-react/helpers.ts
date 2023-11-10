@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
-import type { FieldConfig, BaseConfig } from './context.js';
-import type { FormConfig } from './hooks.js';
+import type { FieldConfig, BaseConfig } from './context';
+import type { FormConfig } from './hooks';
 
 interface FormControlProps {
 	id: string;
