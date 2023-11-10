@@ -156,7 +156,7 @@ export interface FormConfig<
 		event: FormEvent<HTMLFormElement>,
 		context: {
 			formData: FormData;
-			submission: Submission;
+			submission: Submission<Output>;
 			action: string;
 			encType: ReturnType<typeof getFormEncType>;
 			method: ReturnType<typeof getFormMethod>;
