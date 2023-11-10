@@ -1,16 +1,13 @@
+import type { SubmissionResult } from '@conform-to/dom';
 import type { FieldConfig } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
-interface PlaygroundProps<
-	Submission extends {
-		error: Record<string, string[]> | null;
-	},
-> {
+interface PlaygroundProps {
 	title: string;
 	description?: ReactNode;
 	form?: string;
-	lastSubmission?: Submission;
+	lastSubmission?: SubmissionResult;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
@@ -26,7 +23,7 @@ export function Playground({
 	formMethod,
 	formEncType,
 	children,
-}: PlaygroundProps<any>) {
+}: PlaygroundProps) {
 	const [submission, setSubmission] = useState(lastSubmission ?? null);
 
 	useEffect(() => {
@@ -50,7 +47,7 @@ export function Playground({
 						<summary>Submission</summary>
 						<pre
 							className={`m-4 border-l-4 overflow-x-scroll ${
-								!submission.error || Object.entries(submission.error).length > 0
+								submission.status === 'error'
 									? 'border-pink-600'
 									: 'border-emerald-500'
 							} pl-4 py-2 mt-4`}
@@ -118,10 +115,10 @@ export function Field({ label, inline, config, children }: FieldProps) {
 				{children}
 			</div>
 			<div id={config?.errorId} className="my-1 space-y-0.5">
-				{!config?.errors?.length ? (
+				{!config?.error?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					config.errors.map((message) => (
+					config.error.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>

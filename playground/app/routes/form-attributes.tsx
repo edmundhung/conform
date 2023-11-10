@@ -1,4 +1,4 @@
-import { useForm } from '@conform-to/react';
+import { useForm, conform } from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { useState } from 'react';
@@ -26,20 +26,20 @@ export default function Example() {
 		encType: null,
 	});
 	const options = useLoaderData<typeof loader>();
-	const [form] = useForm({
-		onSubmit(event, { method, action, encType }) {
-			event.preventDefault();
-
-			setAttributes({ method, action, encType });
-		},
-	});
+	const form = useForm({});
 
 	return (
 		<form
 			action={options.formAction ?? undefined}
 			method={options.formMethod ?? undefined}
 			encType={options.formEncType ?? undefined}
-			{...form.props}
+			{...conform.form(form, {
+				onSubmit(event, { method, action, encType }) {
+					event.preventDefault();
+
+					setAttributes({ method, action, encType });
+				},
+			})}
 		>
 			<Playground
 				title="Form attributes"

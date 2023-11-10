@@ -1,4 +1,4 @@
-import { conform, useForm, validate } from '@conform-to/react';
+import { ConformBoundary, conform, useForm, intent } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -23,43 +23,49 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
+	}
+
+	return json(submission.accept());
 }
 
 export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData();
-	const [form, { name, message }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData();
+	const form = useForm({
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Validate" lastSubmission={lastSubmission}>
-				<Field label="Name" config={name}>
-					<input {...conform.input(name, { type: 'text' })} />
-				</Field>
-				<Field label="Message" config={message}>
-					<textarea {...conform.textarea(message)} />
-				</Field>
-				<div className="flex flex-row gap-2">
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...validate(name.name)}
-					>
-						Validate Name
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...validate(message.name)}
-					>
-						Validate Message
-					</button>
-				</div>
-			</Playground>
-		</Form>
+		<ConformBoundary context={form.context}>
+			<Form method="post" {...conform.form(form)}>
+				<Playground title="Validate" lastSubmission={lastResult}>
+					<Field label="Name" config={form.fields.name}>
+						<input {...conform.input(form.fields.name, { type: 'text' })} />
+					</Field>
+					<Field label="Message" config={form.fields.message}>
+						<textarea {...conform.textarea(form.fields.message)} />
+					</Field>
+					<div className="flex flex-row gap-2">
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...intent.validate(form.fields.name)}
+						>
+							Validate Name
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...intent.validate(form.fields.message)}
+						>
+							Validate Message
+						</button>
+					</div>
+				</Playground>
+			</Form>
+		</ConformBoundary>
 	);
 }

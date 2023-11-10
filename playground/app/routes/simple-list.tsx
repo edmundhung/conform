@@ -1,4 +1,10 @@
-import { conform, useFieldList, useForm, list } from '@conform-to/react';
+import {
+	ConformBoundary,
+	conform,
+	useFieldList,
+	useForm,
+	intent,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -28,14 +34,18 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
+	}
+
+	return json(submission.accept());
 }
 
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData();
-	const [form, { items }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData();
+	const form = useForm({
+		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
 			: undefined,
@@ -43,59 +53,75 @@ export default function SimpleList() {
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
-	const itemsList = useFieldList(form.ref, items);
+	const items = useFieldList({
+		formId: form.id,
+		name: form.fields.items.name,
+		context: form.context,
+	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Simple list" lastSubmission={lastSubmission}>
-				<Alert errors={items.errors} />
-				<ol>
-					{itemsList.map((item, index) => (
-						<li key={item.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} config={item}>
-								<input {...conform.input(item, { type: 'text' })} />
-							</Field>
-							<div className="flex flex-row gap-2">
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.remove(items.name, { index })}
-								>
-									Delete
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.reorder(items.name, { from: index, to: 0 })}
-								>
-									Move to top
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.replace(items.name, {
-										index,
-										defaultValue: '',
-									})}
-								>
-									Clear
-								</button>
-							</div>
-						</li>
-					))}
-				</ol>
-				<div className="flex flex-row gap-2">
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...list.insert(items.name, { defaultValue: 'Top item', index: 0 })}
-					>
-						Insert top
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...list.insert(items.name)}
-					>
-						Insert bottom
-					</button>
-				</div>
-			</Playground>
-		</Form>
+		<ConformBoundary context={form.context}>
+			<Form method="post" {...conform.form(form)}>
+				<Playground title="Simple list" lastSubmission={lastResult}>
+					<Alert errors={form.fields.items.error} />
+					<ol>
+						{items.map((item, index) => (
+							<li key={item.key} className="border rounded-md p-4 mb-4">
+								<Field label={`Item #${index + 1}`} config={item}>
+									<input {...conform.input(item, { type: 'text' })} />
+								</Field>
+								<div className="flex flex-row gap-2">
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...intent.list.remove(form.fields.items, {
+											index,
+										})}
+									>
+										Delete
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...intent.list.reorder(form.fields.items, {
+											from: index,
+											to: 0,
+										})}
+									>
+										Move to top
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...intent.list.replace(form.fields.items, {
+											index,
+											defaultValue: '',
+										})}
+									>
+										Clear
+									</button>
+								</div>
+							</li>
+						))}
+					</ol>
+					<div className="flex flex-row gap-2">
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...intent.list.insert(form.fields.items, {
+								defaultValue: 'Top item',
+								index: 0,
+							})}
+						>
+							Insert top
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...intent.list.insert(form.fields.items, {
+								defaultValue: '',
+							})}
+						>
+							Insert bottom
+						</button>
+					</div>
+				</Playground>
+			</Form>
+		</ConformBoundary>
 	);
 }

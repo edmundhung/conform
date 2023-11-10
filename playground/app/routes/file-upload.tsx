@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { ConformBoundary, conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -36,30 +36,39 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
+	}
+
+	return json(submission.accept());
 }
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { file, files }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const form = useForm({
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props} encType="multipart/form-data">
-			<Playground title="Employee Form" lastSubmission={lastSubmission}>
-				<Alert errors={form.errors} />
-				<Field label="Single file" config={file}>
-					<input {...conform.input(file, { type: 'file' })} />
-				</Field>
-				<Field label="Multiple files" config={files}>
-					<input {...conform.input(files, { type: 'file' })} multiple />
-				</Field>
-			</Playground>
-		</Form>
+		<ConformBoundary context={form.context}>
+			<Form method="post" {...conform.form(form)} encType="multipart/form-data">
+				<Playground title="Employee Form" lastSubmission={lastResult}>
+					<Alert errors={form.error} />
+					<Field label="Single file" config={form.fields.file}>
+						<input {...conform.input(form.fields.file, { type: 'file' })} />
+					</Field>
+					<Field label="Multiple files" config={form.fields.files}>
+						<input
+							{...conform.input(form.fields.files, { type: 'file' })}
+							multiple
+						/>
+					</Field>
+				</Playground>
+			</Form>
+		</ConformBoundary>
 	);
 }

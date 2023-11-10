@@ -35,24 +35,20 @@ async function runValidationScenario(page: Page) {
 
 	await expect(playground.error).toHaveText(['', '']);
 
-	await expect(playground.submission).toHaveText(
-		JSON.stringify(
-			{
-				intent: 'submit',
-				payload: {
-					language: 'de',
-					tos: 'on',
-				},
-				error: {},
-				value: {
-					language: 'de',
-					tos: true,
-				},
+	await expect.poll(playground.result).toStrictEqual({
+		status: 'success',
+		initialValue: {
+			language: 'de',
+			tos: 'on',
+		},
+		state: {
+			validated: {
+				language: true,
+				tos: true,
 			},
-			null,
-			2,
-		),
-	);
+			key: {},
+		},
+	});
 }
 
 test('Client Validation', async ({ page }) => {

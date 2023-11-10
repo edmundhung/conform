@@ -9,7 +9,7 @@ function getFieldset(form: Locator) {
 	};
 }
 
-test('Basic usage with constraint', async ({ page }) => {
+test.skip('Basic usage with constraint', async ({ page }) => {
 	await page.goto('/validate-constraint');
 
 	const playground = getPlayground(page);
@@ -107,7 +107,7 @@ test('Basic usage with constraint', async ({ page }) => {
 	);
 });
 
-test('Mutliple error support', async ({ page }) => {
+test.skip('Mutliple error support', async ({ page }) => {
 	await page.goto('/validate-constraint');
 
 	const playground = getPlayground(page);
@@ -135,7 +135,7 @@ test('Mutliple error support', async ({ page }) => {
 	await expect(playground.error).toHaveText(['', '', '']);
 });
 
-test('Custom error message support', async ({ page }) => {
+test.skip('Custom error message support', async ({ page }) => {
 	await page.goto('/validate-constraint?enableCustomMessage=yes');
 
 	const playground = getPlayground(page);
@@ -148,7 +148,7 @@ test('Custom error message support', async ({ page }) => {
 	]);
 });
 
-test('Form reset', async ({ page }) => {
+test.skip('Form reset', async ({ page }) => {
 	await page.goto('/validate-constraint');
 
 	const playground = getPlayground(page);

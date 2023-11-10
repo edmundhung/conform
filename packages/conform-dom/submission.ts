@@ -388,6 +388,7 @@ export const list = createIntent<ListIntentPayload, void>({
 		switch (payload.operation) {
 			case 'append':
 			case 'prepend':
+			case 'insert':
 			case 'replace':
 				updateState(result.state.validated, {
 					...payload,
@@ -409,6 +410,7 @@ export const list = createIntent<ListIntentPayload, void>({
 });
 
 export type ListIntentPayload<Schema = unknown> =
+	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
 	| { name: string; operation: 'prepend'; defaultValue?: DefaultValue<Schema> }
 	| { name: string; operation: 'append'; defaultValue?: DefaultValue<Schema> }
 	| {
@@ -444,6 +446,9 @@ export function updateList<Schema>(
 			break;
 		case 'append':
 			list.push(payload.defaultValue as any);
+			break;
+		case 'insert':
+			list.splice(payload.index ?? list.length, 0, payload.defaultValue as any);
 			break;
 		case 'replace':
 			list.splice(payload.index, 1, payload.defaultValue);

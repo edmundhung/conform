@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { ConformBoundary, conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -57,14 +57,18 @@ export async function action({ request }: ActionArgs) {
 		async: true,
 	});
 
-	return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
+	}
+
+	return json(submission.accept());
 }
 
 export default function EmployeeForm() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { email, title }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const form = useForm({
+		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parse(formData, {
@@ -74,18 +78,20 @@ export default function EmployeeForm() {
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Employee Form" lastSubmission={lastSubmission}>
-				<Field label="Email" config={email}>
-					<input
-						{...conform.input(email, { type: 'email' })}
-						autoComplete="off"
-					/>
-				</Field>
-				<Field label="Title" config={title}>
-					<input {...conform.input(title, { type: 'text' })} />
-				</Field>
-			</Playground>
-		</Form>
+		<ConformBoundary context={form.context}>
+			<Form method="post" {...conform.form(form)}>
+				<Playground title="Employee Form" lastSubmission={lastResult}>
+					<Field label="Email" config={form.fields.email}>
+						<input
+							{...conform.input(form.fields.email, { type: 'email' })}
+							autoComplete="off"
+						/>
+					</Field>
+					<Field label="Title" config={form.fields.title}>
+						<input {...conform.input(form.fields.title, { type: 'text' })} />
+					</Field>
+				</Playground>
+			</Form>
+		</ConformBoundary>
 	);
 }
