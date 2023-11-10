@@ -4,10 +4,12 @@ on:
     branches:
     - main
     - next
+    - v1
   pull_request:
     branches:
     - main
     - next
+    - v1
 jobs:
 
   e2e:
