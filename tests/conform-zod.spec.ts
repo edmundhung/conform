@@ -2,9 +2,12 @@ import { test, expect } from '@playwright/test';
 import { getFieldsetConstraint, parse, refine } from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
+import { STATE } from '@conform-to/dom';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
 	const formData = new FormData();
+
+	formData.set(STATE, JSON.stringify({ validated: {}, key: {} }));
 
 	for (const [name, value] of entries) {
 		formData.append(name, value);
@@ -191,36 +194,48 @@ test.describe('conform-zod', () => {
 			const file = new File([], '');
 
 			expect(parse(createFormData([]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'xyz']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'xyz' },
 				error: { test: ['min', 'regex', 'refine'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -235,45 +250,60 @@ test.describe('conform-zod', () => {
 			const file = new File([], '');
 
 			expect(parse(createFormData([]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'abc' },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '5']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '5' },
 				error: { test: ['step'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -290,45 +320,60 @@ test.describe('conform-zod', () => {
 			const file = new File([], '');
 
 			expect(parse(createFormData([]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'abc' },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', new Date(0).toISOString()]]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: new Date(0).toISOString() },
 				error: { test: ['min'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -342,48 +387,62 @@ test.describe('conform-zod', () => {
 			const file = new File([], '');
 
 			expect(parse(createFormData([]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', '']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '' },
 				error: { test: ['required'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', file]]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: file },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'abc']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'abc' },
 				error: { test: ['invalid'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'on']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'on' },
 				error: {},
 				value: {
 					test: true,
 				},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -405,9 +464,12 @@ test.describe('conform-zod', () => {
 				});
 
 			expect(parse(createFormData([]), { schema: createSchema() })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['min'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: Checkbox group (Checked only one item)
 			expect(
@@ -415,10 +477,12 @@ test.describe('conform-zod', () => {
 					schema: createSchema(),
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: 'a' },
 				error: {},
 				value: { test: ['a'] },
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: Checkbox group (Checked at least two items)
 			expect(
@@ -432,11 +496,14 @@ test.describe('conform-zod', () => {
 					},
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: ['a', 'b'] },
 				error: {
 					test: ['max'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: File upload (No file selected)
 			const emptyFile = new File([], '');
@@ -447,11 +514,14 @@ test.describe('conform-zod', () => {
 					schema: createSchema(z.instanceof(File)),
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: emptyFile },
 				error: {
 					test: ['min'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: File upload (Only one file selected)
 			expect(
@@ -459,12 +529,14 @@ test.describe('conform-zod', () => {
 					schema: createSchema(z.instanceof(File)),
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: textFile },
 				error: {},
 				value: {
 					test: [textFile],
 				},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: File upload (At least two files selected)
 			expect(
@@ -478,11 +550,14 @@ test.describe('conform-zod', () => {
 					},
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: [textFile, textFile] },
 				error: {
 					test: ['max'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: Only one input with the specific name
 			expect(
@@ -490,11 +565,14 @@ test.describe('conform-zod', () => {
 					schema: createSchema(),
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: '' },
 				error: {
 					'test[0]': ['required'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			// Scenario: Group of inputs with the same name
 			expect(
@@ -508,12 +586,15 @@ test.describe('conform-zod', () => {
 					},
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: { test: ['foo', ''] },
 				error: {
 					test: ['max'],
 					'test[1]': ['required'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -525,35 +606,47 @@ test.describe('conform-zod', () => {
 			const txtFile = new File(['hello', 'world'], 'example.txt');
 
 			expect(parse(createFormData([]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {},
 				error: { test: ['message'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', '']]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: '',
 				},
 				error: { test: ['message'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(createFormData([['test', 'helloworld']]), { schema }),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: 'helloworld',
 				},
 				error: { test: ['message'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', emptyFile]]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: emptyFile,
 				},
 				error: { test: ['message'] },
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(parse(createFormData([['test', txtFile]]), { schema })).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: txtFile,
 				},
@@ -561,6 +654,8 @@ test.describe('conform-zod', () => {
 				value: {
 					test: txtFile,
 				},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -586,20 +681,23 @@ test.describe('conform-zod', () => {
 					schema: schemaWithNoPreprocess,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: '1,234.5',
 				},
 				error: {
 					test: ['invalid'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 			expect(
 				parse(formData, {
 					schema: schemaWithCustomPreprocess,
 				}),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					test: '1,234.5',
 				},
@@ -607,6 +705,8 @@ test.describe('conform-zod', () => {
 				value: {
 					test: 1234.5,
 				},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -636,7 +736,7 @@ test.describe('conform-zod', () => {
 					{ schema },
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					a: '',
 					b: '',
@@ -659,6 +759,8 @@ test.describe('conform-zod', () => {
 					g: undefined,
 				},
 				error: {},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 
 			// @ts-expect-error To test if File is not defined in certain environment
@@ -693,7 +795,7 @@ test.describe('conform-zod', () => {
 					{ schema },
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					a: '',
 					b: '',
@@ -711,6 +813,8 @@ test.describe('conform-zod', () => {
 					f: ['foo', 'bar'],
 				},
 				error: {},
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 
@@ -746,7 +850,7 @@ test.describe('conform-zod', () => {
 					{ schema },
 				),
 			).toEqual({
-				intent: 'submit',
+				type: 'submit',
 				payload: {
 					category: {
 						name: '',
@@ -795,6 +899,9 @@ test.describe('conform-zod', () => {
 					'node.right.name': ['required'],
 					'node.right.right.name': ['required'],
 				},
+				value: null,
+				accept: expect.any(Function),
+				reject: expect.any(Function),
 			});
 		});
 	});
@@ -818,13 +925,16 @@ test.describe('conform-zod', () => {
 				},
 			}),
 		).toEqual({
-			intent: 'submit',
+			type: 'submit',
 			payload: {
 				text: 'abc',
 			},
 			error: {
 				text: ['The field is too short'],
 			},
+			value: null,
+			accept: expect.any(Function),
+			reject: expect.any(Function),
 		});
 	});
 
@@ -847,10 +957,13 @@ test.describe('conform-zod', () => {
 			});
 		const formData = createFormData([['email', 'test@example.com']]);
 		const submission = {
-			intent: 'submit',
+			type: 'submit',
 			payload: {
 				email: 'test@example.com',
 			},
+			value: null,
+			accept: expect.any(Function),
+			reject: expect.any(Function),
 		};
 
 		expect(parse(formData, { schema: createSchema() })).toEqual({

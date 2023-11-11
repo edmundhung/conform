@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { parse, getFieldsetConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
 import { installGlobals } from '@remix-run/node';
+import { STATE } from '@conform-to/dom';
 
 function createFormData(entries: Array<[string, string | File]>): FormData {
 	const formData = new FormData();
@@ -101,6 +102,7 @@ test.describe('conform-yup', () => {
 
 	test('parse', () => {
 		const formData = createFormData([
+			[STATE, JSON.stringify({ validated: {}, key: {} })],
 			['text', payload.text],
 			['tag', payload.tag],
 			['number', payload.number],
@@ -112,9 +114,12 @@ test.describe('conform-yup', () => {
 		]);
 
 		expect(parse(formData, { schema })).toEqual({
-			intent: 'submit',
+			type: 'submit',
 			payload,
 			error,
+			value: null,
+			accept: expect.any(Function),
+			reject: expect.any(Function),
 		});
 	});
 });
