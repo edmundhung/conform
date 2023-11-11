@@ -130,6 +130,10 @@ export interface Form<Type extends Record<string, unknown> = any> {
 	getContext(): FormContext;
 }
 
+export const VALIDATION_UNDEFINED = '__undefined__';
+
+export const VALIDATION_SKIPPED = '__skipped__';
+
 export function createForm<Type extends Record<string, unknown> = any>(
 	formId: string,
 	options: FormOptions<Type>,
@@ -404,7 +408,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 					if (
 						!result.error ||
 						Object.values(result.error).every(
-							(messages) => !messages.includes('__VALIDATION_UNDEFINED__'),
+							(messages) => !messages.includes(VALIDATION_UNDEFINED),
 						)
 					) {
 						report(result);
@@ -558,7 +562,19 @@ export function createForm<Type extends Record<string, unknown> = any>(
 				return result;
 			}, {}),
 		);
-		const error = result.error ?? {};
+		const error = Object.entries(result.error ?? {}).reduce<
+			Record<string, string[]>
+		>((result, [name, messages]) => {
+			const error = messages.includes(VALIDATION_SKIPPED)
+				? context.error[name]
+				: messages;
+
+			if (error) {
+				result[name] = error;
+			}
+
+			return result;
+		}, {});
 
 		updateContext({
 			...context,

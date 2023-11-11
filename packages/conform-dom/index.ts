@@ -10,6 +10,8 @@ export {
 	type Form,
 	type SubscriptionSubject,
 	type SubscriptionScope,
+	VALIDATION_SKIPPED,
+	VALIDATION_UNDEFINED,
 	createForm,
 } from './form';
 export { type FieldElement, isFieldElement } from './dom';

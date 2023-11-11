@@ -1,5 +1,7 @@
 import {
 	type Submission,
+	VALIDATION_UNDEFINED,
+	VALIDATION_SKIPPED,
 	formatPaths,
 	parse as baseParse,
 } from '@conform-to/dom';
@@ -111,7 +113,7 @@ export function refine(
 	if (typeof options.when !== 'undefined' && !options.when) {
 		ctx.addIssue({
 			code: ZodIssueCode.custom,
-			message: '__VALIDATION_SKIPPED__',
+			message: VALIDATION_SKIPPED,
 			path: options.path,
 		});
 		return;
@@ -124,7 +126,7 @@ export function refine(
 		// Validate only if the constraint is defined
 		ctx.addIssue({
 			code: ZodIssueCode.custom,
-			message: `__VALIDATION_UNDEFINED__`,
+			message: VALIDATION_UNDEFINED,
 			path: options.path,
 		});
 		return;
