@@ -13,7 +13,6 @@ import { useEffect, useId, useRef, useState, useCallback } from 'react';
 import {
 	type BaseConfig,
 	type FieldConfig,
-	type Pretty,
 	useFormContext,
 	useSubjectRef,
 	getFieldConfig,
@@ -40,21 +39,19 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 	return noValidate;
 }
 
-export type FormConfig<Type extends Record<string, any>> = Pretty<
-	BaseConfig<Type> & {
-		context: Form<Type>;
-		fields: Type extends Array<any>
-			? { [Key in keyof Type]: FieldConfig<Type[Key]> }
-			: Type extends { [key in string]?: any }
-			? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
-			: Record<string | number, FieldConfig<any>>;
-		onSubmit: (
-			event: React.FormEvent<HTMLFormElement>,
-		) => ReturnType<Form<Type>['submit']>;
-		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-		noValidate: boolean;
-	}
->;
+export type FormConfig<Type extends Record<string, any>> = BaseConfig<Type> & {
+	context: Form<Type>;
+	fields: Type extends Array<any>
+		? { [Key in keyof Type]: FieldConfig<Type[Key]> }
+		: Type extends { [key in string]?: any }
+		? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
+		: Record<string | number, FieldConfig<any>>;
+	onSubmit: (
+		event: React.FormEvent<HTMLFormElement>,
+	) => ReturnType<Form<Type>['submit']>;
+	onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+	noValidate: boolean;
+};
 
 export function useForm<Type extends Record<string, any>>(options: {
 	/**
