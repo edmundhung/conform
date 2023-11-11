@@ -89,35 +89,26 @@ function cleanup<Props>(props: Props): Props {
 	return props;
 }
 
-function getAriaAttributes<Config extends BaseConfig<unknown>>(
-	config: Config,
-	options: BaseOptions = {},
+function getAriaAttributes(
+	config: BaseConfig<unknown>,
+	options: ControlOptions = {},
 ) {
-	const hasAriaAttributes = options.ariaAttributes ?? true;
+	if (
+		typeof options.ariaAttributes !== 'undefined' &&
+		!options.ariaAttributes
+	) {
+		return {};
+	}
 
 	return cleanup({
-		'aria-invalid':
-			(hasAriaAttributes && config.errorId && !config.valid) || undefined,
-		'aria-describedby': hasAriaAttributes
-			? [
-					config.errorId && !config.valid ? config.errorId : undefined,
-					config.descriptionId &&
-					options.ariaAttributes !== false &&
-					options.description
-						? config.descriptionId
-						: undefined,
-			  ].reduce((result, id) => {
-					if (!result) {
-						return id;
-					}
-
-					if (!id) {
-						return result;
-					}
-
-					return `${result} ${id}`;
-			  })
-			: undefined,
+		'aria-invalid': !config.valid || undefined,
+		'aria-describedby': config.valid
+			? options.description
+				? config.descriptionId
+				: undefined
+			: `${config.errorId} ${
+					options.description ? config.descriptionId : ''
+			  }`.trim(),
 	});
 }
 
@@ -129,9 +120,8 @@ function getFormControlProps(
 		id: config.id,
 		name: config.name,
 		form: config.formId,
-		required: config.constraint.required,
-		// FIXME: something to differentiate if the form is reloaded
-		autoFocus: false,
+		required: config.constraint.required || undefined,
+		autoFocus: !config.valid || undefined,
 		...(options?.hidden ? hiddenProps : undefined),
 		...getAriaAttributes(config, options),
 	});
@@ -192,7 +182,7 @@ export function input<Schema extends Primitive | File | File[] | unknown>(
 				? field.defaultValue
 				: field.defaultValue === props.value;
 	} else if (options.type !== 'file') {
-		props.defaultValue = `${field.defaultValue ?? ''}`;
+		props.defaultValue = field.defaultValue?.toString();
 	}
 
 	return cleanup(props);
@@ -203,9 +193,7 @@ export function select<
 >(field: FieldConfig<Schema>, options?: ControlOptions): SelectProps {
 	return cleanup({
 		...getFormControlProps(field, options),
-		defaultValue: Array.isArray(field.defaultValue)
-			? field.defaultValue
-			: `${field.defaultValue ?? ''}`,
+		defaultValue: field.defaultValue?.toString(),
 		multiple: field.constraint.multiple,
 	});
 }
@@ -216,7 +204,7 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 ): TextareaProps {
 	return cleanup({
 		...getFormControlProps(field, options),
-		defaultValue: `${field.defaultValue ?? ''}`,
+		defaultValue: field.defaultValue?.toString(),
 		minLength: field.constraint.minLength,
 		maxLength: field.constraint.maxLength,
 	});
