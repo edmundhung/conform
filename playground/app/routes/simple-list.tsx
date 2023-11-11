@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const form = useForm({
+	const { form, context, fields } = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
@@ -55,15 +55,15 @@ export default function SimpleList() {
 	});
 	const items = useFieldList({
 		formId: form.id,
-		name: form.fields.items.name,
-		context: form.context,
+		name: fields.items.name,
+		context: context,
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<Playground title="Simple list" lastSubmission={lastResult}>
-					<Alert errors={form.fields.items.error} />
+					<Alert errors={fields.items.error} />
 					<ol>
 						{items.map((item, index) => (
 							<li key={item.key} className="border rounded-md p-4 mb-4">
@@ -73,7 +73,7 @@ export default function SimpleList() {
 								<div className="flex flex-row gap-2">
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...intent.list.remove(form.fields.items, {
+										{...intent.list.remove(fields.items, {
 											index,
 										})}
 									>
@@ -81,7 +81,7 @@ export default function SimpleList() {
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...intent.list.reorder(form.fields.items, {
+										{...intent.list.reorder(fields.items, {
 											from: index,
 											to: 0,
 										})}
@@ -90,7 +90,7 @@ export default function SimpleList() {
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...intent.list.replace(form.fields.items, {
+										{...intent.list.replace(fields.items, {
 											index,
 											defaultValue: '',
 										})}
@@ -104,7 +104,7 @@ export default function SimpleList() {
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...intent.list.insert(form.fields.items, {
+							{...intent.list.insert(fields.items, {
 								defaultValue: 'Top item',
 								index: 0,
 							})}
@@ -113,7 +113,7 @@ export default function SimpleList() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...intent.list.insert(form.fields.items, {
+							{...intent.list.insert(fields.items, {
 								defaultValue: '',
 							})}
 						>

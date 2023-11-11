@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { form, context, fields } = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
@@ -53,21 +53,21 @@ export default function Example() {
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
-					<Field label="Headless ListBox" config={form.fields.language}>
+					<Field label="Headless ListBox" config={fields.language}>
 						<CustomSelect
-							id={form.fields.language.id}
-							name={form.fields.language.name}
-							defaultValue={form.fields.language.defaultValue}
+							id={fields.language.id}
+							name={fields.language.name}
+							defaultValue={fields.language.defaultValue}
 						/>
 					</Field>
-					<Field label="Radix Checkbox" config={form.fields.tos}>
+					<Field label="Radix Checkbox" config={fields.tos}>
 						<CustomCheckbox
-							id={form.fields.tos.id}
-							name={form.fields.tos.name}
-							defaultChecked={form.fields.tos.defaultValue === 'on'}
+							id={fields.tos.id}
+							name={fields.tos.name}
+							defaultChecked={fields.tos.defaultValue === 'on'}
 							label="I accept the terms of service"
 						/>
 					</Field>

@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { form, context, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -40,11 +40,11 @@ export default function Example() {
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<Playground title="Template Form" lastSubmission={lastResult}>
-					<Field label="Name" config={form.fields.name}>
-						<input {...conform.input(form.fields.name, { type: 'text' })} />
+					<Field label="Name" config={fields.name}>
+						<input {...conform.input(fields.name, { type: 'text' })} />
 					</Field>
 				</Playground>
 			</Form>

@@ -46,7 +46,7 @@ export async function action({ request }: ActionArgs) {
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { form, context, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -54,16 +54,16 @@ export default function FileUpload() {
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)} encType="multipart/form-data">
 				<Playground title="Employee Form" lastSubmission={lastResult}>
 					<Alert errors={form.error} />
-					<Field label="Single file" config={form.fields.file}>
-						<input {...conform.input(form.fields.file, { type: 'file' })} />
+					<Field label="Single file" config={fields.file}>
+						<input {...conform.input(fields.file, { type: 'file' })} />
 					</Field>
-					<Field label="Multiple files" config={form.fields.files}>
+					<Field label="Multiple files" config={fields.files}>
 						<input
-							{...conform.input(form.fields.files, { type: 'file' })}
+							{...conform.input(fields.files, { type: 'file' })}
 							multiple
 						/>
 					</Field>

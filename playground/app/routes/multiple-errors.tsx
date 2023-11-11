@@ -130,7 +130,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { validator, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm<Schema>({
+	const { form, context, fields } = useForm<Schema>({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData, validator)
@@ -138,11 +138,11 @@ export default function Example() {
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<Playground title="Mutliple Errors" lastSubmission={lastResult}>
-					<Field label="Username" config={form.fields.username}>
-						<input {...conform.input(form.fields.username, { type: 'text' })} />
+					<Field label="Username" config={fields.username}>
+						<input {...conform.input(fields.username, { type: 'text' })} />
 					</Field>
 				</Playground>
 			</Form>

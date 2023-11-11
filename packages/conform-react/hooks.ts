@@ -40,12 +40,6 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 }
 
 export type FormConfig<Type extends Record<string, any>> = BaseConfig<Type> & {
-	context: Form<Type>;
-	fields: Type extends Array<any>
-		? { [Key in keyof Type]: FieldConfig<Type[Key]> }
-		: Type extends { [key in string]?: any }
-		? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
-		: Record<string | number, FieldConfig<any>>;
 	onSubmit: (
 		event: React.FormEvent<HTMLFormElement>,
 	) => ReturnType<Form<Type>['submit']>;
@@ -110,7 +104,15 @@ export function useForm<Type extends Record<string, any>>(options: {
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
 	}) => Submission<Type>;
-}): FormConfig<Type> {
+}): {
+	form: FormConfig<Type>;
+	context: Form<Type>;
+	fields: Type extends Array<any>
+		? { [Key in keyof Type]: FieldConfig<Type[Key]> }
+		: Type extends { [key in string]?: any }
+		? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
+		: Record<string | number, FieldConfig<any>>;
+} {
 	const formId = useFormId(options.id);
 	const initializeForm = () =>
 		createForm(formId, {
@@ -184,33 +186,35 @@ export function useForm<Type extends Record<string, any>>(options: {
 
 	return {
 		context: form,
-		id: formId,
-		errorId: config.errorId,
-		descriptionId: config.descriptionId,
 		fields,
-		onSubmit,
-		onReset,
-		noValidate,
-		get defaultValue() {
-			return config.defaultValue;
-		},
-		get value() {
-			return config.value;
-		},
-		get dirty() {
-			return config.dirty;
-		},
-		get valid() {
-			return config.valid;
-		},
-		get error() {
-			return config.error;
-		},
-		get allError() {
-			return config.allError;
-		},
-		get allValid() {
-			return config.allValid;
+		form: {
+			id: formId,
+			errorId: config.errorId,
+			descriptionId: config.descriptionId,
+			onSubmit,
+			onReset,
+			noValidate,
+			get defaultValue() {
+				return config.defaultValue;
+			},
+			get value() {
+				return config.value;
+			},
+			get dirty() {
+				return config.dirty;
+			},
+			get valid() {
+				return config.valid;
+			},
+			get error() {
+				return config.error;
+			},
+			get allError() {
+				return config.allError;
+			},
+			get allValid() {
+				return config.allValid;
+			},
 		},
 	};
 }
@@ -258,7 +262,7 @@ export function useFieldset<Type>(options: {
 
 export function useFieldList<Item>(options: {
 	formId: string;
-	name: FieldName<Item>;
+	name: FieldName<Array<Item>>;
 	context?: Form;
 }): Array<FieldConfig<Item>> {
 	const subjectRef = useSubjectRef({

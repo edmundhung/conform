@@ -67,7 +67,7 @@ export async function action({ request }: ActionArgs) {
 export default function EmployeeForm() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { form, context, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) =>
@@ -78,17 +78,17 @@ export default function EmployeeForm() {
 	});
 
 	return (
-		<ConformBoundary context={form.context}>
+		<ConformBoundary context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<Playground title="Employee Form" lastSubmission={lastResult}>
-					<Field label="Email" config={form.fields.email}>
+					<Field label="Email" config={fields.email}>
 						<input
-							{...conform.input(form.fields.email, { type: 'email' })}
+							{...conform.input(fields.email, { type: 'email' })}
 							autoComplete="off"
 						/>
 					</Field>
-					<Field label="Title" config={form.fields.title}>
-						<input {...conform.input(form.fields.title, { type: 'text' })} />
+					<Field label="Title" config={fields.title}>
+						<input {...conform.input(fields.title, { type: 'text' })} />
 					</Field>
 				</Playground>
 			</Form>
