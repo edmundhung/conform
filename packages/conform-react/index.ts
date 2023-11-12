@@ -6,11 +6,17 @@ export {
 } from '@conform-to/dom';
 export {
 	type Field,
-	type FieldConfig,
+	type FieldMetadata as FieldConfig,
 	FormContextProvider,
 	FormStateInput,
 } from './context';
-export { useForm, useFieldset, useFieldList, useField } from './hooks';
+export {
+	useForm,
+	useFormMetadata,
+	useFieldset,
+	useFieldList,
+	useField,
+} from './hooks';
 export { useInputEvent } from './integrations';
 export * as conform from './helpers';
 export * as intent from './intent';

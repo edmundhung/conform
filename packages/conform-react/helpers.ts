@@ -1,6 +1,6 @@
+import type { Form } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
-import type { FieldConfig, BaseConfig } from './context';
-import type { FormConfig } from './hooks';
+import type { FormMetadata, FieldMetadata, BaseMetadata } from './context';
 
 interface FormControlProps {
 	id: string;
@@ -58,7 +58,7 @@ type ControlOptions = BaseOptions & {
 type FormOptions<Type extends Record<string, any>> = BaseOptions & {
 	onSubmit?: (
 		event: React.FormEvent<HTMLFormElement>,
-		context: ReturnType<FormConfig<Type>['onSubmit']>,
+		context: ReturnType<Form<Type>['submit']>,
 	) => void;
 	onReset?: (event: React.FormEvent<HTMLFormElement>) => void;
 };
@@ -90,7 +90,7 @@ function cleanup<Props>(props: Props): Props {
 }
 
 function getAriaAttributes(
-	config: BaseConfig<unknown>,
+	metadata: BaseMetadata<unknown>,
 	options: ControlOptions = {},
 ) {
 	if (
@@ -101,29 +101,29 @@ function getAriaAttributes(
 	}
 
 	return cleanup({
-		'aria-invalid': !config.valid || undefined,
-		'aria-describedby': config.valid
+		'aria-invalid': !metadata.valid || undefined,
+		'aria-describedby': metadata.valid
 			? options.description
-				? config.descriptionId
+				? metadata.descriptionId
 				: undefined
-			: `${config.errorId} ${
-					options.description ? config.descriptionId : ''
+			: `${metadata.errorId} ${
+					options.description ? metadata.descriptionId : ''
 			  }`.trim(),
 	});
 }
 
 function getFormControlProps(
-	config: FieldConfig<unknown>,
+	metadata: FieldMetadata<unknown>,
 	options?: ControlOptions,
 ) {
 	return cleanup({
-		id: config.id,
-		name: config.name,
-		form: config.formId,
-		required: config.constraint.required || undefined,
-		autoFocus: !config.valid || undefined,
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+		required: metadata.constraint?.required || undefined,
+		autoFocus: !metadata.valid || undefined,
 		...(options?.hidden ? hiddenProps : undefined),
-		...getAriaAttributes(config, options),
+		...getAriaAttributes(metadata, options),
 	});
 }
 
@@ -152,27 +152,27 @@ export const hiddenProps: {
 };
 
 export function input<Schema extends Primitive | unknown>(
-	field: FieldConfig<Schema>,
+	field: FieldMetadata<Schema>,
 	options?: InputOptions,
 ): InputProps;
 export function input<Schema extends File | File[]>(
-	field: FieldConfig<Schema>,
+	field: FieldMetadata<Schema>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
 export function input<Schema extends Primitive | File | File[] | unknown>(
-	field: FieldConfig<Schema>,
+	field: FieldMetadata<Schema>,
 	options: InputOptions = {},
 ): InputProps {
 	const props: InputProps = {
 		...getFormControlProps(field, options),
 		type: options.type,
-		minLength: field.constraint.minLength,
-		maxLength: field.constraint.maxLength,
-		min: field.constraint.min,
-		max: field.constraint.max,
-		step: field.constraint.step,
-		pattern: field.constraint.pattern,
-		multiple: field.constraint.multiple,
+		minLength: field.constraint?.minLength,
+		maxLength: field.constraint?.maxLength,
+		min: field.constraint?.min,
+		max: field.constraint?.max,
+		step: field.constraint?.step,
+		pattern: field.constraint?.pattern,
+		multiple: field.constraint?.multiple,
 	};
 
 	if (options.type === 'checkbox' || options.type === 'radio') {
@@ -190,40 +190,46 @@ export function input<Schema extends Primitive | File | File[] | unknown>(
 
 export function select<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
->(field: FieldConfig<Schema>, options?: ControlOptions): SelectProps {
+>(metadata: FieldMetadata<Schema>, options?: ControlOptions): SelectProps {
 	return cleanup({
-		...getFormControlProps(field, options),
-		defaultValue: field.defaultValue?.toString(),
-		multiple: field.constraint.multiple,
+		...getFormControlProps(metadata, options),
+		defaultValue: metadata.defaultValue?.toString(),
+		multiple: metadata.constraint?.multiple,
 	});
 }
 
 export function textarea<Schema extends Primitive | undefined | unknown>(
-	field: FieldConfig<Schema>,
+	metadata: FieldMetadata<Schema>,
 	options?: ControlOptions,
 ): TextareaProps {
 	return cleanup({
-		...getFormControlProps(field, options),
-		defaultValue: field.defaultValue?.toString(),
-		minLength: field.constraint.minLength,
-		maxLength: field.constraint.maxLength,
+		...getFormControlProps(metadata, options),
+		defaultValue: metadata.defaultValue?.toString(),
+		minLength: metadata.constraint?.minLength,
+		maxLength: metadata.constraint?.maxLength,
 	});
 }
 
 export function form<Type extends Record<string, any>>(
-	config: FormConfig<Type>,
+	metadata: FormMetadata<Type> & {
+		onSubmit: (
+			event: React.FormEvent<HTMLFormElement>,
+		) => ReturnType<Form<Type>['submit']>;
+		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		noValidate: boolean;
+	},
 	options?: FormOptions<Type>,
 ) {
 	const onSubmit = options?.onSubmit;
 	const onReset = options?.onReset;
 
 	return cleanup({
-		id: config.id,
+		id: metadata.id,
 		onSubmit:
 			typeof onSubmit !== 'function'
-				? config.onSubmit
+				? metadata.onSubmit
 				: (event: React.FormEvent<HTMLFormElement>) => {
-						const context = config.onSubmit(event);
+						const context = metadata.onSubmit(event);
 
 						if (!event.defaultPrevented) {
 							onSubmit(event, context);
@@ -231,24 +237,24 @@ export function form<Type extends Record<string, any>>(
 				  },
 		onReset:
 			typeof onReset !== 'function'
-				? config.onReset
+				? metadata.onReset
 				: (event: React.FormEvent<HTMLFormElement>) => {
-						config.onReset(event);
+						metadata.onReset(event);
 						onReset(event);
 				  },
-		noValidate: config.noValidate,
-		...getAriaAttributes(config, options),
+		noValidate: metadata.noValidate,
+		...getAriaAttributes(metadata, options),
 	});
 }
 
 export function fieldset<
 	Schema extends Record<string, any> | undefined | unknown,
->(field: FieldConfig<Schema>, options?: BaseOptions) {
+>(metadata: FieldMetadata<Schema>, options?: BaseOptions) {
 	return cleanup({
-		id: field.id,
-		name: field.name,
-		form: field.formId,
-		...getAriaAttributes(field, options),
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+		...getAriaAttributes(metadata, options),
 	});
 }
 
@@ -260,7 +266,7 @@ export function collection<
 		| undefined
 		| unknown,
 >(
-	field: FieldConfig<Schema>,
+	metadata: FieldMetadata<Schema>,
 	options: BaseOptions & {
 		type: 'checkbox' | 'radio';
 		options: string[];
@@ -268,20 +274,20 @@ export function collection<
 ): Array<InputProps & Pick<Required<InputProps>, 'type' | 'value'>> {
 	return options.options.map((value) =>
 		cleanup({
-			...getFormControlProps(field, options),
-			id: `${field.id}-${value}`,
+			...getFormControlProps(metadata, options),
+			id: `${metadata.id}-${value}`,
 			type: options.type,
 			value,
 			defaultChecked:
-				options.type === 'checkbox' && Array.isArray(field.defaultValue)
-					? field.defaultValue.includes(value)
-					: field.defaultValue === value,
+				options.type === 'checkbox' && Array.isArray(metadata.defaultValue)
+					? metadata.defaultValue.includes(value)
+					: metadata.defaultValue === value,
 
 			// The required attribute doesn't make sense for checkbox group
 			// As it would require all checkboxes to be checked instead of at least one
 			// It is overriden with `undefiend` so it could be cleaned upW properly
 			required:
-				options.type === 'checkbox' ? undefined : field.constraint.required,
+				options.type === 'checkbox' ? undefined : metadata.constraint?.required,
 		}),
 	);
 }

@@ -24,7 +24,8 @@ import {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export interface BaseConfig<Type> {
+export type BaseMetadata<Type> = {
+	key?: string;
 	id: string;
 	errorId: string;
 	descriptionId: string;
@@ -35,19 +36,20 @@ export interface BaseConfig<Type> {
 	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
-}
+};
 
 export type Field<Type> = {
 	name: FieldName<Type>;
 	formId: string;
 };
 
-export interface FieldConfig<Type> extends BaseConfig<Type> {
-	key?: string;
+export type FormMetadata<Type extends Record<string, any>> = BaseMetadata<Type>;
+
+export type FieldMetadata<Type> = BaseMetadata<Type> & {
 	formId: string;
 	name: FieldName<Type>;
-	constraint: Constraint;
-}
+	constraint?: Constraint;
+};
 
 export const Context = createContext<Record<string, Form>>({});
 
@@ -130,19 +132,15 @@ export function useSubjectRef(
 	return subjectRef;
 }
 
-export function getFieldConfig<Type>(
+export function getBaseMetadata<Type>(
 	formId: string,
 	context: FormContext,
 	options: {
 		name?: string;
-		key?: string | number;
 		subjectRef: MutableRefObject<SubscriptionSubject>;
 	},
-): FieldConfig<Type> {
-	const name =
-		typeof options.key !== 'undefined'
-			? formatPaths([...getPaths(options.name ?? ''), options.key])
-			: options.name ?? '';
+): BaseMetadata<Type> {
+	const name = options.name ?? '';
 	const id = name ? `${formId}-${name}` : formId;
 	const error = context.error[name];
 	const updateSubject = (
@@ -159,15 +157,14 @@ export function getFieldConfig<Type>(
 
 	return new Proxy(
 		{
-			key: context.state.key[name],
 			id,
-			formId,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
-			name,
 			defaultValue: context.initialValue[name] as DefaultValue<Type>,
 			value: context.value[name] as DefaultValue<Type>,
-			constraint: context.metadata.constraint[name] ?? {},
+			get key() {
+				return context.state.key[name];
+			},
 			get valid() {
 				return context.state.valid[name] as boolean;
 			},
@@ -229,4 +226,38 @@ export function getFieldConfig<Type>(
 			},
 		},
 	);
+}
+
+export function getFieldMetadata<Type>(
+	formId: string,
+	context: FormContext,
+	options: {
+		name?: string;
+		key?: string | number;
+		subjectRef: MutableRefObject<SubscriptionSubject>;
+	},
+): FieldMetadata<Type> {
+	const name =
+		typeof options.key !== 'undefined'
+			? formatPaths([...getPaths(options.name ?? ''), options.key])
+			: options.name ?? '';
+	const metadata = getBaseMetadata(formId, context, {
+		subjectRef: options.subjectRef,
+		name,
+	});
+
+	return new Proxy(metadata as any, {
+		get(target, key, receiver) {
+			switch (key) {
+				case 'formId':
+					return formId;
+				case 'name':
+					return name;
+				case 'constraint':
+					return context.metadata.constraint[name];
+			}
+
+			return Reflect.get(target, key, receiver);
+		},
+	});
 }

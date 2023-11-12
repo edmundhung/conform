@@ -11,11 +11,12 @@ import {
 } from '@conform-to/dom';
 import { useEffect, useId, useRef, useState, useCallback } from 'react';
 import {
-	type BaseConfig,
-	type FieldConfig,
+	type FormMetadata,
+	type FieldMetadata,
 	useFormContext,
 	useSubjectRef,
-	getFieldConfig,
+	getFieldMetadata,
+	getBaseMetadata,
 } from './context';
 
 export function useFormId(preferredId?: string): string {
@@ -38,14 +39,6 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 
 	return noValidate;
 }
-
-export type FormConfig<Type extends Record<string, any>> = BaseConfig<Type> & {
-	onSubmit: (
-		event: React.FormEvent<HTMLFormElement>,
-	) => ReturnType<Form<Type>['submit']>;
-	onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-	noValidate: boolean;
-};
 
 export function useForm<Type extends Record<string, any>>(options: {
 	/**
@@ -105,13 +98,19 @@ export function useForm<Type extends Record<string, any>>(options: {
 		formData: FormData;
 	}) => Submission<Type>;
 }): {
-	form: FormConfig<Type>;
+	form: FormMetadata<Type> & {
+		onSubmit: (
+			event: React.FormEvent<HTMLFormElement>,
+		) => ReturnType<Form<Type>['submit']>;
+		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		noValidate: boolean;
+	};
 	context: Form<Type>;
 	fields: Type extends Array<any>
-		? { [Key in keyof Type]: FieldConfig<Type[Key]> }
+		? { [Key in keyof Type]: FieldMetadata<Type[Key]> }
 		: Type extends { [key in string]?: any }
-		? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
-		: Record<string | number, FieldConfig<any>>;
+		? { [Key in UnionKeyof<Type>]: FieldMetadata<UnionKeyType<Type, Key>> }
+		: Record<string | number, FieldMetadata<any>>;
 } {
 	const formId = useFormId(options.id);
 	const initializeForm = () =>
@@ -132,10 +131,9 @@ export function useForm<Type extends Record<string, any>>(options: {
 
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const optionsRef = useRef(options);
-	const config = useField<Type>({
+	const metadata = useFormMetadata<Type>({
 		formId,
 		context: form,
-		name: '',
 	});
 	const fields = useFieldset<Type>({
 		formId,
@@ -197,7 +195,7 @@ export function useForm<Type extends Record<string, any>>(options: {
 	return {
 		context: form,
 		fields,
-		form: new Proxy(config as any, {
+		form: new Proxy(metadata as any, {
 			get(target, key, receiver) {
 				switch (key) {
 					case 'onSubmit':
@@ -219,22 +217,35 @@ export function useForm<Type extends Record<string, any>>(options: {
 	};
 }
 
+export function useFormMetadata<Type extends Record<string, any>>(options: {
+	formId: string;
+	context?: Form<Type>;
+}): FormMetadata<Type> {
+	const subjectRef = useSubjectRef();
+	const context = useFormContext(options.formId, options.context, subjectRef);
+	const metadata = getBaseMetadata<Type>(options.formId, context, {
+		subjectRef,
+	});
+
+	return metadata;
+}
+
 export function useFieldset<Type>(options: {
 	formId: string;
 	name?: FieldName<Type>;
 	context?: Form;
 }): Type extends Array<any>
-	? { [Key in keyof Type]: FieldConfig<Type[Key]> }
+	? { [Key in keyof Type]: FieldMetadata<Type[Key]> }
 	: Type extends { [key in string]?: any }
-	? { [Key in UnionKeyof<Type>]: FieldConfig<UnionKeyType<Type, Key>> }
-	: Record<string | number, FieldConfig<any>> {
+	? { [Key in UnionKeyof<Type>]: FieldMetadata<UnionKeyType<Type, Key>> }
+	: Record<string | number, FieldMetadata<any>> {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId, options.context, subjectRef);
 
 	return new Proxy({} as any, {
 		get(target, prop, receiver) {
-			const getConfig = (key: string | number) =>
-				getFieldConfig(options.formId, context, {
+			const getMetadata = (key: string | number) =>
+				getFieldMetadata(options.formId, context, {
 					name: options.name,
 					key: key,
 					subjectRef,
@@ -245,14 +256,14 @@ export function useFieldset<Type>(options: {
 				let index = 0;
 
 				return () => ({
-					next: () => ({ value: getConfig(index++), done: false }),
+					next: () => ({ value: getMetadata(index++), done: false }),
 				});
 			}
 
 			const index = Number(prop);
 
 			if (typeof prop === 'string') {
-				return getConfig(Number.isNaN(index) ? prop : index);
+				return getMetadata(Number.isNaN(index) ? prop : index);
 			}
 
 			return Reflect.get(target, prop, receiver);
@@ -264,7 +275,7 @@ export function useFieldList<Item>(options: {
 	formId: string;
 	name: FieldName<Array<Item>>;
 	context?: Form;
-}): Array<FieldConfig<Item>> {
+}): Array<FieldMetadata<Item>> {
 	const subjectRef = useSubjectRef({
 		defaultValue: {
 			name: [options.name],
@@ -280,7 +291,7 @@ export function useFieldList<Item>(options: {
 	return Array(defaultValue.length)
 		.fill(0)
 		.map((_, index) =>
-			getFieldConfig<Item>(options.formId, context, {
+			getFieldMetadata<Item>(options.formId, context, {
 				name: options.name,
 				key: index,
 				subjectRef,
@@ -292,13 +303,13 @@ export function useField<Type>(options: {
 	formId: string;
 	name: FieldName<Type>;
 	context?: Form;
-}): FieldConfig<Type> {
+}): FieldMetadata<Type> {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId, options.context, subjectRef);
-	const field = getFieldConfig<Type>(options.formId, context, {
+	const metadata = getFieldMetadata<Type>(options.formId, context, {
 		name: options.name,
 		subjectRef,
 	});
 
-	return field;
+	return metadata;
 }
