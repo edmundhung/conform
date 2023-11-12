@@ -115,10 +115,10 @@ export function Field({ label, inline, config, children }: FieldProps) {
 				{children}
 			</div>
 			<div id={config?.errorId} className="my-1 space-y-0.5">
-				{!config?.error?.length ? (
+				{!config?.errors?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					config.error.map((message) => (
+					config.errors.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>

@@ -73,15 +73,15 @@ export function formatPaths(paths: Array<string | number>): string {
 }
 
 /**
- * Check if a name is a subpath of a parent name
+ * Check if a name match the prefix paths
  */
-export function isSubpath(name: string, parent: string) {
+export function isPrefix(name: string, prefix: string) {
 	const paths = getPaths(name);
-	const parentPaths = getPaths(parent);
+	const prefixPaths = getPaths(prefix);
 
 	return (
-		paths.length >= parentPaths.length &&
-		parentPaths.every((path, index) => paths[index] === path)
+		paths.length >= prefixPaths.length &&
+		prefixPaths.every((path, index) => paths[index] === path)
 	);
 }
 

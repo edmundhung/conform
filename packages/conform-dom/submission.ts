@@ -8,13 +8,13 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
-export interface SubmissionContext<Value> {
+export type SubmissionContext<Value> = {
 	intent: string | null;
 	initialValue: Record<string, unknown>;
 	value: Value | null;
 	error: Record<string, string[]>;
 	state: SubmissionState;
-}
+};
 
 export type Submission<Output> =
 	| {

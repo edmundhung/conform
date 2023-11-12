@@ -2,7 +2,6 @@ export {
 	type UnionKeyof,
 	type UnionKeyType,
 	type Constraint,
-	type FormMetadata,
 	type FormState,
 	type FieldName,
 	type DefaultValue,
@@ -27,4 +26,4 @@ export {
 	requestIntent,
 	parse,
 } from './submission';
-export { getPaths, formatPaths, isSubpath } from './formdata';
+export { getPaths, formatPaths, isPrefix } from './formdata';

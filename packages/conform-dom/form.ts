@@ -3,7 +3,7 @@ import {
 	formatPaths,
 	getFormData,
 	getPaths,
-	isSubpath,
+	isPrefix,
 	isPlainObject,
 	setValue,
 } from './formdata';
@@ -61,11 +61,6 @@ export type Constraint = {
 	pattern?: string;
 };
 
-export type FormMetadata = {
-	defaultValue: Record<string, unknown>;
-	constraint: Record<string, Constraint>;
-};
-
 export type FormState = {
 	key: Record<string, string>;
 	validated: Record<string, boolean>;
@@ -73,15 +68,16 @@ export type FormState = {
 	dirty: Record<string, boolean>;
 };
 
-export interface FormContext {
-	metadata: FormMetadata;
+export type FormContext = {
+	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
 	error: Record<string, string[]>;
+	constraint: Record<string, Constraint>;
 	state: FormState;
-}
+};
 
-export interface FormOptions<Type> {
+export type FormOptions<Type> = {
 	defaultValue?: DefaultValue<Type>;
 	constraint?: Record<string, Constraint>;
 	lastResult?: SubmissionResult;
@@ -92,12 +88,12 @@ export interface FormOptions<Type> {
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
 	}) => Submission<Type>;
-}
+};
 
 export type SubscriptionSubject = {
 	[key in
 		| 'error'
-		| 'defaultValue'
+		| 'initialValue'
 		| 'value'
 		| 'key'
 		| 'validated'
@@ -106,11 +102,11 @@ export type SubscriptionSubject = {
 };
 
 export type SubscriptionScope = {
-	parent?: string[];
+	prefix?: string[];
 	name?: string[];
 };
 
-export interface Form<Type extends Record<string, unknown> = any> {
+export type Form<Type extends Record<string, unknown> = any> = {
 	id: string;
 	submit(event: SubmitEvent): {
 		formData: FormData;
@@ -130,7 +126,7 @@ export interface Form<Type extends Record<string, unknown> = any> {
 	): () => void;
 	getContext(): FormContext;
 	getSerializedState(): string;
-}
+};
 
 export const VALIDATION_UNDEFINED = '__undefined__';
 
@@ -154,30 +150,33 @@ export function createForm<Type extends Record<string, unknown> = any>(
 	}
 
 	function initializeFormContext(): FormContext {
-		const metadata: FormMetadata = initializeMetadata(options);
+		const defaultValue = flatten(options.defaultValue);
 		const value = options.lastResult?.initialValue
 			? flatten(options.lastResult.initialValue)
-			: metadata.defaultValue;
+			: defaultValue;
 		const error = options.lastResult?.error ?? {};
 
 		return {
-			metadata,
+			constraint: options.constraint ?? {},
+			defaultValue,
 			initialValue: value,
 			value,
 			error,
 			state: {
 				validated: options.lastResult?.state?.validated ?? {},
 				key: createKeyProxy(
-					options.lastResult?.state?.key ?? getDefaultKey(metadata),
+					options.lastResult?.state?.key ?? getDefaultKey(defaultValue),
 				),
 				valid: createValidProxy(error),
-				dirty: createDirtyProxy(metadata.defaultValue, value),
+				dirty: createDirtyProxy(defaultValue, value),
 			},
 		};
 	}
 
-	function getDefaultKey(metadata: FormMetadata): Record<string, string> {
-		return Object.entries(metadata.defaultValue).reduce<Record<string, string>>(
+	function getDefaultKey(
+		defaultValue: Record<string, unknown>,
+	): Record<string, string> {
+		return Object.entries(defaultValue).reduce<Record<string, string>>(
 			(result, [key, value]) => {
 				if (Array.isArray(value)) {
 					for (let i = 0; i < value.length; i++) {
@@ -250,13 +249,6 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		);
 	}
 
-	function initializeMetadata(options: FormOptions<Type>): FormMetadata {
-		return {
-			defaultValue: flatten(options.defaultValue),
-			constraint: options.constraint ?? {},
-		};
-	}
-
 	function shouldNotify<Type>(config: {
 		prev: Record<string, Type>;
 		next: Record<string, Type>;
@@ -265,10 +257,10 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		scope?: SubscriptionScope;
 	}): boolean {
 		if (config.scope) {
-			const parents = config.scope.parent ?? [];
+			const prefixes = config.scope.prefix ?? [];
 			const names = config.scope.name ?? [];
 			const list =
-				parents.length === 0
+				prefixes.length === 0
 					? names
 					: Array.from(
 							new Set([
@@ -279,9 +271,9 @@ export function createForm<Type extends Record<string, unknown> = any>(
 
 			for (const name of list) {
 				if (
-					parents.length === 0 ||
+					prefixes.length === 0 ||
 					names.includes(name) ||
-					parents.some((parent) => isSubpath(name, parent))
+					prefixes.some((prefix) => isPrefix(name, prefix))
 				) {
 					config.cache[name] ??= config.compareFn(
 						config.prev[name],
@@ -302,7 +294,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		const diff: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
 			value: {},
 			error: {},
-			defaultValue: {},
+			initialValue: {},
 			key: {},
 			validated: {},
 			valid: {},
@@ -331,8 +323,8 @@ export function createForm<Type extends Record<string, unknown> = any>(
 					next: next.initialValue,
 					compareFn: (prev, next) =>
 						JSON.stringify(prev) !== JSON.stringify(next),
-					cache: diff.defaultValue,
-					scope: subject.defaultValue,
+					cache: diff.initialValue,
+					scope: subject.initialValue,
 				}) ||
 				shouldNotify({
 					prev: prev.state.key,
@@ -510,7 +502,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 				value,
 				state: {
 					...context.state,
-					dirty: createDirtyProxy(context.metadata.defaultValue, value),
+					dirty: createDirtyProxy(context.defaultValue, value),
 				},
 			});
 		} else {
@@ -543,18 +535,19 @@ export function createForm<Type extends Record<string, unknown> = any>(
 			return;
 		}
 
-		const metadata = initializeMetadata(latestOptions);
+		const defaultValue = flatten(latestOptions.defaultValue);
 
 		updateContext({
-			metadata,
-			initialValue: metadata.defaultValue,
-			value: metadata.defaultValue,
+			constraint: latestOptions.constraint ?? {},
+			defaultValue,
+			initialValue: defaultValue,
+			value: defaultValue,
 			error: {},
 			state: {
 				validated: {},
-				key: createKeyProxy(getDefaultKey(metadata)),
+				key: createKeyProxy(getDefaultKey(defaultValue)),
 				valid: createValidProxy({}),
-				dirty: createDirtyProxy(metadata.defaultValue, metadata.defaultValue),
+				dirty: createDirtyProxy({}, {}),
 			},
 		});
 	}
@@ -622,7 +615,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 				validated: result.state?.validated ?? {},
 				key,
 				valid: createValidProxy(error),
-				dirty: createDirtyProxy(context.metadata.defaultValue, value),
+				dirty: createDirtyProxy(context.defaultValue, value),
 			},
 		});
 

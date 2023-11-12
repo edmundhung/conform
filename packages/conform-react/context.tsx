@@ -8,7 +8,7 @@ import {
 	type SubscriptionSubject,
 	formatPaths,
 	getPaths,
-	isSubpath,
+	isPrefix,
 	STATE,
 } from '@conform-to/dom';
 import {
@@ -29,10 +29,10 @@ export type BaseMetadata<Type> = {
 	id: string;
 	errorId: string;
 	descriptionId: string;
-	defaultValue: DefaultValue<Type>;
+	initialValue: DefaultValue<Type>;
 	value: DefaultValue<Type>;
-	error: string[] | undefined;
-	allError: Record<string, string[]>;
+	errors: string[] | undefined;
+	allErrors: Record<string, string[]>;
 	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
@@ -142,7 +142,6 @@ export function getBaseMetadata<Type>(
 ): BaseMetadata<Type> {
 	const name = options.name ?? '';
 	const id = name ? `${formId}-${name}` : formId;
-	const error = context.error[name];
 	const updateSubject = (
 		subject: keyof SubscriptionSubject,
 		scope: keyof SubscriptionScope,
@@ -160,8 +159,9 @@ export function getBaseMetadata<Type>(
 			id,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
-			defaultValue: context.initialValue[name] as DefaultValue<Type>,
+			initialValue: context.initialValue[name] as DefaultValue<Type>,
 			value: context.value[name] as DefaultValue<Type>,
+			errors: context.error[name],
 			get key() {
 				return context.state.key[name];
 			},
@@ -179,14 +179,14 @@ export function getBaseMetadata<Type>(
 				}
 
 				for (const key of Object.keys(context.error)) {
-					if (isSubpath(key, name) && !context.state.valid[key]) {
+					if (isPrefix(key, name) && !context.state.valid[key]) {
 						return false;
 					}
 				}
 
 				return true;
 			},
-			get allError() {
+			get allErrors() {
 				if (name === '') {
 					return context.error;
 				}
@@ -194,31 +194,30 @@ export function getBaseMetadata<Type>(
 				const result: Record<string, string[]> = {};
 
 				for (const [key, errors] of Object.entries(context.error)) {
-					if (isSubpath(key, name)) {
+					if (isPrefix(key, name)) {
 						result[key] = errors;
 					}
 				}
 
 				return result;
 			},
-			error,
 		},
 		{
 			get(target, key, receiver) {
 				switch (key) {
 					case 'key':
-					case 'error':
-					case 'defaultValue':
+					case 'errors':
+					case 'initialValue':
 					case 'value':
 					case 'valid':
 					case 'dirty':
-						updateSubject(key, 'name');
+						updateSubject(key === 'errors' ? 'error' : key, 'name');
 						break;
-					case 'allError':
-						updateSubject('error', 'parent');
+					case 'allErrors':
+						updateSubject('error', 'prefix');
 						break;
 					case 'allValid':
-						updateSubject('valid', 'parent');
+						updateSubject('valid', 'prefix');
 						break;
 				}
 
@@ -254,7 +253,7 @@ export function getFieldMetadata<Type>(
 				case 'name':
 					return name;
 				case 'constraint':
-					return context.metadata.constraint[name];
+					return context.constraint[name];
 			}
 
 			return Reflect.get(target, key, receiver);

@@ -40,6 +40,15 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 	return noValidate;
 }
 
+export type FormConfig<Type extends Record<string, any>> =
+	FormMetadata<Type> & {
+		onSubmit: (
+			event: React.FormEvent<HTMLFormElement>,
+		) => ReturnType<Form<Type>['submit']>;
+		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		noValidate: boolean;
+	};
+
 export function useForm<Type extends Record<string, any>>(options: {
 	/**
 	 * If the form id is provided, Id for label,
@@ -98,13 +107,7 @@ export function useForm<Type extends Record<string, any>>(options: {
 		formData: FormData;
 	}) => Submission<Type>;
 }): {
-	form: FormMetadata<Type> & {
-		onSubmit: (
-			event: React.FormEvent<HTMLFormElement>,
-		) => ReturnType<Form<Type>['submit']>;
-		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-		noValidate: boolean;
-	};
+	form: FormConfig<Type>;
 	context: Form<Type>;
 	fields: Type extends Array<any>
 		? { [Key in keyof Type]: FieldMetadata<Type[Key]> }
@@ -277,18 +280,18 @@ export function useFieldList<Item>(options: {
 	context?: Form;
 }): Array<FieldMetadata<Item>> {
 	const subjectRef = useSubjectRef({
-		defaultValue: {
+		initialValue: {
 			name: [options.name],
 		},
 	});
 	const context = useFormContext(options.formId, options.context, subjectRef);
-	const defaultValue = context.initialValue[options.name] ?? [];
+	const initialValue = context.initialValue[options.name] ?? [];
 
-	if (!Array.isArray(defaultValue)) {
-		throw new Error('The default value at the given name is not a list');
+	if (!Array.isArray(initialValue)) {
+		throw new Error('The initial value at the given name is not a list');
 	}
 
-	return Array(defaultValue.length)
+	return Array(initialValue.length)
 		.fill(0)
 		.map((_, index) =>
 			getFieldMetadata<Item>(options.formId, context, {

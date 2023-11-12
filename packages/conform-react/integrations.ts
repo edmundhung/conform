@@ -14,13 +14,13 @@ import {
 const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-interface InputControl {
+type InputControl = {
 	change: (
 		eventOrValue: { target: { value: string } } | string | boolean,
 	) => void;
 	focus: () => void;
 	blur: () => void;
-}
+};
 
 /**
  * Returns a ref object and a set of helpers that dispatch corresponding dom event.

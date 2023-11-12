@@ -1,8 +1,8 @@
-import type { Form } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
-import type { FormMetadata, FieldMetadata, BaseMetadata } from './context';
+import type { FieldMetadata, BaseMetadata, Pretty } from './context';
+import type { FormConfig } from './hooks';
 
-interface FormControlProps {
+type FormControlProps = {
 	id: string;
 	name: string;
 	form: string;
@@ -13,32 +13,38 @@ interface FormControlProps {
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
 	'aria-hidden'?: boolean;
-}
+};
 
-interface InputProps extends FormControlProps {
-	type?: Exclude<HTMLInputTypeAttribute, 'submit' | 'reset' | 'button'>;
-	minLength?: number;
-	maxLength?: number;
-	min?: string | number;
-	max?: string | number;
-	step?: string | number;
-	pattern?: string;
-	multiple?: boolean;
-	value?: string;
-	defaultChecked?: boolean;
-	defaultValue?: string;
-}
+type InputProps = Pretty<
+	FormControlProps & {
+		type?: Exclude<HTMLInputTypeAttribute, 'submit' | 'reset' | 'button'>;
+		minLength?: number;
+		maxLength?: number;
+		min?: string | number;
+		max?: string | number;
+		step?: string | number;
+		pattern?: string;
+		multiple?: boolean;
+		value?: string;
+		defaultChecked?: boolean;
+		defaultValue?: string;
+	}
+>;
 
-interface SelectProps extends FormControlProps {
-	defaultValue?: string | number | readonly string[] | undefined;
-	multiple?: boolean;
-}
+type SelectProps = Pretty<
+	FormControlProps & {
+		defaultValue?: string | number | readonly string[] | undefined;
+		multiple?: boolean;
+	}
+>;
 
-interface TextareaProps extends FormControlProps {
-	minLength?: number;
-	maxLength?: number;
-	defaultValue?: string;
-}
+type TextareaProps = Pretty<
+	FormControlProps & {
+		minLength?: number;
+		maxLength?: number;
+		defaultValue?: string;
+	}
+>;
 
 type Primitive = string | number | boolean | Date | null | undefined;
 
@@ -58,7 +64,7 @@ type ControlOptions = BaseOptions & {
 type FormOptions<Type extends Record<string, any>> = BaseOptions & {
 	onSubmit?: (
 		event: React.FormEvent<HTMLFormElement>,
-		context: ReturnType<Form<Type>['submit']>,
+		context: ReturnType<FormConfig<Type>['onSubmit']>,
 	) => void;
 	onReset?: (event: React.FormEvent<HTMLFormElement>) => void;
 };
@@ -178,11 +184,11 @@ export function input<Schema extends Primitive | File | File[] | unknown>(
 	if (options.type === 'checkbox' || options.type === 'radio') {
 		props.value = options.value ?? 'on';
 		props.defaultChecked =
-			typeof field.defaultValue === 'boolean'
-				? field.defaultValue
-				: field.defaultValue === props.value;
+			typeof field.initialValue === 'boolean'
+				? field.initialValue
+				: field.initialValue === props.value;
 	} else if (options.type !== 'file') {
-		props.defaultValue = field.defaultValue?.toString();
+		props.defaultValue = field.initialValue?.toString();
 	}
 
 	return cleanup(props);
@@ -193,7 +199,7 @@ export function select<
 >(metadata: FieldMetadata<Schema>, options?: ControlOptions): SelectProps {
 	return cleanup({
 		...getFormControlProps(metadata, options),
-		defaultValue: metadata.defaultValue?.toString(),
+		defaultValue: metadata.initialValue?.toString(),
 		multiple: metadata.constraint?.multiple,
 	});
 }
@@ -204,20 +210,14 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 ): TextareaProps {
 	return cleanup({
 		...getFormControlProps(metadata, options),
-		defaultValue: metadata.defaultValue?.toString(),
+		defaultValue: metadata.initialValue?.toString(),
 		minLength: metadata.constraint?.minLength,
 		maxLength: metadata.constraint?.maxLength,
 	});
 }
 
 export function form<Type extends Record<string, any>>(
-	metadata: FormMetadata<Type> & {
-		onSubmit: (
-			event: React.FormEvent<HTMLFormElement>,
-		) => ReturnType<Form<Type>['submit']>;
-		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-		noValidate: boolean;
-	},
+	metadata: FormConfig<Type>,
 	options?: FormOptions<Type>,
 ) {
 	const onSubmit = options?.onSubmit;
@@ -279,9 +279,9 @@ export function collection<
 			type: options.type,
 			value,
 			defaultChecked:
-				options.type === 'checkbox' && Array.isArray(metadata.defaultValue)
-					? metadata.defaultValue.includes(value)
-					: metadata.defaultValue === value,
+				options.type === 'checkbox' && Array.isArray(metadata.initialValue)
+					? metadata.initialValue.includes(value)
+					: metadata.initialValue === value,
 
 			// The required attribute doesn't make sense for checkbox group
 			// As it would require all checkboxes to be checked instead of at least one
