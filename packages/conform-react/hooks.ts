@@ -197,35 +197,25 @@ export function useForm<Type extends Record<string, any>>(options: {
 	return {
 		context: form,
 		fields,
-		form: {
-			id: formId,
-			errorId: config.errorId,
-			descriptionId: config.descriptionId,
-			onSubmit,
-			onReset,
-			noValidate,
-			get defaultValue() {
-				return config.defaultValue;
+		form: new Proxy(config as any, {
+			get(target, key, receiver) {
+				switch (key) {
+					case 'onSubmit':
+						return onSubmit;
+					case 'onReset':
+						return onReset;
+					case 'noValidate':
+						return noValidate;
+					case 'key':
+					case 'formId':
+					case 'name':
+					case 'constraint':
+						return;
+				}
+
+				return Reflect.get(target, key, receiver);
 			},
-			get value() {
-				return config.value;
-			},
-			get dirty() {
-				return config.dirty;
-			},
-			get valid() {
-				return config.valid;
-			},
-			get error() {
-				return config.error;
-			},
-			get allError() {
-				return config.allError;
-			},
-			get allValid() {
-				return config.allValid;
-			},
-		},
+		}),
 	};
 }
 

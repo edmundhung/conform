@@ -51,33 +51,41 @@ export interface FieldConfig<Type> extends BaseConfig<Type> {
 
 export const Context = createContext<Record<string, Form>>({});
 
-export function useFormContext(
-	formId: string,
-	localContext?: Form | undefined,
-	subjectRef?: MutableRefObject<SubscriptionSubject>,
-): FormContext {
+export function useContextForm(formId: string, context?: Form) {
 	const registry = useContext(Context);
-	const form = localContext ?? registry[formId];
+	const form = context ?? registry[formId];
 
 	if (!form) {
 		throw new Error('Form context is not available');
 	}
 
+	return form;
+}
+
+export function useFormContext(
+	formId: string,
+	context?: Form,
+	subjectRef?: MutableRefObject<SubscriptionSubject>,
+): FormContext {
+	const form = useContextForm(formId, context);
 	const subscribe = useCallback(
 		(callback: () => void) =>
 			form.subscribe(callback, () => subjectRef?.current),
 		[form, subjectRef],
 	);
-	const context = useSyncExternalStore(
+	const result = useSyncExternalStore(
 		subscribe,
 		form.getContext,
 		form.getContext,
 	);
 
-	return context;
+	return result;
 }
 
-export function ConformBoundary(props: { context: Form; children: ReactNode }) {
+export function FormContextProvider(props: {
+	context: Form;
+	children: ReactNode;
+}): ReactNode {
 	const context = useContext(Context);
 	const value = useMemo(
 		() => ({ ...context, [props.context.id]: props.context }),
@@ -87,20 +95,24 @@ export function ConformBoundary(props: { context: Form; children: ReactNode }) {
 	return <Context.Provider value={value}>{props.children}</Context.Provider>;
 }
 
-export function FormStateInput(props: {
-	formId: string;
-	context?: Form;
-}): React.ReactElement {
-	const context = useFormContext(props.formId, props.context);
+export function FormStateInput(
+	props:
+		| {
+				formId: string;
+				context?: undefined;
+		  }
+		| {
+				formId?: undefined;
+				context: Form;
+		  },
+): React.ReactElement {
+	const form = useContextForm(props.formId ?? props.context.id, props.context);
 
 	return (
 		<input
 			type="hidden"
 			name={STATE}
-			value={JSON.stringify({
-				key: context.state.key,
-				validated: context.state.validated,
-			})}
+			value={form.getSerializedState()}
 			form={props.formId}
 		/>
 	);

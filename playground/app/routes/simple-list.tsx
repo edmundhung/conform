@@ -56,12 +56,12 @@ export default function SimpleList() {
 	const items = useFieldList({
 		formId: form.id,
 		name: fields.items.name,
-		context: context,
+		context,
 	});
 
 	return (
 		<Form method="post" {...conform.form(form)}>
-			<FormStateInput formId={form.id} context={context} />
+			<FormStateInput context={context} />
 			<Playground title="Simple list" lastSubmission={lastResult}>
 				<Alert errors={fields.items.error} />
 				<ol>

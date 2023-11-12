@@ -7,7 +7,7 @@ export {
 export {
 	type Field,
 	type FieldConfig,
-	ConformBoundary,
+	FormContextProvider,
 	FormStateInput,
 } from './context';
 export { useForm, useFieldset, useFieldList, useField } from './hooks';

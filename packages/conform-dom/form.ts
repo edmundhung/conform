@@ -129,6 +129,7 @@ export interface Form<Type extends Record<string, unknown> = any> {
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
 	getContext(): FormContext;
+	getSerializedState(): string;
 }
 
 export const VALIDATION_UNDEFINED = '__undefined__';
@@ -397,6 +398,13 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		return element;
 	}
 
+	function getSerializedState(): string {
+		return JSON.stringify({
+			key: context.state.key,
+			validated: context.state.validated,
+		});
+	}
+
 	function submit(event: SubmitEvent) {
 		const form = event.target as HTMLFormElement;
 		const submitter = event.submitter as
@@ -412,10 +420,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		const input = getStateInput(form);
 
 		// To ensure it capturing latest state before parsing
-		input.value = JSON.stringify({
-			key: context.state.key,
-			validated: context.state.validated,
-		});
+		input.value = getSerializedState();
 
 		const formData = getFormData(form, submitter);
 		const result = {
@@ -673,5 +678,6 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		update,
 		subscribe,
 		getContext,
+		getSerializedState,
 	};
 }
