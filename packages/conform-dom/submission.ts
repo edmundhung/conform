@@ -73,15 +73,15 @@ export const INTENT = '__intent__';
 export const STATE = '__state__';
 
 export function resolve(payload: FormData | URLSearchParams): ResolveResult {
-	const state = payload.get(STATE);
 	const intent = payload.get(INTENT);
+	const state = payload.get(STATE);
 	const data: Record<string, unknown> = {};
 	const fields: string[] = [];
 
 	invariant(
-		typeof state === 'string' &&
-			(typeof intent === 'string' || intent === null),
-		'Invalid form data',
+		(typeof intent === 'string' || intent === null) &&
+			(typeof state === 'string' || state === null),
+		`The input name "${INTENT}" and "${STATE}" are reserved by Conform. Please use another name for your input.`,
 	);
 
 	for (const [name, next] of payload.entries()) {
@@ -104,7 +104,7 @@ export function resolve(payload: FormData | URLSearchParams): ResolveResult {
 	return {
 		data,
 		intent,
-		state: JSON.parse(state),
+		state: state ? JSON.parse(state) : { key: {}, validated: {} },
 		fields,
 	};
 }

@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -46,7 +46,7 @@ export async function action({ request }: ActionArgs) {
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, context, fields } = useForm({
+	const { form, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -54,21 +54,16 @@ export default function FileUpload() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)} encType="multipart/form-data">
-				<Playground title="Employee Form" lastSubmission={lastResult}>
-					<Alert errors={form.error} />
-					<Field label="Single file" config={fields.file}>
-						<input {...conform.input(fields.file, { type: 'file' })} />
-					</Field>
-					<Field label="Multiple files" config={fields.files}>
-						<input
-							{...conform.input(fields.files, { type: 'file' })}
-							multiple
-						/>
-					</Field>
-				</Playground>
-			</Form>
-		</ConformBoundary>
+		<Form method="post" {...conform.form(form)} encType="multipart/form-data">
+			<Playground title="Employee Form" lastSubmission={lastResult}>
+				<Alert errors={form.error} />
+				<Field label="Single file" config={fields.file}>
+					<input {...conform.input(fields.file, { type: 'file' })} />
+				</Field>
+				<Field label="Multiple files" config={fields.files}>
+					<input {...conform.input(fields.files, { type: 'file' })} multiple />
+				</Field>
+			</Playground>
+		</Form>
 	);
 }

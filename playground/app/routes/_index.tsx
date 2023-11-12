@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, context, fields } = useForm({
+	const { form, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -40,14 +40,12 @@ export default function Example() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)}>
-				<Playground title="Template Form" lastSubmission={lastResult}>
-					<Field label="Name" config={fields.name}>
-						<input {...conform.input(fields.name, { type: 'text' })} />
-					</Field>
-				</Playground>
-			</Form>
-		</ConformBoundary>
+		<Form method="post" {...conform.form(form)}>
+			<Playground title="Template Form" lastSubmission={lastResult}>
+				<Field label="Name" config={fields.name}>
+					<input {...conform.input(fields.name, { type: 'text' })} />
+				</Field>
+			</Playground>
+		</Form>
 	);
 }

@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -59,7 +59,7 @@ export default function ValidationFlow() {
 		showInputWithNoName,
 	} = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, context, fields } = useForm({
+	const { form, fields } = useForm({
 		lastResult,
 		shouldValidate,
 		shouldRevalidate,
@@ -69,29 +69,27 @@ export default function ValidationFlow() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)}>
-				<Playground title="Validation Flow" lastSubmission={lastResult}>
-					<Field label="Email" config={fields.email}>
-						<input {...conform.input(fields.email, { type: 'email' })} />
+		<Form method="post" {...conform.form(form)}>
+			<Playground title="Validation Flow" lastSubmission={lastResult}>
+				<Field label="Email" config={fields.email}>
+					<input {...conform.input(fields.email, { type: 'email' })} />
+				</Field>
+				<Field label="Password" config={fields.password}>
+					<input {...conform.input(fields.password, { type: 'password' })} />
+				</Field>
+				<Field label="Confirm password" config={fields.confirmPassword}>
+					<input
+						{...conform.input(fields.confirmPassword, {
+							type: 'password',
+						})}
+					/>
+				</Field>
+				{showInputWithNoName ? (
+					<Field label="Input with no name">
+						<input type="text" name="" />
 					</Field>
-					<Field label="Password" config={fields.password}>
-						<input {...conform.input(fields.password, { type: 'password' })} />
-					</Field>
-					<Field label="Confirm password" config={fields.confirmPassword}>
-						<input
-							{...conform.input(fields.confirmPassword, {
-								type: 'password',
-							})}
-						/>
-					</Field>
-					{showInputWithNoName ? (
-						<Field label="Input with no name">
-							<input type="text" name="" />
-						</Field>
-					) : null}
-				</Playground>
-			</Form>
-		</ConformBoundary>
+				) : null}
+			</Playground>
+		</Form>
 	);
 }

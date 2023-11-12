@@ -143,6 +143,16 @@ export function useForm<Type extends Record<string, any>>(options: {
 	});
 
 	useEffect(() => {
+		document.addEventListener('input', form.input);
+		document.addEventListener('focusout', form.blur);
+
+		return () => {
+			document.removeEventListener('input', form.input);
+			document.removeEventListener('focusout', form.blur);
+		};
+	}, [form]);
+
+	useEffect(() => {
 		if (options.lastResult === optionsRef.current.lastResult) {
 			// If there is no change, do nothing
 			return;

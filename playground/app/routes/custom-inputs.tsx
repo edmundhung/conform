@@ -1,9 +1,4 @@
-import {
-	ConformBoundary,
-	conform,
-	useForm,
-	useInputEvent,
-} from '@conform-to/react';
+import { conform, useForm, useInputEvent } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -44,7 +39,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, context, fields } = useForm({
+	const { form, fields } = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
@@ -53,27 +48,25 @@ export default function Example() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)}>
-				<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
-					<Field label="Headless ListBox" config={fields.language}>
-						<CustomSelect
-							id={fields.language.id}
-							name={fields.language.name}
-							defaultValue={fields.language.defaultValue}
-						/>
-					</Field>
-					<Field label="Radix Checkbox" config={fields.tos}>
-						<CustomCheckbox
-							id={fields.tos.id}
-							name={fields.tos.name}
-							defaultChecked={fields.tos.defaultValue === 'on'}
-							label="I accept the terms of service"
-						/>
-					</Field>
-				</Playground>
-			</Form>
-		</ConformBoundary>
+		<Form method="post" {...conform.form(form)}>
+			<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
+				<Field label="Headless ListBox" config={fields.language}>
+					<CustomSelect
+						id={fields.language.id}
+						name={fields.language.name}
+						defaultValue={fields.language.defaultValue}
+					/>
+				</Field>
+				<Field label="Radix Checkbox" config={fields.tos}>
+					<CustomCheckbox
+						id={fields.tos.id}
+						name={fields.tos.name}
+						defaultChecked={fields.tos.defaultValue === 'on'}
+						label="I accept the terms of service"
+					/>
+				</Field>
+			</Playground>
+		</Form>
 	);
 }
 

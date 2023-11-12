@@ -21,6 +21,7 @@ import {
 	requestIntent,
 	resolve,
 	validate,
+	STATE,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -374,19 +375,49 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		}
 	}
 
+	function getStateInput(form: HTMLFormElement): FieldElement {
+		const element = form.elements.namedItem(STATE);
+
+		invariant(
+			element === null || isFieldElement(element),
+			`The input name "${STATE}" is reserved by Conform. Please use another name.`,
+		);
+
+		if (!element) {
+			const input = document.createElement('input');
+
+			input.type = 'hidden';
+			input.name = STATE;
+			input.value = '';
+			form.append(input);
+
+			return input;
+		}
+
+		return element;
+	}
+
 	function submit(event: SubmitEvent) {
-		const element = event.target as HTMLFormElement;
+		const form = event.target as HTMLFormElement;
 		const submitter = event.submitter as
 			| HTMLButtonElement
 			| HTMLInputElement
 			| null;
 
 		invariant(
-			element === getFormElement(),
-			`The submit event is dispatched by form#${element.id} instead of form#${formId}`,
+			form === getFormElement(),
+			`The submit event is dispatched by form#${form.id} instead of form#${formId}`,
 		);
 
-		const formData = getFormData(element, submitter);
+		const input = getStateInput(form);
+
+		// To ensure it capturing latest state before parsing
+		input.value = JSON.stringify({
+			key: context.state.key,
+			validated: context.state.validated,
+		});
+
+		const formData = getFormData(form, submitter);
 		const result = {
 			formData,
 			action: getFormAction(event),
@@ -397,7 +428,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		if (typeof latestOptions?.onValidate !== 'undefined') {
 			try {
 				const submission = latestOptions.onValidate({
-					form: element,
+					form,
 					formData,
 					submitter,
 				});

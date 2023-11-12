@@ -84,17 +84,7 @@ export function ConformBoundary(props: { context: Form; children: ReactNode }) {
 		[context, props.context],
 	);
 
-	return (
-		<Context.Provider value={value}>
-			<div
-				onInput={(event) => props.context.input(event.nativeEvent)}
-				onBlur={(event) => props.context.blur(event.nativeEvent)}
-			>
-				<FormStateInput formId={props.context.id} />
-				{props.children}
-			</div>
-		</Context.Provider>
-	);
+	return <Context.Provider value={value}>{props.children}</Context.Provider>;
 }
 
 export function FormStateInput(props: {
