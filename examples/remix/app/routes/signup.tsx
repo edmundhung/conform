@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -73,7 +73,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const lastResult = useActionData<typeof action>();
-	const { form, fields, context } = useForm({
+	const { form, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
@@ -85,35 +85,33 @@ export default function Signup() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)}>
-				<label>
-					<div>Username</div>
-					<input
-						className={fields.username.error ? 'error' : ''}
-						{...conform.input(fields.username)}
-					/>
-					<div>{fields.username.error}</div>
-				</label>
-				<label>
-					<div>Password</div>
-					<input
-						className={fields.password.error ? 'error' : ''}
-						{...conform.input(fields.password, { type: 'password' })}
-					/>
-					<div>{fields.password.error}</div>
-				</label>
-				<label>
-					<div>Confirm Password</div>
-					<input
-						className={fields.confirmPassword.error ? 'error' : ''}
-						{...conform.input(fields.confirmPassword, { type: 'password' })}
-					/>
-					<div>{fields.confirmPassword.error}</div>
-				</label>
-				<hr />
-				<button>Signup</button>
-			</Form>
-		</ConformBoundary>
+		<Form method="post" {...conform.form(form)}>
+			<label>
+				<div>Username</div>
+				<input
+					className={!fields.username.valid ? 'error' : ''}
+					{...conform.input(fields.username)}
+				/>
+				<div>{fields.username.errors}</div>
+			</label>
+			<label>
+				<div>Password</div>
+				<input
+					className={!fields.password.valid ? 'error' : ''}
+					{...conform.input(fields.password, { type: 'password' })}
+				/>
+				<div>{fields.password.errors}</div>
+			</label>
+			<label>
+				<div>Confirm Password</div>
+				<input
+					className={!fields.confirmPassword.valid ? 'error' : ''}
+					{...conform.input(fields.confirmPassword, { type: 'password' })}
+				/>
+				<div>{fields.confirmPassword.errors}</div>
+			</label>
+			<hr />
+			<button>Signup</button>
+		</Form>
 	);
 }

@@ -12,6 +12,7 @@ import {
 	STATE,
 } from '@conform-to/dom';
 import {
+	type ReactElement,
 	type ReactNode,
 	type MutableRefObject,
 	createContext,
@@ -84,10 +85,10 @@ export function useFormContext(
 	return result;
 }
 
-export function FormContextProvider(props: {
+export function FormProvider(props: {
 	context: Form;
 	children: ReactNode;
-}): ReactNode {
+}): ReactElement {
 	const context = useContext(Context);
 	const value = useMemo(
 		() => ({ ...context, [props.context.id]: props.context }),

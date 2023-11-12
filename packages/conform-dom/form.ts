@@ -196,6 +196,11 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		const cache: Record<string, string | undefined> = {};
 		const keyProxy = new Proxy(key, {
 			get(_, name: string) {
+				// This makes getSerializedState() returning the raw key instead
+				if (name === 'toJSON') {
+					return () => key;
+				}
+
 				if (typeof cache[name] === 'undefined') {
 					const currentKey = key[name] ?? '';
 					const resultKey =
@@ -203,7 +208,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 							? currentKey
 							: `${
 									keyProxy[formatPaths(getPaths(name).slice(0, -1))] ?? ''
-							  }${currentKey}`;
+							  }/${currentKey}`;
 
 					if (resultKey) {
 						cache[name] = resultKey;

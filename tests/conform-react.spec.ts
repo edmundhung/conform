@@ -15,10 +15,10 @@ test.describe('conform-react', () => {
 			errorId: 'test-error',
 			descriptionId: 'test-description',
 			constraint: {},
-			defaultValue: undefined,
+			initialValue: undefined,
 			value: undefined,
-			error: undefined,
-			allError: {},
+			errors: undefined,
+			allErrors: {},
 			allValid: true,
 			valid: true,
 			dirty: false,
@@ -33,7 +33,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.input({
 				...config,
-				defaultValue: 'string',
+				initialValue: 'string',
 				constraint: {
 					required: true,
 					min: 1,
@@ -115,7 +115,7 @@ test.describe('conform-react', () => {
 			defaultChecked: false,
 		});
 		expect(
-			conform.input({ ...config, defaultValue: 'on' }, { type: 'radio' }),
+			conform.input({ ...config, initialValue: 'on' }, { type: 'radio' }),
 		).toEqual({
 			...props,
 			type: 'radio',
@@ -124,7 +124,7 @@ test.describe('conform-react', () => {
 		});
 		expect(
 			conform.input(
-				{ ...config, defaultValue: 'something else' },
+				{ ...config, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
@@ -135,7 +135,7 @@ test.describe('conform-react', () => {
 		});
 		expect(
 			conform.input(
-				{ ...config, defaultValue: 'something else' },
+				{ ...config, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
@@ -158,10 +158,10 @@ test.describe('conform-react', () => {
 			errorId: 'test-error',
 			descriptionId: 'test-description',
 			constraint: {},
-			defaultValue: undefined,
+			initialValue: undefined,
 			value: undefined,
-			error: undefined,
-			allError: {},
+			errors: undefined,
+			allErrors: {},
 			allValid: true,
 			valid: true,
 			dirty: false,
@@ -176,7 +176,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.textarea({
 				...config,
-				defaultValue: 'string',
+				initialValue: 'string',
 				constraint: {
 					required: true,
 					min: 1,
@@ -252,10 +252,10 @@ test.describe('conform-react', () => {
 			errorId: 'test-error',
 			descriptionId: 'test-description',
 			constraint: {},
-			defaultValue: undefined,
+			initialValue: undefined,
 			value: undefined,
-			error: undefined,
-			allError: {},
+			errors: undefined,
+			allErrors: {},
 			allValid: true,
 			valid: true,
 			dirty: false,
@@ -270,7 +270,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.select({
 				...config,
-				defaultValue: 'string',
+				initialValue: 'string',
 				constraint: {
 					required: true,
 					min: 1,

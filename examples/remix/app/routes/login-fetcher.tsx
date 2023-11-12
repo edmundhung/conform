@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -24,7 +24,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Login() {
 	const fetcher = useFetcher<typeof action>();
-	const { form, fields, context } = useForm({
+	const { form, fields } = useForm({
 		// Sync the result of last submission
 		lastResult: fetcher.data,
 
@@ -37,33 +37,31 @@ export default function Login() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<fetcher.Form method="post" {...conform.form(form)}>
+		<fetcher.Form method="post" {...conform.form(form)}>
+			<div>
+				<label>Email</label>
+				<input
+					className={!fields.email.valid ? 'error' : ''}
+					{...conform.input(fields.email)}
+				/>
+				<div>{fields.email.errors}</div>
+			</div>
+			<div>
+				<label>Password</label>
+				<input
+					className={!fields.password.valid ? 'error' : ''}
+					{...conform.input(fields.password, { type: 'password' })}
+				/>
+				<div>{fields.password.errors}</div>
+			</div>
+			<label>
 				<div>
-					<label>Email</label>
-					<input
-						className={fields.email.error ? 'error' : ''}
-						{...conform.input(fields.email)}
-					/>
-					<div>{fields.email.error}</div>
+					<span>Remember me</span>
+					<input {...conform.input(fields.remember, { type: 'checkbox' })} />
 				</div>
-				<div>
-					<label>Password</label>
-					<input
-						className={fields.password.error ? 'error' : ''}
-						{...conform.input(fields.password, { type: 'password' })}
-					/>
-					<div>{fields.password.error}</div>
-				</div>
-				<label>
-					<div>
-						<span>Remember me</span>
-						<input {...conform.input(fields.remember, { type: 'checkbox' })} />
-					</div>
-				</label>
-				<hr />
-				<button>Login</button>
-			</fetcher.Form>
-		</ConformBoundary>
+			</label>
+			<hr />
+			<button>Login</button>
+		</fetcher.Form>
 	);
 }

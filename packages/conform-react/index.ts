@@ -7,7 +7,7 @@ export {
 export {
 	type Field,
 	type FieldMetadata as FieldConfig,
-	FormContextProvider,
+	FormProvider,
 	FormStateInput,
 } from './context';
 export {

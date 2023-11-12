@@ -1,4 +1,4 @@
-import { ConformBoundary, conform, useForm } from '@conform-to/react';
+import { conform, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -25,7 +25,7 @@ export async function action({ request }: ActionArgs) {
 export default function Login() {
 	// Last submission returned by the server
 	const lastResult = useActionData<typeof action>();
-	const { form, context, fields } = useForm({
+	const { form, fields } = useForm({
 		// Sync the result of last submission
 		lastResult,
 
@@ -39,33 +39,31 @@ export default function Login() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
-			<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...conform.form(form)}>
+			<div>
+				<label>Email</label>
+				<input
+					className={!fields.email.valid ? 'error' : ''}
+					{...conform.input(fields.email)}
+				/>
+				<div>{fields.email.errors}</div>
+			</div>
+			<div>
+				<label>Password</label>
+				<input
+					className={!fields.password.valid ? 'error' : ''}
+					{...conform.input(fields.password, { type: 'password' })}
+				/>
+				<div>{fields.password.errors}</div>
+			</div>
+			<label>
 				<div>
-					<label>Email</label>
-					<input
-						className={fields.email.error ? 'error' : ''}
-						{...conform.input(fields.email)}
-					/>
-					<div>{fields.email.error}</div>
+					<span>Remember me</span>
+					<input {...conform.input(fields.remember, { type: 'checkbox' })} />
 				</div>
-				<div>
-					<label>Password</label>
-					<input
-						className={fields.password.error ? 'error' : ''}
-						{...conform.input(fields.password, { type: 'password' })}
-					/>
-					<div>{fields.password.error}</div>
-				</div>
-				<label>
-					<div>
-						<span>Remember me</span>
-						<input {...conform.input(fields.remember, { type: 'checkbox' })} />
-					</div>
-				</label>
-				<hr />
-				<button>Login</button>
-			</Form>
-		</ConformBoundary>
+			</label>
+			<hr />
+			<button>Login</button>
+		</Form>
 	);
 }

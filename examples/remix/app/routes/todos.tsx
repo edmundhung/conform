@@ -1,11 +1,11 @@
 import type { Field } from '@conform-to/react';
 import {
+	FormProvider,
 	useForm,
 	useFieldset,
 	useFieldList,
 	conform,
 	intent,
-	ConformBoundary,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -40,9 +40,9 @@ export default function TodoForm() {
 	const lastResult = useActionData<typeof action>();
 	const { form, fields, context } = useForm({
 		lastResult,
-		onValidate({ formData }) {
-			return parse(formData, { schema: todosSchema });
-		},
+		// onValidate({ formData }) {
+		// 	return parse(formData, { schema: todosSchema });
+		// },
 		shouldValidate: 'onBlur',
 	});
 	const taskList = useFieldList({
@@ -52,20 +52,20 @@ export default function TodoForm() {
 	});
 
 	return (
-		<ConformBoundary context={context}>
+		<FormProvider context={context}>
 			<Form method="post" {...conform.form(form)}>
 				<div>
 					<label>Title</label>
 					<input
-						className={fields.title.error ? 'error' : ''}
+						className={!fields.title.valid ? 'error' : ''}
 						{...conform.input(fields.title)}
 					/>
-					<div>{fields.title.error}</div>
+					<div>{fields.title.errors}</div>
 				</div>
 				<hr />
-				<div className="form-error">{fields.tasks.error}</div>
+				<div className="form-error">{fields.tasks.errors}</div>
 				{taskList.map((task, index) => (
-					<p key={task.key}>
+					<div key={task.key}>
 						<TaskFieldset
 							title={`Task #${index + 1}`}
 							name={task.name}
@@ -87,7 +87,7 @@ export default function TodoForm() {
 						>
 							Clear
 						</button>
-					</p>
+					</div>
 				))}
 				<button
 					{...intent.list.insert(fields.tasks, {
@@ -99,7 +99,7 @@ export default function TodoForm() {
 				<hr />
 				<button>Save</button>
 			</Form>
-		</ConformBoundary>
+		</FormProvider>
 	);
 }
 
@@ -118,16 +118,16 @@ function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
 			<div>
 				<label>{title}</label>
 				<input
-					className={fields.content.error ? 'error' : ''}
+					className={!fields.content.valid ? 'error' : ''}
 					{...conform.input(fields.content)}
 				/>
-				<div>{fields.content.error}</div>
+				<div>{fields.content.errors}</div>
 			</div>
 			<div>
 				<label>
 					<span>Completed</span>
 					<input
-						className={fields.completed.error ? 'error' : ''}
+						className={!fields.completed.valid ? 'error' : ''}
 						{...conform.input(fields.completed, {
 							type: 'checkbox',
 						})}
