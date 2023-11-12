@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { ConformBoundary, conform, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -64,17 +64,17 @@ export async function action({ request }: ActionArgs) {
 		async: true,
 	});
 
-	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export default function Signup() {
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { username, password, confirmPassword }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const { form, fields, context } = useForm({
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined
@@ -85,33 +85,35 @@ export default function Signup() {
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<label>
-				<div>Username</div>
-				<input
-					className={username.error ? 'error' : ''}
-					{...conform.input(username)}
-				/>
-				<div>{username.error}</div>
-			</label>
-			<label>
-				<div>Password</div>
-				<input
-					className={password.error ? 'error' : ''}
-					{...conform.input(password, { type: 'password' })}
-				/>
-				<div>{password.error}</div>
-			</label>
-			<label>
-				<div>Confirm Password</div>
-				<input
-					className={confirmPassword.error ? 'error' : ''}
-					{...conform.input(confirmPassword, { type: 'password' })}
-				/>
-				<div>{confirmPassword.error}</div>
-			</label>
-			<hr />
-			<button>Signup</button>
-		</Form>
+		<ConformBoundary context={context}>
+			<Form method="post" {...conform.form(form)}>
+				<label>
+					<div>Username</div>
+					<input
+						className={fields.username.error ? 'error' : ''}
+						{...conform.input(fields.username)}
+					/>
+					<div>{fields.username.error}</div>
+				</label>
+				<label>
+					<div>Password</div>
+					<input
+						className={fields.password.error ? 'error' : ''}
+						{...conform.input(fields.password, { type: 'password' })}
+					/>
+					<div>{fields.password.error}</div>
+				</label>
+				<label>
+					<div>Confirm Password</div>
+					<input
+						className={fields.confirmPassword.error ? 'error' : ''}
+						{...conform.input(fields.confirmPassword, { type: 'password' })}
+					/>
+					<div>{fields.confirmPassword.error}</div>
+				</label>
+				<hr />
+				<button>Signup</button>
+			</Form>
+		</ConformBoundary>
 	);
 }

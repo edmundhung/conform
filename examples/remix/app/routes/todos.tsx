@@ -1,16 +1,16 @@
-import type { FieldsetConfig } from '@conform-to/react';
+import type { Field } from '@conform-to/react';
 import {
 	useForm,
 	useFieldset,
 	useFieldList,
 	conform,
-	list,
+	intent,
+	ConformBoundary,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
-import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
@@ -29,84 +29,106 @@ export async function action({ request }: ActionArgs) {
 		schema: todosSchema,
 	});
 
-	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export default function TodoForm() {
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { title, tasks }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const { form, fields, context } = useForm({
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
 		},
 		shouldValidate: 'onBlur',
 	});
-	const taskList = useFieldList(form.ref, tasks);
+	const taskList = useFieldList({
+		formId: form.id,
+		name: fields.tasks.name,
+		context,
+	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<div>
-				<label>Title</label>
-				<input
-					className={title.error ? 'error' : ''}
-					{...conform.input(title)}
-				/>
-				<div>{title.error}</div>
-			</div>
-			<hr />
-			<div className="form-error">{tasks.error}</div>
-			{taskList.map((task, index) => (
-				<p key={task.key}>
-					<TaskFieldset title={`Task #${index + 1}`} {...task} />
-					<button {...list.remove(tasks.name, { index })}>Delete</button>
-					<button {...list.reorder(tasks.name, { from: index, to: 0 })}>
-						Move to top
-					</button>
-					<button
-						{...list.replace(tasks.name, {
-							index,
-							defaultValue: { content: '' },
-						})}
-					>
-						Clear
-					</button>
-				</p>
-			))}
-			<button {...list.insert(tasks.name)}>Add task</button>
-			<hr />
-			<button>Save</button>
-		</Form>
+		<ConformBoundary context={context}>
+			<Form method="post" {...conform.form(form)}>
+				<div>
+					<label>Title</label>
+					<input
+						className={fields.title.error ? 'error' : ''}
+						{...conform.input(fields.title)}
+					/>
+					<div>{fields.title.error}</div>
+				</div>
+				<hr />
+				<div className="form-error">{fields.tasks.error}</div>
+				{taskList.map((task, index) => (
+					<p key={task.key}>
+						<TaskFieldset
+							title={`Task #${index + 1}`}
+							name={task.name}
+							formId={form.id}
+						/>
+						<button {...intent.list.remove(fields.tasks, { index })}>
+							Delete
+						</button>
+						<button
+							{...intent.list.reorder(fields.tasks, { from: index, to: 0 })}
+						>
+							Move to top
+						</button>
+						<button
+							{...intent.list.replace(fields.tasks, {
+								index,
+								defaultValue: { content: '' },
+							})}
+						>
+							Clear
+						</button>
+					</p>
+				))}
+				<button
+					{...intent.list.insert(fields.tasks, {
+						defaultValue: { content: '' },
+					})}
+				>
+					Add task
+				</button>
+				<hr />
+				<button>Save</button>
+			</Form>
+		</ConformBoundary>
 	);
 }
 
-interface TaskFieldsetProps extends FieldsetConfig<z.input<typeof taskSchema>> {
+interface TaskFieldsetProps extends Field<z.input<typeof taskSchema>> {
 	title: string;
 }
 
-function TaskFieldset({ title, ...config }: TaskFieldsetProps) {
-	const ref = useRef<HTMLFieldSetElement>(null);
-	const { content, completed } = useFieldset(ref, config);
+function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
+	const fields = useFieldset({
+		formId,
+		name,
+	});
 
 	return (
-		<fieldset ref={ref}>
+		<fieldset>
 			<div>
 				<label>{title}</label>
 				<input
-					className={content.error ? 'error' : ''}
-					{...conform.input(content)}
+					className={fields.content.error ? 'error' : ''}
+					{...conform.input(fields.content)}
 				/>
-				<div>{content.error}</div>
+				<div>{fields.content.error}</div>
 			</div>
 			<div>
 				<label>
 					<span>Completed</span>
 					<input
-						className={completed.error ? 'error' : ''}
-						{...conform.input(completed, {
+						className={fields.completed.error ? 'error' : ''}
+						{...conform.input(fields.completed, {
 							type: 'checkbox',
 						})}
 					/>
