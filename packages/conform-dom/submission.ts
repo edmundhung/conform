@@ -1,4 +1,4 @@
-import { type DefaultValue } from './form';
+import { type FormValue } from './form';
 import { requestSubmit } from './dom';
 import { simplify, flatten, isPlainObject, setValue } from './formdata';
 import { invariant } from './util';
@@ -411,12 +411,12 @@ export const list = createIntent<ListIntentPayload, void>({
 
 export type ListIntentPayload<Schema = unknown> =
 	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
-	| { name: string; operation: 'prepend'; defaultValue?: DefaultValue<Schema> }
-	| { name: string; operation: 'append'; defaultValue?: DefaultValue<Schema> }
+	| { name: string; operation: 'prepend'; defaultValue?: FormValue<Schema> }
+	| { name: string; operation: 'append'; defaultValue?: FormValue<Schema> }
 	| {
 			name: string;
 			operation: 'replace';
-			defaultValue: DefaultValue<Schema>;
+			defaultValue: FormValue<Schema>;
 			index: number;
 	  }
 	| { name: string; operation: 'remove'; index: number }
@@ -437,7 +437,7 @@ export function requestIntent(
 }
 
 export function updateList<Schema>(
-	list: Array<DefaultValue<Schema>>,
+	list: Array<FormValue<Schema>>,
 	payload: ListIntentPayload<Schema>,
 ): void {
 	switch (payload.operation) {

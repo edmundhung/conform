@@ -1,20 +1,8 @@
 import { type FieldElement, isFieldElement } from '@conform-to/dom';
-import {
-	type RefObject,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-} from 'react';
+import { type RefObject, useMemo, useRef } from 'react';
+import { useSafeLayoutEffect } from './hooks';
 
-/**
- * useLayoutEffect is client-only.
- * This basically makes it a no-op on server
- */
-const useSafeLayoutEffect =
-	typeof document === 'undefined' ? useEffect : useLayoutEffect;
-
-type InputControl = {
+export type InputControl = {
 	change: (
 		eventOrValue: { target: { value: string } } | string | boolean,
 	) => void;

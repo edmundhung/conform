@@ -32,7 +32,7 @@ export type UnionKeyType<T, K extends UnionKeyof<T>> = T extends {
 	? T[K]
 	: undefined;
 
-export type DefaultValue<Schema> = Schema extends
+export type FormValue<Schema> = Schema extends
 	| string
 	| number
 	| boolean
@@ -43,12 +43,12 @@ export type DefaultValue<Schema> = Schema extends
 	: Schema extends File
 	? undefined
 	: Schema extends Array<infer InnerType>
-	? Array<DefaultValue<InnerType>>
+	? Array<FormValue<InnerType>>
 	: Schema extends Record<string, any>
-	? { [Key in UnionKeyof<Schema>]?: DefaultValue<UnionKeyType<Schema, Key>> }
+	? { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
 	: any;
 
-export type FieldName<Type> = string & { __type?: Type };
+export type FieldName<Schema> = string & { __type?: Schema };
 
 export type Constraint = {
 	required?: boolean;
@@ -77,17 +77,46 @@ export type FormContext = {
 	state: FormState;
 };
 
-export type FormOptions<Type> = {
-	defaultValue?: DefaultValue<Type>;
+export type FormOptions<Schema> = {
+	/**
+	 * An object representing the initial value of the form.
+	 */
+	defaultValue?: FormValue<Schema>;
+
+	/**
+	 * An object describing the constraint of each field
+	 */
 	constraint?: Record<string, Constraint>;
+
+	/**
+	 * An object describing the result of the last submission
+	 */
 	lastResult?: SubmissionResult;
+
+	/**
+	 * Define when conform should start validation.
+	 * Support "onSubmit", "onInput", "onBlur".
+	 *
+	 * @default "onSubmit"
+	 */
 	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
+
+	/**
+	 * Define when conform should revalidate again.
+	 * Support "onSubmit", "onInput", "onBlur".
+	 *
+	 * @default Same as shouldValidate, or "onSubmit" if shouldValidate is not provided.
+	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
+
+	/**
+	 * A function to be called when the form should be (re)validated.
+	 */
 	onValidate?: (context: {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Type>;
+	}) => Submission<Schema>;
 };
 
 export type SubscriptionSubject = {
@@ -106,20 +135,21 @@ export type SubscriptionScope = {
 	name?: string[];
 };
 
-export type Form<Type extends Record<string, unknown> = any> = {
+export type Form<Schema extends Record<string, any> = any> = {
 	id: string;
 	submit(event: SubmitEvent): {
 		formData: FormData;
 		action: ReturnType<typeof getFormAction>;
 		encType: ReturnType<typeof getFormEncType>;
 		method: ReturnType<typeof getFormMethod>;
-		submission?: Submission<Type>;
+		submission?: Submission<Schema>;
 	};
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
+	initialize(): void;
 	report(result: SubmissionResult): void;
-	update(options: Omit<FormOptions<Type>, 'lastResult'>): void;
+	update(options: Omit<FormOptions<Schema>, 'lastResult'>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -132,10 +162,10 @@ export const VALIDATION_UNDEFINED = '__undefined__';
 
 export const VALIDATION_SKIPPED = '__skipped__';
 
-export function createForm<Type extends Record<string, unknown> = any>(
+export function createForm<Schema extends Record<string, any> = any>(
 	formId: string,
-	options: FormOptions<Type>,
-): Form<Type> {
+	options: FormOptions<Schema>,
+): Form<Schema> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
@@ -254,10 +284,10 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		);
 	}
 
-	function shouldNotify<Type>(config: {
-		prev: Record<string, Type>;
-		next: Record<string, Type>;
-		compareFn: (prev: Type | undefined, next: Type | undefined) => boolean;
+	function shouldNotify<Schema>(config: {
+		prev: Record<string, Schema>;
+		next: Record<string, Schema>;
+		compareFn: (prev: Schema | undefined, next: Schema | undefined) => boolean;
 		cache: Record<string, boolean>;
 		scope?: SubscriptionScope;
 	}): boolean {
@@ -529,6 +559,16 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		requestIntent(element.form, validate.serialize(element.name));
 	}
 
+	function initialize() {
+		document.addEventListener('input', input);
+		document.addEventListener('focusout', blur);
+
+		return () => {
+			document.removeEventListener('input', input);
+			document.removeEventListener('focusout', blur);
+		};
+	}
+
 	function reset(event: Event) {
 		const element = getFormElement();
 
@@ -642,7 +682,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		}
 	}
 
-	function update(options: Omit<FormOptions<Type>, 'lastResult'>) {
+	function update(options: Omit<FormOptions<Schema>, 'lastResult'>) {
 		latestOptions = options;
 	}
 
@@ -672,6 +712,7 @@ export function createForm<Type extends Record<string, unknown> = any>(
 		reset,
 		input,
 		blur,
+		initialize,
 		report,
 		update,
 		subscribe,

@@ -1,8 +1,8 @@
 import {
 	type Constraint,
-	type DefaultValue,
 	type FieldName,
 	type Form,
+	type FormValue,
 	type FormContext,
 	type SubscriptionScope,
 	type SubscriptionSubject,
@@ -25,13 +25,13 @@ import {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export type BaseMetadata<Type> = {
+export type BaseMetadata<Schema> = {
 	key?: string;
 	id: string;
 	errorId: string;
 	descriptionId: string;
-	initialValue: DefaultValue<Type>;
-	value: DefaultValue<Type>;
+	initialValue: FormValue<Schema>;
+	value: FormValue<Schema>;
 	errors: string[] | undefined;
 	allErrors: Record<string, string[]>;
 	allValid: boolean;
@@ -39,23 +39,30 @@ export type BaseMetadata<Type> = {
 	dirty: boolean;
 };
 
-export type Field<Type> = {
-	name: FieldName<Type>;
+export type Field<Schema> = {
+	name: FieldName<Schema>;
 	formId: string;
 };
 
-export type FormMetadata<Type extends Record<string, any>> = BaseMetadata<Type>;
+export type FormMetadata<Schema extends Record<string, any>> =
+	BaseMetadata<Schema> & {
+		onSubmit: (
+			event: React.FormEvent<HTMLFormElement>,
+		) => ReturnType<Form<Schema>['submit']>;
+		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		noValidate: boolean;
+	};
 
-export type FieldMetadata<Type> = BaseMetadata<Type> & {
+export type FieldMetadata<Schema> = BaseMetadata<Schema> & {
 	formId: string;
-	name: FieldName<Type>;
+	name: FieldName<Schema>;
 	constraint?: Constraint;
 };
 
-export const Context = createContext<Record<string, Form>>({});
+export const Registry = createContext<Record<string, Form>>({});
 
-export function useContextForm(formId: string, context?: Form) {
-	const registry = useContext(Context);
+export function useFormStore(formId: string, context?: Form) {
+	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
 
 	if (!form) {
@@ -66,11 +73,9 @@ export function useContextForm(formId: string, context?: Form) {
 }
 
 export function useFormContext(
-	formId: string,
-	context?: Form,
+	form: Form,
 	subjectRef?: MutableRefObject<SubscriptionSubject>,
 ): FormContext {
-	const form = useContextForm(formId, context);
 	const subscribe = useCallback(
 		(callback: () => void) =>
 			form.subscribe(callback, () => subjectRef?.current),
@@ -89,13 +94,13 @@ export function FormProvider(props: {
 	context: Form;
 	children: ReactNode;
 }): ReactElement {
-	const context = useContext(Context);
+	const registry = useContext(Registry);
 	const value = useMemo(
-		() => ({ ...context, [props.context.id]: props.context }),
-		[context, props.context],
+		() => ({ ...registry, [props.context.id]: props.context }),
+		[registry, props.context],
 	);
 
-	return <Context.Provider value={value}>{props.children}</Context.Provider>;
+	return <Registry.Provider value={value}>{props.children}</Registry.Provider>;
 }
 
 export function FormStateInput(
@@ -109,7 +114,7 @@ export function FormStateInput(
 				context: Form;
 		  },
 ): React.ReactElement {
-	const form = useContextForm(props.formId ?? props.context.id, props.context);
+	const form = useFormStore(props.formId ?? props.context.id, props.context);
 
 	return (
 		<input
@@ -133,14 +138,14 @@ export function useSubjectRef(
 	return subjectRef;
 }
 
-export function getBaseMetadata<Type>(
+export function getBaseMetadata<Schema>(
 	formId: string,
 	context: FormContext,
 	options: {
 		name?: string;
 		subjectRef: MutableRefObject<SubscriptionSubject>;
 	},
-): BaseMetadata<Type> {
+): BaseMetadata<Schema> {
 	const name = options.name ?? '';
 	const id = name ? `${formId}-${name}` : formId;
 	const updateSubject = (
@@ -160,8 +165,8 @@ export function getBaseMetadata<Type>(
 			id,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
-			initialValue: context.initialValue[name] as DefaultValue<Type>,
-			value: context.value[name] as DefaultValue<Type>,
+			initialValue: context.initialValue[name] as FormValue<Schema>,
+			value: context.value[name] as FormValue<Schema>,
 			errors: context.error[name],
 			get key() {
 				return context.state.key[name];
@@ -228,7 +233,7 @@ export function getBaseMetadata<Type>(
 	);
 }
 
-export function getFieldMetadata<Type>(
+export function getFieldMetadata<Schema>(
 	formId: string,
 	context: FormContext,
 	options: {
@@ -236,7 +241,7 @@ export function getFieldMetadata<Type>(
 		key?: string | number;
 		subjectRef: MutableRefObject<SubscriptionSubject>;
 	},
-): FieldMetadata<Type> {
+): FieldMetadata<Schema> {
 	const name =
 		typeof options.key !== 'undefined'
 			? formatPaths([...getPaths(options.name ?? ''), options.key])

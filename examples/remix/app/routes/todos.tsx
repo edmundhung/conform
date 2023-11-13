@@ -40,9 +40,9 @@ export default function TodoForm() {
 	const lastResult = useActionData<typeof action>();
 	const { form, fields, context } = useForm({
 		lastResult,
-		// onValidate({ formData }) {
-		// 	return parse(formData, { schema: todosSchema });
-		// },
+		onValidate({ formData }) {
+			return parse(formData, { schema: todosSchema });
+		},
 		shouldValidate: 'onBlur',
 	});
 	const taskList = useFieldList({

@@ -1,6 +1,10 @@
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
-import type { FieldMetadata, BaseMetadata, Pretty } from './context';
-import type { FormConfig } from './hooks';
+import type {
+	FormMetadata,
+	FieldMetadata,
+	BaseMetadata,
+	Pretty,
+} from './context';
 
 type FormControlProps = {
 	id: string;
@@ -61,10 +65,10 @@ type ControlOptions = BaseOptions & {
 	hidden?: boolean;
 };
 
-type FormOptions<Type extends Record<string, any>> = BaseOptions & {
+type FormOptions<Schema extends Record<string, any>> = BaseOptions & {
 	onSubmit?: (
 		event: React.FormEvent<HTMLFormElement>,
-		context: ReturnType<FormConfig<Type>['onSubmit']>,
+		context: ReturnType<FormMetadata<Schema>['onSubmit']>,
 	) => void;
 	onReset?: (event: React.FormEvent<HTMLFormElement>) => void;
 };
@@ -216,9 +220,9 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 	});
 }
 
-export function form<Type extends Record<string, any>>(
-	metadata: FormConfig<Type>,
-	options?: FormOptions<Type>,
+export function form<Schema extends Record<string, any>>(
+	metadata: FormMetadata<Schema>,
+	options?: FormOptions<Schema>,
 ) {
 	const onSubmit = options?.onSubmit;
 	const onReset = options?.onReset;

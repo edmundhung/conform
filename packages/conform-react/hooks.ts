@@ -1,23 +1,29 @@
 import {
 	type UnionKeyof,
 	type UnionKeyType,
-	type Constraint,
 	type FieldName,
 	type Form,
-	type SubmissionResult,
-	type Submission,
-	type DefaultValue,
+	type FormOptions,
 	createForm,
 } from '@conform-to/dom';
-import { useEffect, useId, useRef, useState, useCallback } from 'react';
+import { useEffect, useId, useRef, useState, useLayoutEffect } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
+	type Pretty,
 	useFormContext,
 	useSubjectRef,
 	getFieldMetadata,
 	getBaseMetadata,
+	useFormStore,
 } from './context';
+
+/**
+ * useLayoutEffect is client-only.
+ * This basically makes it a no-op on server
+ */
+export const useSafeLayoutEffect =
+	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
 export function useFormId(preferredId?: string): string {
 	const id = useId();
@@ -25,106 +31,30 @@ export function useFormId(preferredId?: string): string {
 	return preferredId ?? id;
 }
 
-export function useNoValidate(defaultNoValidate = true): boolean {
-	const [noValidate, setNoValidate] = useState(defaultNoValidate);
+export function useForm<Schema extends Record<string, any>>(
+	options: Pretty<
+		FormOptions<Schema> & {
+			/**
+			 * If the form id is provided, Id for label,
+			 * input and error elements will be derived.
+			 */
+			id?: string;
 
-	useEffect(() => {
-		// This is necessary to fix an issue in strict mode with related to our proxy setup
-		// It avoids the component from being rerendered without re-rendering the child
-		// Which reset the proxy but failed to capture its usage within child component
-		if (!noValidate) {
-			setNoValidate(true);
+			/**
+			 * Enable constraint validation before the dom is hydated.
+			 *
+			 * Default to `true`.
+			 */
+			defaultNoValidate?: boolean;
 		}
-	}, [noValidate]);
-
-	return noValidate;
-}
-
-export type FormConfig<Type extends Record<string, any>> =
-	FormMetadata<Type> & {
-		onSubmit: (
-			event: React.FormEvent<HTMLFormElement>,
-		) => ReturnType<Form<Type>['submit']>;
-		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-		noValidate: boolean;
-	};
-
-export function useForm<Type extends Record<string, any>>(options: {
-	/**
-	 * If the form id is provided, Id for label,
-	 * input and error elements will be derived.
-	 */
-	id?: string;
-
-	/**
-	 * An object representing the initial value of the form.
-	 */
-	defaultValue?: DefaultValue<Type>;
-
-	/**
-	 * An object describing the result of the last submission
-	 */
-	lastResult?: SubmissionResult;
-
-	/**
-	 * An object describing the constraint of each field
-	 */
-	constraint?: Record<string, Constraint>;
-
-	/**
-	 * Enable constraint validation before the dom is hydated.
-	 *
-	 * Default to `true`.
-	 */
-	defaultNoValidate?: boolean;
-
-	/**
-	 * Define when conform should start validation.
-	 * Support "onSubmit", "onInput", "onBlur".
-	 *
-	 * @default "onSubmit"
-	 */
-	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
-
-	/**
-	 * Define when conform should revalidate again.
-	 * Support "onSubmit", "onInput", "onBlur".
-	 *
-	 * @default Same as shouldValidate, or "onSubmit" if shouldValidate is not provided.
-	 */
-	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-
-	/**
-	 * A function to be called when the form should be (re)validated.
-	 */
-	onValidate?: ({
-		form,
-		submitter,
-		formData,
-	}: {
-		form: HTMLFormElement;
-		submitter: HTMLInputElement | HTMLButtonElement | null;
-		formData: FormData;
-	}) => Submission<Type>;
-}): {
-	form: FormConfig<Type>;
-	context: Form<Type>;
-	fields: Type extends Array<any>
-		? { [Key in keyof Type]: FieldMetadata<Type[Key]> }
-		: Type extends { [key in string]?: any }
-		? { [Key in UnionKeyof<Type>]: FieldMetadata<UnionKeyType<Type, Key>> }
-		: Record<string | number, FieldMetadata<any>>;
+	>,
+): {
+	form: FormMetadata<Schema>;
+	context: Form<Schema>;
+	fields: Pretty<FieldsetMetadata<Schema>>;
 } {
 	const formId = useFormId(options.id);
-	const initializeForm = () =>
-		createForm(formId, {
-			defaultValue: options.defaultValue,
-			constraint: options.constraint,
-			lastResult: options.lastResult,
-			onValidate: options.onValidate,
-			shouldValidate: options.shouldValidate,
-			shouldRevalidate: options.shouldRevalidate,
-		});
+	const initializeForm = () => createForm(formId, options);
 	const [form, setForm] = useState(initializeForm);
 
 	// If id changes, reinitialize the form immediately
@@ -132,28 +62,20 @@ export function useForm<Type extends Record<string, any>>(options: {
 		setForm(initializeForm);
 	}
 
-	const noValidate = useNoValidate(options.defaultNoValidate);
 	const optionsRef = useRef(options);
-	const metadata = useFormMetadata<Type>({
+	const metadata = useFormMetadata({
+		formId,
+		context: form,
+		defaultNoValidate: options.defaultNoValidate,
+	});
+	const fields = useFieldset<Schema>({
 		formId,
 		context: form,
 	});
-	const fields = useFieldset<Type>({
-		formId,
-		context: form,
-	});
 
-	useEffect(() => {
-		document.addEventListener('input', form.input);
-		document.addEventListener('focusout', form.blur);
+	useSafeLayoutEffect(() => form.initialize(), [form]);
 
-		return () => {
-			document.removeEventListener('input', form.input);
-			document.removeEventListener('focusout', form.blur);
-		};
-	}, [form]);
-
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		if (options.lastResult === optionsRef.current.lastResult) {
 			// If there is no change, do nothing
 			return;
@@ -166,84 +88,82 @@ export function useForm<Type extends Record<string, any>>(options: {
 		}
 	}, [form, options.lastResult]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		optionsRef.current = options;
-		form.update({
-			defaultValue: options.defaultValue,
-			constraint: options.constraint,
-			shouldValidate: options.shouldValidate,
-			shouldRevalidate: options.shouldRevalidate,
-			onValidate: options.onValidate,
-		});
+		form.update(options);
 	});
-
-	const onSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			const submitEvent = event.nativeEvent as SubmitEvent;
-			const result = form.submit(submitEvent);
-
-			if (submitEvent.defaultPrevented) {
-				event.preventDefault();
-			}
-
-			return result;
-		},
-		[form],
-	);
-	const onReset = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => form.reset(event.nativeEvent),
-		[form],
-	);
 
 	return {
 		context: form,
 		fields,
-		form: new Proxy(metadata as any, {
-			get(target, key, receiver) {
-				switch (key) {
-					case 'onSubmit':
-						return onSubmit;
-					case 'onReset':
-						return onReset;
-					case 'noValidate':
-						return noValidate;
-					case 'key':
-					case 'formId':
-					case 'name':
-					case 'constraint':
-						return;
-				}
-
-				return Reflect.get(target, key, receiver);
-			},
-		}),
+		form: metadata,
 	};
 }
 
-export function useFormMetadata<Type extends Record<string, any>>(options: {
+export function useFormMetadata<Schema extends Record<string, any>>(options: {
 	formId: string;
-	context?: Form<Type>;
-}): FormMetadata<Type> {
+	context?: Form<Schema>;
+	defaultNoValidate?: boolean;
+}): FormMetadata<Schema> {
 	const subjectRef = useSubjectRef();
-	const context = useFormContext(options.formId, options.context, subjectRef);
-	const metadata = getBaseMetadata<Type>(options.formId, context, {
+	const form = useFormStore(options.formId, options.context);
+	const context = useFormContext(form, subjectRef);
+	const metadata = getBaseMetadata<Schema>(options.formId, context, {
 		subjectRef,
 	});
+	const [noValidate, setNoValidate] = useState(
+		options.defaultNoValidate ?? true,
+	);
 
-	return metadata;
+	useSafeLayoutEffect(() => {
+		// This is necessary to fix an issue in strict mode with related to our proxy setup
+		// It avoids the component from being rerendered without re-rendering the child
+		// Which reset the proxy but failed to capture its usage within child component
+		if (!noValidate) {
+			setNoValidate(true);
+		}
+	}, [noValidate]);
+
+	return new Proxy(metadata as any, {
+		get(target, key, receiver) {
+			switch (key) {
+				case 'onSubmit':
+					return (event: React.FormEvent<HTMLFormElement>) => {
+						const submitEvent = event.nativeEvent as SubmitEvent;
+						const result = form.submit(submitEvent);
+
+						if (submitEvent.defaultPrevented) {
+							event.preventDefault();
+						}
+
+						return result;
+					};
+				case 'onReset':
+					return (event: React.FormEvent<HTMLFormElement>) =>
+						form.reset(event.nativeEvent);
+				case 'noValidate':
+					return noValidate;
+			}
+
+			return Reflect.get(target, key, receiver);
+		},
+	});
 }
 
-export function useFieldset<Type>(options: {
+export type FieldsetMetadata<Schema> = Schema extends Array<any>
+	? { [Key in keyof Schema]: FieldMetadata<Schema[Key]> }
+	: Schema extends { [key in string]?: any }
+	? { [Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>> }
+	: Record<string | number, FieldMetadata<any>>;
+
+export function useFieldset<Schema>(options: {
 	formId: string;
-	name?: FieldName<Type>;
+	name?: FieldName<Schema>;
 	context?: Form;
-}): Type extends Array<any>
-	? { [Key in keyof Type]: FieldMetadata<Type[Key]> }
-	: Type extends { [key in string]?: any }
-	? { [Key in UnionKeyof<Type>]: FieldMetadata<UnionKeyType<Type, Key>> }
-	: Record<string | number, FieldMetadata<any>> {
+}): Pretty<FieldsetMetadata<Schema>> {
 	const subjectRef = useSubjectRef();
-	const context = useFormContext(options.formId, options.context, subjectRef);
+	const form = useFormStore(options.formId, options.context);
+	const context = useFormContext(form, subjectRef);
 
 	return new Proxy({} as any, {
 		get(target, prop, receiver) {
@@ -274,17 +194,20 @@ export function useFieldset<Type>(options: {
 	});
 }
 
-export function useFieldList<Item>(options: {
+export type Item<List> = List extends Array<infer Item> ? Item : any;
+
+export function useFieldList<Schema>(options: {
 	formId: string;
-	name: FieldName<Array<Item>>;
+	name: FieldName<Schema>;
 	context?: Form;
-}): Array<FieldMetadata<Item>> {
+}): Array<FieldMetadata<Item<Schema>>> {
 	const subjectRef = useSubjectRef({
 		initialValue: {
 			name: [options.name],
 		},
 	});
-	const context = useFormContext(options.formId, options.context, subjectRef);
+	const form = useFormStore(options.formId, options.context);
+	const context = useFormContext(form, subjectRef);
 	const initialValue = context.initialValue[options.name] ?? [];
 
 	if (!Array.isArray(initialValue)) {
@@ -294,7 +217,7 @@ export function useFieldList<Item>(options: {
 	return Array(initialValue.length)
 		.fill(0)
 		.map((_, index) =>
-			getFieldMetadata<Item>(options.formId, context, {
+			getFieldMetadata<Item<Schema>>(options.formId, context, {
 				name: options.name,
 				key: index,
 				subjectRef,
@@ -302,14 +225,15 @@ export function useFieldList<Item>(options: {
 		);
 }
 
-export function useField<Type>(options: {
+export function useField<Schema>(options: {
 	formId: string;
-	name: FieldName<Type>;
+	name: FieldName<Schema>;
 	context?: Form;
-}): FieldMetadata<Type> {
+}): FieldMetadata<Schema> {
 	const subjectRef = useSubjectRef();
-	const context = useFormContext(options.formId, options.context, subjectRef);
-	const metadata = getFieldMetadata<Type>(options.formId, context, {
+	const form = useFormStore(options.formId, options.context);
+	const context = useFormContext(form, subjectRef);
+	const metadata = getFieldMetadata<Schema>(options.formId, context, {
 		name: options.name,
 		subjectRef,
 	});

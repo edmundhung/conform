@@ -96,10 +96,10 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
  */
-export function enableTypeCoercion<Type extends ZodTypeAny>(
-	type: Type,
+export function enableTypeCoercion<Schema extends ZodTypeAny>(
+	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
-): ZodType<output<Type>> {
+): ZodType<output<Schema>> {
 	const result = cache.get(type);
 
 	// Return the cached schema if it's already processed
