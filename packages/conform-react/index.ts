@@ -1,12 +1,14 @@
 export {
 	type Submission,
+	type SubmissionResult,
 	type FieldName,
 	requestIntent,
 	isFieldElement,
 } from '@conform-to/dom';
 export {
 	type Field,
-	type FieldMetadata as FieldConfig,
+	type FieldMetadata,
+	type FormMetadata,
 	FormProvider,
 	FormStateInput,
 } from './context';

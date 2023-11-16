@@ -1,6 +1,4 @@
 import {
-	type UnionKeyof,
-	type UnionKeyType,
 	type FieldName,
 	type Form,
 	type FormOptions,
@@ -10,12 +8,14 @@ import { useEffect, useId, useRef, useState, useLayoutEffect } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
+	type FieldsetMetadata,
 	type Pretty,
 	useFormContext,
+	useRegistry,
 	useSubjectRef,
 	getFieldMetadata,
-	getBaseMetadata,
-	useFormStore,
+	getFormMetadata,
+	getFieldsetMetadata,
 } from './context';
 
 /**
@@ -29,6 +29,21 @@ export function useFormId(preferredId?: string): string {
 	const id = useId();
 
 	return preferredId ?? id;
+}
+
+export function useNoValidate(defaultNoValidate = true): boolean {
+	const [noValidate, setNoValidate] = useState(defaultNoValidate);
+
+	useSafeLayoutEffect(() => {
+		// This is necessary to fix an issue in strict mode with related to our proxy setup
+		// It avoids the component from being rerendered without re-rendering the child
+		// Which reset the proxy but failed to capture its usage within child component
+		if (!noValidate) {
+			setNoValidate(true);
+		}
+	}, [noValidate]);
+
+	return noValidate;
 }
 
 export function useForm<Schema extends Record<string, any>>(
@@ -63,15 +78,6 @@ export function useForm<Schema extends Record<string, any>>(
 	}
 
 	const optionsRef = useRef(options);
-	const metadata = useFormMetadata({
-		formId,
-		context: form,
-		defaultNoValidate: options.defaultNoValidate,
-	});
-	const fields = useFieldset<Schema>({
-		formId,
-		context: form,
-	});
 
 	useSafeLayoutEffect(() => form.initialize(), [form]);
 
@@ -93,10 +99,20 @@ export function useForm<Schema extends Record<string, any>>(
 		form.update(options);
 	});
 
+	const subjectRef = useSubjectRef();
+	const context = useFormContext(form, subjectRef);
+	const noValidate = useNoValidate(options.defaultNoValidate);
+
 	return {
+		form: getFormMetadata(formId, context, {
+			subjectRef,
+			form,
+			noValidate,
+		}),
+		fields: getFieldsetMetadata(formId, context, {
+			subjectRef,
+		}),
 		context: form,
-		fields,
-		form: metadata,
 	};
 }
 
@@ -106,55 +122,16 @@ export function useFormMetadata<Schema extends Record<string, any>>(options: {
 	defaultNoValidate?: boolean;
 }): FormMetadata<Schema> {
 	const subjectRef = useSubjectRef();
-	const form = useFormStore(options.formId, options.context);
+	const form = useRegistry(options.formId, options.context);
 	const context = useFormContext(form, subjectRef);
-	const metadata = getBaseMetadata<Schema>(options.formId, context, {
+	const noValidate = useNoValidate(options.defaultNoValidate);
+
+	return getFormMetadata(options.formId, context, {
 		subjectRef,
-	});
-	const [noValidate, setNoValidate] = useState(
-		options.defaultNoValidate ?? true,
-	);
-
-	useSafeLayoutEffect(() => {
-		// This is necessary to fix an issue in strict mode with related to our proxy setup
-		// It avoids the component from being rerendered without re-rendering the child
-		// Which reset the proxy but failed to capture its usage within child component
-		if (!noValidate) {
-			setNoValidate(true);
-		}
-	}, [noValidate]);
-
-	return new Proxy(metadata as any, {
-		get(target, key, receiver) {
-			switch (key) {
-				case 'onSubmit':
-					return (event: React.FormEvent<HTMLFormElement>) => {
-						const submitEvent = event.nativeEvent as SubmitEvent;
-						const result = form.submit(submitEvent);
-
-						if (submitEvent.defaultPrevented) {
-							event.preventDefault();
-						}
-
-						return result;
-					};
-				case 'onReset':
-					return (event: React.FormEvent<HTMLFormElement>) =>
-						form.reset(event.nativeEvent);
-				case 'noValidate':
-					return noValidate;
-			}
-
-			return Reflect.get(target, key, receiver);
-		},
+		form,
+		noValidate,
 	});
 }
-
-export type FieldsetMetadata<Schema> = Schema extends Array<any>
-	? { [Key in keyof Schema]: FieldMetadata<Schema[Key]> }
-	: Schema extends { [key in string]?: any }
-	? { [Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>> }
-	: Record<string | number, FieldMetadata<any>>;
 
 export function useFieldset<Schema>(options: {
 	formId: string;
@@ -162,35 +139,12 @@ export function useFieldset<Schema>(options: {
 	context?: Form;
 }): Pretty<FieldsetMetadata<Schema>> {
 	const subjectRef = useSubjectRef();
-	const form = useFormStore(options.formId, options.context);
+	const form = useRegistry(options.formId, options.context);
 	const context = useFormContext(form, subjectRef);
 
-	return new Proxy({} as any, {
-		get(target, prop, receiver) {
-			const getMetadata = (key: string | number) =>
-				getFieldMetadata(options.formId, context, {
-					name: options.name,
-					key: key,
-					subjectRef,
-				});
-
-			// To support array destructuring
-			if (prop === Symbol.iterator) {
-				let index = 0;
-
-				return () => ({
-					next: () => ({ value: getMetadata(index++), done: false }),
-				});
-			}
-
-			const index = Number(prop);
-
-			if (typeof prop === 'string') {
-				return getMetadata(Number.isNaN(index) ? prop : index);
-			}
-
-			return Reflect.get(target, prop, receiver);
-		},
+	return getFieldsetMetadata(options.formId, context, {
+		name: options.name,
+		subjectRef,
 	});
 }
 
@@ -206,7 +160,7 @@ export function useFieldList<Schema>(options: {
 			name: [options.name],
 		},
 	});
-	const form = useFormStore(options.formId, options.context);
+	const form = useRegistry(options.formId, options.context);
 	const context = useFormContext(form, subjectRef);
 	const initialValue = context.initialValue[options.name] ?? [];
 
@@ -231,12 +185,11 @@ export function useField<Schema>(options: {
 	context?: Form;
 }): FieldMetadata<Schema> {
 	const subjectRef = useSubjectRef();
-	const form = useFormStore(options.formId, options.context);
+	const form = useRegistry(options.formId, options.context);
 	const context = useFormContext(form, subjectRef);
-	const metadata = getFieldMetadata<Schema>(options.formId, context, {
+
+	return getFieldMetadata<Schema>(options.formId, context, {
 		name: options.name,
 		subjectRef,
 	});
-
-	return metadata;
 }

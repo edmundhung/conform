@@ -6,6 +6,8 @@ import {
 	type FormContext,
 	type SubscriptionScope,
 	type SubscriptionSubject,
+	type UnionKeyof,
+	type UnionKeyType,
 	formatPaths,
 	getPaths,
 	isPrefix,
@@ -53,6 +55,12 @@ export type FormMetadata<Schema extends Record<string, any>> =
 		noValidate: boolean;
 	};
 
+export type FieldsetMetadata<Schema> = Schema extends Array<any>
+	? { [Key in keyof Schema]: FieldMetadata<Schema[Key]> }
+	: Schema extends { [key in string]?: any }
+	? { [Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>> }
+	: Record<string | number, FieldMetadata<any>>;
+
 export type FieldMetadata<Schema> = BaseMetadata<Schema> & {
 	formId: string;
 	name: FieldName<Schema>;
@@ -61,7 +69,7 @@ export type FieldMetadata<Schema> = BaseMetadata<Schema> & {
 
 export const Registry = createContext<Record<string, Form>>({});
 
-export function useFormStore(formId: string, context?: Form) {
+export function useRegistry(formId: string, context?: Form): Form {
 	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
 
@@ -114,7 +122,7 @@ export function FormStateInput(
 				context: Form;
 		  },
 ): React.ReactElement {
-	const form = useFormStore(props.formId ?? props.context.id, props.context);
+	const form = useRegistry(props.formId ?? props.context.id, props.context);
 
 	return (
 		<input
@@ -263,6 +271,73 @@ export function getFieldMetadata<Schema>(
 			}
 
 			return Reflect.get(target, key, receiver);
+		},
+	});
+}
+
+export function getFormMetadata<Schema extends Record<string, any>>(
+	formId: string,
+	context: FormContext,
+	options: {
+		subjectRef: MutableRefObject<SubscriptionSubject>;
+		form: Form<Schema>;
+		noValidate: boolean;
+	},
+): FormMetadata<Schema> {
+	const metadata = getBaseMetadata(formId, context, {
+		subjectRef: options.subjectRef,
+	});
+
+	return new Proxy(metadata as any, {
+		get(target, key, receiver) {
+			switch (key) {
+				case 'onSubmit':
+					return (event: React.FormEvent<HTMLFormElement>) => {
+						const submitEvent = event.nativeEvent as SubmitEvent;
+						const result = options.form.submit(submitEvent);
+
+						if (submitEvent.defaultPrevented) {
+							event.preventDefault();
+						}
+
+						return result;
+					};
+				case 'onReset':
+					return (event: React.FormEvent<HTMLFormElement>) =>
+						options.form.reset(event.nativeEvent);
+				case 'noValidate':
+					return options.noValidate;
+			}
+
+			return Reflect.get(target, key, receiver);
+		},
+	});
+}
+
+export function getFieldsetMetadata<Schema>(
+	formId: string,
+	context: FormContext,
+	options: {
+		subjectRef: MutableRefObject<SubscriptionSubject>;
+		name?: FieldName<Schema>;
+	},
+): Pretty<FieldsetMetadata<Schema>> {
+	return new Proxy({} as any, {
+		get(target, prop, receiver) {
+			const getMetadata = (key: string | number) =>
+				getFieldMetadata(formId, context, {
+					subjectRef: options.subjectRef,
+					name: options.name,
+					key: key,
+				});
+
+			if (typeof prop === 'string') {
+				const index = Number(prop);
+
+				return getMetadata(Number.isNaN(index) ? prop : index);
+			}
+
+			return Reflect.get(target, prop, receiver);
 		},
 	});
 }
