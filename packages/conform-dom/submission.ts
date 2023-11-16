@@ -16,11 +16,11 @@ export type SubmissionContext<Value> = {
 	state: SubmissionState;
 };
 
-export type Submission<Output> =
+export type Submission<Schema, Value = Schema> =
 	| {
 			type: 'submit';
 			payload: Record<string, unknown>;
-			value: Output | null;
+			value: Value | null;
 			error: Record<string, string[]>;
 			reject(options?: RejectOptions): SubmissionResult;
 			accept(options?: AcceptOptions): SubmissionResult;

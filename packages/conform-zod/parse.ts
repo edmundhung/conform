@@ -8,11 +8,12 @@ import {
 import {
 	type IssueData,
 	type SafeParseReturnType,
-	type output,
 	type RefinementCtx,
 	type ZodTypeAny,
 	type ZodError,
 	type ZodErrorMap,
+	type input,
+	type output,
 	ZodIssueCode,
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
@@ -37,7 +38,7 @@ export function parse<Schema extends ZodTypeAny>(
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
-): Submission<output<Schema>>;
+): Submission<input<Schema>, output<Schema>>;
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -45,7 +46,7 @@ export function parse<Schema extends ZodTypeAny>(
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
-): Promise<Submission<output<Schema>>>;
+): Promise<Submission<input<Schema>, output<Schema>>>;
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -53,7 +54,9 @@ export function parse<Schema extends ZodTypeAny>(
 		async?: boolean;
 		errorMap?: ZodErrorMap;
 	},
-): Submission<output<Schema>> | Promise<Submission<output<Schema>>> {
+):
+	| Submission<input<Schema>, output<Schema>>
+	| Promise<Submission<input<Schema>, output<Schema>>> {
 	return baseParse(payload, {
 		resolve(payload, intent) {
 			const errorMap = options.errorMap;

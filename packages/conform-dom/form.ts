@@ -116,7 +116,7 @@ export type FormOptions<Schema> = {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Schema>;
+	}) => Submission<Schema, any>;
 };
 
 export type SubscriptionSubject = {
