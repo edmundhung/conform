@@ -117,7 +117,7 @@ export function setValue<Value>(
 }
 
 /**
- * Check if a value is a plain object
+ * Check if the value is a plain object
  */
 export function isPlainObject(
 	obj: unknown,
@@ -127,6 +127,18 @@ export function isPlainObject(
 		obj.constructor === Object &&
 		Object.getPrototypeOf(obj) === Object.prototype
 	);
+}
+
+/**
+ * Check if the value is a File
+ */
+export function isFile(obj: unknown): obj is File {
+	// Skip checking if File is not defined
+	if (typeof File === 'undefined') {
+		return false;
+	}
+
+	return obj instanceof File;
 }
 
 /**
@@ -171,7 +183,7 @@ export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
 		return value.map(simplify);
 	}
 
-	if (value instanceof File || value === null) {
+	if (value === null || isFile(value)) {
 		return;
 	}
 
