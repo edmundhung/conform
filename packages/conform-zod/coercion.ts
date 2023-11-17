@@ -121,7 +121,7 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 			.pipe(type);
 	} else if (type instanceof ZodNumber) {
 		schema = any()
-			.transform((value) => coerceString(value, Number))
+			.transform((value) => coerceString(value, parseInt))
 			.pipe(type);
 	} else if (type instanceof ZodBoolean) {
 		schema = any()
