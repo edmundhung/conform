@@ -275,6 +275,15 @@ test.describe('conform-zod', () => {
 				payload: { test: '5' },
 				error: { test: ['step'] },
 			});
+			expect(
+				parse(createFormData([['test', ' ']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: ' ' },
+				error: { test: ['invalid'] },
+			});
 		});
 
 		test('z.date', () => {

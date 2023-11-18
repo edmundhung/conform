@@ -121,7 +121,11 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 			.pipe(type);
 	} else if (type instanceof ZodNumber) {
 		schema = any()
-			.transform((value) => coerceString(value, parseFloat))
+			.transform((value) =>
+				coerceString(value, (text) =>
+					text.trim() === '' ? Number.NaN : Number(text),
+				),
+			)
 			.pipe(type);
 	} else if (type instanceof ZodBoolean) {
 		schema = any()
