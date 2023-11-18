@@ -44,7 +44,6 @@ async function runValidationScenario(page: Page) {
 				name: true,
 				message: true,
 			},
-			key: {},
 		},
 	});
 }

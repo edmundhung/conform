@@ -46,7 +46,6 @@ async function runValidationScenario(page: Page) {
 				language: true,
 				tos: true,
 			},
-			key: {},
 		},
 	});
 }

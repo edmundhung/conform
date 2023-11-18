@@ -6,3 +6,7 @@ export function invariant(
 		throw new Error(message);
 	}
 }
+
+export function generateId(): string {
+	return (Date.now() * Math.random()).toString(36);
+}

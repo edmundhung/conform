@@ -88,7 +88,6 @@ async function runValidationScenario(page: Page) {
 				file: true,
 				files: true,
 			},
-			key: {},
 		},
 	});
 }

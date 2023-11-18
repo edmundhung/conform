@@ -125,7 +125,6 @@ async function runValidationScenario(page: Page) {
 				email: true,
 				title: true,
 			},
-			key: {},
 		},
 	});
 }

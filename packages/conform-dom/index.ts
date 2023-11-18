@@ -22,8 +22,7 @@ export {
 	type ListIntentPayload,
 	INTENT,
 	STATE,
-	list,
-	validate,
+	serializeIntent,
 	requestIntent,
 	parse,
 } from './submission';

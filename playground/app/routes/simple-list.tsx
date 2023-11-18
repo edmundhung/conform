@@ -97,6 +97,12 @@ export default function SimpleList() {
 								>
 									Clear
 								</button>
+								<button
+									className="rounded-md border p-2 hover:border-black"
+									{...intent.reset(item)}
+								>
+									Reset
+								</button>
 							</div>
 						</li>
 					))}
@@ -118,6 +124,12 @@ export default function SimpleList() {
 						})}
 					>
 						Insert bottom
+					</button>
+					<button
+						className="rounded-md border p-2 hover:border-black"
+						{...intent.reset(fields.items)}
+					>
+						Reset
 					</button>
 				</div>
 			</Playground>

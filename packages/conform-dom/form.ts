@@ -3,8 +3,8 @@ import {
 	formatPaths,
 	getFormData,
 	getPaths,
-	isPrefix,
 	isPlainObject,
+	isPrefix,
 	setValue,
 } from './formdata';
 import {
@@ -14,14 +14,18 @@ import {
 	getFormEncType,
 	getFormMethod,
 } from './dom';
-import { invariant } from './util';
+import { generateId, invariant } from './util';
 import {
+	type Intent,
 	type Submission,
 	type SubmissionResult,
-	requestIntent,
-	resolve,
-	validate,
 	STATE,
+	requestIntent,
+	getSubmissionContext,
+	handleIntent,
+	serializeIntent,
+	updateList,
+	updateState,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -61,20 +65,25 @@ export type Constraint = {
 	pattern?: string;
 };
 
-export type FormState = {
-	key: Record<string, string>;
-	validated: Record<string, boolean>;
-	valid: Record<string, boolean>;
-	dirty: Record<string, boolean>;
-};
-
 export type FormContext = {
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
 	error: Record<string, string[]>;
 	constraint: Record<string, Constraint>;
-	state: FormState;
+	key: Record<string, string>;
+	validated: Record<string, boolean>;
+};
+
+export type FormState = {
+	defaultValue: Record<string, unknown>;
+	initialValue: Record<string, unknown>;
+	value: Record<string, unknown>;
+	error: Record<string, string[]>;
+	constraint: Record<string, Constraint>;
+	key: Record<string, string>;
+	valid: Record<string, boolean>;
+	dirty: Record<string, boolean>;
 };
 
 export type FormOptions<Schema> = {
@@ -125,7 +134,6 @@ export type SubscriptionSubject = {
 		| 'initialValue'
 		| 'value'
 		| 'key'
-		| 'validated'
 		| 'valid'
 		| 'dirty']?: SubscriptionScope;
 };
@@ -154,7 +162,7 @@ export type Form<Schema extends Record<string, any> = any> = {
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
-	getContext(): FormContext;
+	getState(): FormState;
 	getSerializedState(): string;
 };
 
@@ -172,6 +180,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 	}> = [];
 	let latestOptions = options;
 	let context = initializeFormContext();
+	let state = initializeFormState(context);
 
 	function getFormElement(): HTMLFormElement {
 		const element = document.forms.namedItem(formId);
@@ -180,39 +189,58 @@ export function createForm<Schema extends Record<string, any> = any>(
 	}
 
 	function initializeFormContext(): FormContext {
-		const defaultValue = flatten(options.defaultValue);
-		const value = options.lastResult?.initialValue
-			? flatten(options.lastResult.initialValue)
-			: defaultValue;
-		const error = options.lastResult?.error ?? {};
-
-		return {
+		const defaultValue = options.defaultValue ?? {};
+		const value = options.lastResult?.initialValue ?? defaultValue;
+		const result: FormContext = {
 			constraint: options.constraint ?? {},
 			defaultValue,
 			initialValue: value,
+			validated: options.lastResult?.state?.validated ?? {},
+			key: getDefaultKey(defaultValue),
 			value,
-			error,
-			state: {
-				validated: options.lastResult?.state?.validated ?? {},
-				key: createKeyProxy(
-					options.lastResult?.state?.key ?? getDefaultKey(defaultValue),
-				),
-				valid: createValidProxy(error),
-				dirty: createDirtyProxy(defaultValue, value),
-			},
+			error: options.lastResult?.error ?? {},
+		};
+
+		if (options.lastResult?.intent) {
+			handleIntent(options.lastResult.intent, (intent) =>
+				updateFormContext(result, intent, true),
+			);
+		}
+
+		return result;
+	}
+
+	function initializeFormState(context: FormContext): FormState {
+		const defaultValue = flatten(context.defaultValue);
+		const value =
+			context.value === context.defaultValue
+				? defaultValue
+				: flatten(context.value);
+
+		return {
+			defaultValue,
+			initialValue: value,
+			value,
+			error: context.error,
+			constraint: context.constraint,
+			key: createKeyProxy(context.key),
+			valid: createValidProxy(context.error),
+			dirty: createDirtyProxy(defaultValue, context.value),
 		};
 	}
 
 	function getDefaultKey(
-		defaultValue: Record<string, unknown>,
+		defaultValue: Record<string, unknown> | Array<unknown>,
+		prefix?: string,
 	): Record<string, string> {
-		return Object.entries(defaultValue).reduce<Record<string, string>>(
+		const basePaths = getPaths(prefix ?? '');
+
+		return Object.entries(flatten(defaultValue)).reduce<Record<string, string>>(
 			(result, [key, value]) => {
 				if (Array.isArray(value)) {
 					for (let i = 0; i < value.length; i++) {
-						result[formatPaths([...getPaths(key), i])] = (
-							Date.now() * Math.random()
-						).toString(36);
+						result[formatPaths([...basePaths, ...getPaths(key), i])] =
+							generateId();
 					}
 				}
 
@@ -222,15 +250,85 @@ export function createForm<Schema extends Record<string, any> = any>(
 		);
 	}
 
+	function updateFormContext(
+		context: FormContext,
+		intent: Intent,
+		isInit?: boolean,
+	): void {
+		switch (intent.type) {
+			case 'reset': {
+				const defaultValue = setValue(
+					context.defaultValue,
+					intent.payload.name,
+					(value) => value,
+				);
+
+				context.initialValue = JSON.parse(JSON.stringify(context.initialValue));
+
+				setValue(context.initialValue, intent.payload.name, () => defaultValue);
+
+				if (!isInit) {
+					context.key = JSON.parse(JSON.stringify(context.key));
+
+					if (isPlainObject(defaultValue) || Array.isArray(defaultValue)) {
+						const defaultKey = getDefaultKey(defaultValue, intent.payload.name);
+
+						for (const name of Object.keys(context.key)) {
+							if (isPrefix(name, intent.payload.name)) {
+								delete context.key[name];
+							}
+						}
+
+						Object.assign(context.key, defaultKey);
+					}
+
+					context.key[intent.payload.name] = generateId();
+				}
+				break;
+			}
+			case 'list': {
+				if (!isInit) {
+					context.initialValue = JSON.parse(
+						JSON.stringify(context.initialValue),
+					);
+					context.key = JSON.parse(JSON.stringify(context.key));
+
+					setValue(context.initialValue, intent.payload.name, (value) => {
+						const list = value ?? [];
+
+						if (!Array.isArray(list)) {
+							throw new Error('Invalid data');
+						}
+
+						updateList(list, intent.payload);
+
+						return list;
+					});
+
+					switch (intent.payload.operation) {
+						case 'append':
+						case 'prepend':
+						case 'insert':
+						case 'replace':
+							updateState(context.key, {
+								...intent.payload,
+								defaultValue: generateId(),
+							});
+							break;
+						default:
+							updateState(context.key, intent.payload);
+							break;
+					}
+				}
+				break;
+			}
+		}
+	}
+
 	function createKeyProxy(key: Record<string, string>): Record<string, string> {
 		const cache: Record<string, string | undefined> = {};
 		const keyProxy = new Proxy(key, {
 			get(_, name: string) {
-				// This makes getSerializedState() returning the raw key instead
-				if (name === 'toJSON') {
-					return () => key;
-				}
-
 				if (typeof cache[name] === 'undefined') {
 					const currentKey = key[name] ?? '';
 					const resultKey =
@@ -326,19 +424,60 @@ export function createForm<Schema extends Record<string, any> = any>(
 	}
 
 	function updateContext(next: FormContext) {
+		const prev = context;
+
+		// Apply change before updating state
+		context = next;
+
+		const defaultValue =
+			prev.defaultValue !== next.defaultValue
+				? flatten(next.defaultValue)
+				: state.defaultValue;
+		const initialValue =
+			next.initialValue === next.defaultValue
+				? defaultValue
+				: prev.initialValue !== next.initialValue
+				? flatten(next.initialValue)
+				: state.initialValue;
+		const value =
+			next.value === next.initialValue
+				? initialValue
+				: prev.value !== next.value
+				? flatten(next.value)
+				: state.value;
+
+		updateFormState({
+			defaultValue,
+			initialValue,
+			value,
+			error: prev.error !== next.error ? next.error : state.error,
+			constraint:
+				prev.constraint !== next.constraint
+					? next.constraint
+					: state.constraint,
+			key: prev.key !== next.key ? createKeyProxy(next.key) : state.key,
+			valid:
+				prev.error !== next.error ? createValidProxy(next.error) : state.valid,
+			dirty:
+				prev.defaultValue !== next.defaultValue || prev.value !== next.value
+					? createDirtyProxy(next.defaultValue, next.value)
+					: state.dirty,
+		});
+	}
+
+	function updateFormState(next: FormState) {
 		const diff: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
 			value: {},
 			error: {},
 			initialValue: {},
 			key: {},
-			validated: {},
 			valid: {},
 			dirty: {},
 		};
-		const prev = context;
+		const prev = state;
 
 		// Apply change before notifying subscribers
-		context = next;
+		state = next;
 
 		for (const subscriber of subscribers) {
 			const subject = subscriber.getSubject?.();
@@ -362,22 +501,22 @@ export function createForm<Schema extends Record<string, any> = any>(
 					scope: subject.initialValue,
 				}) ||
 				shouldNotify({
-					prev: prev.state.key,
-					next: next.state.key,
+					prev: prev.key,
+					next: next.key,
 					compareFn: (prev, next) => prev !== next,
 					cache: diff.key,
 					scope: subject.key,
 				}) ||
 				shouldNotify({
-					prev: prev.state.valid,
-					next: next.state.valid,
+					prev: prev.valid,
+					next: next.valid,
 					compareFn: (prev, next) => prev !== next,
 					cache: diff.valid,
 					scope: subject.valid,
 				}) ||
 				shouldNotify({
-					prev: prev.state.dirty,
-					next: next.state.dirty,
+					prev: prev.dirty,
+					next: next.dirty,
 					compareFn: (prev, next) => prev !== next,
 					cache: diff.dirty,
 					scope: subject.dirty,
@@ -389,13 +528,6 @@ export function createForm<Schema extends Record<string, any> = any>(
 						JSON.stringify(prev) !== JSON.stringify(next),
 					cache: diff.value,
 					scope: subject.value,
-				}) ||
-				shouldNotify({
-					prev: prev.state.validated,
-					next: next.state.validated,
-					compareFn: (prev = false, next = false) => prev !== next,
-					cache: diff.validated,
-					scope: subject.validated,
 				})
 			) {
 				subscriber.callback();
@@ -427,8 +559,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 	function getSerializedState(): string {
 		return JSON.stringify({
-			key: context.state.key,
-			validated: context.state.validated,
+			validated: context.validated,
 		});
 	}
 
@@ -513,7 +644,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 	): boolean {
 		const { shouldValidate = 'onSubmit', shouldRevalidate = shouldValidate } =
 			latestOptions;
-		const validated = context.state.validated[element.name];
+		const validated = context.validated[element.name];
 
 		return validated
 			? shouldRevalidate === eventName
@@ -529,19 +660,21 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 		if (event.defaultPrevented || !willValidate(element, 'onInput')) {
 			const formData = new FormData(element.form);
-			const result = resolve(formData);
-			const value = flatten(result.data);
+			const result = getSubmissionContext(formData);
+			const value = flatten(result.payload);
 
 			updateContext({
 				...context,
 				value,
-				state: {
-					...context.state,
-					dirty: createDirtyProxy(context.defaultValue, value),
-				},
 			});
 		} else {
-			requestIntent(element.form, validate.serialize(element.name));
+			requestIntent(
+				element.form,
+				serializeIntent({
+					type: 'validate',
+					payload: element.name,
+				}),
+			);
 		}
 	}
 
@@ -556,7 +689,13 @@ export function createForm<Schema extends Record<string, any> = any>(
 			return;
 		}
 
-		requestIntent(element.form, validate.serialize(element.name));
+		requestIntent(
+			element.form,
+			serializeIntent({
+				type: 'validate',
+				payload: element.name,
+			}),
+		);
 	}
 
 	function initialize() {
@@ -580,20 +719,16 @@ export function createForm<Schema extends Record<string, any> = any>(
 			return;
 		}
 
-		const defaultValue = flatten(latestOptions.defaultValue);
+		const defaultValue = latestOptions.defaultValue ?? {};
 
 		updateContext({
-			constraint: latestOptions.constraint ?? {},
+			key: getDefaultKey(defaultValue),
 			defaultValue,
 			initialValue: defaultValue,
 			value: defaultValue,
 			error: {},
-			state: {
-				validated: {},
-				key: createKeyProxy(getDefaultKey(defaultValue)),
-				valid: createValidProxy({}),
-				dirty: createDirtyProxy({}, {}),
-			},
+			validated: {},
+			constraint: latestOptions.constraint ?? {},
 		});
 	}
 
@@ -605,37 +740,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 			return;
 		}
 
-		const key = createKeyProxy(result.state?.key ?? {});
 		const value = flatten(result.initialValue);
-		const keyToName = Object.fromEntries(
-			Object.entries(context.state.key).map(([key, value]) => [value, key]),
-		);
-		const initialValue = flatten(
-			Array.from(
-				new Set([...Object.keys(context.initialValue), ...Object.keys(value)]),
-			).reduce<Record<string, unknown>>((result, name) => {
-				let data: unknown;
-
-				if (
-					!isPlainObject(context.initialValue[name]) &&
-					!Array.isArray(context.initialValue[name])
-				) {
-					if (context.state.key[name] === key[name]) {
-						data = context.initialValue[name];
-					} else {
-						data =
-							context.initialValue[keyToName[key[name] as string] as string] ??
-							value[name];
-					}
-
-					if (typeof data !== 'undefined') {
-						setValue(result, name, () => data);
-					}
-				}
-
-				return result;
-			}, {}),
-		);
 		const error = Object.entries(result.error ?? {}).reduce<
 			Record<string, string[]>
 		>((result, [name, messages]) => {
@@ -649,26 +754,24 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 			return result;
 		}, {});
-
-		updateContext({
+		const update: FormContext = {
 			...context,
-			initialValue,
 			value,
 			error,
-			state: {
-				...context.state,
-				validated: result.state?.validated ?? {},
-				key,
-				valid: createValidProxy(error),
-				dirty: createDirtyProxy(context.defaultValue, value),
-			},
-		});
+			validated: result.state?.validated ?? {},
+		};
+
+		if (result.intent) {
+			handleIntent(result.intent, (intent) =>
+				updateFormContext(update, intent),
+			);
+		}
+
+		updateContext(update);
 
 		for (const element of formElement.elements) {
 			if (isFieldElement(element) && element.name !== '') {
-				element.setCustomValidity(
-					context.error[element.name]?.join(', ') ?? '',
-				);
+				element.setCustomValidity(context.error[element.name]?.join(' ') ?? '');
 			}
 		}
 
@@ -702,8 +805,8 @@ export function createForm<Schema extends Record<string, any> = any>(
 		};
 	}
 
-	function getContext(): FormContext {
-		return context;
+	function getState(): FormState {
+		return state;
 	}
 
 	return {
@@ -716,7 +819,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		report,
 		update,
 		subscribe,
-		getContext,
+		getState,
 		getSerializedState,
 	};
 }

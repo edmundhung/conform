@@ -62,7 +62,6 @@ async function runValidationScenario(page: Page) {
 			validated: {
 				username: true,
 			},
-			key: {},
 		},
 	});
 }

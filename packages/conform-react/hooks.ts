@@ -10,7 +10,7 @@ import {
 	type FieldMetadata,
 	type FieldsetMetadata,
 	type Pretty,
-	useFormContext,
+	useFormState,
 	useRegistry,
 	useSubjectRef,
 	getFieldMetadata,
@@ -100,7 +100,7 @@ export function useForm<Schema extends Record<string, any>>(
 	});
 
 	const subjectRef = useSubjectRef();
-	const context = useFormContext(form, subjectRef);
+	const context = useFormState(form, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
 	return {
@@ -123,10 +123,10 @@ export function useFormMetadata<Schema extends Record<string, any>>(options: {
 }): FormMetadata<Schema> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
-	const context = useFormContext(form, subjectRef);
+	const state = useFormState(form, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
-	return getFormMetadata(options.formId, context, {
+	return getFormMetadata(options.formId, state, {
 		subjectRef,
 		form,
 		noValidate,
@@ -140,9 +140,9 @@ export function useFieldset<Schema>(options: {
 }): Pretty<FieldsetMetadata<Schema>> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
-	const context = useFormContext(form, subjectRef);
+	const state = useFormState(form, subjectRef);
 
-	return getFieldsetMetadata(options.formId, context, {
+	return getFieldsetMetadata(options.formId, state, {
 		name: options.name,
 		subjectRef,
 	});
@@ -161,8 +161,8 @@ export function useFieldList<Schema>(options: {
 		},
 	});
 	const form = useRegistry(options.formId, options.context);
-	const context = useFormContext(form, subjectRef);
-	const initialValue = context.initialValue[options.name] ?? [];
+	const state = useFormState(form, subjectRef);
+	const initialValue = state.initialValue[options.name] ?? [];
 
 	if (!Array.isArray(initialValue)) {
 		throw new Error('The initial value at the given name is not a list');
@@ -171,7 +171,7 @@ export function useFieldList<Schema>(options: {
 	return Array(initialValue.length)
 		.fill(0)
 		.map((_, index) =>
-			getFieldMetadata<Item<Schema>>(options.formId, context, {
+			getFieldMetadata<Item<Schema>>(options.formId, state, {
 				name: options.name,
 				key: index,
 				subjectRef,
@@ -186,9 +186,9 @@ export function useField<Schema>(options: {
 }): FieldMetadata<Schema> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
-	const context = useFormContext(form, subjectRef);
+	const state = useFormState(form, subjectRef);
 
-	return getFieldMetadata<Schema>(options.formId, context, {
+	return getFieldMetadata<Schema>(options.formId, state, {
 		name: options.name,
 		subjectRef,
 	});

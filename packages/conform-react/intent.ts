@@ -1,10 +1,10 @@
 import {
 	type ListIntentPayload,
+	type FieldName,
 	INTENT,
-	list as listIntent,
-	validate as validateIntent,
+	serializeIntent,
 } from '@conform-to/dom';
-import type { Field, Pretty } from './context';
+import type { Pretty } from './context';
 
 function createIntentButtonProps(value: string, form?: string) {
 	return {
@@ -15,10 +15,31 @@ function createIntentButtonProps(value: string, form?: string) {
 	};
 }
 
-export function validate(field: Field<unknown>) {
+export function validate(options: {
+	name: FieldName<unknown>;
+	formId: string;
+}) {
 	return createIntentButtonProps(
-		validateIntent.serialize(field.name),
-		field.formId,
+		serializeIntent({
+			type: 'validate',
+			payload: options.name,
+		}),
+		options.formId,
+	);
+}
+
+export function reset<Schema>(options: {
+	name?: FieldName<Schema>;
+	formId: string;
+}) {
+	return createIntentButtonProps(
+		serializeIntent({
+			type: 'reset',
+			payload: {
+				name: options.name ?? '',
+			},
+		}),
+		options.formId,
 	);
 }
 
@@ -31,11 +52,17 @@ type ExtractListIntentPayload<Operation, Schema = unknown> = Pretty<
 
 type ListIntent<Operation> = {} extends ExtractListIntentPayload<Operation>
 	? <Item>(
-			name: Field<Array<Item>>,
+			field: {
+				name: FieldName<Array<Item>>;
+				formId: string;
+			},
 			payload?: ExtractListIntentPayload<Operation, Item>,
 	  ) => ReturnType<typeof createIntentButtonProps>
 	: <Item>(
-			field: Field<Array<Item>>,
+			field: {
+				name: FieldName<Array<Item>>;
+				formId: string;
+			},
 			payload: ExtractListIntentPayload<Operation, Item>,
 	  ) => ReturnType<typeof createIntentButtonProps>;
 
@@ -59,9 +86,18 @@ export const list = new Proxy<{
 	reorder: ListIntent<'reorder'>;
 }>({} as any, {
 	get(_target, operation: any) {
-		return (field: Field<unknown>, payload = {}) =>
+		return (
+			field: {
+				name: FieldName<unknown>;
+				formId: string;
+			},
+			payload = {},
+		) =>
 			createIntentButtonProps(
-				listIntent.serialize({ name: field.name, operation, ...payload }),
+				serializeIntent({
+					type: 'list',
+					payload: { name: field.name, operation, ...payload },
+				}),
 				field.formId,
 			);
 	},

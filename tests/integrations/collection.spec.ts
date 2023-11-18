@@ -28,7 +28,6 @@ async function runValidationScenario(page: Page) {
 				singleChoice: true,
 				multipleChoice: true,
 			},
-			key: {},
 		},
 	});
 
@@ -47,7 +46,6 @@ async function runValidationScenario(page: Page) {
 				singleChoice: true,
 				multipleChoice: true,
 			},
-			key: {},
 		},
 	});
 }

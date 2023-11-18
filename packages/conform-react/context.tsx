@@ -3,7 +3,7 @@ import {
 	type FieldName,
 	type Form,
 	type FormValue,
-	type FormContext,
+	type FormState,
 	type SubscriptionScope,
 	type SubscriptionSubject,
 	type UnionKeyof,
@@ -80,20 +80,16 @@ export function useRegistry(formId: string, context?: Form): Form {
 	return form;
 }
 
-export function useFormContext(
+export function useFormState(
 	form: Form,
 	subjectRef?: MutableRefObject<SubscriptionSubject>,
-): FormContext {
+): FormState {
 	const subscribe = useCallback(
 		(callback: () => void) =>
 			form.subscribe(callback, () => subjectRef?.current),
 		[form, subjectRef],
 	);
-	const result = useSyncExternalStore(
-		subscribe,
-		form.getContext,
-		form.getContext,
-	);
+	const result = useSyncExternalStore(subscribe, form.getState, form.getState);
 
 	return result;
 }
@@ -148,7 +144,7 @@ export function useSubjectRef(
 
 export function getBaseMetadata<Schema>(
 	formId: string,
-	context: FormContext,
+	state: FormState,
 	options: {
 		name?: string;
 		subjectRef: MutableRefObject<SubscriptionSubject>;
@@ -173,27 +169,27 @@ export function getBaseMetadata<Schema>(
 			id,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
-			initialValue: context.initialValue[name] as FormValue<Schema>,
-			value: context.value[name] as FormValue<Schema>,
-			errors: context.error[name],
+			initialValue: state.initialValue[name] as FormValue<Schema>,
+			value: state.value[name] as FormValue<Schema>,
+			errors: state.error[name],
 			get key() {
-				return context.state.key[name];
+				return state.key[name];
 			},
 			get valid() {
-				return context.state.valid[name] as boolean;
+				return state.valid[name] as boolean;
 			},
 			get dirty() {
-				return context.state.dirty[name] as boolean;
+				return state.dirty[name] as boolean;
 			},
 			get allValid() {
-				const keys = Object.keys(context.error);
+				const keys = Object.keys(state.error);
 
 				if (name === '') {
 					return keys.length === 0;
 				}
 
-				for (const key of Object.keys(context.error)) {
-					if (isPrefix(key, name) && !context.state.valid[key]) {
+				for (const key of Object.keys(state.error)) {
+					if (isPrefix(key, name) && !state.valid[key]) {
 						return false;
 					}
 				}
@@ -202,12 +198,12 @@ export function getBaseMetadata<Schema>(
 			},
 			get allErrors() {
 				if (name === '') {
-					return context.error;
+					return state.error;
 				}
 
 				const result: Record<string, string[]> = {};
 
-				for (const [key, errors] of Object.entries(context.error)) {
+				for (const [key, errors] of Object.entries(state.error)) {
 					if (isPrefix(key, name)) {
 						result[key] = errors;
 					}
@@ -243,7 +239,7 @@ export function getBaseMetadata<Schema>(
 
 export function getFieldMetadata<Schema>(
 	formId: string,
-	context: FormContext,
+	state: FormState,
 	options: {
 		name?: string;
 		key?: string | number;
@@ -254,7 +250,7 @@ export function getFieldMetadata<Schema>(
 		typeof options.key !== 'undefined'
 			? formatPaths([...getPaths(options.name ?? ''), options.key])
 			: options.name ?? '';
-	const metadata = getBaseMetadata(formId, context, {
+	const metadata = getBaseMetadata(formId, state, {
 		subjectRef: options.subjectRef,
 		name,
 	});
@@ -267,7 +263,7 @@ export function getFieldMetadata<Schema>(
 				case 'name':
 					return name;
 				case 'constraint':
-					return context.constraint[name];
+					return state.constraint[name];
 			}
 
 			return Reflect.get(target, key, receiver);
@@ -277,14 +273,14 @@ export function getFieldMetadata<Schema>(
 
 export function getFormMetadata<Schema extends Record<string, any>>(
 	formId: string,
-	context: FormContext,
+	state: FormState,
 	options: {
 		subjectRef: MutableRefObject<SubscriptionSubject>;
 		form: Form<Schema>;
 		noValidate: boolean;
 	},
 ): FormMetadata<Schema> {
-	const metadata = getBaseMetadata(formId, context, {
+	const metadata = getBaseMetadata(formId, state, {
 		subjectRef: options.subjectRef,
 	});
 
@@ -316,7 +312,7 @@ export function getFormMetadata<Schema extends Record<string, any>>(
 
 export function getFieldsetMetadata<Schema>(
 	formId: string,
-	context: FormContext,
+	state: FormState,
 	options: {
 		subjectRef: MutableRefObject<SubscriptionSubject>;
 		name?: FieldName<Schema>;
@@ -325,7 +321,7 @@ export function getFieldsetMetadata<Schema>(
 	return new Proxy({} as any, {
 		get(target, prop, receiver) {
 			const getMetadata = (key: string | number) =>
-				getFieldMetadata(formId, context, {
+				getFieldMetadata(formId, state, {
 					subjectRef: options.subjectRef,
 					name: options.name,
 					key: key,

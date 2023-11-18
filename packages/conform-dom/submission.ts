@@ -1,18 +1,24 @@
-import { type FormValue } from './form';
+import type { FormValue } from './form';
 import { requestSubmit } from './dom';
-import { simplify, flatten, isPlainObject, setValue } from './formdata';
+import {
+	simplify,
+	flatten,
+	isPlainObject,
+	setValue,
+	isPrefix,
+} from './formdata';
 import { invariant } from './util';
 
 export type SubmissionState = {
-	key: Record<string, string>;
 	validated: Record<string, boolean>;
 };
 
 export type SubmissionContext<Value> = {
 	intent: string | null;
-	initialValue: Record<string, unknown>;
-	value: Value | null;
-	error: Record<string, string[]>;
+	payload: Record<string, unknown>;
+	fields: string[];
+	value?: Value | null;
+	error?: Record<string, string[]>;
 	state: SubmissionState;
 };
 
@@ -36,16 +42,10 @@ export type Submission<Schema, Value = Schema> =
 
 export type SubmissionResult = {
 	status: 'updated' | 'error' | 'success';
+	intent?: string | null;
 	initialValue?: Record<string, unknown>;
 	error?: Record<string, string[]>;
 	state?: SubmissionState;
-};
-
-export type ResolveResult = {
-	intent: string | null;
-	state: SubmissionState;
-	data: Record<string, unknown>;
-	fields: string[];
 };
 
 export type AcceptOptions = {
@@ -72,10 +72,12 @@ export const INTENT = '__intent__';
  */
 export const STATE = '__state__';
 
-export function resolve(payload: FormData | URLSearchParams): ResolveResult {
-	const intent = payload.get(INTENT);
-	const state = payload.get(STATE);
-	const data: Record<string, unknown> = {};
+export function getSubmissionContext(
+	body: FormData | URLSearchParams,
+): SubmissionContext<unknown> {
+	const intent = body.get(INTENT);
+	const state = body.get(STATE);
+	const payload: Record<string, unknown> = {};
 	const fields: string[] = [];
 
 	invariant(
@@ -84,13 +86,13 @@ export function resolve(payload: FormData | URLSearchParams): ResolveResult {
 		`The input name "${INTENT}" and "${STATE}" are reserved by Conform. Please use another name for your input.`,
 	);
 
-	for (const [name, next] of payload.entries()) {
+	for (const [name, next] of body.entries()) {
 		if (name === INTENT || name === STATE) {
 			continue;
 		}
 
 		fields.push(name);
-		setValue(data, name, (prev) => {
+		setValue(payload, name, (prev) => {
 			if (!prev) {
 				return next;
 			} else if (Array.isArray(prev)) {
@@ -102,33 +104,10 @@ export function resolve(payload: FormData | URLSearchParams): ResolveResult {
 	}
 
 	return {
-		data,
+		payload,
 		intent,
-		state: state ? JSON.parse(state) : { key: {}, validated: {} },
+		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
-	};
-}
-
-export function getIntentHandler(
-	form: ResolveResult,
-	intents: Array<Intent> = [validate, list],
-): (result: Omit<Required<SubmissionResult>, 'status'>) => void {
-	if (form.intent) {
-		for (const intent of intents) {
-			const payload = intent.deserialize(form.intent);
-
-			if (payload) {
-				return intent.createHandler(form.data, payload);
-			}
-		}
-
-		throw new Error(`Unknown intent: ${form.intent}`);
-	}
-
-	return (result) => {
-		for (const name of [...form.fields, ...Object.keys(result.error)]) {
-			form.state.validated[name] = true;
-		}
 	};
 }
 
@@ -172,29 +151,88 @@ export function parse<Value>(
 			| Promise<{ value?: Value; error?: Record<string, string[]> }>;
 	},
 ): Submission<Value> | Promise<Submission<Value>> {
-	const form = resolve(payload);
-	const update = getIntentHandler(form);
-	const result = options.resolve(form.data, form.intent ?? 'submit');
+	const context = getSubmissionContext(payload);
+
+	if (context.intent) {
+		handleIntent(context.intent, (intent) => {
+			switch (intent.type) {
+				case 'validate':
+					context.state.validated[intent.payload] = true;
+					break;
+				case 'reset': {
+					if (intent.payload.name !== '') {
+						setValue(context.payload, intent.payload.name, () => undefined);
+
+						for (const key of Object.keys(context.state.validated)) {
+							if (isPrefix(key, intent.payload.name)) {
+								delete context.state.validated[key];
+							}
+						}
+					} else {
+						context.payload = {};
+						context.state.validated = {};
+					}
+					break;
+				}
+				case 'list': {
+					const list = setValue(
+						context.payload,
+						intent.payload.name,
+						(currentValue) => {
+							if (
+								typeof currentValue !== 'undefined' &&
+								!Array.isArray(currentValue)
+							) {
+								throw new Error(
+									'The list intent can only be applied to a list',
+								);
+							}
+
+							return currentValue ?? [];
+						},
+					);
+
+					updateList(list, intent.payload);
+
+					switch (intent.payload.operation) {
+						case 'append':
+						case 'prepend':
+						case 'insert':
+						case 'replace':
+							updateState(context.state.validated, {
+								...intent.payload,
+								defaultValue: undefined,
+							});
+							break;
+						default:
+							updateState(context.state.validated, intent.payload);
+							break;
+					}
+
+					context.state.validated[intent.payload.name] = true;
+					break;
+				}
+			}
+		});
+	}
+
+	const result = options.resolve(context.payload, context.intent ?? 'submit');
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, string[]>;
 		value?: Value;
 	}): Submission<Value> => {
 		const error = resolved.error ?? {};
-		const initialValue = form.data;
-		const state = form.state;
 
-		update({
-			initialValue,
-			error,
-			state,
-		});
+		if (!context.intent) {
+			for (const name of [...context.fields, ...Object.keys(error)]) {
+				context.state.validated[name] = true;
+			}
+		}
 
 		return createSubmission({
-			intent: form.intent,
-			initialValue,
+			...context,
 			value: resolved.value ?? null,
 			error,
-			state,
 		});
 	};
 
@@ -206,14 +244,14 @@ export function parse<Value>(
 }
 
 export function createSubmission<Value>(
-	context: SubmissionContext<Value>,
+	context: Required<SubmissionContext<Value>>,
 ): Submission<Value> {
 	if (context.intent !== null) {
 		return {
 			type: 'update',
-			payload: context.initialValue,
+			payload: context.payload,
 			value: null,
-			error: context.error,
+			error: context.error ?? {},
 			accept(options) {
 				return acceptSubmission(context, options);
 			},
@@ -225,7 +263,7 @@ export function createSubmission<Value>(
 
 	return {
 		type: 'submit',
-		payload: context.initialValue,
+		payload: context.payload,
 		value: context.value,
 		error: context.error,
 		accept(options) {
@@ -238,7 +276,7 @@ export function createSubmission<Value>(
 }
 
 export function acceptSubmission(
-	context: SubmissionContext<unknown>,
+	context: Required<SubmissionContext<unknown>>,
 	options?: AcceptOptions,
 ): SubmissionResult {
 	if (options?.resetForm) {
@@ -247,14 +285,14 @@ export function acceptSubmission(
 
 	return {
 		status: 'success',
-		initialValue: simplify(context.initialValue) ?? {},
+		initialValue: simplify(context.payload) ?? {},
 		error: simplify(context.error) as Record<string, string[]>,
 		state: context.state,
 	};
 }
 
 export function rejectSubmission(
-	context: SubmissionContext<unknown>,
+	context: Required<SubmissionContext<unknown>>,
 	options?: RejectOptions,
 ): SubmissionResult {
 	const error = Object.entries(context.error ?? {}).reduce<
@@ -272,142 +310,28 @@ export function rejectSubmission(
 
 	return {
 		status: context.intent === null ? 'error' : 'updated',
-		initialValue: simplify(context.initialValue) ?? {},
+		intent: context.intent,
+		initialValue: simplify(context.payload) ?? {},
 		error: simplify(error) as Record<string, string[]>,
 		state: context.state,
 	};
 }
 
-export type Intent<Payload = unknown> = {
-	type: string;
-	serialize(payload: Payload): string;
-	deserialize(serializedIntent: string): Payload | null;
-	createHandler(
-		data: Record<string, unknown>,
-		payload: Payload,
-	): (result: Omit<Required<SubmissionResult>, 'status'>) => void;
-};
-
-export function createIntent(options: {
-	type: string;
-	update: (
-		result: Omit<Required<SubmissionResult>, 'status'>,
-		payload: string,
-	) => void;
-}): Intent<string>;
-export function createIntent<Payload>(options: {
-	type: string;
-	serialize: (payload: Payload) => string;
-	deserialize: (serializedPayload: string) => Payload;
-	update: (
-		result: Omit<Required<SubmissionResult>, 'status'>,
-		payload: Payload,
-	) => void;
-}): Intent<Payload>;
-export function createIntent<Payload, Context>(options: {
-	type: string;
-	serialize: (payload: Payload) => string;
-	deserialize: (serializedPayload: string) => Payload;
-	preprocess: (data: Record<string, unknown>, payload: Payload) => Context;
-	update: (
-		result: Omit<Required<SubmissionResult>, 'status'>,
-		payload: Payload,
-		context: Context,
-	) => void;
-}): Intent<Payload>;
-export function createIntent<Payload, Context>(options: {
-	type: string;
-	serialize?: (payload: Payload) => string;
-	deserialize?: (serializedPayload: string) => Payload;
-	preprocess?: (data: Record<string, unknown>, payload: Payload) => Context;
-	update: (
-		result: Omit<Required<SubmissionResult>, 'status'>,
-		payload: Payload,
-		context: Context | undefined,
-	) => void;
-}): Intent<Payload> {
-	return {
-		type: options.type,
-		serialize(payload) {
-			return `${options.type}/${options.serialize?.(payload) ?? payload}`;
-		},
-		deserialize(serializedIntent) {
-			const seperatorIndex = serializedIntent.indexOf('/');
-
-			if (seperatorIndex > -1) {
-				const type = serializedIntent.slice(0, seperatorIndex);
-				const serializedPayload = serializedIntent.slice(seperatorIndex + 1);
-
-				if (type === options.type) {
-					return (
-						options.deserialize?.(serializedPayload) ??
-						(serializedPayload as Payload)
-					);
-				}
-			}
-
-			return null;
-		},
-		createHandler(data, payload) {
-			const context = options.preprocess?.(data, payload);
-
-			return (result) => {
-				options.update(result, payload, context);
+export type Intent =
+	| {
+			type: 'validate';
+			payload: string;
+	  }
+	| {
+			type: 'list';
+			payload: ListIntentPayload;
+	  }
+	| {
+			type: 'reset';
+			payload: {
+				name: string;
 			};
-		},
-	};
-}
-
-export const validate = createIntent({
-	type: 'validate',
-	update(result, payload) {
-		result.state.validated[payload] = true;
-	},
-});
-
-export const list = createIntent<ListIntentPayload, void>({
-	type: 'list',
-	serialize(payload) {
-		return JSON.stringify(payload);
-	},
-	deserialize(serializedPayload) {
-		return JSON.parse(serializedPayload);
-	},
-	preprocess(data, payload) {
-		const list = setValue(data, payload.name, (currentValue) => {
-			if (typeof currentValue !== 'undefined' && !Array.isArray(currentValue)) {
-				throw new Error('The list intent can only be applied to a list');
-			}
-
-			return currentValue ?? [];
-		});
-
-		updateList(list, payload);
-	},
-	update(result, payload) {
-		switch (payload.operation) {
-			case 'append':
-			case 'prepend':
-			case 'insert':
-			case 'replace':
-				updateState(result.state.validated, {
-					...payload,
-					defaultValue: undefined,
-				});
-				updateState(result.state.key, {
-					...payload,
-					defaultValue: (Date.now() * Math.random()).toString(36),
-				});
-				break;
-			default:
-				updateState(result.state.validated, payload);
-				updateState(result.state.key, payload);
-				break;
-		}
-
-		result.state.validated[payload.name] = true;
-	},
-});
+	  };
 
 export type ListIntentPayload<Schema = unknown> =
 	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
@@ -421,6 +345,38 @@ export type ListIntentPayload<Schema = unknown> =
 	  }
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
+
+export function handleIntent<Result>(
+	intent: string,
+	handler: (intent: Intent) => Result,
+): Result {
+	const seperatorIndex = intent.indexOf('/');
+
+	if (seperatorIndex > -1) {
+		const type = intent.slice(0, seperatorIndex);
+		const payload = intent.slice(seperatorIndex + 1);
+
+		switch (type) {
+			case 'validate':
+				return handler({ type, payload });
+			case 'reset':
+			case 'list':
+				return handler({ type, payload: JSON.parse(payload) });
+		}
+	}
+
+	throw new Error('Unknown intent');
+}
+
+export function serializeIntent(intent: Intent): string {
+	switch (intent.type) {
+		case 'validate':
+			return `${intent.type}/${intent.payload}`;
+		case 'reset':
+		case 'list':
+			return `${intent.type}/${JSON.stringify(intent.payload)}`;
+	}
+}
 
 export function requestIntent(
 	form: HTMLFormElement | null | undefined,
