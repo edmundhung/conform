@@ -86,13 +86,13 @@ export function isPrefix(name: string, prefix: string) {
 }
 
 /**
- * Assign a value to a target object by following the paths on the name
+ * Assign a value to a target object by following the paths
  */
-export function setValue<Value>(
+export function setValue(
 	target: Record<string, any>,
 	name: string,
-	valueFn: (prev?: unknown) => Value,
-): Value {
+	valueFn: (currentValue?: unknown) => unknown,
+) {
 	const paths = getPaths(name);
 	const length = paths.length;
 	const lastIndex = length - 1;
@@ -111,9 +111,21 @@ export function setValue<Value>(
 		pointer[key] = newValue;
 		pointer = pointer[key];
 	}
+}
 
-	// @ts-expect-error: The pointer should be assigned with the result of the valueFn
-	return pointer;
+/**
+ * Retrive the value from a target object by following the paths
+ */
+export function getValue(target: Record<string, any>, name: string): unknown {
+	let value;
+
+	setValue(target, name, (currentValue) => {
+		value = currentValue;
+
+		return value;
+	});
+
+	return value;
 }
 
 /**

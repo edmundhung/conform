@@ -14,7 +14,7 @@ export type SubmissionState = {
 };
 
 export type SubmissionContext<Value> = {
-	intent: string | null;
+	intent: Intent | null;
 	payload: Record<string, unknown>;
 	fields: string[];
 	value?: Value | null;
@@ -42,7 +42,7 @@ export type Submission<Schema, Value = Schema> =
 
 export type SubmissionResult = {
 	status: 'updated' | 'error' | 'success';
-	intent?: string | null;
+	intent?: Intent;
 	initialValue?: Record<string, unknown>;
 	error?: Record<string, string[]>;
 	state?: SubmissionState;
@@ -105,7 +105,7 @@ export function getSubmissionContext(
 
 	return {
 		payload,
-		intent,
+		intent: getIntent(intent),
 		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
 	};
@@ -154,69 +154,56 @@ export function parse<Value>(
 	const context = getSubmissionContext(payload);
 
 	if (context.intent) {
-		handleIntent(context.intent, (intent) => {
-			switch (intent.type) {
-				case 'validate':
-					context.state.validated[intent.payload] = true;
-					break;
-				case 'reset': {
-					if (intent.payload.name !== '') {
-						setValue(context.payload, intent.payload.name, () => undefined);
-
-						for (const key of Object.keys(context.state.validated)) {
-							if (isPrefix(key, intent.payload.name)) {
-								delete context.state.validated[key];
-							}
-						}
-					} else {
-						context.payload = {};
-						context.state.validated = {};
-					}
-					break;
-				}
-				case 'list': {
-					const list = setValue(
+		switch (context.intent.type) {
+			case 'validate':
+				context.state.validated[context.intent.payload] = true;
+				break;
+			case 'reset': {
+				if (context.intent.payload.name) {
+					setValue(
 						context.payload,
-						intent.payload.name,
-						(currentValue) => {
-							if (
-								typeof currentValue !== 'undefined' &&
-								!Array.isArray(currentValue)
-							) {
-								throw new Error(
-									'The list intent can only be applied to a list',
-								);
-							}
-
-							return currentValue ?? [];
-						},
+						context.intent.payload.name,
+						() => undefined,
 					);
 
-					updateList(list, intent.payload);
+					if (!context.intent.payload.validated) {
+						setState(
+							context.state.validated,
+							context.intent.payload.name,
+							() => undefined,
+						);
 
-					switch (intent.payload.operation) {
-						case 'append':
-						case 'prepend':
-						case 'insert':
-						case 'replace':
-							updateState(context.state.validated, {
-								...intent.payload,
-								defaultValue: undefined,
-							});
-							break;
-						default:
-							updateState(context.state.validated, intent.payload);
-							break;
+						delete context.state.validated[context.intent.payload.name];
 					}
+				} else {
+					context.payload = {};
 
-					context.state.validated[intent.payload.name] = true;
-					break;
+					if (!context.intent.payload.validated) {
+						context.state.validated = {};
+					}
 				}
+				break;
 			}
-		});
+			case 'list': {
+				setListValue(context.payload, context.intent.payload);
+				setListState(context.state.validated, context.intent.payload);
+
+				context.state.validated[context.intent.payload.name] = true;
+				break;
+			}
+		}
 	}
 
-	const result = options.resolve(context.payload, context.intent ?? 'submit');
+	const result = options.resolve(
+		context.payload,
+		context.intent === null
+			? 'submit'
+			: `${context.intent.type}/${
+					context.intent.type === 'validate'
+						? context.intent.payload
+						: JSON.stringify(context.intent.payload)
+			  }`,
+	);
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, string[]>;
 		value?: Value;
@@ -309,8 +296,8 @@ export function rejectSubmission(
 	);
 
 	return {
-		status: context.intent === null ? 'error' : 'updated',
-		intent: context.intent,
+		status: context.intent !== null ? 'updated' : 'error',
+		intent: context.intent !== null ? context.intent : undefined,
 		initialValue: simplify(context.payload) ?? {},
 		error: simplify(error) as Record<string, string[]>,
 		state: context.state,
@@ -329,7 +316,8 @@ export type Intent =
 	| {
 			type: 'reset';
 			payload: {
-				name: string;
+				name?: string;
+				validated?: boolean;
 			};
 	  };
 
@@ -346,36 +334,25 @@ export type ListIntentPayload<Schema = unknown> =
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
 
-export function handleIntent<Result>(
-	intent: string,
-	handler: (intent: Intent) => Result,
-): Result {
-	const seperatorIndex = intent.indexOf('/');
+export function getIntent(intent: string | null | undefined): Intent | null {
+	if (!intent) {
+		return null;
+	}
 
-	if (seperatorIndex > -1) {
-		const type = intent.slice(0, seperatorIndex);
-		const payload = intent.slice(seperatorIndex + 1);
+	const { type, payload } = JSON.parse(intent);
 
-		switch (type) {
-			case 'validate':
-				return handler({ type, payload });
-			case 'reset':
-			case 'list':
-				return handler({ type, payload: JSON.parse(payload) });
-		}
+	switch (type) {
+		case 'validate':
+		case 'reset':
+		case 'list':
+			return { type, payload };
 	}
 
 	throw new Error('Unknown intent');
 }
 
 export function serializeIntent(intent: Intent): string {
-	switch (intent.type) {
-		case 'validate':
-			return `${intent.type}/${intent.payload}`;
-		case 'reset':
-		case 'list':
-			return `${intent.type}/${JSON.stringify(intent.payload)}`;
-	}
+	return JSON.stringify(intent);
 }
 
 export function requestIntent(
@@ -392,10 +369,12 @@ export function requestIntent(
 	requestSubmit(form, submitter);
 }
 
-export function updateList<Schema>(
-	list: Array<FormValue<Schema>>,
-	payload: ListIntentPayload<Schema>,
-): void {
+export function updateList(list: unknown, payload: ListIntentPayload): void {
+	invariant(
+		Array.isArray(list),
+		`Failed to update list. The value is not an array.`,
+	);
+
 	switch (payload.operation) {
 		case 'prepend':
 			list.unshift(payload.defaultValue as any);
@@ -420,59 +399,102 @@ export function updateList<Schema>(
 	}
 }
 
-export function updateState<Schema>(
+export function setListValue(
 	data: Record<string, unknown>,
-	payload: ListIntentPayload<Schema>,
+	payload: ListIntentPayload,
+): void {
+	setValue(data, payload.name, (value) => {
+		const list = value ?? [];
+
+		updateList(list, payload);
+
+		return list;
+	});
+}
+
+export function setState(
+	state: Record<string, unknown>,
+	name: string,
+	valueFn: (value: unknown) => unknown,
 ): void {
 	const root = Symbol.for('root');
 
 	// The keys are sorted in desc so that the root value is handled last
-	const keys = Object.keys(data).sort((prev, next) => next.localeCompare(prev));
+	const keys = Object.keys(state).sort((prev, next) =>
+		next.localeCompare(prev),
+	);
 	const target: Record<string, unknown> = {};
 
 	for (const key of keys) {
-		const value = data[key];
+		const value = state[key];
 
-		if (key.startsWith(payload.name) && key !== payload.name) {
-			setValue(target, key, (prev) => {
-				if (typeof prev === 'undefined') {
+		if (isPrefix(key, name) && key !== name) {
+			setValue(target, key, (currentValue) => {
+				if (typeof currentValue === 'undefined') {
 					return value;
 				}
 
-				// @ts-expect-error As key is unique, if prev is already defined, it must be either an object or an array
-				prev[root] = value;
+				// As the key should be unique, if currentValue is already defined,
+				// it must be either an object or an array
 
-				return prev;
+				// @ts-expect-error
+				currentValue[root] = value;
+
+				return currentValue;
 			});
 
 			// Remove the value from the data
-			delete data[key];
+			delete state[key];
 		}
 	}
 
-	const value = setValue(target, payload.name, (value) => value ?? []);
+	let result;
 
-	if (!Array.isArray(value)) {
-		throw new Error('The name provided is not pointed to a list');
-	}
+	setValue(target, name, (currentValue) => {
+		result = valueFn(currentValue);
 
-	updateList(value, payload);
+		return result;
+	});
 
 	Object.assign(
-		data,
-		flatten(value, {
+		state,
+		flatten(result, {
 			resolve(data) {
-				if (Array.isArray(data)) {
-					return null;
-				}
-
-				if (isPlainObject(data)) {
+				if (isPlainObject(data) || Array.isArray(data)) {
+					// @ts-expect-error
 					return data[root] ?? null;
 				}
 
 				return data;
 			},
-			prefix: payload.name,
+			prefix: name,
 		}),
 	);
+}
+
+export function setListState(
+	state: Record<string, unknown>,
+	payload: ListIntentPayload,
+	getDefaultValue?: () => unknown,
+): void {
+	setState(state, payload.name, (value) => {
+		const list = value ?? [];
+
+		switch (payload.operation) {
+			case 'append':
+			case 'prepend':
+			case 'insert':
+			case 'replace':
+				updateList(list, {
+					...payload,
+					defaultValue: getDefaultValue?.(),
+				});
+				break;
+			default:
+				updateList(list, payload);
+				break;
+		}
+
+		return list;
+	});
 }

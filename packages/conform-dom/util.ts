@@ -10,3 +10,7 @@ export function invariant(
 export function generateId(): string {
 	return (Date.now() * Math.random()).toString(36);
 }
+
+export function clone<Data>(data: Data): Data {
+	return JSON.parse(JSON.stringify(data));
+}

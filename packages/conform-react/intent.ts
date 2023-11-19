@@ -16,8 +16,8 @@ function createIntentButtonProps(value: string, form?: string) {
 }
 
 export function validate(options: {
-	name: FieldName<unknown>;
 	formId: string;
+	name: FieldName<unknown>;
 }) {
 	return createIntentButtonProps(
 		serializeIntent({
@@ -29,14 +29,16 @@ export function validate(options: {
 }
 
 export function reset<Schema>(options: {
-	name?: FieldName<Schema>;
 	formId: string;
+	name?: FieldName<Schema>;
+	validated?: boolean;
 }) {
 	return createIntentButtonProps(
 		serializeIntent({
 			type: 'reset',
 			payload: {
-				name: options.name ?? '',
+				name: options.name,
+				validated: options.validated,
 			},
 		}),
 		options.formId,

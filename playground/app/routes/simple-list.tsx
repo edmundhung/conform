@@ -127,7 +127,10 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.reset(fields.items)}
+						{...intent.reset({
+							formId: form.id,
+							name: fields.items.name,
+						})}
 					>
 						Reset
 					</button>

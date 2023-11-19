@@ -3,6 +3,7 @@ import {
 	formatPaths,
 	getFormData,
 	getPaths,
+	getValue,
 	isPlainObject,
 	isPrefix,
 	setValue,
@@ -14,7 +15,7 @@ import {
 	getFormEncType,
 	getFormMethod,
 } from './dom';
-import { generateId, invariant } from './util';
+import { clone, generateId, invariant } from './util';
 import {
 	type Intent,
 	type Submission,
@@ -22,10 +23,10 @@ import {
 	STATE,
 	requestIntent,
 	getSubmissionContext,
-	handleIntent,
 	serializeIntent,
-	updateList,
-	updateState,
+	setListState,
+	setListValue,
+	setState,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -202,9 +203,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		};
 
 		if (options.lastResult?.intent) {
-			handleIntent(options.lastResult.intent, (intent) =>
-				updateFormContext(result, intent, true),
-			);
+			handleIntent(options.lastResult.intent, result);
 		}
 
 		return result;
@@ -212,14 +211,18 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 	function initializeFormState(context: FormContext): FormState {
 		const defaultValue = flatten(context.defaultValue);
+		const initialValue =
+			context.initialValue === context.defaultValue
+				? defaultValue
+				: flatten(context.initialValue);
 		const value =
-			context.value === context.defaultValue
+			context.value === context.initialValue
 				? defaultValue
 				: flatten(context.value);
 
 		return {
 			defaultValue,
-			initialValue: value,
+			initialValue,
 			value,
 			error: context.error,
 			constraint: context.constraint,
@@ -250,75 +253,39 @@ export function createForm<Schema extends Record<string, any> = any>(
 		);
 	}
 
-	function updateFormContext(
-		context: FormContext,
+	function handleIntent(
 		intent: Intent,
-		isInit?: boolean,
+		context: FormContext,
+		initialized?: boolean,
 	): void {
 		switch (intent.type) {
 			case 'reset': {
-				const defaultValue = setValue(
-					context.defaultValue,
-					intent.payload.name,
-					(value) => value,
-				);
+				const name = intent.payload.name ?? '';
+				const defaultValue = getValue(context.defaultValue, name);
 
-				context.initialValue = JSON.parse(JSON.stringify(context.initialValue));
+				context.initialValue = clone(context.initialValue);
 
-				setValue(context.initialValue, intent.payload.name, () => defaultValue);
+				setValue(context.initialValue, name, () => defaultValue);
+				setValue(context.value, name, () => defaultValue);
 
-				if (!isInit) {
-					context.key = JSON.parse(JSON.stringify(context.key));
+				if (initialized) {
+					context.key = clone(context.key);
 
 					if (isPlainObject(defaultValue) || Array.isArray(defaultValue)) {
-						const defaultKey = getDefaultKey(defaultValue, intent.payload.name);
-
-						for (const name of Object.keys(context.key)) {
-							if (isPrefix(name, intent.payload.name)) {
-								delete context.key[name];
-							}
-						}
-
-						Object.assign(context.key, defaultKey);
+						setState(context.key, name, () => undefined);
 					}
 
-					context.key[intent.payload.name] = generateId();
+					context.key[name] = generateId();
 				}
 				break;
 			}
 			case 'list': {
-				if (!isInit) {
-					context.initialValue = JSON.parse(
-						JSON.stringify(context.initialValue),
-					);
-					context.key = JSON.parse(JSON.stringify(context.key));
+				if (initialized) {
+					context.initialValue = clone(context.initialValue);
+					context.key = clone(context.key);
 
-					setValue(context.initialValue, intent.payload.name, (value) => {
-						const list = value ?? [];
-
-						if (!Array.isArray(list)) {
-							throw new Error('Invalid data');
-						}
-
-						updateList(list, intent.payload);
-
-						return list;
-					});
-
-					switch (intent.payload.operation) {
-						case 'append':
-						case 'prepend':
-						case 'insert':
-						case 'replace':
-							updateState(context.key, {
-								...intent.payload,
-								defaultValue: generateId(),
-							});
-							break;
-						default:
-							updateState(context.key, intent.payload);
-							break;
-					}
+					setListState(context.key, intent.payload, generateId);
+					setListValue(context.initialValue, intent.payload);
 				}
 				break;
 			}
@@ -762,9 +729,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		};
 
 		if (result.intent) {
-			handleIntent(result.intent, (intent) =>
-				updateFormContext(update, intent),
-			);
+			handleIntent(result.intent, update, true);
 		}
 
 		updateContext(update);
