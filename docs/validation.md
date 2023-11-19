@@ -99,7 +99,7 @@ export default function Signup() {
 Here is an example how you can do async validation with zod:
 
 ```tsx
-import { refine } from '@conform-to/react';
+import { refine } from '@conform-to/zod';
 
 // Instead of reusing a schema, let's prepare a schema creator
 function createSchema(constraint?: {
