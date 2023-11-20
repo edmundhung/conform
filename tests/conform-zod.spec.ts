@@ -797,6 +797,60 @@ test.describe('conform-zod', () => {
 				},
 			});
 		});
+
+		test('z.discriminatedUnion', () => {
+			const schema = z.discriminatedUnion('type', [
+				z.object({
+					type: z.literal('a'),
+					number: z.number(),
+				}),
+				z.object({
+					type: z.literal('b'),
+					boolean: z.boolean(),
+				}),
+			]);
+
+			expect(
+				parse(
+					createFormData([
+						['type', 'a'],
+						['number', '1'],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					type: 'a',
+					number: '1',
+				},
+				value: {
+					type: 'a',
+					number: 1,
+				},
+				error: {},
+			});
+			expect(
+				parse(
+					createFormData([
+						['type', 'b'],
+						['boolean', 'on'],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				intent: 'submit',
+				payload: {
+					type: 'b',
+					boolean: 'on',
+				},
+				value: {
+					type: 'b',
+					boolean: true,
+				},
+				error: {},
+			});
+		});
 	});
 
 	test('parse with errorMap', () => {
