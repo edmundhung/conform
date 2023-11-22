@@ -51,7 +51,7 @@ export type FormValue<Schema> = Schema extends
 	? Array<FormValue<InnerType>>
 	: Schema extends Record<string, any>
 	? { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
-	: any;
+	: unknown;
 
 export type FieldName<Schema> = string & { __type?: Schema };
 
@@ -156,7 +156,6 @@ export type Form<Schema extends Record<string, any> = any> = {
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
-	initialize(): void;
 	report(result: SubmissionResult): void;
 	update(options: Omit<FormOptions<Schema>, 'lastResult'>): void;
 	subscribe(
@@ -253,29 +252,46 @@ export function createForm<Schema extends Record<string, any> = any>(
 		);
 	}
 
+	function updateValue(
+		context: FormContext,
+		name: string,
+		value: unknown,
+	): void {
+		context.initialValue = clone(context.initialValue);
+		context.value = clone(context.value);
+		context.key = clone(context.key);
+
+		setValue(context.initialValue, name, () => value);
+		setValue(context.value, name, () => value);
+
+		if (isPlainObject(value) || Array.isArray(value)) {
+			setState(context.key, name, () => undefined);
+		}
+
+		context.key[name] = generateId();
+	}
+
 	function handleIntent(
 		intent: Intent,
 		context: FormContext,
 		initialized?: boolean,
 	): void {
 		switch (intent.type) {
+			case 'replace': {
+				if (typeof intent.payload.value !== 'undefined') {
+					const name = intent.payload.name ?? '';
+					const value = intent.payload.value;
+
+					updateValue(context, name, value);
+				}
+				break;
+			}
 			case 'reset': {
-				const name = intent.payload.name ?? '';
-				const defaultValue = getValue(context.defaultValue, name);
+				if (intent.payload.value ?? true) {
+					const name = intent.payload.name ?? '';
+					const value = getValue(context.defaultValue, name);
 
-				context.initialValue = clone(context.initialValue);
-
-				setValue(context.initialValue, name, () => defaultValue);
-				setValue(context.value, name, () => defaultValue);
-
-				if (initialized) {
-					context.key = clone(context.key);
-
-					if (isPlainObject(defaultValue) || Array.isArray(defaultValue)) {
-						setState(context.key, name, () => undefined);
-					}
-
-					context.key[name] = generateId();
+					updateValue(context, name, value);
 				}
 				break;
 			}
@@ -665,16 +681,6 @@ export function createForm<Schema extends Record<string, any> = any>(
 		);
 	}
 
-	function initialize() {
-		document.addEventListener('input', input);
-		document.addEventListener('focusout', blur);
-
-		return () => {
-			document.removeEventListener('input', input);
-			document.removeEventListener('focusout', blur);
-		};
-	}
-
 	function reset(event: Event) {
 		const element = getFormElement();
 
@@ -780,7 +786,6 @@ export function createForm<Schema extends Record<string, any> = any>(
 		reset,
 		input,
 		blur,
-		initialize,
 		report,
 		update,
 		subscribe,

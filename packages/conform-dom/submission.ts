@@ -158,27 +158,41 @@ export function parse<Value>(
 			case 'validate':
 				context.state.validated[context.intent.payload] = true;
 				break;
-			case 'reset': {
-				if (context.intent.payload.name) {
-					setValue(
-						context.payload,
-						context.intent.payload.name,
-						() => undefined,
-					);
+			case 'replace': {
+				const { name = '', value, validated } = context.intent.payload;
 
-					if (!context.intent.payload.validated) {
-						setState(
-							context.state.validated,
-							context.intent.payload.name,
-							() => undefined,
-						);
-
-						delete context.state.validated[context.intent.payload.name];
+				if (typeof value !== 'undefined') {
+					if (name) {
+						setValue(context.payload, name, () => value);
+					} else {
+						context.payload = value as any;
 					}
-				} else {
-					context.payload = {};
+				}
 
-					if (!context.intent.payload.validated) {
+				if (validated) {
+					context.state.validated[name] = true;
+				} else {
+					delete context.state.validated[name];
+				}
+				break;
+			}
+			case 'reset': {
+				const { name, value = true, validated } = context.intent.payload;
+
+				if (value) {
+					if (name) {
+						setValue(context.payload, name, () => undefined);
+					} else {
+						context.payload = {};
+					}
+				}
+
+				if (!validated) {
+					if (name) {
+						setState(context.state.validated, name, () => undefined);
+
+						delete context.state.validated[name];
+					} else {
 						context.state.validated = {};
 					}
 				}
@@ -317,19 +331,25 @@ export type Intent =
 			type: 'reset';
 			payload: {
 				name?: string;
+				value?: boolean;
+				validated?: boolean;
+			};
+	  }
+	| {
+			type: 'replace';
+			payload: {
+				name?: string;
+				value?: unknown;
 				validated?: boolean;
 			};
 	  };
 
 export type ListIntentPayload<Schema = unknown> =
-	| { name: string; operation: 'insert'; defaultValue?: Schema; index?: number }
-	| { name: string; operation: 'prepend'; defaultValue?: FormValue<Schema> }
-	| { name: string; operation: 'append'; defaultValue?: FormValue<Schema> }
 	| {
 			name: string;
-			operation: 'replace';
-			defaultValue: FormValue<Schema>;
-			index: number;
+			operation: 'insert';
+			defaultValue?: FormValue<Schema>;
+			index?: number;
 	  }
 	| { name: string; operation: 'remove'; index: number }
 	| { name: string; operation: 'reorder'; from: number; to: number };
@@ -343,6 +363,7 @@ export function getIntent(intent: string | null | undefined): Intent | null {
 
 	switch (type) {
 		case 'validate':
+		case 'replace':
 		case 'reset':
 		case 'list':
 			return { type, payload };
@@ -376,17 +397,8 @@ export function updateList(list: unknown, payload: ListIntentPayload): void {
 	);
 
 	switch (payload.operation) {
-		case 'prepend':
-			list.unshift(payload.defaultValue as any);
-			break;
-		case 'append':
-			list.push(payload.defaultValue as any);
-			break;
 		case 'insert':
 			list.splice(payload.index ?? list.length, 0, payload.defaultValue as any);
-			break;
-		case 'replace':
-			list.splice(payload.index, 1, payload.defaultValue);
 			break;
 		case 'remove':
 			list.splice(payload.index, 1);
@@ -481,10 +493,7 @@ export function setListState(
 		const list = value ?? [];
 
 		switch (payload.operation) {
-			case 'append':
-			case 'prepend':
 			case 'insert':
-			case 'replace':
 				updateList(list, {
 					...payload,
 					defaultValue: getDefaultValue?.(),

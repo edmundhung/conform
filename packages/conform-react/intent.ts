@@ -1,6 +1,7 @@
 import {
 	type ListIntentPayload,
 	type FieldName,
+	type FormValue,
 	INTENT,
 	serializeIntent,
 } from '@conform-to/dom';
@@ -31,6 +32,7 @@ export function validate(options: {
 export function reset<Schema>(options: {
 	formId: string;
 	name?: FieldName<Schema>;
+	value?: boolean;
 	validated?: boolean;
 }) {
 	return createIntentButtonProps(
@@ -38,6 +40,26 @@ export function reset<Schema>(options: {
 			type: 'reset',
 			payload: {
 				name: options.name,
+				value: options.value,
+				validated: options.validated,
+			},
+		}),
+		options.formId,
+	);
+}
+
+export function replace<Schema>(options: {
+	formId: string;
+	name?: FieldName<Schema>;
+	value?: FormValue<Schema>;
+	validated?: boolean;
+}) {
+	return createIntentButtonProps(
+		serializeIntent({
+			type: 'replace',
+			payload: {
+				name: options.name,
+				value: options.value,
 				validated: options.validated,
 			},
 		}),
@@ -74,16 +96,7 @@ type ListIntent<Operation> = {} extends ExtractListIntentPayload<Operation>
  * @see https://conform.guide/api/react#list
  */
 export const list = new Proxy<{
-	/**
-	 * @deprecated You can use `insert` without specifying an index instead
-	 */
-	append: ListIntent<'append'>;
-	/**
-	 * @deprecated You can use `insert` with zero index instead
-	 */
-	prepend: ListIntent<'prepend'>;
 	insert: ListIntent<'insert'>;
-	replace: ListIntent<'replace'>;
 	remove: ListIntent<'remove'>;
 	reorder: ListIntent<'reorder'>;
 }>({} as any, {
