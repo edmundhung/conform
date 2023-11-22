@@ -8,14 +8,12 @@ import { useEffect, useId, useRef, useState, useLayoutEffect } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
-	type FieldsetMetadata,
 	type Pretty,
 	useFormState,
 	useRegistry,
 	useSubjectRef,
 	getFieldMetadata,
 	getFormMetadata,
-	getFieldsetMetadata,
 } from './context';
 
 /**
@@ -63,23 +61,27 @@ export function useForm<Schema extends Record<string, any>>(
 			defaultNoValidate?: boolean;
 		}
 	>,
-): {
-	form: FormMetadata<Schema>;
-	context: Form<Schema>;
-	fields: Pretty<FieldsetMetadata<Schema>>;
-} {
+): FormMetadata<Schema> {
 	const formId = useFormId(options.id);
-	const initializeForm = () => createForm(formId, options);
-	const [form, setForm] = useState(initializeForm);
+	const initializeContext = () => createForm(formId, options);
+	const [context, setContext] = useState(initializeContext);
 
 	// If id changes, reinitialize the form immediately
-	if (formId !== form.id) {
-		setForm(initializeForm);
+	if (formId !== context.id) {
+		setContext(initializeContext);
 	}
 
 	const optionsRef = useRef(options);
 
-	useSafeLayoutEffect(() => form.initialize(), [form]);
+	useSafeLayoutEffect(() => {
+		document.addEventListener('input', context.input);
+		document.addEventListener('focusout', context.blur);
+
+		return () => {
+			document.removeEventListener('input', context.input);
+			document.removeEventListener('focusout', context.blur);
+		};
+	}, [context]);
 
 	useSafeLayoutEffect(() => {
 		if (options.lastResult === optionsRef.current.lastResult) {
@@ -88,32 +90,22 @@ export function useForm<Schema extends Record<string, any>>(
 		}
 
 		if (options.lastResult) {
-			form.report(options.lastResult);
+			context.report(options.lastResult);
 		} else {
-			document.forms.namedItem(form.id)?.reset();
+			document.forms.namedItem(context.id)?.reset();
 		}
-	}, [form, options.lastResult]);
+	}, [context, options.lastResult]);
 
 	useSafeLayoutEffect(() => {
 		optionsRef.current = options;
-		form.update(options);
+		context.update(options);
 	});
 
-	const subjectRef = useSubjectRef();
-	const context = useFormState(form, subjectRef);
-	const noValidate = useNoValidate(options.defaultNoValidate);
-
-	return {
-		form: getFormMetadata(formId, context, {
-			subjectRef,
-			form,
-			noValidate,
-		}),
-		fields: getFieldsetMetadata(formId, context, {
-			subjectRef,
-		}),
-		context: form,
-	};
+	return useFormMetadata({
+		formId,
+		context,
+		defaultNoValidate: options.defaultNoValidate,
+	});
 }
 
 export function useFormMetadata<Schema extends Record<string, any>>(options: {
@@ -126,57 +118,7 @@ export function useFormMetadata<Schema extends Record<string, any>>(options: {
 	const state = useFormState(form, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
-	return getFormMetadata(options.formId, state, {
-		subjectRef,
-		form,
-		noValidate,
-	});
-}
-
-export function useFieldset<Schema>(options: {
-	formId: string;
-	name?: FieldName<Schema>;
-	context?: Form;
-}): Pretty<FieldsetMetadata<Schema>> {
-	const subjectRef = useSubjectRef();
-	const form = useRegistry(options.formId, options.context);
-	const state = useFormState(form, subjectRef);
-
-	return getFieldsetMetadata(options.formId, state, {
-		name: options.name,
-		subjectRef,
-	});
-}
-
-export type Item<List> = List extends Array<infer Item> ? Item : any;
-
-export function useFieldList<Schema>(options: {
-	formId: string;
-	name: FieldName<Schema>;
-	context?: Form;
-}): Array<FieldMetadata<Item<Schema>>> {
-	const subjectRef = useSubjectRef({
-		initialValue: {
-			name: [options.name],
-		},
-	});
-	const form = useRegistry(options.formId, options.context);
-	const state = useFormState(form, subjectRef);
-	const initialValue = state.initialValue[options.name] ?? [];
-
-	if (!Array.isArray(initialValue)) {
-		throw new Error('The initial value at the given name is not a list');
-	}
-
-	return Array(initialValue.length)
-		.fill(0)
-		.map((_, index) =>
-			getFieldMetadata<Item<Schema>>(options.formId, state, {
-				name: options.name,
-				key: index,
-				subjectRef,
-			}),
-		);
+	return getFormMetadata(options.formId, state, subjectRef, form, noValidate);
 }
 
 export function useField<Schema>(options: {
@@ -188,8 +130,5 @@ export function useField<Schema>(options: {
 	const form = useRegistry(options.formId, options.context);
 	const state = useFormState(form, subjectRef);
 
-	return getFieldMetadata<Schema>(options.formId, state, {
-		name: options.name,
-		subjectRef,
-	});
+	return getFieldMetadata(options.formId, state, subjectRef, options.name);
 }

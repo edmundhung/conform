@@ -61,7 +61,7 @@ export async function action({ request }: ActionArgs) {
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fields } = useForm({
+	const form = useForm({
 		lastResult,
 		defaultValue,
 	});
@@ -98,11 +98,11 @@ export default function ExampleForm() {
 				}
 				lastSubmission={lastResult}
 			>
-				<Field label="Name" config={fields.name}>
-					<input {...conform.input(fields.name, { type: 'text' })} />
+				<Field label="Name" config={form.fields.name}>
+					<input {...conform.input(form.fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" config={fields.code}>
-					<input {...conform.input(fields.code, { type: 'color' })} />
+				<Field label="Code" config={form.fields.code}>
+					<input {...conform.input(form.fields.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

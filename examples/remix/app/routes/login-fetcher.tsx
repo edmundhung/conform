@@ -24,7 +24,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Login() {
 	const fetcher = useFetcher<typeof action>();
-	const { form, fields } = useForm({
+	const form = useForm({
 		// Sync the result of last submission
 		lastResult: fetcher.data,
 
@@ -41,23 +41,25 @@ export default function Login() {
 			<div>
 				<label>Email</label>
 				<input
-					className={!fields.email.valid ? 'error' : ''}
-					{...conform.input(fields.email)}
+					className={!form.fields.email.valid ? 'error' : ''}
+					{...conform.input(form.fields.email)}
 				/>
-				<div>{fields.email.errors}</div>
+				<div>{form.fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...conform.input(fields.password, { type: 'password' })}
+					className={!form.fields.password.valid ? 'error' : ''}
+					{...conform.input(form.fields.password, { type: 'password' })}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{form.fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...conform.input(fields.remember, { type: 'checkbox' })} />
+					<input
+						{...conform.input(form.fields.remember, { type: 'checkbox' })}
+					/>
 				</div>
 			</label>
 			<hr />

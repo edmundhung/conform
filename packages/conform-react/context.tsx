@@ -27,6 +27,15 @@ import {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
+export type Primitive =
+	| string
+	| number
+	| boolean
+	| Date
+	| File
+	| null
+	| undefined;
+
 export type BaseMetadata<Schema> = {
 	key?: string;
 	id: string;
@@ -48,6 +57,10 @@ export type Field<Schema> = {
 
 export type FormMetadata<Schema extends Record<string, any>> =
 	BaseMetadata<Schema> & {
+		context: Form;
+		fields: {
+			[Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>>;
+		};
 		onSubmit: (
 			event: React.FormEvent<HTMLFormElement>,
 		) => ReturnType<Form<Schema>['submit']>;
@@ -55,21 +68,35 @@ export type FormMetadata<Schema extends Record<string, any>> =
 		noValidate: boolean;
 	};
 
-export type FieldsetMetadata<Schema> = Schema extends Array<any>
-	? { [Key in keyof Schema]: FieldMetadata<Schema[Key]> }
-	: Schema extends { [key in string]?: any }
-	? { [Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>> }
-	: Record<string | number, FieldMetadata<any>>;
-
 export type FieldMetadata<Schema> = BaseMetadata<Schema> & {
 	formId: string;
 	name: FieldName<Schema>;
 	constraint?: Constraint;
-};
+} & (Primitive & Array<any> extends Schema
+		? {
+				fields: {
+					[Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>>;
+				};
+				items: Array<FieldMetadata<any>>;
+		  }
+		: Schema extends Primitive
+		? {}
+		: Schema extends Array<infer Item>
+		? {
+				items: Array<FieldMetadata<Item>>;
+		  }
+		: {
+				fields: {
+					[Key in UnionKeyof<Schema>]: FieldMetadata<UnionKeyType<Schema, Key>>;
+				};
+		  });
 
 export const Registry = createContext<Record<string, Form>>({});
 
-export function useRegistry(formId: string, context?: Form): Form {
+export function useRegistry<Schema extends Record<string, any>>(
+	formId: string,
+	context?: Form<Schema>,
+): Form<Schema> {
 	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
 
@@ -89,9 +116,8 @@ export function useFormState(
 			form.subscribe(callback, () => subjectRef?.current),
 		[form, subjectRef],
 	);
-	const result = useSyncExternalStore(subscribe, form.getState, form.getState);
 
-	return result;
+	return useSyncExternalStore(subscribe, form.getState, form.getState);
 }
 
 export function FormProvider(props: {
@@ -142,27 +168,25 @@ export function useSubjectRef(
 	return subjectRef;
 }
 
+export function updateSubjectRef(
+	ref: MutableRefObject<SubscriptionSubject>,
+	name: string,
+	subject: keyof SubscriptionSubject,
+	scope: keyof SubscriptionScope,
+): void {
+	ref.current[subject] = {
+		...ref.current[subject],
+		[scope]: (ref.current[subject]?.[scope] ?? []).concat(name),
+	};
+}
+
 export function getBaseMetadata<Schema>(
 	formId: string,
 	state: FormState,
-	options: {
-		name?: string;
-		subjectRef: MutableRefObject<SubscriptionSubject>;
-	},
+	subjectRef: MutableRefObject<SubscriptionSubject>,
+	name: FieldName<Schema> = '',
 ): BaseMetadata<Schema> {
-	const name = options.name ?? '';
 	const id = name ? `${formId}-${name}` : formId;
-	const updateSubject = (
-		subject: keyof SubscriptionSubject,
-		scope: keyof SubscriptionScope,
-	) => {
-		options.subjectRef.current[subject] = {
-			...options.subjectRef.current[subject],
-			[scope]: (options.subjectRef.current[subject]?.[scope] ?? []).concat(
-				name,
-			),
-		};
-	};
 
 	return new Proxy(
 		{
@@ -211,6 +235,22 @@ export function getBaseMetadata<Schema>(
 
 				return result;
 			},
+			get fields() {
+				return new Proxy({} as any, {
+					get(target, prop, receiver) {
+						const getMetadata = (key: string | number) =>
+							getFieldMetadata(formId, state, subjectRef, name, key);
+
+						if (typeof prop === 'string') {
+							const index = Number(prop);
+
+							return getMetadata(Number.isNaN(index) ? prop : index);
+						}
+
+						return Reflect.get(target, prop, receiver);
+					},
+				});
+			},
 		},
 		{
 			get(target, key, receiver) {
@@ -221,13 +261,18 @@ export function getBaseMetadata<Schema>(
 					case 'value':
 					case 'valid':
 					case 'dirty':
-						updateSubject(key === 'errors' ? 'error' : key, 'name');
+						updateSubjectRef(
+							subjectRef,
+							name,
+							key === 'errors' ? 'error' : key,
+							'name',
+						);
 						break;
 					case 'allErrors':
-						updateSubject('error', 'prefix');
+						updateSubjectRef(subjectRef, name, 'error', 'prefix');
 						break;
 					case 'allValid':
-						updateSubject('valid', 'prefix');
+						updateSubjectRef(subjectRef, name, 'valid', 'prefix');
 						break;
 				}
 
@@ -240,20 +285,15 @@ export function getBaseMetadata<Schema>(
 export function getFieldMetadata<Schema>(
 	formId: string,
 	state: FormState,
-	options: {
-		name?: string;
-		key?: string | number;
-		subjectRef: MutableRefObject<SubscriptionSubject>;
-	},
+	subjectRef: MutableRefObject<SubscriptionSubject>,
+	prefix: string,
+	key?: string | number,
 ): FieldMetadata<Schema> {
 	const name =
-		typeof options.key !== 'undefined'
-			? formatPaths([...getPaths(options.name ?? ''), options.key])
-			: options.name ?? '';
-	const metadata = getBaseMetadata(formId, state, {
-		subjectRef: options.subjectRef,
-		name,
-	});
+		typeof key !== 'undefined'
+			? formatPaths([...getPaths(prefix), key])
+			: prefix;
+	const metadata = getBaseMetadata(formId, state, subjectRef, name);
 
 	return new Proxy(metadata as any, {
 		get(target, key, receiver) {
@@ -264,6 +304,23 @@ export function getFieldMetadata<Schema>(
 					return name;
 				case 'constraint':
 					return state.constraint[name];
+				case 'items': {
+					const initialValue = state.initialValue[name] ?? [];
+
+					updateSubjectRef(subjectRef, name, 'initialValue', 'name');
+
+					if (!Array.isArray(initialValue)) {
+						throw new Error(
+							'The initial value at the given name is not a list',
+						);
+					}
+
+					return Array(initialValue.length)
+						.fill(0)
+						.map((_, index) =>
+							getFieldMetadata(formId, state, subjectRef, name, index),
+						);
+				}
 			}
 
 			return Reflect.get(target, key, receiver);
@@ -274,23 +331,21 @@ export function getFieldMetadata<Schema>(
 export function getFormMetadata<Schema extends Record<string, any>>(
 	formId: string,
 	state: FormState,
-	options: {
-		subjectRef: MutableRefObject<SubscriptionSubject>;
-		form: Form<Schema>;
-		noValidate: boolean;
-	},
+	subjectRef: MutableRefObject<SubscriptionSubject>,
+	form: Form<Schema>,
+	noValidate: boolean,
 ): FormMetadata<Schema> {
-	const metadata = getBaseMetadata(formId, state, {
-		subjectRef: options.subjectRef,
-	});
+	const metadata = getBaseMetadata(formId, state, subjectRef);
 
 	return new Proxy(metadata as any, {
 		get(target, key, receiver) {
 			switch (key) {
+				case 'context':
+					return form;
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
-						const result = options.form.submit(submitEvent);
+						const result = form.submit(submitEvent);
 
 						if (submitEvent.defaultPrevented) {
 							event.preventDefault();
@@ -300,40 +355,12 @@ export function getFormMetadata<Schema extends Record<string, any>>(
 					};
 				case 'onReset':
 					return (event: React.FormEvent<HTMLFormElement>) =>
-						options.form.reset(event.nativeEvent);
+						form.reset(event.nativeEvent);
 				case 'noValidate':
-					return options.noValidate;
+					return noValidate;
 			}
 
 			return Reflect.get(target, key, receiver);
-		},
-	});
-}
-
-export function getFieldsetMetadata<Schema>(
-	formId: string,
-	state: FormState,
-	options: {
-		subjectRef: MutableRefObject<SubscriptionSubject>;
-		name?: FieldName<Schema>;
-	},
-): Pretty<FieldsetMetadata<Schema>> {
-	return new Proxy({} as any, {
-		get(target, prop, receiver) {
-			const getMetadata = (key: string | number) =>
-				getFieldMetadata(formId, state, {
-					subjectRef: options.subjectRef,
-					name: options.name,
-					key: key,
-				});
-
-			if (typeof prop === 'string') {
-				const index = Number(prop);
-
-				return getMetadata(Number.isNaN(index) ? prop : index);
-			}
-
-			return Reflect.get(target, prop, receiver);
 		},
 	});
 }

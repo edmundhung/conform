@@ -33,7 +33,7 @@ export async function action({ request }: ActionArgs) {
 export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const { form, fields } = useForm({
+	const form = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -43,22 +43,22 @@ export default function Validate() {
 	return (
 		<Form method="post" {...conform.form(form)}>
 			<Playground title="Validate" lastSubmission={lastResult}>
-				<Field label="Name" config={fields.name}>
-					<input {...conform.input(fields.name, { type: 'text' })} />
+				<Field label="Name" config={form.fields.name}>
+					<input {...conform.input(form.fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" config={fields.message}>
-					<textarea {...conform.textarea(fields.message)} />
+				<Field label="Message" config={form.fields.message}>
+					<textarea {...conform.textarea(form.fields.message)} />
 				</Field>
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.validate(fields.name)}
+						{...intent.validate(form.fields.name)}
 					>
 						Validate Name
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.validate(fields.message)}
+						{...intent.validate(form.fields.message)}
 					>
 						Validate Message
 					</button>

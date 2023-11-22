@@ -1,10 +1,4 @@
-import {
-	FormStateInput,
-	conform,
-	useFieldList,
-	useForm,
-	intent,
-} from '@conform-to/react';
+import { FormStateInput, conform, useForm, intent } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -44,7 +38,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const { form, context, fields } = useForm({
+	const form = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
@@ -53,27 +47,23 @@ export default function SimpleList() {
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
-	const items = useFieldList({
-		formId: form.id,
-		name: fields.items.name,
-		context,
-	});
+	const items = form.fields.items;
 
 	return (
 		<Form method="post" {...conform.form(form)}>
-			<FormStateInput context={context} />
+			<FormStateInput context={form.context} />
 			<Playground title="Simple list" lastSubmission={lastResult}>
-				<Alert errors={fields.items.errors} />
+				<Alert errors={items.errors} />
 				<ol>
-					{items.map((item, index) => (
-						<li key={item.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} config={item}>
-								<input {...conform.input(item, { type: 'text' })} />
+					{items.items.map((task, index) => (
+						<li key={task.key} className="border rounded-md p-4 mb-4">
+							<Field label={`Item #${index + 1}`} config={task}>
+								<input {...conform.input(task, { type: 'text' })} />
 							</Field>
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...intent.list.remove(fields.items, {
+									{...intent.list.remove(items, {
 										index,
 									})}
 								>
@@ -81,7 +71,7 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...intent.list.reorder(fields.items, {
+									{...intent.list.reorder(items, {
 										from: index,
 										to: 0,
 									})}
@@ -90,16 +80,20 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...intent.list.replace(fields.items, {
-										index,
-										defaultValue: '',
+									{...intent.replace({
+										formId: form.id,
+										name: task.name,
+										value: '',
 									})}
 								>
 									Clear
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...intent.reset(item)}
+									{...intent.reset({
+										formId: form.id,
+										name: task.name,
+									})}
 								>
 									Reset
 								</button>
@@ -110,7 +104,7 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.list.insert(fields.items, {
+						{...intent.list.insert(items, {
 							defaultValue: 'Top item',
 							index: 0,
 						})}
@@ -119,7 +113,7 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.list.insert(fields.items, {
+						{...intent.list.insert(items, {
 							defaultValue: '',
 						})}
 					>
@@ -129,7 +123,7 @@ export default function SimpleList() {
 						className="rounded-md border p-2 hover:border-black"
 						{...intent.reset({
 							formId: form.id,
-							name: fields.items.name,
+							name: items.name,
 						})}
 					>
 						Reset

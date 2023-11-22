@@ -59,7 +59,7 @@ export default function ValidationFlow() {
 		showInputWithNoName,
 	} = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fields } = useForm({
+	const form = useForm({
 		lastResult,
 		shouldValidate,
 		shouldRevalidate,
@@ -71,15 +71,17 @@ export default function ValidationFlow() {
 	return (
 		<Form method="post" {...conform.form(form)}>
 			<Playground title="Validation Flow" lastSubmission={lastResult}>
-				<Field label="Email" config={fields.email}>
-					<input {...conform.input(fields.email, { type: 'email' })} />
+				<Field label="Email" config={form.fields.email}>
+					<input {...conform.input(form.fields.email, { type: 'email' })} />
 				</Field>
-				<Field label="Password" config={fields.password}>
-					<input {...conform.input(fields.password, { type: 'password' })} />
-				</Field>
-				<Field label="Confirm password" config={fields.confirmPassword}>
+				<Field label="Password" config={form.fields.password}>
 					<input
-						{...conform.input(fields.confirmPassword, {
+						{...conform.input(form.fields.password, { type: 'password' })}
+					/>
+				</Field>
+				<Field label="Confirm password" config={form.fields.confirmPassword}>
+					<input
+						{...conform.input(form.fields.confirmPassword, {
 							type: 'password',
 						})}
 					/>

@@ -67,7 +67,6 @@ export async function action({ request }: ActionArgs) {
 		},
 		state: {
 			validated,
-			key: {},
 		},
 	});
 }
@@ -75,7 +74,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fields } = useForm<Schema>({
+	const form = useForm<Schema>({
 		id: 'test',
 		lastResult,
 		constraint: {
@@ -117,32 +116,32 @@ export default function Example() {
 		<Form method="post" encType="multipart/form-data" {...conform.form(form)}>
 			<Playground title="Input attributes" lastSubmission={lastResult}>
 				<Alert id={form.errorId} errors={form.errors} />
-				<Field label="Title" config={fields.title}>
+				<Field label="Title" config={form.fields.title}>
 					<input
-						{...conform.input(fields.title, {
+						{...conform.input(form.fields.title, {
 							type: 'text',
 							description: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Description" config={fields.description}>
+				<Field label="Description" config={form.fields.description}>
 					<textarea
-						{...conform.textarea(fields.description, {
+						{...conform.textarea(form.fields.description, {
 							description: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Image" config={fields.images}>
+				<Field label="Image" config={form.fields.images}>
 					<input
-						{...conform.input(fields.images, {
+						{...conform.input(form.fields.images, {
 							type: 'file',
 							description: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Tags" config={fields.tags}>
+				<Field label="Tags" config={form.fields.tags}>
 					<select
-						{...conform.select(fields.tags, {
+						{...conform.select(form.fields.tags, {
 							description: enableDescription,
 						})}
 					>
@@ -156,17 +155,17 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" config={fields.rating}>
+				<Field label="Rating" config={form.fields.rating}>
 					<input
-						{...conform.input(fields.rating, {
+						{...conform.input(form.fields.rating, {
 							type: 'number',
 							description: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Released" config={fields.released}>
+				<Field label="Released" config={form.fields.released}>
 					{conform
-						.collection(fields.released, {
+						.collection(form.fields.released, {
 							type: 'radio',
 							options: ['yes', 'no'],
 							ariaAttributes: true,
@@ -183,9 +182,9 @@ export default function Example() {
 							</label>
 						))}
 				</Field>
-				<Field label="Languages" config={fields.languages}>
+				<Field label="Languages" config={form.fields.languages}>
 					{conform
-						.collection(fields.languages, {
+						.collection(form.fields.languages, {
 							type: 'checkbox',
 							options: ['en', 'de', 'jp'],
 							ariaAttributes: true,

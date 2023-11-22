@@ -26,7 +26,7 @@ export default function Example() {
 		encType: null,
 	});
 	const options = useLoaderData<typeof loader>();
-	const { form } = useForm({});
+	const form = useForm({});
 
 	return (
 		<form

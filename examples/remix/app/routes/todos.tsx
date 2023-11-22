@@ -2,10 +2,9 @@ import type { Field } from '@conform-to/react';
 import {
 	FormProvider,
 	useForm,
-	useFieldset,
-	useFieldList,
 	conform,
 	intent,
+	useField,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -38,51 +37,44 @@ export async function action({ request }: ActionArgs) {
 
 export default function TodoForm() {
 	const lastResult = useActionData<typeof action>();
-	const { form, fields, context } = useForm({
+	const form = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
 		},
 		shouldValidate: 'onBlur',
 	});
-	const taskList = useFieldList({
-		formId: form.id,
-		name: fields.tasks.name,
-		context,
-	});
+	const tasks = form.fields.tasks;
 
 	return (
-		<FormProvider context={context}>
+		<FormProvider context={form.context}>
 			<Form method="post" {...conform.form(form)}>
 				<div>
 					<label>Title</label>
 					<input
-						className={!fields.title.valid ? 'error' : ''}
-						{...conform.input(fields.title)}
+						className={!form.fields.title.valid ? 'error' : ''}
+						{...conform.input(form.fields.title)}
 					/>
-					<div>{fields.title.errors}</div>
+					<div>{form.fields.title.errors}</div>
 				</div>
 				<hr />
-				<div className="form-error">{fields.tasks.errors}</div>
-				{taskList.map((task, index) => (
+				<div className="form-error">{tasks.errors}</div>
+				{tasks.items.map((task, index) => (
 					<div key={task.key}>
 						<TaskFieldset
 							title={`Task #${index + 1}`}
 							name={task.name}
 							formId={form.id}
 						/>
-						<button {...intent.list.remove(fields.tasks, { index })}>
-							Delete
-						</button>
-						<button
-							{...intent.list.reorder(fields.tasks, { from: index, to: 0 })}
-						>
+						<button {...intent.list.remove(tasks, { index })}>Delete</button>
+						<button {...intent.list.reorder(tasks, { from: index, to: 0 })}>
 							Move to top
 						</button>
 						<button
-							{...intent.list.replace(fields.tasks, {
-								index,
-								defaultValue: { content: '' },
+							{...intent.replace({
+								formId: form.id,
+								name: task.name,
+								value: { content: '' },
 							})}
 						>
 							Clear
@@ -90,7 +82,7 @@ export default function TodoForm() {
 					</div>
 				))}
 				<button
-					{...intent.list.insert(fields.tasks, {
+					{...intent.list.insert(tasks, {
 						defaultValue: { content: '' },
 					})}
 				>
@@ -108,7 +100,7 @@ interface TaskFieldsetProps extends Field<z.input<typeof taskSchema>> {
 }
 
 function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
-	const fields = useFieldset({
+	const { fields } = useField({
 		formId,
 		name,
 	});

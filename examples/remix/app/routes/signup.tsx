@@ -73,7 +73,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function Signup() {
 	const lastResult = useActionData<typeof action>();
-	const { form, fields } = useForm({
+	const form = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
@@ -89,26 +89,26 @@ export default function Signup() {
 			<label>
 				<div>Username</div>
 				<input
-					className={!fields.username.valid ? 'error' : ''}
-					{...conform.input(fields.username)}
+					className={!form.fields.username.valid ? 'error' : ''}
+					{...conform.input(form.fields.username)}
 				/>
-				<div>{fields.username.errors}</div>
+				<div>{form.fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...conform.input(fields.password, { type: 'password' })}
+					className={!form.fields.password.valid ? 'error' : ''}
+					{...conform.input(form.fields.password, { type: 'password' })}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{form.fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!fields.confirmPassword.valid ? 'error' : ''}
-					{...conform.input(fields.confirmPassword, { type: 'password' })}
+					className={!form.fields.confirmPassword.valid ? 'error' : ''}
+					{...conform.input(form.fields.confirmPassword, { type: 'password' })}
 				/>
-				<div>{fields.confirmPassword.errors}</div>
+				<div>{form.fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<button>Signup</button>

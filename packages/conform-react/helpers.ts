@@ -4,6 +4,7 @@ import type {
 	FieldMetadata,
 	BaseMetadata,
 	Pretty,
+	Primitive,
 } from './context';
 
 type FormControlProps = {
@@ -49,8 +50,6 @@ type TextareaProps = Pretty<
 		defaultValue?: string;
 	}
 >;
-
-type Primitive = string | number | boolean | Date | null | undefined;
 
 type BaseOptions =
 	| {
@@ -122,8 +121,8 @@ function getAriaAttributes(
 	});
 }
 
-function getFormControlProps(
-	metadata: FieldMetadata<unknown>,
+function getFormControlProps<Schema>(
+	metadata: FieldMetadata<Schema>,
 	options?: ControlOptions,
 ) {
 	return cleanup({
@@ -161,7 +160,7 @@ export const hiddenProps: {
 	'aria-hidden': true,
 };
 
-export function input<Schema extends Primitive | unknown>(
+export function input<Schema extends Exclude<Primitive, File> | unknown>(
 	field: FieldMetadata<Schema>,
 	options?: InputOptions,
 ): InputProps;
@@ -169,7 +168,7 @@ export function input<Schema extends File | File[]>(
 	field: FieldMetadata<Schema>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
-export function input<Schema extends Primitive | File | File[] | unknown>(
+export function input<Schema extends Primitive | File[] | unknown>(
 	field: FieldMetadata<Schema>,
 	options: InputOptions = {},
 ): InputProps {

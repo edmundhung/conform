@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fields } = useForm({
+	const form = useForm({
 		id: 'collection',
 		lastResult,
 		shouldRevalidate: 'onInput',
@@ -44,9 +44,9 @@ export default function Example() {
 	return (
 		<Form method="post" {...conform.form(form)}>
 			<Playground title="Collection" lastSubmission={lastResult}>
-				<Field label="Single choice" config={fields.singleChoice}>
+				<Field label="Single choice" config={form.fields.singleChoice}>
 					{conform
-						.collection(fields.singleChoice, {
+						.collection(form.fields.singleChoice, {
 							type: 'radio',
 							options: ['x', 'y', 'z'],
 						})
@@ -57,9 +57,9 @@ export default function Example() {
 							</label>
 						))}
 				</Field>
-				<Field label="Multiple choice" config={fields.multipleChoice}>
+				<Field label="Multiple choice" config={form.fields.multipleChoice}>
 					{conform
-						.collection(fields.multipleChoice, {
+						.collection(form.fields.multipleChoice, {
 							type: 'checkbox',
 							options: ['a', 'b', 'c', 'd'],
 						})
