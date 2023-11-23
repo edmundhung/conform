@@ -15,7 +15,7 @@ A submit button can contribute to the form data when it triggers the submission 
 
 ### Submission Intent
 
-The submitter is particular useful when you want to extend the form with different behaviour based on the intent. However, it also pollutes the form value with data that are used to control form behaviour.
+The submitter is particularly useful when you want to extend the form with different behaviour based on the intent. However, it also pollutes the form value with data that are used to control form behaviour.
 
 ```tsx
 import { useForm } from '@conform-to/react';
