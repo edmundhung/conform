@@ -61,7 +61,7 @@ export function getPaths(name: string): Array<string | number> {
 export function formatPaths(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
-			return `${name}[${path}]`;
+			return `${name}[${Number.isNaN(path) ? '' : path}]`;
 		}
 
 		if (name === '' || path === '') {

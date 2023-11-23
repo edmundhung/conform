@@ -1,22 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { STATE, parse, getPaths, formatPaths } from '@conform-to/dom';
-import { installGlobals } from '@remix-run/node';
-
-function createFormData(entries: Array<[string, string | File]>): FormData {
-	const formData = new FormData();
-
-	for (const [name, value] of entries) {
-		formData.append(name, value);
-	}
-
-	return formData;
-}
-
-const defaultState = JSON.stringify({ key: {}, validated: {} });
-
-test.beforeAll(() => {
-	installGlobals();
-});
+import { parse, getPaths, formatPaths } from '@conform-to/dom';
+import { createFormData } from './helpers';
 
 test.describe('conform-dom', () => {
 	test.describe('parse', () => {
@@ -24,7 +8,6 @@ test.describe('conform-dom', () => {
 			expect(
 				parse(
 					createFormData([
-						[STATE, defaultState],
 						['title', 'The cat'],
 						['description', 'Once upon a time...'],
 					]),
@@ -51,7 +34,6 @@ test.describe('conform-dom', () => {
 			expect(
 				parse(
 					createFormData([
-						[STATE, defaultState],
 						['account', 'AB00 1111 2222 3333 4444'],
 						['amount.currency', 'EUR'],
 						['amount.value', '99.9'],
@@ -84,7 +66,6 @@ test.describe('conform-dom', () => {
 			expect(
 				parse(
 					createFormData([
-						[STATE, defaultState],
 						['title', ''],
 						['tasks[0].content', 'Test some stuffs'],
 						['tasks[0].completed', 'Yes'],
@@ -118,7 +99,6 @@ test.describe('conform-dom', () => {
 			expect(
 				parse(
 					new URLSearchParams([
-						[STATE, defaultState],
 						['title', 'The cat'],
 						['description', 'Once upon a time...'],
 					]),

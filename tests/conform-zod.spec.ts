@@ -1,34 +1,21 @@
 import { test, expect } from '@playwright/test';
-import { getFieldsetConstraint, parse, refine } from '@conform-to/zod';
+import { getConstraint, parse, refine } from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
-import { STATE } from '@conform-to/dom';
-
-function createFormData(entries: Array<[string, string | File]>): FormData {
-	const formData = new FormData();
-
-	formData.set(STATE, JSON.stringify({ validated: {}, key: {} }));
-
-	for (const [name, value] of entries) {
-		formData.append(name, value);
-	}
-
-	return formData;
-}
+import { createFormData } from './helpers';
 
 test.beforeEach(() => {
 	installGlobals();
 });
 
 test.describe('conform-zod', () => {
-	test('getFieldsetConstraint', () => {
+	test('getConstraint', () => {
 		const schema = z
 			.object({
 				text: z
 					.string({ required_error: 'required' })
 					.min(10, 'min')
 					.max(100, 'max')
-					.regex(/^[A-Z]{1-100}$/, 'regex')
 					.refine(() => false, 'refine'),
 				number: z
 					.number({ required_error: 'required' })
@@ -63,6 +50,10 @@ test.describe('conform-zod', () => {
 				files: z
 					.array(z.instanceof(File, { message: 'Invalid file' }))
 					.min(1, 'required'),
+				tuple: z.tuple([
+					z.string().min(3, 'min'),
+					z.number().max(100, 'max').optional(),
+				]),
 			})
 			.refine(() => false, 'refine');
 		const constraint = {
@@ -70,7 +61,6 @@ test.describe('conform-zod', () => {
 				required: true,
 				minLength: 10,
 				maxLength: 100,
-				pattern: '^[A-Z]{1-100}$',
 			},
 			number: {
 				required: true,
@@ -85,31 +75,57 @@ test.describe('conform-zod', () => {
 			},
 			options: {
 				required: true,
-				pattern: 'a|b|c',
 				multiple: true,
+			},
+			'options[]': {
+				required: true,
+				pattern: 'a|b|c',
 			},
 			files: {
 				required: true,
 				multiple: true,
 			},
+			'files[]': {
+				required: true,
+			},
 			nested: {
+				required: true,
+			},
+			'nested.key': {
 				required: true,
 			},
 			list: {
 				required: true,
 				multiple: true,
 			},
+			'list[]': {
+				required: true,
+			},
+			'list[].key': {
+				required: true,
+			},
+			tuple: {
+				required: true,
+			},
+			'tuple[0]': {
+				required: true,
+				minLength: 3,
+			},
+			'tuple[1]': {
+				required: false,
+				max: 100,
+			},
 		};
 
-		expect(getFieldsetConstraint(schema)).toEqual(constraint);
+		expect(getConstraint(schema)).toEqual(constraint);
 
-		// Non-object schemas will be ignored
-		expect(getFieldsetConstraint(z.string())).toEqual({});
-		expect(getFieldsetConstraint(z.string().array())).toEqual({});
+		// Non-object schemas will throw an error
+		expect(() => getConstraint(z.string())).toThrow();
+		expect(() => getConstraint(z.array(z.string()))).toThrow();
 
 		// Intersection is supported
 		expect(
-			getFieldsetConstraint(
+			getConstraint(
 				schema.and(
 					z.object({ text: z.string().optional(), something: z.string() }),
 				),
@@ -122,7 +138,7 @@ test.describe('conform-zod', () => {
 
 		// Union is supported
 		expect(
-			getFieldsetConstraint(
+			getConstraint(
 				z
 					.union([
 						z.object({
@@ -152,7 +168,7 @@ test.describe('conform-zod', () => {
 
 		// Discriminated union is also supported
 		expect(
-			getFieldsetConstraint(
+			getConstraint(
 				z
 					.discriminatedUnion('type', [
 						z.object({
@@ -179,6 +195,92 @@ test.describe('conform-zod', () => {
 			baz: { required: true, minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
+
+		// // Recursive schema should be supported too
+		// const baseCategorySchema = z.object({
+		// 	name: z.string(),
+		//   });
+
+		// type Category = z.infer<typeof baseCategorySchema> & {
+		// 	subcategories: Category[];
+		// };
+
+		// const categorySchema: z.ZodType<Category> = baseCategorySchema.extend({
+		// 	subcategories: z.lazy(() => categorySchema.array()),
+		// });
+
+		// expect(
+		// 	getConstraint(categorySchema),
+		// ).toEqual({
+		// 	name: {
+		// 		required: true,
+		// 	},
+		// 	subcategories: {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+
+		// 	'subcategories[].name': {
+		// 		required: true,
+		// 	},
+		// 	'subcategories[].subcategories': {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+
+		// 	'subcategories[].subcategories[].name': {
+		// 		required: true,
+		// 	},
+		// 	'subcategories[].subcategories[].subcategories': {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+		// });
+
+		// type Condition = { type: 'filter' } | { type: 'group', conditions: Condition[] }
+
+		// const ConditionSchema: z.ZodType<Condition> = z.discriminatedUnion('type', [
+		// 	z.object({
+		// 		type: z.literal('filter')
+		// 	}),
+		// 	z.object({
+		// 		type: z.literal('group'),
+		// 		conditions: z.lazy(() => ConditionSchema.array()),
+		// 	}),
+		// ]);
+
+		// const FilterSchema = z.object({
+		// 	type: z.literal('group'),
+		// 	conditions: ConditionSchema.array(),
+		// })
+
+		// expect(
+		// 	getConstraint(FilterSchema),
+		// ).toEqual({
+		// 	type: {
+		// 		required: true,
+		// 	},
+		// 	conditions: {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+
+		// 	'conditions[].type': {
+		// 		required: true,
+		// 	},
+		// 	'conditions[].conditions': {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+
+		// 	'conditions[].conditions[].type': {
+		// 		required: true,
+		// 	},
+		// 	'conditions[].conditions[].conditions': {
+		// 		required: true,
+		// 		multiple: true,
+		// 	},
+		// });
 	});
 
 	test.describe('parse', () => {

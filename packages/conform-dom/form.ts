@@ -224,7 +224,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 			initialValue,
 			value,
 			error: context.error,
-			constraint: context.constraint,
+			constraint: createConstraintProxy(context.constraint),
 			key: createKeyProxy(context.key),
 			valid: createValidProxy(context.error),
 			dirty: createDirtyProxy(defaultValue, context.value),
@@ -306,6 +306,46 @@ export function createForm<Schema extends Record<string, any> = any>(
 				break;
 			}
 		}
+	}
+
+	function createConstraintProxy(
+		constraint: Record<string, Constraint>,
+	): Record<string, Constraint> {
+		const cache: Record<string, Constraint> = {};
+		const proxy = new Proxy(constraint, {
+			get(_, name: string) {
+				if (typeof cache[name] === 'undefined') {
+					let result = constraint[name];
+
+					if (!result) {
+						const paths = getPaths(name);
+
+						for (let i = paths.length - 1; i >= 0; i--) {
+							const path = paths[i];
+
+							if (typeof path === 'number' && !Number.isNaN(path)) {
+								paths[i] = Number.NaN;
+								break;
+							}
+						}
+
+						const alternative = formatPaths(paths);
+
+						if (name !== alternative) {
+							result = proxy[alternative];
+						}
+					}
+
+					if (result) {
+						cache[name] = result;
+					}
+				}
+
+				return cache[name];
+			},
+		});
+
+		return proxy;
 	}
 
 	function createKeyProxy(key: Record<string, string>): Record<string, string> {
@@ -436,7 +476,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 			error: prev.error !== next.error ? next.error : state.error,
 			constraint:
 				prev.constraint !== next.constraint
-					? next.constraint
+					? createConstraintProxy(next.constraint)
 					: state.constraint,
 			key: prev.key !== next.key ? createKeyProxy(next.key) : state.key,
 			valid:

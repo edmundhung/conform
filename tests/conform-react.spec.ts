@@ -1,38 +1,43 @@
 import { test, expect } from '@playwright/test';
-import { conform } from '@conform-to/react';
-import { installGlobals } from '@remix-run/node';
+import { type FieldMetadata, conform } from '@conform-to/react';
 
-test.beforeAll(() => {
-	installGlobals();
-});
+function createFieldMetadata(): FieldMetadata<any> {
+	return {
+		id: 'test',
+		name: 'message',
+		formId: 'example',
+		errorId: 'test-error',
+		descriptionId: 'test-description',
+		constraint: {},
+		initialValue: undefined,
+		value: undefined,
+		errors: undefined,
+		allErrors: {},
+		allValid: true,
+		valid: true,
+		dirty: false,
+		fields: {},
+		items: [],
+	};
+}
 
-test.describe('conform-react', () => {
-	test('conform.input', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			formId: 'example',
-			errorId: 'test-error',
-			descriptionId: 'test-description',
-			constraint: {},
-			initialValue: undefined,
-			value: undefined,
-			errors: undefined,
-			allErrors: {},
-			allValid: true,
-			valid: true,
-			dirty: false,
-		} as const;
-		const props = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+function getProps(metadata: FieldMetadata<any>) {
+	return {
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+	};
+}
 
-		expect(conform.input(config)).toEqual(props);
+test.describe('conform', () => {
+	test('input', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
+
+		expect(conform.input(metadata)).toEqual(props);
 		expect(
 			conform.input({
-				...config,
+				...metadata,
 				initialValue: 'string',
 				constraint: {
 					required: true,
@@ -57,23 +62,23 @@ test.describe('conform-react', () => {
 			pattern: '[0-9]+',
 			multiple: true,
 		});
-		expect(conform.input({ ...config, valid: false })).toEqual({
+		expect(conform.input({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.input(config, { type: 'text' })).toEqual({
+		expect(conform.input(metadata, { type: 'text' })).toEqual({
 			...props,
 			type: 'text',
 		});
-		expect(conform.input(config, { description: true })).toEqual({
+		expect(conform.input(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
 			conform.input({
-				...config,
+				...metadata,
 				valid: false,
 			}),
 		).toEqual({
@@ -85,7 +90,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.input(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ description: true },
@@ -99,7 +104,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.input(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ ariaAttributes: false },
@@ -108,14 +113,14 @@ test.describe('conform-react', () => {
 			...props,
 			autoFocus: true,
 		});
-		expect(conform.input(config, { type: 'checkbox' })).toEqual({
+		expect(conform.input(metadata, { type: 'checkbox' })).toEqual({
 			...props,
 			type: 'checkbox',
 			value: 'on',
 			defaultChecked: false,
 		});
 		expect(
-			conform.input({ ...config, initialValue: 'on' }, { type: 'radio' }),
+			conform.input({ ...metadata, initialValue: 'on' }, { type: 'radio' }),
 		).toEqual({
 			...props,
 			type: 'radio',
@@ -124,7 +129,7 @@ test.describe('conform-react', () => {
 		});
 		expect(
 			conform.input(
-				{ ...config, initialValue: 'something else' },
+				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
@@ -135,7 +140,7 @@ test.describe('conform-react', () => {
 		});
 		expect(
 			conform.input(
-				{ ...config, initialValue: 'something else' },
+				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
@@ -144,38 +149,20 @@ test.describe('conform-react', () => {
 			value: 'something else',
 			defaultChecked: true,
 		});
-		expect(conform.input(config, { type: 'file' })).toEqual({
+		expect(conform.input(metadata, { type: 'file' })).toEqual({
 			...props,
 			type: 'file',
 		});
 	});
 
-	test('conform.textarea', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			formId: 'example',
-			errorId: 'test-error',
-			descriptionId: 'test-description',
-			constraint: {},
-			initialValue: undefined,
-			value: undefined,
-			errors: undefined,
-			allErrors: {},
-			allValid: true,
-			valid: true,
-			dirty: false,
-		} as const;
-		const props = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('textarea', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.textarea(config)).toEqual(props);
+		expect(conform.textarea(metadata)).toEqual(props);
 		expect(
 			conform.textarea({
-				...config,
+				...metadata,
 				initialValue: 'string',
 				constraint: {
 					required: true,
@@ -195,19 +182,19 @@ test.describe('conform-react', () => {
 			minLength: 1,
 			maxLength: 2,
 		});
-		expect(conform.textarea({ ...config, valid: false })).toEqual({
+		expect(conform.textarea({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.textarea(config, { description: true })).toEqual({
+		expect(conform.textarea(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
 			conform.textarea({
-				...config,
+				...metadata,
 				valid: false,
 			}),
 		).toEqual({
@@ -219,7 +206,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.textarea(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ description: true },
@@ -233,7 +220,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.textarea(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ ariaAttributes: false },
@@ -244,32 +231,14 @@ test.describe('conform-react', () => {
 		});
 	});
 
-	test('conform.select', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			formId: 'example',
-			errorId: 'test-error',
-			descriptionId: 'test-description',
-			constraint: {},
-			initialValue: undefined,
-			value: undefined,
-			errors: undefined,
-			allErrors: {},
-			allValid: true,
-			valid: true,
-			dirty: false,
-		} as const;
-		const props = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('select', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.select(config)).toEqual(props);
+		expect(conform.select(metadata)).toEqual(props);
 		expect(
 			conform.select({
-				...config,
+				...metadata,
 				initialValue: 'string',
 				constraint: {
 					required: true,
@@ -288,20 +257,20 @@ test.describe('conform-react', () => {
 			required: true,
 			multiple: true,
 		});
-		expect(conform.select({ ...config, valid: false })).toEqual({
+		expect(conform.select({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.select(config, { description: true })).toEqual({
+		expect(conform.select(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
 			conform.select(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ description: true },
@@ -315,7 +284,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.select(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ ariaAttributes: false },
@@ -323,33 +292,15 @@ test.describe('conform-react', () => {
 		).toEqual({ ...props, autoFocus: true });
 	});
 
-	test('conform.fieldset', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			formId: 'example',
-			errorId: 'test-error',
-			descriptionId: 'test-description',
-			constraint: {},
-			defaultValue: undefined,
-			value: undefined,
-			error: undefined,
-			allError: {},
-			allValid: true,
-			valid: true,
-			dirty: false,
-		} as const;
-		const props = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('fieldset', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.fieldset(config)).toEqual(props);
-		expect(conform.fieldset(config, { ariaAttributes: true })).toEqual(props);
+		expect(conform.fieldset(metadata)).toEqual(props);
+		expect(conform.fieldset(metadata, { ariaAttributes: true })).toEqual(props);
 		expect(
 			conform.fieldset({
-				...config,
+				...metadata,
 				valid: false,
 			}),
 		).toEqual({
@@ -357,14 +308,14 @@ test.describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.fieldset(config, { description: true })).toEqual({
+		expect(conform.fieldset(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
 			conform.fieldset(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ description: true },
@@ -378,7 +329,7 @@ test.describe('conform-react', () => {
 		expect(
 			conform.fieldset(
 				{
-					...config,
+					...metadata,
 					valid: false,
 				},
 				{ ariaAttributes: false },

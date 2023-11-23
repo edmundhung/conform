@@ -1,22 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { parse, getFieldsetConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
-import { installGlobals } from '@remix-run/node';
 import { STATE } from '@conform-to/dom';
-
-function createFormData(entries: Array<[string, string | File]>): FormData {
-	const formData = new FormData();
-
-	for (const [name, value] of entries) {
-		formData.append(name, value);
-	}
-
-	return formData;
-}
-
-test.beforeAll(() => {
-	installGlobals();
-});
+import { createFormData } from './helpers';
 
 test.describe('conform-yup', () => {
 	const schema = yup
