@@ -1,4 +1,4 @@
-import { useForm, conform } from '@conform-to/react';
+import { getFormProps, useForm } from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { useState } from 'react';
@@ -33,7 +33,7 @@ export default function Example() {
 			action={options.formAction ?? undefined}
 			method={options.formMethod ?? undefined}
 			encType={options.formEncType ?? undefined}
-			{...conform.form(form, {
+			{...getFormProps(form, {
 				onSubmit(event, { method, action, encType }) {
 					event.preventDefault();
 

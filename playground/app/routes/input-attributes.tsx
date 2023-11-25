@@ -1,5 +1,12 @@
 import { type SubmissionResult } from '@conform-to/dom';
-import { conform, useForm } from '@conform-to/react';
+import {
+	getCollectionProps,
+	getFormProps,
+	getInputProps,
+	getSelectProps,
+	getTextareaProps,
+	useForm,
+} from '@conform-to/react';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field, Alert } from '~/components';
@@ -113,12 +120,12 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" encType="multipart/form-data" {...conform.form(form)}>
+		<Form method="post" encType="multipart/form-data" {...getFormProps(form)}>
 			<Playground title="Input attributes" lastSubmission={lastResult}>
 				<Alert id={form.errorId} errors={form.errors} />
 				<Field label="Title" config={form.fields.title}>
 					<input
-						{...conform.input(form.fields.title, {
+						{...getInputProps(form.fields.title, {
 							type: 'text',
 							description: enableDescription,
 						})}
@@ -126,14 +133,14 @@ export default function Example() {
 				</Field>
 				<Field label="Description" config={form.fields.description}>
 					<textarea
-						{...conform.textarea(form.fields.description, {
+						{...getTextareaProps(form.fields.description, {
 							description: enableDescription,
 						})}
 					/>
 				</Field>
 				<Field label="Image" config={form.fields.images}>
 					<input
-						{...conform.input(form.fields.images, {
+						{...getInputProps(form.fields.images, {
 							type: 'file',
 							description: enableDescription,
 						})}
@@ -141,7 +148,7 @@ export default function Example() {
 				</Field>
 				<Field label="Tags" config={form.fields.tags}>
 					<select
-						{...conform.select(form.fields.tags, {
+						{...getSelectProps(form.fields.tags, {
 							description: enableDescription,
 						})}
 					>
@@ -157,45 +164,41 @@ export default function Example() {
 				</Field>
 				<Field label="Rating" config={form.fields.rating}>
 					<input
-						{...conform.input(form.fields.rating, {
+						{...getInputProps(form.fields.rating, {
 							type: 'number',
 							description: enableDescription,
 						})}
 					/>
 				</Field>
 				<Field label="Released" config={form.fields.released}>
-					{conform
-						.collection(form.fields.released, {
-							type: 'radio',
-							options: ['yes', 'no'],
-							ariaAttributes: true,
-							description: enableDescription,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">
-									{`${props.value?.slice(0, 1).toUpperCase()}${props.value
-										?.slice(1)
-										.toLowerCase()}`}
-								</span>
-							</label>
-						))}
+					{getCollectionProps(form.fields.released, {
+						type: 'radio',
+						options: ['yes', 'no'],
+						ariaAttributes: true,
+						description: enableDescription,
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">
+								{`${props.value?.slice(0, 1).toUpperCase()}${props.value
+									?.slice(1)
+									.toLowerCase()}`}
+							</span>
+						</label>
+					))}
 				</Field>
 				<Field label="Languages" config={form.fields.languages}>
-					{conform
-						.collection(form.fields.languages, {
-							type: 'checkbox',
-							options: ['en', 'de', 'jp'],
-							ariaAttributes: true,
-							description: enableDescription,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+					{getCollectionProps(form.fields.languages, {
+						type: 'checkbox',
+						options: ['en', 'de', 'jp'],
+						ariaAttributes: true,
+						description: enableDescription,
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
 			</Playground>
 		</Form>

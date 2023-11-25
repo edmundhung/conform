@@ -1,4 +1,4 @@
-import { useForm, conform } from '@conform-to/react';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { useFetcher, json, redirect } from 'react-router-dom';
@@ -14,8 +14,8 @@ export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parse(formData, { schema });
 
-	if (submission.intent !== 'submit' || !submission.value) {
-		return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
@@ -23,8 +23,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const fetcher = useFetcher();
-	const [form, { email, password, remember }] = useForm({
-		lastSubmission: fetcher.data,
+	const form = useForm({
+		lastResult: fetcher.data,
 		onValidate({ formData }) {
 			return parse(formData, { schema });
 		},
@@ -32,27 +32,29 @@ export function Component() {
 	});
 
 	return (
-		<fetcher.Form method="post" {...form.props}>
+		<fetcher.Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Email</label>
 				<input
-					className={email.error ? 'error' : ''}
-					{...conform.input(email)}
+					className={!form.fields.email.valid ? 'error' : ''}
+					{...getInputProps(form.fields.email)}
 				/>
-				<div>{email.error}</div>
+				<div>{form.fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={password.error ? 'error' : ''}
-					{...conform.input(password, { type: 'password' })}
+					className={!form.fields.password.valid ? 'error' : ''}
+					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
-				<div>{password.error}</div>
+				<div>{form.fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...conform.input(remember, { type: 'checkbox' })} />
+					<input
+						{...getInputProps(form.fields.remember, { type: 'checkbox' })}
+					/>
 				</div>
 			</label>
 			<hr />

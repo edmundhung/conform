@@ -1,11 +1,11 @@
 import type { FieldProps } from '@conform-to/react';
 import {
-	useForm,
-	conform,
-	useInputControl,
-	useField,
-	validateConstraint,
 	FormProvider,
+	useForm,
+	useField,
+	useInputControl,
+	validateConstraint,
+	getFormProps,
 } from '@conform-to/react';
 import {
 	TextField,
@@ -52,7 +52,7 @@ export default function ExampleForm() {
 	return (
 		<Container maxWidth="sm">
 			<FormProvider context={form.context}>
-				<form {...conform.form(form)}>
+				<form {...getFormProps(form)}>
 					<Stack spacing={4} marginY={4}>
 						<header>
 							<Typography variant="h6" component="h1">

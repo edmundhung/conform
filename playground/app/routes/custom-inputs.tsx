@@ -1,10 +1,10 @@
 import {
 	type FieldProps,
 	FormProvider,
-	conform,
 	useForm,
 	useField,
 	useInputControl,
+	getFormProps,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -54,7 +54,7 @@ export default function Example() {
 
 	return (
 		<FormProvider context={form.context}>
-			<Form method="post" {...conform.form(form)}>
+			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
 					<Field label="Headless ListBox" config={form.fields.language}>
 						<CustomSelect name={form.fields.language.name} formId={form.id} />

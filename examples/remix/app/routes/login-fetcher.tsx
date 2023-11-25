@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { useForm, getFormProps, getInputProps } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -37,12 +37,12 @@ export default function Login() {
 	});
 
 	return (
-		<fetcher.Form method="post" {...conform.form(form)}>
+		<fetcher.Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Email</label>
 				<input
 					className={!form.fields.email.valid ? 'error' : ''}
-					{...conform.input(form.fields.email)}
+					{...getInputProps(form.fields.email)}
 				/>
 				<div>{form.fields.email.errors}</div>
 			</div>
@@ -50,7 +50,7 @@ export default function Login() {
 				<label>Password</label>
 				<input
 					className={!form.fields.password.valid ? 'error' : ''}
-					{...conform.input(form.fields.password, { type: 'password' })}
+					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
 				<div>{form.fields.password.errors}</div>
 			</div>
@@ -58,7 +58,7 @@ export default function Login() {
 				<div>
 					<span>Remember me</span>
 					<input
-						{...conform.input(form.fields.remember, { type: 'checkbox' })}
+						{...getInputProps(form.fields.remember, { type: 'checkbox' })}
 					/>
 				</div>
 			</label>

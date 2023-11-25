@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -54,15 +54,15 @@ export default function FileUpload() {
 	});
 
 	return (
-		<Form method="post" {...conform.form(form)} encType="multipart/form-data">
+		<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
 			<Playground title="Employee Form" lastSubmission={lastResult}>
 				<Alert errors={form.errors} />
 				<Field label="Single file" config={form.fields.file}>
-					<input {...conform.input(form.fields.file, { type: 'file' })} />
+					<input {...getInputProps(form.fields.file, { type: 'file' })} />
 				</Field>
 				<Field label="Multiple files" config={form.fields.files}>
 					<input
-						{...conform.input(form.fields.files, { type: 'file' })}
+						{...getInputProps(form.fields.files, { type: 'file' })}
 						multiple
 					/>
 				</Field>

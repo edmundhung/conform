@@ -1,4 +1,4 @@
-import { useForm, useInputControl, conform } from '@conform-to/react';
+import { getFormProps, useForm, useInputControl } from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
@@ -48,7 +48,7 @@ export default function Example() {
 
 	return (
 		<form
-			{...conform.form(form)}
+			{...getFormProps(form)}
 			onChange={log}
 			onInput={log}
 			onFocusCapture={log}

@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { type FieldMetadata, conform } from '@conform-to/react';
+import {
+	type FieldMetadata,
+	getInputProps,
+	getTextareaProps,
+	getSelectProps,
+	getFieldsetProps,
+} from '@conform-to/react';
 
 function createFieldMetadata(): FieldMetadata<any> {
 	return {
@@ -29,14 +35,14 @@ function getProps(metadata: FieldMetadata<any>) {
 	};
 }
 
-test.describe('conform', () => {
-	test('input', () => {
+test.describe('conform-react', () => {
+	test('getInputProps', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
 
-		expect(conform.input(metadata)).toEqual(props);
+		expect(getInputProps(metadata)).toEqual(props);
 		expect(
-			conform.input({
+			getInputProps({
 				...metadata,
 				initialValue: 'string',
 				constraint: {
@@ -62,22 +68,22 @@ test.describe('conform', () => {
 			pattern: '[0-9]+',
 			multiple: true,
 		});
-		expect(conform.input({ ...metadata, valid: false })).toEqual({
+		expect(getInputProps({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.input(metadata, { type: 'text' })).toEqual({
+		expect(getInputProps(metadata, { type: 'text' })).toEqual({
 			...props,
 			type: 'text',
 		});
-		expect(conform.input(metadata, { description: true })).toEqual({
+		expect(getInputProps(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.input({
+			getInputProps({
 				...metadata,
 				valid: false,
 			}),
@@ -88,7 +94,7 @@ test.describe('conform', () => {
 			'aria-describedby': 'test-error',
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{
 					...metadata,
 					valid: false,
@@ -102,7 +108,7 @@ test.describe('conform', () => {
 			'aria-describedby': 'test-error test-description',
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{
 					...metadata,
 					valid: false,
@@ -113,14 +119,14 @@ test.describe('conform', () => {
 			...props,
 			autoFocus: true,
 		});
-		expect(conform.input(metadata, { type: 'checkbox' })).toEqual({
+		expect(getInputProps(metadata, { type: 'checkbox' })).toEqual({
 			...props,
 			type: 'checkbox',
 			value: 'on',
 			defaultChecked: false,
 		});
 		expect(
-			conform.input({ ...metadata, initialValue: 'on' }, { type: 'radio' }),
+			getInputProps({ ...metadata, initialValue: 'on' }, { type: 'radio' }),
 		).toEqual({
 			...props,
 			type: 'radio',
@@ -128,7 +134,7 @@ test.describe('conform', () => {
 			defaultChecked: true,
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
@@ -139,7 +145,7 @@ test.describe('conform', () => {
 			defaultChecked: true,
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
@@ -149,19 +155,19 @@ test.describe('conform', () => {
 			value: 'something else',
 			defaultChecked: true,
 		});
-		expect(conform.input(metadata, { type: 'file' })).toEqual({
+		expect(getInputProps(metadata, { type: 'file' })).toEqual({
 			...props,
 			type: 'file',
 		});
 	});
 
-	test('textarea', () => {
+	test('getTextareaProps', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
 
-		expect(conform.textarea(metadata)).toEqual(props);
+		expect(getTextareaProps(metadata)).toEqual(props);
 		expect(
-			conform.textarea({
+			getTextareaProps({
 				...metadata,
 				initialValue: 'string',
 				constraint: {
@@ -182,18 +188,18 @@ test.describe('conform', () => {
 			minLength: 1,
 			maxLength: 2,
 		});
-		expect(conform.textarea({ ...metadata, valid: false })).toEqual({
+		expect(getTextareaProps({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.textarea(metadata, { description: true })).toEqual({
+		expect(getTextareaProps(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.textarea({
+			getTextareaProps({
 				...metadata,
 				valid: false,
 			}),
@@ -204,7 +210,7 @@ test.describe('conform', () => {
 			'aria-describedby': 'test-error',
 		});
 		expect(
-			conform.textarea(
+			getTextareaProps(
 				{
 					...metadata,
 					valid: false,
@@ -218,7 +224,7 @@ test.describe('conform', () => {
 			'aria-describedby': 'test-error test-description',
 		});
 		expect(
-			conform.textarea(
+			getTextareaProps(
 				{
 					...metadata,
 					valid: false,
@@ -231,13 +237,13 @@ test.describe('conform', () => {
 		});
 	});
 
-	test('select', () => {
+	test('getSelectProps', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
 
-		expect(conform.select(metadata)).toEqual(props);
+		expect(getSelectProps(metadata)).toEqual(props);
 		expect(
-			conform.select({
+			getSelectProps({
 				...metadata,
 				initialValue: 'string',
 				constraint: {
@@ -257,18 +263,18 @@ test.describe('conform', () => {
 			required: true,
 			multiple: true,
 		});
-		expect(conform.select({ ...metadata, valid: false })).toEqual({
+		expect(getSelectProps({ ...metadata, valid: false })).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.select(metadata, { description: true })).toEqual({
+		expect(getSelectProps(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.select(
+			getSelectProps(
 				{
 					...metadata,
 					valid: false,
@@ -282,7 +288,7 @@ test.describe('conform', () => {
 			'aria-describedby': 'test-error test-description',
 		});
 		expect(
-			conform.select(
+			getSelectProps(
 				{
 					...metadata,
 					valid: false,
@@ -292,14 +298,14 @@ test.describe('conform', () => {
 		).toEqual({ ...props, autoFocus: true });
 	});
 
-	test('fieldset', () => {
+	test('getFieldsetProps', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
 
-		expect(conform.fieldset(metadata)).toEqual(props);
-		expect(conform.fieldset(metadata, { ariaAttributes: true })).toEqual(props);
+		expect(getFieldsetProps(metadata)).toEqual(props);
+		expect(getFieldsetProps(metadata, { ariaAttributes: true })).toEqual(props);
 		expect(
-			conform.fieldset({
+			getFieldsetProps({
 				...metadata,
 				valid: false,
 			}),
@@ -308,12 +314,12 @@ test.describe('conform', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(conform.fieldset(metadata, { description: true })).toEqual({
+		expect(getFieldsetProps(metadata, { description: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
 		});
 		expect(
-			conform.fieldset(
+			getFieldsetProps(
 				{
 					...metadata,
 					valid: false,
@@ -327,7 +333,7 @@ test.describe('conform', () => {
 		});
 
 		expect(
-			conform.fieldset(
+			getFieldsetProps(
 				{
 					...metadata,
 					valid: false,

@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { getCollectionProps, getFormProps, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -42,33 +42,29 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Collection" lastSubmission={lastResult}>
 				<Field label="Single choice" config={form.fields.singleChoice}>
-					{conform
-						.collection(form.fields.singleChoice, {
-							type: 'radio',
-							options: ['x', 'y', 'z'],
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+					{getCollectionProps(form.fields.singleChoice, {
+						type: 'radio',
+						options: ['x', 'y', 'z'],
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
 				<Field label="Multiple choice" config={form.fields.multipleChoice}>
-					{conform
-						.collection(form.fields.multipleChoice, {
-							type: 'checkbox',
-							options: ['a', 'b', 'c', 'd'],
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+					{getCollectionProps(form.fields.multipleChoice, {
+						type: 'checkbox',
+						options: ['a', 'b', 'c', 'd'],
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
 			</Playground>
 		</Form>

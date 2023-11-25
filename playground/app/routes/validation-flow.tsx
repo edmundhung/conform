@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -69,19 +69,19 @@ export default function ValidationFlow() {
 	});
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Validation Flow" lastSubmission={lastResult}>
 				<Field label="Email" config={form.fields.email}>
-					<input {...conform.input(form.fields.email, { type: 'email' })} />
+					<input {...getInputProps(form.fields.email, { type: 'email' })} />
 				</Field>
 				<Field label="Password" config={form.fields.password}>
 					<input
-						{...conform.input(form.fields.password, { type: 'password' })}
+						{...getInputProps(form.fields.password, { type: 'password' })}
 					/>
 				</Field>
 				<Field label="Confirm password" config={form.fields.confirmPassword}>
 					<input
-						{...conform.input(form.fields.confirmPassword, {
+						{...getInputProps(form.fields.confirmPassword, {
 							type: 'password',
 						})}
 					/>

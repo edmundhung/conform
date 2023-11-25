@@ -2,9 +2,10 @@ import type { FieldProps } from '@conform-to/react';
 import {
 	FormProvider,
 	useForm,
-	conform,
 	intent,
 	useField,
+	getFormProps,
+	getInputProps,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -48,12 +49,12 @@ export default function TodoForm() {
 
 	return (
 		<FormProvider context={form.context}>
-			<Form method="post" {...conform.form(form)}>
+			<Form method="post" {...getFormProps(form)}>
 				<div>
 					<label>Title</label>
 					<input
 						className={!form.fields.title.valid ? 'error' : ''}
-						{...conform.input(form.fields.title)}
+						{...getInputProps(form.fields.title)}
 					/>
 					<div>{form.fields.title.errors}</div>
 				</div>
@@ -111,7 +112,7 @@ function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
 				<label>{title}</label>
 				<input
 					className={!fields.content.valid ? 'error' : ''}
-					{...conform.input(fields.content)}
+					{...getInputProps(fields.content)}
 				/>
 				<div>{fields.content.errors}</div>
 			</div>
@@ -120,7 +121,7 @@ function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
 					<span>Completed</span>
 					<input
 						className={!fields.completed.valid ? 'error' : ''}
-						{...conform.input(fields.completed, {
+						{...getInputProps(fields.completed, {
 							type: 'checkbox',
 						})}
 					/>

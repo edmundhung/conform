@@ -1,4 +1,4 @@
-import { conform, useForm } from '@conform-to/react';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
@@ -85,12 +85,12 @@ export default function Signup() {
 	});
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<label>
 				<div>Username</div>
 				<input
 					className={!form.fields.username.valid ? 'error' : ''}
-					{...conform.input(form.fields.username)}
+					{...getInputProps(form.fields.username)}
 				/>
 				<div>{form.fields.username.errors}</div>
 			</label>
@@ -98,7 +98,7 @@ export default function Signup() {
 				<div>Password</div>
 				<input
 					className={!form.fields.password.valid ? 'error' : ''}
-					{...conform.input(form.fields.password, { type: 'password' })}
+					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
 				<div>{form.fields.password.errors}</div>
 			</label>
@@ -106,7 +106,7 @@ export default function Signup() {
 				<div>Confirm Password</div>
 				<input
 					className={!form.fields.confirmPassword.valid ? 'error' : ''}
-					{...conform.input(form.fields.confirmPassword, { type: 'password' })}
+					{...getInputProps(form.fields.confirmPassword, { type: 'password' })}
 				/>
 				<div>{form.fields.confirmPassword.errors}</div>
 			</label>

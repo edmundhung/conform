@@ -1,4 +1,10 @@
-import { FormStateInput, conform, useForm, intent } from '@conform-to/react';
+import {
+	FormStateInput,
+	useForm,
+	intent,
+	getFormProps,
+	getInputProps,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -51,7 +57,7 @@ export default function SimpleList() {
 	const items = form.fields.items;
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<FormStateInput context={form.context} />
 			<Playground title="Simple list" lastSubmission={lastResult}>
 				<Alert errors={items.errors} />
@@ -59,7 +65,7 @@ export default function SimpleList() {
 					{items.items.map((task, index) => (
 						<li key={task.key} className="border rounded-md p-4 mb-4">
 							<Field label={`Item #${index + 1}`} config={task}>
-								<input {...conform.input(task, { type: 'text' })} />
+								<input {...getInputProps(task, { type: 'text' })} />
 							</Field>
 							<div className="flex flex-row gap-2">
 								<button

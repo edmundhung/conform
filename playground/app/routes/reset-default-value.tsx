@@ -1,4 +1,4 @@
-import { useForm, conform } from '@conform-to/react';
+import { useForm, getFormProps, getInputProps } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -71,7 +71,7 @@ export default function ExampleForm() {
 	}, [form.id, color]);
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground
 				title="Payment Form"
 				description={
@@ -99,10 +99,10 @@ export default function ExampleForm() {
 				lastSubmission={lastResult}
 			>
 				<Field label="Name" config={form.fields.name}>
-					<input {...conform.input(form.fields.name, { type: 'text' })} />
+					<input {...getInputProps(form.fields.name, { type: 'text' })} />
 				</Field>
 				<Field label="Code" config={form.fields.code}>
-					<input {...conform.input(form.fields.code, { type: 'color' })} />
+					<input {...getInputProps(form.fields.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

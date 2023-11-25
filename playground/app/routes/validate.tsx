@@ -1,4 +1,10 @@
-import { conform, useForm, intent } from '@conform-to/react';
+import {
+	useForm,
+	intent,
+	getFormProps,
+	getInputProps,
+	getTextareaProps,
+} from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -41,13 +47,13 @@ export default function Validate() {
 	});
 
 	return (
-		<Form method="post" {...conform.form(form)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Validate" lastSubmission={lastResult}>
 				<Field label="Name" config={form.fields.name}>
-					<input {...conform.input(form.fields.name, { type: 'text' })} />
+					<input {...getInputProps(form.fields.name, { type: 'text' })} />
 				</Field>
 				<Field label="Message" config={form.fields.message}>
-					<textarea {...conform.textarea(form.fields.message)} />
+					<textarea {...getTextareaProps(form.fields.message)} />
 				</Field>
 				<div className="flex flex-row gap-2">
 					<button

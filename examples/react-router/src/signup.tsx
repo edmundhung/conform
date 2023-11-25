@@ -1,5 +1,5 @@
-import type { Submission } from '@conform-to/react';
-import { conform, useForm } from '@conform-to/react';
+import type { SubmissionResult } from '@conform-to/react';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json, redirect } from 'react-router-dom';
@@ -64,17 +64,17 @@ export async function action({ request }: ActionFunctionArgs) {
 		async: true,
 	});
 
-	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+	if (!submission.value) {
+		return json(submission.reject());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export function Component() {
-	const lastSubmission = useActionData() as Submission;
-	const [form, { username, password, confirmPassword }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData() as SubmissionResult;
+	const form = useForm({
+		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined
@@ -85,30 +85,30 @@ export function Component() {
 	});
 
 	return (
-		<Form method="post" {...form.props}>
+		<Form method="post" {...getFormProps(form)}>
 			<label>
 				<div>Username</div>
 				<input
-					className={username.error ? 'error' : ''}
-					{...conform.input(username)}
+					className={!form.fields.username.valid ? 'error' : ''}
+					{...getInputProps(form.fields.username)}
 				/>
-				<div>{username.error}</div>
+				<div>{form.fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={password.error ? 'error' : ''}
-					{...conform.input(password, { type: 'password' })}
+					className={!form.fields.password.valid ? 'error' : ''}
+					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
-				<div>{password.error}</div>
+				<div>{form.fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={confirmPassword.error ? 'error' : ''}
-					{...conform.input(confirmPassword, { type: 'password' })}
+					className={!form.fields.confirmPassword.valid ? 'error' : ''}
+					{...getInputProps(form.fields.confirmPassword, { type: 'password' })}
 				/>
-				<div>{confirmPassword.error}</div>
+				<div>{form.fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<button>Signup</button>

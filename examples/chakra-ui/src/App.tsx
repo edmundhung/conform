@@ -1,11 +1,11 @@
 import type { FieldProps } from '@conform-to/react';
 import {
-	useForm,
-	useInputControl,
-	conform,
-	validateConstraint,
-	useField,
 	FormProvider,
+	useForm,
+	useField,
+	useInputControl,
+	validateConstraint,
+	getFormProps,
 } from '@conform-to/react';
 import {
 	Stack,
@@ -66,7 +66,7 @@ export default function Example() {
 	return (
 		<Container maxW="container.sm" paddingY={8}>
 			<FormProvider context={form.context}>
-				<form {...conform.form(form)}>
+				<form {...getFormProps(form)}>
 					<Stack direction="column" spacing={8}>
 						<header>
 							<Heading mb={4}>Chakra UI Example</Heading>

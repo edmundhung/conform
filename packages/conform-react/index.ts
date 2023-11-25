@@ -15,5 +15,13 @@ export {
 export { useForm, useFormMetadata, useField } from './hooks';
 export { useInputControl } from './integrations';
 export { validateConstraint } from './validitystate';
-export * as conform from './helpers';
+export {
+	getFormProps,
+	getFieldProps,
+	getFieldsetProps,
+	getInputProps,
+	getSelectProps,
+	getTextareaProps,
+	getCollectionProps,
+} from './helpers';
 export * as intent from './intent';

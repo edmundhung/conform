@@ -5,6 +5,7 @@ import type {
 	BaseMetadata,
 	Pretty,
 	Primitive,
+	FieldProps,
 } from './context';
 
 type FormControlProps = {
@@ -131,44 +132,18 @@ function getFormControlProps<Schema>(
 		form: metadata.formId,
 		required: metadata.constraint?.required || undefined,
 		autoFocus: !metadata.valid || undefined,
-		...(options?.hidden ? hiddenProps : undefined),
 		...getAriaAttributes(metadata, options),
 	});
 }
 
-export const hiddenProps: {
-	style: CSSProperties;
-	tabIndex: number;
-	'aria-hidden': boolean;
-} = {
-	/**
-	 * Style to make the input element visually hidden
-	 * Based on the `sr-only` class from tailwindcss
-	 */
-	style: {
-		position: 'absolute',
-		width: '1px',
-		height: '1px',
-		padding: 0,
-		margin: '-1px',
-		overflow: 'hidden',
-		clip: 'rect(0,0,0,0)',
-		whiteSpace: 'nowrap',
-		border: 0,
-	},
-	tabIndex: -1,
-	'aria-hidden': true,
-};
-
-export function input<Schema extends Exclude<Primitive, File> | unknown>(
-	field: FieldMetadata<Schema>,
-	options?: InputOptions,
-): InputProps;
-export function input<Schema extends File | File[]>(
+export function getInputProps<
+	Schema extends Exclude<Primitive, File> | unknown,
+>(field: FieldMetadata<Schema>, options?: InputOptions): InputProps;
+export function getInputProps<Schema extends File | File[]>(
 	field: FieldMetadata<Schema>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
-export function input<Schema extends Primitive | File[] | unknown>(
+export function getInputProps<Schema extends Primitive | File[] | unknown>(
 	field: FieldMetadata<Schema>,
 	options: InputOptions = {},
 ): InputProps {
@@ -197,7 +172,7 @@ export function input<Schema extends Primitive | File[] | unknown>(
 	return cleanup(props);
 }
 
-export function select<
+export function getSelectProps<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
 >(metadata: FieldMetadata<Schema>, options?: ControlOptions): SelectProps {
 	return cleanup({
@@ -207,10 +182,9 @@ export function select<
 	});
 }
 
-export function textarea<Schema extends Primitive | undefined | unknown>(
-	metadata: FieldMetadata<Schema>,
-	options?: ControlOptions,
-): TextareaProps {
+export function getTextareaProps<
+	Schema extends Primitive | undefined | unknown,
+>(metadata: FieldMetadata<Schema>, options?: ControlOptions): TextareaProps {
 	return cleanup({
 		...getFormControlProps(metadata, options),
 		defaultValue: metadata.initialValue?.toString(),
@@ -219,7 +193,7 @@ export function textarea<Schema extends Primitive | undefined | unknown>(
 	});
 }
 
-export function form<Schema extends Record<string, any>>(
+export function getFormProps<Schema extends Record<string, any>>(
 	metadata: FormMetadata<Schema>,
 	options?: FormOptions<Schema>,
 ) {
@@ -250,7 +224,7 @@ export function form<Schema extends Record<string, any>>(
 	});
 }
 
-export function fieldset<
+export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
 >(metadata: FieldMetadata<Schema>, options?: BaseOptions) {
 	return cleanup({
@@ -261,7 +235,16 @@ export function fieldset<
 	});
 }
 
-export function collection<
+export function getFieldProps<Schema>(
+	metadata: FieldMetadata<Schema>,
+): FieldProps<Schema> {
+	return {
+		name: metadata.name,
+		formId: metadata.formId,
+	};
+}
+
+export function getCollectionProps<
 	Schema extends
 		| Array<string | boolean>
 		| string

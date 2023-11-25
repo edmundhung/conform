@@ -1,11 +1,11 @@
 import {
 	type FieldProps,
+	FormProvider,
 	useForm,
 	useField,
 	useInputControl,
-	conform,
 	validateConstraint,
-	FormProvider,
+	getFormProps,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
@@ -32,7 +32,7 @@ export default function Example() {
 			<FormProvider context={form.context}>
 				<form
 					className="space-y-8 divide-y divide-gray-200"
-					{...conform.form(form)}
+					{...getFormProps(form)}
 				>
 					<div className="space-y-8 divide-y divide-gray-200">
 						<div>
@@ -52,10 +52,7 @@ export default function Example() {
 										Owner (List box)
 									</label>
 									<div className="mt-1">
-										<ExampleListBox
-											name={form.fields.owner.name}
-											formId={form.id}
-										/>
+										<ExampleListBox {...getFieldProps(form.fields.owner)} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
 										{form.fields.owner.errors?.join(', ')}
