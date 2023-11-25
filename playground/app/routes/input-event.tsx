@@ -1,4 +1,4 @@
-import { useInputEvent } from '@conform-to/react';
+import { useForm, useInputControl, conform } from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
@@ -14,20 +14,20 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function Example() {
 	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
-	const controlRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: controlRef,
+	const form = useForm({
+		defaultValue: {
+			'native-input': defaultValue,
+			'base-input': defaultValue,
+		},
+	});
+	const control = useInputControl(form.fields['base-input'], {
 		onFocus() {
 			if (delegateFocus) {
 				inputRef.current?.focus();
 			}
 		},
-		onReset() {
-			setValue(defaultValue ?? '');
-		},
 	});
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [value, setValue] = useState(defaultValue ?? '');
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
 		const input = event.target as HTMLInputElement;
@@ -48,6 +48,7 @@ export default function Example() {
 
 	return (
 		<form
+			{...conform.form(form)}
 			onChange={log}
 			onInput={log}
 			onFocusCapture={log}
@@ -62,12 +63,9 @@ export default function Example() {
 						className="p-2 flex-1"
 						name="native-input"
 						type="text"
-						value={value}
+						value={control.value ?? ''}
 						ref={inputRef}
-						onChange={(e) => {
-							control.change(e.target.value);
-							setValue(e.target.value);
-						}}
+						onChange={(event) => control.change(event.target.value)}
 						onFocus={control.focus}
 						onBlur={control.blur}
 					/>
@@ -88,11 +86,10 @@ export default function Example() {
 				<div className="pt-4">
 					<div>Shadow input</div>
 					<input
-						ref={controlRef}
 						name="base-input"
 						type="text"
 						defaultValue={defaultValue ?? ''}
-						onChange={control.change}
+						onChange={(event) => control.change(event.target.value)}
 						onFocus={control.focus}
 						onBlur={control.blur}
 					/>

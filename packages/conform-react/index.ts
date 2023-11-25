@@ -6,13 +6,14 @@ export {
 	isFieldElement,
 } from '@conform-to/dom';
 export {
-	type Field,
+	type FieldProps,
 	type FieldMetadata,
 	type FormMetadata,
 	FormProvider,
 	FormStateInput,
 } from './context';
 export { useForm, useFormMetadata, useField } from './hooks';
-export { useInputEvent } from './integrations';
+export { useInputControl } from './integrations';
+export { validateConstraint } from './validitystate';
 export * as conform from './helpers';
 export * as intent from './intent';

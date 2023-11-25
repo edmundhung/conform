@@ -1,4 +1,4 @@
-import type { Field } from '@conform-to/react';
+import type { FieldProps } from '@conform-to/react';
 import {
 	FormProvider,
 	useForm,
@@ -95,7 +95,7 @@ export default function TodoForm() {
 	);
 }
 
-interface TaskFieldsetProps extends Field<z.input<typeof taskSchema>> {
+interface TaskFieldsetProps extends FieldProps<z.input<typeof taskSchema>> {
 	title: string;
 }
 

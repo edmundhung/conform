@@ -50,7 +50,7 @@ export type BaseMetadata<Schema> = {
 	dirty: boolean;
 };
 
-export type Field<Schema> = {
+export type FieldProps<Schema> = {
 	name: FieldName<Schema>;
 	formId: string;
 };

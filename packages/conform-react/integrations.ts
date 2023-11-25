@@ -1,137 +1,158 @@
-import { type FieldElement, isFieldElement } from '@conform-to/dom';
-import { type RefObject, useMemo, useRef } from 'react';
-import { useSafeLayoutEffect } from './hooks';
+import {
+	type FieldElement,
+	type FormValue,
+	isFieldElement,
+} from '@conform-to/dom';
+import { useRef, useState, useMemo, useEffect } from 'react';
+import { type FieldMetadata } from './context';
 
-export type InputControl = {
-	change: (
-		eventOrValue: { target: { value: string } } | string | boolean,
-	) => void;
+export type InputControl<Value> = {
+	value: Value;
+	change: (value: Value) => void;
 	focus: () => void;
 	blur: () => void;
 };
 
-/**
- * Returns a ref object and a set of helpers that dispatch corresponding dom event.
- *
- * @see https://conform.guide/api/react#useinputevent
- */
-export function useInputEvent(options: {
-	ref:
-		| RefObject<FieldElement>
-		| (() => Element | RadioNodeList | FieldElement | null | undefined);
-	onInput?: (event: Event) => void;
-	onFocus?: (event: FocusEvent) => void;
-	onBlur?: (event: FocusEvent) => void;
-	onReset?: (event: Event) => void;
-}): InputControl {
-	const optionsRef = useRef(options);
-	const eventDispatched = useRef({
-		onInput: false,
-		onFocus: false,
-		onBlur: false,
-	});
+export function getFieldElement(
+	formId: string,
+	name: string,
+	match: (element: FieldElement) => boolean = () => true,
+): FieldElement | null {
+	const element = document.forms.namedItem(formId)?.elements.namedItem(name);
 
-	useSafeLayoutEffect(() => {
+	if (element) {
+		const items =
+			element instanceof Element ? [element] : Array.from(element.values());
+
+		for (const item of items) {
+			if (isFieldElement(item) && match(item)) {
+				return item;
+			}
+		}
+	}
+
+	return null;
+}
+
+export function getEventTarget(formId: string, name: string): FieldElement {
+	const element = getFieldElement(formId, name);
+
+	if (element) {
+		return element;
+	}
+
+	const form = document.forms.namedItem(formId);
+	const input = document.createElement('input');
+
+	input.type = 'hidden';
+	input.name = name;
+	input.setAttribute('form', formId);
+
+	form?.append(input);
+
+	return input;
+}
+
+export function useInputControl<Schema>(
+	metadata: FieldMetadata<Schema>,
+	options?: {
+		onFocus?: (event: Event) => void;
+	},
+): InputControl<string | undefined>;
+export function useInputControl<Schema, Value>(
+	metadata: FieldMetadata<Schema>,
+	options: {
+		initialize: (value: FormValue<Schema> | undefined) => Value;
+		serialize?: (value: Value) => string;
+		onFocus?: (event: Event) => void;
+	},
+): InputControl<Value>;
+export function useInputControl<Schema, Value>(
+	metadata: FieldMetadata<Schema>,
+	options?: {
+		initialize?: (value: FormValue<Schema> | undefined) => Value;
+		serialize?: (value: Value | string | undefined) => string;
+		onFocus?: (event: Event) => void;
+	},
+): InputControl<Value | string | undefined> {
+	const eventDispatched = useRef({
+		change: false,
+		focus: false,
+		blur: false,
+	});
+	const [key, setKey] = useState(metadata.key);
+	const optionsRef = useRef(options);
+	const initialize = options?.initialize ?? ((value) => value?.toString());
+	const [value, setValue] = useState(() => initialize(metadata.initialValue));
+
+	if (key !== metadata.key) {
+		setValue(initialize(metadata.initialValue));
+		setKey(metadata.key);
+	}
+
+	useEffect(() => {
 		optionsRef.current = options;
 	});
 
-	useSafeLayoutEffect(() => {
-		const createEventListener = (
-			listener: Exclude<keyof typeof options, 'ref'>,
-		) => {
-			return (event: any) => {
-				const element =
-					typeof optionsRef.current?.ref === 'function'
-						? optionsRef.current?.ref()
-						: optionsRef.current?.ref.current;
+	useEffect(() => {
+		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
+			return (event: Event) => {
+				const element = getFieldElement(
+					metadata.formId,
+					metadata.name,
+					(element) => element === event.target,
+				);
 
-				if (
-					isFieldElement(element) &&
-					(listener === 'onReset'
-						? event.target === element.form
-						: event.target === element)
-				) {
-					if (listener !== 'onReset') {
-						eventDispatched.current[listener] = true;
+				if (element) {
+					if (listener === 'focus') {
+						optionsRef.current?.onFocus?.(event);
 					}
 
-					optionsRef.current?.[listener]?.(event);
+					eventDispatched.current[listener] = true;
 				}
 			};
 		};
-		const inputHandler = createEventListener('onInput');
-		const focusHandler = createEventListener('onFocus');
-		const blurHandler = createEventListener('onBlur');
-		const resetHandler = createEventListener('onReset');
+		const inputHandler = createEventListener('change');
+		const focusHandler = createEventListener('focus');
+		const blurHandler = createEventListener('blur');
 
-		// focus/blur event does not bubble
 		document.addEventListener('input', inputHandler, true);
-		document.addEventListener('focus', focusHandler, true);
-		document.addEventListener('blur', blurHandler, true);
-		document.addEventListener('reset', resetHandler);
+		document.addEventListener('focusin', focusHandler, true);
+		document.addEventListener('focusout', blurHandler, true);
 
 		return () => {
 			document.removeEventListener('input', inputHandler, true);
-			document.removeEventListener('focus', focusHandler, true);
-			document.removeEventListener('blur', blurHandler, true);
-			document.removeEventListener('reset', resetHandler);
+			document.removeEventListener('focusin', focusHandler, true);
+			document.removeEventListener('focusout', blurHandler, true);
 		};
-	}, []);
+	}, [metadata.formId, metadata.name]);
 
-	const control = useMemo<InputControl>(() => {
-		const dispatch = (
-			listener: Exclude<keyof typeof options, 'ref' | 'onReset'>,
-			fn: (element: FieldElement) => void,
-		) => {
-			if (!eventDispatched.current[listener]) {
-				const element =
-					typeof optionsRef.current?.ref === 'function'
-						? optionsRef.current?.ref()
-						: optionsRef.current?.ref.current;
-
-				if (!isFieldElement(element)) {
-					// eslint-disable-next-line no-console
-					console.warn('Failed to dispatch event; is the input mounted?');
-					return;
-				}
-
-				// To avoid recursion
-				eventDispatched.current[listener] = true;
-				fn(element);
-			}
-
-			eventDispatched.current[listener] = false;
-		};
-
+	const handlers = useMemo<
+		Omit<InputControl<Value | string | undefined>, 'value'>
+	>(() => {
 		return {
-			change(eventOrValue) {
-				dispatch('onInput', (element) => {
+			change(value) {
+				if (!eventDispatched.current.change) {
+					const element = getEventTarget(metadata.formId, metadata.name);
+					const serializedValue =
+						optionsRef.current?.serialize?.(value) ?? value?.toString() ?? '';
+
+					eventDispatched.current.change = true;
+
 					if (
 						element instanceof HTMLInputElement &&
 						(element.type === 'checkbox' || element.type === 'radio')
 					) {
-						if (typeof eventOrValue !== 'boolean') {
-							throw new Error(
-								'You should pass a boolean when changing a checkbox or radio input',
-							);
+						if (
+							element.checked
+								? element.value !== serializedValue
+								: element.value === serializedValue
+						) {
+							element.click();
 						}
-
-						element.checked = eventOrValue;
 					} else {
-						if (typeof eventOrValue === 'boolean') {
-							throw new Error(
-								'You can pass a boolean only when changing a checkbox or radio input',
-							);
-						}
-
-						const value =
-							typeof eventOrValue === 'string'
-								? eventOrValue
-								: eventOrValue.target.value;
-
-						// No change event will triggered on React if `element.value` is updated
-						// before dispatching the event
-						if (element.value !== value) {
+						// No change event will be triggered on React if `element.value` is already updated
+						if (element.value !== serializedValue) {
 							/**
 							 * Triggering react custom change event
 							 * Solution based on dom-testing-library
@@ -159,36 +180,53 @@ export function useInputEvent(options: {
 								}
 							}
 						}
-					}
 
-					// Dispatch input event with the updated input value
-					element.dispatchEvent(new InputEvent('input', { bubbles: true }));
-					// Dispatch change event (necessary for select to update the selected option)
-					element.dispatchEvent(new Event('change', { bubbles: true }));
-				});
+						// Dispatch input event with the updated input value
+						element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+						// Dispatch change event (necessary for select to update the selected option)
+						element.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+				}
+
+				setValue(value);
+
+				eventDispatched.current.change = false;
 			},
 			focus() {
-				dispatch('onFocus', (element) => {
+				if (!eventDispatched.current.focus) {
+					const element = getEventTarget(metadata.formId, metadata.name);
+
+					eventDispatched.current.focus = true;
 					element.dispatchEvent(
 						new FocusEvent('focusin', {
 							bubbles: true,
 						}),
 					);
 					element.dispatchEvent(new FocusEvent('focus'));
-				});
+				}
+
+				eventDispatched.current.focus = false;
 			},
 			blur() {
-				dispatch('onBlur', (element) => {
+				if (!eventDispatched.current.blur) {
+					const element = getEventTarget(metadata.formId, metadata.name);
+
+					eventDispatched.current.blur = true;
 					element.dispatchEvent(
 						new FocusEvent('focusout', {
 							bubbles: true,
 						}),
 					);
 					element.dispatchEvent(new FocusEvent('blur'));
-				});
+				}
+
+				eventDispatched.current.blur = false;
 			},
 		};
-	}, [optionsRef]);
+	}, [metadata.formId, metadata.name]);
 
-	return control;
+	return {
+		...handlers,
+		value,
+	};
 }

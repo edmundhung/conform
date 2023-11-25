@@ -1,9 +1,11 @@
-import type { FieldConfig } from '@conform-to/react';
+import type { FieldProps } from '@conform-to/react';
 import {
 	useForm,
-	useInputEvent,
-	validateConstraint,
+	useInputControl,
 	conform,
+	validateConstraint,
+	useField,
+	FormProvider,
 } from '@conform-to/react';
 import {
 	Stack,
@@ -36,7 +38,7 @@ import {
 	Heading,
 	Text,
 } from '@chakra-ui/react';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 
 interface Schema {
 	email: string;
@@ -53,7 +55,9 @@ interface Schema {
 }
 
 export default function Example() {
-	const [form, fieldset] = useForm<Schema>({
+	const form = useForm<Schema>({
+		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onInput',
 		onValidate(context) {
 			return validateConstraint(context);
 		},
@@ -61,151 +65,169 @@ export default function Example() {
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
-			<form {...form.props}>
-				<Stack direction="column" spacing={8}>
-					<header>
-						<Heading mb={4}>Chakra UI Example</Heading>
-						<Text fontSize="xl">
-							This shows you how to integrate forms components with Conform.
-						</Text>
-					</header>
+			<FormProvider context={form.context}>
+				<form {...conform.form(form)}>
+					<Stack direction="column" spacing={8}>
+						<header>
+							<Heading mb={4}>Chakra UI Example</Heading>
+							<Text fontSize="xl">
+								This shows you how to integrate forms components with Conform.
+							</Text>
+						</header>
 
-					<FormControl isInvalid={Boolean(fieldset.email.error)}>
-						<FormLabel>Email (Input)</FormLabel>
-						<Input type="email" name={fieldset.email.name} required />
-						<FormErrorMessage>{fieldset.email.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.email.valid}>
+							<FormLabel>Email (Input)</FormLabel>
+							<Input type="email" name={form.fields.email.name} required />
+							<FormErrorMessage>
+								{form.fields.email.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.language.error)}>
-						<FormLabel>Language (Select)</FormLabel>
-						<Select
-							name={fieldset.language.name}
-							placeholder="Select option"
-							required
-						>
-							<option value="english">English</option>
-							<option value="deutsche">Deutsch</option>
-							<option value="japanese">Japanese</option>
-						</Select>
-						<FormErrorMessage>{fieldset.language.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.language.valid}>
+							<FormLabel>Language (Select)</FormLabel>
+							<Select
+								name={form.fields.language.name}
+								placeholder="Select option"
+								required
+							>
+								<option value="english">English</option>
+								<option value="deutsche">Deutsch</option>
+								<option value="japanese">Japanese</option>
+							</Select>
+							<FormErrorMessage>
+								{form.fields.language.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.description.error)}>
-						<FormLabel>Description (Textarea)</FormLabel>
-						<Textarea name={fieldset.description.name} required />
-						<FormErrorMessage>{fieldset.description.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.description.valid}>
+							<FormLabel>Description (Textarea)</FormLabel>
+							<Textarea name={form.fields.description.name} required />
+							<FormErrorMessage>
+								{form.fields.description.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.quantity.error)}>
-						<FormLabel>Quantity (NumberInput)</FormLabel>
-						<ExampleNumberInput
-							name={fieldset.quantity.name}
-							required
-							min={1}
-							max={10}
-							step={1}
-						/>
-						<FormErrorMessage>{fieldset.quantity.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.quantity.valid}>
+							<FormLabel>Quantity (NumberInput)</FormLabel>
+							<ExampleNumberInput
+								name={form.fields.quantity.name}
+								formId={form.id}
+							/>
+							<FormErrorMessage>
+								{form.fields.quantity.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.pin.error)}>
-						<FormLabel>PIN (PinInput)</FormLabel>
-						<ExamplePinInput
-							name={fieldset.pin.name}
-							isInvalid={Boolean(fieldset.pin.error)}
-							required
-							pattern="[0-9]{4}"
-						/>
-						<FormErrorMessage>{fieldset.pin.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.pin.valid}>
+							<FormLabel>PIN (PinInput)</FormLabel>
+							<ExamplePinInput name={form.fields.pin.name} formId={form.id} />
+							<FormErrorMessage>
+								{form.fields.pin.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.title.error)}>
-						<FormLabel>Title (Editable)</FormLabel>
-						<Editable
-							defaultValue={fieldset.title.defaultValue}
-							placeholder="No content"
-						>
-							<EditablePreview />
-							<EditableInput name={fieldset.title.name} required />
-						</Editable>
-						<FormErrorMessage>{fieldset.title.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.title.valid}>
+							<FormLabel>Title (Editable)</FormLabel>
+							<Editable
+								defaultValue={form.fields.title.initialValue}
+								placeholder="No content"
+							>
+								<EditablePreview />
+								<EditableInput name={form.fields.title.name} required />
+							</Editable>
+							<FormErrorMessage>
+								{form.fields.title.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.subscribe.error)}>
-						<FormLabel>Subscribe (Checkbox)</FormLabel>
-						<Checkbox name={fieldset.subscribe.name} value="yes" required>
-							Newsletter
-						</Checkbox>
-						<FormErrorMessage>{fieldset.subscribe.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.subscribe.valid}>
+							<FormLabel>Subscribe (Checkbox)</FormLabel>
+							<Checkbox name={form.fields.subscribe.name} value="yes" required>
+								Newsletter
+							</Checkbox>
+							<FormErrorMessage>
+								{form.fields.subscribe.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.enabled.error)}>
-						<FormLabel>Enabled (Switch)</FormLabel>
-						<Switch name={fieldset.enabled.name} required />
-						<FormErrorMessage>{fieldset.enabled.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.enabled.valid}>
+							<FormLabel>Enabled (Switch)</FormLabel>
+							<Switch name={form.fields.enabled.name} required />
+							<FormErrorMessage>
+								{form.fields.enabled.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.progress.error)}>
-						<FormLabel>Progress (Slider)</FormLabel>
-						<ExampleSlider name={fieldset.progress.name} required />
-						<FormErrorMessage>{fieldset.progress.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.progress.valid}>
+							<FormLabel>Progress (Slider)</FormLabel>
+							<ExampleSlider
+								name={form.fields.progress.name}
+								formId={form.id}
+							/>
+							<FormErrorMessage>
+								{form.fields.progress.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<FormControl isInvalid={Boolean(fieldset.active.error)}>
-						<FormLabel>Active (Radio)</FormLabel>
-						<RadioGroup
-							name={fieldset.active.name}
-							defaultValue={fieldset.active.defaultValue}
-						>
-							<Stack spacing={5} direction="row">
-								<Radio
-									value="yes"
-									isRequired={fieldset.active.required ?? true}
-								>
-									Yes
-								</Radio>
-								<Radio value="no" isRequired={fieldset.active.required ?? true}>
-									No
-								</Radio>
-							</Stack>
-						</RadioGroup>
-						<FormErrorMessage>{fieldset.active.error}</FormErrorMessage>
-					</FormControl>
+						<FormControl isInvalid={!form.fields.active.valid}>
+							<FormLabel>Active (Radio)</FormLabel>
+							<RadioGroup
+								name={form.fields.active.name}
+								defaultValue={
+									typeof form.fields.active.initialValue === 'boolean'
+										? form.fields.active.initialValue
+											? 'on'
+											: ''
+										: form.fields.active.initialValue
+								}
+							>
+								<Stack spacing={5} direction="row">
+									<Radio
+										value="yes"
+										isRequired={form.fields.active.constraint?.required ?? true}
+									>
+										Yes
+									</Radio>
+									<Radio
+										value="no"
+										isRequired={form.fields.active.constraint?.required ?? true}
+									>
+										No
+									</Radio>
+								</Stack>
+							</RadioGroup>
+							<FormErrorMessage>
+								{form.fields.active.errors?.join(', ')}
+							</FormErrorMessage>
+						</FormControl>
 
-					<Stack direction="row" justifyContent="flex-end">
-						<Button type="reset" variant="outline">
-							Reset
-						</Button>
-						<Button type="submit" variant="solid">
-							Submit
-						</Button>
+						<Stack direction="row" justifyContent="flex-end">
+							<Button type="reset" variant="outline">
+								Reset
+							</Button>
+							<Button type="submit" variant="solid">
+								Submit
+							</Button>
+						</Stack>
 					</Stack>
-				</Stack>
-			</form>
+				</form>
+			</FormProvider>
 		</Container>
 	);
 }
 
-function ExampleNumberInput(config: FieldConfig<number>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onFocus: () => shadowInputRef.current?.focus(),
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+function ExampleNumberInput(props: FieldProps<number>) {
+	const field = useField(props);
+	const control = useInputControl(field);
 
 	return (
 		<NumberInput
-			isRequired={config.required}
-			name={config.name}
-			value={value}
-			onChange={(value) => {
-				control.change(value);
-				setValue(value);
-			}}
+			isRequired
+			name={field.name}
+			value={control.value ?? ''}
+			onChange={control.change}
 		>
-			<NumberInputField ref={shadowInputRef} />
+			<NumberInputField />
 			<NumberInputStepper>
 				<NumberIncrementStepper />
 				<NumberDecrementStepper />
@@ -214,67 +236,44 @@ function ExampleNumberInput(config: FieldConfig<number>) {
 	);
 }
 
-function ExamplePinInput({
-	isInvalid,
-	...config
-}: FieldConfig<string> & { isInvalid: boolean }) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
+function ExamplePinInput(config: FieldProps<string>) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+	const field = useField(config);
+	const control = useInputControl(field);
 
 	return (
-		<>
-			<input
-				ref={shadowInputRef}
-				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
-				onFocus={() => inputRef.current?.focus()}
-			/>
-			<PinInput
-				type="alphanumeric"
-				value={value}
-				onChange={control.change}
-				isInvalid={isInvalid}
-			>
-				<PinInputField ref={inputRef} />
-				<PinInputField />
-				<PinInputField />
-				<PinInputField />
-			</PinInput>
-		</>
+		<PinInput
+			type="alphanumeric"
+			value={control.value ?? ''}
+			onChange={control.change}
+			isInvalid={!field.valid}
+		>
+			<PinInputField ref={inputRef} />
+			<PinInputField />
+			<PinInputField />
+			<PinInputField />
+		</PinInput>
 	);
 }
 
-function ExampleSlider(config: FieldConfig<number>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
+function ExampleSlider(config: FieldProps<number>) {
+	const field = useField(config);
+	const control = useInputControl(field, {
+		initialize(value) {
+			return typeof value !== 'undefined' ? Number(value) : undefined;
+		},
 	});
 
 	return (
-		<>
-			<input
-				ref={shadowInputRef}
-				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
-			/>
-			<Slider
-				value={value ? Number(value) : undefined}
-				onChange={(value) => control.change(`${value}`)}
-				onFocus={control.focus}
-				onBlur={control.blur}
-			>
-				<SliderTrack>
-					<SliderFilledTrack />
-				</SliderTrack>
-				<SliderThumb />
-			</Slider>
-		</>
+		<Slider
+			value={control.value}
+			onChange={control.change}
+			onBlur={control.blur}
+		>
+			<SliderTrack>
+				<SliderFilledTrack />
+			</SliderTrack>
+			<SliderThumb />
+		</Slider>
 	);
 }

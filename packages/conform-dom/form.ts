@@ -44,14 +44,17 @@ export type FormValue<Schema> = Schema extends
 	| Date
 	| null
 	| undefined
-	? Schema | string
+	? Schema | string | undefined
 	: Schema extends File
-	? undefined
-	: Schema extends Array<infer InnerType>
-	? Array<FormValue<InnerType>>
+	? string | undefined
+	: Schema extends Array<infer Item>
+	? Array<FormValue<Item>> | string | undefined
 	: Schema extends Record<string, any>
-	? { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
-	: unknown;
+	?
+			| { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
+			| string
+			| undefined
+	: unknown | string | undefined;
 
 export type FieldName<Schema> = string & { __type?: Schema };
 
@@ -735,7 +738,10 @@ export function createForm<Schema extends Record<string, any> = any>(
 		const defaultValue = latestOptions.defaultValue ?? {};
 
 		updateContext({
-			key: getDefaultKey(defaultValue),
+			key: {
+				'': generateId(),
+				...getDefaultKey(defaultValue),
+			},
 			defaultValue,
 			initialValue: defaultValue,
 			value: defaultValue,
