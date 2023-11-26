@@ -1,4 +1,4 @@
-import { type Intent, INTENT, serializeIntent } from '@conform-to/dom';
+import { type Intent, INTENT, serializeIntents } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 import type {
 	FormMetadata,
@@ -279,10 +279,10 @@ export function getCollectionProps<
 	);
 }
 
-export function getControlButtonProps(formId: string, intent: Intent) {
+export function getControlButtonProps(formId: string, intents: Array<Intent>) {
 	return {
 		name: INTENT,
-		value: serializeIntent(intent),
+		value: serializeIntents(intents),
 		form: formId,
 		formNoValidate: true,
 	};

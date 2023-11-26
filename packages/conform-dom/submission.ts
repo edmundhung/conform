@@ -14,7 +14,7 @@ export type SubmissionState = {
 };
 
 export type SubmissionContext<Value> = {
-	intent: Intent | null;
+	intents: Array<Intent> | null;
 	payload: Record<string, unknown>;
 	fields: string[];
 	value?: Value | null;
@@ -42,7 +42,7 @@ export type Submission<Schema, Value = Schema> =
 
 export type SubmissionResult = {
 	status: 'updated' | 'error' | 'success';
-	intent?: Intent;
+	intents?: Array<Intent>;
 	initialValue?: Record<string, unknown>;
 	error?: Record<string, string[]>;
 	state?: SubmissionState;
@@ -105,7 +105,7 @@ export function getSubmissionContext(
 
 	return {
 		payload,
-		intent: getIntent(intent),
+		intents: getIntents(intent),
 		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
 	};
@@ -116,7 +116,7 @@ export function parse<Value>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			intents: Array<Intent> | null,
 		) => { value?: Value; error?: Record<string, string[]> };
 	},
 ): Submission<Value>;
@@ -125,7 +125,7 @@ export function parse<Value>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			intents: Array<Intent> | null,
 		) => Promise<{ value?: Value; error?: Record<string, string[]> }>;
 	},
 ): Promise<Submission<Value>>;
@@ -134,7 +134,7 @@ export function parse<Value>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			intents: Array<Intent> | null,
 		) =>
 			| { value?: Value; error?: Record<string, string[]> }
 			| Promise<{ value?: Value; error?: Record<string, string[]> }>;
@@ -145,7 +145,7 @@ export function parse<Value>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			intent: string,
+			intents: Array<Intent> | null,
 		) =>
 			| { value?: Value; error?: Record<string, string[]> }
 			| Promise<{ value?: Value; error?: Record<string, string[]> }>;
@@ -153,80 +153,73 @@ export function parse<Value>(
 ): Submission<Value> | Promise<Submission<Value>> {
 	const context = getSubmissionContext(payload);
 
-	if (context.intent) {
-		switch (context.intent.type) {
-			case 'validate':
-				context.state.validated[context.intent.payload] = true;
-				break;
-			case 'replace': {
-				const { name = '', value, validated } = context.intent.payload;
+	if (context.intents) {
+		for (const intent of context.intents) {
+			switch (intent.type) {
+				case 'validate':
+					context.state.validated[intent.payload] = true;
+					break;
+				case 'replace': {
+					const { name = '', value, validated } = intent.payload;
 
-				if (typeof value !== 'undefined') {
-					if (name) {
-						setValue(context.payload, name, () => value);
-					} else {
-						context.payload = value as any;
+					if (typeof value !== 'undefined') {
+						if (name) {
+							setValue(context.payload, name, () => value);
+						} else {
+							context.payload = value as any;
+						}
 					}
-				}
 
-				if (validated) {
-					context.state.validated[name] = true;
-				} else {
-					delete context.state.validated[name];
-				}
-				break;
-			}
-			case 'reset': {
-				const { name, value = true, validated } = context.intent.payload;
-
-				if (value) {
-					if (name) {
-						setValue(context.payload, name, () => undefined);
+					if (validated) {
+						context.state.validated[name] = true;
 					} else {
-						context.payload = {};
-					}
-				}
-
-				if (!validated) {
-					if (name) {
-						setState(context.state.validated, name, () => undefined);
-
 						delete context.state.validated[name];
-					} else {
-						context.state.validated = {};
 					}
+					break;
 				}
-				break;
-			}
-			case 'insert':
-			case 'remove':
-			case 'reorder': {
-				setListValue(context.payload, context.intent);
-				setListState(context.state.validated, context.intent);
+				case 'reset': {
+					const { name, value = true, validated } = intent.payload;
 
-				context.state.validated[context.intent.payload.name] = true;
-				break;
+					if (value) {
+						if (name) {
+							setValue(context.payload, name, () => undefined);
+						} else {
+							context.payload = {};
+						}
+					}
+
+					if (!validated) {
+						if (name) {
+							setState(context.state.validated, name, () => undefined);
+
+							delete context.state.validated[name];
+						} else {
+							context.state.validated = {};
+						}
+					}
+					break;
+				}
+				case 'insert':
+				case 'remove':
+				case 'reorder': {
+					setListValue(context.payload, intent);
+					setListState(context.state.validated, intent);
+
+					context.state.validated[intent.payload.name] = true;
+					break;
+				}
 			}
 		}
 	}
 
-	const result = options.resolve(
-		context.payload,
-		context.intent === null
-			? 'submit'
-			: `${context.intent.type}/${
-					context.intent.type === 'validate'
-						? context.intent.payload
-						: JSON.stringify(context.intent.payload)
-			  }`,
-	);
+	const result = options.resolve(context.payload, context.intents);
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, string[]>;
 		value?: Value;
 	}): Submission<Value> => {
 		const error = resolved.error ?? {};
 
-		if (!context.intent) {
+		if (!context.intents) {
 			for (const name of [...context.fields, ...Object.keys(error)]) {
 				context.state.validated[name] = true;
 			}
@@ -249,7 +242,7 @@ export function parse<Value>(
 export function createSubmission<Value>(
 	context: Required<SubmissionContext<Value>>,
 ): Submission<Value> {
-	if (context.intent !== null) {
+	if (context.intents) {
 		return {
 			type: 'update',
 			payload: context.payload,
@@ -312,8 +305,8 @@ export function rejectSubmission(
 	);
 
 	return {
-		status: context.intent !== null ? 'updated' : 'error',
-		intent: context.intent !== null ? context.intent : undefined,
+		status: context.intents !== null ? 'updated' : 'error',
+		intents: context.intents !== null ? context.intents : undefined,
 		initialValue: simplify(context.payload) ?? {},
 		error: simplify(error) as Record<string, string[]>,
 		state: context.state,
@@ -377,36 +370,40 @@ export type Intent<Schema = any> =
 	| RemoveIntent<Schema extends Array<any> ? Schema : never>
 	| InsertIntent<Schema extends Array<any> ? Schema : never>;
 
-export function getIntent(intent: string | null | undefined): Intent | null {
+export function getIntents(
+	intent: string | null | undefined,
+): Array<Intent> | null {
 	if (!intent) {
 		return null;
 	}
 
-	const { type, payload } = JSON.parse(intent);
+	const intents = JSON.parse(intent);
 
-	switch (type) {
-		case 'validate':
-		case 'replace':
-		case 'reset':
-		case 'insert':
-		case 'remove':
-		case 'reorder':
-			return { type, payload };
+	if (
+		!Array.isArray(intents) ||
+		intents.length === 0 ||
+		!intents.every(
+			(intent) =>
+				typeof intent.type === 'string' &&
+				typeof intent.payload !== 'undefined',
+		)
+	) {
+		throw new Error('Unknown intent');
 	}
 
-	throw new Error('Unknown intent');
+	return intents;
 }
 
-export function serializeIntent(intent: Intent): string {
-	return JSON.stringify(intent);
+export function serializeIntents(intents: Array<Intent>): string {
+	return JSON.stringify(intents);
 }
 
-export function requestIntent(formId: string, intent: Intent): void {
+export function requestIntent(formId: string, intents: Array<Intent>): void {
 	const form = document.forms.namedItem(formId);
 	const submitter = document.createElement('button');
 
 	submitter.name = INTENT;
-	submitter.value = serializeIntent(intent);
+	submitter.value = serializeIntents(intents);
 	submitter.hidden = true;
 	submitter.formNoValidate = true;
 

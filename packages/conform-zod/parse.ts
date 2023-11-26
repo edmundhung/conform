@@ -1,4 +1,5 @@
 import {
+	type Intent,
 	type Submission,
 	VALIDATION_UNDEFINED,
 	VALIDATION_SKIPPED,
@@ -34,7 +35,7 @@ function getError({ errors }: ZodError): Record<string, string[]> {
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intent: string) => Schema);
+		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
@@ -42,7 +43,7 @@ export function parse<Schema extends ZodTypeAny>(
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intent: string) => Schema);
+		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
@@ -50,7 +51,7 @@ export function parse<Schema extends ZodTypeAny>(
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intent: string) => Schema);
+		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
 	},
@@ -58,11 +59,11 @@ export function parse<Schema extends ZodTypeAny>(
 	| Submission<input<Schema>, output<Schema>>
 	| Promise<Submission<input<Schema>, output<Schema>>> {
 	return baseParse(payload, {
-		resolve(payload, intent) {
+		resolve(payload, intents) {
 			const errorMap = options.errorMap;
 			const schema = enableTypeCoercion(
 				typeof options.schema === 'function'
-					? options.schema(intent)
+					? options.schema(intents)
 					: options.schema,
 			);
 

@@ -1,6 +1,7 @@
 export {
 	type Submission,
 	type SubmissionResult,
+	type Intent,
 	type FieldName,
 	requestIntent,
 	requestSubmit,

@@ -79,33 +79,32 @@ export function Component() {
 						</label>
 					</div>
 					<button
-						{...getControlButtonProps(
-							form.id,
+						{...getControlButtonProps(form.id, [
 							intent.remove({ name: tasks.name, index }),
-						)}
+						])}
 					>
 						Delete
 					</button>
 					<button
-						{...getControlButtonProps(
-							form.id,
+						{...getControlButtonProps(form.id, [
 							intent.reorder({ name: tasks.name, from: index, to: 0 }),
-						)}
+						])}
 					>
 						Move to top
 					</button>
 					<button
-						{...getControlButtonProps(
-							form.id,
+						{...getControlButtonProps(form.id, [
 							intent.replace({ value: { content: '' } }),
-						)}
+						])}
 					>
 						Clear
 					</button>
 				</fieldset>
 			))}
 			<button
-				{...getControlButtonProps(form.id, intent.insert({ name: tasks.name }))}
+				{...getControlButtonProps(form.id, [
+					intent.insert({ name: tasks.name }),
+				])}
 			>
 				Add task
 			</button>

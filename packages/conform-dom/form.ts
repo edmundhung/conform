@@ -204,8 +204,8 @@ export function createForm<Schema extends Record<string, any> = any>(
 			error: options.lastResult?.error ?? {},
 		};
 
-		if (options.lastResult?.intent) {
-			handleIntent(options.lastResult.intent, result);
+		if (options.lastResult?.intents) {
+			handleIntents(options.lastResult.intents, result);
 		}
 
 		return result;
@@ -274,41 +274,43 @@ export function createForm<Schema extends Record<string, any> = any>(
 		context.key[name] = generateId();
 	}
 
-	function handleIntent(
-		intent: Intent,
+	function handleIntents(
+		intents: Array<Intent>,
 		context: FormContext,
 		initialized?: boolean,
 	): void {
-		switch (intent.type) {
-			case 'replace': {
-				if (typeof intent.payload.value !== 'undefined') {
-					const name = intent.payload.name ?? '';
-					const value = intent.payload.value;
+		for (const intent of intents) {
+			switch (intent.type) {
+				case 'replace': {
+					if (typeof intent.payload.value !== 'undefined') {
+						const name = intent.payload.name ?? '';
+						const value = intent.payload.value;
 
-					updateValue(context, name, value);
+						updateValue(context, name, value);
+					}
+					break;
 				}
-				break;
-			}
-			case 'reset': {
-				if (intent.payload.value ?? true) {
-					const name = intent.payload.name ?? '';
-					const value = getValue(context.defaultValue, name);
+				case 'reset': {
+					if (intent.payload.value ?? true) {
+						const name = intent.payload.name ?? '';
+						const value = getValue(context.defaultValue, name);
 
-					updateValue(context, name, value);
+						updateValue(context, name, value);
+					}
+					break;
 				}
-				break;
-			}
-			case 'insert':
-			case 'remove':
-			case 'reorder': {
-				if (initialized) {
-					context.initialValue = clone(context.initialValue);
-					context.key = clone(context.key);
+				case 'insert':
+				case 'remove':
+				case 'reorder': {
+					if (initialized) {
+						context.initialValue = clone(context.initialValue);
+						context.key = clone(context.key);
 
-					setListState(context.key, intent, generateId);
-					setListValue(context.initialValue, intent);
+						setListState(context.key, intent, generateId);
+						setListValue(context.initialValue, intent);
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}
@@ -696,7 +698,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 				value,
 			});
 		} else {
-			requestIntent(formId, intent.validate(element.name));
+			requestIntent(formId, [intent.validate(element.name)]);
 		}
 	}
 
@@ -711,7 +713,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 			return;
 		}
 
-		requestIntent(formId, intent.validate(element.name));
+		requestIntent(formId, [intent.validate(element.name)]);
 	}
 
 	function reset(event: Event) {
@@ -770,8 +772,8 @@ export function createForm<Schema extends Record<string, any> = any>(
 			validated: result.state?.validated ?? {},
 		};
 
-		if (result.intent) {
-			handleIntent(result.intent, update, true);
+		if (result.intents) {
+			handleIntents(result.intents, update, true);
 		}
 
 		updateContext(update);

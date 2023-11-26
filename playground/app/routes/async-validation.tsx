@@ -1,4 +1,9 @@
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
+import {
+	type Intent,
+	getFormProps,
+	getInputProps,
+	useForm,
+} from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
@@ -7,7 +12,7 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 function createSchema(
-	intent: string,
+	intents: Array<Intent> | null,
 	constraints: {
 		isEmailUnique?: (email: string) => Promise<boolean>;
 	} = {},
@@ -21,7 +26,12 @@ function createSchema(
 				z.string().superRefine((email, ctx) =>
 					refine(ctx, {
 						validate: () => constraints.isEmailUnique?.(email),
-						when: intent === 'validate/email' || intent === 'submit',
+						when:
+							!intents ||
+							intents.some(
+								(intent) =>
+									intent.type === 'validate' && intent.payload === 'email',
+							),
 						message: 'Email is already used',
 					}),
 				),
@@ -43,8 +53,8 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
-		schema: (intent) =>
-			createSchema(intent, {
+		schema: (intents) =>
+			createSchema(intents, {
 				isEmailUnique(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
