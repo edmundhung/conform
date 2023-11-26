@@ -3,7 +3,9 @@ export {
 	type SubmissionResult,
 	type FieldName,
 	requestIntent,
+	requestSubmit,
 	isFieldElement,
+	intent,
 } from '@conform-to/dom';
 export {
 	type FieldProps,
@@ -23,5 +25,5 @@ export {
 	getSelectProps,
 	getTextareaProps,
 	getCollectionProps,
+	getControlButtonProps,
 } from './helpers';
-export * as intent from './intent';

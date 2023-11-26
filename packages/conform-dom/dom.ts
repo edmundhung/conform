@@ -116,13 +116,6 @@ export function requestSubmit(
 		'Failed to submit the form. The element provided is null or undefined.',
 	);
 
-	let shouldRemoveSubmitter = false;
-
-	if (submitter && !submitter.isConnected) {
-		shouldRemoveSubmitter = true;
-		form.appendChild(submitter);
-	}
-
 	if (typeof form.requestSubmit === 'function') {
 		form.requestSubmit(submitter);
 	} else {
@@ -133,9 +126,5 @@ export function requestSubmit(
 		});
 
 		form.dispatchEvent(event);
-	}
-
-	if (submitter && shouldRemoveSubmitter) {
-		form.removeChild(submitter);
 	}
 }

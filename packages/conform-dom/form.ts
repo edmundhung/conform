@@ -23,10 +23,10 @@ import {
 	STATE,
 	requestIntent,
 	getSubmissionContext,
-	serializeIntent,
 	setListState,
 	setListValue,
 	setState,
+	intent,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -298,13 +298,15 @@ export function createForm<Schema extends Record<string, any> = any>(
 				}
 				break;
 			}
-			case 'list': {
+			case 'insert':
+			case 'remove':
+			case 'reorder': {
 				if (initialized) {
 					context.initialValue = clone(context.initialValue);
 					context.key = clone(context.key);
 
-					setListState(context.key, intent.payload, generateId);
-					setListValue(context.initialValue, intent.payload);
+					setListState(context.key, intent, generateId);
+					setListValue(context.initialValue, intent);
 				}
 				break;
 			}
@@ -694,13 +696,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 				value,
 			});
 		} else {
-			requestIntent(
-				element.form,
-				serializeIntent({
-					type: 'validate',
-					payload: element.name,
-				}),
-			);
+			requestIntent(formId, intent.validate(element.name));
 		}
 	}
 
@@ -715,13 +711,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 			return;
 		}
 
-		requestIntent(
-			element.form,
-			serializeIntent({
-				type: 'validate',
-				payload: element.name,
-			}),
-		);
+		requestIntent(formId, intent.validate(element.name));
 	}
 
 	function reset(event: Event) {

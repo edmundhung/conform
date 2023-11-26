@@ -14,14 +14,15 @@ export {
 	VALIDATION_UNDEFINED,
 	createForm,
 } from './form';
-export { type FieldElement, isFieldElement } from './dom';
+export { type FieldElement, isFieldElement, requestSubmit } from './dom';
 export { invariant } from './util';
 export {
 	type Submission,
 	type SubmissionResult,
-	type ListIntentPayload,
+	type Intent,
 	INTENT,
 	STATE,
+	intent,
 	serializeIntent,
 	requestIntent,
 	parse,

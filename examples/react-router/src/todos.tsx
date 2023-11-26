@@ -4,6 +4,8 @@ import {
 	intent,
 	getFormProps,
 	getInputProps,
+	getFieldsetProps,
+	getControlButtonProps,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
@@ -41,6 +43,7 @@ export function Component() {
 			return parse(formData, { schema: todosSchema });
 		},
 	});
+	const tasks = form.fields.tasks;
 
 	return (
 		<Form method="post" {...getFormProps(form)}>
@@ -53,9 +56,9 @@ export function Component() {
 				<div>{form.fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{form.fields.tasks.errors}</div>
-			{form.fields.tasks.items.map((task, index) => (
-				<fieldset key={task.key}>
+			<div className="form-error">{tasks.errors}</div>
+			{tasks.items.map((task, index) => (
+				<fieldset key={task.key} {...getFieldsetProps(task)}>
 					<div>
 						<label>Task #${index + 1}</label>
 						<input
@@ -75,26 +78,37 @@ export function Component() {
 							/>
 						</label>
 					</div>
-					<button {...intent.list.remove(form.fields.tasks, { index })}>
+					<button
+						{...getControlButtonProps(
+							form.id,
+							intent.remove({ name: tasks.name, index }),
+						)}
+					>
 						Delete
 					</button>
 					<button
-						{...intent.list.reorder(form.fields.tasks, { from: index, to: 0 })}
+						{...getControlButtonProps(
+							form.id,
+							intent.reorder({ name: tasks.name, from: index, to: 0 }),
+						)}
 					>
 						Move to top
 					</button>
 					<button
-						{...intent.replace({
-							name: task.name,
-							formId: form.id,
-							value: { content: '' },
-						})}
+						{...getControlButtonProps(
+							form.id,
+							intent.replace({ value: { content: '' } }),
+						)}
 					>
 						Clear
 					</button>
 				</fieldset>
 			))}
-			<button {...intent.list.insert(form.fields.tasks)}>Add task</button>
+			<button
+				{...getControlButtonProps(form.id, intent.insert({ name: tasks.name }))}
+			>
+				Add task
+			</button>
 			<hr />
 			<button>Save</button>
 		</Form>

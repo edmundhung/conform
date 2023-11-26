@@ -46,9 +46,8 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 
 	input.type = 'hidden';
 	input.name = name;
-	input.setAttribute('form', formId);
 
-	form?.append(input);
+	form?.appendChild(input);
 
 	return input;
 }

@@ -1,3 +1,4 @@
+import { type Intent, INTENT, serializeIntent } from '@conform-to/dom';
 import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 import type {
 	FormMetadata,
@@ -276,4 +277,13 @@ export function getCollectionProps<
 				options.type === 'checkbox' ? undefined : metadata.constraint?.required,
 		}),
 	);
+}
+
+export function getControlButtonProps(formId: string, intent: Intent) {
+	return {
+		name: INTENT,
+		value: serializeIntent(intent),
+		form: formId,
+		formNoValidate: true,
+	};
 }

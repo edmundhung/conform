@@ -1,4 +1,4 @@
-import type { FormValue } from './form';
+import type { FieldName, FormValue } from './form';
 import { requestSubmit } from './dom';
 import {
 	simplify,
@@ -198,9 +198,11 @@ export function parse<Value>(
 				}
 				break;
 			}
-			case 'list': {
-				setListValue(context.payload, context.intent.payload);
-				setListState(context.state.validated, context.intent.payload);
+			case 'insert':
+			case 'remove':
+			case 'reorder': {
+				setListValue(context.payload, context.intent);
+				setListState(context.state.validated, context.intent);
 
 				context.state.validated[context.intent.payload.name] = true;
 				break;
@@ -318,41 +320,62 @@ export function rejectSubmission(
 	};
 }
 
-export type Intent =
-	| {
-			type: 'validate';
-			payload: string;
-	  }
-	| {
-			type: 'list';
-			payload: ListIntentPayload;
-	  }
-	| {
-			type: 'reset';
-			payload: {
-				name?: string;
-				value?: boolean;
-				validated?: boolean;
-			};
-	  }
-	| {
-			type: 'replace';
-			payload: {
-				name?: string;
-				value?: unknown;
-				validated?: boolean;
-			};
-	  };
+export type ValidateIntent<Schema = any> = {
+	type: 'validate';
+	payload: FieldName<Schema>;
+};
 
-export type ListIntentPayload<Schema = unknown> =
-	| {
-			name: string;
-			operation: 'insert';
-			defaultValue?: FormValue<Schema>;
-			index?: number;
-	  }
-	| { name: string; operation: 'remove'; index: number }
-	| { name: string; operation: 'reorder'; from: number; to: number };
+export type ResetIntent<Schema = any> = {
+	type: 'reset';
+	payload: {
+		name?: FieldName<Schema>;
+		value?: boolean;
+		validated?: boolean;
+	};
+};
+
+export type ReplaceIntent<Schema = any> = {
+	type: 'replace';
+	payload: {
+		name?: FieldName<Schema>;
+		value?: FormValue<Schema>;
+		validated?: boolean;
+	};
+};
+
+export type RemoveIntent<Schema extends Array<any> = any> = {
+	type: 'remove';
+	payload: {
+		name: FieldName<Schema>;
+		index: number;
+	};
+};
+
+export type InsertIntent<Schema extends Array<any> = any> = {
+	type: 'insert';
+	payload: {
+		name: FieldName<Schema>;
+		defaultValue?: Schema extends Array<infer Item> ? FormValue<Item> : never;
+		index?: number;
+	};
+};
+
+export type ReorderIntent<Schema extends Array<any> = any> = {
+	type: 'reorder';
+	payload: {
+		name: FieldName<Schema>;
+		from: number;
+		to: number;
+	};
+};
+
+export type Intent<Schema = any> =
+	| ValidateIntent<Schema>
+	| ResetIntent<Schema>
+	| ReplaceIntent<Schema>
+	| ReorderIntent<Schema extends Array<any> ? Schema : never>
+	| RemoveIntent<Schema extends Array<any> ? Schema : never>
+	| InsertIntent<Schema extends Array<any> ? Schema : never>;
 
 export function getIntent(intent: string | null | undefined): Intent | null {
 	if (!intent) {
@@ -365,7 +388,9 @@ export function getIntent(intent: string | null | undefined): Intent | null {
 		case 'validate':
 		case 'replace':
 		case 'reset':
-		case 'list':
+		case 'insert':
+		case 'remove':
+		case 'reorder':
 			return { type, payload };
 	}
 
@@ -376,35 +401,42 @@ export function serializeIntent(intent: Intent): string {
 	return JSON.stringify(intent);
 }
 
-export function requestIntent(
-	form: HTMLFormElement | null | undefined,
-	value: string,
-): void {
+export function requestIntent(formId: string, intent: Intent): void {
+	const form = document.forms.namedItem(formId);
 	const submitter = document.createElement('button');
 
 	submitter.name = INTENT;
-	submitter.value = value;
+	submitter.value = serializeIntent(intent);
 	submitter.hidden = true;
 	submitter.formNoValidate = true;
 
+	form?.appendChild(submitter);
 	requestSubmit(form, submitter);
+	form?.removeChild(submitter);
 }
 
-export function updateList(list: unknown, payload: ListIntentPayload): void {
+export function updateList(
+	list: unknown,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
+): void {
 	invariant(
 		Array.isArray(list),
 		`Failed to update list. The value is not an array.`,
 	);
 
-	switch (payload.operation) {
+	switch (intent.type) {
 		case 'insert':
-			list.splice(payload.index ?? list.length, 0, payload.defaultValue as any);
+			list.splice(
+				intent.payload.index ?? list.length,
+				0,
+				intent.payload.defaultValue as any,
+			);
 			break;
 		case 'remove':
-			list.splice(payload.index, 1);
+			list.splice(intent.payload.index, 1);
 			break;
 		case 'reorder':
-			list.splice(payload.to, 0, ...list.splice(payload.from, 1));
+			list.splice(intent.payload.to, 0, ...list.splice(intent.payload.from, 1));
 			break;
 		default:
 			throw new Error('Unknown list intent received');
@@ -413,12 +445,12 @@ export function updateList(list: unknown, payload: ListIntentPayload): void {
 
 export function setListValue(
 	data: Record<string, unknown>,
-	payload: ListIntentPayload,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
-	setValue(data, payload.name, (value) => {
+	setValue(data, intent.payload.name, (value) => {
 		const list = value ?? [];
 
-		updateList(list, payload);
+		updateList(list, intent);
 
 		return list;
 	});
@@ -486,24 +518,40 @@ export function setState(
 
 export function setListState(
 	state: Record<string, unknown>,
-	payload: ListIntentPayload,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
 	getDefaultValue?: () => unknown,
 ): void {
-	setState(state, payload.name, (value) => {
+	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
 
-		switch (payload.operation) {
+		switch (intent.type) {
 			case 'insert':
 				updateList(list, {
-					...payload,
-					defaultValue: getDefaultValue?.(),
+					type: intent.type,
+					payload: {
+						...intent.payload,
+						defaultValue: getDefaultValue?.(),
+					},
 				});
 				break;
 			default:
-				updateList(list, payload);
+				updateList(list, intent);
 				break;
 		}
 
 		return list;
 	});
 }
+
+export const intent = new Proxy(
+	{} as {
+		[Type in Intent['type']]: <Schema>(
+			payload: Extract<Intent<Schema>, { type: Type }>['payload'],
+		) => Extract<Intent<Schema>, { type: Type }>;
+	},
+	{
+		get(_, type) {
+			return (payload: any) => ({ type, payload });
+		},
+	},
+);

@@ -1,11 +1,10 @@
-import type { FieldProps } from '@conform-to/react';
 import {
-	FormProvider,
 	useForm,
 	intent,
-	useField,
 	getFormProps,
 	getInputProps,
+	getControlButtonProps,
+	getFieldsetProps,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
@@ -36,7 +35,7 @@ export async function action({ request }: ActionArgs) {
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
-export default function TodoForm() {
+export default function Example() {
 	const lastResult = useActionData<typeof action>();
 	const form = useForm({
 		lastResult,
@@ -48,85 +47,71 @@ export default function TodoForm() {
 	const tasks = form.fields.tasks;
 
 	return (
-		<FormProvider context={form.context}>
-			<Form method="post" {...getFormProps(form)}>
-				<div>
-					<label>Title</label>
-					<input
-						className={!form.fields.title.valid ? 'error' : ''}
-						{...getInputProps(form.fields.title)}
-					/>
-					<div>{form.fields.title.errors}</div>
-				</div>
-				<hr />
-				<div className="form-error">{tasks.errors}</div>
-				{tasks.items.map((task, index) => (
-					<div key={task.key}>
-						<TaskFieldset
-							title={`Task #${index + 1}`}
-							name={task.name}
-							formId={form.id}
-						/>
-						<button {...intent.list.remove(tasks, { index })}>Delete</button>
-						<button {...intent.list.reorder(tasks, { from: index, to: 0 })}>
-							Move to top
-						</button>
-						<button
-							{...intent.replace({
-								formId: form.id,
-								name: task.name,
-								value: { content: '' },
-							})}
-						>
-							Clear
-						</button>
-					</div>
-				))}
-				<button
-					{...intent.list.insert(tasks, {
-						defaultValue: { content: '' },
-					})}
-				>
-					Add task
-				</button>
-				<hr />
-				<button>Save</button>
-			</Form>
-		</FormProvider>
-	);
-}
-
-interface TaskFieldsetProps extends FieldProps<z.input<typeof taskSchema>> {
-	title: string;
-}
-
-function TaskFieldset({ title, name, formId }: TaskFieldsetProps) {
-	const { fields } = useField({
-		formId,
-		name,
-	});
-
-	return (
-		<fieldset>
+		<Form method="post" {...getFormProps(form)}>
 			<div>
-				<label>{title}</label>
+				<label>Title</label>
 				<input
-					className={!fields.content.valid ? 'error' : ''}
-					{...getInputProps(fields.content)}
+					className={!form.fields.title.valid ? 'error' : ''}
+					{...getInputProps(form.fields.title)}
 				/>
-				<div>{fields.content.errors}</div>
+				<div>{form.fields.title.errors}</div>
 			</div>
-			<div>
-				<label>
-					<span>Completed</span>
-					<input
-						className={!fields.completed.valid ? 'error' : ''}
-						{...getInputProps(fields.completed, {
-							type: 'checkbox',
-						})}
-					/>
-				</label>
-			</div>
-		</fieldset>
+			<hr />
+			<div className="form-error">{tasks.errors}</div>
+			{tasks.items.map((task, index) => (
+				<fieldset key={task.key} {...getFieldsetProps(task)}>
+					<div>
+						<label>Task #${index + 1}</label>
+						<input
+							className={!task.fields.content.valid ? 'error' : ''}
+							{...getInputProps(task.fields.content)}
+						/>
+						<div>{task.fields.content.errors}</div>
+					</div>
+					<div>
+						<label>
+							<span>Completed</span>
+							<input
+								className={!task.fields.completed.valid ? 'error' : ''}
+								{...getInputProps(task.fields.completed, {
+									type: 'checkbox',
+								})}
+							/>
+						</label>
+					</div>
+					<button
+						{...getControlButtonProps(
+							form.id,
+							intent.remove({ name: tasks.name, index }),
+						)}
+					>
+						Delete
+					</button>
+					<button
+						{...getControlButtonProps(
+							form.id,
+							intent.reorder({ name: tasks.name, from: index, to: 0 }),
+						)}
+					>
+						Move to top
+					</button>
+					<button
+						{...getControlButtonProps(
+							form.id,
+							intent.replace({ value: { content: '' } }),
+						)}
+					>
+						Clear
+					</button>
+				</fieldset>
+			))}
+			<button
+				{...getControlButtonProps(form.id, intent.insert({ name: tasks.name }))}
+			>
+				Add task
+			</button>
+			<hr />
+			<button>Save</button>
+		</Form>
 	);
 }

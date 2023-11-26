@@ -4,6 +4,7 @@ import {
 	getFormProps,
 	getInputProps,
 	getTextareaProps,
+	getControlButtonProps,
 } from '@conform-to/react';
 import { parse } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -58,13 +59,19 @@ export default function Validate() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.validate(form.fields.name)}
+						{...getControlButtonProps(
+							form.id,
+							intent.validate(form.fields.name.name),
+						)}
 					>
 						Validate Name
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...intent.validate(form.fields.message)}
+						{...getControlButtonProps(
+							form.id,
+							intent.validate(form.fields.message.name),
+						)}
 					>
 						Validate Message
 					</button>
