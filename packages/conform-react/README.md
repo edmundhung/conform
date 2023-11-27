@@ -430,7 +430,7 @@ import { Form } from 'react-router-dom';
 export default function SignupForm() {
     const [form, { email, password, confirmPassword }] = useForm({
         onValidate(context) {
-            // This enables validating each field based on the validity state and custom cosntraint if defined
+            // This enables validating each field based on the validity state and custom constraint if defined
             return validateConstraint(
               ...context,
               constraint: {
