@@ -101,7 +101,7 @@ function cleanup<Props>(props: Props): Props {
 }
 
 function getAriaAttributes(
-	metadata: BaseMetadata<unknown>,
+	metadata: BaseMetadata<unknown, unknown>,
 	options: ControlOptions = {},
 ) {
 	if (
@@ -124,7 +124,7 @@ function getAriaAttributes(
 }
 
 function getFormControlProps<Schema>(
-	metadata: FieldMetadata<Schema>,
+	metadata: FieldMetadata<Schema, unknown>,
 	options?: ControlOptions,
 ) {
 	return cleanup({
@@ -139,13 +139,13 @@ function getFormControlProps<Schema>(
 
 export function getInputProps<
 	Schema extends Exclude<Primitive, File> | unknown,
->(field: FieldMetadata<Schema>, options?: InputOptions): InputProps;
+>(field: FieldMetadata<Schema, unknown>, options?: InputOptions): InputProps;
 export function getInputProps<Schema extends File | File[]>(
-	field: FieldMetadata<Schema>,
+	field: FieldMetadata<Schema, unknown>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
 export function getInputProps<Schema extends Primitive | File[] | unknown>(
-	field: FieldMetadata<Schema>,
+	field: FieldMetadata<Schema, unknown>,
 	options: InputOptions = {},
 ): InputProps {
 	const props: InputProps = {
@@ -175,7 +175,10 @@ export function getInputProps<Schema extends Primitive | File[] | unknown>(
 
 export function getSelectProps<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
->(metadata: FieldMetadata<Schema>, options?: ControlOptions): SelectProps {
+>(
+	metadata: FieldMetadata<Schema, unknown>,
+	options?: ControlOptions,
+): SelectProps {
 	return cleanup({
 		...getFormControlProps(metadata, options),
 		defaultValue: metadata.initialValue?.toString(),
@@ -185,7 +188,10 @@ export function getSelectProps<
 
 export function getTextareaProps<
 	Schema extends Primitive | undefined | unknown,
->(metadata: FieldMetadata<Schema>, options?: ControlOptions): TextareaProps {
+>(
+	metadata: FieldMetadata<Schema, unknown>,
+	options?: ControlOptions,
+): TextareaProps {
 	return cleanup({
 		...getFormControlProps(metadata, options),
 		defaultValue: metadata.initialValue?.toString(),
@@ -195,7 +201,7 @@ export function getTextareaProps<
 }
 
 export function getFormProps<Schema extends Record<string, any>>(
-	metadata: FormMetadata<Schema>,
+	metadata: FormMetadata<Schema, any>,
 	options?: FormOptions<Schema>,
 ) {
 	const onSubmit = options?.onSubmit;
@@ -227,7 +233,7 @@ export function getFormProps<Schema extends Record<string, any>>(
 
 export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
->(metadata: FieldMetadata<Schema>, options?: BaseOptions) {
+>(metadata: FieldMetadata<Schema, unknown>, options?: BaseOptions) {
 	return cleanup({
 		id: metadata.id,
 		name: metadata.name,
@@ -236,9 +242,9 @@ export function getFieldsetProps<
 	});
 }
 
-export function getFieldProps<Schema>(
-	metadata: FieldMetadata<Schema>,
-): FieldProps<Schema> {
+export function getFieldProps<Schema, Error>(
+	metadata: FieldMetadata<Schema, Error>,
+): FieldProps<Schema, Error> {
 	return {
 		name: metadata.name,
 		formId: metadata.formId,
@@ -253,7 +259,7 @@ export function getCollectionProps<
 		| undefined
 		| unknown,
 >(
-	metadata: FieldMetadata<Schema>,
+	metadata: FieldMetadata<Schema, unknown>,
 	options: BaseOptions & {
 		type: 'checkbox' | 'radio';
 		options: string[];

@@ -1,4 +1,5 @@
 import {
+	type FormId,
 	type FieldName,
 	type Form,
 	type FormOptions,
@@ -23,7 +24,7 @@ import {
 export const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-export function useFormId(preferredId?: string): string {
+export function useFormId<Error>(preferredId?: string): FormId<Error> {
 	const id = useId();
 
 	return preferredId ?? id;
@@ -44,9 +45,9 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 	return noValidate;
 }
 
-export function useForm<Schema extends Record<string, any>>(
+export function useForm<Schema extends Record<string, any>, Error>(
 	options: Pretty<
-		FormOptions<Schema> & {
+		FormOptions<Schema, Error> & {
 			/**
 			 * If the form id is provided, Id for label,
 			 * input and error elements will be derived.
@@ -61,8 +62,8 @@ export function useForm<Schema extends Record<string, any>>(
 			defaultNoValidate?: boolean;
 		}
 	>,
-): FormMetadata<Schema> {
-	const formId = useFormId(options.id);
+): FormMetadata<Schema, Error> {
+	const formId = useFormId<Error>(options.id);
 	const initializeContext = () => createForm(formId, options);
 	const [context, setContext] = useState(initializeContext);
 
@@ -108,11 +109,14 @@ export function useForm<Schema extends Record<string, any>>(
 	});
 }
 
-export function useFormMetadata<Schema extends Record<string, any>>(options: {
-	formId: string;
-	context?: Form<Schema>;
+export function useFormMetadata<
+	Schema extends Record<string, any>,
+	Error,
+>(options: {
+	formId: FormId<Error>;
+	context?: Form<Schema, Error>;
 	defaultNoValidate?: boolean;
-}): FormMetadata<Schema> {
+}): FormMetadata<Schema, Error> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
 	const state = useFormState(form, subjectRef);
@@ -122,10 +126,10 @@ export function useFormMetadata<Schema extends Record<string, any>>(options: {
 }
 
 export function useField<Schema>(options: {
-	formId: string;
+	formId: FormId<Error>;
 	name: FieldName<Schema>;
-	context?: Form;
-}): FieldMetadata<Schema> {
+	context?: Form<any, Error>;
+}): FieldMetadata<Schema, Error> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
 	const state = useFormState(form, subjectRef);

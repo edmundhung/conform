@@ -120,7 +120,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 ):
 	| Submission<yup.InferType<Schema>>
 	| Promise<Submission<yup.InferType<Schema>>> {
-	return baseParse<Submission<yup.InferType<Schema>>>(payload, {
+	return baseParse<Submission<yup.InferType<Schema>>, string[]>(payload, {
 		resolve(payload, intents) {
 			const schema =
 				typeof config.schema === 'function'

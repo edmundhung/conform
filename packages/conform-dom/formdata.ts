@@ -157,14 +157,14 @@ export function isFile(obj: unknown): obj is File {
  * Simplify value by removing empty object or array and null values
  */
 export function simplify<Type extends Record<string, unknown>>(
-	value: Type,
-): Record<string, unknown> | undefined;
+	value: Type | null,
+): Type | undefined;
 export function simplify<Type extends Array<unknown>>(
-	value: Type,
-): Array<unknown> | undefined;
+	value: Type | null,
+): Type | undefined;
 export function simplify(value: unknown): unknown | undefined;
 export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
-	value: Type,
+	value: Type | null,
 ): Record<string, unknown> | Array<unknown> | undefined {
 	if (isPlainObject(value)) {
 		const obj = Object.entries(value).reduce<Record<string, unknown>>(

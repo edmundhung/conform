@@ -1070,9 +1070,7 @@ test.describe('conform-zod', () => {
 
 		expect(parse(formData, { schema: createSchema() })).toEqual({
 			...submission,
-			error: {
-				email: ['__undefined__'],
-			},
+			error: null,
 		});
 		expect(parse(formData, { schema: createSchema(() => false) })).toEqual({
 			...submission,
@@ -1090,7 +1088,7 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			...submission,
 			error: {
-				email: ['__skipped__'],
+				email: null,
 			},
 		});
 		expect(
@@ -1098,7 +1096,7 @@ test.describe('conform-zod', () => {
 		).toEqual({
 			...submission,
 			error: {
-				email: ['__skipped__'],
+				email: null,
 			},
 		});
 		expect(

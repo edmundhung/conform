@@ -56,6 +56,8 @@ export type FormValue<Schema> = Schema extends
 			| undefined
 	: unknown | string | undefined;
 
+export type FormId<Error> = string & { __error?: Error };
+
 export type FieldName<Schema> = string & { __type?: Schema };
 
 export type Constraint = {
@@ -69,28 +71,28 @@ export type Constraint = {
 	pattern?: string;
 };
 
-export type FormContext = {
+export type FormContext<Error> = {
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
-	error: Record<string, string[]>;
+	error: Record<string, Error>;
 	constraint: Record<string, Constraint>;
 	key: Record<string, string>;
 	validated: Record<string, boolean>;
 };
 
-export type FormState = {
+export type FormState<Error = unknown> = {
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
-	error: Record<string, string[]>;
+	error: Record<string, Error>;
 	constraint: Record<string, Constraint>;
 	key: Record<string, string>;
 	valid: Record<string, boolean>;
 	dirty: Record<string, boolean>;
 };
 
-export type FormOptions<Schema> = {
+export type FormOptions<Schema, Error> = {
 	/**
 	 * An object representing the initial value of the form.
 	 */
@@ -104,7 +106,7 @@ export type FormOptions<Schema> = {
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastResult?: SubmissionResult;
+	lastResult?: SubmissionResult<Error>;
 
 	/**
 	 * Define when conform should start validation.
@@ -129,7 +131,7 @@ export type FormOptions<Schema> = {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Schema, any>;
+	}) => Submission<Schema, any, Error>;
 };
 
 export type SubscriptionSubject = {
@@ -147,36 +149,32 @@ export type SubscriptionScope = {
 	name?: string[];
 };
 
-export type Form<Schema extends Record<string, any> = any> = {
+export type Form<Schema extends Record<string, any> = any, Error = string[]> = {
 	id: string;
 	submit(event: SubmitEvent): {
 		formData: FormData;
 		action: ReturnType<typeof getFormAction>;
 		encType: ReturnType<typeof getFormEncType>;
 		method: ReturnType<typeof getFormMethod>;
-		submission?: Submission<Schema>;
+		submission?: Submission<Schema, any, Error>;
 	};
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
-	report(result: SubmissionResult): void;
-	update(options: Omit<FormOptions<Schema>, 'lastResult'>): void;
+	report(result: SubmissionResult<Error>): void;
+	update(options: Omit<FormOptions<Schema, Error>, 'lastResult'>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
-	getState(): FormState;
+	getState(): FormState<Error>;
 	getSerializedState(): string;
 };
 
-export const VALIDATION_UNDEFINED = '__undefined__';
-
-export const VALIDATION_SKIPPED = '__skipped__';
-
-export function createForm<Schema extends Record<string, any> = any>(
-	formId: string,
-	options: FormOptions<Schema>,
-): Form<Schema> {
+export function createForm<
+	Schema extends Record<string, any> = any,
+	Error = string[],
+>(formId: string, options: FormOptions<Schema, Error>): Form<Schema, Error> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
@@ -191,17 +189,19 @@ export function createForm<Schema extends Record<string, any> = any>(
 		return element;
 	}
 
-	function initializeFormContext(): FormContext {
+	function initializeFormContext(): FormContext<Error> {
 		const defaultValue = options.defaultValue ?? {};
 		const value = options.lastResult?.initialValue ?? defaultValue;
-		const result: FormContext = {
+		const result: FormContext<Error> = {
 			constraint: options.constraint ?? {},
 			defaultValue,
 			initialValue: value,
 			validated: options.lastResult?.state?.validated ?? {},
 			key: getDefaultKey(defaultValue),
 			value,
-			error: options.lastResult?.error ?? {},
+			// The `lastResult` should comes from the server which we won't expect the error to be null
+			// We can consider adding a warning if it happens
+			error: (options.lastResult?.error as Record<string, Error>) ?? {},
 		};
 
 		if (options.lastResult?.intents) {
@@ -211,7 +211,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		return result;
 	}
 
-	function initializeFormState(context: FormContext): FormState {
+	function initializeFormState(context: FormContext<Error>): FormState<Error> {
 		const defaultValue = flatten(context.defaultValue);
 		const initialValue =
 			context.initialValue === context.defaultValue
@@ -256,7 +256,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 	}
 
 	function updateValue(
-		context: FormContext,
+		context: FormContext<Error>,
 		name: string,
 		value: unknown,
 	): void {
@@ -276,7 +276,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 	function handleIntents(
 		intents: Array<Intent>,
-		context: FormContext,
+		context: FormContext<Error>,
 		initialized?: boolean,
 	): void {
 		for (const intent of intents) {
@@ -381,7 +381,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 	}
 
 	function createValidProxy(
-		error: Record<string, string[]>,
+		error: Record<string, Error>,
 	): Record<string, boolean> {
 		const cache: Record<string, boolean> = {};
 
@@ -453,7 +453,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		return false;
 	}
 
-	function updateContext(next: FormContext) {
+	function updateContext(next: FormContext<Error>) {
 		const prev = context;
 
 		// Apply change before updating state
@@ -495,7 +495,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		});
 	}
 
-	function updateFormState(next: FormState) {
+	function updateFormState(next: FormState<Error>) {
 		const diff: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
 			value: {},
 			error: {},
@@ -626,18 +626,9 @@ export function createForm<Schema extends Record<string, any> = any>(
 					submitter,
 				});
 
-				if (!submission.value) {
-					const result = submission.reject();
-
-					if (
-						!result.error ||
-						Object.values(result.error).every(
-							(messages) => !messages.includes(VALIDATION_UNDEFINED),
-						)
-					) {
-						report(result);
-						event.preventDefault();
-					}
+				if (!submission.value && submission.error !== null) {
+					report(submission.reject());
+					event.preventDefault();
 				}
 
 				return {
@@ -743,7 +734,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		});
 	}
 
-	function report(result: SubmissionResult) {
+	function report(result: SubmissionResult<Error>) {
 		const formElement = getFormElement();
 
 		if (typeof result.initialValue === 'undefined') {
@@ -753,11 +744,9 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 		const value = flatten(result.initialValue);
 		const error = Object.entries(result.error ?? {}).reduce<
-			Record<string, string[]>
+			Record<string, Error>
 		>((result, [name, messages]) => {
-			const error = messages.includes(VALIDATION_SKIPPED)
-				? context.error[name]
-				: messages;
+			const error = messages === null ? context.error[name] : messages;
 
 			if (error) {
 				result[name] = error;
@@ -765,7 +754,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 			return result;
 		}, {});
-		const update: FormContext = {
+		const update: FormContext<Error> = {
 			...context,
 			value,
 			error,
@@ -778,11 +767,12 @@ export function createForm<Schema extends Record<string, any> = any>(
 
 		updateContext(update);
 
-		for (const element of formElement.elements) {
-			if (isFieldElement(element) && element.name !== '') {
-				element.setCustomValidity(context.error[element.name]?.join(' ') ?? '');
-			}
-		}
+		// TODO: An option to configure what to put in the error message
+		// for (const element of formElement.elements) {
+		// 	if (isFieldElement(element) && element.name !== '') {
+		// 		element.setCustomValidity(context.error[element.name]?.join(' ') ?? '');
+		// 	}
+		// }
 
 		if (result.status === 'error') {
 			for (const element of formElement.elements) {
@@ -794,7 +784,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		}
 	}
 
-	function update(options: Omit<FormOptions<Schema>, 'lastResult'>) {
+	function update(options: Omit<FormOptions<Schema, Error>, 'lastResult'>) {
 		latestOptions = options;
 	}
 
@@ -814,7 +804,7 @@ export function createForm<Schema extends Record<string, any> = any>(
 		};
 	}
 
-	function getState(): FormState {
+	function getState(): FormState<Error> {
 		return state;
 	}
 

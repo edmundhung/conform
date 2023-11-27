@@ -1,8 +1,6 @@
 import {
 	type Intent,
 	type Submission,
-	VALIDATION_UNDEFINED,
-	VALIDATION_SKIPPED,
 	formatPaths,
 	parse as baseParse,
 } from '@conform-to/dom';
@@ -15,21 +13,49 @@ import {
 	type ZodErrorMap,
 	type input,
 	type output,
+	type ZodIssue,
 	ZodIssueCode,
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
 
-function getError({ errors }: ZodError): Record<string, string[]> {
-	return errors.reduce<Record<string, string[]>>((result, error) => {
-		const name = formatPaths(error.path);
-		const messages = result[name] ?? [];
+function getError<Error>(
+	zodError: ZodError,
+	formatError: (issues: Array<ZodIssue>) => Error,
+): Record<string, Error | null> | null {
+	const result: Record<string, ZodIssue[] | null> = {};
 
-		messages.push(error.message);
+	for (const issue of zodError.errors) {
+		const name = formatPaths(issue.path);
 
-		result[name] = messages;
+		switch (issue.message) {
+			case '__undefined__':
+				return null;
+			case '__skipped__':
+				result[name] = null;
+				break;
+			default: {
+				const issues = result[name];
 
-		return result;
-	}, {});
+				if (issues !== null) {
+					if (issues) {
+						result[name] = issues.concat(issue);
+					} else {
+						result[name] = [issue];
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	return Object.entries(result).reduce<Record<string, Error | null>>(
+		(result, [name, issues]) => {
+			result[name] = issues ? formatError(issues) : null;
+
+			return result;
+		},
+		{},
+	);
 }
 
 export function parse<Schema extends ZodTypeAny>(
@@ -39,7 +65,16 @@ export function parse<Schema extends ZodTypeAny>(
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
-): Submission<input<Schema>, output<Schema>>;
+): Submission<input<Schema>, output<Schema>, string[]>;
+export function parse<Schema extends ZodTypeAny, Error>(
+	payload: FormData | URLSearchParams,
+	options: {
+		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		async?: false;
+		errorMap?: ZodErrorMap;
+		formatError: (issues: Array<ZodIssue>) => Error;
+	},
+): Submission<input<Schema>, output<Schema>, Error>;
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -47,17 +82,27 @@ export function parse<Schema extends ZodTypeAny>(
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
-): Promise<Submission<input<Schema>, output<Schema>>>;
-export function parse<Schema extends ZodTypeAny>(
+): Promise<Submission<input<Schema>, output<Schema>, string[]>>;
+export function parse<Schema extends ZodTypeAny, Error>(
+	payload: FormData | URLSearchParams,
+	options: {
+		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		async: true;
+		errorMap?: ZodErrorMap;
+		formatError: (issues: Array<ZodIssue>) => Error;
+	},
+): Promise<Submission<input<Schema>, output<Schema>, Error>>;
+export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
+		formatError?: (issues: Array<ZodIssue>) => Error;
 	},
 ):
-	| Submission<input<Schema>, output<Schema>>
-	| Promise<Submission<input<Schema>, output<Schema>>> {
+	| Submission<input<Schema>, output<Schema>, Error | string[]>
+	| Promise<Submission<input<Schema>, output<Schema>, Error | string[]>> {
 	return baseParse(payload, {
 		resolve(payload, intents) {
 			const errorMap = options.errorMap;
@@ -72,7 +117,13 @@ export function parse<Schema extends ZodTypeAny>(
 			) => {
 				return {
 					value: result.success ? result.data : null,
-					error: !result.success ? getError(result.error) : {},
+					error: !result.success
+						? getError<Error | string[]>(
+								result.error,
+								options.formatError ??
+									((issues) => issues.map((issue) => issue.message)),
+						  )
+						: {},
 				};
 			};
 
@@ -117,7 +168,7 @@ export function refine(
 	if (typeof options.when !== 'undefined' && !options.when) {
 		ctx.addIssue({
 			code: ZodIssueCode.custom,
-			message: VALIDATION_SKIPPED,
+			message: '__skipped__',
 			path: options.path,
 		});
 		return;
@@ -130,8 +181,9 @@ export function refine(
 		// Validate only if the constraint is defined
 		ctx.addIssue({
 			code: ZodIssueCode.custom,
-			message: VALIDATION_UNDEFINED,
+			message: '__undefined__',
 			path: options.path,
+			fatal: true,
 		});
 		return;
 	}

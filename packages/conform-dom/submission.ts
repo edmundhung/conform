@@ -13,38 +13,38 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
-export type SubmissionContext<Value> = {
+export type SubmissionContext<Value = null, Error = unknown> = {
 	intents: Array<Intent> | null;
 	payload: Record<string, unknown>;
 	fields: string[];
-	value?: Value | null;
-	error?: Record<string, string[]>;
+	value: Value | null;
+	error: Record<string, Error | null> | null;
 	state: SubmissionState;
 };
 
-export type Submission<Schema, Value = Schema> =
+export type Submission<Schema, Value = Schema, Error = unknown> =
 	| {
 			type: 'submit';
 			payload: Record<string, unknown>;
 			value: Value | null;
-			error: Record<string, string[]>;
-			reject(options?: RejectOptions): SubmissionResult;
-			accept(options?: AcceptOptions): SubmissionResult;
+			error: Record<string, Error | null> | null;
+			reject(options?: RejectOptions<Error>): SubmissionResult<Error>;
+			accept(options?: AcceptOptions): SubmissionResult<Error>;
 	  }
 	| {
 			type: 'update';
 			payload: Record<string, unknown>;
 			value: null;
-			error: Record<string, string[]> | null;
-			reject(options?: RejectOptions): SubmissionResult;
-			accept(options?: AcceptOptions): SubmissionResult;
+			error: Record<string, Error | null> | null;
+			reject(options?: RejectOptions<Error>): SubmissionResult<Error>;
+			accept(options?: AcceptOptions): SubmissionResult<Error>;
 	  };
 
-export type SubmissionResult = {
+export type SubmissionResult<Error> = {
 	status: 'updated' | 'error' | 'success';
 	intents?: Array<Intent>;
 	initialValue?: Record<string, unknown>;
-	error?: Record<string, string[]>;
+	error?: Record<string, Error | null>;
 	state?: SubmissionState;
 };
 
@@ -52,14 +52,14 @@ export type AcceptOptions = {
 	resetForm?: boolean;
 };
 
-export type RejectOptions =
+export type RejectOptions<Error> =
 	| {
-			formErrors: string[];
-			fieldErrors?: Record<string, string[]>;
+			formErrors: Error;
+			fieldErrors?: Record<string, Error>;
 	  }
 	| {
-			formErrors?: string[];
-			fieldErrors: Record<string, string[]>;
+			formErrors?: Error;
+			fieldErrors: Record<string, Error>;
 	  };
 
 /**
@@ -74,7 +74,7 @@ export const STATE = '__state__';
 
 export function getSubmissionContext(
 	body: FormData | URLSearchParams,
-): SubmissionContext<unknown> {
+): SubmissionContext {
 	const intent = body.get(INTENT);
 	const state = body.get(STATE);
 	const payload: Record<string, unknown> = {};
@@ -108,49 +108,54 @@ export function getSubmissionContext(
 		intents: getIntents(intent),
 		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
+		value: null,
+		error: null,
 	};
 }
 
-export function parse<Value>(
+export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			intents: Array<Intent> | null,
-		) => { value?: Value; error?: Record<string, string[]> };
+		) => { value?: Value; error?: Record<string, Error | null> | null };
 	},
-): Submission<Value>;
-export function parse<Value>(
+): Submission<Value, Value, Error>;
+export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			intents: Array<Intent> | null,
-		) => Promise<{ value?: Value; error?: Record<string, string[]> }>;
+		) => Promise<{
+			value?: Value;
+			error?: Record<string, Error | null> | null;
+		}>;
 	},
-): Promise<Submission<Value>>;
-export function parse<Value>(
-	payload: FormData | URLSearchParams,
-	options: {
-		resolve: (
-			payload: Record<string, any>,
-			intents: Array<Intent> | null,
-		) =>
-			| { value?: Value; error?: Record<string, string[]> }
-			| Promise<{ value?: Value; error?: Record<string, string[]> }>;
-	},
-): Submission<Value> | Promise<Submission<Value>>;
-export function parse<Value>(
+): Promise<Submission<Value, Value, Error>>;
+export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			intents: Array<Intent> | null,
 		) =>
-			| { value?: Value; error?: Record<string, string[]> }
-			| Promise<{ value?: Value; error?: Record<string, string[]> }>;
+			| { value?: Value; error?: Record<string, Error | null> | null }
+			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
 	},
-): Submission<Value> | Promise<Submission<Value>> {
+): Submission<Value, Value, Error> | Promise<Submission<Value, Value, Error>>;
+export function parse<Value, Error>(
+	payload: FormData | URLSearchParams,
+	options: {
+		resolve: (
+			payload: Record<string, any>,
+			intents: Array<Intent> | null,
+		) =>
+			| { value?: Value; error?: Record<string, Error | null> | null }
+			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
+	},
+): Submission<Value, Value, Error> | Promise<Submission<Value, Value, Error>> {
 	const context = getSubmissionContext(payload);
 
 	if (context.intents) {
@@ -214,13 +219,13 @@ export function parse<Value>(
 
 	const result = options.resolve(context.payload, context.intents);
 	const mergeResolveResult = (resolved: {
-		error?: Record<string, string[]>;
+		error?: Record<string, Error | null> | null;
 		value?: Value;
-	}): Submission<Value> => {
-		const error = resolved.error ?? {};
+	}) => {
+		const error = typeof resolved.error !== 'undefined' ? resolved.error : {};
 
 		if (!context.intents) {
-			for (const name of [...context.fields, ...Object.keys(error)]) {
+			for (const name of [...context.fields, ...Object.keys(error ?? {})]) {
 				context.state.validated[name] = true;
 			}
 		}
@@ -239,9 +244,9 @@ export function parse<Value>(
 	return mergeResolveResult(result);
 }
 
-export function createSubmission<Value>(
-	context: Required<SubmissionContext<Value>>,
-): Submission<Value> {
+export function createSubmission<Value, Error>(
+	context: Required<SubmissionContext<Value, Error>>,
+): Submission<Value, Value, Error> {
 	if (context.intents) {
 		return {
 			type: 'update',
@@ -271,10 +276,10 @@ export function createSubmission<Value>(
 	};
 }
 
-export function acceptSubmission(
-	context: Required<SubmissionContext<unknown>>,
+export function acceptSubmission<Error>(
+	context: Required<SubmissionContext<unknown, Error>>,
 	options?: AcceptOptions,
-): SubmissionResult {
+): SubmissionResult<Error> {
 	if (options?.resetForm) {
 		return { status: 'success' };
 	}
@@ -282,33 +287,38 @@ export function acceptSubmission(
 	return {
 		status: 'success',
 		initialValue: simplify(context.payload) ?? {},
-		error: simplify(context.error) as Record<string, string[]>,
+		error: simplify(context.error),
 		state: context.state,
 	};
 }
 
-export function rejectSubmission(
-	context: Required<SubmissionContext<unknown>>,
-	options?: RejectOptions,
-): SubmissionResult {
+export function rejectSubmission<Error>(
+	context: Required<SubmissionContext<unknown, Error>>,
+	options?: RejectOptions<Error>,
+): SubmissionResult<Error> {
 	const error = Object.entries(context.error ?? {}).reduce<
-		Record<string, string[]>
-	>(
-		(result, [name, messages]) => {
-			if (messages.length > 0 && context.state.validated[name]) {
-				result[name] = (result[name] ?? []).concat(messages);
-			}
+		Record<string, Error | null>
+	>((result, [name, currentError]) => {
+		if (context.state.validated[name]) {
+			const newError =
+				name === '' ? options?.formErrors : options?.fieldErrors?.[name];
 
-			return result;
-		},
-		{ '': options?.formErrors ?? [], ...options?.fieldErrors },
-	);
+			if (Array.isArray(currentError) && newError) {
+				result[name] = currentError.concat(newError) as Error;
+			} else {
+				// Replace existing error with new error if the error is not an array
+				result[name] = newError ?? currentError;
+			}
+		}
+
+		return result;
+	}, {});
 
 	return {
 		status: context.intents !== null ? 'updated' : 'error',
 		intents: context.intents !== null ? context.intents : undefined,
 		initialValue: simplify(context.payload) ?? {},
-		error: simplify(error) as Record<string, string[]>,
+		error: simplify(error),
 		state: context.state,
 	};
 }

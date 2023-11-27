@@ -3,6 +3,7 @@ export {
 	type UnionKeyType,
 	type Constraint,
 	type FormState,
+	type FormId,
 	type FieldName,
 	type FormValue,
 	type FormContext,
@@ -10,8 +11,6 @@ export {
 	type Form,
 	type SubscriptionSubject,
 	type SubscriptionScope,
-	VALIDATION_SKIPPED,
-	VALIDATION_UNDEFINED,
 	createForm,
 } from './form';
 export { type FieldElement, isFieldElement, requestSubmit } from './dom';

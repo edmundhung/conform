@@ -34,7 +34,9 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parse(formData, {
+		schema,
+	});
 
 	if (!submission.value) {
 		return json(submission.reject());
@@ -45,7 +47,7 @@ export async function action({ request }: ActionArgs) {
 
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
-	const lastResult = useActionData();
+	const lastResult = useActionData<typeof action>();
 	const form = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
