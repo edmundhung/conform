@@ -40,22 +40,13 @@ import {
 } from '@chakra-ui/react';
 import { useRef } from 'react';
 
-interface Schema {
-	email: string;
-	language: string;
-	description: string;
-	quantity: number;
-	pin: string;
-	title: string;
-	progress: number;
-	ranges: number[];
-	subscribe: boolean;
-	enabled: boolean;
-	active: boolean;
-}
+type Error = {
+	validity: ValidityState;
+	validationMessage: string;
+};
 
 export default function Example() {
-	const form = useForm<Schema>({
+	const form = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -79,7 +70,7 @@ export default function Example() {
 							<FormLabel>Email (Input)</FormLabel>
 							<Input type="email" name={form.fields.email.name} required />
 							<FormErrorMessage>
-								{form.fields.email.error?.join(', ')}
+								{form.fields.email.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -95,7 +86,7 @@ export default function Example() {
 								<option value="japanese">Japanese</option>
 							</Select>
 							<FormErrorMessage>
-								{form.fields.language.error?.join(', ')}
+								{form.fields.language.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -103,7 +94,7 @@ export default function Example() {
 							<FormLabel>Description (Textarea)</FormLabel>
 							<Textarea name={form.fields.description.name} required />
 							<FormErrorMessage>
-								{form.fields.description.error?.join(', ')}
+								{form.fields.description.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -114,7 +105,7 @@ export default function Example() {
 								formId={form.id}
 							/>
 							<FormErrorMessage>
-								{form.fields.quantity.error?.join(', ')}
+								{form.fields.quantity.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -122,7 +113,7 @@ export default function Example() {
 							<FormLabel>PIN (PinInput)</FormLabel>
 							<ExamplePinInput name={form.fields.pin.name} formId={form.id} />
 							<FormErrorMessage>
-								{form.fields.pin.error?.join(', ')}
+								{form.fields.pin.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -136,7 +127,7 @@ export default function Example() {
 								<EditableInput name={form.fields.title.name} required />
 							</Editable>
 							<FormErrorMessage>
-								{form.fields.title.error?.join(', ')}
+								{form.fields.title.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -146,7 +137,7 @@ export default function Example() {
 								Newsletter
 							</Checkbox>
 							<FormErrorMessage>
-								{form.fields.subscribe.error?.join(', ')}
+								{form.fields.subscribe.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -154,7 +145,7 @@ export default function Example() {
 							<FormLabel>Enabled (Switch)</FormLabel>
 							<Switch name={form.fields.enabled.name} required />
 							<FormErrorMessage>
-								{form.fields.enabled.error?.join(', ')}
+								{form.fields.enabled.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -165,7 +156,7 @@ export default function Example() {
 								formId={form.id}
 							/>
 							<FormErrorMessage>
-								{form.fields.progress.error?.join(', ')}
+								{form.fields.progress.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -197,7 +188,7 @@ export default function Example() {
 								</Stack>
 							</RadioGroup>
 							<FormErrorMessage>
-								{form.fields.active.error?.join(', ')}
+								{form.fields.active.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -216,7 +207,7 @@ export default function Example() {
 	);
 }
 
-function ExampleNumberInput(props: FieldProps<number>) {
+function ExampleNumberInput(props: FieldProps<number, Error>) {
 	const field = useField(props);
 	const control = useInputControl(field);
 
@@ -236,7 +227,7 @@ function ExampleNumberInput(props: FieldProps<number>) {
 	);
 }
 
-function ExamplePinInput(config: FieldProps<string>) {
+function ExamplePinInput(config: FieldProps<string, Error>) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const field = useField(config);
 	const control = useInputControl(field);
@@ -256,7 +247,7 @@ function ExamplePinInput(config: FieldProps<string>) {
 	);
 }
 
-function ExampleSlider(config: FieldProps<number>) {
+function ExampleSlider(config: FieldProps<number, Error>) {
 	const field = useField(config);
 	const control = useInputControl(field, {
 		initialize(value) {

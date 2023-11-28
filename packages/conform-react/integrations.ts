@@ -53,13 +53,13 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 }
 
 export function useInputControl<Schema>(
-	metadata: FieldMetadata<Schema>,
+	metadata: FieldMetadata<Schema, any>,
 	options?: {
 		onFocus?: (event: Event) => void;
 	},
 ): InputControl<string | undefined>;
 export function useInputControl<Schema, Value>(
-	metadata: FieldMetadata<Schema>,
+	metadata: FieldMetadata<Schema, any>,
 	options: {
 		initialize: (value: FormValue<Schema> | undefined) => Value;
 		serialize?: (value: Value) => string;
@@ -67,7 +67,7 @@ export function useInputControl<Schema, Value>(
 	},
 ): InputControl<Value>;
 export function useInputControl<Schema, Value>(
-	metadata: FieldMetadata<Schema>,
+	metadata: FieldMetadata<Schema, any>,
 	options?: {
 		initialize?: (value: FormValue<Schema> | undefined) => Value;
 		serialize?: (value: Value | string | undefined) => string;

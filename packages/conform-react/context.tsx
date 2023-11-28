@@ -59,7 +59,8 @@ export type FieldProps<Schema, Error = string[]> = {
 export type FormMetadata<
 	Schema extends Record<string, any>,
 	Error = string[],
-> = Metadata<Schema, Error> & {
+> = Omit<Metadata<Schema, Error>, 'id'> & {
+	id: FormId<Error>;
 	context: Form<Schema, Error>;
 	fields: {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
@@ -115,7 +116,7 @@ export function useRegistry<
 >(
 	formId: FormId<Error>,
 	context?: Form<Schema, Error, Value>,
-): Form<Schema, Error> {
+): Form<Schema, Error, Value> {
 	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
 
@@ -123,7 +124,7 @@ export function useRegistry<
 		throw new Error('Form context is not available');
 	}
 
-	return form as Form<Schema, Error>;
+	return form as Form<Schema, Error, Value>;
 }
 
 export function useFormState<Error>(
@@ -140,7 +141,7 @@ export function useFormState<Error>(
 }
 
 export function FormProvider(props: {
-	context: Form;
+	context: Form<any, any, any>;
 	children: ReactNode;
 }): ReactElement {
 	const registry = useContext(Registry);
@@ -346,7 +347,7 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 	formId: FormId<Error>,
 	state: FormState<Error>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	form: Form<Schema, Error>,
+	form: Form<Schema, Error, any>,
 	noValidate: boolean,
 ): FormMetadata<Schema, Error> {
 	const metadata = getMetadata(formId, state, subjectRef);

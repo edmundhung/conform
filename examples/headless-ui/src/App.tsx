@@ -11,15 +11,13 @@ import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 
-interface Schema {
-	owner: string;
-	assignee: string;
-	enabled: boolean;
-	color: string;
-}
+type Error = {
+	validity: ValidityState;
+	validationMessage: string;
+};
 
 export default function Example() {
-	const form = useForm<Schema>({
+	const form = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -58,7 +56,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.owner.error?.join(', ')}
+										{form.fields.owner.error?.validationMessage}
 									</p>
 								</div>
 
@@ -73,7 +71,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.assignee.error?.join(', ')}
+										{form.fields.assignee.error?.validationMessage}
 									</p>
 								</div>
 
@@ -88,7 +86,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.enabled.error?.join(', ')}
+										{form.fields.enabled.error?.validationMessage}
 									</p>
 								</div>
 
@@ -103,7 +101,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.color.error?.join(', ')}
+										{form.fields.color.error?.validationMessage}
 									</p>
 								</div>
 							</div>
@@ -144,7 +142,7 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function ExampleListBox(config: FieldProps<string>) {
+function ExampleListBox(config: FieldProps<string, Error>) {
 	const field = useField(config);
 	const control = useInputControl(field);
 
@@ -206,7 +204,7 @@ function ExampleListBox(config: FieldProps<string>) {
 	);
 }
 
-function ExampleCombobox(config: FieldProps<string>) {
+function ExampleCombobox(config: FieldProps<string, Error>) {
 	const [query, setQuery] = useState('');
 	const field = useField(config);
 	const control = useInputControl(field);
@@ -285,7 +283,7 @@ function ExampleCombobox(config: FieldProps<string>) {
 	);
 }
 
-function ExampleSwitch(config: FieldProps<boolean>) {
+function ExampleSwitch(config: FieldProps<boolean, Error>) {
 	const field = useField(config);
 	const control = useInputControl(field, {
 		initialize(value) {
@@ -315,7 +313,7 @@ function ExampleSwitch(config: FieldProps<boolean>) {
 	);
 }
 
-function ExampleRadioGroup(config: FieldProps<string>) {
+function ExampleRadioGroup(config: FieldProps<string, Error>) {
 	const field = useField(config);
 	const control = useInputControl(field);
 	const colors = [

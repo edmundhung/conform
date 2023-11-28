@@ -28,20 +28,8 @@ import {
 	Switch,
 } from '@mui/material';
 
-interface Schema {
-	email: string;
-	description: string;
-	language: string;
-	movie: string;
-	subscribe: boolean;
-	enabled: boolean;
-	active: boolean;
-	score: number;
-	progress: number;
-}
-
 export default function ExampleForm() {
-	const form = useForm<Schema>({
+	const form = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -69,7 +57,7 @@ export default function ExampleForm() {
 							type="email"
 							name="email"
 							error={!form.fields.email.valid}
-							helperText={form.fields.email.error?.join(', ')}
+							helperText={form.fields.email.error?.validationMessage}
 							required
 						/>
 
@@ -77,7 +65,7 @@ export default function ExampleForm() {
 							label="Description (TextField - multline)"
 							name={form.fields.description.name}
 							error={!form.fields.description.valid}
-							helperText={form.fields.description.error?.join(', ')}
+							helperText={form.fields.description.error?.validationMessage}
 							inputProps={{
 								minLength: 10,
 							}}
@@ -115,7 +103,7 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{form.fields.subscribe.error?.join(', ')}
+								{form.fields.subscribe.error?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
@@ -138,13 +126,13 @@ export default function ExampleForm() {
 								/>
 							</RadioGroup>
 							<FormHelperText>
-								{form.fields.active.error?.join(', ')}
+								{form.fields.active.error?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={Boolean(form.fields.enabled.error?.join(', '))}
+							error={Boolean(form.fields.enabled.error?.validationMessage)}
 							required
 						>
 							<FormLabel>Enabled (Switch)</FormLabel>
@@ -155,7 +143,7 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{form.fields.enabled.error?.join(', ')}
+								{form.fields.enabled.error?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
@@ -188,7 +176,11 @@ export default function ExampleForm() {
 	);
 }
 
-interface Field<Schema> extends FieldProps<Schema> {
+interface Field<Schema>
+	extends FieldProps<
+		Schema,
+		{ validity: ValidityState; validationMessage: string }
+	> {
 	label: string;
 	required?: boolean;
 }
@@ -208,7 +200,7 @@ function ExampleSelect({ label, required, formId, name }: Field<string>) {
 			onChange={(event) => control.change(event.target.value)}
 			onBlur={control.blur}
 			error={!field.valid}
-			helperText={field.error?.join(', ')}
+			helperText={field.error?.validationMessage}
 			select
 			required={required}
 		>
@@ -241,7 +233,7 @@ function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
 					label={label}
 					name={field.name}
 					error={!field.valid}
-					helperText={field.error?.join(', ')}
+					helperText={field.error?.validationMessage}
 					required={required}
 				/>
 			)}
@@ -270,7 +262,7 @@ function ExampleRating({ label, name, formId, required }: Field<number>) {
 				}}
 				onBlur={control.blur}
 			/>
-			<FormHelperText>{field.error?.join(', ')}</FormHelperText>
+			<FormHelperText>{field.error?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
@@ -300,7 +292,7 @@ function ExampleSlider({ label, name, formId, required }: Field<number>) {
 					control.change(value);
 				}}
 			/>
-			<FormHelperText>{field.error?.join(', ')}</FormHelperText>
+			<FormHelperText>{field.error?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
