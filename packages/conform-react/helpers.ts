@@ -3,7 +3,7 @@ import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
 import type {
 	FormMetadata,
 	FieldMetadata,
-	BaseMetadata,
+	Metadata,
 	Pretty,
 	Primitive,
 	FieldProps,
@@ -101,7 +101,7 @@ function cleanup<Props>(props: Props): Props {
 }
 
 function getAriaAttributes(
-	metadata: BaseMetadata<unknown, unknown>,
+	metadata: Metadata<unknown, unknown>,
 	options: ControlOptions = {},
 ) {
 	if (

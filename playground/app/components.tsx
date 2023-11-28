@@ -1,5 +1,5 @@
 import type { SubmissionResult } from '@conform-to/dom';
-import type { FieldConfig } from '@conform-to/react';
+import type { FieldMetadata } from '@conform-to/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -92,7 +92,7 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	config?: Partial<FieldConfig<any>>;
+	config?: FieldMetadata<any>;
 	children: ReactNode;
 }
 
@@ -115,10 +115,10 @@ export function Field({ label, inline, config, children }: FieldProps) {
 				{children}
 			</div>
 			<div id={config?.errorId} className="my-1 space-y-0.5">
-				{!config?.errors?.length ? (
+				{!config?.error?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					config.errors.map((message) => (
+					config.error.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>

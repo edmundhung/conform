@@ -39,7 +39,7 @@ export function Component() {
 					className={!form.fields.email.valid ? 'error' : ''}
 					{...getInputProps(form.fields.email)}
 				/>
-				<div>{form.fields.email.errors}</div>
+				<div>{form.fields.email.error}</div>
 			</div>
 			<div>
 				<label>Password</label>
@@ -47,7 +47,7 @@ export function Component() {
 					className={!form.fields.password.valid ? 'error' : ''}
 					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
-				<div>{form.fields.password.errors}</div>
+				<div>{form.fields.password.error}</div>
 			</div>
 			<label>
 				<div>

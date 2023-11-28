@@ -79,7 +79,7 @@ export default function Example() {
 							<FormLabel>Email (Input)</FormLabel>
 							<Input type="email" name={form.fields.email.name} required />
 							<FormErrorMessage>
-								{form.fields.email.errors?.join(', ')}
+								{form.fields.email.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -95,7 +95,7 @@ export default function Example() {
 								<option value="japanese">Japanese</option>
 							</Select>
 							<FormErrorMessage>
-								{form.fields.language.errors?.join(', ')}
+								{form.fields.language.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -103,7 +103,7 @@ export default function Example() {
 							<FormLabel>Description (Textarea)</FormLabel>
 							<Textarea name={form.fields.description.name} required />
 							<FormErrorMessage>
-								{form.fields.description.errors?.join(', ')}
+								{form.fields.description.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -114,7 +114,7 @@ export default function Example() {
 								formId={form.id}
 							/>
 							<FormErrorMessage>
-								{form.fields.quantity.errors?.join(', ')}
+								{form.fields.quantity.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -122,7 +122,7 @@ export default function Example() {
 							<FormLabel>PIN (PinInput)</FormLabel>
 							<ExamplePinInput name={form.fields.pin.name} formId={form.id} />
 							<FormErrorMessage>
-								{form.fields.pin.errors?.join(', ')}
+								{form.fields.pin.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -136,7 +136,7 @@ export default function Example() {
 								<EditableInput name={form.fields.title.name} required />
 							</Editable>
 							<FormErrorMessage>
-								{form.fields.title.errors?.join(', ')}
+								{form.fields.title.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -146,7 +146,7 @@ export default function Example() {
 								Newsletter
 							</Checkbox>
 							<FormErrorMessage>
-								{form.fields.subscribe.errors?.join(', ')}
+								{form.fields.subscribe.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -154,7 +154,7 @@ export default function Example() {
 							<FormLabel>Enabled (Switch)</FormLabel>
 							<Switch name={form.fields.enabled.name} required />
 							<FormErrorMessage>
-								{form.fields.enabled.errors?.join(', ')}
+								{form.fields.enabled.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -165,7 +165,7 @@ export default function Example() {
 								formId={form.id}
 							/>
 							<FormErrorMessage>
-								{form.fields.progress.errors?.join(', ')}
+								{form.fields.progress.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -197,7 +197,7 @@ export default function Example() {
 								</Stack>
 							</RadioGroup>
 							<FormErrorMessage>
-								{form.fields.active.errors?.join(', ')}
+								{form.fields.active.error?.join(', ')}
 							</FormErrorMessage>
 						</FormControl>
 

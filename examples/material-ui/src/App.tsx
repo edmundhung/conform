@@ -69,7 +69,7 @@ export default function ExampleForm() {
 							type="email"
 							name="email"
 							error={!form.fields.email.valid}
-							helperText={form.fields.email.errors?.join(', ')}
+							helperText={form.fields.email.error?.join(', ')}
 							required
 						/>
 
@@ -77,7 +77,7 @@ export default function ExampleForm() {
 							label="Description (TextField - multline)"
 							name={form.fields.description.name}
 							error={!form.fields.description.valid}
-							helperText={form.fields.description.errors?.join(', ')}
+							helperText={form.fields.description.error?.join(', ')}
 							inputProps={{
 								minLength: 10,
 							}}
@@ -115,7 +115,7 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{form.fields.subscribe.errors?.join(', ')}
+								{form.fields.subscribe.error?.join(', ')}
 							</FormHelperText>
 						</FormControl>
 
@@ -138,13 +138,13 @@ export default function ExampleForm() {
 								/>
 							</RadioGroup>
 							<FormHelperText>
-								{form.fields.active.errors?.join(', ')}
+								{form.fields.active.error?.join(', ')}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={Boolean(form.fields.enabled.errors?.join(', '))}
+							error={Boolean(form.fields.enabled.error?.join(', '))}
 							required
 						>
 							<FormLabel>Enabled (Switch)</FormLabel>
@@ -155,7 +155,7 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{form.fields.enabled.errors?.join(', ')}
+								{form.fields.enabled.error?.join(', ')}
 							</FormHelperText>
 						</FormControl>
 
@@ -208,7 +208,7 @@ function ExampleSelect({ label, required, formId, name }: Field<string>) {
 			onChange={(event) => control.change(event.target.value)}
 			onBlur={control.blur}
 			error={!field.valid}
-			helperText={field.errors?.join(', ')}
+			helperText={field.error?.join(', ')}
 			select
 			required={required}
 		>
@@ -241,7 +241,7 @@ function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
 					label={label}
 					name={field.name}
 					error={!field.valid}
-					helperText={field.errors?.join(', ')}
+					helperText={field.error?.join(', ')}
 					required={required}
 				/>
 			)}
@@ -270,7 +270,7 @@ function ExampleRating({ label, name, formId, required }: Field<number>) {
 				}}
 				onBlur={control.blur}
 			/>
-			<FormHelperText>{field.errors?.join(', ')}</FormHelperText>
+			<FormHelperText>{field.error?.join(', ')}</FormHelperText>
 		</FormControl>
 	);
 }
@@ -300,7 +300,7 @@ function ExampleSlider({ label, name, formId, required }: Field<number>) {
 					control.change(value);
 				}}
 			/>
-			<FormHelperText>{field.errors?.join(', ')}</FormHelperText>
+			<FormHelperText>{field.error?.join(', ')}</FormHelperText>
 		</FormControl>
 	);
 }

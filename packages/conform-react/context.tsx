@@ -37,15 +37,15 @@ export type Primitive =
 	| null
 	| undefined;
 
-export type BaseMetadata<Schema, Error = string[]> = {
+export type Metadata<Schema, Error = string[]> = {
 	key?: string;
 	id: string;
 	errorId: string;
 	descriptionId: string;
 	initialValue: FormValue<Schema>;
 	value: FormValue<Schema>;
-	errors: Error | undefined;
-	allErrors: Record<string, Error>;
+	error: Error | undefined;
+	allError: Record<string, Error>;
 	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
@@ -59,8 +59,8 @@ export type FieldProps<Schema, Error = string[]> = {
 export type FormMetadata<
 	Schema extends Record<string, any>,
 	Error = string[],
-> = BaseMetadata<Schema, Error> & {
-	context: Form;
+> = Metadata<Schema, Error> & {
+	context: Form<Schema, Error>;
 	fields: {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
 			UnionKeyType<Schema, Key>,
@@ -74,7 +74,7 @@ export type FormMetadata<
 	noValidate: boolean;
 };
 
-export type FieldMetadata<Schema, Error = string[]> = BaseMetadata<
+export type FieldMetadata<Schema, Error = string[]> = Metadata<
 	Schema,
 	Error
 > & {
@@ -195,12 +195,12 @@ export function updateSubjectRef(
 	};
 }
 
-export function getBaseMetadata<Schema, Error>(
+export function getMetadata<Schema, Error>(
 	formId: FormId<Error>,
 	state: FormState<Error>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
 	name: FieldName<Schema> = '',
-): BaseMetadata<Schema, Error> {
+): Metadata<Schema, Error> {
 	const id = name ? `${formId}-${name}` : formId;
 
 	return new Proxy(
@@ -210,7 +210,7 @@ export function getBaseMetadata<Schema, Error>(
 			descriptionId: `${id}-description`,
 			initialValue: state.initialValue[name] as FormValue<Schema>,
 			value: state.value[name] as FormValue<Schema>,
-			errors: state.error[name],
+			error: state.error[name],
 			get key() {
 				return state.key[name];
 			},
@@ -235,16 +235,16 @@ export function getBaseMetadata<Schema, Error>(
 
 				return true;
 			},
-			get allErrors() {
+			get allError() {
 				if (name === '') {
 					return state.error;
 				}
 
 				const result: Record<string, Error> = {};
 
-				for (const [key, errors] of Object.entries(state.error)) {
+				for (const [key, error] of Object.entries(state.error)) {
 					if (isPrefix(key, name)) {
-						result[key] = errors;
+						result[key] = error;
 					}
 				}
 
@@ -271,19 +271,14 @@ export function getBaseMetadata<Schema, Error>(
 			get(target, key, receiver) {
 				switch (key) {
 					case 'key':
-					case 'errors':
+					case 'error':
 					case 'initialValue':
 					case 'value':
 					case 'valid':
 					case 'dirty':
-						updateSubjectRef(
-							subjectRef,
-							name,
-							key === 'errors' ? 'error' : key,
-							'name',
-						);
+						updateSubjectRef(subjectRef, name, key, 'name');
 						break;
-					case 'allErrors':
+					case 'allError':
 						updateSubjectRef(subjectRef, name, 'error', 'prefix');
 						break;
 					case 'allValid':
@@ -308,7 +303,7 @@ export function getFieldMetadata<Schema, Error>(
 		typeof key !== 'undefined'
 			? formatPaths([...getPaths(prefix), key])
 			: prefix;
-	const metadata = getBaseMetadata(formId, state, subjectRef, name);
+	const metadata = getMetadata(formId, state, subjectRef, name);
 
 	return new Proxy(metadata as any, {
 		get(target, key, receiver) {
@@ -350,7 +345,7 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 	form: Form<Schema, Error>,
 	noValidate: boolean,
 ): FormMetadata<Schema, Error> {
-	const metadata = getBaseMetadata(formId, state, subjectRef);
+	const metadata = getMetadata(formId, state, subjectRef);
 
 	return new Proxy(metadata as any, {
 		get(target, key, receiver) {

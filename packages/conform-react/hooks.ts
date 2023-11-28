@@ -45,7 +45,7 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 	return noValidate;
 }
 
-export function useForm<Schema extends Record<string, any>, Error>(
+export function useForm<Schema extends Record<string, any>, Error = string[]>(
 	options: Pretty<
 		FormOptions<Schema, Error> & {
 			/**
@@ -125,7 +125,7 @@ export function useFormMetadata<
 	return getFormMetadata(options.formId, state, subjectRef, form, noValidate);
 }
 
-export function useField<Schema>(options: {
+export function useField<Schema, Error>(options: {
 	formId: FormId<Error>;
 	name: FieldName<Schema>;
 	context?: Form<any, Error>;

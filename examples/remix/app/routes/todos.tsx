@@ -54,10 +54,10 @@ export default function Example() {
 					className={!form.fields.title.valid ? 'error' : ''}
 					{...getInputProps(form.fields.title)}
 				/>
-				<div>{form.fields.title.errors}</div>
+				<div>{form.fields.title.error}</div>
 			</div>
 			<hr />
-			<div className="form-error">{tasks.errors}</div>
+			<div className="form-error">{tasks.error}</div>
 			{tasks.items.map((task, index) => (
 				<fieldset key={task.key} {...getFieldsetProps(task)}>
 					<div>
@@ -66,7 +66,7 @@ export default function Example() {
 							className={!task.fields.content.valid ? 'error' : ''}
 							{...getInputProps(task.fields.content)}
 						/>
-						<div>{task.fields.content.errors}</div>
+						<div>{task.fields.content.error}</div>
 					</div>
 					<div>
 						<label>

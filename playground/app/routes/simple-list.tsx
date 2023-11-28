@@ -63,7 +63,7 @@ export default function SimpleList() {
 		<Form method="post" {...getFormProps(form)}>
 			<FormStateInput context={form.context} />
 			<Playground title="Simple list" lastSubmission={lastResult}>
-				<Alert errors={items.errors} />
+				<Alert errors={items.error} />
 				<ol>
 					{items.items.map((task, index) => (
 						<li key={task.key} className="border rounded-md p-4 mb-4">

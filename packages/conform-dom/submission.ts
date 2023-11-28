@@ -40,7 +40,7 @@ export type Submission<Schema, Value = Schema, Error = unknown> =
 			accept(options?: AcceptOptions): SubmissionResult<Error>;
 	  };
 
-export type SubmissionResult<Error> = {
+export type SubmissionResult<Error = string[]> = {
 	status: 'updated' | 'error' | 'success';
 	intents?: Array<Intent>;
 	initialValue?: Record<string, unknown>;

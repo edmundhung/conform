@@ -52,10 +52,13 @@ export default function Example() {
 										Owner (List box)
 									</label>
 									<div className="mt-1">
-										<ExampleListBox {...getFieldProps(form.fields.owner)} />
+										<ExampleListBox
+											name={form.fields.owner.name}
+											formId={form.id}
+										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.owner.errors?.join(', ')}
+										{form.fields.owner.error?.join(', ')}
 									</p>
 								</div>
 
@@ -70,7 +73,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.assignee.errors?.join(', ')}
+										{form.fields.assignee.error?.join(', ')}
 									</p>
 								</div>
 
@@ -85,7 +88,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.enabled.errors?.join(', ')}
+										{form.fields.enabled.error?.join(', ')}
 									</p>
 								</div>
 
@@ -100,7 +103,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{form.fields.color.errors?.join(', ')}
+										{form.fields.color.error?.join(', ')}
 									</p>
 								</div>
 							</div>

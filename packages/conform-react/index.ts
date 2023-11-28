@@ -2,6 +2,7 @@ export {
 	type Submission,
 	type SubmissionResult,
 	type Intent,
+	type FormId,
 	type FieldName,
 	requestIntent,
 	requestSubmit,

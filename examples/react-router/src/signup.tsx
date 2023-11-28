@@ -1,4 +1,4 @@
-import type { SubmissionResult } from '@conform-to/react';
+import type { SubmissionResult, Intent } from '@conform-to/react';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parse, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
-	intent: string,
+	intents: Array<Intent> | null,
 	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
@@ -26,7 +26,12 @@ function createSchema(
 					z.string().superRefine((username, ctx) =>
 						refine(ctx, {
 							validate: () => constraint.isUsernameUnique?.(username),
-							when: intent === 'submit' || intent === 'validate/username',
+							when:
+								!intents ||
+								intents.some(
+									(intent) =>
+										intent.type === 'validate' && intent.payload === 'username',
+								),
 							message: 'Username is already used',
 						}),
 					),
@@ -78,7 +83,7 @@ export function Component() {
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined
-				schema: (intent) => createSchema(intent),
+				schema: (intents) => createSchema(intents),
 			});
 		},
 		shouldRevalidate: 'onBlur',
@@ -92,7 +97,7 @@ export function Component() {
 					className={!form.fields.username.valid ? 'error' : ''}
 					{...getInputProps(form.fields.username)}
 				/>
-				<div>{form.fields.username.errors}</div>
+				<div>{form.fields.username.error}</div>
 			</label>
 			<label>
 				<div>Password</div>
@@ -100,7 +105,7 @@ export function Component() {
 					className={!form.fields.password.valid ? 'error' : ''}
 					{...getInputProps(form.fields.password, { type: 'password' })}
 				/>
-				<div>{form.fields.password.errors}</div>
+				<div>{form.fields.password.error}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
@@ -108,7 +113,7 @@ export function Component() {
 					className={!form.fields.confirmPassword.valid ? 'error' : ''}
 					{...getInputProps(form.fields.confirmPassword, { type: 'password' })}
 				/>
-				<div>{form.fields.confirmPassword.errors}</div>
+				<div>{form.fields.confirmPassword.error}</div>
 			</label>
 			<hr />
 			<button>Signup</button>
