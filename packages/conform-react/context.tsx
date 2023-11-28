@@ -108,9 +108,13 @@ export type FieldMetadata<Schema, Error = string[]> = Metadata<
 
 export const Registry = createContext<Record<string, Form>>({});
 
-export function useRegistry<Schema extends Record<string, any>, Error>(
+export function useRegistry<
+	Schema extends Record<string, any>,
+	Error,
+	Value = Schema,
+>(
 	formId: FormId<Error>,
-	context?: Form<Schema, Error>,
+	context?: Form<Schema, Error, Value>,
 ): Form<Schema, Error> {
 	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
@@ -355,17 +359,13 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
-						const result = form.submit(submitEvent);
+
+						form.submit(submitEvent);
 
 						if (submitEvent.defaultPrevented) {
 							event.preventDefault();
 						}
-
-						return result;
 					};
-				case 'onReset':
-					return (event: React.FormEvent<HTMLFormElement>) =>
-						form.reset(event.nativeEvent);
 				case 'noValidate':
 					return noValidate;
 			}

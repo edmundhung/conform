@@ -25,7 +25,7 @@ export function validateConstraint(options: {
 		constraint: Record<string, boolean>;
 		defaultErrors: string[];
 	}) => string[];
-}): Submission<Record<string, any>, Record<string, any>, string[]> {
+}): Submission<Record<string, any>, string[]> {
 	const formData = options?.formData ?? new FormData(options.form);
 	const getDefaultErrors = (
 		validity: ValidityState,

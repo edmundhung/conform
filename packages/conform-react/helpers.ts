@@ -53,7 +53,7 @@ type TextareaProps = Pretty<
 	}
 >;
 
-type BaseOptions =
+type AriaOptions =
 	| {
 			ariaAttributes?: true;
 			description?: boolean;
@@ -62,19 +62,7 @@ type BaseOptions =
 			ariaAttributes: false;
 	  };
 
-type ControlOptions = BaseOptions & {
-	hidden?: boolean;
-};
-
-type FormOptions<Schema extends Record<string, any>> = BaseOptions & {
-	onSubmit?: (
-		event: React.FormEvent<HTMLFormElement>,
-		context: ReturnType<FormMetadata<Schema>['onSubmit']>,
-	) => void;
-	onReset?: (event: React.FormEvent<HTMLFormElement>) => void;
-};
-
-type InputOptions = ControlOptions &
+type InputOptions = AriaOptions &
 	(
 		| {
 				type: 'checkbox' | 'radio';
@@ -90,7 +78,7 @@ type InputOptions = ControlOptions &
  * Cleanup `undefined` from the dervied props
  * To minimize conflicts when merging with user defined props
  */
-function cleanup<Props>(props: Props): Props {
+function simplify<Props>(props: Props): Props {
 	for (const key in props) {
 		if (props[key] === undefined) {
 			delete props[key];
@@ -102,8 +90,11 @@ function cleanup<Props>(props: Props): Props {
 
 function getAriaAttributes(
 	metadata: Metadata<unknown, unknown>,
-	options: ControlOptions = {},
-) {
+	options: AriaOptions = {},
+): {
+	'aria-invalid'?: boolean;
+	'aria-describedby'?: string;
+} {
 	if (
 		typeof options.ariaAttributes !== 'undefined' &&
 		!options.ariaAttributes
@@ -111,7 +102,7 @@ function getAriaAttributes(
 		return {};
 	}
 
-	return cleanup({
+	return simplify({
 		'aria-invalid': !metadata.valid || undefined,
 		'aria-describedby': metadata.valid
 			? options.description
@@ -125,9 +116,9 @@ function getAriaAttributes(
 
 function getFormControlProps<Schema>(
 	metadata: FieldMetadata<Schema, unknown>,
-	options?: ControlOptions,
+	options?: AriaOptions,
 ) {
-	return cleanup({
+	return simplify({
 		id: metadata.id,
 		name: metadata.name,
 		form: metadata.formId,
@@ -170,16 +161,16 @@ export function getInputProps<Schema extends Primitive | File[] | unknown>(
 		props.defaultValue = field.initialValue?.toString();
 	}
 
-	return cleanup(props);
+	return simplify(props);
 }
 
 export function getSelectProps<
 	Schema extends Primitive | Primitive[] | undefined | unknown,
 >(
 	metadata: FieldMetadata<Schema, unknown>,
-	options?: ControlOptions,
+	options?: AriaOptions,
 ): SelectProps {
-	return cleanup({
+	return simplify({
 		...getFormControlProps(metadata, options),
 		defaultValue: metadata.initialValue?.toString(),
 		multiple: metadata.constraint?.multiple,
@@ -190,9 +181,9 @@ export function getTextareaProps<
 	Schema extends Primitive | undefined | unknown,
 >(
 	metadata: FieldMetadata<Schema, unknown>,
-	options?: ControlOptions,
+	options?: AriaOptions,
 ): TextareaProps {
-	return cleanup({
+	return simplify({
 		...getFormControlProps(metadata, options),
 		defaultValue: metadata.initialValue?.toString(),
 		minLength: metadata.constraint?.minLength,
@@ -202,30 +193,11 @@ export function getTextareaProps<
 
 export function getFormProps<Schema extends Record<string, any>>(
 	metadata: FormMetadata<Schema, any>,
-	options?: FormOptions<Schema>,
+	options?: AriaOptions,
 ) {
-	const onSubmit = options?.onSubmit;
-	const onReset = options?.onReset;
-
-	return cleanup({
+	return simplify({
 		id: metadata.id,
-		onSubmit:
-			typeof onSubmit !== 'function'
-				? metadata.onSubmit
-				: (event: React.FormEvent<HTMLFormElement>) => {
-						const context = metadata.onSubmit(event);
-
-						if (!event.defaultPrevented) {
-							onSubmit(event, context);
-						}
-				  },
-		onReset:
-			typeof onReset !== 'function'
-				? metadata.onReset
-				: (event: React.FormEvent<HTMLFormElement>) => {
-						metadata.onReset(event);
-						onReset(event);
-				  },
+		onSubmit: metadata.onSubmit,
 		noValidate: metadata.noValidate,
 		...getAriaAttributes(metadata, options),
 	});
@@ -233,8 +205,8 @@ export function getFormProps<Schema extends Record<string, any>>(
 
 export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
->(metadata: FieldMetadata<Schema, unknown>, options?: BaseOptions) {
-	return cleanup({
+>(metadata: FieldMetadata<Schema, unknown>, options?: AriaOptions) {
+	return simplify({
 		id: metadata.id,
 		name: metadata.name,
 		form: metadata.formId,
@@ -260,13 +232,13 @@ export function getCollectionProps<
 		| unknown,
 >(
 	metadata: FieldMetadata<Schema, unknown>,
-	options: BaseOptions & {
+	options: AriaOptions & {
 		type: 'checkbox' | 'radio';
 		options: string[];
 	},
 ): Array<InputProps & Pick<Required<InputProps>, 'type' | 'value'>> {
 	return options.options.map((value) =>
-		cleanup({
+		simplify({
 			...getFormControlProps(metadata, options),
 			id: `${metadata.id}-${value}`,
 			type: options.type,

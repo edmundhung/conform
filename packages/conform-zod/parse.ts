@@ -65,7 +65,7 @@ export function parse<Schema extends ZodTypeAny>(
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
-): Submission<input<Schema>, output<Schema>, string[]>;
+): Submission<input<Schema>, string[], output<Schema>>;
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -74,7 +74,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => Error;
 	},
-): Submission<input<Schema>, output<Schema>, Error>;
+): Submission<input<Schema>, Error, output<Schema>>;
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -82,7 +82,7 @@ export function parse<Schema extends ZodTypeAny>(
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
-): Promise<Submission<input<Schema>, output<Schema>, string[]>>;
+): Promise<Submission<input<Schema>, string[], output<Schema>>>;
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -91,7 +91,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => Error;
 	},
-): Promise<Submission<input<Schema>, output<Schema>, Error>>;
+): Promise<Submission<input<Schema>, Error, output<Schema>>>;
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -101,8 +101,8 @@ export function parse<Schema extends ZodTypeAny, Error>(
 		formatError?: (issues: Array<ZodIssue>) => Error;
 	},
 ):
-	| Submission<input<Schema>, output<Schema>, Error | string[]>
-	| Promise<Submission<input<Schema>, output<Schema>, Error | string[]>> {
+	| Submission<input<Schema>, Error | string[], output<Schema>>
+	| Promise<Submission<input<Schema>, Error | string[], output<Schema>>> {
 	return baseParse(payload, {
 		resolve(payload, intents) {
 			const errorMap = options.errorMap;

@@ -45,9 +45,13 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 	return noValidate;
 }
 
-export function useForm<Schema extends Record<string, any>, Error = string[]>(
+export function useForm<
+	Schema extends Record<string, any>,
+	Error = string[],
+	Value = Schema,
+>(
 	options: Pretty<
-		FormOptions<Schema, Error> & {
+		FormOptions<Schema, Error, Value> & {
 			/**
 			 * If the form id is provided, Id for label,
 			 * input and error elements will be derived.
@@ -77,10 +81,12 @@ export function useForm<Schema extends Record<string, any>, Error = string[]>(
 	useSafeLayoutEffect(() => {
 		document.addEventListener('input', context.input);
 		document.addEventListener('focusout', context.blur);
+		document.addEventListener('reset', context.reset);
 
 		return () => {
 			document.removeEventListener('input', context.input);
 			document.removeEventListener('focusout', context.blur);
+			document.removeEventListener('reset', context.reset);
 		};
 	}, [context]);
 
@@ -112,9 +118,10 @@ export function useForm<Schema extends Record<string, any>, Error = string[]>(
 export function useFormMetadata<
 	Schema extends Record<string, any>,
 	Error,
+	Value = Schema,
 >(options: {
 	formId: FormId<Error>;
-	context?: Form<Schema, Error>;
+	context?: Form<Schema, Error, Value>;
 	defaultNoValidate?: boolean;
 }): FormMetadata<Schema, Error> {
 	const subjectRef = useSubjectRef();

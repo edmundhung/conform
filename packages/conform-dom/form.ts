@@ -92,7 +92,7 @@ export type FormState<Error = unknown> = {
 	dirty: Record<string, boolean>;
 };
 
-export type FormOptions<Schema, Error> = {
+export type FormOptions<Schema, Error, Value = Schema> = {
 	/**
 	 * An object representing the initial value of the form.
 	 */
@@ -131,7 +131,21 @@ export type FormOptions<Schema, Error> = {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Schema, any, Error>;
+	}) => Submission<Schema, Error, Value>;
+
+	/**
+	 * A function to be called before the form is submitted.
+	 */
+	onSubmit?: (
+		event: SubmitEvent,
+		context: {
+			formData: FormData;
+			action: ReturnType<typeof getFormAction>;
+			encType: ReturnType<typeof getFormEncType>;
+			method: ReturnType<typeof getFormMethod>;
+			submission?: Submission<Schema, Error, Value>;
+		},
+	) => void;
 };
 
 export type SubscriptionSubject = {
@@ -149,20 +163,18 @@ export type SubscriptionScope = {
 	name?: string[];
 };
 
-export type Form<Schema extends Record<string, any> = any, Error = string[]> = {
+export type Form<
+	Schema extends Record<string, any> = any,
+	Error = string[],
+	Value = Schema,
+> = {
 	id: string;
-	submit(event: SubmitEvent): {
-		formData: FormData;
-		action: ReturnType<typeof getFormAction>;
-		encType: ReturnType<typeof getFormEncType>;
-		method: ReturnType<typeof getFormMethod>;
-		submission?: Submission<Schema, any, Error>;
-	};
+	submit(event: SubmitEvent): void;
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
 	report(result: SubmissionResult<Error>): void;
-	update(options: Omit<FormOptions<Schema, Error>, 'lastResult'>): void;
+	update(options: Omit<FormOptions<Schema, Error, Value>, 'lastResult'>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -174,7 +186,11 @@ export type Form<Schema extends Record<string, any> = any, Error = string[]> = {
 export function createForm<
 	Schema extends Record<string, any> = any,
 	Error = string[],
->(formId: string, options: FormOptions<Schema, Error>): Form<Schema, Error> {
+	Value = Schema,
+>(
+	formId: string,
+	options: FormOptions<Schema, Error, Value>,
+): Form<Schema, Error, Value> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
@@ -415,13 +431,16 @@ export function createForm<
 	function shouldNotify<Schema>(config: {
 		prev: Record<string, Schema>;
 		next: Record<string, Schema>;
-		compareFn: (prev: Schema | undefined, next: Schema | undefined) => boolean;
+		compareFn?: (prev: Schema | undefined, next: Schema | undefined) => boolean;
 		cache: Record<string, boolean>;
 		scope?: SubscriptionScope;
 	}): boolean {
 		if (config.scope) {
 			const prefixes = config.scope.prefix ?? [];
 			const names = config.scope.name ?? [];
+			const compareFn =
+				config.compareFn ??
+				((prev, next) => JSON.stringify(prev) !== JSON.stringify(next));
 			const list =
 				prefixes.length === 0
 					? names
@@ -438,7 +457,7 @@ export function createForm<
 					names.includes(name) ||
 					prefixes.some((prefix) => isPrefix(name, prefix))
 				) {
-					config.cache[name] ??= config.compareFn(
+					config.cache[name] ??= compareFn(
 						config.prev[name],
 						config.next[name],
 					);
@@ -495,8 +514,12 @@ export function createForm<
 		});
 	}
 
+	function compareBoolean(prev = false, next = false): boolean {
+		return prev !== next;
+	}
+
 	function updateFormState(next: FormState<Error>) {
-		const diff: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
+		const cache: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
 			value: {},
 			error: {},
 			initialValue: {},
@@ -517,46 +540,40 @@ export function createForm<
 				shouldNotify({
 					prev: prev.error,
 					next: next.error,
-					compareFn: (prev, next) =>
-						JSON.stringify(prev) !== JSON.stringify(next),
-					cache: diff.error,
+					cache: cache.error,
 					scope: subject.error,
 				}) ||
 				shouldNotify({
 					prev: prev.initialValue,
 					next: next.initialValue,
-					compareFn: (prev, next) =>
-						JSON.stringify(prev) !== JSON.stringify(next),
-					cache: diff.initialValue,
+					cache: cache.initialValue,
 					scope: subject.initialValue,
 				}) ||
 				shouldNotify({
 					prev: prev.key,
 					next: next.key,
 					compareFn: (prev, next) => prev !== next,
-					cache: diff.key,
+					cache: cache.key,
 					scope: subject.key,
 				}) ||
 				shouldNotify({
 					prev: prev.valid,
 					next: next.valid,
-					compareFn: (prev, next) => prev !== next,
-					cache: diff.valid,
+					compareFn: compareBoolean,
+					cache: cache.valid,
 					scope: subject.valid,
 				}) ||
 				shouldNotify({
 					prev: prev.dirty,
 					next: next.dirty,
-					compareFn: (prev, next) => prev !== next,
-					cache: diff.dirty,
+					compareFn: compareBoolean,
+					cache: cache.dirty,
 					scope: subject.dirty,
 				}) ||
 				shouldNotify({
 					prev: prev.value,
 					next: next.value,
-					compareFn: (prev, next) =>
-						JSON.stringify(prev) !== JSON.stringify(next),
-					cache: diff.value,
+					cache: cache.value,
 					scope: subject.value,
 				})
 			) {
@@ -611,14 +628,16 @@ export function createForm<
 		input.value = getSerializedState();
 
 		const formData = getFormData(form, submitter);
-		const result = {
+		const context = {
 			formData,
 			action: getFormAction(event),
 			encType: getFormEncType(event),
 			method: getFormMethod(event),
 		};
 
-		if (typeof latestOptions?.onValidate !== 'undefined') {
+		if (typeof latestOptions?.onValidate === 'undefined') {
+			latestOptions.onSubmit?.(event, context);
+		} else {
 			try {
 				const submission = latestOptions.onValidate({
 					form,
@@ -631,17 +650,12 @@ export function createForm<
 					event.preventDefault();
 				}
 
-				return {
-					...result,
-					submission,
-				};
+				latestOptions.onSubmit?.(event, { ...context, submission });
 			} catch (error) {
 				// eslint-disable-next-line no-console
 				console.warn('Client validation failed', error);
 			}
 		}
-
-		return result;
 	}
 
 	function resolveTarget(event: Event) {
@@ -784,7 +798,7 @@ export function createForm<
 		}
 	}
 
-	function update(options: Omit<FormOptions<Schema, Error>, 'lastResult'>) {
+	function update(options: FormOptions<Schema, Error, Value>) {
 		latestOptions = options;
 	}
 

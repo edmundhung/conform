@@ -22,7 +22,7 @@ export type SubmissionContext<Value = null, Error = unknown> = {
 	state: SubmissionState;
 };
 
-export type Submission<Schema, Value = Schema, Error = unknown> =
+export type Submission<Schema, Error = unknown, Value = Schema> =
 	| {
 			type: 'submit';
 			payload: Record<string, unknown>;
@@ -121,7 +121,7 @@ export function parse<Value, Error>(
 			intents: Array<Intent> | null,
 		) => { value?: Value; error?: Record<string, Error | null> | null };
 	},
-): Submission<Value, Value, Error>;
+): Submission<Value, Error>;
 export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -133,7 +133,7 @@ export function parse<Value, Error>(
 			error?: Record<string, Error | null> | null;
 		}>;
 	},
-): Promise<Submission<Value, Value, Error>>;
+): Promise<Submission<Value, Error>>;
 export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -144,7 +144,7 @@ export function parse<Value, Error>(
 			| { value?: Value; error?: Record<string, Error | null> | null }
 			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
 	},
-): Submission<Value, Value, Error> | Promise<Submission<Value, Value, Error>>;
+): Submission<Value, Error> | Promise<Submission<Value, Error>>;
 export function parse<Value, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -155,7 +155,7 @@ export function parse<Value, Error>(
 			| { value?: Value; error?: Record<string, Error | null> | null }
 			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
 	},
-): Submission<Value, Value, Error> | Promise<Submission<Value, Value, Error>> {
+): Submission<Value, Error> | Promise<Submission<Value, Error>> {
 	const context = getSubmissionContext(payload);
 
 	if (context.intents) {
@@ -246,7 +246,7 @@ export function parse<Value, Error>(
 
 export function createSubmission<Value, Error>(
 	context: Required<SubmissionContext<Value, Error>>,
-): Submission<Value, Value, Error> {
+): Submission<Value, Error> {
 	if (context.intents) {
 		return {
 			type: 'update',
