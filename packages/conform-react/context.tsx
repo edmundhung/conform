@@ -82,30 +82,18 @@ export type FieldMetadata<Schema, Error = string[]> = Metadata<
 	formId: FormId<Error>;
 	name: FieldName<Schema>;
 	constraint?: Constraint;
-} & (Primitive & Array<any> extends Schema
-		? {
-				fields: {
-					[Key in UnionKeyof<Schema>]: FieldMetadata<
-						UnionKeyType<Schema, Key>,
-						Error
-					>;
-				};
-				items: Array<FieldMetadata<any, Error>>;
-		  }
-		: Schema extends Primitive
-		? {}
-		: Schema extends Array<infer Item>
-		? {
-				items: Array<FieldMetadata<Item, Error>>;
-		  }
+	items: Schema extends Array<infer Item>
+		? Array<FieldMetadata<Item, Error>>
+		: never;
+	fields: Schema extends Primitive | Array<any>
+		? never
 		: {
-				fields: {
-					[Key in UnionKeyof<Schema>]: FieldMetadata<
-						UnionKeyType<Schema, Key>,
-						Error
-					>;
-				};
-		  });
+				[Key in UnionKeyof<Schema>]: FieldMetadata<
+					UnionKeyType<Schema, Key>,
+					Error
+				>;
+		  };
+};
 
 export const Registry = createContext<Record<string, Form>>({});
 

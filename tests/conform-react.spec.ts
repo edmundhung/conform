@@ -17,8 +17,8 @@ function createFieldMetadata(): FieldMetadata<any> {
 		constraint: {},
 		initialValue: undefined,
 		value: undefined,
-		errors: undefined,
-		allErrors: {},
+		error: undefined,
+		allError: {},
 		allValid: true,
 		valid: true,
 		dirty: false,
@@ -78,9 +78,13 @@ test.describe('conform-react', () => {
 			...props,
 			type: 'text',
 		});
-		expect(getInputProps(metadata, { description: true })).toEqual({
+		expect(getInputProps(metadata, { ariaDescribedBy: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
+		});
+		expect(getInputProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
 			getInputProps({
@@ -99,13 +103,27 @@ test.describe('conform-react', () => {
 					...metadata,
 					valid: false,
 				},
-				{ description: true },
+				{ ariaDescribedBy: true },
 			),
 		).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
+		});
+		expect(
+			getInputProps(
+				{
+					...metadata,
+					valid: false,
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			autoFocus: true,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
 		});
 		expect(
 			getInputProps(
@@ -194,9 +212,15 @@ test.describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getTextareaProps(metadata, { description: true })).toEqual({
+		expect(getTextareaProps(metadata, { ariaDescribedBy: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
+		});
+		expect(
+			getTextareaProps(metadata, { ariaDescribedBy: 'something' }),
+		).toEqual({
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
 			getTextareaProps({
@@ -215,13 +239,27 @@ test.describe('conform-react', () => {
 					...metadata,
 					valid: false,
 				},
-				{ description: true },
+				{ ariaDescribedBy: true },
 			),
 		).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
+		});
+		expect(
+			getTextareaProps(
+				{
+					...metadata,
+					valid: false,
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			autoFocus: true,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
 		});
 		expect(
 			getTextareaProps(
@@ -269,9 +307,13 @@ test.describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getSelectProps(metadata, { description: true })).toEqual({
+		expect(getSelectProps(metadata, { ariaDescribedBy: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
+		});
+		expect(getSelectProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
 			getSelectProps(
@@ -279,13 +321,27 @@ test.describe('conform-react', () => {
 					...metadata,
 					valid: false,
 				},
-				{ description: true },
+				{ ariaDescribedBy: true },
 			),
 		).toEqual({
 			...props,
 			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
+		});
+		expect(
+			getSelectProps(
+				{
+					...metadata,
+					valid: false,
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			autoFocus: true,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
 		});
 		expect(
 			getSelectProps(
@@ -314,9 +370,15 @@ test.describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getFieldsetProps(metadata, { description: true })).toEqual({
+		expect(getFieldsetProps(metadata, { ariaDescribedBy: true })).toEqual({
 			...props,
 			'aria-describedby': 'test-description',
+		});
+		expect(
+			getFieldsetProps(metadata, { ariaDescribedBy: 'something' }),
+		).toEqual({
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
 			getFieldsetProps(
@@ -324,14 +386,26 @@ test.describe('conform-react', () => {
 					...metadata,
 					valid: false,
 				},
-				{ description: true },
+				{ ariaDescribedBy: true },
 			),
 		).toEqual({
 			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
-
+		expect(
+			getFieldsetProps(
+				{
+					...metadata,
+					valid: false,
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
+		});
 		expect(
 			getFieldsetProps(
 				{

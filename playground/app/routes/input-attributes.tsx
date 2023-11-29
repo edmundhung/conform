@@ -127,14 +127,14 @@ export default function Example() {
 					<input
 						{...getInputProps(form.fields.title, {
 							type: 'text',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
 				<Field label="Description" config={form.fields.description}>
 					<textarea
 						{...getTextareaProps(form.fields.description, {
-							description: enableDescription,
+							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
@@ -142,14 +142,14 @@ export default function Example() {
 					<input
 						{...getInputProps(form.fields.images, {
 							type: 'file',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
 				<Field label="Tags" config={form.fields.tags}>
 					<select
 						{...getSelectProps(form.fields.tags, {
-							description: enableDescription,
+							ariaDescribedBy: enableDescription,
 						})}
 					>
 						<option value="">Please select</option>
@@ -166,7 +166,7 @@ export default function Example() {
 					<input
 						{...getInputProps(form.fields.rating, {
 							type: 'number',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
@@ -175,7 +175,7 @@ export default function Example() {
 						type: 'radio',
 						options: ['yes', 'no'],
 						ariaAttributes: true,
-						description: enableDescription,
+						ariaDescribedBy: enableDescription,
 					}).map((props) => (
 						<label key={props.value} className="inline-block">
 							<input {...props} />
@@ -191,8 +191,7 @@ export default function Example() {
 					{getCollectionProps(form.fields.languages, {
 						type: 'checkbox',
 						options: ['en', 'de', 'jp'],
-						ariaAttributes: true,
-						description: enableDescription,
+						ariaDescribedBy: enableDescription,
 					}).map((props) => (
 						<label key={props.value} className="inline-block">
 							<input {...props} />
