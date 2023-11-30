@@ -285,6 +285,16 @@ export function createForm<
 
 		if (isPlainObject(value) || Array.isArray(value)) {
 			setState(context.key, name, () => undefined);
+
+			Object.assign(
+				context.key,
+				flatten(value, {
+					resolve() {
+						return generateId();
+					},
+					prefix: name,
+				}),
+			);
 		}
 
 		context.key[name] = generateId();
@@ -298,16 +308,17 @@ export function createForm<
 		for (const intent of intents) {
 			switch (intent.type) {
 				case 'replace': {
-					if (typeof intent.payload.value !== 'undefined') {
-						const name = intent.payload.name ?? '';
-						const value = intent.payload.value;
+					const name = intent.payload.name ?? '';
+					const value = intent.payload.value;
 
-						updateValue(context, name, value);
-					}
+					updateValue(context, name, value);
 					break;
 				}
 				case 'reset': {
-					if (intent.payload.value ?? true) {
+					if (
+						typeof intent.payload.value === 'undefined' ||
+						intent.payload.value
+					) {
 						const name = intent.payload.name ?? '';
 						const value = getValue(context.defaultValue, name);
 

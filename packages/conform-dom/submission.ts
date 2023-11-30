@@ -1,4 +1,4 @@
-import type { FieldName, FormValue } from './form';
+import type { FieldName } from './form';
 import { requestSubmit } from './dom';
 import {
 	simplify,
@@ -165,27 +165,43 @@ export function parse<Value, Error>(
 					context.state.validated[intent.payload] = true;
 					break;
 				case 'replace': {
-					const { name = '', value, validated } = intent.payload;
+					const { name, value, validated } = intent.payload;
 
-					if (typeof value !== 'undefined') {
-						if (name) {
-							setValue(context.payload, name, () => value);
-						} else {
-							context.payload = value as any;
-						}
+					if (name) {
+						setValue(context.payload, name, () => value);
+					} else {
+						context.payload = value;
 					}
 
 					if (validated) {
+						if (isPlainObject(value) || Array.isArray(value)) {
+							// Clean up previous validated state
+							setState(context.state.validated, name, () => undefined);
+							Object.assign(
+								context.state.validated,
+								flatten(value, {
+									resolve() {
+										return true;
+									},
+									prefix: name,
+								}),
+							);
+						}
+
 						context.state.validated[name] = true;
 					} else {
+						if (isPlainObject(value) || Array.isArray(value)) {
+							setState(context.state.validated, name, () => undefined);
+						}
+
 						delete context.state.validated[name];
 					}
 					break;
 				}
 				case 'reset': {
-					const { name, value = true, validated } = intent.payload;
+					const { name, value, validated } = intent.payload;
 
-					if (value) {
+					if (typeof value === 'undefined' || value) {
 						if (name) {
 							setValue(context.payload, name, () => undefined);
 						} else {
@@ -193,10 +209,9 @@ export function parse<Value, Error>(
 						}
 					}
 
-					if (!validated) {
+					if (typeof validated === 'undefined' || validated) {
 						if (name) {
 							setState(context.state.validated, name, () => undefined);
-
 							delete context.state.validated[name];
 						} else {
 							context.state.validated = {};
@@ -337,11 +352,11 @@ export type ResetIntent<Schema = any> = {
 	};
 };
 
-export type ReplaceIntent<Schema = any> = {
+export type ReplaceIntent<Schema = unknown> = {
 	type: 'replace';
 	payload: {
-		name?: FieldName<Schema>;
-		value?: FormValue<Schema>;
+		name: FieldName<Schema>;
+		value: NonNullable<Schema>;
 		validated?: boolean;
 	};
 };
@@ -358,7 +373,7 @@ export type InsertIntent<Schema extends Array<any> = any> = {
 	type: 'insert';
 	payload: {
 		name: FieldName<Schema>;
-		defaultValue?: Schema extends Array<infer Item> ? FormValue<Item> : never;
+		defaultValue?: Schema extends Array<infer Item> ? Item : never;
 		index?: number;
 	};
 };
@@ -372,7 +387,7 @@ export type ReorderIntent<Schema extends Array<any> = any> = {
 	};
 };
 
-export type Intent<Schema = any> =
+export type Intent<Schema = unknown> =
 	| ValidateIntent<Schema>
 	| ResetIntent<Schema>
 	| ReplaceIntent<Schema>
