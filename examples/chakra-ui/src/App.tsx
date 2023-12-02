@@ -164,13 +164,7 @@ export default function Example() {
 							<FormLabel>Active (Radio)</FormLabel>
 							<RadioGroup
 								name={form.fields.active.name}
-								defaultValue={
-									typeof form.fields.active.initialValue === 'boolean'
-										? form.fields.active.initialValue
-											? 'on'
-											: ''
-										: form.fields.active.initialValue
-								}
+								defaultValue={form.fields.active.initialValue}
 							>
 								<Stack spacing={5} direction="row">
 									<Radio

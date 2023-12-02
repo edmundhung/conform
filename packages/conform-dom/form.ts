@@ -71,14 +71,11 @@ export type FormValue<Schema> = Schema extends
 	?
 			| { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
 			| undefined
-	: string | undefined;
+	: unknown;
 
-export type FormId<
-	// Schema extends Record<string, unknown> = Record<string, unknown>,
-	Error = unknown,
-> = string & {
+export type FormId<Schema extends Record<string, unknown>, Error> = string & {
 	__error?: Error;
-	// __schema?: Schema;
+	__schema?: Schema;
 };
 
 export type FieldName<Schema> = string & { __schema?: Schema };
@@ -206,11 +203,7 @@ export type Form<
 	getSerializedState(): string;
 };
 
-export function createForm<
-	Schema extends Record<string, any> = any,
-	Error = string[],
-	Value = Schema,
->(
+export function createForm<Schema extends Record<string, any>, Error, Value>(
 	formId: string,
 	options: FormOptions<Schema, Error, Value>,
 ): Form<Schema, Error, Value> {

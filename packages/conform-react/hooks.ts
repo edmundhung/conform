@@ -24,7 +24,9 @@ import {
 export const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-export function useFormId<Error>(preferredId?: string): FormId<Error> {
+export function useFormId<Schema extends Record<string, unknown>, Error>(
+	preferredId?: string,
+): FormId<Schema, Error> {
 	const id = useId();
 
 	return preferredId ?? id;
@@ -67,7 +69,7 @@ export function useForm<
 		}
 	>,
 ): FormMetadata<Schema, Error> {
-	const formId = useFormId<Error>(options.id);
+	const formId = useFormId<Schema, Error>(options.id);
 	const initializeContext = () => createForm(formId, options);
 	const [context, setContext] = useState(initializeContext);
 
@@ -120,7 +122,7 @@ export function useFormMetadata<
 	Error,
 	Value = Schema,
 >(options: {
-	formId: FormId<Error>;
+	formId: FormId<Schema, Error>;
 	context?: Form<Schema, Error, Value>;
 	defaultNoValidate?: boolean;
 }): FormMetadata<Schema, Error> {
@@ -132,14 +134,24 @@ export function useFormMetadata<
 	return getFormMetadata(options.formId, state, subjectRef, form, noValidate);
 }
 
-export function useField<Schema, Error>(options: {
-	formId: FormId<Error>;
+export function useField<
+	Schema,
+	Error,
+	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+>(options: {
+	formId: FormId<FormSchema, Error>;
 	name: FieldName<Schema>;
-	context?: Form<any, Error>;
-}): FieldMetadata<Schema, Error> {
+	context?: Form<FormSchema, Error>;
+}): FieldMetadata<Schema, Error, FormSchema> {
 	const subjectRef = useSubjectRef();
 	const form = useRegistry(options.formId, options.context);
 	const state = useFormState(form, subjectRef);
 
-	return getFieldMetadata(options.formId, state, subjectRef, options.name);
+	return getFieldMetadata(
+		options.formId,
+		state,
+		subjectRef,
+		form,
+		options.name,
+	);
 }

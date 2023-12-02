@@ -145,8 +145,8 @@ function simplify<Props>(props: Props): Props {
 /**
  * Derives aria attributes of a form control based on the field metadata.
  */
-export function getAriaAttributes<Schema>(
-	metadata: Metadata<Schema, unknown>,
+export function getAriaAttributes<Schema, Error>(
+	metadata: Metadata<Schema, Error>,
 	options: FormControlOptions = {},
 ): {
 	'aria-invalid'?: boolean;
@@ -185,8 +185,8 @@ export function getAriaAttributes<Schema>(
  * <form {...getFormProps(metadata)} />
  * ```
  */
-export function getFormProps<Schema extends Record<string, any>>(
-	metadata: FormMetadata<Schema, any>,
+export function getFormProps<Schema extends Record<string, any>, Error>(
+	metadata: FormMetadata<Schema, Error>,
 	options?: FormControlOptions,
 ) {
 	return simplify({
@@ -226,7 +226,8 @@ export function getFieldProps<Schema, Error>(
  */
 export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
->(metadata: FieldMetadata<Schema, unknown>, options?: FormControlOptions) {
+	Error,
+>(metadata: FieldMetadata<Schema, Error, any>, options?: FormControlOptions) {
 	return simplify({
 		id: metadata.id,
 		name: metadata.name,
@@ -239,8 +240,8 @@ export function getFieldsetProps<
  * Derives common properties of a form control based on the field metadata,
  * including `key`, `id`, `name`, `form`, `required`, `autoFocus`, `aria-invalid` and `aria-describedby`.
  */
-export function getFormControlProps<Schema>(
-	metadata: FieldMetadata<Schema, unknown>,
+export function getFormControlProps<Schema, Error>(
+	metadata: FieldMetadata<Schema, Error, any>,
 	options?: FormControlOptions,
 ) {
 	return simplify({
@@ -272,15 +273,15 @@ export function getFormControlProps<Schema>(
  * ```
  */
 export function getInputProps<Schema extends Exclude<Primitive, File>>(
-	metadata: FieldMetadata<Schema, unknown>,
+	metadata: FieldMetadata<Schema, any, any>,
 	options?: InputOptions,
 ): InputProps;
 export function getInputProps<Schema extends File | File[]>(
-	metadata: FieldMetadata<Schema, unknown>,
+	metadata: FieldMetadata<Schema, any, any>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
 export function getInputProps<Schema extends Primitive | File[]>(
-	metadata: FieldMetadata<Schema, unknown>,
+	metadata: FieldMetadata<Schema, any, any>,
 	options: InputOptions = {},
 ): InputProps {
 	const props: InputProps = {
@@ -302,7 +303,7 @@ export function getInputProps<Schema extends Primitive | File[]>(
 				typeof metadata.initialValue === 'boolean'
 					? metadata.initialValue
 					: metadata.initialValue === props.value;
-		} else if (!Array.isArray(metadata.initialValue)) {
+		} else if (typeof metadata.initialValue === 'string') {
 			props.defaultValue = metadata.initialValue;
 		}
 	}
@@ -326,9 +327,12 @@ export function getInputProps<Schema extends Primitive | File[]>(
  * ```
  */
 export function getSelectProps<
-	Schema extends Primitive | Primitive[] | undefined,
+	Schema extends
+		| Exclude<Primitive, File>
+		| Array<Exclude<Primitive, File>>
+		| undefined,
 >(
-	metadata: FieldMetadata<Schema, unknown>,
+	metadata: FieldMetadata<Schema, any, any>,
 	options: SelectOptions = {},
 ): SelectProps {
 	const props: SelectProps = {
@@ -360,8 +364,10 @@ export function getSelectProps<
  * <textarea {...getTextareaProps(metadata, { value: false })} />
  * ```
  */
-export function getTextareaProps<Schema extends Primitive | undefined>(
-	metadata: FieldMetadata<Schema, unknown>,
+export function getTextareaProps<
+	Schema extends Exclude<Primitive, File> | undefined,
+>(
+	metadata: FieldMetadata<Schema, any, any>,
 	options: TextareaOptions = {},
 ): TextareaProps {
 	const props: TextareaProps = {
@@ -405,7 +411,7 @@ export function getCollectionProps<
 		| undefined
 		| unknown,
 >(
-	metadata: FieldMetadata<Schema, unknown>,
+	metadata: FieldMetadata<Schema, any, any>,
 	options: Pretty<
 		FormControlOptions & {
 			/**

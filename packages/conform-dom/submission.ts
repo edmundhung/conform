@@ -1,4 +1,4 @@
-import type { FieldName } from './form';
+import type { DefaultValue, FieldName } from './form';
 import { requestSubmit } from './dom';
 import {
 	simplify,
@@ -40,7 +40,7 @@ export type Submission<Schema, Error = unknown, Value = Schema> =
 			accept(options?: AcceptOptions): SubmissionResult<Error>;
 	  };
 
-export type SubmissionResult<Error = string[]> = {
+export type SubmissionResult<Error = unknown> = {
 	status: 'updated' | 'error' | 'success';
 	intents?: Array<Intent>;
 	initialValue?: Record<string, unknown>;
@@ -170,6 +170,7 @@ export function parse<Value, Error>(
 					if (name) {
 						setValue(context.payload, name, () => value);
 					} else {
+						// @ts-expect-error FIXME - it must be an object if there is no name
 						context.payload = value;
 					}
 
@@ -356,7 +357,7 @@ export type ReplaceIntent<Schema = unknown> = {
 	type: 'replace';
 	payload: {
 		name: FieldName<Schema>;
-		value: NonNullable<Schema>;
+		value: NonNullable<DefaultValue<Schema>>;
 		validated?: boolean;
 	};
 };
@@ -391,9 +392,9 @@ export type Intent<Schema = unknown> =
 	| ValidateIntent<Schema>
 	| ResetIntent<Schema>
 	| ReplaceIntent<Schema>
-	| ReorderIntent<Schema extends Array<any> ? Schema : never>
-	| RemoveIntent<Schema extends Array<any> ? Schema : never>
-	| InsertIntent<Schema extends Array<any> ? Schema : never>;
+	| ReorderIntent<Schema extends Array<any> ? Schema : any>
+	| RemoveIntent<Schema extends Array<any> ? Schema : any>
+	| InsertIntent<Schema extends Array<any> ? Schema : any>;
 
 export function getIntents(
 	intent: string | null | undefined,

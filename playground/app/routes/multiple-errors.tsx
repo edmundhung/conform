@@ -7,10 +7,6 @@ import { Playground, Field } from '~/components';
 import { z } from 'zod';
 import * as yup from 'yup';
 
-interface Schema {
-	username: string;
-}
-
 function parseForm(formData: FormData, validator: string | null) {
 	switch (validator) {
 		case 'yup': {
@@ -130,7 +126,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { validator, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm<Schema>({
+	const form = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData, validator)

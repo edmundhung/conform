@@ -103,14 +103,14 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async?: false;
 	},
-): Submission<yup.InferType<Schema>>;
+): Submission<yup.InferType<Schema>, string[]>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intents: Array<Intent> | null) => Schema);
 		async: true;
 	},
-): Promise<Submission<yup.InferType<Schema>>>;
+): Promise<Submission<yup.InferType<Schema>, string[]>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
@@ -118,8 +118,8 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 		async?: boolean;
 	},
 ):
-	| Submission<yup.InferType<Schema>>
-	| Promise<Submission<yup.InferType<Schema>>> {
+	| Submission<yup.InferType<Schema>, string[]>
+	| Promise<Submission<yup.InferType<Schema>, string[]>> {
 	return baseParse<Submission<yup.InferType<Schema>>, string[]>(payload, {
 		resolve(payload, intents) {
 			const schema =
