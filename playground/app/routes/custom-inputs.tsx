@@ -161,7 +161,7 @@ function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
 	const field = useField({ name, formId });
 	const control = useInputControl(field, {
 		initialize(value) {
-			return typeof value === 'boolean' ? value : value === 'on';
+			return typeof value !== 'undefined' ? value === 'on' : false;
 		},
 	});
 

@@ -37,7 +37,7 @@ export type UnionKeyType<T, K extends UnionKeyof<T>> = T extends {
 	? T[K]
 	: undefined;
 
-export type FormValue<Schema> = Schema extends
+export type DefaultValue<Schema> = Schema extends
 	| string
 	| number
 	| boolean
@@ -46,19 +46,42 @@ export type FormValue<Schema> = Schema extends
 	| undefined
 	? Schema | string | undefined
 	: Schema extends File
-	? string | undefined
+	? undefined
 	: Schema extends Array<infer Item>
-	? Array<FormValue<Item>> | string | undefined
+	? Array<DefaultValue<Item>>
+	: Schema extends Record<string, any>
+	? {
+			[Key in UnionKeyof<Schema>]?: DefaultValue<UnionKeyType<Schema, Key>>;
+	  }
+	: string | undefined;
+
+export type FormValue<Schema> = Schema extends
+	| string
+	| number
+	| boolean
+	| Date
+	| null
+	| undefined
+	? string | undefined
+	: Schema extends File
+	? File | undefined
+	: Schema extends Array<infer Item>
+	? Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
 	?
 			| { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
-			| string
 			| undefined
-	: unknown | string | undefined;
+	: string | undefined;
 
-export type FormId<Error> = string & { __error?: Error };
+export type FormId<
+	// Schema extends Record<string, unknown> = Record<string, unknown>,
+	Error = unknown,
+> = string & {
+	__error?: Error;
+	// __schema?: Schema;
+};
 
-export type FieldName<Schema> = string & { __type?: Schema };
+export type FieldName<Schema> = string & { __schema?: Schema };
 
 export type Constraint = {
 	required?: boolean;
@@ -96,7 +119,7 @@ export type FormOptions<Schema, Error, Value = Schema> = {
 	/**
 	 * An object representing the initial value of the form.
 	 */
-	defaultValue?: FormValue<Schema>;
+	defaultValue?: DefaultValue<Schema>;
 
 	/**
 	 * An object describing the constraint of each field
@@ -205,8 +228,36 @@ export function createForm<
 		return element;
 	}
 
+	function serialize(defaultValue?: DefaultValue<Schema>): FormValue<Schema> {
+		if (isPlainObject(defaultValue)) {
+			// @ts-expect-error FIXME
+			return Object.entries(defaultValue).reduce<Record<string, unknown>>(
+				(result, [key, value]) => {
+					result[key] = serialize(value);
+					return result;
+				},
+				{},
+			);
+		} else if (Array.isArray(defaultValue)) {
+			// @ts-expect-error FIXME
+			return defaultValue.map(serialize);
+		} else if (
+			// @ts-ignore-error FIXME
+			defaultValue instanceof Date
+		) {
+			// @ts-expect-error FIXME
+			return defaultValue.toISOString();
+		} else if (typeof defaultValue === 'boolean') {
+			// @ts-expect-error FIXME
+			return defaultValue ? 'on' : undefined;
+		} else {
+			// @ts-expect-error FIXME
+			return defaultValue?.toString();
+		}
+	}
+
 	function initializeFormContext(): FormContext<Error> {
-		const defaultValue = options.defaultValue ?? {};
+		const defaultValue = serialize(options.defaultValue) ?? {};
 		const value = options.lastResult?.initialValue ?? defaultValue;
 		const result: FormContext<Error> = {
 			constraint: options.constraint ?? {},
@@ -743,7 +794,7 @@ export function createForm<
 			return;
 		}
 
-		const defaultValue = latestOptions.defaultValue ?? {};
+		const defaultValue = serialize(latestOptions.defaultValue) ?? {};
 
 		updateContext({
 			key: {

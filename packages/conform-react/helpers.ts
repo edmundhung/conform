@@ -1,9 +1,4 @@
-import {
-	type Intent,
-	type FormValue,
-	INTENT,
-	serializeIntents,
-} from '@conform-to/dom';
+import { type Intent, INTENT, serializeIntents } from '@conform-to/dom';
 import type {
 	FormMetadata,
 	FieldMetadata,
@@ -78,7 +73,7 @@ type InputProps = Pretty<
 	}
 >;
 
-type InputOptions<Schema> = Pretty<
+type InputOptions = Pretty<
 	FormControlOptions &
 		(
 			| {
@@ -95,16 +90,7 @@ type InputOptions<Schema> = Pretty<
 					/**
 					 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
 					 */
-					value?: true;
-
-					/**
-					 * To serialize the default value to string
-					 */
-					serialize?: (value: FormValue<Schema>) => string;
-			  }
-			| {
-					type?: Exclude<InputProps['type'], 'checkbox' | 'radio'>;
-					value?: false;
+					value?: boolean;
 			  }
 		)
 >;
@@ -116,20 +102,13 @@ type SelectProps = Pretty<
 	}
 >;
 
-type SelectOptions<Schema> = Pretty<
-	FormControlOptions &
-		(
-			| {
-					/**
-					 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
-					 */
-					value?: true;
-					serialize?: (value: FormValue<Schema>) => string | string[];
-			  }
-			| {
-					value: false;
-			  }
-		)
+type SelectOptions = Pretty<
+	FormControlOptions & {
+		/**
+		 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+		 */
+		value?: boolean;
+	}
 >;
 
 type TextareaProps = Pretty<
@@ -140,20 +119,13 @@ type TextareaProps = Pretty<
 	}
 >;
 
-type TextareaOptions<Schema> = Pretty<
-	FormControlOptions &
-		(
-			| {
-					/**
-					 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
-					 */
-					value?: true;
-					serialize?: (value: FormValue<Schema>) => string;
-			  }
-			| {
-					value: false;
-			  }
-		)
+type TextareaOptions = Pretty<
+	FormControlOptions & {
+		/**
+		 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+		 */
+		value?: true;
+	}
 >;
 
 /**
@@ -173,8 +145,8 @@ function simplify<Props>(props: Props): Props {
 /**
  * Derives aria attributes of a form control based on the field metadata.
  */
-export function getAriaAttributes(
-	metadata: Metadata<unknown, unknown>,
+export function getAriaAttributes<Schema>(
+	metadata: Metadata<Schema, unknown>,
 	options: FormControlOptions = {},
 ): {
 	'aria-invalid'?: boolean;
@@ -299,19 +271,17 @@ export function getFormControlProps<Schema>(
  * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
  * ```
  */
-export function getInputProps<
-	Schema extends Exclude<Primitive, File> | unknown,
->(
+export function getInputProps<Schema extends Exclude<Primitive, File>>(
 	metadata: FieldMetadata<Schema, unknown>,
-	options?: InputOptions<Schema>,
+	options?: InputOptions,
 ): InputProps;
 export function getInputProps<Schema extends File | File[]>(
 	metadata: FieldMetadata<Schema, unknown>,
-	options: InputOptions<Schema> & { type: 'file' },
+	options: InputOptions & { type: 'file' },
 ): InputProps;
-export function getInputProps<Schema extends Primitive | File[] | unknown>(
+export function getInputProps<Schema extends Primitive | File[]>(
 	metadata: FieldMetadata<Schema, unknown>,
-	options: InputOptions<Schema> = {},
+	options: InputOptions = {},
 ): InputProps {
 	const props: InputProps = {
 		...getFormControlProps(metadata, options),
@@ -332,12 +302,8 @@ export function getInputProps<Schema extends Primitive | File[] | unknown>(
 				typeof metadata.initialValue === 'boolean'
 					? metadata.initialValue
 					: metadata.initialValue === props.value;
-		} else {
-			const serialize = (value: FormValue<Schema>) =>
-				// @ts-expect-error ts be able to narrow down the type, but it doesn't
-				options?.serialize?.(value) ?? value?.toString();
-
-			props.defaultValue = serialize(metadata.initialValue);
+		} else if (!Array.isArray(metadata.initialValue)) {
+			props.defaultValue = metadata.initialValue;
 		}
 	}
 
@@ -360,10 +326,10 @@ export function getInputProps<Schema extends Primitive | File[] | unknown>(
  * ```
  */
 export function getSelectProps<
-	Schema extends Primitive | Primitive[] | undefined | unknown,
+	Schema extends Primitive | Primitive[] | undefined,
 >(
 	metadata: FieldMetadata<Schema, unknown>,
-	options: SelectOptions<Schema> = {},
+	options: SelectOptions = {},
 ): SelectProps {
 	const props: SelectProps = {
 		...getFormControlProps(metadata, options),
@@ -371,13 +337,9 @@ export function getSelectProps<
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
-		const serialize = (value: FormValue<Schema>) =>
-			options?.serialize?.(value) ??
-			(Array.isArray(value)
-				? value.map((item) => `${item ?? ''}`)
-				: value?.toString());
-
-		props.defaultValue = serialize(metadata.initialValue);
+		props.defaultValue = Array.isArray(metadata.initialValue)
+			? metadata.initialValue.map((item) => `${item ?? ''}`)
+			: metadata.initialValue;
 	}
 
 	return simplify(props);
@@ -398,11 +360,9 @@ export function getSelectProps<
  * <textarea {...getTextareaProps(metadata, { value: false })} />
  * ```
  */
-export function getTextareaProps<
-	Schema extends Primitive | undefined | unknown,
->(
+export function getTextareaProps<Schema extends Primitive | undefined>(
 	metadata: FieldMetadata<Schema, unknown>,
-	options: TextareaOptions<Schema> = {},
+	options: TextareaOptions = {},
 ): TextareaProps {
 	const props: TextareaProps = {
 		...getFormControlProps(metadata, options),
@@ -411,10 +371,7 @@ export function getTextareaProps<
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
-		const serialize = (value: FormValue<Schema>) =>
-			options.serialize?.(value) ?? value?.toString();
-
-		props.defaultValue = serialize(metadata.initialValue);
+		props.defaultValue = metadata.initialValue;
 	}
 
 	return simplify(props);
