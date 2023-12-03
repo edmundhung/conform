@@ -46,7 +46,7 @@ type Error = {
 };
 
 export default function Example() {
-	const form = useForm({
+	const { meta, fields } = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -56,8 +56,8 @@ export default function Example() {
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
-			<FormProvider context={form.context}>
-				<form {...getFormProps(form)}>
+			<FormProvider context={meta.context}>
+				<form {...getFormProps(meta)}>
 					<Stack direction="column" spacing={8}>
 						<header>
 							<Heading mb={4}>Chakra UI Example</Heading>
@@ -66,18 +66,18 @@ export default function Example() {
 							</Text>
 						</header>
 
-						<FormControl isInvalid={!form.fields.email.valid}>
+						<FormControl isInvalid={!fields.email.valid}>
 							<FormLabel>Email (Input)</FormLabel>
-							<Input type="email" name={form.fields.email.name} required />
+							<Input type="email" name={fields.email.name} required />
 							<FormErrorMessage>
-								{form.fields.email.error?.validationMessage}
+								{fields.email.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.language.valid}>
+						<FormControl isInvalid={!fields.language.valid}>
 							<FormLabel>Language (Select)</FormLabel>
 							<Select
-								name={form.fields.language.name}
+								name={fields.language.name}
 								placeholder="Select option"
 								required
 							>
@@ -86,103 +86,100 @@ export default function Example() {
 								<option value="japanese">Japanese</option>
 							</Select>
 							<FormErrorMessage>
-								{form.fields.language.error?.validationMessage}
+								{fields.language.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.description.valid}>
+						<FormControl isInvalid={!fields.description.valid}>
 							<FormLabel>Description (Textarea)</FormLabel>
-							<Textarea name={form.fields.description.name} required />
+							<Textarea name={fields.description.name} required />
 							<FormErrorMessage>
-								{form.fields.description.error?.validationMessage}
+								{fields.description.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.quantity.valid}>
+						<FormControl isInvalid={!fields.quantity.valid}>
 							<FormLabel>Quantity (NumberInput)</FormLabel>
 							<ExampleNumberInput
-								name={form.fields.quantity.name}
-								formId={form.id}
+								name={fields.quantity.name}
+								formId={meta.id}
 							/>
 							<FormErrorMessage>
-								{form.fields.quantity.error?.validationMessage}
+								{fields.quantity.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.pin.valid}>
+						<FormControl isInvalid={!fields.pin.valid}>
 							<FormLabel>PIN (PinInput)</FormLabel>
-							<ExamplePinInput name={form.fields.pin.name} formId={form.id} />
+							<ExamplePinInput name={fields.pin.name} formId={meta.id} />
 							<FormErrorMessage>
-								{form.fields.pin.error?.validationMessage}
+								{fields.pin.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.title.valid}>
+						<FormControl isInvalid={!fields.title.valid}>
 							<FormLabel>Title (Editable)</FormLabel>
 							<Editable
-								defaultValue={form.fields.title.initialValue}
+								defaultValue={fields.title.initialValue}
 								placeholder="No content"
 							>
 								<EditablePreview />
-								<EditableInput name={form.fields.title.name} required />
+								<EditableInput name={fields.title.name} required />
 							</Editable>
 							<FormErrorMessage>
-								{form.fields.title.error?.validationMessage}
+								{fields.title.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.subscribe.valid}>
+						<FormControl isInvalid={!fields.subscribe.valid}>
 							<FormLabel>Subscribe (Checkbox)</FormLabel>
-							<Checkbox name={form.fields.subscribe.name} value="yes" required>
+							<Checkbox name={fields.subscribe.name} value="yes" required>
 								Newsletter
 							</Checkbox>
 							<FormErrorMessage>
-								{form.fields.subscribe.error?.validationMessage}
+								{fields.subscribe.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.enabled.valid}>
+						<FormControl isInvalid={!fields.enabled.valid}>
 							<FormLabel>Enabled (Switch)</FormLabel>
-							<Switch name={form.fields.enabled.name} required />
+							<Switch name={fields.enabled.name} required />
 							<FormErrorMessage>
-								{form.fields.enabled.error?.validationMessage}
+								{fields.enabled.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.progress.valid}>
+						<FormControl isInvalid={!fields.progress.valid}>
 							<FormLabel>Progress (Slider)</FormLabel>
-							<ExampleSlider
-								name={form.fields.progress.name}
-								formId={form.id}
-							/>
+							<ExampleSlider name={fields.progress.name} formId={meta.id} />
 							<FormErrorMessage>
-								{form.fields.progress.error?.validationMessage}
+								{fields.progress.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
-						<FormControl isInvalid={!form.fields.active.valid}>
+						<FormControl isInvalid={!fields.active.valid}>
 							<FormLabel>Active (Radio)</FormLabel>
 							<RadioGroup
-								name={form.fields.active.name}
-								defaultValue={form.fields.active.initialValue}
+								name={fields.active.name}
+								defaultValue={fields.active.initialValue}
 							>
 								<Stack spacing={5} direction="row">
 									<Radio
 										value="yes"
-										isRequired={form.fields.active.constraint?.required ?? true}
+										isRequired={fields.active.constraint?.required ?? true}
 									>
 										Yes
 									</Radio>
 									<Radio
 										value="no"
-										isRequired={form.fields.active.constraint?.required ?? true}
+										isRequired={fields.active.constraint?.required ?? true}
 									>
 										No
 									</Radio>
 								</Stack>
 							</RadioGroup>
 							<FormErrorMessage>
-								{form.fields.active.error?.validationMessage}
+								{fields.active.error?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -202,13 +199,13 @@ export default function Example() {
 }
 
 function ExampleNumberInput(props: FieldProps<number, Error>) {
-	const field = useField(props);
-	const control = useInputControl(field);
+	const { meta } = useField(props);
+	const control = useInputControl(meta);
 
 	return (
 		<NumberInput
 			isRequired
-			name={field.name}
+			name={meta.name}
 			value={control.value ?? ''}
 			onChange={control.change}
 		>
@@ -223,15 +220,15 @@ function ExampleNumberInput(props: FieldProps<number, Error>) {
 
 function ExamplePinInput(config: FieldProps<string, Error>) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const field = useField(config);
-	const control = useInputControl(field);
+	const { meta } = useField(config);
+	const control = useInputControl(meta);
 
 	return (
 		<PinInput
 			type="alphanumeric"
 			value={control.value ?? ''}
 			onChange={control.change}
-			isInvalid={!field.valid}
+			isInvalid={!meta.valid}
 		>
 			<PinInputField ref={inputRef} />
 			<PinInputField />
@@ -242,8 +239,8 @@ function ExamplePinInput(config: FieldProps<string, Error>) {
 }
 
 function ExampleSlider(config: FieldProps<number, Error>) {
-	const field = useField(config);
-	const control = useInputControl(field, {
+	const { meta } = useField(config);
+	const control = useInputControl(meta, {
 		initialize(value) {
 			return typeof value !== 'undefined' ? Number(value) : undefined;
 		},

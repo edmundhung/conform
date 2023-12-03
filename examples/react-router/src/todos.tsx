@@ -36,74 +36,78 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export function Component() {
-	const lastResult = useActionData() as SubmissionResult;
-	const form = useForm({
+	const lastResult = useActionData() as SubmissionResult<string[]>;
+	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, { schema: todosSchema });
 		},
 	});
-	const tasks = form.fields.tasks;
+	const tasks = fields.tasks.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(meta)}>
 			<div>
 				<label>Title</label>
 				<input
-					className={!form.fields.title.valid ? 'error' : ''}
-					{...getInputProps(form.fields.title)}
+					className={!fields.title.valid ? 'error' : ''}
+					{...getInputProps(fields.title)}
 				/>
-				<div>{form.fields.title.error}</div>
+				<div>{fields.title.error}</div>
 			</div>
 			<hr />
-			<div className="form-error">{tasks.error}</div>
-			{tasks.items.map((task, index) => (
-				<fieldset key={task.key} {...getFieldsetProps(task)}>
-					<div>
-						<label>Task #${index + 1}</label>
-						<input
-							className={!task.fields.content.valid ? 'error' : ''}
-							{...getInputProps(task.fields.content)}
-						/>
-						<div>{task.fields.content.error}</div>
-					</div>
-					<div>
-						<label>
-							<span>Completed</span>
+			<div className="form-error">{fields.tasks.error}</div>
+			{tasks.map((task, index) => {
+				const taskFields = task.getFieldset();
+
+				return (
+					<fieldset key={task.key} {...getFieldsetProps(task)}>
+						<div>
+							<label>Task #${index + 1}</label>
 							<input
-								className={!task.fields.completed.valid ? 'error' : ''}
-								{...getInputProps(task.fields.completed, {
-									type: 'checkbox',
-								})}
+								className={!taskFields.content.valid ? 'error' : ''}
+								{...getInputProps(taskFields.content)}
 							/>
-						</label>
-					</div>
-					<button
-						{...getControlButtonProps(form.id, [
-							intent.remove({ name: tasks.name, index }),
-						])}
-					>
-						Delete
-					</button>
-					<button
-						{...getControlButtonProps(form.id, [
-							intent.reorder({ name: tasks.name, from: index, to: 0 }),
-						])}
-					>
-						Move to top
-					</button>
-					<button
-						{...getControlButtonProps(form.id, [
-							intent.replace({ value: { content: '' } }),
-						])}
-					>
-						Clear
-					</button>
-				</fieldset>
-			))}
+							<div>{taskFields.content.error}</div>
+						</div>
+						<div>
+							<label>
+								<span>Completed</span>
+								<input
+									className={!taskFields.completed.valid ? 'error' : ''}
+									{...getInputProps(taskFields.completed, {
+										type: 'checkbox',
+									})}
+								/>
+							</label>
+						</div>
+						<button
+							{...getControlButtonProps(meta.id, [
+								intent.remove({ name: fields.tasks.name, index }),
+							])}
+						>
+							Delete
+						</button>
+						<button
+							{...getControlButtonProps(meta.id, [
+								intent.reorder({ name: fields.tasks.name, from: index, to: 0 }),
+							])}
+						>
+							Move to top
+						</button>
+						<button
+							{...getControlButtonProps(meta.id, [
+								intent.replace({ name: task.name, value: { content: '' } }),
+							])}
+						>
+							Clear
+						</button>
+					</fieldset>
+				);
+			})}
 			<button
-				{...getControlButtonProps(form.id, [
-					intent.insert({ name: tasks.name }),
+				{...getControlButtonProps(meta.id, [
+					intent.insert({ name: fields.tasks.name }),
 				])}
 			>
 				Add task

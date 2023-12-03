@@ -48,7 +48,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
@@ -57,15 +57,15 @@ export default function SimpleList() {
 			? ({ formData }) => parse(formData, { schema })
 			: undefined,
 	});
-	const items = form.fields.items;
+	const items = fields.items.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
-			<FormStateInput context={form.context} />
+		<Form method="post" {...getFormProps(meta)}>
+			<FormStateInput context={meta.context} />
 			<Playground title="Simple list" lastSubmission={lastResult}>
-				<Alert errors={items.error} />
+				<Alert errors={fields.items.error} />
 				<ol>
-					{items.items.map((task, index) => (
+					{items.map((task, index) => (
 						<li key={task.key} className="border rounded-md p-4 mb-4">
 							<Field label={`Item #${index + 1}`} config={task}>
 								<input {...getInputProps(task, { type: 'text' })} />
@@ -73,23 +73,27 @@ export default function SimpleList() {
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(form.id, [
-										intent.remove({ name: items.name, index }),
+									{...getControlButtonProps(meta.id, [
+										intent.remove({ name: fields.items.name, index }),
 									])}
 								>
 									Delete
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(form.id, [
-										intent.reorder({ name: items.name, from: index, to: 0 }),
+									{...getControlButtonProps(meta.id, [
+										intent.reorder({
+											name: fields.items.name,
+											from: index,
+											to: 0,
+										}),
 									])}
 								>
 									Move to top
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(form.id, [
+									{...getControlButtonProps(meta.id, [
 										intent.replace({ name: task.name, value: '' }),
 									])}
 								>
@@ -97,7 +101,7 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(form.id, [
+									{...getControlButtonProps(meta.id, [
 										intent.reset({ name: task.name }),
 									])}
 								>
@@ -110,9 +114,9 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, [
+						{...getControlButtonProps(meta.id, [
 							intent.insert({
-								name: items.name,
+								name: fields.items.name,
 								defaultValue: 'Top item',
 								index: 0,
 							}),
@@ -122,16 +126,16 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, [
-							intent.insert({ name: items.name, defaultValue: '' }),
+						{...getControlButtonProps(meta.id, [
+							intent.insert({ name: fields.items.name, defaultValue: '' }),
 						])}
 					>
 						Insert bottom
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, [
-							intent.reset({ name: items.name }),
+						{...getControlButtonProps(meta.id, [
+							intent.reset({ name: fields.items.name }),
 						])}
 					>
 						Reset

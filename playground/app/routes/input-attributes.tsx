@@ -81,7 +81,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm<Schema>({
+	const { meta, fields } = useForm<Schema>({
 		id: 'test',
 		lastResult,
 		constraint: {
@@ -120,35 +120,35 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" encType="multipart/form-data" {...getFormProps(form)}>
+		<Form method="post" encType="multipart/form-data" {...getFormProps(meta)}>
 			<Playground title="Input attributes" lastSubmission={lastResult}>
-				<Alert id={form.errorId} errors={form.error} />
-				<Field label="Title" config={form.fields.title}>
+				<Alert id={meta.errorId} errors={meta.error} />
+				<Field label="Title" config={fields.title}>
 					<input
-						{...getInputProps(form.fields.title, {
+						{...getInputProps(fields.title, {
 							type: 'text',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Description" config={form.fields.description}>
+				<Field label="Description" config={fields.description}>
 					<textarea
-						{...getTextareaProps(form.fields.description, {
+						{...getTextareaProps(fields.description, {
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Image" config={form.fields.images}>
+				<Field label="Image" config={fields.images}>
 					<input
-						{...getInputProps(form.fields.images, {
+						{...getInputProps(fields.images, {
 							type: 'file',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Tags" config={form.fields.tags}>
+				<Field label="Tags" config={fields.tags}>
 					<select
-						{...getSelectProps(form.fields.tags, {
+						{...getSelectProps(fields.tags, {
 							ariaDescribedBy: enableDescription,
 						})}
 					>
@@ -162,16 +162,16 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" config={form.fields.rating}>
+				<Field label="Rating" config={fields.rating}>
 					<input
-						{...getInputProps(form.fields.rating, {
+						{...getInputProps(fields.rating, {
 							type: 'number',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Released" config={form.fields.released}>
-					{getCollectionProps(form.fields.released, {
+				<Field label="Released" config={fields.released}>
+					{getCollectionProps(fields.released, {
 						type: 'radio',
 						options: ['yes', 'no'],
 						ariaAttributes: true,
@@ -187,8 +187,8 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Languages" config={form.fields.languages}>
-					{getCollectionProps(form.fields.languages, {
+				<Field label="Languages" config={fields.languages}>
+					{getCollectionProps(fields.languages, {
 						type: 'checkbox',
 						options: ['en', 'de', 'jp'],
 						ariaDescribedBy: enableDescription,

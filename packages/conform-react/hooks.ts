@@ -68,7 +68,10 @@ export function useForm<
 			defaultNoValidate?: boolean;
 		}
 	>,
-): FormMetadata<Schema, Error> {
+): {
+	meta: FormMetadata<Schema, Error>;
+	fields: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
+} {
 	const formId = useFormId<Schema, Error>(options.id);
 	const initializeContext = () => createForm(formId, options);
 	const [context, setContext] = useState(initializeContext);
@@ -110,11 +113,16 @@ export function useForm<
 		context.update(options);
 	});
 
-	return useFormMetadata({
+	const meta = useFormMetadata({
 		formId,
 		context,
 		defaultNoValidate: options.defaultNoValidate,
 	});
+
+	return {
+		meta,
+		fields: meta.getFieldset(),
+	};
 }
 
 export function useFormMetadata<
@@ -142,16 +150,51 @@ export function useField<
 	formId: FormId<FormSchema, Error>;
 	name: FieldName<Schema>;
 	context?: Form<FormSchema, Error>;
-}): FieldMetadata<Schema, Error, FormSchema> {
+}): {
+	meta: FieldMetadata<Schema, Error, FormSchema>;
+	fields: FieldMetadata<
+		Schema,
+		Error,
+		FormSchema
+	>['getFieldset'] extends Function
+		? ReturnType<FieldMetadata<Schema, Error, FormSchema>['getFieldset']>
+		: never;
+	list: FieldMetadata<
+		Schema,
+		Error,
+		FormSchema
+	>['getFieldList'] extends Function
+		? ReturnType<FieldMetadata<Schema, Error, FormSchema>['getFieldList']>
+		: never;
+	form: FormMetadata<FormSchema, Error>;
+} {
 	const subjectRef = useSubjectRef();
-	const form = useRegistry(options.formId, options.context);
-	const state = useFormState(form, subjectRef);
-
-	return getFieldMetadata(
+	const context = useRegistry(options.formId, options.context);
+	const state = useFormState(context, subjectRef);
+	const meta = getFieldMetadata<Schema, Error, FormSchema>(
 		options.formId,
 		state,
 		subjectRef,
-		form,
 		options.name,
 	);
+	const form = getFormMetadata(
+		options.formId,
+		state,
+		subjectRef,
+		context,
+		false,
+	);
+
+	return {
+		meta,
+		// @ts-expect-error The types is used as a hint only
+		get fields() {
+			return meta.getFieldset();
+		},
+		// @ts-expect-error The types is used as a hint only
+		get list() {
+			return meta.getFieldList();
+		},
+		form,
+	};
 }

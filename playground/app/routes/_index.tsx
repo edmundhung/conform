@@ -32,7 +32,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -40,10 +40,10 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(meta)}>
 			<Playground title="Template Form" lastSubmission={lastResult}>
-				<Field label="Name" config={form.fields.name}>
-					<input {...getInputProps(form.fields.name, { type: 'text' })} />
+				<Field label="Name" config={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

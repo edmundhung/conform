@@ -14,13 +14,13 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function Example() {
 	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		defaultValue: {
 			'native-input': defaultValue,
 			'base-input': defaultValue,
 		},
 	});
-	const control = useInputControl(form.fields['base-input'], {
+	const control = useInputControl(fields['base-input'], {
 		onFocus() {
 			if (delegateFocus) {
 				inputRef.current?.focus();
@@ -48,7 +48,7 @@ export default function Example() {
 
 	return (
 		<form
-			{...getFormProps(form)}
+			{...getFormProps(meta)}
 			onChange={log}
 			onInput={log}
 			onFocusCapture={log}

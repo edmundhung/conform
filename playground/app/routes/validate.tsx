@@ -40,7 +40,7 @@ export async function action({ request }: ActionArgs) {
 export default function Validate() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parse(formData, { schema })
@@ -48,27 +48,27 @@ export default function Validate() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(meta)}>
 			<Playground title="Validate" lastSubmission={lastResult}>
-				<Field label="Name" config={form.fields.name}>
-					<input {...getInputProps(form.fields.name, { type: 'text' })} />
+				<Field label="Name" config={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" config={form.fields.message}>
-					<textarea {...getTextareaProps(form.fields.message)} />
+				<Field label="Message" config={fields.message}>
+					<textarea {...getTextareaProps(fields.message)} />
 				</Field>
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, [
-							intent.validate(form.fields.name.name),
+						{...getControlButtonProps(meta.id, [
+							intent.validate(fields.name.name),
 						])}
 					>
 						Validate Name
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, [
-							intent.validate(form.fields.message.name),
+						{...getControlButtonProps(meta.id, [
+							intent.validate(fields.message.name),
 						])}
 					>
 						Validate Message

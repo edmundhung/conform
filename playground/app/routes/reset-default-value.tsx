@@ -61,17 +61,17 @@ export async function action({ request }: ActionArgs) {
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		lastResult,
 		defaultValue,
 	});
 
 	useEffect(() => {
-		document.forms.namedItem(form.id)?.reset();
-	}, [form.id, color]);
+		document.forms.namedItem(meta.id)?.reset();
+	}, [meta.id, color]);
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(meta)}>
 			<Playground
 				title="Payment Form"
 				description={
@@ -98,11 +98,11 @@ export default function ExampleForm() {
 				}
 				lastSubmission={lastResult}
 			>
-				<Field label="Name" config={form.fields.name}>
-					<input {...getInputProps(form.fields.name, { type: 'text' })} />
+				<Field label="Name" config={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" config={form.fields.code}>
-					<input {...getInputProps(form.fields.code, { type: 'color' })} />
+				<Field label="Code" config={fields.code}>
+					<input {...getInputProps(fields.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

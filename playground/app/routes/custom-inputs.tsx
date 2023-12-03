@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const form = useForm({
+	const { meta, fields } = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
@@ -53,17 +53,17 @@ export default function Example() {
 	});
 
 	return (
-		<FormProvider context={form.context}>
-			<Form method="post" {...getFormProps(form)}>
+		<FormProvider context={meta.context}>
+			<Form method="post" {...getFormProps(meta)}>
 				<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
-					<Field label="Headless ListBox" config={form.fields.language}>
-						<CustomSelect name={form.fields.language.name} formId={form.id} />
+					<Field label="Headless ListBox" config={fields.language}>
+						<CustomSelect name={fields.language.name} formId={meta.id} />
 					</Field>
-					<Field label="Radix Checkbox" config={form.fields.tos}>
+					<Field label="Radix Checkbox" config={fields.tos}>
 						<div className="flex items-center">
-							<CustomCheckbox name={form.fields.tos.name} formId={form.id} />
+							<CustomCheckbox name={fields.tos.name} formId={meta.id} />
 							<label
-								htmlFor={form.fields.tos.id}
+								htmlFor={fields.tos.id}
 								className="pl-[15px] text-[15px] leading-none"
 							>
 								I accept the terms of service
@@ -81,9 +81,9 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function CustomSelect({ name, formId }: FieldProps<string>) {
-	const field = useField({ name, formId });
+	const { meta } = useField({ name, formId });
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const control = useInputControl(field, {
+	const control = useInputControl(meta, {
 		onFocus() {
 			buttonRef.current?.focus();
 		},
@@ -158,8 +158,8 @@ function CustomSelect({ name, formId }: FieldProps<string>) {
 }
 
 function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
-	const field = useField({ name, formId });
-	const control = useInputControl(field, {
+	const { meta } = useField({ name, formId });
+	const control = useInputControl(meta, {
 		initialize(value) {
 			return typeof value !== 'undefined' ? value === 'on' : false;
 		},
@@ -169,7 +169,7 @@ function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
 		<Checkbox.Root
 			type="button"
 			className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
-			id={field.id}
+			id={meta.id}
 			name={name}
 			checked={control.value}
 			onCheckedChange={(state) => control.change(Boolean(state.valueOf()))}

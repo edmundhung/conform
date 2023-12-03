@@ -77,8 +77,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export function Component() {
-	const lastResult = useActionData() as SubmissionResult;
-	const form = useForm({
+	const lastResult = useActionData() as SubmissionResult<string[]>;
+	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parse(formData, {
@@ -90,30 +90,30 @@ export function Component() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(meta)}>
 			<label>
 				<div>Username</div>
 				<input
-					className={!form.fields.username.valid ? 'error' : ''}
-					{...getInputProps(form.fields.username)}
+					className={!fields.username.valid ? 'error' : ''}
+					{...getInputProps(fields.username)}
 				/>
-				<div>{form.fields.username.error}</div>
+				<div>{fields.username.error}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={!form.fields.password.valid ? 'error' : ''}
-					{...getInputProps(form.fields.password, { type: 'password' })}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{form.fields.password.error}</div>
+				<div>{fields.password.error}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!form.fields.confirmPassword.valid ? 'error' : ''}
-					{...getInputProps(form.fields.confirmPassword, { type: 'password' })}
+					className={!fields.confirmPassword.valid ? 'error' : ''}
+					{...getInputProps(fields.confirmPassword, { type: 'password' })}
 				/>
-				<div>{form.fields.confirmPassword.error}</div>
+				<div>{fields.confirmPassword.error}</div>
 			</label>
 			<hr />
 			<button>Signup</button>
