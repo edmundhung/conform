@@ -54,12 +54,12 @@ export type AcceptOptions = {
 
 export type RejectOptions<Error> =
 	| {
-			formErrors: Error;
-			fieldErrors?: Record<string, Error>;
+			formError: Error;
+			fieldError?: Record<string, Error>;
 	  }
 	| {
-			formErrors?: Error;
-			fieldErrors: Record<string, Error>;
+			formError?: Error;
+			fieldError: Record<string, Error>;
 	  };
 
 /**
@@ -317,14 +317,9 @@ export function rejectSubmission<Error>(
 	>((result, [name, currentError]) => {
 		if (context.state.validated[name]) {
 			const newError =
-				name === '' ? options?.formErrors : options?.fieldErrors?.[name];
+				name === '' ? options?.formError : options?.fieldError?.[name];
 
-			if (Array.isArray(currentError) && newError) {
-				result[name] = currentError.concat(newError) as Error;
-			} else {
-				// Replace existing error with new error if the error is not an array
-				result[name] = newError ?? currentError;
-			}
+			result[name] = newError ?? currentError;
 		}
 
 		return result;
