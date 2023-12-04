@@ -5,7 +5,6 @@ import type {
 	Metadata,
 	Pretty,
 	Primitive,
-	FieldProps,
 } from './context';
 
 type FormControlProps = {
@@ -195,24 +194,6 @@ export function getFormProps<Schema extends Record<string, any>, Error>(
 		noValidate: metadata.noValidate,
 		...getAriaAttributes(metadata, options),
 	});
-}
-
-/**
- * Derives the properties of a custom field component based on the field metadata,
- * including `name` and `formId`.
- *
- * @example
- * ```tsx
- * <Field {...getFieldProps(metadata)} />
- * ```
- */
-export function getFieldProps<Schema, Error>(
-	metadata: FieldMetadata<Schema, Error>,
-): FieldProps<Schema, Error> {
-	return {
-		name: metadata.name,
-		formId: metadata.formId,
-	};
 }
 
 /**

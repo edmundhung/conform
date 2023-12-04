@@ -174,14 +174,13 @@ export default function ExampleForm() {
 	);
 }
 
-interface Field<Schema>
-	extends FieldProps<
-		Schema,
-		{ validity: ValidityState; validationMessage: string }
-	> {
+type Field<Schema> = FieldProps<
+	Schema,
+	{ validity: ValidityState; validationMessage: string }
+> & {
 	label: string;
 	required?: boolean;
-}
+};
 
 function ExampleSelect({ label, required, formId, name }: Field<string>) {
 	const { meta } = useField({

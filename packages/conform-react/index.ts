@@ -21,7 +21,6 @@ export { useInputControl } from './integrations';
 export { validateConstraint } from './validitystate';
 export {
 	getFormProps,
-	getFieldProps,
 	getFieldsetProps,
 	getInputProps,
 	getSelectProps,

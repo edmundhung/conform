@@ -836,12 +836,12 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 
 		updateContext(update);
 
-		// TODO: An option to configure what to put in the error message
-		// for (const element of formElement.elements) {
-		// 	if (isFieldElement(element) && element.name !== '') {
-		// 		element.setCustomValidity(context.error[element.name]?.join(' ') ?? '');
-		// 	}
-		// }
+		// TODO: An option to configure the validationMessage
+		for (const element of formElement.elements) {
+			if (isFieldElement(element) && element.name !== '') {
+				element.setCustomValidity(context.error[element.name] ? 'Invalid' : '');
+			}
+		}
 
 		if (result.status === 'error') {
 			for (const element of formElement.elements) {

@@ -38,13 +38,20 @@ export type Primitive =
 	| undefined;
 
 export type FieldProps<
-	FieldSchema = unknown,
+	FieldSchema,
 	Error = unknown,
 	FormSchema extends Record<string, unknown> = Record<string, unknown>,
-> = {
-	name: FieldName<FieldSchema>;
-	formId: FormId<FormSchema, Error>;
-};
+> =
+	| {
+			formId: FormId<FormSchema, Error>;
+			name: FieldName<FieldSchema>;
+	  }
+	| {
+			formId: FieldSchema extends Record<string, unknown>
+				? FormId<FieldSchema, Error>
+				: never;
+			name?: undefined;
+	  };
 
 export type Metadata<Schema, Error> = {
 	key?: string;
@@ -303,13 +310,13 @@ export function getFieldMetadata<
 	formId: FormId<FormSchema, Error>,
 	state: FormState<Error>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	prefix: string,
+	prefix = '',
 	key?: string | number,
 ): FieldMetadata<Schema, Error, FormSchema> {
 	const name =
-		typeof key !== 'undefined'
-			? formatPaths([...getPaths(prefix), key])
-			: prefix;
+		typeof key === 'undefined'
+			? prefix
+			: formatPaths([...getPaths(prefix), key]);
 	const metadata = getMetadata(formId, state, subjectRef, name);
 
 	return new Proxy(metadata as any, {

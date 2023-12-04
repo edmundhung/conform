@@ -119,10 +119,7 @@ export default function Example() {
 
 						<FormControl isInvalid={!fields.title.valid}>
 							<FormLabel>Title (Editable)</FormLabel>
-							<Editable
-								defaultValue={fields.title.initialValue}
-								placeholder="No content"
-							>
+							<Editable placeholder="No content">
 								<EditablePreview />
 								<EditableInput name={fields.title.name} required />
 							</Editable>
@@ -159,10 +156,7 @@ export default function Example() {
 
 						<FormControl isInvalid={!fields.active.valid}>
 							<FormLabel>Active (Radio)</FormLabel>
-							<RadioGroup
-								name={fields.active.name}
-								defaultValue={fields.active.initialValue}
-							>
+							<RadioGroup name={fields.active.name}>
 								<Stack spacing={5} direction="row">
 									<Radio
 										value="yes"
