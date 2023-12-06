@@ -41,7 +41,7 @@ export type Submission<Schema, Error = unknown, Value = Schema> =
 	  };
 
 export type SubmissionResult<Error = unknown> = {
-	status: 'updated' | 'error' | 'success';
+	status?: 'error' | 'success';
 	intents?: Array<Intent>;
 	initialValue?: Record<string, unknown>;
 	error?: Record<string, Error | null>;
@@ -326,7 +326,7 @@ export function rejectSubmission<Error>(
 	}, {});
 
 	return {
-		status: context.intents !== null ? 'updated' : 'error',
+		status: context.intents !== null ? undefined : 'error',
 		intents: context.intents !== null ? context.intents : undefined,
 		initialValue: simplify(context.payload) ?? {},
 		error: simplify(error),

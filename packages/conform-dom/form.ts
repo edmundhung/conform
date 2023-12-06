@@ -92,6 +92,7 @@ export type Constraint = {
 };
 
 export type FormContext<Error> = {
+	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
@@ -102,6 +103,7 @@ export type FormContext<Error> = {
 };
 
 export type FormState<Error = unknown> = {
+	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
@@ -176,6 +178,8 @@ export type SubscriptionSubject = {
 		| 'key'
 		| 'valid'
 		| 'dirty']?: SubscriptionScope;
+} & {
+	status?: boolean;
 };
 
 export type SubscriptionScope = {
@@ -253,6 +257,7 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 		const defaultValue = serialize(options.defaultValue) ?? {};
 		const value = options.lastResult?.initialValue ?? defaultValue;
 		const result: FormContext<Error> = {
+			submissionStatus: options.lastResult?.status,
 			constraint: options.constraint ?? {},
 			defaultValue,
 			initialValue: value,
@@ -551,6 +556,7 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 				: state.value;
 
 		updateFormState({
+			submissionStatus: next.submissionStatus,
 			defaultValue,
 			initialValue,
 			value,
@@ -574,7 +580,10 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 	}
 
 	function updateFormState(next: FormState<Error>) {
-		const cache: Record<keyof SubscriptionSubject, Record<string, boolean>> = {
+		const cache: Record<
+			Exclude<keyof SubscriptionSubject, 'status'>,
+			Record<string, boolean>
+		> = {
 			value: {},
 			error: {},
 			initialValue: {},
@@ -592,6 +601,7 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 
 			if (
 				!subject ||
+				(subject.status && prev.submissionStatus !== next.submissionStatus) ||
 				shouldNotify({
 					prev: prev.error,
 					next: next.error,
@@ -825,6 +835,7 @@ export function createForm<Schema extends Record<string, any>, Error, Value>(
 		}, {});
 		const update: FormContext<Error> = {
 			...context,
+			submissionStatus: result.status,
 			value,
 			error,
 			validated: result.state?.validated ?? {},

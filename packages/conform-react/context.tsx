@@ -73,6 +73,7 @@ export type FormMetadata<
 > = Omit<Metadata<Schema, Error>, 'id'> & {
 	id: FormId<Schema, Error>;
 	context: Form<Schema, Error>;
+	status?: 'success' | 'error';
 	getFieldset: () => {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
 			UnionKeyType<Schema, Key>,
@@ -199,10 +200,14 @@ export function updateSubjectRef(
 	subject: keyof SubscriptionSubject,
 	scope: keyof SubscriptionScope,
 ): void {
-	ref.current[subject] = {
-		...ref.current[subject],
-		[scope]: (ref.current[subject]?.[scope] ?? []).concat(name),
-	};
+	if (subject === 'status') {
+		ref.current[subject] = true;
+	} else {
+		ref.current[subject] = {
+			...ref.current[subject],
+			[scope]: (ref.current[subject]?.[scope] ?? []).concat(name),
+		};
+	}
 }
 
 export function getMetadata<
@@ -368,6 +373,8 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 			switch (key) {
 				case 'context':
 					return form;
+				case 'status':
+					return state.submissionStatus;
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
