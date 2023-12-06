@@ -47,6 +47,7 @@ type InputProps = Pretty<
 			| 'datetime-local'
 			| 'email'
 			| 'file'
+			| 'hidden'
 			| 'image'
 			| 'month'
 			| 'number'
