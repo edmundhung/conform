@@ -258,7 +258,7 @@ export function getInputProps<Schema extends Exclude<Primitive, File>>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options?: InputOptions,
 ): InputProps;
-export function getInputProps<Schema extends File | File[]>(
+export function getInputProps<Schema extends File | File[] | null | undefined>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: InputOptions & { type: 'file' },
 ): InputProps;
