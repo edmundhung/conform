@@ -194,7 +194,12 @@ export default function Example() {
 
 function ExampleNumberInput(props: FieldProps<number, Error>) {
 	const { meta } = useField(props);
-	const control = useInputControl(meta);
+	const control = useInputControl({
+		key: meta.key,
+		name: meta.name,
+		formId: meta.formId,
+		initialValue: meta.initialValue,
+	});
 
 	return (
 		<NumberInput
@@ -212,9 +217,9 @@ function ExampleNumberInput(props: FieldProps<number, Error>) {
 	);
 }
 
-function ExamplePinInput(config: FieldProps<string, Error>) {
+function ExamplePinInput(props: FieldProps<string, Error>) {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const { meta } = useField(config);
+	const { meta } = useField(props);
 	const control = useInputControl(meta);
 
 	return (
@@ -232,8 +237,8 @@ function ExamplePinInput(config: FieldProps<string, Error>) {
 	);
 }
 
-function ExampleSlider(config: FieldProps<number, Error>) {
-	const { meta } = useField(config);
+function ExampleSlider(props: FieldProps<number, Error>) {
+	const { meta } = useField(props);
 	const control = useInputControl(meta, {
 		initialize(value) {
 			return typeof value !== 'undefined' ? Number(value) : undefined;

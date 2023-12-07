@@ -2,6 +2,8 @@ import {
 	type FieldElement,
 	type FormValue,
 	isFieldElement,
+	FieldName,
+	FormId,
 } from '@conform-to/dom';
 import { useRef, useState, useMemo, useEffect } from 'react';
 import { type FieldMetadata } from './context';
@@ -58,6 +60,13 @@ export function useInputControl<Schema>(
 		onFocus?: (event: Event) => void;
 	},
 ): InputControl<string | undefined>;
+export function useInputControl<Schema>(options: {
+	key?: string;
+	name: FieldName<Schema>;
+	formId: FormId<any, any>;
+	initialValue: FormValue<Schema>;
+	onFocus?: (event: Event) => void;
+}): InputControl<string | undefined>;
 export function useInputControl<Schema, Value>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: {
@@ -66,8 +75,27 @@ export function useInputControl<Schema, Value>(
 		onFocus?: (event: Event) => void;
 	},
 ): InputControl<Value>;
+export function useInputControl<Schema, Value>(options: {
+	key?: string;
+	name: FieldName<Schema>;
+	formId: FormId<any, any>;
+	initialValue: FormValue<Schema>;
+	initialize: (value: FormValue<Schema> | undefined) => Value;
+	serialize?: (value: Value) => string;
+	onFocus?: (event: Event) => void;
+}): InputControl<Value>;
 export function useInputControl<Schema, Value>(
-	metadata: FieldMetadata<Schema, any, any>,
+	metadata:
+		| FieldMetadata<Schema, any, any>
+		| {
+				key?: string;
+				name: FieldName<Schema>;
+				formId: FormId<any, any>;
+				initialValue: FormValue<Schema>;
+				initialize?: (value: FormValue<Schema> | undefined) => Value;
+				serialize?: (value: Value | string | undefined) => string;
+				onFocus?: (event: Event) => void;
+		  },
 	options?: {
 		initialize?: (value: FormValue<Schema> | undefined) => Value;
 		serialize?: (value: Value | string | undefined) => string;
@@ -80,8 +108,23 @@ export function useInputControl<Schema, Value>(
 		blur: false,
 	});
 	const [key, setKey] = useState(metadata.key);
-	const optionsRef = useRef(options);
-	const initialize = options?.initialize ?? ((value) => value?.toString());
+	const initialize =
+		options?.initialize ??
+		('initialize' in metadata && metadata.initialize
+			? metadata.initialize
+			: (value) => value?.toString());
+	const serialize =
+		options?.serialize ??
+		('serialize' in metadata && metadata.serialize
+			? metadata.serialize
+			: undefined);
+	const onFocus =
+		options?.onFocus ?? ('onFocus' in metadata ? metadata.onFocus : undefined);
+	const optionsRef = useRef({
+		initialize,
+		serialize,
+		onFocus,
+	});
 	const [value, setValue] = useState(() => initialize(metadata.initialValue));
 
 	if (key !== metadata.key) {
@@ -90,7 +133,11 @@ export function useInputControl<Schema, Value>(
 	}
 
 	useEffect(() => {
-		optionsRef.current = options;
+		optionsRef.current = {
+			initialize,
+			serialize,
+			onFocus,
+		};
 	});
 
 	useEffect(() => {
@@ -134,7 +181,7 @@ export function useInputControl<Schema, Value>(
 				if (!eventDispatched.current.change) {
 					const element = getEventTarget(metadata.formId, metadata.name);
 					const serializedValue =
-						optionsRef.current?.serialize?.(value) ?? value?.toString() ?? '';
+						optionsRef.current.serialize?.(value) ?? value?.toString() ?? '';
 
 					eventDispatched.current.change = true;
 

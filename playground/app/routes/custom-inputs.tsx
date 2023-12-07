@@ -159,7 +159,11 @@ function CustomSelect({ name, formId }: FieldProps<string>) {
 
 function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
 	const { meta } = useField({ name, formId });
-	const control = useInputControl(meta, {
+	const control = useInputControl<boolean, boolean>({
+		key: meta.key,
+		name: meta.name,
+		formId: meta.formId,
+		initialValue: meta.initialValue,
 		initialize(value) {
 			return typeof value !== 'undefined' ? value === 'on' : false;
 		},
