@@ -6,6 +6,7 @@ import {
 	isPlainObject,
 	setValue,
 	isPrefix,
+	getValue,
 } from './formdata';
 import { invariant } from './util';
 
@@ -48,19 +49,19 @@ export type SubmissionResult<Error = unknown> = {
 	state?: SubmissionState;
 };
 
-export type AcceptOptions = {
-	resetForm?: boolean;
-};
-
-export type RejectOptions<Error> =
+export type AcceptOptions =
 	| {
-			formError: Error;
-			fieldError?: Record<string, Error>;
+			resetForm?: boolean;
 	  }
 	| {
-			formError?: Error;
-			fieldError: Record<string, Error>;
+			hideFields?: string[];
 	  };
+
+export type RejectOptions<Error> = {
+	formError?: Error;
+	fieldError?: Record<string, Error>;
+	hideFields?: string[];
+};
 
 /**
  * The name to be used when submitting an intent
@@ -292,12 +293,31 @@ export function createSubmission<Value, Error>(
 	};
 }
 
+export function hideFields(
+	payload: Record<string, unknown>,
+	fields: string[],
+): void {
+	for (const name of fields) {
+		const value = getValue(payload, name);
+
+		if (typeof value !== 'undefined') {
+			setValue(payload, name, () => undefined);
+		}
+	}
+}
+
 export function acceptSubmission<Error>(
 	context: Required<SubmissionContext<unknown, Error>>,
 	options?: AcceptOptions,
 ): SubmissionResult<Error> {
-	if (options?.resetForm) {
-		return { status: 'success' };
+	if (options) {
+		if ('resetForm' in options && options.resetForm) {
+			return { status: 'success' };
+		}
+
+		if ('hideFields' in options && options.hideFields) {
+			hideFields(context.payload, options.hideFields);
+		}
 	}
 
 	return {
@@ -324,6 +344,10 @@ export function rejectSubmission<Error>(
 
 		return result;
 	}, {});
+
+	if (options?.hideFields) {
+		hideFields(context.payload, options.hideFields);
+	}
 
 	return {
 		status: context.intents !== null ? undefined : 'error',

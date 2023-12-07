@@ -117,15 +117,17 @@ export function setValue(
  * Retrive the value from a target object by following the paths
  */
 export function getValue(target: Record<string, any>, name: string): unknown {
-	let value;
+	let pointer = target;
 
-	setValue(target, name, (currentValue) => {
-		value = currentValue;
+	for (const path of getPaths(name)) {
+		if (typeof pointer === 'undefined' || pointer == null) {
+			break;
+		}
 
-		return value;
-	});
+		pointer = pointer[path];
+	}
 
-	return value;
+	return pointer;
 }
 
 /**
