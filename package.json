@@ -1,27 +1,27 @@
 {
 	"private": true,
-	"name": "conform-monorepo",
+	"name": "conform",
 	"license": "MIT",
-	"workspaces": [
-		"packages/*",
-		"examples/*",
-		"guide",
-		"playground"
-	],
 	"scripts": {
-		"build": "run-s build:*",
+		"build": "pnpm run cleanup && run-s build:*",
 		"build:js": "rollup -c",
 		"build:ts": "tsc -b",
 		"watch": "run-p watch:*",
-		"watch:js": "npm run build:js -- --watch",
-		"watch:ts": "npm run build:ts -- --watch",
-		"guide": "npm run dev --workspace=guide",
-		"playground": "npm run dev --workspace=playground",
-		"prebuild": "rimraf --glob ./packages/**/*.{d.ts,cjs,mjs,js,tsbuildinfo}",
-		"pretest": "npm run build --workspace=playground",
-		"test": "playwright test",
+		"watch:js": "pnpm run build:js -- --watch",
+		"watch:ts": "pnpm run build:ts -- --watch",
+		"guide": "pnpm --filter ./guide run dev ",
+		"playground": "pnpm --filter ./playground run dev",
+		"cleanup": "rimraf --glob ./packages/*/*.{d.ts,cjs,mjs,js,tsbuildinfo}",
+		"test": "pnpm --filter ./playground run build && playwright test",
 		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"
+	},
+	"dependencies": {
+		"@conform-to/dom": "workspace:*",
+		"@conform-to/react": "workspace:*",
+		"@conform-to/validitystate": "workspace:*",
+		"@conform-to/yup": "workspace:*",
+		"@conform-to/zod": "workspace:*"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -33,6 +33,7 @@
 		"@remix-run/node": "^1.19.3",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
+		"@types/node": "^20.10.4",
 		"husky": "^8.0.3",
 		"lint-staged": "^13.1.2",
 		"npm-run-all": "^4.1.5",
@@ -43,7 +44,7 @@
 		"typescript": "^5.2.2"
 	},
 	"engines": {
-		"node": ">=12"
+		"node": ">=20"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",

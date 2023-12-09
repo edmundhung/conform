@@ -21,15 +21,18 @@ jobs:
     - name: ⎔ Setup node
       uses: actions/setup-node@v3
       with:
-        node-version: 18
+        node-version: 20
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
     - name: 📥 Download deps
-      uses: bahmutov/npm-install@v1
+      run: pnpm i
     - name: 🎭 Install Playwright
-      run: npx playwright install --with-deps
+      run: pnpm exec playwright install --with-deps
     - name: 📦 Build the packages
-      run: npm run build
+      run: pnpm run build
     - name: 💣 Run playwright tests
-      run: npm run test
+      run: pnpm run test
     - uses: actions/upload-artifact@v2
       if: always()
       with:

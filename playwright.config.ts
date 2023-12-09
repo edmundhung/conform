@@ -109,7 +109,7 @@ const config: PlaywrightTestConfig = {
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: 'npm start --workspace=playground',
+		command: 'pnpm run playground',
 		port: process.env.PORT ? Number(process.env.PORT) : 3000,
 		reuseExistingServer: !process.env.CI,
 	},
