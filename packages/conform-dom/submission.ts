@@ -269,7 +269,7 @@ export function createSubmission<Value, Error>(
 			type: 'update',
 			payload: context.payload,
 			value: null,
-			error: context.error ?? {},
+			error: context.error,
 			accept(options) {
 				return acceptSubmission(context, options);
 			},
