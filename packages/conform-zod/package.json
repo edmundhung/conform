@@ -24,8 +24,10 @@
 	"bugs": {
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
+	"dependencies": {
+		"@conform-to/dom": "1.0.0-pre.2"
+	},
 	"peerDependencies": {
-		"@conform-to/dom": "1.0.0-pre.2",
 		"zod": "^3.21.0"
 	},
 	"devDependencies": {
