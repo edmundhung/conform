@@ -102,7 +102,7 @@ export type FormMeta<Error> = {
 	value: Record<string, unknown>;
 	error: Record<string, Error>;
 	constraint: Record<string, Constraint>;
-	key: Record<string, string>;
+	key: Record<string, string | undefined>;
 	validated: Record<string, boolean>;
 };
 
@@ -370,17 +370,24 @@ function createConstraintProxy(
 	});
 }
 
-function createKeyProxy(key: Record<string, string>): Record<string, string> {
+function createKeyProxy(
+	key: Record<string, string | undefined>,
+): Record<string, string | undefined> {
 	return createStateProxy((name, proxy) => {
-		const currentKey = key[name] ?? '';
-		const resultKey =
-			name === ''
-				? currentKey
-				: `${
-						proxy[formatPaths(getPaths(name).slice(0, -1))] ?? ''
-				  }/${currentKey}`;
+		const currentKey = key[name];
+		const paths = getPaths(name);
 
-		return resultKey;
+		if (paths.length === 0) {
+			return currentKey;
+		}
+
+		const parentKey = proxy[formatPaths(paths.slice(0, -1))];
+
+		if (typeof parentKey === 'undefined') {
+			return currentKey;
+		}
+
+		return `${parentKey}/${currentKey ?? name}`;
 	});
 }
 
