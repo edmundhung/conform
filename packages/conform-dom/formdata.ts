@@ -116,7 +116,7 @@ export function setValue(
 /**
  * Retrive the value from a target object by following the paths
  */
-export function getValue(target: Record<string, any>, name: string): unknown {
+export function getValue(target: unknown, name: string): unknown {
 	let pointer = target;
 
 	for (const path of getPaths(name)) {
@@ -124,7 +124,13 @@ export function getValue(target: Record<string, any>, name: string): unknown {
 			break;
 		}
 
-		pointer = pointer[path];
+		if (isPlainObject(pointer) && typeof path === 'string') {
+			pointer = pointer[path];
+		} else if (Array.isArray(pointer) && typeof path === 'number') {
+			pointer = pointer[path];
+		} else {
+			return;
+		}
 	}
 
 	return pointer;

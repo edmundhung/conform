@@ -2,16 +2,16 @@ export {
 	type UnionKeyof,
 	type UnionKeyType,
 	type Constraint,
-	type FormState,
 	type FormId,
 	type FieldName,
+	type DefaultValue,
 	type FormValue,
-	type FormContext,
 	type FormOptions,
-	type Form,
+	type FormState,
+	type FormContext,
 	type SubscriptionSubject,
 	type SubscriptionScope,
-	createForm,
+	createFormContext,
 } from './form';
 export { type FieldElement, isFieldElement, requestSubmit } from './dom';
 export { invariant } from './util';

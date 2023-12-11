@@ -1,4 +1,4 @@
-import type { DefaultValue, FieldName } from './form';
+import type { DefaultValue, FieldName, FormValue } from './form';
 import { requestSubmit } from './dom';
 import {
 	simplify,
@@ -393,7 +393,9 @@ export type InsertIntent<Schema extends Array<any> = any> = {
 	type: 'insert';
 	payload: {
 		name: FieldName<Schema>;
-		defaultValue?: Schema extends Array<infer Item> ? Item : never;
+		defaultValue?: Schema extends Array<infer Item>
+			? DefaultValue<Item>
+			: never;
 		index?: number;
 	};
 };
@@ -471,7 +473,7 @@ export function updateList(
 			list.splice(
 				intent.payload.index ?? list.length,
 				0,
-				intent.payload.defaultValue as any,
+				serialize(intent.payload.defaultValue),
 			);
 			break;
 		case 'remove':
@@ -534,16 +536,11 @@ export function setState(
 		}
 	}
 
-	let result;
-
-	setValue(target, name, (currentValue) => {
-		result = valueFn(currentValue);
-
-		return result;
-	});
+	const result = valueFn(getValue(target, name));
 
 	Object.assign(
 		state,
+		// @ts-expect-error FIXME flatten should be more flexible
 		flatten(result, {
 			resolve(data) {
 				if (isPlainObject(data) || Array.isArray(data)) {
@@ -561,7 +558,7 @@ export function setState(
 export function setListState(
 	state: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
-	getDefaultValue?: () => unknown,
+	getDefaultValue?: () => string,
 ): void {
 	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
@@ -583,6 +580,40 @@ export function setListState(
 
 		return list;
 	});
+}
+
+export function serialize<Schema>(
+	defaultValue: DefaultValue<Schema>,
+): FormValue<Schema> {
+	if (isPlainObject(defaultValue)) {
+		// @ts-expect-error FIXME
+		return Object.entries(defaultValue).reduce<Record<string, unknown>>(
+			(result, [key, value]) => {
+				// @ts-ignore-error FIXME
+				result[key] = serialize(value);
+				return result;
+			},
+			{},
+		);
+	} else if (Array.isArray(defaultValue)) {
+		// @ts-expect-error FIXME
+		return defaultValue.map(serialize);
+	} else if (
+		// @ts-ignore-error FIXME
+		defaultValue instanceof Date
+	) {
+		// @ts-expect-error FIXME
+		return defaultValue.toISOString();
+	} else if (typeof defaultValue === 'boolean') {
+		// @ts-expect-error FIXME
+		return defaultValue ? 'on' : undefined;
+	} else if (typeof defaultValue === 'number') {
+		// @ts-expect-error FIXME
+		return defaultValue.toString();
+	} else {
+		// @ts-expect-error FIXME
+		return defaultValue ?? undefined;
+	}
 }
 
 export const intent = new Proxy(

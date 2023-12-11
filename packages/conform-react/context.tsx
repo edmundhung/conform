@@ -2,7 +2,7 @@ import {
 	type Constraint,
 	type FormId,
 	type FieldName,
-	type Form,
+	type FormContext,
 	type FormValue,
 	type FormState,
 	type SubscriptionScope,
@@ -72,7 +72,7 @@ export type FormMetadata<
 	Error = unknown,
 > = Omit<Metadata<Schema, Error>, 'id'> & {
 	id: FormId<Schema, Error>;
-	context: Form<Schema, Error>;
+	context: FormContext<Schema, Error>;
 	status?: 'success' | 'error';
 	getFieldset: () => {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
@@ -83,7 +83,7 @@ export type FormMetadata<
 	};
 	onSubmit: (
 		event: React.FormEvent<HTMLFormElement>,
-	) => ReturnType<Form<Schema>['submit']>;
+	) => ReturnType<FormContext<Schema>['submit']>;
 	onReset: (event: React.FormEvent<HTMLFormElement>) => void;
 	noValidate: boolean;
 };
@@ -113,16 +113,16 @@ export type FieldMetadata<
 		: never;
 };
 
-export const Registry = createContext<Record<string, Form>>({});
+export const Registry = createContext<Record<string, FormContext>>({});
 
-export function useRegistry<
+export function useFormContext<
 	Schema extends Record<string, any>,
 	Error,
 	Value = Schema,
 >(
 	formId: FormId<Schema, Error>,
-	context?: Form<Schema, Error, Value>,
-): Form<Schema, Error, Value> {
+	context?: FormContext<Schema, Error, Value>,
+): FormContext<Schema, Error, Value> {
 	const registry = useContext(Registry);
 	const form = context ?? registry[formId];
 
@@ -130,11 +130,11 @@ export function useRegistry<
 		throw new Error('Form context is not available');
 	}
 
-	return form as Form<Schema, Error, Value>;
+	return form as FormContext<Schema, Error, Value>;
 }
 
 export function useFormState<Error>(
-	form: Form<any, Error>,
+	form: FormContext<any, Error>,
 	subjectRef?: MutableRefObject<SubscriptionSubject>,
 ): FormState<Error> {
 	const subscribe = useCallback(
@@ -147,12 +147,12 @@ export function useFormState<Error>(
 }
 
 export function FormProvider(props: {
-	context: Form<any, any, any>;
+	context: FormContext<any, any, any>;
 	children: ReactNode;
 }): ReactElement {
 	const registry = useContext(Registry);
 	const value = useMemo(
-		() => ({ ...registry, [props.context.id]: props.context }),
+		() => ({ ...registry, [props.context.formId]: props.context }),
 		[registry, props.context],
 	);
 
@@ -167,16 +167,19 @@ export function FormStateInput(
 		  }
 		| {
 				formId?: undefined;
-				context: Form;
+				context: FormContext;
 		  },
 ): React.ReactElement {
-	const form = useRegistry(props.formId ?? props.context.id, props.context);
+	const context = useFormContext(
+		props.formId ?? props.context.formId,
+		props.context,
+	);
 
 	return (
 		<input
 			type="hidden"
 			name={STATE}
-			value={form.getSerializedState()}
+			value={context.getSerializedState()}
 			form={props.formId}
 		/>
 	);
@@ -363,7 +366,7 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 	formId: FormId<Schema, Error>,
 	state: FormState<Error>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	form: Form<Schema, Error, any>,
+	context: FormContext<Schema, Error, any>,
 	noValidate: boolean,
 ): FormMetadata<Schema, Error> {
 	const metadata = getMetadata(formId, state, subjectRef);
@@ -372,14 +375,14 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 		get(target, key, receiver) {
 			switch (key) {
 				case 'context':
-					return form;
+					return context;
 				case 'status':
 					return state.submissionStatus;
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
 
-						form.submit(submitEvent);
+						context.submit(submitEvent);
 
 						if (submitEvent.defaultPrevented) {
 							event.preventDefault();

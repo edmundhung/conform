@@ -2,7 +2,7 @@ import {
 	type FormId,
 	type FieldName,
 	type FormOptions,
-	createForm,
+	createFormContext,
 } from '@conform-to/dom';
 import { useEffect, useId, useRef, useState, useLayoutEffect } from 'react';
 import {
@@ -10,7 +10,7 @@ import {
 	type FieldMetadata,
 	type Pretty,
 	useFormState,
-	useRegistry,
+	useFormContext,
 	useSubjectRef,
 	getFieldMetadata,
 	getFormMetadata,
@@ -72,27 +72,27 @@ export function useForm<
 	fields: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
 } {
 	const formId = useFormId<Schema, Error>(options.id);
-	const initializeContext = () => createForm(formId, options);
-	const [form, setForm] = useState(initializeContext);
+	const initializeContext = () => createFormContext(formId, options);
+	const [context, setFormContext] = useState(initializeContext);
 
 	// If id changes, reinitialize the form immediately
-	if (formId !== form.id) {
-		setForm(initializeContext);
+	if (formId !== context.formId) {
+		setFormContext(initializeContext);
 	}
 
 	const optionsRef = useRef(options);
 
 	useSafeLayoutEffect(() => {
-		document.addEventListener('input', form.input);
-		document.addEventListener('focusout', form.blur);
-		document.addEventListener('reset', form.reset);
+		document.addEventListener('input', context.input);
+		document.addEventListener('focusout', context.blur);
+		document.addEventListener('reset', context.reset);
 
 		return () => {
-			document.removeEventListener('input', form.input);
-			document.removeEventListener('focusout', form.blur);
-			document.removeEventListener('reset', form.reset);
+			document.removeEventListener('input', context.input);
+			document.removeEventListener('focusout', context.blur);
+			document.removeEventListener('reset', context.reset);
 		};
-	}, [form]);
+	}, [context]);
 
 	useSafeLayoutEffect(() => {
 		if (options.lastResult === optionsRef.current.lastResult) {
@@ -101,21 +101,21 @@ export function useForm<
 		}
 
 		if (options.lastResult) {
-			form.report(options.lastResult);
+			context.report(options.lastResult);
 		} else {
-			document.forms.namedItem(form.id)?.reset();
+			document.forms.namedItem(context.formId)?.reset();
 		}
-	}, [form, options.lastResult]);
+	}, [context, options.lastResult]);
 
 	useSafeLayoutEffect(() => {
 		optionsRef.current = options;
-		form.update(options);
+		context.update(options);
 	});
 
 	const subjectRef = useSubjectRef();
-	const state = useFormState(form, subjectRef);
+	const state = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
-	const meta = getFormMetadata(formId, state, subjectRef, form, noValidate);
+	const meta = getFormMetadata(formId, state, subjectRef, context, noValidate);
 
 	return {
 		meta,
@@ -131,11 +131,17 @@ export function useFormMetadata<
 	defaultNoValidate?: boolean;
 }): FormMetadata<Schema, Error> {
 	const subjectRef = useSubjectRef();
-	const form = useRegistry(options.formId);
-	const state = useFormState(form, subjectRef);
+	const context = useFormContext(options.formId);
+	const state = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
-	return getFormMetadata(options.formId, state, subjectRef, form, noValidate);
+	return getFormMetadata(
+		options.formId,
+		state,
+		subjectRef,
+		context,
+		noValidate,
+	);
 }
 
 export function useField<
@@ -171,7 +177,7 @@ export function useField<
 	form: FormMetadata<FormSchema, Error>;
 } {
 	const subjectRef = useSubjectRef();
-	const context = useRegistry(options.formId);
+	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
 	const meta = getFieldMetadata<FieldSchema, Error, FormSchema>(
 		options.formId,
