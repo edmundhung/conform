@@ -100,31 +100,31 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 	},
 ): Submission<yup.InferType<Schema>, string[]>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 	},
 ): Promise<Submission<yup.InferType<Schema>, string[]>>;
 export function parse<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: boolean;
 	},
 ):
 	| Submission<yup.InferType<Schema>, string[]>
 	| Promise<Submission<yup.InferType<Schema>, string[]>> {
 	return baseParse<Submission<yup.InferType<Schema>>, string[]>(payload, {
-		resolve(payload, intents) {
+		resolve(payload, intent) {
 			const schema =
 				typeof config.schema === 'function'
-					? config.schema(intents)
+					? config.schema(intent)
 					: config.schema;
 			const resolveData = (value: yup.InferType<Schema>) => ({ value });
 			const resolveError = (error: unknown) => {

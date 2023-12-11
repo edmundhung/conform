@@ -19,7 +19,7 @@ export const loginSchema = z.object({
 });
 
 export function createSignupSchema(
-	intents: Array<Intent> | null,
+	intent: Intent | null,
 	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
@@ -39,11 +39,8 @@ export function createSignupSchema(
 						refine(ctx, {
 							validate: () => constraint.isUsernameUnique?.(username),
 							when:
-								!intents ||
-								intents.some(
-									(intent) =>
-										intent.type === 'validate' && intent.payload === 'username',
-								),
+								!intent ||
+								(intent.type === 'validate' && intent.payload === 'username'),
 							message: 'Username is already used',
 						}),
 					),

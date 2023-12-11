@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 function createSchema(
-	intents: Array<Intent> | null,
+	intent: Intent | null,
 	constraints: {
 		isEmailUnique?: (email: string) => Promise<boolean>;
 	} = {},
@@ -27,11 +27,8 @@ function createSchema(
 					refine(ctx, {
 						validate: () => constraints.isEmailUnique?.(email),
 						when:
-							!intents ||
-							intents.some(
-								(intent) =>
-									intent.type === 'validate' && intent.payload === 'email',
-							),
+							!intent ||
+							(intent.type === 'validate' && intent.payload === 'email'),
 						message: 'Email is already used',
 					}),
 				),
@@ -53,8 +50,8 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parse(formData, {
-		schema: (intents) =>
-			createSchema(intents, {
+		schema: (intent) =>
+			createSchema(intent, {
 				isEmailUnique(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {

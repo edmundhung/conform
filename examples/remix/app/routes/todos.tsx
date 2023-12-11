@@ -83,23 +83,26 @@ export default function Example() {
 							</label>
 						</div>
 						<button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.remove({ name: fields.tasks.name, index }),
-							])}
+							)}
 						>
 							Delete
 						</button>
 						<button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.reorder({ name: fields.tasks.name, from: index, to: 0 }),
-							])}
+							)}
 						>
 							Move to top
 						</button>
 						<button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.replace({ name: task.name, value: { content: '' } }),
-							])}
+							)}
 						>
 							Clear
 						</button>
@@ -107,9 +110,10 @@ export default function Example() {
 				);
 			})}
 			<button
-				{...getControlButtonProps(meta.id, [
+				{...getControlButtonProps(
+					meta.id,
 					intent.insert({ name: fields.tasks.name }),
-				])}
+				)}
 			>
 				Add task
 			</button>

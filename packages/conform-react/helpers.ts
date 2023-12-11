@@ -1,4 +1,4 @@
-import { type Intent, INTENT, serializeIntents } from '@conform-to/dom';
+import { type Intent, INTENT, serializeIntent } from '@conform-to/dom';
 import type {
 	FormMetadata,
 	FieldMetadata,
@@ -434,10 +434,10 @@ export function getCollectionProps<
 	);
 }
 
-export function getControlButtonProps(formId: string, intents: Array<Intent>) {
+export function getControlButtonProps(formId: string, intent: Intent) {
 	return {
 		name: INTENT,
-		value: serializeIntents(intents),
+		value: serializeIntent(intent),
 		form: formId,
 		formNoValidate: true,
 	};

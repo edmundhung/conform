@@ -59,17 +59,19 @@ export default function Validate() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, [
+						{...getControlButtonProps(
+							meta.id,
 							intent.validate(fields.name.name),
-						])}
+						)}
 					>
 						Validate Name
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, [
+						{...getControlButtonProps(
+							meta.id,
 							intent.validate(fields.message.name),
-						])}
+						)}
 					>
 						Validate Message
 					</button>

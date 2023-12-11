@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
-	intents: Array<Intent> | null,
+	intent: Intent | null,
 	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
@@ -27,11 +27,8 @@ function createSchema(
 						refine(ctx, {
 							validate: () => constraint.isUsernameUnique?.(username),
 							when:
-								!intents ||
-								intents.some(
-									(intent) =>
-										intent.type === 'validate' && intent.payload === 'username',
-								),
+								!intent ||
+								(intent.type === 'validate' && intent.payload === 'username'),
 							message: 'Username is already used',
 						}),
 					),
@@ -83,7 +80,7 @@ export function Component() {
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined
-				schema: (intents) => createSchema(intents),
+				schema: (intent) => createSchema(intent),
 			});
 		},
 		shouldRevalidate: 'onBlur',

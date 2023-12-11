@@ -61,7 +61,7 @@ function getError<Error>(
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
@@ -69,7 +69,7 @@ export function parse<Schema extends ZodTypeAny>(
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => Error;
@@ -78,7 +78,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 export function parse<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
@@ -86,7 +86,7 @@ export function parse<Schema extends ZodTypeAny>(
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => Error;
@@ -95,7 +95,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 export function parse<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((intents: Array<Intent> | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
 		formatError?: (issues: Array<ZodIssue>) => Error;
@@ -104,11 +104,11 @@ export function parse<Schema extends ZodTypeAny, Error>(
 	| Submission<input<Schema>, Error | string[], output<Schema>>
 	| Promise<Submission<input<Schema>, Error | string[], output<Schema>>> {
 	return baseParse(payload, {
-		resolve(payload, intents) {
+		resolve(payload, intent) {
 			const errorMap = options.errorMap;
 			const schema = enableTypeCoercion(
 				typeof options.schema === 'function'
-					? options.schema(intents)
+					? options.schema(intent)
 					: options.schema,
 			);
 

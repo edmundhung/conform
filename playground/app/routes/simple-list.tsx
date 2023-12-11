@@ -73,37 +73,41 @@ export default function SimpleList() {
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(meta.id, [
+									{...getControlButtonProps(
+										meta.id,
 										intent.remove({ name: fields.items.name, index }),
-									])}
+									)}
 								>
 									Delete
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(meta.id, [
+									{...getControlButtonProps(
+										meta.id,
 										intent.reorder({
 											name: fields.items.name,
 											from: index,
 											to: 0,
 										}),
-									])}
+									)}
 								>
 									Move to top
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(meta.id, [
+									{...getControlButtonProps(
+										meta.id,
 										intent.replace({ name: task.name, value: '' }),
-									])}
+									)}
 								>
 									Clear
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(meta.id, [
+									{...getControlButtonProps(
+										meta.id,
 										intent.reset({ name: task.name }),
-									])}
+									)}
 								>
 									Reset
 								</button>
@@ -114,29 +118,32 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, [
+						{...getControlButtonProps(
+							meta.id,
 							intent.insert({
 								name: fields.items.name,
 								defaultValue: 'Top item',
 								index: 0,
 							}),
-						])}
+						)}
 					>
 						Insert top
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, [
+						{...getControlButtonProps(
+							meta.id,
 							intent.insert({ name: fields.items.name, defaultValue: '' }),
-						])}
+						)}
 					>
 						Insert bottom
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, [
+						{...getControlButtonProps(
+							meta.id,
 							intent.reset({ name: fields.items.name }),
-						])}
+						)}
 					>
 						Reset
 					</button>

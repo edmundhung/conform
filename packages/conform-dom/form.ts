@@ -231,8 +231,8 @@ function createFormMeta<Schema, Error, Value>(
 		error: (lastResult?.error as Record<string, Error>) ?? {},
 	};
 
-	if (lastResult?.intents) {
-		handleIntents(lastResult.intents, result);
+	if (lastResult?.intent) {
+		handleIntent(result, lastResult.intent);
 	}
 
 	return result;
@@ -255,67 +255,62 @@ function getDefaultKey(
 	}, {});
 }
 
-function handleIntents<Error>(
-	intents: Array<Intent>,
-	context: FormMeta<Error>,
+function handleIntent<Error>(
+	meta: FormMeta<Error>,
+	intent: Intent,
 	initialized?: boolean,
 ): void {
-	for (const intent of intents) {
-		switch (intent.type) {
-			case 'replace': {
+	switch (intent.type) {
+		case 'replace': {
+			const name = intent.payload.name ?? '';
+			const value = intent.payload.value;
+
+			updateValue(meta, name, value);
+			break;
+		}
+		case 'reset': {
+			if (typeof intent.payload.value === 'undefined' || intent.payload.value) {
 				const name = intent.payload.name ?? '';
-				const value = intent.payload.value;
+				const value = getValue(meta.defaultValue, name);
 
-				updateValue(context, name, value);
-				break;
+				updateValue(meta, name, value);
 			}
-			case 'reset': {
-				if (
-					typeof intent.payload.value === 'undefined' ||
-					intent.payload.value
-				) {
-					const name = intent.payload.name ?? '';
-					const value = getValue(context.defaultValue, name);
+			break;
+		}
+		case 'insert':
+		case 'remove':
+		case 'reorder': {
+			if (initialized) {
+				meta.initialValue = clone(meta.initialValue);
+				meta.key = clone(meta.key);
 
-					updateValue(context, name, value);
-				}
-				break;
+				setListState(meta.key, intent, generateId);
+				setListValue(meta.initialValue, intent);
 			}
-			case 'insert':
-			case 'remove':
-			case 'reorder': {
-				if (initialized) {
-					context.initialValue = clone(context.initialValue);
-					context.key = clone(context.key);
-
-					setListState(context.key, intent, generateId);
-					setListValue(context.initialValue, intent);
-				}
-				break;
-			}
+			break;
 		}
 	}
 }
 
 function updateValue<Error>(
-	context: FormMeta<Error>,
+	meta: FormMeta<Error>,
 	name: string,
 	value: unknown,
 ): void {
-	context.initialValue = clone(context.initialValue);
-	context.value = clone(context.value);
-	context.key = clone(context.key);
+	meta.initialValue = clone(meta.initialValue);
+	meta.value = clone(meta.value);
+	meta.key = clone(meta.key);
 
-	setValue(context.initialValue, name, () => value);
-	setValue(context.value, name, () => value);
+	setValue(meta.initialValue, name, () => value);
+	setValue(meta.value, name, () => value);
 
 	if (isPlainObject(value) || Array.isArray(value)) {
-		setState(context.key, name, () => undefined);
+		setState(meta.key, name, () => undefined);
 
-		Object.assign(context.key, getDefaultKey(value, name));
+		Object.assign(meta.key, getDefaultKey(value, name));
 	}
 
-	context.key[name] = generateId();
+	meta.key[name] = generateId();
 }
 
 function createStateProxy<State>(
@@ -709,7 +704,7 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			requestIntent(formId, [intent.validate(element.name)]);
+			requestIntent(formId, intent.validate(element.name));
 		}
 	}
 
@@ -724,7 +719,7 @@ export function createFormContext<
 			return;
 		}
 
-		requestIntent(formId, [intent.validate(element.name)]);
+		requestIntent(formId, intent.validate(element.name));
 	}
 
 	function reset(event: Event) {
@@ -768,8 +763,8 @@ export function createFormContext<
 			validated: result.state?.validated ?? {},
 		};
 
-		if (result.intents) {
-			handleIntents(result.intents, update, true);
+		if (result.intent) {
+			handleIntent(update, result.intent, true);
 		}
 
 		updateFormMeta(update);

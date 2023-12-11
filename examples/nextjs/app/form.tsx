@@ -70,23 +70,26 @@ export function TodoForm() {
 							</label>
 						</div>
 						<Button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.remove({ name: fields.tasks.name, index }),
-							])}
+							)}
 						>
 							Delete
 						</Button>
 						<Button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.reorder({ name: fields.tasks.name, from: index, to: 0 }),
-							])}
+							)}
 						>
 							Move to top
 						</Button>
 						<Button
-							{...getControlButtonProps(meta.id, [
+							{...getControlButtonProps(
+								meta.id,
 								intent.replace({ name: task.name, value: { content: '' } }),
-							])}
+							)}
 						>
 							Clear
 						</Button>
@@ -94,9 +97,10 @@ export function TodoForm() {
 				);
 			})}
 			<Button
-				{...getControlButtonProps(meta.id, [
+				{...getControlButtonProps(
+					meta.id,
 					intent.insert({ name: fields.tasks.name }),
-				])}
+				)}
 			>
 				Add task
 			</Button>
@@ -160,7 +164,7 @@ export function SignupForm() {
 		onValidate({ formData }) {
 			return parse(formData, {
 				// Create the schema without any constraint defined
-				schema: (intents) => createSignupSchema(intents),
+				schema: (intent) => createSignupSchema(intent),
 			});
 		},
 		shouldValidate: 'onBlur',
