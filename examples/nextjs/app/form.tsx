@@ -39,10 +39,10 @@ export function TodoForm() {
 					{...getInputProps(fields.title)}
 					key={fields.title.key}
 				/>
-				<div>{fields.title.error}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fields.tasks.error}</div>
+			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -55,7 +55,7 @@ export function TodoForm() {
 								{...getInputProps(taskFields.content)}
 								key={taskFields.content.key}
 							/>
-							<div>{taskFields.content.error}</div>
+							<div>{taskFields.content.errors}</div>
 						</div>
 						<div>
 							<label>
@@ -134,7 +134,7 @@ export function LoginForm() {
 					{...getInputProps(fields.email)}
 					key={fields.email.key}
 				/>
-				<div>{fields.email.error}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
@@ -143,7 +143,7 @@ export function LoginForm() {
 					{...getInputProps(fields.password, { type: 'password' })}
 					key={fields.password.key}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
@@ -180,7 +180,7 @@ export function SignupForm() {
 					{...getInputProps(fields.username)}
 					key={fields.username.key}
 				/>
-				<div>{fields.username.error}</div>
+				<div>{fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
@@ -189,7 +189,7 @@ export function SignupForm() {
 					{...getInputProps(fields.password, { type: 'password' })}
 					key={fields.password.key}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
@@ -198,7 +198,7 @@ export function SignupForm() {
 					{...getInputProps(fields.confirmPassword, { type: 'password' })}
 					key={fields.confirmPassword.key}
 				/>
-				<div>{fields.confirmPassword.error}</div>
+				<div>{fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<Button>Signup</Button>

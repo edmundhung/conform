@@ -122,7 +122,7 @@ export default function Example() {
 	return (
 		<Form method="post" encType="multipart/form-data" {...getFormProps(meta)}>
 			<Playground title="Input attributes" lastSubmission={lastResult}>
-				<Alert id={meta.errorId} errors={meta.error} />
+				<Alert id={meta.errorId} errors={meta.errors} />
 				<Field label="Title" config={fields.title}>
 					<input
 						{...getInputProps(fields.title, {

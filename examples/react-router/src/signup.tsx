@@ -94,7 +94,7 @@ export function Component() {
 					className={!fields.username.valid ? 'error' : ''}
 					{...getInputProps(fields.username)}
 				/>
-				<div>{fields.username.error}</div>
+				<div>{fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
@@ -102,7 +102,7 @@ export function Component() {
 					className={!fields.password.valid ? 'error' : ''}
 					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
@@ -110,7 +110,7 @@ export function Component() {
 					className={!fields.confirmPassword.valid ? 'error' : ''}
 					{...getInputProps(fields.confirmPassword, { type: 'password' })}
 				/>
-				<div>{fields.confirmPassword.error}</div>
+				<div>{fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<button>Signup</button>

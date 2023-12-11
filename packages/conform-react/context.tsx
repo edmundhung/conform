@@ -60,8 +60,8 @@ export type Metadata<Schema, Error> = {
 	descriptionId: string;
 	initialValue: FormValue<Schema>;
 	value: FormValue<Schema>;
-	error: Error | undefined;
-	allError: Record<string, Error>;
+	errors: Error | undefined;
+	allErrors: Record<string, Error>;
 	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
@@ -232,7 +232,7 @@ export function getMetadata<
 			descriptionId: `${id}-description`,
 			initialValue: state.initialValue[name] as FormValue<Schema>,
 			value: state.value[name] as FormValue<Schema>,
-			error: state.error[name],
+			errors: state.error[name],
 			get key() {
 				return state.key[name];
 			},
@@ -257,7 +257,7 @@ export function getMetadata<
 
 				return true;
 			},
-			get allError() {
+			get allErrors() {
 				if (name === '') {
 					return state.error;
 				}
@@ -289,14 +289,19 @@ export function getMetadata<
 			get(target, key, receiver) {
 				switch (key) {
 					case 'key':
-					case 'error':
+					case 'errors':
 					case 'initialValue':
 					case 'value':
 					case 'valid':
 					case 'dirty':
-						updateSubjectRef(subjectRef, name, key, 'name');
+						updateSubjectRef(
+							subjectRef,
+							name,
+							key === 'errors' ? 'error' : key,
+							'name',
+						);
 						break;
-					case 'allError':
+					case 'allErrors':
 						updateSubjectRef(subjectRef, name, 'error', 'prefix');
 						break;
 					case 'allValid':

@@ -54,10 +54,10 @@ export default function Example() {
 					className={!fields.title.valid ? 'error' : ''}
 					{...getInputProps(fields.title)}
 				/>
-				<div>{fields.title.error}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fields.tasks.error}</div>
+			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -69,7 +69,7 @@ export default function Example() {
 								className={!taskFields.content.valid ? 'error' : ''}
 								{...getInputProps(taskFields.content)}
 							/>
-							<div>{taskFields.content.error}</div>
+							<div>{taskFields.content.errors}</div>
 						</div>
 						<div>
 							<label>

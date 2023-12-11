@@ -46,7 +46,7 @@ export default function Login() {
 					className={!fields.email.valid ? 'error' : ''}
 					{...getInputProps(fields.email)}
 				/>
-				<div>{fields.email.error}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
@@ -54,7 +54,7 @@ export default function Login() {
 					className={!fields.password.valid ? 'error' : ''}
 					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>

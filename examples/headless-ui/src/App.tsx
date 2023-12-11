@@ -53,7 +53,7 @@ export default function Example() {
 										<ExampleListBox name={fields.owner.name} formId={meta.id} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.owner.error?.validationMessage}
+										{fields.owner.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -68,7 +68,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.assignee.error?.validationMessage}
+										{fields.assignee.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -83,7 +83,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.enabled.error?.validationMessage}
+										{fields.enabled.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -98,7 +98,7 @@ export default function Example() {
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.color.error?.validationMessage}
+										{fields.color.errors?.validationMessage}
 									</p>
 								</div>
 							</div>

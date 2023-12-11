@@ -70,7 +70,7 @@ export default function Example() {
 							<FormLabel>Email (Input)</FormLabel>
 							<Input type="email" name={fields.email.name} required />
 							<FormErrorMessage>
-								{fields.email.error?.validationMessage}
+								{fields.email.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -86,7 +86,7 @@ export default function Example() {
 								<option value="japanese">Japanese</option>
 							</Select>
 							<FormErrorMessage>
-								{fields.language.error?.validationMessage}
+								{fields.language.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -94,7 +94,7 @@ export default function Example() {
 							<FormLabel>Description (Textarea)</FormLabel>
 							<Textarea name={fields.description.name} required />
 							<FormErrorMessage>
-								{fields.description.error?.validationMessage}
+								{fields.description.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -105,7 +105,7 @@ export default function Example() {
 								formId={meta.id}
 							/>
 							<FormErrorMessage>
-								{fields.quantity.error?.validationMessage}
+								{fields.quantity.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -113,7 +113,7 @@ export default function Example() {
 							<FormLabel>PIN (PinInput)</FormLabel>
 							<ExamplePinInput name={fields.pin.name} formId={meta.id} />
 							<FormErrorMessage>
-								{fields.pin.error?.validationMessage}
+								{fields.pin.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -124,7 +124,7 @@ export default function Example() {
 								<EditableInput name={fields.title.name} required />
 							</Editable>
 							<FormErrorMessage>
-								{fields.title.error?.validationMessage}
+								{fields.title.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -134,7 +134,7 @@ export default function Example() {
 								Newsletter
 							</Checkbox>
 							<FormErrorMessage>
-								{fields.subscribe.error?.validationMessage}
+								{fields.subscribe.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -142,7 +142,7 @@ export default function Example() {
 							<FormLabel>Enabled (Switch)</FormLabel>
 							<Switch name={fields.enabled.name} required />
 							<FormErrorMessage>
-								{fields.enabled.error?.validationMessage}
+								{fields.enabled.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -150,7 +150,7 @@ export default function Example() {
 							<FormLabel>Progress (Slider)</FormLabel>
 							<ExampleSlider name={fields.progress.name} formId={meta.id} />
 							<FormErrorMessage>
-								{fields.progress.error?.validationMessage}
+								{fields.progress.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
@@ -173,7 +173,7 @@ export default function Example() {
 								</Stack>
 							</RadioGroup>
 							<FormErrorMessage>
-								{fields.active.error?.validationMessage}
+								{fields.active.errors?.validationMessage}
 							</FormErrorMessage>
 						</FormControl>
 
