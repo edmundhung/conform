@@ -44,7 +44,7 @@ export type Submission<Schema, Error = unknown, Value = Schema> =
 export type SubmissionResult<Error = unknown> = {
 	status?: 'error' | 'success';
 	intent?: Intent;
-	initialValue?: Record<string, unknown>;
+	initialValue?: Record<string, unknown> | null;
 	error?: Record<string, Error | null>;
 	state?: SubmissionState;
 };
@@ -311,14 +311,13 @@ export function acceptSubmission<Error>(
 ): SubmissionResult<Error> {
 	if (options) {
 		if ('resetForm' in options && options.resetForm) {
-			return { status: 'success' };
+			return { status: 'success', initialValue: null };
 		}
 
 		if ('hideFields' in options && options.hideFields) {
 			hideFields(context.payload, options.hideFields);
 		}
 	}
-
 	return {
 		status: 'success',
 		initialValue: simplify(context.payload) ?? {},
@@ -331,6 +330,18 @@ export function rejectSubmission<Error>(
 	context: Required<SubmissionContext<unknown, Error>>,
 	options?: RejectOptions<Error>,
 ): SubmissionResult<Error> {
+	switch (context.intent?.type) {
+		case 'reset': {
+			const name = context.intent.payload.name ?? '';
+
+			if (name === '') {
+				return {
+					initialValue: null,
+				};
+			}
+		}
+	}
+
 	const error = Object.entries(context.error ?? {}).reduce<
 		Record<string, Error | null>
 	>((result, [name, currentError]) => {
@@ -612,13 +623,20 @@ export function serialize<Schema>(
 
 export const intent = new Proxy(
 	{} as {
-		[Type in Intent['type']]: <Schema>(
-			payload: Extract<Intent<Schema>, { type: Type }>['payload'],
-		) => Extract<Intent<Schema>, { type: Type }>;
+		[Type in Intent['type']]: {} extends Extract<
+			Intent,
+			{ type: Type }
+		>['payload']
+			? <Schema>(
+					payload?: Extract<Intent<Schema>, { type: Type }>['payload'],
+			  ) => Extract<Intent<Schema>, { type: Type }>
+			: <Schema>(
+					payload: Extract<Intent<Schema>, { type: Type }>['payload'],
+			  ) => Extract<Intent<Schema>, { type: Type }>;
 	},
 	{
 		get(_, type) {
-			return (payload: any) => ({ type, payload });
+			return (payload = {}) => ({ type, payload });
 		},
 	},
 );

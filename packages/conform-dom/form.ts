@@ -746,7 +746,7 @@ export function createFormContext<
 	function report(result: SubmissionResult<Error>) {
 		const formElement = getFormElement();
 
-		if (typeof result.initialValue === 'undefined') {
+		if (!result.initialValue) {
 			formElement.reset();
 			return;
 		}
