@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parse as parseWithZod } from '@conform-to/zod';
-import { parse as parseWithYup } from '@conform-to/yup';
+import { parseWithZod } from '@conform-to/zod';
+import { parseWithYup } from '@conform-to/yup';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';

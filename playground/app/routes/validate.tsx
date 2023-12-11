@@ -6,7 +6,7 @@ import {
 	getTextareaProps,
 	getControlButtonProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
 	if (!submission.value) {
 		return json(submission.reject());
@@ -43,7 +43,7 @@ export default function Validate() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 

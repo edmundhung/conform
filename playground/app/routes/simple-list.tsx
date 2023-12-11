@@ -6,7 +6,7 @@ import {
 	getInputProps,
 	getControlButtonProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema,
 	});
 
@@ -54,7 +54,7 @@ export default function SimpleList() {
 			? { items: ['default item 0', 'default item 1'] }
 			: undefined,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 	const items = fields.items.getFieldList();

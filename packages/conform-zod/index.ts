@@ -1,2 +1,2 @@
-export { getConstraint } from './constraint';
-export { parse, refine } from './parse';
+export { getZodConstraint } from './constraint';
+export { parseWithZod, refine } from './parse';

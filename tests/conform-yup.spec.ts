@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { parse, getFieldsetConstraint } from '@conform-to/yup';
+import { parseWithYup, getFieldsetConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
 import { STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
@@ -86,7 +86,7 @@ test.describe('conform-yup', () => {
 		});
 	});
 
-	test('parse', () => {
+	test('parseWithYup', () => {
 		const formData = createFormData([
 			[STATE, JSON.stringify({ validated: {}, key: {} })],
 			['text', payload.text],
@@ -99,7 +99,7 @@ test.describe('conform-yup', () => {
 			['list[0].key', payload.list[0].key],
 		]);
 
-		expect(parse(formData, { schema })).toEqual({
+		expect(parseWithYup(formData, { schema })).toEqual({
 			type: 'submit',
 			payload,
 			error,

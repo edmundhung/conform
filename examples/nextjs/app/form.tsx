@@ -10,7 +10,7 @@ import {
 	getFieldsetProps,
 	getControlButtonProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
 
 function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -24,7 +24,7 @@ export function TodoForm() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, { schema: todosSchema });
+			return parseWithZod(formData, { schema: todosSchema });
 		},
 		shouldValidate: 'onBlur',
 	});
@@ -118,7 +118,7 @@ export function LoginForm() {
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {
-			return parse(formData, { schema: loginSchema });
+			return parseWithZod(formData, { schema: loginSchema });
 		},
 
 		// Validate the form on blur event triggered
@@ -162,7 +162,7 @@ export function SignupForm() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, {
+			return parseWithZod(formData, {
 				// Create the schema without any constraint defined
 				schema: (intent) => createSignupSchema(intent),
 			});

@@ -6,7 +6,7 @@ import {
 	getControlButtonProps,
 	getFieldsetProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -24,7 +24,7 @@ const todosSchema = z.object({
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema: todosSchema,
 	});
 
@@ -40,7 +40,7 @@ export default function Example() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, { schema: todosSchema });
+			return parseWithZod(formData, { schema: todosSchema });
 		},
 		shouldValidate: 'onBlur',
 	});

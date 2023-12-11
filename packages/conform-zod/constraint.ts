@@ -28,7 +28,9 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
-export function getConstraint(schema: ZodTypeAny): Record<string, Constraint> {
+export function getZodConstraint(
+	schema: ZodTypeAny,
+): Record<string, Constraint> {
 	function updateConstraint(
 		schema: ZodTypeAny,
 		data: Record<string, Constraint>,

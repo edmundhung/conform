@@ -1,5 +1,5 @@
 import { useForm, getFormProps, getInputProps } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react';
@@ -47,7 +47,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema,
 	});
 

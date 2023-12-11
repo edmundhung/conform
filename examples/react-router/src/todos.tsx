@@ -7,7 +7,7 @@ import {
 	getFieldsetProps,
 	getControlButtonProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json, redirect } from 'react-router-dom';
 import { z } from 'zod';
@@ -24,7 +24,7 @@ const todosSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema: todosSchema,
 	});
 
@@ -40,7 +40,7 @@ export function Component() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, { schema: todosSchema });
+			return parseWithZod(formData, { schema: todosSchema });
 		},
 	});
 	const tasks = fields.tasks.getFieldList();

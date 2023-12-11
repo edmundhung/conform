@@ -1,11 +1,11 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
 
 export async function login(prevState: unknown, formData: FormData) {
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema: loginSchema,
 	});
 
@@ -17,7 +17,7 @@ export async function login(prevState: unknown, formData: FormData) {
 }
 
 export async function createTodos(prevState: unknown, formData: FormData) {
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema: todosSchema,
 	});
 
@@ -29,7 +29,7 @@ export async function createTodos(prevState: unknown, formData: FormData) {
 }
 
 export async function signup(prevState: unknown, formData: FormData) {
-	const submission = await parse(formData, {
+	const submission = await parseWithZod(formData, {
 		schema: (intent) =>
 			// create the zod schema with the intent and constraint
 			createSignupSchema(intent, {

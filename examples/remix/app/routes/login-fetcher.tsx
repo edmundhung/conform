@@ -1,5 +1,5 @@
 import { useForm, getFormProps, getInputProps } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
@@ -13,7 +13,7 @@ const schema = z.object({
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
 	if (!submission.value) {
 		return json(submission.reject());
@@ -30,7 +30,7 @@ export default function Login() {
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {
-			return parse(formData, { schema });
+			return parseWithZod(formData, { schema });
 		},
 
 		shouldRevalidate: 'onBlur',

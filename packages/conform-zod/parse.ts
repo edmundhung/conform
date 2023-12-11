@@ -2,7 +2,7 @@ import {
 	type Intent,
 	type Submission,
 	formatPaths,
-	parse as baseParse,
+	parse,
 } from '@conform-to/dom';
 import {
 	type IssueData,
@@ -58,7 +58,7 @@ function getError<Error>(
 	);
 }
 
-export function parse<Schema extends ZodTypeAny>(
+export function parseWithZod<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -66,7 +66,7 @@ export function parse<Schema extends ZodTypeAny>(
 		errorMap?: ZodErrorMap;
 	},
 ): Submission<input<Schema>, string[], output<Schema>>;
-export function parse<Schema extends ZodTypeAny, Error>(
+export function parseWithZod<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -75,7 +75,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 		formatError: (issues: Array<ZodIssue>) => Error;
 	},
 ): Submission<input<Schema>, Error, output<Schema>>;
-export function parse<Schema extends ZodTypeAny>(
+export function parseWithZod<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -83,7 +83,7 @@ export function parse<Schema extends ZodTypeAny>(
 		errorMap?: ZodErrorMap;
 	},
 ): Promise<Submission<input<Schema>, string[], output<Schema>>>;
-export function parse<Schema extends ZodTypeAny, Error>(
+export function parseWithZod<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -92,7 +92,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 		formatError: (issues: Array<ZodIssue>) => Error;
 	},
 ): Promise<Submission<input<Schema>, Error, output<Schema>>>;
-export function parse<Schema extends ZodTypeAny, Error>(
+export function parseWithZod<Schema extends ZodTypeAny, Error>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -103,7 +103,7 @@ export function parse<Schema extends ZodTypeAny, Error>(
 ):
 	| Submission<input<Schema>, Error | string[], output<Schema>>
 	| Promise<Submission<input<Schema>, Error | string[], output<Schema>>> {
-	return baseParse(payload, {
+	return parse(payload, {
 		resolve(payload, intent) {
 			const errorMap = options.errorMap;
 			const schema = enableTypeCoercion(

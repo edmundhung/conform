@@ -4,7 +4,7 @@ import {
 	getInputProps,
 	useForm,
 } from '@conform-to/react';
-import { parse, refine } from '@conform-to/zod';
+import { parseWithZod, refine } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = await parse(formData, {
+	const submission = await parseWithZod(formData, {
 		schema: (intent) =>
 			createSchema(intent, {
 				isEmailUnique(email) {
@@ -78,7 +78,7 @@ export default function EmployeeForm() {
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) =>
-					parse(formData, {
+					parseWithZod(formData, {
 						schema: (intent) => createSchema(intent),
 					})
 			: undefined,

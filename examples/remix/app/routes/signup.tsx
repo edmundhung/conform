@@ -1,6 +1,6 @@
 import type { Intent } from '@conform-to/react';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parse, refine } from '@conform-to/zod';
+import { parseWithZod, refine } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -52,7 +52,7 @@ function createSchema(
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = await parse(formData, {
+	const submission = await parseWithZod(formData, {
 		schema: (intent) =>
 			// create the zod schema with the intent and constraint
 			createSchema(intent, {
@@ -79,7 +79,7 @@ export default function Signup() {
 	const { meta, fields } = useForm({
 		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, {
+			return parseWithZod(formData, {
 				// Create the schema without any constraint defined
 				schema: (intent) => createSchema(intent),
 			});

@@ -2,7 +2,7 @@ import {
 	type Constraint,
 	type Intent,
 	type Submission,
-	parse as baseParse,
+	parse,
 	invariant,
 } from '@conform-to/dom';
 import * as yup from 'yup';
@@ -97,21 +97,21 @@ export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
 	);
 }
 
-export function parse<Schema extends yup.AnyObjectSchema>(
+export function parseWithYup<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 	},
 ): Submission<yup.InferType<Schema>, string[]>;
-export function parse<Schema extends yup.AnyObjectSchema>(
+export function parseWithYup<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 	},
 ): Promise<Submission<yup.InferType<Schema>, string[]>>;
-export function parse<Schema extends yup.AnyObjectSchema>(
+export function parseWithYup<Schema extends yup.AnyObjectSchema>(
 	payload: FormData | URLSearchParams,
 	config: {
 		schema: Schema | ((intent: Intent | null) => Schema);
@@ -120,7 +120,7 @@ export function parse<Schema extends yup.AnyObjectSchema>(
 ):
 	| Submission<yup.InferType<Schema>, string[]>
 	| Promise<Submission<yup.InferType<Schema>, string[]>> {
-	return baseParse<Submission<yup.InferType<Schema>>, string[]>(payload, {
+	return parse<Submission<yup.InferType<Schema>>, string[]>(payload, {
 		resolve(payload, intent) {
 			const schema =
 				typeof config.schema === 'function'

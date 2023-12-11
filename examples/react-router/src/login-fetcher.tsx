@@ -1,5 +1,5 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { useFetcher, json, redirect } from 'react-router-dom';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ const schema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
 	if (!submission.value) {
 		return json(submission.reject());
@@ -26,7 +26,7 @@ export function Component() {
 	const { meta, fields } = useForm({
 		lastResult: fetcher.data,
 		onValidate({ formData }) {
-			return parse(formData, { schema });
+			return parseWithZod(formData, { schema });
 		},
 		shouldRevalidate: 'onBlur',
 	});
