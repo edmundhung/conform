@@ -8,12 +8,12 @@ import type {
 } from './context';
 
 type FormControlProps = {
+	key: string | undefined;
 	id: string;
 	name: string;
 	form: string;
 	required?: boolean;
 	autoFocus?: boolean;
-	tabIndex?: number;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
 };
@@ -225,7 +225,7 @@ export function getFieldsetProps<
 export function getFormControlProps<Schema, Error>(
 	metadata: FieldMetadata<Schema, Error, any>,
 	options?: FormControlOptions,
-) {
+): FormControlProps {
 	return simplify({
 		key: metadata.key,
 		required: metadata.constraint?.required || undefined,
