@@ -14,8 +14,8 @@ export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, { schema });
 
-	if (!submission.value) {
-		return json(submission.reject());
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);

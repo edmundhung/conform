@@ -44,11 +44,7 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, { schema });
 
-	if (!submission.value) {
-		return json(submission.reject());
-	}
-
-	return json(submission.accept());
+	return json(submission.reply());
 }
 
 export default function ValidationFlow() {

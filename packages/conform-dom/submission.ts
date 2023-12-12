@@ -18,27 +18,23 @@ export type SubmissionContext<Value = null, Error = unknown> = {
 	intent: Intent | null;
 	payload: Record<string, unknown>;
 	fields: string[];
-	value: Value | null;
-	error: Record<string, Error | null> | null;
+	value?: Value;
+	error?: Record<string, Error | null> | null;
 	state: SubmissionState;
 };
 
 export type Submission<Schema, Error = unknown, Value = Schema> =
 	| {
-			type: 'submit';
+			status: 'success';
 			payload: Record<string, unknown>;
-			value: Value | null;
-			error: Record<string, Error | null> | null;
-			reject(options?: RejectOptions<Error>): SubmissionResult<Error>;
-			accept(options?: AcceptOptions): SubmissionResult<Error>;
+			value: Value;
+			reply(options?: ReplyOptions<Error>): SubmissionResult<Error>;
 	  }
 	| {
-			type: 'update';
+			status: 'error' | undefined;
 			payload: Record<string, unknown>;
-			value: null;
 			error: Record<string, Error | null> | null;
-			reject(options?: RejectOptions<Error>): SubmissionResult<Error>;
-			accept(options?: AcceptOptions): SubmissionResult<Error>;
+			reply(options?: ReplyOptions<Error>): SubmissionResult<Error>;
 	  };
 
 export type SubmissionResult<Error = unknown> = {
@@ -49,19 +45,15 @@ export type SubmissionResult<Error = unknown> = {
 	state?: SubmissionState;
 };
 
-export type AcceptOptions =
+export type ReplyOptions<Error> =
 	| {
 			resetForm?: boolean;
 	  }
 	| {
+			formErrors?: Error;
+			fieldErrors?: Record<string, Error>;
 			hideFields?: string[];
 	  };
-
-export type RejectOptions<Error> = {
-	formError?: Error;
-	fieldError?: Record<string, Error>;
-	hideFields?: string[];
-};
 
 /**
  * The name to be used when submitting an intent
@@ -109,8 +101,6 @@ export function getSubmissionContext(
 		intent: getIntent(intent),
 		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
-		value: null,
-		error: null,
 	};
 }
 
@@ -248,8 +238,8 @@ export function parse<Value, Error>(
 
 		return createSubmission({
 			...context,
-			value: resolved.value ?? null,
-			error,
+			value: resolved.value,
+			error: resolved.error,
 		});
 	};
 
@@ -261,74 +251,32 @@ export function parse<Value, Error>(
 }
 
 export function createSubmission<Value, Error>(
-	context: Required<SubmissionContext<Value, Error>>,
+	context: SubmissionContext<Value, Error>,
 ): Submission<Value, Error> {
-	if (context.intent) {
+	if (context.intent || !context.value || context.error) {
 		return {
-			type: 'update',
+			status: !context.intent ? 'error' : undefined,
 			payload: context.payload,
-			value: null,
-			error: context.error,
-			accept(options) {
-				return acceptSubmission(context, options);
-			},
-			reject(options) {
-				return rejectSubmission(context, options);
+			error: typeof context.error !== 'undefined' ? context.error : {},
+			reply(options) {
+				return replySubmission(context, options);
 			},
 		};
 	}
 
 	return {
-		type: 'submit',
+		status: 'success',
 		payload: context.payload,
 		value: context.value,
-		error: context.error,
-		accept(options) {
-			return acceptSubmission(context, options);
-		},
-		reject(options) {
-			return rejectSubmission(context, options);
+		reply(options) {
+			return replySubmission(context, options);
 		},
 	};
 }
 
-export function hideFields(
-	payload: Record<string, unknown>,
-	fields: string[],
-): void {
-	for (const name of fields) {
-		const value = getValue(payload, name);
-
-		if (typeof value !== 'undefined') {
-			setValue(payload, name, () => undefined);
-		}
-	}
-}
-
-export function acceptSubmission<Error>(
-	context: Required<SubmissionContext<unknown, Error>>,
-	options?: AcceptOptions,
-): SubmissionResult<Error> {
-	if (options) {
-		if ('resetForm' in options && options.resetForm) {
-			return { status: 'success', initialValue: null };
-		}
-
-		if ('hideFields' in options && options.hideFields) {
-			hideFields(context.payload, options.hideFields);
-		}
-	}
-	return {
-		status: 'success',
-		initialValue: simplify(context.payload) ?? {},
-		error: simplify(context.error),
-		state: context.state,
-	};
-}
-
-export function rejectSubmission<Error>(
-	context: Required<SubmissionContext<unknown, Error>>,
-	options?: RejectOptions<Error>,
+export function replySubmission<Error>(
+	context: SubmissionContext<unknown, Error>,
+	options: ReplyOptions<Error> = {},
 ): SubmissionResult<Error> {
 	switch (context.intent?.type) {
 		case 'reset': {
@@ -342,28 +290,45 @@ export function rejectSubmission<Error>(
 		}
 	}
 
-	const error = Object.entries(context.error ?? {}).reduce<
-		Record<string, Error | null>
-	>((result, [name, currentError]) => {
-		if (context.state.validated[name]) {
-			const newError =
-				name === '' ? options?.formError : options?.fieldError?.[name];
+	if ('resetForm' in options && options.resetForm) {
+		return { initialValue: null };
+	}
 
-			result[name] = newError ?? currentError;
+	if ('hideFields' in options && options.hideFields) {
+		for (const name of options.hideFields) {
+			const value = getValue(context.payload, name);
+
+			if (typeof value !== 'undefined') {
+				setValue(context.payload, name, () => undefined);
+			}
+		}
+	}
+
+	const submissionError = Object.entries(context.error ?? {}).reduce<
+		Record<string, Error | null>
+	>((result, [name, error]) => {
+		if (context.state.validated[name]) {
+			result[name] = error;
 		}
 
 		return result;
 	}, {});
-
-	if (options?.hideFields) {
-		hideFields(context.payload, options.hideFields);
-	}
+	const extraError =
+		'formErrors' in options || 'fieldErrors' in options
+			? simplify({
+					'': options.formErrors,
+					...options.fieldErrors,
+			  })
+			: null;
+	const error = simplify({
+		...submissionError,
+		...extraError,
+	});
 
 	return {
-		status: context.intent !== null ? undefined : 'error',
-		intent: context.intent !== null ? context.intent : undefined,
+		status: context.intent ? undefined : error ? 'error' : 'success',
 		initialValue: simplify(context.payload) ?? {},
-		error: simplify(error),
+		error,
 		state: context.state,
 	};
 }

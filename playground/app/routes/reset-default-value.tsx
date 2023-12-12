@@ -51,11 +51,11 @@ export async function action({ request }: ActionArgs) {
 		schema,
 	});
 
-	if (!submission.value) {
-		return json(submission.reject());
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
-	return json(submission.accept({ resetForm: true }));
+	return json(submission.reply({ resetForm: true }));
 }
 
 export default function ExampleForm() {

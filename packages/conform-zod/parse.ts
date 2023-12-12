@@ -116,14 +116,14 @@ export function parseWithZod<Schema extends ZodTypeAny, Error>(
 				result: SafeParseReturnType<Input, Output>,
 			) => {
 				return {
-					value: result.success ? result.data : null,
+					value: result.success ? result.data : undefined,
 					error: !result.success
 						? getError<Error | string[]>(
 								result.error,
 								options.formatError ??
 									((issues) => issues.map((issue) => issue.message)),
 						  )
-						: {},
+						: undefined,
 				};
 			};
 

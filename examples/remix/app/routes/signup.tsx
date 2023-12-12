@@ -67,8 +67,8 @@ export async function action({ request }: ActionArgs) {
 		async: true,
 	});
 
-	if (!submission.value) {
-		return json(submission.reject());
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);

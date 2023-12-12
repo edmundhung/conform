@@ -100,12 +100,10 @@ test.describe('conform-yup', () => {
 		]);
 
 		expect(parseWithYup(formData, { schema })).toEqual({
-			type: 'submit',
+			status: 'error',
 			payload,
 			error,
-			value: null,
-			accept: expect.any(Function),
-			reject: expect.any(Function),
+			reply: expect.any(Function),
 		});
 	});
 });

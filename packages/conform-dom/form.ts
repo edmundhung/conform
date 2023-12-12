@@ -654,8 +654,8 @@ export function createFormContext<
 					submitter,
 				});
 
-				if (!submission.value && submission.error !== null) {
-					report(submission.reject());
+				if (submission.status !== 'success' && submission.error !== null) {
+					report(submission.reply());
 					event.preventDefault();
 				}
 

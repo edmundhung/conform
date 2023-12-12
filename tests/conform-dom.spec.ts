@@ -18,7 +18,7 @@ test.describe('conform-dom', () => {
 					},
 				),
 			).toEqual({
-				type: 'submit',
+				status: 'error',
 				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -26,9 +26,7 @@ test.describe('conform-dom', () => {
 				error: {
 					title: ['Test'],
 				},
-				value: null,
-				accept: expect.any(Function),
-				reject: expect.any(Function),
+				reply: expect.any(Function),
 			});
 
 			expect(
@@ -46,7 +44,7 @@ test.describe('conform-dom', () => {
 					},
 				),
 			).toEqual({
-				type: 'submit',
+				status: 'error',
 				payload: {
 					account: 'AB00 1111 2222 3333 4444',
 					amount: {
@@ -58,9 +56,7 @@ test.describe('conform-dom', () => {
 				error: {
 					account: ['Test'],
 				},
-				value: null,
-				accept: expect.any(Function),
-				reject: expect.any(Function),
+				reply: expect.any(Function),
 			});
 
 			expect(
@@ -78,7 +74,7 @@ test.describe('conform-dom', () => {
 					},
 				),
 			).toEqual({
-				type: 'submit',
+				status: 'error',
 				payload: {
 					title: '',
 					tasks: [
@@ -89,9 +85,7 @@ test.describe('conform-dom', () => {
 				error: {
 					title: ['Test'],
 				},
-				value: null,
-				accept: expect.any(Function),
-				reject: expect.any(Function),
+				reply: expect.any(Function),
 			});
 		});
 
@@ -109,7 +103,7 @@ test.describe('conform-dom', () => {
 					},
 				),
 			).toEqual({
-				type: 'submit',
+				status: 'error',
 				payload: {
 					title: 'The cat',
 					description: 'Once upon a time...',
@@ -117,9 +111,7 @@ test.describe('conform-dom', () => {
 				error: {
 					title: ['Test'],
 				},
-				value: null,
-				accept: expect.any(Function),
-				reject: expect.any(Function),
+				reply: expect.any(Function),
 			});
 		});
 	});

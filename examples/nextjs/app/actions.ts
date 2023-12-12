@@ -9,8 +9,8 @@ export async function login(prevState: unknown, formData: FormData) {
 		schema: loginSchema,
 	});
 
-	if (!submission.value) {
-		return submission.reject();
+	if (submission.status !== 'success') {
+		return submission.reply();
 	}
 
 	redirect(`/?value=${JSON.stringify(submission.value)}`);
@@ -21,8 +21,8 @@ export async function createTodos(prevState: unknown, formData: FormData) {
 		schema: todosSchema,
 	});
 
-	if (!submission.value) {
-		return submission.reject();
+	if (submission.status !== 'success') {
+		return submission.reply();
 	}
 
 	redirect(`/?value=${JSON.stringify(submission.value)}`);
@@ -44,8 +44,8 @@ export async function signup(prevState: unknown, formData: FormData) {
 		async: true,
 	});
 
-	if (!submission.value) {
-		return submission.reject();
+	if (submission.status !== 'success') {
+		return submission.reply();
 	}
 
 	redirect(`/?value=${JSON.stringify(submission.value)}`);

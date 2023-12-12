@@ -28,8 +28,8 @@ export async function action({ request }: ActionArgs) {
 		schema: todosSchema,
 	});
 
-	if (!submission.value) {
-		return json(submission.reject());
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
