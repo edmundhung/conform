@@ -54,7 +54,7 @@ export type FieldProps<
 	  };
 
 export type Metadata<Schema, Error> = {
-	key?: string;
+	key: string | undefined;
 	id: string;
 	errorId: string;
 	descriptionId: string;

@@ -243,19 +243,15 @@ function ExampleRating({ label, name, formId, required }: Field<number>) {
 		formId,
 		name,
 	});
-	const control = useInputControl(meta, {
-		initialize(value) {
-			return value !== '' ? Number(value) : null;
-		},
-	});
+	const control = useInputControl(meta);
 
 	return (
 		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Rating
-				value={control.value}
+				value={control.value ? Number(control.value) : null}
 				onChange={(_, value) => {
-					control.change(value);
+					control.change(value?.toString() ?? '');
 				}}
 				onBlur={control.blur}
 			/>
@@ -269,24 +265,20 @@ function ExampleSlider({ label, name, formId, required }: Field<number>) {
 		formId,
 		name,
 	});
-	const control = useInputControl(meta, {
-		initialize(value) {
-			return Number(value);
-		},
-	});
+	const control = useInputControl(meta);
 
 	return (
 		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Slider
 				name={meta.name}
-				value={control.value}
+				value={control.value ? Number(control.value) : 0}
 				onChange={(_, value) => {
 					if (Array.isArray(value)) {
 						return;
 					}
 
-					control.change(value);
+					control.change(value.toString());
 				}}
 			/>
 			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>

@@ -83,12 +83,7 @@ function classNames(...classes: Array<string | boolean>): string {
 function CustomSelect({ name, formId }: FieldProps<string>) {
 	const { meta } = useField({ name, formId });
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const control = useInputControl(meta, {
-		onFocus() {
-			buttonRef.current?.focus();
-		},
-	});
-
+	const control = useInputControl(meta);
 	const options = [
 		{ code: '', name: 'Please select' },
 		{ code: 'en', name: 'English' },
@@ -159,15 +154,7 @@ function CustomSelect({ name, formId }: FieldProps<string>) {
 
 function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
 	const { meta } = useField({ name, formId });
-	const control = useInputControl<boolean, boolean>({
-		key: meta.key,
-		name: meta.name,
-		formId: meta.formId,
-		initialValue: meta.initialValue,
-		initialize(value) {
-			return typeof value !== 'undefined' ? value === 'on' : false;
-		},
-	});
+	const control = useInputControl(meta);
 
 	return (
 		<Checkbox.Root
@@ -175,8 +162,8 @@ function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
 			className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
 			id={meta.id}
 			name={name}
-			checked={control.value}
-			onCheckedChange={(state) => control.change(Boolean(state.valueOf()))}
+			checked={control.value === 'on'}
+			onCheckedChange={(state) => control.change(state.valueOf() ? 'on' : '')}
 			onBlur={control.blur}
 		>
 			<Checkbox.Indicator>

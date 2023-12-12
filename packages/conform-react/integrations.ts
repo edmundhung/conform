@@ -1,16 +1,9 @@
-import {
-	type FieldElement,
-	type FormValue,
-	isFieldElement,
-	FieldName,
-	FormId,
-} from '@conform-to/dom';
+import { type FieldElement, isFieldElement } from '@conform-to/dom';
 import { useRef, useState, useMemo, useEffect } from 'react';
-import { type FieldMetadata } from './context';
 
-export type InputControl<Value> = {
-	value: Value;
-	change: (value: Value) => void;
+export type InputControl = {
+	value: string | undefined;
+	change: (value: string) => void;
 	focus: () => void;
 	blur: () => void;
 };
@@ -54,106 +47,35 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 	return input;
 }
 
-export function useInputControl<Schema>(
-	metadata: FieldMetadata<Schema, any, any>,
-	options?: {
-		onFocus?: (event: Event) => void;
-	},
-): InputControl<string | undefined>;
-export function useInputControl<Schema>(options: {
-	key?: string;
-	name: FieldName<Schema>;
-	formId: FormId<any, any>;
-	initialValue: FormValue<Schema>;
-	onFocus?: (event: Event) => void;
-}): InputControl<string | undefined>;
-export function useInputControl<Schema, Value>(
-	metadata: FieldMetadata<Schema, any, any>,
-	options: {
-		initialize: (value: FormValue<Schema> | undefined) => Value;
-		serialize?: (value: Value) => string;
-		onFocus?: (event: Event) => void;
-	},
-): InputControl<Value>;
-export function useInputControl<Schema, Value>(options: {
-	key?: string;
-	name: FieldName<Schema>;
-	formId: FormId<any, any>;
-	initialValue: FormValue<Schema>;
-	initialize: (value: FormValue<Schema> | undefined) => Value;
-	serialize?: (value: Value) => string;
-	onFocus?: (event: Event) => void;
-}): InputControl<Value>;
-export function useInputControl<Schema, Value>(
-	metadata:
-		| FieldMetadata<Schema, any, any>
-		| {
-				key?: string;
-				name: FieldName<Schema>;
-				formId: FormId<any, any>;
-				initialValue: FormValue<Schema>;
-				initialize?: (value: FormValue<Schema> | undefined) => Value;
-				serialize?: (value: Value | string | undefined) => string;
-				onFocus?: (event: Event) => void;
-		  },
-	options?: {
-		initialize?: (value: FormValue<Schema> | undefined) => Value;
-		serialize?: (value: Value | string | undefined) => string;
-		onFocus?: (event: Event) => void;
-	},
-): InputControl<Value | string | undefined> {
+export function useInputControl(options: {
+	key?: string | undefined;
+	name: string;
+	formId: string;
+	initialValue: string | undefined;
+}): InputControl {
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
 		blur: false,
 	});
-	const [key, setKey] = useState(metadata.key);
-	const initialize =
-		options?.initialize ??
-		('initialize' in metadata && metadata.initialize
-			? metadata.initialize
-			: (value) => value?.toString());
-	const serialize =
-		options?.serialize ??
-		('serialize' in metadata && metadata.serialize
-			? metadata.serialize
-			: undefined);
-	const onFocus =
-		options?.onFocus ?? ('onFocus' in metadata ? metadata.onFocus : undefined);
-	const optionsRef = useRef({
-		initialize,
-		serialize,
-		onFocus,
-	});
-	const [value, setValue] = useState(() => initialize(metadata.initialValue));
+	const [key, setKey] = useState(options.key);
+	const [value, setValue] = useState(() => options.initialValue);
 
-	if (key !== metadata.key) {
-		setValue(initialize(metadata.initialValue));
-		setKey(metadata.key);
+	if (key !== options.key) {
+		setValue(options.initialValue);
+		setKey(options.key);
 	}
-
-	useEffect(() => {
-		optionsRef.current = {
-			initialize,
-			serialize,
-			onFocus,
-		};
-	});
 
 	useEffect(() => {
 		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
 			return (event: Event) => {
 				const element = getFieldElement(
-					metadata.formId,
-					metadata.name,
+					options.formId,
+					options.name,
 					(element) => element === event.target,
 				);
 
 				if (element) {
-					if (listener === 'focus') {
-						optionsRef.current?.onFocus?.(event);
-					}
-
 					eventDispatched.current[listener] = true;
 				}
 			};
@@ -171,17 +93,13 @@ export function useInputControl<Schema, Value>(
 			document.removeEventListener('focusin', focusHandler, true);
 			document.removeEventListener('focusout', blurHandler, true);
 		};
-	}, [metadata.formId, metadata.name]);
+	}, [options.formId, options.name]);
 
-	const handlers = useMemo<
-		Omit<InputControl<Value | string | undefined>, 'value'>
-	>(() => {
+	const handlers = useMemo<Omit<InputControl, 'value'>>(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
-					const element = getEventTarget(metadata.formId, metadata.name);
-					const serializedValue =
-						optionsRef.current.serialize?.(value) ?? value?.toString() ?? '';
+					const element = getEventTarget(options.formId, options.name);
 
 					eventDispatched.current.change = true;
 
@@ -189,49 +107,39 @@ export function useInputControl<Schema, Value>(
 						element instanceof HTMLInputElement &&
 						(element.type === 'checkbox' || element.type === 'radio')
 					) {
-						if (
-							element.checked
-								? element.value !== serializedValue
-								: element.value === serializedValue
-						) {
-							element.click();
-						}
-					} else {
+						element.checked = element.value === value;
+					} else if (element.value !== value) {
 						// No change event will be triggered on React if `element.value` is already updated
-						if (element.value !== serializedValue) {
-							/**
-							 * Triggering react custom change event
-							 * Solution based on dom-testing-library
-							 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-							 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
-							 */
-							const { set: valueSetter } =
-								Object.getOwnPropertyDescriptor(element, 'value') || {};
-							const prototype = Object.getPrototypeOf(element);
-							const { set: prototypeValueSetter } =
-								Object.getOwnPropertyDescriptor(prototype, 'value') || {};
 
-							if (
-								prototypeValueSetter &&
-								valueSetter !== prototypeValueSetter
-							) {
-								prototypeValueSetter.call(element, value);
+						/**
+						 * Triggering react custom change event
+						 * Solution based on dom-testing-library
+						 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+						 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+						 */
+						const { set: valueSetter } =
+							Object.getOwnPropertyDescriptor(element, 'value') || {};
+						const prototype = Object.getPrototypeOf(element);
+						const { set: prototypeValueSetter } =
+							Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+						if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+							prototypeValueSetter.call(element, value);
+						} else {
+							if (valueSetter) {
+								valueSetter.call(element, value);
 							} else {
-								if (valueSetter) {
-									valueSetter.call(element, value);
-								} else {
-									throw new Error(
-										'The given element does not have a value setter',
-									);
-								}
+								throw new Error(
+									'The given element does not have a value setter',
+								);
 							}
 						}
-
-						// Dispatch input event with the updated input value
-						element.dispatchEvent(new InputEvent('input', { bubbles: true }));
-						// Dispatch change event (necessary for select to update the selected option)
-						element.dispatchEvent(new Event('change', { bubbles: true }));
 					}
+
+					// Dispatch input event with the updated input value
+					element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+					// Dispatch change event (necessary for select to update the selected option)
+					element.dispatchEvent(new Event('change', { bubbles: true }));
 				}
 
 				setValue(value);
@@ -240,7 +148,7 @@ export function useInputControl<Schema, Value>(
 			},
 			focus() {
 				if (!eventDispatched.current.focus) {
-					const element = getEventTarget(metadata.formId, metadata.name);
+					const element = getEventTarget(options.formId, options.name);
 
 					eventDispatched.current.focus = true;
 					element.dispatchEvent(
@@ -255,7 +163,7 @@ export function useInputControl<Schema, Value>(
 			},
 			blur() {
 				if (!eventDispatched.current.blur) {
-					const element = getEventTarget(metadata.formId, metadata.name);
+					const element = getEventTarget(options.formId, options.name);
 
 					eventDispatched.current.blur = true;
 					element.dispatchEvent(
@@ -269,7 +177,7 @@ export function useInputControl<Schema, Value>(
 				eventDispatched.current.blur = false;
 			},
 		};
-	}, [metadata.formId, metadata.name]);
+	}, [options.formId, options.name]);
 
 	return {
 		...handlers,

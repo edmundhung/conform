@@ -205,12 +205,11 @@ function ExampleCombobox(config: FieldProps<string, Error>) {
 	const [query, setQuery] = useState('');
 	const { meta } = useField(config);
 	const control = useInputControl(meta);
-	const filteredPeople =
-		control.value === ''
-			? people
-			: people.filter((person) =>
-					person.name.toLowerCase().includes(query.toLowerCase()),
-			  );
+	const filteredPeople = !control.value
+		? people
+		: people.filter((person) =>
+				person.name.toLowerCase().includes(query.toLowerCase()),
+		  );
 
 	return (
 		<Combobox
@@ -282,17 +281,13 @@ function ExampleCombobox(config: FieldProps<string, Error>) {
 
 function ExampleSwitch(config: FieldProps<boolean, Error>) {
 	const { meta } = useField(config);
-	const control = useInputControl(meta, {
-		initialize(value) {
-			return typeof value !== 'undefined' ? value === 'on' : false;
-		},
-	});
+	const control = useInputControl(meta);
 
 	return (
 		<Switch
 			name={meta.name}
-			checked={control.value}
-			onChange={control.change}
+			checked={control.value === 'on'}
+			onChange={(state) => control.change(state ? 'on' : '')}
 			className={classNames(
 				control.value ? 'bg-indigo-600' : 'bg-gray-200',
 				'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',

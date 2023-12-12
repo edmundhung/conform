@@ -20,13 +20,7 @@ export default function Example() {
 			'base-input': defaultValue,
 		},
 	});
-	const control = useInputControl(fields['base-input'], {
-		onFocus() {
-			if (delegateFocus) {
-				inputRef.current?.focus();
-			}
-		},
-	});
+	const control = useInputControl(fields['base-input']);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
@@ -90,7 +84,13 @@ export default function Example() {
 						type="text"
 						defaultValue={defaultValue ?? ''}
 						onChange={(event) => control.change(event.target.value)}
-						onFocus={control.focus}
+						onFocus={() => {
+							control.focus();
+
+							if (delegateFocus) {
+								inputRef.current?.focus();
+							}
+						}}
 						onBlur={control.blur}
 					/>
 				</div>
