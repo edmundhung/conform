@@ -36,7 +36,7 @@ importers:
         specifier: ^7.20.2
         version: 7.23.3(@babel/core@7.23.5)
       '@playwright/test':
-        specifier: ^1.36.2
+        specifier: ^1.40.1
         version: 1.40.1
       '@remix-run/eslint-config':
         specifier: ^1.19.3

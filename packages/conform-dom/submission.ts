@@ -327,6 +327,7 @@ export function replySubmission<Error>(
 
 	return {
 		status: context.intent ? undefined : error ? 'error' : 'success',
+		intent: context.intent ? context.intent : undefined,
 		initialValue: simplify(context.payload) ?? {},
 		error,
 		state: context.state,

@@ -5,6 +5,7 @@ import {
 	getInputProps,
 	getTextareaProps,
 	getControlButtonProps,
+	FormStateInput,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -33,7 +34,7 @@ export async function action({ request }: ActionArgs) {
 	return json(submission.reply());
 }
 
-export default function Validate() {
+export default function Intent() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
 	const { meta, fields } = useForm({
@@ -45,14 +46,15 @@ export default function Validate() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Validate" lastSubmission={lastResult}>
+			<FormStateInput context={meta.context} />
+			<Playground title="Intent" lastSubmission={lastResult}>
 				<Field label="Name" config={fields.name}>
 					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
 				<Field label="Message" config={fields.message}>
 					<textarea {...getTextareaProps(fields.message)} />
 				</Field>
-				<div className="flex flex-row gap-2">
+				<div className="flex flex-col gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
@@ -70,6 +72,46 @@ export default function Validate() {
 						)}
 					>
 						Validate Message
+					</button>
+					<button
+						className="rounded-md border p-2 hover:border-black"
+						{...getControlButtonProps(
+							meta.id,
+							intent.replace({
+								name: fields.message.name,
+								value: 'Hello World',
+							}),
+						)}
+					>
+						Update message
+					</button>
+					<button
+						className="rounded-md border p-2 hover:border-black"
+						{...getControlButtonProps(
+							meta.id,
+							intent.replace({
+								name: fields.message.name,
+								value: '',
+								validated: true,
+							}),
+						)}
+					>
+						Clear message
+					</button>
+					<button
+						className="rounded-md border p-2 hover:border-black"
+						{...getControlButtonProps(
+							meta.id,
+							intent.reset({ name: fields.message.name }),
+						)}
+					>
+						Reset message
+					</button>
+					<button
+						className="rounded-md border p-2 hover:border-black"
+						{...getControlButtonProps(meta.id, intent.reset())}
+					>
+						Reset form
 					</button>
 				</div>
 			</Playground>
