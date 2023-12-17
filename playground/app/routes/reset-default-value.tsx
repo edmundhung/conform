@@ -3,7 +3,6 @@ import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react';
-import { useEffect } from 'react';
 import { z } from 'zod';
 import { Field, Playground } from '~/components';
 
@@ -62,18 +61,15 @@ export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
 	const { meta, fields } = useForm({
+		id: `color-${color ?? 'default'}`,
 		lastResult,
 		defaultValue,
 	});
 
-	useEffect(() => {
-		document.forms.namedItem(meta.id)?.reset();
-	}, [meta.id, color]);
-
 	return (
 		<Form method="post" {...getFormProps(meta)}>
 			<Playground
-				title="Payment Form"
+				title="Reset default value"
 				description={
 					<div>
 						Please choose a color
@@ -96,7 +92,6 @@ export default function ExampleForm() {
 						</ul>
 					</div>
 				}
-				lastSubmission={lastResult}
 			>
 				<Field label="Name" config={fields.name}>
 					<input {...getInputProps(fields.name, { type: 'text' })} />

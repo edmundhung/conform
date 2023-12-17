@@ -47,7 +47,7 @@ export default function Intent() {
 	return (
 		<Form method="post" {...getFormProps(meta)}>
 			<FormStateInput context={meta.context} />
-			<Playground title="Intent" lastSubmission={lastResult}>
+			<Playground title="Intent" result={lastResult}>
 				<Field label="Name" config={fields.name}>
 					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>

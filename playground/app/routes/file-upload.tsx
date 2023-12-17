@@ -51,7 +51,7 @@ export default function FileUpload() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)} encType="multipart/form-data">
-			<Playground title="Employee Form" lastSubmission={lastResult}>
+			<Playground title="Employee Form" result={lastResult}>
 				<Alert errors={meta.errors} />
 				<Field label="Single file" config={fields.file}>
 					<input {...getInputProps(fields.file, { type: 'file' })} />

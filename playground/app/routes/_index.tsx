@@ -37,7 +37,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Template Form" lastSubmission={lastResult}>
+			<Playground title="Template Form" result={lastResult}>
 				<Field label="Name" config={fields.name}>
 					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>

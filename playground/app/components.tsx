@@ -1,13 +1,11 @@
-import type { SubmissionResult } from '@conform-to/dom';
 import type { FieldMetadata } from '@conform-to/react';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
 
 interface PlaygroundProps {
 	title: string;
 	description?: ReactNode;
 	form?: string;
-	lastSubmission?: SubmissionResult;
+	result?: Record<string, unknown>;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
@@ -18,18 +16,12 @@ export function Playground({
 	title,
 	description,
 	form,
-	lastSubmission,
+	result,
 	formAction,
 	formMethod,
 	formEncType,
 	children,
 }: PlaygroundProps) {
-	const [submission, setSubmission] = useState(lastSubmission ?? null);
-
-	useEffect(() => {
-		setSubmission(lastSubmission ?? null);
-	}, [lastSubmission]);
-
 	return (
 		<section
 			className="lg:grid lg:grid-cols-2 lg:gap-6 py-8"
@@ -40,21 +32,18 @@ export function Playground({
 					<h3 className="text-lg font-medium leading-6 text-gray-900">
 						{title}
 					</h3>
-					<div className="mt-1 mb-2 text-sm text-gray-600">{description}</div>
+					<div className="mt-4 mb-2 text-sm text-gray-600">{description}</div>
 				</header>
-				{submission ? (
-					<details open={true}>
-						<summary>Submission</summary>
-						<pre
-							className={`m-4 border-l-4 overflow-x-scroll ${
-								submission.status === 'error'
-									? 'border-pink-600'
-									: 'border-emerald-500'
-							} pl-4 py-2 mt-4`}
-						>
-							{JSON.stringify(submission, null, 2)}
-						</pre>
-					</details>
+				{result ? (
+					<pre
+						className={`m-4 border-l-4 overflow-x-scroll ${
+							result.status === 'error'
+								? 'border-pink-600'
+								: 'border-emerald-500'
+						} pl-4 py-2 mt-4`}
+					>
+						{JSON.stringify(result, null, 2)}
+					</pre>
 				) : null}
 			</aside>
 			<div>
@@ -66,7 +55,6 @@ export function Playground({
 						<button
 							type="reset"
 							className="inline-flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-							onClick={() => setSubmission(null)}
 							form={form}
 						>
 							Reset
@@ -74,7 +62,6 @@ export function Playground({
 						<button
 							type="submit"
 							className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-							onClick={() => setSubmission(null)}
 							form={form}
 							formAction={formAction}
 							formMethod={formMethod}

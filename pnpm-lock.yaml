@@ -6,7 +6,19 @@ settings:
 
 importers:
   .:
-    dependencies:
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.17.8
+        version: 7.23.5
+      '@babel/preset-env':
+        specifier: ^7.20.2
+        version: 7.23.5(@babel/core@7.23.5)
+      '@babel/preset-react':
+        specifier: ^7.18.6
+        version: 7.23.3(@babel/core@7.23.5)
+      '@babel/preset-typescript':
+        specifier: ^7.20.2
+        version: 7.23.3(@babel/core@7.23.5)
       '@conform-to/dom':
         specifier: workspace:*
         version: link:packages/conform-dom
@@ -22,19 +34,6 @@ importers:
       '@conform-to/zod':
         specifier: workspace:*
         version: link:packages/conform-zod
-    devDependencies:
-      '@babel/core':
-        specifier: ^7.17.8
-        version: 7.23.5
-      '@babel/preset-env':
-        specifier: ^7.20.2
-        version: 7.23.5(@babel/core@7.23.5)
-      '@babel/preset-react':
-        specifier: ^7.18.6
-        version: 7.23.3(@babel/core@7.23.5)
-      '@babel/preset-typescript':
-        specifier: ^7.20.2
-        version: 7.23.3(@babel/core@7.23.5)
       '@playwright/test':
         specifier: ^1.40.1
         version: 1.40.1
@@ -77,6 +76,12 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.3.3
+      yup:
+        specifier: ^0.32.11
+        version: 0.32.11
+      zod:
+        specifier: 3.21.4
+        version: 3.21.4
 
   examples/chakra-ui:
     dependencies:

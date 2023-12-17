@@ -58,7 +58,7 @@ export default function SimpleList() {
 	return (
 		<Form method="post" {...getFormProps(meta)}>
 			<FormStateInput context={meta.context} />
-			<Playground title="Simple list" lastSubmission={lastResult}>
+			<Playground title="Simple list" result={lastResult}>
 				<Alert errors={fields.items.errors} />
 				<ol>
 					{items.map((task, index) => (

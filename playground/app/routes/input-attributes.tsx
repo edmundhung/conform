@@ -121,7 +121,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" encType="multipart/form-data" {...getFormProps(meta)}>
-			<Playground title="Input attributes" lastSubmission={lastResult}>
+			<Playground title="Input attributes" result={lastResult}>
 				<Alert id={meta.errorId} errors={meta.errors} />
 				<Field label="Title" config={fields.title}>
 					<input

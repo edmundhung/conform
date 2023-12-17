@@ -66,7 +66,7 @@ export default function ValidationFlow() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Validation Flow" lastSubmission={lastResult}>
+			<Playground title="Validation Flow" result={lastResult}>
 				<Field label="Email" config={fields.email}>
 					<input {...getInputProps(fields.email, { type: 'email' })} />
 				</Field>

@@ -82,7 +82,7 @@ export default function EmployeeForm() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Employee Form" lastSubmission={lastResult}>
+			<Playground title="Employee Form" result={lastResult}>
 				<Field label="Email" config={fields.email}>
 					<input
 						{...getInputProps(fields.email, { type: 'email' })}

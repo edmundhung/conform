@@ -39,7 +39,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Collection" lastSubmission={lastResult}>
+			<Playground title="Collection" result={lastResult}>
 				<Field label="Single choice" config={fields.singleChoice}>
 					{getCollectionProps(fields.singleChoice, {
 						type: 'radio',

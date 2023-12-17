@@ -203,7 +203,11 @@ export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
 		return value.map(simplify);
 	}
 
-	if (value === null || isFile(value)) {
+	if (
+		(typeof value === 'string' && value === '') ||
+		value === null ||
+		isFile(value)
+	) {
 		return;
 	}
 

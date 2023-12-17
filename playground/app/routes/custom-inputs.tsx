@@ -51,7 +51,7 @@ export default function Example() {
 	return (
 		<FormProvider context={meta.context}>
 			<Form method="post" {...getFormProps(meta)}>
-				<Playground title="Custom Inputs Form" lastSubmission={lastResult}>
+				<Playground title="Custom Inputs Form" result={lastResult}>
 					<Field label="Headless ListBox" config={fields.language}>
 						<CustomSelect name={fields.language.name} formId={meta.id} />
 					</Field>

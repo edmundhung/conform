@@ -8,7 +8,7 @@ import {
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
-import { Playground, Field } from '~/components';
+import { Playground } from '~/components';
 
 function getConstraint(url: URL) {
 	if (url.searchParams.has('constraint')) {
@@ -112,43 +112,59 @@ export default function Example() {
 			}}
 			noValidate
 		>
-			<Playground title="Validity State" lastSubmission={submission}>
-				<Field label="Field" config={{ errors: error.field }}>
-					{constraint.type === 'checkbox' || constraint.type === 'radio' ? (
-						<input
-							name="field"
-							defaultChecked={
-								(constraint.value ?? 'on') === submission?.payload.field
-							}
-							{...constraint}
-						/>
-					) : constraint.type === 'select' ? (
-						<select
-							name="field"
-							defaultValue={submission?.payload.field ?? ''}
-							{...constraint}
-						>
-							{constraint.multiple ? null : (
-								<option value="">Select an option</option>
-							)}
-							<option value="a">Option A</option>
-							<option value="b">Option B</option>
-							<option value="c">Option C</option>
-						</select>
-					) : constraint.type === 'textarea' ? (
-						<textarea
-							name="field"
-							defaultValue={submission?.payload.field ?? ''}
-							{...constraint}
-						/>
-					) : (
-						<input
-							name="field"
-							defaultValue={submission?.payload.field ?? ''}
-							{...constraint}
-						/>
-					)}
-				</Field>
+			<Playground title="Validity State" result={submission}>
+				<div className="mb-4">
+					<div>
+						<label className="block text-sm font-medium text-gray-700">
+							Field
+						</label>
+						{constraint.type === 'checkbox' || constraint.type === 'radio' ? (
+							<input
+								name="field"
+								defaultChecked={
+									(constraint.value ?? 'on') === submission?.payload.field
+								}
+								{...constraint}
+							/>
+						) : constraint.type === 'select' ? (
+							<select
+								name="field"
+								defaultValue={submission?.payload.field ?? ''}
+								{...constraint}
+							>
+								{constraint.multiple ? null : (
+									<option value="">Select an option</option>
+								)}
+								<option value="a">Option A</option>
+								<option value="b">Option B</option>
+								<option value="c">Option C</option>
+							</select>
+						) : constraint.type === 'textarea' ? (
+							<textarea
+								name="field"
+								defaultValue={submission?.payload.field ?? ''}
+								{...constraint}
+							/>
+						) : (
+							<input
+								name="field"
+								defaultValue={submission?.payload.field ?? ''}
+								{...constraint}
+							/>
+						)}
+					</div>
+					<div className="my-1 space-y-0.5">
+						{!error.field ? (
+							<p />
+						) : (
+							error.field.map((message) => (
+								<p className="text-pink-600 text-sm" key={message}>
+									{message}
+								</p>
+							))
+						)}
+					</div>
+				</div>
 			</Playground>
 		</Form>
 	);

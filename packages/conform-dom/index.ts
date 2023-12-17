@@ -22,7 +22,7 @@ export {
 	INTENT,
 	STATE,
 	intent,
-	serializeIntent as serializeIntent,
+	serializeIntent,
 	requestIntent,
 	parse,
 } from './submission';

@@ -131,7 +131,7 @@ export default function Example() {
 
 	return (
 		<Form method="post" {...getFormProps(meta)}>
-			<Playground title="Mutliple Errors" lastSubmission={lastResult}>
+			<Playground title="Mutliple Errors" result={lastResult}>
 				<Field label="Username" config={fields.username}>
 					<input {...getInputProps(fields.username, { type: 'text' })} />
 				</Field>

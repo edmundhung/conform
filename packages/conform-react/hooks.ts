@@ -52,7 +52,7 @@ export function useForm<
 	Value = Schema,
 >(
 	options: Pretty<
-		FormOptions<Schema, Error, Value> & {
+		Omit<FormOptions<Schema, Error, Value>, 'formId'> & {
 			/**
 			 * If the form id is provided, Id for label,
 			 * input and error elements will be derived.
@@ -72,14 +72,7 @@ export function useForm<
 	fields: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
 } {
 	const formId = useFormId<Schema, Error>(options.id);
-	const initializeContext = () => createFormContext(formId, options);
-	const [context, setFormContext] = useState(initializeContext);
-
-	// If id changes, reinitialize the form immediately
-	if (formId !== context.formId) {
-		setFormContext(initializeContext);
-	}
-
+	const [context] = useState(() => createFormContext({ ...options, formId }));
 	const optionsRef = useRef(options);
 
 	useSafeLayoutEffect(() => {
@@ -102,14 +95,12 @@ export function useForm<
 
 		if (options.lastResult) {
 			context.report(options.lastResult);
-		} else {
-			document.forms.namedItem(context.formId)?.reset();
 		}
 	}, [context, options.lastResult]);
 
 	useSafeLayoutEffect(() => {
 		optionsRef.current = options;
-		context.update(options);
+		context.update({ ...options, formId });
 	});
 
 	const subjectRef = useSubjectRef();

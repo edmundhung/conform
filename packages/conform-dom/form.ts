@@ -7,6 +7,7 @@ import {
 	isPlainObject,
 	isPrefix,
 	setValue,
+	simplify,
 } from './formdata';
 import {
 	type FieldElement,
@@ -112,6 +113,11 @@ export type FormState<Error> = FormMeta<Error> & {
 };
 
 export type FormOptions<Schema, Error, Value = Schema> = {
+	/**
+	 * The id of the form.
+	 */
+	formId: string;
+
 	/**
 	 * An object representing the initial value of the form.
 	 */
@@ -327,9 +333,10 @@ function createStateProxy<State>(
 function createValueProxy(
 	value: Record<string, unknown>,
 ): Record<string, unknown> {
+	const val = simplify(value);
 	return createStateProxy((name, proxy) => {
 		if (name === '') {
-			return value;
+			return val;
 		}
 
 		const paths = getPaths(name);
@@ -487,7 +494,7 @@ function createFormState<Error>(
 			!state ||
 			prev.defaultValue !== next.defaultValue ||
 			prev.value !== next.value
-				? createDirtyProxy(next.defaultValue, next.value)
+				? createDirtyProxy(defaultValue, value)
 				: state.dirty,
 	};
 }
@@ -497,7 +504,6 @@ export function createFormContext<
 	Error,
 	Value,
 >(
-	formId: string,
 	options: FormOptions<Schema, Error, Value>,
 ): FormContext<Schema, Error, Value> {
 	let subscribers: Array<{
@@ -509,8 +515,8 @@ export function createFormContext<
 	let state = createFormState(meta);
 
 	function getFormElement(): HTMLFormElement {
-		const element = document.forms.namedItem(formId);
-		invariant(element !== null, `Form#${formId} does not exist`);
+		const element = document.forms.namedItem(latestOptions.formId);
+		invariant(element !== null, `Form#${latestOptions.formId} does not exist`);
 		return element;
 	}
 
@@ -628,7 +634,7 @@ export function createFormContext<
 
 		invariant(
 			form === getFormElement(),
-			`The submit event is dispatched by form#${form.id} instead of form#${formId}`,
+			`The submit event is dispatched by form#${form.id} instead of form#${latestOptions.formId}`,
 		);
 
 		const input = getStateInput(form);
@@ -711,7 +717,7 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			requestIntent(formId, intent.validate(element.name));
+			requestIntent(latestOptions.formId, intent.validate(element.name));
 		}
 	}
 
@@ -726,7 +732,7 @@ export function createFormContext<
 			return;
 		}
 
-		requestIntent(formId, intent.validate(element.name));
+		requestIntent(latestOptions.formId, intent.validate(element.name));
 	}
 
 	function reset(event: Event) {
@@ -794,7 +800,13 @@ export function createFormContext<
 	}
 
 	function update(options: FormOptions<Schema, Error, Value>) {
+		const currentFormId = latestOptions.formId;
+
 		latestOptions = options;
+
+		if (latestOptions.formId !== currentFormId) {
+			getFormElement().reset();
+		}
 	}
 
 	function subscribe(
@@ -818,7 +830,7 @@ export function createFormContext<
 	}
 
 	return {
-		formId,
+		formId: latestOptions.formId,
 		submit,
 		reset,
 		input,
