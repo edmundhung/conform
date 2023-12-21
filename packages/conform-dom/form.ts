@@ -414,25 +414,23 @@ function createDirtyProxy(
 	);
 }
 
-function shouldNotify<Schema>(config: {
-	prev: Record<string, Schema>;
-	next: Record<string, Schema>;
-	compareFn?: (prev: Schema | undefined, next: Schema | undefined) => boolean;
-	cache: Record<string, boolean>;
-	scope?: SubscriptionScope;
-}): boolean {
-	if (config.scope) {
-		const prefixes = config.scope.prefix ?? [];
-		const names = config.scope.name ?? [];
-		const compareFn =
-			config.compareFn ??
-			((prev, next) => JSON.stringify(prev) !== JSON.stringify(next));
+function shouldNotify<Schema>(
+	prev: Record<string, Schema>,
+	next: Record<string, Schema>,
+	cache: Record<string, boolean>,
+	scope: SubscriptionScope | undefined,
+	compareFn: (prev: Schema | undefined, next: Schema | undefined) => boolean = (
+		prev,
+		next,
+	) => JSON.stringify(prev) !== JSON.stringify(next),
+): boolean {
+	if (scope && prev !== next) {
+		const prefixes = scope.prefix ?? [];
+		const names = scope.name ?? [];
 		const list =
 			prefixes.length === 0
 				? names
-				: Array.from(
-						new Set([...Object.keys(config.prev), ...Object.keys(config.next)]),
-				  );
+				: Array.from(new Set([...Object.keys(prev), ...Object.keys(next)]));
 
 		for (const name of list) {
 			if (
@@ -440,9 +438,9 @@ function shouldNotify<Schema>(config: {
 				names.includes(name) ||
 				prefixes.some((prefix) => isPrefix(name, prefix))
 			) {
-				config.cache[name] ??= compareFn(config.prev[name], config.next[name]);
+				cache[name] ??= compareFn(prev[name], next[name]);
 
-				if (config.cache[name]) {
+				if (cache[name]) {
 					return true;
 				}
 			}
@@ -548,45 +546,45 @@ export function createFormContext<
 				!subject ||
 				(subject.status &&
 					prevState.submissionStatus !== nextState.submissionStatus) ||
-				shouldNotify({
-					prev: prevState.error,
-					next: nextState.error,
-					cache: cache.error,
-					scope: subject.error,
-				}) ||
-				shouldNotify({
-					prev: prevState.initialValue,
-					next: nextState.initialValue,
-					cache: cache.initialValue,
-					scope: subject.initialValue,
-				}) ||
-				shouldNotify({
-					prev: prevState.key,
-					next: nextState.key,
-					compareFn: (prev, next) => prev !== next,
-					cache: cache.key,
-					scope: subject.key,
-				}) ||
-				shouldNotify({
-					prev: prevState.valid,
-					next: nextState.valid,
-					compareFn: compareBoolean,
-					cache: cache.valid,
-					scope: subject.valid,
-				}) ||
-				shouldNotify({
-					prev: prevState.dirty,
-					next: nextState.dirty,
-					compareFn: compareBoolean,
-					cache: cache.dirty,
-					scope: subject.dirty,
-				}) ||
-				shouldNotify({
-					prev: prevState.value,
-					next: nextState.value,
-					cache: cache.value,
-					scope: subject.value,
-				})
+				shouldNotify(
+					prevState.error,
+					nextState.error,
+					cache.error,
+					subject.error,
+				) ||
+				shouldNotify(
+					prevState.initialValue,
+					nextState.initialValue,
+					cache.initialValue,
+					subject.initialValue,
+				) ||
+				shouldNotify(
+					prevState.key,
+					nextState.key,
+					cache.key,
+					subject.key,
+					(prev, next) => prev !== next,
+				) ||
+				shouldNotify(
+					prevState.valid,
+					nextState.valid,
+					cache.valid,
+					subject.valid,
+					compareBoolean,
+				) ||
+				shouldNotify(
+					prevState.dirty,
+					nextState.dirty,
+					cache.dirty,
+					subject.dirty,
+					compareBoolean,
+				) ||
+				shouldNotify(
+					prevState.value,
+					nextState.value,
+					cache.value,
+					subject.value,
+				)
 			) {
 				subscriber.callback();
 			}
