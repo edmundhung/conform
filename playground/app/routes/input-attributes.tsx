@@ -81,7 +81,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm<Schema>({
+	const { form, fieldset } = useForm<Schema>({
 		id: 'test',
 		lastResult,
 		constraint: {
@@ -120,35 +120,35 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" encType="multipart/form-data" {...getFormProps(meta)}>
+		<Form method="post" encType="multipart/form-data" {...getFormProps(form)}>
 			<Playground title="Input attributes" result={lastResult}>
-				<Alert id={meta.errorId} errors={meta.errors} />
-				<Field label="Title" config={fields.title}>
+				<Alert id={form.errorId} errors={form.errors} />
+				<Field label="Title" config={fieldset.title}>
 					<input
-						{...getInputProps(fields.title, {
+						{...getInputProps(fieldset.title, {
 							type: 'text',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Description" config={fields.description}>
+				<Field label="Description" config={fieldset.description}>
 					<textarea
-						{...getTextareaProps(fields.description, {
+						{...getTextareaProps(fieldset.description, {
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Image" config={fields.images}>
+				<Field label="Image" config={fieldset.images}>
 					<input
-						{...getInputProps(fields.images, {
+						{...getInputProps(fieldset.images, {
 							type: 'file',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Tags" config={fields.tags}>
+				<Field label="Tags" config={fieldset.tags}>
 					<select
-						{...getSelectProps(fields.tags, {
+						{...getSelectProps(fieldset.tags, {
 							ariaDescribedBy: enableDescription,
 						})}
 					>
@@ -162,16 +162,16 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" config={fields.rating}>
+				<Field label="Rating" config={fieldset.rating}>
 					<input
-						{...getInputProps(fields.rating, {
+						{...getInputProps(fieldset.rating, {
 							type: 'number',
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Released" config={fields.released}>
-					{getCollectionProps(fields.released, {
+				<Field label="Released" config={fieldset.released}>
+					{getCollectionProps(fieldset.released, {
 						type: 'radio',
 						options: ['yes', 'no'],
 						ariaAttributes: true,
@@ -187,8 +187,8 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Languages" config={fields.languages}>
-					{getCollectionProps(fields.languages, {
+				<Field label="Languages" config={fieldset.languages}>
+					{getCollectionProps(fieldset.languages, {
 						type: 'checkbox',
 						options: ['en', 'de', 'jp'],
 						ariaDescribedBy: enableDescription,

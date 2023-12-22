@@ -23,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const lastResult = useActionData() as any;
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
@@ -32,27 +32,27 @@ export function Component() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Email</label>
 				<input
-					className={!fields.email.valid ? 'error' : ''}
-					{...getInputProps(fields.email)}
+					className={!fieldset.email.valid ? 'error' : ''}
+					{...getInputProps(fieldset.email)}
 				/>
-				<div>{fields.email.errors}</div>
+				<div>{fieldset.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...getInputProps(fields.password, { type: 'password' })}
+					className={!fieldset.password.valid ? 'error' : ''}
+					{...getInputProps(fieldset.password, { type: 'password' })}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{fieldset.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
+					<input {...getInputProps(fieldset.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

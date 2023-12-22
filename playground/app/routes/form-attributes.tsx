@@ -26,7 +26,7 @@ export default function Example() {
 		encType: null,
 	});
 	const options = useLoaderData<typeof loader>();
-	const { meta } = useForm({
+	const { form } = useForm({
 		onSubmit(event, { method, action, encType }) {
 			event.preventDefault();
 
@@ -39,7 +39,7 @@ export default function Example() {
 			action={options.formAction ?? undefined}
 			method={options.formMethod ?? undefined}
 			encType={options.formEncType ?? undefined}
-			{...getFormProps(meta)}
+			{...getFormProps(form)}
 		>
 			<Playground
 				title="Form attributes"

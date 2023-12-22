@@ -37,26 +37,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const lastResult = useActionData() as SubmissionResult<string[]>;
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema: todosSchema });
 		},
 	});
-	const tasks = fields.tasks.getFieldList();
+	const tasks = fieldset.tasks.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Title</label>
 				<input
-					className={!fields.title.valid ? 'error' : ''}
-					{...getInputProps(fields.title)}
+					className={!fieldset.title.valid ? 'error' : ''}
+					{...getInputProps(fieldset.title)}
 				/>
-				<div>{fields.title.errors}</div>
+				<div>{fieldset.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fields.tasks.errors}</div>
+			<div className="form-error">{fieldset.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -83,23 +83,27 @@ export function Component() {
 						</div>
 						<button
 							{...getControlButtonProps(
-								meta.id,
-								intent.remove({ name: fields.tasks.name, index }),
+								form.id,
+								intent.remove({ name: fieldset.tasks.name, index }),
 							)}
 						>
 							Delete
 						</button>
 						<button
 							{...getControlButtonProps(
-								meta.id,
-								intent.reorder({ name: fields.tasks.name, from: index, to: 0 }),
+								form.id,
+								intent.reorder({
+									name: fieldset.tasks.name,
+									from: index,
+									to: 0,
+								}),
 							)}
 						>
 							Move to top
 						</button>
 						<button
 							{...getControlButtonProps(
-								meta.id,
+								form.id,
 								intent.replace({ name: task.name, value: { content: '' } }),
 							)}
 						>
@@ -110,8 +114,8 @@ export function Component() {
 			})}
 			<button
 				{...getControlButtonProps(
-					meta.id,
-					intent.insert({ name: fields.tasks.name }),
+					form.id,
+					intent.insert({ name: fieldset.tasks.name }),
 				)}
 			>
 				Add task

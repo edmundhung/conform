@@ -55,56 +55,56 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const name = fields.name.name;
-	const message = fields.message.name;
+	const name = fieldset.name.name;
+	const message = fieldset.message.name;
 	const description = (
 		<ul className="space-y-1 list-disc">
-			<FormMetadata formId={meta.id} subject="initialValue" />
-			<FormMetadata formId={meta.id} subject="value" />
-			<FormMetadata formId={meta.id} subject="key" />
-			<FormMetadata formId={meta.id} subject="dirty" />
-			<FormMetadata formId={meta.id} subject="valid" />
-			<FormMetadata formId={meta.id} subject="allValid" />
-			<FormMetadata formId={meta.id} subject="errors" />
-			<FormMetadata formId={meta.id} subject="allErrors" />
-			<FieldMetadata formId={meta.id} name={name} subject="initialValue" />
-			<FieldMetadata formId={meta.id} name={name} subject="value" />
-			<FieldMetadata formId={meta.id} name={name} subject="key" />
-			<FieldMetadata formId={meta.id} name={name} subject="dirty" />
-			<FieldMetadata formId={meta.id} name={name} subject="valid" />
-			<FieldMetadata formId={meta.id} name={name} subject="errors" />
-			<FieldMetadata formId={meta.id} name={message} subject="initialValue" />
-			<FieldMetadata formId={meta.id} name={message} subject="value" />
-			<FieldMetadata formId={meta.id} name={message} subject="key" />
-			<FieldMetadata formId={meta.id} name={message} subject="dirty" />
-			<FieldMetadata formId={meta.id} name={message} subject="valid" />
-			<FieldMetadata formId={meta.id} name={message} subject="errors" />
+			<FormMetadata formId={form.id} subject="initialValue" />
+			<FormMetadata formId={form.id} subject="value" />
+			<FormMetadata formId={form.id} subject="key" />
+			<FormMetadata formId={form.id} subject="dirty" />
+			<FormMetadata formId={form.id} subject="valid" />
+			<FormMetadata formId={form.id} subject="allValid" />
+			<FormMetadata formId={form.id} subject="errors" />
+			<FormMetadata formId={form.id} subject="allErrors" />
+			<FieldMetadata formId={form.id} name={name} subject="initialValue" />
+			<FieldMetadata formId={form.id} name={name} subject="value" />
+			<FieldMetadata formId={form.id} name={name} subject="key" />
+			<FieldMetadata formId={form.id} name={name} subject="dirty" />
+			<FieldMetadata formId={form.id} name={name} subject="valid" />
+			<FieldMetadata formId={form.id} name={name} subject="errors" />
+			<FieldMetadata formId={form.id} name={message} subject="initialValue" />
+			<FieldMetadata formId={form.id} name={message} subject="value" />
+			<FieldMetadata formId={form.id} name={message} subject="key" />
+			<FieldMetadata formId={form.id} name={message} subject="dirty" />
+			<FieldMetadata formId={form.id} name={message} subject="valid" />
+			<FieldMetadata formId={form.id} name={message} subject="errors" />
 		</ul>
 	);
 
 	return (
-		<FormProvider context={meta.context}>
-			<Form method="post" {...getFormProps(meta)}>
+		<FormProvider context={form.context}>
+			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Fine-grained Subscription" description={description}>
 					<Field label="Name">
-						<input {...getInputProps(fields.name)} />
+						<input {...getInputProps(fieldset.name)} />
 					</Field>
 					<Field label="Message">
-						<textarea {...getTextareaProps(fields.message)} rows={6} />
+						<textarea {...getTextareaProps(fieldset.message)} rows={6} />
 					</Field>
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...getControlButtonProps(
-								meta.id,
-								intent.reset({ name: fields.message.name }),
+								form.id,
+								intent.reset({ name: fieldset.message.name }),
 							)}
 						>
 							Reset message
@@ -134,13 +134,13 @@ const FieldMetadata = memo(function FieldMetadata({
 	subject: keyof FieldMetadata<string, string[]>;
 }) {
 	const renderCount = useRenderCount();
-	const field = useField({
+	const { field } = useField({
 		formId,
 		name,
 	});
 
 	// eslint-disable-next-line no-console
-	console.log(`${name}.${subject}: ${JSON.stringify(field.meta[subject])}`);
+	console.log(`${name}.${subject}: ${JSON.stringify(field[subject])}`);
 
 	return <li>{`${name}.${subject}: ${renderCount}`}</li>;
 });

@@ -14,13 +14,13 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function Example() {
 	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		defaultValue: {
 			'native-input': defaultValue,
 			'base-input': defaultValue,
 		},
 	});
-	const control = useInputControl(fields['base-input']);
+	const control = useInputControl(fieldset['base-input']);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
@@ -42,7 +42,7 @@ export default function Example() {
 
 	return (
 		<form
-			{...getFormProps(meta)}
+			{...getFormProps(form)}
 			onChange={log}
 			onInput={log}
 			onFocusCapture={log}

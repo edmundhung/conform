@@ -122,7 +122,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { validator, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseForm(formData, validator)
@@ -130,10 +130,10 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Mutliple Errors" result={lastResult}>
-				<Field label="Username" config={fields.username}>
-					<input {...getInputProps(fields.username, { type: 'text' })} />
+				<Field label="Username" config={fieldset.username}>
+					<input {...getInputProps(fieldset.username, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

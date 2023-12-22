@@ -17,7 +17,7 @@ type Error = {
 };
 
 export default function Example() {
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -27,10 +27,10 @@ export default function Example() {
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">
-			<FormProvider context={meta.context}>
+			<FormProvider context={form.context}>
 				<form
 					className="space-y-8 divide-y divide-gray-200"
-					{...getFormProps(meta)}
+					{...getFormProps(form)}
 				>
 					<div className="space-y-8 divide-y divide-gray-200">
 						<div>
@@ -50,10 +50,13 @@ export default function Example() {
 										Owner (List box)
 									</label>
 									<div className="mt-1">
-										<ExampleListBox name={fields.owner.name} formId={meta.id} />
+										<ExampleListBox
+											name={fieldset.owner.name}
+											formId={form.id}
+										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.owner.errors?.validationMessage}
+										{fieldset.owner.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -63,12 +66,12 @@ export default function Example() {
 									</label>
 									<div className="mt-1">
 										<ExampleCombobox
-											name={fields.assignee.name}
-											formId={meta.id}
+											name={fieldset.assignee.name}
+											formId={form.id}
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.assignee.errors?.validationMessage}
+										{fieldset.assignee.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -78,12 +81,12 @@ export default function Example() {
 									</label>
 									<div className="mt-1">
 										<ExampleSwitch
-											name={fields.enabled.name}
-											formId={meta.id}
+											name={fieldset.enabled.name}
+											formId={form.id}
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.enabled.errors?.validationMessage}
+										{fieldset.enabled.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -93,12 +96,12 @@ export default function Example() {
 									</label>
 									<div className="mt-1">
 										<ExampleRadioGroup
-											name={fields.color.name}
-											formId={meta.id}
+											name={fieldset.color.name}
+											formId={form.id}
 										/>
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.color.errors?.validationMessage}
+										{fieldset.color.errors?.validationMessage}
 									</p>
 								</div>
 							</div>
@@ -140,11 +143,11 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function ExampleListBox(config: FieldProps<string, Error>) {
-	const { meta } = useField(config);
-	const control = useInputControl(meta);
+	const { field } = useField(config);
+	const control = useInputControl(field);
 
 	return (
-		<Listbox name={meta.name} value={control.value} onChange={control.change}>
+		<Listbox name={field.name} value={control.value} onChange={control.change}>
 			<div className="relative mt-1">
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
@@ -203,8 +206,8 @@ function ExampleListBox(config: FieldProps<string, Error>) {
 
 function ExampleCombobox(config: FieldProps<string, Error>) {
 	const [query, setQuery] = useState('');
-	const { meta } = useField(config);
-	const control = useInputControl(meta);
+	const { field } = useField(config);
+	const control = useInputControl(field);
 	const filteredPeople = !control.value
 		? people
 		: people.filter((person) =>
@@ -214,7 +217,7 @@ function ExampleCombobox(config: FieldProps<string, Error>) {
 	return (
 		<Combobox
 			as="div"
-			name={meta.name}
+			name={field.name}
 			value={control.value}
 			onChange={control.change}
 			nullable
@@ -280,12 +283,12 @@ function ExampleCombobox(config: FieldProps<string, Error>) {
 }
 
 function ExampleSwitch(config: FieldProps<boolean, Error>) {
-	const { meta } = useField(config);
-	const control = useInputControl(meta);
+	const { field } = useField(config);
+	const control = useInputControl(field);
 
 	return (
 		<Switch
-			name={meta.name}
+			name={field.name}
 			checked={control.value === 'on'}
 			onChange={(state) => control.change(state ? 'on' : '')}
 			className={classNames(
@@ -306,8 +309,8 @@ function ExampleSwitch(config: FieldProps<boolean, Error>) {
 }
 
 function ExampleRadioGroup(config: FieldProps<string, Error>) {
-	const { meta } = useField(config);
-	const control = useInputControl(meta);
+	const { field } = useField(config);
+	const control = useInputControl(field);
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{
@@ -326,7 +329,7 @@ function ExampleRadioGroup(config: FieldProps<string, Error>) {
 
 	return (
 		<RadioGroup
-			name={meta.name}
+			name={field.name}
 			value={control.value}
 			onChange={control.change}
 		>

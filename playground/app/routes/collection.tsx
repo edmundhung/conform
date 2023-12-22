@@ -28,7 +28,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		id: 'collection',
 		lastResult,
 		shouldRevalidate: 'onInput',
@@ -38,10 +38,10 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Collection" result={lastResult}>
-				<Field label="Single choice" config={fields.singleChoice}>
-					{getCollectionProps(fields.singleChoice, {
+				<Field label="Single choice" config={fieldset.singleChoice}>
+					{getCollectionProps(fieldset.singleChoice, {
 						type: 'radio',
 						options: ['x', 'y', 'z'],
 					}).map((props) => (
@@ -51,8 +51,8 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Multiple choice" config={fields.multipleChoice}>
-					{getCollectionProps(fields.multipleChoice, {
+				<Field label="Multiple choice" config={fieldset.multipleChoice}>
+					{getCollectionProps(fieldset.multipleChoice, {
 						type: 'checkbox',
 						options: ['a', 'b', 'c', 'd'],
 					}).map((props) => (

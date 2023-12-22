@@ -55,7 +55,7 @@ export default function ValidationFlow() {
 		showInputWithNoName,
 	} = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		shouldValidate,
 		shouldRevalidate,
@@ -65,17 +65,17 @@ export default function ValidationFlow() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Validation Flow" result={lastResult}>
-				<Field label="Email" config={fields.email}>
-					<input {...getInputProps(fields.email, { type: 'email' })} />
+				<Field label="Email" config={fieldset.email}>
+					<input {...getInputProps(fieldset.email, { type: 'email' })} />
 				</Field>
-				<Field label="Password" config={fields.password}>
-					<input {...getInputProps(fields.password, { type: 'password' })} />
+				<Field label="Password" config={fieldset.password}>
+					<input {...getInputProps(fieldset.password, { type: 'password' })} />
 				</Field>
-				<Field label="Confirm password" config={fields.confirmPassword}>
+				<Field label="Confirm password" config={fieldset.confirmPassword}>
 					<input
-						{...getInputProps(fields.confirmPassword, {
+						{...getInputProps(fieldset.confirmPassword, {
 							type: 'password',
 						})}
 					/>

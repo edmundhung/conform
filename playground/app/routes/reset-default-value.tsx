@@ -60,14 +60,14 @@ export async function action({ request }: ActionArgs) {
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		id: `color-${color ?? 'default'}`,
 		lastResult,
 		defaultValue,
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground
 				title="Reset default value"
 				description={
@@ -93,11 +93,11 @@ export default function ExampleForm() {
 					</div>
 				}
 			>
-				<Field label="Name" config={fields.name}>
-					<input {...getInputProps(fields.name, { type: 'text' })} />
+				<Field label="Name" config={fieldset.name}>
+					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" config={fields.code}>
-					<input {...getInputProps(fields.code, { type: 'color' })} />
+				<Field label="Code" config={fieldset.code}>
+					<input {...getInputProps(fieldset.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

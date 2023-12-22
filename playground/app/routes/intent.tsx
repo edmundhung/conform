@@ -37,7 +37,7 @@ export async function action({ request }: ActionArgs) {
 export default function Intent() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
@@ -45,21 +45,21 @@ export default function Intent() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
-			<FormStateInput context={meta.context} />
+		<Form method="post" {...getFormProps(form)}>
+			<FormStateInput context={form.context} />
 			<Playground title="Intent" result={lastResult}>
-				<Field label="Name" config={fields.name}>
-					<input {...getInputProps(fields.name, { type: 'text' })} />
+				<Field label="Name" config={fieldset.name}>
+					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" config={fields.message}>
-					<textarea {...getTextareaProps(fields.message)} />
+				<Field label="Message" config={fieldset.message}>
+					<textarea {...getTextareaProps(fieldset.message)} />
 				</Field>
 				<div className="flex flex-col gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
-							intent.validate(fields.name.name),
+							form.id,
+							intent.validate(fieldset.name.name),
 						)}
 					>
 						Validate Name
@@ -67,8 +67,8 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
-							intent.validate(fields.message.name),
+							form.id,
+							intent.validate(fieldset.message.name),
 						)}
 					>
 						Validate Message
@@ -76,9 +76,9 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
+							form.id,
 							intent.replace({
-								name: fields.message.name,
+								name: fieldset.message.name,
 								value: 'Hello World',
 							}),
 						)}
@@ -88,9 +88,9 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
+							form.id,
 							intent.replace({
-								name: fields.message.name,
+								name: fieldset.message.name,
 								value: '',
 								validated: true,
 							}),
@@ -101,15 +101,15 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
-							intent.reset({ name: fields.message.name }),
+							form.id,
+							intent.reset({ name: fieldset.message.name }),
 						)}
 					>
 						Reset message
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(meta.id, intent.reset())}
+						{...getControlButtonProps(form.id, intent.reset())}
 					>
 						Reset form
 					</button>

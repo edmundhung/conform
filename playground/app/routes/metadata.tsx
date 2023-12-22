@@ -47,7 +47,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		id: 'example',
 		lastResult,
 		defaultValue: {
@@ -57,40 +57,40 @@ export default function Example() {
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const bookmarks = fields.bookmarks.getFieldList();
+	const bookmarks = fieldset.bookmarks.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground
 				title="Metadata"
 				result={{
 					form: {
-						status: meta.status,
-						initialValue: meta.initialValue,
-						value: meta.value,
-						dirty: meta.dirty,
-						valid: meta.valid,
-						errors: meta.errors,
-						allValid: meta.allValid,
-						allErrors: meta.allErrors,
+						status: form.status,
+						initialValue: form.initialValue,
+						value: form.value,
+						dirty: form.dirty,
+						valid: form.valid,
+						errors: form.errors,
+						allValid: form.allValid,
+						allErrors: form.allErrors,
 					},
 					title: {
-						initialValue: fields.title.initialValue,
-						value: fields.title.value,
-						dirty: fields.title.dirty,
-						valid: fields.title.valid,
-						errors: fields.title.errors,
-						allValid: fields.title.allValid,
-						allErrors: fields.title.allErrors,
+						initialValue: fieldset.title.initialValue,
+						value: fieldset.title.value,
+						dirty: fieldset.title.dirty,
+						valid: fieldset.title.valid,
+						errors: fieldset.title.errors,
+						allValid: fieldset.title.allValid,
+						allErrors: fieldset.title.allErrors,
 					},
 					bookmarks: {
-						initialValue: fields.bookmarks.initialValue,
-						value: fields.bookmarks.value,
-						dirty: fields.bookmarks.dirty,
-						valid: fields.bookmarks.valid,
-						errors: fields.bookmarks.errors,
-						allValid: fields.bookmarks.allValid,
-						allErrors: fields.bookmarks.allErrors,
+						initialValue: fieldset.bookmarks.initialValue,
+						value: fieldset.bookmarks.value,
+						dirty: fieldset.bookmarks.dirty,
+						valid: fieldset.bookmarks.valid,
+						errors: fieldset.bookmarks.errors,
+						allValid: fieldset.bookmarks.allValid,
+						allErrors: fieldset.bookmarks.allErrors,
 					},
 					'bookmarks[0]': {
 						initialValue: bookmarks[0].initialValue,
@@ -112,10 +112,13 @@ export default function Example() {
 					},
 				}}
 			>
-				<Field label="Title" config={fields.title}>
-					<input {...getInputProps(fields.title)} />
+				<Field label="Title" config={fieldset.title}>
+					<input {...getInputProps(fieldset.title)} />
 				</Field>
-				<Alert id={fields.bookmarks.errorId} errors={fields.bookmarks.errors} />
+				<Alert
+					id={fieldset.bookmarks.errorId}
+					errors={fieldset.bookmarks.errors}
+				/>
 				{bookmarks.map((bookmark, index) => {
 					const { name, url } = bookmark.getFieldset();
 

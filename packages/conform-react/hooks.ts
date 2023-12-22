@@ -68,8 +68,8 @@ export function useForm<
 		}
 	>,
 ): {
-	meta: FormMetadata<Schema, Error>;
-	fields: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
+	form: FormMetadata<Schema, Error>;
+	fieldset: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
 } {
 	const formId = useFormId<Schema, Error>(options.id);
 	const [context] = useState(() => createFormContext({ ...options, formId }));
@@ -106,11 +106,11 @@ export function useForm<
 	const subjectRef = useSubjectRef();
 	const state = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
-	const meta = getFormMetadata(formId, state, subjectRef, context, noValidate);
+	const form = getFormMetadata(formId, state, subjectRef, context, noValidate);
 
 	return {
-		meta,
-		fields: meta.getFieldset(),
+		form,
+		fieldset: form.getFieldset(),
 	};
 }
 
@@ -150,15 +150,15 @@ export function useField<
 				name?: undefined;
 		  },
 ): {
-	meta: FieldMetadata<FieldSchema, Error, FormSchema>;
-	fields: FieldMetadata<
+	field: FieldMetadata<FieldSchema, Error, FormSchema>;
+	fieldset: FieldMetadata<
 		FieldSchema,
 		Error,
 		FormSchema
 	>['getFieldset'] extends Function
 		? ReturnType<FieldMetadata<FieldSchema, Error, FormSchema>['getFieldset']>
 		: never;
-	list: FieldMetadata<
+	fieldlist: FieldMetadata<
 		FieldSchema,
 		Error,
 		FormSchema
@@ -170,7 +170,7 @@ export function useField<
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
-	const meta = getFieldMetadata<FieldSchema, Error, FormSchema>(
+	const field = getFieldMetadata<FieldSchema, Error, FormSchema>(
 		options.formId,
 		state,
 		subjectRef,
@@ -185,14 +185,14 @@ export function useField<
 	);
 
 	return {
-		meta,
+		field,
 		// @ts-expect-error The types is used as a hint only
-		get fields() {
-			return meta.getFieldset();
+		get fieldset() {
+			return field.getFieldset();
 		},
 		// @ts-expect-error The types is used as a hint only
-		get list() {
-			return meta.getFieldList();
+		get fieldlist() {
+			return field.getFieldList();
 		},
 		form,
 	};

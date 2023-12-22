@@ -28,7 +28,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
@@ -36,10 +36,10 @@ export default function Example() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Template Form" result={lastResult}>
-				<Field label="Name" config={fields.name}>
-					<input {...getInputProps(fields.name, { type: 'text' })} />
+				<Field label="Name" config={fieldset.name}>
+					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

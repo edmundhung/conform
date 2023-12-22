@@ -29,7 +29,7 @@ import {
 } from '@mui/material';
 
 export default function ExampleForm() {
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -39,8 +39,8 @@ export default function ExampleForm() {
 
 	return (
 		<Container maxWidth="sm">
-			<FormProvider context={meta.context}>
-				<form {...getFormProps(meta)}>
+			<FormProvider context={form.context}>
+				<form {...getFormProps(form)}>
 					<Stack spacing={4} marginY={4}>
 						<header>
 							<Typography variant="h6" component="h1">
@@ -56,16 +56,16 @@ export default function ExampleForm() {
 							label="Email (TextField)"
 							type="email"
 							name="email"
-							error={!fields.email.valid}
-							helperText={fields.email.errors?.validationMessage}
+							error={!fieldset.email.valid}
+							helperText={fieldset.email.errors?.validationMessage}
 							required
 						/>
 
 						<TextField
 							label="Description (TextField - multline)"
-							name={fields.description.name}
-							error={!fields.description.valid}
-							helperText={fields.description.errors?.validationMessage}
+							name={fieldset.description.name}
+							error={!fieldset.description.valid}
+							helperText={fieldset.description.errors?.validationMessage}
 							inputProps={{
 								minLength: 10,
 							}}
@@ -75,39 +75,39 @@ export default function ExampleForm() {
 
 						<ExampleSelect
 							label="Language (Select)"
-							name={fields.language.name}
-							formId={meta.id}
+							name={fieldset.language.name}
+							formId={form.id}
 							required
 						/>
 
 						<ExampleAutocomplete
 							label="Movie (Autocomplete)"
-							name={fields.movie.name}
-							formId={meta.id}
+							name={fieldset.movie.name}
+							formId={form.id}
 							required
 						/>
 
 						<FormControl
 							component="fieldset"
 							variant="standard"
-							error={!fields.subscribe.valid}
+							error={!fieldset.subscribe.valid}
 							required
 						>
 							<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
 							<FormGroup>
 								<FormControlLabel
-									control={<Checkbox name={fields.subscribe.name} required />}
+									control={<Checkbox name={fieldset.subscribe.name} required />}
 									label="Newsletter"
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{fields.subscribe.errors?.validationMessage}
+								{fieldset.subscribe.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={!fields.active.valid}
+							error={!fieldset.active.valid}
 							required
 						>
 							<FormLabel>Active (Radio)</FormLabel>
@@ -124,13 +124,13 @@ export default function ExampleForm() {
 								/>
 							</RadioGroup>
 							<FormHelperText>
-								{fields.active.errors?.validationMessage}
+								{fieldset.active.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={Boolean(fields.enabled.errors?.validationMessage)}
+							error={Boolean(fieldset.enabled.errors?.validationMessage)}
 							required
 						>
 							<FormLabel>Enabled (Switch)</FormLabel>
@@ -141,21 +141,21 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{fields.enabled.errors?.validationMessage}
+								{fieldset.enabled.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<ExampleRating
 							label="Score (Rating)"
-							name={fields.score.name}
-							formId={fields.score.formId}
+							name={fieldset.score.name}
+							formId={fieldset.score.formId}
 							required
 						/>
 
 						<ExampleSlider
 							label="Progress (Slider)"
-							name={fields.progress.name}
-							formId={fields.progress.formId}
+							name={fieldset.progress.name}
+							formId={fieldset.progress.formId}
 							required
 						/>
 
@@ -183,21 +183,21 @@ type Field<Schema> = FieldProps<
 };
 
 function ExampleSelect({ label, required, formId, name }: Field<string>) {
-	const { meta } = useField({
+	const { field } = useField({
 		formId,
 		name,
 	});
-	const control = useInputControl(meta);
+	const control = useInputControl(field);
 
 	return (
 		<TextField
 			label={label}
-			name={meta.name}
+			name={field.name}
 			value={control.value ?? ''}
 			onChange={(event) => control.change(event.target.value)}
 			onBlur={control.blur}
-			error={!meta.valid}
-			helperText={meta.errors?.validationMessage}
+			error={!field.valid}
+			helperText={field.errors?.validationMessage}
 			select
 			required={required}
 		>
@@ -210,11 +210,11 @@ function ExampleSelect({ label, required, formId, name }: Field<string>) {
 }
 
 function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
-	const { meta } = useField({
+	const { field } = useField({
 		formId,
 		name,
 	});
-	const control = useInputControl(meta);
+	const control = useInputControl(field);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
@@ -228,9 +228,9 @@ function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
 				<TextField
 					{...params}
 					label={label}
-					name={meta.name}
-					error={!meta.valid}
-					helperText={meta.errors?.validationMessage}
+					name={field.name}
+					error={!field.valid}
+					helperText={field.errors?.validationMessage}
 					required={required}
 				/>
 			)}
@@ -239,14 +239,14 @@ function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
 }
 
 function ExampleRating({ label, name, formId, required }: Field<number>) {
-	const { meta } = useField({
+	const { field } = useField({
 		formId,
 		name,
 	});
-	const control = useInputControl(meta);
+	const control = useInputControl(field);
 
 	return (
-		<FormControl variant="standard" error={!meta.valid} required={required}>
+		<FormControl variant="standard" error={!field.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Rating
 				value={control.value ? Number(control.value) : null}
@@ -255,23 +255,23 @@ function ExampleRating({ label, name, formId, required }: Field<number>) {
 				}}
 				onBlur={control.blur}
 			/>
-			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
+			<FormHelperText>{field.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
 
 function ExampleSlider({ label, name, formId, required }: Field<number>) {
-	const { meta } = useField({
+	const { field } = useField({
 		formId,
 		name,
 	});
-	const control = useInputControl(meta);
+	const control = useInputControl(field);
 
 	return (
-		<FormControl variant="standard" error={!meta.valid} required={required}>
+		<FormControl variant="standard" error={!field.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Slider
-				name={meta.name}
+				name={field.name}
 				value={control.value ? Number(control.value) : 0}
 				onChange={(_, value) => {
 					if (Array.isArray(value)) {
@@ -281,7 +281,7 @@ function ExampleSlider({ label, name, formId, required }: Field<number>) {
 					control.change(value.toString());
 				}}
 			/>
-			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
+			<FormHelperText>{field.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }

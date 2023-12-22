@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
@@ -53,13 +53,13 @@ export default function SimpleList() {
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const items = fields.items.getFieldList();
+	const items = fieldset.items.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
-			<FormStateInput context={meta.context} />
+		<Form method="post" {...getFormProps(form)}>
+			<FormStateInput context={form.context} />
 			<Playground title="Simple list" result={lastResult}>
-				<Alert errors={fields.items.errors} />
+				<Alert errors={fieldset.items.errors} />
 				<ol>
 					{items.map((task, index) => (
 						<li key={task.key} className="border rounded-md p-4 mb-4">
@@ -70,8 +70,8 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...getControlButtonProps(
-										meta.id,
-										intent.remove({ name: fields.items.name, index }),
+										form.id,
+										intent.remove({ name: fieldset.items.name, index }),
 									)}
 								>
 									Delete
@@ -79,9 +79,9 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...getControlButtonProps(
-										meta.id,
+										form.id,
 										intent.reorder({
-											name: fields.items.name,
+											name: fieldset.items.name,
 											from: index,
 											to: 0,
 										}),
@@ -92,7 +92,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...getControlButtonProps(
-										meta.id,
+										form.id,
 										intent.replace({ name: task.name, value: '' }),
 									)}
 								>
@@ -101,7 +101,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...getControlButtonProps(
-										meta.id,
+										form.id,
 										intent.reset({ name: task.name }),
 									)}
 								>
@@ -115,9 +115,9 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
+							form.id,
 							intent.insert({
-								name: fields.items.name,
+								name: fieldset.items.name,
 								defaultValue: 'Top item',
 								index: 0,
 							}),
@@ -128,8 +128,8 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
-							intent.insert({ name: fields.items.name, defaultValue: '' }),
+							form.id,
+							intent.insert({ name: fieldset.items.name, defaultValue: '' }),
 						)}
 					>
 						Insert bottom
@@ -137,8 +137,8 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
-							meta.id,
-							intent.reset({ name: fields.items.name }),
+							form.id,
+							intent.reset({ name: fieldset.items.name }),
 						)}
 					>
 						Reset

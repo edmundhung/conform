@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const lastResult = useActionData() as SubmissionResult<string[]>;
-	const { meta, fields } = useForm({
+	const { form, fieldset } = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
@@ -87,30 +87,30 @@ export function Component() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(meta)}>
+		<Form method="post" {...getFormProps(form)}>
 			<label>
 				<div>Username</div>
 				<input
-					className={!fields.username.valid ? 'error' : ''}
-					{...getInputProps(fields.username)}
+					className={!fieldset.username.valid ? 'error' : ''}
+					{...getInputProps(fieldset.username)}
 				/>
-				<div>{fields.username.errors}</div>
+				<div>{fieldset.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...getInputProps(fields.password, { type: 'password' })}
+					className={!fieldset.password.valid ? 'error' : ''}
+					{...getInputProps(fieldset.password, { type: 'password' })}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{fieldset.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!fields.confirmPassword.valid ? 'error' : ''}
-					{...getInputProps(fields.confirmPassword, { type: 'password' })}
+					className={!fieldset.confirmPassword.valid ? 'error' : ''}
+					{...getInputProps(fieldset.confirmPassword, { type: 'password' })}
 				/>
-				<div>{fields.confirmPassword.errors}</div>
+				<div>{fieldset.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<button>Signup</button>
