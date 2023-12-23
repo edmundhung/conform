@@ -3,13 +3,12 @@
 	"private": true,
 	"sideEffects": false,
 	"scripts": {
-		"build": "run-s build:*",
+		"start": "run-s build:* && remix-serve build",
 		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
 		"build:remix": "remix build",
 		"dev": "run-p dev:*",
 		"dev:style": "tailwindcss -i ./styles.css -o ./app/styles.css --watch",
-		"dev:remix": "remix dev",
-		"start": "remix-serve build"
+		"dev:remix": "remix dev"
 	},
 	"dependencies": {
 		"@conform-to/dom": "workspace:*",

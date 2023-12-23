@@ -1,14 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { beforeEach, describe, test, expect } from 'vitest';
 import { getZodConstraint, parseWithZod, refine } from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
 import { createFormData } from './helpers';
 
-test.beforeEach(() => {
+beforeEach(() => {
 	installGlobals();
 });
 
-test.describe('conform-zod', () => {
+describe('conform-zod', () => {
 	test('getZodConstraint', () => {
 		const schema = z
 			.object({
@@ -283,7 +283,7 @@ test.describe('conform-zod', () => {
 		// });
 	});
 
-	test.describe('parseWithZod', () => {
+	describe('parseWithZod', () => {
 		test('z.string', () => {
 			const schema = z.object({
 				test: z

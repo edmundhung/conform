@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { describe, test, expect } from 'vitest';
 import { parseWithYup, getFieldsetConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
 import { STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
-test.describe('conform-yup', () => {
+describe('conform-yup', () => {
 	const schema = yup
 		.object({
 			text: yup

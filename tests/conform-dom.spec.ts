@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { describe, test, expect } from 'vitest';
 import {
 	parse,
 	getPaths,
@@ -10,7 +10,7 @@ import {
 } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
-test.describe('conform-dom', () => {
+describe('conform-dom', () => {
 	test('parse()', () => {
 		const successSubmission = parse(
 			new URLSearchParams([

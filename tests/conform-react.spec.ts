@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { describe, test, expect } from 'vitest';
 import {
 	type FieldMetadata,
 	getInputProps,
@@ -7,8 +7,9 @@ import {
 	getFieldsetProps,
 } from '@conform-to/react';
 
-function createFieldMetadata(): FieldMetadata<any> {
+function createFieldMetadata(): FieldMetadata<string> {
 	return {
+		key: undefined,
 		id: 'test',
 		name: 'message',
 		formId: 'example',
@@ -17,13 +18,11 @@ function createFieldMetadata(): FieldMetadata<any> {
 		constraint: {},
 		initialValue: undefined,
 		value: undefined,
-		error: undefined,
-		allError: {},
+		errors: undefined,
+		allErrors: {},
 		allValid: true,
 		valid: true,
 		dirty: false,
-		fields: {},
-		items: [],
 	};
 }
 
@@ -35,7 +34,7 @@ function getProps(metadata: FieldMetadata<any>) {
 	};
 }
 
-test.describe('conform-react', () => {
+describe('conform-react', () => {
 	test('getInputProps', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
