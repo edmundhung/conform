@@ -5,7 +5,7 @@ function getUsernameInput(container: Locator) {
 	return container.locator('[name="username"]');
 }
 
-async function runValidationScenario(page: Page) {
+async function runTest(page: Page) {
 	const playground = getPlayground(page);
 	const username = getUsernameInput(playground.container);
 
@@ -66,44 +66,20 @@ async function runValidationScenario(page: Page) {
 	});
 }
 
-test.describe.skip('Custom Validation', () => {
+test.describe('Parse with yup', () => {
 	test('Client Validation', async ({ page }) => {
-		await page.goto('/multiple-errors');
-		await runValidationScenario(page);
+		await page.goto('/parse-with-yup');
+		await runTest(page);
 	});
 
 	test('Server Validation', async ({ page }) => {
-		await page.goto('/multiple-errors?noClientValidate=yes');
-		await runValidationScenario(page);
-	});
-});
-
-test.describe('Zod', () => {
-	test('Client Validation', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=zod');
-		await runValidationScenario(page);
-	});
-
-	test('Server Validation', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=zod&noClientValidate=yes');
-		await runValidationScenario(page);
-	});
-});
-
-test.describe('Yup', () => {
-	test('Client Validation', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=yup');
-		await runValidationScenario(page);
-	});
-
-	test('Server Validation', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=yup&noClientValidate=yes');
-		await runValidationScenario(page);
+		await page.goto('/parse-with-yup?noClientValidate=yes');
+		await runTest(page);
 	});
 });
 
 test('Form reset', async ({ page }) => {
-	await page.goto('/multiple-errors?validator=zod');
+	await page.goto('/parse-with-yup');
 
 	const playground = getPlayground(page);
 	const username = getUsernameInput(playground.container);
@@ -124,18 +100,8 @@ test('Form reset', async ({ page }) => {
 test.describe('No JS', () => {
 	test.use({ javaScriptEnabled: false });
 
-	test.skip('Custom Validation', async ({ page }) => {
-		await page.goto('/multiple-errors');
-		await runValidationScenario(page);
-	});
-
-	test('Zod', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=zod');
-		await runValidationScenario(page);
-	});
-
-	test.skip('Yup', async ({ page }) => {
-		await page.goto('/multiple-errors?validator=yup');
-		await runValidationScenario(page);
+	test.skip('Validation', async ({ page }) => {
+		await page.goto('/parse-with-yup');
+		await runTest(page);
 	});
 });

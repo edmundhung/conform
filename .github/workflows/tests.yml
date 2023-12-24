@@ -31,6 +31,8 @@ jobs:
       run: pnpm run build
     - name: Run tests
       run: pnpm exec vitest
+    - name: Typecheck
+      run: pnpm -r run typecheck
 
   e2e:
     name: E2E Tests
