@@ -63,7 +63,7 @@ export default function SimpleList() {
 				<ol>
 					{items.map((task, index) => (
 						<li key={task.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} config={task}>
+							<Field label={`Item #${index + 1}`} meta={task}>
 								<input {...getInputProps(task, { type: 'text' })} />
 							</Field>
 							<div className="flex flex-row gap-2">

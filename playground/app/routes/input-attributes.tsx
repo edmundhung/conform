@@ -123,7 +123,7 @@ export default function Example() {
 		<Form method="post" encType="multipart/form-data" {...getFormProps(form)}>
 			<Playground title="Input attributes" result={lastResult}>
 				<Alert id={form.errorId} errors={form.errors} />
-				<Field label="Title" config={fieldset.title}>
+				<Field label="Title" meta={fieldset.title}>
 					<input
 						{...getInputProps(fieldset.title, {
 							type: 'text',
@@ -131,14 +131,14 @@ export default function Example() {
 						})}
 					/>
 				</Field>
-				<Field label="Description" config={fieldset.description}>
+				<Field label="Description" meta={fieldset.description}>
 					<textarea
 						{...getTextareaProps(fieldset.description, {
 							ariaDescribedBy: enableDescription,
 						})}
 					/>
 				</Field>
-				<Field label="Image" config={fieldset.images}>
+				<Field label="Image" meta={fieldset.images}>
 					<input
 						{...getInputProps(fieldset.images, {
 							type: 'file',
@@ -146,7 +146,7 @@ export default function Example() {
 						})}
 					/>
 				</Field>
-				<Field label="Tags" config={fieldset.tags}>
+				<Field label="Tags" meta={fieldset.tags}>
 					<select
 						{...getSelectProps(fieldset.tags, {
 							ariaDescribedBy: enableDescription,
@@ -162,7 +162,7 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" config={fieldset.rating}>
+				<Field label="Rating" meta={fieldset.rating}>
 					<input
 						{...getInputProps(fieldset.rating, {
 							type: 'number',
@@ -170,7 +170,7 @@ export default function Example() {
 						})}
 					/>
 				</Field>
-				<Field label="Released" config={fieldset.released}>
+				<Field label="Released" meta={fieldset.released}>
 					{getCollectionProps(fieldset.released, {
 						type: 'radio',
 						options: ['yes', 'no'],
@@ -187,7 +187,7 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Languages" config={fieldset.languages}>
+				<Field label="Languages" meta={fieldset.languages}>
 					{getCollectionProps(fieldset.languages, {
 						type: 'checkbox',
 						options: ['en', 'de', 'jp'],

@@ -40,7 +40,7 @@ export default function Example() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Collection" result={lastResult}>
-				<Field label="Single choice" config={fieldset.singleChoice}>
+				<Field label="Single choice" meta={fieldset.singleChoice}>
 					{getCollectionProps(fieldset.singleChoice, {
 						type: 'radio',
 						options: ['x', 'y', 'z'],
@@ -51,7 +51,7 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Multiple choice" config={fieldset.multipleChoice}>
+				<Field label="Multiple choice" meta={fieldset.multipleChoice}>
 					{getCollectionProps(fieldset.multipleChoice, {
 						type: 'checkbox',
 						options: ['a', 'b', 'c', 'd'],

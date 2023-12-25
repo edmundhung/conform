@@ -79,11 +79,11 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	config?: FieldMetadata<any, string[], any>;
+	meta?: FieldMetadata<any, string[], any>;
 	children: ReactNode;
 }
 
-export function Field({ label, inline, config, children }: FieldProps) {
+export function Field({ label, inline, meta, children }: FieldProps) {
 	return (
 		<div className="mb-4">
 			<div
@@ -94,18 +94,18 @@ export function Field({ label, inline, config, children }: FieldProps) {
 				}
 			>
 				<label
-					htmlFor={config?.id}
+					htmlFor={meta?.id}
 					className="block text-sm font-medium text-gray-700"
 				>
 					{label}
 				</label>
 				{children}
 			</div>
-			<div id={config?.errorId} className="my-1 space-y-0.5">
-				{!config?.errors?.length ? (
+			<div id={meta?.errorId} className="my-1 space-y-0.5">
+				{!meta?.errors?.length ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					config.errors.map((message) => (
+					meta.errors.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>

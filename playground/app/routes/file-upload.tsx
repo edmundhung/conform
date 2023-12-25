@@ -53,10 +53,10 @@ export default function FileUpload() {
 		<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
 			<Playground title="Employee Form" result={lastResult}>
 				<Alert errors={form.errors} />
-				<Field label="Single file" config={fieldset.file}>
+				<Field label="Single file" meta={fieldset.file}>
 					<input {...getInputProps(fieldset.file, { type: 'file' })} />
 				</Field>
-				<Field label="Multiple files" config={fieldset.files}>
+				<Field label="Multiple files" meta={fieldset.files}>
 					<input
 						{...getInputProps(fieldset.files, { type: 'file' })}
 						multiple

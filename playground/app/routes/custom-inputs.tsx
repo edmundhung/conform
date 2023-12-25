@@ -52,10 +52,10 @@ export default function Example() {
 		<FormProvider context={form.context}>
 			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Custom Inputs Form" result={lastResult}>
-					<Field label="Headless ListBox" config={fieldset.language}>
+					<Field label="Headless ListBox" meta={fieldset.language}>
 						<CustomSelect name={fieldset.language.name} formId={form.id} />
 					</Field>
-					<Field label="Radix Checkbox" config={fieldset.tos}>
+					<Field label="Radix Checkbox" meta={fieldset.tos}>
 						<div className="flex items-center">
 							<CustomCheckbox name={fieldset.tos.name} formId={form.id} />
 							<label

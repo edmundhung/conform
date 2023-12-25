@@ -61,7 +61,7 @@ export default function Example() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Mutliple Errors" result={lastResult}>
-				<Field label="Username" config={fieldset.username}>
+				<Field label="Username" meta={fieldset.username}>
 					<input {...getInputProps(fieldset.username, { type: 'text' })} />
 				</Field>
 			</Playground>

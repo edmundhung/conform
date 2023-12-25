@@ -48,10 +48,10 @@ export default function Intent() {
 		<Form method="post" {...getFormProps(form)}>
 			<FormStateInput context={form.context} />
 			<Playground title="Intent" result={lastResult}>
-				<Field label="Name" config={fieldset.name}>
+				<Field label="Name" meta={fieldset.name}>
 					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
-				<Field label="Message" config={fieldset.message}>
+				<Field label="Message" meta={fieldset.message}>
 					<textarea {...getTextareaProps(fieldset.message)} />
 				</Field>
 				<div className="flex flex-col gap-2">

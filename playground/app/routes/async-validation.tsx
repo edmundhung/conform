@@ -83,13 +83,13 @@ export default function EmployeeForm() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Employee Form" result={lastResult}>
-				<Field label="Email" config={fieldset.email}>
+				<Field label="Email" meta={fieldset.email}>
 					<input
 						{...getInputProps(fieldset.email, { type: 'email' })}
 						autoComplete="off"
 					/>
 				</Field>
-				<Field label="Title" config={fieldset.title}>
+				<Field label="Title" meta={fieldset.title}>
 					<input {...getInputProps(fieldset.title, { type: 'text' })} />
 				</Field>
 			</Playground>

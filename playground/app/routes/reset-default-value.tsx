@@ -93,10 +93,10 @@ export default function ExampleForm() {
 					</div>
 				}
 			>
-				<Field label="Name" config={fieldset.name}>
+				<Field label="Name" meta={fieldset.name}>
 					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" config={fieldset.code}>
+				<Field label="Code" meta={fieldset.code}>
 					<input {...getInputProps(fieldset.code, { type: 'color' })} />
 				</Field>
 			</Playground>

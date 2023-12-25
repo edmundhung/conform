@@ -112,7 +112,7 @@ export default function Example() {
 					},
 				}}
 			>
-				<Field label="Title" config={fieldset.title}>
+				<Field label="Title" meta={fieldset.title}>
 					<input {...getInputProps(fieldset.title)} />
 				</Field>
 				<Alert
@@ -125,10 +125,10 @@ export default function Example() {
 					return (
 						<fieldset key={bookmark.key} {...getFieldsetProps(bookmark)}>
 							<legend className="mt-2 mb-4">Bookmark #{index + 1}</legend>
-							<Field label="Name" config={name}>
+							<Field label="Name" meta={name}>
 								<input {...getInputProps(name)} />
 							</Field>
-							<Field label="Url" config={url}>
+							<Field label="Url" meta={url}>
 								<input {...getInputProps(url)} />
 							</Field>
 						</fieldset>

@@ -38,7 +38,7 @@ export default function Example() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Template Form" result={lastResult}>
-				<Field label="Name" config={fieldset.name}>
+				<Field label="Name" meta={fieldset.name}>
 					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
 			</Playground>

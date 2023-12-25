@@ -67,13 +67,13 @@ export default function ValidationFlow() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<Playground title="Validation Flow" result={lastResult}>
-				<Field label="Email" config={fieldset.email}>
+				<Field label="Email" meta={fieldset.email}>
 					<input {...getInputProps(fieldset.email, { type: 'email' })} />
 				</Field>
-				<Field label="Password" config={fieldset.password}>
+				<Field label="Password" meta={fieldset.password}>
 					<input {...getInputProps(fieldset.password, { type: 'password' })} />
 				</Field>
-				<Field label="Confirm password" config={fieldset.confirmPassword}>
+				<Field label="Confirm password" meta={fieldset.confirmPassword}>
 					<input
 						{...getInputProps(fieldset.confirmPassword, {
 							type: 'password',
