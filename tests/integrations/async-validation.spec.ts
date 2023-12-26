@@ -31,7 +31,7 @@ async function runValidationScenario(page: Page) {
 
 		// When validting the email field
 		if (
-			value['__intent__'] === 'validate/email' &&
+			value['__control__'] === 'validate/email' &&
 			[
 				'hey@conform.gu',
 				'hey@conform.gui',
@@ -43,7 +43,7 @@ async function runValidationScenario(page: Page) {
 		}
 
 		// When clicking on the submit button
-		if (typeof value['__intent__'] === 'undefined') {
+		if (typeof value['__control__'] === 'undefined') {
 			return route.continue();
 		}
 

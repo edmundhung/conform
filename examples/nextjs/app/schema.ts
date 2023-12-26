@@ -1,4 +1,4 @@
-import type { Intent } from '@conform-to/react';
+import type { FormControl } from '@conform-to/react';
 import { refine } from '@conform-to/zod';
 import { z } from 'zod';
 
@@ -19,7 +19,7 @@ export const loginSchema = z.object({
 });
 
 export function createSignupSchema(
-	intent: Intent | null,
+	control: FormControl | null,
 	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
@@ -39,9 +39,9 @@ export function createSignupSchema(
 						refine(ctx, {
 							validate: () => constraint.isUsernameUnique?.(username),
 							when:
-								!intent ||
-								(intent.type === 'validate' &&
-									intent.payload.name === 'username'),
+								!control ||
+								(control.type === 'validate' &&
+									control.payload.name === 'username'),
 							message: 'Username is already used',
 						}),
 					),

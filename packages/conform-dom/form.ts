@@ -19,18 +19,18 @@ import {
 } from './dom';
 import { clone, generateId, invariant } from './util';
 import {
-	type Intent,
+	type FormControl,
 	type Submission,
 	type SubmissionResult,
-	INTENT,
+	CONTROL,
 	STATE,
 	getSubmissionContext,
 	setListState,
 	setListValue,
 	setState,
 	serialize,
-	intent,
-	serializeIntent,
+	control,
+	serializeControl,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -215,8 +215,8 @@ export type FormContext<
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
-	dispatch(intent: Intent): void;
-	getControlButtonProps(intent: Intent): ControlButtonProps;
+	dispatch(control: FormControl): void;
+	getControlButtonProps(control: FormControl): ControlButtonProps;
 	getState(): FormState<Error>;
 	getSerializedState(): string;
 };
@@ -248,8 +248,8 @@ function createFormMeta<Schema, Error, Value>(
 		error: (lastResult?.error as Record<string, Error>) ?? {},
 	};
 
-	if (lastResult?.intent) {
-		handleIntent(result, lastResult.intent);
+	if (lastResult?.control) {
+		handleControl(result, lastResult.control);
 	}
 
 	return result;
@@ -272,22 +272,25 @@ function getDefaultKey(
 	}, {});
 }
 
-function handleIntent<Error>(
+function handleControl<Error>(
 	meta: FormMeta<Error>,
-	intent: Intent,
+	control: FormControl,
 	initialized?: boolean,
 ): void {
-	switch (intent.type) {
+	switch (control.type) {
 		case 'replace': {
-			const name = intent.payload.name ?? '';
-			const value = intent.payload.value;
+			const name = control.payload.name ?? '';
+			const value = control.payload.value;
 
 			updateValue(meta, name, value);
 			break;
 		}
 		case 'reset': {
-			if (typeof intent.payload.value === 'undefined' || intent.payload.value) {
-				const name = intent.payload.name ?? '';
+			if (
+				typeof control.payload.value === 'undefined' ||
+				control.payload.value
+			) {
+				const name = control.payload.name ?? '';
 				const value = getValue(meta.defaultValue, name);
 
 				updateValue(meta, name, value);
@@ -301,8 +304,8 @@ function handleIntent<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, intent, generateId);
-				setListValue(meta.initialValue, intent);
+				setListState(meta.key, control, generateId);
+				setListValue(meta.initialValue, control);
 			}
 			break;
 		}
@@ -721,7 +724,7 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			dispatch(intent.validate({ name: element.name }));
+			dispatch(control.validate({ name: element.name }));
 		}
 	}
 
@@ -736,7 +739,7 @@ export function createFormContext<
 			return;
 		}
 
-		dispatch(intent.validate({ name: element.name }));
+		dispatch(control.validate({ name: element.name }));
 	}
 
 	function reset(event: Event) {
@@ -780,8 +783,8 @@ export function createFormContext<
 			validated: result.state?.validated ?? {},
 		};
 
-		if (result.intent) {
-			handleIntent(update, result.intent, true);
+		if (result.control) {
+			handleControl(update, result.control, true);
 		}
 
 		updateFormMeta(update);
@@ -826,10 +829,10 @@ export function createFormContext<
 		return state;
 	}
 
-	function dispatch(intent: Intent): void {
+	function dispatch(control: FormControl): void {
 		const form = getFormElement();
 		const submitter = document.createElement('button');
-		const buttonProps = getControlButtonProps(intent);
+		const buttonProps = getControlButtonProps(control);
 
 		submitter.name = buttonProps.name;
 		submitter.value = buttonProps.value;
@@ -841,10 +844,10 @@ export function createFormContext<
 		form?.removeChild(submitter);
 	}
 
-	function getControlButtonProps(intent: Intent): ControlButtonProps {
+	function getControlButtonProps(control: FormControl): ControlButtonProps {
 		return {
-			name: INTENT,
-			value: serializeIntent(intent),
+			name: CONTROL,
+			value: serializeControl(control),
 			form: latestOptions.formId,
 			formNoValidate: true,
 		};

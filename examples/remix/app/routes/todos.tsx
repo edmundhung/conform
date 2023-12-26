@@ -1,6 +1,6 @@
 import {
 	useForm,
-	intent,
+	control,
 	getFormProps,
 	getInputProps,
 	getFieldsetProps,
@@ -83,14 +83,14 @@ export default function Example() {
 						</div>
 						<button
 							{...form.getControlButtonProps(
-								intent.remove({ name: fieldset.tasks.name, index }),
+								control.remove({ name: fieldset.tasks.name, index }),
 							)}
 						>
 							Delete
 						</button>
 						<button
 							{...form.getControlButtonProps(
-								intent.reorder({
+								control.reorder({
 									name: fieldset.tasks.name,
 									from: index,
 									to: 0,
@@ -101,7 +101,7 @@ export default function Example() {
 						</button>
 						<button
 							{...form.getControlButtonProps(
-								intent.replace({ name: task.name, value: { content: '' } }),
+								control.replace({ name: task.name, value: { content: '' } }),
 							)}
 						>
 							Clear
@@ -111,7 +111,7 @@ export default function Example() {
 			})}
 			<button
 				{...form.getControlButtonProps(
-					intent.insert({ name: fieldset.tasks.name }),
+					control.insert({ name: fieldset.tasks.name }),
 				)}
 			>
 				Add task

@@ -30,9 +30,9 @@ export async function createTodos(prevState: unknown, formData: FormData) {
 
 export async function signup(prevState: unknown, formData: FormData) {
 	const submission = await parseWithZod(formData, {
-		schema: (intent) =>
-			// create the zod schema with the intent and constraint
-			createSignupSchema(intent, {
+		schema: (control) =>
+			// create a zod schema base on the control
+			createSignupSchema(control, {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {

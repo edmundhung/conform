@@ -4,9 +4,9 @@ import {
 	type FormId,
 	type FieldName,
 	type FormContext,
+	type FormControl,
 	type FormValue,
 	type FormState,
-	type Intent,
 	type SubscriptionScope,
 	type SubscriptionSubject,
 	type UnionKeyof,
@@ -76,8 +76,8 @@ export type FormMetadata<
 	id: FormId<Schema, Error>;
 	context: FormContext<Schema, Error>;
 	status?: 'success' | 'error';
-	dispatch(intent: Intent): void;
-	getControlButtonProps(intent: Intent): ControlButtonProps;
+	dispatch(control: FormControl): void;
+	getControlButtonProps(control: FormControl): ControlButtonProps;
 	getFieldset: () => {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
 			UnionKeyType<Schema, Key>,

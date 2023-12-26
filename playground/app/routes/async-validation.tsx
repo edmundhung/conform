@@ -1,5 +1,5 @@
 import {
-	type Intent,
+	type FormControl,
 	getFormProps,
 	getInputProps,
 	useForm,
@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 function createSchema(
-	intent: Intent | null,
+	control: FormControl | null,
 	constraints: {
 		isEmailUnique?: (email: string) => Promise<boolean>;
 	} = {},
@@ -27,8 +27,8 @@ function createSchema(
 					refine(ctx, {
 						validate: () => constraints.isEmailUnique?.(email),
 						when:
-							!intent ||
-							(intent.type === 'validate' && intent.payload.name === 'email'),
+							!control ||
+							(control.type === 'validate' && control.payload.name === 'email'),
 						message: 'Email is already used',
 					}),
 				),
@@ -50,8 +50,8 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
-		schema: (intent) =>
-			createSchema(intent, {
+		schema: (control) =>
+			createSchema(control, {
 				isEmailUnique(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
@@ -75,7 +75,7 @@ export default function EmployeeForm() {
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parseWithZod(formData, {
-						schema: (intent) => createSchema(intent),
+						schema: (control) => createSchema(control),
 					})
 			: undefined,
 	});

@@ -1,12 +1,12 @@
 export {
 	type Submission,
 	type SubmissionResult,
-	type Intent,
+	type FormControl,
 	type FormId,
 	type FieldName,
 	requestSubmit,
 	isFieldElement,
-	intent,
+	control,
 } from '@conform-to/dom';
 export {
 	type FieldProps,

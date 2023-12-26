@@ -4,7 +4,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { login, signup, createTodos } from '@/app/actions';
 import {
 	useForm,
-	intent,
+	control,
 	getFormProps,
 	getInputProps,
 	getFieldsetProps,
@@ -70,14 +70,14 @@ export function TodoForm() {
 						</div>
 						<Button
 							{...form.getControlButtonProps(
-								intent.remove({ name: fieldset.tasks.name, index }),
+								control.remove({ name: fieldset.tasks.name, index }),
 							)}
 						>
 							Delete
 						</Button>
 						<Button
 							{...form.getControlButtonProps(
-								intent.reorder({
+								control.reorder({
 									name: fieldset.tasks.name,
 									from: index,
 									to: 0,
@@ -88,7 +88,7 @@ export function TodoForm() {
 						</Button>
 						<Button
 							{...form.getControlButtonProps(
-								intent.replace({ name: task.name, value: { content: '' } }),
+								control.replace({ name: task.name, value: { content: '' } }),
 							)}
 						>
 							Clear
@@ -98,7 +98,7 @@ export function TodoForm() {
 			})}
 			<Button
 				{...form.getControlButtonProps(
-					intent.insert({ name: fieldset.tasks.name }),
+					control.insert({ name: fieldset.tasks.name }),
 				)}
 			>
 				Add task
@@ -163,7 +163,7 @@ export function SignupForm() {
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
 				// Create the schema without any constraint defined
-				schema: (intent) => createSignupSchema(intent),
+				schema: (control) => createSignupSchema(control),
 			});
 		},
 		shouldValidate: 'onBlur',

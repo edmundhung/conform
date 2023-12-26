@@ -4,9 +4,9 @@ import {
 	getPaths,
 	formatPaths,
 	isPrefix,
-	INTENT,
-	serializeIntent,
-	intent,
+	CONTROL,
+	serializeControl,
+	control,
 } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
@@ -36,10 +36,10 @@ describe('conform-dom', () => {
 				},
 			},
 		);
-		const intentSubmission = parse(
+		const controlSubmission = parse(
 			createFormData([
 				['message', 'Hello'],
-				[INTENT, serializeIntent(intent.validate('message'))],
+				[CONTROL, serializeControl(control.validate({ name: 'message' }))],
 			]),
 			{
 				resolve() {
@@ -217,7 +217,7 @@ describe('conform-dom', () => {
 				},
 			},
 		});
-		expect(intentSubmission).toEqual({
+		expect(controlSubmission).toEqual({
 			status: undefined,
 			payload: {
 				message: 'Hello',
@@ -227,9 +227,9 @@ describe('conform-dom', () => {
 			},
 			reply: expect.any(Function),
 		});
-		expect(intentSubmission.reply()).toEqual({
+		expect(controlSubmission.reply()).toEqual({
 			status: undefined,
-			intent: intent.validate('message'),
+			control: control.validate({ name: 'message' }),
 			initialValue: {
 				message: 'Hello',
 			},
@@ -242,9 +242,9 @@ describe('conform-dom', () => {
 				},
 			},
 		});
-		expect(intentSubmission.reply({ formErrors: ['example'] })).toEqual({
+		expect(controlSubmission.reply({ formErrors: ['example'] })).toEqual({
 			status: undefined,
-			intent: intent.validate('message'),
+			control: control.validate({ name: 'message' }),
 			initialValue: {
 				message: 'Hello',
 			},
@@ -259,10 +259,10 @@ describe('conform-dom', () => {
 			},
 		});
 		expect(
-			intentSubmission.reply({ fieldErrors: { message: ['invalid'] } }),
+			controlSubmission.reply({ fieldErrors: { message: ['invalid'] } }),
 		).toEqual({
 			status: undefined,
-			intent: intent.validate('message'),
+			control: control.validate({ name: 'message' }),
 			initialValue: {
 				message: 'Hello',
 			},
@@ -275,12 +275,12 @@ describe('conform-dom', () => {
 				},
 			},
 		});
-		expect(intentSubmission.reply({ resetForm: true })).toEqual({
+		expect(controlSubmission.reply({ resetForm: true })).toEqual({
 			initialValue: null,
 		});
-		expect(intentSubmission.reply({ hideFields: ['message'] })).toEqual({
+		expect(controlSubmission.reply({ hideFields: ['message'] })).toEqual({
 			status: undefined,
-			intent: intent.validate('message'),
+			control: control.validate({ name: 'message' }),
 			initialValue: {},
 			error: {
 				message: ['World'],

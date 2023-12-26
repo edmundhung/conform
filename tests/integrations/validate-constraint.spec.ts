@@ -93,7 +93,7 @@ test.skip('Basic usage with constraint', async ({ page }) => {
 	await expect(playground.submission).toHaveText(
 		JSON.stringify(
 			{
-				intent: 'submit',
+				control: 'submit',
 				payload: {
 					email: 'a@example.com',
 					password: 'Hello1234',

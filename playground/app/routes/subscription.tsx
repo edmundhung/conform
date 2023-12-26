@@ -10,7 +10,7 @@ import {
 	useFormMetadata,
 	FormProvider,
 	getTextareaProps,
-	intent,
+	control,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -104,7 +104,7 @@ export default function Example() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								intent.reset({ name: fieldset.message.name }),
+								control.reset({ name: fieldset.message.name }),
 							)}
 						>
 							Reset message

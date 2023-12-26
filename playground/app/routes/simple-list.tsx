@@ -1,7 +1,7 @@
 import {
 	FormStateInput,
 	useForm,
-	intent,
+	control,
 	getFormProps,
 	getInputProps,
 } from '@conform-to/react';
@@ -69,7 +69,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...form.getControlButtonProps(
-										intent.remove({ name: fieldset.items.name, index }),
+										control.remove({ name: fieldset.items.name, index }),
 									)}
 								>
 									Delete
@@ -77,7 +77,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...form.getControlButtonProps(
-										intent.reorder({
+										control.reorder({
 											name: fieldset.items.name,
 											from: index,
 											to: 0,
@@ -89,7 +89,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...form.getControlButtonProps(
-										intent.replace({ name: task.name, value: '' }),
+										control.replace({ name: task.name, value: '' }),
 									)}
 								>
 									Clear
@@ -97,7 +97,7 @@ export default function SimpleList() {
 								<button
 									className="rounded-md border p-2 hover:border-black"
 									{...form.getControlButtonProps(
-										intent.reset({ name: task.name }),
+										control.reset({ name: task.name }),
 									)}
 								>
 									Reset
@@ -110,7 +110,7 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.insert({
+							control.insert({
 								name: fieldset.items.name,
 								defaultValue: 'Top item',
 								index: 0,
@@ -122,7 +122,7 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.insert({ name: fieldset.items.name, defaultValue: '' }),
+							control.insert({ name: fieldset.items.name, defaultValue: '' }),
 						)}
 					>
 						Insert bottom
@@ -130,7 +130,7 @@ export default function SimpleList() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.reset({ name: fieldset.items.name }),
+							control.reset({ name: fieldset.items.name }),
 						)}
 					>
 						Reset

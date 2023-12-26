@@ -1,6 +1,6 @@
 import {
 	useForm,
-	intent,
+	control,
 	getFormProps,
 	getInputProps,
 	getTextareaProps,
@@ -33,7 +33,7 @@ export async function action({ request }: ActionArgs) {
 	return json(submission.reply());
 }
 
-export default function Intent() {
+export default function FormControl() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
 	const { form, fieldset } = useForm({
@@ -46,7 +46,7 @@ export default function Intent() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<FormStateInput context={form.context} />
-			<Playground title="Intent" result={lastResult}>
+			<Playground title="Form Control" result={lastResult}>
 				<Field label="Name" meta={fieldset.name}>
 					<input {...getInputProps(fieldset.name, { type: 'text' })} />
 				</Field>
@@ -56,14 +56,14 @@ export default function Intent() {
 				<div className="flex flex-col gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(intent.validate())}
+						{...form.getControlButtonProps(control.validate())}
 					>
 						Validate Form
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.validate({ name: fieldset.message.name }),
+							control.validate({ name: fieldset.message.name }),
 						)}
 					>
 						Validate Message
@@ -71,7 +71,7 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.replace({
+							control.replace({
 								name: fieldset.message.name,
 								value: 'Hello World',
 							}),
@@ -82,7 +82,7 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.replace({
+							control.replace({
 								name: fieldset.message.name,
 								value: '',
 								validated: true,
@@ -94,14 +94,14 @@ export default function Intent() {
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...form.getControlButtonProps(
-							intent.reset({ name: fieldset.message.name }),
+							control.reset({ name: fieldset.message.name }),
 						)}
 					>
 						Reset message
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(intent.reset())}
+						{...form.getControlButtonProps(control.reset())}
 					>
 						Reset form
 					</button>

@@ -1,4 +1,4 @@
-import type { SubmissionResult, Intent } from '@conform-to/react';
+import type { SubmissionResult, FormControl } from '@conform-to/react';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parseWithZod, refine } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
-	intent: Intent | null,
+	control: FormControl | null,
 	constraint: {
 		// isUsernameUnique is only defined on the server
 		isUsernameUnique?: (username: string) => Promise<boolean>;
@@ -27,9 +27,9 @@ function createSchema(
 						refine(ctx, {
 							validate: () => constraint.isUsernameUnique?.(username),
 							when:
-								!intent ||
-								(intent.type === 'validate' &&
-									intent.payload.name === 'username'),
+								!control ||
+								(control.type === 'validate' &&
+									control.payload.name === 'username'),
 							message: 'Username is already used',
 						}),
 					),
@@ -53,9 +53,9 @@ function createSchema(
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
-		schema: (intent) =>
-			// create the zod schema with the intent and constraint
-			createSchema(intent, {
+		schema: (control) =>
+			// create the zod schema based on the control
+			createSchema(control, {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
@@ -81,7 +81,7 @@ export function Component() {
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
 				// Create the schema without any constraint defined
-				schema: (intent) => createSchema(intent),
+				schema: (control) => createSchema(control),
 			});
 		},
 		shouldRevalidate: 'onBlur',

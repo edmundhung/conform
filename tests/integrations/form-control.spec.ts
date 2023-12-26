@@ -52,12 +52,12 @@ async function runValidationScenario(page: Page) {
 
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
-		await page.goto('/intent');
+		await page.goto('/form-control');
 		await runValidationScenario(page);
 	});
 
 	test('Server Validation', async ({ page }) => {
-		await page.goto('/intent?noClientValidate=yes');
+		await page.goto('/form-control?noClientValidate=yes');
 		await runValidationScenario(page);
 	});
 });
@@ -66,7 +66,7 @@ test.describe('No JS', () => {
 	test.use({ javaScriptEnabled: false });
 
 	test('Validation', async ({ page }) => {
-		await page.goto('/intent');
+		await page.goto('/form-control');
 		await runValidationScenario(page);
 	});
 });
