@@ -4,7 +4,6 @@ import {
 	intent,
 	getFormProps,
 	getInputProps,
-	getControlButtonProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -69,8 +68,7 @@ export default function SimpleList() {
 							<div className="flex flex-row gap-2">
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(
-										form.id,
+									{...form.getControlButtonProps(
 										intent.remove({ name: fieldset.items.name, index }),
 									)}
 								>
@@ -78,8 +76,7 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(
-										form.id,
+									{...form.getControlButtonProps(
 										intent.reorder({
 											name: fieldset.items.name,
 											from: index,
@@ -91,8 +88,7 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(
-										form.id,
+									{...form.getControlButtonProps(
 										intent.replace({ name: task.name, value: '' }),
 									)}
 								>
@@ -100,8 +96,7 @@ export default function SimpleList() {
 								</button>
 								<button
 									className="rounded-md border p-2 hover:border-black"
-									{...getControlButtonProps(
-										form.id,
+									{...form.getControlButtonProps(
 										intent.reset({ name: task.name }),
 									)}
 								>
@@ -114,8 +109,7 @@ export default function SimpleList() {
 				<div className="flex flex-row gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.insert({
 								name: fieldset.items.name,
 								defaultValue: 'Top item',
@@ -127,8 +121,7 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.insert({ name: fieldset.items.name, defaultValue: '' }),
 						)}
 					>
@@ -136,8 +129,7 @@ export default function SimpleList() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.reset({ name: fieldset.items.name }),
 						)}
 					>

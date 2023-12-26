@@ -10,7 +10,6 @@ import {
 	useFormMetadata,
 	FormProvider,
 	getTextareaProps,
-	getControlButtonProps,
 	intent,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
@@ -104,8 +103,7 @@ export default function Example() {
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.reset({ name: fieldset.message.name }),
 							)}
 						>

@@ -4,7 +4,6 @@ export {
 	type Intent,
 	type FormId,
 	type FieldName,
-	requestIntent,
 	requestSubmit,
 	isFieldElement,
 	intent,
@@ -26,5 +25,4 @@ export {
 	getSelectProps,
 	getTextareaProps,
 	getCollectionProps,
-	getControlButtonProps,
 } from './helpers';

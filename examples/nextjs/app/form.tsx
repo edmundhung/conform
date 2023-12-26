@@ -8,7 +8,6 @@ import {
 	getFormProps,
 	getInputProps,
 	getFieldsetProps,
-	getControlButtonProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
@@ -70,16 +69,14 @@ export function TodoForm() {
 							</label>
 						</div>
 						<Button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.remove({ name: fieldset.tasks.name, index }),
 							)}
 						>
 							Delete
 						</Button>
 						<Button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.reorder({
 									name: fieldset.tasks.name,
 									from: index,
@@ -90,8 +87,7 @@ export function TodoForm() {
 							Move to top
 						</Button>
 						<Button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.replace({ name: task.name, value: { content: '' } }),
 							)}
 						>
@@ -101,8 +97,7 @@ export function TodoForm() {
 				);
 			})}
 			<Button
-				{...getControlButtonProps(
-					form.id,
+				{...form.getControlButtonProps(
 					intent.insert({ name: fieldset.tasks.name }),
 				)}
 			>

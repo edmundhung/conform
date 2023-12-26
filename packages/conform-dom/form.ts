@@ -15,20 +15,22 @@ import {
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
+	requestSubmit,
 } from './dom';
 import { clone, generateId, invariant } from './util';
 import {
 	type Intent,
 	type Submission,
 	type SubmissionResult,
+	INTENT,
 	STATE,
-	requestIntent,
 	getSubmissionContext,
 	setListState,
 	setListValue,
 	setState,
 	serialize,
 	intent,
+	serializeIntent,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -190,6 +192,13 @@ export type SubscriptionScope = {
 	name?: string[];
 };
 
+export type ControlButtonProps = {
+	name: string;
+	value: string;
+	form: string;
+	formNoValidate: boolean;
+};
+
 export type FormContext<
 	Schema extends Record<string, any> = any,
 	Error = string[],
@@ -206,6 +215,8 @@ export type FormContext<
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
+	dispatch(intent: Intent): void;
+	getControlButtonProps(intent: Intent): ControlButtonProps;
 	getState(): FormState<Error>;
 	getSerializedState(): string;
 };
@@ -710,10 +721,7 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			requestIntent(
-				latestOptions.formId,
-				intent.validate({ name: element.name }),
-			);
+			dispatch(intent.validate({ name: element.name }));
 		}
 	}
 
@@ -728,10 +736,7 @@ export function createFormContext<
 			return;
 		}
 
-		requestIntent(
-			latestOptions.formId,
-			intent.validate({ name: element.name }),
-		);
+		dispatch(intent.validate({ name: element.name }));
 	}
 
 	function reset(event: Event) {
@@ -821,6 +826,30 @@ export function createFormContext<
 		return state;
 	}
 
+	function dispatch(intent: Intent): void {
+		const form = getFormElement();
+		const submitter = document.createElement('button');
+		const buttonProps = getControlButtonProps(intent);
+
+		submitter.name = buttonProps.name;
+		submitter.value = buttonProps.value;
+		submitter.hidden = true;
+		submitter.formNoValidate = true;
+
+		form?.appendChild(submitter);
+		requestSubmit(form, submitter);
+		form?.removeChild(submitter);
+	}
+
+	function getControlButtonProps(intent: Intent): ControlButtonProps {
+		return {
+			name: INTENT,
+			value: serializeIntent(intent),
+			form: latestOptions.formId,
+			formNoValidate: true,
+		};
+	}
+
 	return {
 		get formId() {
 			return latestOptions.formId;
@@ -829,6 +858,8 @@ export function createFormContext<
 		reset,
 		input,
 		blur,
+		dispatch,
+		getControlButtonProps,
 		report,
 		update,
 		subscribe,

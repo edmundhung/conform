@@ -3,7 +3,6 @@ import {
 	intent,
 	getFormProps,
 	getInputProps,
-	getControlButtonProps,
 	getFieldsetProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
@@ -83,16 +82,14 @@ export default function Example() {
 							</label>
 						</div>
 						<button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.remove({ name: fieldset.tasks.name, index }),
 							)}
 						>
 							Delete
 						</button>
 						<button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.reorder({
 									name: fieldset.tasks.name,
 									from: index,
@@ -103,8 +100,7 @@ export default function Example() {
 							Move to top
 						</button>
 						<button
-							{...getControlButtonProps(
-								form.id,
+							{...form.getControlButtonProps(
 								intent.replace({ name: task.name, value: { content: '' } }),
 							)}
 						>
@@ -114,8 +110,7 @@ export default function Example() {
 				);
 			})}
 			<button
-				{...getControlButtonProps(
-					form.id,
+				{...form.getControlButtonProps(
 					intent.insert({ name: fieldset.tasks.name }),
 				)}
 			>

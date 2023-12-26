@@ -1,5 +1,4 @@
 import type { DefaultValue, FieldName, FormValue } from './form';
-import { requestSubmit } from './dom';
 import {
 	simplify,
 	flatten,
@@ -418,20 +417,6 @@ export function getIntent(
 
 export function serializeIntent(intent: Intent): string {
 	return JSON.stringify(intent);
-}
-
-export function requestIntent(formId: string, intent: Intent): void {
-	const form = document.forms.namedItem(formId);
-	const submitter = document.createElement('button');
-
-	submitter.name = INTENT;
-	submitter.value = serializeIntent(intent);
-	submitter.hidden = true;
-	submitter.formNoValidate = true;
-
-	form?.appendChild(submitter);
-	requestSubmit(form, submitter);
-	form?.removeChild(submitter);
 }
 
 export function updateList(

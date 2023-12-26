@@ -2,6 +2,7 @@ export {
 	type UnionKeyof,
 	type UnionKeyType,
 	type Constraint,
+	type ControlButtonProps,
 	type FormId,
 	type FieldName,
 	type DefaultValue,
@@ -23,7 +24,6 @@ export {
 	STATE,
 	intent,
 	serializeIntent,
-	requestIntent,
 	parse,
 } from './submission';
 export { getPaths, formatPaths, isPrefix } from './formdata';

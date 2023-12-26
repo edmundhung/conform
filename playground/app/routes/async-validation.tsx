@@ -28,7 +28,7 @@ function createSchema(
 						validate: () => constraints.isEmailUnique?.(email),
 						when:
 							!intent ||
-							(intent.type === 'validate' && intent.payload === 'email'),
+							(intent.type === 'validate' && intent.payload.name === 'email'),
 						message: 'Email is already used',
 					}),
 				),

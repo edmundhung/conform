@@ -4,7 +4,6 @@ import {
 	getFormProps,
 	getInputProps,
 	getTextareaProps,
-	getControlButtonProps,
 	FormStateInput,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
@@ -57,14 +56,13 @@ export default function Intent() {
 				<div className="flex flex-col gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, intent.validate())}
+						{...form.getControlButtonProps(intent.validate())}
 					>
 						Validate Form
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.validate({ name: fieldset.message.name }),
 						)}
 					>
@@ -72,8 +70,7 @@ export default function Intent() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.replace({
 								name: fieldset.message.name,
 								value: 'Hello World',
@@ -84,8 +81,7 @@ export default function Intent() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.replace({
 								name: fieldset.message.name,
 								value: '',
@@ -97,8 +93,7 @@ export default function Intent() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
+						{...form.getControlButtonProps(
 							intent.reset({ name: fieldset.message.name }),
 						)}
 					>
@@ -106,7 +101,7 @@ export default function Intent() {
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(form.id, intent.reset())}
+						{...form.getControlButtonProps(intent.reset())}
 					>
 						Reset form
 					</button>

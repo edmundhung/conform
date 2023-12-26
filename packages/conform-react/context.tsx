@@ -1,10 +1,12 @@
 import {
 	type Constraint,
+	type ControlButtonProps,
 	type FormId,
 	type FieldName,
 	type FormContext,
 	type FormValue,
 	type FormState,
+	type Intent,
 	type SubscriptionScope,
 	type SubscriptionSubject,
 	type UnionKeyof,
@@ -74,6 +76,8 @@ export type FormMetadata<
 	id: FormId<Schema, Error>;
 	context: FormContext<Schema, Error>;
 	status?: 'success' | 'error';
+	dispatch(intent: Intent): void;
+	getControlButtonProps(intent: Intent): ControlButtonProps;
 	getFieldset: () => {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
 			UnionKeyType<Schema, Key>,
@@ -332,8 +336,8 @@ export function getFieldMetadata<
 			: formatPaths([...getPaths(prefix), key]);
 	const metadata = getMetadata(formId, state, subjectRef, name);
 
-	return new Proxy(metadata as any, {
-		get(target, key, receiver) {
+	return new Proxy({} as any, {
+		get(_, key, receiver) {
 			switch (key) {
 				case 'formId':
 					return formId;
@@ -362,7 +366,7 @@ export function getFieldMetadata<
 				}
 			}
 
-			return Reflect.get(target, key, receiver);
+			return Reflect.get(metadata, key, receiver);
 		},
 	});
 }
@@ -376,13 +380,16 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 ): FormMetadata<Schema, Error> {
 	const metadata = getMetadata(formId, state, subjectRef);
 
-	return new Proxy(metadata as any, {
-		get(target, key, receiver) {
+	return new Proxy({} as any, {
+		get(_, key, receiver) {
 			switch (key) {
 				case 'context':
 					return context;
 				case 'status':
 					return state.submissionStatus;
+				case 'dispatch':
+				case 'getControlButtonProps':
+					return context[key];
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
@@ -397,7 +404,7 @@ export function getFormMetadata<Schema extends Record<string, any>, Error>(
 					return noValidate;
 			}
 
-			return Reflect.get(target, key, receiver);
+			return Reflect.get(metadata, key, receiver);
 		},
 	});
 }

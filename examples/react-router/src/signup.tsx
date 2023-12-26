@@ -28,7 +28,8 @@ function createSchema(
 							validate: () => constraint.isUsernameUnique?.(username),
 							when:
 								!intent ||
-								(intent.type === 'validate' && intent.payload === 'username'),
+								(intent.type === 'validate' &&
+									intent.payload.name === 'username'),
 							message: 'Username is already used',
 						}),
 					),

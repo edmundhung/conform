@@ -116,15 +116,15 @@ export function requestSubmit(
 		'Failed to submit the form. The element provided is null or undefined.',
 	);
 
-	if (typeof form.requestSubmit === 'function') {
-		form.requestSubmit(submitter);
-	} else {
-		const event = new SubmitEvent('submit', {
-			bubbles: true,
-			cancelable: true,
-			submitter,
-		});
+	// if (typeof form.requestSubmit === 'function') {
+	// 	form.requestSubmit(submitter);
+	// } else {
+	const event = new SubmitEvent('submit', {
+		bubbles: true,
+		cancelable: true,
+		submitter,
+	});
 
-		form.dispatchEvent(event);
-	}
+	form.dispatchEvent(event);
+	// }
 }
