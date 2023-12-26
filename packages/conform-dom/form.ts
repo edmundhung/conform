@@ -651,23 +651,18 @@ export function createFormContext<
 		if (typeof latestOptions?.onValidate === 'undefined') {
 			latestOptions.onSubmit?.(event, context);
 		} else {
-			try {
-				const submission = latestOptions.onValidate({
-					form,
-					formData,
-					submitter,
-				});
+			const submission = latestOptions.onValidate({
+				form,
+				formData,
+				submitter,
+			});
 
-				if (submission.status !== 'success' && submission.error !== null) {
-					report(submission.reply());
-					event.preventDefault();
-				}
-
-				latestOptions.onSubmit?.(event, { ...context, submission });
-			} catch (error) {
-				// eslint-disable-next-line no-console
-				console.warn('Client validation failed', error);
+			if (submission.status !== 'success' && submission.error !== null) {
+				report(submission.reply());
+				event.preventDefault();
 			}
+
+			latestOptions.onSubmit?.(event, { ...context, submission });
 		}
 	}
 
@@ -715,7 +710,10 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			requestIntent(latestOptions.formId, intent.validate(element.name));
+			requestIntent(
+				latestOptions.formId,
+				intent.validate({ name: element.name }),
+			);
 		}
 	}
 
@@ -730,7 +728,10 @@ export function createFormContext<
 			return;
 		}
 
-		requestIntent(latestOptions.formId, intent.validate(element.name));
+		requestIntent(
+			latestOptions.formId,
+			intent.validate({ name: element.name }),
+		);
 	}
 
 	function reset(event: Event) {
@@ -780,13 +781,6 @@ export function createFormContext<
 
 		updateFormMeta(update);
 
-		// TODO: An option to configure the validationMessage
-		for (const element of formElement.elements) {
-			if (isFieldElement(element) && element.name !== '') {
-				element.setCustomValidity(error[element.name] ? 'Invalid' : '');
-			}
-		}
-
 		if (result.status === 'error') {
 			for (const element of formElement.elements) {
 				if (isFieldElement(element) && error[element.name]) {
@@ -828,7 +822,9 @@ export function createFormContext<
 	}
 
 	return {
-		formId: latestOptions.formId,
+		get formId() {
+			return latestOptions.formId;
+		},
 		submit,
 		reset,
 		input,

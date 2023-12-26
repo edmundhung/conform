@@ -5,7 +5,7 @@ function getFieldset(form: Locator) {
 	return {
 		name: form.locator('[name="name"]'),
 		message: form.locator('[name="message"]'),
-		validateName: form.locator('button:text("Validate Name")'),
+		validateForm: form.locator('button:text("Validate Form")'),
 		validateMessage: form.locator('button:text("Validate Message")'),
 		updateMessage: form.locator('button:text("Update message")'),
 		clearMessage: form.locator('button:text("Clear message")'),
@@ -20,32 +20,29 @@ async function runValidationScenario(page: Page) {
 
 	await expect(playground.error).toHaveText(['', '']);
 
-	await fieldset.validateName.click();
-	await expect(playground.error).toHaveText(['Name is required', '']);
-
 	await fieldset.validateMessage.click();
-	await expect(playground.error).toHaveText([
-		'Name is required',
-		'Message is required',
-	]);
+	await expect(playground.error).toHaveText(['', 'Message is required']);
 
 	await fieldset.updateMessage.click();
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('Hello World');
-	await expect(playground.error).toHaveText(['Name is required', '']);
+	await expect(playground.error).toHaveText(['', '']);
 
 	await fieldset.clearMessage.click();
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
-	await expect(playground.error).toHaveText([
-		'Name is required',
-		'Message is required',
-	]);
+	await expect(playground.error).toHaveText(['', 'Message is required']);
 
 	await fieldset.resetMessage.click();
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
-	await expect(playground.error).toHaveText(['Name is required', '']);
+	await expect(playground.error).toHaveText(['', '']);
+
+	await fieldset.validateForm.click();
+	await expect(playground.error).toHaveText([
+		'Name is required',
+		'Message is required',
+	]);
 
 	await fieldset.resetForm.click();
 	await expect(fieldset.name).toHaveValue('');

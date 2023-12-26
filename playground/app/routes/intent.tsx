@@ -57,18 +57,15 @@ export default function Intent() {
 				<div className="flex flex-col gap-2">
 					<button
 						className="rounded-md border p-2 hover:border-black"
-						{...getControlButtonProps(
-							form.id,
-							intent.validate(fieldset.name.name),
-						)}
+						{...getControlButtonProps(form.id, intent.validate())}
 					>
-						Validate Name
+						Validate Form
 					</button>
 					<button
 						className="rounded-md border p-2 hover:border-black"
 						{...getControlButtonProps(
 							form.id,
-							intent.validate(fieldset.message.name),
+							intent.validate({ name: fieldset.message.name }),
 						)}
 					>
 						Validate Message

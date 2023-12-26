@@ -153,7 +153,9 @@ export function parse<Value, Error>(
 	if (intent) {
 		switch (intent.type) {
 			case 'validate':
-				context.state.validated[intent.payload] = true;
+				if (intent.payload.name) {
+					context.state.validated[intent.payload.name] = true;
+				}
 				break;
 			case 'replace': {
 				const { name, value, validated } = intent.payload;
@@ -230,7 +232,7 @@ export function parse<Value, Error>(
 	}) => {
 		const error = typeof resolved.error !== 'undefined' ? resolved.error : {};
 
-		if (!intent) {
+		if (!intent || (intent.type === 'validate' && !intent.payload.name)) {
 			for (const name of [...context.fields, ...Object.keys(error ?? {})]) {
 				context.state.validated[name] = true;
 			}
@@ -336,7 +338,9 @@ export function replySubmission<Error>(
 
 export type ValidateIntent<Schema = any> = {
 	type: 'validate';
-	payload: FieldName<Schema>;
+	payload: {
+		name?: FieldName<Schema>;
+	};
 };
 
 export type ResetIntent<Schema = any> = {
