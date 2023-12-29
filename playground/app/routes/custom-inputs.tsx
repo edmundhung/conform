@@ -40,7 +40,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
@@ -52,14 +52,14 @@ export default function Example() {
 		<FormProvider context={form.context}>
 			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Custom Inputs Form" result={lastResult}>
-					<Field label="Headless ListBox" meta={fieldset.language}>
-						<CustomSelect name={fieldset.language.name} />
+					<Field label="Headless ListBox" meta={fields.language}>
+						<CustomSelect name={fields.language.name} />
 					</Field>
-					<Field label="Radix Checkbox" meta={fieldset.tos}>
+					<Field label="Radix Checkbox" meta={fields.tos}>
 						<div className="flex items-center">
-							<CustomCheckbox name={fieldset.tos.name} />
+							<CustomCheckbox name={fields.tos.name} />
 							<label
-								htmlFor={fieldset.tos.id}
+								htmlFor={fields.tos.id}
 								className="pl-[15px] text-[15px] leading-none"
 							>
 								I accept the terms of service
@@ -77,7 +77,7 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function CustomSelect({ name }: { name: FieldName<string> }) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useInputControl(field);
 	const options = [
@@ -149,7 +149,7 @@ function CustomSelect({ name }: { name: FieldName<string> }) {
 }
 
 function CustomCheckbox({ name }: { name: FieldName<boolean> }) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const control = useInputControl(field);
 
 	return (

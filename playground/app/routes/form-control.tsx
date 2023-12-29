@@ -37,7 +37,7 @@ export async function action({ request }: ActionArgs) {
 export default function FormControl() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
@@ -49,11 +49,11 @@ export default function FormControl() {
 			<Form method="post" {...getFormProps(form)}>
 				<FormStateInput formId={form.id} />
 				<Playground title="Form Control" result={lastResult}>
-					<Field label="Name" meta={fieldset.name}>
-						<input {...getInputProps(fieldset.name, { type: 'text' })} />
+					<Field label="Name" meta={fields.name}>
+						<input {...getInputProps(fields.name, { type: 'text' })} />
 					</Field>
-					<Field label="Message" meta={fieldset.message}>
-						<textarea {...getTextareaProps(fieldset.message)} />
+					<Field label="Message" meta={fields.message}>
+						<textarea {...getTextareaProps(fields.message)} />
 					</Field>
 					<div className="flex flex-col gap-2">
 						<button
@@ -65,7 +65,7 @@ export default function FormControl() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								control.validate({ name: fieldset.message.name }),
+								control.validate({ name: fields.message.name }),
 							)}
 						>
 							Validate Message
@@ -74,7 +74,7 @@ export default function FormControl() {
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
 								control.replace({
-									name: fieldset.message.name,
+									name: fields.message.name,
 									value: 'Hello World',
 								}),
 							)}
@@ -85,7 +85,7 @@ export default function FormControl() {
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
 								control.replace({
-									name: fieldset.message.name,
+									name: fields.message.name,
 									value: '',
 									validated: true,
 								}),
@@ -96,7 +96,7 @@ export default function FormControl() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								control.reset({ name: fieldset.message.name }),
+								control.reset({ name: fields.message.name }),
 							)}
 						>
 							Reset message

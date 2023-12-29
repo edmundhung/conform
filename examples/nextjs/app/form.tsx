@@ -20,28 +20,28 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
 
 export function TodoForm() {
 	const [lastResult, action] = useFormState(createTodos, undefined);
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema: todosSchema });
 		},
 		shouldValidate: 'onBlur',
 	});
-	const tasks = fieldset.tasks.getFieldList();
+	const tasks = fields.tasks.getFieldList();
 
 	return (
 		<form action={action} {...getFormProps(form)}>
 			<div>
 				<label>Title</label>
 				<input
-					className={!fieldset.title.valid ? 'error' : ''}
-					{...getInputProps(fieldset.title)}
-					key={fieldset.title.key}
+					className={!fields.title.valid ? 'error' : ''}
+					{...getInputProps(fields.title)}
+					key={fields.title.key}
 				/>
-				<div>{fieldset.title.errors}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fieldset.tasks.errors}</div>
+			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -70,7 +70,7 @@ export function TodoForm() {
 						</div>
 						<Button
 							{...form.getControlButtonProps(
-								control.remove({ name: fieldset.tasks.name, index }),
+								control.remove({ name: fields.tasks.name, index }),
 							)}
 						>
 							Delete
@@ -78,7 +78,7 @@ export function TodoForm() {
 						<Button
 							{...form.getControlButtonProps(
 								control.reorder({
-									name: fieldset.tasks.name,
+									name: fields.tasks.name,
 									from: index,
 									to: 0,
 								}),
@@ -98,7 +98,7 @@ export function TodoForm() {
 			})}
 			<Button
 				{...form.getControlButtonProps(
-					control.insert({ name: fieldset.tasks.name }),
+					control.insert({ name: fields.tasks.name }),
 				)}
 			>
 				Add task
@@ -111,7 +111,7 @@ export function TodoForm() {
 
 export function LoginForm() {
 	const [lastResult, action] = useFormState(login, undefined);
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		// Sync the result of last submission
 		lastResult,
 
@@ -129,25 +129,25 @@ export function LoginForm() {
 			<div>
 				<label>Email</label>
 				<input
-					className={!fieldset.email.valid ? 'error' : ''}
-					{...getInputProps(fieldset.email)}
-					key={fieldset.email.key}
+					className={!fields.email.valid ? 'error' : ''}
+					{...getInputProps(fields.email)}
+					key={fields.email.key}
 				/>
-				<div>{fieldset.email.errors}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fieldset.password.valid ? 'error' : ''}
-					{...getInputProps(fieldset.password, { type: 'password' })}
-					key={fieldset.password.key}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
+					key={fields.password.key}
 				/>
-				<div>{fieldset.password.errors}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...getInputProps(fieldset.remember, { type: 'checkbox' })} />
+					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />
@@ -158,7 +158,7 @@ export function LoginForm() {
 
 export function SignupForm() {
 	const [lastResult, action] = useFormState(signup, undefined);
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
@@ -175,29 +175,29 @@ export function SignupForm() {
 			<label>
 				<div>Username</div>
 				<input
-					className={!fieldset.username.valid ? 'error' : ''}
-					{...getInputProps(fieldset.username)}
-					key={fieldset.username.key}
+					className={!fields.username.valid ? 'error' : ''}
+					{...getInputProps(fields.username)}
+					key={fields.username.key}
 				/>
-				<div>{fieldset.username.errors}</div>
+				<div>{fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={!fieldset.password.valid ? 'error' : ''}
-					{...getInputProps(fieldset.password, { type: 'password' })}
-					key={fieldset.password.key}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
+					key={fields.password.key}
 				/>
-				<div>{fieldset.password.errors}</div>
+				<div>{fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!fieldset.confirmPassword.valid ? 'error' : ''}
-					{...getInputProps(fieldset.confirmPassword, { type: 'password' })}
-					key={fieldset.confirmPassword.key}
+					className={!fields.confirmPassword.valid ? 'error' : ''}
+					{...getInputProps(fields.confirmPassword, { type: 'password' })}
+					key={fields.confirmPassword.key}
 				/>
-				<div>{fieldset.confirmPassword.errors}</div>
+				<div>{fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<Button>Signup</Button>

@@ -17,7 +17,7 @@ type FormError = {
 };
 
 export default function Example() {
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -50,10 +50,10 @@ export default function Example() {
 										Owner (List box)
 									</label>
 									<div className="mt-1">
-										<ExampleListBox name={fieldset.owner.name} />
+										<ExampleListBox name={fields.owner.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fieldset.owner.errors?.validationMessage}
+										{fields.owner.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -62,10 +62,10 @@ export default function Example() {
 										Assigned to (Combobox)
 									</label>
 									<div className="mt-1">
-										<ExampleCombobox name={fieldset.assignee.name} />
+										<ExampleCombobox name={fields.assignee.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fieldset.assignee.errors?.validationMessage}
+										{fields.assignee.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -74,10 +74,10 @@ export default function Example() {
 										Enabled (Switch)
 									</label>
 									<div className="mt-1">
-										<ExampleSwitch name={fieldset.enabled.name} />
+										<ExampleSwitch name={fields.enabled.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fieldset.enabled.errors?.validationMessage}
+										{fields.enabled.errors?.validationMessage}
 									</p>
 								</div>
 
@@ -86,10 +86,10 @@ export default function Example() {
 										Color (Radio Group)
 									</label>
 									<div className="mt-1">
-										<ExampleRadioGroup name={fieldset.color.name} />
+										<ExampleRadioGroup name={fields.color.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fieldset.color.errors?.validationMessage}
+										{fields.color.errors?.validationMessage}
 									</p>
 								</div>
 							</div>
@@ -131,7 +131,7 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function ExampleListBox(props: { name: FieldName<string, FormError> }) {
-	const { field } = useField(props);
+	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
 	return (
@@ -194,7 +194,7 @@ function ExampleListBox(props: { name: FieldName<string, FormError> }) {
 
 function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
 	const [query, setQuery] = useState('');
-	const { field } = useField(props);
+	const [field] = useField(props.name);
 	const control = useInputControl(field);
 	const filteredPeople = !control.value
 		? people
@@ -271,7 +271,7 @@ function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
 }
 
 function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
-	const { field } = useField(props);
+	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
 	return (
@@ -296,8 +296,8 @@ function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
 	);
 }
 
-function ExampleRadioGroup(config: { name: FieldName<string, FormError> }) {
-	const { field } = useField(config);
+function ExampleRadioGroup(props: { name: FieldName<string, FormError> }) {
+	const [field] = useField(props.name);
 	const control = useInputControl(field);
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },

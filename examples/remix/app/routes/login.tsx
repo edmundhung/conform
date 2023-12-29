@@ -25,7 +25,7 @@ export async function action({ request }: ActionArgs) {
 export default function Login() {
 	// Last submission returned by the server
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		// Sync the result of last submission
 		lastResult,
 
@@ -43,23 +43,23 @@ export default function Login() {
 			<div>
 				<label>Email</label>
 				<input
-					className={!fieldset.email.valid ? 'error' : ''}
-					{...getInputProps(fieldset.email)}
+					className={!fields.email.valid ? 'error' : ''}
+					{...getInputProps(fields.email)}
 				/>
-				<div>{fieldset.email.errors}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fieldset.password.valid ? 'error' : ''}
-					{...getInputProps(fieldset.password, { type: 'password' })}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{fieldset.password.errors}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...getInputProps(fieldset.remember, { type: 'checkbox' })} />
+					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

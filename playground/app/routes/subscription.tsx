@@ -56,15 +56,15 @@ export default function Example() {
 	const { noClientValidate, isStrcitMode: strict } =
 		useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		id: 'example',
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const name = fieldset.name.name;
-	const message = fieldset.message.name;
+	const name = fields.name.name;
+	const message = fields.message.name;
 	const description = (
 		<ul className="space-y-1 list-disc">
 			<FormMetadata strict={strict} formId={form.id} subject="initialValue" />
@@ -95,16 +95,16 @@ export default function Example() {
 			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Fine-grained Subscription" description={description}>
 					<Field label="Name">
-						<input {...getInputProps(fieldset.name)} />
+						<input {...getInputProps(fields.name)} />
 					</Field>
 					<Field label="Message">
-						<textarea {...getTextareaProps(fieldset.message)} rows={6} />
+						<textarea {...getTextareaProps(fields.message)} rows={6} />
 					</Field>
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								control.reset({ name: fieldset.message.name }),
+								control.reset({ name: fields.message.name }),
 							)}
 						>
 							Reset message
@@ -140,7 +140,7 @@ const FieldMetadata = memo(function FieldMetadata({
 	strict: boolean;
 }) {
 	const renderCount = useRenderCount(strict);
-	const { field } = useField({ name });
+	const [field] = useField(name);
 
 	// eslint-disable-next-line no-console
 	console.log(`${name}.${subject}: ${JSON.stringify(field[subject])}`);
@@ -158,7 +158,7 @@ const FormMetadata = memo(function FormMetadata({
 	strict: boolean;
 }) {
 	const renderCount = useRenderCount(strict);
-	const form = useFormMetadata({ formId });
+	const form = useFormMetadata(formId);
 
 	// eslint-disable-next-line no-console
 	console.log(`form.${subject}: ${JSON.stringify(form[subject])}`);

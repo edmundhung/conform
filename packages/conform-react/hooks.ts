@@ -54,8 +54,7 @@ export function useForm<
 	options: Pretty<
 		Omit<FormOptions<Schema, FormError, FormValue>, 'formId'> & {
 			/**
-			 * If the form id is provided, Id for label,
-			 * input and error elements will be derived.
+			 * The form id. If not provided, a random id will be generated.
 			 */
 			id?: string;
 
@@ -67,10 +66,10 @@ export function useForm<
 			defaultNoValidate?: boolean;
 		}
 	>,
-): {
-	form: FormMetadata<Schema, FormError>;
-	fieldset: ReturnType<FormMetadata<Schema, FormError>['getFieldset']>;
-} {
+): [
+	FormMetadata<Schema, FormError>,
+	ReturnType<FormMetadata<Schema, FormError>['getFieldset']>,
+] {
 	const formId = useFormId<Schema, FormError>(options.id);
 	const [context] = useState(() => createFormContext({ ...options, formId }));
 	const optionsRef = useRef(options);
@@ -108,21 +107,17 @@ export function useForm<
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(formId, state, subjectRef, context, noValidate);
 
-	return {
-		form,
-		fieldset: form.getFieldset(),
-	};
+	return [form, form.getFieldset()];
 }
 
-export function useFormMetadata<
-	Schema extends Record<string, any>,
-	FormError,
->(options: {
-	formId: FormId<Schema, FormError>;
-	defaultNoValidate?: boolean;
-}): FormMetadata<Schema, FormError> {
+export function useFormMetadata<Schema extends Record<string, any>, FormError>(
+	formId: FormId<Schema, FormError>,
+	options: {
+		defaultNoValidate?: boolean;
+	} = {},
+): FormMetadata<Schema, FormError> {
 	const subjectRef = useSubjectRef();
-	const context = useFormContext(options.formId);
+	const context = useFormContext(formId);
 	const state = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
@@ -136,34 +131,18 @@ export function useFormMetadata<
 }
 
 export function useField<
-	FormSchema extends Record<string, unknown>,
-	FieldSchema = FormSchema,
+	FieldSchema,
 	FormError = string[],
->(options: {
-	name?: FieldName<FieldSchema, FormError, FormSchema>;
-	formId?: FormId<FormSchema, FormError>;
-}): {
-	field: FieldMetadata<FieldSchema, FormError, FormSchema>;
-	fieldset: FieldMetadata<
-		FieldSchema,
-		FormError,
-		FormSchema
-	>['getFieldset'] extends Function
-		? ReturnType<
-				FieldMetadata<FieldSchema, FormError, FormSchema>['getFieldset']
-		  >
-		: never;
-	fieldlist: FieldMetadata<
-		FieldSchema,
-		FormError,
-		FormSchema
-	>['getFieldList'] extends Function
-		? ReturnType<
-				FieldMetadata<FieldSchema, FormError, FormSchema>['getFieldList']
-		  >
-		: never;
-	form: FormMetadata<FormSchema, FormError>;
-} {
+	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+>(
+	name: FieldName<FieldSchema, FormError, FormSchema>,
+	options: {
+		formId?: FormId<FormSchema, FormError>;
+	} = {},
+): [
+	FieldMetadata<FieldSchema, FormError, FormSchema>,
+	FormMetadata<FormSchema, FormError>,
+] {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
@@ -171,7 +150,7 @@ export function useField<
 		context.formId,
 		state,
 		subjectRef,
-		options.name,
+		name,
 	);
 	const form = getFormMetadata(
 		context.formId,
@@ -181,16 +160,5 @@ export function useField<
 		false,
 	);
 
-	return {
-		field,
-		// @ts-expect-error The types is used as a hint only
-		get fieldset() {
-			return field.getFieldset();
-		},
-		// @ts-expect-error The types is used as a hint only
-		get fieldlist() {
-			return field.getFieldList();
-		},
-		form,
-	};
+	return [field, form];
 }

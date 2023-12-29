@@ -44,7 +44,7 @@ export async function action({ request }: ActionArgs) {
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
@@ -53,14 +53,14 @@ export default function SimpleList() {
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const items = fieldset.items.getFieldList();
+	const items = fields.items.getFieldList();
 
 	return (
 		<FormProvider context={form.context}>
 			<Form method="post" {...getFormProps(form)}>
 				<FormStateInput formId={form.id} />
 				<Playground title="Simple list" result={lastResult}>
-					<Alert errors={fieldset.items.errors} />
+					<Alert errors={fields.items.errors} />
 					<ol>
 						{items.map((task, index) => (
 							<li key={task.key} className="border rounded-md p-4 mb-4">
@@ -71,7 +71,7 @@ export default function SimpleList() {
 									<button
 										className="rounded-md border p-2 hover:border-black"
 										{...form.getControlButtonProps(
-											control.remove({ name: fieldset.items.name, index }),
+											control.remove({ name: fields.items.name, index }),
 										)}
 									>
 										Delete
@@ -80,7 +80,7 @@ export default function SimpleList() {
 										className="rounded-md border p-2 hover:border-black"
 										{...form.getControlButtonProps(
 											control.reorder({
-												name: fieldset.items.name,
+												name: fields.items.name,
 												from: index,
 												to: 0,
 											}),
@@ -113,7 +113,7 @@ export default function SimpleList() {
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
 								control.insert({
-									name: fieldset.items.name,
+									name: fields.items.name,
 									defaultValue: 'Top item',
 									index: 0,
 								}),
@@ -124,7 +124,7 @@ export default function SimpleList() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								control.insert({ name: fieldset.items.name, defaultValue: '' }),
+								control.insert({ name: fields.items.name, defaultValue: '' }),
 							)}
 						>
 							Insert bottom
@@ -132,7 +132,7 @@ export default function SimpleList() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.getControlButtonProps(
-								control.reset({ name: fieldset.items.name }),
+								control.reset({ name: fields.items.name }),
 							)}
 						>
 							Reset

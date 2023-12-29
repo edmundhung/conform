@@ -39,11 +39,16 @@ export type Primitive =
 	| null
 	| undefined;
 
-export type Metadata<Schema, FormError> = {
+export type Metadata<
+	Schema,
+	FormError,
+	FormSchema extends Record<string, unknown>,
+> = {
 	key: string | undefined;
 	id: string;
 	errorId: string;
 	descriptionId: string;
+	name: FieldName<Schema, FormError, FormSchema>;
 	initialValue: FormValue<Schema>;
 	value: FormValue<Schema>;
 	errors: FormError | undefined;
@@ -56,7 +61,7 @@ export type Metadata<Schema, FormError> = {
 export type FormMetadata<
 	Schema extends Record<string, unknown> = Record<string, unknown>,
 	FormError = string[],
-> = Omit<Metadata<Schema, FormError>, 'id'> & {
+> = Omit<Metadata<Schema, FormError, Schema>, 'id'> & {
 	id: FormId<Schema, FormError>;
 	context: FormContext<Schema, FormError>;
 	status?: 'success' | 'error';
@@ -80,9 +85,8 @@ export type FieldMetadata<
 	Schema = unknown,
 	FormError = string[],
 	FormSchema extends Record<string, any> = Record<string, unknown>,
-> = Metadata<Schema, FormError> & {
+> = Metadata<Schema, FormError, FormSchema> & {
 	formId: FormId<FormSchema, FormError>;
-	name: FieldName<Schema, FormError, FormSchema>;
 	constraint?: Constraint;
 	getFieldset: unknown extends Schema
 		? () => unknown
@@ -193,13 +197,14 @@ export function getMetadata<
 	formId: FormId<FormSchema, FormError>,
 	state: FormState<FormError>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	name: FieldName<Schema> = '',
-): Metadata<Schema, FormError> {
+	name: FieldName<Schema, FormError, FormSchema> = '',
+): Metadata<Schema, FormError, FormSchema> {
 	const id = name ? `${formId}-${name}` : formId;
 
 	return new Proxy(
 		{
 			id,
+			name,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
 			initialValue: state.initialValue[name] as FormValue<Schema>,
@@ -309,8 +314,6 @@ export function getFieldMetadata<
 			switch (key) {
 				case 'formId':
 					return formId;
-				case 'name':
-					return name;
 				case 'constraint':
 					return state.constraint[name];
 				case 'getFieldList': {

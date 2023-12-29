@@ -36,26 +36,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const lastResult = useActionData() as SubmissionResult<string[]>;
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema: todosSchema });
 		},
 	});
-	const tasks = fieldset.tasks.getFieldList();
+	const tasks = fields.tasks.getFieldList();
 
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Title</label>
 				<input
-					className={!fieldset.title.valid ? 'error' : ''}
-					{...getInputProps(fieldset.title)}
+					className={!fields.title.valid ? 'error' : ''}
+					{...getInputProps(fields.title)}
 				/>
-				<div>{fieldset.title.errors}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fieldset.tasks.errors}</div>
+			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -82,7 +82,7 @@ export function Component() {
 						</div>
 						<button
 							{...form.getControlButtonProps(
-								control.remove({ name: fieldset.tasks.name, index }),
+								control.remove({ name: fields.tasks.name, index }),
 							)}
 						>
 							Delete
@@ -90,7 +90,7 @@ export function Component() {
 						<button
 							{...form.getControlButtonProps(
 								control.reorder({
-									name: fieldset.tasks.name,
+									name: fields.tasks.name,
 									from: index,
 									to: 0,
 								}),
@@ -110,7 +110,7 @@ export function Component() {
 			})}
 			<button
 				{...form.getControlButtonProps(
-					control.insert({ name: fieldset.tasks.name }),
+					control.insert({ name: fields.tasks.name }),
 				)}
 			>
 				Add task

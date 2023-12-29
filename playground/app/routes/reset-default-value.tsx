@@ -60,7 +60,7 @@ export async function action({ request }: ActionArgs) {
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		id: `color-${color ?? 'default'}`,
 		lastResult,
 		defaultValue,
@@ -93,11 +93,11 @@ export default function ExampleForm() {
 					</div>
 				}
 			>
-				<Field label="Name" meta={fieldset.name}>
-					<input {...getInputProps(fieldset.name, { type: 'text' })} />
+				<Field label="Name" meta={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" meta={fieldset.code}>
-					<input {...getInputProps(fieldset.code, { type: 'color' })} />
+				<Field label="Code" meta={fields.code}>
+					<input {...getInputProps(fields.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

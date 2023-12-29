@@ -47,7 +47,7 @@ export async function action({ request }: ActionArgs) {
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		id: 'example',
 		lastResult,
 		defaultValue: {
@@ -57,7 +57,7 @@ export default function Example() {
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const bookmarks = fieldset.bookmarks.getFieldList();
+	const bookmarks = fields.bookmarks.getFieldList();
 
 	return (
 		<Form method="post" {...getFormProps(form)}>
@@ -75,22 +75,22 @@ export default function Example() {
 						allErrors: form.allErrors,
 					},
 					title: {
-						initialValue: fieldset.title.initialValue,
-						value: fieldset.title.value,
-						dirty: fieldset.title.dirty,
-						valid: fieldset.title.valid,
-						errors: fieldset.title.errors,
-						allValid: fieldset.title.allValid,
-						allErrors: fieldset.title.allErrors,
+						initialValue: fields.title.initialValue,
+						value: fields.title.value,
+						dirty: fields.title.dirty,
+						valid: fields.title.valid,
+						errors: fields.title.errors,
+						allValid: fields.title.allValid,
+						allErrors: fields.title.allErrors,
 					},
 					bookmarks: {
-						initialValue: fieldset.bookmarks.initialValue,
-						value: fieldset.bookmarks.value,
-						dirty: fieldset.bookmarks.dirty,
-						valid: fieldset.bookmarks.valid,
-						errors: fieldset.bookmarks.errors,
-						allValid: fieldset.bookmarks.allValid,
-						allErrors: fieldset.bookmarks.allErrors,
+						initialValue: fields.bookmarks.initialValue,
+						value: fields.bookmarks.value,
+						dirty: fields.bookmarks.dirty,
+						valid: fields.bookmarks.valid,
+						errors: fields.bookmarks.errors,
+						allValid: fields.bookmarks.allValid,
+						allErrors: fields.bookmarks.allErrors,
 					},
 					'bookmarks[0]': {
 						initialValue: bookmarks[0]?.initialValue,
@@ -112,13 +112,10 @@ export default function Example() {
 					},
 				}}
 			>
-				<Field label="Title" meta={fieldset.title}>
-					<input {...getInputProps(fieldset.title)} />
+				<Field label="Title" meta={fields.title}>
+					<input {...getInputProps(fields.title)} />
 				</Field>
-				<Alert
-					id={fieldset.bookmarks.errorId}
-					errors={fieldset.bookmarks.errors}
-				/>
+				<Alert id={fields.bookmarks.errorId} errors={fields.bookmarks.errors} />
 				{bookmarks.map((bookmark, index) => {
 					const { name, url } = bookmark.getFieldset();
 

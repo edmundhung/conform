@@ -23,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Component() {
 	const lastResult = useActionData() as any;
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
@@ -36,23 +36,23 @@ export function Component() {
 			<div>
 				<label>Email</label>
 				<input
-					className={!fieldset.email.valid ? 'error' : ''}
-					{...getInputProps(fieldset.email)}
+					className={!fields.email.valid ? 'error' : ''}
+					{...getInputProps(fields.email)}
 				/>
-				<div>{fieldset.email.errors}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fieldset.password.valid ? 'error' : ''}
-					{...getInputProps(fieldset.password, { type: 'password' })}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{fieldset.password.errors}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...getInputProps(fieldset.remember, { type: 'checkbox' })} />
+					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

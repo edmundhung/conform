@@ -42,7 +42,7 @@ export async function action({ request }: ActionArgs) {
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		lastResult,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
@@ -53,14 +53,11 @@ export default function FileUpload() {
 		<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
 			<Playground title="Employee Form" result={lastResult}>
 				<Alert errors={form.errors} />
-				<Field label="Single file" meta={fieldset.file}>
-					<input {...getInputProps(fieldset.file, { type: 'file' })} />
+				<Field label="Single file" meta={fields.file}>
+					<input {...getInputProps(fields.file, { type: 'file' })} />
 				</Field>
-				<Field label="Multiple files" meta={fieldset.files}>
-					<input
-						{...getInputProps(fieldset.files, { type: 'file' })}
-						multiple
-					/>
+				<Field label="Multiple files" meta={fields.files}>
+					<input {...getInputProps(fields.files, { type: 'file' })} multiple />
 				</Field>
 			</Playground>
 		</Form>

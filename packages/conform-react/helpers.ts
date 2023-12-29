@@ -144,8 +144,8 @@ function simplify<Props>(props: Props): Props {
 /**
  * Derives aria attributes of a form control based on the field metadata.
  */
-export function getAriaAttributes<Schema, FormError>(
-	metadata: Metadata<Schema, FormError>,
+export function getAriaAttributes(
+	metadata: Metadata<any, any, any>,
 	options: FormControlOptions = {},
 ): {
 	'aria-invalid'?: boolean;

@@ -29,7 +29,7 @@ import {
 } from '@mui/material';
 
 export default function ExampleForm() {
-	const { form, fieldset } = useForm({
+	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		onValidate(context) {
@@ -56,16 +56,16 @@ export default function ExampleForm() {
 							label="Email (TextField)"
 							type="email"
 							name="email"
-							error={!fieldset.email.valid}
-							helperText={fieldset.email.errors?.validationMessage}
+							error={!fields.email.valid}
+							helperText={fields.email.errors?.validationMessage}
 							required
 						/>
 
 						<TextField
 							label="Description (TextField - multline)"
-							name={fieldset.description.name}
-							error={!fieldset.description.valid}
-							helperText={fieldset.description.errors?.validationMessage}
+							name={fields.description.name}
+							error={!fields.description.valid}
+							helperText={fields.description.errors?.validationMessage}
 							inputProps={{
 								minLength: 10,
 							}}
@@ -75,37 +75,37 @@ export default function ExampleForm() {
 
 						<ExampleSelect
 							label="Language (Select)"
-							name={fieldset.language.name}
+							name={fields.language.name}
 							required
 						/>
 
 						<ExampleAutocomplete
 							label="Movie (Autocomplete)"
-							name={fieldset.movie.name}
+							name={fields.movie.name}
 							required
 						/>
 
 						<FormControl
 							component="fieldset"
 							variant="standard"
-							error={!fieldset.subscribe.valid}
+							error={!fields.subscribe.valid}
 							required
 						>
 							<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
 							<FormGroup>
 								<FormControlLabel
-									control={<Checkbox name={fieldset.subscribe.name} required />}
+									control={<Checkbox name={fields.subscribe.name} required />}
 									label="Newsletter"
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{fieldset.subscribe.errors?.validationMessage}
+								{fields.subscribe.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={!fieldset.active.valid}
+							error={!fields.active.valid}
 							required
 						>
 							<FormLabel>Active (Radio)</FormLabel>
@@ -122,13 +122,13 @@ export default function ExampleForm() {
 								/>
 							</RadioGroup>
 							<FormHelperText>
-								{fieldset.active.errors?.validationMessage}
+								{fields.active.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<FormControl
 							variant="standard"
-							error={Boolean(fieldset.enabled.errors?.validationMessage)}
+							error={Boolean(fields.enabled.errors?.validationMessage)}
 							required
 						>
 							<FormLabel>Enabled (Switch)</FormLabel>
@@ -139,19 +139,19 @@ export default function ExampleForm() {
 								/>
 							</FormGroup>
 							<FormHelperText>
-								{fieldset.enabled.errors?.validationMessage}
+								{fields.enabled.errors?.validationMessage}
 							</FormHelperText>
 						</FormControl>
 
 						<ExampleRating
 							label="Score (Rating)"
-							name={fieldset.score.name}
+							name={fields.score.name}
 							required
 						/>
 
 						<ExampleSlider
 							label="Progress (Slider)"
-							name={fieldset.progress.name}
+							name={fields.progress.name}
 							required
 						/>
 
@@ -183,7 +183,7 @@ type Field<Schema> = {
 };
 
 function ExampleSelect({ label, required, name }: Field<string>) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const control = useInputControl(field);
 
 	return (
@@ -207,7 +207,7 @@ function ExampleSelect({ label, required, name }: Field<string>) {
 }
 
 function ExampleAutocomplete({ label, name, required }: Field<string>) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const control = useInputControl(field);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
@@ -233,7 +233,7 @@ function ExampleAutocomplete({ label, name, required }: Field<string>) {
 }
 
 function ExampleRating({ label, name, required }: Field<number>) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const control = useInputControl(field);
 
 	return (
@@ -252,7 +252,7 @@ function ExampleRating({ label, name, required }: Field<number>) {
 }
 
 function ExampleSlider({ label, name, required }: Field<number>) {
-	const { field } = useField({ name });
+	const [field] = useField(name);
 	const control = useInputControl(field);
 
 	return (
