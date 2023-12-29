@@ -13,44 +13,44 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
-export type SubmissionContext<Value = null, Error = unknown> = {
+export type SubmissionContext<Value = null, FormError = unknown> = {
 	control: FormControl | null;
 	payload: Record<string, unknown>;
 	fields: string[];
 	value?: Value;
-	error?: Record<string, Error | null> | null;
+	error?: Record<string, FormError | null> | null;
 	state: SubmissionState;
 };
 
-export type Submission<Schema, Error = unknown, Value = Schema> =
+export type Submission<Schema, FormError = string[], Value = Schema> =
 	| {
 			status: 'success';
 			payload: Record<string, unknown>;
 			value: Value;
-			reply(options?: ReplyOptions<Error>): SubmissionResult<Error>;
+			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  }
 	| {
 			status: 'error' | undefined;
 			payload: Record<string, unknown>;
-			error: Record<string, Error | null> | null;
-			reply(options?: ReplyOptions<Error>): SubmissionResult<Error>;
+			error: Record<string, FormError | null> | null;
+			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  };
 
-export type SubmissionResult<Error = unknown> = {
+export type SubmissionResult<FormError = string[]> = {
 	status?: 'error' | 'success';
 	control?: FormControl;
 	initialValue?: Record<string, unknown> | null;
-	error?: Record<string, Error | null>;
+	error?: Record<string, FormError | null>;
 	state?: SubmissionState;
 };
 
-export type ReplyOptions<Error> =
+export type ReplyOptions<FormError> =
 	| {
 			resetForm?: boolean;
 	  }
 	| {
-			formErrors?: Error;
-			fieldErrors?: Record<string, Error>;
+			formErrors?: FormError;
+			fieldErrors?: Record<string, FormError>;
 			hideFields?: string[];
 	  };
 
@@ -103,49 +103,57 @@ export function getSubmissionContext(
 	};
 }
 
-export function parse<Value, Error>(
+export function parse<FormValue, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			control: FormControl | null,
-		) => { value?: Value; error?: Record<string, Error | null> | null };
+		) => { value?: FormValue; error?: Record<string, FormError | null> | null };
 	},
-): Submission<Value, Error>;
-export function parse<Value, Error>(
+): Submission<FormValue, FormError>;
+export function parse<FormValue, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			control: FormControl | null,
 		) => Promise<{
-			value?: Value;
-			error?: Record<string, Error | null> | null;
+			value?: FormValue;
+			error?: Record<string, FormError | null> | null;
 		}>;
 	},
-): Promise<Submission<Value, Error>>;
-export function parse<Value, Error>(
+): Promise<Submission<FormValue, FormError>>;
+export function parse<FormValue, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			control: FormControl | null,
 		) =>
-			| { value?: Value; error?: Record<string, Error | null> | null }
-			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
+			| { value?: FormValue; error?: Record<string, FormError | null> | null }
+			| Promise<{
+					value?: FormValue;
+					error?: Record<string, FormError | null> | null;
+			  }>;
 	},
-): Submission<Value, Error> | Promise<Submission<Value, Error>>;
-export function parse<Value, Error>(
+): Submission<FormValue, FormError> | Promise<Submission<FormValue, FormError>>;
+export function parse<FormValue, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		resolve: (
 			payload: Record<string, any>,
 			control: FormControl | null,
 		) =>
-			| { value?: Value; error?: Record<string, Error | null> | null }
-			| Promise<{ value?: Value; error?: Record<string, Error | null> | null }>;
+			| { value?: FormValue; error?: Record<string, FormError | null> | null }
+			| Promise<{
+					value?: FormValue;
+					error?: Record<string, FormError | null> | null;
+			  }>;
 	},
-): Submission<Value, Error> | Promise<Submission<Value, Error>> {
+):
+	| Submission<FormValue, FormError>
+	| Promise<Submission<FormValue, FormError>> {
 	const context = getSubmissionContext(payload);
 	const control = context.control;
 
@@ -226,8 +234,8 @@ export function parse<Value, Error>(
 
 	const result = options.resolve(context.payload, control);
 	const mergeResolveResult = (resolved: {
-		error?: Record<string, Error | null> | null;
-		value?: Value;
+		error?: Record<string, FormError | null> | null;
+		value?: FormValue;
 	}) => {
 		const error = typeof resolved.error !== 'undefined' ? resolved.error : {};
 
@@ -251,9 +259,9 @@ export function parse<Value, Error>(
 	return mergeResolveResult(result);
 }
 
-export function createSubmission<Value, Error>(
-	context: SubmissionContext<Value, Error>,
-): Submission<Value, Error> {
+export function createSubmission<FormValue, FormError>(
+	context: SubmissionContext<FormValue, FormError>,
+): Submission<FormValue, FormError> {
 	if (context.control || !context.value || context.error) {
 		return {
 			status: !context.control ? 'error' : undefined,
@@ -275,10 +283,10 @@ export function createSubmission<Value, Error>(
 	};
 }
 
-export function replySubmission<Error>(
-	context: SubmissionContext<unknown, Error>,
-	options: ReplyOptions<Error> = {},
-): SubmissionResult<Error> {
+export function replySubmission<FormError>(
+	context: SubmissionContext<unknown, FormError>,
+	options: ReplyOptions<FormError> = {},
+): SubmissionResult<FormError> {
 	switch (context.control?.type) {
 		case 'reset': {
 			const name = context.control.payload.name ?? '';
@@ -306,7 +314,7 @@ export function replySubmission<Error>(
 	}
 
 	const submissionError = Object.entries(context.error ?? {}).reduce<
-		Record<string, Error | null>
+		Record<string, FormError | null>
 	>((result, [name, error]) => {
 		if (context.state.validated[name]) {
 			result[name] = error;

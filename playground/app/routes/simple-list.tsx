@@ -4,6 +4,7 @@ import {
 	control,
 	getFormProps,
 	getInputProps,
+	FormProvider,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -55,88 +56,90 @@ export default function SimpleList() {
 	const items = fieldset.items.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
-			<FormStateInput context={form.context} />
-			<Playground title="Simple list" result={lastResult}>
-				<Alert errors={fieldset.items.errors} />
-				<ol>
-					{items.map((task, index) => (
-						<li key={task.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} meta={task}>
-								<input {...getInputProps(task, { type: 'text' })} />
-							</Field>
-							<div className="flex flex-row gap-2">
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...form.getControlButtonProps(
-										control.remove({ name: fieldset.items.name, index }),
-									)}
-								>
-									Delete
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...form.getControlButtonProps(
-										control.reorder({
-											name: fieldset.items.name,
-											from: index,
-											to: 0,
-										}),
-									)}
-								>
-									Move to top
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...form.getControlButtonProps(
-										control.replace({ name: task.name, value: '' }),
-									)}
-								>
-									Clear
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...form.getControlButtonProps(
-										control.reset({ name: task.name }),
-									)}
-								>
-									Reset
-								</button>
-							</div>
-						</li>
-					))}
-				</ol>
-				<div className="flex flex-row gap-2">
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.insert({
-								name: fieldset.items.name,
-								defaultValue: 'Top item',
-								index: 0,
-							}),
-						)}
-					>
-						Insert top
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.insert({ name: fieldset.items.name, defaultValue: '' }),
-						)}
-					>
-						Insert bottom
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.reset({ name: fieldset.items.name }),
-						)}
-					>
-						Reset
-					</button>
-				</div>
-			</Playground>
-		</Form>
+		<FormProvider context={form.context}>
+			<Form method="post" {...getFormProps(form)}>
+				<FormStateInput formId={form.id} />
+				<Playground title="Simple list" result={lastResult}>
+					<Alert errors={fieldset.items.errors} />
+					<ol>
+						{items.map((task, index) => (
+							<li key={task.key} className="border rounded-md p-4 mb-4">
+								<Field label={`Item #${index + 1}`} meta={task}>
+									<input {...getInputProps(task, { type: 'text' })} />
+								</Field>
+								<div className="flex flex-row gap-2">
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.getControlButtonProps(
+											control.remove({ name: fieldset.items.name, index }),
+										)}
+									>
+										Delete
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.getControlButtonProps(
+											control.reorder({
+												name: fieldset.items.name,
+												from: index,
+												to: 0,
+											}),
+										)}
+									>
+										Move to top
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.getControlButtonProps(
+											control.replace({ name: task.name, value: '' }),
+										)}
+									>
+										Clear
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.getControlButtonProps(
+											control.reset({ name: task.name }),
+										)}
+									>
+										Reset
+									</button>
+								</div>
+							</li>
+						))}
+					</ol>
+					<div className="flex flex-row gap-2">
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.insert({
+									name: fieldset.items.name,
+									defaultValue: 'Top item',
+									index: 0,
+								}),
+							)}
+						>
+							Insert top
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.insert({ name: fieldset.items.name, defaultValue: '' }),
+							)}
+						>
+							Insert bottom
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.reset({ name: fieldset.items.name }),
+							)}
+						>
+							Reset
+						</button>
+					</div>
+				</Playground>
+			</Form>
+		</FormProvider>
 	);
 }

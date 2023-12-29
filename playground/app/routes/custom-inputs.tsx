@@ -1,5 +1,5 @@
 import {
-	type FieldProps,
+	type FieldName,
 	FormProvider,
 	useForm,
 	useField,
@@ -53,11 +53,11 @@ export default function Example() {
 			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Custom Inputs Form" result={lastResult}>
 					<Field label="Headless ListBox" meta={fieldset.language}>
-						<CustomSelect name={fieldset.language.name} formId={form.id} />
+						<CustomSelect name={fieldset.language.name} />
 					</Field>
 					<Field label="Radix Checkbox" meta={fieldset.tos}>
 						<div className="flex items-center">
-							<CustomCheckbox name={fieldset.tos.name} formId={form.id} />
+							<CustomCheckbox name={fieldset.tos.name} />
 							<label
 								htmlFor={fieldset.tos.id}
 								className="pl-[15px] text-[15px] leading-none"
@@ -76,8 +76,8 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function CustomSelect({ name, formId }: FieldProps<string>) {
-	const { field } = useField({ name, formId });
+function CustomSelect({ name }: { name: FieldName<string> }) {
+	const { field } = useField({ name });
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useInputControl(field);
 	const options = [
@@ -148,8 +148,8 @@ function CustomSelect({ name, formId }: FieldProps<string>) {
 	);
 }
 
-function CustomCheckbox({ name, formId }: FieldProps<boolean>) {
-	const { field } = useField({ name, formId });
+function CustomCheckbox({ name }: { name: FieldName<boolean> }) {
+	const { field } = useField({ name });
 	const control = useInputControl(field);
 
 	return (

@@ -39,31 +39,15 @@ export type Primitive =
 	| null
 	| undefined;
 
-export type FieldProps<
-	FieldSchema,
-	Error = unknown,
-	FormSchema extends Record<string, unknown> = Record<string, unknown>,
-> =
-	| {
-			formId: FormId<FormSchema, Error>;
-			name: FieldName<FieldSchema>;
-	  }
-	| {
-			formId: FieldSchema extends Record<string, unknown>
-				? FormId<FieldSchema, Error>
-				: never;
-			name?: undefined;
-	  };
-
-export type Metadata<Schema, Error> = {
+export type Metadata<Schema, FormError> = {
 	key: string | undefined;
 	id: string;
 	errorId: string;
 	descriptionId: string;
 	initialValue: FormValue<Schema>;
 	value: FormValue<Schema>;
-	errors: Error | undefined;
-	allErrors: Record<string, Error>;
+	errors: FormError | undefined;
+	allErrors: Record<string, FormError>;
 	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
@@ -71,17 +55,17 @@ export type Metadata<Schema, Error> = {
 
 export type FormMetadata<
 	Schema extends Record<string, unknown> = Record<string, unknown>,
-	Error = unknown,
-> = Omit<Metadata<Schema, Error>, 'id'> & {
-	id: FormId<Schema, Error>;
-	context: FormContext<Schema, Error>;
+	FormError = string[],
+> = Omit<Metadata<Schema, FormError>, 'id'> & {
+	id: FormId<Schema, FormError>;
+	context: FormContext<Schema, FormError>;
 	status?: 'success' | 'error';
 	dispatch(control: FormControl): void;
 	getControlButtonProps(control: FormControl): ControlButtonProps;
 	getFieldset: () => {
 		[Key in UnionKeyof<Schema>]: FieldMetadata<
 			UnionKeyType<Schema, Key>,
-			Error,
+			FormError,
 			Schema
 		>;
 	};
@@ -94,11 +78,11 @@ export type FormMetadata<
 
 export type FieldMetadata<
 	Schema = unknown,
-	Error = unknown,
+	FormError = string[],
 	FormSchema extends Record<string, any> = Record<string, unknown>,
-> = Metadata<Schema, Error> & {
-	formId: FormId<FormSchema, Error>;
-	name: FieldName<Schema>;
+> = Metadata<Schema, FormError> & {
+	formId: FormId<FormSchema, FormError>;
+	name: FieldName<Schema, FormError, FormSchema>;
 	constraint?: Constraint;
 	getFieldset: unknown extends Schema
 		? () => unknown
@@ -107,40 +91,37 @@ export type FieldMetadata<
 		: () => {
 				[Key in UnionKeyof<Schema>]: FieldMetadata<
 					UnionKeyType<Schema, Key>,
-					Error
+					FormError
 				>;
 		  };
 	getFieldList: unknown extends Schema
 		? () => unknown
 		: Schema extends Array<infer Item>
-		? () => Array<FieldMetadata<Item, Error>>
+		? () => Array<FieldMetadata<Item, FormError>>
 		: never;
 };
 
-export const Registry = createContext<Record<string, FormContext>>({});
+export const Form = createContext<FormContext[]>([]);
 
-export function useFormContext<
-	Schema extends Record<string, any>,
-	Error,
-	Value = Schema,
->(
-	formId: FormId<Schema, Error>,
-	context?: FormContext<Schema, Error, Value>,
-): FormContext<Schema, Error, Value> {
-	const registry = useContext(Registry);
-	const form = context ?? registry[formId];
+export function useFormContext<Schema extends Record<string, any>, FormError>(
+	formId?: FormId<Schema, FormError>,
+): FormContext<Schema, FormError, unknown> {
+	const contexts = useContext(Form);
+	const form = formId
+		? contexts.find((context) => context.formId === formId)
+		: contexts[0];
 
 	if (!form) {
 		throw new Error('Form context is not available');
 	}
 
-	return form as FormContext<Schema, Error, Value>;
+	return form as unknown as FormContext<Schema, FormError, unknown>;
 }
 
-export function useFormState<Error>(
-	form: FormContext<any, Error>,
+export function useFormState<FormError>(
+	form: FormContext<any, FormError>,
 	subjectRef?: MutableRefObject<SubscriptionSubject>,
-): FormState<Error> {
+): FormState<FormError> {
 	const subscribe = useCallback(
 		(callback: () => void) =>
 			form.subscribe(callback, () => subjectRef?.current),
@@ -154,30 +135,17 @@ export function FormProvider(props: {
 	context: FormContext<any, any, any>;
 	children: ReactNode;
 }): ReactElement {
-	const registry = useContext(Registry);
+	const forms = useContext(Form);
 	const value = useMemo(
-		() => ({ ...registry, [props.context.formId]: props.context }),
-		[registry, props.context],
+		() => [props.context].concat(forms), // Put the latest form context first
+		[forms, props.context],
 	);
 
-	return <Registry.Provider value={value}>{props.children}</Registry.Provider>;
+	return <Form.Provider value={value}>{props.children}</Form.Provider>;
 }
 
-export function FormStateInput(
-	props:
-		| {
-				formId: string;
-				context?: undefined;
-		  }
-		| {
-				formId?: undefined;
-				context: FormContext;
-		  },
-): React.ReactElement {
-	const context = useFormContext(
-		props.formId ?? props.context.formId,
-		props.context,
-	);
+export function FormStateInput(props: { formId?: string }): React.ReactElement {
+	const context = useFormContext(props.formId);
 
 	return (
 		<input
@@ -219,14 +187,14 @@ export function updateSubjectRef(
 
 export function getMetadata<
 	Schema,
-	Error,
+	FormError,
 	FormSchema extends Record<string, any>,
 >(
-	formId: FormId<FormSchema, Error>,
-	state: FormState<Error>,
+	formId: FormId<FormSchema, FormError>,
+	state: FormState<FormError>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
 	name: FieldName<Schema> = '',
-): Metadata<Schema, Error> {
+): Metadata<Schema, FormError> {
 	const id = name ? `${formId}-${name}` : formId;
 
 	return new Proxy(
@@ -266,7 +234,7 @@ export function getMetadata<
 					return state.error;
 				}
 
-				const result: Record<string, Error> = {};
+				const result: Record<string, FormError> = {};
 
 				for (const [key, error] of Object.entries(state.error)) {
 					if (isPrefix(key, name)) {
@@ -321,15 +289,15 @@ export function getMetadata<
 
 export function getFieldMetadata<
 	Schema,
-	Error,
+	FormError,
 	FormSchema extends Record<string, any>,
 >(
-	formId: FormId<FormSchema, Error>,
-	state: FormState<Error>,
+	formId: FormId<FormSchema, FormError>,
+	state: FormState<FormError>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
 	prefix = '',
 	key?: string | number,
-): FieldMetadata<Schema, Error, FormSchema> {
+): FieldMetadata<Schema, FormError, FormSchema> {
 	const name =
 		typeof key === 'undefined'
 			? prefix
@@ -371,13 +339,16 @@ export function getFieldMetadata<
 	});
 }
 
-export function getFormMetadata<Schema extends Record<string, any>, Error>(
-	formId: FormId<Schema, Error>,
-	state: FormState<Error>,
+export function getFormMetadata<
+	Schema extends Record<string, any>,
+	FormError = string[],
+>(
+	formId: FormId<Schema, FormError>,
+	state: FormState<FormError>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	context: FormContext<Schema, Error, any>,
+	context: FormContext<Schema, FormError, any>,
 	noValidate: boolean,
-): FormMetadata<Schema, Error> {
+): FormMetadata<Schema, FormError> {
 	const metadata = getMetadata(formId, state, subjectRef);
 
 	return new Proxy({} as any, {

@@ -5,6 +5,7 @@ import {
 	getInputProps,
 	getTextareaProps,
 	FormStateInput,
+	FormProvider,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -44,69 +45,71 @@ export default function FormControl() {
 	});
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
-			<FormStateInput context={form.context} />
-			<Playground title="Form Control" result={lastResult}>
-				<Field label="Name" meta={fieldset.name}>
-					<input {...getInputProps(fieldset.name, { type: 'text' })} />
-				</Field>
-				<Field label="Message" meta={fieldset.message}>
-					<textarea {...getTextareaProps(fieldset.message)} />
-				</Field>
-				<div className="flex flex-col gap-2">
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(control.validate())}
-					>
-						Validate Form
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.validate({ name: fieldset.message.name }),
-						)}
-					>
-						Validate Message
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.replace({
-								name: fieldset.message.name,
-								value: 'Hello World',
-							}),
-						)}
-					>
-						Update message
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.replace({
-								name: fieldset.message.name,
-								value: '',
-								validated: true,
-							}),
-						)}
-					>
-						Clear message
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(
-							control.reset({ name: fieldset.message.name }),
-						)}
-					>
-						Reset message
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...form.getControlButtonProps(control.reset())}
-					>
-						Reset form
-					</button>
-				</div>
-			</Playground>
-		</Form>
+		<FormProvider context={form.context}>
+			<Form method="post" {...getFormProps(form)}>
+				<FormStateInput formId={form.id} />
+				<Playground title="Form Control" result={lastResult}>
+					<Field label="Name" meta={fieldset.name}>
+						<input {...getInputProps(fieldset.name, { type: 'text' })} />
+					</Field>
+					<Field label="Message" meta={fieldset.message}>
+						<textarea {...getTextareaProps(fieldset.message)} />
+					</Field>
+					<div className="flex flex-col gap-2">
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(control.validate())}
+						>
+							Validate Form
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.validate({ name: fieldset.message.name }),
+							)}
+						>
+							Validate Message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.replace({
+									name: fieldset.message.name,
+									value: 'Hello World',
+								}),
+							)}
+						>
+							Update message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.replace({
+									name: fieldset.message.name,
+									value: '',
+									validated: true,
+								}),
+							)}
+						>
+							Clear message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(
+								control.reset({ name: fieldset.message.name }),
+							)}
+						>
+							Reset message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.getControlButtonProps(control.reset())}
+						>
+							Reset form
+						</button>
+					</div>
+				</Playground>
+			</Form>
+		</FormProvider>
 	);
 }

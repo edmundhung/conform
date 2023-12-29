@@ -1,4 +1,4 @@
-import type { FieldProps } from '@conform-to/react';
+import type { FieldName } from '@conform-to/react';
 import {
 	FormProvider,
 	useForm,
@@ -40,7 +40,7 @@ import {
 } from '@chakra-ui/react';
 import { useRef } from 'react';
 
-type Error = {
+type FormError = {
 	validity: ValidityState;
 	validationMessage: string;
 };
@@ -100,10 +100,7 @@ export default function Example() {
 
 						<FormControl isInvalid={!fieldset.quantity.valid}>
 							<FormLabel>Quantity (NumberInput)</FormLabel>
-							<ExampleNumberInput
-								name={fieldset.quantity.name}
-								formId={form.id}
-							/>
+							<ExampleNumberInput name={fieldset.quantity.name} />
 							<FormErrorMessage>
 								{fieldset.quantity.errors?.validationMessage}
 							</FormErrorMessage>
@@ -111,7 +108,7 @@ export default function Example() {
 
 						<FormControl isInvalid={!fieldset.pin.valid}>
 							<FormLabel>PIN (PinInput)</FormLabel>
-							<ExamplePinInput name={fieldset.pin.name} formId={form.id} />
+							<ExamplePinInput name={fieldset.pin.name} />
 							<FormErrorMessage>
 								{fieldset.pin.errors?.validationMessage}
 							</FormErrorMessage>
@@ -148,7 +145,7 @@ export default function Example() {
 
 						<FormControl isInvalid={!fieldset.progress.valid}>
 							<FormLabel>Progress (Slider)</FormLabel>
-							<ExampleSlider name={fieldset.progress.name} formId={form.id} />
+							<ExampleSlider name={fieldset.progress.name} />
 							<FormErrorMessage>
 								{fieldset.progress.errors?.validationMessage}
 							</FormErrorMessage>
@@ -192,7 +189,7 @@ export default function Example() {
 	);
 }
 
-function ExampleNumberInput(props: FieldProps<number, Error>) {
+function ExampleNumberInput(props: { name: FieldName<number, FormError> }) {
 	const { field } = useField(props);
 	const control = useInputControl(field);
 
@@ -212,7 +209,7 @@ function ExampleNumberInput(props: FieldProps<number, Error>) {
 	);
 }
 
-function ExamplePinInput(props: FieldProps<string, Error>) {
+function ExamplePinInput(props: { name: FieldName<number, FormError> }) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const { field } = useField(props);
 	const control = useInputControl(field);
@@ -232,7 +229,7 @@ function ExamplePinInput(props: FieldProps<string, Error>) {
 	);
 }
 
-function ExampleSlider(props: FieldProps<number, Error>) {
+function ExampleSlider(props: { name: FieldName<number, FormError> }) {
 	const { field } = useField(props);
 	const control = useInputControl(field);
 

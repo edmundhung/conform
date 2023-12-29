@@ -1,4 +1,4 @@
-import type { FieldProps } from '@conform-to/react';
+import type { FieldName } from '@conform-to/react';
 import {
 	FormProvider,
 	useForm,
@@ -76,14 +76,12 @@ export default function ExampleForm() {
 						<ExampleSelect
 							label="Language (Select)"
 							name={fieldset.language.name}
-							formId={form.id}
 							required
 						/>
 
 						<ExampleAutocomplete
 							label="Movie (Autocomplete)"
 							name={fieldset.movie.name}
-							formId={form.id}
 							required
 						/>
 
@@ -148,14 +146,12 @@ export default function ExampleForm() {
 						<ExampleRating
 							label="Score (Rating)"
 							name={fieldset.score.name}
-							formId={fieldset.score.formId}
 							required
 						/>
 
 						<ExampleSlider
 							label="Progress (Slider)"
 							name={fieldset.progress.name}
-							formId={fieldset.progress.formId}
 							required
 						/>
 
@@ -174,19 +170,20 @@ export default function ExampleForm() {
 	);
 }
 
-type Field<Schema> = FieldProps<
-	Schema,
-	{ validity: ValidityState; validationMessage: string }
-> & {
+type Field<Schema> = {
+	name: FieldName<
+		Schema,
+		{
+			validity: ValidityState;
+			validationMessage: string;
+		}
+	>;
 	label: string;
 	required?: boolean;
 };
 
-function ExampleSelect({ label, required, formId, name }: Field<string>) {
-	const { field } = useField({
-		formId,
-		name,
-	});
+function ExampleSelect({ label, required, name }: Field<string>) {
+	const { field } = useField({ name });
 	const control = useInputControl(field);
 
 	return (
@@ -209,11 +206,8 @@ function ExampleSelect({ label, required, formId, name }: Field<string>) {
 	);
 }
 
-function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
-	const { field } = useField({
-		formId,
-		name,
-	});
+function ExampleAutocomplete({ label, name, required }: Field<string>) {
+	const { field } = useField({ name });
 	const control = useInputControl(field);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
@@ -238,11 +232,8 @@ function ExampleAutocomplete({ label, name, formId, required }: Field<string>) {
 	);
 }
 
-function ExampleRating({ label, name, formId, required }: Field<number>) {
-	const { field } = useField({
-		formId,
-		name,
-	});
+function ExampleRating({ label, name, required }: Field<number>) {
+	const { field } = useField({ name });
 	const control = useInputControl(field);
 
 	return (
@@ -260,11 +251,8 @@ function ExampleRating({ label, name, formId, required }: Field<number>) {
 	);
 }
 
-function ExampleSlider({ label, name, formId, required }: Field<number>) {
-	const { field } = useField({
-		formId,
-		name,
-	});
+function ExampleSlider({ label, name, required }: Field<number>) {
+	const { field } = useField({ name });
 	const control = useInputControl(field);
 
 	return (

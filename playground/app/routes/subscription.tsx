@@ -1,5 +1,5 @@
 import {
-	type FieldProps,
+	type FieldName,
 	type FormId,
 	type FieldMetadata,
 	type FormMetadata,
@@ -53,7 +53,8 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Example() {
-	const { noClientValidate, isStrcitMode: s } = useLoaderData<typeof loader>();
+	const { noClientValidate, isStrcitMode: strict } =
+		useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
 	const { form, fieldset } = useForm({
 		id: 'example',
@@ -62,31 +63,30 @@ export default function Example() {
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const id = form.id;
 	const name = fieldset.name.name;
 	const message = fieldset.message.name;
 	const description = (
 		<ul className="space-y-1 list-disc">
-			<FormMetadata formId={id} s={s} subject="initialValue" />
-			<FormMetadata formId={id} s={s} subject="value" />
-			<FormMetadata formId={id} s={s} subject="key" />
-			<FormMetadata formId={id} s={s} subject="dirty" />
-			<FormMetadata formId={id} s={s} subject="valid" />
-			<FormMetadata formId={id} s={s} subject="allValid" />
-			<FormMetadata formId={id} s={s} subject="errors" />
-			<FormMetadata formId={id} s={s} subject="allErrors" />
-			<FieldMetadata formId={id} s={s} name={name} subject="initialValue" />
-			<FieldMetadata formId={id} s={s} name={name} subject="value" />
-			<FieldMetadata formId={id} s={s} name={name} subject="key" />
-			<FieldMetadata formId={id} s={s} name={name} subject="dirty" />
-			<FieldMetadata formId={id} s={s} name={name} subject="valid" />
-			<FieldMetadata formId={id} s={s} name={name} subject="errors" />
-			<FieldMetadata formId={id} s={s} name={message} subject="initialValue" />
-			<FieldMetadata formId={id} s={s} name={message} subject="value" />
-			<FieldMetadata formId={id} s={s} name={message} subject="key" />
-			<FieldMetadata formId={id} s={s} name={message} subject="dirty" />
-			<FieldMetadata formId={id} s={s} name={message} subject="valid" />
-			<FieldMetadata formId={id} s={s} name={message} subject="errors" />
+			<FormMetadata strict={strict} formId={form.id} subject="initialValue" />
+			<FormMetadata strict={strict} formId={form.id} subject="value" />
+			<FormMetadata strict={strict} formId={form.id} subject="key" />
+			<FormMetadata strict={strict} formId={form.id} subject="dirty" />
+			<FormMetadata strict={strict} formId={form.id} subject="valid" />
+			<FormMetadata strict={strict} formId={form.id} subject="allValid" />
+			<FormMetadata strict={strict} formId={form.id} subject="errors" />
+			<FormMetadata strict={strict} formId={form.id} subject="allErrors" />
+			<FieldMetadata strict={strict} name={name} subject="initialValue" />
+			<FieldMetadata strict={strict} name={name} subject="value" />
+			<FieldMetadata strict={strict} name={name} subject="key" />
+			<FieldMetadata strict={strict} name={name} subject="dirty" />
+			<FieldMetadata strict={strict} name={name} subject="valid" />
+			<FieldMetadata strict={strict} name={name} subject="errors" />
+			<FieldMetadata strict={strict} name={message} subject="initialValue" />
+			<FieldMetadata strict={strict} name={message} subject="value" />
+			<FieldMetadata strict={strict} name={message} subject="key" />
+			<FieldMetadata strict={strict} name={message} subject="dirty" />
+			<FieldMetadata strict={strict} name={message} subject="valid" />
+			<FieldMetadata strict={strict} name={message} subject="errors" />
 		</ul>
 	);
 
@@ -131,19 +131,16 @@ function useRenderCount(isStrcitMode: boolean): number {
 }
 
 const FieldMetadata = memo(function FieldMetadata({
-	formId,
 	name,
 	subject,
-	s,
-}: FieldProps<string, string[]> & {
-	subject: keyof FieldMetadata<string, string[]>;
-	s: boolean;
+	strict,
+}: {
+	name: FieldName<string>;
+	subject: keyof FieldMetadata<string>;
+	strict: boolean;
 }) {
-	const renderCount = useRenderCount(s);
-	const { field } = useField({
-		formId,
-		name,
-	});
+	const renderCount = useRenderCount(strict);
+	const { field } = useField({ name });
 
 	// eslint-disable-next-line no-console
 	console.log(`${name}.${subject}: ${JSON.stringify(field[subject])}`);
@@ -154,16 +151,14 @@ const FieldMetadata = memo(function FieldMetadata({
 const FormMetadata = memo(function FormMetadata({
 	formId,
 	subject,
-	s,
+	strict,
 }: {
-	formId: FormId<Record<string, any>, string[]>;
-	subject: keyof FormMetadata<Record<string, any>, string[]>;
-	s: boolean;
+	formId: FormId;
+	subject: keyof FormMetadata<Record<string, any>>;
+	strict: boolean;
 }) {
-	const renderCount = useRenderCount(s);
-	const form = useFormMetadata({
-		formId,
-	});
+	const renderCount = useRenderCount(strict);
+	const form = useFormMetadata({ formId });
 
 	// eslint-disable-next-line no-console
 	console.log(`form.${subject}: ${JSON.stringify(form[subject])}`);

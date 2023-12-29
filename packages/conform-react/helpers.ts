@@ -144,8 +144,8 @@ function simplify<Props>(props: Props): Props {
 /**
  * Derives aria attributes of a form control based on the field metadata.
  */
-export function getAriaAttributes<Schema, Error>(
-	metadata: Metadata<Schema, Error>,
+export function getAriaAttributes<Schema, FormError>(
+	metadata: Metadata<Schema, FormError>,
 	options: FormControlOptions = {},
 ): {
 	'aria-invalid'?: boolean;
@@ -184,8 +184,8 @@ export function getAriaAttributes<Schema, Error>(
  * <form {...getFormProps(metadata)} />
  * ```
  */
-export function getFormProps<Schema extends Record<string, any>, Error>(
-	metadata: FormMetadata<Schema, Error>,
+export function getFormProps<Schema extends Record<string, any>, FormError>(
+	metadata: FormMetadata<Schema, FormError>,
 	options?: FormControlOptions,
 ) {
 	return simplify({
@@ -207,8 +207,7 @@ export function getFormProps<Schema extends Record<string, any>, Error>(
  */
 export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
-	Error,
->(metadata: FieldMetadata<Schema, Error, any>, options?: FormControlOptions) {
+>(metadata: FieldMetadata<Schema, any, any>, options?: FormControlOptions) {
 	return simplify({
 		id: metadata.id,
 		name: metadata.name,
@@ -221,8 +220,8 @@ export function getFieldsetProps<
  * Derives common properties of a form control based on the field metadata,
  * including `key`, `id`, `name`, `form`, `required`, `autoFocus`, `aria-invalid` and `aria-describedby`.
  */
-export function getFormControlProps<Schema, Error>(
-	metadata: FieldMetadata<Schema, Error, any>,
+export function getFormControlProps<Schema>(
+	metadata: FieldMetadata<Schema, any, any>,
 	options?: FormControlOptions,
 ): FormControlProps {
 	return simplify({

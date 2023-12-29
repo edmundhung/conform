@@ -1,5 +1,5 @@
 import {
-	type FieldProps,
+	type FieldName,
 	FormProvider,
 	useForm,
 	useField,
@@ -11,7 +11,7 @@ import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 
-type Error = {
+type FormError = {
 	validity: ValidityState;
 	validationMessage: string;
 };
@@ -50,10 +50,7 @@ export default function Example() {
 										Owner (List box)
 									</label>
 									<div className="mt-1">
-										<ExampleListBox
-											name={fieldset.owner.name}
-											formId={form.id}
-										/>
+										<ExampleListBox name={fieldset.owner.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
 										{fieldset.owner.errors?.validationMessage}
@@ -65,10 +62,7 @@ export default function Example() {
 										Assigned to (Combobox)
 									</label>
 									<div className="mt-1">
-										<ExampleCombobox
-											name={fieldset.assignee.name}
-											formId={form.id}
-										/>
+										<ExampleCombobox name={fieldset.assignee.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
 										{fieldset.assignee.errors?.validationMessage}
@@ -80,10 +74,7 @@ export default function Example() {
 										Enabled (Switch)
 									</label>
 									<div className="mt-1">
-										<ExampleSwitch
-											name={fieldset.enabled.name}
-											formId={form.id}
-										/>
+										<ExampleSwitch name={fieldset.enabled.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
 										{fieldset.enabled.errors?.validationMessage}
@@ -95,10 +86,7 @@ export default function Example() {
 										Color (Radio Group)
 									</label>
 									<div className="mt-1">
-										<ExampleRadioGroup
-											name={fieldset.color.name}
-											formId={form.id}
-										/>
+										<ExampleRadioGroup name={fieldset.color.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
 										{fieldset.color.errors?.validationMessage}
@@ -142,8 +130,8 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function ExampleListBox(config: FieldProps<string, Error>) {
-	const { field } = useField(config);
+function ExampleListBox(props: { name: FieldName<string, FormError> }) {
+	const { field } = useField(props);
 	const control = useInputControl(field);
 
 	return (
@@ -204,9 +192,9 @@ function ExampleListBox(config: FieldProps<string, Error>) {
 	);
 }
 
-function ExampleCombobox(config: FieldProps<string, Error>) {
+function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
 	const [query, setQuery] = useState('');
-	const { field } = useField(config);
+	const { field } = useField(props);
 	const control = useInputControl(field);
 	const filteredPeople = !control.value
 		? people
@@ -282,8 +270,8 @@ function ExampleCombobox(config: FieldProps<string, Error>) {
 	);
 }
 
-function ExampleSwitch(config: FieldProps<boolean, Error>) {
-	const { field } = useField(config);
+function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
+	const { field } = useField(props);
 	const control = useInputControl(field);
 
 	return (
@@ -308,7 +296,7 @@ function ExampleSwitch(config: FieldProps<boolean, Error>) {
 	);
 }
 
-function ExampleRadioGroup(config: FieldProps<string, Error>) {
+function ExampleRadioGroup(config: { name: FieldName<string, FormError> }) {
 	const { field } = useField(config);
 	const control = useInputControl(field);
 	const colors = [

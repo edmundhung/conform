@@ -23,9 +23,9 @@ import {
 export const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-export function useFormId<Schema extends Record<string, unknown>, Error>(
+export function useFormId<Schema extends Record<string, unknown>, FormError>(
 	preferredId?: string,
-): FormId<Schema, Error> {
+): FormId<Schema, FormError> {
 	const id = useId();
 
 	return preferredId ?? id;
@@ -48,11 +48,11 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 
 export function useForm<
 	Schema extends Record<string, any>,
-	Error = string[],
-	Value = Schema,
+	FormError = string[],
+	FormValue = Schema,
 >(
 	options: Pretty<
-		Omit<FormOptions<Schema, Error, Value>, 'formId'> & {
+		Omit<FormOptions<Schema, FormError, FormValue>, 'formId'> & {
 			/**
 			 * If the form id is provided, Id for label,
 			 * input and error elements will be derived.
@@ -68,10 +68,10 @@ export function useForm<
 		}
 	>,
 ): {
-	form: FormMetadata<Schema, Error>;
-	fieldset: ReturnType<FormMetadata<Schema, Error>['getFieldset']>;
+	form: FormMetadata<Schema, FormError>;
+	fieldset: ReturnType<FormMetadata<Schema, FormError>['getFieldset']>;
 } {
-	const formId = useFormId<Schema, Error>(options.id);
+	const formId = useFormId<Schema, FormError>(options.id);
 	const [context] = useState(() => createFormContext({ ...options, formId }));
 	const optionsRef = useRef(options);
 
@@ -116,18 +116,18 @@ export function useForm<
 
 export function useFormMetadata<
 	Schema extends Record<string, any>,
-	Error,
+	FormError,
 >(options: {
-	formId: FormId<Schema, Error>;
+	formId: FormId<Schema, FormError>;
 	defaultNoValidate?: boolean;
-}): FormMetadata<Schema, Error> {
+}): FormMetadata<Schema, FormError> {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
 	return getFormMetadata(
-		options.formId,
+		context.formId,
 		state,
 		subjectRef,
 		context,
@@ -138,46 +138,43 @@ export function useFormMetadata<
 export function useField<
 	FormSchema extends Record<string, unknown>,
 	FieldSchema = FormSchema,
-	Error = unknown,
->(
-	options:
-		| {
-				formId: FormId<FormSchema, Error>;
-				name: FieldName<FieldSchema>;
-		  }
-		| {
-				formId: FormId<FormSchema, Error>;
-				name?: undefined;
-		  },
-): {
-	field: FieldMetadata<FieldSchema, Error, FormSchema>;
+	FormError = string[],
+>(options: {
+	name?: FieldName<FieldSchema, FormError, FormSchema>;
+	formId?: FormId<FormSchema, FormError>;
+}): {
+	field: FieldMetadata<FieldSchema, FormError, FormSchema>;
 	fieldset: FieldMetadata<
 		FieldSchema,
-		Error,
+		FormError,
 		FormSchema
 	>['getFieldset'] extends Function
-		? ReturnType<FieldMetadata<FieldSchema, Error, FormSchema>['getFieldset']>
+		? ReturnType<
+				FieldMetadata<FieldSchema, FormError, FormSchema>['getFieldset']
+		  >
 		: never;
 	fieldlist: FieldMetadata<
 		FieldSchema,
-		Error,
+		FormError,
 		FormSchema
 	>['getFieldList'] extends Function
-		? ReturnType<FieldMetadata<FieldSchema, Error, FormSchema>['getFieldList']>
+		? ReturnType<
+				FieldMetadata<FieldSchema, FormError, FormSchema>['getFieldList']
+		  >
 		: never;
-	form: FormMetadata<FormSchema, Error>;
+	form: FormMetadata<FormSchema, FormError>;
 } {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
-	const field = getFieldMetadata<FieldSchema, Error, FormSchema>(
-		options.formId,
+	const field = getFieldMetadata<FieldSchema, FormError, FormSchema>(
+		context.formId,
 		state,
 		subjectRef,
 		options.name,
 	);
 	const form = getFormMetadata(
-		options.formId,
+		context.formId,
 		state,
 		subjectRef,
 		context,

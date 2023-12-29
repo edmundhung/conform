@@ -80,12 +80,23 @@ export type FormValue<Schema> = Schema extends
 			| undefined
 	: unknown;
 
-export type FormId<Schema extends Record<string, unknown>, Error> = string & {
+export type FormId<
+	Schema extends Record<string, unknown> = Record<string, unknown>,
+	Error = string[],
+> = string & {
 	__error?: Error;
 	__schema?: Schema;
 };
 
-export type FieldName<Schema> = string & { __schema?: Schema };
+export type FieldName<
+	FieldSchema,
+	Error = string[],
+	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+> = string & {
+	__field?: FieldSchema;
+	__error?: Error;
+	__form?: FormSchema;
+};
 
 export type Constraint = {
 	required?: boolean;
@@ -98,23 +109,23 @@ export type Constraint = {
 	pattern?: string;
 };
 
-export type FormMeta<Error> = {
+export type FormMeta<FormError> = {
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
 	value: Record<string, unknown>;
-	error: Record<string, Error>;
+	error: Record<string, FormError>;
 	constraint: Record<string, Constraint>;
 	key: Record<string, string | undefined>;
 	validated: Record<string, boolean>;
 };
 
-export type FormState<Error> = FormMeta<Error> & {
+export type FormState<FormError> = FormMeta<FormError> & {
 	valid: Record<string, boolean>;
 	dirty: Record<string, boolean>;
 };
 
-export type FormOptions<Schema, Error, Value = Schema> = {
+export type FormOptions<Schema, FormError, Value = Schema> = {
 	/**
 	 * The id of the form.
 	 */
@@ -133,7 +144,7 @@ export type FormOptions<Schema, Error, Value = Schema> = {
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastResult?: SubmissionResult<Error>;
+	lastResult?: SubmissionResult<FormError>;
 
 	/**
 	 * Define when conform should start validation.
@@ -158,7 +169,7 @@ export type FormOptions<Schema, Error, Value = Schema> = {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Schema, Error, Value>;
+	}) => Submission<Schema, FormError, Value>;
 
 	/**
 	 * A function to be called before the form is submitted.
@@ -170,7 +181,7 @@ export type FormOptions<Schema, Error, Value = Schema> = {
 			action: ReturnType<typeof getFormAction>;
 			encType: ReturnType<typeof getFormEncType>;
 			method: ReturnType<typeof getFormMethod>;
-			submission?: Submission<Schema, Error, Value>;
+			submission?: Submission<Schema, FormError, Value>;
 		},
 	) => void;
 };
@@ -201,7 +212,7 @@ export type ControlButtonProps = {
 
 export type FormContext<
 	Schema extends Record<string, any> = any,
-	Error = string[],
+	FormError = string[],
 	Value = Schema,
 > = {
 	formId: string;
@@ -209,28 +220,30 @@ export type FormContext<
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
-	report(result: SubmissionResult<Error>): void;
-	update(options: Omit<FormOptions<Schema, Error, Value>, 'lastResult'>): void;
+	report(result: SubmissionResult<FormError>): void;
+	update(
+		options: Omit<FormOptions<Schema, FormError, Value>, 'lastResult'>,
+	): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
 	dispatch(control: FormControl): void;
 	getControlButtonProps(control: FormControl): ControlButtonProps;
-	getState(): FormState<Error>;
+	getState(): FormState<FormError>;
 	getSerializedState(): string;
 };
 
-function createFormMeta<Schema, Error, Value>(
-	options: FormOptions<Schema, Error, Value>,
+function createFormMeta<Schema, FormError, Value>(
+	options: FormOptions<Schema, FormError, Value>,
 	initialized?: boolean,
-): FormMeta<Error> {
+): FormMeta<FormError> {
 	const lastResult = !initialized ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
 		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
-	const result: FormMeta<Error> = {
+	const result: FormMeta<FormError> = {
 		submissionStatus: lastResult?.status,
 		defaultValue,
 		initialValue,
@@ -245,7 +258,7 @@ function createFormMeta<Schema, Error, Value>(
 			  },
 		// The `lastResult` should comes from the server which we won't expect the error to be null
 		// We can consider adding a warning if it happens
-		error: (lastResult?.error as Record<string, Error>) ?? {},
+		error: (lastResult?.error as Record<string, FormError>) ?? {},
 	};
 
 	if (lastResult?.control) {
@@ -412,8 +425,8 @@ function createKeyProxy(
 	});
 }
 
-function createValidProxy<Error>(
-	error: Record<string, Error>,
+function createValidProxy<FormError>(
+	error: Record<string, FormError>,
 ): Record<string, boolean> {
 	return createStateProxy((name) => typeof error[name] === 'undefined');
 }
@@ -513,11 +526,11 @@ function createFormState<Error>(
 
 export function createFormContext<
 	Schema extends Record<string, any>,
-	Error,
+	FormError,
 	Value,
 >(
-	options: FormOptions<Schema, Error, Value>,
-): FormContext<Schema, Error, Value> {
+	options: FormOptions<Schema, FormError, Value>,
+): FormContext<Schema, FormError, Value> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
@@ -532,7 +545,7 @@ export function createFormContext<
 		return element;
 	}
 
-	function updateFormMeta(nextMeta: FormMeta<Error>) {
+	function updateFormMeta(nextMeta: FormMeta<FormError>) {
 		const prevMeta = meta;
 		const prevState = state;
 		const nextState = createFormState(nextMeta, prevMeta, prevState);
@@ -756,7 +769,7 @@ export function createFormContext<
 		updateFormMeta(createFormMeta(latestOptions, true));
 	}
 
-	function report(result: SubmissionResult<Error>) {
+	function report(result: SubmissionResult<FormError>) {
 		const formElement = getFormElement();
 
 		if (!result.initialValue) {
@@ -765,7 +778,7 @@ export function createFormContext<
 		}
 
 		const error = Object.entries(result.error ?? {}).reduce<
-			Record<string, Error>
+			Record<string, FormError>
 		>((result, [name, newError]) => {
 			const error = newError === null ? meta.error[name] : newError;
 
@@ -775,7 +788,7 @@ export function createFormContext<
 
 			return result;
 		}, {});
-		const update: FormMeta<Error> = {
+		const update: FormMeta<FormError> = {
 			...meta,
 			submissionStatus: result.status,
 			value: result.initialValue,
@@ -799,7 +812,7 @@ export function createFormContext<
 		}
 	}
 
-	function update(options: FormOptions<Schema, Error, Value>) {
+	function update(options: FormOptions<Schema, FormError, Value>) {
 		const currentFormId = latestOptions.formId;
 
 		latestOptions = options;
@@ -825,7 +838,7 @@ export function createFormContext<
 		};
 	}
 
-	function getState(): FormState<Error> {
+	function getState(): FormState<FormError> {
 		return state;
 	}
 

@@ -18,10 +18,10 @@ import {
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
 
-function getError<Error>(
+function getError<FormError>(
 	zodError: ZodError,
-	formatError: (issues: Array<ZodIssue>) => Error,
-): Record<string, Error | null> | null {
+	formatError: (issues: Array<ZodIssue>) => FormError,
+): Record<string, FormError | null> | null {
 	const result: Record<string, ZodIssue[] | null> = {};
 
 	for (const issue of zodError.errors) {
@@ -48,7 +48,7 @@ function getError<Error>(
 		}
 	}
 
-	return Object.entries(result).reduce<Record<string, Error | null>>(
+	return Object.entries(result).reduce<Record<string, FormError | null>>(
 		(result, [name, issues]) => {
 			result[name] = issues ? formatError(issues) : null;
 
@@ -66,15 +66,15 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 		errorMap?: ZodErrorMap;
 	},
 ): Submission<input<Schema>, string[], output<Schema>>;
-export function parseWithZod<Schema extends ZodTypeAny, Error>(
+export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((control: FormControl | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
-		formatError: (issues: Array<ZodIssue>) => Error;
+		formatError: (issues: Array<ZodIssue>) => FormError;
 	},
-): Submission<input<Schema>, Error, output<Schema>>;
+): Submission<input<Schema>, FormError, output<Schema>>;
 export function parseWithZod<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
@@ -83,26 +83,26 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 		errorMap?: ZodErrorMap;
 	},
 ): Promise<Submission<input<Schema>, string[], output<Schema>>>;
-export function parseWithZod<Schema extends ZodTypeAny, Error>(
+export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((control: FormControl | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
-		formatError: (issues: Array<ZodIssue>) => Error;
+		formatError: (issues: Array<ZodIssue>) => FormError;
 	},
-): Promise<Submission<input<Schema>, Error, output<Schema>>>;
-export function parseWithZod<Schema extends ZodTypeAny, Error>(
+): Promise<Submission<input<Schema>, FormError, output<Schema>>>;
+export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
 		schema: Schema | ((control: FormControl | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
-		formatError?: (issues: Array<ZodIssue>) => Error;
+		formatError?: (issues: Array<ZodIssue>) => FormError;
 	},
 ):
-	| Submission<input<Schema>, Error | string[], output<Schema>>
-	| Promise<Submission<input<Schema>, Error | string[], output<Schema>>> {
+	| Submission<input<Schema>, FormError | string[], output<Schema>>
+	| Promise<Submission<input<Schema>, FormError | string[], output<Schema>>> {
 	return parse(payload, {
 		resolve(payload, control) {
 			const errorMap = options.errorMap;
@@ -118,7 +118,7 @@ export function parseWithZod<Schema extends ZodTypeAny, Error>(
 				return {
 					value: result.success ? result.data : undefined,
 					error: !result.success
-						? getError<Error | string[]>(
+						? getError<FormError | string[]>(
 								result.error,
 								options.formatError ??
 									((issues) => issues.map((issue) => issue.message)),
