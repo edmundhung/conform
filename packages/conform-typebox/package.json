@@ -1,0 +1,44 @@
+{
+	"name": "@conform-to/typebox",
+	"description": "Conform helpers for integrating with typebox",
+	"homepage": "https://conform.guide",
+	"license": "MIT",
+	"version": "0.9.1",
+	"main": "index.js",
+	"module": "index.mjs",
+	"types": "index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"module": "./index.mjs",
+			"import": "./index.mjs",
+			"require": "./index.js",
+			"default": "./index.mjs"
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conform",
+		"directory": "packages/conform-typebox"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conform/issues"
+	},
+	"peerDependencies": {
+		"@conform-to/dom": "0.9.1",
+		"@sinclair/typebox": ">=0.32.0"
+	},
+	"devDependencies": {
+		"@sinclair/typebox": "^0.32.3"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"html",
+		"progressive-enhancement",
+		"validation",
+		"typebox"
+	],
+	"sideEffects": false
+}
