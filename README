@@ -1,0 +1,32 @@
+
+
+ ██████╗ ██████╗ ███╗   ██╗███████╗ ██████╗ ██████╗ ███╗   ███╗
+██╔════╝██╔═══██╗████╗  ██║██╔════╝██╔═══██╗██╔══██╗████╗ ████║
+██║     ██║   ██║██╔██╗ ██║█████╗  ██║   ██║██████╔╝██╔████╔██║
+██║     ██║   ██║██║╚██╗██║██╔══╝  ██║   ██║██╔══██╗██║╚██╔╝██║
+╚██████╗╚██████╔╝██║ ╚████║██║     ╚██████╔╝██║  ██║██║ ╚═╝ ██║
+ ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝
+
+
+Version 1.0.0-pre.5 / License MIT / Copyright (c) 2024 Edmund Hung
+
+A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms, delivering a modern, accessible, and resilient user experience with full support for server frameworks like Remix actions and Next.js server actions.
+
+> Getting Started
+
+Check out the tutoiral at https://conform.guide/tutoiral for a quick overview.
+
+> Documentation
+
+The documentation is divided into several sections:
+
+* Overview: https://conform.guide/overview
+* Example Usages: https://conform.guide/examples
+* Complex structures: https://conform.guide/complex-structures
+* UI Integrations: https://conform.guide/integrations
+* Accessibility Guide: https://conform.guide/accessibility
+* API Reference: https://conform.guide/references
+
+> Support
+
+To report a bug, please open an issue on the GitHub repository at https://github.com/edmundhung/conform. For feature requests and questions, you can post them in the Discussions section.
