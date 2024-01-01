@@ -1,7 +1,7 @@
 import type {
-	MetaFunction,
+	V2_MetaFunction as MetaFunction,
 	LinksFunction,
-	LoaderArgs,
+	LoaderFunctionArgs,
 } from '@remix-run/cloudflare';
 import {
 	Links,
@@ -10,7 +10,8 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
-	useCatch,
+	useRouteError,
+	isRouteErrorResponse,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
 import stylesUrl from '~/styles.css';
@@ -20,7 +21,7 @@ export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export function loader({ context }: LoaderArgs) {
+export function loader({ context }: LoaderFunctionArgs) {
 	const repository = 'edmundhung/conform';
 	const branch = getBranch(context);
 
@@ -30,15 +31,15 @@ export function loader({ context }: LoaderArgs) {
 	});
 }
 
-export const meta: MetaFunction = () => ({
-	charset: 'utf-8',
-	title: 'Conform Guide',
-	description: 'Make your form conform to the dom',
-	viewport: 'width=device-width,initial-scale=1',
-});
+export const meta: MetaFunction = () => [
+	{ charSet: 'utf-8' },
+	{ title: 'Conform Guide' },
+	{ name: 'description', content: 'Make your form conform to the dom' },
+	{ name: 'viewport', content: 'width=device-width,initial-scale=1' },
+];
 
-export function CatchBoundary() {
-	const caught = useCatch();
+export function ErrorBoundary() {
+	const error = useRouteError();
 
 	return (
 		<html>
@@ -49,7 +50,9 @@ export function CatchBoundary() {
 			</head>
 			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white flex flex-col h-screen items-center justify-center p-4">
 				<h1 className="text-3xl font-medium tracking-wider">
-					{caught.status} {caught.statusText}
+					{isRouteErrorResponse(error)
+						? `${error.status} ${error.statusText}`
+						: error?.toString() ?? 'Unknown error'}
 				</h1>
 				<Scripts />
 			</body>

@@ -1,5 +1,5 @@
 import {
-	type LoaderArgs,
+	type LoaderFunctionArgs,
 	type HeadersFunction,
 	type MetaFunction,
 	json,
@@ -15,12 +15,16 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 };
 
 export const meta: MetaFunction = ({ params }) => {
-	return {
-		title: `Conform Guide - ${formatTitle(params.package ?? '')} API Reference`,
-	};
+	return [
+		{
+			title: `Conform Guide - ${formatTitle(
+				params.package ?? '',
+			)} API Reference`,
+		},
+	];
 };
 
-export async function loader({ params, context }: LoaderArgs) {
+export async function loader({ params, context }: LoaderFunctionArgs) {
 	const readme = await getFileContent(
 		context,
 		`packages/conform-${params.package}/README.md`,

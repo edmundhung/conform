@@ -1,5 +1,5 @@
 import {
-	type LoaderArgs,
+	type LoaderFunctionArgs,
 	type HeadersFunction,
 	json,
 } from '@remix-run/cloudflare';
@@ -12,7 +12,7 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
 };
 
-export async function loader({ context }: LoaderArgs) {
+export async function loader({ context }: LoaderFunctionArgs) {
 	const readme = await getFileContent(context, 'README.md');
 
 	return json(

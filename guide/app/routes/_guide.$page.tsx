@@ -1,5 +1,5 @@
 import {
-	type LoaderArgs,
+	type LoaderFunctionArgs,
 	type HeadersFunction,
 	type MetaFunction,
 	json,
@@ -15,12 +15,14 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 };
 
 export const meta: MetaFunction = ({ params }) => {
-	return {
-		title: `Conform Guide - ${formatTitle(params.page ?? '')}`,
-	};
+	return [
+		{
+			title: `Conform Guide - ${formatTitle(params.page ?? '')}`,
+		},
+	];
 };
 
-export async function loader({ params, context }: LoaderArgs) {
+export async function loader({ params, context }: LoaderFunctionArgs) {
 	const readme = await getFileContent(context, `docs/${params.page}.md`);
 
 	return json(
