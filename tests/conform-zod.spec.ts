@@ -391,13 +391,14 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 			expect(
-				parse(createFormData([['test', ' ']]), {
+				parseWithZod(createFormData([['test', ' ']]), {
 					schema,
 				}),
 			).toEqual({
-				intent: 'submit',
+				status: 'error',
 				payload: { test: ' ' },
 				error: { test: ['invalid'] },
+				reply: expect.any(Function),
 			});
 		});
 
