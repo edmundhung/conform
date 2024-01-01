@@ -17,38 +17,38 @@ Native form controls are supported out of the box. There is no need to setup any
 
 ```tsx
 function Example() {
-    const [form, { title, description, color }] = useForm();
+  const [form, { title, description, color }] = useForm();
 
-    return (
-        <form {...form.props}>
-            <div>
-                <label>Title</label>
-                <input type="text" name="title" />
-                <div>{title.error}</div>
-            </div>
-            <div>
-                <label>Description</label>
-                <textarea name="description" />
-                <div>{description.error}</div>
-            </div>
-            <div>
-                <label>Color</label>
-                <select name="color">
-                    <option>Red</option>
-                    <option>Green</option>
-                    <option>Blue</option>
-                </select>
-                <div>{color.error}</div>
-            </div>
-            <button>Submit</button>
-        </form>
-    )
+  return (
+    <form {...form.props}>
+      <div>
+        <label>Title</label>
+        <input type="text" name="title" />
+        <div>{title.error}</div>
+      </div>
+      <div>
+        <label>Description</label>
+        <textarea name="description" />
+        <div>{description.error}</div>
+      </div>
+      <div>
+        <label>Color</label>
+        <select name="color">
+          <option>Red</option>
+          <option>Green</option>
+          <option>Blue</option>
+        </select>
+        <div>{color.error}</div>
+      </div>
+      <button>Submit</button>
+    </form>
+  );
 }
 ```
 
 ## Custom input component
 
-Integrating Conform with a UI components library, however, might requires integration depending on how it is implemented. For example, an `<Input />` component could be just a styled input element. As the user will continue typing on a native input element, there is no additional integration needed.
+Integrating Conform with a UI component's library, however, might require integration depending on how it is implemented. For example, an `<Input />` component could be just a styled input element. As the user will continue typing on a native input element, there is no additional integration needed.
 
 However, custom control such as `<Select />` or `<DatePicker />` will likely require users to interact with custom elements instead with no focus / input / blur event dispatched from the native form control element. This is where the [useInputEvent](/packages/conform-react/README.md#useinputevent) hook comes in handy.
 

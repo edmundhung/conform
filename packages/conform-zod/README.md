@@ -8,6 +8,7 @@
 
 - [getFieldsetConstraint](#getfieldsetconstraint)
 - [parse](#parse)
+- [refine](#refine)
 
 <!-- /aside -->
 
