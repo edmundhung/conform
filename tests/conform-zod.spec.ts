@@ -949,6 +949,60 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 		});
+
+		test('z.discriminatedUnion', () => {
+			const schema = z.discriminatedUnion('type', [
+				z.object({
+					type: z.literal('a'),
+					number: z.number(),
+				}),
+				z.object({
+					type: z.literal('b'),
+					boolean: z.boolean(),
+				}),
+			]);
+
+			expect(
+				parseWithZod(
+					createFormData([
+						['type', 'a'],
+						['number', '1'],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					type: 'a',
+					number: '1',
+				},
+				value: {
+					type: 'a',
+					number: 1,
+				},
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(
+					createFormData([
+						['type', 'b'],
+						['boolean', 'on'],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					type: 'b',
+					boolean: 'on',
+				},
+				value: {
+					type: 'b',
+					boolean: true,
+				},
+				reply: expect.any(Function),
+			});
+		});
 	});
 
 	test('parseWithZod with errorMap', () => {

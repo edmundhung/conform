@@ -238,6 +238,12 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			options: type.options.map((option: ZodTypeAny) =>
 				enableTypeCoercion(option, cache),
 			),
+			optionsMap: new Map(
+				Array.from(type.optionsMap.entries()).map(([discriminator, option]) => [
+					discriminator,
+					enableTypeCoercion(option, cache),
+				]),
+			),
 		});
 	} else if (type instanceof ZodTuple) {
 		schema = new ZodTuple({
