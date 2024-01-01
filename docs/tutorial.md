@@ -1,6 +1,6 @@
 # Tutorial
 
-In this tutoiral, we will show you how to enhance a contact form with Conform.
+In this tutorial, we will show you how to enhance a contact form with Conform.
 
 <!-- aside -->
 
