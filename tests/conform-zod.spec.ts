@@ -390,6 +390,15 @@ describe('conform-zod', () => {
 				error: { test: ['step'] },
 				reply: expect.any(Function),
 			});
+			expect(
+				parse(createFormData([['test', ' ']]), {
+					schema,
+				}),
+			).toEqual({
+				intent: 'submit',
+				payload: { test: ' ' },
+				error: { test: ['invalid'] },
+			});
 		});
 
 		test('z.date', () => {
