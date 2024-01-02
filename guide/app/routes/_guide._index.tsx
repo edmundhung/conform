@@ -4,7 +4,7 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { getFileContent } from '~/context';
+import { getFileContent } from '~/util';
 import { parse } from '~/markdoc';
 import { Markdown } from '~/components';
 
@@ -17,7 +17,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 	return json(
 		{
-			content: parse(atob(readme)),
+			content: parse(readme),
 		},
 		{
 			headers: {

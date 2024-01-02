@@ -5,10 +5,9 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { getFileContent } from '~/context';
 import { parse } from '~/markdoc';
 import { Markdown } from '~/components';
-import { formatTitle } from '~/util';
+import { formatTitle, getFileContent } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -30,7 +29,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
 
 	return json(
 		{
-			content: parse(atob(readme)),
+			content: parse(readme),
 		},
 		{
 			headers: {

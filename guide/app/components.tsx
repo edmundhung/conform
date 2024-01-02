@@ -1,12 +1,13 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
 import { renderers } from '@markdoc/markdoc';
-import { Link as RouterLink, useMatches } from '@remix-run/react';
+import { Link as RouterLink, useRouteLoaderData } from '@remix-run/react';
 import * as React from 'react';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
-import { getChildren, isTag } from './markdoc';
+import { getChildren, isTag } from '~/markdoc';
+import type { loader } from '~/root';
 
 const style = {
 	...darcula,
@@ -20,9 +21,7 @@ ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
 
 export function useRootLoaderData() {
-	const [root] = useMatches();
-
-	return root.data;
+	return useRouteLoaderData<typeof loader>('root')!;
 }
 
 export function Sandbox({
@@ -34,7 +33,7 @@ export function Sandbox({
 	src: string;
 	children: React.ReactNode;
 }) {
-	const { repository, branch } = useRootLoaderData();
+	const { owner, repo, ref } = useRootLoaderData();
 	const [hydated, setHydrated] = React.useState(false);
 
 	React.useEffect(() => {
@@ -46,7 +45,7 @@ export function Sandbox({
 	}
 
 	const url = new URL(
-		`https://codesandbox.io/embed/github/${repository}/tree/${branch}${src}`,
+		`https://codesandbox.io/embed/github/${owner}/${repo}/tree/${ref}${src}`,
 	);
 
 	url.searchParams.set('editorsize', '60');
