@@ -1,6 +1,7 @@
 export {
 	type Submission,
 	type SubmissionResult,
+	type DefaultValue,
 	type FormControl,
 	type FormId,
 	type FieldName,

@@ -163,6 +163,12 @@ export type FormOptions<Schema, FormError, Value = Schema> = {
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
+	 * Define if conform should considered the field for dirty state.
+	 * e.g. Excluding form fields that are not managed by Conform, such as CSRF token
+	 */
+	shouldDirtyConsider?: (name: string) => boolean;
+
+	/**
 	 * A function to be called when the form should be (re)validated.
 	 */
 	onValidate?: (context: {
@@ -220,10 +226,7 @@ export type FormContext<
 	reset(event: Event): void;
 	input(event: Event): void;
 	blur(event: Event): void;
-	report(result: SubmissionResult<FormError>): void;
-	update(
-		options: Omit<FormOptions<Schema, FormError, Value>, 'lastResult'>,
-	): void;
+	update(options: Partial<FormOptions<Schema, FormError, Value>>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -434,10 +437,26 @@ function createValidProxy<FormError>(
 function createDirtyProxy(
 	defaultValue: Record<string, unknown>,
 	value: Record<string, unknown>,
+	shouldDirtyConsider: (name: string) => boolean,
 ): Record<string, boolean> {
 	return createStateProxy(
 		(name) =>
-			JSON.stringify(defaultValue[name]) !== JSON.stringify(value[name]),
+			JSON.stringify(defaultValue[name]) !==
+			JSON.stringify(value[name], (key, value) => {
+				if (name === '' && key === '' && value) {
+					return Object.entries(value).reduce<
+						Record<string, unknown> | undefined
+					>((result, [name, value]) => {
+						if (!shouldDirtyConsider(name)) {
+							return result;
+						}
+
+						return Object.assign(result ?? {}, { [name]: value });
+					}, undefined);
+				}
+
+				return value;
+			}),
 	);
 }
 
@@ -477,53 +496,6 @@ function shouldNotify<Schema>(
 	return false;
 }
 
-function createFormState<Error>(
-	next: FormMeta<Error>,
-	prev: FormMeta<Error> = next,
-	state?: FormState<Error>,
-): FormState<Error> {
-	const defaultValue =
-		!state || prev.defaultValue !== next.defaultValue
-			? createValueProxy(next.defaultValue)
-			: state.defaultValue;
-	const initialValue =
-		next.initialValue === next.defaultValue
-			? defaultValue
-			: !state || prev.initialValue !== next.initialValue
-			? createValueProxy(next.initialValue)
-			: state.initialValue;
-	const value =
-		next.value === next.initialValue
-			? initialValue
-			: !state || prev.value !== next.value
-			? createValueProxy(next.value)
-			: state.value;
-
-	return {
-		submissionStatus: next.submissionStatus,
-		defaultValue,
-		initialValue,
-		value,
-		error: !state || prev.error !== next.error ? next.error : state.error,
-		validated: next.validated,
-		constraint:
-			!state || prev.constraint !== next.constraint
-				? createConstraintProxy(next.constraint)
-				: state.constraint,
-		key: !state || prev.key !== next.key ? createKeyProxy(next.key) : state.key,
-		valid:
-			!state || prev.error !== next.error
-				? createValidProxy(next.error)
-				: state.valid,
-		dirty:
-			!state ||
-			prev.defaultValue !== next.defaultValue ||
-			prev.value !== next.value
-				? createDirtyProxy(defaultValue, value)
-				: state.dirty,
-	};
-}
-
 export function createFormContext<
 	Schema extends Record<string, any>,
 	FormError,
@@ -543,6 +515,58 @@ export function createFormContext<
 		const element = document.forms.namedItem(latestOptions.formId);
 		invariant(element !== null, `Form#${latestOptions.formId} does not exist`);
 		return element;
+	}
+
+	function createFormState<Error>(
+		next: FormMeta<Error>,
+		prev: FormMeta<Error> = next,
+		state?: FormState<Error>,
+	): FormState<Error> {
+		const defaultValue =
+			!state || prev.defaultValue !== next.defaultValue
+				? createValueProxy(next.defaultValue)
+				: state.defaultValue;
+		const initialValue =
+			next.initialValue === next.defaultValue
+				? defaultValue
+				: !state || prev.initialValue !== next.initialValue
+				? createValueProxy(next.initialValue)
+				: state.initialValue;
+		const value =
+			next.value === next.initialValue
+				? initialValue
+				: !state || prev.value !== next.value
+				? createValueProxy(next.value)
+				: state.value;
+
+		return {
+			submissionStatus: next.submissionStatus,
+			defaultValue,
+			initialValue,
+			value,
+			error: !state || prev.error !== next.error ? next.error : state.error,
+			validated: next.validated,
+			constraint:
+				!state || prev.constraint !== next.constraint
+					? createConstraintProxy(next.constraint)
+					: state.constraint,
+			key:
+				!state || prev.key !== next.key ? createKeyProxy(next.key) : state.key,
+			valid:
+				!state || prev.error !== next.error
+					? createValidProxy(next.error)
+					: state.valid,
+			dirty:
+				!state ||
+				prev.defaultValue !== next.defaultValue ||
+				prev.value !== next.value
+					? createDirtyProxy(
+							defaultValue,
+							value,
+							(key) => latestOptions.shouldDirtyConsider?.(key) ?? true,
+					  )
+					: state.dirty,
+		};
 	}
 
 	function updateFormMeta(nextMeta: FormMeta<FormError>) {
@@ -812,13 +836,20 @@ export function createFormContext<
 		}
 	}
 
-	function update(options: FormOptions<Schema, FormError, Value>) {
+	function update(options: Partial<FormOptions<Schema, FormError, Value>>) {
 		const currentFormId = latestOptions.formId;
+		const currentResult = latestOptions.lastResult;
 
-		latestOptions = options;
+		// Merge new options with the latest options
+		Object.assign(latestOptions, options);
 
 		if (latestOptions.formId !== currentFormId) {
 			getFormElement().reset();
+		} else if (
+			typeof options.lastResult !== 'undefined' &&
+			options.lastResult !== currentResult
+		) {
+			report(options.lastResult);
 		}
 	}
 
@@ -876,7 +907,6 @@ export function createFormContext<
 		blur,
 		dispatch,
 		getControlButtonProps,
-		report,
 		update,
 		subscribe,
 		getState,

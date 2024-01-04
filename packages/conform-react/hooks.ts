@@ -4,7 +4,7 @@ import {
 	type FormOptions,
 	createFormContext,
 } from '@conform-to/dom';
-import { useEffect, useId, useRef, useState, useLayoutEffect } from 'react';
+import { useEffect, useId, useState, useLayoutEffect } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -70,9 +70,11 @@ export function useForm<
 	FormMetadata<Schema, FormError>,
 	ReturnType<FormMetadata<Schema, FormError>['getFieldset']>,
 ] {
-	const formId = useFormId<Schema, FormError>(options.id);
-	const [context] = useState(() => createFormContext({ ...options, formId }));
-	const optionsRef = useRef(options);
+	const { id, ...formConfig } = options;
+	const formId = useFormId<Schema, FormError>(id);
+	const [context] = useState(() =>
+		createFormContext({ ...formConfig, formId }),
+	);
 
 	useSafeLayoutEffect(() => {
 		document.addEventListener('input', context.input);
@@ -87,19 +89,7 @@ export function useForm<
 	}, [context]);
 
 	useSafeLayoutEffect(() => {
-		if (options.lastResult === optionsRef.current.lastResult) {
-			// If there is no change, do nothing
-			return;
-		}
-
-		if (options.lastResult) {
-			context.report(options.lastResult);
-		}
-	}, [context, options.lastResult]);
-
-	useSafeLayoutEffect(() => {
-		optionsRef.current = options;
-		context.update({ ...options, formId });
+		context.update({ ...formConfig, formId });
 	});
 
 	const subjectRef = useSubjectRef();
