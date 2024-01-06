@@ -27,11 +27,7 @@ export function loader({ context }: LoaderFunctionArgs) {
 	return json(meta);
 }
 
-export const meta: MetaFunction = () => [
-	{ charSet: 'utf-8' },
-	{ title: 'Conform Guide' },
-	{ name: 'viewport', content: 'width=device-width,initial-scale=1' },
-];
+export const meta: MetaFunction = () => [{ title: 'Conform Guide' }];
 
 export function ErrorBoundary() {
 	const error = useRouteError();
@@ -59,8 +55,10 @@ export default function App() {
 
 function Document({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" className="text-[14px]">
 			<head>
+				<meta charSet="utf-8" />
+				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
 				<script
@@ -69,7 +67,7 @@ function Document({ children }: { children: React.ReactNode }) {
 					src="https://plausible.io/js/script.js"
 				/>
 			</head>
-			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
+			<body className="font-mono antialiased bg-zinc-900 text-white">
 				{children}
 				<ScrollRestoration />
 				<Scripts />

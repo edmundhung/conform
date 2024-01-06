@@ -1,4 +1,5 @@
 import * as markdoc from '@markdoc/markdoc';
+import { type Menu } from '~/components';
 
 export function parse(markdown: string) {
 	const content = markdown
@@ -70,16 +71,36 @@ export function parse(markdown: string) {
 	return node;
 }
 
-export function isTag(node: markdoc.RenderableTreeNode): node is markdoc.Tag {
-	return node !== null && typeof node !== 'string';
+export function getIdFromHeading(heading: string) {
+	return heading.replace(/[?]/g, '').replace(/\s+/g, '-').toLowerCase();
 }
 
-export function getChildren(
-	nodes: markdoc.RenderableTreeNodes,
-): markdoc.RenderableTreeNode[] {
-	if (Array.isArray(nodes) || !isTag(nodes)) {
-		return [];
+export function getMenu(
+	node: markdoc.RenderableTreeNode,
+	menu: Menu = {
+		title: 'On this page',
+		links: [],
+	},
+): Menu {
+	if (typeof node !== 'string' && node !== null) {
+		// Match all h1, h2, h3… tags
+		if (node.name === 'Heading' && node.attributes.level === 2) {
+			const title = node.children[0];
+
+			if (typeof title === 'string') {
+				menu.links.push({
+					title,
+					to: `#${getIdFromHeading(title)}`,
+				});
+			}
+		}
+
+		if (node.children) {
+			for (const child of node.children) {
+				getMenu(child, menu);
+			}
+		}
 	}
 
-	return nodes.children;
+	return menu;
 }

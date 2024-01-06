@@ -5,7 +5,7 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { parse } from '~/markdoc';
+import { getMenu, parse } from '~/markdoc';
 import { Markdown } from '~/components';
 import { formatTitle, getFileContent } from '~/util';
 
@@ -22,11 +22,15 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export async function loader({ params, context }: LoaderFunctionArgs) {
-	const readme = await getFileContent(context, `docs/${params.page}.md`);
+	const file = `docs/${params.page}.md`;
+	const readme = await getFileContent(context, file);
+	const content = parse(readme);
 
 	return json(
 		{
-			content: parse(readme),
+			file,
+			content,
+			toc: getMenu(content),
 		},
 		{
 			headers: {

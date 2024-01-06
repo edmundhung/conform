@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+	color-scheme: light dark;
+}
+
 @layer base {
 	/* ubuntu-300 - latin */
 	@font-face {
