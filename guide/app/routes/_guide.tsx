@@ -48,7 +48,7 @@ export default function Guide() {
 
 	if (toc) {
 		sidemenus.push({
-			title: toc.title,
+			title: 'On this page',
 			links: toc.links.map((link) => ({
 				title: link.title,
 				to: `${location.pathname}${location.search}${link.to}`,
@@ -115,14 +115,11 @@ export default function Guide() {
 
 				{/* <div className="py-2 flex items-center gap-4">
 					<span>Theme:</span>
-					<a
-						className="py-1 text-zinc-400 hover:text-zinc-200"
-						href={`https://github.com/${owner}/${repo}`}
-					>
+					<a className="py-1 text-zinc-400 hover:text-zinc-200">
 						Light
 					</a>
 					<span>/</span>
-					<a className="py-1" href={`https://github.com/${owner}/${repo}`}>
+					<a className="py-1">
 						Dark
 					</a>
 				</div> */}

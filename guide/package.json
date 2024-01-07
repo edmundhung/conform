@@ -7,22 +7,22 @@
 		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.ts",
 		"dev": "remix dev --manual -c \"npm run start\"",
 		"predev": "remix build",
-		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development"
+		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development -b CF_PAGES_BRANCH=$(git branch --show-current)"
 	},
 	"dependencies": {
-		"@markdoc/markdoc": "^0.1.7",
-		"@octokit/core": "^4.0.5",
+		"@markdoc/markdoc": "^0.4.0",
 		"@remix-run/cloudflare": "^2.4.1",
 		"@remix-run/cloudflare-pages": "^2.4.1",
 		"@remix-run/react": "^2.4.1",
 		"cross-env": "^7.0.3",
-		"isbot": "latest",
+		"isbot": "^3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-syntax-highlighter": "^15.5.0"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20231218.0",
+		"@octokit/types": "^12.4.0",
 		"@remix-run/dev": "^2.4.1",
 		"@remix-run/eslint-config": "^2.4.1",
 		"@tailwindcss/forms": "^0.5.7",

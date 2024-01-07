@@ -11,6 +11,7 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
 import type { loader as rootLoader } from '~/root';
+import type { loader as indexLoader } from '~/routes/_guide._index';
 import type { loader as pageLoader } from '~/routes/_guide.$page';
 import { getIdFromHeading } from './markdoc';
 import { useLayoutEffect, useRef } from 'react';
@@ -28,7 +29,6 @@ const style = {
 	'pre[class*="language-"]': {
 		...darcula['pre[class*="language-"]'],
 		background: '#111',
-		margin: 'revert',
 	},
 };
 
@@ -40,7 +40,12 @@ export function useRootLoaderData() {
 }
 
 export function usePageLoaderData() {
-	return useRouteLoaderData<typeof pageLoader>('routes/_guide.$page');
+	const indexData = useRouteLoaderData<typeof indexLoader>(
+		'routes/_guide._index',
+	);
+	const pageData = useRouteLoaderData<typeof pageLoader>('routes/_guide.$page');
+
+	return pageData ?? indexData;
 }
 
 export function Sandbox({
@@ -89,10 +94,9 @@ export function Fence({
 }: {
 	language: string;
 	children: string;
-}): React.ReactElement {
+}): React.ReactNode {
 	return (
 		<ReactSyntaxHighlighter
-			className="my-8 py-4"
 			language={language}
 			style={style}
 			showLineNumbers={language === 'tsx' || language === 'css'}
@@ -107,13 +111,33 @@ export function Details({
 	children,
 }: {
 	summary: string;
-	children: React.ReactElement;
+	children: React.ReactNode;
 }) {
 	return (
 		<details className="border border-zinc-700 rounded p-4 my-6">
 			<summary>{summary}</summary>
 			{children}
 		</details>
+	);
+}
+
+export function List({
+	ordered,
+	children,
+}: {
+	ordered?: boolean;
+	children: React.ReactNode;
+}): React.ReactNode {
+	const ListTag = ordered ? 'ol' : 'ul';
+
+	return <ListTag className="py-2">{children}</ListTag>;
+}
+
+export function Item({ children }: { children: React.ReactNode }) {
+	return (
+		<li className="relative before:content-['-_'] before:absolute before:left-0 before:text-zinc-400 py-1 px-4 text-zinc-200">
+			{children}
+		</li>
 	);
 }
 
@@ -132,18 +156,25 @@ export function Heading({
 			id={id}
 			className={
 				level === 1
-					? 'text-xl xl:text-3xl pt-4 pb-6 xl:pt-4 xl:pb-4 xl:mb-8 uppercase tracking-wider'
-					: 'text-md xl:text-xl pt-40 -mt-32 pb-2 mb-6 xl:mt-auto xl:pt-8 xl:pb-4 xl:mb-8 border-b border-dotted border-zinc-200 '
+					? 'text-xl xl:text-3xl pt-4 pb-6 xl:pt-4 xl:pb-2 xl:mb-8 uppercase tracking-wider'
+					: 'text-md xl:text-xl pt-40 -mt-32 pb-2 mb-4 xl:mt-auto xl:pt-8 xl:pb-4 xl:mb-6 border-b border-dotted border-zinc-200 '
 			}
 		>
 			{level > 1 ? (
-				<RouterLink className="mr-4" to={`#${id}`}>
+				<RouterLink
+					className="text-zinc-400 hover:text-zinc-200 mr-4"
+					to={`#${id}`}
+				>
 					#
 				</RouterLink>
 			) : null}
 			{children}
 		</HeadingTag>
 	);
+}
+
+export function Paragraph({ children }: { children: React.ReactNode }) {
+	return <p className="py-2">{children}</p>;
 }
 
 export function MainNavigation({ menus }: { menus: Menu[] }) {
@@ -199,18 +230,18 @@ export function Navigation({
 					{nav.title}
 					<ul className="py-4">
 						{nav.links.map((link) => (
-							<li key={link.title}>
+							<Item key={link.title}>
 								<Link
-									className={`block py-1 ${
+									className={`block py-1 -my-1 ${
 										isActiveLink?.(link.to)
 											? `text-white`
 											: `text-zinc-400 hover:text-zinc-200`
 									}`}
 									href={link.to}
 								>
-									- {link.title}
+									{link.title}
 								</Link>
-							</li>
+							</Item>
 						))}
 					</ul>
 				</div>
@@ -219,9 +250,17 @@ export function Navigation({
 	);
 }
 
+export function Strong({ children }: { children: React.ReactNode }) {
+	return (
+		<span className="before:content-['**'] after:content-['**'] before:text-zinc-400 after:text-zinc-400">
+			{children}
+		</span>
+	);
+}
+
 export function Link({
 	href,
-	className,
+	className = "px-1 before:content-['['] after:content-[']'] before:text-zinc-400 after:text-zinc-400 before:hover:text-zinc-200 after:hover:text-zinc-200",
 	title,
 	children,
 }: {
@@ -262,6 +301,14 @@ export function Link({
 	);
 }
 
+export function Code({ content }: { content: string }) {
+	return (
+		<code className="text-white before:content-['`'] after:content-['`'] before:text-zinc-400 after:text-zinc-400">
+			{content}
+		</code>
+	);
+}
+
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
 		<section className="py-4">
@@ -271,8 +318,13 @@ export function Markdown({ content }: { content: RenderableTreeNodes }) {
 					Sandbox,
 					Details,
 					Fence,
+					List,
+					Item,
 					Heading,
+					Paragraph,
 					Link,
+					Code,
+					Strong,
 				},
 			})}
 		</section>

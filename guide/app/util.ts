@@ -1,4 +1,4 @@
-import { Octokit } from '@octokit/core';
+import type { Endpoints } from '@octokit/types';
 import type { AppLoadContext } from '@remix-run/cloudflare';
 
 export function invariant(
@@ -57,12 +57,25 @@ export async function getFileContent(
 		content = atob(file.content);
 		context.waitUntil(
 			cache.put(cacheKey, content, {
-				expirationTtl: 300,
+				expirationTtl: 3600,
 			}),
 		);
 	}
 
 	return content;
+}
+
+export function getGitHubApiHeaders(auth: string | undefined) {
+	const headers = new Headers({
+		Accept: 'application/vnd.github+json',
+		'User-Agent': 'Conform Guide',
+	});
+
+	if (auth) {
+		headers.set('Authorization', `Bearer ${auth}`);
+	}
+
+	return headers;
 }
 
 export async function downloadFile(options: {
@@ -72,24 +85,21 @@ export async function downloadFile(options: {
 	owner: string;
 	repo: string;
 }) {
-	const octokit = new Octokit({ auth: options.auth });
-
 	try {
-		const file = await octokit.request(
-			'GET /repos/{owner}/{repo}/contents/{path}',
+		const resposne = await fetch(
+			`https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.path}?ref=${options.ref}`,
 			{
-				owner: options.owner,
-				repo: options.repo,
-				path: options.path,
-				ref: options.ref,
+				headers: getGitHubApiHeaders(options.auth),
 			},
 		);
+		const file: Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data'] =
+			await resposne.json();
 
-		if (Array.isArray(file.data) || file.data.type !== 'file') {
+		if (Array.isArray(file) || file.type !== 'file') {
 			throw new Error('The path provided should be pointed to a file');
 		}
 
-		return file.data;
+		return file;
 	} catch (e) {
 		if ((e as any).status === 404) {
 			throw notFound();
@@ -99,8 +109,8 @@ export async function downloadFile(options: {
 	}
 }
 
-export function formatTitle(text: string): string {
-	return `${text.slice(0, 1).toUpperCase()}${text.slice(1).toLowerCase()}`;
+export function formatTitle(title: string | undefined): string {
+	return title ? `Conform / ${title}` : 'Conform Guide';
 }
 
 export function notFound() {

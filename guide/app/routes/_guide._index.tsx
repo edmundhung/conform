@@ -1,23 +1,36 @@
 import {
 	type LoaderFunctionArgs,
 	type HeadersFunction,
+	type MetaFunction,
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { getFileContent } from '~/util';
-import { parse } from '~/markdoc';
+import { collectHeadings, parse } from '~/markdoc';
 import { Markdown } from '~/components';
+import { formatTitle, getFileContent } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
+	return [
+		{
+			title: formatTitle(data?.toc.title),
+		},
+	];
+};
+
 export async function loader({ context }: LoaderFunctionArgs) {
-	const readme = await getFileContent(context, 'README.md');
+	const file = 'docs/overview.md';
+	const readme = await getFileContent(context, file);
+	const content = parse(readme);
 
 	return json(
 		{
-			content: parse(readme),
+			file,
+			content,
+			toc: collectHeadings(content),
 		},
 		{
 			headers: {
@@ -28,7 +41,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-	const { content } = useLoaderData<typeof loader>();
+	let { content } = useLoaderData<typeof loader>();
 
 	return <Markdown content={content} />;
 }

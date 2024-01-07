@@ -5,7 +5,7 @@ import {
 	json,
 } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { getMenu, parse } from '~/markdoc';
+import { collectHeadings, parse } from '~/markdoc';
 import { Markdown } from '~/components';
 import { formatTitle, getFileContent } from '~/util';
 
@@ -13,10 +13,10 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
 };
 
-export const meta: MetaFunction = ({ params }) => {
+export const meta: MetaFunction<typeof loader> = ({ data }) => {
 	return [
 		{
-			title: `Conform Guide - ${formatTitle(params.page ?? '')}`,
+			title: formatTitle(data?.toc.title),
 		},
 	];
 };
@@ -30,7 +30,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
 		{
 			file,
 			content,
-			toc: getMenu(content),
+			toc: collectHeadings(content),
 		},
 		{
 			headers: {
