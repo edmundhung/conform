@@ -150,12 +150,14 @@ Conform will trigger a [server validation](./validation.md#server-validation) to
 
 ## Setting client validation
 
-Server validation might some time be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
+Server validation might take time and be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { z } from 'zod';
 import { sendMessage } from '~/message';
 
 const schema = z.object({
