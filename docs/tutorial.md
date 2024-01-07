@@ -146,7 +146,7 @@ export default function ContactUs() {
 }
 ```
 
-Conform will trigger a [server validation](./validation.md#server-validation) to validate each field whenever user leave the input (i.e. `onBlur`). It also focuses on the first invalid field on submit.
+Conform will trigger a [server validation](./validation.md#server-validation) to validate each field whenever the user leaves the input (i.e. `onBlur`). It also focuses on the first invalid field on submit.
 
 ## Setting client validation
 
