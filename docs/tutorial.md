@@ -146,16 +146,18 @@ export default function ContactUs() {
 }
 ```
 
-Conform will trigger a [server validation](./validation.md#server-validation) to validate each field whenever user leave the input (i.e. `onBlur`). It also focuses on the first invalid field on submit.
+Conform will trigger a [server validation](./validation.md#server-validation) to validate each field whenever the user leaves the input (i.e. `onBlur`). It also focuses on the first invalid field on submit.
 
 ## Setting client validation
 
-Server validation might some time be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
+Server validation might take time and be too slow for a good user experience. We can also reuse the validation logic on the client for a instant feedback.
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { z } from 'zod';
 import { sendMessage } from '~/message';
 
 const schema = z.object({
@@ -191,9 +193,11 @@ There is more we need do to make a form accessible. For example:
 - Set an `id` for the error message and use it as the `aria-describedby` attribute of the field when there is an error
 
 ```tsx
-import { parse, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
+import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { z } from 'zod';
 import { sendMessage } from '~/message';
 
 const schema = z.object({
@@ -253,6 +257,7 @@ import { parse } from '@conform-to/zod';
 import { type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { useId } from 'react';
+import { z } from 'zod';
 import { sendMessage } from '~/message';
 
 const schema = z.object({
