@@ -14,7 +14,7 @@ import type { loader as rootLoader } from '~/root';
 import type { loader as indexLoader } from '~/routes/_guide._index';
 import type { loader as pageLoader } from '~/routes/_guide.$page';
 import { getIdFromHeading } from './markdoc';
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface Menu {
 	title: string;
@@ -31,6 +31,9 @@ const style = {
 		background: '#111',
 	},
 };
+
+export const useSafeLayoutEffect =
+	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
 ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
 ReactSyntaxHighlighter.registerLanguage('css', css);
@@ -192,7 +195,7 @@ export function MainNavigation({ menus }: { menus: Menu[] }) {
 		return result;
 	}, '');
 
-	useLayoutEffect(() => {
+	useSafeLayoutEffect(() => {
 		if (detailsRef.current) {
 			detailsRef.current.open = false;
 		}
@@ -202,13 +205,14 @@ export function MainNavigation({ menus }: { menus: Menu[] }) {
 		<>
 			<details
 				ref={detailsRef}
-				className="xl:hidden peer block py-4 bg-zinc-950 open:bg-zinc-700 -mx-8 px-8 pointer"
+				className="xl:hidden peer block py-4 bg-zinc-950 open:bg-zinc-700 -mx-8 px-8"
 			>
 				<summary className="list-none">{currentPage}</summary>
 			</details>
-			<div className="hidden peer-open:block xl:block overflow-y-auto bg-zinc-950 xl:bg-inherit -mx-8 px-8 xl:m-0 xl:p-0 py-8">
+			<div className="hidden peer-open:block xl:block overflow-y-auto bg-zinc-950 xl:bg-inherit -mx-8 px-8 xl:mx-0 xl:px-0">
 				<Navigation
 					menus={menus}
+					backgroundClassName="bg-zinc-950 xl:bg-zinc-900"
 					isActiveLink={(link) => link === location.pathname}
 				/>
 			</div>
@@ -218,17 +222,23 @@ export function MainNavigation({ menus }: { menus: Menu[] }) {
 
 export function Navigation({
 	menus,
+	backgroundClassName = 'bg-zinc-900',
 	isActiveLink,
 }: {
 	menus: Menu[];
+	backgroundClassName?: string;
 	isActiveLink?: (link: string) => boolean;
 }) {
 	return (
-		<nav className="flex flex-col gap-4">
+		<nav>
 			{menus.map((nav) => (
-				<div key={nav.title}>
-					{nav.title}
-					<ul className="py-4">
+				<div key={nav.title} className="relative">
+					<div
+						className={`sticky top-0 ${backgroundClassName} z-10 pt-8 xl:pt-4 pb-1`}
+					>
+						{nav.title}
+					</div>
+					<ul className="pt-4 xl:pt-4">
 						{nav.links.map((link) => (
 							<Item key={link.title}>
 								<Link

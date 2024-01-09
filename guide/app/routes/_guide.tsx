@@ -10,19 +10,19 @@ import { logo } from '~/util';
 
 const menus: Menu[] = [
 	{
-		title: 'Get Started',
+		title: 'Getting Started',
 		links: [
 			{ title: 'Overview', to: '/' },
 			{ title: 'Tutorial', to: '/tutorial' },
-			{ title: 'Examples', to: '/examples' },
+			{ title: 'GitHub', to: 'https://github.com/edmundhung/conform' },
 		],
 	},
 	{
 		title: 'Guides',
 		links: [
 			{ title: 'Validation', to: '/validation' },
-			{ title: 'Integrations', to: '/integrations' },
 			{ title: 'Nested object and Array', to: '/complex-structures' },
+			{ title: 'Custom Inputs', to: '/integrations' },
 			{ title: 'Intent button', to: '/intent-button' },
 			{ title: 'Accessibility', to: '/accessibility' },
 			{ title: 'Checkbox and Radio Group', to: '/checkbox-and-radio-group' },
@@ -30,11 +30,35 @@ const menus: Menu[] = [
 		],
 	},
 	{
+		title: 'Integration',
+		links: [
+			{ title: 'React Router', to: '/integration/react-router' },
+			{ title: 'Remix', to: '/integration/remix' },
+			{ title: 'Yup', to: '/integration/yup' },
+			{ title: 'Zod', to: '/integration/zod' },
+		],
+	},
+	{
 		title: 'API Reference',
 		links: [
-			{ title: '@conform-to/react', to: '/api/react' },
-			{ title: '@conform-to/yup', to: '/api/yup' },
-			{ title: '@conform-to/zod', to: '/api/zod' },
+			{ title: 'useForm', to: '/api/react/useForm' },
+			{ title: 'useField', to: '/api/react/useField' },
+			{ title: 'useFormMetadata', to: '/api/react/useFormMetadata' },
+			{ title: 'useInputControl', to: '/api/react/useInputControl' },
+			{ title: 'FormProvider', to: '/api/react/FormProvider' },
+			{ title: 'FormStateInput', to: '/api/react/FormStateInput' },
+		],
+	},
+	{
+		title: 'Utilities',
+		links: [
+			{ title: 'intent', to: '/api/react/intent' },
+			{ title: 'getFormProps', to: '/api/react/getFormProps' },
+			{ title: 'getFieldsetProps', to: '/api/react/getFieldsetProps' },
+			{ title: 'getInputProps', to: '/api/react/getInputProps' },
+			{ title: 'getSelectProps', to: '/api/react/getSelectProps' },
+			{ title: 'getTextareaProps', to: '/api/react/getTextareaProps' },
+			{ title: 'getCollectionProps', to: '/api/react/getCollectionProps' },
 		],
 	},
 ];
@@ -57,26 +81,12 @@ export default function Guide() {
 	}
 
 	if (file) {
-		const githubURL = `https://github.com/${owner}/${repo}`;
-
 		sidemenus.push({
-			title: 'Useful links',
+			title: 'Related links',
 			links: [
 				{
-					title: 'GitHub',
-					to: githubURL,
-				},
-				{
-					title: `Version (${ref})`,
-					to: `${githubURL}/commits/${ref}`,
-				},
-				{
-					title: 'MIT License',
-					to: `${githubURL}/blob/${ref}/LICENSE`,
-				},
-				{
 					title: 'Edit this page',
-					to: `${githubURL}/edit/${ref}/${file}`,
+					to: `https://github.com/${owner}/${repo}/edit/${ref}/${file}`,
 				},
 			],
 		});
@@ -85,7 +95,7 @@ export default function Guide() {
 	return (
 		<div className="xl:container mx-auto xl:grid xl:grid-cols-5 gap-10 px-8 relative">
 			<header className="bg-zinc-900 xl:bg-transparent sticky top-0 max-h-screen z-10 flex flex-col">
-				<div className="py-2 xl:pt-4 xl:pb-8">
+				<div className="py-2 xl:py-4">
 					<Link
 						className="inline-block py-4 text-[.25rem] leading-[.25rem] xl:text-[.35rem] xl:leading-[.40rem] whitespace-pre"
 						title="Conform"
@@ -100,7 +110,7 @@ export default function Guide() {
 				<Outlet />
 			</main>
 			<footer className="xl:col-span-1 top-0 sticky py-4 xl:flex xl:flex-col xl:h-screen -mx-8 px-8 mt-8 xl:mt-0 border-t xl:border-t-0 border-dotted">
-				<div className="pt-2 pb-4 mb-4 hidden xl:block xl:invisible">
+				<div className="pt-2 pb-4 hidden xl:block xl:invisible">
 					<button className="flex items-center justify-between w-full gap-4 px-2.5 py-2 rounded-sm border border-zinc-500 text-zinc-500 hover:text-zinc-400 hover:border-zinc-400">
 						<div className="line-clamp-1 text-left">
 							Type{' "'}
