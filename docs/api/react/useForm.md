@@ -3,18 +3,7 @@
 A React hook that returns the form and field metadata to enhance a HTML form.
 
 ```tsx
-import { useForm } from '@conform-to/react';
-
-function ExampleForm() {
-  const [form, fields] = useForm(options);
-
-  return (
-    <form id={form.id} onSubmit={form.onSubmit}>
-      <input name={fields.title.name} />
-      <div>{fields.title.errors}</div>
-    </form>
-  );
-}
+const [form, fields] = useForm(options);
 ```
 
 ## Options
@@ -33,17 +22,17 @@ The result of the last submission. This is usually sent from the server and will
 
 The initial value of the form.
 
-### `shouldValidate`
-
-Define when Conform should start validating each field with 3 options: `onSubmit`, `onBlur` and `onInput`. Default to `onSubmit`.
-
-### `shouldRevalidate'`
-
-Define when Conform should re-validate each field after it is validated. Default to the value of `shouldValidate`.
-
 ### `constraint`
 
 The validation attributes to be set on each field.
+
+### `shouldValidate`
+
+Define when Conform should start validating each field with 3 options: **onSubmit**, **onBlur** and **onInput**. Default to **onSubmit**.
+
+### `shouldRevalidate`
+
+Define when Conform should re-validate each field after it is validated. Default to the value of **shouldValidate**.
 
 ### `shouldDirtyConsider`
 
@@ -55,21 +44,11 @@ A function to be called when the form should be (re)validated.
 
 ### `onSubmit`
 
-A function to be called before the form is submitted. If `onValidate` is set, it will be called only if the client validation passes.
+A function to be called before the form is submitted. If **onValidate** is set, it will be called only if the client validation passes.
 
 ### `defaultNoValidate`
 
-Enable constraint validation before the DOM is hydated. Default to `true`.
-
-## Returns
-
-### `form`
-
-The form metadata.
-
-### `fields`
-
-A group of field metadata.
+Enable constraint validation before the DOM is hydated. Default to **true**.
 
 ## Tips
 
