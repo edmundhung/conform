@@ -49,7 +49,7 @@ export interface FieldConfig<Schema> extends FieldConstraint<Schema> {
 	errorId?: string;
 
 	/**
-	 * The frist error of the field
+	 * The first error of the field
 	 */
 	error?: string;
 
