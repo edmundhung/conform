@@ -13,7 +13,6 @@ import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
 import type { loader as rootLoader } from '~/root';
 import type { loader as indexLoader } from '~/routes/_guide._index';
 import type { loader as pageLoader } from '~/routes/_guide.$page';
-import { getIdFromHeading } from './markdoc';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface Menu {
@@ -145,25 +144,35 @@ export function Item({ children }: { children: React.ReactNode }) {
 }
 
 export function Heading({
+	id,
 	level,
 	children,
 }: {
+	id?: string;
 	level: number;
 	children: React.ReactNode;
 }) {
 	const HeadingTag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-	const id = typeof children === 'string' ? getIdFromHeading(children) : '';
+
+	let className: string;
+
+	switch (level) {
+		case 1:
+			className =
+				'text-xl xl:text-3xl pt-4 pb-6 xl:pt-4 xl:pb-2 xl:mb-8 tracking-wide';
+			break;
+		case 2:
+			className =
+				'text-md xl:text-xl pt-40 -mt-32 pb-2 mb-4 xl:mt-auto xl:pt-8 xl:pb-4 xl:mb-6 border-b border-dotted border-zinc-200';
+			break;
+		default:
+			className = 'pt-12 pb-4';
+			break;
+	}
 
 	return (
-		<HeadingTag
-			id={id}
-			className={
-				level === 1
-					? 'text-xl xl:text-3xl pt-4 pb-6 xl:pt-4 xl:pb-2 xl:mb-8 uppercase tracking-wider'
-					: 'text-md xl:text-xl pt-40 -mt-32 pb-2 mb-4 xl:mt-auto xl:pt-8 xl:pb-4 xl:mb-6 border-b border-dotted border-zinc-200 '
-			}
-		>
-			{level > 1 ? (
+		<HeadingTag id={id} className={className}>
+			{id ? (
 				<RouterLink
 					className="text-zinc-400 hover:text-zinc-200 mr-4"
 					to={`#${id}`}
@@ -177,7 +186,7 @@ export function Heading({
 }
 
 export function Paragraph({ children }: { children: React.ReactNode }) {
-	return <p className="py-2">{children}</p>;
+	return <p className="py-2 text-zinc-400">{children}</p>;
 }
 
 export function MainNavigation({ menus }: { menus: Menu[] }) {
@@ -311,10 +320,10 @@ export function Link({
 	);
 }
 
-export function Code({ content }: { content: string }) {
+export function Code({ children }: { children: React.ReactNode }) {
 	return (
 		<code className="text-white before:content-['`'] after:content-['`'] before:text-zinc-400 after:text-zinc-400">
-			{content}
+			{children}
 		</code>
 	);
 }

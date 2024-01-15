@@ -6,6 +6,28 @@ import {
 } from '@markdoc/markdoc';
 import { type Menu } from '~/components';
 
+function generateID(
+	children: RenderableTreeNode[],
+	attributes: Record<string, any>,
+) {
+	if (attributes.id && typeof attributes.id === 'string') {
+		return attributes.id;
+	}
+
+	return children
+		.flatMap((child) => {
+			if (child instanceof Tag) {
+				return child.children;
+			}
+			return [child];
+		})
+		.filter((child) => typeof child === 'string')
+		.join(' ')
+		.replace(/[?]/g, '')
+		.replace(/\s+/g, '-')
+		.toLowerCase();
+}
+
 export function parse(markdown: string) {
 	const content = markdown
 		.replace(
@@ -23,9 +45,25 @@ export function parse(markdown: string) {
 				},
 			},
 			heading: {
-				render: 'Heading',
 				attributes: {
+					id: { type: String, required: false },
 					level: { type: Number },
+				},
+				transform(node, config) {
+					const attributes = node.transformAttributes(config);
+					const children = node.transformChildren(config);
+
+					return new Tag(
+						`Heading`,
+						{
+							...attributes,
+							id:
+								attributes.level === 2
+									? generateID(children, attributes)
+									: undefined,
+						},
+						children,
+					);
 				},
 			},
 			link: {
@@ -48,9 +86,10 @@ export function parse(markdown: string) {
 				render: 'Item',
 			},
 			code: {
-				render: 'Code',
-				attributes: {
-					content: { type: String },
+				transform(node) {
+					const { content, ...attributes } = node.attributes;
+
+					return new Tag('Code', attributes, [content]);
 				},
 			},
 			strong: {
@@ -93,10 +132,6 @@ export function parse(markdown: string) {
 	return node;
 }
 
-export function getIdFromHeading(heading: string) {
-	return heading.replace(/[?]/g, '').replace(/\s+/g, '-').toLowerCase();
-}
-
 export function collectHeadings(
 	node: RenderableTreeNode,
 	level = 1,
@@ -117,7 +152,7 @@ export function collectHeadings(
 					case 2:
 						menu.links.push({
 							title,
-							to: `#${getIdFromHeading(title)}`,
+							to: `#${node.attributes.id ?? ''}`,
 						});
 						break;
 				}

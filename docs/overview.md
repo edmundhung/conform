@@ -1,6 +1,6 @@
 # Overview
 
-Conform is a **type-safe** form validation library utilizing web fundamentals to progressively enhance HTML Forms, delivering a modern, accessible, and resilient user experience with full support for server frameworks like [Remix](#)'s actions and [Next.js](#)'s server actions.
+Conform is a **type-safe** form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like [Remix route action](https://remix.run/docs/en/main/discussion/data-flow#route-action) and [Next.js server actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations).
 
 ## Features
 
@@ -12,7 +12,7 @@ Conform is a **type-safe** form validation library utilizing web fundamentals to
 
 ## The Gist
 
-Conform gives you control over the form submission from client to the server and exposes the form state through the `useForm()` hook. It does not restrict your form's markup and works with any valid HTML form. The form value will be captured from the DOM using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web API and is synced through event delegation.
+Conform gives you control over the form submission lifecycle from client to the server and exposes the form state through the `useForm()` hook. It does not restrict your form's markup and works with any valid HTML form. The form value will be captured from the DOM using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web API and is synced through event delegation.
 
 ```tsx
 import { useForm } from '@conform-to/react';
