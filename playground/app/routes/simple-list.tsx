@@ -1,7 +1,6 @@
 import {
 	FormStateInput,
 	useForm,
-	control,
 	getFormProps,
 	getInputProps,
 	FormProvider,
@@ -70,37 +69,37 @@ export default function SimpleList() {
 								<div className="flex flex-row gap-2">
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...form.getControlButtonProps(
-											control.remove({ name: fields.items.name, index }),
-										)}
+										{...form.remove.getButtonProps({
+											name: fields.items.name,
+											index,
+										})}
 									>
 										Delete
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...form.getControlButtonProps(
-											control.reorder({
-												name: fields.items.name,
-												from: index,
-												to: 0,
-											}),
-										)}
+										{...form.reorder.getButtonProps({
+											name: fields.items.name,
+											from: index,
+											to: 0,
+										})}
 									>
 										Move to top
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...form.getControlButtonProps(
-											control.replace({ name: task.name, value: '' }),
-										)}
+										{...form.replace.getButtonProps({
+											name: task.name,
+											value: '',
+										})}
 									>
 										Clear
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...form.getControlButtonProps(
-											control.reset({ name: task.name }),
-										)}
+										{...form.reset.getButtonProps({
+											name: task.name,
+										})}
 									>
 										Reset
 									</button>
@@ -111,29 +110,28 @@ export default function SimpleList() {
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.insert({
-									name: fields.items.name,
-									defaultValue: 'Top item',
-									index: 0,
-								}),
-							)}
+							{...form.insert.getButtonProps({
+								name: fields.items.name,
+								defaultValue: 'Top item',
+								index: 0,
+							})}
 						>
 							Insert top
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.insert({ name: fields.items.name, defaultValue: '' }),
-							)}
+							{...form.insert.getButtonProps({
+								name: fields.items.name,
+								defaultValue: '',
+							})}
 						>
 							Insert bottom
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.reset({ name: fields.items.name }),
-							)}
+							{...form.reset.getButtonProps({
+								name: fields.items.name,
+							})}
 						>
 							Reset
 						</button>

@@ -1,6 +1,5 @@
 import {
 	useForm,
-	control,
 	getFormProps,
 	getInputProps,
 	getTextareaProps,
@@ -58,52 +57,48 @@ export default function FormControl() {
 					<div className="flex flex-col gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(control.validate())}
+							{...form.validate.getButtonProps()}
 						>
 							Validate Form
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.validate({ name: fields.message.name }),
-							)}
+							{...form.validate.getButtonProps({
+								name: fields.message.name,
+							})}
 						>
 							Validate Message
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.replace({
-									name: fields.message.name,
-									value: 'Hello World',
-								}),
-							)}
+							{...form.replace.getButtonProps({
+								name: fields.message.name,
+								value: 'Hello World',
+							})}
 						>
 							Update message
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.replace({
-									name: fields.message.name,
-									value: '',
-									validated: true,
-								}),
-							)}
+							{...form.replace.getButtonProps({
+								name: fields.message.name,
+								value: '',
+								validated: true,
+							})}
 						>
 							Clear message
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.reset({ name: fields.message.name }),
-							)}
+							{...form.reset.getButtonProps({
+								name: fields.message.name,
+							})}
 						>
 							Reset message
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(control.reset())}
+							{...form.reset.getButtonProps()}
 						>
 							Reset form
 						</button>

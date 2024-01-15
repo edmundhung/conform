@@ -77,14 +77,14 @@ export function useForm<
 	);
 
 	useSafeLayoutEffect(() => {
-		document.addEventListener('input', context.input);
-		document.addEventListener('focusout', context.blur);
-		document.addEventListener('reset', context.reset);
+		document.addEventListener('input', context.onInput);
+		document.addEventListener('focusout', context.onBlur);
+		document.addEventListener('reset', context.onReset);
 
 		return () => {
-			document.removeEventListener('input', context.input);
-			document.removeEventListener('focusout', context.blur);
-			document.removeEventListener('reset', context.reset);
+			document.removeEventListener('input', context.onInput);
+			document.removeEventListener('focusout', context.onBlur);
+			document.removeEventListener('reset', context.onReset);
 		};
 	}, [context]);
 

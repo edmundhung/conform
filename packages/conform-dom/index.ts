@@ -19,11 +19,10 @@ export { invariant } from './util';
 export {
 	type Submission,
 	type SubmissionResult,
-	type FormControl,
-	CONTROL,
+	type Intent,
+	INTENT,
 	STATE,
-	control,
-	serializeControl,
+	serializeIntent,
 	parse,
 } from './submission';
 export { getPaths, formatPaths, isPrefix } from './formdata';

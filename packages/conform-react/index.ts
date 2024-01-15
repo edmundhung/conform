@@ -2,12 +2,11 @@ export {
 	type Submission,
 	type SubmissionResult,
 	type DefaultValue,
-	type FormControl,
+	type Intent,
 	type FormId,
 	type FieldName,
 	requestSubmit,
 	isFieldElement,
-	control,
 } from '@conform-to/dom';
 export {
 	type FieldMetadata,

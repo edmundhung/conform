@@ -10,7 +10,6 @@ import {
 	useFormMetadata,
 	FormProvider,
 	getTextareaProps,
-	control,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -103,9 +102,9 @@ export default function Example() {
 					<div className="flex flex-row gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.getControlButtonProps(
-								control.reset({ name: fields.message.name }),
-							)}
+							{...form.reset.getButtonProps({
+								name: fields.message.name,
+							})}
 						>
 							Reset message
 						</button>

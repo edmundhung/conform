@@ -1,5 +1,5 @@
 import {
-	type FormControl,
+	type Intent,
 	type Submission,
 	formatPaths,
 	parse,
@@ -61,7 +61,7 @@ function getError<FormError>(
 export function parseWithZod<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((control: FormControl | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
 	},
@@ -69,7 +69,7 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((control: FormControl | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => FormError;
@@ -78,7 +78,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 export function parseWithZod<Schema extends ZodTypeAny>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((control: FormControl | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
 	},
@@ -86,7 +86,7 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((control: FormControl | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => FormError;
@@ -95,7 +95,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	payload: FormData | URLSearchParams,
 	options: {
-		schema: Schema | ((control: FormControl | null) => Schema);
+		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
 		formatError?: (issues: Array<ZodIssue>) => FormError;
@@ -104,11 +104,11 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	| Submission<input<Schema>, FormError | string[], output<Schema>>
 	| Promise<Submission<input<Schema>, FormError | string[], output<Schema>>> {
 	return parse(payload, {
-		resolve(payload, control) {
+		resolve(payload, intent) {
 			const errorMap = options.errorMap;
 			const schema = enableTypeCoercion(
 				typeof options.schema === 'function'
-					? options.schema(control)
+					? options.schema(intent)
 					: options.schema,
 			);
 

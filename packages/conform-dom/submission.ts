@@ -14,7 +14,7 @@ export type SubmissionState = {
 };
 
 export type SubmissionContext<Value = null, FormError = unknown> = {
-	control: FormControl | null;
+	intent: Intent | null;
 	payload: Record<string, unknown>;
 	fields: string[];
 	value?: Value;
@@ -38,7 +38,7 @@ export type Submission<Schema, FormError = string[], Value = Schema> =
 
 export type SubmissionResult<FormError = string[]> = {
 	status?: 'error' | 'success';
-	control?: FormControl;
+	intent?: Intent;
 	initialValue?: Record<string, unknown> | null;
 	error?: Record<string, FormError | null>;
 	state?: SubmissionState;
@@ -57,7 +57,7 @@ export type ReplyOptions<FormError> =
 /**
  * The name to be used when submitting a form control
  */
-export const CONTROL = '__control__';
+export const INTENT = '__intent__';
 
 /**
  * The name to be used when submitting a state
@@ -67,19 +67,19 @@ export const STATE = '__state__';
 export function getSubmissionContext(
 	body: FormData | URLSearchParams,
 ): SubmissionContext {
-	const control = body.get(CONTROL);
+	const intent = body.get(INTENT);
 	const state = body.get(STATE);
 	const payload: Record<string, unknown> = {};
 	const fields: string[] = [];
 
 	invariant(
-		(typeof control === 'string' || control === null) &&
+		(typeof intent === 'string' || intent === null) &&
 			(typeof state === 'string' || state === null),
-		`The input name "${CONTROL}" and "${STATE}" are reserved by Conform. Please use another name for your input.`,
+		`The input name "${INTENT}" and "${STATE}" are reserved by Conform. Please use another name for your input.`,
 	);
 
 	for (const [name, next] of body.entries()) {
-		if (name === CONTROL || name === STATE) {
+		if (name === INTENT || name === STATE) {
 			continue;
 		}
 
@@ -97,7 +97,7 @@ export function getSubmissionContext(
 
 	return {
 		payload,
-		control: getControl(control),
+		intent: getIntent(intent),
 		state: state ? JSON.parse(state) : { validated: {} },
 		fields,
 	};
@@ -108,7 +108,7 @@ export function parse<FormValue, FormError>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			control: FormControl | null,
+			intent: Intent | null,
 		) => { value?: FormValue; error?: Record<string, FormError | null> | null };
 	},
 ): Submission<FormValue, FormError>;
@@ -117,7 +117,7 @@ export function parse<FormValue, FormError>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			control: FormControl | null,
+			intent: Intent | null,
 		) => Promise<{
 			value?: FormValue;
 			error?: Record<string, FormError | null> | null;
@@ -129,7 +129,7 @@ export function parse<FormValue, FormError>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			control: FormControl | null,
+			intent: Intent | null,
 		) =>
 			| { value?: FormValue; error?: Record<string, FormError | null> | null }
 			| Promise<{
@@ -143,7 +143,7 @@ export function parse<FormValue, FormError>(
 	options: {
 		resolve: (
 			payload: Record<string, any>,
-			control: FormControl | null,
+			intent: Intent | null,
 		) =>
 			| { value?: FormValue; error?: Record<string, FormError | null> | null }
 			| Promise<{
@@ -155,17 +155,17 @@ export function parse<FormValue, FormError>(
 	| Submission<FormValue, FormError>
 	| Promise<Submission<FormValue, FormError>> {
 	const context = getSubmissionContext(payload);
-	const control = context.control;
+	const intent = context.intent;
 
-	if (control) {
-		switch (control.type) {
+	if (intent) {
+		switch (intent.type) {
 			case 'validate':
-				if (control.payload.name) {
-					context.state.validated[control.payload.name] = true;
+				if (intent.payload.name) {
+					context.state.validated[intent.payload.name] = true;
 				}
 				break;
 			case 'replace': {
-				const { name, value, validated } = control.payload;
+				const { name, value, validated } = intent.payload;
 
 				if (name) {
 					setValue(context.payload, name, () => value);
@@ -200,7 +200,7 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'reset': {
-				const { name, value, validated } = control.payload;
+				const { name, value, validated } = intent.payload;
 
 				if (typeof value === 'undefined' || value) {
 					if (name) {
@@ -223,23 +223,23 @@ export function parse<FormValue, FormError>(
 			case 'insert':
 			case 'remove':
 			case 'reorder': {
-				setListValue(context.payload, control);
-				setListState(context.state.validated, control);
+				setListValue(context.payload, intent);
+				setListState(context.state.validated, intent);
 
-				context.state.validated[control.payload.name] = true;
+				context.state.validated[intent.payload.name] = true;
 				break;
 			}
 		}
 	}
 
-	const result = options.resolve(context.payload, control);
+	const result = options.resolve(context.payload, intent);
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, FormError | null> | null;
 		value?: FormValue;
 	}) => {
 		const error = typeof resolved.error !== 'undefined' ? resolved.error : {};
 
-		if (!control || (control.type === 'validate' && !control.payload.name)) {
+		if (!intent || (intent.type === 'validate' && !intent.payload.name)) {
 			for (const name of [...context.fields, ...Object.keys(error ?? {})]) {
 				context.state.validated[name] = true;
 			}
@@ -262,9 +262,9 @@ export function parse<FormValue, FormError>(
 export function createSubmission<FormValue, FormError>(
 	context: SubmissionContext<FormValue, FormError>,
 ): Submission<FormValue, FormError> {
-	if (context.control || !context.value || context.error) {
+	if (context.intent || !context.value || context.error) {
 		return {
-			status: !context.control ? 'error' : undefined,
+			status: !context.intent ? 'error' : undefined,
 			payload: context.payload,
 			error: typeof context.error !== 'undefined' ? context.error : {},
 			reply(options) {
@@ -287,9 +287,9 @@ export function replySubmission<FormError>(
 	context: SubmissionContext<unknown, FormError>,
 	options: ReplyOptions<FormError> = {},
 ): SubmissionResult<FormError> {
-	switch (context.control?.type) {
+	switch (context.intent?.type) {
 		case 'reset': {
-			const name = context.control.payload.name ?? '';
+			const name = context.intent.payload.name ?? '';
 
 			if (name === '') {
 				return {
@@ -335,22 +335,22 @@ export function replySubmission<FormError>(
 	});
 
 	return {
-		status: context.control ? undefined : error ? 'error' : 'success',
-		control: context.control ? context.control : undefined,
+		status: context.intent ? undefined : error ? 'error' : 'success',
+		intent: context.intent ? context.intent : undefined,
 		initialValue: simplify(context.payload) ?? {},
 		error,
 		state: context.state,
 	};
 }
 
-export type ValidateControl<Schema = any> = {
+export type ValidateIntent<Schema = any> = {
 	type: 'validate';
 	payload: {
 		name?: FieldName<Schema>;
 	};
 };
 
-export type ResetControl<Schema = any> = {
+export type ResetIntent<Schema = any> = {
 	type: 'reset';
 	payload: {
 		name?: FieldName<Schema>;
@@ -359,7 +359,7 @@ export type ResetControl<Schema = any> = {
 	};
 };
 
-export type ReplaceControl<Schema = unknown> = {
+export type ReplaceIntent<Schema = unknown> = {
 	type: 'replace';
 	payload: {
 		name: FieldName<Schema>;
@@ -368,7 +368,7 @@ export type ReplaceControl<Schema = unknown> = {
 	};
 };
 
-export type RemoveControl<Schema extends Array<any> = any> = {
+export type RemoveIntent<Schema extends Array<any> = any> = {
 	type: 'remove';
 	payload: {
 		name: FieldName<Schema>;
@@ -376,7 +376,7 @@ export type RemoveControl<Schema extends Array<any> = any> = {
 	};
 };
 
-export type InsertControl<Schema extends Array<any> = any> = {
+export type InsertIntent<Schema extends Array<any> = any> = {
 	type: 'insert';
 	payload: {
 		name: FieldName<Schema>;
@@ -387,7 +387,7 @@ export type InsertControl<Schema extends Array<any> = any> = {
 	};
 };
 
-export type ReorderControl<Schema extends Array<any> = any> = {
+export type ReorderIntent<Schema extends Array<any> = any> = {
 	type: 'reorder';
 	payload: {
 		name: FieldName<Schema>;
@@ -396,77 +396,73 @@ export type ReorderControl<Schema extends Array<any> = any> = {
 	};
 };
 
-export type FormControl<Schema = unknown> =
-	| ValidateControl<Schema>
-	| ResetControl<Schema>
-	| ReplaceControl<Schema>
-	| ReorderControl<Schema extends Array<any> ? Schema : any>
-	| RemoveControl<Schema extends Array<any> ? Schema : any>
-	| InsertControl<Schema extends Array<any> ? Schema : any>;
+export type Intent<Schema = unknown> =
+	| ValidateIntent<Schema>
+	| ResetIntent<Schema>
+	| ReplaceIntent<Schema>
+	| ReorderIntent<Schema extends Array<any> ? Schema : any>
+	| RemoveIntent<Schema extends Array<any> ? Schema : any>
+	| InsertIntent<Schema extends Array<any> ? Schema : any>;
 
-export function getControl(
-	serializedControl: string | null | undefined,
-): FormControl | null {
-	if (!serializedControl) {
+export function getIntent(
+	serializedIntent: string | null | undefined,
+): Intent | null {
+	if (!serializedIntent) {
 		return null;
 	}
 
-	const control = JSON.parse(serializedControl);
+	const control = JSON.parse(serializedIntent);
 
 	if (
 		typeof control.type !== 'string' ||
 		typeof control.payload === 'undefined'
 	) {
-		throw new Error('Unknown control');
+		throw new Error('Unknown form control intent');
 	}
 
 	return control;
 }
 
-export function serializeControl(control: FormControl): string {
-	return JSON.stringify(control);
+export function serializeIntent<Schema>(intent: Intent<Schema>): string {
+	return JSON.stringify(intent);
 }
 
 export function updateList(
 	list: unknown,
-	control: InsertControl | RemoveControl | ReorderControl,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
 	invariant(
 		Array.isArray(list),
 		`Failed to update list. The value is not an array.`,
 	);
 
-	switch (control.type) {
+	switch (intent.type) {
 		case 'insert':
 			list.splice(
-				control.payload.index ?? list.length,
+				intent.payload.index ?? list.length,
 				0,
-				serialize(control.payload.defaultValue),
+				serialize(intent.payload.defaultValue),
 			);
 			break;
 		case 'remove':
-			list.splice(control.payload.index, 1);
+			list.splice(intent.payload.index, 1);
 			break;
 		case 'reorder':
-			list.splice(
-				control.payload.to,
-				0,
-				...list.splice(control.payload.from, 1),
-			);
+			list.splice(intent.payload.to, 0, ...list.splice(intent.payload.from, 1));
 			break;
 		default:
-			throw new Error('Unknown list control received');
+			throw new Error('Unknown list intent received');
 	}
 }
 
 export function setListValue(
 	data: Record<string, unknown>,
-	control: InsertControl | RemoveControl | ReorderControl,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
-	setValue(data, control.payload.name, (value) => {
+	setValue(data, intent.payload.name, (value) => {
 		const list = value ?? [];
 
-		updateList(list, control);
+		updateList(list, intent);
 
 		return list;
 	});
@@ -529,24 +525,24 @@ export function setState(
 
 export function setListState(
 	state: Record<string, unknown>,
-	control: InsertControl | RemoveControl | ReorderControl,
+	intent: InsertIntent | RemoveIntent | ReorderIntent,
 	getDefaultValue?: () => string,
 ): void {
-	setState(state, control.payload.name, (value) => {
+	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
 
-		switch (control.type) {
+		switch (intent.type) {
 			case 'insert':
 				updateList(list, {
-					type: control.type,
+					type: intent.type,
 					payload: {
-						...control.payload,
+						...intent.payload,
 						defaultValue: getDefaultValue?.(),
 					},
 				});
 				break;
 			default:
-				updateList(list, control);
+				updateList(list, intent);
 				break;
 		}
 
@@ -587,23 +583,3 @@ export function serialize<Schema>(
 		return defaultValue ?? undefined;
 	}
 }
-
-export const control = new Proxy(
-	{} as {
-		[Type in FormControl['type']]: {} extends Extract<
-			FormControl,
-			{ type: Type }
-		>['payload']
-			? <Schema>(
-					payload?: Extract<FormControl<Schema>, { type: Type }>['payload'],
-			  ) => Extract<FormControl<Schema>, { type: Type }>
-			: <Schema>(
-					payload: Extract<FormControl<Schema>, { type: Type }>['payload'],
-			  ) => Extract<FormControl<Schema>, { type: Type }>;
-	},
-	{
-		get(_, type) {
-			return (payload = {}) => ({ type, payload });
-		},
-	},
-);

@@ -1,12 +1,11 @@
 import {
 	type Constraint,
-	type ControlButtonProps,
 	type FormId,
 	type FieldName,
 	type FormContext,
-	type FormControl,
 	type FormValue,
 	type FormState,
+	type Intent,
 	type SubscriptionScope,
 	type SubscriptionSubject,
 	type UnionKeyof,
@@ -61,25 +60,24 @@ export type Metadata<
 export type FormMetadata<
 	Schema extends Record<string, unknown> = Record<string, unknown>,
 	FormError = string[],
-> = Omit<Metadata<Schema, FormError, Schema>, 'id'> & {
-	id: FormId<Schema, FormError>;
-	context: FormContext<Schema, FormError>;
-	status?: 'success' | 'error';
-	dispatch(control: FormControl): void;
-	getControlButtonProps(control: FormControl): ControlButtonProps;
-	getFieldset: () => {
-		[Key in UnionKeyof<Schema>]: FieldMetadata<
-			UnionKeyType<Schema, Key>,
-			FormError,
-			Schema
-		>;
+> = Omit<Metadata<Schema, FormError, Schema>, 'id'> &
+	Pick<FormContext<Schema, FormError>, Intent['type']> & {
+		id: FormId<Schema, FormError>;
+		context: FormContext<Schema, FormError>;
+		status?: 'success' | 'error';
+		getFieldset: () => {
+			[Key in UnionKeyof<Schema>]: FieldMetadata<
+				UnionKeyType<Schema, Key>,
+				FormError,
+				Schema
+			>;
+		};
+		onSubmit: (
+			event: React.FormEvent<HTMLFormElement>,
+		) => ReturnType<FormContext<Schema>['onSubmit']>;
+		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		noValidate: boolean;
 	};
-	onSubmit: (
-		event: React.FormEvent<HTMLFormElement>,
-	) => ReturnType<FormContext<Schema>['submit']>;
-	onReset: (event: React.FormEvent<HTMLFormElement>) => void;
-	noValidate: boolean;
-};
 
 export type FieldMetadata<
 	Schema = unknown,
@@ -361,14 +359,18 @@ export function getFormMetadata<
 					return context;
 				case 'status':
 					return state.submissionStatus;
-				case 'dispatch':
-				case 'getControlButtonProps':
+				case 'validate':
+				case 'replace':
+				case 'reset':
+				case 'insert':
+				case 'remove':
+				case 'reorder':
 					return context[key];
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
 
-						context.submit(submitEvent);
+						context.onSubmit(submitEvent);
 
 						if (submitEvent.defaultPrevented) {
 							event.preventDefault();

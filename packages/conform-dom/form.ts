@@ -19,18 +19,17 @@ import {
 } from './dom';
 import { clone, generateId, invariant } from './util';
 import {
-	type FormControl,
+	type Intent,
 	type Submission,
 	type SubmissionResult,
-	CONTROL,
+	INTENT,
 	STATE,
 	getSubmissionContext,
 	setListState,
 	setListValue,
 	setState,
 	serialize,
-	control,
-	serializeControl,
+	serializeIntent,
 } from './submission';
 
 export type UnionKeyof<T> = T extends any ? keyof T : never;
@@ -222,19 +221,38 @@ export type FormContext<
 	Value = Schema,
 > = {
 	formId: string;
-	submit(event: SubmitEvent): void;
-	reset(event: Event): void;
-	input(event: Event): void;
-	blur(event: Event): void;
+	onSubmit(event: SubmitEvent): void;
+	onReset(event: Event): void;
+	onInput(event: Event): void;
+	onBlur(event: Event): void;
 	update(options: Partial<FormOptions<Schema, FormError, Value>>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
-	dispatch(control: FormControl): void;
-	getControlButtonProps(control: FormControl): ControlButtonProps;
+	dispatch(intent: Intent): void;
+	getControlButtonProps(intent: Intent): ControlButtonProps;
 	getState(): FormState<FormError>;
 	getSerializedState(): string;
+} & {
+	[Type in Intent['type']]: {} extends Extract<
+		Intent,
+		{ type: Type }
+	>['payload']
+		? (<FieldSchema>(
+				payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
+		  ) => void) & {
+				getButtonProps<FieldSchema>(
+					payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
+				): ControlButtonProps;
+		  }
+		: (<FieldSchema>(
+				payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
+		  ) => void) & {
+				getButtonProps<FieldSchema>(
+					payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
+				): ControlButtonProps;
+		  };
 };
 
 function createFormMeta<Schema, FormError, Value>(
@@ -264,8 +282,8 @@ function createFormMeta<Schema, FormError, Value>(
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
 	};
 
-	if (lastResult?.control) {
-		handleControl(result, lastResult.control);
+	if (lastResult?.intent) {
+		handleIntent(result, lastResult.intent);
 	}
 
 	return result;
@@ -288,25 +306,22 @@ function getDefaultKey(
 	}, {});
 }
 
-function handleControl<Error>(
+function handleIntent<Error>(
 	meta: FormMeta<Error>,
-	control: FormControl,
+	intent: Intent,
 	initialized?: boolean,
 ): void {
-	switch (control.type) {
+	switch (intent.type) {
 		case 'replace': {
-			const name = control.payload.name ?? '';
-			const value = control.payload.value;
+			const name = intent.payload.name ?? '';
+			const value = intent.payload.value;
 
 			updateValue(meta, name, value);
 			break;
 		}
 		case 'reset': {
-			if (
-				typeof control.payload.value === 'undefined' ||
-				control.payload.value
-			) {
-				const name = control.payload.name ?? '';
+			if (typeof intent.payload.value === 'undefined' || intent.payload.value) {
+				const name = intent.payload.name ?? '';
 				const value = getValue(meta.defaultValue, name);
 
 				updateValue(meta, name, value);
@@ -320,8 +335,8 @@ function handleControl<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, control, generateId);
-				setListValue(meta.initialValue, control);
+				setListState(meta.key, intent, generateId);
+				setListValue(meta.initialValue, intent);
 			}
 			break;
 		}
@@ -674,7 +689,7 @@ export function createFormContext<
 		});
 	}
 
-	function submit(event: SubmitEvent) {
+	function onSubmit(event: SubmitEvent) {
 		const form = event.target as HTMLFormElement;
 		const submitter = event.submitter as
 			| HTMLButtonElement
@@ -745,7 +760,7 @@ export function createFormContext<
 			: shouldValidate === eventName;
 	}
 
-	function input(event: Event) {
+	function onInput(event: Event) {
 		const element = resolveTarget(event);
 
 		if (!element || !element.form) {
@@ -761,11 +776,14 @@ export function createFormContext<
 				value: result.payload,
 			});
 		} else {
-			dispatch(control.validate({ name: element.name }));
+			dispatch({
+				type: 'validate',
+				payload: { name: element.name },
+			});
 		}
 	}
 
-	function blur(event: Event) {
+	function onBlur(event: Event) {
 		const element = resolveTarget(event);
 
 		if (
@@ -776,10 +794,13 @@ export function createFormContext<
 			return;
 		}
 
-		dispatch(control.validate({ name: element.name }));
+		dispatch({
+			type: 'validate',
+			payload: { name: element.name },
+		});
 	}
 
-	function reset(event: Event) {
+	function onReset(event: Event) {
 		const element = getFormElement();
 
 		if (
@@ -820,8 +841,8 @@ export function createFormContext<
 			validated: result.state?.validated ?? {},
 		};
 
-		if (result.control) {
-			handleControl(update, result.control, true);
+		if (result.intent) {
+			handleIntent(update, result.intent, true);
 		}
 
 		updateFormMeta(update);
@@ -873,10 +894,10 @@ export function createFormContext<
 		return state;
 	}
 
-	function dispatch(control: FormControl): void {
+	function dispatch(intent: Intent): void {
 		const form = getFormElement();
 		const submitter = document.createElement('button');
-		const buttonProps = getControlButtonProps(control);
+		const buttonProps = getControlButtonProps(intent);
 
 		submitter.name = buttonProps.name;
 		submitter.value = buttonProps.value;
@@ -888,26 +909,49 @@ export function createFormContext<
 		form?.removeChild(submitter);
 	}
 
-	function getControlButtonProps(control: FormControl): ControlButtonProps {
+	function getControlButtonProps(intent: Intent): ControlButtonProps {
 		return {
-			name: CONTROL,
-			value: serializeControl(control),
+			name: INTENT,
+			value: serializeIntent(intent),
 			form: latestOptions.formId,
 			formNoValidate: true,
 		};
+	}
+
+	function createFormControl<Type extends Intent['type']>(type: Type) {
+		const control = (payload: any = {}) =>
+			dispatch({
+				type,
+				payload,
+			});
+
+		return Object.assign(control, {
+			getButtonProps(payload: any = {}) {
+				return getControlButtonProps({
+					type,
+					payload,
+				});
+			},
+		});
 	}
 
 	return {
 		get formId() {
 			return latestOptions.formId;
 		},
-		submit,
-		reset,
-		input,
-		blur,
+		onSubmit,
+		onReset,
+		onInput,
+		onBlur,
 		dispatch,
 		getControlButtonProps,
 		update,
+		validate: createFormControl('validate'),
+		reset: createFormControl('reset'),
+		replace: createFormControl('replace'),
+		insert: createFormControl('insert'),
+		remove: createFormControl('remove'),
+		reorder: createFormControl('reorder'),
 		subscribe,
 		getState,
 		getSerializedState,

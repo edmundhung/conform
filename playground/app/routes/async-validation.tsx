@@ -1,5 +1,5 @@
 import {
-	type FormControl,
+	type Intent,
 	getFormProps,
 	getInputProps,
 	useForm,
@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 function createSchema(
-	control: FormControl | null,
+	intent: Intent | null,
 	constraints: {
 		isEmailUnique?: (email: string) => Promise<boolean>;
 	} = {},
@@ -27,8 +27,8 @@ function createSchema(
 					refine(ctx, {
 						validate: () => constraints.isEmailUnique?.(email),
 						when:
-							!control ||
-							(control.type === 'validate' && control.payload.name === 'email'),
+							!intent ||
+							(intent.type === 'validate' && intent.payload.name === 'email'),
 						message: 'Email is already used',
 					}),
 				),
