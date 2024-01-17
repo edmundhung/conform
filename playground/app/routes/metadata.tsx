@@ -52,6 +52,8 @@ export default function Example() {
 		lastResult,
 		defaultValue: {
 			bookmarks: [{}, {}],
+			// The title is defined after the bookmarks to ensure the order of the fields doesn't matter for dirty checking
+			title: 'Test',
 		},
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })

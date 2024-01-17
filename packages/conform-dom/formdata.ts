@@ -175,18 +175,17 @@ export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
 	value: Type | null,
 ): Record<string, unknown> | Array<unknown> | undefined {
 	if (isPlainObject(value)) {
-		const obj = Object.entries(value).reduce<Record<string, unknown>>(
-			(result, [key, value]) => {
-				const data = simplify(value);
+		const obj = Object.keys(value)
+			.sort()
+			.reduce<Record<string, unknown>>((result, key) => {
+				const data = simplify(value[key]);
 
 				if (typeof data !== 'undefined') {
 					result[key] = data;
 				}
 
 				return result;
-			},
-			{},
-		);
+			}, {});
 
 		if (Object.keys(obj).length === 0) {
 			return;

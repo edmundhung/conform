@@ -26,9 +26,11 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 	await expect.poll(playground.result).toEqual({
 		form: {
 			initialValue: {
+				title: 'Test',
 				bookmarks: [null, null],
 			},
 			value: {
+				title: 'Test',
 				bookmarks: [null, null],
 			},
 			dirty: false,
@@ -37,8 +39,10 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			allErrors: {},
 		},
 		title: {
+			initialValue: 'Test',
 			dirty: false,
 			valid: true,
+			value: 'Test',
 			allValid: true,
 			allErrors: {},
 		},
@@ -69,16 +73,17 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		form: {
 			status: 'error',
 			initialValue: {
+				title: 'Test',
 				bookmarks: [null, null],
 			},
 			value: {
+				title: 'Test',
 				bookmarks: [null, null],
 			},
 			dirty: false,
 			valid: true,
 			allValid: false,
 			allErrors: {
-				title: ['Title is required'],
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
 				'bookmarks[1].name': ['Name is required'],
@@ -86,13 +91,12 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 		},
 		title: {
+			initialValue: 'Test',
+			value: 'Test',
 			dirty: false,
-			valid: false,
-			errors: ['Title is required'],
-			allValid: false,
-			allErrors: {
-				title: ['Title is required'],
-			},
+			valid: true,
+			allValid: true,
+			allErrors: {},
 		},
 		bookmarks: {
 			initialValue: [null, null],
@@ -127,12 +131,80 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		},
 	});
 
+	// To confirm if dirty check works correctly
+	await fieldset.title.fill('');
+	await fieldset.title.fill('Test');
+	if (!noJS) {
+		await expect.poll(playground.result).toEqual({
+			form: {
+				status: 'error',
+				initialValue: {
+					title: 'Test',
+					bookmarks: [null, null],
+				},
+				value: {
+					title: 'Test',
+					bookmarks: [null, null],
+				},
+				dirty: false,
+				valid: true,
+				allValid: false,
+				allErrors: {
+					'bookmarks[0].name': ['Name is required'],
+					'bookmarks[0].url': ['Url is required'],
+					'bookmarks[1].name': ['Name is required'],
+					'bookmarks[1].url': ['Url is required'],
+				},
+			},
+			title: {
+				initialValue: 'Test',
+				value: 'Test',
+				dirty: false,
+				valid: true,
+				allValid: true,
+				allErrors: {},
+			},
+			bookmarks: {
+				initialValue: [null, null],
+				value: [null, null],
+				dirty: false,
+				valid: true,
+				allValid: false,
+				allErrors: {
+					'bookmarks[0].name': ['Name is required'],
+					'bookmarks[0].url': ['Url is required'],
+					'bookmarks[1].name': ['Name is required'],
+					'bookmarks[1].url': ['Url is required'],
+				},
+			},
+			'bookmarks[0]': {
+				dirty: false,
+				valid: true,
+				allValid: false,
+				allErrors: {
+					'bookmarks[0].name': ['Name is required'],
+					'bookmarks[0].url': ['Url is required'],
+				},
+			},
+			'bookmarks[1]': {
+				dirty: false,
+				valid: true,
+				allValid: false,
+				allErrors: {
+					'bookmarks[1].name': ['Name is required'],
+					'bookmarks[1].url': ['Url is required'],
+				},
+			},
+		});
+	}
+
 	await fieldset.title.fill('Projects');
 	if (!noJS) {
 		await expect.poll(playground.result).toEqual({
 			form: {
 				status: 'error',
 				initialValue: {
+					title: 'Test',
 					bookmarks: [null, null],
 				},
 				value: {
@@ -143,7 +215,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				valid: true,
 				allValid: false,
 				allErrors: {
-					title: ['Title is required'],
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
 					'bookmarks[1].name': ['Name is required'],
@@ -151,14 +222,12 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				},
 			},
 			title: {
+				initialValue: 'Test',
 				value: 'Projects',
 				dirty: true,
-				valid: false,
-				errors: ['Title is required'],
-				allValid: false,
-				allErrors: {
-					title: ['Title is required'],
-				},
+				valid: true,
+				allValid: true,
+				allErrors: {},
 			},
 			bookmarks: {
 				initialValue: [null, null],
@@ -199,7 +268,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		form: {
 			status: 'error',
 			initialValue: {
-				title: noJS ? 'Projects' : undefined,
+				title: noJS ? 'Projects' : 'Test',
 				bookmarks: [null, null],
 			},
 			value: {
@@ -217,7 +286,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 		},
 		title: {
-			initialValue: noJS ? 'Projects' : undefined,
+			initialValue: noJS ? 'Projects' : 'Test',
 			value: 'Projects',
 			dirty: true,
 			valid: true,
@@ -273,6 +342,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 						],
 				  }
 				: {
+						title: 'Test',
 						bookmarks: [null, null],
 				  },
 			value: {
@@ -294,7 +364,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 		},
 		title: {
-			initialValue: noJS ? 'Projects' : undefined,
+			initialValue: noJS ? 'Projects' : 'Test',
 			value: 'Projects',
 			dirty: true,
 			valid: true,
@@ -365,6 +435,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 						],
 				  }
 				: {
+						title: 'Test',
 						bookmarks: [null, null],
 				  },
 			value: {
@@ -386,7 +457,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 		},
 		title: {
-			initialValue: noJS ? 'Projects' : undefined,
+			initialValue: noJS ? 'Projects' : 'Test',
 			value: 'Projects',
 			dirty: true,
 			valid: true,
@@ -463,6 +534,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 						],
 				  }
 				: {
+						title: 'Test',
 						bookmarks: [null, null],
 				  },
 			value: {
@@ -486,7 +558,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 		},
 		title: {
-			initialValue: noJS ? 'Projects' : undefined,
+			initialValue: noJS ? 'Projects' : 'Test',
 			value: 'Projects',
 			dirty: true,
 			valid: true,
@@ -572,6 +644,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 						],
 				  }
 				: {
+						title: 'Test',
 						bookmarks: [null, null],
 				  },
 			value: {
@@ -593,7 +666,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			allErrors: {},
 		},
 		title: {
-			initialValue: noJS ? 'Projects' : undefined,
+			initialValue: noJS ? 'Projects' : 'Test',
 			value: 'Projects',
 			dirty: true,
 			valid: true,
