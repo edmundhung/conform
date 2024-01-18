@@ -1,5 +1,9 @@
 import { beforeEach, describe, test, expect } from 'vitest';
-import { getZodConstraint, parseWithZod, refine } from '@conform-to/zod';
+import {
+	getZodConstraint,
+	parseWithZod,
+	conformZodMessage,
+} from '@conform-to/zod';
 import { z } from 'zod';
 import { installGlobals } from '@remix-run/node';
 import { createFormData } from './helpers';
@@ -1035,22 +1039,41 @@ describe('conform-zod', () => {
 		});
 	});
 
-	test('parseWithZod with refine', () => {
+	test('parseWithZod with custom message', async () => {
 		const createSchema = (
-			validate?: (email) => Promise<boolean> | boolean,
-			when?: boolean,
+			validate?: (email: string) => Promise<boolean>,
+			when = true,
 		) =>
 			z.object({
 				email: z
 					.string()
 					.email()
-					.superRefine((email, ctx) =>
-						refine(ctx, {
-							validate: () => validate?.(email),
-							when,
-							message: 'Email is invalid',
-						}),
-					),
+					.superRefine((email, ctx) => {
+						if (!when) {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_SKIPPED,
+							});
+							return;
+						}
+
+						if (typeof validate === 'undefined') {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_UNDEFINED,
+							});
+							return;
+						}
+
+						return validate(email).then((valid) => {
+							if (!valid) {
+								ctx.addIssue({
+									code: 'custom',
+									message: 'Email is invalid',
+								});
+							}
+						});
+					}),
 			});
 		const formData = createFormData([['email', 'test@example.com']]);
 		const submission = {
@@ -1066,7 +1089,10 @@ describe('conform-zod', () => {
 			error: null,
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => false) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(false)),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'error',
@@ -1075,14 +1101,20 @@ describe('conform-zod', () => {
 			},
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => true) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(true)),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'success',
 			value: submission.payload,
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => true, false) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(true), false),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'error',
@@ -1091,7 +1123,10 @@ describe('conform-zod', () => {
 			},
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => false, false) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(false), false),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'error',
@@ -1100,7 +1135,10 @@ describe('conform-zod', () => {
 			},
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => false, true) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(false), true),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'error',
@@ -1109,7 +1147,10 @@ describe('conform-zod', () => {
 			},
 		});
 		expect(
-			parseWithZod(formData, { schema: createSchema(() => true, true) }),
+			await parseWithZod(formData, {
+				schema: createSchema(() => Promise.resolve(true), true),
+				async: true,
+			}),
 		).toEqual({
 			...submission,
 			status: 'success',

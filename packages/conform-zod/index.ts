@@ -1,2 +1,2 @@
 export { getZodConstraint } from './constraint';
-export { parseWithZod, refine } from './parse';
+export { parseWithZod, conformZodMessage } from './parse';

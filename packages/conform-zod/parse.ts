@@ -5,16 +5,13 @@ import {
 	parse,
 } from '@conform-to/dom';
 import {
-	type IssueData,
 	type SafeParseReturnType,
-	type RefinementCtx,
 	type ZodTypeAny,
 	type ZodError,
 	type ZodErrorMap,
 	type input,
 	type output,
 	type ZodIssue,
-	ZodIssueCode,
 } from 'zod';
 import { enableTypeCoercion } from './coercion';
 
@@ -28,9 +25,9 @@ function getError<FormError>(
 		const name = formatPaths(issue.path);
 
 		switch (issue.message) {
-			case '__undefined__':
+			case conformZodMessage.VALIDATION_UNDEFINED:
 				return null;
-			case '__skipped__':
+			case conformZodMessage.VALIDATION_SKIPPED:
 				result[name] = null;
 				break;
 			default: {
@@ -136,71 +133,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	});
 }
 
-/**
- * A helper function to define a custom constraint on a superRefine check.
- * Mainly used for async validation.
- *
- * @see https://conform.guide/api/zod#refine
- */
-export function refine(
-	ctx: RefinementCtx,
-	options: {
-		/**
-		 * A validate function. If the function returns `undefined`,
-		 * it will fallback to server validation.
-		 */
-		validate: () => boolean | Promise<boolean> | undefined;
-		/**
-		 * Define when the validation should be run. If the value is `false`,
-		 * the validation will be skipped.
-		 */
-		when?: boolean;
-		/**
-		 * The message displayed when the validation fails.
-		 */
-		message: string;
-		/**
-		 * The path set to the zod issue.
-		 */
-		path?: IssueData['path'];
-	},
-): void | Promise<void> {
-	if (typeof options.when !== 'undefined' && !options.when) {
-		ctx.addIssue({
-			code: ZodIssueCode.custom,
-			message: '__skipped__',
-			path: options.path,
-		});
-		return;
-	}
-
-	// Run the validation
-	const result = options.validate();
-
-	if (typeof result === 'undefined') {
-		// Validate only if the constraint is defined
-		ctx.addIssue({
-			code: ZodIssueCode.custom,
-			message: '__undefined__',
-			path: options.path,
-			fatal: true,
-		});
-		return;
-	}
-
-	const reportInvalid = (valid: boolean) => {
-		if (valid) {
-			return;
-		}
-
-		ctx.addIssue({
-			code: ZodIssueCode.custom,
-			message: options.message,
-			path: options.path,
-		});
-	};
-
-	return typeof result === 'boolean'
-		? reportInvalid(result)
-		: result.then(reportInvalid);
-}
+export const conformZodMessage = {
+	VALIDATION_SKIPPED: '__skipped__',
+	VALIDATION_UNDEFINED: '__undefined__',
+};
