@@ -88,9 +88,10 @@ export default function SimpleList() {
 									</button>
 									<button
 										className="rounded-md border p-2 hover:border-black"
-										{...form.replace.getButtonProps({
+										{...form.update.getButtonProps({
 											name: task.name,
 											value: '',
+											validated: false,
 										})}
 									>
 										Clear

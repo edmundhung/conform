@@ -89,7 +89,7 @@ export function useForm<
 	}, [context]);
 
 	useSafeLayoutEffect(() => {
-		context.update({ ...formConfig, formId });
+		context.onUpdate({ ...formConfig, formId });
 	});
 
 	const subjectRef = useSubjectRef();

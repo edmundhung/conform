@@ -71,7 +71,7 @@ export default function FormControl() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.replace.getButtonProps({
+							{...form.update.getButtonProps({
 								name: fields.message.name,
 								value: 'Hello World',
 							})}
@@ -80,7 +80,7 @@ export default function FormControl() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.replace.getButtonProps({
+							{...form.update.getButtonProps({
 								name: fields.message.name,
 								value: '',
 								validated: true,

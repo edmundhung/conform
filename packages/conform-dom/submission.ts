@@ -164,59 +164,56 @@ export function parse<FormValue, FormError>(
 					context.state.validated[intent.payload.name] = true;
 				}
 				break;
-			case 'replace': {
+			case 'update': {
 				const { name, value, validated } = intent.payload;
 
-				if (name) {
-					setValue(context.payload, name, () => value);
-				} else {
-					// @ts-expect-error FIXME - it must be an object if there is no name
-					context.payload = value;
+				if (typeof value !== 'undefined') {
+					if (name) {
+						setValue(context.payload, name, () => value);
+					} else {
+						// @ts-expect-error FIXME - it must be an object if there is no name
+						context.payload = value;
+					}
 				}
 
-				if (validated) {
-					if (isPlainObject(value) || Array.isArray(value)) {
-						// Clean up previous validated state
+				if (typeof validated !== 'undefined') {
+					// Clean up previous validated state
+					if (name) {
 						setState(context.state.validated, name, () => undefined);
-						Object.assign(
-							context.state.validated,
-							flatten(value, {
-								resolve() {
-									return true;
-								},
-								prefix: name,
-							}),
-						);
+					} else {
+						context.state.validated = {};
 					}
 
-					context.state.validated[name] = true;
-				} else {
-					if (isPlainObject(value) || Array.isArray(value)) {
-						setState(context.state.validated, name, () => undefined);
-					}
+					if (validated) {
+						if (isPlainObject(value) || Array.isArray(value)) {
+							Object.assign(
+								context.state.validated,
+								flatten(value, {
+									resolve() {
+										return true;
+									},
+									prefix: name,
+								}),
+							);
+						}
 
-					delete context.state.validated[name];
+						context.state.validated[name ?? ''] = true;
+					} else if (name) {
+						delete context.state.validated[name];
+					}
 				}
 				break;
 			}
 			case 'reset': {
-				const { name, value, validated } = intent.payload;
+				const { name } = intent.payload;
 
-				if (typeof value === 'undefined' || value) {
-					if (name) {
-						setValue(context.payload, name, () => undefined);
-					} else {
-						context.payload = {};
-					}
-				}
-
-				if (typeof validated === 'undefined' || validated) {
-					if (name) {
-						setState(context.state.validated, name, () => undefined);
-						delete context.state.validated[name];
-					} else {
-						context.state.validated = {};
-					}
+				if (name) {
+					setValue(context.payload, name, () => undefined);
+					setState(context.state.validated, name, () => undefined);
+					delete context.state.validated[name];
+				} else {
+					context.payload = {};
+					context.state.validated = {};
 				}
 				break;
 			}
@@ -354,16 +351,14 @@ export type ResetIntent<Schema = any> = {
 	type: 'reset';
 	payload: {
 		name?: FieldName<Schema>;
-		value?: boolean;
-		validated?: boolean;
 	};
 };
 
-export type ReplaceIntent<Schema = unknown> = {
-	type: 'replace';
+export type UpdateIntent<Schema = unknown> = {
+	type: 'update';
 	payload: {
-		name: FieldName<Schema>;
-		value: NonNullable<DefaultValue<Schema>>;
+		name?: FieldName<Schema>;
+		value?: NonNullable<DefaultValue<Schema>>;
 		validated?: boolean;
 	};
 };
@@ -399,7 +394,7 @@ export type ReorderIntent<Schema extends Array<any> = any> = {
 export type Intent<Schema = unknown> =
 	| ValidateIntent<Schema>
 	| ResetIntent<Schema>
-	| ReplaceIntent<Schema>
+	| UpdateIntent<Schema>
 	| ReorderIntent<Schema extends Array<any> ? Schema : any>
 	| RemoveIntent<Schema extends Array<any> ? Schema : any>
 	| InsertIntent<Schema extends Array<any> ? Schema : any>;

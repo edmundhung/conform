@@ -225,13 +225,11 @@ export type FormContext<
 	onReset(event: Event): void;
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
-	update(options: Partial<FormOptions<Schema, FormError, Value>>): void;
+	onUpdate(options: Partial<FormOptions<Schema, FormError, Value>>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
 	): () => void;
-	dispatch(intent: Intent): void;
-	getControlButtonProps(intent: Intent): ControlButtonProps;
 	getState(): FormState<FormError>;
 	getSerializedState(): string;
 } & {
@@ -239,17 +237,17 @@ export type FormContext<
 		Intent,
 		{ type: Type }
 	>['payload']
-		? (<FieldSchema>(
+		? (<FieldSchema = Schema>(
 				payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 		  ) => void) & {
-				getButtonProps<FieldSchema>(
+				getButtonProps<FieldSchema = Schema>(
 					payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 				): ControlButtonProps;
 		  }
-		: (<FieldSchema>(
+		: (<FieldSchema = Schema>(
 				payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 		  ) => void) & {
-				getButtonProps<FieldSchema>(
+				getButtonProps<FieldSchema = Schema>(
 					payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 				): ControlButtonProps;
 		  };
@@ -312,20 +310,20 @@ function handleIntent<Error>(
 	initialized?: boolean,
 ): void {
 	switch (intent.type) {
-		case 'replace': {
-			const name = intent.payload.name ?? '';
-			const value = intent.payload.value;
-
-			updateValue(meta, name, value);
-			break;
-		}
-		case 'reset': {
-			if (typeof intent.payload.value === 'undefined' || intent.payload.value) {
+		case 'update': {
+			if (typeof intent.payload.value !== 'undefined') {
 				const name = intent.payload.name ?? '';
-				const value = getValue(meta.defaultValue, name);
+				const value = intent.payload.value;
 
 				updateValue(meta, name, value);
 			}
+			break;
+		}
+		case 'reset': {
+			const name = intent.payload.name ?? '';
+			const value = getValue(meta.defaultValue, name);
+
+			updateValue(meta, name, value);
 			break;
 		}
 		case 'insert':
@@ -857,7 +855,7 @@ export function createFormContext<
 		}
 	}
 
-	function update(options: Partial<FormOptions<Schema, FormError, Value>>) {
+	function onUpdate(options: Partial<FormOptions<Schema, FormError, Value>>) {
 		const currentFormId = latestOptions.formId;
 		const currentResult = latestOptions.lastResult;
 
@@ -943,12 +941,10 @@ export function createFormContext<
 		onReset,
 		onInput,
 		onBlur,
-		dispatch,
-		getControlButtonProps,
-		update,
+		onUpdate,
 		validate: createFormControl('validate'),
 		reset: createFormControl('reset'),
-		replace: createFormControl('replace'),
+		update: createFormControl('update'),
 		insert: createFormControl('insert'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),

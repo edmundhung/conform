@@ -360,7 +360,7 @@ export function getFormMetadata<
 				case 'status':
 					return state.submissionStatus;
 				case 'validate':
-				case 'replace':
+				case 'update':
 				case 'reset':
 				case 'insert':
 				case 'remove':
