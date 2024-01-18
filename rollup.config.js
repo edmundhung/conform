@@ -71,6 +71,7 @@ export default function rollup() {
 		// Schema resolver
 		'conform-zod',
 		'conform-yup',
+		'conform-typebox',
 
 		// View adapter
 		'conform-react',

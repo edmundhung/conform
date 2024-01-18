@@ -15,6 +15,7 @@
 		"@conform-to/react": "*",
 		"@conform-to/validitystate": "*",
 		"@conform-to/zod": "*",
+		"@conform-to/typebox": "*",
 		"@headlessui/tailwindcss": "^0.1.3",
 		"@heroicons/react": "^2.0.18",
 		"@radix-ui/react-checkbox": "^1.0.4",
