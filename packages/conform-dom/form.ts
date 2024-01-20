@@ -221,7 +221,7 @@ export type FormContext<
 	Value = Schema,
 > = {
 	formId: string;
-	onSubmit(event: SubmitEvent): void;
+	submit(event: SubmitEvent): Submission<Schema, FormError, Value> | undefined;
 	onReset(event: Event): void;
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
@@ -687,7 +687,7 @@ export function createFormContext<
 		});
 	}
 
-	function onSubmit(event: SubmitEvent) {
+	function submit(event: SubmitEvent) {
 		const form = event.target as HTMLFormElement;
 		const submitter = event.submitter as
 			| HTMLButtonElement
@@ -714,20 +714,22 @@ export function createFormContext<
 
 		if (typeof latestOptions?.onValidate === 'undefined') {
 			latestOptions.onSubmit?.(event, context);
+			return;
+		}
+
+		const submission = latestOptions.onValidate({
+			form,
+			formData,
+			submitter,
+		});
+
+		if (submission.status !== 'success' && submission.error !== null) {
+			report(submission.reply());
 		} else {
-			const submission = latestOptions.onValidate({
-				form,
-				formData,
-				submitter,
-			});
-
-			if (submission.status !== 'success' && submission.error !== null) {
-				report(submission.reply());
-				event.preventDefault();
-			}
-
 			latestOptions.onSubmit?.(event, { ...context, submission });
 		}
+
+		return submission;
 	}
 
 	function resolveTarget(event: Event) {
@@ -937,7 +939,7 @@ export function createFormContext<
 		get formId() {
 			return latestOptions.formId;
 		},
-		onSubmit,
+		submit,
 		onReset,
 		onInput,
 		onBlur,

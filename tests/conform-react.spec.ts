@@ -69,7 +69,6 @@ describe('conform-react', () => {
 		});
 		expect(getInputProps({ ...metadata, valid: false })).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -92,7 +91,6 @@ describe('conform-react', () => {
 			}),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -106,7 +104,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
@@ -120,7 +117,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error something',
 		});
@@ -132,10 +128,7 @@ describe('conform-react', () => {
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual({
-			...props,
-			autoFocus: true,
-		});
+		).toEqual(props);
 		expect(getInputProps(metadata, { type: 'checkbox' })).toEqual({
 			...props,
 			type: 'checkbox',
@@ -207,7 +200,6 @@ describe('conform-react', () => {
 		});
 		expect(getTextareaProps({ ...metadata, valid: false })).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -228,7 +220,6 @@ describe('conform-react', () => {
 			}),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -242,7 +233,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
@@ -256,7 +246,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error something',
 		});
@@ -268,10 +257,7 @@ describe('conform-react', () => {
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual({
-			...props,
-			autoFocus: true,
-		});
+		).toEqual(props);
 	});
 
 	test('getSelectProps', () => {
@@ -302,7 +288,6 @@ describe('conform-react', () => {
 		});
 		expect(getSelectProps({ ...metadata, valid: false })).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -324,7 +309,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error test-description',
 		});
@@ -338,7 +322,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			autoFocus: true,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error something',
 		});
@@ -350,7 +333,7 @@ describe('conform-react', () => {
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual({ ...props, autoFocus: true });
+		).toEqual(props);
 	});
 
 	test('getFieldsetProps', () => {

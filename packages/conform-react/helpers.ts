@@ -227,7 +227,6 @@ export function getFormControlProps<Schema>(
 	return simplify({
 		key: metadata.key,
 		required: metadata.constraint?.required || undefined,
-		autoFocus: !metadata.valid || undefined,
 		...getFieldsetProps(metadata, options),
 	});
 }

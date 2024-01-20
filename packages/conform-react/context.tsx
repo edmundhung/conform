@@ -72,10 +72,7 @@ export type FormMetadata<
 				Schema
 			>;
 		};
-		onSubmit: (
-			event: React.FormEvent<HTMLFormElement>,
-		) => ReturnType<FormContext<Schema>['onSubmit']>;
-		onReset: (event: React.FormEvent<HTMLFormElement>) => void;
+		onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 		noValidate: boolean;
 	};
 
@@ -369,10 +366,13 @@ export function getFormMetadata<
 				case 'onSubmit':
 					return (event: React.FormEvent<HTMLFormElement>) => {
 						const submitEvent = event.nativeEvent as SubmitEvent;
+						const submission = context.submit(submitEvent);
 
-						context.onSubmit(submitEvent);
-
-						if (submitEvent.defaultPrevented) {
+						if (
+							submission &&
+							submission.status !== 'success' &&
+							submission.error !== null
+						) {
 							event.preventDefault();
 						}
 					};
