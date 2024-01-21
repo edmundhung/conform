@@ -70,10 +70,6 @@ describe('conform-react', () => {
 			...props,
 			type: 'text',
 		});
-		expect(getInputProps(metadata, { ariaDescribedBy: true })).toEqual({
-			...props,
-			'aria-describedby': 'test-description',
-		});
 		expect(getInputProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
 			...props,
 			'aria-describedby': 'something',
@@ -87,19 +83,6 @@ describe('conform-react', () => {
 			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
-		});
-		expect(
-			getInputProps(
-				{
-					...metadata,
-					errors: ['required'],
-				},
-				{ ariaDescribedBy: true },
-			),
-		).toEqual({
-			...props,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
 		});
 		expect(
 			getInputProps(
@@ -197,10 +180,6 @@ describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getTextareaProps(metadata, { ariaDescribedBy: true })).toEqual({
-			...props,
-			'aria-describedby': 'test-description',
-		});
 		expect(
 			getTextareaProps(metadata, { ariaDescribedBy: 'something' }),
 		).toEqual({
@@ -216,19 +195,6 @@ describe('conform-react', () => {
 			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
-		});
-		expect(
-			getTextareaProps(
-				{
-					...metadata,
-					errors: ['required'],
-				},
-				{ ariaDescribedBy: true },
-			),
-		).toEqual({
-			...props,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
 		});
 		expect(
 			getTextareaProps(
@@ -285,26 +251,9 @@ describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getSelectProps(metadata, { ariaDescribedBy: true })).toEqual({
-			...props,
-			'aria-describedby': 'test-description',
-		});
 		expect(getSelectProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
 			...props,
 			'aria-describedby': 'something',
-		});
-		expect(
-			getSelectProps(
-				{
-					...metadata,
-					errors: ['required'],
-				},
-				{ ariaDescribedBy: true },
-			),
-		).toEqual({
-			...props,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
 		});
 		expect(
 			getSelectProps(
@@ -346,28 +295,11 @@ describe('conform-react', () => {
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(getFieldsetProps(metadata, { ariaDescribedBy: true })).toEqual({
-			...props,
-			'aria-describedby': 'test-description',
-		});
 		expect(
 			getFieldsetProps(metadata, { ariaDescribedBy: 'something' }),
 		).toEqual({
 			...props,
 			'aria-describedby': 'something',
-		});
-		expect(
-			getFieldsetProps(
-				{
-					...metadata,
-					errors: ['required'],
-				},
-				{ ariaDescribedBy: true },
-			),
-		).toEqual({
-			...props,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
 		});
 		expect(
 			getFieldsetProps(

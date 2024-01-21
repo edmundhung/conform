@@ -127,14 +127,18 @@ export default function Example() {
 					<input
 						{...getInputProps(fields.title, {
 							type: 'text',
-							ariaDescribedBy: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.title.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
 				<Field label="Description" meta={fields.description}>
 					<textarea
 						{...getTextareaProps(fields.description, {
-							ariaDescribedBy: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.description.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
@@ -142,14 +146,18 @@ export default function Example() {
 					<input
 						{...getInputProps(fields.images, {
 							type: 'file',
-							ariaDescribedBy: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.images.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
 				<Field label="Tags" meta={fields.tags}>
 					<select
 						{...getSelectProps(fields.tags, {
-							ariaDescribedBy: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.tags.descriptionId
+								: undefined,
 						})}
 					>
 						<option value="">Please select</option>
@@ -166,7 +174,9 @@ export default function Example() {
 					<input
 						{...getInputProps(fields.rating, {
 							type: 'number',
-							ariaDescribedBy: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.rating.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
@@ -175,7 +185,9 @@ export default function Example() {
 						type: 'radio',
 						options: ['yes', 'no'],
 						ariaAttributes: true,
-						ariaDescribedBy: enableDescription,
+						ariaDescribedBy: enableDescription
+							? fields.released.descriptionId
+							: undefined,
 					}).map((props) => (
 						<label key={props.value} className="inline-block">
 							<input {...props} />
@@ -191,7 +203,9 @@ export default function Example() {
 					{getCollectionProps(fields.languages, {
 						type: 'checkbox',
 						options: ['en', 'de', 'jp'],
-						ariaDescribedBy: enableDescription,
+						ariaDescribedBy: enableDescription
+							? fields.languages.descriptionId
+							: undefined,
 					}).map((props) => (
 						<label key={props.value} className="inline-block">
 							<input {...props} />

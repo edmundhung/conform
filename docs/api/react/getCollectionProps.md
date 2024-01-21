@@ -50,11 +50,11 @@ Decide whether to include `aria-invalid` and `aria-describedby` in the result pr
 
 ### `ariaInvalid`
 
-Decide whether the aria attributes should be based on `field.errors` or `field.allErrors`. Default to **errors**.
+Decide whether the aria attributes should be based on `meta.errors` or `meta.allErrors`. Default to **errors**.
 
 ### `ariaDescribedBy`
 
-Append additional **id** to the `aria-describedby` attribute. If the value is **true**, it will use the `descriptionId` from the field metadata.
+Append additional **id** to the `aria-describedby` attribute. You can pass `meta.descriptionId` from the field metadata.
 
 ## Tips
 

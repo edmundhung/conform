@@ -24,14 +24,14 @@ type FormControlOptions =
 			 */
 			ariaAttributes?: true;
 			/**
-			 * Decide whether the aria attributes should be based on `field.errors` or `field.allErrors`.
+			 * Decide whether the aria-invalid attributes should be based on `meta.errors` or `meta.allErrors`.
 			 * @default 'errors'
 			 */
 			ariaInvalid?: 'errors' | 'allErrors';
 			/**
-			 * Assign additional `id` to the `aria-describedby` attribute. If `true`, it will use the `descriptionId` from the metadata.
+			 * Assign additional `id` to the `aria-describedby` attribute.
 			 */
-			ariaDescribedBy?: boolean | string;
+			ariaDescribedBy?: string;
 	  }
 	| {
 			ariaAttributes: false;
@@ -162,12 +162,7 @@ export function getAriaAttributes(
 		options.ariaInvalid === 'allErrors'
 			? !metadata.valid
 			: typeof metadata.errors !== 'undefined';
-	const ariaDescribedBy =
-		typeof options.ariaDescribedBy === 'string'
-			? options.ariaDescribedBy
-			: options.ariaDescribedBy
-			? metadata.descriptionId
-			: undefined;
+	const ariaDescribedBy = options.ariaDescribedBy;
 
 	return simplify({
 		'aria-invalid': invalid || undefined,
