@@ -13,7 +13,7 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
-export type SubmissionContext<Value = null, FormError = unknown> = {
+export type SubmissionContext<Value = null, FormError = string[]> = {
 	intent: Intent | null;
 	payload: Record<string, unknown>;
 	fields: string[];
@@ -22,11 +22,11 @@ export type SubmissionContext<Value = null, FormError = unknown> = {
 	state: SubmissionState;
 };
 
-export type Submission<Schema, FormError = string[], Value = Schema> =
+export type Submission<Schema, FormError = string[], FormValue = Schema> =
 	| {
 			status: 'success';
 			payload: Record<string, unknown>;
-			value: Value;
+			value: FormValue;
 			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  }
 	| {

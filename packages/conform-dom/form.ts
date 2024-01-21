@@ -79,22 +79,26 @@ export type FormValue<Schema> = Schema extends
 			| undefined
 	: unknown;
 
+const error = Symbol('error');
+const field = Symbol('field');
+const form = Symbol('form');
+
 export type FormId<
 	Schema extends Record<string, unknown> = Record<string, unknown>,
 	Error = string[],
 > = string & {
-	__error?: Error;
-	__schema?: Schema;
+	[error]?: Error;
+	[form]?: Schema;
 };
 
 export type FieldName<
 	FieldSchema,
-	Error = string[],
 	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+	Error = string[],
 > = string & {
-	__field?: FieldSchema;
-	__error?: Error;
-	__form?: FormSchema;
+	[field]?: FieldSchema;
+	[error]?: Error;
+	[form]?: FormSchema;
 };
 
 export type Constraint = {
@@ -124,7 +128,7 @@ export type FormState<FormError> = FormMeta<FormError> & {
 	dirty: Record<string, boolean>;
 };
 
-export type FormOptions<Schema, FormError, Value = Schema> = {
+export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	/**
 	 * The id of the form.
 	 */
@@ -174,7 +178,7 @@ export type FormOptions<Schema, FormError, Value = Schema> = {
 		form: HTMLFormElement;
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
-	}) => Submission<Schema, FormError, Value>;
+	}) => Submission<Schema, FormError, FormValue>;
 
 	/**
 	 * A function to be called before the form is submitted.
@@ -186,7 +190,7 @@ export type FormOptions<Schema, FormError, Value = Schema> = {
 			action: ReturnType<typeof getFormAction>;
 			encType: ReturnType<typeof getFormEncType>;
 			method: ReturnType<typeof getFormMethod>;
-			submission?: Submission<Schema, FormError, Value>;
+			submission?: Submission<Schema, FormError, FormValue>;
 		},
 	) => void;
 };
@@ -217,15 +221,17 @@ export type ControlButtonProps = {
 
 export type FormContext<
 	Schema extends Record<string, any> = any,
+	FormValue = Schema,
 	FormError = string[],
-	Value = Schema,
 > = {
 	formId: string;
-	submit(event: SubmitEvent): Submission<Schema, FormError, Value> | undefined;
+	submit(
+		event: SubmitEvent,
+	): Submission<Schema, FormError, FormValue> | undefined;
 	onReset(event: Event): void;
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
-	onUpdate(options: Partial<FormOptions<Schema, FormError, Value>>): void;
+	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -253,8 +259,8 @@ export type FormContext<
 		  };
 };
 
-function createFormMeta<Schema, FormError, Value>(
-	options: FormOptions<Schema, FormError, Value>,
+function createFormMeta<Schema, FormError, FormValue>(
+	options: FormOptions<Schema, FormError, FormValue>,
 	initialized?: boolean,
 ): FormMeta<FormError> {
 	const lastResult = !initialized ? options.lastResult : undefined;
@@ -525,11 +531,11 @@ function shouldNotify<Schema>(
 
 export function createFormContext<
 	Schema extends Record<string, any>,
+	FormValue,
 	FormError,
-	Value,
 >(
-	options: FormOptions<Schema, FormError, Value>,
-): FormContext<Schema, FormError, Value> {
+	options: FormOptions<Schema, FormError, FormValue>,
+): FormContext<Schema, FormValue, FormError> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
@@ -871,7 +877,9 @@ export function createFormContext<
 		}
 	}
 
-	function onUpdate(options: Partial<FormOptions<Schema, FormError, Value>>) {
+	function onUpdate(
+		options: Partial<FormOptions<Schema, FormError, FormValue>>,
+	) {
 		const currentFormId = latestOptions.formId;
 		const currentResult = latestOptions.lastResult;
 

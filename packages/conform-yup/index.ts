@@ -3,7 +3,6 @@ import {
 	type Intent,
 	type Submission,
 	parse,
-	invariant,
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
@@ -62,10 +61,9 @@ export function getYupConstraint<Source extends yup.AnyObjectSchema>(
 									constraint.required = true;
 									break;
 								case 'min':
-									invariant(
-										typeof constraint.min !== 'string',
-										'min is not a number',
-									);
+									if (typeof constraint.min === 'string') {
+										throw new Error('min should not be a string');
+									}
 
 									if (
 										!constraint.min ||
@@ -75,10 +73,10 @@ export function getYupConstraint<Source extends yup.AnyObjectSchema>(
 									}
 									break;
 								case 'max':
-									invariant(
-										typeof constraint.max !== 'string',
-										'max is not a number',
-									);
+									if (typeof constraint.max === 'string') {
+										throw new Error('max should not be a number');
+									}
+
 									if (
 										!constraint.max ||
 										constraint.max > Number(test.params?.max)

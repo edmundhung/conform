@@ -79,7 +79,7 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
-	meta?: FieldMetadata<any, string[], any>;
+	meta?: FieldMetadata<any, any>;
 	children: ReactNode;
 }
 

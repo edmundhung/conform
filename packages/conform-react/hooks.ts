@@ -2,7 +2,7 @@ import {
 	type FormId,
 	type FieldName,
 	type FormOptions,
-	createFormContext,
+	unstable_createFormContext as createFormContext,
 } from '@conform-to/dom';
 import { useEffect, useId, useState, useLayoutEffect } from 'react';
 import {
@@ -48,8 +48,8 @@ export function useNoValidate(defaultNoValidate = true): boolean {
 
 export function useForm<
 	Schema extends Record<string, any>,
-	FormError = string[],
 	FormValue = Schema,
+	FormError = string[],
 >(
 	options: Pretty<
 		Omit<FormOptions<Schema, FormError, FormValue>, 'formId'> & {
@@ -100,7 +100,10 @@ export function useForm<
 	return [form, form.getFieldset()];
 }
 
-export function useFormMetadata<Schema extends Record<string, any>, FormError>(
+export function useFormMetadata<
+	Schema extends Record<string, any>,
+	FormError = string[],
+>(
 	formId: FormId<Schema, FormError>,
 	options: {
 		defaultNoValidate?: boolean;
@@ -122,21 +125,21 @@ export function useFormMetadata<Schema extends Record<string, any>, FormError>(
 
 export function useField<
 	FieldSchema,
-	FormError = string[],
 	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+	FormError = string[],
 >(
-	name: FieldName<FieldSchema, FormError, FormSchema>,
+	name: FieldName<FieldSchema, FormSchema, FormError>,
 	options: {
 		formId?: FormId<FormSchema, FormError>;
 	} = {},
 ): [
-	FieldMetadata<FieldSchema, FormError, FormSchema>,
+	FieldMetadata<FieldSchema, FormSchema, FormError>,
 	FormMetadata<FormSchema, FormError>,
 ] {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
 	const state = useFormState(context, subjectRef);
-	const field = getFieldMetadata<FieldSchema, FormError, FormSchema>(
+	const field = getFieldMetadata<FieldSchema, FormSchema, FormError>(
 		context.formId,
 		state,
 		subjectRef,

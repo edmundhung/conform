@@ -12,10 +12,9 @@ export {
 	type FormContext,
 	type SubscriptionSubject,
 	type SubscriptionScope,
-	createFormContext,
+	createFormContext as unstable_createFormContext,
 } from './form';
-export { type FieldElement, isFieldElement, requestSubmit } from './dom';
-export { invariant } from './util';
+export { type FieldElement, isFieldElement } from './dom';
 export {
 	type Submission,
 	type SubmissionResult,
