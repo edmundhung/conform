@@ -10,7 +10,7 @@
 
 Version 1.0.0-pre.6 / License MIT / Copyright (c) 2024 Edmund Hung
 
-A **type-safe** form validation library utilizing web fundamentals to progressively enhance HTML Forms, delivering a modern, accessible, and resilient user experience with full support for server frameworks like Remix route action and Next.js server actions.
+A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix route action and Next.js server actions.
 
 > Getting Started
 
@@ -29,4 +29,4 @@ The documentation is divided into several sections:
 
 > Support
 
-To report a bug, please open an issue on the GitHub repository at https://github.com/edmundhung/conform. For feature requests and questions, you can post them in the Discussions section.
+To report a bug, please open an issue on the repository at https://github.com/edmundhung/conform. For feature requests and questions, you can post them in the Discussions section.
