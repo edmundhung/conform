@@ -34,7 +34,7 @@ Decide whether to include `aria-invalid` and `aria-describedby` in the result pr
 
 ### `ariaInvalid`
 
-Decide whether the aria attributes should be based on `field.valid` or `field.allValid`. Default to **field**.
+Decide whether the aria attributes should be based on `field.errors` or `field.allErrors`. Default to **errors**.
 
 ### `ariaDescribedBy`
 

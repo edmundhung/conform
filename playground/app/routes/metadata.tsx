@@ -73,7 +73,6 @@ export default function Example() {
 						dirty: form.dirty,
 						valid: form.valid,
 						errors: form.errors,
-						allValid: form.allValid,
 						allErrors: form.allErrors,
 					},
 					title: {
@@ -82,7 +81,6 @@ export default function Example() {
 						dirty: fields.title.dirty,
 						valid: fields.title.valid,
 						errors: fields.title.errors,
-						allValid: fields.title.allValid,
 						allErrors: fields.title.allErrors,
 					},
 					bookmarks: {
@@ -91,7 +89,6 @@ export default function Example() {
 						dirty: fields.bookmarks.dirty,
 						valid: fields.bookmarks.valid,
 						errors: fields.bookmarks.errors,
-						allValid: fields.bookmarks.allValid,
 						allErrors: fields.bookmarks.allErrors,
 					},
 					'bookmarks[0]': {
@@ -100,7 +97,6 @@ export default function Example() {
 						dirty: bookmarks[0]?.dirty,
 						valid: bookmarks[0]?.valid,
 						errors: bookmarks[0]?.errors,
-						allValid: bookmarks[0]?.allValid,
 						allErrors: bookmarks[0]?.allErrors,
 					},
 					'bookmarks[1]': {
@@ -109,7 +105,6 @@ export default function Example() {
 						dirty: bookmarks[1]?.dirty,
 						valid: bookmarks[1]?.valid,
 						errors: bookmarks[1]?.errors,
-						allValid: bookmarks[1]?.allValid,
 						allErrors: bookmarks[1]?.allErrors,
 					},
 				}}

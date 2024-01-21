@@ -20,7 +20,6 @@ function createFieldMetadata(): FieldMetadata<string> {
 		value: undefined,
 		errors: undefined,
 		allErrors: {},
-		allValid: true,
 		valid: true,
 		dirty: false,
 	};
@@ -67,11 +66,6 @@ describe('conform-react', () => {
 			pattern: '[0-9]+',
 			multiple: true,
 		});
-		expect(getInputProps({ ...metadata, valid: false })).toEqual({
-			...props,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error',
-		});
 		expect(getInputProps(metadata, { type: 'text' })).toEqual({
 			...props,
 			type: 'text',
@@ -87,7 +81,7 @@ describe('conform-react', () => {
 		expect(
 			getInputProps({
 				...metadata,
-				valid: false,
+				errors: ['required'],
 			}),
 		).toEqual({
 			...props,
@@ -98,7 +92,7 @@ describe('conform-react', () => {
 			getInputProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: true },
 			),
@@ -111,7 +105,7 @@ describe('conform-react', () => {
 			getInputProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: 'something' },
 			),
@@ -124,7 +118,7 @@ describe('conform-react', () => {
 			getInputProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
@@ -198,7 +192,7 @@ describe('conform-react', () => {
 			minLength: 1,
 			maxLength: 2,
 		});
-		expect(getTextareaProps({ ...metadata, valid: false })).toEqual({
+		expect(getTextareaProps({ ...metadata, errors: ['required'] })).toEqual({
 			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
@@ -216,7 +210,7 @@ describe('conform-react', () => {
 		expect(
 			getTextareaProps({
 				...metadata,
-				valid: false,
+				errors: ['required'],
 			}),
 		).toEqual({
 			...props,
@@ -227,7 +221,7 @@ describe('conform-react', () => {
 			getTextareaProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: true },
 			),
@@ -240,7 +234,7 @@ describe('conform-react', () => {
 			getTextareaProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: 'something' },
 			),
@@ -253,7 +247,7 @@ describe('conform-react', () => {
 			getTextareaProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
@@ -286,7 +280,7 @@ describe('conform-react', () => {
 			required: true,
 			multiple: true,
 		});
-		expect(getSelectProps({ ...metadata, valid: false })).toEqual({
+		expect(getSelectProps({ ...metadata, errors: ['required'] })).toEqual({
 			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
@@ -303,7 +297,7 @@ describe('conform-react', () => {
 			getSelectProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: true },
 			),
@@ -316,7 +310,7 @@ describe('conform-react', () => {
 			getSelectProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: 'something' },
 			),
@@ -329,7 +323,7 @@ describe('conform-react', () => {
 			getSelectProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
@@ -345,7 +339,7 @@ describe('conform-react', () => {
 		expect(
 			getFieldsetProps({
 				...metadata,
-				valid: false,
+				errors: ['required'],
 			}),
 		).toEqual({
 			...props,
@@ -366,7 +360,7 @@ describe('conform-react', () => {
 			getFieldsetProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: true },
 			),
@@ -379,7 +373,7 @@ describe('conform-react', () => {
 			getFieldsetProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaDescribedBy: 'something' },
 			),
@@ -392,7 +386,7 @@ describe('conform-react', () => {
 			getFieldsetProps(
 				{
 					...metadata,
-					valid: false,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),

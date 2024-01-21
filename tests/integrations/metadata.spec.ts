@@ -35,7 +35,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: false,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		title: {
@@ -43,7 +42,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			dirty: false,
 			valid: true,
 			value: 'Test',
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
@@ -51,19 +49,16 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: [null, null],
 			dirty: false,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[0]': {
 			dirty: false,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[1]': {
 			dirty: false,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 	});
@@ -81,8 +76,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				bookmarks: [null, null],
 			},
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -95,15 +89,13 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Test',
 			dirty: false,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
 			initialValue: [null, null],
 			value: [null, null],
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -113,8 +105,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		},
 		'bookmarks[0]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -122,8 +113,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		},
 		'bookmarks[1]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -147,8 +137,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 					bookmarks: [null, null],
 				},
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -161,15 +150,13 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				value: 'Test',
 				dirty: false,
 				valid: true,
-				allValid: true,
 				allErrors: {},
 			},
 			bookmarks: {
 				initialValue: [null, null],
 				value: [null, null],
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -179,8 +166,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			'bookmarks[0]': {
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -188,8 +174,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			'bookmarks[1]': {
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[1].name': ['Name is required'],
 					'bookmarks[1].url': ['Url is required'],
@@ -212,8 +197,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 					bookmarks: [null, null],
 				},
 				dirty: true,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -226,15 +210,13 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				value: 'Projects',
 				dirty: true,
 				valid: true,
-				allValid: true,
 				allErrors: {},
 			},
 			bookmarks: {
 				initialValue: [null, null],
 				value: [null, null],
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -244,8 +226,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			'bookmarks[0]': {
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[0].name': ['Name is required'],
 					'bookmarks[0].url': ['Url is required'],
@@ -253,8 +234,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			'bookmarks[1]': {
 				dirty: false,
-				valid: true,
-				allValid: false,
+				valid: false,
 				allErrors: {
 					'bookmarks[1].name': ['Name is required'],
 					'bookmarks[1].url': ['Url is required'],
@@ -276,8 +256,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				bookmarks: [null, null],
 			},
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -290,15 +269,13 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Projects',
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
 			initialValue: [null, null],
 			value: [null, null],
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -308,8 +285,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		},
 		'bookmarks[0]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].name': ['Name is required'],
 				'bookmarks[0].url': ['Url is required'],
@@ -317,8 +293,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 		},
 		'bookmarks[1]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -355,8 +330,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				],
 			},
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].url': ['Url is required'],
 				'bookmarks[1].name': ['Name is required'],
@@ -368,7 +342,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Projects',
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
@@ -387,8 +360,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				null,
 			],
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].url': ['Url is required'],
 				'bookmarks[1].name': ['Name is required'],
@@ -401,16 +373,14 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				name: 'Conform',
 			},
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[0].url': ['Url is required'],
 			},
 		},
 		'bookmarks[1]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -449,8 +419,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				],
 			},
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -461,7 +430,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Projects',
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
@@ -482,8 +450,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				null,
 			],
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -499,13 +466,11 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[1]': {
 			dirty: false,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				'bookmarks[1].name': ['Name is required'],
 				'bookmarks[1].url': ['Url is required'],
@@ -551,8 +516,7 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 				],
 			},
 			dirty: true,
-			valid: true,
-			allValid: false,
+			valid: false,
 			allErrors: {
 				bookmarks: ['Bookmark URLs are repeated'],
 			},
@@ -562,7 +526,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Projects',
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
@@ -591,7 +554,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			dirty: true,
 			valid: false,
 			errors: ['Bookmark URLs are repeated'],
-			allValid: false,
 			allErrors: {
 				bookmarks: ['Bookmark URLs are repeated'],
 			},
@@ -606,7 +568,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[1]': {
@@ -619,7 +580,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 	});
@@ -662,7 +622,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		title: {
@@ -670,7 +629,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			value: 'Projects',
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		bookmarks: {
@@ -698,7 +656,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			],
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[0]': {
@@ -711,7 +668,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 		'bookmarks[1]': {
@@ -724,7 +680,6 @@ async function validateMetadata(page: Page, noJS?: boolean) {
 			},
 			dirty: true,
 			valid: true,
-			allValid: true,
 			allErrors: {},
 		},
 	});

@@ -71,7 +71,6 @@ export default function Example() {
 			<FormMetadata strict={strict} formId={form.id} subject="key" />
 			<FormMetadata strict={strict} formId={form.id} subject="dirty" />
 			<FormMetadata strict={strict} formId={form.id} subject="valid" />
-			<FormMetadata strict={strict} formId={form.id} subject="allValid" />
 			<FormMetadata strict={strict} formId={form.id} subject="errors" />
 			<FormMetadata strict={strict} formId={form.id} subject="allErrors" />
 			<FieldMetadata strict={strict} name={name} subject="initialValue" />

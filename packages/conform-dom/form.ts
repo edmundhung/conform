@@ -444,7 +444,21 @@ function createKeyProxy(
 function createValidProxy<FormError>(
 	error: Record<string, FormError>,
 ): Record<string, boolean> {
-	return createStateProxy((name) => typeof error[name] === 'undefined');
+	return createStateProxy((name) => {
+		const keys = Object.keys(error);
+
+		if (name === '') {
+			return keys.length === 0;
+		}
+
+		for (const key of keys) {
+			if (isPrefix(key, name) && typeof error[key] !== 'undefined') {
+				return false;
+			}
+		}
+
+		return true;
+	});
 }
 
 function createDirtyProxy(

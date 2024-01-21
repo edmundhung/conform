@@ -52,7 +52,6 @@ export type Metadata<
 	value: FormValue<Schema>;
 	errors: FormError | undefined;
 	allErrors: Record<string, FormError>;
-	allValid: boolean;
 	valid: boolean;
 	dirty: boolean;
 };
@@ -214,21 +213,6 @@ export function getMetadata<
 			get dirty() {
 				return state.dirty[name] as boolean;
 			},
-			get allValid() {
-				const keys = Object.keys(state.error);
-
-				if (name === '') {
-					return keys.length === 0;
-				}
-
-				for (const key of Object.keys(state.error)) {
-					if (isPrefix(key, name) && !state.valid[key]) {
-						return false;
-					}
-				}
-
-				return true;
-			},
 			get allErrors() {
 				if (name === '') {
 					return state.error;
@@ -261,23 +245,20 @@ export function getMetadata<
 			get(target, key, receiver) {
 				switch (key) {
 					case 'key':
-					case 'errors':
 					case 'initialValue':
 					case 'value':
 					case 'valid':
 					case 'dirty':
+						updateSubjectRef(subjectRef, name, key, 'name');
+						break;
+					case 'errors':
+					case 'allErrors':
 						updateSubjectRef(
 							subjectRef,
 							name,
-							key === 'errors' ? 'error' : key,
-							'name',
+							'error',
+							key === 'errors' ? 'name' : 'prefix',
 						);
-						break;
-					case 'allErrors':
-						updateSubjectRef(subjectRef, name, 'error', 'prefix');
-						break;
-					case 'allValid':
-						updateSubjectRef(subjectRef, name, 'valid', 'prefix');
 						break;
 				}
 
