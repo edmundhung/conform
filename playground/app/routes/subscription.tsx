@@ -93,7 +93,7 @@ export default function Example() {
 			<Form method="post" {...getFormProps(form)}>
 				<Playground title="Fine-grained Subscription" description={description}>
 					<Field label="Name">
-						<input {...getInputProps(fields.name)} />
+						<input {...getInputProps(fields.name, { type: 'text' })} />
 					</Field>
 					<Field label="Message">
 						<textarea {...getTextareaProps(fields.message)} rows={6} />

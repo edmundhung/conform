@@ -94,7 +94,7 @@ export default function Signup() {
 				<div>Username</div>
 				<input
 					className={!fields.username.valid ? 'error' : ''}
-					{...getInputProps(fields.username)}
+					{...getInputProps(fields.username, { type: 'text' })}
 				/>
 				<div>{fields.username.errors}</div>
 			</label>

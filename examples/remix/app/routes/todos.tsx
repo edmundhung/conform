@@ -51,7 +51,7 @@ export default function Example() {
 				<label>Title</label>
 				<input
 					className={!fields.title.valid ? 'error' : ''}
-					{...getInputProps(fields.title)}
+					{...getInputProps(fields.title, { type: 'text' })}
 				/>
 				<div>{fields.title.errors}</div>
 			</div>
@@ -66,7 +66,7 @@ export default function Example() {
 							<label>Task #${index + 1}</label>
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
-								{...getInputProps(taskFields.content)}
+								{...getInputProps(taskFields.content, { type: 'text' })}
 							/>
 							<div>{taskFields.content.errors}</div>
 						</div>

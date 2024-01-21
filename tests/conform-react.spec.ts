@@ -38,24 +38,27 @@ describe('conform-react', () => {
 		const metadata = createFieldMetadata();
 		const props = getProps(metadata);
 
-		expect(getInputProps(metadata)).toEqual(props);
 		expect(
-			getInputProps({
-				...metadata,
-				initialValue: 'string',
-				constraint: {
-					required: true,
-					min: 1,
-					max: 10,
-					step: 1,
-					minLength: 1,
-					maxLength: 2,
-					pattern: '[0-9]+',
-					multiple: true,
+			getInputProps(
+				{
+					...metadata,
+					initialValue: 'string',
+					constraint: {
+						required: true,
+						min: 1,
+						max: 10,
+						step: 1,
+						minLength: 1,
+						maxLength: 2,
+						pattern: '[0-9]+',
+						multiple: true,
+					},
 				},
-			}),
+				{ type: 'text' },
+			),
 		).toEqual({
 			...props,
+			type: 'text',
 			defaultValue: 'string',
 			required: true,
 			min: 1,
@@ -66,21 +69,26 @@ describe('conform-react', () => {
 			pattern: '[0-9]+',
 			multiple: true,
 		});
-		expect(getInputProps(metadata, { type: 'text' })).toEqual({
+		expect(
+			getInputProps(metadata, { type: 'text', ariaDescribedBy: 'something' }),
+		).toEqual({
 			...props,
 			type: 'text',
-		});
-		expect(getInputProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
-			...props,
 			'aria-describedby': 'something',
 		});
 		expect(
-			getInputProps({
-				...metadata,
-				errors: ['required'],
-			}),
+			getInputProps(
+				{
+					...metadata,
+					errors: ['required'],
+				},
+				{
+					type: 'text',
+				},
+			),
 		).toEqual({
 			...props,
+			type: 'text',
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
@@ -90,10 +98,11 @@ describe('conform-react', () => {
 					...metadata,
 					errors: ['required'],
 				},
-				{ ariaDescribedBy: 'something' },
+				{ type: 'text', ariaDescribedBy: 'something' },
 			),
 		).toEqual({
 			...props,
+			type: 'text',
 			'aria-invalid': true,
 			'aria-describedby': 'test-error something',
 		});
@@ -103,9 +112,12 @@ describe('conform-react', () => {
 					...metadata,
 					errors: ['required'],
 				},
-				{ ariaAttributes: false },
+				{ type: 'text', ariaAttributes: false },
 			),
-		).toEqual(props);
+		).toEqual({
+			...props,
+			type: 'text',
+		});
 		expect(getInputProps(metadata, { type: 'checkbox' })).toEqual({
 			...props,
 			type: 'checkbox',

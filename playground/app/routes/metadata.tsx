@@ -110,7 +110,7 @@ export default function Example() {
 				}}
 			>
 				<Field label="Title" meta={fields.title}>
-					<input {...getInputProps(fields.title)} />
+					<input {...getInputProps(fields.title, { type: 'text' })} />
 				</Field>
 				<Alert id={fields.bookmarks.errorId} errors={fields.bookmarks.errors} />
 				{bookmarks.map((bookmark, index) => {
@@ -120,10 +120,10 @@ export default function Example() {
 						<fieldset key={bookmark.key} {...getFieldsetProps(bookmark)}>
 							<legend className="mt-2 mb-4">Bookmark #{index + 1}</legend>
 							<Field label="Name" meta={name}>
-								<input {...getInputProps(name)} />
+								<input {...getInputProps(name, { type: 'text' })} />
 							</Field>
 							<Field label="Url" meta={url}>
-								<input {...getInputProps(url)} />
+								<input {...getInputProps(url, { type: 'text' })} />
 							</Field>
 						</fieldset>
 					);

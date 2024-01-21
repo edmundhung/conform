@@ -35,7 +35,7 @@ export function TodoForm() {
 				<label>Title</label>
 				<input
 					className={!fields.title.valid ? 'error' : ''}
-					{...getInputProps(fields.title)}
+					{...getInputProps(fields.title, { type: 'text' })}
 					key={fields.title.key}
 				/>
 				<div>{fields.title.errors}</div>
@@ -51,7 +51,7 @@ export function TodoForm() {
 							<label>Task #${index + 1}</label>
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
-								{...getInputProps(taskFields.content)}
+								{...getInputProps(taskFields.content, { type: 'text' })}
 								key={taskFields.content.key}
 							/>
 							<div>{taskFields.content.errors}</div>
@@ -130,7 +130,7 @@ export function LoginForm() {
 				<label>Email</label>
 				<input
 					className={!fields.email.valid ? 'error' : ''}
-					{...getInputProps(fields.email)}
+					{...getInputProps(fields.email, { type: 'text' })}
 					key={fields.email.key}
 				/>
 				<div>{fields.email.errors}</div>
@@ -176,7 +176,7 @@ export function SignupForm() {
 				<div>Username</div>
 				<input
 					className={!fields.username.valid ? 'error' : ''}
-					{...getInputProps(fields.username)}
+					{...getInputProps(fields.username, { type: 'text' })}
 					key={fields.username.key}
 				/>
 				<div>{fields.username.errors}</div>

@@ -12,7 +12,6 @@ type FormControlProps = {
 	name: string;
 	form: string;
 	required?: boolean;
-	autoFocus?: boolean;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
 };
@@ -39,7 +38,7 @@ type FormControlOptions =
 
 type InputProps = Pretty<
 	FormControlProps & {
-		type?:
+		type:
 			| 'checkbox'
 			| 'color'
 			| 'date'
@@ -84,7 +83,7 @@ type InputOptions = Pretty<
 					value?: string | boolean;
 			  }
 			| {
-					type?: Exclude<InputProps['type'], 'checkbox' | 'radio'>;
+					type: Exclude<InputProps['type'], 'checkbox' | 'radio'>;
 
 					/**
 					 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
@@ -239,7 +238,7 @@ export function getFormControlProps<Schema>(
  * @example
  * ```tsx
  * // To setup an uncontrolled input
- * <input {...getInputProps(metadata)} />
+ * <input {...getInputProps(metadata, { type: 'text' })} />
  * // To setup an uncontrolled checkbox
  * <input {...getInputProps(metadata, { type: 'checkbox' })} />
  * // To setup an input without defaultValue
@@ -248,17 +247,9 @@ export function getFormControlProps<Schema>(
  * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
  * ```
  */
-export function getInputProps<Schema extends Exclude<Primitive, File>>(
-	metadata: FieldMetadata<Schema, any, any>,
-	options?: InputOptions,
-): InputProps;
-export function getInputProps<Schema extends File | File[] | null | undefined>(
-	metadata: FieldMetadata<Schema, any, any>,
-	options: InputOptions & { type: 'file' },
-): InputProps;
 export function getInputProps<Schema extends Primitive | File[]>(
 	metadata: FieldMetadata<Schema, any, any>,
-	options: InputOptions = {},
+	options: InputOptions,
 ): InputProps {
 	const props: InputProps = {
 		...getFormControlProps(metadata, options),

@@ -93,7 +93,7 @@ function Example() {
   return (
     <form>
       {/* text input */}
-      <input {...getInputProps(fields.task)} />
+      <input {...getInputProps(fields.task, { type: 'text' })} />
       {/* checkbox */}
       <input
         {...getInputProps(fields.completed, {
