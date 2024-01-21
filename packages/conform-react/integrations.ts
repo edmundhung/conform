@@ -47,31 +47,31 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 	return input;
 }
 
-export function useInputControl(options: {
-	key?: string | undefined;
+export function useInputControl(meta: {
+	key?: string | null | undefined;
 	name: string;
 	formId: string;
-	initialValue: string | undefined;
+	initialValue?: string | undefined;
 }): InputControl {
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
 		blur: false,
 	});
-	const [key, setKey] = useState(options.key);
-	const [value, setValue] = useState(() => options.initialValue);
+	const [key, setKey] = useState(meta.key);
+	const [value, setValue] = useState(() => meta.initialValue);
 
-	if (key !== options.key) {
-		setValue(options.initialValue);
-		setKey(options.key);
+	if (key !== meta.key) {
+		setValue(meta.initialValue);
+		setKey(meta.key);
 	}
 
 	useEffect(() => {
 		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
 			return (event: Event) => {
 				const element = getFieldElement(
-					options.formId,
-					options.name,
+					meta.formId,
+					meta.name,
 					(element) => element === event.target,
 				);
 
@@ -93,13 +93,13 @@ export function useInputControl(options: {
 			document.removeEventListener('focusin', focusHandler, true);
 			document.removeEventListener('focusout', blurHandler, true);
 		};
-	}, [options.formId, options.name]);
+	}, [meta.formId, meta.name]);
 
 	const handlers = useMemo<Omit<InputControl, 'value'>>(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
-					const element = getEventTarget(options.formId, options.name);
+					const element = getEventTarget(meta.formId, meta.name);
 
 					eventDispatched.current.change = true;
 
@@ -148,7 +148,7 @@ export function useInputControl(options: {
 			},
 			focus() {
 				if (!eventDispatched.current.focus) {
-					const element = getEventTarget(options.formId, options.name);
+					const element = getEventTarget(meta.formId, meta.name);
 
 					eventDispatched.current.focus = true;
 					element.dispatchEvent(
@@ -163,7 +163,7 @@ export function useInputControl(options: {
 			},
 			blur() {
 				if (!eventDispatched.current.blur) {
-					const element = getEventTarget(options.formId, options.name);
+					const element = getEventTarget(meta.formId, meta.name);
 
 					eventDispatched.current.blur = true;
 					element.dispatchEvent(
@@ -177,7 +177,7 @@ export function useInputControl(options: {
 				eventDispatched.current.blur = false;
 			},
 		};
-	}, [options.formId, options.name]);
+	}, [meta.formId, meta.name]);
 
 	return {
 		...handlers,

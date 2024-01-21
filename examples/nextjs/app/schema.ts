@@ -1,5 +1,5 @@
-import type { FormControl } from '@conform-to/react';
-import { refine } from '@conform-to/zod';
+import type { Intent } from '@conform-to/react';
+import { conformZodMessage } from '@conform-to/zod';
 import { z } from 'zod';
 
 export const taskSchema = z.object({
@@ -19,11 +19,11 @@ export const loginSchema = z.object({
 });
 
 export function createSignupSchema(
-	control: FormControl | null,
-	constraint: {
+	intent: Intent | null,
+	options?: {
 		// isUsernameUnique is only defined on the server
-		isUsernameUnique?: (username: string) => Promise<boolean>;
-	} = {},
+		isUsernameUnique: (username: string) => Promise<boolean>;
+	},
 ) {
 	return z
 		.object({
@@ -35,16 +35,38 @@ export function createSignupSchema(
 				)
 				// Pipe the schema so it runs only if the username is valid
 				.pipe(
-					z.string().superRefine((username, ctx) =>
-						refine(ctx, {
-							validate: () => constraint.isUsernameUnique?.(username),
-							when:
-								!control ||
-								(control.type === 'validate' &&
-									control.payload.name === 'username'),
-							message: 'Username is already used',
-						}),
-					),
+					z.string().superRefine((username, ctx) => {
+						const isValidatingUsername =
+							intent === null ||
+							(intent.type === 'validate' &&
+								intent.payload.name === 'username');
+
+						if (!isValidatingUsername) {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_SKIPPED,
+							});
+							return;
+						}
+
+						if (typeof options?.isUsernameUnique !== 'function') {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_UNDEFINED,
+								fatal: true,
+							});
+							return;
+						}
+
+						return options.isUsernameUnique(username).then((isUnique) => {
+							if (!isUnique) {
+								ctx.addIssue({
+									code: 'custom',
+									message: 'Username is already used',
+								});
+							}
+						});
+					}),
 				),
 		})
 		.and(

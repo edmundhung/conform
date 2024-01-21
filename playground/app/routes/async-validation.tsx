@@ -71,8 +71,8 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
-		schema: (control) =>
-			createSchema(control, {
+		schema: (intent) =>
+			createSchema(intent, {
 				isEmailUnique(email) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
@@ -96,7 +96,7 @@ export default function EmployeeForm() {
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parseWithZod(formData, {
-						schema: (control) => createSchema(control),
+						schema: (intent) => createSchema(intent),
 					})
 			: undefined,
 	});

@@ -5,8 +5,7 @@ export {
 	type Intent,
 	type FormId,
 	type FieldName,
-	requestSubmit,
-	isFieldElement,
+	parse,
 } from '@conform-to/dom';
 export {
 	type FieldMetadata,
@@ -16,7 +15,6 @@ export {
 } from './context';
 export { useForm, useFormMetadata, useField } from './hooks';
 export { useInputControl } from './integrations';
-export { validateConstraint } from './validitystate';
 export {
 	getFormProps,
 	getFieldsetProps,

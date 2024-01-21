@@ -1,6 +1,6 @@
-import type { FormControl } from '@conform-to/react';
+import type { Intent } from '@conform-to/react';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parseWithZod, refine } from '@conform-to/zod';
+import { parseWithZod, conformZodMessage } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
@@ -8,11 +8,11 @@ import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
-	control: FormControl | null,
-	constraint: {
+	intent: Intent | null,
+	options?: {
 		// isUsernameUnique is only defined on the server
-		isUsernameUnique?: (username: string) => Promise<boolean>;
-	} = {},
+		isUsernameUnique: (username: string) => Promise<boolean>;
+	},
 ) {
 	return z
 		.object({
@@ -24,16 +24,38 @@ function createSchema(
 				)
 				// Pipe the schema so it runs only if the username is valid
 				.pipe(
-					z.string().superRefine((username, ctx) =>
-						refine(ctx, {
-							validate: () => constraint.isUsernameUnique?.(username),
-							when:
-								!control ||
-								(control.type === 'validate' &&
-									control.payload.name === 'username'),
-							message: 'Username is already used',
-						}),
-					),
+					z.string().superRefine((username, ctx) => {
+						const isValidatingUsername =
+							intent === null ||
+							(intent.type === 'validate' &&
+								intent.payload.name === 'username');
+
+						if (!isValidatingUsername) {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_SKIPPED,
+							});
+							return;
+						}
+
+						if (typeof options?.isUsernameUnique !== 'function') {
+							ctx.addIssue({
+								code: 'custom',
+								message: conformZodMessage.VALIDATION_UNDEFINED,
+								fatal: true,
+							});
+							return;
+						}
+
+						return options.isUsernameUnique(username).then((isUnique) => {
+							if (!isUnique) {
+								ctx.addIssue({
+									code: 'custom',
+									message: 'Username is already used',
+								});
+							}
+						});
+					}),
 				),
 		})
 		.and(
@@ -54,9 +76,9 @@ function createSchema(
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
-		schema: (control) =>
-			// create the zod schema based on the control
-			createSchema(control, {
+		schema: (intent) =>
+			// create the zod schema based on the intent
+			createSchema(intent, {
 				isUsernameUnique(username) {
 					return new Promise((resolve) => {
 						setTimeout(() => {
@@ -81,8 +103,8 @@ export default function Signup() {
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
-				// Create the schema without any constraint defined
-				schema: (control) => createSchema(control),
+				// Create the schema without `isUsernameUnique` defined
+				schema: (intent) => createSchema(intent),
 			});
 		},
 		shouldValidate: 'onBlur',

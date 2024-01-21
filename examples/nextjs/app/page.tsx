@@ -12,7 +12,7 @@ export default function Index({
 	return (
 		<div>
 			Submitted the following value:
-			<pre>{JSON.stringify(value, null, 2)}</pre>
+			<pre>{JSON.stringify(JSON.parse(value.toString()), null, 2)}</pre>
 		</div>
 	);
 }

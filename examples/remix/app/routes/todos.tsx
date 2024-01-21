@@ -1,6 +1,5 @@
 import {
 	useForm,
-	control,
 	getFormProps,
 	getInputProps,
 	getFieldsetProps,
@@ -63,7 +62,7 @@ export default function Example() {
 				return (
 					<fieldset key={task.key} {...getFieldsetProps(task)}>
 						<div>
-							<label>Task #${index + 1}</label>
+							<label>Task #{index + 1}</label>
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
 								{...getInputProps(taskFields.content, { type: 'text' })}
@@ -82,38 +81,34 @@ export default function Example() {
 							</label>
 						</div>
 						<button
-							{...form.getControlButtonProps(
-								control.remove({ name: fields.tasks.name, index }),
-							)}
+							{...form.remove.getButtonProps({
+								name: fields.tasks.name,
+								index,
+							})}
 						>
 							Delete
 						</button>
 						<button
-							{...form.getControlButtonProps(
-								control.reorder({
-									name: fields.tasks.name,
-									from: index,
-									to: 0,
-								}),
-							)}
+							{...form.reorder.getButtonProps({
+								name: fields.tasks.name,
+								from: index,
+								to: 0,
+							})}
 						>
 							Move to top
 						</button>
 						<button
-							{...form.getControlButtonProps(
-								control.replace({ name: task.name, value: { content: '' } }),
-							)}
+							{...form.update.getButtonProps({
+								name: task.name,
+								value: { content: '' },
+							})}
 						>
 							Clear
 						</button>
 					</fieldset>
 				);
 			})}
-			<button
-				{...form.getControlButtonProps(
-					control.insert({ name: fields.tasks.name }),
-				)}
-			>
+			<button {...form.insert.getButtonProps({ name: fields.tasks.name })}>
 				Add task
 			</button>
 			<hr />

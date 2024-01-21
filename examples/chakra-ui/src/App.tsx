@@ -4,7 +4,7 @@ import {
 	useForm,
 	useField,
 	useInputControl,
-	validateConstraint,
+	parse,
 	getFormProps,
 } from '@conform-to/react';
 import {
@@ -48,8 +48,36 @@ export default function Example() {
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		onValidate(context) {
-			return validateConstraint(context);
+		onValidate({ formData, form }) {
+			return parse(formData, {
+				resolve(value) {
+					const error: Record<
+						string,
+						{ validity: ValidityState; validationMessage: string }
+					> = {};
+
+					for (const element of Array.from(form.elements)) {
+						if (
+							(element instanceof HTMLInputElement ||
+								element instanceof HTMLSelectElement ||
+								element instanceof HTMLTextAreaElement) &&
+							element.name !== '' &&
+							!element.validity.valid
+						) {
+							error[element.name] = {
+								validity: { ...element.validity },
+								validationMessage: element.validationMessage,
+							};
+						}
+					}
+
+					if (Object.entries(error).length > 0) {
+						return { error };
+					}
+
+					return { value };
+				},
+			});
 		},
 	});
 

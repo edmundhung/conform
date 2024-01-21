@@ -143,7 +143,7 @@ export type FormOptions<Schema, FormError, Value = Schema> = {
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastResult?: SubmissionResult<FormError>;
+	lastResult?: SubmissionResult<FormError> | null;
 
 	/**
 	 * Define when conform should start validation.
@@ -880,10 +880,7 @@ export function createFormContext<
 
 		if (latestOptions.formId !== currentFormId) {
 			getFormElement().reset();
-		} else if (
-			typeof options.lastResult !== 'undefined' &&
-			options.lastResult !== currentResult
-		) {
+		} else if (options.lastResult && options.lastResult !== currentResult) {
 			report(options.lastResult);
 		}
 	}

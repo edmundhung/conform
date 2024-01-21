@@ -4,24 +4,46 @@ import {
 	useForm,
 	useField,
 	useInputControl,
-	validateConstraint,
+	parse,
 	getFormProps,
+	getInputProps,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 
-type FormError = {
-	validity: ValidityState;
-	validationMessage: string;
-};
-
 export default function Example() {
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		onValidate(context) {
-			return validateConstraint(context);
+		onValidate({ formData }) {
+			return parse(formData, {
+				resolve(value) {
+					const error: Record<string, string[]> = {};
+
+					if (!value.owner) {
+						error.owner = ['Please select an owner'];
+					}
+
+					if (!value.assignee) {
+						error.assignee = ['Please select an assignee'];
+					}
+
+					if (!value.enabled) {
+						error.enabled = ['Please enable the switch'];
+					}
+
+					if (!value.color) {
+						error.color = ['Please select a color'];
+					}
+
+					if (Object.entries(error).length > 0) {
+						return { error };
+					}
+
+					return { value };
+				},
+			});
 		},
 	});
 
@@ -53,7 +75,7 @@ export default function Example() {
 										<ExampleListBox name={fields.owner.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.owner.errors?.validationMessage}
+										{fields.owner.errors}
 									</p>
 								</div>
 
@@ -65,7 +87,7 @@ export default function Example() {
 										<ExampleCombobox name={fields.assignee.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.assignee.errors?.validationMessage}
+										{fields.assignee.errors}
 									</p>
 								</div>
 
@@ -77,7 +99,7 @@ export default function Example() {
 										<ExampleSwitch name={fields.enabled.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.enabled.errors?.validationMessage}
+										{fields.enabled.errors}
 									</p>
 								</div>
 
@@ -89,7 +111,7 @@ export default function Example() {
 										<ExampleRadioGroup name={fields.color.name} />
 									</div>
 									<p className="mt-2 text-sm text-red-500">
-										{fields.color.errors?.validationMessage}
+										{fields.color.errors}
 									</p>
 								</div>
 							</div>
@@ -130,12 +152,13 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function ExampleListBox(props: { name: FieldName<string, FormError> }) {
+function ExampleListBox(props: { name: FieldName<string> }) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
 	return (
-		<Listbox name={field.name} value={control.value} onChange={control.change}>
+		<Listbox value={control.value} onChange={control.change}>
+			<input {...getInputProps(field, { type: 'hidden' })} />
 			<div className="relative mt-1">
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
@@ -192,7 +215,7 @@ function ExampleListBox(props: { name: FieldName<string, FormError> }) {
 	);
 }
 
-function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
+function ExampleCombobox(props: { name: FieldName<string> }) {
 	const [query, setQuery] = useState('');
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
@@ -203,13 +226,8 @@ function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
 		  );
 
 	return (
-		<Combobox
-			as="div"
-			name={field.name}
-			value={control.value}
-			onChange={control.change}
-			nullable
-		>
+		<Combobox as="div" value={control.value} onChange={control.change} nullable>
+			<input {...getInputProps(field, { type: 'hidden' })} />
 			<div className="relative mt-1">
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -270,13 +288,12 @@ function ExampleCombobox(props: { name: FieldName<string, FormError> }) {
 	);
 }
 
-function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
+function ExampleSwitch(props: { name: FieldName<boolean> }) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
 	return (
 		<Switch
-			name={field.name}
 			checked={control.value === 'on'}
 			onChange={(state) => control.change(state ? 'on' : '')}
 			className={classNames(
@@ -284,6 +301,7 @@ function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
 				'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
 			)}
 		>
+			<input {...getInputProps(field, { type: 'hidden' })} />
 			<span className="sr-only">Use setting</span>
 			<span
 				aria-hidden="true"
@@ -296,7 +314,7 @@ function ExampleSwitch(props: { name: FieldName<boolean, FormError> }) {
 	);
 }
 
-function ExampleRadioGroup(props: { name: FieldName<string, FormError> }) {
+function ExampleRadioGroup(props: { name: FieldName<string> }) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 	const colors = [
@@ -316,11 +334,8 @@ function ExampleRadioGroup(props: { name: FieldName<string, FormError> }) {
 	];
 
 	return (
-		<RadioGroup
-			name={field.name}
-			value={control.value}
-			onChange={control.change}
-		>
+		<RadioGroup value={control.value} onChange={control.change}>
+			<input {...getInputProps(field, { type: 'hidden' })} />
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option

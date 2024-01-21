@@ -4,7 +4,6 @@ import { useFormState, useFormStatus } from 'react-dom';
 import { login, signup, createTodos } from '@/app/actions';
 import {
 	useForm,
-	control,
 	getFormProps,
 	getInputProps,
 	getFieldsetProps,
@@ -48,7 +47,7 @@ export function TodoForm() {
 				return (
 					<fieldset key={task.key} {...getFieldsetProps(task)}>
 						<div>
-							<label>Task #${index + 1}</label>
+							<label>Task #{index + 1}</label>
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
 								{...getInputProps(taskFields.content, { type: 'text' })}
@@ -69,38 +68,34 @@ export function TodoForm() {
 							</label>
 						</div>
 						<Button
-							{...form.getControlButtonProps(
-								control.remove({ name: fields.tasks.name, index }),
-							)}
+							{...form.remove.getButtonProps({
+								name: fields.tasks.name,
+								index,
+							})}
 						>
 							Delete
 						</Button>
 						<Button
-							{...form.getControlButtonProps(
-								control.reorder({
-									name: fields.tasks.name,
-									from: index,
-									to: 0,
-								}),
-							)}
+							{...form.reorder.getButtonProps({
+								name: fields.tasks.name,
+								from: index,
+								to: 0,
+							})}
 						>
 							Move to top
 						</Button>
 						<Button
-							{...form.getControlButtonProps(
-								control.replace({ name: task.name, value: { content: '' } }),
-							)}
+							{...form.update.getButtonProps({
+								name: task.name,
+								value: { content: '' },
+							})}
 						>
 							Clear
 						</Button>
 					</fieldset>
 				);
 			})}
-			<Button
-				{...form.getControlButtonProps(
-					control.insert({ name: fields.tasks.name }),
-				)}
-			>
+			<Button {...form.insert.getButtonProps({ name: fields.tasks.name })}>
 				Add task
 			</Button>
 			<hr />
