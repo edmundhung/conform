@@ -62,7 +62,7 @@ export type FormMetadata<
 > = Omit<Metadata<Schema, FormError, Schema>, 'id'> &
 	Pick<FormContext<Schema, FormError>, Intent['type']> & {
 		id: FormId<Schema, FormError>;
-		context: FormContext<Schema, FormError>;
+		context: Wrapped<FormContext<Schema, FormError>>;
 		status?: 'success' | 'error';
 		getFieldset: () => {
 			[Key in UnionKeyof<Schema>]: FieldMetadata<
@@ -101,6 +101,19 @@ export type FieldMetadata<
 
 export const Form = createContext<FormContext[]>([]);
 
+// To hide the FormContext type from the public API
+const wrappedSymbol = Symbol('wrapped');
+
+export type Wrapped<Type> = {
+	[wrappedSymbol]: Type;
+};
+
+export function getWrappedFormContext(
+	context: Wrapped<FormContext>,
+): FormContext {
+	return context[wrappedSymbol];
+}
+
 export function useFormContext<Schema extends Record<string, any>, FormError>(
 	formId?: FormId<Schema, FormError>,
 ): FormContext<Schema, FormError, unknown> {
@@ -130,13 +143,14 @@ export function useFormState<FormError>(
 }
 
 export function FormProvider(props: {
-	context: FormContext<any, any, any>;
+	context: Wrapped<FormContext<any, any, any>>;
 	children: ReactNode;
 }): ReactElement {
 	const forms = useContext(Form);
+	const context = getWrappedFormContext(props.context);
 	const value = useMemo(
-		() => [props.context].concat(forms), // Put the latest form context first
-		[forms, props.context],
+		() => [context].concat(forms), // Put the latest form context first
+		[forms, context],
 	);
 
 	return <Form.Provider value={value}>{props.children}</Form.Provider>;
@@ -334,7 +348,9 @@ export function getFormMetadata<
 		get(_, key, receiver) {
 			switch (key) {
 				case 'context':
-					return context;
+					return {
+						[wrappedSymbol]: context,
+					};
 				case 'status':
 					return state.submissionStatus;
 				case 'validate':
