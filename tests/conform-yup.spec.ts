@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { parseWithYup, getFieldsetConstraint } from '@conform-to/yup';
+import { parseWithYup, getYupConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
 import { STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
@@ -63,8 +63,8 @@ describe('conform-yup', () => {
 		'': ['error'],
 	};
 
-	test('getFieldsetConstraint', () => {
-		expect(getFieldsetConstraint(schema)).toEqual({
+	test('getYupConstraint', () => {
+		expect(getYupConstraint(schema)).toEqual({
 			text: {
 				minLength: 1,
 				maxLength: 100,

@@ -7,7 +7,7 @@ import {
 } from '@conform-to/dom';
 import * as yup from 'yup';
 
-export function getFieldsetConstraint<Source extends yup.AnyObjectSchema>(
+export function getYupConstraint<Source extends yup.AnyObjectSchema>(
 	source: Source,
 ): Record<string, Constraint> {
 	const description = source.describe();
