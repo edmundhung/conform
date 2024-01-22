@@ -3,7 +3,7 @@
 A React hook that let you control the browser events to be dispatched. It is useful if you want to hook up a custom input to Conform.
 
 ```tsx
-const control = useInputControl(metaOrConfig);
+const control = useInputControl(metaOrOptions);
 ```
 
 ## Example
@@ -34,9 +34,9 @@ function Example() {
 
 ## Parameters
 
-### `meta`
+### `metaOrOptions`
 
-The field metadata.
+The field metadata or an options object that includes `key`, `name`, `formId` and `initialValue`.
 
 ## Returns
 

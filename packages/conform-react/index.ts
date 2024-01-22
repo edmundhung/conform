@@ -14,7 +14,7 @@ export {
 	FormStateInput,
 } from './context';
 export { useForm, useFormMetadata, useField } from './hooks';
-export { useInputControl } from './integrations';
+export { type InputControlOptions, useInputControl } from './integrations';
 export {
 	getFormProps,
 	getFieldsetProps,

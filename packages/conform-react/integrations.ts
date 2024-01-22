@@ -1,5 +1,5 @@
 import { type FieldElement, isFieldElement } from '@conform-to/dom';
-import { useRef, useState, useMemo, useEffect } from 'react';
+import { type Key, useRef, useState, useMemo, useEffect } from 'react';
 
 export type InputControl = {
 	value: string | undefined;
@@ -47,31 +47,35 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 	return input;
 }
 
-export function useInputControl(meta: {
-	key?: string | null | undefined;
+export type InputControlOptions = {
+	key?: Key | null | undefined;
 	name: string;
 	formId: string;
 	initialValue?: string | undefined;
-}): InputControl {
+};
+
+export function useInputControl(
+	metaOrOptions: InputControlOptions,
+): InputControl {
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
 		blur: false,
 	});
-	const [key, setKey] = useState(meta.key);
-	const [value, setValue] = useState(() => meta.initialValue);
+	const [key, setKey] = useState(metaOrOptions.key);
+	const [value, setValue] = useState(() => metaOrOptions.initialValue);
 
-	if (key !== meta.key) {
-		setValue(meta.initialValue);
-		setKey(meta.key);
+	if (key !== metaOrOptions.key) {
+		setValue(metaOrOptions.initialValue);
+		setKey(metaOrOptions.key);
 	}
 
 	useEffect(() => {
 		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
 			return (event: Event) => {
 				const element = getFieldElement(
-					meta.formId,
-					meta.name,
+					metaOrOptions.formId,
+					metaOrOptions.name,
 					(element) => element === event.target,
 				);
 
@@ -93,13 +97,16 @@ export function useInputControl(meta: {
 			document.removeEventListener('focusin', focusHandler, true);
 			document.removeEventListener('focusout', blurHandler, true);
 		};
-	}, [meta.formId, meta.name]);
+	}, [metaOrOptions.formId, metaOrOptions.name]);
 
 	const handlers = useMemo<Omit<InputControl, 'value'>>(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
-					const element = getEventTarget(meta.formId, meta.name);
+					const element = getEventTarget(
+						metaOrOptions.formId,
+						metaOrOptions.name,
+					);
 
 					eventDispatched.current.change = true;
 
@@ -148,7 +155,10 @@ export function useInputControl(meta: {
 			},
 			focus() {
 				if (!eventDispatched.current.focus) {
-					const element = getEventTarget(meta.formId, meta.name);
+					const element = getEventTarget(
+						metaOrOptions.formId,
+						metaOrOptions.name,
+					);
 
 					eventDispatched.current.focus = true;
 					element.dispatchEvent(
@@ -163,7 +173,10 @@ export function useInputControl(meta: {
 			},
 			blur() {
 				if (!eventDispatched.current.blur) {
-					const element = getEventTarget(meta.formId, meta.name);
+					const element = getEventTarget(
+						metaOrOptions.formId,
+						metaOrOptions.name,
+					);
 
 					eventDispatched.current.blur = true;
 					element.dispatchEvent(
@@ -177,7 +190,7 @@ export function useInputControl(meta: {
 				eventDispatched.current.blur = false;
 			},
 		};
-	}, [meta.formId, meta.name]);
+	}, [metaOrOptions.formId, metaOrOptions.name]);
 
 	return {
 		...handlers,
