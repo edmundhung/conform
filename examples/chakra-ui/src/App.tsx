@@ -216,7 +216,9 @@ export default function Example() {
 	);
 }
 
-function ExampleNumberInput(props: { name: FieldName<number, FormError> }) {
+function ExampleNumberInput(props: {
+	name: FieldName<number, any, FormError>;
+}) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
@@ -236,7 +238,7 @@ function ExampleNumberInput(props: { name: FieldName<number, FormError> }) {
 	);
 }
 
-function ExamplePinInput(props: { name: FieldName<number, FormError> }) {
+function ExamplePinInput(props: { name: FieldName<number, any, FormError> }) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 
@@ -255,7 +257,7 @@ function ExamplePinInput(props: { name: FieldName<number, FormError> }) {
 	);
 }
 
-function ExampleSlider(props: { name: FieldName<number, FormError> }) {
+function ExampleSlider(props: { name: FieldName<number, any, FormError> }) {
 	const [field] = useField(props.name);
 	const control = useInputControl(field);
 

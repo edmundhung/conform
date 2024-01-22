@@ -30,13 +30,13 @@ The form metadata. It is the same object as the one returned by the [useForm](./
 
 ### Better type-safety with the `FieldName` type
 
-You can use the `FieldName<FieldSchema, FormError, FormSchema>` type instead of `string` to improve the type inference of the field and form metadata returned.
+You can use the `FieldName<FieldSchema, FormSchema, FormError>` type instead of `string` to improve the type inference of the field and form metadata returned.
 
 ```tsx
 import { type FormName, useFormMetadata } from '@conform-to/react';
 
 type ExampleComponentProps = {
-  name: FieldName<FieldSchema, FormError, FormSchema>;
+  name: FieldName<FieldSchema, FormSchema, FormError>;
 };
 
 function ExampleComponent({ name }: ExampleComponentProps) {
@@ -47,7 +47,7 @@ function ExampleComponent({ name }: ExampleComponentProps) {
 }
 ```
 
-When rendering your component, you will use the name provided by Conform, such as `fields.fieldName.name` which is already typed as `FieldName<FieldSchema, FormError, FormSchema>`. This allows typescript to check if the type is compatible and warn you if it doesn't. You can still pass a `string`, but you will lose the ability for type checking.
+When rendering your component, you will use the name provided by Conform, such as `fields.fieldName.name` which is already typed as `FieldName<FieldSchema, FormSchema, FormError>`. This allows typescript to check if the type is compatible and warn you if it doesn't. You can still pass a `string`, but you will lose the ability for type checking.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -59,7 +59,7 @@ function Example() {
 }
 ```
 
-However, the more specific you made with the `FieldName` type, the harder it is to reuse the component. If your component have no use for some of the generics, you can omit them as well.
+However, the more specific you made with the `FieldName` type, the harder it is to reuse the component. If your component have no use for some of the generics, you can always omit them.
 
 ```ts
 type ExampleComponentProps = {
@@ -67,9 +67,9 @@ type ExampleComponentProps = {
   name: string;
   // If you are accessing the field value
   name: FieldName<number>;
+  // If you have a deeply nested form and wanted to access a specific fields at the top
+  name: FieldName<number, { fieldName: string }>;
   // If you have a custom error type
-  name: FieldName<number, CustomFormError>;
-  // If you have a deeply nested form and access a specific fields at the top
-  name: FieldName<number, CustomFormError, { fieldName: string }>;
+  name: FieldName<number, any, CustomFormError>;
 };
 ```
