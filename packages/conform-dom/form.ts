@@ -443,7 +443,7 @@ function createKeyProxy(
 			return currentKey;
 		}
 
-		return `${parentKey}/${currentKey ?? name}`;
+		return `${parentKey}/${currentKey ?? paths.at(-1)}`;
 	});
 }
 
