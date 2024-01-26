@@ -147,7 +147,7 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	/**
 	 * An object describing the result of the last submission
 	 */
-	lastResult?: SubmissionResult<FormError> | null;
+	lastResult?: SubmissionResult<FormError> | null | undefined;
 
 	/**
 	 * Define when conform should start validation.

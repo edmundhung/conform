@@ -46,7 +46,6 @@ type InputProps = Pretty<
 			| 'email'
 			| 'file'
 			| 'hidden'
-			| 'image'
 			| 'month'
 			| 'number'
 			| 'password'
