@@ -2,15 +2,6 @@
 
 In this guide, we will show you how Conform can works with different form controls, including custom input components.
 
-<!-- aside -->
-
-## On this page
-
-- [Native form controls](#native-form-controls)
-- [Custom input component](#custom-input-component)
-
-<!-- /aside -->
-
 ## Native form controls
 
 Native form controls are supported out of the box. There is no need to setup any event handlers on `<input />`, `<select />` or `<textarea />` element, as Conform utilizes event delegation and listens to events on the form level instead.

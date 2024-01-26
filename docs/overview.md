@@ -1,6 +1,6 @@
 # Overview
 
-Conform is a **type-safe** form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like [Remix route action](https://remix.run/docs/en/main/discussion/data-flow#route-action) and [Next.js server actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations).
+Conform is a **type-safe** form validation library utilizing web fundamentals to **progressively enhance** HTML Forms with full support for server frameworks like [Remix](https://remix.run) and [Next.js](https://nextjs.org).
 
 ## Features
 
@@ -19,7 +19,7 @@ import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
 import { login } from './your-auth-library';
-import { useYourActionResult, redirect } from './your-server-framework';
+import { useActionResult, redirect } from './your-server-framework';
 
 // Define a schema for your form
 const schema = z.object({
@@ -32,13 +32,14 @@ export async function action({ request }) {
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema });
 
-  // Send the result back to the client if the submission is not successful
+  // Send the submission back to the client if the status is not successful
   if (submission.status !== 'success') {
     return submission.reply();
   }
 
   const session = await login(submission.value);
 
+  // Send the submission with addional error message if login fails
   if (!session) {
     return submission.reply({
       formErrors: ['Incorrect username or password'],
@@ -52,11 +53,11 @@ export async function action({ request }) {
 export default function LoginForm() {
   // Grap the last submission result if you have defined a server action handler
   // This could be `useActionData()` or `useFormState()` depending on the framework
-  const lastResult = useYourActionResult();
-  const [form, { username, password }] = useForm({
+  const lastResult = useActionResult();
+  const [form, fields] = useForm({
     // Configure when each field should be validated
     shouldValidate: 'onBlur',
-    // Optional: Needed only if you're validating on the server
+    // Optional: Required only if you're validating on the server
     lastResult,
     // Optional: Client validation. Fallback to server validation if not provided
     onValidate({ formData }) {
@@ -68,14 +69,14 @@ export default function LoginForm() {
     <form method="post" id={form.id} onSubmit={form.onSubmit}>
       <div>{form.errors}</div>
       <div>
-        <label htmlFor={username.id}>Username</label>
-        <input type="text" id={username.id} name={username.name} />
-        <div>{username.errors}</div>
+        <label>Username</label>
+        <input type="text" name={fields.username.name} />
+        <div>{fields.username.errors}</div>
       </div>
       <div>
-        <label htmlFor={password.id}>Password</label>
-        <input type="password" id={password.id} name={password.name} />
-        <div>{password.errors}</div>
+        <label>Password</label>
+        <input type="password" name={fields.password.name} />
+        <div>{fields.password.errors}</div>
       </div>
       <button>Login</button>
     </form>

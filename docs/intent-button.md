@@ -1,38 +1,32 @@
 # Intent button
 
-A submit button can contribute to the form data when it triggers the submission as a [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter).
+A submit button will contribute to the form data when it triggers the submission as a [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter).
 
-<!-- aside -->
+## Submission Intent
 
-## On this page
-
-- [Submission Intent](#submission-intent)
-- [List intent](#list-intent)
-- [Validate intent](#validate-intent)
-- [Triggering intent](#triggering-intent)
-
-<!-- /aside -->
-
-### Submission Intent
-
-The submitter is particularly useful when you want to extend the form with different behaviour based on the intent. However, it also pollutes the form value with data that are used to control form behaviour.
+The submitter is particularly useful when you want to extend the form with different behaviour based on the intent.
 
 ```tsx
 import { useForm } from '@conform-to/react';
 
 function Product() {
   const [form] = useForm({
-    onSubmit(event, { submission }) {
+    onSubmit(event, { formData }) {
       event.preventDefault();
 
-      // This will log `{ productId: 'rf23g43', intent: 'add-to-cart' }`
-      // or `{ productId: 'rf23g43', intent: 'buy-now' }`
-      console.log(submission.payload);
+      switch (formData.get('intent')) {
+        case 'add-to-cart':
+          // Add to cart
+          break;
+        case 'buy-now':
+          // Buy now
+          break;
+      }
     },
   });
 
   return (
-    <form>
+    <form id={form.id}>
       <input type="hidden" name="productId" value="rf23g43" />
       <button type="submit" name="intent" value="add-to-cart">
         Add to Cart
@@ -45,162 +39,143 @@ function Product() {
 }
 ```
 
-In **Conform**, if the name of a button is configured with `conform.INTENT`, its value will be treated as the intent of the submission instead. Otherwise, the intent would be `submit` by default.
+## Form Controls
+
+Conform utitlize the submission intent for all form controls, such as validating or removing a field. This is achieved by giving the buttons a reserved name with the intent serialized as the value. To simplify the setup, Conform provides a set of form control helpers, such as `form.validate`, `form.reset` or `form.insert`.
+
+### Validate intent
+
+To trigger a validation, you can configure a button with the validate intent.
 
 ```tsx
-import { useForm, conform } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
-function Product() {
-  const [form] = useForm({
-    onSubmit(event, { submission }) {
-      event.preventDefault();
-
-      // This will log `add-to-cart` or `buy-now`
-      console.log(submission.intent);
-
-      // This will log `{ productId: 'rf23g43' }`
-      console.log(submission.payload);
-    },
-  });
+function EmailForm() {
+  const [form, fields] = useForm();
 
   return (
-    <form {...form.props}>
-      <input type="hidden" name="productId" value="rf23g43" />
-      <button type="submit" name={conform.INTENT} value="add-to-cart">
-        Add to Cart
-      </button>
-      <button type="submit" name={conform.INTENT} value="buy-now">
-        Buy now
+    <form id={form.id}>
+      <input name={fields.email.name} />
+      <button {...form.validate.getButtonProps({ name: fields.email.name })}>
+        Validate Email
       </button>
     </form>
   );
 }
 ```
 
-### List intent
+When the button is clicked, conform identify the serialized intent with the reserved name and trigger a validation by marking the email field as validated and returns the error message if the email is invalid.
 
-Conform provides built-in [list](/packages/conform-react/README.md#list) intent button builder for you to modify a list of fields.
+However, if you want to trigger the validation once the user leaves the field, you can also trigger the validate intent directly.
 
 ```tsx
-import { useForm, useFieldList, conform, list } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
-export default function Todos() {
-  const [form, { tasks }] = useForm();
-  const taskList = useFieldList(form.ref, tasks);
+function EmailForm() {
+  const [form, fields] = useForm();
 
   return (
-    <form {...form.props}>
+    <form id={form.id}>
+      <input
+        name={fields.email.name}
+        onBlur={(event) => form.validate({ name: event.target.name })}
+      />
+    </form>
+  );
+}
+```
+
+### Reset and Update intent
+
+You can also modify a field with the **reset** and **update** intent.
+
+```tsx
+import { useForm } from '@conform-to/react';
+
+export default function Tasks() {
+  const [form, fields] = useForm();
+
+  return (
+    <form id={form.id}>
+      <button {...form.reset.getButtonProps()}>Reset form</button>
+      <button
+        {...form.reset.getButtonProps({
+          name: fields.tasks.name,
+        })}
+      >
+        Reset field (including nested / list field)
+      </button>
+      <button
+        {...form.update.getButtonProps({
+          name: fields.agenda.name,
+          value: {
+            title: 'My agenda',
+            description: 'This is my agenda',
+          },
+        })}
+      >
+        Update field (including nested / list field)
+      </button>
+      <button
+        {...form.update.getButtonProps({
+          validated: false,
+        })}
+      >
+        Clear all error
+      </button>
+    </form>
+  );
+}
+```
+
+Be aware that both intents requires setting up the inputs with the **key** from the field metadata. As Conform relies on the key to notify React for re-mounting the input with the updated initialValue. The only exception is if you are setting up a controlled input with the [useInputControl](./api/react/useInputControl.md) hook which will reset the value when the key changes.
+
+### Insert, remove and reorder intents
+
+To manipulate a field list, you can use the **insert**, **remove** and **reorder** intents.
+
+```tsx
+import { useForm } from '@conform-to/react';
+
+export default function Tasks() {
+  const [form, fields] = useForm();
+  const tasks = fields.tasks.getFieldList();
+
+  return (
+    <form id={form.id}>
       <ul>
-        {taskList.map((task, index) => (
+        {tasks.map((task) => (
           <li key={task.key}>
             <input name={task.name} />
-            <button {...list.remove(tasks.name, { index })}>Delete</button>
+            <button
+              {...form.reorder.getButtonProps({
+                name: fields.tasks.name,
+                from: index,
+                to: 0,
+              })}
+            >
+              Move to top
+            </button>
+            <button
+              {...form.remove.getButtonProps({
+                name: fields.tasks.name,
+                index,
+              })}
+            >
+              Delete
+            </button>
           </li>
         ))}
       </ul>
-      <div>
-        <button {...list.insert(tasks.name)}>Add task</button>
-      </div>
+      <button
+        {...form.insert.getButtonProps({
+          name: fields.tasks.name,
+        })}
+      >
+        Add task
+      </button>
       <button>Save</button>
     </form>
   );
 }
 ```
-
-## Validate intent
-
-A validation can be triggered by configuring a button with the [validate](/packages/conform-react/README.md#validate) intent.
-
-```tsx
-import { useForm, validate } from '@conform-to/react';
-
-export default function Todos() {
-  const [form, { email }] = useForm();
-
-  return (
-    <form {...form.props}>
-      <input name={email.name} />
-      {/* Validating field manually */}
-      <button {...validate(email.name)}>Validate email</button>
-      <button>Send</button>
-    </form>
-  );
-}
-```
-
-## Triggering intent
-
-Sometimes, it could be useful to trigger an intent without requiring users to click on the intent button. We can achieve it by capturing the button element with `useRef` and triggering the intent with `button.click()`
-
-```tsx
-import { useForm, useFieldList, conform, list } from '@conform-to/react';
-import { useEffect } from 'react';
-
-export default function Todos() {
-  const [form, { tasks }] = useForm();
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const taskList = useFieldList(form.ref, tasks);
-
-  useEffect(() => {
-    if (taskList.length === 0) {
-      // Ensure at least 1 task is shown
-      // by clicking on the Add task button
-      buttonRef.current?.click();
-    }
-  }, [taskList.length]);
-
-  return (
-    <form {...form.props}>
-      <ul>
-        {taskList.map((task, index) => (
-          <li key={task.key}>
-            <input name={task.name} />
-          </li>
-        ))}
-      </ul>
-      <div>
-        <button {...list.insert(tasks.name)} ref={buttonRef}>
-          Add task
-        </button>
-      </div>
-      <button>Save</button>
-    </form>
-  );
-}
-```
-
-However, if the intent button can not be pre-configured easily, like drag and drop an item on the list with dynamic `from` / `to` index, an intent can be triggered by using the [requestIntent](/packages/conform-react/README.md#requestintent) helper.
-
-```tsx
-import {
-  useForm,
-  useFieldList,
-  conform,
-  list,
-  requestIntent,
-} from '@conform-to/react';
-import DragAndDrop from 'awesome-dnd-example';
-
-export default function Todos() {
-  const [form, { tasks }] = useForm();
-  const taskList = useFieldList(form.ref, tasks);
-
-  const handleDrop = (from, to) =>
-    requestIntent(form.ref.current, list.reorder({ from, to }));
-
-  return (
-    <form {...form.props}>
-      <DragAndDrop onDrop={handleDrop}>
-        {taskList.map((task, index) => (
-          <div key={task.key}>
-            <input name={task.name} />
-          </div>
-        ))}
-      </DragAndDrop>
-      <button>Save</button>
-    </form>
-  );
-}
-```
-
-Conform is also utilizing the `requestIntent` helper to trigger the `validate` intent on input or blur event.

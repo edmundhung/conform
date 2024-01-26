@@ -1,52 +1,33 @@
 # Checkbox and Radio Group
 
-Conform provides a set of [conform](/packages/conform-react/README.md#conform) helper to configure each form control. For example, you can use the `collection` helper to setup a checkbox or radio group.
-
-<!-- aside -->
-
-## On this page
-
-- [Radio Group](#radio-group)
-- [Checkbox](#checkbox)
-
-<!-- /aside -->
+Setting up a checkbox or radio group is no different from any standard inputs.
 
 ## Radio Group
 
-Setting up a radio group is no different from other inputs. You just need to pass the list of options to the helper and each option will be set as the value of the input. The helper will also derive the `defaultChecked` property and manage the `id` and aria attributes for you.
+To set up a radio group, make sure the **name** attribute is the same for all the inputs. You can also use the initialValue from the field metadata to derive whether the radio button should be checked.
 
 ```tsx
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
-import { z } from 'zod';
-
-const schema = z.object({
-  color: z.string(),
-});
+import { useForm } from '@conform-to/react';
 
 function Example() {
-  const [form, { color }] = useForm({
-    onValidate({ formData }) {
-      return parse(formData, { schema });
-    },
-  });
+  const [form, fields] = useForm();
 
   return (
-    <form {...form.props}>
+    <form id={form.id}>
       <fieldset>
         <legend>Please select your favorite color</legend>
-        {conform
-          .collection(color, {
-            type: 'radio',
-            options: ['red', 'green', 'blue'],
-          })
-          .map((props, index) => (
-            <div key={index}>
-              <label>{props.value}</label>
-              <input {...props} />
-            </div>
-          ))}
-        <div>{color.error}</div>
+        {['red', 'green', 'blue'].map((value) => (
+          <div key={value}>
+            <label>{value}</label>
+            <input
+              type="radio"
+              name={fields.color.name}
+              value={value}
+              defaultChecked={fields.color.initialValue === value}
+            />
+          </div>
+        ))}
+        <div>{fields.color.errors}</div>
       </fieldset>
       <button>Submit</button>
     </form>
@@ -56,43 +37,35 @@ function Example() {
 
 ## Checkbox
 
-Setting up a checkbox group would be similar to a radio group except the `type` is set to `checkbox`.
+Setting up a checkbox group would be similar to a radio group except the initialValue can be either a string or an array because of missing information on the server side whether the checkbox is a boolean or a group. You can derive the **defaultChecked** value from the initialValue as shown below.
 
 ```tsx
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
-import { z } from 'zod';
-
-const schema = z.object({
-  answer: z
-    .string()
-    .array()
-    .nonEmpty('At least one answer is required'),
-});
+import { useForm } from '@conform-to/react';
 
 function Example() {
-  const [form, { answer }] = useForm({
-    onValidate({ formData }) {
-      return parse(formData, { schema });
-    },
-  });
+  const [form, fields] = useForm();
 
   return (
-    <form {...form.props}>
+    <form id={form.id}>
       <fieldset>
         <legend>Please select the correct answers</legend>
-        {conform
-          .collection(answer, {
-            type: 'checkbox',
-            options: ['a', 'b', 'c', 'd'],
-          })
-          .map((props, index) => (
-            <div key={index}>
-              <label>{props.value}</label>
-              <input {...props} />
-            </div>
-          ))}
-        <div>{answer.error}</div>
+        {['a', 'b', 'c', 'd'].map((value) => (
+          <div key={value}>
+            <label>{value}</label>
+            <input
+              type="checkbox"
+              name={fields.answer.name}
+              value={value}
+              defaultChecked={
+                fields.answer.initialValue &&
+                Array.isArray(fields.answer.initialValue)
+                  ? fields.answer.initialValue.includes(value)
+                  : fields.answer.initialValue === value
+              }
+            />
+          </div>
+        ))}
+        <div>{fields.answer.errors}</div>
       </fieldset>
       <button>Submit</button>
     </form>
@@ -100,38 +73,23 @@ function Example() {
 }
 ```
 
-However, if you are using checkbox as a boolean, you can use the `input` helper instead.
+However, if it is just a single checkbox, you can check if the initialValue matches the input **value** which defaults to **on** by the browser.
 
 ```tsx
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
-import { z } from 'zod';
-
-const schema = z.object({
-  acceptTerms: z.boolean({
-    required_error: 'You must accept the terms and conditions',
-  }),
-  subscribeNewsletter: z.boolean().optional(),
-});
+import { useForm } from '@conform-to/react';
 
 function Example() {
-  const [form, { acceptTerms, subscribeNewsletter }] = useForm({
-    onValidate({ formData }) {
-      return parse(formData, { schema });
-    },
-  });
+  const [form, fields] = useForm();
 
   return (
-    <form {...form.props}>
+    <form id={form.id}>
       <div>
         <label>Terms and conditions</label>
-        <input {...conform.input(acceptTerms, { type: 'checkbox' })} />
-        <div>{acceptTerms.error}</div>
-      </div>
-      <div>
-        <label>Subscribe Newsletter</label>
-        <input {...conform.input(subscribeNewsletter, { type: 'checkbox' })} />
-        <div>{subscribeNewsletter.error}</div>
+        <input
+          name={fields.toc}
+          defaultChecked={fields.toc.initialValue === 'on'}
+        />
+        <div>{fields.toc.errors}</div>
       </div>
       <button>Submit</button>
     </form>

@@ -4,17 +4,6 @@
 
 [Conform](https://github.com/edmundhung/conform) helpers for server validation based on the validation attributes.
 
-<!-- aside -->
-
-## API Reference
-
-- [parse](#parse)
-- [validate](#validate)
-- [defaultFormatError](#defaultformaterror)
-- [getError](#geterror)
-
-<!-- /aside -->
-
 ### parse
 
 A function to parse FormData or URLSearchParams on the server based on the constraints and an optional error formatter.

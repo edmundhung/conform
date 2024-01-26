@@ -10,7 +10,7 @@
 
 Version 1.0.0-rc.0 / License MIT / Copyright (c) 2024 Edmund Hung
 
-A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix route action and Next.js server actions.
+A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix and Next.js.
 
 > Getting Started
 
@@ -21,7 +21,7 @@ Check out the overview and tutorial at our website https://conform.guide
 The documentation is divided into several sections:
 
 * Overview: https://conform.guide/overview
-* Example Usages: https://conform.guide/examples
+* Examples: https://conform.guide/examples
 * Complex structures: https://conform.guide/complex-structures
 * UI Integrations: https://conform.guide/integrations
 * Accessibility Guide: https://conform.guide/accessibility
