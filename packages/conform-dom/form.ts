@@ -179,20 +179,6 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
 	}) => Submission<Schema, FormError, FormValue>;
-
-	/**
-	 * A function to be called before the form is submitted.
-	 */
-	onSubmit?: (
-		event: SubmitEvent,
-		context: {
-			formData: FormData;
-			action: ReturnType<typeof getFormAction>;
-			encType: ReturnType<typeof getFormEncType>;
-			method: ReturnType<typeof getFormMethod>;
-			submission?: Submission<Schema, FormError, FormValue>;
-		},
-	) => void;
 };
 
 export type SubscriptionSubject = {
@@ -225,9 +211,13 @@ export type FormContext<
 	FormError = string[],
 > = {
 	formId: string;
-	submit(
-		event: SubmitEvent,
-	): Submission<Schema, FormError, FormValue> | undefined;
+	submit(event: SubmitEvent): {
+		formData: FormData;
+		action: ReturnType<typeof getFormAction>;
+		encType: ReturnType<typeof getFormEncType>;
+		method: ReturnType<typeof getFormMethod>;
+		submission?: Submission<Schema, FormError, FormValue>;
+	};
 	onReset(event: Event): void;
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
@@ -725,7 +715,7 @@ export function createFormContext<
 		input.value = getSerializedState();
 
 		const formData = getFormData(form, submitter);
-		const context = {
+		const result = {
 			formData,
 			action: getFormAction(event),
 			encType: getFormEncType(event),
@@ -733,8 +723,7 @@ export function createFormContext<
 		};
 
 		if (typeof latestOptions?.onValidate === 'undefined') {
-			latestOptions.onSubmit?.(event, context);
-			return;
+			return result;
 		}
 
 		const submission = latestOptions.onValidate({
@@ -745,11 +734,9 @@ export function createFormContext<
 
 		if (submission.status !== 'success' && submission.error !== null) {
 			report(submission.reply());
-		} else {
-			latestOptions.onSubmit?.(event, { ...context, submission });
 		}
 
-		return submission;
+		return { ...result, submission };
 	}
 
 	function resolveTarget(event: Event) {

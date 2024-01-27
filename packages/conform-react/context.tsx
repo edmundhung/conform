@@ -2,7 +2,7 @@ import {
 	type Constraint,
 	type FormId,
 	type FieldName,
-	type FormContext,
+	type FormContext as BaseFormContext,
 	type FormValue,
 	type FormState,
 	type Intent,
@@ -10,12 +10,15 @@ import {
 	type SubscriptionSubject,
 	type UnionKeyof,
 	type UnionKeyType,
+	type FormOptions as BaseFormOptions,
+	unstable_createFormContext as createBaseFormContext,
 	formatPaths,
 	getPaths,
 	isPrefix,
 	STATE,
 } from '@conform-to/dom';
 import {
+	type FormEvent,
 	type ReactElement,
 	type ReactNode,
 	type MutableRefObject,
@@ -363,18 +366,7 @@ export function getFormMetadata<
 				case 'reorder':
 					return context[key];
 				case 'onSubmit':
-					return (event: React.FormEvent<HTMLFormElement>) => {
-						const submitEvent = event.nativeEvent as SubmitEvent;
-						const submission = context.submit(submitEvent);
-
-						if (
-							submission &&
-							submission.status !== 'success' &&
-							submission.error !== null
-						) {
-							event.preventDefault();
-						}
-					};
+					return context.submit;
 				case 'noValidate':
 					return noValidate;
 			}
@@ -382,4 +374,67 @@ export function getFormMetadata<
 			return Reflect.get(metadata, key, receiver);
 		},
 	});
+}
+
+export type FormOptions<
+	Schema extends Record<string, any> = any,
+	FormError = string[],
+	FormValue = Schema,
+> = BaseFormOptions<Schema, FormError, FormValue> & {
+	/**
+	 * A function to be called before the form is submitted.
+	 */
+	onSubmit?: (
+		event: FormEvent<HTMLFormElement>,
+		context: ReturnType<
+			BaseFormContext<Schema, FormValue, FormError>['submit']
+		>,
+	) => void;
+};
+
+export type FormContext<
+	Schema extends Record<string, any> = any,
+	FormValue = Schema,
+	FormError = string[],
+> = Omit<
+	BaseFormContext<Schema, FormValue, FormError>,
+	'submit' | 'onUpdate'
+> & {
+	submit: (event: FormEvent<HTMLFormElement>) => void;
+	onUpdate: (
+		options: Partial<FormOptions<Schema, FormError, FormValue>>,
+	) => void;
+};
+
+export function createFormContext<
+	Schema extends Record<string, any> = any,
+	FormValue = Schema,
+	FormError = string[],
+>(
+	options: FormOptions<Schema, FormError, FormValue>,
+): FormContext<Schema, FormValue, FormError> {
+	let { onSubmit, ...rest } = options;
+	const context = createBaseFormContext(rest);
+
+	return {
+		...context,
+		submit(event) {
+			const submitEvent = event.nativeEvent as SubmitEvent;
+			const result = context.submit(submitEvent);
+
+			if (
+				result.submission &&
+				result.submission.status !== 'success' &&
+				result.submission.error !== null
+			) {
+				event.preventDefault();
+			} else {
+				onSubmit?.(event, result);
+			}
+		},
+		onUpdate(options) {
+			onSubmit = options.onSubmit;
+			context.onUpdate(options);
+		},
+	};
 }
