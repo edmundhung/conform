@@ -120,7 +120,7 @@ export function getWrappedFormContext(
 
 export function useFormContext<Schema extends Record<string, any>, FormError>(
 	formId?: FormId<Schema, FormError>,
-): FormContext<Schema, unknown, FormError> {
+): FormContext<Schema, FormError, unknown> {
 	const contexts = useContext(Form);
 	const form = formId
 		? contexts.find((context) => context.formId === formId)
@@ -130,11 +130,11 @@ export function useFormContext<Schema extends Record<string, any>, FormError>(
 		throw new Error('Form context is not available');
 	}
 
-	return form as unknown as FormContext<Schema, unknown, FormError>;
+	return form as unknown as FormContext<Schema, FormError, unknown>;
 }
 
 export function useFormState<FormError>(
-	form: FormContext<any, any, FormError>,
+	form: FormContext<any, FormError>,
 	subjectRef?: MutableRefObject<SubscriptionSubject>,
 ): FormState<FormError> {
 	const subscribe = useCallback(
@@ -147,7 +147,7 @@ export function useFormState<FormError>(
 }
 
 export function FormProvider(props: {
-	context: Wrapped<FormContext<any, any, any>>;
+	context: Wrapped<FormContext<any, any>>;
 	children: ReactNode;
 }): ReactElement {
 	const forms = useContext(Form);
@@ -338,13 +338,13 @@ export function getFieldMetadata<
 
 export function getFormMetadata<
 	Schema extends Record<string, any>,
-	FormValue = Schema,
 	FormError = string[],
+	FormValue = Schema,
 >(
 	formId: FormId<Schema, FormError>,
 	state: FormState<FormError>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
-	context: FormContext<Schema, FormValue, FormError>,
+	context: FormContext<Schema, FormError, FormValue>,
 	noValidate: boolean,
 ): FormMetadata<Schema, FormError> {
 	const metadata = getMetadata(formId, state, subjectRef);
@@ -387,17 +387,17 @@ export type FormOptions<
 	onSubmit?: (
 		event: FormEvent<HTMLFormElement>,
 		context: ReturnType<
-			BaseFormContext<Schema, FormValue, FormError>['submit']
+			BaseFormContext<Schema, FormError, FormValue>['submit']
 		>,
 	) => void;
 };
 
 export type FormContext<
 	Schema extends Record<string, any> = any,
-	FormValue = Schema,
 	FormError = string[],
+	FormValue = Schema,
 > = Omit<
-	BaseFormContext<Schema, FormValue, FormError>,
+	BaseFormContext<Schema, FormError, FormValue>,
 	'submit' | 'onUpdate'
 > & {
 	submit: (event: FormEvent<HTMLFormElement>) => void;
@@ -408,11 +408,11 @@ export type FormContext<
 
 export function createFormContext<
 	Schema extends Record<string, any> = any,
-	FormValue = Schema,
 	FormError = string[],
+	FormValue = Schema,
 >(
 	options: FormOptions<Schema, FormError, FormValue>,
-): FormContext<Schema, FormValue, FormError> {
+): FormContext<Schema, FormError, FormValue> {
 	let { onSubmit, ...rest } = options;
 	const context = createBaseFormContext(rest);
 

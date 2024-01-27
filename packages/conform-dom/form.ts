@@ -207,8 +207,8 @@ export type ControlButtonProps = {
 
 export type FormContext<
 	Schema extends Record<string, any> = any,
-	FormValue = Schema,
 	FormError = string[],
+	FormValue = Schema,
 > = {
 	formId: string;
 	submit(event: SubmitEvent): {
@@ -521,11 +521,11 @@ function shouldNotify<Schema>(
 
 export function createFormContext<
 	Schema extends Record<string, any>,
-	FormValue,
-	FormError,
+	FormError = string[],
+	FormValue = Schema,
 >(
 	options: FormOptions<Schema, FormError, FormValue>,
-): FormContext<Schema, FormValue, FormError> {
+): FormContext<Schema, FormError, FormValue> {
 	let subscribers: Array<{
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
