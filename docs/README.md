@@ -14,6 +14,8 @@ The documentation is divided into several sections:
   - [Accessibility](./accessibility.md)
 - Integrations
   - [UI Libraries](./ui-libraries.md)
+  - [Remix](./remix.md)
+  - [Next.js](./nextjs.md)
 - API Reference
   - @conform-to/react
     - [useForm](./api/react/useForm.md)

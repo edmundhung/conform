@@ -1,42 +1,27 @@
 # Validation
 
-Conform supports several validation modes. In this section, we will walk you through how to validate a form based on different requirements.
-
-<!-- aside -->
-
-## On this page
-
-- [Server Validation](#server-validation)
-- [Client Validation](#client-validation)
-- [Async Validation](#async-validation)
-  - [Skipping validation](#skipping-validation)
-
-<!-- /aside -->
+Conform supports different validation modes. In this section, we will walk you through how to validate a form based on different requirements.
 
 ## Server Validation
 
-**Conform** enables you to validate a form **fully server side**.
+You can validate a form **fully server side**. It is not limited to form submission but also works when user is typing or leaving a field. This allows you to exclude the validation logic from the client bundle. But network latency might be a concern if you want to validate while user is typing.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse(formData, {
+  const submission = parseWithZod(formData, {
     schema: z.object({
-      email: z
-        .string({ required_error: 'Email is required' })
-        .email('Email is invalid'),
-      message: z
-        .string({ required_error: 'Message is required' })
-        .max(100, 'Message is too long'),
+      email: z.string().email(),
+      message: z.string().max(100),
     }),
   });
 
-  if (submission.intent !== 'submit' || !submission.value) {
-    return json(submission);
+  if (submission.status !== 'success') {
+    return submission.reply();
   }
 
   return await signup(data);
@@ -48,6 +33,10 @@ export default function Signup() {
   const [form] = useForm({
     // Sync the result of last submission
     lastSubmission,
+
+    // Configure when each field should be validated
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
   });
 
   // ...
@@ -56,25 +45,21 @@ export default function Signup() {
 
 ## Client Validation
 
-Server validation works well generally. However, network latency would be a concern if there is a need to provide instant feedback while user is typing. In this case, you might want to validate on the client side as well.
+You can always reuse the validation logic on the client side for instant feedback.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 
 // Move the schema definition out of action
 const schema = z.object({
-  email: z
-    .string({ required_error: 'Email is required' })
-    .email('Email is invalid'),
-  message: z
-    .string({ required_error: 'Message is required' })
-    .max(100, 'Message is too long'),
+  email: z.string().email(),
+  message: z.string().max(100),
 });
 
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse(formData, { schema });
+  const submission = parseWithZod(formData, { schema });
 
   // ...
 }
@@ -83,10 +68,12 @@ export default function Signup() {
   const lastSubmission = useActionData<typeof action>();
   const [form] = useForm({
     lastSubmission,
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
 
     // Setup client validation
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
@@ -96,127 +83,178 @@ export default function Signup() {
 
 ## Async Validation
 
-Here is an example how you can do async validation with zod:
+Conform supports async validation in a slightly different way. Instead of sending a request to another endpoint, we will simply fallback to server validation when needed.
+
+Here is an example which validate if the email is unique.
 
 ```tsx
 import { refine } from '@conform-to/zod';
 
-// Instead of reusing a schema, let's prepare a schema creator
-function createSchema(constraint?: {
-  isEmailUnique?: (email) => Promise<boolean>;
-}) {
-  return z.object({
-    email: z
-      .string({ required_error: 'Email is required' })
-      .email('Email is invalid')
-      // Pipe another schema so it runs only if the email is valid
-      .pipe(
-        z.string().superRefine((email, ctx) =>
-          // Using the `refine` helper from Conform
-          refine(ctx, {
-            validate: () => constraint.isEmailUnique?.(email),
-            message: 'Username is already used',
+// Instead of sharing a schema, prepare a schema creator
+function createSchema(
+  options?: {
+    isEmailUnique: (email: string) => Promise<boolean>;
+  },
+) {
+  return z
+    .object({
+      email: z
+        .string()
+        .email()
+        // Pipe the schema so it runs only if the email is valid
+        .pipe(
+          // Note: The callback cannot be async here
+          // As we run zod validation synchronously on the client
+          z.string().superRefine((email, ctx) => {
+            // This makes Conform to fallback to server validation
+            // by indicating that the validation is not defined
+            if (typeof options?.isEmailUnique !== 'function') {
+              ctx.addIssue({
+                code: 'custom',
+                message: conformZodMessage.VALIDATION_UNDEFINED,
+                fatal: true,
+              });
+              return;
+            }
+
+            // If it reaches here, then it must be validating on the server
+            // Return the result as a promise so Zod knows it's async instead
+            return options.isEmailUnique(email).then((isUnique) => {
+              if (!isUnique) {
+                ctx.addIssue({
+                  code: 'custom',
+                  message: 'Email is already used',
+                });
+              }
+            });
           }),
         ),
-      ),
+    }),
     // ...
-  });
 }
 
 export function action() {
-  const formData = await request.formData();
-  const submission = await parse(formData, {
-    // create the zod schema with `isEmailUnique()` implemented
-    schema: createSchema({
-      async isEmailUnique(email) {
-        // ...
-      },
-    }),
+	const formData = await request.formData();
+	const submission = await parse(formData, {
+		// create the zod schema with `isEmailUnique()` implemented
+		schema: createSchema({
+			async isEmailUnique(email) {
+				// ...
+			},
+		}),
 
-    // Enable async validation
-    async: true,
-  });
+		// Enable async validation on the server
+    // We won't set `async: true` on the client
+    // as client validation must be synchronous
+		async: true,
+	});
 
-  // ...
+	// ...
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData();
-  const [form] = useForm({
-    lastSubmission,
-    onValidate({ formData }) {
-      return parse(formData, {
-        // Create the schema without implementing `isEmailUnique()`
-        schema: createSchema(),
-      });
-    },
-  });
+	const lastSubmission = useActionData();
+	const [form] = useForm({
+		lastSubmission,
+		onValidate({ formData }) {
+			return parse(formData, {
+				// Create the schema without implementing `isEmailUnique()`
+				schema: createSchema(),
+			});
+		},
+	});
 
-  // ...
+	// ...
 }
 ```
 
 ## Skipping Validation
 
-Conform validates all fields by default. This could be expensive especially with async validation. One solution is to minimize the validation by checking the submission intent.
+As the schema validates all fields together. This could be expensive especially with async validation. One solution is to minimize the validation by checking the submission intent.
 
 ```tsx
-import { parse } from '@conform-to/zod';
+import { parseWithZod, conformZodMessage } from '@conform-to/zod';
 
 function createSchema(
-  // Accept an intent on the schema creator
-  intent: string,
+  // The `intent` will be provieded by the `parseWithZod` helper
+  intent: Intent | null,
   options?: {
-    isEmailUnique?: (email) => Promise<boolean>;
+    isEmailUnique: (email: string) => Promise<boolean>;
   },
 ) {
-  return z.object({
-    email: z
-      .string({ required_error: 'Email is required' })
-      .email('Email is invalid')
-      .pipe(
-        z.string().superRefine((email, ctx) =>
-          refine(ctx, {
-            validate: () => constraint.isEmailUnique?.(email),
-            // Check only when it is validating the email field or submitting
-            when: intent === 'submit' || intent === 'validate/email',
-            message: 'Username is already used',
+  return z
+    .object({
+      email: z
+        .string()
+        .email()
+        .pipe(
+          z.string().superRefine((email, ctx) => {
+            const isValidatingEmail =
+              intent === null ||
+              (intent.type === 'validate' && intent.payload.name === 'email');
+
+            // This make Conform to use the previous result instead
+            // by indicating that the validation is skipped
+            if (!isValidatingEmail) {
+              ctx.addIssue({
+                code: 'custom',
+                message: conformZodMessage.VALIDATION_SKIPPED,
+              });
+              return;
+            }
+
+            if (typeof options?.isEmailUnique !== 'function') {
+              ctx.addIssue({
+                code: 'custom',
+                message: conformZodMessage.VALIDATION_UNDEFINED,
+                fatal: true,
+              });
+              return;
+            }
+
+            return options.isEmailUnique(email).then((isUnique) => {
+              if (!isUnique) {
+                ctx.addIssue({
+                  code: 'custom',
+                  message: 'Email is already used',
+                });
+              }
+            });
           }),
         ),
-      ),
+    }),
     // ...
-  });
 }
 
 export async function action({ request }: ActionArgs) {
-  const formData = await request.formData();
-  const submission = await parse(formData, {
-    // Retrieve the intent by providing a function instead
-    schema: (intent) =>
-      createSchema(intent, {
-        async isEmailUnique(email) {
-          // ...
-        },
-      }),
+	const formData = await request.formData();
+	const submission = await parse(formData, {
+		// Retrieve the intent by providing a function instead
+		schema: (intent) =>
+			createSchema(intent, {
+				async isEmailUnique(email) {
+					// ...
+				},
+			}),
 
-    async: true,
-  });
+		async: true,
+	});
 
-  // ...
+	// ...
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData();
-  const [form] = useForm({
-    lastSubmission,
-    onValidate({ formData }) {
-      return parse(formData, {
-        // Similar to the action above
-        schema: (intent) => createSchema(intent),
-      });
-    },
-  });
+	const lastSubmission = useActionData();
+	const [form] = useForm({
+		lastSubmission,
+		onValidate({ formData }) {
+			return parse(formData, {
+				// Similar to the action above
+				schema: (intent) => createSchema(intent),
+			});
+		},
+	});
 
-  // ...
+	// ...
 }
 ```
