@@ -5,8 +5,6 @@ import {
 	useField,
 	useInputControl,
 	parse,
-	getFormProps,
-	getInputProps,
 } from '@conform-to/react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
@@ -52,7 +50,9 @@ export default function Example() {
 			<FormProvider context={form.context}>
 				<form
 					className="space-y-8 divide-y divide-gray-200"
-					{...getFormProps(form)}
+					id={form.id}
+					onSubmit={form.onSubmit}
+					noValidate
 				>
 					<div className="space-y-8 divide-y divide-gray-200">
 						<div>
@@ -153,12 +153,12 @@ function classNames(...classes: Array<string | boolean>): string {
 }
 
 function ExampleListBox(props: { name: FieldName<string> }) {
-	const [field] = useField(props.name);
-	const control = useInputControl(field);
+	const [meta] = useField(props.name);
+	const control = useInputControl(meta);
 
 	return (
 		<Listbox value={control.value} onChange={control.change}>
-			<input {...getInputProps(field, { type: 'hidden' })} />
+			<input type="hidden" name={meta.name} value={control.value} />
 			<div className="relative mt-1">
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
@@ -217,8 +217,8 @@ function ExampleListBox(props: { name: FieldName<string> }) {
 
 function ExampleCombobox(props: { name: FieldName<string> }) {
 	const [query, setQuery] = useState('');
-	const [field] = useField(props.name);
-	const control = useInputControl(field);
+	const [meta] = useField(props.name);
+	const control = useInputControl(meta);
 	const filteredPeople = !control.value
 		? people
 		: people.filter((person) =>
@@ -227,7 +227,7 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 
 	return (
 		<Combobox as="div" value={control.value} onChange={control.change} nullable>
-			<input {...getInputProps(field, { type: 'hidden' })} />
+			<input type="hidden" name={meta.name} value={control.value} />
 			<div className="relative mt-1">
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -289,8 +289,8 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 }
 
 function ExampleSwitch(props: { name: FieldName<boolean> }) {
-	const [field] = useField(props.name);
-	const control = useInputControl(field);
+	const [meta] = useField(props.name);
+	const control = useInputControl(meta);
 
 	return (
 		<Switch
@@ -301,7 +301,7 @@ function ExampleSwitch(props: { name: FieldName<boolean> }) {
 				'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
 			)}
 		>
-			<input {...getInputProps(field, { type: 'hidden' })} />
+			<input type="hidden" name={meta.name} value={control.value} />
 			<span className="sr-only">Use setting</span>
 			<span
 				aria-hidden="true"
@@ -315,8 +315,8 @@ function ExampleSwitch(props: { name: FieldName<boolean> }) {
 }
 
 function ExampleRadioGroup(props: { name: FieldName<string> }) {
-	const [field] = useField(props.name);
-	const control = useInputControl(field);
+	const [meta] = useField(props.name);
+	const control = useInputControl(meta);
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{
@@ -335,7 +335,7 @@ function ExampleRadioGroup(props: { name: FieldName<string> }) {
 
 	return (
 		<RadioGroup value={control.value} onChange={control.change}>
-			<input {...getInputProps(field, { type: 'hidden' })} />
+			<input type="hidden" name={meta.name} value={control.value} />
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option

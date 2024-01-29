@@ -5,7 +5,6 @@ import {
 	useField,
 	useInputControl,
 	parse,
-	getFormProps,
 } from '@conform-to/react';
 import {
 	Stack,
@@ -84,7 +83,7 @@ export default function Example() {
 	return (
 		<Container maxW="container.sm" paddingY={8}>
 			<FormProvider context={form.context}>
-				<form {...getFormProps(form)}>
+				<form id={form.id} onSubmit={form.onSubmit} noValidate>
 					<Stack direction="column" spacing={8}>
 						<header>
 							<Heading mb={4}>Chakra UI Example</Heading>

@@ -5,7 +5,6 @@ import {
 	useField,
 	useInputControl,
 	parse,
-	getFormProps,
 } from '@conform-to/react';
 import {
 	TextField,
@@ -68,7 +67,7 @@ export default function ExampleForm() {
 	return (
 		<Container maxWidth="sm">
 			<FormProvider context={form.context}>
-				<form {...getFormProps(form)}>
+				<form id={form.id} onSubmit={form.onSubmit} noValidate>
 					<Stack spacing={4} marginY={4}>
 						<header>
 							<Typography variant="h6" component="h1">
@@ -212,18 +211,18 @@ type Field<Schema> = {
 };
 
 function ExampleSelect({ label, required, name }: Field<string>) {
-	const [field] = useField(name);
-	const control = useInputControl(field);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
 		<TextField
 			label={label}
-			name={field.name}
+			name={meta.name}
 			value={control.value ?? ''}
 			onChange={(event) => control.change(event.target.value)}
 			onBlur={control.blur}
-			error={!field.valid}
-			helperText={field.errors?.validationMessage}
+			error={!meta.valid}
+			helperText={meta.errors?.validationMessage}
 			select
 			required={required}
 		>
@@ -236,8 +235,8 @@ function ExampleSelect({ label, required, name }: Field<string>) {
 }
 
 function ExampleAutocomplete({ label, name, required }: Field<string>) {
-	const [field] = useField(name);
-	const control = useInputControl(field);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
@@ -251,9 +250,9 @@ function ExampleAutocomplete({ label, name, required }: Field<string>) {
 				<TextField
 					{...params}
 					label={label}
-					name={field.name}
-					error={!field.valid}
-					helperText={field.errors?.validationMessage}
+					name={meta.name}
+					error={!meta.valid}
+					helperText={meta.errors?.validationMessage}
 					required={required}
 				/>
 			)}
@@ -262,11 +261,11 @@ function ExampleAutocomplete({ label, name, required }: Field<string>) {
 }
 
 function ExampleRating({ label, name, required }: Field<number>) {
-	const [field] = useField(name);
-	const control = useInputControl(field);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
-		<FormControl variant="standard" error={!field.valid} required={required}>
+		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Rating
 				value={control.value ? Number(control.value) : null}
@@ -275,20 +274,20 @@ function ExampleRating({ label, name, required }: Field<number>) {
 				}}
 				onBlur={control.blur}
 			/>
-			<FormHelperText>{field.errors?.validationMessage}</FormHelperText>
+			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
 
 function ExampleSlider({ label, name, required }: Field<number>) {
-	const [field] = useField(name);
-	const control = useInputControl(field);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
-		<FormControl variant="standard" error={!field.valid} required={required}>
+		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
 			<Slider
-				name={field.name}
+				name={meta.name}
 				value={control.value ? Number(control.value) : 0}
 				onChange={(_, value) => {
 					if (Array.isArray(value)) {
@@ -298,7 +297,7 @@ function ExampleSlider({ label, name, required }: Field<number>) {
 					control.change(value.toString());
 				}}
 			/>
-			<FormHelperText>{field.errors?.validationMessage}</FormHelperText>
+			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
