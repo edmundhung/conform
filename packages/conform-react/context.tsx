@@ -82,26 +82,26 @@ export type FieldMetadata<
 	Schema = unknown,
 	FormSchema extends Record<string, any> = Record<string, unknown>,
 	FormError = string[],
-> = Metadata<Schema, FormSchema, FormError> & {
-	formId: FormId<FormSchema, FormError>;
-	constraint?: Constraint;
-	getFieldset: unknown extends Schema
-		? () => unknown
-		: Schema extends Primitive | Array<any>
-		? never
-		: () => {
-				[Key in UnionKeyof<Schema>]: FieldMetadata<
-					UnionKeyType<Schema, Key>,
-					FormSchema,
-					FormError
-				>;
-		  };
-	getFieldList: unknown extends Schema
-		? () => unknown
-		: Schema extends Array<infer Item>
-		? () => Array<FieldMetadata<Item, FormSchema, FormError>>
-		: never;
-};
+> = Metadata<Schema, FormSchema, FormError> &
+	Constraint & {
+		formId: FormId<FormSchema, FormError>;
+		getFieldset: unknown extends Schema
+			? () => unknown
+			: Schema extends Primitive | Array<any>
+			? never
+			: () => {
+					[Key in UnionKeyof<Schema>]: FieldMetadata<
+						UnionKeyType<Schema, Key>,
+						FormSchema,
+						FormError
+					>;
+			  };
+		getFieldList: unknown extends Schema
+			? () => unknown
+			: Schema extends Array<infer Item>
+			? () => Array<FieldMetadata<Item, FormSchema, FormError>>
+			: never;
+	};
 
 export const Form = createContext<FormContext[]>([]);
 
@@ -219,9 +219,15 @@ export function getMetadata<
 			name,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
-			initialValue: state.initialValue[name] as FormValue<Schema>,
-			value: state.value[name] as FormValue<Schema>,
-			errors: state.error[name],
+			get initialValue() {
+				return state.initialValue[name] as FormValue<Schema>;
+			},
+			get value() {
+				return state.value[name] as FormValue<Schema>;
+			},
+			get errors() {
+				return state.error[name];
+			},
 			get key() {
 				return state.key[name];
 			},
@@ -308,8 +314,15 @@ export function getFieldMetadata<
 			switch (key) {
 				case 'formId':
 					return formId;
-				case 'constraint':
-					return state.constraint[name];
+				case 'required':
+				case 'minLength':
+				case 'maxLength':
+				case 'min':
+				case 'max':
+				case 'pattern':
+				case 'step':
+				case 'multiple':
+					return state.constraint[name]?.[key];
 				case 'getFieldList': {
 					return () => {
 						const initialValue = state.initialValue[name] ?? [];

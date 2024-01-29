@@ -221,7 +221,7 @@ export function getFormControlProps<Schema>(
 ): FormControlProps {
 	return simplify({
 		key: metadata.key,
-		required: metadata.constraint?.required || undefined,
+		required: metadata.required || undefined,
 		...getFieldsetProps(metadata, options),
 	});
 }
@@ -253,13 +253,13 @@ export function getInputProps<Schema extends Primitive | File[]>(
 	const props: InputProps = {
 		...getFormControlProps(metadata, options),
 		type: options.type,
-		minLength: metadata.constraint?.minLength,
-		maxLength: metadata.constraint?.maxLength,
-		min: metadata.constraint?.min,
-		max: metadata.constraint?.max,
-		step: metadata.constraint?.step,
-		pattern: metadata.constraint?.pattern,
-		multiple: metadata.constraint?.multiple,
+		minLength: metadata.minLength,
+		maxLength: metadata.maxLength,
+		min: metadata.min,
+		max: metadata.max,
+		step: metadata.step,
+		pattern: metadata.pattern,
+		multiple: metadata.multiple,
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
@@ -303,7 +303,7 @@ export function getSelectProps<
 ): SelectProps {
 	const props: SelectProps = {
 		...getFormControlProps(metadata, options),
-		multiple: metadata.constraint?.multiple,
+		multiple: metadata.multiple,
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
@@ -338,8 +338,8 @@ export function getTextareaProps<
 ): TextareaProps {
 	const props: TextareaProps = {
 		...getFormControlProps(metadata, options),
-		minLength: metadata.constraint?.minLength,
-		maxLength: metadata.constraint?.maxLength,
+		minLength: metadata.minLength,
+		maxLength: metadata.maxLength,
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
@@ -412,8 +412,7 @@ export function getCollectionProps<
 			// The required attribute doesn't make sense for checkbox group
 			// As it would require all checkboxes to be checked instead of at least one
 			// It is overriden with `undefiend` so it could be cleaned up properly
-			required:
-				options.type === 'checkbox' ? undefined : metadata.constraint?.required,
+			required: options.type === 'checkbox' ? undefined : metadata.required,
 		}),
 	);
 }

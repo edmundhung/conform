@@ -60,14 +60,14 @@ function Example() {
         defaultValue={fields.task.initialValue}
         aria-invalid={!fields.task.valid || undefined}
         aria-describedby={!fields.task.valid ? fields.task.errorId : undefined}
-        required={field.task.constraint?.required}
-        minLength={field.task.constraint?.minLength}
-        maxLength={field.task.constraint?.maxLength}
-        min={field.task.constraint?.min}
-        max={field.task.constraint?.max}
-        step={field.task.constraint?.step}
-        pattern={field.task.constraint?.pattern}
-        multiple={field.task.constraint?.multiple}
+        required={field.task.required}
+        minLength={field.task.minLength}
+        maxLength={field.task.maxLength}
+        min={field.task.min}
+        max={field.task.max}
+        step={field.task.step}
+        pattern={field.task.pattern}
+        multiple={field.task.multiple}
       />
       {/* checkbox */}
       <input
@@ -82,7 +82,7 @@ function Example() {
         aria-describedby={
           !fields.completed.valid ? fields.completed.errorId : undefined
         }
-        required={field.completed.constraint?.required}
+        required={field.completed.required}
       />
     </form>
   );

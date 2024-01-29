@@ -64,10 +64,10 @@ function Example() {
       <input
         type="text"
         name={fields.message.name}
-        required={fields.message.constraint?.required}
-        minLength={fields.message.constraint?.minLength}
-        maxLength={fields.message.constraint?.maxLength}
-        pattern={fields.message.constraint?.pattern}
+        required={fields.message.required}
+        minLength={fields.message.minLength}
+        maxLength={fields.message.maxLength}
+        pattern={fields.message.pattern}
       />
       <button>Send</button>
     </form>
@@ -158,10 +158,10 @@ function Example() {
         type="text"
         id={fields.message.id}
         name={fields.message.name}
-        required={fields.message.constraint?.required}
-        minLength={fields.message.constraint?.minLength}
-        maxLength={fields.message.constraint?.maxLength}
-        pattern={fields.message.constraint?.pattern}
+        required={fields.message.required}
+        minLength={fields.message.minLength}
+        maxLength={fields.message.maxLength}
+        pattern={fields.message.pattern}
         aria-invalid={!fields.message.valid ? true : undefined}
         aria-describedby={
           !fields.message.valid

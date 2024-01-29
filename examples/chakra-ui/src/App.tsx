@@ -183,14 +183,11 @@ export default function Example() {
 								<Stack spacing={5} direction="row">
 									<Radio
 										value="yes"
-										isRequired={fields.active.constraint?.required ?? true}
+										isRequired={fields.active.required ?? true}
 									>
 										Yes
 									</Radio>
-									<Radio
-										value="no"
-										isRequired={fields.active.constraint?.required ?? true}
-									>
+									<Radio value="no" isRequired={fields.active.required ?? true}>
 										No
 									</Radio>
 								</Stack>

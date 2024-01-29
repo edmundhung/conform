@@ -291,7 +291,7 @@ export default function ContactUs() {
 					type="email"
 					name={fields.email.name}
 					defaultValue={fields.email.initialValue}
-					required={fields.email.constraint?.required}
+					required={fields.email.required}
 					aria-invalid={fields.email.errors ? true : undefined}
 					aria-describedby={
 						fields.email.errors ? fields.email.errorId : undefined
@@ -305,9 +305,9 @@ export default function ContactUs() {
 					id={fields.message.id}
 					name={fields.message.name}
 					defaultValue={fields.message.initialValue}
-					required={fields.message.constraint?.required}
-					minLength={fields.message.constraint?.minLength}
-					maxLength={fields.message.constraint?.maxLength}
+					required={fields.message.required}
+					minLength={fields.message.minLength}
+					maxLength={fields.message.maxLength}
 					aria-invalid={fields.message.errors ? true : undefined}
 					aria-describedby={
 						fields.message.errors ? fields.message.errorId : undefined
