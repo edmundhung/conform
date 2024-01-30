@@ -5,6 +5,7 @@ The documentation is divided into several sections:
 - Get Started
   - [Overview](./overview.md)
   - [Tutorial](./tutorial.md)
+  - [Upgrading to v1](./upgrading-v1.md)
 - Guides
   - [Validation](./validation.md)
   - [Nested object and Array](./complex-structures.md)
