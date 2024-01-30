@@ -221,14 +221,10 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 				}),
 			);
 	} else if (type instanceof ZodCatch) {
-		schema = any()
-			.transform((value) => coerceFile(coerceString(value)))
-			.pipe(
-				new ZodCatch({
-					...type._def,
-					innerType: enableTypeCoercion(type.removeCatch(), cache),
-				}),
-			);
+		schema = new ZodCatch({
+			...type._def,
+			innerType: enableTypeCoercion(type.removeCatch(), cache),
+		});
 	} else if (type instanceof ZodIntersection) {
 		schema = new ZodIntersection({
 			...type._def,
