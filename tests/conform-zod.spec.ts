@@ -877,7 +877,7 @@ describe('conform-zod', () => {
 			const schema = z.object({
 				a: z.string().catch('text'),
 				b: z.number().catch(123),
-				c: z.boolean().catch(false),
+				c: z.boolean().catch(true),
 				d: z.date().catch(defaultDate),
 				e: z.instanceof(File).catch(defaultFile),
 				f: z.array(z.string()).min(1).catch(['foo', 'bar']),
@@ -909,7 +909,7 @@ describe('conform-zod', () => {
 				value: {
 					a: 'text',
 					b: 123,
-					c: false,
+					c: true,
 					d: defaultDate,
 					e: defaultFile,
 					f: ['foo', 'bar'],
