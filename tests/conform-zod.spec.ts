@@ -869,6 +869,88 @@ describe('conform-zod', () => {
 			});
 		});
 
+		test('z.catch', () => {
+			const defaultFile = new File(['hello', 'world'], 'example.txt');
+			const userFile = new File(['foo', 'bar'], 'foobar.txt');
+			const defaultDate = new Date(0);
+			const userDate = new Date(1);
+			const schema = z.object({
+				a: z.string().catch('text'),
+				b: z.number().catch(123),
+				c: z.boolean().catch(true),
+				d: z.date().catch(defaultDate),
+				e: z.instanceof(File).catch(defaultFile),
+				f: z.array(z.string()).min(1).catch(['foo', 'bar']),
+			});
+			const emptyFile = new File([], '');
+
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', ''],
+						['b', ''],
+						['c', ''],
+						['d', ''],
+						['e', emptyFile],
+						['f', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					a: '',
+					b: '',
+					c: '',
+					d: '',
+					e: emptyFile,
+					f: '',
+				},
+				value: {
+					a: 'text',
+					b: 123,
+					c: true,
+					d: defaultDate,
+					e: defaultFile,
+					f: ['foo', 'bar'],
+				},
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', 'othertext'],
+						['b', '456'],
+						['c', 'on'],
+						['d', userDate.toISOString()],
+						['e', userFile],
+						['f', 'hello'],
+						['f', 'world'],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					a: 'othertext',
+					b: '456',
+					c: 'on',
+					d: userDate.toISOString(),
+					e: userFile,
+					f: ['hello', 'world'],
+				},
+				value: {
+					a: 'othertext',
+					b: 456,
+					c: true,
+					d: userDate,
+					e: userFile,
+					f: ['hello', 'world'],
+				},
+				reply: expect.any(Function),
+			});
+		});
+
 		test('z.lazy', () => {
 			const category = z.object({
 				name: z.string({ required_error: 'required' }),

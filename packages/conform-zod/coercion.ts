@@ -25,6 +25,7 @@ import {
 	ZodDefault,
 	lazy,
 	any,
+	ZodCatch,
 } from 'zod';
 
 /**
@@ -219,6 +220,11 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 					innerType: enableTypeCoercion(type.removeDefault(), cache),
 				}),
 			);
+	} else if (type instanceof ZodCatch) {
+		schema = new ZodCatch({
+			...type._def,
+			innerType: enableTypeCoercion(type.removeCatch(), cache),
+		});
 	} else if (type instanceof ZodIntersection) {
 		schema = new ZodIntersection({
 			...type._def,
