@@ -4,33 +4,61 @@ on:
     branches:
     - main
     - next
+    - v1
   pull_request:
     branches:
     - main
     - next
+    - v1
 jobs:
 
-  e2e:
-    name: 🔍 E2E Testing
+  unit:
+    name: API Tests
     runs-on: ubuntu-latest
     steps:
-    - name: ⬇️ Checkout repo
+    - name: Checkout repo
       uses: actions/checkout@v3
-    - name: ⎔ Setup node
+    - name: Setup node
       uses: actions/setup-node@v3
       with:
-        node-version: 16
-    - name: 📥 Download deps
-      uses: bahmutov/npm-install@v1
-    - name: 🎭 Install Playwright
-      run: npx playwright install --with-deps
-    - name: 📦 Build the packages
-      run: npm run build
-    - name: 💣 Run playwright tests
-      run: npm run test
-    - uses: actions/upload-artifact@v2
+        node-version: 20
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    - name: Download deps
+      run: pnpm i
+    - name: Build packages
+      run: pnpm run build
+    - name: Run tests
+      run: pnpm exec vitest
+    - name: Typecheck
+      run: pnpm -r run typecheck
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+    - name: Setup node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 8
+    - name: Download deps
+      run: pnpm i
+    - name: Install Playwright
+      run: pnpm exec playwright install --with-deps
+    - name: Build packages
+      run: pnpm run build
+    - name: Run tests
+      run: pnpm exec playwright test
+    - name: Upload test result
+      uses: actions/upload-artifact@v2
       if: always()
       with:
-        name: playwright-report
-        path: playwright-report/
+        name: test-results
+        path: test-results/
         retention-days: 30

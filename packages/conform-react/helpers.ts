@@ -1,82 +1,135 @@
-import {
-	INTENT,
-	VALIDATION_UNDEFINED,
-	VALIDATION_SKIPPED,
-} from '@conform-to/dom';
-import type { FieldConfig, Primitive } from './hooks.js';
-import type { CSSProperties, HTMLInputTypeAttribute } from 'react';
+import type {
+	FormMetadata,
+	FieldMetadata,
+	Metadata,
+	Pretty,
+	Primitive,
+} from './context';
 
-interface FormElementProps {
-	id?: string;
+type FormControlProps = {
+	key: string | undefined;
+	id: string;
 	name: string;
-	form?: string;
+	form: string;
+	required?: boolean;
 	'aria-describedby'?: string;
 	'aria-invalid'?: boolean;
-}
+};
 
-interface FormControlProps extends FormElementProps {
-	required?: boolean;
-	autoFocus?: boolean;
-	tabIndex?: number;
-	style?: CSSProperties;
-	'aria-hidden'?: boolean;
-}
-
-interface InputProps<Schema> extends FormControlProps {
-	type?: HTMLInputTypeAttribute;
-	minLength?: number;
-	maxLength?: number;
-	min?: Schema extends number ? number : string | number;
-	max?: Schema extends number ? number : string | number;
-	step?: Schema extends number ? number : string | number;
-	pattern?: string;
-	multiple?: boolean;
-	value?: string;
-	defaultChecked?: boolean;
-	defaultValue?: string;
-}
-
-interface SelectProps extends FormControlProps {
-	defaultValue?: string | number | readonly string[] | undefined;
-	multiple?: boolean;
-}
-
-interface TextareaProps extends FormControlProps {
-	minLength?: number;
-	maxLength?: number;
-	defaultValue?: string;
-}
-
-type BaseOptions =
+type FormControlOptions =
 	| {
+			/**
+			 * Decide whether to include `aria-invalid` and `aria-describedby` in the result.
+			 */
 			ariaAttributes?: true;
-			description?: boolean;
+			/**
+			 * Decide whether the aria-invalid attributes should be based on `meta.errors` or `meta.allErrors`.
+			 * @default 'errors'
+			 */
+			ariaInvalid?: 'errors' | 'allErrors';
+			/**
+			 * Assign additional `id` to the `aria-describedby` attribute.
+			 */
+			ariaDescribedBy?: string;
 	  }
 	| {
 			ariaAttributes: false;
 	  };
 
-type ControlOptions = BaseOptions & {
-	hidden?: boolean;
-};
+type InputProps = Pretty<
+	FormControlProps & {
+		type:
+			| 'checkbox'
+			| 'color'
+			| 'date'
+			| 'datetime-local'
+			| 'email'
+			| 'file'
+			| 'hidden'
+			| 'month'
+			| 'number'
+			| 'password'
+			| 'radio'
+			| 'range'
+			| 'search'
+			| 'tel'
+			| 'text'
+			| 'time'
+			| 'url'
+			| 'week';
+		minLength?: number;
+		maxLength?: number;
+		min?: string | number;
+		max?: string | number;
+		step?: string | number;
+		pattern?: string;
+		multiple?: boolean;
+		value?: string;
+		defaultChecked?: boolean;
+		defaultValue?: string;
+	}
+>;
 
-type InputOptions = ControlOptions &
-	(
-		| {
-				type: 'checkbox' | 'radio';
-				value?: string;
-		  }
-		| {
-				type?: Exclude<HTMLInputTypeAttribute, 'button' | 'submit' | 'hidden'>;
-				value?: never;
-		  }
-	);
+type InputOptions = Pretty<
+	FormControlOptions &
+		(
+			| {
+					type: 'checkbox' | 'radio';
+					/**
+					 * The value of the checkbox or radio button. Pass `false` if you want to mange the checked state yourself.
+					 * @default 'on'
+					 */
+					value?: string | boolean;
+			  }
+			| {
+					type: Exclude<InputProps['type'], 'checkbox' | 'radio'>;
+
+					/**
+					 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+					 */
+					value?: boolean;
+			  }
+		)
+>;
+
+type SelectProps = Pretty<
+	FormControlProps & {
+		defaultValue?: string | number | readonly string[] | undefined;
+		multiple?: boolean;
+	}
+>;
+
+type SelectOptions = Pretty<
+	FormControlOptions & {
+		/**
+		 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+		 */
+		value?: boolean;
+	}
+>;
+
+type TextareaProps = Pretty<
+	FormControlProps & {
+		minLength?: number;
+		maxLength?: number;
+		defaultValue?: string;
+	}
+>;
+
+type TextareaOptions = Pretty<
+	FormControlOptions & {
+		/**
+		 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+		 */
+		value?: true;
+	}
+>;
 
 /**
- * Cleanup `undefined` from the dervied props
+ * Cleanup `undefined` from the result.
  * To minimize conflicts when merging with user defined props
  */
-function cleanup<Props>(props: Props): Props {
+function simplify<Props>(props: Props): Props {
 	for (const key in props) {
 		if (props[key] === undefined) {
 			delete props[key];
@@ -86,145 +139,237 @@ function cleanup<Props>(props: Props): Props {
 	return props;
 }
 
-function getFormElementProps(
-	config: FieldConfig<unknown>,
-	options: BaseOptions = {},
-): FormElementProps {
-	const hasAriaAttributes = options.ariaAttributes ?? true;
-
-	return cleanup({
-		id: config.id,
-		name: config.name,
-		form: config.form,
-		'aria-invalid':
-			hasAriaAttributes && config.errorId && config.error?.length
-				? true
-				: undefined,
-		'aria-describedby': hasAriaAttributes
-			? [
-					config.errorId && config.error?.length ? config.errorId : undefined,
-					config.descriptionId &&
-					options.ariaAttributes !== false &&
-					options.description
-						? config.descriptionId
-						: undefined,
-			  ].reduce((result, id) => {
-					if (!result) {
-						return id;
-					}
-
-					if (!id) {
-						return result;
-					}
-
-					return `${result} ${id}`;
-			  })
-			: undefined,
-	});
-}
-
-function getFormControlProps(
-	config: FieldConfig<unknown>,
-	options?: ControlOptions,
-): FormControlProps {
-	return cleanup({
-		...getFormElementProps(config, options),
-		required: config.required,
-		autoFocus:
-			config.initialError && Object.entries(config.initialError).length > 0
-				? true
-				: undefined,
-		...(options?.hidden ? hiddenProps : undefined),
-	});
-}
-
-export const hiddenProps: {
-	style: CSSProperties;
-	tabIndex: number;
-	'aria-hidden': boolean;
-} = {
-	/**
-	 * Style to make the input element visually hidden
-	 * Based on the `sr-only` class from tailwindcss
-	 */
-	style: {
-		position: 'absolute',
-		width: '1px',
-		height: '1px',
-		padding: 0,
-		margin: '-1px',
-		overflow: 'hidden',
-		clip: 'rect(0,0,0,0)',
-		whiteSpace: 'nowrap',
-		border: 0,
-	},
-	tabIndex: -1,
-	'aria-hidden': true,
-};
-
-export function input<Schema extends Primitive | unknown>(
-	config: FieldConfig<Schema>,
-	options?: InputOptions,
-): InputProps<Schema>;
-export function input<Schema extends File | File[]>(
-	config: FieldConfig<Schema>,
-	options: InputOptions & { type: 'file' },
-): InputProps<Schema>;
-export function input<Schema extends Primitive | File | File[] | unknown>(
-	config: FieldConfig<Schema>,
-	options: InputOptions = {},
-): InputProps<Schema> {
-	const props: InputProps<Schema> = {
-		...getFormControlProps(config, options),
-		type: options.type,
-		minLength: config.minLength,
-		maxLength: config.maxLength,
-		min: config.min,
-		max: config.max,
-		step: config.step,
-		pattern: config.pattern,
-		multiple: config.multiple,
-	};
-
-	if (options.type === 'checkbox' || options.type === 'radio') {
-		props.value = options.value ?? 'on';
-		props.defaultChecked = config.defaultValue === props.value;
-	} else if (options.type !== 'file') {
-		props.defaultValue = config.defaultValue as string | undefined;
+/**
+ * Derives aria attributes of a form control based on the field metadata.
+ */
+export function getAriaAttributes(
+	metadata: Metadata<any, any, any>,
+	options: FormControlOptions = {},
+): {
+	'aria-invalid'?: boolean;
+	'aria-describedby'?: string;
+} {
+	if (
+		typeof options.ariaAttributes !== 'undefined' &&
+		!options.ariaAttributes
+	) {
+		return {};
 	}
 
-	return cleanup(props);
-}
+	const invalid =
+		options.ariaInvalid === 'allErrors'
+			? !metadata.valid
+			: typeof metadata.errors !== 'undefined';
+	const ariaDescribedBy = options.ariaDescribedBy;
 
-export function select<
-	Schema extends Primitive | Primitive[] | undefined | unknown,
->(config: FieldConfig<Schema>, options?: ControlOptions): SelectProps {
-	return cleanup({
-		...getFormControlProps(config, options),
-		defaultValue: config.defaultValue,
-		multiple: config.multiple,
+	return simplify({
+		'aria-invalid': invalid || undefined,
+		'aria-describedby': invalid
+			? `${metadata.errorId} ${ariaDescribedBy ?? ''}`.trim()
+			: ariaDescribedBy,
 	});
 }
 
-export function textarea<Schema extends Primitive | undefined | unknown>(
-	config: FieldConfig<Schema>,
-	options?: ControlOptions,
+/**
+ * Derives the properties of a form element based on the form metadata,
+ * including `id`, `onSubmit`, `noValidate`, `aria-invalid` and `aria-describedby`.
+ *
+ * @example
+ * ```tsx
+ * <form {...getFormProps(metadata)} />
+ * ```
+ */
+export function getFormProps<Schema extends Record<string, any>, FormError>(
+	metadata: FormMetadata<Schema, FormError>,
+	options?: FormControlOptions,
+) {
+	return simplify({
+		id: metadata.id,
+		onSubmit: metadata.onSubmit,
+		noValidate: metadata.noValidate,
+		...getAriaAttributes(metadata, options),
+	});
+}
+
+/**
+ * Derives the properties of a fieldset element based on the field metadata,
+ * including `id`, `name`, `form`, `aria-invalid` and `aria-describedby`.
+ *
+ * @example
+ * ```tsx
+ * <fieldset {...getFieldsetProps(metadata)} />
+ * ```
+ */
+export function getFieldsetProps<
+	Schema extends Record<string, any> | undefined | unknown,
+>(metadata: FieldMetadata<Schema, any, any>, options?: FormControlOptions) {
+	return simplify({
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+		...getAriaAttributes(metadata, options),
+	});
+}
+
+/**
+ * Derives common properties of a form control based on the field metadata,
+ * including `key`, `id`, `name`, `form`, `required`, `autoFocus`, `aria-invalid` and `aria-describedby`.
+ */
+export function getFormControlProps<Schema>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options?: FormControlOptions,
+): FormControlProps {
+	return simplify({
+		key: metadata.key,
+		required: metadata.required || undefined,
+		...getFieldsetProps(metadata, options),
+	});
+}
+
+/**
+ * Derives the properties of an input element based on the field metadata,
+ * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby`
+ * and constraint attributes such as `type`, `required`, `minLength`, `maxLength`, `min`, `max`, `step`, `pattern`, `multiple`.
+ * Depends on the provided options, it will also set `defaultChecked` / `checked` if it is a checkbox or radio button,
+ * or otherwise `defaultValue` / `value`.
+ *
+ * @see https://conform.guide/api/react/get-input-props
+ * @example
+ * ```tsx
+ * // To setup an uncontrolled input
+ * <input {...getInputProps(metadata, { type: 'text' })} />
+ * // To setup an uncontrolled checkbox
+ * <input {...getInputProps(metadata, { type: 'checkbox' })} />
+ * // To setup an input without defaultValue
+ * <input {...getInputProps(metadata, { value: false })} />
+ * // To setup a radio button without defaultChecked state
+ * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
+ * ```
+ */
+export function getInputProps<Schema extends Primitive | File[]>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options: InputOptions,
+): InputProps {
+	const props: InputProps = {
+		...getFormControlProps(metadata, options),
+		type: options.type,
+		minLength: metadata.minLength,
+		maxLength: metadata.maxLength,
+		min: metadata.min,
+		max: metadata.max,
+		step: metadata.step,
+		pattern: metadata.pattern,
+		multiple: metadata.multiple,
+	};
+
+	if (typeof options.value === 'undefined' || options.value) {
+		if (options.type === 'checkbox' || options.type === 'radio') {
+			props.value = typeof options.value === 'string' ? options.value : 'on';
+			props.defaultChecked =
+				typeof metadata.initialValue === 'boolean'
+					? metadata.initialValue
+					: metadata.initialValue === props.value;
+		} else if (typeof metadata.initialValue === 'string') {
+			props.defaultValue = metadata.initialValue;
+		}
+	}
+
+	return simplify(props);
+}
+
+/**
+ * Derives the properties of a select element based on the field metadata,
+ * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby`
+ * and constraint attributes such as `required` or `multiple`.
+ * Depends on the provided options, it will also set `defaultValue` / `value`.
+ *
+ * @see https://conform.guide/api/react/get-select-props
+ * @example
+ * ```tsx
+ * // To setup an uncontrolled select
+ * <select {...getSelectProps(metadata)} />
+ * // To setup a select without defaultValue
+ * <select {...getSelectProps(metadata, { value: false })} />
+ * ```
+ */
+export function getSelectProps<
+	Schema extends
+		| Exclude<Primitive, File>
+		| Array<Exclude<Primitive, File>>
+		| undefined,
+>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options: SelectOptions = {},
+): SelectProps {
+	const props: SelectProps = {
+		...getFormControlProps(metadata, options),
+		multiple: metadata.multiple,
+	};
+
+	if (typeof options.value === 'undefined' || options.value) {
+		props.defaultValue = Array.isArray(metadata.initialValue)
+			? metadata.initialValue.map((item) => `${item ?? ''}`)
+			: metadata.initialValue;
+	}
+
+	return simplify(props);
+}
+
+/**
+ * Derives the properties of a textarea element based on the field metadata,
+ * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby`
+ * and constraint attributes such as `required`, `minLength` or `maxLength`.
+ * Depends on the provided options, it will also set `defaultValue` / `value`.
+ *
+ * @see https://conform.guide/api/react/get-textarea-props
+ * @example
+ * ```tsx
+ * // To setup an uncontrolled textarea
+ * <textarea {...getTextareaProps(metadata)} />
+ * // To setup a textarea without defaultValue
+ * <textarea {...getTextareaProps(metadata, { value: false })} />
+ * ```
+ */
+export function getTextareaProps<
+	Schema extends Exclude<Primitive, File> | undefined,
+>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options: TextareaOptions = {},
 ): TextareaProps {
-	return cleanup({
-		...getFormControlProps(config, options),
-		defaultValue: config.defaultValue,
-		minLength: config.minLength,
-		maxLength: config.maxLength,
-	});
+	const props: TextareaProps = {
+		...getFormControlProps(metadata, options),
+		minLength: metadata.minLength,
+		maxLength: metadata.maxLength,
+	};
+
+	if (typeof options.value === 'undefined' || options.value) {
+		props.defaultValue = metadata.initialValue;
+	}
+
+	return simplify(props);
 }
 
-export function fieldset<
-	Schema extends Record<string, unknown> | undefined | unknown,
->(config: FieldConfig<Schema>, options?: BaseOptions): FormControlProps {
-	return getFormElementProps(config, options);
-}
-
-export function collection<
+/**
+ * Derives the properties of a collection of checkboxes or radio buttons based on the field metadata,
+ * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby` and `required`.
+ *
+ * @see https://conform.guide/api/react/get-textarea-props
+ * @example
+ * ```tsx
+ * <fieldset>
+ *   {getCollectionProps(metadata, {
+ *     type: 'checkbox',
+ *     options: ['a', 'b', 'c']
+ *   }).map((props) => (
+ *     <div key={props.key}>
+ *       <label htmlFor={props.id}>{props.value}</label>
+ *       <input {...props} />
+ *     </div>
+ *  ))}
+ * </fieldset>
+ * ```
+ */
+export function getCollectionProps<
 	Schema extends
 		| Array<string | boolean>
 		| string
@@ -232,31 +377,42 @@ export function collection<
 		| undefined
 		| unknown,
 >(
-	config: FieldConfig<Schema>,
-	options: BaseOptions & {
-		type: 'checkbox' | 'radio';
-		options: string[];
-	},
-): Array<
-	InputProps<Schema> & Pick<Required<InputProps<Schema>>, 'type' | 'value'>
-> {
+	metadata: FieldMetadata<Schema, any, any>,
+	options: Pretty<
+		FormControlOptions & {
+			/**
+			 * The input type. Use `checkbox` for multiple selection or `radio` for single selection.
+			 */
+			type: 'checkbox' | 'radio';
+			/**
+			 * The `value` assigned to each input element.
+			 */
+			options: string[];
+			/**
+			 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+			 */
+			value?: boolean;
+		}
+	>,
+): Array<InputProps & Pick<Required<InputProps>, 'type' | 'value'>> {
 	return options.options.map((value) =>
-		cleanup({
-			...getFormControlProps(config, options),
-			id: config.id ? `${config.id}-${value}` : undefined,
+		simplify({
+			...getFormControlProps(metadata, options),
+			key: `${metadata.key ?? ''}${value}`,
+			id: `${metadata.id}-${value}`,
 			type: options.type,
 			value,
 			defaultChecked:
-				options.type === 'checkbox' && Array.isArray(config.defaultValue)
-					? config.defaultValue.includes(value)
-					: config.defaultValue === value,
+				typeof options.value === 'undefined' || options.value
+					? options.type === 'checkbox' && Array.isArray(metadata.initialValue)
+						? metadata.initialValue.includes(value)
+						: metadata.initialValue === value
+					: undefined,
 
 			// The required attribute doesn't make sense for checkbox group
 			// As it would require all checkboxes to be checked instead of at least one
-			// overriden with `undefiend` so it gets cleaned up
-			required: options.type === 'checkbox' ? undefined : config.required,
+			// It is overriden with `undefiend` so it could be cleaned up properly
+			required: options.type === 'checkbox' ? undefined : metadata.required,
 		}),
 	);
 }
-
-export { INTENT, VALIDATION_UNDEFINED, VALIDATION_SKIPPED };

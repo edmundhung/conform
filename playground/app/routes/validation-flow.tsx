@@ -1,5 +1,5 @@
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -42,9 +42,9 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
-	return json(submission);
+	return json(submission.reply());
 }
 
 export default function ValidationFlow() {
@@ -54,27 +54,31 @@ export default function ValidationFlow() {
 		shouldRevalidate,
 		showInputWithNoName,
 	} = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData();
-	const [form, { email, password, confirmPassword }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
+		lastResult,
 		shouldValidate,
 		shouldRevalidate,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Validation Flow" lastSubmission={lastSubmission}>
-				<Field label="Email" config={email}>
-					<input {...conform.input(email, { type: 'email' })} />
+		<Form method="post" {...getFormProps(form)}>
+			<Playground title="Validation Flow" result={lastResult}>
+				<Field label="Email" meta={fields.email}>
+					<input {...getInputProps(fields.email, { type: 'email' })} />
 				</Field>
-				<Field label="Password" config={password}>
-					<input {...conform.input(password, { type: 'password' })} />
+				<Field label="Password" meta={fields.password}>
+					<input {...getInputProps(fields.password, { type: 'password' })} />
 				</Field>
-				<Field label="Confirm password" config={confirmPassword}>
-					<input {...conform.input(confirmPassword, { type: 'password' })} />
+				<Field label="Confirm password" meta={fields.confirmPassword}>
+					<input
+						{...getInputProps(fields.confirmPassword, {
+							type: 'password',
+						})}
+					/>
 				</Field>
 				{showInputWithNoName ? (
 					<Field label="Input with no name">

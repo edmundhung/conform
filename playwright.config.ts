@@ -11,7 +11,7 @@ import { devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 const config: PlaywrightTestConfig = {
-	testDir: './tests',
+	testDir: './tests/integrations',
 	/* Maximum time one test can run for. */
 	timeout: 30 * 1000,
 	expect: {
@@ -47,13 +47,7 @@ const config: PlaywrightTestConfig = {
 	/* Configure projects for major browsers */
 	projects: [
 		{
-			name: 'node',
-			testMatch: /conform-\w+.spec.ts/,
-		},
-
-		{
 			name: 'chromium',
-			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Chrome'],
 			},
@@ -61,7 +55,6 @@ const config: PlaywrightTestConfig = {
 
 		{
 			name: 'firefox',
-			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Firefox'],
 			},
@@ -69,76 +62,21 @@ const config: PlaywrightTestConfig = {
 
 		{
 			name: 'webkit',
-			testIgnore: /conform-\w+.spec.ts/,
 			use: {
 				...devices['Desktop Safari'],
 			},
 		},
-
-		/* Test against mobile viewports. */
-		// {
-		//   name: 'Mobile Chrome',
-		//   use: {
-		//     ...devices['Pixel 5'],
-		//   },
-		// },
-		// {
-		//   name: 'Mobile Safari',
-		//   use: {
-		//     ...devices['iPhone 12'],
-		//   },
-		// },
-
-		/* Test against branded browsers. */
-		// {
-		//   name: 'Microsoft Edge',
-		//   use: {
-		//     channel: 'msedge',
-		//   },
-		// },
-		// {
-		//   name: 'Google Chrome',
-		//   use: {
-		//     channel: 'chrome',
-		//   },
-		// },
 	],
 
 	/* Folder for test artifacts such as screenshots, videos, traces, etc. */
-	// outputDir: 'test-results/',
+	outputDir: 'test-results/',
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: 'npm start --workspace=playground',
+		command: 'pnpm --filter=./playground start',
 		port: process.env.PORT ? Number(process.env.PORT) : 3000,
 		reuseExistingServer: !process.env.CI,
 	},
 };
-
-if (typeof process.env.DEBUG !== 'undefined') {
-	config.use = {
-		...config.use,
-		headless: false,
-	};
-
-	config.projects = (config.projects ?? []).reduce<
-		Required<PlaywrightTestConfig>['projects']
-	>((list, project) => {
-		if (project.name === 'chromium') {
-			list.push({
-				...project,
-				use: {
-					...project.use,
-					launchOptions: {
-						...project.use?.launchOptions,
-						slowMo: 150,
-					},
-				},
-			});
-		}
-
-		return list;
-	}, []);
-}
 
 export default config;

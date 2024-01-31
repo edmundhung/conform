@@ -1,5 +1,5 @@
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -20,26 +20,26 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
-	return json(submission);
+	return json(submission.reply());
 }
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { name }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
+		lastResult,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Template Form" lastSubmission={lastSubmission}>
-				<Field label="Name" config={name}>
-					<input {...conform.input(name, { type: 'text' })} />
+		<Form method="post" {...getFormProps(form)}>
+			<Playground title="Template Form" result={lastResult}>
+				<Field label="Name" meta={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
 			</Playground>
 		</Form>

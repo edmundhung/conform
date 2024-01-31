@@ -1,5 +1,5 @@
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { getFormProps, getInputProps, useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -34,30 +34,30 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
-	return json(submission);
+	return json(submission.reply());
 }
 
 export default function FileUpload() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { file, files }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
+		lastResult,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props} encType="multipart/form-data">
-			<Playground title="Employee Form" lastSubmission={lastSubmission}>
+		<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
+			<Playground title="Employee Form" result={lastResult}>
 				<Alert errors={form.errors} />
-				<Field label="Single file" config={file}>
-					<input {...conform.input(file, { type: 'file' })} />
+				<Field label="Single file" meta={fields.file}>
+					<input {...getInputProps(fields.file, { type: 'file' })} />
 				</Field>
-				<Field label="Multiple files" config={files}>
-					<input {...conform.input(files, { type: 'file' })} multiple />
+				<Field label="Multiple files" meta={fields.files}>
+					<input {...getInputProps(fields.files, { type: 'file' })} multiple />
 				</Field>
 			</Playground>
 		</Form>

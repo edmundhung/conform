@@ -1,37 +1,61 @@
-import { test, expect } from '@playwright/test';
-import { conform } from '@conform-to/react';
-import { installGlobals } from '@remix-run/node';
+import { describe, test, expect } from 'vitest';
+import {
+	type FieldMetadata,
+	getInputProps,
+	getTextareaProps,
+	getSelectProps,
+	getFieldsetProps,
+} from '@conform-to/react';
 
-test.beforeAll(() => {
-	installGlobals();
-});
+function createFieldMetadata(): FieldMetadata<string> {
+	return {
+		key: undefined,
+		id: 'test',
+		name: 'message',
+		formId: 'example',
+		errorId: 'test-error',
+		descriptionId: 'test-description',
+		initialValue: undefined,
+		value: undefined,
+		errors: undefined,
+		allErrors: {},
+		valid: true,
+		dirty: false,
+	};
+}
 
-test.describe('conform-react', () => {
-	test('conform.input', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+function getProps(metadata: FieldMetadata<any>) {
+	return {
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+	};
+}
 
-		expect(conform.input({ name: config.name })).toEqual({
-			name: config.name,
-		});
+describe('conform-react', () => {
+	test('getInputProps', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
+
 		expect(
-			conform.input({
-				...config,
-				defaultValue: 'string',
-				required: true,
-				min: 1,
-				max: 10,
-				step: 1,
-				minLength: 1,
-				maxLength: 2,
-				pattern: '[0-9]+',
-				multiple: true,
-			}),
+			getInputProps(
+				{
+					...metadata,
+					initialValue: 'string',
+					required: true,
+					min: 1,
+					max: 10,
+					step: 1,
+					minLength: 1,
+					maxLength: 2,
+					pattern: '[0-9]+',
+					multiple: true,
+				},
+				{ type: 'text' },
+			),
 		).toEqual({
-			...config,
+			...props,
+			type: 'text',
 			defaultValue: 'string',
 			required: true,
 			min: 1,
@@ -43,137 +67,105 @@ test.describe('conform-react', () => {
 			multiple: true,
 		});
 		expect(
-			conform.input({ ...config, initialError: { '': 'Invalid' } }),
+			getInputProps(metadata, { type: 'text', ariaDescribedBy: 'something' }),
 		).toEqual({
-			...config,
-			autoFocus: true,
-		});
-		expect(conform.input(config, { type: 'text' })).toEqual({
-			...config,
+			...props,
 			type: 'text',
+			'aria-describedby': 'something',
 		});
-		expect(conform.input(config, { hidden: true })).toEqual({
-			...config,
-			style: conform.hiddenProps.style,
-			tabIndex: conform.hiddenProps.tabIndex,
-			'aria-hidden': conform.hiddenProps['aria-hidden'],
-		});
-		expect(conform.input(config)).toEqual(config);
 		expect(
-			conform.input({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-			}),
-		).toEqual(config);
-		expect(
-			conform.input(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ description: true },
+			getInputProps(
+				{
+					...metadata,
+					errors: ['required'],
+				},
+				{
+					type: 'text',
+				},
 			),
 		).toEqual({
-			...config,
-			'aria-describedby': 'test-description',
-		});
-		expect(
-			conform.input({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-				error: 'Invalid',
-			}),
-		).toEqual({
-			...config,
+			...props,
+			type: 'text',
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
 				},
-				{ description: true },
+				{ type: 'text', ariaDescribedBy: 'something' },
 			),
 		).toEqual({
-			...config,
+			...props,
+			type: 'text',
 			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
+			'aria-describedby': 'test-error something',
 		});
 		expect(
-			conform.input(
+			getInputProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
 				},
-				{ ariaAttributes: false },
+				{ type: 'text', ariaAttributes: false },
 			),
-		).toEqual(config);
-		expect(conform.input(config, { type: 'checkbox' })).toEqual({
-			...config,
+		).toEqual({
+			...props,
+			type: 'text',
+		});
+		expect(getInputProps(metadata, { type: 'checkbox' })).toEqual({
+			...props,
 			type: 'checkbox',
 			value: 'on',
 			defaultChecked: false,
 		});
 		expect(
-			conform.input({ ...config, defaultValue: 'on' }, { type: 'radio' }),
+			getInputProps({ ...metadata, initialValue: 'on' }, { type: 'radio' }),
 		).toEqual({
-			...config,
+			...props,
 			type: 'radio',
 			value: 'on',
 			defaultChecked: true,
 		});
 		expect(
-			conform.input(
-				{ ...config, defaultValue: 'something else' },
+			getInputProps(
+				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
-			...config,
+			...props,
 			type: 'checkbox',
 			value: 'something else',
 			defaultChecked: true,
 		});
 		expect(
-			conform.input(
-				{ ...config, defaultValue: 'something else' },
+			getInputProps(
+				{ ...metadata, initialValue: 'something else' },
 				{ type: 'checkbox', value: 'something else' },
 			),
 		).toEqual({
-			...config,
+			...props,
 			type: 'checkbox',
 			value: 'something else',
 			defaultChecked: true,
 		});
-		expect(
-			conform.input(
-				{ ...config, defaultValue: new File([], '') },
-				{ type: 'file' },
-			),
-		).toEqual({
-			...config,
+		expect(getInputProps(metadata, { type: 'file' })).toEqual({
+			...props,
 			type: 'file',
 		});
 	});
 
-	test('conform.textarea', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('getTextareaProps', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.textarea({ name: config.name })).toEqual({
-			name: config.name,
-		});
+		expect(getTextareaProps(metadata)).toEqual(props);
 		expect(
-			conform.textarea({
-				...config,
-				defaultValue: 'string',
+			getTextareaProps({
+				...metadata,
+				initialValue: 'string',
 				required: true,
 				min: 1,
 				max: 10,
@@ -184,95 +176,66 @@ test.describe('conform-react', () => {
 				multiple: true,
 			}),
 		).toEqual({
-			...config,
+			...props,
 			defaultValue: 'string',
 			required: true,
 			minLength: 1,
 			maxLength: 2,
 		});
-		expect(
-			conform.textarea({ ...config, initialError: { '': 'Invalid' } }),
-		).toEqual({
-			...config,
-			autoFocus: true,
-		});
-		expect(conform.textarea(config, { hidden: true })).toEqual({
-			...config,
-			style: conform.hiddenProps.style,
-			tabIndex: conform.hiddenProps.tabIndex,
-			'aria-hidden': conform.hiddenProps['aria-hidden'],
-		});
-		expect(conform.textarea(config)).toEqual(config);
-		expect(
-			conform.textarea({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-			}),
-		).toEqual(config);
-		expect(
-			conform.textarea(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ description: true },
-			),
-		).toEqual({
-			...config,
-			'aria-describedby': 'test-description',
-		});
-		expect(
-			conform.textarea({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-				error: 'Invalid',
-			}),
-		).toEqual({
-			...config,
+		expect(getTextareaProps({ ...metadata, errors: ['required'] })).toEqual({
+			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
 		expect(
-			conform.textarea(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ description: true },
-			),
+			getTextareaProps(metadata, { ariaDescribedBy: 'something' }),
 		).toEqual({
-			...config,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
-			conform.textarea(
+			getTextareaProps({
+				...metadata,
+				errors: ['required'],
+			}),
+		).toEqual({
+			...props,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error',
+		});
+		expect(
+			getTextareaProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
+		});
+		expect(
+			getTextareaProps(
+				{
+					...metadata,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual(config);
+		).toEqual(props);
 	});
 
-	test('conform.select', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('getSelectProps', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.select({ name: config.name })).toEqual({
-			name: config.name,
-		});
+		expect(getSelectProps(metadata)).toEqual(props);
 		expect(
-			conform.select({
-				...config,
-				defaultValue: 'string',
+			getSelectProps({
+				...metadata,
+				initialValue: 'string',
 				required: true,
 				min: 1,
 				max: 10,
@@ -283,146 +246,87 @@ test.describe('conform-react', () => {
 				multiple: true,
 			}),
 		).toEqual({
-			...config,
+			...props,
 			defaultValue: 'string',
 			required: true,
 			multiple: true,
 		});
-		expect(
-			conform.select({ ...config, initialError: { '': 'Invalid' } }),
-		).toEqual({
-			...config,
-			autoFocus: true,
-		});
-		expect(conform.select(config, { hidden: true })).toEqual({
-			...config,
-			style: conform.hiddenProps.style,
-			tabIndex: conform.hiddenProps.tabIndex,
-			'aria-hidden': conform.hiddenProps['aria-hidden'],
-		});
-		expect(conform.select(config)).toEqual(config);
-		expect(
-			conform.select({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-			}),
-		).toEqual(config);
-		expect(
-			conform.select(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ description: true },
-			),
-		).toEqual({
-			...config,
-			'aria-describedby': 'test-description',
-		});
-		expect(
-			conform.select({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-				error: 'Invalid',
-			}),
-		).toEqual({
-			...config,
+		expect(getSelectProps({ ...metadata, errors: ['required'] })).toEqual({
+			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
-		expect(
-			conform.select(
-				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
-				},
-				{ description: true },
-			),
-		).toEqual({
-			...config,
-			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
+		expect(getSelectProps(metadata, { ariaDescribedBy: 'something' })).toEqual({
+			...props,
+			'aria-describedby': 'something',
 		});
 		expect(
-			conform.select(
+			getSelectProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
+				},
+				{ ariaDescribedBy: 'something' },
+			),
+		).toEqual({
+			...props,
+			'aria-invalid': true,
+			'aria-describedby': 'test-error something',
+		});
+		expect(
+			getSelectProps(
+				{
+					...metadata,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual(config);
+		).toEqual(props);
 	});
 
-	test('conform.fieldset', () => {
-		const config = {
-			id: 'test',
-			name: 'message',
-			form: 'example',
-		} as const;
+	test('getFieldsetProps', () => {
+		const metadata = createFieldMetadata();
+		const props = getProps(metadata);
 
-		expect(conform.fieldset({ name: config.name })).toEqual({
-			name: config.name,
-		});
-		expect(conform.fieldset(config)).toEqual(config);
-		expect(conform.fieldset(config, { ariaAttributes: true })).toEqual(config);
+		expect(getFieldsetProps(metadata)).toEqual(props);
+		expect(getFieldsetProps(metadata, { ariaAttributes: true })).toEqual(props);
 		expect(
-			conform.fieldset({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-			}),
-		).toEqual(config);
-		expect(
-			conform.fieldset(
-				{ ...config, errorId: 'test-error', descriptionId: 'test-description' },
-				{ description: true },
-			),
-		).toEqual({
-			...config,
-			'aria-describedby': 'test-description',
-		});
-		expect(
-			conform.fieldset({
-				...config,
-				errorId: 'test-error',
-				descriptionId: 'test-description',
-				error: 'Invalid',
+			getFieldsetProps({
+				...metadata,
+				errors: ['required'],
 			}),
 		).toEqual({
-			...config,
+			...props,
 			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
 		expect(
-			conform.fieldset(
+			getFieldsetProps(metadata, { ariaDescribedBy: 'something' }),
+		).toEqual({
+			...props,
+			'aria-describedby': 'something',
+		});
+		expect(
+			getFieldsetProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
 				},
-				{ description: true },
+				{ ariaDescribedBy: 'something' },
 			),
 		).toEqual({
-			...config,
+			...props,
 			'aria-invalid': true,
-			'aria-describedby': 'test-error test-description',
+			'aria-describedby': 'test-error something',
 		});
-
 		expect(
-			conform.fieldset(
+			getFieldsetProps(
 				{
-					...config,
-					errorId: 'test-error',
-					descriptionId: 'test-description',
-					error: 'Invalid',
+					...metadata,
+					errors: ['required'],
 				},
 				{ ariaAttributes: false },
 			),
-		).toEqual(config);
+		).toEqual(props);
 	});
 });

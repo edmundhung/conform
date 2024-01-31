@@ -19,6 +19,7 @@ pids
 /packages/*/*.cjs
 /packages/*/*.mjs
 /packages/*/*.d.ts
+/packages/*/README
 /packages/*/LICENSE
 /packages/*/_virtual
 

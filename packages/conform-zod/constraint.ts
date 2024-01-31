@@ -1,7 +1,5 @@
-import { type FieldConstraint, type FieldsetConstraint } from '@conform-to/dom';
+import type { Constraint } from '@conform-to/dom';
 import {
-	type input,
-	type ZodType,
 	type ZodTypeAny,
 	ZodArray,
 	ZodDefault,
@@ -15,71 +13,126 @@ import {
 	ZodPipeline,
 	ZodString,
 	ZodUnion,
+	ZodTuple,
+	ZodLazy,
 } from 'zod';
 
-export function getConstraint<Schema extends ZodTypeAny>(
-	schema: Schema,
-): FieldsetConstraint<input<Schema>> {
-	function inferConstraint<T>(schema: ZodType<T>): FieldConstraint<T> {
-		let constraint: FieldConstraint = {};
+const keys: Array<keyof Constraint> = [
+	'required',
+	'minLength',
+	'maxLength',
+	'min',
+	'max',
+	'step',
+	'multiple',
+	'pattern',
+];
 
-		if (schema instanceof ZodEffects) {
-			constraint = {
-				...inferConstraint(schema.innerType()),
-			};
-		} else if (schema instanceof ZodPipeline) {
-			constraint = {
-				...inferConstraint(schema._def.out),
-			};
-		} else if (schema instanceof ZodOptional) {
-			constraint = {
-				...inferConstraint(schema.unwrap()),
-				required: false,
-			};
-		} else if (schema instanceof ZodDefault) {
-			constraint = {
-				...inferConstraint(schema.removeDefault()),
-				required: false,
-			};
-		} else if (schema instanceof ZodArray) {
-			constraint = {
-				...inferConstraint(schema.element),
-				multiple: true,
-			};
-		} else if (schema instanceof ZodString) {
-			for (let check of schema._def.checks) {
-				switch (check.kind) {
-					case 'min':
-						if (!constraint.minLength || constraint.minLength < check.value) {
-							constraint.minLength = check.value;
-						}
-						break;
-					case 'max':
-						if (!constraint.maxLength || constraint.maxLength > check.value) {
-							constraint.maxLength = check.value;
-						}
-						break;
-					case 'regex':
-						if (!constraint.pattern) {
-							constraint.pattern = check.regex.source;
-						}
-						break;
-				}
+export function getZodConstraint(
+	schema: ZodTypeAny,
+): Record<string, Constraint> {
+	function updateConstraint(
+		schema: ZodTypeAny,
+		data: Record<string, Constraint>,
+		name = '',
+	): void {
+		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
+
+		if (schema instanceof ZodObject) {
+			for (const key in schema.shape) {
+				updateConstraint(
+					schema.shape[key],
+					data,
+					name ? `${name}.${key}` : key,
+				);
 			}
+		} else if (schema instanceof ZodEffects) {
+			updateConstraint(schema.innerType(), data, name);
+		} else if (schema instanceof ZodPipeline) {
+			// FIXME: What to do with .pipe()?
+			updateConstraint(schema._def.out, data, name);
+		} else if (schema instanceof ZodIntersection) {
+			const leftResult: Record<string, Constraint> = {};
+			const rightResult: Record<string, Constraint> = {};
+
+			updateConstraint(schema._def.left, leftResult, name);
+			updateConstraint(schema._def.right, rightResult, name);
+
+			Object.assign(data, leftResult, rightResult);
+		} else if (
+			schema instanceof ZodUnion ||
+			schema instanceof ZodDiscriminatedUnion
+		) {
+			Object.assign(
+				data,
+				(schema.options as ZodTypeAny[])
+					.map((option) => {
+						const result: Record<string, Constraint> = {};
+
+						updateConstraint(option, result, name);
+
+						return result;
+					})
+					.reduce((prev, next) => {
+						const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
+						const result: Record<string, Constraint> = {};
+
+						for (const name of list) {
+							const prevConstraint = prev[name];
+							const nextConstraint = next[name];
+
+							if (prevConstraint && nextConstraint) {
+								const constraint: Constraint = {};
+
+								result[name] = constraint;
+
+								for (const key of keys) {
+									if (
+										typeof prevConstraint[key] !== 'undefined' &&
+										typeof nextConstraint[key] !== 'undefined' &&
+										prevConstraint[key] === nextConstraint[key]
+									) {
+										// @ts-expect-error Both are on the same type
+										constraint[key] = prevConstraint[key];
+									}
+								}
+							} else {
+								result[name] = {
+									...prevConstraint,
+									...nextConstraint,
+									required: false,
+								};
+							}
+						}
+
+						return result;
+					}),
+			);
+		} else if (name === '') {
+			// All the cases below are not allowed on root
+			throw new Error('Unsupported schema');
+		} else if (schema instanceof ZodArray) {
+			constraint.multiple = true;
+			updateConstraint(schema.element, data, `${name}[]`);
+		} else if (schema instanceof ZodString) {
+			if (schema.minLength !== null) {
+				constraint.minLength = schema.minLength;
+			}
+			if (schema.maxLength !== null) {
+				constraint.maxLength = schema.maxLength;
+			}
+		} else if (schema instanceof ZodOptional) {
+			constraint.required = false;
+			updateConstraint(schema.unwrap(), data, name);
+		} else if (schema instanceof ZodDefault) {
+			constraint.required = false;
+			updateConstraint(schema.removeDefault(), data, name);
 		} else if (schema instanceof ZodNumber) {
-			for (let check of schema._def.checks) {
-				switch (check.kind) {
-					case 'min':
-						if (!constraint.min || constraint.min < check.value) {
-							constraint.min = check.value;
-						}
-						break;
-					case 'max':
-						if (!constraint.max || constraint.max > check.value) {
-							constraint.max = check.value;
-						}
-						break;
-				}
+			if (schema.minValue !== null) {
+				constraint.min = schema.minValue;
+			}
+			if (schema.maxValue !== null) {
+				constraint.max = schema.maxValue;
 			}
 		} else if (schema instanceof ZodEnum) {
 			constraint.pattern = schema.options
@@ -88,93 +141,18 @@ export function getConstraint<Schema extends ZodTypeAny>(
 					option.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'),
 				)
 				.join('|');
-		}
-
-		if (typeof constraint.required === 'undefined') {
-			constraint.required = true;
-		}
-
-		return constraint;
-	}
-
-	const keys: Array<keyof FieldConstraint> = [
-		'required',
-		'minLength',
-		'maxLength',
-		'min',
-		'max',
-		'step',
-		'multiple',
-		'pattern',
-	];
-
-	function resolveFieldsetConstraint<T extends Record<string, any>>(
-		schema: ZodType<T>,
-	): FieldsetConstraint<input<Schema>> {
-		if (schema instanceof ZodObject) {
-			const result: FieldsetConstraint<input<Schema>> = {};
-
-			for (const [key, def] of Object.entries(schema.shape)) {
-				// @ts-expect-error
-				result[key] = inferConstraint(def);
+		} else if (schema instanceof ZodTuple) {
+			for (let i = 0; i < schema.items.length; i++) {
+				updateConstraint(schema.items[i], data, `${name}[${i}]`);
 			}
-
-			return result;
+		} else if (schema instanceof ZodLazy) {
+			// FIXME: If you are interested in this, feel free to create a PR
 		}
-
-		if (schema instanceof ZodEffects) {
-			return resolveFieldsetConstraint(schema.innerType());
-		} else if (schema instanceof ZodOptional) {
-			return resolveFieldsetConstraint(schema.unwrap());
-		} else if (schema instanceof ZodIntersection) {
-			return {
-				...resolveFieldsetConstraint(schema._def.left),
-				...resolveFieldsetConstraint(schema._def.right),
-			};
-		} else if (
-			schema instanceof ZodUnion ||
-			schema instanceof ZodDiscriminatedUnion
-		) {
-			const options = schema.options as Array<ZodType<any>>;
-
-			return options.map(resolveFieldsetConstraint).reduce((prev, next) => {
-				const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
-				const result: Record<string, FieldConstraint> = {};
-
-				for (const name of list) {
-					// @ts-expect-error
-					const prevConstraint = prev[name];
-					// @ts-expect-error
-					const nextConstraint = next[name];
-
-					if (prevConstraint && nextConstraint) {
-						result[name] = {};
-
-						for (const key of keys) {
-							if (
-								typeof prevConstraint[key] !== 'undefined' &&
-								typeof nextConstraint[key] !== 'undefined' &&
-								prevConstraint[key] === nextConstraint[key]
-							) {
-								// @ts-expect-error
-								result[name][key] = prevConstraint[key];
-							}
-						}
-					} else {
-						result[name] = {
-							...prevConstraint,
-							...nextConstraint,
-							required: false,
-						};
-					}
-				}
-
-				return result;
-			});
-		}
-
-		return {};
 	}
 
-	return resolveFieldsetConstraint(schema);
+	let result: Record<string, Constraint> = {};
+
+	updateConstraint(schema, result);
+
+	return result;
 }

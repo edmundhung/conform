@@ -1,23 +1,10 @@
-import { test, expect } from '@playwright/test';
-import { parse, getFieldsetConstraint } from '@conform-to/yup';
+import { describe, test, expect } from 'vitest';
+import { parseWithYup, getYupConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
-import { installGlobals } from '@remix-run/node';
+import { STATE } from '@conform-to/dom';
+import { createFormData } from './helpers';
 
-function createFormData(entries: Array<[string, string | File]>): FormData {
-	const formData = new FormData();
-
-	for (const [name, value] of entries) {
-		formData.append(name, value);
-	}
-
-	return formData;
-}
-
-test.beforeAll(() => {
-	installGlobals();
-});
-
-test.describe('conform-yup', () => {
+describe('conform-yup', () => {
 	const schema = yup
 		.object({
 			text: yup
@@ -76,8 +63,8 @@ test.describe('conform-yup', () => {
 		'': ['error'],
 	};
 
-	test('getFieldsetConstraint', () => {
-		expect(getFieldsetConstraint(schema)).toEqual({
+	test('getYupConstraint', () => {
+		expect(getYupConstraint(schema)).toEqual({
 			text: {
 				minLength: 1,
 				maxLength: 100,
@@ -99,8 +86,9 @@ test.describe('conform-yup', () => {
 		});
 	});
 
-	test('parse', () => {
+	test('parseWithYup', () => {
 		const formData = createFormData([
+			[STATE, JSON.stringify({ validated: {}, key: {} })],
 			['text', payload.text],
 			['tag', payload.tag],
 			['number', payload.number],
@@ -111,10 +99,11 @@ test.describe('conform-yup', () => {
 			['list[0].key', payload.list[0].key],
 		]);
 
-		expect(parse(formData, { schema })).toEqual({
-			intent: 'submit',
+		expect(parseWithYup(formData, { schema })).toEqual({
+			status: 'error',
 			payload,
 			error,
+			reply: expect.any(Function),
 		});
 	});
 });

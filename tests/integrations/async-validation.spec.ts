@@ -31,7 +31,7 @@ async function runValidationScenario(page: Page) {
 
 		// When validting the email field
 		if (
-			value['__intent__'] === 'validate/email' &&
+			value['__control__'] === 'validate/email' &&
 			[
 				'hey@conform.gu',
 				'hey@conform.gui',
@@ -43,7 +43,7 @@ async function runValidationScenario(page: Page) {
 		}
 
 		// When clicking on the submit button
-		if (typeof value['__intent__'] === 'undefined') {
+		if (typeof value['__control__'] === 'undefined') {
 			return route.continue();
 		}
 
@@ -114,24 +114,19 @@ async function runValidationScenario(page: Page) {
 
 	await expect(playground.error).toHaveText(['', '']);
 
-	await expect(playground.submission).toHaveText(
-		JSON.stringify(
-			{
-				intent: 'submit',
-				payload: {
-					email: 'hey@conform.guide',
-					title: 'Software Developer',
-				},
-				error: {},
-				value: {
-					email: 'hey@conform.guide',
-					title: 'Software Developer',
-				},
+	await expect.poll(playground.result).toStrictEqual({
+		status: 'success',
+		initialValue: {
+			email: 'hey@conform.guide',
+			title: 'Software Developer',
+		},
+		state: {
+			validated: {
+				email: true,
+				title: true,
 			},
-			null,
-			2,
-		),
-	);
+		},
+	});
 }
 
 test.describe('With JS', () => {

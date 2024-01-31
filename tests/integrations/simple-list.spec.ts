@@ -127,22 +127,20 @@ async function runValidationScenario(page: Page) {
 	// Trigger revalidation
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', '', '']);
-	await expect(playground.submission).toHaveText(
-		JSON.stringify(
-			{
-				intent: 'submit',
-				payload: {
-					items: ['Last item', 'Another item'],
-				},
-				error: {},
-				value: {
-					items: ['Last item', 'Another item'],
-				},
+
+	await expect.poll(playground.result).toStrictEqual({
+		status: 'success',
+		initialValue: {
+			items: ['Last item', 'Another item'],
+		},
+		state: {
+			validated: {
+				items: true,
+				'items[0]': true,
+				'items[1]': true,
 			},
-			null,
-			2,
-		),
-	);
+		},
+	});
 }
 
 async function testListDefaultValue(page: Page, shouldReset?: boolean) {

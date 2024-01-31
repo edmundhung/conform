@@ -80,19 +80,15 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['', '', '']);
 
-	expect(JSON.parse(await playground.submission.innerText())).toMatchObject({
-		intent: 'submit',
-		payload: {
-			file: {
-				_name: 'test.json',
-				_lastModified: expect.anything(),
-			},
-			files: {
-				_name: 'huge.json',
-				_lastModified: expect.anything(),
+	await expect.poll(playground.result).toStrictEqual({
+		status: 'success',
+		initialValue: {},
+		state: {
+			validated: {
+				file: true,
+				files: true,
 			},
 		},
-		error: {},
 	});
 }
 

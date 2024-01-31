@@ -1,5 +1,11 @@
-import { conform, useFieldList, useForm, list } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import {
+	FormStateInput,
+	useForm,
+	getFormProps,
+	getInputProps,
+	FormProvider,
+} from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
@@ -9,6 +15,7 @@ import { Playground, Field, Alert } from '~/components';
 const schema = z.object({
 	items: z
 		.string({ required_error: 'The field is required' })
+		.min(2, 'At least 2 characters are required')
 		.regex(/^[^0-9]+$/, 'Number is not allowed')
 		.array()
 		.min(1, 'At least one item is required')
@@ -26,76 +33,112 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, {
+		schema,
+	});
 
-	return json(submission);
+	return json(submission.reply());
 }
 
 export default function SimpleList() {
 	const { hasDefaultValue, noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData();
-	const [form, { items }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
+		lastResult,
 		defaultValue: hasDefaultValue
 			? { items: ['default item 0', 'default item 1'] }
 			: undefined,
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
-	const itemsList = useFieldList(form.ref, items);
+	const items = fields.items.getFieldList();
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Simple list" lastSubmission={lastSubmission}>
-				<Alert errors={items.errors} />
-				<ol>
-					{itemsList.map((item, index) => (
-						<li key={item.key} className="border rounded-md p-4 mb-4">
-							<Field label={`Item #${index + 1}`} config={item}>
-								<input {...conform.input(item, { type: 'text' })} />
-							</Field>
-							<div className="flex flex-row gap-2">
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.remove(items.name, { index })}
-								>
-									Delete
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.reorder(items.name, { from: index, to: 0 })}
-								>
-									Move to top
-								</button>
-								<button
-									className="rounded-md border p-2 hover:border-black"
-									{...list.replace(items.name, {
-										index,
-										defaultValue: '',
-									})}
-								>
-									Clear
-								</button>
-							</div>
-						</li>
-					))}
-				</ol>
-				<div className="flex flex-row gap-2">
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...list.insert(items.name, { defaultValue: 'Top item', index: 0 })}
-					>
-						Insert top
-					</button>
-					<button
-						className="rounded-md border p-2 hover:border-black"
-						{...list.insert(items.name)}
-					>
-						Insert bottom
-					</button>
-				</div>
-			</Playground>
-		</Form>
+		<FormProvider context={form.context}>
+			<Form method="post" {...getFormProps(form)}>
+				<FormStateInput formId={form.id} />
+				<Playground title="Simple list" result={lastResult}>
+					<Alert errors={fields.items.errors} />
+					<ol>
+						{items.map((task, index) => (
+							<li key={task.key} className="border rounded-md p-4 mb-4">
+								<Field label={`Item #${index + 1}`} meta={task}>
+									<input {...getInputProps(task, { type: 'text' })} />
+								</Field>
+								<div className="flex flex-row gap-2">
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.remove.getButtonProps({
+											name: fields.items.name,
+											index,
+										})}
+									>
+										Delete
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.reorder.getButtonProps({
+											name: fields.items.name,
+											from: index,
+											to: 0,
+										})}
+									>
+										Move to top
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.update.getButtonProps({
+											name: task.name,
+											value: '',
+											validated: false,
+										})}
+									>
+										Clear
+									</button>
+									<button
+										className="rounded-md border p-2 hover:border-black"
+										{...form.reset.getButtonProps({
+											name: task.name,
+										})}
+									>
+										Reset
+									</button>
+								</div>
+							</li>
+						))}
+					</ol>
+					<div className="flex flex-row gap-2">
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.insert.getButtonProps({
+								name: fields.items.name,
+								defaultValue: 'Top item',
+								index: 0,
+							})}
+						>
+							Insert top
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.insert.getButtonProps({
+								name: fields.items.name,
+								defaultValue: '',
+							})}
+						>
+							Insert bottom
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.reset.getButtonProps({
+								name: fields.items.name,
+							})}
+						>
+							Reset
+						</button>
+					</div>
+				</Playground>
+			</Form>
+		</FormProvider>
 	);
 }

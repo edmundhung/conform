@@ -1,4 +1,32 @@
-import * as markdoc from '@markdoc/markdoc';
+import {
+	type RenderableTreeNode,
+	parse as markdocParse,
+	transform as markdocTransform,
+	Tag,
+} from '@markdoc/markdoc';
+import { type Menu } from '~/components';
+
+function generateID(
+	children: RenderableTreeNode[],
+	attributes: Record<string, any>,
+) {
+	if (attributes.id && typeof attributes.id === 'string') {
+		return attributes.id;
+	}
+
+	return children
+		.flatMap((child) => {
+			if (child instanceof Tag) {
+				return child.children;
+			}
+			return [child];
+		})
+		.filter((child) => typeof child === 'string')
+		.join(' ')
+		.replace(/[?]/g, '')
+		.replace(/\s+/g, '-')
+		.toLowerCase();
+}
 
 export function parse(markdown: string) {
 	const content = markdown
@@ -7,31 +35,65 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(/<!-- (\/?(aside|sandbox)( \w+=".+")*) -->/g, '{% $1 %}');
-	const ast = markdoc.parse(content);
-	const node = markdoc.transform(ast, {
+	const ast = markdocParse(content);
+	const node = markdocTransform(ast, {
 		nodes: {
 			fence: {
 				render: 'Fence',
 				attributes: {
-					language: {
-						type: String,
-						description:
-							'The programming language of the code block. Place it after the backticks.',
-					},
+					language: { type: String },
 				},
 			},
 			heading: {
-				render: 'Heading',
 				attributes: {
-					level: { type: Number, required: true, default: 1 },
+					id: { type: String, required: false },
+					level: { type: Number },
+				},
+				transform(node, config) {
+					const attributes = node.transformAttributes(config);
+					const children = node.transformChildren(config);
+
+					return new Tag(
+						`Heading`,
+						{
+							...attributes,
+							id:
+								attributes.level === 2
+									? generateID(children, attributes)
+									: undefined,
+						},
+						children,
+					);
 				},
 			},
 			link: {
 				render: 'Link',
 				attributes: {
-					href: { type: String, required: true },
+					href: { type: String },
 					title: { type: String },
 				},
+			},
+			paragraph: {
+				render: 'Paragraph',
+			},
+			list: {
+				render: 'List',
+				attributes: {
+					ordered: { type: Boolean },
+				},
+			},
+			item: {
+				render: 'Item',
+			},
+			code: {
+				transform(node) {
+					const { content, ...attributes } = node.attributes;
+
+					return new Tag('Code', attributes, [content]);
+				},
+			},
+			strong: {
+				render: 'Strong',
 			},
 		},
 		tags: {
@@ -70,16 +132,39 @@ export function parse(markdown: string) {
 	return node;
 }
 
-export function isTag(node: markdoc.RenderableTreeNode): node is markdoc.Tag {
-	return node !== null && typeof node !== 'string';
-}
+export function collectHeadings(
+	node: RenderableTreeNode,
+	level = 1,
+	menu: Menu = { title: '', links: [] },
+): Menu {
+	if (node instanceof Tag) {
+		if (node.name === 'Heading') {
+			const title = Array.isArray(node.children) ? node.children[0] : null;
 
-export function getChildren(
-	nodes: markdoc.RenderableTreeNodes,
-): markdoc.RenderableTreeNode[] {
-	if (Array.isArray(nodes) || !isTag(nodes)) {
-		return [];
+			if (typeof title === 'string') {
+				switch (node.attributes.level) {
+					case 1:
+						if (menu.title) {
+							throw new Error('There are multiple h1 headings in the document');
+						}
+						menu.title = title;
+						break;
+					case 2:
+						menu.links.push({
+							title,
+							to: `#${node.attributes.id ?? ''}`,
+						});
+						break;
+				}
+			}
+		}
+
+		if (level > 0 && node.children) {
+			for (const child of node.children) {
+				collectHeadings(child, level - 1, menu);
+			}
+		}
 	}
 
-	return nodes.children;
+	return menu;
 }

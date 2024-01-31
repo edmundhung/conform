@@ -1,18 +1,23 @@
 /**
- * A ponyfill-like helper to get the form data with the submitter value.
- * It does not respect the tree order nor handles the image input.
+ * Construct a form data with the submitter value.
+ * It utilizes the submitter argument on the FormData constructor from modern browsers
+ * with fallback to append the submitter value in case it is not unsupported.
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData#parameters
  */
-
 export function getFormData(
 	form: HTMLFormElement,
 	submitter?: HTMLInputElement | HTMLButtonElement | null,
 ): FormData {
-	const payload = new FormData(form);
+	const payload = new FormData(form, submitter);
 
 	if (submitter && submitter.type === 'submit' && submitter.name !== '') {
-		payload.append(submitter.name, submitter.value);
+		const entries = payload.getAll(submitter.name);
+
+		// This assumes the submitter value to be always unique, which should be fine in most cases
+		if (!entries.includes(submitter.value)) {
+			payload.append(submitter.name, submitter.value);
+		}
 	}
 
 	return payload;
@@ -56,7 +61,7 @@ export function getPaths(name: string): Array<string | number> {
 export function formatPaths(paths: Array<string | number>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
-			return `${name}[${path}]`;
+			return `${name}[${Number.isNaN(path) ? '' : path}]`;
 		}
 
 		if (name === '' || path === '') {
@@ -68,13 +73,26 @@ export function formatPaths(paths: Array<string | number>): string {
 }
 
 /**
- * Assign a value to a target object by following the paths on the name
+ * Check if a name match the prefix paths
+ */
+export function isPrefix(name: string, prefix: string) {
+	const paths = getPaths(name);
+	const prefixPaths = getPaths(prefix);
+
+	return (
+		paths.length >= prefixPaths.length &&
+		prefixPaths.every((path, index) => paths[index] === path)
+	);
+}
+
+/**
+ * Assign a value to a target object by following the paths
  */
 export function setValue(
 	target: Record<string, any>,
 	name: string,
-	valueFn: (prev?: unknown) => any,
-): void {
+	valueFn: (currentValue?: unknown) => unknown,
+) {
 	const paths = getPaths(name);
 	const length = paths.length;
 	const lastIndex = length - 1;
@@ -96,50 +114,171 @@ export function setValue(
 }
 
 /**
- * Resolves the payload into a plain object based on the JS syntax convention
+ * Retrive the value from a target object by following the paths
  */
-export function resolve(
-	payload: FormData | URLSearchParams,
-	options: {
-		ignoreKeys?: string[];
-	} = {},
-) {
-	const data = {};
+export function getValue(target: unknown, name: string): unknown {
+	let pointer = target;
 
-	for (const [key, value] of payload.entries()) {
-		if (options.ignoreKeys?.includes(key)) {
-			continue;
+	for (const path of getPaths(name)) {
+		if (typeof pointer === 'undefined' || pointer == null) {
+			break;
 		}
 
-		setValue(data, key, (prev) => {
-			if (!prev) {
-				return value;
-			} else if (Array.isArray(prev)) {
-				return prev.concat(value);
+		if (isPlainObject(pointer) && typeof path === 'string') {
+			pointer = pointer[path];
+		} else if (Array.isArray(pointer) && typeof path === 'number') {
+			pointer = pointer[path];
+		} else {
+			return;
+		}
+	}
+
+	return pointer;
+}
+
+/**
+ * Check if the value is a plain object
+ */
+export function isPlainObject(
+	obj: unknown,
+): obj is Record<string | number | symbol, unknown> {
+	return (
+		!!obj &&
+		obj.constructor === Object &&
+		Object.getPrototypeOf(obj) === Object.prototype
+	);
+}
+
+/**
+ * Check if the value is a File
+ */
+export function isFile(obj: unknown): obj is File {
+	// Skip checking if File is not defined
+	if (typeof File === 'undefined') {
+		return false;
+	}
+
+	return obj instanceof File;
+}
+
+/**
+ * Simplify value by removing empty object or array and null values
+ */
+export function simplify<Type extends Record<string, unknown>>(
+	value: Type | null,
+): Type | undefined;
+export function simplify<Type extends Array<unknown>>(
+	value: Type | null,
+): Type | undefined;
+export function simplify(value: unknown): unknown | undefined;
+export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
+	value: Type | null,
+): Record<string, unknown> | Array<unknown> | undefined {
+	if (isPlainObject(value)) {
+		const obj = Object.keys(value)
+			.sort()
+			.reduce<Record<string, unknown>>((result, key) => {
+				const data = simplify(value[key]);
+
+				if (typeof data !== 'undefined') {
+					result[key] = data;
+				}
+
+				return result;
+			}, {});
+
+		if (Object.keys(obj).length === 0) {
+			return;
+		}
+
+		return obj;
+	}
+
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return undefined;
+		}
+
+		return value.map(simplify);
+	}
+
+	if (
+		(typeof value === 'string' && value === '') ||
+		value === null ||
+		isFile(value)
+	) {
+		return;
+	}
+
+	return value;
+}
+
+/**
+ * Flatten a tree into a dictionary
+ */
+export function flatten(
+	data: Record<string | number | symbol, unknown> | Array<unknown> | undefined,
+	options?: {
+		resolve?: (data: unknown) => unknown | null;
+		prefix?: string;
+	},
+): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	const resolve = options?.resolve ?? ((data) => data);
+
+	function setResult(data: unknown, name: string) {
+		const value = simplify(resolve(data));
+
+		if (typeof value !== 'undefined') {
+			result[name] = value;
+		}
+	}
+
+	function processObject(
+		obj: Record<string | number | symbol, unknown>,
+		prefix: string,
+	): void {
+		setResult(obj, prefix);
+
+		for (const [key, value] of Object.entries(obj)) {
+			const name = prefix ? `${prefix}.${key}` : key;
+
+			if (Array.isArray(value)) {
+				processArray(value, name);
+			} else if (value && isPlainObject(value)) {
+				processObject(value, name);
 			} else {
-				return [prev, value];
+				setResult(value, name);
 			}
-		});
+		}
 	}
 
-	return data;
-}
+	function processArray(array: Array<unknown>, prefix: string): void {
+		setResult(array, prefix);
 
-/**
- * Format the error messages into a validation message
- */
-export function getValidationMessage(errors?: string[]): string {
-	return errors?.join(String.fromCharCode(31)) ?? '';
-}
+		for (let i = 0; i < array.length; i++) {
+			const item = array[i];
+			const name = `${prefix}[${i}]`;
 
-/**
- * Retrieve the error messages from the validation message
- */
-export function getErrors(validationMessage: string | undefined): string[] {
-	// Empty string should be considered no error as well
-	if (!validationMessage) {
-		return [];
+			if (Array.isArray(item)) {
+				processArray(item, name);
+			} else if (item && isPlainObject(item)) {
+				processObject(item, name);
+			} else {
+				setResult(item, name);
+			}
+		}
 	}
 
-	return validationMessage.split(String.fromCharCode(31));
+	if (data) {
+		const prefix = options?.prefix ?? '';
+
+		if (Array.isArray(data)) {
+			processArray(data, prefix);
+		} else {
+			processObject(data, prefix);
+		}
+	}
+
+	return result;
 }

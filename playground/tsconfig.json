@@ -3,13 +3,16 @@
 	"compilerOptions": {
 		"lib": ["DOM", "DOM.Iterable", "ES2019"],
 		"isolatedModules": true,
+		"skipLibCheck": true,
 		"esModuleInterop": true,
 		"jsx": "react-jsx",
 		"moduleResolution": "node",
 		"resolveJsonModule": true,
 		"target": "ES2019",
 		"strict": true,
-		"allowJs": true,
+		"allowJs": false,
+		"allowSyntheticDefaultImports": true,
+		"noUncheckedIndexedAccess": true,
 		"forceConsistentCasingInFileNames": true,
 		"baseUrl": ".",
 		"paths": {

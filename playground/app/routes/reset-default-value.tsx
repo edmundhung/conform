@@ -1,9 +1,8 @@
-import { useForm, conform } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { useForm, getFormProps, getInputProps } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, Link, useActionData, useLoaderData } from '@remix-run/react';
-import { useEffect } from 'react';
 import { z } from 'zod';
 import { Field, Playground } from '~/components';
 
@@ -47,38 +46,30 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema,
 	});
 
-	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
-	// We can also skip sending the submission back to the client on success
-	// As the form value shuold be reset anyway
-	return json({
-		...submission,
-		payload: null,
-	});
+	return json(submission.reply({ resetForm: true }));
 }
 
 export default function ExampleForm() {
 	const { color, defaultValue } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, fieldset] = useForm({
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
+		id: `color-${color ?? 'default'}`,
+		lastResult,
 		defaultValue,
-		lastSubmission,
 	});
 
-	useEffect(() => {
-		form.ref.current?.reset();
-	}, [form.ref, color]);
-
 	return (
-		<Form method="post" {...form.props}>
+		<Form method="post" {...getFormProps(form)}>
 			<Playground
-				title="Payment Form"
+				title="Reset default value"
 				description={
 					<div>
 						Please choose a color
@@ -101,13 +92,12 @@ export default function ExampleForm() {
 						</ul>
 					</div>
 				}
-				lastSubmission={lastSubmission}
 			>
-				<Field label="Name" config={fieldset.name}>
-					<input {...conform.input(fieldset.name, { type: 'text' })} />
+				<Field label="Name" meta={fields.name}>
+					<input {...getInputProps(fields.name, { type: 'text' })} />
 				</Field>
-				<Field label="Code" config={fieldset.code}>
-					<input {...conform.input(fieldset.code, { type: 'color' })} />
+				<Field label="Code" meta={fields.code}>
+					<input {...getInputProps(fields.code, { type: 'color' })} />
 				</Field>
 			</Playground>
 		</Form>

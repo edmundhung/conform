@@ -1,7 +1,7 @@
 import type {
 	MetaFunction,
 	LinksFunction,
-	LoaderArgs,
+	LoaderFunctionArgs,
 } from '@remix-run/cloudflare';
 import {
 	Links,
@@ -10,57 +10,55 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
-	useCatch,
+	useRouteError,
+	isRouteErrorResponse,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
+import { getMetadata } from '~/util';
 import stylesUrl from '~/styles.css';
-import { getBranch } from './context';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export function loader({ context }: LoaderArgs) {
-	const repository = 'edmundhung/conform';
-	const branch = getBranch(context);
+export function loader({ context }: LoaderFunctionArgs) {
+	const meta = getMetadata(context);
 
-	return json({
-		repository,
-		branch,
-	});
+	return json(meta);
 }
 
-export const meta: MetaFunction = () => ({
-	charset: 'utf-8',
-	title: 'Conform Guide',
-	description: 'Make your form conform to the dom',
-	viewport: 'width=device-width,initial-scale=1',
-});
+export const meta: MetaFunction = () => [{ title: 'Conform Guide' }];
 
-export function CatchBoundary() {
-	const caught = useCatch();
+export function ErrorBoundary() {
+	const error = useRouteError();
 
 	return (
-		<html>
-			<head>
-				<title>Oops!</title>
-				<Meta />
-				<Links />
-			</head>
-			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white flex flex-col h-screen items-center justify-center p-4">
+		<Document>
+			<div className="flex flex-col h-screen items-center justify-center p-4">
 				<h1 className="text-3xl font-medium tracking-wider">
-					{caught.status} {caught.statusText}
+					{isRouteErrorResponse(error)
+						? `${error.status} ${error.statusText}`
+						: error?.toString() ?? 'Unknown error'}
 				</h1>
-				<Scripts />
-			</body>
-		</html>
+			</div>
+		</Document>
 	);
 }
 
 export default function App() {
 	return (
+		<Document>
+			<Outlet />
+		</Document>
+	);
+}
+
+function Document({ children }: { children: React.ReactNode }) {
+	return (
 		<html lang="en">
 			<head>
+				<meta charSet="utf-8" />
+				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
 				<script
@@ -69,8 +67,8 @@ export default function App() {
 					src="https://plausible.io/js/script.js"
 				/>
 			</head>
-			<body className="font-['Ubuntu','sans-serif'] antialiased bg-zinc-900 text-white">
-				<Outlet />
+			<body className="font-mono antialiased bg-zinc-900 text-zinc-50">
+				{children}
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />

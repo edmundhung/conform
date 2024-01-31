@@ -1,9 +1,10 @@
-import type { FieldConfig } from '@conform-to/react';
+import type { FieldName } from '@conform-to/react';
 import {
+	FormProvider,
 	useForm,
-	conform,
-	useInputEvent,
-	validateConstraint,
+	useField,
+	useInputControl,
+	parse,
 } from '@conform-to/react';
 import {
 	TextField,
@@ -25,293 +26,278 @@ import {
 	Slider,
 	Switch,
 } from '@mui/material';
-import { useRef, useState } from 'react';
-
-interface Schema {
-	email: string;
-	description: string;
-	language: string;
-	movie: string;
-	subscribe: boolean;
-	enabled: boolean;
-	active: boolean;
-	score: number;
-	progress: number;
-}
 
 export default function ExampleForm() {
-	const [form, fieldset] = useForm<Schema>({
-		onValidate(context) {
-			return validateConstraint(context);
+	const [form, fields] = useForm({
+		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onInput',
+		onValidate({ formData, form }) {
+			return parse(formData, {
+				resolve(value) {
+					const error: Record<
+						string,
+						{ validity: ValidityState; validationMessage: string }
+					> = {};
+
+					for (const element of Array.from(form.elements)) {
+						if (
+							(element instanceof HTMLInputElement ||
+								element instanceof HTMLSelectElement ||
+								element instanceof HTMLTextAreaElement) &&
+							element.name !== '' &&
+							!element.validity.valid
+						) {
+							error[element.name] = {
+								validity: { ...element.validity },
+								validationMessage: element.validationMessage,
+							};
+						}
+					}
+
+					if (Object.entries(error).length > 0) {
+						return { error };
+					}
+
+					return { value };
+				},
+			});
 		},
 	});
 
 	return (
 		<Container maxWidth="sm">
-			<form {...form.props}>
-				<Stack spacing={4} marginY={4}>
-					<header>
-						<Typography variant="h6" component="h1">
-							Material UI Example
-						</Typography>
-						<Typography variant="subtitle1">
-							This example shows you how to integrate Inputs components with
-							Conform.
-						</Typography>
-					</header>
+			<FormProvider context={form.context}>
+				<form id={form.id} onSubmit={form.onSubmit} noValidate>
+					<Stack spacing={4} marginY={4}>
+						<header>
+							<Typography variant="h6" component="h1">
+								Material UI Example
+							</Typography>
+							<Typography variant="subtitle1">
+								This example shows you how to integrate Inputs components with
+								Conform.
+							</Typography>
+						</header>
 
-					<TextField
-						label="Email (TextField)"
-						type="email"
-						name="email"
-						error={Boolean(fieldset.email.error)}
-						helperText={fieldset.email.error}
-						required
-					/>
+						<TextField
+							label="Email (TextField)"
+							type="email"
+							name="email"
+							error={!fields.email.valid}
+							helperText={fields.email.errors?.validationMessage}
+							required
+						/>
 
-					<TextField
-						label="Description (TextField - multline)"
-						name="description"
-						error={Boolean(fieldset.description.error)}
-						helperText={fieldset.description.error}
-						inputProps={{
-							minLength: 10,
-						}}
-						required
-						multiline
-					/>
+						<TextField
+							label="Description (TextField - multline)"
+							name={fields.description.name}
+							error={!fields.description.valid}
+							helperText={fields.description.errors?.validationMessage}
+							inputProps={{
+								minLength: 10,
+							}}
+							required
+							multiline
+						/>
 
-					<ExampleSelect
-						label="Language (Select)"
-						name="language"
-						error={fieldset.language.error}
-						required
-					/>
+						<ExampleSelect
+							label="Language (Select)"
+							name={fields.language.name}
+							required
+						/>
 
-					<ExampleAutocomplete
-						label="Movie (Autocomplete)"
-						name="movie"
-						error={fieldset.movie.error}
-						required
-					/>
+						<ExampleAutocomplete
+							label="Movie (Autocomplete)"
+							name={fields.movie.name}
+							required
+						/>
 
-					<FormControl
-						component="fieldset"
-						variant="standard"
-						error={Boolean(fieldset.subscribe.error)}
-						required
-					>
-						<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
-						<FormGroup>
-							<FormControlLabel
-								control={<Checkbox name="subscribe" required />}
-								label="Newsletter"
-							/>
-						</FormGroup>
-						<FormHelperText>{fieldset.subscribe.error}</FormHelperText>
-					</FormControl>
+						<FormControl
+							component="fieldset"
+							variant="standard"
+							error={!fields.subscribe.valid}
+							required
+						>
+							<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
+							<FormGroup>
+								<FormControlLabel
+									control={<Checkbox name={fields.subscribe.name} required />}
+									label="Newsletter"
+								/>
+							</FormGroup>
+							<FormHelperText>
+								{fields.subscribe.errors?.validationMessage}
+							</FormHelperText>
+						</FormControl>
 
-					<FormControl
-						variant="standard"
-						error={Boolean(fieldset.active.error)}
-						required
-					>
-						<FormLabel>Active (Radio)</FormLabel>
-						<RadioGroup name="active">
-							<FormControlLabel
-								value="yes"
-								control={<Radio required />}
-								label="Yes"
-							/>
-							<FormControlLabel
-								value="no"
-								control={<Radio required />}
-								label="No"
-							/>
-						</RadioGroup>
-						<FormHelperText>{fieldset.active.error}</FormHelperText>
-					</FormControl>
+						<FormControl
+							variant="standard"
+							error={!fields.active.valid}
+							required
+						>
+							<FormLabel>Active (Radio)</FormLabel>
+							<RadioGroup name="active">
+								<FormControlLabel
+									value="yes"
+									control={<Radio required />}
+									label="Yes"
+								/>
+								<FormControlLabel
+									value="no"
+									control={<Radio required />}
+									label="No"
+								/>
+							</RadioGroup>
+							<FormHelperText>
+								{fields.active.errors?.validationMessage}
+							</FormHelperText>
+						</FormControl>
 
-					<FormControl
-						variant="standard"
-						error={Boolean(fieldset.enabled.error)}
-						required
-					>
-						<FormLabel>Enabled (Switch)</FormLabel>
-						<FormGroup>
-							<FormControlLabel
-								control={<Switch name="enabled" required />}
-								label="Enabled"
-							/>
-						</FormGroup>
-						<FormHelperText>{fieldset.enabled.error}</FormHelperText>
-					</FormControl>
+						<FormControl
+							variant="standard"
+							error={Boolean(fields.enabled.errors?.validationMessage)}
+							required
+						>
+							<FormLabel>Enabled (Switch)</FormLabel>
+							<FormGroup>
+								<FormControlLabel
+									control={<Switch name="enabled" required />}
+									label="Enabled"
+								/>
+							</FormGroup>
+							<FormHelperText>
+								{fields.enabled.errors?.validationMessage}
+							</FormHelperText>
+						</FormControl>
 
-					<ExampleRating
-						label="Score (Rating)"
-						name="score"
-						error={fieldset.score.error}
-						required
-					/>
+						<ExampleRating
+							label="Score (Rating)"
+							name={fields.score.name}
+							required
+						/>
 
-					<ExampleSlider
-						label="Progress (Slider)"
-						name="progress"
-						error={fieldset.progress.error}
-						required
-					/>
+						<ExampleSlider
+							label="Progress (Slider)"
+							name={fields.progress.name}
+							required
+						/>
 
-					<Stack direction="row" justifyContent="flex-end" spacing={2}>
-						<Button type="reset" variant="outlined">
-							Reset
-						</Button>
-						<Button type="submit" variant="contained">
-							Submit
-						</Button>
+						<Stack direction="row" justifyContent="flex-end" spacing={2}>
+							<Button type="reset" variant="outlined">
+								Reset
+							</Button>
+							<Button type="submit" variant="contained">
+								Submit
+							</Button>
+						</Stack>
 					</Stack>
-				</Stack>
-			</form>
+				</form>
+			</FormProvider>
 		</Container>
 	);
 }
 
-interface FieldProps<Schema> extends FieldConfig<Schema> {
+type Field<Schema> = {
+	name: FieldName<
+		Schema,
+		any,
+		{
+			validity: ValidityState;
+			validationMessage: string;
+		}
+	>;
 	label: string;
-	error?: string;
-}
+	required?: boolean;
+};
 
-function ExampleSelect({ label, error, ...config }: FieldProps<string>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+function ExampleSelect({ label, required, name }: Field<string>) {
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
-		<>
-			<input
-				ref={shadowInputRef}
-				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
-				onFocus={() => inputRef.current?.focus()}
-			/>
-			<TextField
-				label={label}
-				inputRef={inputRef}
-				value={value}
-				onChange={control.change}
-				onFocus={control.focus}
-				onBlur={control.blur}
-				error={Boolean(error)}
-				helperText={error}
-				select
-			>
-				<MenuItem value="">Please select</MenuItem>
-				<MenuItem value="english">English</MenuItem>
-				<MenuItem value="deutsch">Deutsch</MenuItem>
-				<MenuItem value="japanese">Japanese</MenuItem>
-			</TextField>
-		</>
+		<TextField
+			label={label}
+			name={meta.name}
+			value={control.value ?? ''}
+			onChange={(event) => control.change(event.target.value)}
+			onBlur={control.blur}
+			error={!meta.valid}
+			helperText={meta.errors?.validationMessage}
+			select
+			required={required}
+		>
+			<MenuItem value="">Please select</MenuItem>
+			<MenuItem value="english">English</MenuItem>
+			<MenuItem value="deutsch">Deutsch</MenuItem>
+			<MenuItem value="japanese">Japanese</MenuItem>
+		</TextField>
 	);
 }
 
-function ExampleAutocomplete({ label, error, ...config }: FieldProps<string>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+function ExampleAutocomplete({ label, name, required }: Field<string>) {
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
 		<Autocomplete
 			disablePortal
 			options={options}
-			value={value}
-			onChange={(_, option) => {
-				const value = `${option ?? ''}`;
-				control.change(value);
-				setValue(value);
-			}}
-			onFocus={control.focus}
+			value={control.value}
+			onChange={(event, option) => control.change(option ?? '')}
 			onBlur={control.blur}
 			renderInput={(params) => (
 				<TextField
 					{...params}
-					inputRef={shadowInputRef}
 					label={label}
-					name={config.name}
-					error={Boolean(error)}
-					helperText={error}
-					required={config.required}
+					name={meta.name}
+					error={!meta.valid}
+					helperText={meta.errors?.validationMessage}
+					required={required}
 				/>
 			)}
 		/>
 	);
 }
 
-function ExampleRating({ label, error, ...config }: FieldProps<number>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+function ExampleRating({ label, name, required }: Field<number>) {
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
-		<FormControl variant="standard" error={Boolean(error)} required>
+		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
-			<input
-				ref={shadowInputRef}
-				{...conform.input(config, {
-					type: 'number',
-					hidden: true,
-				})}
-				onChange={(e) => setValue(e.target.value)}
-			/>
 			<Rating
-				value={value ? Number(value) : null}
+				value={control.value ? Number(control.value) : null}
 				onChange={(_, value) => {
-					control.change(`${value ?? ''}`);
+					control.change(value?.toString() ?? '');
 				}}
-				onFocus={control.focus}
 				onBlur={control.blur}
 			/>
-			<FormHelperText>{error}</FormHelperText>
+			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }
 
-function ExampleSlider({ label, error, ...config }: FieldProps<number>) {
-	const [value, setValue] = useState(config.defaultValue ?? '');
-	const shadowInputRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: shadowInputRef,
-		onReset: () => setValue(config.defaultValue ?? ''),
-	});
+function ExampleSlider({ label, name, required }: Field<number>) {
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
 	return (
-		<FormControl variant="standard" error={Boolean(error)} required>
+		<FormControl variant="standard" error={!meta.valid} required={required}>
 			<FormLabel>{label}</FormLabel>
-			<input
-				ref={shadowInputRef}
-				{...conform.input(config, { hidden: true })}
-				onChange={(e) => setValue(e.target.value)}
-			/>
 			<Slider
-				value={value ? Number(value) : undefined}
+				name={meta.name}
+				value={control.value ? Number(control.value) : 0}
 				onChange={(_, value) => {
 					if (Array.isArray(value)) {
 						return;
 					}
 
-					control.change(`${value}`);
+					control.change(value.toString());
 				}}
 			/>
-			<FormHelperText>{error}</FormHelperText>
+			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
 		</FormControl>
 	);
 }

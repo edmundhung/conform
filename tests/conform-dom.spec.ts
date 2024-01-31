@@ -1,400 +1,364 @@
-import { test, expect } from '@playwright/test';
+import { describe, test, expect } from 'vitest';
 import {
-	INTENT,
 	parse,
 	getPaths,
-	getName,
-	list,
-	getIntent,
-	parseIntent,
-	validate,
+	formatPaths,
+	isPrefix,
+	INTENT,
+	serializeIntent,
 } from '@conform-to/dom';
-import { installGlobals } from '@remix-run/node';
+import { createFormData } from './helpers';
 
-function createFormData(entries: Array<[string, string | File]>): FormData {
-	const formData = new FormData();
-
-	for (const [name, value] of entries) {
-		formData.append(name, value);
-	}
-
-	return formData;
-}
-
-test.beforeAll(() => {
-	installGlobals();
-});
-
-test.describe('conform-dom', () => {
-	test.describe('parse', () => {
-		test('FormData', () => {
-			expect(
-				parse(
-					createFormData([
-						['title', 'The cat'],
-						['description', 'Once upon a time...'],
-					]),
-				),
-			).toEqual({
-				intent: 'submit',
-				payload: {
-					title: 'The cat',
-					description: 'Once upon a time...',
+describe('conform-dom', () => {
+	test('parse()', () => {
+		const successSubmission = parse(
+			new URLSearchParams([
+				['title', 'The cat'],
+				['description', 'Once upon a time...'],
+			]),
+			{
+				resolve(payload) {
+					return { value: payload };
 				},
-				error: {},
-			});
-
-			expect(
-				parse(
-					createFormData([
-						['account', 'AB00 1111 2222 3333 4444'],
-						['amount.currency', 'EUR'],
-						['amount.value', '99.9'],
-						['reference', ''],
-					]),
-				),
-			).toEqual({
-				intent: 'submit',
-				payload: {
-					account: 'AB00 1111 2222 3333 4444',
-					amount: {
-						currency: 'EUR',
-						value: '99.9',
-					},
-					reference: '',
-				},
-				error: {},
-			});
-
-			expect(
-				parse(
-					createFormData([
-						['title', ''],
-						['tasks[0].content', 'Test some stuffs'],
-						['tasks[0].completed', 'Yes'],
-						['tasks[1].content', 'Test integration'],
-					]),
-				),
-			).toEqual({
-				intent: 'submit',
-				payload: {
-					title: '',
-					tasks: [
-						{ content: 'Test some stuffs', completed: 'Yes' },
-						{ content: 'Test integration' },
-					],
-				},
-				error: {},
-			});
-		});
-
-		test('URLSearchParams', () => {
-			expect(
-				parse(
-					new URLSearchParams([
-						['title', 'The cat'],
-						['description', 'Once upon a time...'],
-					]),
-				),
-			).toEqual({
-				intent: 'submit',
-				payload: {
-					title: 'The cat',
-					description: 'Once upon a time...',
-				},
-				error: {},
-			});
-		});
-
-		test('Processing submission intent', () => {
-			expect(
-				parse(
-					createFormData([
-						['title', 'Test intent'],
-						['__intent__', 'intent value'],
-					]),
-				),
-			).toEqual({
-				intent: 'intent value',
-				payload: {
-					title: 'Test intent',
-				},
-				error: {},
-			});
-			expect(() =>
-				parse(
-					createFormData([
-						['title', ''],
-						['__intent__', 'list/helloworld'],
-					]),
-				),
-			).toThrow('Failed parsing intent: list/helloworld');
-		});
-
-		test('List intent', () => {
-			const entries: Array<[string, string]> = [
+			},
+		);
+		const errorSubmission = parse(
+			createFormData([
+				['title', ''],
 				['tasks[0].content', 'Test some stuffs'],
 				['tasks[0].completed', 'Yes'],
-			];
-			const result = {
-				payload: {
-					tasks: [{ content: 'Test some stuffs', completed: 'Yes' }],
+				['tasks[1].content', 'Test integration'],
+			]),
+			{
+				resolve() {
+					return { error: { title: ['Test'] } };
 				},
-				error: {},
-			};
-
-			const intent1 = list.insert('tasks', { index: 0 });
-
-			expect(
-				parse(createFormData([...entries, [intent1.name, intent1.value]])),
-			).toEqual({
-				...result,
-				intent: intent1.value,
-				payload: {
-					tasks: [undefined, ...result.payload.tasks],
+			},
+		);
+		const intentSubmission = parse(
+			createFormData([
+				['message', 'Hello'],
+				[
+					INTENT,
+					serializeIntent({
+						type: 'validate',
+						payload: { name: 'message' },
+					}),
+				],
+			]),
+			{
+				resolve() {
+					return { error: { message: ['World'] } };
 				},
-			});
+			},
+		);
 
-			const intent2 = list.insert('tasks', {
-				defaultValue: { content: 'Something' },
-				index: 0,
-			});
-
-			expect(
-				parse(createFormData([...entries, [intent2.name, intent2.value]])),
-			).toEqual({
-				...result,
-				intent: intent2.value,
-				payload: {
-					tasks: [{ content: 'Something' }, ...result.payload.tasks],
-				},
-			});
-
-			const intent3 = list.insert('tasks');
-
-			expect(
-				parse(createFormData([...entries, [intent3.name, intent3.value]])),
-			).toEqual({
-				...result,
-				intent: intent3.value,
-				payload: {
-					tasks: [...result.payload.tasks, undefined],
-				},
-			});
-
-			const intent4 = list.insert('tasks', {
-				defaultValue: { content: 'Something' },
-			});
-
-			expect(
-				parse(createFormData([...entries, [intent4.name, intent4.value]])),
-			).toEqual({
-				...result,
-				intent: intent4.value,
-				payload: {
-					tasks: [...result.payload.tasks, { content: 'Something' }],
-				},
-			});
-
-			const intent5 = list.replace('tasks', {
-				defaultValue: { content: 'Something' },
-				index: 0,
-			});
-
-			expect(
-				parse(createFormData([...entries, [intent5.name, intent5.value]])),
-			).toEqual({
-				...result,
-				intent: intent5.value,
-				payload: {
-					tasks: [{ content: 'Something' }],
-				},
-			});
-
-			const intent6 = list.remove('tasks', { index: 0 });
-
-			expect(
-				parse(createFormData([...entries, [intent6.name, intent6.value]])),
-			).toEqual({
-				...result,
-				intent: intent6.value,
-				payload: {
-					tasks: [],
-				},
-			});
-
-			const intent7 = list.reorder('tasks', { from: 0, to: 1 });
-
-			expect(
-				parse(
-					createFormData([
-						...entries,
-						['tasks[1].content', 'Test more stuffs'],
-						[intent7.name, intent7.value],
-					]),
-				),
-			).toEqual({
-				...result,
-				intent: intent7.value,
-				payload: {
-					tasks: [{ content: 'Test more stuffs' }, ...result.payload.tasks],
-				},
-			});
+		expect(successSubmission).toEqual({
+			status: 'success',
+			payload: {
+				title: 'The cat',
+				description: 'Once upon a time...',
+			},
+			value: {
+				title: 'The cat',
+				description: 'Once upon a time...',
+			},
+			reply: expect.any(Function),
 		});
-	});
-
-	test.describe('getPaths', () => {
-		test('Expected inputs', () => {
-			expect(getPaths('')).toEqual([]);
-			expect(getPaths('title')).toEqual(['title']);
-			expect(getPaths('123')).toEqual(['123']);
-			expect(getPaths('amount.currency')).toEqual(['amount', 'currency']);
-			expect(getPaths('[0]')).toEqual([0]);
-			expect(getPaths('tasks[0]')).toEqual(['tasks', 0]);
-			expect(getPaths('tasks[1].completed')).toEqual(['tasks', 1, 'completed']);
-			expect(getPaths('multiple[0][1][2]')).toEqual(['multiple', 0, 1, 2]);
-			expect(getPaths('books[0].chapters[1]')).toEqual([
-				'books',
-				0,
-				'chapters',
-				1,
-			]);
+		expect(successSubmission.reply()).toEqual({
+			status: 'success',
+			initialValue: {
+				title: 'The cat',
+				description: 'Once upon a time...',
+			},
+			state: {
+				validated: {
+					title: true,
+					description: true,
+				},
+			},
 		});
-	});
-
-	test.describe('getName', () => {
-		test('Expected inputs', () => {
-			expect(getName([])).toEqual('');
-			expect(getName([0])).toEqual('[0]');
-			expect(getName(['title'])).toEqual('title');
-			expect(getName(['amount', 'currency'])).toEqual('amount.currency');
-			expect(getName(['tasks', 0])).toEqual('tasks[0]');
-			expect(getName(['tasks', 1, 'completed'])).toEqual('tasks[1].completed');
+		expect(successSubmission.reply({ resetForm: true })).toEqual({
+			initialValue: null,
 		});
-	});
-
-	test.describe('getIntent', () => {
-		test('Default value', () => {
-			expect(getIntent(createFormData([]))).toEqual('submit');
-			expect(getIntent(createFormData([['foo', 'bar']]))).toEqual('submit');
+		expect(successSubmission.reply({ formErrors: ['example'] })).toEqual({
+			status: 'error',
+			initialValue: {
+				title: 'The cat',
+				description: 'Once upon a time...',
+			},
+			error: {
+				'': ['example'],
+			},
+			state: {
+				validated: {
+					title: true,
+					description: true,
+				},
+			},
 		});
-
-		test('Normal result', () => {
-			expect(getIntent(createFormData([[INTENT, 'test']]))).toEqual('test');
+		expect(
+			successSubmission.reply({ fieldErrors: { description: ['invalid'] } }),
+		).toEqual({
+			status: 'error',
+			initialValue: {
+				title: 'The cat',
+				description: 'Once upon a time...',
+			},
+			error: {
+				description: ['invalid'],
+			},
+			state: {
+				validated: {
+					title: true,
+					description: true,
+				},
+			},
 		});
-
-		test('Multiple intents', () => {
-			expect(
-				getIntent(
-					createFormData([
-						[INTENT, 'test'],
-						[INTENT, 'test'],
-					]),
-				),
-			).toEqual('test');
-			expect(() =>
-				getIntent(
-					createFormData([
-						[INTENT, 'test1'],
-						[INTENT, 'test2'],
-					]),
-				),
-			).toThrow();
-			expect(() =>
-				getIntent(
-					createFormData([
-						[INTENT, 'test'],
-						[INTENT, 'test'],
-						[INTENT, 'test'],
-					]),
-				),
-			).toThrow();
+		expect(successSubmission.reply({ hideFields: ['title'] })).toEqual({
+			status: 'success',
+			initialValue: {
+				description: 'Once upon a time...',
+			},
+			state: {
+				validated: {
+					title: true,
+					description: true,
+				},
+			},
 		});
-	});
-
-	test.describe('parseIntent', () => {
-		test('default submission', () => {
-			expect(parseIntent(parse(new FormData()).intent)).toEqual(null);
+		expect(errorSubmission).toEqual({
+			status: 'error',
+			payload: {
+				title: '',
+				tasks: [
+					{ content: 'Test some stuffs', completed: 'Yes' },
+					{ content: 'Test integration' },
+				],
+			},
+			error: {
+				title: ['Test'],
+			},
+			reply: expect.any(Function),
 		});
-
-		test('validate intent', () => {
-			expect(parseIntent(validate('something').value)).toEqual({
+		expect(errorSubmission.reply()).toEqual({
+			status: 'error',
+			initialValue: {
+				tasks: [
+					{ content: 'Test some stuffs', completed: 'Yes' },
+					{ content: 'Test integration' },
+				],
+			},
+			error: {
+				title: ['Test'],
+			},
+			state: {
+				validated: {
+					title: true,
+					'tasks[0].content': true,
+					'tasks[0].completed': true,
+					'tasks[1].content': true,
+				},
+			},
+		});
+		expect(errorSubmission.reply({ resetForm: true })).toEqual({
+			initialValue: null,
+		});
+		expect(errorSubmission.reply({ formErrors: ['example'] })).toEqual({
+			status: 'error',
+			initialValue: {
+				tasks: [
+					{ content: 'Test some stuffs', completed: 'Yes' },
+					{ content: 'Test integration' },
+				],
+			},
+			error: {
+				'': ['example'],
+				title: ['Test'],
+			},
+			state: {
+				validated: {
+					title: true,
+					'tasks[0].content': true,
+					'tasks[0].completed': true,
+					'tasks[1].content': true,
+				},
+			},
+		});
+		expect(
+			errorSubmission.reply({ fieldErrors: { title: ['invalid'] } }),
+		).toEqual({
+			status: 'error',
+			initialValue: {
+				tasks: [
+					{ content: 'Test some stuffs', completed: 'Yes' },
+					{ content: 'Test integration' },
+				],
+			},
+			error: {
+				title: ['invalid'],
+			},
+			state: {
+				validated: {
+					title: true,
+					'tasks[0].content': true,
+					'tasks[0].completed': true,
+					'tasks[1].content': true,
+				},
+			},
+		});
+		expect(errorSubmission.reply({ hideFields: ['tasks'] })).toEqual({
+			status: 'error',
+			initialValue: {},
+			error: {
+				title: ['Test'],
+			},
+			state: {
+				validated: {
+					title: true,
+					'tasks[0].content': true,
+					'tasks[0].completed': true,
+					'tasks[1].content': true,
+				},
+			},
+		});
+		expect(intentSubmission).toEqual({
+			status: undefined,
+			payload: {
+				message: 'Hello',
+			},
+			error: {
+				message: ['World'],
+			},
+			reply: expect.any(Function),
+		});
+		expect(intentSubmission.reply()).toEqual({
+			status: undefined,
+			intent: {
 				type: 'validate',
-				payload: 'something',
-			});
+				payload: { name: 'message' },
+			},
+			initialValue: {
+				message: 'Hello',
+			},
+			error: {
+				message: ['World'],
+			},
+			state: {
+				validated: {
+					message: true,
+				},
+			},
 		});
+		expect(intentSubmission.reply({ formErrors: ['example'] })).toEqual({
+			status: undefined,
+			intent: {
+				type: 'validate',
+				payload: { name: 'message' },
+			},
+			initialValue: {
+				message: 'Hello',
+			},
+			error: {
+				'': ['example'],
+				message: ['World'],
+			},
+			state: {
+				validated: {
+					message: true,
+				},
+			},
+		});
+		expect(
+			intentSubmission.reply({ fieldErrors: { message: ['invalid'] } }),
+		).toEqual({
+			status: undefined,
+			intent: {
+				type: 'validate',
+				payload: { name: 'message' },
+			},
+			initialValue: {
+				message: 'Hello',
+			},
+			error: {
+				message: ['invalid'],
+			},
+			state: {
+				validated: {
+					message: true,
+				},
+			},
+		});
+		expect(intentSubmission.reply({ resetForm: true })).toEqual({
+			initialValue: null,
+		});
+		expect(intentSubmission.reply({ hideFields: ['message'] })).toEqual({
+			status: undefined,
+			intent: {
+				type: 'validate',
+				payload: { name: 'message' },
+			},
+			initialValue: {},
+			error: {
+				message: ['World'],
+			},
+			state: {
+				validated: {
+					message: true,
+				},
+			},
+		});
+	});
 
-		test('list intent', () => {
-			expect(parseIntent(list.append('items').value)).toEqual({
-				type: 'list',
-				payload: {
-					name: 'items',
-					operation: 'append',
-				},
-			});
-			expect(
-				parseIntent(
-					list.prepend('tasks', { defaultValue: 'testing/seperator' }).value,
-				),
-			).toEqual({
-				type: 'list',
-				payload: {
-					name: 'tasks',
-					operation: 'prepend',
-					defaultValue: 'testing/seperator',
-				},
-			});
-			expect(
-				parseIntent(
-					list.insert('tasks', { index: 3, defaultValue: 'testing/seperator' })
-						.value,
-				),
-			).toEqual({
-				type: 'list',
-				payload: {
-					name: 'tasks',
-					operation: 'insert',
-					defaultValue: 'testing/seperator',
-					index: 3,
-				},
-			});
-			expect(parseIntent(list.remove('tasks', { index: 0 }).value)).toEqual({
-				type: 'list',
-				payload: {
-					name: 'tasks',
-					operation: 'remove',
-					index: 0,
-				},
-			});
-			expect(
-				parseIntent(list.reorder('tasks', { from: 1, to: 2 }).value),
-			).toEqual({
-				type: 'list',
-				payload: {
-					name: 'tasks',
-					operation: 'reorder',
-					from: 1,
-					to: 2,
-				},
-			});
-			expect(
-				parseIntent(
-					list.replace('tasks', { defaultValue: '', index: 0 }).value,
-				),
-			).toEqual({
-				type: 'list',
-				payload: {
-					name: 'tasks',
-					operation: 'replace',
-					defaultValue: '',
-					index: 0,
-				},
-			});
-		});
+	test('getPaths()', () => {
+		expect(getPaths('')).toEqual([]);
+		expect(getPaths('title')).toEqual(['title']);
+		expect(getPaths('123')).toEqual(['123']);
+		expect(getPaths('amount.currency')).toEqual(['amount', 'currency']);
+		expect(getPaths('[0]')).toEqual([0]);
+		expect(getPaths('tasks[0]')).toEqual(['tasks', 0]);
+		expect(getPaths('tasks[1].completed')).toEqual(['tasks', 1, 'completed']);
+		expect(getPaths('multiple[0][1][2]')).toEqual(['multiple', 0, 1, 2]);
+		expect(getPaths('books[0].chapters[1]')).toEqual([
+			'books',
+			0,
+			'chapters',
+			1,
+		]);
+	});
 
-		test('custom intent', () => {
-			expect(parseIntent('submit/something')).toEqual(null);
-			expect(parseIntent('testing')).toEqual(null);
-		});
+	test('formatPaths()', () => {
+		expect(formatPaths([])).toEqual('');
+		expect(formatPaths([0])).toEqual('[0]');
+		expect(formatPaths(['title'])).toEqual('title');
+		expect(formatPaths(['amount', 'currency'])).toEqual('amount.currency');
+		expect(formatPaths(['tasks', 0])).toEqual('tasks[0]');
+		expect(formatPaths(['tasks', 1, 'completed'])).toEqual(
+			'tasks[1].completed',
+		);
+	});
+
+	test('isPrefix()', () => {
+		expect(isPrefix('', '')).toBe(true);
+		expect(isPrefix('address', '')).toBe(true);
+		expect(isPrefix('address', 'address')).toBe(true);
+		expect(isPrefix('address', 'address.city')).toBe(false);
+		expect(isPrefix('address.city', '')).toBe(true);
+		expect(isPrefix('address.city', 'address')).toBe(true);
+		expect(isPrefix('address.city', 'address.city')).toBe(true);
+		expect(isPrefix('address.city', 'address.street')).toBe(false);
+		expect(isPrefix('address.city.zipcode', '')).toBe(true);
+		expect(isPrefix('address.city.zipcode', 'address.city')).toBe(true);
+
+		expect(isPrefix('tasks[0]', '')).toBe(true);
+		expect(isPrefix('tasks[0]', 'tasks')).toBe(true);
+		expect(isPrefix('tasks[0]', 'tasks[0]')).toBe(true);
+		expect(isPrefix('tasks[0]', 'tasks[1]')).toBe(false);
+		expect(isPrefix('tasks[0].content', '')).toBe(true);
+		expect(isPrefix('tasks[0].content', 'tasks')).toBe(true);
+		expect(isPrefix('tasks[0].content', 'tasks[0]')).toBe(true);
+		expect(isPrefix('tasks[0].content', 'tasks[0].content')).toBe(true);
+		expect(isPrefix('tasks[0].content', 'tasks[1].content')).toBe(false);
+		expect(isPrefix('tasks[0].content', 'tasks[0].completed')).toBe(false);
 	});
 });

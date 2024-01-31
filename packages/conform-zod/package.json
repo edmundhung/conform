@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.9.1",
+	"version": "1.0.0-rc.1",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -24,12 +24,14 @@
 	"bugs": {
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
+	"dependencies": {
+		"@conform-to/dom": "1.0.0-rc.1"
+	},
 	"peerDependencies": {
-		"@conform-to/dom": "0.9.1",
 		"zod": "^3.21.0"
 	},
 	"devDependencies": {
-		"zod": "^3.22.2"
+		"zod": "3.21.4"
 	},
 	"keywords": [
 		"constraint-validation",

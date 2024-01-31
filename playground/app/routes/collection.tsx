@@ -1,5 +1,5 @@
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { getCollectionProps, getFormProps, useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
@@ -20,53 +20,47 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
-	return json(submission);
+	return json(submission.reply());
 }
 
 export default function Example() {
 	const { noClientValidate } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const [form, { singleChoice, multipleChoice }] = useForm({
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm({
 		id: 'collection',
-		lastSubmission,
+		lastResult,
 		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
-			? ({ formData }) => parse(formData, { schema })
+			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
 	});
 
 	return (
-		<Form method="post" {...form.props}>
-			<Playground title="Collection" lastSubmission={lastSubmission}>
-				<Field label="Single choice" config={singleChoice}>
-					{conform
-						.collection(singleChoice, {
-							type: 'radio',
-							options: ['x', 'y', 'z'],
-							ariaAttributes: true,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+		<Form method="post" {...getFormProps(form)}>
+			<Playground title="Collection" result={lastResult}>
+				<Field label="Single choice" meta={fields.singleChoice}>
+					{getCollectionProps(fields.singleChoice, {
+						type: 'radio',
+						options: ['x', 'y', 'z'],
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
-				<Field label="Multiple choice" config={multipleChoice}>
-					{conform
-						.collection(multipleChoice, {
-							type: 'checkbox',
-							options: ['a', 'b', 'c', 'd'],
-							ariaAttributes: true,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+				<Field label="Multiple choice" meta={fields.multipleChoice}>
+					{getCollectionProps(fields.multipleChoice, {
+						type: 'checkbox',
+						options: ['a', 'b', 'c', 'd'],
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
 			</Playground>
 		</Form>

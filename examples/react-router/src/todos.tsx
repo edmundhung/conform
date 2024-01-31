@@ -1,20 +1,18 @@
-import type { FieldsetConfig } from '@conform-to/react';
+import type { SubmissionResult } from '@conform-to/react';
 import {
-	conform,
 	useForm,
-	useFieldset,
-	useFieldList,
-	list,
+	getFormProps,
+	getInputProps,
+	getFieldsetProps,
 } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionFunctionArgs } from 'react-router-dom';
 import { Form, useActionData, json, redirect } from 'react-router-dom';
-import { useRef } from 'react';
 import { z } from 'zod';
 
 const taskSchema = z.object({
 	content: z.string(),
-	completed: z.boolean(),
+	completed: z.boolean().optional(),
 });
 
 const todosSchema = z.object({
@@ -24,93 +22,96 @@ const todosSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
+	const submission = parseWithZod(formData, {
 		schema: todosSchema,
 	});
 
-	if (!submission.value || submission.intent !== 'submit') {
-		return json(submission);
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
 }
 
 export function Component() {
-	const lastSubmission = useActionData() as any;
-	const [form, { title, tasks }] = useForm({
-		lastSubmission,
+	const lastResult = useActionData() as SubmissionResult<string[]>;
+	const [form, fields] = useForm({
+		lastResult,
 		onValidate({ formData }) {
-			return parse(formData, { schema: todosSchema });
+			return parseWithZod(formData, { schema: todosSchema });
 		},
 	});
-	const taskList = useFieldList(form.ref, tasks);
+	const tasks = fields.tasks.getFieldList();
 
 	return (
-		<Form method="post" {...form.props}>
+		<Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Title</label>
 				<input
-					className={title.error ? 'error' : ''}
-					{...conform.input(title)}
+					className={!fields.title.valid ? 'error' : ''}
+					{...getInputProps(fields.title, { type: 'text' })}
 				/>
-				<div>{title.error}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{tasks.error}</div>
-			{taskList.map((task, index) => (
-				<p key={task.key}>
-					<TaskFieldset title={`Task #${index + 1}`} config={task} />
-					<button {...list.remove(tasks.name, { index })}>Delete</button>
-					<button {...list.reorder(tasks.name, { from: index, to: 0 })}>
-						Move to top
-					</button>
-					<button
-						{...list.replace(tasks.name, {
-							index,
-							defaultValue: { content: '' },
-						})}
-					>
-						Clear
-					</button>
-				</p>
-			))}
-			<button {...list.insert(tasks.name)}>Add task</button>
+			<div className="form-error">{fields.tasks.errors}</div>
+			{tasks.map((task, index) => {
+				const taskFields = task.getFieldset();
+
+				return (
+					<fieldset key={task.key} {...getFieldsetProps(task)}>
+						<div>
+							<label>Task #{index + 1}</label>
+							<input
+								className={!taskFields.content.valid ? 'error' : ''}
+								{...getInputProps(taskFields.content, { type: 'text' })}
+							/>
+							<div>{taskFields.content.errors}</div>
+						</div>
+						<div>
+							<label>
+								<span>Completed</span>
+								<input
+									className={!taskFields.completed.valid ? 'error' : ''}
+									{...getInputProps(taskFields.completed, {
+										type: 'checkbox',
+									})}
+								/>
+							</label>
+						</div>
+						<button
+							{...form.remove.getButtonProps({
+								name: fields.tasks.name,
+								index,
+							})}
+						>
+							Delete
+						</button>
+						<button
+							{...form.reorder.getButtonProps({
+								name: fields.tasks.name,
+								from: index,
+								to: 0,
+							})}
+						>
+							Move to top
+						</button>
+						<button
+							{...form.update.getButtonProps({
+								name: task.name,
+								value: { content: '' },
+							})}
+						>
+							Clear
+						</button>
+					</fieldset>
+				);
+			})}
+			<button {...form.insert.getButtonProps({ name: fields.tasks.name })}>
+				Add task
+			</button>
 			<hr />
 			<button>Save</button>
 		</Form>
-	);
-}
-
-interface TaskFieldsetProps {
-	title: string;
-	config: FieldsetConfig<z.input<typeof taskSchema>>;
-}
-
-function TaskFieldset({ title, config }: TaskFieldsetProps) {
-	const ref = useRef<HTMLFieldSetElement>(null);
-	const { content, completed } = useFieldset(ref, config);
-
-	return (
-		<fieldset ref={ref}>
-			<div>
-				<label>{title}</label>
-				<input
-					className={content.error ? 'error' : ''}
-					{...conform.input(content)}
-				/>
-				<div>{content.error}</div>
-			</div>
-			<div>
-				<label>
-					<span>Completed</span>
-					<input
-						className={completed.error ? 'error' : ''}
-						{...conform.input(completed, {
-							type: 'checkbox',
-						})}
-					/>
-				</label>
-			</div>
-		</fieldset>
 	);
 }

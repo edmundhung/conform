@@ -1,7 +1,14 @@
-import { conform, useForm, parse } from '@conform-to/react';
+import { type SubmissionResult } from '@conform-to/dom';
+import {
+	getCollectionProps,
+	getFormProps,
+	getInputProps,
+	getSelectProps,
+	getTextareaProps,
+	useForm,
+} from '@conform-to/react';
 import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
-import { useRef } from 'react';
 import { Playground, Field, Alert } from '~/components';
 
 interface Schema {
@@ -24,43 +31,59 @@ export async function loader({ request }: LoaderArgs) {
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, {
-		resolve({ languages }) {
-			if (!languages) {
-				return {
-					error: {
-						// Checkbox group cannot be validated with the required constraint
-						languages: ['Please select at least one language'],
-					},
-				};
+	const initialValue: Record<string, string | string[]> = {};
+	const error: Record<string, string[]> = {};
+	const validated: Record<string, boolean> = {};
+
+	for (const name of [
+		'title',
+		'description',
+		'rating',
+		'images',
+		'tags',
+		'released',
+		'languages',
+	]) {
+		const values = formData.getAll(name);
+
+		validated[name] = true;
+		error[name] = ['invalid'];
+
+		for (const next of values) {
+			const prev = initialValue[name];
+
+			if (typeof next === 'string') {
+				if (typeof prev === 'undefined') {
+					initialValue[name] = next;
+				} else {
+					initialValue[name] = Array.isArray(prev)
+						? [...prev, next]
+						: [prev, next];
+				}
 			}
+		}
+	}
 
-			return {
-				value: {},
-			};
-		},
-	});
-
-	return json({
-		...submission,
+	return json<SubmissionResult>({
+		status: 'error',
+		initialValue,
 		error: {
-			...submission.error,
-			'': ['Submitted'],
+			...error,
+			'': ['invalid'],
+			released: ['invalid'],
+		},
+		state: {
+			validated,
 		},
 	});
 }
 
 export default function Example() {
 	const { enableDescription } = useLoaderData<typeof loader>();
-	const lastSubmission = useActionData<typeof action>();
-	const ref = useRef<HTMLFormElement>(null);
-	const [
-		form,
-		{ title, description, images, rating, tags, released, languages },
-	] = useForm<Schema>({
+	const lastResult = useActionData<typeof action>();
+	const [form, fields] = useForm<Schema>({
 		id: 'test',
-		ref,
-		lastSubmission,
+		lastResult,
 		constraint: {
 			title: {
 				required: true,
@@ -96,41 +119,45 @@ export default function Example() {
 		},
 	});
 
-	if (form.ref !== ref || form.props.ref !== ref) {
-		throw new Error('Invalid ref object');
-	}
-
 	return (
-		<Form method="post" encType="multipart/form-data" {...form.props}>
-			<Playground title="Input attributes" lastSubmission={lastSubmission}>
+		<Form method="post" encType="multipart/form-data" {...getFormProps(form)}>
+			<Playground title="Input attributes" result={lastResult}>
 				<Alert id={form.errorId} errors={form.errors} />
-				<Field label="Title" config={title}>
+				<Field label="Title" meta={fields.title}>
 					<input
-						{...conform.input(title, {
+						{...getInputProps(fields.title, {
 							type: 'text',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.title.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
-				<Field label="Description" config={description}>
+				<Field label="Description" meta={fields.description}>
 					<textarea
-						{...conform.textarea(description, {
-							description: enableDescription,
+						{...getTextareaProps(fields.description, {
+							ariaDescribedBy: enableDescription
+								? fields.description.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
-				<Field label="Image" config={images}>
+				<Field label="Image" meta={fields.images}>
 					<input
-						{...conform.input(images, {
+						{...getInputProps(fields.images, {
 							type: 'file',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.images.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
-				<Field label="Tags" config={tags}>
+				<Field label="Tags" meta={fields.tags}>
 					<select
-						{...conform.select(tags, {
-							description: enableDescription,
+						{...getSelectProps(fields.tags, {
+							ariaDescribedBy: enableDescription
+								? fields.tags.descriptionId
+								: undefined,
 						})}
 					>
 						<option value="">Please select</option>
@@ -143,47 +170,48 @@ export default function Example() {
 						<option value="romance">Romance</option>
 					</select>
 				</Field>
-				<Field label="Rating" config={rating}>
+				<Field label="Rating" meta={fields.rating}>
 					<input
-						{...conform.input(rating, {
+						{...getInputProps(fields.rating, {
 							type: 'number',
-							description: enableDescription,
+							ariaDescribedBy: enableDescription
+								? fields.rating.descriptionId
+								: undefined,
 						})}
 					/>
 				</Field>
-				<Field label="Released" config={released}>
-					{conform
-						.collection(released, {
-							type: 'radio',
-							options: ['yes', 'no'],
-							ariaAttributes: true,
-							description: enableDescription,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">
-									{`${props.value?.slice(0, 1).toUpperCase()}${props.value
-										?.slice(1)
-										.toLowerCase()}`}
-								</span>
-							</label>
-						))}
+				<Field label="Released" meta={fields.released}>
+					{getCollectionProps(fields.released, {
+						type: 'radio',
+						options: ['yes', 'no'],
+						ariaAttributes: true,
+						ariaDescribedBy: enableDescription
+							? fields.released.descriptionId
+							: undefined,
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">
+								{`${props.value?.slice(0, 1).toUpperCase()}${props.value
+									?.slice(1)
+									.toLowerCase()}`}
+							</span>
+						</label>
+					))}
 				</Field>
-				<Field label="Languages" config={languages}>
-					{conform
-						.collection(languages, {
-							type: 'checkbox',
-							options: ['en', 'de', 'jp'],
-							ariaAttributes: true,
-							description: enableDescription,
-						})
-						.map((props) => (
-							<label key={props.value} className="inline-block">
-								<input {...props} />
-								<span className="p-2">{props.value?.toUpperCase()}</span>
-							</label>
-						))}
+				<Field label="Languages" meta={fields.languages}>
+					{getCollectionProps(fields.languages, {
+						type: 'checkbox',
+						options: ['en', 'de', 'jp'],
+						ariaDescribedBy: enableDescription
+							? fields.languages.descriptionId
+							: undefined,
+					}).map((props) => (
+						<label key={props.value} className="inline-block">
+							<input {...props} />
+							<span className="p-2">{props.value?.toUpperCase()}</span>
+						</label>
+					))}
 				</Field>
 			</Playground>
 		</Form>

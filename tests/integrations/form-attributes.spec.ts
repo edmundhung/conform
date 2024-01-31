@@ -20,7 +20,7 @@ test('default form attributes', async ({ page }) => {
 	await expect(fieldset.encType).toHaveValue(
 		'application/x-www-form-urlencoded',
 	);
-	await expect(fieldset.method).toHaveValue('get');
+	await expect(fieldset.method).toHaveValue('GET');
 });
 
 test('custom form attributes', async ({ page }) => {
@@ -34,7 +34,7 @@ test('custom form attributes', async ({ page }) => {
 	await playground.submit.click();
 	await expect(fieldset.action).toHaveValue('/test');
 	await expect(fieldset.encType).toHaveValue('multipart/form-data');
-	await expect(fieldset.method).toHaveValue('post');
+	await expect(fieldset.method).toHaveValue('POST');
 });
 
 test('unsupported form attributes', async ({ page }) => {
@@ -50,7 +50,7 @@ test('unsupported form attributes', async ({ page }) => {
 	await expect(fieldset.encType).toHaveValue(
 		'application/x-www-form-urlencoded',
 	);
-	await expect(fieldset.method).toHaveValue('get');
+	await expect(fieldset.method).toHaveValue('GET');
 });
 
 test('submitter attributes', async ({ page }) => {
@@ -64,7 +64,7 @@ test('submitter attributes', async ({ page }) => {
 	await playground.submit.click();
 	await expect(fieldset.action).toHaveValue('/hello');
 	await expect(fieldset.encType).toHaveValue('multipart/form-data');
-	await expect(fieldset.method).toHaveValue('put');
+	await expect(fieldset.method).toHaveValue('PUT');
 });
 
 test('unsupported submitter attributes', async ({ page }) => {
@@ -80,7 +80,7 @@ test('unsupported submitter attributes', async ({ page }) => {
 	await expect(fieldset.encType).toHaveValue(
 		'application/x-www-form-urlencoded',
 	);
-	await expect(fieldset.method).toHaveValue('get');
+	await expect(fieldset.method).toHaveValue('GET');
 });
 
 test('override behaviour', async ({ page }) => {
@@ -96,5 +96,5 @@ test('override behaviour', async ({ page }) => {
 	await expect(fieldset.encType).toHaveValue(
 		'application/x-www-form-urlencoded',
 	);
-	await expect(fieldset.method).toHaveValue('get');
+	await expect(fieldset.method).toHaveValue('GET');
 });

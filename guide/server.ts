@@ -10,8 +10,8 @@ export const onRequest = createPagesFunctionHandler({
 	build,
 	getLoadContext: (context) => ({
 		env: {
-			...context.env,
 			CF_PAGES_BRANCH: 'main',
+			...context.env,
 		},
 		waitUntil(promise: Promise<unknown>) {
 			context.waitUntil(promise);

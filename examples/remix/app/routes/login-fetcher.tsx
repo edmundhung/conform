@@ -1,5 +1,5 @@
-import { conform, useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
+import { useForm, getFormProps, getInputProps } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
@@ -13,14 +13,10 @@ const schema = z.object({
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = parse(formData, { schema });
+	const submission = parseWithZod(formData, { schema });
 
-	/**
-	 * Signup only when the user click on the submit button and no error found
-	 */
-	if (!submission.value || submission.intent !== 'submit') {
-		// Always sends the submission state back to client until the user is signed up
-		return json(submission);
+	if (submission.status !== 'success') {
+		return json(submission.reply());
 	}
 
 	return redirect(`/?value=${JSON.stringify(submission.value)}`);
@@ -28,42 +24,40 @@ export async function action({ request }: ActionArgs) {
 
 export default function Login() {
 	const fetcher = useFetcher<typeof action>();
-	// Last submission returned by the server
-	const lastSubmission = fetcher.data;
-	const [form, { email, password, remember }] = useForm({
+	const [form, fields] = useForm({
 		// Sync the result of last submission
-		lastSubmission,
+		lastResult: fetcher.data,
 
 		// Reuse the validation logic on the client
 		onValidate({ formData }) {
-			return parse(formData, { schema });
+			return parseWithZod(formData, { schema });
 		},
 
 		shouldRevalidate: 'onBlur',
 	});
 
 	return (
-		<fetcher.Form method="post" {...form.props}>
+		<fetcher.Form method="post" {...getFormProps(form)}>
 			<div>
 				<label>Email</label>
 				<input
-					className={email.error ? 'error' : ''}
-					{...conform.input(email)}
+					className={!fields.email.valid ? 'error' : ''}
+					{...getInputProps(fields.email, { type: 'email' })}
 				/>
-				<div>{email.error}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={password.error ? 'error' : ''}
-					{...conform.input(password, { type: 'password' })}
+					className={!fields.password.valid ? 'error' : ''}
+					{...getInputProps(fields.password, { type: 'password' })}
 				/>
-				<div>{password.error}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...conform.input(remember, { type: 'checkbox' })} />
+					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
 				</div>
 			</label>
 			<hr />

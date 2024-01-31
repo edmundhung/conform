@@ -1,4 +1,4 @@
-import { useInputEvent } from '@conform-to/react';
+import { getFormProps, useForm, useInputControl } from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
@@ -14,20 +14,14 @@ export async function loader({ request }: LoaderArgs) {
 
 export default function Example() {
 	const { defaultValue, delegateFocus } = useLoaderData<typeof loader>();
-	const controlRef = useRef<HTMLInputElement>(null);
-	const control = useInputEvent({
-		ref: controlRef,
-		onFocus() {
-			if (delegateFocus) {
-				inputRef.current?.focus();
-			}
-		},
-		onReset() {
-			setValue(defaultValue ?? '');
+	const [form, fields] = useForm({
+		defaultValue: {
+			'native-input': defaultValue,
+			'base-input': defaultValue,
 		},
 	});
+	const control = useInputControl(fields['base-input']);
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [value, setValue] = useState(defaultValue ?? '');
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
 		const input = event.target as HTMLInputElement;
@@ -48,6 +42,7 @@ export default function Example() {
 
 	return (
 		<form
+			{...getFormProps(form)}
 			onChange={log}
 			onInput={log}
 			onFocusCapture={log}
@@ -62,20 +57,13 @@ export default function Example() {
 						className="p-2 flex-1"
 						name="native-input"
 						type="text"
-						value={value}
+						value={control.value ?? ''}
 						ref={inputRef}
-						onChange={(e) => {
-							control.change(e.target.value);
-							setValue(e.target.value);
-						}}
+						onChange={(event) => control.change(event.target.value)}
 						onFocus={control.focus}
 						onBlur={control.blur}
 					/>
-					<button
-						className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-						name="intent"
-						value="clear"
-					>
+					<button className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
 						Submit
 					</button>
 					<button
@@ -88,12 +76,17 @@ export default function Example() {
 				<div className="pt-4">
 					<div>Shadow input</div>
 					<input
-						ref={controlRef}
 						name="base-input"
 						type="text"
 						defaultValue={defaultValue ?? ''}
-						onChange={control.change}
-						onFocus={control.focus}
+						onChange={(event) => control.change(event.target.value)}
+						onFocus={() => {
+							control.focus();
+
+							if (delegateFocus) {
+								inputRef.current?.focus();
+							}
+						}}
 						onBlur={control.blur}
 					/>
 				</div>

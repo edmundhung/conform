@@ -25,6 +25,7 @@ import {
 	ZodDefault,
 	lazy,
 	any,
+	ZodCatch,
 } from 'zod';
 
 /**
@@ -96,10 +97,10 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
  */
-export function enableTypeCoercion<Type extends ZodTypeAny>(
-	type: Type,
+export function enableTypeCoercion<Schema extends ZodTypeAny>(
+	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
-): ZodType<output<Type>> {
+): ZodType<output<Schema>> {
 	const result = cache.get(type);
 
 	// Return the cached schema if it's already processed
@@ -121,7 +122,11 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 			.pipe(type);
 	} else if (type instanceof ZodNumber) {
 		schema = any()
-			.transform((value) => coerceString(value, Number))
+			.transform((value) =>
+				coerceString(value, (text) =>
+					text.trim() === '' ? Number.NaN : Number(text),
+				),
+			)
 			.pipe(type);
 	} else if (type instanceof ZodBoolean) {
 		schema = any()
@@ -215,6 +220,11 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 					innerType: enableTypeCoercion(type.removeDefault(), cache),
 				}),
 			);
+	} else if (type instanceof ZodCatch) {
+		schema = new ZodCatch({
+			...type._def,
+			innerType: enableTypeCoercion(type.removeCatch(), cache),
+		});
 	} else if (type instanceof ZodIntersection) {
 		schema = new ZodIntersection({
 			...type._def,
@@ -233,6 +243,12 @@ export function enableTypeCoercion<Type extends ZodTypeAny>(
 			...type._def,
 			options: type.options.map((option: ZodTypeAny) =>
 				enableTypeCoercion(option, cache),
+			),
+			optionsMap: new Map(
+				Array.from(type.optionsMap.entries()).map(([discriminator, option]) => [
+					discriminator,
+					enableTypeCoercion(option, cache),
+				]),
 			),
 		});
 	} else if (type instanceof ZodTuple) {
