@@ -11,9 +11,9 @@
 	},
 	"dependencies": {
 		"@markdoc/markdoc": "^0.4.0",
-		"@remix-run/cloudflare": "^2.4.1",
-		"@remix-run/cloudflare-pages": "^2.4.1",
-		"@remix-run/react": "^2.4.1",
+		"@remix-run/cloudflare": "^2.5.1",
+		"@remix-run/cloudflare-pages": "^2.5.1",
+		"@remix-run/react": "^2.5.1",
 		"cross-env": "^7.0.3",
 		"isbot": "^3",
 		"react": "^18.2.0",
@@ -23,8 +23,8 @@
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20231218.0",
 		"@octokit/types": "^12.4.0",
-		"@remix-run/dev": "^2.4.1",
-		"@remix-run/eslint-config": "^2.4.1",
+		"@remix-run/dev": "^2.5.1",
+		"@remix-run/eslint-config": "^2.5.1",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.10",
 		"@types/react": "^18.2.46",

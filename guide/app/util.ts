@@ -85,31 +85,28 @@ export async function downloadFile(options: {
 	owner: string;
 	repo: string;
 }) {
-	try {
-		const resposne = await fetch(
-			`https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.path}?ref=${options.ref}`,
-			{
-				headers: getGitHubApiHeaders(options.auth),
-			},
-		);
-		const file: Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data'] =
-			await resposne.json();
+	const resposne = await fetch(
+		`https://api.github.com/repos/${options.owner}/${options.repo}/contents/${options.path}?ref=${options.ref}`,
+		{
+			headers: getGitHubApiHeaders(options.auth),
+		},
+	);
 
-		if (Array.isArray(file) || file.type !== 'file') {
-			throw new Error('The path provided should be pointed to a file');
-		}
-
-		return file;
-	} catch (e) {
-		if ((e as any).status === 404) {
-			throw notFound();
-		}
-
-		throw e;
+	if (resposne.status === 404) {
+		throw notFound();
 	}
+
+	const file: Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data'] =
+		await resposne.json();
+
+	if (Array.isArray(file) || file.type !== 'file') {
+		throw notFound();
+	}
+
+	return file;
 }
 
-export function formatTitle(title: string | undefined): string {
+export function formatTitle(title: string | null | undefined): string {
 	return title ? `Conform / ${title}` : 'Conform Guide';
 }
 

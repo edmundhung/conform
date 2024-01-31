@@ -1,6 +1,6 @@
 # Overview
 
-Conform is a **type-safe** form validation library utilizing web fundamentals to **progressively enhance** HTML Forms with full support for server frameworks like [Remix](https://remix.run) and [Next.js](https://nextjs.org).
+Conform is a type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like [Remix](https://remix.run) and [Next.js](https://nextjs.org).
 
 ## Features
 

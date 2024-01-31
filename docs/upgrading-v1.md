@@ -10,7 +10,7 @@ Conform now requires React 18 or higher. If you are using an older version of Re
 
 First, all helpers are renamed and can be imported individually:
 
-- `conform.input` -> [getInputProps](./api//react/getInputProps.md)
+- `conform.input` -> [getInputProps](./api/react/getInputProps.md)
 - `conform.select` -> [getSelectProps](./api/react/getSelectProps.md)
 - `conform.textarea` -> [getTextareaProps](./api/react/getTextareaProps.md)
 - `conform.fieldset` -> [getFieldsetProps](./api/react/getFieldsetProps.md)

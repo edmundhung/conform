@@ -55,7 +55,7 @@ export default function App() {
 
 function Document({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" className="text-[14px]">
+		<html lang="en">
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />

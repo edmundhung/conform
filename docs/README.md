@@ -1,7 +1,5 @@
 # Documentation
 
-The documentation is divided into several sections:
-
 - Get Started
   - [Overview](./overview.md)
   - [Tutorial](./tutorial.md)
@@ -14,9 +12,9 @@ The documentation is divided into several sections:
   - [File Upload](./file-upload.md)
   - [Accessibility](./accessibility.md)
 - Integrations
-  - [UI Libraries](./ui-libraries.md)
-  - [Remix](./remix.md)
-  - [Next.js](./nextjs.md)
+  - [UI Libraries](./integration/ui-libraries.md)
+  - [Remix](./integration/remix.md)
+  - [Next.js](./integration/nextjs.md)
 - API Reference
   - @conform-to/react
     - [useForm](./api/react/useForm.md)

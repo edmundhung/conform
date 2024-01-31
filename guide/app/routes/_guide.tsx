@@ -14,6 +14,7 @@ const menus: Menu[] = [
 		links: [
 			{ title: 'Overview', to: '/' },
 			{ title: 'Tutorial', to: '/tutorial' },
+			{ title: 'Upgrading to v1', to: '/upgrading-v1' },
 			{ title: 'GitHub', to: 'https://github.com/edmundhung/conform' },
 		],
 	},
@@ -22,7 +23,6 @@ const menus: Menu[] = [
 		links: [
 			{ title: 'Validation', to: '/validation' },
 			{ title: 'Nested object and Array', to: '/complex-structures' },
-			{ title: 'Custom Inputs', to: '/integrations' },
 			{ title: 'Intent button', to: '/intent-button' },
 			{ title: 'Accessibility', to: '/accessibility' },
 			{ title: 'Checkbox and Radio Group', to: '/checkbox-and-radio-group' },
@@ -32,10 +32,9 @@ const menus: Menu[] = [
 	{
 		title: 'Integration',
 		links: [
-			{ title: 'React Router', to: '/integration/react-router' },
+			{ title: 'UI Libraries', to: '/integration/ui-libraries' },
 			{ title: 'Remix', to: '/integration/remix' },
-			{ title: 'Yup', to: '/integration/yup' },
-			{ title: 'Zod', to: '/integration/zod' },
+			{ title: 'Next.js', to: '/integration/nextjs' },
 		],
 	},
 	{
@@ -52,13 +51,21 @@ const menus: Menu[] = [
 	{
 		title: 'Utilities',
 		links: [
-			{ title: 'intent', to: '/api/react/intent' },
 			{ title: 'getFormProps', to: '/api/react/getFormProps' },
 			{ title: 'getFieldsetProps', to: '/api/react/getFieldsetProps' },
 			{ title: 'getInputProps', to: '/api/react/getInputProps' },
 			{ title: 'getSelectProps', to: '/api/react/getSelectProps' },
 			{ title: 'getTextareaProps', to: '/api/react/getTextareaProps' },
 			{ title: 'getCollectionProps', to: '/api/react/getCollectionProps' },
+		],
+	},
+	{
+		title: 'Schema related',
+		links: [
+			{ title: 'parseWithZod', to: '/api/zod/parseWithZod' },
+			{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
+			{ title: 'getZodConstraint', to: '/api/zod/getZodConstraint' },
+			{ title: 'getYupConstraint', to: '/api/yup/getYupConstraint' },
 		],
 	},
 ];
@@ -70,7 +77,7 @@ export default function Guide() {
 
 	const sidemenus: Menu[] = [];
 
-	if (toc) {
+	if (toc && toc.links.length > 0) {
 		sidemenus.push({
 			title: 'On this page',
 			links: toc.links.map((link) => ({
@@ -122,22 +129,9 @@ export default function Guide() {
 						</div>
 					</button>
 				</div>
-
-				{/* <div className="py-2 flex items-center gap-4">
-					<span>Theme:</span>
-					<a className="py-1 text-zinc-400 hover:text-zinc-200">
-						Light
-					</a>
-					<span>/</span>
-					<a className="py-1">
-						Dark
-					</a>
-				</div> */}
-
 				<div className="py-4 flex-1 xl:overflow-y-auto">
 					<Navigation menus={sidemenus} />
 				</div>
-
 				<div className="py-4 text-sm">
 					&copy; {new Date().getFullYear()} Edmund Hung
 				</div>

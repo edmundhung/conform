@@ -12,7 +12,7 @@ import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
 import type { loader as rootLoader } from '~/root';
 import type { loader as indexLoader } from '~/routes/_guide._index';
-import type { loader as pageLoader } from '~/routes/_guide.$page';
+import type { loader as pageLoader } from '~/routes/_guide.$';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface Menu {
@@ -45,7 +45,7 @@ export function usePageLoaderData() {
 	const indexData = useRouteLoaderData<typeof indexLoader>(
 		'routes/_guide._index',
 	);
-	const pageData = useRouteLoaderData<typeof pageLoader>('routes/_guide.$page');
+	const pageData = useRouteLoaderData<typeof pageLoader>('routes/_guide.$');
 
 	return pageData ?? indexData;
 }
@@ -98,13 +98,15 @@ export function Fence({
 	children: string;
 }): React.ReactNode {
 	return (
-		<ReactSyntaxHighlighter
-			language={language}
-			style={style}
-			showLineNumbers={language === 'tsx' || language === 'css'}
-		>
-			{children}
-		</ReactSyntaxHighlighter>
+		<div className="pb-4">
+			<ReactSyntaxHighlighter
+				language={language}
+				style={style}
+				showLineNumbers={language === 'tsx' || language === 'css'}
+			>
+				{children.trim()}
+			</ReactSyntaxHighlighter>
+		</div>
 	);
 }
 
@@ -159,14 +161,14 @@ export function Heading({
 	switch (level) {
 		case 1:
 			className =
-				'text-xl xl:text-3xl pt-4 pb-6 xl:pt-4 xl:pb-2 xl:mb-8 tracking-wide';
+				'text-xl xl:text-3xl pt-4 pb-4 xl:pt-4 xl:pb-0 xl:mb-8 tracking-wide';
 			break;
 		case 2:
 			className =
 				'text-md xl:text-xl pt-40 -mt-32 pb-2 mb-4 xl:mt-auto xl:pt-8 xl:pb-4 xl:mb-6 border-b border-dotted border-zinc-200';
 			break;
 		default:
-			className = 'pt-12 pb-4';
+			className = `pt-4 pb-4 px-1 before:content-['[_'] after:content-['_]'] before:text-zinc-400 after:text-zinc-400`;
 			break;
 	}
 
@@ -186,7 +188,7 @@ export function Heading({
 }
 
 export function Paragraph({ children }: { children: React.ReactNode }) {
-	return <p className="py-2 text-zinc-400">{children}</p>;
+	return <p className="py-4 text-zinc-400">{children}</p>;
 }
 
 export function MainNavigation({ menus }: { menus: Menu[] }) {
@@ -270,16 +272,12 @@ export function Navigation({
 }
 
 export function Strong({ children }: { children: React.ReactNode }) {
-	return (
-		<span className="before:content-['**'] after:content-['**'] before:text-zinc-400 after:text-zinc-400">
-			{children}
-		</span>
-	);
+	return <span className="text-zinc-200">{children}</span>;
 }
 
 export function Link({
 	href,
-	className = "px-1 before:content-['['] after:content-[']'] before:text-zinc-400 after:text-zinc-400 before:hover:text-zinc-200 after:hover:text-zinc-200",
+	className = 'underline',
 	title,
 	children,
 }: {
@@ -303,18 +301,14 @@ export function Link({
 		);
 	}
 
-	let to = url;
-
-	if (to.startsWith('/packages/')) {
-		to = to.replace('/packages/conform-', '/api/').replace('/README.md', '');
-	} else if (to.startsWith('/docs/')) {
-		to = to.replace('/docs', '').replace('.md', '');
-	} else {
-		to = to.replace('.md', '');
-	}
-
 	return (
-		<RouterLink className={className} to={to} title={title} prefetch="intent">
+		<RouterLink
+			className={className}
+			to={url.replace('.md', '')}
+			title={title}
+			prefetch="intent"
+			relative="path"
+		>
 			{children}
 		</RouterLink>
 	);

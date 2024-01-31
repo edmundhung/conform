@@ -13,4 +13,7 @@ export default {
 	// assetsBuildDirectory: "public/build",
 	// publicPath: "/build/",
 	tailwind: true,
+	future: {
+		v3_relativeSplatPath: true,
+	},
 };
