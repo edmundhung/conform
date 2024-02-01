@@ -1,9 +1,9 @@
 import { type FieldElement, isFieldElement } from '@conform-to/dom';
 import { type Key, useRef, useState, useMemo, useEffect } from 'react';
 
-export type InputControl = {
-	value: string | undefined;
-	change: (value: string) => void;
+export type InputControl<T> = {
+	value: T | undefined;
+	change: (value: T) => void;
 	focus: () => void;
 	blur: () => void;
 };
@@ -47,16 +47,16 @@ export function getEventTarget(formId: string, name: string): FieldElement {
 	return input;
 }
 
-export type InputControlOptions = {
+export type InputControlOptions<T> = {
 	key?: Key | null | undefined;
 	name: string;
 	formId: string;
-	initialValue?: string | undefined;
+	initialValue?: T | undefined;
 };
 
-export function useInputControl(
-	metaOrOptions: InputControlOptions,
-): InputControl {
+export function useInputControl<T = string>(
+	metaOrOptions: InputControlOptions<T>,
+): InputControl<T> {
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
@@ -99,7 +99,7 @@ export function useInputControl(
 		};
 	}, [metaOrOptions.formId, metaOrOptions.name]);
 
-	const handlers = useMemo<Omit<InputControl, 'value'>>(() => {
+	const handlers = useMemo<Omit<InputControl<T>, 'value'>>(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
