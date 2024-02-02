@@ -398,8 +398,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.1
       isbot:
-        specifier: latest
-        version: 4.4.0
+        specifier: ^3
+        version: 3.7.1
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -581,8 +581,8 @@ importers:
         specifier: ^1.19.3
         version: 1.19.3
       isbot:
-        specifier: latest
-        version: 4.4.0
+        specifier: ^3
+        version: 3.7.1
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -5945,7 +5945,7 @@ packages:
       '@motionone/easing': 10.16.3
       '@motionone/types': 10.16.3
       '@motionone/utils': 10.16.3
-      tslib: 2.6.2
+      tslib: 2.4.0
     dev: false
 
   /@motionone/dom@10.16.4:
@@ -5969,7 +5969,7 @@ packages:
       }
     dependencies:
       '@motionone/utils': 10.16.3
-      tslib: 2.6.2
+      tslib: 2.4.0
     dev: false
 
   /@motionone/generators@10.16.4:
@@ -5980,7 +5980,7 @@ packages:
     dependencies:
       '@motionone/types': 10.16.3
       '@motionone/utils': 10.16.3
-      tslib: 2.6.2
+      tslib: 2.4.0
     dev: false
 
   /@motionone/types@10.16.3:
@@ -5998,7 +5998,7 @@ packages:
     dependencies:
       '@motionone/types': 10.16.3
       hey-listen: 1.0.8
-      tslib: 2.6.2
+      tslib: 2.4.0
     dev: false
 
   /@mui/base@5.0.0-beta.26(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0):
@@ -10828,7 +10828,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.22.2
-      caniuse-lite: 1.0.30001582
+      caniuse-lite: 1.0.30001583
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -10847,7 +10847,7 @@ packages:
       postcss: ^8.1.0
     dependencies:
       browserslist: 4.22.2
-      caniuse-lite: 1.0.30001582
+      caniuse-lite: 1.0.30001583
       fraction.js: 4.3.7
       normalize-range: 0.1.2
       picocolors: 1.0.0
@@ -11280,7 +11280,7 @@ packages:
     engines: { node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7 }
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001566
+      caniuse-lite: 1.0.30001583
       electron-to-chromium: 1.4.609
       node-releases: 2.0.14
       update-browserslist-db: 1.0.13(browserslist@4.22.2)
@@ -11500,10 +11500,10 @@ packages:
         integrity: sha512-ggIhCsTxmITBAMmK8yZjEhCO5/47jKXPu6Dha/wuCS4JePVL+3uiDEBuhu2aIoT+bqTOR8L76Ip1ARL9xYsEJA==,
       }
 
-  /caniuse-lite@1.0.30001582:
+  /caniuse-lite@1.0.30001583:
     resolution:
       {
-        integrity: sha512-vsJG3V5vgfduaQGVxL53uSX/HUzxyr2eA8xCo36OLal7sRcSZbibJtLeh0qja4sFOr/QQGt4opB4tOy+eOgAxg==,
+        integrity: sha512-acWTYaha8xfhA/Du/z4sNZjHUWjkiuoAi2LM+T/aL+kemKQgPT1xBb/YKjlQ0Qo8gvbHsGNplrEJ+9G3gL7i4Q==,
       }
 
   /capnp-ts@0.7.0:
@@ -16587,14 +16587,6 @@ packages:
         integrity: sha512-JfqOaY3O1lcWt2nc+D6Mq231CNpwZrBboLa59Go0J8hjGH+gY/Sy0CA/YLUSIScINmAVwTdJZIsOTk4PfBtRuw==,
       }
     engines: { node: '>=12' }
-    dev: false
-
-  /isbot@4.4.0:
-    resolution:
-      {
-        integrity: sha512-8ZvOWUA68kyJO4hHJdWjyreq7TYNWTS9y15IzeqVdKxR9pPr3P/3r9AHcoIv9M0Rllkao5qWz2v1lmcyKIVCzQ==,
-      }
-    engines: { node: '>=18' }
     dev: false
 
   /isexe@2.0.0:

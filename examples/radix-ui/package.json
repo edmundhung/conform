@@ -1,5 +1,5 @@
 {
-	"name": "conform-radix-ui",
+	"name": "@conform-example/radix-ui",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
