@@ -37,7 +37,7 @@ const schema = z.object({
 In the action handler, we will parse the form data and validate it with zod. If there is any error, we will return it to the client together with the submitted value.
 
 ```tsx
-import { type ActionArgs, redirect } from '@remix-run/node';
+import { type ActionFunctionArgs, redirect } from '@remix-run/node';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
 
@@ -45,7 +45,7 @@ const schema = z.object({
   // ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   // Construct an object using `Object.fromEntries`
@@ -83,7 +83,7 @@ export async function action({ request }: ActionArgs) {
 Then, we will implement the contact form. If the submission result is returned from `useActionData()`, we will display the error message next to each field. The fields are also initialized with the submitted value to persist the form data in case the document is reloaded.
 
 ```tsx
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
@@ -92,7 +92,7 @@ const schema = z.object({
   // ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   // ...
 }
 
@@ -126,7 +126,7 @@ We are not done yet. Accessibility should never be overlooked. Let's make the fo
 - Make sure the error message is linked to a form element with the **aria-describedby** attribute
 
 ```tsx
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
@@ -135,7 +135,7 @@ const schema = z.object({
   // ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   // ...
 }
 
@@ -210,7 +210,7 @@ Then, we can simplify the action with the `parseWithZod()` helper function. It w
 
 ```tsx
 import { parseWithZod } from '@conform-to/zod';
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
 
@@ -218,7 +218,7 @@ const schema = z.object({
   // ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   // Replace `Object.fromEntries()` with the parseWithZod helper
@@ -247,7 +247,7 @@ Now, we can manage all the form metadata with the [useForm](./api/react/useForm.
 ```tsx
 import { useForm } from '@conform-to/react';
 import { parseWithZod, getZodConstraint } from '@conform-to/zod';
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
@@ -257,7 +257,7 @@ const schema = z.object({
 	// ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	// ...
 }
 
@@ -329,8 +329,8 @@ Let's setup the `shouldValidate` and `shouldRevalidate` options.
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
-import { type ActionArgs, type LoaderArgs, json } from '@remix-run/node';
+import { parseWithZod } from '@conform-to/zod';
+import { type ActionFunctionArgs, type LoaderFunctionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { sendMessage } from '~/message';
 import { getUser } from '~/session';
@@ -339,11 +339,11 @@ const schema = z.object({
   // ...
 });
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   // ...
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   // ...
 }
 
@@ -367,8 +367,8 @@ At this point, our contact form is only validated on the server and takes a roun
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { parse } from '@conform-to/zod';
-import { type ActionArgs, type LoaderArgs } from '@remix-run/node';
+import { parseWithZod } from '@conform-to/zod';
+import { type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { sendMessage } from '~/message';
 import { getUser } from '~/session';
@@ -377,7 +377,7 @@ const schema = z.object({
 	// ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	// ...
 }
 
@@ -420,7 +420,7 @@ import {
   getTextareaProps,
 } from '@conform-to/react';
 import { parseWithZod, getZodConstraint } from '@conform-to/zod';
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { sendMessage } from '~/message';
 
@@ -428,7 +428,7 @@ const schema = z.object({
   // ...
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   // ...
 }
 
@@ -466,7 +466,7 @@ import {
   getTextareaProps,
 } from '@conform-to/react';
 import { parseWithZod, getZodConstraint } from '@conform-to/zod';
-import { type ActionArgs } from '@remix-run/node';
+import { type ActionFunctionArgs } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
 import { sendMessage } from '~/message';
@@ -481,7 +481,7 @@ const schema = z.object({
     .max(100, 'Message is too long'),
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const submission = parseWithZod(formData, { schema });
 
@@ -489,7 +489,7 @@ export async function action({ request }: ActionArgs) {
     return submission.reply();
   }
 
-  const message = await sendMessage(result.data);
+  const message = await sendMessage(submission.value);
 
   if (!message.sent) {
     return submission.reply({
@@ -508,7 +508,7 @@ export default function ContactUs() {
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
