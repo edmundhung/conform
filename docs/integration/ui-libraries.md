@@ -18,12 +18,12 @@ function Example() {
       <div>
         <label>Title</label>
         <input type="text" name="title" />
-        <div>{fields.title.error}</div>
+        <div>{fields.title.errors}</div>
       </div>
       <div>
         <label>Description</label>
         <textarea name="description" />
-        <div>{fields.description.error}</div>
+        <div>{fields.description.errors}</div>
       </div>
       <div>
         <label>Color</label>
@@ -32,7 +32,7 @@ function Example() {
           <option>Green</option>
           <option>Blue</option>
         </select>
-        <div>{fields.color.error}</div>
+        <div>{fields.color.errors}</div>
       </div>
       <button form={form.id}>Submit</button>
     </form>
@@ -143,7 +143,7 @@ function Example() {
       <div>
         <label>Currency</label>
         <SelectField meta={fields.color} options={['red', 'green', 'blue']} />
-        <div>{fields.color.error}</div>
+        <div>{fields.color.errors}</div>
       </div>
       <button>Submit</button>
     </form>
@@ -208,7 +208,7 @@ function Example() {
         <div>
           <label>Color</label>
           <Select name={fields.color.name} options={['red', 'green', 'blue']} />
-          <div>{fields.color.error}</div>
+          <div>{fields.color.errors}</div>
         </div>
         <button>Submit</button>
       </form>
