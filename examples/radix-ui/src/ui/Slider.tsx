@@ -1,8 +1,8 @@
 import { FieldMetadata, useInputControl } from '@conform-to/react';
-import * as Slider from '@radix-ui/react-slider';
+import * as RadixSlider from '@radix-ui/react-slider';
 import { ElementRef, useRef } from 'react';
 
-export function SliderConform({
+export function Slider({
 	meta,
 	max = 100,
 }: {
@@ -10,7 +10,7 @@ export function SliderConform({
 	ariaLabel?: string;
 	max?: number;
 }) {
-	const thumbRef = useRef<ElementRef<typeof Slider.Thumb>>(null);
+	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
 	const control = useInputControl(meta);
 
 	return (
@@ -24,7 +24,7 @@ export function SliderConform({
 					thumbRef.current?.focus();
 				}}
 			/>
-			<Slider.Root
+			<RadixSlider.Root
 				value={[parseFloat(control.value ?? '0')]}
 				className="relative flex items-center select-none touch-none w-full h-5"
 				aria-invalid={!!meta.errors}
@@ -35,14 +35,14 @@ export function SliderConform({
 				onBlur={control.blur}
 				step={1}
 			>
-				<Slider.Track className="bg-neutral-400 relative grow rounded-full h-1">
-					<Slider.Range className="absolute bg-amber-700/40 rounded-full h-full" />
-				</Slider.Track>
-				<Slider.Thumb
+				<RadixSlider.Track className="bg-neutral-400 relative grow rounded-full h-1">
+					<RadixSlider.Range className="absolute bg-amber-700/40 rounded-full h-full" />
+				</RadixSlider.Track>
+				<RadixSlider.Thumb
 					ref={thumbRef}
 					className="block size-5 shadow-md rounded-full bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 border"
 				/>
-			</Slider.Root>
+			</RadixSlider.Root>
 			<div>{control.value}</div>
 		</div>
 	);

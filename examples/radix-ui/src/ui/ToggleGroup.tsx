@@ -1,15 +1,15 @@
 import { type FieldMetadata, useInputControl } from '@conform-to/react';
-import * as ToggleGroup from '@radix-ui/react-toggle-group';
+import * as RadixToggleGroup from '@radix-ui/react-toggle-group';
 import { type ElementRef, useRef } from 'react';
 
-export function ToggleGroupConform({
+export function ToggleGroup({
 	meta,
 	items,
 }: {
 	meta: FieldMetadata<string>;
 	items: Array<{ label: string; value: string }>;
 }) {
-	const toggleGroupRef = useRef<ElementRef<typeof ToggleGroup.Root>>(null);
+	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
 	const control = useInputControl(meta);
 
 	return (
@@ -23,7 +23,7 @@ export function ToggleGroupConform({
 					toggleGroupRef.current?.focus();
 				}}
 			/>
-			<ToggleGroup.Root
+			<RadixToggleGroup.Root
 				type="single"
 				value={control.value}
 				ref={toggleGroupRef}
@@ -34,16 +34,16 @@ export function ToggleGroupConform({
 				onBlur={control.blur}
 			>
 				{items.map((item) => (
-					<ToggleGroup.Item
+					<RadixToggleGroup.Item
 						key={item.value}
 						className="p-1 hover:bg-amber-700/30 color-amber-100 data-[state=on]:bg-amber-800 data-[state=on]:text-white flex grow items-center justify-center bg-transparent first:rounded-l-lg last:rounded-r-lg focus:z-10 focus:ring-2 focus:outline-none  focus:ring-amber-500"
 						value={item.value}
 						aria-label={item.label}
 					>
 						{item.label}
-					</ToggleGroup.Item>
+					</RadixToggleGroup.Item>
 				))}
-			</ToggleGroup.Root>
+			</RadixToggleGroup.Root>
 		</>
 	);
 }

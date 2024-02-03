@@ -1,12 +1,12 @@
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
-import { CheckboxConform } from './ui/Checkbox';
-import { RadioGroupConform } from './ui/RadioGroup';
-import { SliderConform } from './ui/Slider';
-import { SwitchConform } from './ui/Switch';
-import { ToggleGroupConform } from './ui/ToggleGroup';
-import { SelectConform } from './ui/Select';
+import { Checkbox } from './ui/Checkbox';
+import { RadioGroup } from './ui/RadioGroup';
+import { Slider } from './ui/Slider';
+import { Switch } from './ui/Switch';
+import { ToggleGroup } from './ui/ToggleGroup';
+import { Select } from './ui/Select';
 
 const schema = z.object({
 	hasAgreedToTerms: z.boolean({
@@ -68,7 +68,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Checkbox</h2>
 					<div className="flex items-center gap-2">
-						<CheckboxConform meta={hasAgreedToTerms} />
+						<Checkbox meta={hasAgreedToTerms} />
 						<label htmlFor={hasAgreedToTerms.id}>
 							Accept terms and conditions.
 						</label>
@@ -81,7 +81,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Radio Group</h2>
 					<div className="flex flex-col gap-2">
 						Car type:
-						<RadioGroupConform
+						<RadioGroup
 							meta={selectedCarType}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
@@ -98,7 +98,7 @@ export function App() {
 				<div className="flex flex-col gap-2 items-start">
 					<h2 className="text-medium text-amber-600">Select</h2>
 					<label htmlFor={userCountry.id}>Country</label>
-					<SelectConform
+					<Select
 						meta={userCountry}
 						placeholder="Select a country 🗺"
 						items={[
@@ -115,7 +115,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Slider</h2>
 					<div className="flex flex-col gap-2">
 						Estimated kilometers per year:
-						<SliderConform
+						<Slider
 							meta={estimatedKilometersPerYear}
 							ariaLabel="Estimated kilometers per year"
 							max={10_000}
@@ -130,7 +130,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Switch</h2>
 					<div className="flex items-center gap-2">
-						<SwitchConform meta={hasAdditionalDriver} />
+						<Switch meta={hasAdditionalDriver} />
 						<label htmlFor={hasAdditionalDriver.id}>
 							Has additional driver
 						</label>
@@ -143,7 +143,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Toggle group</h2>
 					<div className="flex flex-col gap-2">
 						Desired contract type:
-						<ToggleGroupConform
+						<ToggleGroup
 							meta={desiredContractType}
 							items={[
 								{ value: 'full', label: 'Full' },
