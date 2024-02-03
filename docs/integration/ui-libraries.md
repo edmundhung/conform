@@ -226,3 +226,4 @@ Here you can find examples integrating with some of the popular UI libraries.
 - [Chakra UI](../../examples/chakra-ui/)
 - [Headless UI](../../examples/headless-ui/)
 - [Material UI](../../examples/material-ui/)
+- [Radix UI](../../examples/radix-ui/)
