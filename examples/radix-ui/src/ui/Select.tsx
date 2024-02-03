@@ -1,29 +1,29 @@
-import { FieldMetadata, useInputControl } from '@conform-to/react';
+import { type FieldMetadata, useInputControl } from '@conform-to/react';
 import {
 	CheckIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
 } from '@radix-ui/react-icons';
 import * as Select from '@radix-ui/react-select';
-import { ElementRef, useRef } from 'react';
+import { type ElementRef, useRef } from 'react';
 
 export const SelectConform = ({
-	config,
+	meta,
 	items,
 	placeholder = '',
 }: {
-	config: FieldMetadata<string>;
+	meta: FieldMetadata<string>;
 	items: Array<{ name: string; value: string }>;
 	placeholder?: string;
 }) => {
 	const selectRef = useRef<ElementRef<typeof Select.Trigger>>(null);
-	const control = useInputControl(config);
+	const control = useInputControl(meta);
 
 	return (
 		<>
 			<input
-				name={config.name}
-				defaultValue={config.initialValue}
+				name={meta.name}
+				defaultValue={meta.initialValue}
 				className="sr-only"
 				tabIndex={-1}
 				onFocus={() => {
@@ -65,7 +65,7 @@ export const SelectConform = ({
 									return (
 										<Select.Item
 											value={item.value}
-											id={`${item.name}Id`}
+											id={`${meta.id}-${item.value}`}
 											key={item.value}
 											className="rounded-md flex items-center h-8 pr-4 pl-6 relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-amber-100"
 										>

@@ -1,33 +1,33 @@
-import { FieldMetadata, useInputControl } from '@conform-to/react';
+import { type FieldMetadata, useInputControl } from '@conform-to/react';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import { CheckIcon } from '@radix-ui/react-icons';
-import { ElementRef, useRef } from 'react';
+import { type ElementRef, useRef } from 'react';
 
 export function CheckboxConform({
-	config,
+	meta,
 }: {
-	config: FieldMetadata<string | undefined>;
+	meta: FieldMetadata<string | boolean | undefined>;
 }) {
 	const checkboxRef = useRef<ElementRef<typeof Checkbox.Root>>(null);
-	const control = useInputControl(config);
+	const control = useInputControl(meta);
 
 	return (
 		<>
 			<input
 				className="sr-only"
-				name={config.name}
+				name={meta.name}
 				tabIndex={-1}
-				defaultValue={config.initialValue}
+				defaultValue={meta.initialValue}
 				onFocus={() => checkboxRef.current?.focus()}
 			/>
 			<Checkbox.Root
 				ref={checkboxRef}
-				id={config.id}
-				onCheckedChange={(e) => {
-					control.change(e ? 'on' : 'off');
+				id={meta.id}
+				checked={control.value === 'on'}
+				onCheckedChange={(checked) => {
+					control.change(checked ? 'on' : '');
 				}}
 				onBlur={control.blur}
-				defaultChecked={config.initialValue == 'on'}
 				className="hover:bg-amber-50 flex size-5 appearance-none items-center justify-center rounded-md bg-white outline-none border focus:ring-amber-500 focus:ring-2"
 			>
 				<Checkbox.Indicator className="text-amber-900">

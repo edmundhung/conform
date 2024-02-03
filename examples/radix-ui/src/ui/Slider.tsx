@@ -3,23 +3,21 @@ import * as Slider from '@radix-ui/react-slider';
 import { ElementRef, useRef } from 'react';
 
 export function SliderConform({
-	config,
+	meta,
 	max = 100,
 }: {
-	config: FieldMetadata<number>;
+	meta: FieldMetadata<number>;
 	ariaLabel?: string;
 	max?: number;
 }) {
-	const defaultValue = config.initialValue ?? '0';
 	const thumbRef = useRef<ElementRef<typeof Slider.Thumb>>(null);
-
-	const control = useInputControl(config);
+	const control = useInputControl(meta);
 
 	return (
 		<div className="flex items-center gap-4">
 			<input
-				name={config.name}
-				defaultValue={config.initialValue}
+				name={meta.name}
+				defaultValue={meta.initialValue}
 				className="sr-only"
 				tabIndex={-1}
 				onFocus={() => {
@@ -29,15 +27,12 @@ export function SliderConform({
 			<Slider.Root
 				value={[parseFloat(control.value ?? '0')]}
 				className="relative flex items-center select-none touch-none w-full h-5"
-				aria-invalid={!!config.errors}
-				defaultValue={[parseFloat(defaultValue)]}
+				aria-invalid={!!meta.errors}
 				max={max}
 				onValueChange={(value) => {
 					control.change(value[0].toString());
 				}}
-				onBlur={() => {
-					control.blur();
-				}}
+				onBlur={control.blur}
 				step={1}
 			>
 				<Slider.Track className="bg-neutral-400 relative grow rounded-full h-1">

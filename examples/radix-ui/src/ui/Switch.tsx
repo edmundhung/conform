@@ -1,15 +1,16 @@
-import { FieldMetadata, useInputControl } from '@conform-to/react';
+import { type FieldMetadata, useInputControl } from '@conform-to/react';
 import * as Switch from '@radix-ui/react-switch';
-import { ElementRef, useRef } from 'react';
+import { type ElementRef, useRef } from 'react';
 
-export function SwitchConform({ config }: { config: FieldMetadata<string> }) {
+export function SwitchConform({ meta }: { meta: FieldMetadata<boolean> }) {
 	const switchRef = useRef<ElementRef<typeof Switch.Root>>(null);
-	const control = useInputControl(config);
+	const control = useInputControl(meta);
+
 	return (
 		<>
 			<input
-				name={config.name}
-				defaultValue={config.initialValue ? 'on' : 'off'}
+				name={meta.name}
+				defaultValue={meta.initialValue}
 				className="sr-only"
 				tabIndex={-1}
 				onFocus={() => {
@@ -17,11 +18,11 @@ export function SwitchConform({ config }: { config: FieldMetadata<string> }) {
 				}}
 			/>
 			<Switch.Root
-				checked={config.value == 'on'}
 				ref={switchRef}
-				id={config.id}
-				onCheckedChange={(value) => {
-					control.change(value ? 'on' : 'off');
+				id={meta.id}
+				checked={meta.value === 'on'}
+				onCheckedChange={(checked) => {
+					control.change(checked ? 'on' : '');
 				}}
 				onBlur={control.blur}
 				className="w-[42px] h-[25px] bg-amber-700/30 rounded-full relative focus:ring-2 focus:ring-amber-500 data-[state=checked]:bg-amber-700 outline-none cursor-default"

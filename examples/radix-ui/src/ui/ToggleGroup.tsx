@@ -1,23 +1,24 @@
-import { FieldMetadata, useInputControl } from '@conform-to/react';
+import { type FieldMetadata, useInputControl } from '@conform-to/react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { ElementRef, useRef } from 'react';
+import { type ElementRef, useRef } from 'react';
 
 export function ToggleGroupConform({
-	config,
+	meta,
 	items,
 }: {
-	config: FieldMetadata<string>;
+	meta: FieldMetadata<string>;
 	items: Array<{ label: string; value: string }>;
 }) {
 	const toggleGroupRef = useRef<ElementRef<typeof ToggleGroup.Root>>(null);
-	const control = useInputControl(config);
+	const control = useInputControl(meta);
+
 	return (
 		<>
 			<input
-				name={config.name}
+				name={meta.name}
 				className="sr-only"
 				tabIndex={-1}
-				defaultValue={config.initialValue}
+				defaultValue={meta.initialValue}
 				onFocus={() => {
 					toggleGroupRef.current?.focus();
 				}}
@@ -26,14 +27,11 @@ export function ToggleGroupConform({
 				type="single"
 				value={control.value}
 				ref={toggleGroupRef}
-				defaultValue={config.initialValue}
 				className={
 					'flex flex-row items-center p-1 gap-0 bg-neutral-200 rounded-lg max-w-md'
 				}
-				onValueChange={(value) => {
-					control.change(value);
-				}}
-				onBlur={() => control.blur()}
+				onValueChange={control.change}
+				onBlur={control.blur}
 			>
 				{items.map((item) => (
 					<ToggleGroup.Item

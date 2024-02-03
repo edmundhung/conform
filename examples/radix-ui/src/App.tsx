@@ -1,27 +1,24 @@
-import { getFormProps, useForm } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
-import { CheckboxConform } from './ui/CheckboxConform';
-import { RadioGroupConform } from './ui/RadioGroupConform';
-import { SliderConform } from './ui/SliderConform';
-import { SwitchConform } from './ui/SwitchConform';
-import { ToggleGroupConform } from './ui/ToggleGroupConform';
-import { SelectConform } from './ui/SelectConform';
+import { CheckboxConform } from './ui/Checkbox';
+import { RadioGroupConform } from './ui/RadioGroup';
+import { SliderConform } from './ui/Slider';
+import { SwitchConform } from './ui/Switch';
+import { ToggleGroupConform } from './ui/ToggleGroup';
+import { SelectConform } from './ui/Select';
 
 const schema = z.object({
-	hasAgreedToTerms: z
-		.string()
-		.optional()
-		.refine((val) => val === 'on', {
-			message: 'You must agree to the terms and conditions',
-		}),
+	hasAgreedToTerms: z.boolean({
+		required_error: 'You must agree to the terms and conditions',
+	}),
 	selectedCarType: z.enum(['sedan', 'hatchback', 'suv']),
 	userCountry: z.enum(['usa', 'canada', 'mexico']),
 	estimatedKilometersPerYear: z.number().min(1).max(100000),
 	hasAdditionalDriver: z
-		.string()
+		.boolean()
 		.optional()
-		.refine((val) => val === 'off', {
+		.refine((flag) => !flag, {
 			message: 'You cannot have an additional driver',
 		}),
 	desiredContractType: z.enum(['full', 'part']),
@@ -61,7 +58,8 @@ export function App() {
 		<main className="flex flex-col gap-4 p-12 font-sans">
 			<form
 				method="POST"
-				{...getFormProps(form)}
+				id={form.id}
+				onSubmit={form.onSubmit}
 				className="bg-neutral-100 flex flex-col gap-12 p-12 rounded-lg mx-auto"
 			>
 				<h1 className="font-bold text-4xl text-amber-800">
@@ -70,7 +68,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Checkbox</h2>
 					<div className="flex items-center gap-2">
-						<CheckboxConform config={hasAgreedToTerms} />
+						<CheckboxConform meta={hasAgreedToTerms} />
 						<label htmlFor={hasAgreedToTerms.id}>
 							Accept terms and conditions.
 						</label>
@@ -84,7 +82,7 @@ export function App() {
 					<div className="flex flex-col gap-2">
 						Car type:
 						<RadioGroupConform
-							config={selectedCarType}
+							meta={selectedCarType}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
 								{ value: 'hatchback', label: 'Hatchback' },
@@ -101,7 +99,7 @@ export function App() {
 					<h2 className="text-medium text-amber-600">Select</h2>
 					<label htmlFor={userCountry.id}>Country</label>
 					<SelectConform
-						config={userCountry}
+						meta={userCountry}
 						placeholder="Select a country 🗺"
 						items={[
 							{ name: 'USA', value: 'usa' },
@@ -118,7 +116,7 @@ export function App() {
 					<div className="flex flex-col gap-2">
 						Estimated kilometers per year:
 						<SliderConform
-							config={estimatedKilometersPerYear}
+							meta={estimatedKilometersPerYear}
 							ariaLabel="Estimated kilometers per year"
 							max={10_000}
 						/>
@@ -132,7 +130,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Switch</h2>
 					<div className="flex items-center gap-2">
-						<SwitchConform config={hasAdditionalDriver} />
+						<SwitchConform meta={hasAdditionalDriver} />
 						<label htmlFor={hasAdditionalDriver.id}>
 							Has additional driver
 						</label>
@@ -146,7 +144,7 @@ export function App() {
 					<div className="flex flex-col gap-2">
 						Desired contract type:
 						<ToggleGroupConform
-							config={desiredContractType}
+							meta={desiredContractType}
 							items={[
 								{ value: 'full', label: 'Full' },
 								{ value: 'part', label: 'Part time' },
@@ -167,7 +165,6 @@ export function App() {
 					</button>
 					<button
 						type="reset"
-						{...form.reset.getButtonProps()}
 						className="text-amber-800 hover:opacity-90 px-3 py-2 border-neutral-300 border rounded-lg grow"
 					>
 						Reset
