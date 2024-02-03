@@ -389,7 +389,7 @@ export default function ContactUs() {
 
 		// Run the same validation logic on client
 		onValidate({ formData }) {
-			return parse(formData, { schema });
+			return parseWithZod(formData, { schema });
 		},
 	});
 
