@@ -137,7 +137,7 @@ We have redesigned the submission object to simplify the setup.
 ```tsx
 export async function action({ request }: ActionArgs) {
   const formData = await request.formData();
-  const submission = parse(formData, { schema });
+  const submission = parseWithZod(formData, { schema });
 
   /**
    * The submission status could be either "success", "error" or undefined
