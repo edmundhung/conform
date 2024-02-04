@@ -45,6 +45,7 @@ export type DefaultValue<Schema> = Schema extends
 	| number
 	| boolean
 	| Date
+	| bigint
 	| null
 	| undefined
 	? Schema | string | null | undefined
@@ -66,6 +67,7 @@ export type FormValue<Schema> = Schema extends
 	| number
 	| boolean
 	| Date
+	| bigint
 	| null
 	| undefined
 	? string | undefined
