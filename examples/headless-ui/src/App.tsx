@@ -152,18 +152,26 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function ExampleListBox(props: { name: FieldName<string> }) {
+function ExampleListBox(props: { name: FieldName<string[]> }) {
 	const [meta] = useField(props.name);
 	const control = useInputControl(meta);
+	const value =
+		typeof control.value === 'undefined'
+			? []
+			: Array.isArray(control.value)
+			? control.value
+			: [control.value];
 
 	return (
-		<Listbox value={control.value} onChange={control.change}>
-			<input type="hidden" name={meta.name} value={control.value} />
+		<Listbox value={value} onChange={control.change} multiple>
 			<div className="relative mt-1">
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
-						{people.find((p) => control.value === `${p.id}`)?.name ??
-							'Please select'}
+						{value.length === 0
+							? 'Please select'
+							: value
+									.map((id) => people.find((p) => p.id.toString() === id)?.name)
+									.join(', ')}
 					</span>
 					<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
 						<ChevronUpDownIcon
@@ -173,7 +181,7 @@ function ExampleListBox(props: { name: FieldName<string> }) {
 					</span>
 				</Listbox.Button>
 				<Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-					{[{ id: '', name: 'Please select' }, ...people].map((person) => (
+					{people.map((person) => (
 						<Listbox.Option
 							key={person.id}
 							className={({ active }) =>
@@ -195,7 +203,7 @@ function ExampleListBox(props: { name: FieldName<string> }) {
 										{person.name}
 									</span>
 
-									{person.id !== '' && selected ? (
+									{selected ? (
 										<span
 											className={classNames(
 												active ? 'text-white' : 'text-indigo-600',
@@ -226,8 +234,12 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 		  );
 
 	return (
-		<Combobox as="div" value={control.value} onChange={control.change} nullable>
-			<input type="hidden" name={meta.name} value={control.value} />
+		<Combobox
+			as="div"
+			value={control.value ?? ''}
+			onChange={control.change}
+			nullable
+		>
 			<div className="relative mt-1">
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -301,7 +313,6 @@ function ExampleSwitch(props: { name: FieldName<boolean> }) {
 				'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
 			)}
 		>
-			<input type="hidden" name={meta.name} value={control.value} />
 			<span className="sr-only">Use setting</span>
 			<span
 				aria-hidden="true"
@@ -334,8 +345,7 @@ function ExampleRadioGroup(props: { name: FieldName<string> }) {
 	];
 
 	return (
-		<RadioGroup value={control.value} onChange={control.change}>
-			<input type="hidden" name={meta.name} value={control.value} />
+		<RadioGroup value={control.value ?? ''} onChange={control.change}>
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option
