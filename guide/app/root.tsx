@@ -14,6 +14,7 @@ import {
 	isRouteErrorResponse,
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
+import { Guide } from '~/layout';
 import { getMetadata } from '~/util';
 import stylesUrl from '~/styles.css';
 
@@ -48,7 +49,9 @@ export function ErrorBoundary() {
 export default function App() {
 	return (
 		<Document>
-			<Outlet />
+			<Guide>
+				<Outlet />
+			</Guide>
 		</Document>
 	);
 }
