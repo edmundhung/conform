@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from '@remix-run/react';
+import { Link, useLocation } from '@remix-run/react';
 import {
 	type Menu,
 	Navigation,
@@ -70,7 +70,11 @@ const menus: Menu[] = [
 	},
 ];
 
-export default function Guide() {
+export function Guide({
+	children,
+}: {
+	children: React.ReactNode;
+}): React.ReactNode {
 	const { owner, repo, ref } = useRootLoaderData();
 	const { file, toc } = usePageLoaderData() ?? {};
 	const location = useLocation();
@@ -113,9 +117,7 @@ export default function Guide() {
 				</div>
 				<MainNavigation menus={menus} />
 			</header>
-			<main className="xl:col-span-3">
-				<Outlet />
-			</main>
+			<main className="xl:col-span-3">{children}</main>
 			<footer className="xl:col-span-1 top-0 sticky py-4 xl:flex xl:flex-col xl:h-screen -mx-8 px-8 mt-8 xl:mt-0 border-t xl:border-t-0 border-dotted">
 				<div className="pt-2 pb-4 hidden xl:block xl:invisible">
 					<button className="flex items-center justify-between w-full gap-4 px-2.5 py-2 rounded-sm border border-zinc-500 text-zinc-500 hover:text-zinc-400 hover:border-zinc-400">

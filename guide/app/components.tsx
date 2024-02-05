@@ -11,8 +11,8 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
 import type { loader as rootLoader } from '~/root';
-import type { loader as indexLoader } from '~/routes/_guide._index';
-import type { loader as pageLoader } from '~/routes/_guide.$';
+import type { loader as indexLoader } from '~/routes/_index';
+import type { loader as pageLoader } from '~/routes/$';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface Menu {
@@ -42,10 +42,8 @@ export function useRootLoaderData() {
 }
 
 export function usePageLoaderData() {
-	const indexData = useRouteLoaderData<typeof indexLoader>(
-		'routes/_guide._index',
-	);
-	const pageData = useRouteLoaderData<typeof pageLoader>('routes/_guide.$');
+	const indexData = useRouteLoaderData<typeof indexLoader>('routes/_index');
+	const pageData = useRouteLoaderData<typeof pageLoader>('routes/$');
 
 	return pageData ?? indexData;
 }
@@ -301,10 +299,16 @@ export function Link({
 		);
 	}
 
+	const to = url
+		// Remove markdown file extension
+		.replace(/\.md$/, '')
+		// Remove leading './' to make relative path compatible with Remix
+		.replace(/^\.\//, '../');
+
 	return (
 		<RouterLink
 			className={className}
-			to={url.replace('.md', '')}
+			to={to}
 			title={title}
 			prefetch="intent"
 			relative="path"
