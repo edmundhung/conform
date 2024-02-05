@@ -35,6 +35,7 @@ export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 export type Primitive =
 	| string
 	| number
+	| bigint
 	| boolean
 	| Date
 	| File
