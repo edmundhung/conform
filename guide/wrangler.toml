@@ -1,0 +1,3 @@
+kv_namespaces = [
+  { id = "CACHE", binding="CACHE" }
+]

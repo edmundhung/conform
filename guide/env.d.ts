@@ -1,4 +1,4 @@
-import '@remix-run/dev';
+import 'vite/client';
 import '@remix-run/cloudflare';
 import '@cloudflare/workers-types';
 

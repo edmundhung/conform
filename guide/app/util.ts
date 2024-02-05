@@ -39,12 +39,12 @@ export async function getFileContent(
 	path: string,
 ): Promise<string> {
 	const { ref, owner, repo } = getMetadata(context);
-	const cache = getCache(context);
-	const cacheKey = `${ref}/${path}`;
+	// const cache = getCache(context);
+	// const cacheKey = `${ref}/${path}`;
 
-	let content = await cache.get(cacheKey);
+	// let content = await cache.get(cacheKey);
 
-	if (!content) {
+	// if (!content) {
 		const auth = getGitHubToken(context);
 		const file = await downloadFile({
 			auth,
@@ -54,15 +54,18 @@ export async function getFileContent(
 			repo,
 		});
 
-		content = atob(file.content);
-		context.waitUntil(
-			cache.put(cacheKey, content, {
-				expirationTtl: 3600,
-			}),
-		);
-	}
+		console.log({ file })
 
-	return content;
+		return atob(file.content);
+		// content = atob(file.content);
+		// context.waitUntil(
+		// 	cache.put(cacheKey, content, {
+		// 		expirationTtl: 3600,
+		// 	}),
+		// );
+	// }
+
+	// return content;
 }
 
 export function getGitHubApiHeaders(auth: string | undefined) {

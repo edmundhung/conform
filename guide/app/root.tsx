@@ -5,7 +5,6 @@ import type {
 } from '@remix-run/cloudflare';
 import {
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
@@ -15,7 +14,7 @@ import {
 } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
 import { getMetadata } from '~/util';
-import stylesUrl from '~/styles.css';
+import stylesUrl from '~/styles.css?url';
 
 export let links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
@@ -71,7 +70,6 @@ function Document({ children }: { children: React.ReactNode }) {
 				{children}
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
 	);

@@ -1,15 +1,15 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
-import { renderers } from '@markdoc/markdoc';
+import markdoc from '@markdoc/markdoc';
 import {
 	Link as RouterLink,
 	useLocation,
 	useRouteLoaderData,
 } from '@remix-run/react';
-import * as React from 'react';
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
-import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
-import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
-import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
+import React from 'react';
+import RSH from 'react-syntax-highlighter/dist/cjs/prism-light';
+// import tsx from 'react-syntax-highlighter/dist/cjs/languages/prism/tsx';
+// import css from 'react-syntax-highlighter/dist/cjs/languages/prism/css';
+import darcula from 'react-syntax-highlighter/dist/cjs/styles/prism/darcula';
 import type { loader as rootLoader } from '~/root';
 import type { loader as indexLoader } from '~/routes/_guide._index';
 import type { loader as pageLoader } from '~/routes/_guide.$';
@@ -34,8 +34,13 @@ const style = {
 export const useSafeLayoutEffect =
 	typeof document === 'undefined' ? useEffect : useLayoutEffect;
 
-ReactSyntaxHighlighter.registerLanguage('tsx', tsx);
-ReactSyntaxHighlighter.registerLanguage('css', css);
+// @ts-expect-error
+const ReactSyntaxHighlighter = RSH.default;
+
+console.log({RSH, ReactSyntaxHighlighter});
+
+// ReactSyntaxHighlighter.default.registerLanguage('tsx', tsx);
+// ReactSyntaxHighlighter.default.registerLanguage('css', css);
 
 export function useRootLoaderData() {
 	return useRouteLoaderData<typeof rootLoader>('root')!;
@@ -325,7 +330,7 @@ export function Code({ children }: { children: React.ReactNode }) {
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
 		<section className="py-4">
-			{renderers.react(content, React, {
+			{markdoc.renderers.react(content, React, {
 				components: {
 					Aside,
 					Sandbox,
