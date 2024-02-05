@@ -12,7 +12,7 @@ export const loginSchema = z.object({
   remember: z.boolean().optional(),
 });
 
-// actiona.ts
+// action.ts
 'use server';
 
 import { redirect } from 'next/navigation';
