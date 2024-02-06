@@ -162,23 +162,25 @@ export function isFile(obj: unknown): obj is File {
 }
 
 /**
- * Simplify value by removing empty object or array and null values
+ * Normalize value by removing empty object or array, empty string and null values
  */
-export function simplify<Type extends Record<string, unknown>>(
+export function normalize<Type extends Record<string, unknown>>(
 	value: Type | null,
-): Type | undefined;
-export function simplify<Type extends Array<unknown>>(
+): Type | null | undefined;
+export function normalize<Type extends Array<unknown>>(
 	value: Type | null,
-): Type | undefined;
-export function simplify(value: unknown): unknown | undefined;
-export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
+): Type | null | undefined;
+export function normalize(value: unknown): unknown | undefined;
+export function normalize<
+	Type extends Record<string, unknown> | Array<unknown>,
+>(
 	value: Type | null,
-): Record<string, unknown> | Array<unknown> | undefined {
+): Record<string, unknown> | Array<unknown> | null | undefined {
 	if (isPlainObject(value)) {
 		const obj = Object.keys(value)
 			.sort()
 			.reduce<Record<string, unknown>>((result, key) => {
-				const data = simplify(value[key]);
+				const data = normalize(value[key]);
 
 				if (typeof data !== 'undefined') {
 					result[key] = data;
@@ -199,7 +201,7 @@ export function simplify<Type extends Record<string, unknown> | Array<unknown>>(
 			return undefined;
 		}
 
-		return value.map(simplify);
+		return value.map(normalize);
 	}
 
 	if (
@@ -227,7 +229,7 @@ export function flatten(
 	const resolve = options?.resolve ?? ((data) => data);
 
 	function setResult(data: unknown, name: string) {
-		const value = simplify(resolve(data));
+		const value = normalize(resolve(data));
 
 		if (typeof value !== 'undefined') {
 			result[name] = value;

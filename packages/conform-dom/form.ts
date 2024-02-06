@@ -7,7 +7,7 @@ import {
 	isPlainObject,
 	isPrefix,
 	setValue,
-	simplify,
+	normalize,
 } from './formdata';
 import {
 	type FieldElement,
@@ -374,7 +374,7 @@ function createStateProxy<State>(
 function createValueProxy(
 	value: Record<string, unknown>,
 ): Record<string, unknown> {
-	const val = simplify(value);
+	const val = normalize(value);
 	return createStateProxy((name, proxy) => {
 		if (name === '') {
 			return val;

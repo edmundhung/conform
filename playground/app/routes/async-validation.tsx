@@ -93,6 +93,7 @@ export default function EmployeeForm() {
 	const lastResult = useActionData<typeof action>();
 	const [form, fields] = useForm({
 		lastResult,
+		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
 			? ({ formData }) =>
 					parseWithZod(formData, {
