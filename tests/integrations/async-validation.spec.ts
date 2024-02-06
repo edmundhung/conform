@@ -8,7 +8,7 @@ function getFieldset(form: Locator) {
 	};
 }
 
-async function runValidationScenario(page: Page) {
+async function runTest(page: Page, javaScriptEnabled: boolean) {
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
@@ -65,7 +65,9 @@ async function runValidationScenario(page: Page) {
 	]);
 
 	await fieldset.email.type('hey@conform.g');
-	await playground.submit.click();
+	if (!javaScriptEnabled) {
+		await playground.submit.click();
+	}
 
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
@@ -75,7 +77,9 @@ async function runValidationScenario(page: Page) {
 	await fieldset.email.press('Control+a');
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('u');
-	await playground.submit.click();
+	if (!javaScriptEnabled) {
+		await playground.submit.click();
+	}
 
 	await expect(playground.error).toHaveText([
 		'Email is already used',
@@ -85,7 +89,9 @@ async function runValidationScenario(page: Page) {
 	await fieldset.email.press('Control+a');
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('i');
-	await playground.submit.click();
+	if (!javaScriptEnabled) {
+		await playground.submit.click();
+	}
 
 	await expect(playground.error).toHaveText([
 		'Email is already used',
@@ -95,7 +101,9 @@ async function runValidationScenario(page: Page) {
 	await fieldset.email.press('Control+a');
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('d');
-	await playground.submit.click();
+	if (!javaScriptEnabled) {
+		await playground.submit.click();
+	}
 
 	await expect(playground.error).toHaveText([
 		'Email is already used',
@@ -103,7 +111,9 @@ async function runValidationScenario(page: Page) {
 	]);
 
 	await fieldset.title.type('Software Developer');
-	await playground.submit.click();
+	if (!javaScriptEnabled) {
+		await playground.submit.click();
+	}
 
 	await expect(playground.error).toHaveText(['Email is already used', '']);
 
@@ -132,12 +142,12 @@ async function runValidationScenario(page: Page) {
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/async-validation');
-		await runValidationScenario(page);
+		await runTest(page, true);
 	});
 
 	test('Server Validation', async ({ page }) => {
 		await page.goto('/async-validation?noClientValidate=yes');
-		await runValidationScenario(page);
+		await runTest(page, true);
 	});
 
 	test('Form reset', async ({ page }) => {
@@ -171,6 +181,6 @@ test.describe('No JS', () => {
 
 	test('Validation', async ({ page }) => {
 		await page.goto('/async-validation');
-		await runValidationScenario(page);
+		await runTest(page, false);
 	});
 });

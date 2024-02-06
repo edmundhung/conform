@@ -1,6 +1,6 @@
 import type { DefaultValue, FieldName, FormValue } from './form';
 import {
-	simplify,
+	normalize,
 	flatten,
 	isPlainObject,
 	setValue,
@@ -310,31 +310,37 @@ export function replySubmission<FormError>(
 		}
 	}
 
-	const submissionError = Object.entries(context.error ?? {}).reduce<
-		Record<string, FormError | null>
-	>((result, [name, error]) => {
-		if (context.state.validated[name]) {
-			result[name] = error;
-		}
+	const submissionError = context.error
+		? Object.entries(context.error).reduce<Record<string, FormError | null>>(
+				(result, [name, error]) => {
+					if (context.state.validated[name]) {
+						result[name] = error;
+					}
 
-		return result;
-	}, {});
+					return result;
+				},
+				{},
+		  )
+		: undefined;
 	const extraError =
 		'formErrors' in options || 'fieldErrors' in options
-			? simplify({
-					'': options.formErrors,
+			? normalize<Record<string, FormError | null>>({
+					'': options.formErrors ?? null,
 					...options.fieldErrors,
 			  })
 			: null;
-	const error = simplify({
-		...submissionError,
-		...extraError,
-	});
+	const error =
+		submissionError || extraError
+			? {
+					...submissionError,
+					...extraError,
+			  }
+			: undefined;
 
 	return {
 		status: context.intent ? undefined : error ? 'error' : 'success',
 		intent: context.intent ? context.intent : undefined,
-		initialValue: simplify(context.payload) ?? {},
+		initialValue: normalize(context.payload) ?? {},
 		error,
 		state: context.state,
 	};
