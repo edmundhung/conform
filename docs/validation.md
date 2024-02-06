@@ -135,7 +135,7 @@ function createSchema(
 
 export function action() {
 	const formData = await request.formData();
-	const submission = await parse(formData, {
+	const submission = await parseWithZod(formData, {
 		// create the zod schema with `isEmailUnique()` implemented
 		schema: createSchema({
 			async isEmailUnique(email) {
@@ -157,7 +157,7 @@ export default function Signup() {
 	const [form] = useForm({
 		lastSubmission,
 		onValidate({ formData }) {
-			return parse(formData, {
+			return parseWithZod(formData, {
 				// Create the schema without implementing `isEmailUnique()`
 				schema: createSchema(),
 			});
@@ -228,7 +228,7 @@ function createSchema(
 
 export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
-	const submission = await parse(formData, {
+	const submission = await parseWithZod(formData, {
 		// Retrieve the intent by providing a function instead
 		schema: (intent) =>
 			createSchema(intent, {
@@ -248,7 +248,7 @@ export default function Signup() {
 	const [form] = useForm({
 		lastSubmission,
 		onValidate({ formData }) {
-			return parse(formData, {
+			return parseWithZod(formData, {
 				// Similar to the action above
 				schema: (intent) => createSchema(intent),
 			});
