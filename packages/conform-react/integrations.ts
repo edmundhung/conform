@@ -53,7 +53,7 @@ export function createDummySelect(
 	value?: string | string[] | undefined,
 ): HTMLSelectElement {
 	const select = document.createElement('select');
-	const options = Array.isArray(value) ? value : [value ?? ''];
+	const options = typeof value === 'string' ? [value] : value ?? [];
 
 	select.name = name;
 	select.multiple = true;

@@ -10,7 +10,7 @@ import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { z } from 'zod';
 import { Playground, Field } from '~/components';
 import { Listbox } from '@headlessui/react';
@@ -18,8 +18,12 @@ import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import * as Checkbox from '@radix-ui/react-checkbox';
 
 const schema = z.object({
-	language: z.string({ required_error: 'Language is required' }),
+	color: z.enum(['red', 'green', 'blue'], {
+		required_error: 'Color is required',
+	}),
+	languages: z.string().array().min(1, 'Languages is required'),
 	tos: z.boolean({ required_error: 'Please accept the terms of service' }),
+	options: z.array(z.string()).min(1, 'At least one option is required'),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -43,6 +47,7 @@ export default function Example() {
 	const [form, fields] = useForm({
 		id: 'example',
 		lastResult,
+		shouldRevalidate: 'onInput',
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
@@ -51,20 +56,33 @@ export default function Example() {
 	return (
 		<FormProvider context={form.context}>
 			<Form method="post" {...getFormProps(form)}>
-				<Playground title="Custom Inputs Form" result={lastResult}>
-					<Field label="Headless ListBox" meta={fields.language}>
-						<CustomSelect name={fields.language.name} />
+				<Playground title="Custom Inputs" result={lastResult}>
+					<Field label="Headless ListBox (Single)" meta={fields.color}>
+						<CustomSelect
+							name={fields.color.name}
+							options={['red', 'green', 'blue']}
+							placeholder="Select a color"
+						/>
 					</Field>
-					<Field label="Radix Checkbox" meta={fields.tos}>
-						<div className="flex items-center">
-							<CustomCheckbox name={fields.tos.name} />
-							<label
-								htmlFor={fields.tos.id}
-								className="pl-[15px] text-[15px] leading-none"
-							>
-								I accept the terms of service
-							</label>
-						</div>
+					<Field label="Headless ListBox (Multiple)" meta={fields.languages}>
+						<CustomSelect
+							name={fields.languages.name}
+							options={['English', 'Spanish', 'French']}
+							placeholder="Select languages"
+							multiple
+						/>
+					</Field>
+					<Field label="Radix Checkbox (Single)" meta={fields.tos}>
+						<CustomCheckbox
+							label="I accept the terms of service"
+							name={fields.tos.name}
+						/>
+					</Field>
+					<Field label="Radix Checkbox (Multiple)" meta={fields.options}>
+						<CustomMultipleCheckbox
+							name={fields.options.name}
+							options={['a', 'b', 'c', 'd']}
+						/>
 					</Field>
 				</Playground>
 			</Form>
@@ -76,27 +94,36 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function CustomSelect({ name }: { name: FieldName<string> }) {
+function CustomSelect({
+	name,
+	options,
+	placeholder,
+	multiple,
+}: {
+	name: FieldName<string | string[]>;
+	placeholder: string;
+	options: string[];
+	multiple?: boolean;
+}) {
 	const [field] = useField(name);
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useInputControl(field);
-	const options = [
-		{ code: '', name: 'Please select' },
-		{ code: 'en', name: 'English' },
-		{ code: 'de', name: 'Deutsch' },
-		{ code: 'jp', name: 'Japanese' },
-	];
+	const value =
+		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
 	return (
-		<Listbox value={control.value} onChange={control.change}>
+		<Listbox
+			value={control.value}
+			onChange={control.change}
+			multiple={multiple}
+		>
 			<div className="relative mt-1">
 				<Listbox.Button
 					className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
 					ref={buttonRef}
 				>
 					<span className="block truncate">
-						{options.find((option) => control.value === option.code)?.name ??
-							'Please select'}
+						{value.length === 0 ? placeholder : value.join(', ')}
 					</span>
 					<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
 						<ChevronUpDownIcon
@@ -108,14 +135,14 @@ function CustomSelect({ name }: { name: FieldName<string> }) {
 				<Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
 					{options.map((option) => (
 						<Listbox.Option
-							key={option.code}
+							key={option}
 							className={({ active }) =>
 								classNames(
 									active ? 'text-white bg-indigo-600' : 'text-gray-900',
 									'relative cursor-default select-none py-2 pl-3 pr-9',
 								)
 							}
-							value={option.code}
+							value={option}
 						>
 							{({ selected, active }) => (
 								<>
@@ -125,10 +152,10 @@ function CustomSelect({ name }: { name: FieldName<string> }) {
 											'block truncate',
 										)}
 									>
-										{option.name}
+										{option}
 									</span>
 
-									{option.code !== '' && selected ? (
+									{option !== '' && selected ? (
 										<span
 											className={classNames(
 												active ? 'text-white' : 'text-indigo-600',
@@ -148,23 +175,79 @@ function CustomSelect({ name }: { name: FieldName<string> }) {
 	);
 }
 
-function CustomCheckbox({ name }: { name: FieldName<boolean> }) {
+function CustomCheckbox({
+	name,
+	label,
+}: {
+	name: FieldName<boolean>;
+	label: string;
+}) {
 	const [field] = useField(name);
 	const control = useInputControl(field);
 
 	return (
-		<Checkbox.Root
-			type="button"
-			className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
-			id={field.id}
-			name={name}
-			checked={control.value === 'on'}
-			onCheckedChange={(state) => control.change(state.valueOf() ? 'on' : '')}
-			onBlur={control.blur}
-		>
-			<Checkbox.Indicator>
-				<CheckIcon className="w-4 h-4" />
-			</Checkbox.Indicator>
-		</Checkbox.Root>
+		<div className="flex items-center py-2">
+			<Checkbox.Root
+				type="button"
+				className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
+				id={field.id}
+				checked={control.value === 'on'}
+				onCheckedChange={(state) => control.change(state.valueOf() ? 'on' : '')}
+				onBlur={control.blur}
+			>
+				<Checkbox.Indicator>
+					<CheckIcon className="w-4 h-4" />
+				</Checkbox.Indicator>
+			</Checkbox.Root>
+			<label htmlFor={field.id} className="pl-[15px] text-[15px] leading-none">
+				{label}
+			</label>
+		</div>
+	);
+}
+
+function CustomMultipleCheckbox({
+	name,
+	options,
+}: {
+	name: FieldName<string[]>;
+	options: string[];
+}) {
+	const [field] = useField(name);
+	const control = useInputControl(field);
+	const value =
+		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+
+	return (
+		<div className="py-2 space-y-4">
+			{options.map((option) => (
+				<div key={option} className="flex items-center">
+					<Checkbox.Root
+						type="button"
+						className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
+						id={`${field.id}-${option}`}
+						checked={value.includes(option)}
+						onCheckedChange={(state) =>
+							control.change(
+								state.valueOf()
+									? value.concat(option)
+									: value.filter((item) => item !== option),
+							)
+						}
+						onBlur={control.blur}
+					>
+						<Checkbox.Indicator>
+							<CheckIcon className="w-4 h-4" />
+						</Checkbox.Indicator>
+					</Checkbox.Root>
+					<label
+						htmlFor={`${field.id}-${option}`}
+						className="pl-[15px] text-[15px] leading-none"
+					>
+						{option}
+					</label>
+				</div>
+			))}
+		</div>
 	);
 }
