@@ -536,10 +536,8 @@ export function createFormContext<
 	let meta = createFormMeta(options);
 	let state = createFormState(meta);
 
-	function getFormElement(): HTMLFormElement {
-		const element = document.forms.namedItem(latestOptions.formId);
-		invariant(element !== null, `Form#${latestOptions.formId} does not exist`);
-		return element;
+	function getFormElement(): HTMLFormElement | null {
+		return document.forms.namedItem(latestOptions.formId);
 	}
 
 	function createFormState<Error>(
@@ -746,6 +744,7 @@ export function createFormContext<
 		const element = event.target;
 
 		if (
+			!form ||
 			!isFieldElement(element) ||
 			element.form !== form ||
 			element.name === ''
@@ -827,7 +826,7 @@ export function createFormContext<
 		const formElement = getFormElement();
 
 		if (!result.initialValue) {
-			formElement.reset();
+			formElement?.reset();
 			return;
 		}
 
@@ -856,7 +855,7 @@ export function createFormContext<
 
 		updateFormMeta(update);
 
-		if (result.status === 'error') {
+		if (formElement && result.status === 'error') {
 			for (const element of formElement.elements) {
 				if (isFieldElement(element) && error[element.name]) {
 					element.focus();
@@ -876,7 +875,7 @@ export function createFormContext<
 		Object.assign(latestOptions, options);
 
 		if (latestOptions.formId !== currentFormId) {
-			getFormElement().reset();
+			getFormElement()?.reset();
 		} else if (options.lastResult && options.lastResult !== currentResult) {
 			report(options.lastResult);
 		}
