@@ -22,7 +22,7 @@ The form context. It is created with [useForm](./useForm.md) and can be accessed
 
 ### FormProvider does not need to be a direct parent of the form
 
-You are free to put your inputs anywhere outside of the form as long as they are associated through the [form attrbute](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#instance_properties_related_to_the_parent_form).
+You are free to put your inputs anywhere outside of the form as long as they are associated through the [form attribute](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#instance_properties_related_to_the_parent_form).
 
 ```tsx
 function Example() {

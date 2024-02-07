@@ -22,7 +22,7 @@ function Example() {
 
 ### `value`
 
-The helper will retrun a **defaultValue** unless this is set to `false`, e.g. a controlled input.
+The helper will return a **defaultValue** unless this is set to `false`, e.g. a controlled input.
 
 ### `ariaAttributes`
 

@@ -41,7 +41,7 @@ function Product() {
 
 ## Form Controls
 
-Conform utitlize the submission intent for all form controls, such as validating or removing a field. This is achieved by giving the buttons a reserved name with the intent serialized as the value. To simplify the setup, Conform provides a set of form control helpers, such as `form.validate`, `form.reset` or `form.insert`.
+Conform utilizes the submission intent for all form controls, such as validating or removing a field. This is achieved by giving the buttons a reserved name with the intent serialized as the value. To simplify the setup, Conform provides a set of form control helpers, such as `form.validate`, `form.reset` or `form.insert`.
 
 ### Validate intent
 
@@ -64,7 +64,7 @@ function EmailForm() {
 }
 ```
 
-When the button is clicked, conform identify the serialized intent with the reserved name and trigger a validation by marking the email field as validated and returns the error message if the email is invalid.
+When the button is clicked, conform identifies the serialized intent with the reserved name and trigger a validation by marking the email field as validated and returns the error message if the email is invalid.
 
 However, if you want to trigger the validation once the user leaves the field, you can also trigger the validate intent directly.
 

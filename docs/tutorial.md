@@ -1,6 +1,6 @@
 # Tutorial
 
-In this tutoiral, we will start with a basic contact form built with just Remix and Zod. Then, we will show you how to enhance it using Conform.
+In this tutorial, we will start with a basic contact form built with just Remix and Zod. Then, we will show you how to enhance it using Conform.
 
 ## Installation
 

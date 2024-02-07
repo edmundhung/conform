@@ -14,7 +14,7 @@ This message is used to indicate that the validation is not defined and Conform 
 
 ## Example
 
-Here is a signup form example which validate if the email is unique.
+Here is a signup form example which validates if the email is unique.
 
 ```tsx
 import type { Intent } from '@conform-to/react';
@@ -24,7 +24,7 @@ import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
 function createSchema(
-  // The `intent` will be provieded by the `parseWithZod` helper
+  // The `intent` will be provided by the `parseWithZod` helper
   intent: Intent | null,
   options?: {
     isEmailUnique: (email: string) => Promise<boolean>;

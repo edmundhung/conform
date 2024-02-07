@@ -43,7 +43,7 @@ const submission = parse(formData, {
   formatError,
 });
 
-// The error will be a dictinioary mapping input name to the corresponding errors
+// The error will be a dictionary mapping input name to the corresponding errors
 // e.g. { email: 'Email is required', password: 'Password is required' }
 console.log(submission.error);
 
@@ -75,7 +75,7 @@ function formatError({ input }: FormatErrorArgs) {
         error.push('Password is required');
       }
       if (input.validity.tooShort) {
-        error.push('Passowrd is too short');
+        error.push('Password is too short');
       }
       break;
     }

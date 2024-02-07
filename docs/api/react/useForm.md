@@ -48,13 +48,13 @@ A function to be called before the form is submitted. If **onValidate** is set, 
 
 ### `defaultNoValidate`
 
-Enable constraint validation before the DOM is hydated. Default to **true**.
+Enable constraint validation before the DOM is hydrated. Default to **true**.
 
 ## Tips
 
 ### Client validation is optional
 
-Conform supports live validation (i.e. validate when the user leaves the input or types) without client validation. This is useful to avoid shipping the validation code in the client bundle. But please keep in mind of network latency and how frequently your users might hit the server esepecally if you are revalidating everytime they type.
+Conform supports live validation (i.e. validate when the user leaves the input or types) without client validation. This is useful to avoid shipping the validation code in the client bundle. But please keep in mind network latency and how frequently your users might hit the server especially if you are revalidating every time they type.
 
 ### Automatic form reset when `id` is changed
 
