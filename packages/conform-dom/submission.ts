@@ -165,7 +165,8 @@ export function parse<FormValue, FormError>(
 				}
 				break;
 			case 'update': {
-				const { name, value, validated } = intent.payload;
+				const { name, validated } = intent.payload;
+				const value = serialize(intent.payload.value);
 
 				if (typeof value !== 'undefined') {
 					if (name) {

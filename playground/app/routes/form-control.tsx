@@ -16,6 +16,7 @@ import { Playground, Field } from '~/components';
 const schema = z.object({
 	name: z.string({ required_error: 'Name is required' }),
 	message: z.string({ required_error: 'Message is required' }),
+	number: z.number({ required_error: 'Number is required' }),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -54,6 +55,9 @@ export default function FormControl() {
 					<Field label="Message" meta={fields.message}>
 						<textarea {...getTextareaProps(fields.message)} />
 					</Field>
+					<Field label="Number" meta={fields.number}>
+						<input {...getInputProps(fields.number, { type: 'number' })} />
+					</Field>
 					<div className="flex flex-col gap-2">
 						<button
 							className="rounded-md border p-2 hover:border-black"
@@ -77,6 +81,15 @@ export default function FormControl() {
 							})}
 						>
 							Update message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.update.getButtonProps({
+								name: fields.number.name,
+								value: 123,
+							})}
+						>
+							Update number
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
