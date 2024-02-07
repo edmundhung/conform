@@ -311,7 +311,7 @@ function handleIntent<Error>(
 		case 'update': {
 			if (typeof intent.payload.value !== 'undefined') {
 				const name = intent.payload.name ?? '';
-				const value = intent.payload.value;
+				const value = serialize(intent.payload.value);
 
 				updateValue(meta, name, value);
 			}
