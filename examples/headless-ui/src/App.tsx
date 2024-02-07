@@ -156,11 +156,7 @@ function ExampleListBox(props: { name: FieldName<string[]> }) {
 	const [meta] = useField(props.name);
 	const control = useInputControl(meta);
 	const value =
-		typeof control.value === 'undefined'
-			? []
-			: Array.isArray(control.value)
-			? control.value
-			: [control.value];
+		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
 	return (
 		<Listbox value={value} onChange={control.change} multiple>

@@ -74,7 +74,7 @@ export type FormValue<Schema> = Schema extends
 	: Schema extends File
 	? File | undefined
 	: Schema extends Array<infer Item>
-	? string | Array<Exclude<FormValue<Item>, undefined>> | undefined
+	? string | Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
 	?
 			| { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }

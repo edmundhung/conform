@@ -144,26 +144,29 @@ export function updateFieldValue(
 	}
 }
 
-export function useInputControl<
-	Value extends string | string[],
->(metaOrOptions: {
+export function useInputControl<Value>(metaOrOptions: {
 	key?: Key | null | undefined;
 	name: string;
 	formId: string;
 	initialValue?: Value | undefined;
-}): InputControl<Value> {
+}): InputControl<Value extends string ? string : string | string[]> {
+	// If the initialValue is an array, it must be a string array without undefined values
+	// as there is no way to skip an entry in a multiple select when they all share the same name
+	const inputInitialValue = metaOrOptions.initialValue as Value extends string
+		? string
+		: string | string[];
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
 		blur: false,
 	});
 	const [key, setKey] = useState(metaOrOptions.key);
-	const [initialValue, setInitialValue] = useState(metaOrOptions.initialValue);
-	const [value, setValue] = useState(metaOrOptions.initialValue);
+	const [initialValue, setInitialValue] = useState(inputInitialValue);
+	const [value, setValue] = useState(inputInitialValue);
 
 	if (key !== metaOrOptions.key) {
-		setValue(metaOrOptions.initialValue);
-		setInitialValue(metaOrOptions.initialValue);
+		setValue(inputInitialValue);
+		setInitialValue(inputInitialValue);
 		setKey(metaOrOptions.key);
 	}
 
@@ -174,7 +177,11 @@ export function useInputControl<
 			return;
 		}
 
-		createDummySelect(form, metaOrOptions.name, initialValue);
+		createDummySelect(
+			form,
+			metaOrOptions.name,
+			initialValue as string | string[] | undefined,
+		);
 
 		return () => {
 			const elements = getFieldElements(form, metaOrOptions.name);
@@ -218,7 +225,12 @@ export function useInputControl<
 		};
 	}, [metaOrOptions.formId, metaOrOptions.name]);
 
-	const handlers = useMemo<Omit<InputControl<Value>, 'value'>>(() => {
+	const handlers = useMemo<
+		Omit<
+			InputControl<Value extends string ? string : string | string[]>,
+			'value'
+		>
+	>(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
