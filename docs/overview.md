@@ -51,7 +51,7 @@ export async function action({ request }) {
 
 // Client form component
 export default function LoginForm() {
-  // Grap the last submission result if you have defined a server action handler
+  // Grab the last submission result if you have defined a server action handler
   // This could be `useActionData()` or `useFormState()` depending on the framework
   const lastResult = useActionResult();
   const [form, fields] = useForm({

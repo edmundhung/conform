@@ -21,7 +21,7 @@
     - [useField](./api/react/useField.md)
     - [useFormMetadata](./api/react/useFormMetadata.md)
     - [useInputControl](./api/react/useInputControl.md)
-    - [FormPorvider](./api/react/FormProvider.md)
+    - [FormProvider](./api/react/FormProvider.md)
     - [FormStateInput](./api/react/FormStateInput.md)
     - [getFormProps](./api/react/getFormProps.md)
     - [getFieldsetProps](./api/react/getFieldsetProps.md)

@@ -100,7 +100,7 @@ function Example() {
 
 In the example above, we set up a hidden input manually instead of passing a `name` prop to the custom select component due to no control over the inner input rendered by the custom input. The input is visually hidden but still focusable thanks to the **sr-only** class from [tailwindcss](https://tailwindcss.com/docs/screen-readers#screen-reader-only-elements). When the input is focused, we delegate the focus to the custom input by calling `inputRef.current?.focus()`.
 
-If you are not using tailwindcss, please look for a similiar utiltiy from your preferred styling solution or you can apply the following style based on the implementation of the **sr-only** class:
+If you are not using tailwindcss, please look for a similar utility from your preferred styling solution or you can apply the following style based on the implementation of the **sr-only** class:
 
 ```tsx
 const style = {

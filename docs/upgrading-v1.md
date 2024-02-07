@@ -70,7 +70,7 @@ function Example() {
     <form>
       <ul>
         {tasks.map((task) => {
-          // It is no longer necessary to define an addtional component
+          // It is no longer necessary to define an additional component
           // with nested list as you can access the fieldset directly
           const taskFields = task.getFieldset();
 

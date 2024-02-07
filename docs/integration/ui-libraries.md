@@ -4,7 +4,7 @@ In this guide, we will show you how to integrate custom inputs with Conform.
 
 ## Event delegation
 
-Conform supports all native inputs out of the box by attaching an **input** and **focusout** event listener on the document directly. There is no need to setup any event handlers on the `<input />`, `<select />` or `<textarea />` elements. The only requirment is to set a form **id** on the `<form />` element and make sure all the inputs have a **name** attribute set and are associated with the form either by using the [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) attribute or by nesting them inside the `<form />` element.
+Conform supports all native inputs out of the box by attaching an **input** and **focusout** event listener on the document directly. There is no need to setup any event handlers on the `<input />`, `<select />` or `<textarea />` elements. The only requirement is to set a form **id** on the `<form />` element and make sure all the inputs have a **name** attribute set and are associated with the form either by using the [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) attribute or by nesting them inside the `<form />` element.
 
 ```tsx
 function Example() {
@@ -153,7 +153,7 @@ function Example() {
 
 ## Simplify it with Form Context
 
-You can also simplfy the wrapper component by using the [useField](../api/react/useField.md) hook with a [FormProvider](../api/react/FormProvider.md).
+You can also simplify the wrapper component by using the [useField](../api/react/useField.md) hook with a [FormProvider](../api/react/FormProvider.md).
 
 ```tsx
 import {
