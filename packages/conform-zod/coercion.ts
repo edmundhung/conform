@@ -165,7 +165,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 
 				if (
 					typeof value === 'undefined' ||
-					typeof coerceFile(value) === 'undefined'
+					typeof coerceFile(coerceString(value)) === 'undefined'
 				) {
 					return [];
 				}
