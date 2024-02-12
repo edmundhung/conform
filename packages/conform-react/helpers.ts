@@ -1,10 +1,4 @@
-import type {
-	FormMetadata,
-	FieldMetadata,
-	Metadata,
-	Pretty,
-	Primitive,
-} from './context';
+import type { FormMetadata, FieldMetadata, Metadata, Pretty } from './context';
 
 type FormControlProps = {
 	key: string | undefined;
@@ -246,7 +240,7 @@ export function getFormControlProps<Schema>(
  * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
  * ```
  */
-export function getInputProps<Schema extends Primitive | File[]>(
+export function getInputProps<Schema>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: InputOptions,
 ): InputProps {
@@ -292,12 +286,7 @@ export function getInputProps<Schema extends Primitive | File[]>(
  * <select {...getSelectProps(metadata, { value: false })} />
  * ```
  */
-export function getSelectProps<
-	Schema extends
-		| Exclude<Primitive, File>
-		| Array<Exclude<Primitive, File>>
-		| undefined,
->(
+export function getSelectProps<Schema>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: SelectOptions = {},
 ): SelectProps {
@@ -308,8 +297,8 @@ export function getSelectProps<
 
 	if (typeof options.value === 'undefined' || options.value) {
 		props.defaultValue = Array.isArray(metadata.initialValue)
-			? metadata.initialValue.map((item) => `${item ?? ''}`)
-			: metadata.initialValue;
+			? metadata.initialValue.map((item: string | undefined) => `${item ?? ''}`)
+			: metadata.initialValue?.toString();
 	}
 
 	return simplify(props);
@@ -330,9 +319,7 @@ export function getSelectProps<
  * <textarea {...getTextareaProps(metadata, { value: false })} />
  * ```
  */
-export function getTextareaProps<
-	Schema extends Exclude<Primitive, File> | undefined,
->(
+export function getTextareaProps<Schema>(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: TextareaOptions = {},
 ): TextareaProps {
@@ -343,7 +330,7 @@ export function getTextareaProps<
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
-		props.defaultValue = metadata.initialValue;
+		props.defaultValue = metadata.initialValue?.toString();
 	}
 
 	return simplify(props);
