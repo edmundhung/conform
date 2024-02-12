@@ -3,14 +3,17 @@ import {
 	FormProvider,
 	useForm,
 	useField,
+	unstable_useControl as useControl,
 	useInputControl,
 	getFormProps,
+	getSelectProps,
+	getInputProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { z } from 'zod';
 import { Playground, Field } from '~/components';
 import { Listbox } from '@headlessui/react';
@@ -30,6 +33,7 @@ export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
 
 	return {
+		manualSetup: url.searchParams.get('manualSetup') === 'yes',
 		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
 	};
 }
@@ -42,7 +46,7 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Example() {
-	const { noClientValidate } = useLoaderData<typeof loader>();
+	const { manualSetup, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
 	const [form, fields] = useForm({
 		id: 'example',
@@ -62,6 +66,7 @@ export default function Example() {
 							name={fields.color.name}
 							options={['red', 'green', 'blue']}
 							placeholder="Select a color"
+							manualSetup={manualSetup}
 						/>
 					</Field>
 					<Field label="Headless ListBox (Multiple)" meta={fields.languages}>
@@ -70,18 +75,21 @@ export default function Example() {
 							options={['English', 'Spanish', 'French']}
 							placeholder="Select languages"
 							multiple
+							manualSetup={manualSetup}
 						/>
 					</Field>
 					<Field label="Radix Checkbox (Single)" meta={fields.tos}>
 						<CustomCheckbox
 							label="I accept the terms of service"
 							name={fields.tos.name}
+							manualSetup={manualSetup}
 						/>
 					</Field>
 					<Field label="Radix Checkbox (Multiple)" meta={fields.options}>
 						<CustomMultipleCheckbox
 							name={fields.options.name}
 							options={['a', 'b', 'c', 'd']}
+							manualSetup={manualSetup}
 						/>
 					</Field>
 				</Playground>
@@ -99,24 +107,52 @@ function CustomSelect({
 	options,
 	placeholder,
 	multiple,
+	manualSetup,
 }: {
 	name: FieldName<string | string[]>;
 	placeholder: string;
 	options: string[];
 	multiple?: boolean;
+	manualSetup: boolean;
 }) {
 	const [field] = useField(name);
 	const buttonRef = useRef<HTMLButtonElement>(null);
-	const control = useInputControl(field);
+	// eslint-disable-next-line react-hooks/rules-of-hooks
+	const control = manualSetup ? useControl(field) : useInputControl(field);
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
 	return (
 		<Listbox
-			value={control.value}
+			value={control.value ?? (multiple ? [] : '')}
 			onChange={control.change}
 			multiple={multiple}
 		>
+			{manualSetup ? (
+				<>
+					{multiple ? (
+						<select
+							className="sr-only"
+							aria-hidden
+							tabIndex={-1}
+							{...getSelectProps(field)}
+							multiple
+						>
+							<option value="" />
+							{options.map((option) => (
+								<option key={option} value={option} />
+							))}
+						</select>
+					) : (
+						<input
+							className="sr-only"
+							aria-hidden
+							tabIndex={-1}
+							{...getInputProps(field, { type: 'text' })}
+						/>
+					)}
+				</>
+			) : null}
 			<div className="relative mt-1">
 				<Listbox.Button
 					className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -178,12 +214,15 @@ function CustomSelect({
 function CustomCheckbox({
 	name,
 	label,
+	manualSetup,
 }: {
 	name: FieldName<boolean>;
 	label: string;
+	manualSetup: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useInputControl(field);
+	// eslint-disable-next-line react-hooks/rules-of-hooks
+	const control = manualSetup ? useControl(field) : useInputControl(field);
 
 	return (
 		<div className="flex items-center py-2">
@@ -191,6 +230,7 @@ function CustomCheckbox({
 				type="button"
 				className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
 				id={field.id}
+				name={manualSetup ? field.name : undefined}
 				checked={control.value === 'on'}
 				onCheckedChange={(state) => control.change(state.valueOf() ? 'on' : '')}
 				onBlur={control.blur}
@@ -209,12 +249,15 @@ function CustomCheckbox({
 function CustomMultipleCheckbox({
 	name,
 	options,
+	manualSetup,
 }: {
 	name: FieldName<string[]>;
 	options: string[];
+	manualSetup: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useInputControl(field);
+	// eslint-disable-next-line react-hooks/rules-of-hooks
+	const control = manualSetup ? useControl(field) : useInputControl(field);
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
@@ -226,6 +269,8 @@ function CustomMultipleCheckbox({
 						type="button"
 						className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
 						id={`${field.id}-${option}`}
+						name={manualSetup ? field.name : undefined}
+						value={option}
 						checked={value.includes(option)}
 						onCheckedChange={(state) =>
 							control.change(

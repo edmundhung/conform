@@ -14,7 +14,10 @@ export {
 	FormStateInput,
 } from './context';
 export { useForm, useFormMetadata, useField } from './hooks';
-export { useInputControl } from './integrations';
+export {
+	useInputControl,
+	useControl as unstable_useControl,
+} from './integrations';
 export {
 	getFormProps,
 	getFieldsetProps,

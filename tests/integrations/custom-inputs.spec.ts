@@ -62,9 +62,9 @@ async function runTest(page: Page) {
 		status: 'success',
 		initialValue: {
 			color: 'blue',
-			languages: ['French', 'Spanish'],
+			languages: expect.arrayContaining(['French', 'Spanish']),
 			tos: 'on',
-			options: ['d', 'b'],
+			options: expect.arrayContaining(['d', 'b']),
 		},
 		state: {
 			validated: {
@@ -77,12 +77,22 @@ async function runTest(page: Page) {
 	});
 }
 
-test('Client Validation', async ({ page }) => {
+test('Client Validation: useInputControl', async ({ page }) => {
 	await page.goto('/custom-inputs');
 	await runTest(page);
 });
 
-test('Server Validation', async ({ page }) => {
+test('Server Validation: useInputControl', async ({ page }) => {
 	await page.goto('/custom-inputs?noClientValidate=yes');
+	await runTest(page);
+});
+
+test('Client Validation: useControl', async ({ page }) => {
+	await page.goto('/custom-inputs?manualSetup=yes');
+	await runTest(page);
+});
+
+test('Server Validation: useControl', async ({ page }) => {
+	await page.goto('/custom-inputs?manualSetup=yes&noClientValidate=yes');
 	await runTest(page);
 });
