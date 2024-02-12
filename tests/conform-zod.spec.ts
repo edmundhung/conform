@@ -550,6 +550,21 @@ describe('conform-zod', () => {
 				error: { test: ['min'] },
 				reply: expect.any(Function),
 			});
+			// Scenario: Multiple select (default option is empty string)
+			expect(
+				parseWithZod(createFormData([['test', '']]), {
+					schema: createSchema(),
+				}),
+			).toEqual({
+				status: 'error',
+				payload: {
+					test: '',
+				},
+				error: {
+					test: ['min'],
+				},
+				reply: expect.any(Function),
+			});
 			// Scenario: Checkbox group (Checked only one item)
 			expect(
 				parseWithZod(createFormData([['test', 'a']]), {
@@ -630,12 +645,12 @@ describe('conform-zod', () => {
 			});
 			// Scenario: Only one input with the specific name
 			expect(
-				parseWithZod(createFormData([['test', '']]), {
+				parseWithZod(createFormData([['test[0]', '']]), {
 					schema: createSchema(),
 				}),
 			).toEqual({
 				status: 'error',
-				payload: { test: '' },
+				payload: { test: [''] },
 				error: {
 					'test[0]': ['required'],
 				},
@@ -807,10 +822,7 @@ describe('conform-zod', () => {
 					c: undefined,
 					d: undefined,
 					e: undefined,
-					f: [undefined],
-					// Ideally, this should be `[undefined]` as well similar to `f` above.
-					// However, the preprocess on optional array casts it to undefined before the array preprocess is called
-					// As it is still unclear when we wants an optional array, we are not going to fix this for now.
+					f: [],
 					g: undefined,
 				},
 				reply: expect.any(Function),
