@@ -367,7 +367,11 @@ function createStateProxy<State>(
 ): Record<string, State> {
 	const cache: Record<string, State> = {};
 	return new Proxy(cache, {
-		get(_, name: string, receiver) {
+		get(_, name: string | Symbol, receiver) {
+			if (typeof name !== 'string') {
+				return;
+			}
+
 			return (cache[name] ??= fn(name, receiver));
 		},
 	});
