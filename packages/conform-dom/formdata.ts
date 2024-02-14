@@ -207,7 +207,7 @@ export function normalize<
 	if (
 		(typeof value === 'string' && value === '') ||
 		value === null ||
-		isFile(value)
+		(isFile(value) && value.size === 0)
 	) {
 		return;
 	}
