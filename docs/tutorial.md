@@ -229,7 +229,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return submission.reply();
   }
 
-  const message = await sendMessage(result.data);
+  const message = await sendMessage(submission.value);
 
   // Return a form error if the message is not sent
   if (!message.sent) {
@@ -238,7 +238,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  return await sendMessage(submission.value);
+  return redirect('/messages');
 }
 ```
 
@@ -497,7 +497,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  return await sendMessage(submission.value);
+  return redirect('/messages');
 }
 
 export default function ContactUs() {
