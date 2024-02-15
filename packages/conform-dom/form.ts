@@ -32,13 +32,14 @@ import {
 	serializeIntent,
 } from './submission';
 
-export type UnionKeyof<T> = T extends any ? keyof T : never;
+type BaseCombine<
+	T,
+	K extends PropertyKey = T extends unknown ? keyof T : never,
+> = T extends unknown ? T & Partial<Record<Exclude<K, keyof T>, never>> : never;
 
-export type UnionKeyType<T, K extends UnionKeyof<T>> = T extends {
-	[k in K]?: any;
-}
-	? T[K]
-	: undefined;
+export type Combine<T> = {
+	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
+};
 
 export type DefaultValue<Schema> = Schema extends
 	| string
@@ -55,9 +56,7 @@ export type DefaultValue<Schema> = Schema extends
 	? Array<DefaultValue<Item>> | null | undefined
 	: Schema extends Record<string, any>
 	?
-			| {
-					[Key in UnionKeyof<Schema>]?: DefaultValue<UnionKeyType<Schema, Key>>;
-			  }
+			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
 			| null
 			| undefined
 	: string | null | undefined;
@@ -77,7 +76,7 @@ export type FormValue<Schema> = Schema extends
 	? string | Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
 	?
-			| { [Key in UnionKeyof<Schema>]?: FormValue<UnionKeyType<Schema, Key>> }
+			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
 			| undefined
 	: unknown;
 
@@ -257,7 +256,8 @@ function createFormMeta<Schema, FormError, FormValue>(
 ): FormMeta<FormError> {
 	const lastResult = !initialized ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
-		? (serialize(options.defaultValue) as Record<string, unknown>)
+		? // @ts-expect-error
+		  (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {

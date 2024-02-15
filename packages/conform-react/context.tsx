@@ -1,5 +1,6 @@
 import {
 	type Constraint,
+	type Combine,
 	type FormId,
 	type FieldName,
 	type FormContext as BaseFormContext,
@@ -8,8 +9,6 @@ import {
 	type Intent,
 	type SubscriptionScope,
 	type SubscriptionSubject,
-	type UnionKeyof,
-	type UnionKeyType,
 	type FormOptions as BaseFormOptions,
 	unstable_createFormContext as createBaseFormContext,
 	formatPaths,
@@ -68,41 +67,48 @@ export type FormMetadata<
 		id: FormId<Schema, FormError>;
 		context: Wrapped<FormContext<Schema, FormError>>;
 		status?: 'success' | 'error';
-		getFieldset: () => {
-			[Key in UnionKeyof<Schema>]: FieldMetadata<
-				UnionKeyType<Schema, Key>,
+		getFieldset: () => Required<{
+			[Key in keyof Combine<Schema>]: FieldMetadata<
+				Combine<Schema>[Key],
 				Schema,
 				FormError
 			>;
-		};
+		}>;
 		onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 		noValidate: boolean;
 	};
+
+type SubfieldMetadata<
+	Schema,
+	FormSchema extends Record<string, any>,
+	FormError,
+	CombinedSchema = Combine<Schema>,
+> = Exclude<Schema, undefined> extends Array<infer Item>
+	? {
+			getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
+	  }
+	: Exclude<Schema, undefined> extends Record<string, unknown>
+	? {
+			getFieldset: () => Required<{
+				[Key in keyof CombinedSchema]: FieldMetadata<
+					CombinedSchema[Key],
+					FormSchema,
+					FormError
+				>;
+			}>;
+	  }
+	: {};
 
 export type FieldMetadata<
 	Schema = unknown,
 	FormSchema extends Record<string, any> = Record<string, unknown>,
 	FormError = string[],
 > = Metadata<Schema, FormSchema, FormError> &
-	Constraint & {
-		formId: FormId<FormSchema, FormError>;
-		getFieldset: unknown extends Schema
-			? () => unknown
-			: Schema extends Primitive | Array<any>
-			? never
-			: () => {
-					[Key in UnionKeyof<Schema>]: FieldMetadata<
-						UnionKeyType<Schema, Key>,
-						FormSchema,
-						FormError
-					>;
-			  };
-		getFieldList: unknown extends Schema
-			? () => unknown
-			: Schema extends Array<infer Item>
-			? () => Array<FieldMetadata<Item, FormSchema, FormError>>
-			: never;
-	};
+	Constraint & { formId: FormId<FormSchema, FormError> } & SubfieldMetadata<
+		Schema,
+		FormSchema,
+		FormError
+	>;
 
 export const Form = createContext<FormContext[]>([]);
 
