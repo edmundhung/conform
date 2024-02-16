@@ -9,7 +9,7 @@ interface PlaygroundProps {
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
-	children: ReactNode;
+	children?: ReactNode;
 }
 
 export function Playground({

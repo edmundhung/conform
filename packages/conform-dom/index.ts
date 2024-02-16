@@ -1,6 +1,5 @@
 export {
-	type UnionKeyof,
-	type UnionKeyType,
+	type Combine,
 	type Constraint,
 	type ControlButtonProps,
 	type FormId,
