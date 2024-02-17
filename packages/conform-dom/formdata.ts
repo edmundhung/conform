@@ -212,6 +212,15 @@ export function normalize<
 		return;
 	}
 
+	// We will skip serializing file if the result is sent to the client
+	if (isFile(value)) {
+		return Object.assign(value, {
+			toJSON() {
+				return;
+			},
+		});
+	}
+
 	return value;
 }
 
