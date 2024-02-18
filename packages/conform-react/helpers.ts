@@ -53,8 +53,8 @@ type InputProps = Pretty<
 			| 'week';
 		minLength?: number;
 		maxLength?: number;
-		min?: string | number;
-		max?: string | number;
+		min?: string | number | Date;
+		max?: string | number | Date;
 		step?: string | number;
 		pattern?: string;
 		multiple?: boolean;
