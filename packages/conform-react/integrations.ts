@@ -286,6 +286,25 @@ export function useInputValue<
 	return [value, setValue] as const;
 }
 
+export function useControl<
+	Value extends string | string[] | Array<string | undefined>,
+>(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const [value, setValue] = useInputValue(meta);
+	const { register, change, focus, blur } = useInputEvent();
+	const handleChange = (value: string | string[]) => {
+		setValue(value);
+		change(value);
+	};
+
+	return {
+		register,
+		value,
+		change: handleChange,
+		focus,
+		blur,
+	};
+}
+
 export function useInputControl<
 	Value extends string | string[] | Array<string | undefined>,
 >(meta: {
@@ -295,7 +314,7 @@ export function useInputControl<
 	initialValue?: Value | undefined;
 }) {
 	const [value, setValue] = useInputValue(meta);
-	const [hydrated, setHydrated] = useState(false);
+	const initializedRef = useRef(false);
 	const { register, change, focus, blur } = useInputEvent();
 
 	useEffect(() => {
@@ -321,10 +340,10 @@ export function useInputControl<
 
 		register(element);
 
-		if (hydrated) {
-			change(value ?? '');
+		if (!initializedRef.current) {
+			initializedRef.current = true;
 		} else {
-			setHydrated(true);
+			change(value ?? '');
 		}
 
 		return () => {
@@ -338,7 +357,7 @@ export function useInputControl<
 				}
 			}
 		};
-	}, [meta.formId, meta.name, value, change, register, hydrated]);
+	}, [meta.formId, meta.name, value, change, register]);
 
 	return {
 		value,

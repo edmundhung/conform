@@ -15,7 +15,7 @@ export {
 } from './context';
 export { useForm, useFormMetadata, useField } from './hooks';
 export {
-	useInputEvent as unstable_useInputEvent,
+	useControl as unstable_useControl,
 	useInputControl,
 } from './integrations';
 export {
