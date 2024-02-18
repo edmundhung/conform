@@ -29,6 +29,10 @@ const schema = yup.object({
 			'At least 1 number',
 			(username) => !username || username.match(/[0-9]/) !== null,
 		),
+	// isAdmin: yup.bool().required('isAdmin is required'),
+	// tags: yup.array().required('Tags is required'),
+	// age: yup.number().required('Age is required'),
+	// cloud: yup.mixed().required('Cloud is required'),
 });
 
 export async function loader({ request }: LoaderArgs) {
