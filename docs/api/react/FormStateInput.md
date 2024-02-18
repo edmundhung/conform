@@ -3,7 +3,7 @@
 A React component that renders a hidden input to persist the form state in case document reload.
 
 ```tsx
-import { FormProvider, FormStateInput, useForm } from '@remix-run/react';
+import { FormProvider, FormStateInput, useForm } from '@conform-to/react';
 
 export default function SomeParent() {
   const [form, fields] = useForm();
