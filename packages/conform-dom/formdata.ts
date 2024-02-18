@@ -207,9 +207,18 @@ export function normalize<
 	if (
 		(typeof value === 'string' && value === '') ||
 		value === null ||
-		isFile(value)
+		(isFile(value) && value.size === 0)
 	) {
 		return;
+	}
+
+	// We will skip serializing file if the result is sent to the client
+	if (isFile(value)) {
+		return Object.assign(value, {
+			toJSON() {
+				return;
+			},
+		});
 	}
 
 	return value;

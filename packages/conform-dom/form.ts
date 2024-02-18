@@ -72,6 +72,8 @@ export type FormValue<Schema> = Schema extends
 	? string | undefined
 	: Schema extends File
 	? File | undefined
+	: Schema extends File[]
+	? File | Array<File> | undefined
 	: Schema extends Array<infer Item>
 	? string | Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
