@@ -8,7 +8,6 @@ import {
 	useInputControl,
 	getFormProps,
 	getSelectProps,
-	getCollectionProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionArgs, LoaderArgs } from '@remix-run/node';
@@ -417,16 +416,20 @@ function CheckboxGroup({
 	options: string[];
 }) {
 	const [field] = useField(name);
+	const initialValue =
+		typeof field.initialValue === 'string'
+			? [field.initialValue]
+			: field.initialValue ?? [];
 
 	return (
 		<div className="py-2 space-y-4">
-			{getCollectionProps(field, {
-				type: 'checkbox',
-				options,
-			}).map((props) => (
+			{options.map((option) => (
 				<Control
-					key={props.key}
-					options={props}
+					key={option}
+					meta={{
+						key: field.key,
+						initialValue: initialValue.includes(option) ? option : '',
+					}}
 					render={(control) => (
 						<div
 							className="flex items-center"
@@ -437,12 +440,12 @@ function CheckboxGroup({
 							<RadixCheckbox.Root
 								type="button"
 								className="flex h-[25px] w-[25px] appearance-none items-center justify-center rounded-[4px] bg-white outline-none shadow-[0_0_0_2px_black]"
-								id={props.id}
-								name={props.name}
-								value={props.value}
-								checked={control.value === props.value}
+								id={`${field.id}-${option}`}
+								name={field.name}
+								value={option}
+								checked={control.value === option}
 								onCheckedChange={(state) =>
-									control.change(state.valueOf() ? props.value : '')
+									control.change(state.valueOf() ? option : '')
 								}
 								onBlur={control.blur}
 							>
@@ -451,10 +454,10 @@ function CheckboxGroup({
 								</RadixCheckbox.Indicator>
 							</RadixCheckbox.Root>
 							<label
-								htmlFor={props.id}
+								htmlFor={`${field.id}-${option}`}
 								className="pl-[15px] text-[15px] leading-none"
 							>
-								{props.value}
+								{option}
 							</label>
 						</div>
 					)}

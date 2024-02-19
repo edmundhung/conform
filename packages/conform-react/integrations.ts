@@ -296,8 +296,8 @@ export function useInputValue<
 
 export function useControl<
 	Value extends string | string[] | Array<string | undefined>,
->(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
-	const [value, setValue] = useInputValue(options);
+>(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const [value, setValue] = useInputValue(meta);
 	const { register, change, focus, blur } = useInputEvent();
 	const handleChange = (
 		value: Value extends string ? Value : string | string[],
@@ -380,10 +380,10 @@ export function useInputControl<
 export function Control<
 	Value extends string | string[] | Array<string | undefined>,
 >(props: {
-	options: { key?: Key | null | undefined; initialValue?: Value | undefined };
+	meta: { key?: Key | null | undefined; initialValue?: Value | undefined };
 	render: (control: ReturnType<typeof useControl<Value>>) => React.ReactNode;
 }) {
-	const control = useControl(props.options);
+	const control = useControl(props.meta);
 
 	return props.render(control);
 }
