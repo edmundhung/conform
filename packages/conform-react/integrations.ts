@@ -165,11 +165,15 @@ export function useInputEvent(): {
 	focus(): void;
 	blur(): void;
 	register: RefCallback<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 } {
 	const ref = useRef<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| null
+		| undefined
 	>(null);
 	const eventDispatched = useRef({
 		change: false,
@@ -267,12 +271,16 @@ export function useInputEvent(): {
 
 export function useInputValue<
 	Value extends string | string[] | Array<string | undefined>,
->(options: { key?: Key | null | undefined; initialValue?: Value }) {
-	const initializeValue = (): string | string[] | undefined => {
+>(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const initializeValue = ():
+		| (Value extends string ? Value : string | string[])
+		| undefined => {
 		if (typeof options.initialValue === 'string') {
+			// @ts-expect-error FIXME: To ensure that the type of value is also `string | undefined` if initialValue is not an array
 			return options.initialValue;
 		}
 
+		// @ts-expect-error Same as above
 		return options.initialValue?.map((value) => value ?? '');
 	};
 	const [key, setKey] = useState(options.key);
@@ -288,10 +296,12 @@ export function useInputValue<
 
 export function useControl<
 	Value extends string | string[] | Array<string | undefined>,
->(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
-	const [value, setValue] = useInputValue(meta);
+>(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const [value, setValue] = useInputValue(options);
 	const { register, change, focus, blur } = useInputEvent();
-	const handleChange = (value: string | string[]) => {
+	const handleChange = (
+		value: Value extends string ? Value : string | string[],
+	) => {
 		setValue(value);
 		change(value);
 	};
@@ -365,4 +375,15 @@ export function useInputControl<
 		focus,
 		blur,
 	};
+}
+
+export function Control<
+	Value extends string | string[] | Array<string | undefined>,
+>(props: {
+	options: { key?: Key | null | undefined; initialValue?: Value | undefined };
+	render: (control: ReturnType<typeof useControl<Value>>) => React.ReactNode;
+}) {
+	const control = useControl(props.options);
+
+	return props.render(control);
 }
