@@ -1,4 +1,8 @@
-import { getFormProps, useForm, useInputControl } from '@conform-to/react';
+import {
+	getFormProps,
+	useForm,
+	unstable_useControl as useControl,
+} from '@conform-to/react';
 import { type LoaderArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
@@ -20,7 +24,7 @@ export default function Example() {
 			'base-input': defaultValue,
 		},
 	});
-	const control = useInputControl(fields['base-input']);
+	const control = useControl(fields['base-input']);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [logsByName, setLogsByName] = useState<Record<string, string[]>>({});
 	const log = (event: FormEvent<HTMLFormElement>) => {
@@ -57,7 +61,7 @@ export default function Example() {
 						className="p-2 flex-1"
 						name="native-input"
 						type="text"
-						value={control.value ?? ''}
+						defaultValue={fields['native-input'].initialValue ?? ''}
 						ref={inputRef}
 						onChange={(event) => control.change(event.target.value)}
 						onFocus={control.focus}
@@ -76,9 +80,10 @@ export default function Example() {
 				<div className="pt-4">
 					<div>Shadow input</div>
 					<input
+						ref={control.register}
 						name="base-input"
 						type="text"
-						defaultValue={defaultValue ?? ''}
+						value={control.value}
 						onChange={(event) => control.change(event.target.value)}
 						onFocus={() => {
 							control.focus();

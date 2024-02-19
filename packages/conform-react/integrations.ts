@@ -1,27 +1,21 @@
-import { type Key, useRef, useState, useMemo, useEffect } from 'react';
+import {
+	type Key,
+	type RefCallback,
+	useRef,
+	useState,
+	useMemo,
+	useEffect,
+} from 'react';
 
-export type InputControl<Value> = {
-	value: Value | undefined;
-	change: (value: Value) => void;
-	focus: () => void;
-	blur: () => void;
-};
-
-export function getFormElement(formId: string): HTMLFormElement {
-	const element = document.forms.namedItem(formId);
-
-	if (!element) {
-		throw new Error('Form not found');
-	}
-
-	return element;
+export function getFormElement(formId: string): HTMLFormElement | null {
+	return document.forms.namedItem(formId);
 }
 
 export function getFieldElements(
-	form: HTMLFormElement,
+	form: HTMLFormElement | null,
 	name: string,
 ): Array<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> {
-	const field = form.elements.namedItem(name);
+	const field = form?.elements.namedItem(name);
 	const elements = !field
 		? []
 		: field instanceof Element
@@ -39,10 +33,30 @@ export function getFieldElements(
 }
 
 export function getEventTarget(
-	form: HTMLFormElement,
+	form: HTMLFormElement | null,
 	name: string,
+	value?: string | string[],
 ): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null {
 	const elements = getFieldElements(form, name);
+
+	if (elements.length > 1) {
+		const options = typeof value === 'string' ? [value] : value;
+
+		for (const element of elements) {
+			if (
+				typeof options !== 'undefined' &&
+				element instanceof HTMLInputElement &&
+				element.type === 'checkbox' &&
+				(element.checked
+					? options.includes(element.value)
+					: !options.includes(element.value))
+			) {
+				continue;
+			}
+
+			return element;
+		}
+	}
 
 	return elements[0] ?? null;
 }
@@ -95,7 +109,9 @@ export function updateFieldValue(
 		element instanceof HTMLInputElement &&
 		(element.type === 'checkbox' || element.type === 'radio')
 	) {
-		element.checked = element.value === value;
+		element.checked = Array.isArray(value)
+			? value.includes(element.value)
+			: element.value === value;
 	} else if (element instanceof HTMLSelectElement && element.multiple) {
 		const selectedValue = Array.isArray(value) ? [...value] : [value];
 
@@ -144,68 +160,33 @@ export function updateFieldValue(
 	}
 }
 
-export function useInputControl<Value>(metaOrOptions: {
-	key?: Key | null | undefined;
-	name: string;
-	formId: string;
-	initialValue?: Value | undefined;
-}): InputControl<Value extends string ? string : string | string[]> {
-	// If the initialValue is an array, it must be a string array without undefined values
-	// as there is no way to skip an entry in a multiple select when they all share the same name
-	const inputInitialValue = metaOrOptions.initialValue as Value extends string
-		? string
-		: string | string[];
+export function useInputEvent(): {
+	change(value: string | string[]): void;
+	focus(): void;
+	blur(): void;
+	register: RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	>;
+} {
+	const ref = useRef<
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| null
+		| undefined
+	>(null);
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
 		blur: false,
 	});
-	const [key, setKey] = useState(metaOrOptions.key);
-	const [initialValue, setInitialValue] = useState(inputInitialValue);
-	const [value, setValue] = useState(inputInitialValue);
-
-	if (key !== metaOrOptions.key) {
-		setValue(inputInitialValue);
-		setInitialValue(inputInitialValue);
-		setKey(metaOrOptions.key);
-	}
-
-	useEffect(() => {
-		const form = getFormElement(metaOrOptions.formId);
-
-		if (getEventTarget(form, metaOrOptions.name)) {
-			return;
-		}
-
-		createDummySelect(
-			form,
-			metaOrOptions.name,
-			initialValue as string | string[] | undefined,
-		);
-
-		return () => {
-			const elements = getFieldElements(form, metaOrOptions.name);
-
-			for (const element of elements) {
-				if (isDummySelect(element)) {
-					element.remove();
-				}
-			}
-		};
-	}, [metaOrOptions.formId, metaOrOptions.name, initialValue]);
 
 	useEffect(() => {
 		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
 			return (event: Event) => {
-				const element = event.target;
+				const element = ref.current;
 
-				if (
-					(element instanceof HTMLInputElement ||
-						element instanceof HTMLSelectElement ||
-						element instanceof HTMLTextAreaElement) &&
-					element.name === metaOrOptions.name &&
-					element.form?.id === metaOrOptions.formId
-				) {
+				if (element && event.target === element) {
 					eventDispatched.current[listener] = true;
 				}
 			};
@@ -223,21 +204,15 @@ export function useInputControl<Value>(metaOrOptions: {
 			document.removeEventListener('focusin', focusHandler, true);
 			document.removeEventListener('focusout', blurHandler, true);
 		};
-	}, [metaOrOptions.formId, metaOrOptions.name]);
+	}, [ref]);
 
-	const handlers = useMemo<
-		Omit<
-			InputControl<Value extends string ? string : string | string[]>,
-			'value'
-		>
-	>(() => {
+	return useMemo(() => {
 		return {
 			change(value) {
 				if (!eventDispatched.current.change) {
 					eventDispatched.current.change = true;
 
-					const form = getFormElement(metaOrOptions.formId);
-					const element = getEventTarget(form, metaOrOptions.name);
+					const element = ref.current;
 
 					if (element) {
 						updateFieldValue(element, value);
@@ -249,15 +224,13 @@ export function useInputControl<Value>(metaOrOptions: {
 					}
 				}
 
-				setValue(value);
 				eventDispatched.current.change = false;
 			},
 			focus() {
 				if (!eventDispatched.current.focus) {
 					eventDispatched.current.focus = true;
 
-					const form = getFormElement(metaOrOptions.formId);
-					const element = getEventTarget(form, metaOrOptions.name);
+					const element = ref.current;
 
 					if (element) {
 						element.dispatchEvent(
@@ -275,8 +248,7 @@ export function useInputControl<Value>(metaOrOptions: {
 				if (!eventDispatched.current.blur) {
 					eventDispatched.current.blur = true;
 
-					const form = getFormElement(metaOrOptions.formId);
-					const element = getEventTarget(form, metaOrOptions.name);
+					const element = ref.current;
 
 					if (element) {
 						element.dispatchEvent(
@@ -290,11 +262,128 @@ export function useInputControl<Value>(metaOrOptions: {
 
 				eventDispatched.current.blur = false;
 			},
+			register(element) {
+				ref.current = element;
+			},
 		};
-	}, [metaOrOptions.formId, metaOrOptions.name]);
+	}, []);
+}
+
+export function useInputValue<
+	Value extends string | string[] | Array<string | undefined>,
+>(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const initializeValue = ():
+		| (Value extends string ? Value : string | string[])
+		| undefined => {
+		if (typeof options.initialValue === 'string') {
+			// @ts-expect-error FIXME: To ensure that the type of value is also `string | undefined` if initialValue is not an array
+			return options.initialValue;
+		}
+
+		// @ts-expect-error Same as above
+		return options.initialValue?.map((value) => value ?? '');
+	};
+	const [key, setKey] = useState(options.key);
+	const [value, setValue] = useState(initializeValue);
+
+	if (key !== options.key) {
+		setValue(initializeValue);
+		setKey(options.key);
+	}
+
+	return [value, setValue] as const;
+}
+
+export function useControl<
+	Value extends string | string[] | Array<string | undefined>,
+>(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	const [value, setValue] = useInputValue(meta);
+	const { register, change, focus, blur } = useInputEvent();
+	const handleChange = (
+		value: Value extends string ? Value : string | string[],
+	) => {
+		setValue(value);
+		change(value);
+	};
 
 	return {
-		...handlers,
+		register,
 		value,
+		change: handleChange,
+		focus,
+		blur,
 	};
+}
+
+export function useInputControl<
+	Value extends string | string[] | Array<string | undefined>,
+>(meta: {
+	key?: Key | null | undefined;
+	name: string;
+	formId: string;
+	initialValue?: Value | undefined;
+}) {
+	const [value, setValue] = useInputValue(meta);
+	const initializedRef = useRef(false);
+	const { register, change, focus, blur } = useInputEvent();
+
+	useEffect(() => {
+		const form = getFormElement(meta.formId);
+
+		if (!form) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`useInputControl is unable to find form#${meta.formId} and identify if a dummy input is required`,
+			);
+			return;
+		}
+
+		let element = getEventTarget(form, meta.name);
+
+		if (
+			!element &&
+			typeof value !== 'undefined' &&
+			(!Array.isArray(value) || value.length > 0)
+		) {
+			element = createDummySelect(form, meta.name, value);
+		}
+
+		register(element);
+
+		if (!initializedRef.current) {
+			initializedRef.current = true;
+		} else {
+			change(value ?? '');
+		}
+
+		return () => {
+			register(null);
+
+			const elements = getFieldElements(form, meta.name);
+
+			for (const element of elements) {
+				if (isDummySelect(element)) {
+					element.remove();
+				}
+			}
+		};
+	}, [meta.formId, meta.name, value, change, register]);
+
+	return {
+		value,
+		change: setValue,
+		focus,
+		blur,
+	};
+}
+
+export function Control<
+	Value extends string | string[] | Array<string | undefined>,
+>(props: {
+	meta: { key?: Key | null | undefined; initialValue?: Value | undefined };
+	render: (control: ReturnType<typeof useControl<Value>>) => React.ReactNode;
+}) {
+	const control = useControl(props.meta);
+
+	return props.render(control);
 }
