@@ -394,7 +394,7 @@ export default function ContactUs() {
 	});
 
 	return (
-    <form
+    <Form
       method="post"
 			id={form.id}
       {/* The `onSubmit` handler is required for client validation */}
@@ -403,7 +403,7 @@ export default function ContactUs() {
 			aria-describedby={form.errors ? form.errorId : undefined}
     >
       {/* ... */}
-    </form>
+    </Form>
   );
 }
 ```
