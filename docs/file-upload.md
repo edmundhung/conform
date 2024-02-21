@@ -61,7 +61,7 @@ const schema = z.object({
 function Example() {
   const [form, fields] = useForm({
     onValidate({ formData }) {
-      return parse(formData, { schema });
+      return parseWithZod(formData, { schema });
     },
   });
 
