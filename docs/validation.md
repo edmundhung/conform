@@ -28,11 +28,11 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  // Last submission returned by the server
-  const lastSubmission = useActionData<typeof action>();
+  // Last result returned by the server
+  const lastResult = useActionData<typeof action>();
   const [form] = useForm({
     // Sync the result of last submission
-    lastSubmission,
+    lastResult,
 
     // Configure when each field should be validated
     shouldValidate: 'onBlur',
@@ -65,9 +65,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-  const lastSubmission = useActionData<typeof action>();
+  const lastResult = useActionData<typeof action>();
   const [form] = useForm({
-    lastSubmission,
+    lastResult,
     shouldValidate: 'onBlur',
     shouldRevalidate: 'onInput',
 
@@ -153,9 +153,9 @@ export function action() {
 }
 
 export default function Signup() {
-	const lastSubmission = useActionData();
+	const lastResult = useActionData();
 	const [form] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
 				// Create the schema without implementing `isEmailUnique()`
@@ -244,9 +244,9 @@ export async function action({ request }: ActionArgs) {
 }
 
 export default function Signup() {
-	const lastSubmission = useActionData();
+	const lastResult = useActionData();
 	const [form] = useForm({
-		lastSubmission,
+		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
 				// Similar to the action above
