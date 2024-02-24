@@ -28,8 +28,8 @@ describe('conform-yup', () => {
 			timestamp: yup
 				.date()
 				.required('required')
-				.min(new Date(1), 'min')
-				.max(maxDate, 'max')
+				.min(new Date(1).toISOString(), 'min')
+				.max(maxDate.toISOString(), 'max')
 				.default(new Date()),
 			options: yup
 				.array(
@@ -106,8 +106,8 @@ describe('conform-yup', () => {
 			},
 			timestamp: {
 				required: true,
-				min: new Date(1),
-				max: maxDate,
+				min: new Date(1).toISOString(),
+				max: maxDate.toISOString(),
 			},
 			options: {
 				required: true,
