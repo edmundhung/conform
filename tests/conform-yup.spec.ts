@@ -4,6 +4,15 @@ import * as yup from 'yup';
 import { type Constraint, STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
+// Adding custom method tuple until Yup is updated to v1 where the tuple method is built-in
+// ref: https://github.com/jquense/yup/issues/528#issuecomment-916885944
+yup.addMethod(yup.array, 'tuple', function (schema) {
+	if (!this.isType(schema)) yup.ValidationError();
+	return yup.object({
+		...Object.fromEntries(Object.entries(schema)),
+	});
+});
+
 describe('conform-yup', () => {
 	const maxDate = new Date();
 	const schema = yup
@@ -39,9 +48,18 @@ describe('conform-yup', () => {
 						.object({
 							key: yup.string().required('required'),
 						})
+						.required('required')
 						.test('list-object', 'error', () => false),
 				)
+				.required('required')
 				.max(0, 'max'),
+			tuple: yup
+				.array()
+				.tuple([
+					yup.string().required('required').min(3),
+					yup.number().notRequired().max(100),
+				])
+				.required(),
 		})
 		.test('root', 'error', () => false);
 
@@ -65,6 +83,7 @@ describe('conform-yup', () => {
 		'list[0].key': ['required'],
 		'list[0]': ['error'],
 		list: ['max'],
+		'tuple.0': ['required'],
 		'': ['error'],
 	};
 
@@ -104,7 +123,26 @@ describe('conform-yup', () => {
 			'nested.key': {
 				required: true,
 			},
-			list: {},
+			list: {
+				required: true,
+				multiple: true,
+			},
+			'list[]': {
+				required: true,
+			},
+			'list[].key': {
+				required: true,
+			},
+			tuple: {
+				required: true,
+			},
+			'tuple.0': {
+				required: true,
+				minLength: 3,
+			},
+			'tuple.1': {
+				max: 100,
+			},
 		};
 
 		expect(getYupConstraint(schema)).toEqual(constraint);
