@@ -1,30 +1,37 @@
-# React + TypeScript + Vite
+# Shadcn UI Integration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[Shadcn UI](https://ui.shadcn.com/)
+Shadcn UI is a comprehensive component library built with React. It provides a wide range of pre-built components that can be easily integrated into your projects. The library is designed to be simple to use, allowing you to add components to your project either by copy/pasting them directly or using the provided CLI.
 
-Currently, two official plugins are available:
+## Installation
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+To install a component, you can simply copy and paste the component code into your project. Alternatively, you can use the Shadcn UI CLI to automatically add components to your project. By default, the CLI will place the components into the `src/components/ui` folder.
 
-## Expanding the ESLint configuration
+## Conform Forms integration
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+This example includes a set of components in a separate folder `src/components/conform` that extend the shadcn components. By using these components, you can quickly and easily build complex forms with full validation and error handling.
 
-- Configure the top-level `parserOptions` property like this:
+## Additional infos
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+This example we leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://tailwindcss.com/)
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+**Components**
+
+- Checkbox
+- Checkbox group
+- Combobox
+- Date picker
+- Radio group
+- Select
+- Slider
+- Switch
+- Textarea
+- Toggle group
+
+## Demo
+
+<!-- sandbox src="/examples/shadcn-ui" -->
+
+Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/shadcn-ui).
+
+<!-- /sandbox -->
