@@ -85,7 +85,7 @@ export default function Signup() {
 
 Conform supports async validation in a slightly different way. Instead of sending a request to another endpoint, we will simply fallback to server validation when needed.
 
-Here is an example which validate if the email is unique.
+Here is an example which validates if the email is unique.
 
 ```tsx
 import { refine } from '@conform-to/zod';

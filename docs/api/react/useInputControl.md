@@ -18,7 +18,7 @@ function Example() {
 
   return (
     <Select
-      name={field.color.name}
+      name={fields.color.name}
       value={color.value}
       onChange={color.change}
       onFocus={color.focus}
