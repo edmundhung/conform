@@ -227,7 +227,7 @@ export function getFormControlProps<Schema>(
  * Depends on the provided options, it will also set `defaultChecked` / `checked` if it is a checkbox or radio button,
  * or otherwise `defaultValue` / `value`.
  *
- * @see https://conform.guide/api/react/get-input-props
+ * @see https://conform.guide/api/react/getInputProps
  * @example
  * ```tsx
  * // To setup an uncontrolled input
@@ -277,7 +277,7 @@ export function getInputProps<Schema>(
  * and constraint attributes such as `required` or `multiple`.
  * Depends on the provided options, it will also set `defaultValue` / `value`.
  *
- * @see https://conform.guide/api/react/get-select-props
+ * @see https://conform.guide/api/react/getSelectProps
  * @example
  * ```tsx
  * // To setup an uncontrolled select
@@ -310,7 +310,7 @@ export function getSelectProps<Schema>(
  * and constraint attributes such as `required`, `minLength` or `maxLength`.
  * Depends on the provided options, it will also set `defaultValue` / `value`.
  *
- * @see https://conform.guide/api/react/get-textarea-props
+ * @see https://conform.guide/api/react/getTextareaProps
  * @example
  * ```tsx
  * // To setup an uncontrolled textarea
@@ -340,7 +340,7 @@ export function getTextareaProps<Schema>(
  * Derives the properties of a collection of checkboxes or radio buttons based on the field metadata,
  * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby` and `required`.
  *
- * @see https://conform.guide/api/react/get-textarea-props
+ * @see https://conform.guide/api/react/getTextareaProps
  * @example
  * ```tsx
  * <fieldset>
@@ -376,7 +376,7 @@ export function getCollectionProps<
 			 */
 			options: string[];
 			/**
-			 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
+			 * Decide whether defaultValue should be returned. Pass `false` if you want to manage the value yourself.
 			 */
 			value?: boolean;
 		}

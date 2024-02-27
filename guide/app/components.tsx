@@ -216,7 +216,7 @@ export function MainNavigation({ menus }: { menus: Menu[] }) {
 				ref={detailsRef}
 				className="xl:hidden peer block py-4 bg-zinc-950 open:bg-zinc-700 -mx-8 px-8"
 			>
-				<summary className="list-none">{currentPage}</summary>
+				<summary className="cursor-pointer">{currentPage}</summary>
 			</details>
 			<div className="hidden peer-open:block xl:block overflow-y-auto bg-zinc-950 xl:bg-inherit -mx-8 px-8 xl:mx-0 xl:px-0">
 				<Navigation
