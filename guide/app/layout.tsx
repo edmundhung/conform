@@ -108,7 +108,7 @@ export function Guide({
 			<header className="bg-zinc-900 xl:bg-transparent sticky top-0 max-h-screen z-10 flex flex-col">
 				<div className="py-2 xl:py-4">
 					<Link
-						className="inline-block py-4 text-[.25rem] leading-[.25rem] xl:text-[.35rem] xl:leading-[.40rem] whitespace-pre"
+						className="font-mono inline-block py-4 text-[.25rem] leading-[.25rem] xl:text-[.35rem] xl:leading-[.40rem] whitespace-pre"
 						title="Conform"
 						to="/"
 					>
