@@ -57,8 +57,8 @@ function Example() {
         aria-describedby={
           !fields.category.valid ? fields.category.errorId : undefined
         }
-        required={field.category.required}
-        multiple={field.category.multiple}
+        required={fields.category.required}
+        multiple={fields.category.multiple}
       />
     </form>
   );

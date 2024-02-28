@@ -57,9 +57,9 @@ function Example() {
         aria-describedby={
           !fields.content.valid ? fields.content.errorId : undefined
         }
-        required={field.content.required}
-        minLength={field.content.minLength}
-        maxLength={field.content.maxLength}
+        required={fields.content.required}
+        minLength={fields.content.minLength}
+        maxLength={fields.content.maxLength}
       />
     </form>
   );
