@@ -69,8 +69,6 @@ export function getSubmissionContext(
 ): SubmissionContext {
 	const intent = body.get(INTENT);
 	const state = body.get(STATE);
-	const payload: Record<string, unknown> = {};
-	const fields: string[] = [];
 
 	invariant(
 		(typeof intent === 'string' || intent === null) &&
@@ -78,13 +76,20 @@ export function getSubmissionContext(
 		`The input name "${INTENT}" and "${STATE}" are reserved by Conform. Please use another name for your input.`,
 	);
 
+	const context: SubmissionContext = {
+		payload: {},
+		fields: [],
+		intent: getIntent(intent),
+		state: state ? JSON.parse(state) : { validated: {} },
+	};
+
 	for (const [name, next] of body.entries()) {
 		if (name === INTENT || name === STATE) {
 			continue;
 		}
 
-		fields.push(name);
-		setValue(payload, name, (prev) => {
+		context.fields.push(name);
+		setValue(context.payload, name, (prev) => {
 			if (!prev) {
 				return next;
 			} else if (Array.isArray(prev)) {
@@ -95,12 +100,7 @@ export function getSubmissionContext(
 		});
 	}
 
-	return {
-		payload,
-		intent: getIntent(intent),
-		state: state ? JSON.parse(state) : { validated: {} },
-		fields,
-	};
+	return context;
 }
 
 export function parse<FormValue, FormError>(
@@ -159,13 +159,8 @@ export function parse<FormValue, FormError>(
 
 	if (intent) {
 		switch (intent.type) {
-			case 'validate':
-				if (intent.payload.name) {
-					context.state.validated[intent.payload.name] = true;
-				}
-				break;
 			case 'update': {
-				const { name, validated } = intent.payload;
+				const { name } = intent.payload;
 				const value = serialize(intent.payload.value);
 
 				if (typeof value !== 'undefined') {
@@ -176,33 +171,6 @@ export function parse<FormValue, FormError>(
 						context.payload = value;
 					}
 				}
-
-				if (typeof validated !== 'undefined') {
-					// Clean up previous validated state
-					if (name) {
-						setState(context.state.validated, name, () => undefined);
-					} else {
-						context.state.validated = {};
-					}
-
-					if (validated) {
-						if (isPlainObject(value) || Array.isArray(value)) {
-							Object.assign(
-								context.state.validated,
-								flatten(value, {
-									resolve() {
-										return true;
-									},
-									prefix: name,
-								}),
-							);
-						}
-
-						context.state.validated[name ?? ''] = true;
-					} else if (name) {
-						delete context.state.validated[name];
-					}
-				}
 				break;
 			}
 			case 'reset': {
@@ -210,11 +178,8 @@ export function parse<FormValue, FormError>(
 
 				if (name) {
 					setValue(context.payload, name, () => undefined);
-					setState(context.state.validated, name, () => undefined);
-					delete context.state.validated[name];
 				} else {
 					context.payload = {};
-					context.state.validated = {};
 				}
 				break;
 			}
@@ -222,9 +187,6 @@ export function parse<FormValue, FormError>(
 			case 'remove':
 			case 'reorder': {
 				setListValue(context.payload, intent);
-				setListState(context.state.validated, intent);
-
-				context.state.validated[intent.payload.name] = true;
 				break;
 			}
 		}
@@ -235,10 +197,12 @@ export function parse<FormValue, FormError>(
 		error?: Record<string, FormError | null> | null;
 		value?: FormValue;
 	}) => {
-		const error = typeof resolved.error !== 'undefined' ? resolved.error : {};
-
 		if (!intent || (intent.type === 'validate' && !intent.payload.name)) {
-			for (const name of [...context.fields, ...Object.keys(error ?? {})]) {
+			// Mark all fields as validated
+			for (const name of [
+				...context.fields,
+				...Object.keys(resolved.error ?? {}),
+			]) {
 				context.state.validated[name] = true;
 			}
 		}
@@ -311,18 +275,6 @@ export function replySubmission<FormError>(
 		}
 	}
 
-	const submissionError = context.error
-		? Object.entries(context.error).reduce<Record<string, FormError | null>>(
-				(result, [name, error]) => {
-					if (context.state.validated[name]) {
-						result[name] = error;
-					}
-
-					return result;
-				},
-				{},
-		  )
-		: undefined;
 	const extraError =
 		'formErrors' in options || 'fieldErrors' in options
 			? normalize<Record<string, FormError | null>>({
@@ -331,9 +283,9 @@ export function replySubmission<FormError>(
 			  })
 			: null;
 	const error =
-		submissionError || extraError
+		context.error || extraError
 			? {
-					...submissionError,
+					...context.error,
 					...extraError,
 			  }
 			: undefined;
