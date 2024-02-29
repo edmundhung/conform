@@ -245,9 +245,7 @@ describe('conform-dom', () => {
 				message: ['World'],
 			},
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(intentSubmission.reply({ formErrors: ['example'] })).toEqual({
@@ -264,9 +262,7 @@ describe('conform-dom', () => {
 				message: ['World'],
 			},
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(
@@ -284,9 +280,7 @@ describe('conform-dom', () => {
 				message: ['invalid'],
 			},
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(intentSubmission.reply({ resetForm: true })).toEqual({
@@ -303,9 +297,7 @@ describe('conform-dom', () => {
 				message: ['World'],
 			},
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 	});
