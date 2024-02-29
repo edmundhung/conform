@@ -231,8 +231,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const message = await sendMessage(submission.value);
 
-  //
-メッセージが送信されなかった場合は、フォームエラーを返します。
+  //メッセージが送信されなかった場合は、フォームエラーを返します。
   if (!message.sent) {
     return submission.reply({
       formErrors: ['Failed to send the message. Please try again later.'],
@@ -267,8 +266,7 @@ export default function ContactUs() {
 	// useFormフックは、フォームをレンダリングするために必要なすべてのメタデータを返します。
 	// そして、フォームが送信されたときに最初の無効なフィールドにフォーカスします。
 	const [form, fields] = useForm({
-		//
-これにより、サーバーからのエラーが同期されるだけでなく、
+		//これにより、サーバーからのエラーが同期されるだけでなく、
 		// フォームのデフォルト値としても使用されます。
 		// プログレッシブエンハンスメントのためにドキュメントが再読み込みされた場合、
 
@@ -322,7 +320,7 @@ export default function ContactUs() {
 }
 ```
 
-## バリデーションの体験向上
+## バリデーション体験の向上
 
 現在、コンタクトフォームはユーザーが送信したときにのみ検証されます。タイピングするたびにユーザーに早期フィードバックを提供したい場合はどうすればよいでしょうか？
 
@@ -388,8 +386,7 @@ export default function ContactUs() {
 	const [form, fields] = useForm({
 		// ... 以前の設定
 
-		//
-クライアント上で同じ検証ロジックを実行する
+		//クライアント上で同じ検証ロジックを実行する
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
