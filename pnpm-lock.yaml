@@ -543,6 +543,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.1
         version: 3.4.1
+      tailwindcss-animatecss:
+        specifier: ^3.0.5
+        version: 3.0.5(tailwindcss@3.4.1)
       typescript:
         specifier: ^5.2.2
         version: 5.3.3
@@ -7824,7 +7827,7 @@ packages:
       '@types/react-dom':
         optional: true
     dependencies:
-      '@babel/runtime': 7.23.9
+      '@babel/runtime': 7.23.5
       '@radix-ui/primitive': 1.0.1
       '@radix-ui/react-compose-refs': 1.0.1(@types/react@18.2.58)(react@18.2.0)
       '@radix-ui/react-context': 1.0.1(@types/react@18.2.58)(react@18.2.0)
@@ -7965,7 +7968,7 @@ packages:
       '@types/react-dom':
         optional: true
     dependencies:
-      '@babel/runtime': 7.23.9
+      '@babel/runtime': 7.23.5
       '@radix-ui/number': 1.0.1
       '@radix-ui/primitive': 1.0.1
       '@radix-ui/react-collection': 1.0.3(@types/react-dom@18.2.19)(@types/react@18.2.58)(react-dom@18.2.0)(react@18.2.0)
@@ -8234,7 +8237,7 @@ packages:
       '@types/react-dom':
         optional: true
     dependencies:
-      '@babel/runtime': 7.23.9
+      '@babel/runtime': 7.23.5
       '@radix-ui/primitive': 1.0.1
       '@radix-ui/react-context': 1.0.1(@types/react@18.2.58)(react@18.2.0)
       '@radix-ui/react-direction': 1.0.1(@types/react@18.2.58)(react@18.2.0)
@@ -26113,6 +26116,17 @@ packages:
     dependencies:
       tailwindcss: 3.4.1
     dev: false
+
+  /tailwindcss-animatecss@3.0.5(tailwindcss@3.4.1):
+    resolution:
+      {
+        integrity: sha512-5RDYryJ+O+xQfK1FhSPl1nIe4PPa1ZfHev21CpBGUNSRwUoLEoA6Oe2ftcuCWZEAa55jniqktbtkoHIoKS4jzQ==,
+      }
+    peerDependencies:
+      tailwindcss: '>=3.1.0'
+    dependencies:
+      tailwindcss: 3.4.1
+    dev: true
 
   /tailwindcss@3.3.6:
     resolution:
