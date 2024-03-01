@@ -254,68 +254,69 @@ import { sendMessage } from '~/message';
 import { getUser } from '~/session';
 
 const schema = z.object({
-	// ...
+  // ...
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-	// ...
+  // ...
 }
 
 export default function ContactUs() {
-	const lastResult = useActionData<typeof action>();
-	// useFormフックは、フォームをレンダリングするために必要なすべてのメタデータを返します。
-	// そして、フォームが送信されたときに最初の無効なフィールドにフォーカスします。
-	const [form, fields] = useForm({
-		//これにより、サーバーからのエラーが同期されるだけでなく、
-		// フォームのデフォルト値としても使用されます。
-		// プログレッシブエンハンスメントのためにドキュメントが再読み込みされた場合、
-		// 最後の結果からすべてのバリデーション属性を導出するために使用します。
-		constraint: getZodConstraint(schema),
-	});
+  const lastResult = useActionData<typeof action>();
+  // useFormフックは、フォームをレンダリングするために必要なすべてのメタデータを返します。
+  // そして、フォームが送信されたときに最初の無効なフィールドにフォーカスします。
+  const [form, fields] = useForm({
+    //これにより、サーバーからのエラーが同期されるだけでなく、
+    // フォームのデフォルト値としても使用されます。
+    // プログレッシブエンハンスメントのためにドキュメントが再読み込みされた場合、
 
-	return (
-		<Form
-			method="post"
-			{/* 追加で必要な属性は `id` 属性のみです。*/}
-			id={form.id}
-			aria-invalid={form.errors ? true : undefined}
-			aria-describedby={form.errors ? form.errorId : undefined}
-		>
-			<div id={form.errorId}>{form.errors}</div>
-			<div>
-				<label htmlFor={fields.email.id}>Email</label>
-				<input
-					id={fields.email.id}
-					type="email"
-					name={fields.email.name}
-					defaultValue={fields.email.initialValue}
-					required={fields.email.required}
-					aria-invalid={fields.email.errors ? true : undefined}
-					aria-describedby={
-						fields.email.errors ? fields.email.errorId : undefined
-					}
-				/>
-				<div id={fields.email.errorId}>{fields.email.errors}</div>
-			</div>
-			<div>
-				<label htmlFor={fields.message.id}>Message</label>
-				<textarea
-					id={fields.message.id}
-					name={fields.message.name}
-					defaultValue={fields.message.initialValue}
-					required={fields.message.required}
-					minLength={fields.message.minLength}
-					maxLength={fields.message.maxLength}
-					aria-invalid={fields.message.errors ? true : undefined}
-					aria-describedby={
-						fields.message.errors ? fields.message.errorId : undefined
-					}
-				/>
-				<div id={fields.message.errorId}>{fields.message.errors}</div>
-			</div>
-			<button>Send</button>
-		</Form>
-	);
+    // 最後の結果からすべてのバリデーション属性を導出するために使用します。
+    constraint: getZodConstraint(schema),
+  });
+
+  return (
+    <Form
+      method="post"
+      {/* 追加で必要な属性は `id` 属性のみです。*/}
+      id={form.id}
+      aria-invalid={form.errors ? true : undefined}
+      aria-describedby={form.errors ? form.errorId : undefined}
+    >
+      <div id={form.errorId}>{form.errors}</div>
+      <div>
+        <label htmlFor={fields.email.id}>Email</label>
+        <input
+          id={fields.email.id}
+          type="email"
+          name={fields.email.name}
+          defaultValue={fields.email.initialValue}
+          required={fields.email.required}
+          aria-invalid={fields.email.errors ? true : undefined}
+          aria-describedby={
+            fields.email.errors ? fields.email.errorId : undefined
+          }
+        />
+        <div id={fields.email.errorId}>{fields.email.errors}</div>
+      </div>
+      <div>
+        <label htmlFor={fields.message.id}>Message</label>
+        <textarea
+          id={fields.message.id}
+          name={fields.message.name}
+          defaultValue={fields.message.initialValue}
+          required={fields.message.required}
+          minLength={fields.message.minLength}
+          maxLength={fields.message.maxLength}
+          aria-invalid={fields.message.errors ? true : undefined}
+          aria-describedby={
+            fields.message.errors ? fields.message.errorId : undefined
+          }
+        />
+        <div id={fields.message.errorId}>{fields.message.errors}</div>
+      </div>
+      <button>Send</button>
+    </Form>
+  );
 }
 ```
 
@@ -328,7 +329,11 @@ export default function ContactUs() {
 ```tsx
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
-import { type ActionFunctionArgs, type LoaderFunctionArgs, json } from '@remix-run/node';
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  json,
+} from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { sendMessage } from '~/message';
 import { getUser } from '~/session';
@@ -372,33 +377,33 @@ import { sendMessage } from '~/message';
 import { getUser } from '~/session';
 
 const schema = z.object({
-	// ...
+  // ...
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-	// ...
+  // ...
 }
 
 export default function ContactUs() {
-	const user = useLoaderData<typeof loader>();
-	const lastResult = useActionData<typeof action>();
-	const [form, fields] = useForm({
-		// ... 以前の設定
+  const user = useLoaderData<typeof loader>();
+  const lastResult = useActionData<typeof action>();
+  const [form, fields] = useForm({
+    // ... 以前の設定
 
-		//クライアント上で同じ検証ロジックを実行する
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-	});
+    //クライアント上で同じ検証ロジックを実行する
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema });
+    },
+  });
 
-	return (
+  return (
     <Form
       method="post"
-			id={form.id}
-			{/* クライアント検証には `onSubmit` ハンドラが必要です。 */}
-			onSubmit={form.onSubmit}
-			aria-invalid={form.errors ? true : undefined}
-			aria-describedby={form.errors ? form.errorId : undefined}
+      id={form.id}
+      {/* クライアント検証には `onSubmit` ハンドラが必要です。 */}
+      onSubmit={form.onSubmit}
+      aria-invalid={form.errors ? true : undefined}
+      aria-describedby={form.errors ? form.errorId : undefined}
     >
       {/* ... */}
     </Form>
