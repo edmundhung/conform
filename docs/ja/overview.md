@@ -1,6 +1,6 @@
 # 概要
 
-Conformは、Web標準に基づいてHTMLフォームを段階的に強化し、[Remix](https://remix.run)や[Next.js](https://nextjs.org)のようなサーバーフレームワークを完全にサポートする、型安全なフォームバリデーションライブラリです。
+Conform は、Web 標準に基づいて HTML フォームを段階的に強化し、[Remix](https://remix.run)や[Next.js](https://nextjs.org)のようなサーバーフレームワークを完全にサポートする、型安全なフォームバリデーションライブラリです。
 
 ## 特徴
 
@@ -12,7 +12,7 @@ Conformは、Web標準に基づいてHTMLフォームを段階的に強化し、
 
 ## The Gist
 
-Conformは、クライアントからサーバーへのフォーム送信ライフサイクルを制御し、`useForm()`フックを通じてフォームの状態を公開します。フォームのマークアップを制限せず、どのような有効なHTMLフォームとも動作します。フォームの値は[FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web APIを使用してDOMからキャプチャされ、イベントデリゲーションを通じて同期されます。
+Conform は、クライアントからサーバーへのフォーム送信ライフサイクルを制御し、`useForm()`フックを通じてフォームの状態を公開します。フォームのマークアップを制限せず、どのような有効な HTML フォームとも動作します。フォームの値は[FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web API を使用して DOM からキャプチャされ、イベントデリゲーションを通じて同期されます。
 
 ```tsx
 import { useForm } from '@conform-to/react';
