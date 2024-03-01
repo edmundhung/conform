@@ -90,7 +90,7 @@ Conform は、少し異なる方法で非同期バリデーションをサポー
 ```tsx
 import { refine } from '@conform-to/zod';
 
-// Instead of sharing a schema, prepare a schema creator
+// スキーマを共有する代わりに、スキーマクリエーターを準備します。
 function createSchema(
   options?: {
     isEmailUnique: (email: string) => Promise<boolean>;
@@ -101,13 +101,13 @@ function createSchema(
       email: z
         .string()
         .email()
-        // Pipe the schema so it runs only if the email is valid
+        // メールアドレスが有効な場合にのみ実行されるようにスキーマをパイプします。
         .pipe(
-          // Note: The callback cannot be async here
-          // As we run zod validation synchronously on the client
+          // 注意：ここでのコールバックは非同期にはできません。
+          // クライアント上でzodのバリデーションを同期的に実行するためです。
           z.string().superRefine((email, ctx) => {
-            // This makes Conform to fallback to server validation
-            // by indicating that the validation is not defined
+            // これにより、バリデーションが定義されていないことを示すことで、
+            // Conformはサーバーバリデーションにフォールバックします。
             if (typeof options?.isEmailUnique !== 'function') {
               ctx.addIssue({
                 code: 'custom',
@@ -117,8 +117,8 @@ function createSchema(
               return;
             }
 
-            // If it reaches here, then it must be validating on the server
-            // Return the result as a promise so Zod knows it's async instead
+            // ここに到達した場合、サーバー上でバリデーションが行われているはずです。
+            // 結果をプロミスとして返すことで、Zodに非同期であることを知らせます。
             return options.isEmailUnique(email).then((isUnique) => {
               if (!isUnique) {
                 ctx.addIssue({
@@ -136,17 +136,16 @@ function createSchema(
 export function action() {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
-		// create the zod schema with `isEmailUnique()` implemented
+		// `isEmailUnique()` が実装された zod スキーマを作成します。
 		schema: createSchema({
 			async isEmailUnique(email) {
 				// ...
 			},
 		}),
 
-		// Enable async validation on the server
-    // We won't set `async: true` on the client
-    // as client validation must be synchronous
-		async: true,
+		// サーバー上で非同期バリデーションを有効にします。
+    // クライアントバリデーションは同期的でなければならないため、
+    // クライアントでは `async: true` を設定しません。
 	});
 
 	// ...
@@ -158,7 +157,7 @@ export default function Signup() {
 		lastResult,
 		onValidate({ formData }) {
 			return parseWithZod(formData, {
-				// Create the schema without implementing `isEmailUnique()`
+				// isEmailUnique()を実装せずにスキーマを作成します。
 				schema: createSchema(),
 			});
 		},
