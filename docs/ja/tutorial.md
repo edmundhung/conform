@@ -269,7 +269,6 @@ export default function ContactUs() {
 		//これにより、サーバーからのエラーが同期されるだけでなく、
 		// フォームのデフォルト値としても使用されます。
 		// プログレッシブエンハンスメントのためにドキュメントが再読み込みされた場合、
-
 		// 最後の結果からすべてのバリデーション属性を導出するために使用します。
 		constraint: getZodConstraint(schema),
 	});
@@ -277,7 +276,7 @@ export default function ContactUs() {
 	return (
 		<Form
 			method="post"
-      {/* 追加で必要な属性は `id` 属性のみです。*/}
+			{/* 追加で必要な属性は `id` 属性のみです。*/}
 			id={form.id}
 			aria-invalid={form.errors ? true : undefined}
 			aria-describedby={form.errors ? form.errorId : undefined}
@@ -396,8 +395,8 @@ export default function ContactUs() {
     <Form
       method="post"
 			id={form.id}
-      {/* クライアント検証には `onSubmit` ハンドラが必要です。 */}
-      onSubmit={form.onSubmit}
+			{/* クライアント検証には `onSubmit` ハンドラが必要です。 */}
+			onSubmit={form.onSubmit}
 			aria-invalid={form.errors ? true : undefined}
 			aria-describedby={form.errors ? form.errorId : undefined}
     >
