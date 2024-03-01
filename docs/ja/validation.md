@@ -134,36 +134,36 @@ function createSchema(
 }
 
 export function action() {
-	const formData = await request.formData();
-	const submission = await parseWithZod(formData, {
-		// `isEmailUnique()` が実装された zod スキーマを作成します。
-		schema: createSchema({
-			async isEmailUnique(email) {
-				// ...
-			},
-		}),
+  const formData = await request.formData();
+  const submission = await parseWithZod(formData, {
+    // `isEmailUnique()` が実装された zod スキーマを作成します。
+    schema: createSchema({
+      async isEmailUnique(email) {
+        // ...
+      },
+    }),
 
-		// サーバー上で非同期バリデーションを有効にします。
+    // サーバー上で非同期バリデーションを有効にします。
     // クライアントバリデーションは同期的でなければならないため、
     // クライアントでは `async: true` を設定しません。
-	});
+  });
 
-	// ...
+  // ...
 }
 
 export default function Signup() {
-	const lastResult = useActionData();
-	const [form] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, {
-				// isEmailUnique()を実装せずにスキーマを作成します。
-				schema: createSchema(),
-			});
-		},
-	});
+  const lastResult = useActionData();
+  const [form] = useForm({
+    lastResult,
+    onValidate({ formData }) {
+      return parseWithZod(formData, {
+        // isEmailUnique()を実装せずにスキーマを作成します。
+        schema: createSchema(),
+      });
+    },
+  });
 
-	// ...
+  // ...
 }
 ```
 
@@ -226,34 +226,34 @@ function createSchema(
 }
 
 export async function action({ request }: ActionArgs) {
-	const formData = await request.formData();
-	const submission = await parseWithZod(formData, {
-		// Retrieve the intent by providing a function instead
-		schema: (intent) =>
-			createSchema(intent, {
-				async isEmailUnique(email) {
-					// ...
-				},
-			}),
+  const formData = await request.formData();
+  const submission = await parseWithZod(formData, {
+    // Retrieve the intent by providing a function instead
+    schema: (intent) =>
+      createSchema(intent, {
+        async isEmailUnique(email) {
+          // ...
+        },
+      }),
 
-		async: true,
-	});
+    async: true,
+  });
 
-	// ...
+  // ...
 }
 
 export default function Signup() {
-	const lastResult = useActionData();
-	const [form] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, {
-				// 上記のアクションと同様です。
-				schema: (intent) => createSchema(intent),
-			});
-		},
-	});
+  const lastResult = useActionData();
+  const [form] = useForm({
+    lastResult,
+    onValidate({ formData }) {
+      return parseWithZod(formData, {
+        // 上記のアクションと同様です。
+        schema: (intent) => createSchema(intent),
+      });
+    },
+  });
 
-	// ...
+  // ...
 }
 ```
