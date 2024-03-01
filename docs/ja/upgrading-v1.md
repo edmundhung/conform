@@ -4,7 +4,7 @@
 
 ## 最小限必要な React バージョン
 
-Conform は現在、 React 18 以降を要求します。もし古いバージョンのReactを使用している場合は、まず React のバージョンをアップグレードする必要があります。
+Conform は現在、 React 18 以降を要求します。もし古いバージョンの React を使用している場合は、まず React のバージョンをアップグレードする必要があります。
 
 ## `conform` オブジェクトは削除されました
 
@@ -31,7 +31,7 @@ Conform は現在、 React 18 以降を要求します。もし古いバージ�
 <input {...getInputProps(fields.title, { type: 'text' })} />
 ```
 
-- `description` オプションは `ariaDescribedBy` に改名され、ブール値の代わりに文字列型（ description 要素の `id`  ）になりました。
+- `description` オプションは `ariaDescribedBy` に改名され、ブール値の代わりに文字列型（ description 要素の `id` ）になりました。
 
 ```tsx
 <input
@@ -118,7 +118,7 @@ function Example() {
 
 ## スキーマ・インテグレーション
 
-混乱を避けるために、各統合におけるAPIを一意の名前に変更しました。こちらが同等のメソッドです:
+混乱を避けるために、各統合における API を一意の名前に変更しました。こちらが同等のメソッドです:
 
 #### `@conform-to/zod`
 
