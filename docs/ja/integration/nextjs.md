@@ -13,7 +13,7 @@ export const loginSchema = z.object({
 });
 
 // action.ts
-'use server';
+('use server');
 
 import { redirect } from 'next/navigation';
 import { parseWithZod } from '@conform-to/zod';
@@ -32,7 +32,7 @@ export async function login(prevState: unknown, formData: FormData) {
 }
 
 // form.tsx
-'use client';
+('use client');
 
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';

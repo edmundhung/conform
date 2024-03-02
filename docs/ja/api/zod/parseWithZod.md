@@ -1,6 +1,6 @@
 # parseWithZod
 
-提供されたzodスキーマを使用してフォームデータを解析し、提出内容の概要を返すヘルパーです。
+提供された zod スキーマを使用してフォームデータを解析し、提出内容の概要を返すヘルパーです。
 
 ```tsx
 const submission = parseWithZod(payload, options);
@@ -24,7 +24,7 @@ Zod スキーマ、または Zod スキーマを返す関数のいずれかで�
 
 #### `errorMap`
 
-フォームデータを解析する際に使用されるzodの [エラーマップ](https://github.com/colinhacks/zod/blob/master/ERROR_HANDLING.md#contextual-error-map) です。
+フォームデータを解析する際に使用される zod の [エラーマップ](https://github.com/colinhacks/zod/blob/master/ERROR_HANDLING.md#contextual-error-map) です。
 
 #### `formatError`
 
@@ -68,7 +68,7 @@ Conform は空の値を除去し、スキーマを内省することでフォー
 
 この挙動は、スキーマ内で独自の `z.preprocess` ステップを設定することで上書きすることができます。
 
-> 注意: v3.22以降、 `z.preprocess` の挙動に関して Zod のリポジトリには複数のバグレポートがあります。例えば、 https://github.com/colinhacks/zod/issues/2671 および <br> https://github.com/colinhacks/zod/issues/2677 があります。問題を経験している場合は、v3.21.4 にダウングレードしてください。
+> 注意: v3.22 以降、 `z.preprocess` の挙動に関して Zod のリポジトリには複数のバグレポートがあります。例えば、 https://github.com/colinhacks/zod/issues/2671 および <br> https://github.com/colinhacks/zod/issues/2677 があります。問題を経験している場合は、v3.21.4 にダウングレードしてください。
 
 ```tsx
 const schema = z.object({
