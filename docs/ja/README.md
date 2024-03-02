@@ -8,7 +8,7 @@
   - [バリデーション](./validation.md)
   - [ネストされたオブジェクトと配列](./complex-structures.md)
   - [インテントボタン](./intent-button.md)
-  - [チェックボックス と ラジオグループ](./checkbox-and-radio-group.md)
+  - [チェックボックスとラジオグループ](./checkbox-and-radio-group.md)
   - [ファイルのアップロード](./file-upload.md)
   - [アクセシビリティ](./accessibility.md)
 - インテグレーション
