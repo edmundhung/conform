@@ -1,10 +1,10 @@
-# UIライブラリとのインテグレーション
+# UI ライブラリとのインテグレーション
 
 このガイドでは、カスタム入力コンポーネントを Conform とインテグレーションする方法を紹介します。
 
 ## イベント移譲
 
-Conformは、ドキュメントに直接 **input** と **focusout** イベントリスナーをアタッチすることで、すべてのネイティブ入力をサポートしています。 `<input />` 、 `<select />` 、または `<textarea />` 要素にイベントハンドラーを設定する必要はありません。唯一の要件は、 `<form />` 要素にフォーム **id** を設定し、すべての入力に **name** 属性が設定されていて、 [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) 属性を使用するか、 `<form />` 要素内にネストすることでフォームに関連付けられていることです。
+Conform は、ドキュメントに直接 **input** と **focusout** イベントリスナーをアタッチすることで、すべてのネイティブ入力をサポートしています。 `<input />` 、 `<select />` 、または `<textarea />` 要素にイベントハンドラーを設定する必要はありません。唯一の要件は、 `<form />` 要素にフォーム **id** を設定し、すべての入力に **name** 属性が設定されていて、 [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) 属性を使用するか、 `<form />` 要素内にネストすることでフォームに関連付けられていることです。
 
 ```tsx
 function Example() {
@@ -42,9 +42,9 @@ function Example() {
 
 ## インテグレーションが必要かどうかの判別
 
-Conformは[イベント移譲](#event-delegation)に依存してフォームをバリデートし、フォームイベントを発行する限り、どのようなカスタム入力とも動作します。これは通常、 `<Input />` や `<Textarea />` のように、ネイティブの入力要素をラップするだけのシンプルなコンポーネントに対して当てはまります。しかし、 `<Select />` や `<DatePicker />` のようなカスタム入力コンポーネントでは、ユーザーが非ネイティブのフォーム要素で操作し、隠された入力を使うため、フォームイベントが発行されない可能性が高いです。
+Conform は[イベント移譲](#event-delegation)に依存してフォームをバリデートし、フォームイベントを発行する限り、どのようなカスタム入力とも動作します。これは通常、 `<Input />` や `<Textarea />` のように、ネイティブの入力要素をラップするだけのシンプルなコンポーネントに対して当てはまります。しかし、 `<Select />` や `<DatePicker />` のようなカスタム入力コンポーネントでは、ユーザーが非ネイティブのフォーム要素で操作し、隠された入力を使うため、フォームイベントが発行されない可能性が高いです。
 
-入力がネイティブ入力かどうかを識別するために、カスタム入力を操作している間にフォームイベントが発行され、バブルアップするかどうかを確認するために、イベントリスナーを添付したdivで入力をラップすることができます。また、以下にはいくつかの人気のあるUIライブラリに関する [例](#examples) も掲載されています。
+入力がネイティブ入力かどうかを識別するために、カスタム入力を操作している間にフォームイベントが発行され、バブルアップするかどうかを確認するために、イベントリスナーを添付した div で入力をラップすることができます。また、以下にはいくつかの人気のある UI ライブラリに関する [例](#examples) も掲載されています。
 
 ```tsx
 import { CustomInput } from 'your-ui-library';
@@ -67,7 +67,7 @@ function Example() {
 - `focus`: `focus` および `focusin` イベントを発行するための関数
 - `blur`: `blur` および`focusout` イベントを発行するための関数
 
-以下は、Radix UIの[Selectコンポーネント](https://www.radix-ui.com/primitives/docs/components/select)をラップする例です:
+以下は、Radix UI の[Select コンポーネント](https://www.radix-ui.com/primitives/docs/components/select)をラップする例です:
 
 ```tsx
 import {
@@ -219,9 +219,9 @@ function Example() {
 
 ## 例
 
-こちらでは、いくつかの人気のあるUIライブラリとの統合例を見ることができます。
+こちらでは、いくつかの人気のある UI ライブラリとの統合例を見ることができます。
 
-> Radix UI や React Aria Component など、さらに多くのUIライブラリの例を準備するためのコントリビューターを探しています。
+> Radix UI や React Aria Component など、さらに多くの UI ライブラリの例を準備するためのコントリビューターを探しています。
 
 - [Chakra UI](../../examples/chakra-ui/)
 - [Headless UI](../../examples/headless-ui/)

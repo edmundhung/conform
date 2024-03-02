@@ -1,6 +1,6 @@
 # useForm
 
-HTMLフォームを強化するためのフォームとフィールドのメタデータを返す React フックです。
+HTML フォームを強化するためのフォームとフィールドのメタデータを返す React フックです。
 
 ```tsx
 const [form, fields] = useForm(options);
@@ -28,15 +28,15 @@ const [form, fields] = useForm(options);
 
 ### `shouldValidate`
 
-Conformが各フィールドのバリデーションを開始するタイミングを3つのオプションで定義します:  **onSubmit**, **onBlur**,または **onInput** 。デフォルトは **onSubmit** です。
+Conform が各フィールドのバリデーションを開始するタイミングを 3 つのオプションで定義します: **onSubmit**, **onBlur**,または **onInput** 。デフォルトは **onSubmit** です。
 
 ### `shouldRevalidate`
 
-フィールドがバリデーションされた後、Conformが各フィールドをいつ再バリデーションするかを定義します。デフォルトは **shouldValidate** の値です。
+フィールドがバリデーションされた後、Conform が各フィールドをいつ再バリデーションするかを定義します。デフォルトは **shouldValidate** の値です。
 
 ### `shouldDirtyConsider`
 
-Conformがフィールドをダーティ状態とみなすべきかどうかを定義します。例えば、 CSRF トークンのように Conform によって管理されていないフォームフィールドを除外する場合などです。
+Conform がフィールドをダーティ状態とみなすべきかどうかを定義します。例えば、 CSRF トークンのように Conform によって管理されていないフォームフィールドを除外する場合などです。
 
 ### `onValidate`
 

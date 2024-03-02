@@ -30,7 +30,7 @@ function Example() {
 
 ### `ariaInvalid`
 
-ARIA属性を `meta.errors` または `meta.allErrors` に基づいて設定するかどうかを決定します。デフォルトは **errors** です。
+ARIA 属性を `meta.errors` または `meta.allErrors` に基づいて設定するかどうかを決定します。デフォルトは **errors** です。
 
 ### `ariaDescribedBy`
 
