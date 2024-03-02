@@ -12,7 +12,7 @@ Conform is a type-safe form validation library utilizing web fundamentals to pro
 
 ## The Gist
 
-Conform gives you control over the form submission lifecycle from client to the server and exposes the form state through the `useForm()` hook. It does not restrict your form's markup and works with any valid HTML form. The form value will be captured from the DOM using the [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web API and is synced through event delegation.
+Conform gives you control over the form submission lifecycle from client to the server and exposes the form state through the `useForm()` hook. It does not restrict your form's markup and works with any valid HTML form. The form value will be captured from the DOM using the [FormData](https://developer.mozilla.org/ja/docs/Web/API/FormData) Web API and is synced through event delegation.
 
 ```tsx
 import { useForm } from '@conform-to/react';
