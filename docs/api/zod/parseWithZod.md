@@ -72,7 +72,7 @@ You can override this behavior by setting up your own `z.preprocess` step in the
 
 ```tsx
 const schema = z.object({
-  amount: z.preprocss((value) => {
+  amount: z.preprocess((value) => {
     // If no value is provided, return `undefined`
     if (!value) {
       return undefined;
