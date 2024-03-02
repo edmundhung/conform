@@ -1,6 +1,6 @@
 # Remix
 
-Here is a login form example integrating with [Remix](https://remix.run/) と統合したログインフォームの例です。完全な例は [こちら](../../examples/remix) です。
+Here is a login form example integrating with [Remix](https://remix.run/) とインテグレーションしたログインフォームの例です。完全な例は [こちら](../../examples/remix) です。
 
 ```tsx
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';

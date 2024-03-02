@@ -1,6 +1,6 @@
 # Next.js
 
-[Next.js](https://nextjs.org)と統合したログインフォームの例をこちらに示します。完全な例は[こちら](../../examples/nextjs)で見ることができます。
+[Next.js](https://nextjs.org)とインテグレーションしたログインフォームの例をこちらに示します。完全な例は[こちら](../../examples/nextjs)で見ることができます。
 
 ```tsx
 // schema.ts
