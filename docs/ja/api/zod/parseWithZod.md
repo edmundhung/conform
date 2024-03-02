@@ -1,6 +1,6 @@
 # parseWithZod
 
-提供された zod スキーマを使用してフォームデータを解析し、提出内容の概要を返すヘルパーです。
+提供された zod スキーマを使用してフォームデータを解析し、送信内容の概要を返すヘルパーです。
 
 ```tsx
 const submission = parseWithZod(payload, options);
@@ -10,7 +10,7 @@ const submission = parseWithZod(payload, options);
 
 ### `payload`
 
-フォームの提出方法に応じて、 **FormData** オブジェクトまたは **URLSearchParams** オブジェクトのいずれかになります。
+フォームの送信方法に応じて、 **FormData** オブジェクトまたは **URLSearchParams** オブジェクトのいずれかになります。
 
 ### `options`
 
