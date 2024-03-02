@@ -1,4 +1,4 @@
-# インテント(意図)ボタン
+# インテントボタン
 
 送信ボタンがフォームの送信を行う際、それは [submitter](https://developer.mozilla.org/en-US/docs/Web/API/SubmitEvent/submitter) として機能し、フォームデータに含まれることになります。
 
