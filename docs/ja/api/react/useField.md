@@ -14,7 +14,7 @@ const [meta, form] = useField(name, options);
 
 ### `options`
 
-現時点での **オプション** は1つだけです。入れ子になったフォームコンテキストがあり、最も近い [FormProvider](./FormProvider.md) からではないフィールドにアクセスしたい場合は、 `formId` を渡して、正しいフィールドメタデータが返されるようにすることができます。
+現時点での **オプション** は 1 つだけです。入れ子になったフォームコンテキストがあり、最も近い [FormProvider](./FormProvider.md) からではないフィールドにアクセスしたい場合は、 `formId` を渡して、正しいフィールドメタデータが返されるようにすることができます。
 
 ## 戻り値
 
@@ -47,7 +47,7 @@ function ExampleComponent({ name }: ExampleComponentProps) {
 }
 ```
 
-コンポーネントをレンダリングする際には、 Conform によって提供される名前（例:  `fields.fieldName.name` ）を使用します。これは既に `FieldName<FieldSchema, FormSchema, FormError>` として型付けされています。これにより、 TypeScript は型が互換性があるかをチェックし、互換性がない場合に警告を出すことができます。 `string` を渡すこともできますが、型チェックの機能は失われます。
+コンポーネントをレンダリングする際には、 Conform によって提供される名前（例: `fields.fieldName.name` ）を使用します。これは既に `FieldName<FieldSchema, FormSchema, FormError>` として型付けされています。これにより、 TypeScript は型が互換性があるかをチェックし、互換性がない場合に警告を出すことができます。 `string` を渡すこともできますが、型チェックの機能は失われます。
 
 ```tsx
 import { useForm } from '@conform-to/react';

@@ -1,6 +1,6 @@
 # getYupConstraint
 
-Yupスキーマをイントロスペクトすることで、各フィールドの検証属性を含むオブジェクトを返すヘルパーです。
+Yup スキーマをイントロスペクトすることで、各フィールドの検証属性を含むオブジェクトを返すヘルパーです。
 
 ```tsx
 const constraint = getYupConstraint(schema);
