@@ -72,13 +72,13 @@ Conform は空の値を除去し、スキーマを内省することでフォー
 
 ```tsx
 const schema = z.object({
-  amount: z.preprocss((value) => {
+  amount: z.preprocess((value) => {
     // 値が提供されていない場合は、 `undefined` を返します。
     if (!value) {
       return undefined;
     }
 
-    // Clear the formatting and cast the value to number
+    // 書式をクリアして値を数値に変換します。
     return Number(value.trim().replace(/,/g, ''));
   }, z.number()),
 });
