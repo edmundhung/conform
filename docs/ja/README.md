@@ -28,7 +28,7 @@
     - [getInputProps](./api/react/getInputProps.md)
     - [getSelectProps](./api/react/getSelectProps.md)
     - [getTextareaProps](./api/react/getTextareaProps.md)
-    - [getCollectionProps](./api/react/getButtonProps.md)
+    - [getCollectionProps](./api/react/getCollectionProps.md)
   - @conform-to/yup
     - [parseWithYup](./api/yup/parseWithYup.md)
     - [getYupConstraint](./api/yup/getYupConstraint.md)
