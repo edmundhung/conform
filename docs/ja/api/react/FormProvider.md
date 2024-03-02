@@ -22,7 +22,7 @@ export default function SomeParent() {
 
 ### FormProvider は、フォームの直接の親である必要はありません。
 
-入力が [form属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#instance_properties_related_to_the_parent_form) を通じて関連付けられている限り、フォームの外部のどこにでも自由に入力を配置できます。
+入力が [form 属性](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement#instance_properties_related_to_the_parent_form) を通じて関連付けられている限り、フォームの外部のどこにでも自由に入力を配置できます。
 
 ```tsx
 function Example() {
@@ -42,7 +42,7 @@ function Example() {
 
 ### FormProvider はネストすることができます
 
-これは、レイアウトの制約のために1つのフォームを別のフォームの内部に配置する必要がある場合に便利です。
+これは、レイアウトの制約のために 1 つのフォームを別のフォームの内部に配置する必要がある場合に便利です。
 
 ```tsx
 import { FormProvider, useForm } from '@conform-to/react';
