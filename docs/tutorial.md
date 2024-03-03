@@ -330,11 +330,7 @@ Let's setup the `shouldValidate` and `shouldRevalidate` options.
 ```tsx
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-  json,
-} from '@remix-run/node';
+import { type ActionFunctionArgs, type LoaderFunctionArgs, json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { sendMessage } from '~/message';
 import { getUser } from '~/session';
