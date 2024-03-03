@@ -7,19 +7,22 @@ import {
 import { Form } from '@remix-run/react';
 import { Playground } from '~/components';
 
-type Task = { content: string; completed: boolean };
+interface Task {
+	content: string;
+	completed: boolean;
+}
 
-type Rule = {
+interface Rule {
 	type: 'rule';
 	key: string;
 	operator: string;
 	value: string;
-};
+}
 
-type Group = {
+interface Group {
 	type: 'group';
 	conditions: Array<Group | Rule>;
-};
+}
 
 type Schema =
 	| {
