@@ -83,11 +83,11 @@ type SubfieldMetadata<
 	FormSchema extends Record<string, any>,
 	FormError,
 	CombinedSchema = Combine<Schema>,
-> = Exclude<Schema, undefined> extends Array<infer Item>
+> = NonNullable<Schema> extends Array<infer Item>
 	? {
 			getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
 	  }
-	: Exclude<Schema, undefined> extends Record<string, unknown>
+	: NonNullable<Schema> extends object
 	? {
 			getFieldset: () => Required<{
 				[Key in keyof CombinedSchema]: FieldMetadata<
