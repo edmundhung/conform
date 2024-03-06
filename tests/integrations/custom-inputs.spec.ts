@@ -66,14 +66,7 @@ async function runTest(page: Page) {
 			tos: 'on',
 			options: expect.arrayContaining(['d', 'b']),
 		},
-		state: {
-			validated: {
-				color: true,
-				languages: true,
-				tos: true,
-				options: true,
-			},
-		},
+		fields: ['color', 'languages', 'tos', 'options'],
 	});
 }
 

@@ -16,10 +16,10 @@ export type SubmissionState = {
 export type SubmissionContext<Value = null, FormError = string[]> = {
 	intent: Intent | null;
 	payload: Record<string, unknown>;
-	fields: string[];
+	fields: Set<string>;
 	value?: Value;
 	error?: Record<string, FormError | null> | null;
-	state: SubmissionState;
+	state?: SubmissionState;
 };
 
 export type Submission<Schema, FormError = string[], FormValue = Schema> =
@@ -40,6 +40,7 @@ export type SubmissionResult<FormError = string[]> = {
 	status?: 'error' | 'success';
 	intent?: Intent;
 	initialValue?: Record<string, unknown> | null;
+	fields?: string[];
 	error?: Record<string, FormError | null>;
 	state?: SubmissionState;
 };
@@ -78,17 +79,20 @@ export function getSubmissionContext(
 
 	const context: SubmissionContext = {
 		payload: {},
-		fields: [],
+		fields: new Set(),
 		intent: getIntent(intent),
-		state: state ? JSON.parse(state) : { validated: {} },
 	};
+
+	if (state) {
+		context.state = JSON.parse(state);
+	}
 
 	for (const [name, next] of body.entries()) {
 		if (name === INTENT || name === STATE) {
 			continue;
 		}
 
-		context.fields.push(name);
+		context.fields.add(name);
 		setValue(context.payload, name, (prev) => {
 			if (!prev) {
 				return next;
@@ -196,23 +200,12 @@ export function parse<FormValue, FormError>(
 	const mergeResolveResult = (resolved: {
 		error?: Record<string, FormError | null> | null;
 		value?: FormValue;
-	}) => {
-		if (!intent || (intent.type === 'validate' && !intent.payload.name)) {
-			// Mark all fields as validated
-			for (const name of [
-				...context.fields,
-				...Object.keys(resolved.error ?? {}),
-			]) {
-				context.state.validated[name] = true;
-			}
-		}
-
-		return createSubmission({
+	}) =>
+		createSubmission({
 			...context,
 			value: resolved.value,
 			error: resolved.error,
 		});
-	};
 
 	if (result instanceof Promise) {
 		return result.then(mergeResolveResult);
@@ -249,19 +242,11 @@ export function replySubmission<FormError>(
 	context: SubmissionContext<unknown, FormError>,
 	options: ReplyOptions<FormError> = {},
 ): SubmissionResult<FormError> {
-	switch (context.intent?.type) {
-		case 'reset': {
-			const name = context.intent.payload.name ?? '';
-
-			if (name === '') {
-				return {
-					initialValue: null,
-				};
-			}
-		}
-	}
-
-	if ('resetForm' in options && options.resetForm) {
+	if (
+		('resetForm' in options && options.resetForm) ||
+		(context.intent?.type === 'reset' &&
+			(context.intent.payload.name ?? '') === '')
+	) {
 		return { initialValue: null };
 	}
 
@@ -296,6 +281,7 @@ export function replySubmission<FormError>(
 		initialValue: normalize(context.payload) ?? {},
 		error,
 		state: context.state,
+		fields: Array.from(context.fields),
 	};
 }
 

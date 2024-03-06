@@ -273,9 +273,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
 	};
 
-	if (lastResult?.intent) {
-		handleIntent(result, lastResult.intent);
-	}
+	handleIntent(result, lastResult?.intent, lastResult?.fields);
 
 	return result;
 }
@@ -297,16 +295,32 @@ function getDefaultKey(
 	}, {});
 }
 
+function setFieldsValidated<Error>(
+	meta: FormMeta<Error>,
+	fields: string[] | undefined,
+): void {
+	for (const name of Object.keys(meta.error).concat(fields ?? [])) {
+		meta.validated[name] = true;
+	}
+}
+
 function handleIntent<Error>(
 	meta: FormMeta<Error>,
-	intent: Intent,
+	intent: Intent | undefined,
+	fields: string[] | undefined,
 	initialized?: boolean,
 ): void {
+	if (!intent) {
+		setFieldsValidated(meta, fields);
+		return;
+	}
+
 	switch (intent.type) {
 		case 'validate': {
-			// Form level validate is handled on the submission instead
 			if (intent.payload.name) {
 				meta.validated[intent.payload.name] = true;
+			} else {
+				setFieldsValidated(meta, fields);
 			}
 			break;
 		}
@@ -878,10 +892,7 @@ export function createFormContext<
 			error,
 		};
 
-		if (result.intent) {
-			handleIntent(update, result.intent, true);
-		}
-
+		handleIntent(update, result.intent, result.fields, true);
 		updateFormMeta(update);
 
 		if (formElement && result.status === 'error') {

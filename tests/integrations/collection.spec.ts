@@ -23,12 +23,7 @@ async function runValidationScenario(page: Page) {
 			singleChoice: 'y',
 			multipleChoice: 'c',
 		},
-		state: {
-			validated: {
-				singleChoice: true,
-				multipleChoice: true,
-			},
-		},
+		fields: ['singleChoice', 'multipleChoice'],
 	});
 
 	await playground.container.getByLabel('A').click();
@@ -41,12 +36,7 @@ async function runValidationScenario(page: Page) {
 			singleChoice: 'y',
 			multipleChoice: ['a', 'c'],
 		},
-		state: {
-			validated: {
-				singleChoice: true,
-				multipleChoice: true,
-			},
-		},
+		fields: ['singleChoice', 'multipleChoice'],
 	});
 }
 
