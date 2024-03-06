@@ -55,10 +55,7 @@ export type DefaultValue<Schema> = Schema extends
 	: Schema extends Array<infer Item>
 	? Array<DefaultValue<Item>> | null | undefined
 	: Schema extends Record<string, any>
-	?
-			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
-			| null
-			| undefined
+	? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
 	: string | null | undefined;
 
 export type FormValue<Schema> = Schema extends
@@ -77,9 +74,7 @@ export type FormValue<Schema> = Schema extends
 	: Schema extends Array<infer Item>
 	? string | Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
-	?
-			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
-			| undefined
+	? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | null | undefined
 	: unknown;
 
 const error = Symbol('error');
@@ -258,8 +253,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 ): FormMeta<FormError> {
 	const lastResult = !initialized ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
-		? // @ts-expect-error
-		  (serialize(options.defaultValue) as Record<string, unknown>)
+		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {

@@ -28,6 +28,7 @@ type Schema =
 	| {
 			intent: 'foo';
 			tasks: Array<Task>;
+			date: Date;
 	  }
 	| {
 			intent: 'bar';
@@ -120,6 +121,15 @@ export default function Example() {
 	isFieldMetadataType1<Task>(tasks);
 	// @ts-expect-error
 	isFieldMetadataType1<Array<string>>(tasks);
+
+	const date = fields.date;
+
+	isFieldMetadataType0(date);
+	isFieldMetadataType1<Date>(date);
+	isFieldMetadataType1<Date | undefined>(date);
+
+	// @ts-expect-error
+	date.getFieldset();
 
 	const tasksList = tasks.getFieldList();
 
