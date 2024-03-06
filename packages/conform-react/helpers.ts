@@ -1,4 +1,10 @@
-import type { FormMetadata, FieldMetadata, Metadata, Pretty } from './context';
+import {
+	type FormMetadata,
+	type FieldMetadata,
+	type Metadata,
+	type Pretty,
+	getWrappedFormContext,
+} from './context';
 
 type FormControlProps = {
 	key: string | undefined;
@@ -177,9 +183,16 @@ export function getFormProps<Schema extends Record<string, any>, FormError>(
 	metadata: FormMetadata<Schema, FormError>,
 	options?: FormControlOptions,
 ) {
+	const { onInput, onBlur, onReset } = getWrappedFormContext(
+		// TODO: fix type
+		metadata.context as any,
+	);
 	return simplify({
 		id: metadata.id,
 		onSubmit: metadata.onSubmit,
+		onInput: (e: React.FormEvent<HTMLFormElement>) => onInput(e.nativeEvent),
+		onBlur: (e: React.FocusEvent<HTMLFormElement>) => onBlur(e.nativeEvent),
+		onReset: (e: React.FormEvent<HTMLFormElement>) => onReset(e.nativeEvent),
 		noValidate: metadata.noValidate,
 		...getAriaAttributes(metadata, options),
 	});

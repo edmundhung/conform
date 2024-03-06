@@ -74,18 +74,6 @@ export function useForm<
 	);
 
 	useSafeLayoutEffect(() => {
-		document.addEventListener('input', context.onInput);
-		document.addEventListener('focusout', context.onBlur);
-		document.addEventListener('reset', context.onReset);
-
-		return () => {
-			document.removeEventListener('input', context.onInput);
-			document.removeEventListener('focusout', context.onBlur);
-			document.removeEventListener('reset', context.onReset);
-		};
-	}, [context]);
-
-	useSafeLayoutEffect(() => {
 		context.onUpdate({ ...formConfig, formId });
 	});
 
