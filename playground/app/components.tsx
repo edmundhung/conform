@@ -5,7 +5,7 @@ interface PlaygroundProps {
 	title: string;
 	description?: ReactNode;
 	form?: string;
-	result?: Record<string, unknown>;
+	result?: Record<string, unknown> | null | undefined;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
