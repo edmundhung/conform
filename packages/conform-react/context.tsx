@@ -82,16 +82,17 @@ type SubfieldMetadata<
 	Schema,
 	FormSchema extends Record<string, any>,
 	FormError,
-	CombinedSchema = Combine<Schema>,
-> = Exclude<Schema, undefined> extends Array<infer Item>
+> = [Schema] extends [Primitive]
+	? {}
+	: [Schema] extends [Array<infer Item> | null | undefined]
 	? {
 			getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
 	  }
-	: Exclude<Schema, undefined> extends Record<string, unknown>
+	: [Schema] extends [Record<string, any> | null | undefined]
 	? {
 			getFieldset: () => Required<{
-				[Key in keyof CombinedSchema]: FieldMetadata<
-					CombinedSchema[Key],
+				[Key in keyof Combine<Schema>]: FieldMetadata<
+					Combine<Schema>[Key],
 					FormSchema,
 					FormError
 				>;
