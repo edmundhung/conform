@@ -1,5 +1,6 @@
 import { type FormId, type FieldName } from '@conform-to/dom';
 import { useEffect, useId, useState, useLayoutEffect } from 'react';
+import { flushSync } from 'react-dom';
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -49,7 +50,7 @@ export function useForm<
 	FormError = string[],
 >(
 	options: Pretty<
-		Omit<FormOptions<Schema, FormError, FormValue>, 'formId'> & {
+		Omit<FormOptions<Schema, FormError, FormValue>, 'formId' | 'onSchedule'> & {
 			/**
 			 * The form id. If not provided, a random id will be generated.
 			 */
@@ -70,7 +71,11 @@ export function useForm<
 	const { id, ...formConfig } = options;
 	const formId = useFormId<Schema, FormError>(id);
 	const [context] = useState(() =>
-		createFormContext({ ...formConfig, formId }),
+		createFormContext({
+			...formConfig,
+			onSchedule: (callback: () => void) => flushSync(callback),
+			formId,
+		}),
 	);
 
 	useSafeLayoutEffect(() => {
