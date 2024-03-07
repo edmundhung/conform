@@ -133,6 +133,7 @@ async function runValidationScenario(page: Page) {
 		initialValue: {
 			items: ['Last item', 'Another item'],
 		},
+		fields: ['items[0]', 'items[1]'],
 		state: {
 			validated: {
 				items: true,

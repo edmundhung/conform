@@ -130,12 +130,7 @@ async function runTest(page: Page, javaScriptEnabled: boolean) {
 			email: 'hey@conform.guide',
 			title: 'Software Developer',
 		},
-		state: {
-			validated: {
-				email: true,
-				title: true,
-			},
-		},
+		fields: ['email', 'title'],
 	});
 }
 

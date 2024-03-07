@@ -5,6 +5,7 @@ import {
 	formatPaths,
 	isPrefix,
 	INTENT,
+	STATE,
 	serializeIntent,
 } from '@conform-to/dom';
 import { createFormData } from './helpers';
@@ -38,6 +39,7 @@ describe('conform-dom', () => {
 		const intentSubmission = parse(
 			createFormData([
 				['message', 'Hello'],
+				[STATE, JSON.stringify({ validated: {} })],
 				[
 					INTENT,
 					serializeIntent({
@@ -71,12 +73,7 @@ describe('conform-dom', () => {
 				title: 'The cat',
 				description: 'Once upon a time...',
 			},
-			state: {
-				validated: {
-					title: true,
-					description: true,
-				},
-			},
+			fields: ['title', 'description'],
 		});
 		expect(successSubmission.reply({ resetForm: true })).toEqual({
 			initialValue: null,
@@ -90,12 +87,7 @@ describe('conform-dom', () => {
 			error: {
 				'': ['example'],
 			},
-			state: {
-				validated: {
-					title: true,
-					description: true,
-				},
-			},
+			fields: ['title', 'description'],
 		});
 		expect(
 			successSubmission.reply({ fieldErrors: { description: ['invalid'] } }),
@@ -108,24 +100,14 @@ describe('conform-dom', () => {
 			error: {
 				description: ['invalid'],
 			},
-			state: {
-				validated: {
-					title: true,
-					description: true,
-				},
-			},
+			fields: ['title', 'description'],
 		});
 		expect(successSubmission.reply({ hideFields: ['title'] })).toEqual({
 			status: 'success',
 			initialValue: {
 				description: 'Once upon a time...',
 			},
-			state: {
-				validated: {
-					title: true,
-					description: true,
-				},
-			},
+			fields: ['title', 'description'],
 		});
 		expect(errorSubmission).toEqual({
 			status: 'error',
@@ -152,14 +134,12 @@ describe('conform-dom', () => {
 			error: {
 				title: ['Test'],
 			},
-			state: {
-				validated: {
-					title: true,
-					'tasks[0].content': true,
-					'tasks[0].completed': true,
-					'tasks[1].content': true,
-				},
-			},
+			fields: [
+				'title',
+				'tasks[0].content',
+				'tasks[0].completed',
+				'tasks[1].content',
+			],
 		});
 		expect(errorSubmission.reply({ resetForm: true })).toEqual({
 			initialValue: null,
@@ -176,14 +156,12 @@ describe('conform-dom', () => {
 				'': ['example'],
 				title: ['Test'],
 			},
-			state: {
-				validated: {
-					title: true,
-					'tasks[0].content': true,
-					'tasks[0].completed': true,
-					'tasks[1].content': true,
-				},
-			},
+			fields: [
+				'title',
+				'tasks[0].content',
+				'tasks[0].completed',
+				'tasks[1].content',
+			],
 		});
 		expect(
 			errorSubmission.reply({ fieldErrors: { title: ['invalid'] } }),
@@ -198,14 +176,12 @@ describe('conform-dom', () => {
 			error: {
 				title: ['invalid'],
 			},
-			state: {
-				validated: {
-					title: true,
-					'tasks[0].content': true,
-					'tasks[0].completed': true,
-					'tasks[1].content': true,
-				},
-			},
+			fields: [
+				'title',
+				'tasks[0].content',
+				'tasks[0].completed',
+				'tasks[1].content',
+			],
 		});
 		expect(errorSubmission.reply({ hideFields: ['tasks'] })).toEqual({
 			status: 'error',
@@ -213,14 +189,12 @@ describe('conform-dom', () => {
 			error: {
 				title: ['Test'],
 			},
-			state: {
-				validated: {
-					title: true,
-					'tasks[0].content': true,
-					'tasks[0].completed': true,
-					'tasks[1].content': true,
-				},
-			},
+			fields: [
+				'title',
+				'tasks[0].content',
+				'tasks[0].completed',
+				'tasks[1].content',
+			],
 		});
 		expect(intentSubmission).toEqual({
 			status: undefined,
@@ -244,10 +218,9 @@ describe('conform-dom', () => {
 			error: {
 				message: ['World'],
 			},
+			fields: ['message'],
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(intentSubmission.reply({ formErrors: ['example'] })).toEqual({
@@ -263,10 +236,9 @@ describe('conform-dom', () => {
 				'': ['example'],
 				message: ['World'],
 			},
+			fields: ['message'],
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(
@@ -283,10 +255,9 @@ describe('conform-dom', () => {
 			error: {
 				message: ['invalid'],
 			},
+			fields: ['message'],
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 		expect(intentSubmission.reply({ resetForm: true })).toEqual({
@@ -302,10 +273,9 @@ describe('conform-dom', () => {
 			error: {
 				message: ['World'],
 			},
+			fields: ['message'],
 			state: {
-				validated: {
-					message: true,
-				},
+				validated: {},
 			},
 		});
 	});

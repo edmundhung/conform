@@ -58,11 +58,7 @@ async function runTest(page: Page) {
 		initialValue: {
 			username: '@Conform2023',
 		},
-		state: {
-			validated: {
-				username: true,
-			},
-		},
+		fields: ['username'],
 	});
 }
 
