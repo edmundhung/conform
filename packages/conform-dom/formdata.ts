@@ -165,22 +165,28 @@ export function isFile(obj: unknown): obj is File {
  * Normalize value by removing empty object or array, empty string and null values
  */
 export function normalize<Type extends Record<string, unknown>>(
-	value: Type | null,
-): Type | null | undefined;
+	value: Type,
+	acceptFile?: boolean,
+): Type | undefined;
 export function normalize<Type extends Array<unknown>>(
-	value: Type | null,
-): Type | null | undefined;
-export function normalize(value: unknown): unknown | undefined;
+	value: Type,
+	acceptFile?: boolean,
+): Type | undefined;
+export function normalize(
+	value: unknown,
+	acceptFile?: boolean,
+): unknown | undefined;
 export function normalize<
 	Type extends Record<string, unknown> | Array<unknown>,
 >(
-	value: Type | null,
-): Record<string, unknown> | Array<unknown> | null | undefined {
+	value: Type,
+	acceptFile = true,
+): Record<string, unknown> | Array<unknown> | undefined {
 	if (isPlainObject(value)) {
 		const obj = Object.keys(value)
 			.sort()
 			.reduce<Record<string, unknown>>((result, key) => {
-				const data = normalize(value[key]);
+				const data = normalize(value[key], acceptFile);
 
 				if (typeof data !== 'undefined') {
 					result[key] = data;
@@ -201,24 +207,15 @@ export function normalize<
 			return undefined;
 		}
 
-		return value.map(normalize);
+		return value.map((item) => normalize(item, acceptFile));
 	}
 
 	if (
 		(typeof value === 'string' && value === '') ||
 		value === null ||
-		(isFile(value) && value.size === 0)
+		(isFile(value) && (!acceptFile || value.size === 0))
 	) {
 		return;
-	}
-
-	// We will skip serializing file if the result is sent to the client
-	if (isFile(value)) {
-		return Object.assign(value, {
-			toJSON() {
-				return;
-			},
-		});
 	}
 
 	return value;

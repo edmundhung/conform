@@ -278,7 +278,12 @@ export function replySubmission<FormError>(
 	return {
 		status: context.intent ? undefined : error ? 'error' : 'success',
 		intent: context.intent ? context.intent : undefined,
-		initialValue: normalize(context.payload) ?? {},
+		initialValue:
+			normalize(
+				context.payload,
+				// We can't serialize the file and send it back from the server, but we can preserve it in the client
+				typeof document !== 'undefined',
+			) ?? {},
 		error,
 		state: context.state,
 		fields: Array.from(context.fields),

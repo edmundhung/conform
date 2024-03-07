@@ -27,7 +27,32 @@ const schema = z.object({
 				bookmarks.length,
 			'Bookmark URLs are repeated',
 		),
+	file: z.instanceof(File, { message: 'File is required' }),
+	files: z
+		.instanceof(File)
+		.array()
+		.min(1, 'At least 1 file is required')
+		.refine(
+			(files) => files.every((file) => file.type === 'application/json'),
+			'Only JSON file is accepted',
+		),
 });
+
+const getPrintableValue = (value: unknown) => {
+	if (typeof value === 'undefined') {
+		return;
+	}
+
+	return JSON.parse(
+		JSON.stringify(value, (key, value) => {
+			if (value instanceof File) {
+				return `${value.name} (${value.size} bytes)`;
+			}
+
+			return value;
+		}),
+	);
+};
 
 export async function loader({ request }: LoaderArgs) {
 	const url = new URL(request.url);
@@ -62,14 +87,14 @@ export default function Example() {
 	const bookmarks = fields.bookmarks.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
 			<Playground
 				title="Metadata"
 				result={{
 					form: {
 						status: form.status,
 						initialValue: form.initialValue,
-						value: form.value,
+						value: getPrintableValue(form.value),
 						dirty: form.dirty,
 						valid: form.valid,
 						errors: form.errors,
@@ -107,6 +132,22 @@ export default function Example() {
 						errors: bookmarks[1]?.errors,
 						allErrors: bookmarks[1]?.allErrors,
 					},
+					file: {
+						initialValue: fields.file.initialValue,
+						value: getPrintableValue(fields.file.value),
+						dirty: fields.file.dirty,
+						valid: fields.file.valid,
+						errors: fields.file.errors,
+						allErrors: fields.file.allErrors,
+					},
+					files: {
+						initialValue: fields.files.initialValue,
+						value: getPrintableValue(fields.files.value),
+						dirty: fields.files.dirty,
+						valid: fields.files.valid,
+						errors: fields.files.errors,
+						allErrors: fields.files.allErrors,
+					},
 				}}
 			>
 				<Field label="Title" meta={fields.title}>
@@ -128,6 +169,12 @@ export default function Example() {
 						</fieldset>
 					);
 				})}
+				<Field label="File" meta={fields.file}>
+					<input {...getInputProps(fields.file, { type: 'file' })} />
+				</Field>
+				<Field label="Files" meta={fields.files}>
+					<input {...getInputProps(fields.files, { type: 'file' })} multiple />
+				</Field>
 			</Playground>
 		</Form>
 	);
