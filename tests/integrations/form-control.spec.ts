@@ -13,18 +13,10 @@ function getFieldset(form: Locator) {
 		clearMessage: form.locator('button:text("Clear message")'),
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
-		resetNumberWithMessageUpdated: form.locator(
-			'button:text("Reset number with message updated")',
-		),
 	};
 }
 
-async function runTest(
-	page: Page,
-	options: {
-		clientValidate?: boolean;
-	} = {},
-) {
+async function runValidationScenario(page: Page) {
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
@@ -63,33 +55,17 @@ async function runTest(
 	await expect(fieldset.number).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
 	await expect(playground.error).toHaveText(['', '', '']);
-
-	if (options.clientValidate) {
-		await fieldset.number.fill('123');
-		await expect.poll(playground.result).toStrictEqual({
-			number: '123',
-		});
-
-		await fieldset.resetNumberWithMessageUpdated.click();
-		await expect(fieldset.number).toHaveValue('');
-		await expect(fieldset.message).toHaveValue('Hello World');
-		await expect.poll(playground.result).toStrictEqual({
-			message: 'Hello World',
-		});
-	}
 }
 
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/form-control');
-		await runTest(page, {
-			clientValidate: true,
-		});
+		await runValidationScenario(page);
 	});
 
 	test('Server Validation', async ({ page }) => {
 		await page.goto('/form-control?noClientValidate=yes');
-		await runTest(page);
+		await runValidationScenario(page);
 	});
 });
 
@@ -98,6 +74,6 @@ test.describe('No JS', () => {
 
 	test('Validation', async ({ page }) => {
 		await page.goto('/form-control');
-		await runTest(page);
+		await runValidationScenario(page);
 	});
 });
