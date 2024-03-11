@@ -48,7 +48,7 @@ export default function FormControl() {
 		<FormProvider context={form.context}>
 			<Form method="post" {...getFormProps(form)}>
 				<FormStateInput formId={form.id} />
-				<Playground title="Form Control" result={form.value}>
+				<Playground title="Form Control" result={lastResult}>
 					<Field label="Name" meta={fields.name}>
 						<input {...getInputProps(fields.name, { type: 'text' })} />
 					</Field>
@@ -114,21 +114,6 @@ export default function FormControl() {
 							{...form.reset.getButtonProps()}
 						>
 							Reset form
-						</button>
-						<button
-							className="rounded-md border p-2 hover:border-black"
-							type="button"
-							onClick={() => {
-								form.update({
-									name: fields.message.name,
-									value: 'Hello World',
-								});
-								form.reset({
-									name: fields.number.name,
-								});
-							}}
-						>
-							Reset number with message updated
 						</button>
 					</div>
 				</Playground>

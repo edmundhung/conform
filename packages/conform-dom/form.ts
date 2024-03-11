@@ -176,11 +176,6 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
 	}) => Submission<Schema, FormError, FormValue>;
-
-	/**
-	 * To schedule when an intent should be dispatched.
-	 */
-	onSchedule?: (callback: () => void) => void;
 };
 
 export type SubscriptionSubject = {
@@ -971,10 +966,11 @@ export function createFormContext<
 	}
 
 	function createFormControl<Type extends Intent['type']>(type: Type) {
-		const schedule =
-			latestOptions.onSchedule ?? ((callback: () => void) => callback());
 		const control = (payload: any = {}) =>
-			schedule(() => dispatch({ type, payload }));
+			dispatch({
+				type,
+				payload,
+			});
 
 		return Object.assign(control, {
 			getButtonProps(payload: any = {}) {

@@ -33,13 +33,11 @@
 		"@conform-to/dom": "1.0.3"
 	},
 	"devDependencies": {
-		"@types/react": "^18.2.64",
-		"@types/react-dom": "^18.2.20",
+		"@types/react": "^18.2.43",
 		"react": "^18.2.0"
 	},
 	"peerDependencies": {
-		"react": ">=18",
-		"react-dom": ">=18"
+		"react": ">=18"
 	},
 	"keywords": [
 		"constraint-validation",
