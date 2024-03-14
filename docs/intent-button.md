@@ -144,7 +144,7 @@ export default function Tasks() {
   return (
     <form id={form.id}>
       <ul>
-        {tasks.map((task) => (
+        {tasks.map((task, index) => (
           <li key={task.key}>
             <input name={task.name} />
             <button
