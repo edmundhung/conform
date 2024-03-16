@@ -413,6 +413,13 @@ function updateValue<Error>(
 	name: string,
 	value: unknown,
 ): void {
+	if (name === '') {
+		meta.initialValue = value as Record<string, unknown>;
+		meta.value = value as Record<string, unknown>;
+		meta.key = getDefaultKey(value as Record<string, unknown>);
+		return;
+	}
+
 	meta.initialValue = clone(meta.initialValue);
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
