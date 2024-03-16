@@ -70,7 +70,7 @@ function Document({ children }: { children: React.ReactNode }) {
 					src="https://plausible.io/js/script.js"
 				/>
 			</head>
-			<body className="font-mono antialiased bg-zinc-900 text-zinc-50">
+			<body className="antialiased bg-zinc-900 text-zinc-50">
 				{children}
 				<ScrollRestoration />
 				<Scripts />
