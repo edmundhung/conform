@@ -380,7 +380,13 @@ function handleIntent<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, intent, generateId);
+				setListState(meta.key, intent, (defaultValue, name) => {
+					if (!Array.isArray(defaultValue) && !isPlainObject(defaultValue)) {
+						return generateId();
+					}
+
+					return getDefaultKey(defaultValue, name);
+				});
 				setListValue(meta.initialValue, intent);
 			}
 

@@ -471,7 +471,7 @@ export function setState(
 export function setListState(
 	state: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
-	getDefaultValue?: () => string,
+	getDefaultValue?: (defaultValue: any, prefix?: string) => any,
 ): void {
 	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
@@ -482,7 +482,10 @@ export function setListState(
 					type: intent.type,
 					payload: {
 						...intent.payload,
-						defaultValue: getDefaultValue?.(),
+						defaultValue: getDefaultValue?.(
+							intent.payload.defaultValue,
+							intent.payload.name,
+						),
 					},
 				});
 				break;
