@@ -1,6 +1,6 @@
 # 概要
 
-Conform は、Web 標準に基づいて HTML フォームを段階的に強化し、[Remix](https://remix.run)や[Next.js](https://nextjs.org)のようなサーバーフレームワークを完全にサポートする、型安全なフォームバリデーションライブラリです。
+Conform は、Web 標準に基づいて HTML フォームを段階的に強化し、 [Remix](https://remix.run) や [Next.js](https://nextjs.org) のようなサーバーフレームワークを完全にサポートする、型安全なフォームバリデーションライブラリです。
 
 ## 特徴
 
