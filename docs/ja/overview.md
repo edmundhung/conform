@@ -12,7 +12,7 @@ Conform は、Web 標準に基づいて HTML フォームを段階的に強化�
 
 ## The Gist
 
-Conform は、クライアントからサーバーへのフォーム送信ライフサイクルを制御し、`useForm()`フックを通じてフォームの状態を公開します。フォームのマークアップを制限せず、どのような有効な HTML フォームとも動作します。フォームの値は[FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web API を使用して DOM からキャプチャされ、イベントデリゲーションを通じて同期されます。
+Conformは、クライアントからサーバーへのフォーム送信のライフサイクルを制御し、`useForm()` フックを通じてフォームの状態を提供します。フォームのマークアップを制限せず、有効なHTMLフォームであればどのようなものでも動作します。フォームの値は、[FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) Web APIを使用してDOMから取得され、イベント委譲によって同期されます。
 
 ```tsx
 import { useForm } from '@conform-to/react';
