@@ -22,7 +22,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export async function loader({ context }: LoaderFunctionArgs) {
-	const file = 'docs/overview.md';
+	const file = 'docs/ja/overview.md';
 	const readme = await getFileContent(context, file);
 	const content = parse(readme);
 

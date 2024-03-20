@@ -12,7 +12,7 @@ export function invariant(
 
 export function getMetadata(context: AppLoadContext) {
 	return {
-		owner: 'edmundhung',
+		owner: 'coji',
 		repo: 'conform',
 		ref: getBranch(context),
 	};
@@ -32,6 +32,16 @@ export function getBranch(context: AppLoadContext): string {
 
 export function getCache(context: AppLoadContext): KVNamespace {
 	return context.env.CACHE;
+}
+
+// UTF-8 を含む日本語が文字化けするので、バイナリ文字列に変換してからデコードする
+function base64DecodeUtf8(base64String: string) {
+	var binaryString = atob(base64String);
+	var charCodeArray = Array.from(binaryString).map((char) =>
+		char.charCodeAt(0),
+	);
+	var uintArray = new Uint8Array(charCodeArray);
+	return new TextDecoder('utf-8').decode(uintArray);
 }
 
 export async function getFileContent(
@@ -54,7 +64,7 @@ export async function getFileContent(
 			repo,
 		});
 
-		content = atob(file.content);
+		content = base64DecodeUtf8(file.content);
 		context.waitUntil(
 			cache.put(cacheKey, content, {
 				expirationTtl: 3600,
