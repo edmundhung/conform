@@ -6,7 +6,7 @@
 const submission = parseWithYup(payload, options);
 ```
 
-## パラメーター
+## パラメータ
 
 ### `payload`
 
