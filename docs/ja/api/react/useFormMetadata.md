@@ -6,7 +6,7 @@
 const form = useFormMetadata(formId);
 ```
 
-## パラメーター
+## パラメータ
 
 ### `formId`
 
