@@ -23,7 +23,6 @@ import {
 	type Submission,
 	type SubmissionResult,
 	INTENT,
-	STATE,
 	getSubmissionContext,
 	setListState,
 	setListValue,
@@ -55,10 +54,7 @@ export type DefaultValue<Schema> = Schema extends
 	: Schema extends Array<infer Item>
 	? Array<DefaultValue<Item>> | null | undefined
 	: Schema extends Record<string, any>
-	?
-			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
-			| null
-			| undefined
+	? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
 	: string | null | undefined;
 
 export type FormValue<Schema> = Schema extends
@@ -77,9 +73,7 @@ export type FormValue<Schema> = Schema extends
 	: Schema extends Array<infer Item>
 	? string | Array<FormValue<Item>> | undefined
 	: Schema extends Record<string, any>
-	?
-			| { [Key in keyof Combine<Schema>]?: DefaultValue<Combine<Schema>[Key]> }
-			| undefined
+	? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | null | undefined
 	: unknown;
 
 const error = Symbol('error');
@@ -258,8 +252,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 ): FormMeta<FormError> {
 	const lastResult = !initialized ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
-		? // @ts-expect-error
-		  (serialize(options.defaultValue) as Record<string, unknown>)
+		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
@@ -280,9 +273,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
 	};
 
-	if (lastResult?.intent) {
-		handleIntent(result, lastResult.intent);
-	}
+	handleIntent(result, lastResult?.intent, lastResult?.fields);
 
 	return result;
 }
@@ -304,18 +295,67 @@ function getDefaultKey(
 	}, {});
 }
 
+function setFieldsValidated<Error>(
+	meta: FormMeta<Error>,
+	fields: string[] | undefined,
+): void {
+	for (const name of Object.keys(meta.error).concat(fields ?? [])) {
+		meta.validated[name] = true;
+	}
+}
+
 function handleIntent<Error>(
 	meta: FormMeta<Error>,
-	intent: Intent,
+	intent: Intent | undefined,
+	fields: string[] | undefined,
 	initialized?: boolean,
 ): void {
-	switch (intent.type) {
-		case 'update': {
-			if (typeof intent.payload.value !== 'undefined') {
-				const name = intent.payload.name ?? '';
-				const value = serialize(intent.payload.value);
+	if (!intent) {
+		setFieldsValidated(meta, fields);
+		return;
+	}
 
-				updateValue(meta, name, value);
+	switch (intent.type) {
+		case 'validate': {
+			if (intent.payload.name) {
+				meta.validated[intent.payload.name] = true;
+			} else {
+				setFieldsValidated(meta, fields);
+			}
+			break;
+		}
+		case 'update': {
+			const { name, validated, value } = intent.payload;
+
+			if (typeof value !== 'undefined') {
+				updateValue(meta, name ?? '', serialize(value));
+			}
+
+			if (typeof validated !== 'undefined') {
+				// Clean up previous validated state
+				if (name) {
+					setState(meta.validated, name, () => undefined);
+				} else {
+					meta.validated = {};
+				}
+
+				if (validated) {
+					if (isPlainObject(value) || Array.isArray(value)) {
+						Object.assign(
+							meta.validated,
+							flatten(value, {
+								resolve() {
+									return true;
+								},
+								prefix: name,
+							}),
+						);
+					}
+
+					meta.validated[name ?? ''] = true;
+				} else if (name) {
+					delete meta.validated[name];
+				}
 			}
 			break;
 		}
@@ -324,6 +364,13 @@ function handleIntent<Error>(
 			const value = getValue(meta.defaultValue, name);
 
 			updateValue(meta, name, value);
+
+			if (name) {
+				setState(meta.validated, name, () => undefined);
+				delete meta.validated[name];
+			} else {
+				meta.validated = {};
+			}
 			break;
 		}
 		case 'insert':
@@ -336,9 +383,23 @@ function handleIntent<Error>(
 				setListState(meta.key, intent, generateId);
 				setListValue(meta.initialValue, intent);
 			}
+
+			setListState(meta.validated, intent);
+			meta.validated[intent.payload.name] = true;
 			break;
 		}
 	}
+
+	meta.error = Object.entries(meta.error).reduce<Record<string, Error>>(
+		(result, [name, error]) => {
+			if (meta.validated[name]) {
+				result[name] = error;
+			}
+
+			return result;
+		},
+		{},
+	);
 }
 
 function updateValue<Error>(
@@ -675,28 +736,6 @@ export function createFormContext<
 		return prev !== next;
 	}
 
-	function getStateInput(form: HTMLFormElement): FieldElement {
-		const element = form.elements.namedItem(STATE);
-
-		invariant(
-			element === null || isFieldElement(element),
-			`The input name "${STATE}" is reserved by Conform. Please use another name.`,
-		);
-
-		if (!element) {
-			const input = document.createElement('input');
-
-			input.type = 'hidden';
-			input.name = STATE;
-			input.value = '';
-			form.append(input);
-
-			return input;
-		}
-
-		return element;
-	}
-
 	function getSerializedState(): string {
 		return JSON.stringify({
 			validated: meta.validated,
@@ -714,11 +753,6 @@ export function createFormContext<
 			form === getFormElement(),
 			`The submit event is dispatched by form#${form.id} instead of form#${latestOptions.formId}`,
 		);
-
-		const input = getStateInput(form);
-
-		// To ensure it capturing latest state before parsing
-		input.value = getSerializedState();
 
 		const formData = getFormData(form, submitter);
 		const result = {
@@ -851,19 +885,19 @@ export function createFormContext<
 			...meta,
 			submissionStatus: result.status,
 			value: result.initialValue,
+			validated: {
+				...meta.validated,
+				...result.state?.validated,
+			},
 			error,
-			validated: result.state?.validated ?? {},
 		};
 
-		if (result.intent) {
-			handleIntent(update, result.intent, true);
-		}
-
+		handleIntent(update, result.intent, result.fields, true);
 		updateFormMeta(update);
 
 		if (formElement && result.status === 'error') {
 			for (const element of formElement.elements) {
-				if (isFieldElement(element) && error[element.name]) {
+				if (isFieldElement(element) && meta.error[element.name]) {
 					element.focus();
 					break;
 				}
