@@ -15,6 +15,7 @@ import { SwitchConform } from './components/conform/Switch';
 import { TextareaConform } from './components/conform/Textarea';
 import { ToggleGroupConform } from './components/conform/ToggleGroup';
 import { CheckboxGroupConform } from './components/conform/CheckboxGroup';
+import { InputOTPConform } from './components/conform/InputOTP';
 
 const UserSubscriptionSchema = z.object({
 	name: z
@@ -46,6 +47,7 @@ const UserSubscriptionSchema = z.object({
 	interests: z
 		.array(z.string())
 		.min(3, 'You must select at least three interest'),
+	code: z.string().length(6, 'Code must be 6 characters long'),
 });
 
 function App() {
@@ -181,6 +183,11 @@ function App() {
 					{fields.interests.errors && (
 						<FieldError>{fields.interests.errors}</FieldError>
 					)}
+				</Field>
+				<Field>
+					<Label htmlFor={fields.code.id}>Code</Label>
+					<InputOTPConform meta={fields.code} length={6} />
+					{fields.code.errors && <FieldError>{fields.code.errors}</FieldError>}
 				</Field>
 
 				<div className="flex gap-2">
