@@ -6,7 +6,7 @@ Zod スキーマを内省することにより、各フィールドの検証属�
 const constraint = getZodConstraint(schema);
 ```
 
-## パラメーター
+## パラメータ
 
 ### `schema`
 
