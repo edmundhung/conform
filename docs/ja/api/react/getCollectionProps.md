@@ -56,7 +56,7 @@ ARIA 属性が `meta.errors` または `meta.allErrors` に基づくべきかど
 
 `aria-describedby` 属性に追加の **id** を付加します。フィールドメタデータから `meta.descriptionId` を渡すことができます。
 
-## 例
+## Tips
 
 ### ヘルパーは任意です
 
