@@ -32,7 +32,7 @@ function Example() {
 }
 ```
 
-## パラメーター
+## パラメータ
 
 ### `metaOrOptions`
 
