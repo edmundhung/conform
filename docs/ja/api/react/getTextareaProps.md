@@ -18,7 +18,7 @@ function Example() {
 }
 ```
 
-## Options
+## オプション
 
 ### `value`
 
