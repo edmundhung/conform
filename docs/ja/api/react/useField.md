@@ -6,7 +6,7 @@
 const [meta, form] = useField(name, options);
 ```
 
-## パラメーター
+## パラメータ
 
 ### `name`
 
