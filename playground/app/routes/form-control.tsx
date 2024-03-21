@@ -85,6 +85,20 @@ export default function FormControl() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.update.getButtonProps({
+								name: form.name,
+								value: {
+									number: 13579,
+									name: 'Conform',
+									message:
+										'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+								},
+							})}
+						>
+							Update form
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.update.getButtonProps({
 								name: fields.number.name,
 								value: 123,
 							})}
