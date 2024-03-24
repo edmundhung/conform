@@ -29,6 +29,7 @@ import {
 	setState,
 	serialize,
 	serializeIntent,
+	root,
 } from './submission';
 
 type BaseCombine<
@@ -380,12 +381,14 @@ function handleIntent<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, intent, (defaultValue, name) => {
+				setListState(meta.key, intent, (defaultValue) => {
 					if (!Array.isArray(defaultValue) && !isPlainObject(defaultValue)) {
 						return generateId();
 					}
 
-					return getDefaultKey(defaultValue, name);
+					return Object.assign(getDefaultKey(defaultValue), {
+						[root]: generateId(),
+					});
 				});
 				setListValue(meta.initialValue, intent);
 			}
