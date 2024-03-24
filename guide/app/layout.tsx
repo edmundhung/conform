@@ -10,35 +10,38 @@ import { logo } from '~/util';
 
 const menus: Menu[] = [
 	{
-		title: 'Getting Started',
+		title: 'はじめに',
 		links: [
-			{ title: 'Overview', to: '/' },
-			{ title: 'Tutorial', to: '/tutorial' },
-			{ title: 'Upgrading to v1', to: '/upgrading-v1' },
+			{ title: '概要', to: '/' },
+			{ title: 'チュートリアル', to: '/tutorial' },
+			{ title: 'v1 へのアップグレード', to: '/upgrading-v1' },
 			{ title: 'GitHub', to: 'https://github.com/edmundhung/conform' },
 		],
 	},
 	{
-		title: 'Guides',
+		title: 'ガイド',
 		links: [
-			{ title: 'Validation', to: '/validation' },
-			{ title: 'Nested object and Array', to: '/complex-structures' },
-			{ title: 'Intent button', to: '/intent-button' },
-			{ title: 'Accessibility', to: '/accessibility' },
-			{ title: 'Checkbox and Radio Group', to: '/checkbox-and-radio-group' },
-			{ title: 'File Upload', to: '/file-upload' },
+			{ title: 'バリデーション', to: '/validation' },
+			{ title: 'ネストされたオブジェクトと配列', to: '/complex-structures' },
+			{ title: 'インテントボタン', to: '/intent-button' },
+			{ title: 'アクセシビリティ', to: '/accessibility' },
+			{
+				title: 'チェックボックスとラジオグループ',
+				to: '/checkbox-and-radio-group',
+			},
+			{ title: 'ファイルのアップロード', to: '/file-upload' },
 		],
 	},
 	{
-		title: 'Integration',
+		title: 'インテグレーション',
 		links: [
-			{ title: 'UI Libraries', to: '/integration/ui-libraries' },
+			{ title: 'UI ライブラリ', to: '/integration/ui-libraries' },
 			{ title: 'Remix', to: '/integration/remix' },
 			{ title: 'Next.js', to: '/integration/nextjs' },
 		],
 	},
 	{
-		title: 'API Reference',
+		title: 'API リファレンス',
 		links: [
 			{ title: 'useForm', to: '/api/react/useForm' },
 			{ title: 'useField', to: '/api/react/useField' },
@@ -49,7 +52,7 @@ const menus: Menu[] = [
 		],
 	},
 	{
-		title: 'Utilities',
+		title: 'ユーティリティ',
 		links: [
 			{ title: 'getFormProps', to: '/api/react/getFormProps' },
 			{ title: 'getFieldsetProps', to: '/api/react/getFieldsetProps' },
@@ -60,7 +63,7 @@ const menus: Menu[] = [
 		],
 	},
 	{
-		title: 'Schema related',
+		title: 'スキーマ関連',
 		links: [
 			{ title: 'parseWithZod', to: '/api/zod/parseWithZod' },
 			{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
@@ -83,7 +86,7 @@ export function Guide({
 
 	if (toc && toc.links.length > 0) {
 		sidemenus.push({
-			title: 'On this page',
+			title: 'このページ',
 			links: toc.links.map((link) => ({
 				title: link.title,
 				to: `${location.pathname}${location.search}${link.to}`,
@@ -93,10 +96,10 @@ export function Guide({
 
 	if (file) {
 		sidemenus.push({
-			title: 'Related links',
+			title: '関連リンク',
 			links: [
 				{
-					title: 'Edit this page',
+					title: 'このページを編集',
 					to: `https://github.com/${owner}/${repo}/edit/${ref}/${file}`,
 				},
 			],

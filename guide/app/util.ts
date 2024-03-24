@@ -27,11 +27,21 @@ export function getGitHubToken(context: AppLoadContext): string | undefined {
 }
 
 export function getBranch(context: AppLoadContext): string {
-	return context.env.CF_PAGES_BRANCH ?? 'main';
+	return context.env.CF_PAGES_BRANCH ?? 'ja';
 }
 
 export function getCache(context: AppLoadContext): KVNamespace {
 	return context.env.CACHE;
+}
+
+// Japanese characters including UTF-8 are garbled, so convert to binary string before decoding
+function base64DecodeUtf8(base64String: string) {
+	var binaryString = atob(base64String);
+	var charCodeArray = Array.from(binaryString).map((char) =>
+		char.charCodeAt(0),
+	);
+	var uintArray = new Uint8Array(charCodeArray);
+	return new TextDecoder('utf-8').decode(uintArray);
 }
 
 export async function getFileContent(
@@ -54,7 +64,7 @@ export async function getFileContent(
 			repo,
 		});
 
-		content = atob(file.content);
+		content = base64DecodeUtf8(file.content);
 		context.waitUntil(
 			cache.put(cacheKey, content, {
 				expirationTtl: 3600,
