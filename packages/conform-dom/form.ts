@@ -220,6 +220,7 @@ export type FormContext<
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
+	observe(): () => void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -825,6 +826,16 @@ export function createFormContext<
 			: shouldValidate === eventName;
 	}
 
+	function updateFormValue(form: HTMLFormElement) {
+		const formData = new FormData(form);
+		const result = getSubmissionContext(formData);
+
+		updateFormMeta({
+			...meta,
+			value: result.payload,
+		});
+	}
+
 	function onInput(event: Event) {
 		const element = resolveTarget(event);
 
@@ -833,13 +844,7 @@ export function createFormContext<
 		}
 
 		if (event.defaultPrevented || !willValidate(element, 'onInput')) {
-			const formData = new FormData(element.form);
-			const result = getSubmissionContext(formData);
-
-			updateFormMeta({
-				...meta,
-				value: result.payload,
-			});
+			updateFormValue(element.form);
 		} else {
 			dispatch({
 				type: 'validate',
@@ -999,6 +1004,47 @@ export function createFormContext<
 		});
 	}
 
+	function observe() {
+		const observer = new MutationObserver((mutations) => {
+			const form = getFormElement();
+
+			if (!form) {
+				return;
+			}
+
+			for (const mutation of mutations) {
+				const nodes =
+					mutation.type === 'childList'
+						? [...mutation.addedNodes, ...mutation.removedNodes]
+						: [mutation.target];
+
+				for (const node of nodes) {
+					const element = isFieldElement(node)
+						? node
+						: node instanceof HTMLElement
+						? node.querySelector<FieldElement>('input,select,textarea')
+						: null;
+
+					if (element?.form === form) {
+						updateFormValue(form);
+						return;
+					}
+				}
+			}
+		});
+
+		observer.observe(document, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ['form', 'name'],
+		});
+
+		return () => {
+			observer.disconnect();
+		};
+	}
+
 	return {
 		get formId() {
 			return latestOptions.formId;
@@ -1017,5 +1063,6 @@ export function createFormContext<
 		subscribe,
 		getState,
 		getSerializedState,
+		observe,
 	};
 }
