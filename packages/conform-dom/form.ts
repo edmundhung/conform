@@ -380,7 +380,13 @@ function handleIntent<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, intent, generateId);
+				setListState(meta.key, intent, (defaultValue, name) => {
+					if (!Array.isArray(defaultValue) && !isPlainObject(defaultValue)) {
+						return generateId();
+					}
+
+					return getDefaultKey(defaultValue, name);
+				});
 				setListValue(meta.initialValue, intent);
 			}
 
@@ -407,6 +413,13 @@ function updateValue<Error>(
 	name: string,
 	value: unknown,
 ): void {
+	if (name === '') {
+		meta.initialValue = value as Record<string, unknown>;
+		meta.value = value as Record<string, unknown>;
+		meta.key = getDefaultKey(value as Record<string, unknown>);
+		return;
+	}
+
 	meta.initialValue = clone(meta.initialValue);
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
