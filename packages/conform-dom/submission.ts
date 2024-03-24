@@ -187,7 +187,16 @@ export function parse<FormValue, FormError>(
 				}
 				break;
 			}
-			case 'insert':
+			case 'insert': {
+				setListValue(context.payload, {
+					type: intent.type,
+					payload: {
+						...intent.payload,
+						defaultValue: serialize(intent.payload.defaultValue),
+					},
+				});
+				break;
+			}
 			case 'remove':
 			case 'reorder': {
 				setListValue(context.payload, intent);
@@ -386,7 +395,7 @@ export function updateList(
 			list.splice(
 				intent.payload.index ?? list.length,
 				0,
-				serialize(intent.payload.defaultValue),
+				intent.payload.defaultValue,
 			);
 			break;
 		case 'remove':
@@ -413,13 +422,16 @@ export function setListValue(
 	});
 }
 
+/**
+ * A placeholder symbol for the root value of a nested object
+ */
+export const root = Symbol.for('root');
+
 export function setState(
 	state: Record<string, unknown>,
 	name: string,
 	valueFn: (value: unknown) => unknown,
 ): void {
-	const root = Symbol.for('root');
-
 	// The keys are sorted in desc so that the root value is handled last
 	const keys = Object.keys(state).sort((prev, next) =>
 		next.localeCompare(prev),
@@ -471,7 +483,7 @@ export function setState(
 export function setListState(
 	state: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
-	getDefaultValue?: (defaultValue: any, prefix?: string) => any,
+	getDefaultValue?: (defaultValue: any) => any,
 ): void {
 	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
@@ -482,10 +494,7 @@ export function setListState(
 					type: intent.type,
 					payload: {
 						...intent.payload,
-						defaultValue: getDefaultValue?.(
-							intent.payload.defaultValue,
-							intent.payload.name,
-						),
+						defaultValue: getDefaultValue?.(intent.payload.defaultValue),
 					},
 				});
 				break;
