@@ -803,6 +803,7 @@ export function createFormContext<
 			!form ||
 			!isFieldElement(element) ||
 			element.form !== form ||
+			!element.form.isConnected ||
 			element.name === ''
 		) {
 			return null;
