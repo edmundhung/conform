@@ -27,6 +27,7 @@
 		"clsx": "^2.1.0",
 		"cmdk": "^0.2.1",
 		"date-fns": "^3.3.1",
+		"input-otp": "^1.2.2",
 		"lucide-react": "^0.338.0",
 		"react": "^18.2.0",
 		"react-day-picker": "^8.10.0",
