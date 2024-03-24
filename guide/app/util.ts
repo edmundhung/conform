@@ -12,7 +12,7 @@ export function invariant(
 
 export function getMetadata(context: AppLoadContext) {
 	return {
-		owner: 'coji',
+		owner: 'edmundhung',
 		repo: 'conform',
 		ref: getBranch(context),
 	};
@@ -27,14 +27,14 @@ export function getGitHubToken(context: AppLoadContext): string | undefined {
 }
 
 export function getBranch(context: AppLoadContext): string {
-	return context.env.CF_PAGES_BRANCH ?? 'main';
+	return context.env.CF_PAGES_BRANCH ?? 'ja';
 }
 
 export function getCache(context: AppLoadContext): KVNamespace {
 	return context.env.CACHE;
 }
 
-// UTF-8 を含む日本語が文字化けするので、バイナリ文字列に変換してからデコードする
+// Japanese characters including UTF-8 are garbled, so convert to binary string before decoding
 function base64DecodeUtf8(base64String: string) {
 	var binaryString = atob(base64String);
 	var charCodeArray = Array.from(binaryString).map((char) =>
