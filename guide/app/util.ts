@@ -56,7 +56,7 @@ export function getGitHubToken(context: AppLoadContext): string | undefined {
 }
 
 export function getBranch(context: AppLoadContext): string {
-	return context.env.CF_PAGES_BRANCH ?? 'main';
+	return context.env.CF_PAGES_BRANCH ?? 'ja';
 }
 
 export function getCache(context: AppLoadContext): KVNamespace {
