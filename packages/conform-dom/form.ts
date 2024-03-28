@@ -376,7 +376,8 @@ function handleIntent<Error>(
 		}
 		case 'insert':
 		case 'remove':
-		case 'reorder': {
+		case 'reorder':
+		case 'updateAt': {
 			if (initialized) {
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
@@ -1012,6 +1013,7 @@ export function createFormContext<
 		reset: createFormControl('reset'),
 		update: createFormControl('update'),
 		insert: createFormControl('insert'),
+		updateAt: createFormControl('updateAt'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),
 		subscribe,

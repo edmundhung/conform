@@ -79,6 +79,15 @@ export default function App() {
 													>
 														Delete option
 													</button>
+													<button
+														{...form.updateAt.getButtonProps({
+															name: fieldset.options.name,
+															index,
+															value: 'Updated value',
+														})}
+													>
+														Update value
+													</button>
 												</div>
 											))}
 										</div>
