@@ -7,6 +7,7 @@ function getFieldset(form: Locator) {
 		addItem: form.getByRole('button', { name: 'Add item' }),
 		addOption: form.getByRole('button', { name: 'Add option' }),
 		deleteOption: form.getByRole('button', { name: 'Delete option' }),
+		updateOption: form.getByRole('button', { name: 'Update value' }),
 	};
 }
 
@@ -41,6 +42,13 @@ async function runTest(page: Page) {
 	await expect(fieldset.options).toHaveCount(3);
 	await expect(fieldset.options.nth(0)).toHaveValue('First');
 	await expect(fieldset.options.nth(1)).toHaveValue('Third');
+	await expect(fieldset.options.nth(2)).toHaveValue('Another item');
+
+	await fieldset.options.nth(1).fill('Value to update');
+	await fieldset.updateOption.nth(1).click();
+	await expect(fieldset.options).toHaveCount(3);
+	await expect(fieldset.options.nth(0)).toHaveValue('First');
+	await expect(fieldset.options.nth(1)).toHaveValue('Updated value');
 	await expect(fieldset.options.nth(2)).toHaveValue('Another item');
 }
 

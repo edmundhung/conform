@@ -385,6 +385,7 @@ export function getFormMetadata<
 				case 'insert':
 				case 'remove':
 				case 'reorder':
+				case 'updateAt':
 					return context[key];
 				case 'onSubmit':
 					return context.submit;

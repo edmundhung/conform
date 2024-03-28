@@ -198,7 +198,8 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'remove':
-			case 'reorder': {
+			case 'reorder':
+			case 'updateAt': {
 				setListValue(context.payload, intent);
 				break;
 			}
@@ -341,6 +342,15 @@ export type InsertIntent<Schema extends Array<any> = any> = {
 	};
 };
 
+export type UpdateAtIntent<Schema extends Array<any> = any> = {
+	type: 'updateAt';
+	payload: {
+		name: FieldName<Schema>;
+		index: number;
+		value: Schema extends Array<infer Item> ? DefaultValue<Item> : never;
+	};
+};
+
 export type ReorderIntent<Schema extends Array<any> = any> = {
 	type: 'reorder';
 	payload: {
@@ -356,7 +366,8 @@ export type Intent<Schema = unknown> =
 	| UpdateIntent<Schema>
 	| ReorderIntent<Schema extends Array<any> ? Schema : any>
 	| RemoveIntent<Schema extends Array<any> ? Schema : any>
-	| InsertIntent<Schema extends Array<any> ? Schema : any>;
+	| InsertIntent<Schema extends Array<any> ? Schema : any>
+	| UpdateAtIntent<Schema extends Array<any> ? Schema : any>;
 
 export function getIntent(
 	serializedIntent: string | null | undefined,
@@ -383,7 +394,7 @@ export function serializeIntent<Schema>(intent: Intent<Schema>): string {
 
 export function updateList(
 	list: unknown,
-	intent: InsertIntent | RemoveIntent | ReorderIntent,
+	intent: InsertIntent | RemoveIntent | ReorderIntent | UpdateAtIntent,
 ): void {
 	invariant(
 		Array.isArray(list),
@@ -404,6 +415,9 @@ export function updateList(
 		case 'reorder':
 			list.splice(intent.payload.to, 0, ...list.splice(intent.payload.from, 1));
 			break;
+		case 'updateAt':
+			list.splice(intent.payload.index, 1, intent.payload.value);
+			break;
 		default:
 			throw new Error('Unknown list intent received');
 	}
@@ -411,7 +425,7 @@ export function updateList(
 
 export function setListValue(
 	data: Record<string, unknown>,
-	intent: InsertIntent | RemoveIntent | ReorderIntent,
+	intent: InsertIntent | RemoveIntent | ReorderIntent | UpdateAtIntent,
 ): void {
 	setValue(data, intent.payload.name, (value) => {
 		const list = value ?? [];
@@ -482,7 +496,7 @@ export function setState(
 
 export function setListState(
 	state: Record<string, unknown>,
-	intent: InsertIntent | RemoveIntent | ReorderIntent,
+	intent: InsertIntent | RemoveIntent | ReorderIntent | UpdateAtIntent,
 	getDefaultValue?: (defaultValue: any) => any,
 ): void {
 	setState(state, intent.payload.name, (value) => {
