@@ -184,7 +184,7 @@ export function Guide({
 						className="bg-zinc-900 text-xs rounded-md py-1"
 						defaultValue={language.code}
 						onChange={(e) => {
-							const selectedLanguage = getLanguage(e.target.value);
+							const selectedLanguage = getLanguage(e.currentTarget.value);
 							window.location.href = `//${selectedLanguage.domain}${location.pathname}${location.search}`;
 						}}
 					>
