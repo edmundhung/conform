@@ -789,8 +789,13 @@ export function createFormContext<
 			submitter,
 		});
 
-		if (submission.status !== 'success' && submission.error !== null) {
-			report(submission.reply());
+		if (submission.status === 'success' || submission.error !== null) {
+			const result = submission.reply();
+
+			report({
+				...result,
+				status: result.status !== 'success' ? result.status : undefined,
+			});
 		}
 
 		return { ...result, submission };
