@@ -30,7 +30,7 @@ export function getFormData(
  * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
  * ```
  */
-export function getPaths(name: string): Array<string | number> {
+export function getPaths(name: string | undefined): Array<string | number> {
 	if (!name) {
 		return [];
 	}
@@ -70,6 +70,15 @@ export function formatPaths(paths: Array<string | number>): string {
 
 		return [name, path].join('.');
 	}, '');
+}
+
+/**
+ * Format based on a prefix and a path
+ */
+export function formatName(prefix: string | undefined, path?: string | number) {
+	return typeof path !== 'undefined'
+		? formatPaths([...getPaths(prefix), path])
+		: prefix ?? '';
 }
 
 /**

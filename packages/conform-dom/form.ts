@@ -8,6 +8,7 @@ import {
 	isPrefix,
 	setValue,
 	normalize,
+	formatName,
 } from './formdata';
 import {
 	type FieldElement,
@@ -289,7 +290,7 @@ function getDefaultKey(
 	>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
-				result[formatPaths([...getPaths(key), i])] = generateId();
+				result[formatName(key, i)] = generateId();
 			}
 		}
 
@@ -327,7 +328,8 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'update': {
-			const { name, validated, value } = intent.payload;
+			const { validated, value } = intent.payload;
+			const name = formatName(intent.payload.name, intent.payload.index);
 
 			if (typeof value !== 'undefined') {
 				updateValue(meta, name ?? '', serialize(value));
@@ -362,7 +364,7 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'reset': {
-			const name = intent.payload.name ?? '';
+			const name = formatName(intent.payload.name, intent.payload.index);
 			const value = getValue(meta.defaultValue, name);
 
 			updateValue(meta, name, value);

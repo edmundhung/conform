@@ -6,6 +6,7 @@ import {
 	setValue,
 	isPrefix,
 	getValue,
+	formatName,
 } from './formdata';
 import { invariant } from './util';
 
@@ -164,7 +165,7 @@ export function parse<FormValue, FormError>(
 	if (intent) {
 		switch (intent.type) {
 			case 'update': {
-				const { name } = intent.payload;
+				const name = formatName(intent.payload.name, intent.payload.index);
 				const value = serialize(intent.payload.value);
 
 				if (typeof value !== 'undefined') {
@@ -178,7 +179,7 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'reset': {
-				const { name } = intent.payload;
+				const name = formatName(intent.payload.name, intent.payload.index);
 
 				if (name) {
 					setValue(context.payload, name, () => undefined);
@@ -308,18 +309,34 @@ export type ValidateIntent<Schema = any> = {
 
 export type ResetIntent<Schema = any> = {
 	type: 'reset';
-	payload: {
-		name?: FieldName<Schema>;
-	};
+	payload:
+		| {
+				name?: FieldName<Schema>;
+				index?: never;
+		  }
+		| {
+				name: FieldName<Schema>;
+				index: Schema extends Array<unknown> ? number : never;
+		  };
 };
 
 export type UpdateIntent<Schema = unknown> = {
 	type: 'update';
-	payload: {
-		name?: FieldName<Schema>;
-		value?: NonNullable<DefaultValue<Schema>>;
-		validated?: boolean;
-	};
+	payload:
+		| {
+				name?: FieldName<Schema>;
+				index?: never;
+				value?: NonNullable<DefaultValue<Schema>>;
+				validated?: boolean;
+		  }
+		| {
+				name: FieldName<Schema>;
+				index: Schema extends Array<unknown> ? number : never;
+				value?: NonNullable<
+					DefaultValue<Schema extends Array<infer Item> ? Item : unknown>
+				>;
+				validated?: boolean;
+		  };
 };
 
 export type RemoveIntent<Schema extends Array<any> = any> = {

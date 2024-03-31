@@ -89,7 +89,8 @@ export default function SimpleList() {
 									<button
 										className="rounded-md border p-2 hover:border-black"
 										{...form.update.getButtonProps({
-											name: task.name,
+											name: fields.items.name,
+											index,
 											value: '',
 											validated: false,
 										})}
@@ -99,7 +100,8 @@ export default function SimpleList() {
 									<button
 										className="rounded-md border p-2 hover:border-black"
 										{...form.reset.getButtonProps({
-											name: task.name,
+											name: fields.items.name,
+											index,
 										})}
 									>
 										Reset
