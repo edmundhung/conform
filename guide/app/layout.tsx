@@ -172,16 +172,16 @@ export function Guide({
 	return (
 		<div className="xl:container mx-auto xl:grid xl:grid-cols-5 gap-10 px-8 relative">
 			<header className="bg-zinc-900 xl:bg-transparent sticky top-0 max-h-screen z-10 flex flex-col">
-				<div className="py-2 xl:py-4 flex items-center">
+				<div className="py-6 xl:py-10 flex items-end justify-between">
 					<Link
-						className="flex-1 font-mono inline-block py-4 text-[.25rem] leading-[.25rem] xl:text-[.35rem] xl:leading-[.40rem] whitespace-pre"
+						className="font-mono inline-block text-[.20rem] leading-[.25rem] 2xl:text-[.3rem] 2xl:leading-[.3rem] whitespace-pre"
 						title="Conform"
 						to="/"
 					>
 						{logo}
 					</Link>
 					<select
-						className="bg-zinc-900 text-xs rounded-md py-1"
+						className="bg-zinc-900 text-xs rounded-md py-1 pl-1 pr-8"
 						defaultValue={language.code}
 						onChange={(e) => {
 							const selectedLanguage = getLanguage(e.currentTarget.value);

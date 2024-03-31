@@ -12,7 +12,7 @@ interface Language {
 export const allLanguages: Language[] = [
 	{
 		code: 'en',
-		label: 'English',
+		label: 'en',
 		branch: 'main',
 		docPath: 'docs',
 		domain: 'conform.guide',
@@ -20,7 +20,7 @@ export const allLanguages: Language[] = [
 	},
 	{
 		code: 'ja',
-		label: 'Japanese',
+		label: 'ja',
 		branch: 'ja',
 		docPath: 'docs/ja',
 		domain: 'ja.conform.guide',
