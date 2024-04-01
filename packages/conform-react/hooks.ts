@@ -103,7 +103,7 @@ export function useFormMetadata<
 	Schema extends Record<string, any>,
 	FormError = string[],
 >(
-	formId: FormId<Schema, FormError>,
+	formId?: FormId<Schema, FormError>,
 	options: {
 		defaultNoValidate?: boolean;
 	} = {},
