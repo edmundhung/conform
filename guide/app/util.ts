@@ -4,16 +4,15 @@ import type { AppLoadContext } from '@remix-run/cloudflare';
 interface Language {
 	code: string;
 	label: string;
-	branch: string;
 	docPath: string;
 	domain: string;
 	isDecodeUtf8: boolean;
 }
+
 export const allLanguages: Language[] = [
 	{
 		code: 'en',
 		label: 'en',
-		branch: 'main',
 		docPath: 'docs',
 		domain: 'conform.guide',
 		isDecodeUtf8: false,
@@ -21,7 +20,6 @@ export const allLanguages: Language[] = [
 	{
 		code: 'ja',
 		label: 'ja',
-		branch: 'ja',
 		docPath: 'docs/ja',
 		domain: 'ja.conform.guide',
 		isDecodeUtf8: true,
@@ -43,7 +41,7 @@ export function getMetadata(context: AppLoadContext) {
 		owner: 'edmundhung',
 		repo: 'conform',
 		ref: branch,
-		language: getLanguage(branch),
+		language: getLanguage(context.env.LANGUAGE),
 	};
 }
 
@@ -68,7 +66,14 @@ export const getDocPath = (context: AppLoadContext) => {
 	return docPath;
 };
 
-export function getLanguage(code: string): Language {
+export function getLanguageCode(url: string): string | undefined {
+	const { hostname } = new URL(url);
+	const language = allLanguages.find((lang) => lang.domain === hostname);
+
+	return language?.code;
+}
+
+export function getLanguage(code: string | undefined): Language {
 	const language = allLanguages.find((lang) => lang.code === code);
 	return language ?? allLanguages[0]; // default to English
 }
