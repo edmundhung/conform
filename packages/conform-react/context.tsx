@@ -15,6 +15,7 @@ import {
 	getPaths,
 	isPrefix,
 	STATE,
+	INTENT,
 } from '@conform-to/dom';
 import {
 	type FormEvent,
@@ -466,13 +467,15 @@ export function createFormContext<
 			const result = context.submit(submitEvent);
 
 			if (
-				result.submission &&
-				result.submission.status !== 'success' &&
-				result.submission.error !== null
+				!result.submission ||
+				result.submission.status === 'success' ||
+				result.submission.error === null
 			) {
-				event.preventDefault();
+				if (!result.formData.has(INTENT)) {
+					onSubmit?.(event, result);
+				}
 			} else {
-				onSubmit?.(event, result);
+				event.preventDefault();
 			}
 		},
 		onUpdate(options) {
