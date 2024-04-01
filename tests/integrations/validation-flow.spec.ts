@@ -119,13 +119,13 @@ test('shouldValidate: onBlur', async ({ page }) => {
 		playground.container,
 	);
 
-	await email.type('Invalid email');
+	await email.fill('Invalid email');
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	await playground.form.press('Tab');
 	await expect(playground.error).toHaveText(['Email is invalid', '', '']);
 
-	await password.type('1234');
+	await password.fill('1234');
 	await expect(playground.error).toHaveText(['Email is invalid', '', '']);
 
 	await playground.form.press('Tab');
@@ -135,7 +135,7 @@ test('shouldValidate: onBlur', async ({ page }) => {
 		'',
 	]);
 
-	await confirmPassword.type('5678');
+	await confirmPassword.fill('5678');
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
@@ -150,7 +150,7 @@ test('shouldValidate: onBlur', async ({ page }) => {
 	]);
 
 	await email.clear();
-	await email.type('example@conform.guide');
+	await email.fill('test@email.registered');
 	await expect(playground.error).toHaveText([
 		'Email is invalid',
 		'Password is too short',
@@ -164,8 +164,7 @@ test('shouldValidate: onBlur', async ({ page }) => {
 		'Password does not match',
 	]);
 
-	await password.clear();
-	await password.type('secretpassword');
+	await password.fill('secretpassword');
 	await expect(playground.error).toHaveText([
 		'',
 		'Password is too short',
@@ -179,14 +178,32 @@ test('shouldValidate: onBlur', async ({ page }) => {
 		'Password does not match',
 	]);
 
-	await confirmPassword.clear();
-	await confirmPassword.type('secretpassword');
+	await confirmPassword.fill('secretpassword');
 	await expect(playground.error).toHaveText([
 		'',
 		'',
 		'Password does not match',
 	]);
 
+	await playground.form.press('Tab');
+	await expect(playground.error).toHaveText(['', '', '']);
+
+	await playground.submit.click();
+	await expect(playground.error).toHaveText([
+		'Email is already registered',
+		'',
+		'',
+	]);
+
+	await email.click();
+	await password.click();
+	await expect(playground.error).toHaveText([
+		'Email is already registered',
+		'',
+		'',
+	]);
+
+	await email.fill('example@conform.guide');
 	await playground.form.press('Tab');
 	await expect(playground.error).toHaveText(['', '', '']);
 });

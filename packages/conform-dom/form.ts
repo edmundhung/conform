@@ -112,6 +112,7 @@ export type Constraint = {
 };
 
 export type FormMeta<FormError> = {
+	isValueUpdated: boolean;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
@@ -122,7 +123,10 @@ export type FormMeta<FormError> = {
 	validated: Record<string, boolean>;
 };
 
-export type FormState<FormError> = FormMeta<FormError> & {
+export type FormState<FormError> = Omit<
+	FormMeta<FormError>,
+	'isValueUpdated'
+> & {
 	valid: Record<string, boolean>;
 	dirty: Record<string, boolean>;
 };
@@ -259,6 +263,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
+		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
 		initialValue,
@@ -829,7 +834,8 @@ export function createFormContext<
 		const validated = meta.validated[element.name];
 
 		return validated
-			? shouldRevalidate === eventName
+			? shouldRevalidate === eventName &&
+					(eventName === 'onInput' || meta.isValueUpdated)
 			: shouldValidate === eventName;
 	}
 
@@ -839,6 +845,7 @@ export function createFormContext<
 
 		updateFormMeta({
 			...meta,
+			isValueUpdated: true,
 			value: result.payload,
 		});
 	}
@@ -912,6 +919,7 @@ export function createFormContext<
 		}, {});
 		const update: FormMeta<FormError> = {
 			...meta,
+			isValueUpdated: false,
 			submissionStatus: result.status,
 			value: result.initialValue,
 			validated: {

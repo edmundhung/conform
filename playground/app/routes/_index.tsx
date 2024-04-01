@@ -22,7 +22,13 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, { schema });
 
-	return json(submission.reply());
+	return json(
+		submission.reply({
+			fieldErrors: {
+				name: ['Something went wrong'],
+			},
+		}),
+	);
 }
 
 export default function Example() {
@@ -30,6 +36,7 @@ export default function Example() {
 	const lastResult = useActionData<typeof action>();
 	const [form, fields] = useForm({
 		lastResult,
+		shouldValidate: 'onBlur',
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
