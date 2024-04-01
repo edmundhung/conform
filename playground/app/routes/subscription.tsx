@@ -61,6 +61,12 @@ export default function Example() {
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
+		onSubmit(event) {
+			// We should be able to access the latest form / field metadata anytime
+			if (!form.dirty || !(fields.name.dirty || fields.message.dirty)) {
+				event.preventDefault();
+			}
+		},
 	});
 	const name = fields.name.name;
 	const message = fields.message.name;

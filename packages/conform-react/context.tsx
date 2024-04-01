@@ -214,12 +214,13 @@ export function getMetadata<
 	FormError,
 	FormSchema extends Record<string, any>,
 >(
-	formId: FormId<FormSchema, FormError>,
-	state: FormState<FormError>,
+	context: FormContext<FormSchema, FormError, any>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
+	stateSnapshot: FormState<FormError>,
 	name: FieldName<Schema, FormSchema, FormError> = '',
 ): Metadata<Schema, FormSchema, FormError> {
-	const id = name ? `${formId}-${name}` : formId;
+	const id = name ? `${context.formId}-${name}` : context.formId;
+	const state = context.getState();
 
 	return new Proxy(
 		{
@@ -265,7 +266,13 @@ export function getMetadata<
 					new Proxy({} as any, {
 						get(target, key, receiver) {
 							if (typeof key === 'string') {
-								return getFieldMetadata(formId, state, subjectRef, name, key);
+								return getFieldMetadata(
+									context,
+									subjectRef,
+									stateSnapshot,
+									name,
+									key,
+								);
 							}
 
 							return Reflect.get(target, key, receiver);
@@ -275,23 +282,28 @@ export function getMetadata<
 		},
 		{
 			get(target, key, receiver) {
-				switch (key) {
-					case 'key':
-					case 'initialValue':
-					case 'value':
-					case 'valid':
-					case 'dirty':
-						updateSubjectRef(subjectRef, name, key, 'name');
-						break;
-					case 'errors':
-					case 'allErrors':
-						updateSubjectRef(
-							subjectRef,
-							name,
-							'error',
-							key === 'errors' ? 'name' : 'prefix',
-						);
-						break;
+				// We want to minize re-render by identifying whether the field is used in a callback only
+				// but there is no clear way to know if it is accessed during render or not
+				// if the stateSnapshot is not the latest, then it must be accessed in a callback
+				if (state === stateSnapshot) {
+					switch (key) {
+						case 'key':
+						case 'initialValue':
+						case 'value':
+						case 'valid':
+						case 'dirty':
+							updateSubjectRef(subjectRef, name, key, 'name');
+							break;
+						case 'errors':
+						case 'allErrors':
+							updateSubjectRef(
+								subjectRef,
+								name,
+								'error',
+								key === 'errors' ? 'name' : 'prefix',
+							);
+							break;
+					}
 				}
 
 				return Reflect.get(target, key, receiver);
@@ -305,9 +317,9 @@ export function getFieldMetadata<
 	FormSchema extends Record<string, any>,
 	FormError,
 >(
-	formId: FormId<FormSchema, FormError>,
-	state: FormState<FormError>,
+	context: FormContext<FormSchema, FormError, any>,
 	subjectRef: MutableRefObject<SubscriptionSubject>,
+	stateSnapshot: FormState<FormError>,
 	prefix = '',
 	key?: string | number,
 ): FieldMetadata<Schema, FormSchema, FormError> {
@@ -315,13 +327,15 @@ export function getFieldMetadata<
 		typeof key === 'undefined'
 			? prefix
 			: formatPaths([...getPaths(prefix), key]);
-	const metadata = getMetadata(formId, state, subjectRef, name);
 
 	return new Proxy({} as any, {
 		get(_, key, receiver) {
+			const metadata = getMetadata(context, subjectRef, stateSnapshot, name);
+			const state = context.getState();
+
 			switch (key) {
 				case 'formId':
-					return formId;
+					return context.formId;
 				case 'required':
 				case 'minLength':
 				case 'maxLength':
@@ -335,7 +349,9 @@ export function getFieldMetadata<
 					return () => {
 						const initialValue = state.initialValue[name] ?? [];
 
-						updateSubjectRef(subjectRef, name, 'initialValue', 'name');
+						if (state === stateSnapshot) {
+							updateSubjectRef(subjectRef, name, 'initialValue', 'name');
+						}
 
 						if (!Array.isArray(initialValue)) {
 							throw new Error(
@@ -346,7 +362,13 @@ export function getFieldMetadata<
 						return Array(initialValue.length)
 							.fill(0)
 							.map((_, index) =>
-								getFieldMetadata(formId, state, subjectRef, name, index),
+								getFieldMetadata(
+									context,
+									subjectRef,
+									stateSnapshot,
+									name,
+									index,
+								),
 							);
 					};
 				}
@@ -362,16 +384,16 @@ export function getFormMetadata<
 	FormError = string[],
 	FormValue = Schema,
 >(
-	formId: FormId<Schema, FormError>,
-	state: FormState<FormError>,
-	subjectRef: MutableRefObject<SubscriptionSubject>,
 	context: FormContext<Schema, FormError, FormValue>,
+	subjectRef: MutableRefObject<SubscriptionSubject>,
+	stateSnapshot: FormState<FormError>,
 	noValidate: boolean,
 ): FormMetadata<Schema, FormError> {
-	const metadata = getMetadata(formId, state, subjectRef);
-
 	return new Proxy({} as any, {
 		get(_, key, receiver) {
+			const metadata = getMetadata(context, subjectRef, stateSnapshot);
+			const state = context.getState();
+
 			switch (key) {
 				case 'context':
 					return {

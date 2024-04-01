@@ -937,7 +937,7 @@ export function createFormContext<
 		Object.assign(latestOptions, options);
 
 		if (latestOptions.formId !== currentFormId) {
-			getFormElement()?.reset();
+			updateFormMeta(createFormMeta(latestOptions, true));
 		} else if (options.lastResult && options.lastResult !== currentResult) {
 			report(options.lastResult);
 		}
