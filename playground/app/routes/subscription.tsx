@@ -1,6 +1,5 @@
 import {
 	type FieldName,
-	type FormId,
 	type FieldMetadata,
 	type FormMetadata,
 	getFormProps,
@@ -72,13 +71,13 @@ export default function Example() {
 	const message = fields.message.name;
 	const description = (
 		<ul className="space-y-1 list-disc">
-			<FormMetadata strict={strict} formId={form.id} subject="initialValue" />
-			<FormMetadata strict={strict} formId={form.id} subject="value" />
-			<FormMetadata strict={strict} formId={form.id} subject="key" />
-			<FormMetadata strict={strict} formId={form.id} subject="dirty" />
-			<FormMetadata strict={strict} formId={form.id} subject="valid" />
-			<FormMetadata strict={strict} formId={form.id} subject="errors" />
-			<FormMetadata strict={strict} formId={form.id} subject="allErrors" />
+			<FormMetadata strict={strict} subject="initialValue" />
+			<FormMetadata strict={strict} subject="value" />
+			<FormMetadata strict={strict} subject="key" />
+			<FormMetadata strict={strict} subject="dirty" />
+			<FormMetadata strict={strict} subject="valid" />
+			<FormMetadata strict={strict} subject="errors" />
+			<FormMetadata strict={strict} subject="allErrors" />
 			<FieldMetadata strict={strict} name={name} subject="initialValue" />
 			<FieldMetadata strict={strict} name={name} subject="value" />
 			<FieldMetadata strict={strict} name={name} subject="key" />
@@ -153,16 +152,14 @@ const FieldMetadata = memo(function FieldMetadata({
 });
 
 const FormMetadata = memo(function FormMetadata({
-	formId,
 	subject,
 	strict,
 }: {
-	formId: FormId;
 	subject: keyof FormMetadata<Record<string, any>>;
 	strict: boolean;
 }) {
 	const renderCount = useRenderCount(strict);
-	const form = useFormMetadata(formId);
+	const form = useFormMetadata();
 
 	// eslint-disable-next-line no-console
 	console.log(`form.${subject}: ${JSON.stringify(form[subject])}`);
