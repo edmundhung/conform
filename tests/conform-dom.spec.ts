@@ -281,6 +281,7 @@ describe('conform-dom', () => {
 	});
 
 	test('getPaths()', () => {
+		expect(getPaths(undefined)).toEqual([]);
 		expect(getPaths('')).toEqual([]);
 		expect(getPaths('title')).toEqual(['title']);
 		expect(getPaths('123')).toEqual(['123']);
