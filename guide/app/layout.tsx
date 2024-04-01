@@ -149,7 +149,7 @@ export function Guide({
 
 	if (toc && toc.links.length > 0) {
 		sidemenus.push({
-			title: 'On this page',
+			title: 'このページ',
 			links: toc.links.map((link) => ({
 				title: link.title,
 				to: `${location.pathname}${location.search}${link.to}`,
@@ -159,10 +159,10 @@ export function Guide({
 
 	if (file) {
 		sidemenus.push({
-			title: 'Related links',
+			title: '関連リンク',
 			links: [
 				{
-					title: 'Edit this page',
+					title: 'このページを編集',
 					to: `https://github.com/${owner}/${repo}/edit/${ref}/${file}`,
 				},
 			],
