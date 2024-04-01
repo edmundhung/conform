@@ -9,8 +9,8 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.0.6",
-		"@conform-to/zod": "1.0.6",
+		"@conform-to/react": "1.1.0-pre.0",
+		"@conform-to/zod": "1.1.0-pre.0",
 		"next": "14.0.4",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
