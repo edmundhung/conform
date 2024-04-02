@@ -383,7 +383,7 @@ export function getCollectionProps<
 	metadata: FieldMetadata<Schema, any, any>,
 	options: Options,
 ): Array<
-	InputProps & { type: Options['type'] } & Pick<Required<InputProps>, 'value'>
+	InputProps & Pick<Options, 'type'> & Pick<Required<InputProps>, 'value'>
 > {
 	return options.options.map((value) =>
 		simplify({
