@@ -363,9 +363,7 @@ export function getCollectionProps<
 		| boolean
 		| undefined
 		| unknown,
->(
-	metadata: FieldMetadata<Schema, any, any>,
-	options: Pretty<
+	Options extends Pretty<
 		FormControlOptions & {
 			/**
 			 * The input type. Use `checkbox` for multiple selection or `radio` for single selection.
@@ -381,7 +379,12 @@ export function getCollectionProps<
 			value?: boolean;
 		}
 	>,
-): Array<InputProps & Pick<Required<InputProps>, 'type' | 'value'>> {
+>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options: Options,
+): Array<
+	InputProps & { type: Options['type'] } & Pick<Required<InputProps>, 'value'>
+> {
 	return options.options.map((value) =>
 		simplify({
 			...getFormControlProps(metadata, options),
