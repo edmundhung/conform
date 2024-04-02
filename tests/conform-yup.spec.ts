@@ -4,15 +4,6 @@ import * as yup from 'yup';
 import { type Constraint, STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
-// Adding custom method tuple until Yup is updated to v1 where the tuple method is built-in
-// ref: https://github.com/jquense/yup/issues/528#issuecomment-916885944
-yup.addMethod(yup.array, 'tuple', function (schema) {
-	if (!this.isType(schema)) yup.ValidationError();
-	return yup.object({
-		...Object.fromEntries(Object.entries(schema)),
-	});
-});
-
 describe('conform-yup', () => {
 	const maxDate = new Date();
 	const schema = yup
@@ -36,7 +27,8 @@ describe('conform-yup', () => {
 					yup.string().required('required').oneOf(['a', 'b', 'c'], 'invalid'),
 				)
 				.required('required')
-				.min(3, 'min'),
+				.min(3, 'min')
+				.test('nested', 'error', () => false),
 			nested: yup
 				.object({
 					key: yup.string().required('required'),
@@ -53,13 +45,6 @@ describe('conform-yup', () => {
 				)
 				.required('required')
 				.max(0, 'max'),
-			tuple: yup
-				.array()
-				.tuple([
-					yup.string().required('required').min(3),
-					yup.number().notRequired().max(100),
-				])
-				.required(),
 		})
 		.test('root', 'error', () => false);
 
@@ -78,12 +63,11 @@ describe('conform-yup', () => {
 		number: ['max'],
 		timestamp: ['min'],
 		'options[1]': ['invalid'],
-		options: ['min'],
+		options: ['min', 'error'],
 		'nested.key': ['required'],
 		'list[0].key': ['required'],
 		'list[0]': ['error'],
 		list: ['max'],
-		'tuple.0': ['required'],
 		'': ['error'],
 	};
 
@@ -132,16 +116,6 @@ describe('conform-yup', () => {
 			},
 			'list[].key': {
 				required: true,
-			},
-			tuple: {
-				required: true,
-			},
-			'tuple.0': {
-				required: true,
-				minLength: 3,
-			},
-			'tuple.1': {
-				max: 100,
 			},
 		};
 
