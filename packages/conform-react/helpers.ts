@@ -340,7 +340,7 @@ export function getTextareaProps<Schema>(
  * Derives the properties of a collection of checkboxes or radio buttons based on the field metadata,
  * including common form control attributes like `key`, `id`, `name`, `form`, `autoFocus`, `aria-invalid`, `aria-describedby` and `required`.
  *
- * @see https://conform.guide/api/react/getTextareaProps
+ * @see https://conform.guide/api/react/getCollectionProps
  * @example
  * ```tsx
  * <fieldset>
