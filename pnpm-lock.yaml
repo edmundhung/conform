@@ -73,6 +73,9 @@ importers:
       rollup-plugin-copy:
         specifier: ^3.4.0
         version: 3.5.0
+      rollup-plugin-typescript2:
+        specifier: ^0.36.0
+        version: 0.36.0(rollup@2.79.1)(typescript@5.3.3)
       typescript:
         specifier: ^5.2.2
         version: 5.3.3
@@ -6134,7 +6137,7 @@ packages:
       '@motionone/easing': 10.16.3
       '@motionone/types': 10.16.3
       '@motionone/utils': 10.16.3
-      tslib: 2.4.0
+      tslib: 2.6.2
     dev: false
 
   /@motionone/dom@10.16.4:
@@ -6148,7 +6151,7 @@ packages:
       '@motionone/types': 10.16.3
       '@motionone/utils': 10.16.3
       hey-listen: 1.0.8
-      tslib: 2.4.0
+      tslib: 2.6.2
     dev: false
 
   /@motionone/easing@10.16.3:
@@ -6169,7 +6172,7 @@ packages:
     dependencies:
       '@motionone/types': 10.16.3
       '@motionone/utils': 10.16.3
-      tslib: 2.4.0
+      tslib: 2.6.2
     dev: false
 
   /@motionone/types@10.16.3:
@@ -6187,7 +6190,7 @@ packages:
     dependencies:
       '@motionone/types': 10.16.3
       hey-listen: 1.0.8
-      tslib: 2.4.0
+      tslib: 2.6.2
     dev: false
 
   /@mui/base@5.0.0-beta.26(@types/react@18.2.42)(react-dom@18.2.0)(react@18.2.0):
@@ -13718,7 +13721,6 @@ packages:
       {
         integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==,
       }
-    dev: false
 
   /compressible@2.0.18:
     resolution:
@@ -16828,7 +16830,6 @@ packages:
       commondir: 1.0.1
       make-dir: 3.1.0
       pkg-dir: 4.2.0
-    dev: false
 
   /find-root@1.1.0:
     resolution:
@@ -16856,7 +16857,6 @@ packages:
     dependencies:
       locate-path: 5.0.0
       path-exists: 4.0.0
-    dev: false
 
   /find-up@5.0.0:
     resolution:
@@ -19931,7 +19931,6 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       p-locate: 4.1.0
-    dev: false
 
   /locate-path@6.0.0:
     resolution:
@@ -20180,7 +20179,6 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       semver: 6.3.1
-    dev: false
 
   /make-dir@4.0.0:
     resolution:
@@ -21794,7 +21792,6 @@ packages:
     engines: { node: '>=6' }
     dependencies:
       p-try: 2.2.0
-    dev: false
 
   /p-limit@3.1.0:
     resolution:
@@ -21833,7 +21830,6 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       p-limit: 2.3.0
-    dev: false
 
   /p-locate@5.0.0:
     resolution:
@@ -21871,7 +21867,6 @@ packages:
         integrity: sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==,
       }
     engines: { node: '>=6' }
-    dev: false
 
   /pac-proxy-agent@7.0.1:
     resolution:
@@ -22219,7 +22214,6 @@ packages:
     engines: { node: '>=8' }
     dependencies:
       find-up: 4.1.0
-    dev: false
 
   /pkg-types@1.0.3:
     resolution:
@@ -24819,6 +24813,24 @@ packages:
       serialize-javascript: 4.0.0
       terser: 5.26.0
     dev: false
+
+  /rollup-plugin-typescript2@0.36.0(rollup@2.79.1)(typescript@5.3.3):
+    resolution:
+      {
+        integrity: sha512-NB2CSQDxSe9+Oe2ahZbf+B4bh7pHwjV5L+RSYpCu7Q5ROuN94F9b6ioWwKfz3ueL3KTtmX4o2MUH2cgHDIEUsw==,
+      }
+    peerDependencies:
+      rollup: '>=1.26.3'
+      typescript: '>=2.4.0'
+    dependencies:
+      '@rollup/pluginutils': 4.2.1
+      find-cache-dir: 3.3.2
+      fs-extra: 10.1.0
+      rollup: 2.79.1
+      semver: 7.5.4
+      tslib: 2.6.2
+      typescript: 5.3.3
+    dev: true
 
   /rollup-pluginutils@2.8.2:
     resolution:

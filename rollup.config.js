@@ -2,11 +2,12 @@ import path from 'node:path';
 import babel from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
+import typescript from 'rollup-plugin-typescript2';
 
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage(name) {
 	let sourceDir = `packages/${name}`;
-	let outputDir = `${sourceDir}`;
+	let outputDir = sourceDir;
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {
@@ -21,6 +22,9 @@ function configurePackage(name) {
 			entryFileNames: '[name].mjs',
 		},
 		plugins: [
+			typescript({
+				tsconfig: `${sourceDir}/tsconfig.json`,
+			}),
 			babel({
 				babelHelpers: 'bundled',
 				exclude: /node_modules/,
@@ -28,12 +32,6 @@ function configurePackage(name) {
 			}),
 			nodeResolve({
 				extensions: ['.ts', '.tsx'],
-			}),
-			copy({
-				targets: [
-					{ src: `README`, dest: sourceDir },
-					{ src: `LICENSE`, dest: sourceDir },
-				],
 			}),
 		],
 	};
@@ -47,6 +45,7 @@ function configurePackage(name) {
 		output: {
 			dir: outputDir,
 			format: 'cjs',
+			entryFileNames: '[name].cjs',
 			preserveModules: true,
 			exports: 'auto',
 		},
@@ -58,6 +57,26 @@ function configurePackage(name) {
 			}),
 			nodeResolve({
 				extensions: ['.ts', '.tsx'],
+			}),
+			copy({
+				targets: [
+					{ src: `README`, dest: outputDir },
+					{ src: `LICENSE`, dest: outputDir },
+					{
+						src: `${outputDir}/*.d.ts`,
+						dest: outputDir,
+						rename(name) {
+							return `${name}.mts`;
+						},
+					},
+					{
+						src: `${outputDir}/*.d.ts`,
+						dest: outputDir,
+						rename(name) {
+							return `${name}.cts`;
+						},
+					},
+				],
 			}),
 		],
 	};
