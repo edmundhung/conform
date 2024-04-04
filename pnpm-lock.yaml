@@ -485,6 +485,9 @@ importers:
       date-fns:
         specifier: ^3.3.1
         version: 3.3.1
+      input-otp:
+        specifier: ^1.2.2
+        version: 1.2.4(react-dom@18.2.0)(react@18.2.0)
       lucide-react:
         specifier: ^0.338.0
         version: 0.338.0(react@18.2.0)
@@ -18127,6 +18130,19 @@ packages:
         integrity: sha512-7NXolsK4CAS5+xvdj5OMMbI962hU/wvwoxk+LWR9Ek9bVtyuuYScDN6eS0rUm6TxApFpw7CX1o4uJzcd4AyD3Q==,
       }
     dev: true
+
+  /input-otp@1.2.4(react-dom@18.2.0)(react@18.2.0):
+    resolution:
+      {
+        integrity: sha512-md6rhmD+zmMnUh5crQNSQxq3keBRYvE3odbr4Qb9g2NWzQv9azi+t1a3X4TBTbh98fsGHgEEJlzbe1q860uGCA==,
+      }
+    peerDependencies:
+      react: ^16.8 || ^17.0 || ^18.0
+      react-dom: ^16.8 || ^17.0 || ^18.0
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+    dev: false
 
   /inquirer@8.2.6:
     resolution:
