@@ -19,7 +19,7 @@ import { z } from 'zod';
 
 const schema = z.object({
   // The preprocess step is required for zod to perform the required check properly
-  // As the value of an empty input is an usually an empty string
+  // as the value of an empty input is usually an empty string
   email: z.preprocess(
     (value) => (value === '' ? undefined : value),
     z.string({ required_error: 'Email is required' }).email('Email is invalid'),
@@ -264,10 +264,10 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function ContactUs() {
 	const lastResult = useActionData<typeof action>();
 	// The useForm hook will return all the metadata we need to render the form
-	// and focus on the first invalid field when the form is submitted
+	// and put focus on the first invalid field when the form is submitted
 	const [form, fields] = useForm({
-		// This not only sync the error from the server
-		// But also used as the default value of the form
+		// This not only syncs the error from the server
+		// But is also used as the default value of the form
 		// in case the document is reloaded for progressive enhancement
 		lastResult,
 

@@ -10,6 +10,7 @@ function getFieldset(form: Locator) {
 		validateMessage: form.locator('button:text("Validate Message")'),
 		updateMessage: form.locator('button:text("Update message")'),
 		updateNumber: form.locator('button:text("Update number")'),
+		updateForm: form.locator('button:text("Update form")'),
 		clearMessage: form.locator('button:text("Clear message")'),
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
@@ -55,6 +56,13 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.number).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
 	await expect(playground.error).toHaveText(['', '', '']);
+
+	await fieldset.updateForm.click();
+	await expect(fieldset.name).toHaveValue('Conform');
+	await expect(fieldset.number).toHaveValue('13579');
+	await expect(fieldset.message).toHaveValue(
+		'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+	);
 }
 
 test.describe('With JS', () => {

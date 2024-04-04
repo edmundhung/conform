@@ -44,6 +44,19 @@ export async function action({ request }: ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, { schema });
 
+	if (
+		submission.status === 'success' &&
+		submission.value.email === 'test@email.registered'
+	) {
+		return json(
+			submission.reply({
+				fieldErrors: {
+					email: ['Email is already registered'],
+				},
+			}),
+		);
+	}
+
 	return json(submission.reply());
 }
 

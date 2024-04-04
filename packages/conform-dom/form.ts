@@ -8,6 +8,7 @@ import {
 	isPrefix,
 	setValue,
 	normalize,
+	formatName,
 } from './formdata';
 import {
 	type FieldElement,
@@ -29,6 +30,7 @@ import {
 	setState,
 	serialize,
 	serializeIntent,
+	root,
 } from './submission';
 
 type BaseCombine<
@@ -110,6 +112,7 @@ export type Constraint = {
 };
 
 export type FormMeta<FormError> = {
+	isValueUpdated: boolean;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
@@ -120,7 +123,10 @@ export type FormMeta<FormError> = {
 	validated: Record<string, boolean>;
 };
 
-export type FormState<FormError> = FormMeta<FormError> & {
+export type FormState<FormError> = Omit<
+	FormMeta<FormError>,
+	'isValueUpdated'
+> & {
 	valid: Record<string, boolean>;
 	dirty: Record<string, boolean>;
 };
@@ -219,6 +225,7 @@ export type FormContext<
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
+	observe(): () => void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -256,6 +263,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
+		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
 		initialValue,
@@ -287,7 +295,7 @@ function getDefaultKey(
 	>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
-				result[formatPaths([...getPaths(key), i])] = generateId();
+				result[formatName(key, i)] = generateId();
 			}
 		}
 
@@ -325,7 +333,8 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'update': {
-			const { name, validated, value } = intent.payload;
+			const { validated, value } = intent.payload;
+			const name = formatName(intent.payload.name, intent.payload.index);
 
 			if (typeof value !== 'undefined') {
 				updateValue(meta, name ?? '', serialize(value));
@@ -360,7 +369,7 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'reset': {
-			const name = intent.payload.name ?? '';
+			const name = formatName(intent.payload.name, intent.payload.index);
 			const value = getValue(meta.defaultValue, name);
 
 			updateValue(meta, name, value);
@@ -380,7 +389,15 @@ function handleIntent<Error>(
 				meta.initialValue = clone(meta.initialValue);
 				meta.key = clone(meta.key);
 
-				setListState(meta.key, intent, generateId);
+				setListState(meta.key, intent, (defaultValue) => {
+					if (!Array.isArray(defaultValue) && !isPlainObject(defaultValue)) {
+						return generateId();
+					}
+
+					return Object.assign(getDefaultKey(defaultValue), {
+						[root]: generateId(),
+					});
+				});
 				setListValue(meta.initialValue, intent);
 			}
 
@@ -407,6 +424,13 @@ function updateValue<Error>(
 	name: string,
 	value: unknown,
 ): void {
+	if (name === '') {
+		meta.initialValue = value as Record<string, unknown>;
+		meta.value = value as Record<string, unknown>;
+		meta.key = getDefaultKey(value as Record<string, unknown>);
+		return;
+	}
+
 	meta.initialValue = clone(meta.initialValue);
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
@@ -772,8 +796,13 @@ export function createFormContext<
 			submitter,
 		});
 
-		if (submission.status !== 'success' && submission.error !== null) {
-			report(submission.reply());
+		if (submission.status === 'success' || submission.error !== null) {
+			const result = submission.reply();
+
+			report({
+				...result,
+				status: result.status !== 'success' ? result.status : undefined,
+			});
 		}
 
 		return { ...result, submission };
@@ -787,6 +816,7 @@ export function createFormContext<
 			!form ||
 			!isFieldElement(element) ||
 			element.form !== form ||
+			!element.form.isConnected ||
 			element.name === ''
 		) {
 			return null;
@@ -804,8 +834,20 @@ export function createFormContext<
 		const validated = meta.validated[element.name];
 
 		return validated
-			? shouldRevalidate === eventName
+			? shouldRevalidate === eventName &&
+					(eventName === 'onInput' || meta.isValueUpdated)
 			: shouldValidate === eventName;
+	}
+
+	function updateFormValue(form: HTMLFormElement) {
+		const formData = new FormData(form);
+		const result = getSubmissionContext(formData);
+
+		updateFormMeta({
+			...meta,
+			isValueUpdated: true,
+			value: result.payload,
+		});
 	}
 
 	function onInput(event: Event) {
@@ -816,13 +858,7 @@ export function createFormContext<
 		}
 
 		if (event.defaultPrevented || !willValidate(element, 'onInput')) {
-			const formData = new FormData(element.form);
-			const result = getSubmissionContext(formData);
-
-			updateFormMeta({
-				...meta,
-				value: result.payload,
-			});
+			updateFormValue(element.form);
 		} else {
 			dispatch({
 				type: 'validate',
@@ -883,6 +919,7 @@ export function createFormContext<
 		}, {});
 		const update: FormMeta<FormError> = {
 			...meta,
+			isValueUpdated: false,
 			submissionStatus: result.status,
 			value: result.initialValue,
 			validated: {
@@ -915,7 +952,7 @@ export function createFormContext<
 		Object.assign(latestOptions, options);
 
 		if (latestOptions.formId !== currentFormId) {
-			getFormElement()?.reset();
+			updateFormMeta(createFormMeta(latestOptions, true));
 		} else if (options.lastResult && options.lastResult !== currentResult) {
 			report(options.lastResult);
 		}
@@ -982,6 +1019,47 @@ export function createFormContext<
 		});
 	}
 
+	function observe() {
+		const observer = new MutationObserver((mutations) => {
+			const form = getFormElement();
+
+			if (!form) {
+				return;
+			}
+
+			for (const mutation of mutations) {
+				const nodes =
+					mutation.type === 'childList'
+						? [...mutation.addedNodes, ...mutation.removedNodes]
+						: [mutation.target];
+
+				for (const node of nodes) {
+					const element = isFieldElement(node)
+						? node
+						: node instanceof HTMLElement
+						? node.querySelector<FieldElement>('input,select,textarea')
+						: null;
+
+					if (element?.form === form) {
+						updateFormValue(form);
+						return;
+					}
+				}
+			}
+		});
+
+		observer.observe(document, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ['form', 'name'],
+		});
+
+		return () => {
+			observer.disconnect();
+		};
+	}
+
 	return {
 		get formId() {
 			return latestOptions.formId;
@@ -1000,5 +1078,6 @@ export function createFormContext<
 		subscribe,
 		getState,
 		getSerializedState,
+		observe,
 	};
 }

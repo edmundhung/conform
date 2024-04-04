@@ -7,7 +7,7 @@ import {
 import { useLoaderData } from '@remix-run/react';
 import { collectHeadings, parse } from '~/markdoc';
 import { Markdown } from '~/components';
-import { formatTitle, getFileContent } from '~/util';
+import { getDocPath, formatTitle, getFileContent } from '~/util';
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
 	return loaderHeaders;
@@ -22,7 +22,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 };
 
 export async function loader({ params, context }: LoaderFunctionArgs) {
-	const file = `docs/${params['*']}.md`;
+	const file = `${getDocPath(context)}/${params['*']}.md`;
 	const readme = await getFileContent(context, file);
 	const content = parse(readme);
 

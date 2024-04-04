@@ -6,6 +6,7 @@ import {
 	setValue,
 	isPrefix,
 	getValue,
+	formatName,
 } from './formdata';
 import { invariant } from './util';
 
@@ -164,7 +165,7 @@ export function parse<FormValue, FormError>(
 	if (intent) {
 		switch (intent.type) {
 			case 'update': {
-				const { name } = intent.payload;
+				const name = formatName(intent.payload.name, intent.payload.index);
 				const value = serialize(intent.payload.value);
 
 				if (typeof value !== 'undefined') {
@@ -178,7 +179,7 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'reset': {
-				const { name } = intent.payload;
+				const name = formatName(intent.payload.name, intent.payload.index);
 
 				if (name) {
 					setValue(context.payload, name, () => undefined);
@@ -187,7 +188,16 @@ export function parse<FormValue, FormError>(
 				}
 				break;
 			}
-			case 'insert':
+			case 'insert': {
+				setListValue(context.payload, {
+					type: intent.type,
+					payload: {
+						...intent.payload,
+						defaultValue: serialize(intent.payload.defaultValue),
+					},
+				});
+				break;
+			}
 			case 'remove':
 			case 'reorder': {
 				setListValue(context.payload, intent);
@@ -299,18 +309,34 @@ export type ValidateIntent<Schema = any> = {
 
 export type ResetIntent<Schema = any> = {
 	type: 'reset';
-	payload: {
-		name?: FieldName<Schema>;
-	};
+	payload:
+		| {
+				name?: FieldName<Schema>;
+				index?: never;
+		  }
+		| {
+				name: FieldName<Schema>;
+				index: Schema extends Array<unknown> ? number : never;
+		  };
 };
 
 export type UpdateIntent<Schema = unknown> = {
 	type: 'update';
-	payload: {
-		name?: FieldName<Schema>;
-		value?: NonNullable<DefaultValue<Schema>>;
-		validated?: boolean;
-	};
+	payload:
+		| {
+				name?: FieldName<Schema>;
+				index?: never;
+				value?: NonNullable<DefaultValue<Schema>>;
+				validated?: boolean;
+		  }
+		| {
+				name: FieldName<Schema>;
+				index: Schema extends Array<unknown> ? number : never;
+				value?: NonNullable<
+					DefaultValue<Schema extends Array<infer Item> ? Item : unknown>
+				>;
+				validated?: boolean;
+		  };
 };
 
 export type RemoveIntent<Schema extends Array<any> = any> = {
@@ -386,7 +412,7 @@ export function updateList(
 			list.splice(
 				intent.payload.index ?? list.length,
 				0,
-				serialize(intent.payload.defaultValue),
+				intent.payload.defaultValue,
 			);
 			break;
 		case 'remove':
@@ -413,13 +439,16 @@ export function setListValue(
 	});
 }
 
+/**
+ * A placeholder symbol for the root value of a nested object
+ */
+export const root = Symbol.for('root');
+
 export function setState(
 	state: Record<string, unknown>,
 	name: string,
 	valueFn: (value: unknown) => unknown,
 ): void {
-	const root = Symbol.for('root');
-
 	// The keys are sorted in desc so that the root value is handled last
 	const keys = Object.keys(state).sort((prev, next) =>
 		next.localeCompare(prev),
@@ -471,7 +500,7 @@ export function setState(
 export function setListState(
 	state: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
-	getDefaultValue?: () => string,
+	getDefaultValue?: (defaultValue: any) => any,
 ): void {
 	setState(state, intent.payload.name, (value) => {
 		const list = value ?? [];
@@ -482,7 +511,7 @@ export function setListState(
 					type: intent.type,
 					payload: {
 						...intent.payload,
-						defaultValue: getDefaultValue?.(),
+						defaultValue: getDefaultValue?.(intent.payload.defaultValue),
 					},
 				});
 				break;

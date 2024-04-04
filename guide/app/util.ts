@@ -1,6 +1,31 @@
 import type { Endpoints } from '@octokit/types';
 import type { AppLoadContext } from '@remix-run/cloudflare';
 
+interface Language {
+	code: string;
+	label: string;
+	docPath: string;
+	domain: string;
+	isDecodeUtf8: boolean;
+}
+
+export const allLanguages: Language[] = [
+	{
+		code: 'en',
+		label: 'en',
+		docPath: 'docs',
+		domain: 'conform.guide',
+		isDecodeUtf8: false,
+	},
+	{
+		code: 'ja',
+		label: 'ja',
+		docPath: 'docs/ja',
+		domain: 'ja.conform.guide',
+		isDecodeUtf8: true,
+	},
+];
+
 export function invariant(
 	expectedCondition: boolean,
 	message: string,
@@ -11,10 +36,12 @@ export function invariant(
 }
 
 export function getMetadata(context: AppLoadContext) {
+	const branch = getBranch(context);
 	return {
 		owner: 'edmundhung',
 		repo: 'conform',
-		ref: getBranch(context),
+		ref: branch,
+		language: getLanguage(context.env.LANGUAGE),
 	};
 }
 
@@ -34,11 +61,37 @@ export function getCache(context: AppLoadContext): KVNamespace {
 	return context.env.CACHE;
 }
 
+export const getDocPath = (context: AppLoadContext) => {
+	const { docPath } = getMetadata(context).language;
+	return docPath;
+};
+
+export function getLanguageCode(url: string): string | undefined {
+	const { hostname } = new URL(url);
+	const language = allLanguages.find((lang) => lang.domain === hostname);
+
+	return language?.code;
+}
+
+export function getLanguage(code: string | undefined): Language {
+	const language = allLanguages.find((lang) => lang.code === code);
+	return language ?? allLanguages[0]; // default to English
+}
+
+function base64DecodeUtf8(base64String: string) {
+	var binaryString = atob(base64String);
+	var charCodeArray = Array.from(binaryString).map((char) =>
+		char.charCodeAt(0),
+	);
+	var uintArray = new Uint8Array(charCodeArray);
+	return new TextDecoder('utf-8').decode(uintArray);
+}
+
 export async function getFileContent(
 	context: AppLoadContext,
 	path: string,
 ): Promise<string> {
-	const { ref, owner, repo } = getMetadata(context);
+	const { ref, owner, repo, language } = getMetadata(context);
 	const cache = getCache(context);
 	const cacheKey = `${ref}/${path}`;
 
@@ -54,7 +107,10 @@ export async function getFileContent(
 			repo,
 		});
 
-		content = atob(file.content);
+		// Japanese characters including UTF-8 are garbled, so convert to binary string before decoding
+		content = language.isDecodeUtf8
+			? base64DecodeUtf8(file.content)
+			: atob(file.content);
 		context.waitUntil(
 			cache.put(cacheKey, content, {
 				expirationTtl: 3600,

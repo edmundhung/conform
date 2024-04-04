@@ -74,11 +74,13 @@ export function useForm<
 	);
 
 	useSafeLayoutEffect(() => {
+		const disconnect = context.observe();
 		document.addEventListener('input', context.onInput);
 		document.addEventListener('focusout', context.onBlur);
 		document.addEventListener('reset', context.onReset);
 
 		return () => {
+			disconnect();
 			document.removeEventListener('input', context.onInput);
 			document.removeEventListener('focusout', context.onBlur);
 			document.removeEventListener('reset', context.onReset);
@@ -90,9 +92,9 @@ export function useForm<
 	});
 
 	const subjectRef = useSubjectRef();
-	const state = useFormState(context, subjectRef);
+	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
-	const form = getFormMetadata(formId, state, subjectRef, context, noValidate);
+	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
 
 	return [form, form.getFieldset()];
 }
@@ -101,23 +103,17 @@ export function useFormMetadata<
 	Schema extends Record<string, any>,
 	FormError = string[],
 >(
-	formId: FormId<Schema, FormError>,
+	formId?: FormId<Schema, FormError>,
 	options: {
 		defaultNoValidate?: boolean;
 	} = {},
 ): FormMetadata<Schema, FormError> {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(formId);
-	const state = useFormState(context, subjectRef);
+	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 
-	return getFormMetadata(
-		context.formId,
-		state,
-		subjectRef,
-		context,
-		noValidate,
-	);
+	return getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
 }
 
 export function useField<
@@ -135,20 +131,14 @@ export function useField<
 ] {
 	const subjectRef = useSubjectRef();
 	const context = useFormContext(options.formId);
-	const state = useFormState(context, subjectRef);
+	const stateSnapshot = useFormState(context, subjectRef);
 	const field = getFieldMetadata<FieldSchema, FormSchema, FormError>(
-		context.formId,
-		state,
+		context,
 		subjectRef,
+		stateSnapshot,
 		name,
 	);
-	const form = getFormMetadata(
-		context.formId,
-		state,
-		subjectRef,
-		context,
-		false,
-	);
+	const form = getFormMetadata(context, subjectRef, stateSnapshot, false);
 
 	return [field, form];
 }

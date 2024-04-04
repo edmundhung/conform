@@ -4,6 +4,7 @@ import '@cloudflare/workers-types';
 
 interface Env {
 	ENVIRONMENT?: 'development';
+	LANGUAGE?: string;
 	GITHUB_ACCESS_TOKEN?: string;
 	CF_PAGES_BRANCH?: string;
 	CACHE: KVNamespace;
