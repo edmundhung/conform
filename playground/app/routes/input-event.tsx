@@ -3,11 +3,11 @@ import {
 	useForm,
 	unstable_useControl as useControl,
 } from '@conform-to/react';
-import { type LoaderArgs } from '@remix-run/node';
+import { type LoaderFunctionArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 import { type FormEvent, useRef, useState } from 'react';
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return {
@@ -55,11 +55,12 @@ export default function Example() {
 			onBlur={log}
 		>
 			<div className="sticky top-0 pt-4 pb-8 bg-gray-100 border-b">
-				<label>Type here</label>
+				<label htmlFor="native-input">Type here</label>
 				<div className="flex flex-row gap-4">
 					<input
 						className="p-2 flex-1"
 						name="native-input"
+						id="native-input"
 						type="text"
 						defaultValue={fields['native-input'].initialValue ?? ''}
 						ref={inputRef}
@@ -108,9 +109,7 @@ export default function Example() {
 				<div className="flex-1">
 					base-input logs
 					<ul id="base-input">
-						{logsByName['base-input']?.map((log, i) => (
-							<li key={i}>{log}</li>
-						))}
+						{logsByName['base-input']?.map((log, i) => <li key={i}>{log}</li>)}
 					</ul>
 				</div>
 			</div>

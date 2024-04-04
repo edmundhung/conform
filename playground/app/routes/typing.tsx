@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -25,15 +26,8 @@ interface Group {
 }
 
 type Schema =
-	| {
-			intent: 'foo';
-			tasks: Array<Task>;
-			date: Date;
-	  }
-	| {
-			intent: 'bar';
-			filter: Group;
-	  };
+	| { intent: 'foo'; tasks: Array<Task>; date: Date }
+	| { intent: 'bar'; filter: Group };
 
 function isFormMetadataType0(meta: FormMetadata | undefined): void {
 	// eslint-disable-next-line no-console
@@ -66,6 +60,7 @@ function isFieldMetadataType1<Schema>(
 	console.log(meta);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isFieldMetadataType2<Schema, FormSchema extends Record<string, any>>(
 	meta: FieldMetadata<Schema, FormSchema> | undefined,
 ): void {
@@ -75,6 +70,7 @@ function isFieldMetadataType2<Schema, FormSchema extends Record<string, any>>(
 
 function isFieldMetadataType3<
 	Schema,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	FormSchema extends Record<string, any>,
 	FormError,
 >(meta: FieldMetadata<Schema, FormSchema, FormError> | undefined): void {
@@ -103,11 +99,11 @@ export default function Example() {
 	>(intent);
 	isFieldMetadataType2<string, Schema>(intent);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<number>(intent);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType2<string, { filter: Group }>(intent);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType3<string, {}, string>(intent);
 
 	const tasks = fields.tasks;
@@ -117,9 +113,9 @@ export default function Example() {
 	isFieldMetadataType1<Task[] | undefined>(tasks);
 	isFieldMetadataType1<Array<Task | undefined>>(tasks);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Task>(tasks);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Array<string>>(tasks);
 
 	const date = fields.date;
@@ -128,7 +124,7 @@ export default function Example() {
 	isFieldMetadataType1<Date>(date);
 	isFieldMetadataType1<Date | undefined>(date);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	date.getFieldset();
 
 	const tasksList = tasks.getFieldList();
@@ -137,9 +133,9 @@ export default function Example() {
 	isFieldMetadataType1<Task>(tasksList[0]);
 	isFieldMetadataType1<Task | undefined>(tasksList[0]);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<undefined>(tasksList[0]);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Task[]>(tasksList[0]);
 
 	const taskFieldset = tasksList[0]?.getFieldset();
@@ -151,9 +147,9 @@ export default function Example() {
 	isFieldMetadataType1<boolean>(taskFieldset?.completed);
 	isFieldMetadataType1<boolean | '' | undefined>(taskFieldset?.completed);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<string>(taskFieldset?.completed);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<boolean>(taskFieldset?.content);
 
 	const filter = fields.filter;
@@ -174,11 +170,11 @@ export default function Example() {
 		filterFieldset.conditions,
 	);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Rule | Group>(filterFieldset.conditions);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Array<Rule>>(filterFieldset.conditions);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Array<Group>>(filterFieldset.conditions);
 
 	const conditionsList = filterFieldset.conditions.getFieldList();
@@ -186,10 +182,10 @@ export default function Example() {
 	isFieldMetadataType0(conditionsList[0]);
 	isFieldMetadataType1<Rule | Group | undefined>(conditionsList[0]);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Rule>(conditionsList[0]);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Group>(conditionsList[0]);
 
 	const ruleFieldset = conditionsList[0]?.getFieldset();
@@ -211,9 +207,9 @@ export default function Example() {
 	isFieldMetadataType0(innerConditionsList?.[0]);
 	isFieldMetadataType1<Rule | Group | undefined>(innerConditionsList?.[0]);
 
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Rule>(innerConditionsList?.[0]);
-	// @ts-expect-error
+	// @ts-expect-error - testing
 	isFieldMetadataType1<Group>(innerConditionsList?.[0]);
 
 	return (

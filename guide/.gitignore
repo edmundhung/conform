@@ -1,11 +1,8 @@
 node_modules
 
-/.wrangler
 /.cache
-/functions/version.txt
-/functions/\[\[path\]\].js
-/functions/\[\[path\]\].js.map
-/functions/metafile.*
-/public/build
-/public/docs
+/build
 .env
+
+.wrangler
+.dev.vars

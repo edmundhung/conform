@@ -3,54 +3,24 @@
 	"name": "conform",
 	"license": "MIT",
 	"scripts": {
-		"build": "pnpm run cleanup && run-s build:*",
-		"build:js": "rollup -c",
-		"build:ts": "tsc -b",
-		"dev": "run-p dev:*",
-		"dev:js": "pnpm run build:js --watch",
-		"dev:ts": "pnpm run build:ts --watch",
-		"dev:playground": "pnpm --filter ./playground run dev",
-		"guide": "pnpm --filter ./guide run dev ",
-		"cleanup": "rimraf --glob ./packages/*/*.{d.ts,cjs,mjs,js,tsbuildinfo}",
-		"test": "run-p test:*",
-		"test:api": "vitest --watch",
-		"test:e2e": "playwright test --ui",
-		"lint": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx .",
-		"prepare": "husky install"
+		"dev": "pnpm --recursive --parallel --stream run dev",
+		"guide": "pnpm --filter ./guide",
+		"playground": "pnpm --filter ./playground",
+		"prepare": "husky",
+		"test:api": "pnpm playground test:api",
+		"test:e2e": "pnpm playground test:e2e",
+		"test": "pnpm run /test:.*/"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.17.8",
-		"@babel/preset-env": "^7.20.2",
-		"@babel/preset-react": "^7.18.6",
-		"@babel/preset-typescript": "^7.20.2",
 		"@conform-to/dom": "workspace:*",
 		"@conform-to/react": "workspace:*",
-		"@conform-to/validitystate": "workspace:*",
 		"@conform-to/yup": "workspace:*",
 		"@conform-to/zod": "workspace:*",
-		"@playwright/test": "^1.40.1",
-		"@remix-run/eslint-config": "^1.19.3",
-		"@remix-run/node": "^1.19.3",
-		"@rollup/plugin-babel": "^5.3.1",
-		"@rollup/plugin-node-resolve": "^13.3.0",
-		"@types/node": "^20.10.4",
-		"husky": "^8.0.3",
-		"lint-staged": "^13.1.2",
-		"npm-run-all": "^4.1.5",
-		"prettier": "^2.8.4",
-		"rimraf": "^5.0.1",
-		"rollup": "^2.79.1",
-		"rollup-plugin-copy": "^3.4.0",
-		"typescript": "^5.2.2",
-		"vitest": "^1.1.0",
-		"yup": "^0.32.11",
-		"zod": "3.21.4"
+		"husky": "9.0.11",
+		"lint-staged": "15.2.2",
+		"prettier": "3.2.5"
 	},
 	"engines": {
 		"node": ">=20"
-	},
-	"lint-staged": {
-		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",
-		"*.{js,jsx,ts,tsx,css,json,yaml}": "prettier --ignore-path .gitignore --write"
 	}
 }

@@ -1,12 +1,12 @@
 import type { RenderableTreeNodes } from '@markdoc/markdoc';
-import { renderers } from '@markdoc/markdoc';
+import * as Markdoc from '@markdoc/markdoc';
 import {
 	Link as RouterLink,
 	useLocation,
 	useRouteLoaderData,
 } from '@remix-run/react';
 import * as React from 'react';
-import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import { PrismLight as ReactSyntaxHighlighter } from 'react-syntax-highlighter';
 import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import darcula from 'react-syntax-highlighter/dist/esm/styles/prism/darcula';
@@ -329,7 +329,7 @@ export function Code({ children }: { children: React.ReactNode }) {
 export function Markdown({ content }: { content: RenderableTreeNodes }) {
 	return (
 		<section className="py-4">
-			{renderers.react(content, React, {
+			{Markdoc.renderers.react(content, React, {
 				components: {
 					Aside,
 					Sandbox,

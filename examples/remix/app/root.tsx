@@ -1,20 +1,19 @@
-import type { V2_MetaFunction, LinksFunction } from '@remix-run/node';
+import type { MetaFunction, LinksFunction } from '@remix-run/node';
 import {
 	Link,
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
-import stylesUrl from '~/styles.css';
+import stylesUrl from '~/styles.css?url';
 
-export let links: LinksFunction = () => {
+export const links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export const meta: V2_MetaFunction = () => [
+export const meta: MetaFunction = () => [
 	{
 		charset: 'utf-8',
 		title: 'Remix - Conform Example',
@@ -58,7 +57,6 @@ export default function App() {
 				</main>
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
 	);

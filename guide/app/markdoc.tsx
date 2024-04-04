@@ -1,13 +1,10 @@
-import {
-	type RenderableTreeNode,
-	parse as markdocParse,
-	transform as markdocTransform,
-	Tag,
-} from '@markdoc/markdoc';
+import * as Markdoc from '@markdoc/markdoc';
+
 import { type Menu } from '~/components';
 
 function generateID(
-	children: RenderableTreeNode[],
+	children: Markdoc.RenderableTreeNode[],
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	attributes: Record<string, any>,
 ) {
 	if (attributes.id && typeof attributes.id === 'string') {
@@ -16,7 +13,7 @@ function generateID(
 
 	return children
 		.flatMap((child) => {
-			if (child instanceof Tag) {
+			if (child instanceof Markdoc.Tag) {
 				return child.children;
 			}
 			return [child];
@@ -35,8 +32,8 @@ export function parse(markdown: string) {
 			'{% details summary="$1" %}$2{% /details %}',
 		)
 		.replace(/<!-- (\/?(aside|sandbox)( \w+=".+")*) -->/g, '{% $1 %}');
-	const ast = markdocParse(content);
-	const node = markdocTransform(ast, {
+	const ast = Markdoc.parse(content);
+	const node = Markdoc.transform(ast, {
 		nodes: {
 			fence: {
 				render: 'Fence',
@@ -53,7 +50,7 @@ export function parse(markdown: string) {
 					const attributes = node.transformAttributes(config);
 					const children = node.transformChildren(config);
 
-					return new Tag(
+					return new Markdoc.Tag(
 						`Heading`,
 						{
 							...attributes,
@@ -89,7 +86,7 @@ export function parse(markdown: string) {
 				transform(node) {
 					const { content, ...attributes } = node.attributes;
 
-					return new Tag('Code', attributes, [content]);
+					return new Markdoc.Tag('Code', attributes, [content]);
 				},
 			},
 			strong: {
@@ -133,11 +130,11 @@ export function parse(markdown: string) {
 }
 
 export function collectHeadings(
-	node: RenderableTreeNode,
+	node: Markdoc.RenderableTreeNode,
 	level = 1,
 	menu: Menu = { title: '', links: [] },
 ): Menu {
-	if (node instanceof Tag) {
+	if (node instanceof Markdoc.Tag) {
 		if (node.name === 'Heading') {
 			const title = Array.isArray(node.children) ? node.children[0] : null;
 

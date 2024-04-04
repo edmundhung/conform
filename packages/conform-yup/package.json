@@ -4,17 +4,22 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "1.1.0-pre.0",
-	"main": "index.js",
-	"module": "index.mjs",
-	"types": "index.d.ts",
+	"type": "module",
+	"main": "lib/index.cjs",
+	"module": "lib/index.js",
+	"types": "lib/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./index.d.ts",
-			"module": "./index.mjs",
-			"import": "./index.mjs",
-			"require": "./index.js",
-			"default": "./index.mjs"
+			"types": "./lib/index.d.ts",
+			"module": "./lib/index.js",
+			"import": "./lib/index.js",
+			"require": "./lib/index.cjs",
+			"default": "./lib/index.js"
 		}
+	},
+	"scripts": {
+		"dev": "vite build --watch",
+		"prepare": "vite build"
 	},
 	"repository": {
 		"type": "git",
@@ -24,12 +29,16 @@
 	"bugs": {
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
+	"dependencies": {
+		"@conform-to/dom": "workspace:*"
+	},
 	"peerDependencies": {
-		"@conform-to/dom": "1.1.0-pre.0",
 		"yup": ">=0.32.0"
 	},
 	"devDependencies": {
-		"yup": "^0.32.11"
+		"vite": "5.2.8",
+		"vite-plugin-dts": "3.8.1",
+		"yup": "0.32.11"
 	},
 	"keywords": [
 		"constraint-validation",

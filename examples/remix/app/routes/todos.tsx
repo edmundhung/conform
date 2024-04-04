@@ -5,7 +5,7 @@ import {
 	getFieldsetProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
+import type { ActionFunctionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
@@ -20,7 +20,7 @@ const todosSchema = z.object({
 	tasks: z.array(taskSchema).nonempty(),
 });
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, {
 		schema: todosSchema,
@@ -47,10 +47,10 @@ export default function Example() {
 	return (
 		<Form method="post" {...getFormProps(form)}>
 			<div>
-				<label>Title</label>
+				<label htmlFor={fields.title.id}>Title</label>
 				<input
-					className={!fields.title.valid ? 'error' : ''}
 					{...getInputProps(fields.title, { type: 'text' })}
+					className={!fields.title.valid ? 'error' : ''}
 				/>
 				<div>{fields.title.errors}</div>
 			</div>

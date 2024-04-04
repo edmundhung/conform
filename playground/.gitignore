@@ -2,6 +2,5 @@ node_modules
 
 /.cache
 /build
-/public/build
-/app/styles.css
 .env
+/test-results

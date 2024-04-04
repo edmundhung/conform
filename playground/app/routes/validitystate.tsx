@@ -5,7 +5,11 @@ import {
 	defaultFormatError,
 	getError,
 } from '@conform-to/validitystate';
-import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
+import {
+	json,
+	type ActionFunctionArgs,
+	type LoaderFunctionArgs,
+} from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 import { Playground } from '~/components';
@@ -23,6 +27,7 @@ function getSecret(url: URL) {
 }
 
 function configureFormatError(secret: string | null) {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return (args: FormatErrorArgs<{ field: any }>): string[] => {
 		const error = defaultFormatError(args);
 
@@ -39,7 +44,7 @@ function configureFormatError(secret: string | null) {
 	};
 }
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return json({
@@ -48,7 +53,7 @@ export async function loader({ request }: LoaderArgs) {
 	});
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const url = new URL(request.url);
 	const secret = getSecret(url);
 	const formData = await request.formData();
@@ -115,12 +120,16 @@ export default function Example() {
 			<Playground title="Validity State" result={submission}>
 				<div className="mb-4">
 					<div>
-						<label className="block text-sm font-medium text-gray-700">
+						<label
+							htmlFor="field"
+							className="block text-sm font-medium text-gray-700"
+						>
 							Field
 						</label>
 						{constraint.type === 'checkbox' || constraint.type === 'radio' ? (
 							<input
 								name="field"
+								id="field"
 								defaultChecked={
 									(constraint.value ?? 'on') === submission?.payload.field
 								}

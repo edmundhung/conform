@@ -5,7 +5,6 @@ import type {
 } from '@remix-run/cloudflare';
 import {
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
@@ -16,9 +15,9 @@ import {
 import { json } from '@remix-run/cloudflare';
 import { Guide } from '~/layout';
 import { getMetadata } from '~/util';
-import stylesUrl from '~/styles.css';
+import stylesUrl from '~/styles.css?url';
 
-export let links: LinksFunction = () => {
+export const links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
@@ -34,29 +33,25 @@ export function ErrorBoundary() {
 	const error = useRouteError();
 
 	return (
-		<Document>
-			<div className="flex flex-col h-screen items-center justify-center p-4">
-				<h1 className="text-3xl font-medium tracking-wider">
-					{isRouteErrorResponse(error)
-						? `${error.status} ${error.statusText}`
-						: error?.toString() ?? 'Unknown error'}
-				</h1>
-			</div>
-		</Document>
+		<div className="flex flex-col h-screen items-center justify-center p-4">
+			<h1 className="text-3xl font-medium tracking-wider">
+				{isRouteErrorResponse(error)
+					? `${error.status} ${error.statusText}`
+					: error?.toString() ?? 'Unknown error'}
+			</h1>
+		</div>
 	);
 }
 
 export default function App() {
 	return (
-		<Document>
-			<Guide>
-				<Outlet />
-			</Guide>
-		</Document>
+		<Guide>
+			<Outlet />
+		</Guide>
 	);
 }
 
-function Document({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en">
 			<head>
@@ -74,7 +69,6 @@ function Document({ children }: { children: React.ReactNode }) {
 				{children}
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
 	);

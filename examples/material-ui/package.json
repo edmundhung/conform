@@ -2,19 +2,19 @@
 	"name": "@conform-example/material-ui",
 	"private": true,
 	"dependencies": {
-		"@conform-to/react": "1.1.0-pre.0",
-		"@emotion/react": "^11.10.0",
-		"@emotion/styled": "^11.10.0",
-		"@mui/material": "^5.10.2",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
+		"@conform-to/react": "workspace:*",
+		"@emotion/react": "11.11.4",
+		"@emotion/styled": "11.11.5",
+		"@mui/material": "5.15.15",
+		"react": "18.2.0",
+		"react-dom": "18.2.0",
 		"react-scripts": "5.0.1"
 	},
 	"devDependencies": {
-		"@types/node": "^16.18.14",
-		"@types/react": "^18.0.28",
-		"@types/react-dom": "^18.0.11",
-		"typescript": "^4.9.5"
+		"@types/node": "20.12.4",
+		"@types/react": "18.2.74",
+		"@types/react-dom": "18.2.24",
+		"typescript": "5.4.4"
 	},
 	"scripts": {
 		"start": "react-scripts start",

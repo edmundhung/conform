@@ -1,15 +1,14 @@
 import type { FieldMetadata } from '@conform-to/react';
-import type { ReactNode } from 'react';
 
 interface PlaygroundProps {
 	title: string;
-	description?: ReactNode;
+	description?: React.ReactNode;
 	form?: string;
 	result?: Record<string, unknown>;
 	formAction?: string;
 	formMethod?: string;
 	formEncType?: string;
-	children?: ReactNode;
+	children?: React.ReactNode;
 }
 
 export function Playground({
@@ -79,8 +78,9 @@ export function Playground({
 interface FieldProps {
 	label: string;
 	inline?: boolean;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	meta?: FieldMetadata<any, any>;
-	children: ReactNode;
+	children: React.ReactNode;
 }
 
 export function Field({ label, inline, meta, children }: FieldProps) {

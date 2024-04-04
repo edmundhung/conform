@@ -1,14 +1,22 @@
 {
+	"include": [
+		"src",
+	],
 	"compilerOptions": {
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"target": "ES2022",
-		"module": "ES2022",
+		"lib": ["DOM", "DOM.Iterable", "ES2022"],
+		"types": ["vite/client"],
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"module": "ESNext",
 		"moduleResolution": "Bundler",
-		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+		"target": "ES2022",
 		"strict": true,
-		"declaration": true,
-		"emitDeclarationOnly": true,
-		"composite": true,
-		"skipLibCheck": true
+		"allowJs": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+
+		// Vite takes care of building everything, not tsc.
+		"noEmit": true
 	}
 }

@@ -1,7 +1,7 @@
 import type { Intent } from '@conform-to/react';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parseWithZod, conformZodMessage } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
+import type { ActionFunctionArgs } from '@remix-run/node';
 import { json, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
@@ -73,7 +73,7 @@ function createSchema(
 		);
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = await parseWithZod(formData, {
 		schema: (intent) =>

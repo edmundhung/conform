@@ -11,7 +11,7 @@ import {
 	getTextareaProps,
 } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { memo, useRef } from 'react';
@@ -32,7 +32,7 @@ const schema = z
 		}
 	});
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return {
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderArgs) {
 	};
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithZod(formData, {
 		schema,
@@ -155,6 +155,7 @@ const FormMetadata = memo(function FormMetadata({
 	subject,
 	strict,
 }: {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	subject: keyof FormMetadata<Record<string, any>>;
 	strict: boolean;
 }) {

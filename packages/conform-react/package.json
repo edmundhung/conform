@@ -4,17 +4,22 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "1.1.0-pre.0",
-	"main": "index.js",
-	"module": "index.mjs",
-	"types": "index.d.ts",
+	"type": "module",
+	"main": "lib/index.cjs",
+	"module": "lib/index.js",
+	"types": "lib/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./index.d.ts",
-			"module": "./index.mjs",
-			"import": "./index.mjs",
-			"require": "./index.js",
-			"default": "./index.mjs"
+			"types": "./lib/index.d.ts",
+			"module": "./lib/index.js",
+			"import": "./lib/index.js",
+			"require": "./lib/index.cjs",
+			"default": "./lib/index.js"
 		}
+	},
+	"scripts": {
+		"dev": "vite build --watch",
+		"prepare": "vite build"
 	},
 	"repository": {
 		"type": "git",
@@ -30,11 +35,13 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "1.1.0-pre.0"
+		"@conform-to/dom": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/react": "^18.2.43",
-		"react": "^18.2.0"
+		"@types/react": "18.2.74",
+		"react": "18.2.0",
+		"vite": "5.2.8",
+		"vite-plugin-dts": "3.8.1"
 	},
 	"peerDependencies": {
 		"react": ">=18"

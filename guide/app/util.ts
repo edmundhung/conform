@@ -41,7 +41,7 @@ export function getMetadata(context: AppLoadContext) {
 		owner: 'edmundhung',
 		repo: 'conform',
 		ref: branch,
-		language: getLanguage(context.env.LANGUAGE),
+		language: getLanguage(context.cloudflare.env.LANGUAGE),
 	};
 }
 
@@ -50,15 +50,15 @@ export function getEnv(context: AppLoadContext) {
 }
 
 export function getGitHubToken(context: AppLoadContext): string | undefined {
-	return context.env.GITHUB_ACCESS_TOKEN;
+	return context.cloudflare.env.GITHUB_ACCESS_TOKEN;
 }
 
 export function getBranch(context: AppLoadContext): string {
-	return context.env.CF_PAGES_BRANCH ?? 'main';
+	return context.cloudflare.env.CF_PAGES_BRANCH ?? 'main';
 }
 
 export function getCache(context: AppLoadContext): KVNamespace {
-	return context.env.CACHE;
+	return context.cloudflare.env.CACHE;
 }
 
 export const getDocPath = (context: AppLoadContext) => {
@@ -79,11 +79,11 @@ export function getLanguage(code: string | undefined): Language {
 }
 
 function base64DecodeUtf8(base64String: string) {
-	var binaryString = atob(base64String);
-	var charCodeArray = Array.from(binaryString).map((char) =>
+	const binaryString = atob(base64String);
+	const charCodeArray = Array.from(binaryString).map((char) =>
 		char.charCodeAt(0),
 	);
-	var uintArray = new Uint8Array(charCodeArray);
+	const uintArray = new Uint8Array(charCodeArray);
 	return new TextDecoder('utf-8').decode(uintArray);
 }
 
@@ -111,7 +111,7 @@ export async function getFileContent(
 		content = language.isDecodeUtf8
 			? base64DecodeUtf8(file.content)
 			: atob(file.content);
-		context.waitUntil(
+		context.cloudflare.ctx.waitUntil(
 			cache.put(cacheKey, content, {
 				expirationTtl: 3600,
 			}),
