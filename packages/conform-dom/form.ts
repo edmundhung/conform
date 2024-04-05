@@ -884,6 +884,10 @@ export function createFormContext<
 		});
 	}
 
+	function reset() {
+		updateFormMeta(createFormMeta(latestOptions, true));
+	}
+
 	function onReset(event: Event) {
 		const element = getFormElement();
 
@@ -895,14 +899,14 @@ export function createFormContext<
 			return;
 		}
 
-		updateFormMeta(createFormMeta(latestOptions, true));
+		reset();
 	}
 
 	function report(result: SubmissionResult<FormError>) {
 		const formElement = getFormElement();
 
 		if (!result.initialValue) {
-			formElement?.reset();
+			reset();
 			return;
 		}
 
@@ -952,7 +956,7 @@ export function createFormContext<
 		Object.assign(latestOptions, options);
 
 		if (latestOptions.formId !== currentFormId) {
-			updateFormMeta(createFormMeta(latestOptions, true));
+			reset();
 		} else if (options.lastResult && options.lastResult !== currentResult) {
 			report(options.lastResult);
 		}
