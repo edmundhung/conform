@@ -112,6 +112,7 @@ export type Constraint = {
 };
 
 export type FormMeta<FormError> = {
+	formId: string;
 	isValueUpdated: boolean;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
@@ -125,7 +126,7 @@ export type FormMeta<FormError> = {
 
 export type FormState<FormError> = Omit<
 	FormMeta<FormError>,
-	'isValueUpdated'
+	'formId' | 'isValueUpdated'
 > & {
 	valid: Record<string, boolean>;
 	dirty: Record<string, boolean>;
@@ -193,6 +194,7 @@ export type SubscriptionSubject = {
 		| 'valid'
 		| 'dirty']?: SubscriptionScope;
 } & {
+	formId?: boolean;
 	status?: boolean;
 };
 
@@ -213,7 +215,7 @@ export type FormContext<
 	FormError = string[],
 	FormValue = Schema,
 > = {
-	formId: string;
+	getFormId(): string;
 	submit(event: SubmitEvent): {
 		formData: FormData;
 		action: ReturnType<typeof getFormAction>;
@@ -263,6 +265,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
+		formId: options.formId,
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -693,7 +696,7 @@ export function createFormContext<
 		state = nextState;
 
 		const cache: Record<
-			Exclude<keyof SubscriptionSubject, 'status'>,
+			Exclude<keyof SubscriptionSubject, 'formId' | 'status'>,
 			Record<string, boolean>
 		> = {
 			value: {},
@@ -709,6 +712,7 @@ export function createFormContext<
 
 			if (
 				!subject ||
+				(subject.formId && prevMeta.formId !== nextMeta.formId) ||
 				(subject.status &&
 					prevState.submissionStatus !== nextState.submissionStatus) ||
 				shouldNotify(
@@ -1065,8 +1069,8 @@ export function createFormContext<
 	}
 
 	return {
-		get formId() {
-			return latestOptions.formId;
+		getFormId() {
+			return meta.formId;
 		},
 		submit,
 		onReset,

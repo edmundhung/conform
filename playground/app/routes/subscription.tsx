@@ -47,16 +47,19 @@ export async function action({ request }: ActionArgs) {
 		schema,
 	});
 
-	return json(submission.reply());
+	return json({
+		result: submission.reply(),
+		submitted: submission.status === 'success',
+	});
 }
 
 export default function Example() {
 	const { noClientValidate, isStrcitMode: strict } =
 		useLoaderData<typeof loader>();
-	const lastResult = useActionData<typeof action>();
+	const actionData = useActionData<typeof action>();
 	const [form, fields] = useForm({
-		id: 'example',
-		lastResult,
+		id: `example-${actionData?.submitted ? 'submitted' : 'initial'}`,
+		lastResult: actionData?.result,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema })
 			: undefined,
@@ -71,6 +74,9 @@ export default function Example() {
 	const message = fields.message.name;
 	const description = (
 		<ul className="space-y-1 list-disc">
+			<FormMetadata strict={strict} subject="id" />
+			<FormMetadata strict={strict} subject="errorId" />
+			<FormMetadata strict={strict} subject="descriptionId" />
 			<FormMetadata strict={strict} subject="initialValue" />
 			<FormMetadata strict={strict} subject="value" />
 			<FormMetadata strict={strict} subject="key" />
@@ -78,12 +84,20 @@ export default function Example() {
 			<FormMetadata strict={strict} subject="valid" />
 			<FormMetadata strict={strict} subject="errors" />
 			<FormMetadata strict={strict} subject="allErrors" />
+			<FieldMetadata strict={strict} name={name} subject="id" />
+			<FieldMetadata strict={strict} name={name} subject="formId" />
+			<FieldMetadata strict={strict} name={name} subject="errorId" />
+			<FieldMetadata strict={strict} name={name} subject="descriptionId" />
 			<FieldMetadata strict={strict} name={name} subject="initialValue" />
 			<FieldMetadata strict={strict} name={name} subject="value" />
 			<FieldMetadata strict={strict} name={name} subject="key" />
 			<FieldMetadata strict={strict} name={name} subject="dirty" />
 			<FieldMetadata strict={strict} name={name} subject="valid" />
 			<FieldMetadata strict={strict} name={name} subject="errors" />
+			<FieldMetadata strict={strict} name={message} subject="id" />
+			<FieldMetadata strict={strict} name={message} subject="formId" />
+			<FieldMetadata strict={strict} name={message} subject="errorId" />
+			<FieldMetadata strict={strict} name={message} subject="descriptionId" />
 			<FieldMetadata strict={strict} name={message} subject="initialValue" />
 			<FieldMetadata strict={strict} name={message} subject="value" />
 			<FieldMetadata strict={strict} name={message} subject="key" />
