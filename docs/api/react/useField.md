@@ -33,7 +33,7 @@ The form metadata. It is the same object as the one returned by the [useForm](./
 You can use the `FieldName<FieldSchema, FormSchema, FormError>` type instead of `string` to improve the type inference of the field and form metadata returned.
 
 ```tsx
-import { type FormName, useFormMetadata } from '@conform-to/react';
+import { type FieldName, useField } from '@conform-to/react';
 
 type ExampleComponentProps = {
   name: FieldName<FieldSchema, FormSchema, FormError>;
