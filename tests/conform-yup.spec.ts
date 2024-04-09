@@ -1,14 +1,16 @@
 import { describe, test, expect } from 'vitest';
 import { parseWithYup, getYupConstraint } from '@conform-to/yup';
 import * as yup from 'yup';
-import { STATE } from '@conform-to/dom';
+import { type Constraint, STATE } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
 describe('conform-yup', () => {
+	const maxDate = new Date();
 	const schema = yup
 		.object({
 			text: yup
 				.string()
+				.required('required')
 				.min(1, 'min')
 				.max(100, 'max')
 				.matches(/^[A-Z]{1-100}$/, 'regex'),
@@ -16,25 +18,32 @@ describe('conform-yup', () => {
 			number: yup.number().required().min(1, 'min').max(10, 'max'),
 			timestamp: yup
 				.date()
-				.min(new Date(1), 'min')
-				.max(new Date(), 'max')
+				.required('required')
+				.min(new Date(1).toISOString(), 'min')
+				.max(maxDate.toISOString(), 'max')
 				.default(new Date()),
 			options: yup
-				.array(yup.string().oneOf(['a', 'b', 'c'], 'invalid'))
-				.min(3, 'min'),
+				.array(
+					yup.string().required('required').oneOf(['a', 'b', 'c'], 'invalid'),
+				)
+				.required('required')
+				.min(3, 'min')
+				.test('nested', 'error', () => false),
 			nested: yup
 				.object({
 					key: yup.string().required('required'),
 				})
-				.test('nested', 'error', () => false),
+				.required('required'),
 			list: yup
 				.array(
 					yup
 						.object({
 							key: yup.string().required('required'),
 						})
+						.required('required')
 						.test('list-object', 'error', () => false),
 				)
+				.required('required')
 				.max(0, 'max'),
 		})
 		.test('root', 'error', () => false);
@@ -49,14 +58,13 @@ describe('conform-yup', () => {
 		list: [{ key: '' }],
 	};
 	const error = {
-		text: ['min', 'regex'],
+		text: ['required', 'min', 'regex'],
 		tag: ['required', 'invalid'],
 		number: ['max'],
 		timestamp: ['min'],
 		'options[1]': ['invalid'],
-		options: ['min'],
+		options: ['min', 'error'],
 		'nested.key': ['required'],
-		nested: ['error'],
 		'list[0].key': ['required'],
 		'list[0]': ['error'],
 		list: ['max'],
@@ -64,8 +72,9 @@ describe('conform-yup', () => {
 	};
 
 	test('getYupConstraint', () => {
-		expect(getYupConstraint(schema)).toEqual({
+		const constraint: Record<string, Constraint> = {
 			text: {
+				required: true,
 				minLength: 1,
 				maxLength: 100,
 				pattern: '^[A-Z]{1-100}$',
@@ -79,11 +88,38 @@ describe('conform-yup', () => {
 				min: 1,
 				max: 10,
 			},
-			timestamp: {},
-			options: {},
-			nested: {},
-			list: {},
-		});
+			timestamp: {
+				required: true,
+				min: new Date(1).toISOString(),
+				max: maxDate.toISOString(),
+			},
+			options: {
+				required: true,
+				multiple: true,
+			},
+			'options[]': {
+				required: true,
+				pattern: 'a|b|c',
+			},
+			nested: {
+				required: true,
+			},
+			'nested.key': {
+				required: true,
+			},
+			list: {
+				required: true,
+				multiple: true,
+			},
+			'list[]': {
+				required: true,
+			},
+			'list[].key': {
+				required: true,
+			},
+		};
+
+		expect(getYupConstraint(schema)).toEqual(constraint);
 	});
 
 	test('parseWithYup', () => {
