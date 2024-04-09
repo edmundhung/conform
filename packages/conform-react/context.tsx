@@ -132,7 +132,7 @@ export function useFormContext<Schema extends Record<string, any>, FormError>(
 ): FormContext<Schema, FormError, unknown> {
 	const contexts = useContext(Form);
 	const form = formId
-		? contexts.find((context) => context.formId === formId)
+		? contexts.find((context) => formId === context.getFormId())
 		: contexts[0];
 
 	if (!form) {
@@ -196,13 +196,23 @@ export function useSubjectRef(
 
 export function updateSubjectRef(
 	ref: MutableRefObject<SubscriptionSubject>,
-	name: string,
-	subject: keyof SubscriptionSubject,
+	subject: 'status' | 'formId',
+): void;
+export function updateSubjectRef(
+	ref: MutableRefObject<SubscriptionSubject>,
+	subject: Exclude<keyof SubscriptionSubject, 'status' | 'formId'>,
 	scope: keyof SubscriptionScope,
+	name: string,
+): void;
+export function updateSubjectRef(
+	ref: MutableRefObject<SubscriptionSubject>,
+	subject: keyof SubscriptionSubject,
+	scope?: keyof SubscriptionScope,
+	name?: string,
 ): void {
-	if (subject === 'status') {
+	if (subject === 'status' || subject === 'formId') {
 		ref.current[subject] = true;
-	} else {
+	} else if (typeof scope !== 'undefined' && typeof name !== 'undefined') {
 		ref.current[subject] = {
 			...ref.current[subject],
 			[scope]: (ref.current[subject]?.[scope] ?? []).concat(name),
@@ -220,7 +230,7 @@ export function getMetadata<
 	stateSnapshot: FormState<FormError>,
 	name: FieldName<Schema, FormSchema, FormError> = '',
 ): Metadata<Schema, FormSchema, FormError> {
-	const id = name ? `${context.formId}-${name}` : context.formId;
+	const id = name ? `${context.getFormId()}-${name}` : context.getFormId();
 	const state = context.getState();
 
 	return new Proxy(
@@ -288,20 +298,25 @@ export function getMetadata<
 				// if the stateSnapshot is not the latest, then it must be accessed in a callback
 				if (state === stateSnapshot) {
 					switch (key) {
+						case 'id':
+						case 'errorId':
+						case 'descriptionId':
+							updateSubjectRef(subjectRef, 'formId');
+							break;
 						case 'key':
 						case 'initialValue':
 						case 'value':
 						case 'valid':
 						case 'dirty':
-							updateSubjectRef(subjectRef, name, key, 'name');
+							updateSubjectRef(subjectRef, key, 'name', name);
 							break;
 						case 'errors':
 						case 'allErrors':
 							updateSubjectRef(
 								subjectRef,
-								name,
 								'error',
 								key === 'errors' ? 'name' : 'prefix',
+								name,
 							);
 							break;
 					}
@@ -336,7 +351,10 @@ export function getFieldMetadata<
 
 			switch (key) {
 				case 'formId':
-					return context.formId;
+					if (state === stateSnapshot) {
+						updateSubjectRef(subjectRef, 'formId');
+					}
+					return context.getFormId();
 				case 'required':
 				case 'minLength':
 				case 'maxLength':
@@ -351,7 +369,7 @@ export function getFieldMetadata<
 						const initialValue = state.initialValue[name] ?? [];
 
 						if (state === stateSnapshot) {
-							updateSubjectRef(subjectRef, name, 'initialValue', 'name');
+							updateSubjectRef(subjectRef, 'initialValue', 'name', name);
 						}
 
 						if (!Array.isArray(initialValue)) {
@@ -401,6 +419,9 @@ export function getFormMetadata<
 						[wrappedSymbol]: context,
 					};
 				case 'status':
+					if (state === stateSnapshot) {
+						updateSubjectRef(subjectRef, 'status');
+					}
 					return state.submissionStatus;
 				case 'validate':
 				case 'update':
