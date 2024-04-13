@@ -240,10 +240,10 @@ export function getFormControlProps<Schema>(
  * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
  * ```
  */
-export function getInputProps<Schema>(
+export function getInputProps<Schema, Options extends InputOptions>(
 	metadata: FieldMetadata<Schema, any, any>,
-	options: InputOptions,
-): InputProps {
+	options: Options,
+): InputProps & Pick<Options, 'type'> {
 	const props: InputProps = {
 		...getFormControlProps(metadata, options),
 		type: options.type,
