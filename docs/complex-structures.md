@@ -37,7 +37,7 @@ function Example() {
 
 ## Array
 
-When you need to setup a list of fields, you can call the `getFieldList()` method from the parent field metadata to get access to each item field with name infered automatically as well. If you want to modify the items in the list, you can also use the `insert`, `remove` and `reorder` intents as explained in the [Intent button](./intent-button.md#insert-remove-and-reorder-intents) page.
+When you need to setup a list of fields, you can call the `getFieldList()` method from the parent field metadata to get access to each item field with name infered automatically as well. If you want to modify the items in the list, you can also use the `insert`, `remove` and `reorder` intents as explained in the [Intent button](./intent-button#form-controls) page.
 
 ```tsx
 import { useForm } from '@conform-to/react';
