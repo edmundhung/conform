@@ -115,7 +115,7 @@ type TextareaOptions = Pretty<
 		/**
 		 * Decide whether defaultValue should be returned. Pass `false` if you want to mange the value yourself.
 		 */
-		value?: true;
+		value?: boolean;
 	}
 >;
 
