@@ -81,7 +81,7 @@ function CategoryField({ name }: { name: FieldName<Category> }) {
 						name: fields.subcategories.name,
 						defaultValue: {
 							name: '',
-							subcategories: [null],
+							subcategories: [{}],
 						},
 					})}
 				>

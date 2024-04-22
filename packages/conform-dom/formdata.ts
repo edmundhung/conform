@@ -129,7 +129,7 @@ export function getValue(target: unknown, name: string): unknown {
 	let pointer = target;
 
 	for (const path of getPaths(name)) {
-		if (typeof pointer === 'undefined' || pointer == null) {
+		if (typeof pointer === 'undefined') {
 			break;
 		}
 
