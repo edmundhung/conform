@@ -357,12 +357,7 @@ export function getTextareaProps<Schema>(
  * ```
  */
 export function getCollectionProps<
-	Schema extends
-		| Array<string | boolean>
-		| string
-		| boolean
-		| undefined
-		| unknown,
+	Schema extends (string | boolean)[] | string | boolean | undefined | unknown,
 	Options extends Pretty<
 		FormControlOptions & {
 			/**
@@ -382,9 +377,9 @@ export function getCollectionProps<
 >(
 	metadata: FieldMetadata<Schema, any, any>,
 	options: Options,
-): Array<
-	InputProps & Pick<Options, 'type'> & Pick<Required<InputProps>, 'value'>
-> {
+): (InputProps &
+	Pick<Options, 'type'> &
+	Pick<Required<InputProps>, 'value'>)[] {
 	return options.options.map((value) =>
 		simplify({
 			...getFormControlProps(metadata, options),

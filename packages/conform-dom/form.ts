@@ -53,8 +53,8 @@ export type DefaultValue<Schema> = Schema extends
 	? Schema | string | null | undefined
 	: Schema extends File
 	? null | undefined
-	: Schema extends Array<infer Item>
-	? Array<DefaultValue<Item>> | null | undefined
+	: Schema extends (infer Item)[]
+	? DefaultValue<Item>[] | null | undefined
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
 	: string | null | undefined;
@@ -71,9 +71,9 @@ export type FormValue<Schema> = Schema extends
 	: Schema extends File
 	? File | undefined
 	: Schema extends File[]
-	? File | Array<File> | undefined
-	: Schema extends Array<infer Item>
-	? string | Array<FormValue<Item>> | undefined
+	? File | File[] | undefined
+	: Schema extends (infer Item)[]
+	? string | FormValue<Item>[] | undefined
 	: Schema extends Record<string, any>
 	? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | null | undefined
 	: unknown;
@@ -290,7 +290,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 }
 
 function getDefaultKey(
-	defaultValue: Record<string, unknown> | Array<unknown>,
+	defaultValue: Record<string, unknown> | unknown[],
 	prefix?: string,
 ): Record<string, string> {
 	return Object.entries(flatten(defaultValue, { prefix })).reduce<
@@ -622,10 +622,10 @@ export function createFormContext<
 >(
 	options: FormOptions<Schema, FormError, FormValue>,
 ): FormContext<Schema, FormError, FormValue> {
-	let subscribers: Array<{
+	let subscribers: {
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
-	}> = [];
+	}[] = [];
 	let latestOptions = options;
 	let meta = createFormMeta(options);
 	let state = createFormState(meta);

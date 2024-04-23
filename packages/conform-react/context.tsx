@@ -85,9 +85,9 @@ type SubfieldMetadata<
 	FormError,
 > = [Schema] extends [Primitive]
 	? {}
-	: [Schema] extends [Array<infer Item> | null | undefined]
+	: [Schema] extends [(infer Item)[] | null | undefined]
 	? {
-			getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
+			getFieldList: () => FieldMetadata<Item, FormSchema, FormError>[];
 	  }
 	: [Schema] extends [Record<string, any> | null | undefined]
 	? {

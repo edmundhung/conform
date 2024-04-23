@@ -30,25 +30,23 @@ export function getFormData(
  * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
  * ```
  */
-export function getPaths(name: string | undefined): Array<string | number> {
+export function getPaths(name: string | undefined): (string | number)[] {
 	if (!name) {
 		return [];
 	}
 
-	return name
-		.split(/\.|(\[\d*\])/)
-		.reduce<Array<string | number>>((result, segment) => {
-			if (typeof segment !== 'undefined' && segment !== '') {
-				if (segment.startsWith('[') && segment.endsWith(']')) {
-					const index = segment.slice(1, -1);
+	return name.split(/\.|(\[\d*\])/).reduce((result, segment) => {
+		if (typeof segment !== 'undefined' && segment !== '') {
+			if (segment.startsWith('[') && segment.endsWith(']')) {
+				const index = segment.slice(1, -1);
 
-					result.push(Number(index));
-				} else {
-					result.push(segment);
-				}
+				result.push(Number(index));
+			} else {
+				result.push(segment);
 			}
-			return result;
-		}, []);
+		}
+		return result;
+	}, [] as (string | number)[]);
 }
 
 /**
@@ -58,7 +56,7 @@ export function getPaths(name: string | undefined): Array<string | number> {
  * const name = formatPaths(['todos', 0, 'content']); // "todos[0].content"
  * ```
  */
-export function formatPaths(paths: Array<string | number>): string {
+export function formatPaths(paths: (string | number)[]): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
 			return `${name}[${Number.isNaN(path) ? '' : path}]`;
@@ -148,9 +146,7 @@ export function getValue(target: unknown, name: string): unknown {
 /**
  * Check if the value is a plain object
  */
-export function isPlainObject(
-	obj: unknown,
-): obj is Record<string | number | symbol, unknown> {
+export function isPlainObject(obj: unknown): obj is Record<keyof any, unknown> {
 	return (
 		!!obj &&
 		obj.constructor === Object &&
@@ -177,7 +173,7 @@ export function normalize<Type extends Record<string, unknown>>(
 	value: Type,
 	acceptFile?: boolean,
 ): Type | undefined;
-export function normalize<Type extends Array<unknown>>(
+export function normalize<Type extends unknown[]>(
 	value: Type,
 	acceptFile?: boolean,
 ): Type | undefined;
@@ -185,12 +181,10 @@ export function normalize(
 	value: unknown,
 	acceptFile?: boolean,
 ): unknown | undefined;
-export function normalize<
-	Type extends Record<string, unknown> | Array<unknown>,
->(
+export function normalize<Type extends Record<string, unknown> | unknown[]>(
 	value: Type,
 	acceptFile = true,
-): Record<string, unknown> | Array<unknown> | undefined {
+): Record<string, unknown> | unknown[] | undefined {
 	if (isPlainObject(value)) {
 		const obj = Object.keys(value)
 			.sort()
@@ -234,7 +228,7 @@ export function normalize<
  * Flatten a tree into a dictionary
  */
 export function flatten(
-	data: Record<string | number | symbol, unknown> | Array<unknown> | undefined,
+	data: Record<keyof any, unknown> | unknown[] | undefined,
 	options?: {
 		resolve?: (data: unknown) => unknown | null;
 		prefix?: string;
@@ -252,7 +246,7 @@ export function flatten(
 	}
 
 	function processObject(
-		obj: Record<string | number | symbol, unknown>,
+		obj: Record<keyof any, unknown>,
 		prefix: string,
 	): void {
 		setResult(obj, prefix);
@@ -270,7 +264,7 @@ export function flatten(
 		}
 	}
 
-	function processArray(array: Array<unknown>, prefix: string): void {
+	function processArray(array: unknown[], prefix: string): void {
 		setResult(array, prefix);
 
 		for (let i = 0; i < array.length; i++) {

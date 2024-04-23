@@ -10,7 +10,7 @@ export const ToggleGroupConform = ({
 	items,
 	...props
 }: {
-	items: Array<{ value: string; label: string }>;
+	items: { value: string; label: string }[];
 	meta: FieldMetadata<string>;
 } & Omit<ComponentProps<typeof ToggleGroup>, 'defaultValue'>) => {
 	const toggleGroupRef = useRef<ElementRef<typeof ToggleGroup>>(null);

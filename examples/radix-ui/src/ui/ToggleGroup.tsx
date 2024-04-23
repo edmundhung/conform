@@ -7,7 +7,7 @@ export function ToggleGroup({
 	items,
 }: {
 	meta: FieldMetadata<string>;
-	items: Array<{ label: string; value: string }>;
+	items: { label: string; value: string }[];
 }) {
 	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
 	const control = useInputControl(meta);

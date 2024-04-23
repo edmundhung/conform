@@ -13,7 +13,7 @@ export const Select = ({
 	placeholder = '',
 }: {
 	meta: FieldMetadata<string>;
-	items: Array<{ name: string; value: string }>;
+	items: { name: string; value: string }[];
 	placeholder?: string;
 }) => {
 	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);

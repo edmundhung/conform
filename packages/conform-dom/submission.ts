@@ -316,7 +316,7 @@ export type ResetIntent<Schema = any> = {
 		  }
 		| {
 				name: FieldName<Schema>;
-				index: Schema extends Array<unknown> ? number : never;
+				index: Schema extends unknown[] ? number : never;
 		  };
 };
 
@@ -331,15 +331,15 @@ export type UpdateIntent<Schema = unknown> = {
 		  }
 		| {
 				name: FieldName<Schema>;
-				index: Schema extends Array<unknown> ? number : never;
+				index: Schema extends unknown[] ? number : never;
 				value?: NonNullable<
-					DefaultValue<Schema extends Array<infer Item> ? Item : unknown>
+					DefaultValue<Schema extends (infer Item)[] ? Item : unknown>
 				>;
 				validated?: boolean;
 		  };
 };
 
-export type RemoveIntent<Schema extends Array<any> = any> = {
+export type RemoveIntent<Schema extends any[] = any> = {
 	type: 'remove';
 	payload: {
 		name: FieldName<Schema>;
@@ -347,18 +347,16 @@ export type RemoveIntent<Schema extends Array<any> = any> = {
 	};
 };
 
-export type InsertIntent<Schema extends Array<any> = any> = {
+export type InsertIntent<Schema extends any[] = any> = {
 	type: 'insert';
 	payload: {
 		name: FieldName<Schema>;
-		defaultValue?: Schema extends Array<infer Item>
-			? DefaultValue<Item>
-			: never;
+		defaultValue?: Schema extends (infer Item)[] ? DefaultValue<Item> : never;
 		index?: number;
 	};
 };
 
-export type ReorderIntent<Schema extends Array<any> = any> = {
+export type ReorderIntent<Schema extends any[] = any> = {
 	type: 'reorder';
 	payload: {
 		name: FieldName<Schema>;
@@ -371,9 +369,9 @@ export type Intent<Schema = unknown> =
 	| ValidateIntent<Schema>
 	| ResetIntent<Schema>
 	| UpdateIntent<Schema>
-	| ReorderIntent<Schema extends Array<any> ? Schema : any>
-	| RemoveIntent<Schema extends Array<any> ? Schema : any>
-	| InsertIntent<Schema extends Array<any> ? Schema : any>;
+	| ReorderIntent<Schema extends any[] ? Schema : any>
+	| RemoveIntent<Schema extends any[] ? Schema : any>
+	| InsertIntent<Schema extends any[] ? Schema : any>;
 
 export function getIntent(
 	serializedIntent: string | null | undefined,

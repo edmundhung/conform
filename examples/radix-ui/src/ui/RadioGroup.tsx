@@ -8,7 +8,7 @@ export function RadioGroup({
 	items,
 }: {
 	meta: FieldMetadata<string>;
-	items: Array<{ value: string; label: string }>;
+	items: { value: string; label: string }[];
 }) {
 	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
 	const control = useInputControl(meta);

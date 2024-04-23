@@ -17,10 +17,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface Menu {
 	title: string;
-	links: Array<{
-		title: string;
-		to: string;
-	}>;
+	links: { title: string; to: string }[];
 }
 
 const style = {

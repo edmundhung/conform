@@ -17,7 +17,7 @@ import {
 	ZodLazy,
 } from 'zod';
 
-const keys: Array<keyof Constraint> = [
+const keys: (keyof Constraint)[] = [
 	'required',
 	'minLength',
 	'maxLength',

@@ -16,7 +16,7 @@ export function getPlayground(page: Page) {
 }
 
 export function createFormData(
-	entries: Array<[string, FormDataEntryValue]>,
+	entries: [string, FormDataEntryValue][],
 ): FormData {
 	const formData = new FormData();
 

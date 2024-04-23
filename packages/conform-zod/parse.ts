@@ -17,7 +17,7 @@ import { enableTypeCoercion } from './coercion';
 
 function getError<FormError>(
 	zodError: ZodError,
-	formatError: (issues: Array<ZodIssue>) => FormError,
+	formatError: (issues: ZodIssue[]) => FormError,
 ): Record<string, FormError | null> | null {
 	const result: Record<string, ZodIssue[] | null> = {};
 
@@ -69,7 +69,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
-		formatError: (issues: Array<ZodIssue>) => FormError;
+		formatError: (issues: ZodIssue[]) => FormError;
 	},
 ): Submission<input<Schema>, FormError, output<Schema>>;
 export function parseWithZod<Schema extends ZodTypeAny>(
@@ -86,7 +86,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
-		formatError: (issues: Array<ZodIssue>) => FormError;
+		formatError: (issues: ZodIssue[]) => FormError;
 	},
 ): Promise<Submission<input<Schema>, FormError, output<Schema>>>;
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
@@ -95,7 +95,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: boolean;
 		errorMap?: ZodErrorMap;
-		formatError?: (issues: Array<ZodIssue>) => FormError;
+		formatError?: (issues: ZodIssue[]) => FormError;
 	},
 ):
 	| Submission<input<Schema>, FormError | string[], output<Schema>>

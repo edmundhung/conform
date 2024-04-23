@@ -8,35 +8,35 @@ Conform supports all native inputs out of the box by attaching an **input** and 
 
 ```tsx
 function Example() {
-  const [form, fields] = useForm({
-    // Optional, Conform will generate a random id if not provided
-    id: 'example',
-  });
+	const [form, fields] = useForm({
+		// Optional, Conform will generate a random id if not provided
+		id: 'example',
+	});
 
-  return (
-    <form id={form.id}>
-      <div>
-        <label>Title</label>
-        <input type="text" name="title" />
-        <div>{fields.title.errors}</div>
-      </div>
-      <div>
-        <label>Description</label>
-        <textarea name="description" />
-        <div>{fields.description.errors}</div>
-      </div>
-      <div>
-        <label>Color</label>
-        <select name="color">
-          <option>Red</option>
-          <option>Green</option>
-          <option>Blue</option>
-        </select>
-        <div>{fields.color.errors}</div>
-      </div>
-      <button form={form.id}>Submit</button>
-    </form>
-  );
+	return (
+		<form id={form.id}>
+			<div>
+				<label>Title</label>
+				<input type="text" name="title" />
+				<div>{fields.title.errors}</div>
+			</div>
+			<div>
+				<label>Description</label>
+				<textarea name="description" />
+				<div>{fields.description.errors}</div>
+			</div>
+			<div>
+				<label>Color</label>
+				<select name="color">
+					<option>Red</option>
+					<option>Green</option>
+					<option>Blue</option>
+				</select>
+				<div>{fields.color.errors}</div>
+			</div>
+			<button form={form.id}>Submit</button>
+		</form>
+	);
 }
 ```
 
@@ -50,11 +50,11 @@ To identify if the input is a native input, you can wrap it in a div with event 
 import { CustomInput } from 'your-ui-library';
 
 function Example() {
-  return (
-    <div onInput={console.log} onBlur={console.log}>
-      <CustomInput />
-    </div>
-  );
+	return (
+		<div onInput={console.log} onBlur={console.log}>
+			<CustomInput />
+		</div>
+	);
 }
 ```
 
@@ -71,83 +71,83 @@ Here is an example wrapping the [Select component from Radix UI](https://www.rad
 
 ```tsx
 import {
-  type FieldMetadata,
-  useForm,
-  useInputControl,
+	type FieldMetadata,
+	useForm,
+	useInputControl,
 } from '@conform-to/react';
 import * as Select from '@radix-ui/react-select';
 import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
 } from '@radix-ui/react-icons';
 
 type SelectFieldProps = {
-  // You can use the `FieldMetadata` type to define the `meta` prop
-  // And restrict the type of the field it accepts through its generics
-  meta: FieldMetadata<string>;
-  options: Array<string>;
+	// You can use the `FieldMetadata` type to define the `meta` prop
+	// And restrict the type of the field it accepts through its generics
+	meta: FieldMetadata<string>;
+	options: string[];
 };
 
 function SelectField({ meta, options }: SelectFieldProps) {
-  const control = useInputControl(meta);
+	const control = useInputControl(meta);
 
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      <Select.Trigger>
-        <Select.Value />
-        <Select.Icon>
-          <ChevronDownIcon />
-        </Select.Icon>
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Content>
-          <Select.ScrollUpButton>
-            <ChevronUpIcon />
-          </Select.ScrollUpButton>
-          <Select.Viewport>
-            {options.map((option) => (
-              <Select.Item key={option} value={option}>
-                <Select.ItemText>{option}</Select.ItemText>
-                <Select.ItemIndicator>
-                  <CheckIcon />
-                </Select.ItemIndicator>
-              </Select.Item>
-            ))}
-          </Select.Viewport>
-          <Select.ScrollDownButton>
-            <ChevronDownIcon />
-          </Select.ScrollDownButton>
-        </Select.Content>
-      </Select.Portal>
-    </Select.Root>
-  );
+	return (
+		<Select.Root
+			name={meta.name}
+			value={control.value}
+			onValueChange={(value) => {
+				control.change(value);
+			}}
+			onOpenChange={(open) => {
+				if (!open) {
+					control.blur();
+				}
+			}}
+		>
+			<Select.Trigger>
+				<Select.Value />
+				<Select.Icon>
+					<ChevronDownIcon />
+				</Select.Icon>
+			</Select.Trigger>
+			<Select.Portal>
+				<Select.Content>
+					<Select.ScrollUpButton>
+						<ChevronUpIcon />
+					</Select.ScrollUpButton>
+					<Select.Viewport>
+						{options.map((option) => (
+							<Select.Item key={option} value={option}>
+								<Select.ItemText>{option}</Select.ItemText>
+								<Select.ItemIndicator>
+									<CheckIcon />
+								</Select.ItemIndicator>
+							</Select.Item>
+						))}
+					</Select.Viewport>
+					<Select.ScrollDownButton>
+						<ChevronDownIcon />
+					</Select.ScrollDownButton>
+				</Select.Content>
+			</Select.Portal>
+		</Select.Root>
+	);
 }
 
 function Example() {
-  const [form, fields] = useForm();
+	const [form, fields] = useForm();
 
-  return (
-    <form id={form.id}>
-      <div>
-        <label>Currency</label>
-        <SelectField meta={fields.color} options={['red', 'green', 'blue']} />
-        <div>{fields.color.errors}</div>
-      </div>
-      <button>Submit</button>
-    </form>
-  );
+	return (
+		<form id={form.id}>
+			<div>
+				<label>Currency</label>
+				<SelectField meta={fields.color} options={['red', 'green', 'blue']} />
+				<div>{fields.color.errors}</div>
+			</div>
+			<button>Submit</button>
+		</form>
+	);
 }
 ```
 
@@ -157,63 +157,63 @@ You can also simplify the wrapper component by using the [useField](../api/react
 
 ```tsx
 import {
-  type FieldName,
-  FormProvider,
-  useForm,
-  useField,
-  useInputControl,
+	type FieldName,
+	FormProvider,
+	useForm,
+	useField,
+	useInputControl,
 } from '@conform-to/react';
 import * as Select from '@radix-ui/react-select';
 import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
 } from '@radix-ui/react-icons';
 
 type SelectFieldProps = {
-  // Instead of using the `FieldMetadata` type, we will use the `FieldName` type
-  // We can also restrict the type of the field it accepts through its generics
-  name: FieldName<string>;
-  options: Array<string>;
+	// Instead of using the `FieldMetadata` type, we will use the `FieldName` type
+	// We can also restrict the type of the field it accepts through its generics
+	name: FieldName<string>;
+	options: string[];
 };
 
 function Select({ name, options }: SelectFieldProps) {
-  const [meta] = useField(name);
-  const control = useInputControl(meta);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      {/* ... */}
-    </Select.Root>
-  );
+	return (
+		<Select.Root
+			name={meta.name}
+			value={control.value}
+			onValueChange={(value) => {
+				control.change(value);
+			}}
+			onOpenChange={(open) => {
+				if (!open) {
+					control.blur();
+				}
+			}}
+		>
+			{/* ... */}
+		</Select.Root>
+	);
 }
 
 function Example() {
-  const [form, fields] = useForm();
+	const [form, fields] = useForm();
 
-  return (
-    <FormProvider context={form.context}>
-      <form id={form.id}>
-        <div>
-          <label>Color</label>
-          <Select name={fields.color.name} options={['red', 'green', 'blue']} />
-          <div>{fields.color.errors}</div>
-        </div>
-        <button>Submit</button>
-      </form>
-    </FormProvider>
-  );
+	return (
+		<FormProvider context={form.context}>
+			<form id={form.id}>
+				<div>
+					<label>Color</label>
+					<Select name={fields.color.name} options={['red', 'green', 'blue']} />
+					<div>{fields.color.errors}</div>
+				</div>
+				<button>Submit</button>
+			</form>
+		</FormProvider>
+	);
 }
 ```
 

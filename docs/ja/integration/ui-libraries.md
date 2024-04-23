@@ -8,35 +8,35 @@ Conform は、ドキュメントに直接 **input** と **focusout** イベン�
 
 ```tsx
 function Example() {
-  const [form, fields] = useForm({
-    // オプション。指定されていない場合は Conform がランダムなIDを生成します。
-    id: 'example',
-  });
+	const [form, fields] = useForm({
+		// オプション。指定されていない場合は Conform がランダムなIDを生成します。
+		id: 'example',
+	});
 
-  return (
-    <form id={form.id}>
-      <div>
-        <label>Title</label>
-        <input type="text" name="title" />
-        <div>{fields.title.errors}</div>
-      </div>
-      <div>
-        <label>Description</label>
-        <textarea name="description" />
-        <div>{fields.description.errors}</div>
-      </div>
-      <div>
-        <label>Color</label>
-        <select name="color">
-          <option>Red</option>
-          <option>Green</option>
-          <option>Blue</option>
-        </select>
-        <div>{fields.color.errors}</div>
-      </div>
-      <button form={form.id}>Submit</button>
-    </form>
-  );
+	return (
+		<form id={form.id}>
+			<div>
+				<label>Title</label>
+				<input type="text" name="title" />
+				<div>{fields.title.errors}</div>
+			</div>
+			<div>
+				<label>Description</label>
+				<textarea name="description" />
+				<div>{fields.description.errors}</div>
+			</div>
+			<div>
+				<label>Color</label>
+				<select name="color">
+					<option>Red</option>
+					<option>Green</option>
+					<option>Blue</option>
+				</select>
+				<div>{fields.color.errors}</div>
+			</div>
+			<button form={form.id}>Submit</button>
+		</form>
+	);
 }
 ```
 
@@ -50,11 +50,11 @@ Conform は[イベント移譲](#event-delegation)に依存してフォームを
 import { CustomInput } from 'your-ui-library';
 
 function Example() {
-  return (
-    <div onInput={console.log} onBlur={console.log}>
-      <CustomInput />
-    </div>
-  );
+	return (
+		<div onInput={console.log} onBlur={console.log}>
+			<CustomInput />
+		</div>
+	);
 }
 ```
 
@@ -71,83 +71,83 @@ function Example() {
 
 ```tsx
 import {
-  type FieldMetadata,
-  useForm,
-  useInputControl,
+	type FieldMetadata,
+	useForm,
+	useInputControl,
 } from '@conform-to/react';
 import * as Select from '@radix-ui/react-select';
 import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
 } from '@radix-ui/react-icons';
 
 type SelectFieldProps = {
-  // `FieldMetadata` 型を使用して `meta` プロパティを定義し、
-  // そのジェネリクスを通じて受け入れるフィールドの型を制限することができます。
-  meta: FieldMetadata<string>;
-  options: Array<string>;
+	// `FieldMetadata` 型を使用して `meta` プロパティを定義し、
+	// そのジェネリクスを通じて受け入れるフィールドの型を制限することができます。
+	meta: FieldMetadata<string>;
+	options: string[];
 };
 
 function SelectField({ meta, options }: SelectFieldProps) {
-  const control = useInputControl(meta);
+	const control = useInputControl(meta);
 
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      <Select.Trigger>
-        <Select.Value />
-        <Select.Icon>
-          <ChevronDownIcon />
-        </Select.Icon>
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Content>
-          <Select.ScrollUpButton>
-            <ChevronUpIcon />
-          </Select.ScrollUpButton>
-          <Select.Viewport>
-            {options.map((option) => (
-              <Select.Item key={option} value={option}>
-                <Select.ItemText>{option}</Select.ItemText>
-                <Select.ItemIndicator>
-                  <CheckIcon />
-                </Select.ItemIndicator>
-              </Select.Item>
-            ))}
-          </Select.Viewport>
-          <Select.ScrollDownButton>
-            <ChevronDownIcon />
-          </Select.ScrollDownButton>
-        </Select.Content>
-      </Select.Portal>
-    </Select.Root>
-  );
+	return (
+		<Select.Root
+			name={meta.name}
+			value={control.value}
+			onValueChange={(value) => {
+				control.change(value);
+			}}
+			onOpenChange={(open) => {
+				if (!open) {
+					control.blur();
+				}
+			}}
+		>
+			<Select.Trigger>
+				<Select.Value />
+				<Select.Icon>
+					<ChevronDownIcon />
+				</Select.Icon>
+			</Select.Trigger>
+			<Select.Portal>
+				<Select.Content>
+					<Select.ScrollUpButton>
+						<ChevronUpIcon />
+					</Select.ScrollUpButton>
+					<Select.Viewport>
+						{options.map((option) => (
+							<Select.Item key={option} value={option}>
+								<Select.ItemText>{option}</Select.ItemText>
+								<Select.ItemIndicator>
+									<CheckIcon />
+								</Select.ItemIndicator>
+							</Select.Item>
+						))}
+					</Select.Viewport>
+					<Select.ScrollDownButton>
+						<ChevronDownIcon />
+					</Select.ScrollDownButton>
+				</Select.Content>
+			</Select.Portal>
+		</Select.Root>
+	);
 }
 
 function Example() {
-  const [form, fields] = useForm();
+	const [form, fields] = useForm();
 
-  return (
-    <form id={form.id}>
-      <div>
-        <label>Currency</label>
-        <SelectField meta={fields.color} options={['red', 'green', 'blue']} />
-        <div>{fields.color.errors}</div>
-      </div>
-      <button>Submit</button>
-    </form>
-  );
+	return (
+		<form id={form.id}>
+			<div>
+				<label>Currency</label>
+				<SelectField meta={fields.color} options={['red', 'green', 'blue']} />
+				<div>{fields.color.errors}</div>
+			</div>
+			<button>Submit</button>
+		</form>
+	);
 }
 ```
 
@@ -157,63 +157,63 @@ function Example() {
 
 ```tsx
 import {
-  type FieldName,
-  FormProvider,
-  useForm,
-  useField,
-  useInputControl,
+	type FieldName,
+	FormProvider,
+	useForm,
+	useField,
+	useInputControl,
 } from '@conform-to/react';
 import * as Select from '@radix-ui/react-select';
 import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+	CheckIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
 } from '@radix-ui/react-icons';
 
 type SelectFieldProps = {
-  // `FieldMetadata` 型の代わりに `FieldName` 型を使用します。
-  // また、そのジェネリクスを通じて受け入れるフィールドの型を制限することもできます。
-  name: FieldName<string>;
-  options: Array<string>;
+	// `FieldMetadata` 型の代わりに `FieldName` 型を使用します。
+	// また、そのジェネリクスを通じて受け入れるフィールドの型を制限することもできます。
+	name: FieldName<string>;
+	options: string[];
 };
 
 function Select({ name, options }: SelectFieldProps) {
-  const [meta] = useField(name);
-  const control = useInputControl(meta);
+	const [meta] = useField(name);
+	const control = useInputControl(meta);
 
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      {/* ... */}
-    </Select.Root>
-  );
+	return (
+		<Select.Root
+			name={meta.name}
+			value={control.value}
+			onValueChange={(value) => {
+				control.change(value);
+			}}
+			onOpenChange={(open) => {
+				if (!open) {
+					control.blur();
+				}
+			}}
+		>
+			{/* ... */}
+		</Select.Root>
+	);
 }
 
 function Example() {
-  const [form, fields] = useForm();
+	const [form, fields] = useForm();
 
-  return (
-    <FormProvider context={form.context}>
-      <form id={form.id}>
-        <div>
-          <label>Color</label>
-          <Select name={fields.color.name} options={['red', 'green', 'blue']} />
-          <div>{fields.color.errors}</div>
-        </div>
-        <button>Submit</button>
-      </form>
-    </FormProvider>
-  );
+	return (
+		<FormProvider context={form.context}>
+			<form id={form.id}>
+				<div>
+					<label>Color</label>
+					<Select name={fields.color.name} options={['red', 'green', 'blue']} />
+					<div>{fields.color.errors}</div>
+				</div>
+				<button>Submit</button>
+			</form>
+		</FormProvider>
+	);
 }
 ```
 

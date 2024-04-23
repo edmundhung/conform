@@ -10,7 +10,7 @@ export function RadioGroupConform({
 	items,
 }: {
 	meta: FieldMetadata<string>;
-	items: Array<{ value: string; label: string }>;
+	items: { value: string; label: string }[];
 }) {
 	const radioGroupRef = useRef<ElementRef<typeof RadioGroup>>(null);
 	const control = useControl(meta);

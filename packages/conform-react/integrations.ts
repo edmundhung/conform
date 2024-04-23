@@ -14,7 +14,7 @@ export function getFormElement(formId: string): HTMLFormElement | null {
 export function getFieldElements(
 	form: HTMLFormElement | null,
 	name: string,
-): Array<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> {
+): (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)[] {
 	const field = form?.elements.namedItem(name);
 	const elements = !field
 		? []
@@ -270,7 +270,7 @@ export function useInputEvent(): {
 }
 
 export function useInputValue<
-	Value extends string | string[] | Array<string | undefined>,
+	Value extends string | string[] | (string | undefined)[],
 >(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
 	const initializeValue = ():
 		| (Value extends string ? Value : string | string[])
@@ -295,7 +295,7 @@ export function useInputValue<
 }
 
 export function useControl<
-	Value extends string | string[] | Array<string | undefined>,
+	Value extends string | string[] | (string | undefined)[],
 >(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
 	const [value, setValue] = useInputValue(meta);
 	const { register, change, focus, blur } = useInputEvent();
@@ -316,7 +316,7 @@ export function useControl<
 }
 
 export function useInputControl<
-	Value extends string | string[] | Array<string | undefined>,
+	Value extends string | string[] | (string | undefined)[],
 >(meta: {
 	key?: Key | null | undefined;
 	name: string;
@@ -378,7 +378,7 @@ export function useInputControl<
 }
 
 export function Control<
-	Value extends string | string[] | Array<string | undefined>,
+	Value extends string | string[] | (string | undefined)[],
 >(props: {
 	meta: { key?: Key | null | undefined; initialValue?: Value | undefined };
 	render: (control: ReturnType<typeof useControl<Value>>) => React.ReactNode;

@@ -9,7 +9,7 @@ export function CheckboxGroupConform({
 	items,
 }: {
 	meta: FieldMetadata<string[]>;
-	items: Array<{ name: string; value: string }>;
+	items: { name: string; value: string }[];
 }) {
 	const initialValue =
 		typeof meta.initialValue === 'string'

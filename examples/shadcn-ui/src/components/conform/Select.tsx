@@ -18,7 +18,7 @@ export const SelectConform = ({
 	...props
 }: {
 	meta: FieldMetadata<string>;
-	items: Array<{ name: string; value: string }>;
+	items: { name: string; value: string }[];
 	placeholder: string;
 } & ComponentProps<typeof Select>) => {
 	const selectRef = useRef<ElementRef<typeof SelectTrigger>>(null);

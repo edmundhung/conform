@@ -21,13 +21,13 @@ interface Rule {
 
 interface Group {
 	type: 'group';
-	conditions: Array<Group | Rule>;
+	conditions: (Group | Rule)[];
 }
 
 type Schema =
 	| {
 			intent: 'foo';
-			tasks: Array<Task>;
+			tasks: Task[];
 			date: Date;
 	  }
 	| {
@@ -115,12 +115,12 @@ export default function Example() {
 	isFieldMetadataType0(tasks);
 	isFieldMetadataType1<Task[]>(tasks);
 	isFieldMetadataType1<Task[] | undefined>(tasks);
-	isFieldMetadataType1<Array<Task | undefined>>(tasks);
+	isFieldMetadataType1<(Task | undefined)[]>(tasks);
 
 	// @ts-expect-error
 	isFieldMetadataType1<Task>(tasks);
 	// @ts-expect-error
-	isFieldMetadataType1<Array<string>>(tasks);
+	isFieldMetadataType1<string[]>(tasks);
 
 	const date = fields.date;
 
@@ -169,17 +169,15 @@ export default function Example() {
 	isFieldMetadataType1<string>(filterFieldset.type);
 	isFieldMetadataType1<string | undefined>(filterFieldset.type);
 	isFieldMetadataType0(filterFieldset.conditions);
-	isFieldMetadataType1<Array<Rule | Group>>(filterFieldset.conditions);
-	isFieldMetadataType1<Array<Rule | Group> | undefined>(
-		filterFieldset.conditions,
-	);
+	isFieldMetadataType1<(Rule | Group)[]>(filterFieldset.conditions);
+	isFieldMetadataType1<(Rule | Group)[] | undefined>(filterFieldset.conditions);
 
 	// @ts-expect-error
 	isFieldMetadataType1<Rule | Group>(filterFieldset.conditions);
 	// @ts-expect-error
-	isFieldMetadataType1<Array<Rule>>(filterFieldset.conditions);
+	isFieldMetadataType1<Rule[]>(filterFieldset.conditions);
 	// @ts-expect-error
-	isFieldMetadataType1<Array<Group>>(filterFieldset.conditions);
+	isFieldMetadataType1<Group[]>(filterFieldset.conditions);
 
 	const conditionsList = filterFieldset.conditions.getFieldList();
 
@@ -201,10 +199,8 @@ export default function Example() {
 	isFieldMetadataType1<string>(ruleFieldset?.operator);
 	isFieldMetadataType1<string | undefined>(ruleFieldset?.operator);
 	isFieldMetadataType0(ruleFieldset?.conditions);
-	isFieldMetadataType1<Array<Group | Rule>>(ruleFieldset?.conditions);
-	isFieldMetadataType1<Array<Group | Rule | undefined>>(
-		ruleFieldset?.conditions,
-	);
+	isFieldMetadataType1<(Group | Rule)[]>(ruleFieldset?.conditions);
+	isFieldMetadataType1<(Group | Rule | undefined)[]>(ruleFieldset?.conditions);
 
 	const innerConditionsList = ruleFieldset?.conditions.getFieldList();
 
