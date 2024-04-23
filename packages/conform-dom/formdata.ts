@@ -38,7 +38,13 @@ export function getPaths(name: string | undefined): Array<string | number> {
 	return name
 		.split(/\.|(\[\d*\])/)
 		.reduce<Array<string | number>>((result, segment) => {
-			if (typeof segment !== 'undefined' && segment !== '') {
+			if (
+				typeof segment !== 'undefined' &&
+				segment !== '' &&
+				segment !== '__proto__' &&
+				segment !== 'constructor' &&
+				segment !== 'prototype'
+			) {
 				if (segment.startsWith('[') && segment.endsWith(']')) {
 					const index = segment.slice(1, -1);
 
@@ -114,7 +120,11 @@ export function setValue(
 		const nextKey = paths[index + 1];
 		const newValue =
 			index != lastIndex
-				? pointer[key] ?? (typeof nextKey === 'number' ? [] : {})
+				? Object.hasOwn(pointer, key)
+					? pointer[key]
+					: typeof nextKey === 'number'
+					? []
+					: {}
 				: valueFn(pointer[key]);
 
 		pointer[key] = newValue;
@@ -131,6 +141,10 @@ export function getValue(target: unknown, name: string): unknown {
 	for (const path of getPaths(name)) {
 		if (typeof pointer === 'undefined' || pointer == null) {
 			break;
+		}
+
+		if (!Object.hasOwn(pointer, path)) {
+			return;
 		}
 
 		if (isPlainObject(pointer) && typeof path === 'string') {
