@@ -120,7 +120,7 @@ export function setValue(
 		const nextKey = paths[index + 1];
 		const newValue =
 			index != lastIndex
-				? Object.hasOwn(pointer, key)
+				? Object.prototype.hasOwnProperty.call(pointer, key)
 					? pointer[key]
 					: typeof nextKey === 'number'
 					? []
@@ -143,7 +143,7 @@ export function getValue(target: unknown, name: string): unknown {
 			break;
 		}
 
-		if (!Object.hasOwn(pointer, path)) {
+		if (!Object.prototype.hasOwnProperty.call(pointer, path)) {
 			return;
 		}
 
