@@ -4,9 +4,9 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
 
 /** @returns {import("rollup").RollupOptions[]} */
-function configurePackage(name) {
-	let sourceDir = `packages/${name}`;
-	let outputDir = `${sourceDir}`;
+function configurePackage() {
+	let sourceDir = '.';
+	let outputDir = sourceDir;
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {
@@ -22,6 +22,22 @@ function configurePackage(name) {
 		},
 		plugins: [
 			babel({
+				babelrc: false,
+				configFile: false,
+				presets: [
+					[
+						'@babel/preset-env',
+						{
+							targets: {
+								node: '16',
+								esmodules: true,
+							},
+						},
+					],
+					['@babel/preset-react', { runtime: 'automatic' }],
+					'@babel/preset-typescript',
+				],
+				plugins: [],
 				babelHelpers: 'bundled',
 				exclude: /node_modules/,
 				extensions: ['.ts', '.tsx'],
@@ -31,8 +47,8 @@ function configurePackage(name) {
 			}),
 			copy({
 				targets: [
-					{ src: `README`, dest: sourceDir },
-					{ src: `LICENSE`, dest: sourceDir },
+					{ src: `../../README`, dest: sourceDir },
+					{ src: `../../LICENSE`, dest: sourceDir },
 				],
 			}),
 		],
@@ -52,6 +68,22 @@ function configurePackage(name) {
 		},
 		plugins: [
 			babel({
+				babelrc: false,
+				configFile: false,
+				presets: [
+					[
+						'@babel/preset-env',
+						{
+							targets: {
+								node: '16',
+								esmodules: true,
+							},
+						},
+					],
+					['@babel/preset-react', { runtime: 'automatic' }],
+					'@babel/preset-typescript',
+				],
+				plugins: [],
 				babelHelpers: 'bundled',
 				exclude: /node_modules/,
 				extensions: ['.ts', '.tsx'],
@@ -66,18 +98,5 @@ function configurePackage(name) {
 }
 
 export default function rollup() {
-	const packages = [
-		// Base
-		'conform-dom',
-		'conform-validitystate',
-
-		// Schema resolver
-		'conform-zod',
-		'conform-yup',
-
-		// View adapter
-		'conform-react',
-	];
-
-	return packages.flatMap(configurePackage);
+	return configurePackage();
 }

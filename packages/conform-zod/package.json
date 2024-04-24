@@ -16,6 +16,15 @@
 			"default": "./index.mjs"
 		}
 	},
+	"scripts": {
+		"build:js": "rollup -c",
+		"build:ts": "tsc",
+		"build": "pnpm run \"/^build:.*/\"",
+		"dev:js": "pnpm run build:js --watch",
+		"dev:ts": "pnpm run build:ts --watch",
+		"dev": "pnpm run \"/^dev:.*/\"",
+		"prepare": "pnpm run build"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/edmundhung/conform",
@@ -31,6 +40,13 @@
 		"zod": "^3.21.0"
 	},
 	"devDependencies": {
+		"@babel/core": "^7.17.8",
+		"@babel/preset-env": "^7.20.2",
+		"@babel/preset-typescript": "^7.20.2",
+		"@rollup/plugin-babel": "^5.3.1",
+		"@rollup/plugin-node-resolve": "^13.3.0",
+		"rollup-plugin-copy": "^3.4.0",
+		"rollup": "^2.79.1",
 		"zod": "3.21.4"
 	},
 	"keywords": [

@@ -16,6 +16,7 @@ pids
 
 # Build result
 /packages/*/*.js
+!/packages/*/rollup.config.js
 /packages/*/*.cjs
 /packages/*/*.mjs
 /packages/*/*.d.ts
