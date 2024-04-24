@@ -3,7 +3,7 @@
 	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.1.0",
+	"version": "1.1.2",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -15,6 +15,15 @@
 			"require": "./index.js",
 			"default": "./index.mjs"
 		}
+	},
+	"scripts": {
+		"build:js": "rollup -c",
+		"build:ts": "tsc",
+		"build": "pnpm run \"/^build:.*/\"",
+		"dev:js": "pnpm run build:js --watch",
+		"dev:ts": "pnpm run build:ts --watch",
+		"dev": "pnpm run \"/^dev:.*/\"",
+		"prepare": "pnpm run build"
 	},
 	"repository": {
 		"type": "git",
@@ -38,5 +47,14 @@
 		"validation",
 		"dom"
 	],
-	"sideEffects": false
+	"sideEffects": false,
+	"devDependencies": {
+		"@babel/core": "^7.17.8",
+		"@babel/preset-env": "^7.20.2",
+		"@babel/preset-typescript": "^7.20.2",
+		"@rollup/plugin-babel": "^5.3.1",
+		"@rollup/plugin-node-resolve": "^13.3.0",
+		"rollup-plugin-copy": "^3.4.0",
+		"rollup": "^2.79.1"
+	}
 }
