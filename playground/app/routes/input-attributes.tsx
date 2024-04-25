@@ -189,12 +189,12 @@ export default function Example() {
 							? fields.released.descriptionId
 							: undefined,
 					}).map((props) => (
-						<label key={props.value} className="inline-block">
+						<label key={props.defaultValue} className="inline-block">
 							<input {...props} />
 							<span className="p-2">
-								{`${props.value?.slice(0, 1).toUpperCase()}${props.value
-									?.slice(1)
-									.toLowerCase()}`}
+								{`${props.defaultValue
+									.slice(0, 1)
+									.toUpperCase()}${props.defaultValue.slice(1).toLowerCase()}`}
 							</span>
 						</label>
 					))}
@@ -207,9 +207,9 @@ export default function Example() {
 							? fields.languages.descriptionId
 							: undefined,
 					}).map((props) => (
-						<label key={props.value} className="inline-block">
+						<label key={props.defaultValue} className="inline-block">
 							<input {...props} />
-							<span className="p-2">{props.value?.toUpperCase()}</span>
+							<span className="p-2">{props.defaultValue.toUpperCase()}</span>
 						</label>
 					))}
 				</Field>

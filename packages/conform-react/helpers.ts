@@ -58,7 +58,6 @@ type InputProps = Pretty<
 		step?: string | number;
 		pattern?: string;
 		multiple?: boolean;
-		value?: string;
 		defaultChecked?: boolean;
 		defaultValue?: string;
 	}
@@ -258,13 +257,16 @@ export function getInputProps<Schema, Options extends InputOptions>(
 
 	if (typeof options.value === 'undefined' || options.value) {
 		if (options.type === 'checkbox' || options.type === 'radio') {
-			props.value = typeof options.value === 'string' ? options.value : 'on';
+			props.defaultValue =
+				typeof options.value === 'string' ? options.value : 'on';
 			props.defaultChecked =
 				typeof metadata.initialValue === 'boolean'
 					? metadata.initialValue
-					: metadata.initialValue === props.value;
+					: metadata.initialValue === props.defaultValue;
 		} else if (typeof metadata.initialValue === 'string') {
 			props.defaultValue = metadata.initialValue;
+		} else if (typeof metadata.initialValue === 'number') {
+			props.defaultValue = metadata.initialValue.toString();
 		}
 	}
 
@@ -383,20 +385,22 @@ export function getCollectionProps<
 	metadata: FieldMetadata<Schema, any, any>,
 	options: Options,
 ): Array<
-	InputProps & Pick<Options, 'type'> & Pick<Required<InputProps>, 'value'>
+	InputProps &
+		Pick<Options, 'type'> &
+		Pick<Required<InputProps>, 'defaultValue'>
 > {
-	return options.options.map((value) =>
+	return options.options.map((defaultValue) =>
 		simplify({
 			...getFormControlProps(metadata, options),
-			key: `${metadata.key ?? ''}${value}`,
-			id: `${metadata.id}-${value}`,
+			key: `${metadata.key ?? ''}${defaultValue}`,
+			id: `${metadata.id}-${defaultValue}`,
 			type: options.type,
-			value,
+			defaultValue,
 			defaultChecked:
 				typeof options.value === 'undefined' || options.value
 					? options.type === 'checkbox' && Array.isArray(metadata.initialValue)
-						? metadata.initialValue.includes(value)
-						: metadata.initialValue === value
+						? metadata.initialValue.includes(defaultValue)
+						: metadata.initialValue === defaultValue
 					: undefined,
 
 			// The required attribute doesn't make sense for checkbox group

@@ -117,17 +117,17 @@ describe('conform-react', () => {
 		});
 		expect(getInputProps(metadata, { type: 'checkbox' })).toEqual({
 			...props,
-			type: 'checkbox',
-			value: 'on',
 			defaultChecked: false,
+			defaultValue: 'on',
+			type: 'checkbox',
 		});
 		expect(
 			getInputProps({ ...metadata, initialValue: 'on' }, { type: 'radio' }),
 		).toEqual({
 			...props,
+			defaultChecked: true,
+			defaultValue: 'on',
 			type: 'radio',
-			value: 'on',
-			defaultChecked: true,
 		});
 		expect(
 			getInputProps(
@@ -136,9 +136,9 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			type: 'checkbox',
-			value: 'something else',
 			defaultChecked: true,
+			defaultValue: 'something else',
+			type: 'checkbox',
 		});
 		expect(
 			getInputProps(
@@ -147,9 +147,9 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			type: 'checkbox',
-			value: 'something else',
 			defaultChecked: true,
+			defaultValue: 'something else',
+			type: 'checkbox',
 		});
 		expect(getInputProps(metadata, { type: 'file' })).toEqual({
 			...props,

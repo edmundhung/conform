@@ -45,9 +45,9 @@ export default function Example() {
 						type: 'radio',
 						options: ['x', 'y', 'z'],
 					}).map((props) => (
-						<label key={props.value} className="inline-block">
+						<label key={props.defaultValue} className="inline-block">
 							<input {...props} />
-							<span className="p-2">{props.value?.toUpperCase()}</span>
+							<span className="p-2">{props.defaultValue.toUpperCase()}</span>
 						</label>
 					))}
 				</Field>
@@ -56,9 +56,9 @@ export default function Example() {
 						type: 'checkbox',
 						options: ['a', 'b', 'c', 'd'],
 					}).map((props) => (
-						<label key={props.value} className="inline-block">
+						<label key={props.defaultValue} className="inline-block">
 							<input {...props} />
-							<span className="p-2">{props.value?.toUpperCase()}</span>
+							<span className="p-2">{props.defaultValue.toUpperCase()}</span>
 						</label>
 					))}
 				</Field>
