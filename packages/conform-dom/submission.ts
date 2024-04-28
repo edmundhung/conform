@@ -320,7 +320,7 @@ export type ResetIntent<Schema = any> = {
 		  };
 };
 
-export type UpdateIntent<Schema = unknown> = {
+export type UpdateIntent<Schema = any> = {
 	type: 'update';
 	payload:
 		| {
@@ -339,7 +339,7 @@ export type UpdateIntent<Schema = unknown> = {
 		  };
 };
 
-export type RemoveIntent<Schema extends Array<any> = any> = {
+export type RemoveIntent<Schema = any> = {
 	type: 'remove';
 	payload: {
 		name: FieldName<Schema>;
@@ -347,7 +347,7 @@ export type RemoveIntent<Schema extends Array<any> = any> = {
 	};
 };
 
-export type InsertIntent<Schema extends Array<any> = any> = {
+export type InsertIntent<Schema = any> = {
 	type: 'insert';
 	payload: {
 		name: FieldName<Schema>;
@@ -358,7 +358,7 @@ export type InsertIntent<Schema extends Array<any> = any> = {
 	};
 };
 
-export type ReorderIntent<Schema extends Array<any> = any> = {
+export type ReorderIntent<Schema = any> = {
 	type: 'reorder';
 	payload: {
 		name: FieldName<Schema>;
@@ -367,13 +367,13 @@ export type ReorderIntent<Schema extends Array<any> = any> = {
 	};
 };
 
-export type Intent<Schema = unknown> =
+export type Intent<Schema = any> =
 	| ValidateIntent<Schema>
 	| ResetIntent<Schema>
 	| UpdateIntent<Schema>
-	| ReorderIntent<Schema extends Array<any> ? Schema : any>
-	| RemoveIntent<Schema extends Array<any> ? Schema : any>
-	| InsertIntent<Schema extends Array<any> ? Schema : any>;
+	| ReorderIntent<Schema>
+	| RemoveIntent<Schema>
+	| InsertIntent<Schema>;
 
 export function getIntent(
 	serializedIntent: string | null | undefined,
