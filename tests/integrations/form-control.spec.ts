@@ -63,6 +63,17 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.message).toHaveValue(
 		'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
 	);
+
+	// To ensure that keys are updated correctly
+	await fieldset.name.fill('Test');
+	await fieldset.number.fill('2468');
+	await fieldset.message.fill('Hello World');
+	await fieldset.updateForm.click();
+	await expect(fieldset.name).toHaveValue('Conform');
+	await expect(fieldset.number).toHaveValue('13579');
+	await expect(fieldset.message).toHaveValue(
+		'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+	);
 }
 
 test.describe('With JS', () => {

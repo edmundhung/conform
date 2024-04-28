@@ -430,7 +430,10 @@ function updateValue<Error>(
 	if (name === '') {
 		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
-		meta.key = getDefaultKey(value as Record<string, unknown>);
+		meta.key = {
+			...getDefaultKey(value as Record<string, unknown>),
+			'': generateId(),
+		};
 		return;
 	}
 
