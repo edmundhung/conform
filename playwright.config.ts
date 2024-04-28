@@ -76,6 +76,8 @@ const config: PlaywrightTestConfig = {
 		command: 'pnpm --filter=./playground start',
 		port: process.env.PORT ? Number(process.env.PORT) : 3000,
 		reuseExistingServer: !process.env.CI,
+		stderr: 'pipe',
+		stdout: 'pipe',
 	},
 };
 
