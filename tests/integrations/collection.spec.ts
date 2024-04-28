@@ -1,7 +1,12 @@
 import { type Page, test, expect } from '@playwright/test';
 import { getPlayground } from '../helpers';
 
-async function runValidationScenario(page: Page) {
+async function runTest(
+	page: Page,
+	options: {
+		noClientValidate?: boolean;
+	} = {},
+) {
 	const playground = getPlayground(page);
 
 	await playground.submit.click();
@@ -12,6 +17,17 @@ async function runValidationScenario(page: Page) {
 	await playground.submit.click();
 
 	await expect(playground.error).toHaveText(['', 'Required']);
+
+	if (!options.noClientValidate) {
+		const invalidOption = playground.container.getByLabel('D');
+
+		await invalidOption.click();
+
+		await expect(playground.error).toHaveText(['', 'Invalid']);
+
+		// Uncheck it to remove the error
+		await invalidOption.click();
+	}
 
 	await playground.container.getByLabel('C').click();
 	await playground.submit.click();
@@ -43,12 +59,14 @@ async function runValidationScenario(page: Page) {
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/collection');
-		await runValidationScenario(page);
+		await runTest(page);
 	});
 
 	test('Server Validation', async ({ page }) => {
 		await page.goto('/collection?noClientValidate=yes');
-		await runValidationScenario(page);
+		await runTest(page, {
+			noClientValidate: true,
+		});
 	});
 
 	test('Form reset', async ({ page }) => {
@@ -69,6 +87,8 @@ test.describe('No JS', () => {
 
 	test('Validation', async ({ page }) => {
 		await page.goto('/collection');
-		await runValidationScenario(page);
+		await runTest(page, {
+			noClientValidate: true,
+		});
 	});
 });

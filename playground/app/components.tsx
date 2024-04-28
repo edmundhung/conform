@@ -80,10 +80,22 @@ interface FieldProps {
 	label: string;
 	inline?: boolean;
 	meta?: FieldMetadata<any, any>;
+	allErrors?: boolean;
 	children: ReactNode;
 }
 
-export function Field({ label, inline, meta, children }: FieldProps) {
+export function Field({
+	label,
+	inline,
+	meta,
+	allErrors,
+	children,
+}: FieldProps) {
+	const errors =
+		meta && allErrors
+			? Object.values(meta.allErrors).flat()
+			: meta?.errors ?? [];
+
 	return (
 		<div className="mb-4">
 			<div
@@ -102,10 +114,10 @@ export function Field({ label, inline, meta, children }: FieldProps) {
 				{children}
 			</div>
 			<div id={meta?.errorId} className="my-1 space-y-0.5">
-				{!meta?.errors?.length ? (
+				{errors.length === 0 ? (
 					<p className="text-pink-600 text-sm" />
 				) : (
-					meta.errors.map((message) => (
+					errors.map((message) => (
 						<p className="text-pink-600 text-sm" key={message}>
 							{message}
 						</p>

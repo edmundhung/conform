@@ -410,9 +410,14 @@ function handleIntent<Error>(
 		}
 	}
 
+	const validatedFields = fields?.filter((name) => meta.validated[name]) ?? [];
+
 	meta.error = Object.entries(meta.error).reduce<Record<string, Error>>(
 		(result, [name, error]) => {
-			if (meta.validated[name]) {
+			if (
+				meta.validated[name] ||
+				validatedFields.some((field) => isPrefix(name, field))
+			) {
 				result[name] = error;
 			}
 

@@ -7,7 +7,20 @@ import { Playground, Field } from '~/components';
 
 const schema = z.object({
 	singleChoice: z.string({ required_error: 'Required' }),
-	multipleChoice: z.string().array().min(1, 'Required'),
+	multipleChoice: z
+		.enum(['a', 'b', 'c'], {
+			errorMap(issue, ctx) {
+				if (issue.code === 'invalid_enum_value') {
+					return { message: 'Invalid' };
+				}
+
+				return {
+					message: ctx.defaultError,
+				};
+			},
+		})
+		.array()
+		.min(1, 'Required'),
 });
 
 export async function loader({ request }: LoaderArgs) {
@@ -51,7 +64,7 @@ export default function Example() {
 						</label>
 					))}
 				</Field>
-				<Field label="Multiple choice" meta={fields.multipleChoice}>
+				<Field label="Multiple choice" meta={fields.multipleChoice} allErrors>
 					{getCollectionProps(fields.multipleChoice, {
 						type: 'checkbox',
 						options: ['a', 'b', 'c', 'd'],
