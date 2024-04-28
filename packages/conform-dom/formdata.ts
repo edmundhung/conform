@@ -120,7 +120,8 @@ export function setValue(
 		const nextKey = paths[index + 1];
 		const newValue =
 			index != lastIndex
-				? Object.prototype.hasOwnProperty.call(pointer, key)
+				? Object.prototype.hasOwnProperty.call(pointer, key) &&
+				  pointer[key] !== null
 					? pointer[key]
 					: typeof nextKey === 'number'
 					? []
