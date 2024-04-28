@@ -3,7 +3,8 @@
 	"private": true,
 	"sideEffects": false,
 	"scripts": {
-		"start": "pnpm run \"/^build:.*/\" && remix-serve build",
+		"start": "pnpm run build && remix-serve build",
+		"build": "pnpm run build:style && pnpm run build:remix",
 		"build:style": "cross-env NODE_ENV=production tailwindcss -i ./styles.css -o ./app/styles.css --minify",
 		"build:remix": "remix build",
 		"dev": "pnpm run \"/^dev:.*/\"",
