@@ -9,13 +9,11 @@
 	textarea {
 		@apply mt-1 focus:ring-indigo-500 focus:border-indigo-500;
 		@apply block w-full shadow-sm lg:text-sm border-gray-300 rounded-md;
-		@apply touched:invalid:border-pink-500 touched:invalid:text-pink-600;
-		@apply touched:focus:invalid:border-pink-500 touched:focus:invalid:ring-pink-500;
 	}
 
 	input[type='checkbox'],
 	input[type='radio'] {
-		@apply h-4 w-4 text-indigo-600 touched:invalid:border-pink-500 touched:focus:invalid:ring-pink-500 focus:ring-indigo-500 border-gray-300 rounded;
+		@apply h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded;
 	}
 
 	section + section {

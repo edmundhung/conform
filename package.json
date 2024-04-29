@@ -33,7 +33,7 @@
 		"zod": "3.21.4"
 	},
 	"engines": {
-		"node": ">=20"
+		"node": "20.x"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",

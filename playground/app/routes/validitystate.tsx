@@ -5,7 +5,11 @@ import {
 	defaultFormatError,
 	getError,
 } from '@conform-to/validitystate';
-import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
+import {
+	json,
+	type ActionFunctionArgs,
+	type LoaderFunctionArgs,
+} from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { useEffect, useState } from 'react';
 import { Playground } from '~/components';
@@ -39,7 +43,7 @@ function configureFormatError(secret: string | null) {
 	};
 }
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return json({
@@ -48,7 +52,7 @@ export async function loader({ request }: LoaderArgs) {
 	});
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const url = new URL(request.url);
 	const secret = getSecret(url);
 	const formData = await request.formData();
