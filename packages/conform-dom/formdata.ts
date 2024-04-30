@@ -249,7 +249,7 @@ export function normalize<
  * Flatten a tree into a dictionary
  */
 export function flatten(
-	data: Record<string | number | symbol, unknown> | Array<unknown> | undefined,
+	data: unknown,
 	options?: {
 		resolve?: (data: unknown) => unknown | null;
 		prefix?: string;
@@ -307,7 +307,7 @@ export function flatten(
 
 		if (Array.isArray(data)) {
 			processArray(data, prefix);
-		} else {
+		} else if (data && isPlainObject(data)) {
 			processObject(data, prefix);
 		}
 	}
