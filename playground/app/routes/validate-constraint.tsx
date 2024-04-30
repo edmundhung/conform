@@ -3,7 +3,7 @@
 // 	useForm,
 // 	validateConstraint,
 // } from '@conform-to/react';
-// import { type LoaderArgs } from '@remix-run/node';
+// import { type LoaderFunctionArgs } from '@remix-run/node';
 // import { Form, useLoaderData } from '@remix-run/react';
 // import { useState } from 'react';
 // import { Playground, Field } from '~/components';
@@ -14,7 +14,7 @@
 // 	confirmPassword: string;
 // }
 
-// export async function loader({ request }: LoaderArgs) {
+// export async function loader({ request }: LoaderFunctionArgs) {
 // 	const url = new URL(request.url);
 
 // 	return {
