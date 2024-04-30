@@ -1,61 +1,86 @@
-name: Tests
 on:
   push:
-    branches:
-      - main
-      - next
-      - v1
+    branches: [main, next, v1]
   pull_request:
-    branches:
-      - main
-      - next
-      - v1
+    branches: [main, next, v1]
 jobs:
+  e2e:
+    name: E2E Tests
+    timeout-minutes: 60
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm i
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run Playwright tests
+        run: pnpm exec playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - name: Upload blob report to GitHub Actions Artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.os }}-${{ matrix.shardIndex }}
+          path: blob-report
+          retention-days: 1
+  merge-reports:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    # Merge reports after playwright-tests, even if some shards have failed
+    if: ${{ !cancelled() }}
+    needs: [e2e]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm i
+      - name: Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: blob-report-${{ matrix.os }}-*
+          merge-multiple: true
+
+      - name: Merge into HTML Report
+        run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report--attempt-${{ matrix.os }}-${{ github.run_attempt }}
+          path: playwright-report
+          retention-days: 14
   unit:
     name: API Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Setup node
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      - name: Download deps
+          node-version: lts/*
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
         run: pnpm i
-      - name: Build packages
-        run: pnpm run build
-      - name: Run tests
+      - name: Run Vitest tests
         run: pnpm exec vitest
-      - name: Typecheck
+      - name: Run Typecheck
         run: pnpm -r run typecheck
-
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-      - name: Download deps
-        run: pnpm i
-      - name: Install Playwright
-        run: pnpm exec playwright install --with-deps
-      - name: Run tests
-        run: pnpm exec playwright test
-      - name: Upload test result
-        uses: actions/upload-artifact@v2
-        if: always()
-        with:
-          name: test-results
-          path: test-results/
-          retention-days: 30

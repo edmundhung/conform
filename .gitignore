@@ -1,6 +1,6 @@
 # Logs
-logs
 *.log
+logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -9,20 +9,20 @@ yarn-error.log*
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime data
-pids
 *.pid
-*.seed
 *.pid.lock
+*.seed
+pids
 
 # Build result
-/packages/*/*.js
 !/packages/*/rollup.config.js
-/packages/*/*.cjs
-/packages/*/*.mjs
-/packages/*/*.d.ts
-/packages/*/README
-/packages/*/LICENSE
 /packages/*/_virtual
+/packages/*/*.cjs
+/packages/*/*.d.ts
+/packages/*/*.js
+/packages/*/*.mjs
+/packages/*/LICENSE
+/packages/*/README
 
 # Anything built
 build/
@@ -41,10 +41,9 @@ node_modules/
 
 # Output of 'npm pack'
 *.tgz
-/test-results/
 /playwright-report/
 /playwright/.cache/
+/test-results/
 
 # DS Store
 .DS_Store
-**/.DS_Store

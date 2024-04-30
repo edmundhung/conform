@@ -1,5 +1,5 @@
 import { type Locator, test, expect } from '@playwright/test';
-import { getPlayground } from '../helpers';
+import { getPlayground, selectAll } from './helpers';
 
 function getFieldset(form: Locator) {
 	return {
@@ -84,7 +84,7 @@ test.skip('Basic usage with constraint', async ({ page }) => {
 	await confirmPassword.type('4');
 	await expect(playground.error).toHaveText(['', '', 'match']);
 
-	await password.press('Control+a');
+	await selectAll(password);
 	await password.press('ArrowRight');
 	await password.type('4');
 	await expect(playground.error).toHaveText(['', '', '']);
