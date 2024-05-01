@@ -6,7 +6,7 @@ Conform support both nested object and array by leveraging a naming convention o
 
 Conform uses the `object.property` and `array[index]` syntax to denote data structure. These notations could be combined for nested array as well. e.g. `tasks[0].content`. If the form data has an entry `['tasks[0].content', 'Hello World']`, the object constructed will become `{ tasks: [{ content: 'Hello World' }] }`.
 
-However, there is no need to set the name attribute of each field manually. Conform will always infer the name for you and you will have better type safety if you are using the generated name all
+However, there is no need to set the name attribute of each field manually. Conform will always infer the name for you and you will have better type safety if you are using the generated name.
 
 ## Nested Object
 
