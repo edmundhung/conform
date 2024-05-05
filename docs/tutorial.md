@@ -105,12 +105,12 @@ export default function ContactUs() {
       <div>
         <label>Email</label>
         <input type="email" name="email" defaultValue={result?.payload.email} />
-        <div>{result?.fieldsErrors.email}</div>
+        <div>{result?.fieldErrors.email}</div>
       </div>
       <div>
         <label>Message</label>
         <textarea name="message" defaultValue={result?.payload.message} />
-        <div>{result?.fieldsErrors.message}</div>
+        <div>{result?.fieldErrors.message}</div>
       </div>
       <button>Send</button>
     </Form>
