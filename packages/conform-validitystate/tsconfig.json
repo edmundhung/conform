@@ -7,7 +7,6 @@
 		"allowSyntheticDefaultImports": true,
 		"strict": true,
 		"declaration": true,
-		"emitDeclarationOnly": true,
 		"composite": true,
 		"skipLibCheck": true
 	}

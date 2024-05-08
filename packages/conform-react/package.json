@@ -18,12 +18,13 @@
 	},
 	"scripts": {
 		"build:js": "rollup -c",
-		"build:ts": "tsc",
+		"build:ts": "tsc --emitDeclarationOnly",
 		"build": "pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
-		"prepare": "pnpm run build"
+		"prepare": "pnpm run build",
+		"typecheck": "tsc --noEmit"
 	},
 	"repository": {
 		"type": "git",

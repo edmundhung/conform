@@ -14,7 +14,7 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
-export type SubmissionContext<Value = null, FormError = string[]> = {
+export type SubmissionContext<Value = unknown, FormError = string[]> = {
 	intent: Intent | null;
 	payload: Record<string, unknown>;
 	fields: Set<string>;

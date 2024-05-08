@@ -10,7 +10,7 @@ import {
 	type SubscriptionScope,
 	type SubscriptionSubject,
 	type FormOptions as BaseFormOptions,
-	unstable_createFormContext as createBaseFormContext,
+	unstable_createFormContext,
 	formatPaths,
 	getPaths,
 	isPrefix,
@@ -18,10 +18,6 @@ import {
 	INTENT,
 } from '@conform-to/dom';
 import {
-	type FormEvent,
-	type ReactElement,
-	type ReactNode,
-	type MutableRefObject,
 	createContext,
 	useMemo,
 	useCallback,
@@ -32,15 +28,7 @@ import {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export type Primitive =
-	| string
-	| number
-	| bigint
-	| boolean
-	| Date
-	| File
-	| null
-	| undefined;
+export type Primitive = string | number | bigint | boolean | null | undefined;
 
 export type Metadata<
 	Schema,
@@ -83,7 +71,7 @@ type SubfieldMetadata<
 	Schema,
 	FormSchema extends Record<string, any>,
 	FormError,
-> = [Schema] extends [Primitive]
+> = [Schema] extends [Primitive | Date | File]
 	? {}
 	: [Schema] extends [Array<infer Item> | null | undefined]
 	? {
@@ -144,7 +132,7 @@ export function useFormContext<Schema extends Record<string, any>, FormError>(
 
 export function useFormState<FormError>(
 	form: FormContext<any, FormError>,
-	subjectRef?: MutableRefObject<SubscriptionSubject>,
+	subjectRef?: React.MutableRefObject<SubscriptionSubject>,
 ): FormState<FormError> {
 	const subscribe = useCallback(
 		(callback: () => void) =>
@@ -157,8 +145,8 @@ export function useFormState<FormError>(
 
 export function FormProvider(props: {
 	context: Wrapped<FormContext<any, any>>;
-	children: ReactNode;
-}): ReactElement {
+	children: React.ReactNode;
+}): React.ReactElement {
 	const forms = useContext(Form);
 	const context = getWrappedFormContext(props.context);
 	const value = useMemo(
@@ -184,7 +172,7 @@ export function FormStateInput(props: { formId?: string }): React.ReactElement {
 
 export function useSubjectRef(
 	initialSubject: SubscriptionSubject = {},
-): MutableRefObject<SubscriptionSubject> {
+): React.MutableRefObject<SubscriptionSubject> {
 	const subjectRef = useRef(initialSubject);
 
 	// Reset the subject everytime the component is rerendered
@@ -195,17 +183,17 @@ export function useSubjectRef(
 }
 
 export function updateSubjectRef(
-	ref: MutableRefObject<SubscriptionSubject>,
+	ref: React.MutableRefObject<SubscriptionSubject>,
 	subject: 'status' | 'formId',
 ): void;
 export function updateSubjectRef(
-	ref: MutableRefObject<SubscriptionSubject>,
+	ref: React.MutableRefObject<SubscriptionSubject>,
 	subject: Exclude<keyof SubscriptionSubject, 'status' | 'formId'>,
 	scope: keyof SubscriptionScope,
 	name: string,
 ): void;
 export function updateSubjectRef(
-	ref: MutableRefObject<SubscriptionSubject>,
+	ref: React.MutableRefObject<SubscriptionSubject>,
 	subject: keyof SubscriptionSubject,
 	scope?: keyof SubscriptionScope,
 	name?: string,
@@ -226,7 +214,7 @@ export function getMetadata<
 	FormSchema extends Record<string, any>,
 >(
 	context: FormContext<FormSchema, FormError, any>,
-	subjectRef: MutableRefObject<SubscriptionSubject>,
+	subjectRef: React.MutableRefObject<SubscriptionSubject>,
 	stateSnapshot: FormState<FormError>,
 	name: FieldName<Schema, FormSchema, FormError> = '',
 ): Metadata<Schema, FormSchema, FormError> {
@@ -272,24 +260,6 @@ export function getMetadata<
 
 				return result;
 			},
-			get getFieldset() {
-				return () =>
-					new Proxy({} as any, {
-						get(target, key, receiver) {
-							if (typeof key === 'string') {
-								return getFieldMetadata(
-									context,
-									subjectRef,
-									stateSnapshot,
-									name,
-									key,
-								);
-							}
-
-							return Reflect.get(target, key, receiver);
-						},
-					});
-			},
 		},
 		{
 			get(target, key, receiver) {
@@ -334,7 +304,7 @@ export function getFieldMetadata<
 	FormError,
 >(
 	context: FormContext<FormSchema, FormError, any>,
-	subjectRef: MutableRefObject<SubscriptionSubject>,
+	subjectRef: React.MutableRefObject<SubscriptionSubject>,
 	stateSnapshot: FormState<FormError>,
 	prefix = '',
 	key?: string | number,
@@ -404,7 +374,7 @@ export function getFormMetadata<
 	FormValue = Schema,
 >(
 	context: FormContext<Schema, FormError, FormValue>,
-	subjectRef: MutableRefObject<SubscriptionSubject>,
+	subjectRef: React.MutableRefObject<SubscriptionSubject>,
 	stateSnapshot: FormState<FormError>,
 	noValidate: boolean,
 ): FormMetadata<Schema, FormError> {
@@ -450,7 +420,7 @@ export type FormOptions<
 	 * A function to be called before the form is submitted.
 	 */
 	onSubmit?: (
-		event: FormEvent<HTMLFormElement>,
+		event: React.FormEvent<HTMLFormElement>,
 		context: ReturnType<
 			BaseFormContext<Schema, FormError, FormValue>['submit']
 		>,
@@ -465,7 +435,7 @@ export type FormContext<
 	BaseFormContext<Schema, FormError, FormValue>,
 	'submit' | 'onUpdate'
 > & {
-	submit: (event: FormEvent<HTMLFormElement>) => void;
+	submit: (event: React.FormEvent<HTMLFormElement>) => void;
 	onUpdate: (
 		options: Partial<FormOptions<Schema, FormError, FormValue>>,
 	) => void;
@@ -479,7 +449,7 @@ export function createFormContext<
 	options: FormOptions<Schema, FormError, FormValue>,
 ): FormContext<Schema, FormError, FormValue> {
 	let { onSubmit, ...rest } = options;
-	const context = createBaseFormContext(rest);
+	const context = unstable_createFormContext(rest);
 
 	return {
 		...context,

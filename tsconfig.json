@@ -1,10 +1,10 @@
 {
 	"references": [
-		{ "path": "packages/conform-dom" },
-		{ "path": "packages/conform-yup" },
-		{ "path": "packages/conform-zod" },
-		{ "path": "packages/conform-react" },
-		{ "path": "packages/conform-validitystate" }
+		{ "path": "./packages/conform-dom" },
+		{ "path": "./packages/conform-yup" },
+		{ "path": "./packages/conform-zod" },
+		{ "path": "./packages/conform-react" },
+		{ "path": "./packages/conform-validitystate" }
 	],
 	"files": []
 }

@@ -294,10 +294,12 @@ export function useInputValue<
 	return [value, setValue] as const;
 }
 
-export function useControl<
+export function unstable_useControl<
 	Value extends string | string[] | Array<string | undefined>,
 >(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
+	// eslint-disable-next-line react-hooks/rules-of-hooks
 	const [value, setValue] = useInputValue(meta);
+	// eslint-disable-next-line react-hooks/rules-of-hooks
 	const { register, change, focus, blur } = useInputEvent();
 	const handleChange = (
 		value: Value extends string ? Value : string | string[],
@@ -377,13 +379,15 @@ export function useInputControl<
 	};
 }
 
-export function Control<
+export function unstable_Control<
 	Value extends string | string[] | Array<string | undefined>,
 >(props: {
 	meta: { key?: Key | null | undefined; initialValue?: Value | undefined };
-	render: (control: ReturnType<typeof useControl<Value>>) => React.ReactNode;
+	render: (
+		control: ReturnType<typeof unstable_useControl<Value>>,
+	) => React.ReactNode;
 }) {
-	const control = useControl(props.meta);
+	const control = unstable_useControl(props.meta);
 
 	return props.render(control);
 }
