@@ -1,6 +1,10 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parseWithYup } from '@conform-to/yup';
-import { type LoaderArgs, type ActionArgs, json } from '@remix-run/node';
+import {
+	type LoaderFunctionArgs,
+	type ActionFunctionArgs,
+	json,
+} from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import * as yup from 'yup';
@@ -31,7 +35,7 @@ const schema = yup.object({
 		),
 });
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return {
@@ -39,7 +43,7 @@ export async function loader({ request }: LoaderArgs) {
 	};
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseWithYup(formData, {
 		schema,

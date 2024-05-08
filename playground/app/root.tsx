@@ -1,4 +1,4 @@
-import type { V2_MetaFunction, LinksFunction } from '@remix-run/node';
+import type { MetaFunction, LinksFunction } from '@remix-run/node';
 import {
 	Links,
 	LiveReload,
@@ -7,13 +7,13 @@ import {
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
-import stylesUrl from '~/styles.css';
+import stylesheet from '~/tailwind.css';
 
 export let links: LinksFunction = () => {
-	return [{ rel: 'stylesheet', href: stylesUrl }];
+	return [{ rel: 'stylesheet', href: stylesheet }];
 };
 
-export const meta: V2_MetaFunction = () => [
+export const meta: MetaFunction = () => [
 	{
 		charset: 'utf-8',
 		title: 'Conform Playground',

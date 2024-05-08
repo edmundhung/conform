@@ -7,7 +7,11 @@ import {
 	getTextareaProps,
 	useForm,
 } from '@conform-to/react';
-import { json, type ActionArgs, type LoaderArgs } from '@remix-run/node';
+import {
+	json,
+	type ActionFunctionArgs,
+	type LoaderFunctionArgs,
+} from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field, Alert } from '~/components';
 
@@ -21,7 +25,7 @@ interface Schema {
 	languages: string[];
 }
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
 	return json({
@@ -29,7 +33,7 @@ export async function loader({ request }: LoaderArgs) {
 	});
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const initialValue: Record<string, string | string[]> = {};
 	const error: Record<string, string[]> = {};
