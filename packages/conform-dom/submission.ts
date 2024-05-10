@@ -332,9 +332,7 @@ export type UpdateIntent<Schema = any> = {
 		| {
 				name: FieldName<Schema>;
 				index: Schema extends Array<unknown> ? number : never;
-				value?: NonNullable<
-					DefaultValue<Schema extends Array<infer Item> ? Item : unknown>
-				>;
+				value?: NonNullable<Schema extends Array<infer Item> ? DefaultValue<Item> : never>;
 				validated?: boolean;
 		  };
 };
