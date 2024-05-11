@@ -542,7 +542,10 @@ export function serialize<Schema>(defaultValue: Schema): FormValue<Schema> {
 	} else if (typeof defaultValue === 'boolean') {
 		// @ts-expect-error FIXME
 		return defaultValue ? 'on' : undefined;
-	} else if (typeof defaultValue === 'number') {
+	} else if (
+		typeof defaultValue === 'number' ||
+		typeof defaultValue === 'bigint'
+	) {
 		// @ts-expect-error FIXME
 		return defaultValue.toString();
 	} else {
