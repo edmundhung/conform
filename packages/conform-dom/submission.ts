@@ -321,20 +321,23 @@ export type ResetIntent<Schema = any> = {
 };
 
 export type UpdateIntent<Schema = any> = {
-    type: 'update';
-    payload: {
-        name?: FieldName<Schema>;
-        index?: never;
-        value?: NonNullable<DefaultValue<Schema>>;
-        validated?: boolean;
-    } | {
-        name: FieldName<Schema>;
-        index: Schema extends Array<unknown> ? number : never;
-        value?: Schema extends Array<infer Item> ? NonNullable<DefaultValue<Item>> : never;
-        validated?: boolean;
-    };
+	type: 'update';
+	payload:
+		| {
+				name?: FieldName<Schema>;
+				index?: never;
+				value?: NonNullable<DefaultValue<Schema>>;
+				validated?: boolean;
+		  }
+		| {
+				name: FieldName<Schema>;
+				index: Schema extends Array<unknown> ? number : never;
+				value?: Schema extends Array<infer Item>
+					? NonNullable<DefaultValue<Item>>
+					: never;
+				validated?: boolean;
+		  };
 };
-
 
 export type RemoveIntent<Schema = any> = {
 	type: 'remove';
