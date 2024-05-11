@@ -250,66 +250,34 @@ export function normalize<
  */
 export function flatten(
 	data: unknown,
-	options?: {
-		resolve?: (data: unknown) => unknown | null;
+	options: {
+		resolve?: (data: unknown) => unknown;
 		prefix?: string;
-	},
+	} = {},
 ): Record<string, unknown> {
 	const result: Record<string, unknown> = {};
-	const resolve = options?.resolve ?? ((data) => data);
+	const resolve = options.resolve ?? ((data) => data);
 
-	function setResult(data: unknown, name: string) {
+	function process(data: unknown, prefix: string) {
 		const value = normalize(resolve(data));
 
 		if (typeof value !== 'undefined') {
-			result[name] = value;
+			result[prefix] = value;
 		}
-	}
 
-	function processObject(
-		obj: Record<string | number | symbol, unknown>,
-		prefix: string,
-	): void {
-		setResult(obj, prefix);
-
-		for (const [key, value] of Object.entries(obj)) {
-			const name = prefix ? `${prefix}.${key}` : key;
-
-			if (Array.isArray(value)) {
-				processArray(value, name);
-			} else if (value && isPlainObject(value)) {
-				processObject(value, name);
-			} else {
-				setResult(value, name);
+		if (Array.isArray(data)) {
+			for (let i = 0; i < data.length; i++) {
+				process(data[i], `${prefix}[${i}]`);
 			}
-		}
-	}
-
-	function processArray(array: Array<unknown>, prefix: string): void {
-		setResult(array, prefix);
-
-		for (let i = 0; i < array.length; i++) {
-			const item = array[i];
-			const name = `${prefix}[${i}]`;
-
-			if (Array.isArray(item)) {
-				processArray(item, name);
-			} else if (item && isPlainObject(item)) {
-				processObject(item, name);
-			} else {
-				setResult(item, name);
+		} else if (isPlainObject(data)) {
+			for (const [key, value] of Object.entries(data)) {
+				process(value, prefix ? `${prefix}.${key}` : key);
 			}
 		}
 	}
 
 	if (data) {
-		const prefix = options?.prefix ?? '';
-
-		if (Array.isArray(data)) {
-			processArray(data, prefix);
-		} else if (data && isPlainObject(data)) {
-			processObject(data, prefix);
-		}
+		process(data, options.prefix ?? '');
 	}
 
 	return result;
