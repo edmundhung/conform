@@ -332,9 +332,9 @@ export type UpdateIntent<Schema = any> = {
 		| {
 				name: FieldName<Schema>;
 				index: Schema extends Array<unknown> ? number : never;
-				value?: NonNullable<
-					DefaultValue<Schema extends Array<infer Item> ? Item : unknown>
-				>;
+				value?: Schema extends Array<infer Item>
+					? NonNullable<DefaultValue<Item>>
+					: never;
 				validated?: boolean;
 		  };
 };
@@ -482,7 +482,6 @@ export function setState(
 
 	Object.assign(
 		state,
-		// @ts-expect-error FIXME flatten should be more flexible
 		flatten(result, {
 			resolve(data) {
 				if (isPlainObject(data) || Array.isArray(data)) {
@@ -524,14 +523,11 @@ export function setListState(
 	});
 }
 
-export function serialize<Schema>(
-	defaultValue: DefaultValue<Schema>,
-): FormValue<Schema> {
+export function serialize<Schema>(defaultValue: Schema): FormValue<Schema> {
 	if (isPlainObject(defaultValue)) {
 		// @ts-expect-error FIXME
 		return Object.entries(defaultValue).reduce<Record<string, unknown>>(
 			(result, [key, value]) => {
-				// @ts-ignore-error FIXME
 				result[key] = serialize(value);
 				return result;
 			},
@@ -540,16 +536,16 @@ export function serialize<Schema>(
 	} else if (Array.isArray(defaultValue)) {
 		// @ts-expect-error FIXME
 		return defaultValue.map(serialize);
-	} else if (
-		// @ts-ignore-error FIXME
-		defaultValue instanceof Date
-	) {
+	} else if (defaultValue instanceof Date) {
 		// @ts-expect-error FIXME
 		return defaultValue.toISOString();
 	} else if (typeof defaultValue === 'boolean') {
 		// @ts-expect-error FIXME
 		return defaultValue ? 'on' : undefined;
-	} else if (typeof defaultValue === 'number') {
+	} else if (
+		typeof defaultValue === 'number' ||
+		typeof defaultValue === 'bigint'
+	) {
 		// @ts-expect-error FIXME
 		return defaultValue.toString();
 	} else {
