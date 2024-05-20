@@ -11,12 +11,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
         with:
           node-version: lts/*
       - name: Enable Corepack
@@ -26,47 +26,13 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
       - name: Run Playwright tests
-        run: pnpm exec playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
-      - name: Upload blob report to GitHub Actions Artifacts
+        run: pnpm exec playwright test
+      - name: Upload report to GitHub Actions Artifacts
+        uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
         with:
-          name: blob-report-${{ matrix.os }}-${{ matrix.shardIndex }}
-          path: blob-report
-          retention-days: 1
-  merge-reports:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    # Merge reports after playwright-tests, even if some shards have failed
-    if: ${{ !cancelled() }}
-    needs: [e2e]
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Install dependencies
-        run: pnpm i
-      - name: Download blob reports from GitHub Actions Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: all-blob-reports
-          pattern: blob-report-${{ matrix.os }}-*
-          merge-multiple: true
-
-      - name: Merge into HTML Report
-        run: pnpm exec playwright merge-reports --reporter html ./all-blob-reports
-
-      - name: Upload HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-report--attempt-${{ matrix.os }}-${{ github.run_attempt }}
-          path: playwright-report
+          name: playwright-report-${{ matrix.os }}
+          path: playwright-report/
           retention-days: 14
   unit:
     name: API Tests
