@@ -41,24 +41,40 @@ export default function Login() {
 
     // Validate the form on blur event triggered
     shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
   });
 
   return (
-    <Form method="post" id={form.id} onSubmit={form.onSubmit}>
+    <Form method="post" id={form.id} onSubmit={form.onSubmit} noValidate>
       <div>
         <label>Email</label>
-        <input type="email" name={fields.email.name} />
+        <input
+          type="email"
+          key={fields.email.key}
+          name={fields.email.name}
+          defaultValue={fields.email.initialValue}
+        />
         <div>{fields.email.errors}</div>
       </div>
       <div>
         <label>Password</label>
-        <input type="password" name={fields.password.name} />
+        <input
+          type="password"
+          key={fields.password.key}
+          name={fields.password.name}
+          defaultValue={fields.password.initialValue}
+        />
         <div>{fields.password.errors}</div>
       </div>
       <label>
         <div>
           <span>Remember me</span>
-          <input type="checkbox" name={fields.remember.name} />
+          <input
+            type="checkbox"
+            key={fields.remember.key}
+            name={fields.remember.name}
+            defaultChecked={fields.remember.initialValue === 'on'}
+          />
         </div>
       </label>
       <hr />
