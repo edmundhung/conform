@@ -59,6 +59,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report-${{ matrix.os }}
+          name: playwright-report-${{ matrix.os }}-node${{ matrix.node }}-${{ matrix.browser }}
           path: test-results/
           retention-days: 14
