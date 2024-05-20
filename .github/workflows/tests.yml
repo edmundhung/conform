@@ -1,9 +1,28 @@
+name: Tests
 on:
   push:
     branches: [main, next, v1]
   pull_request:
     branches: [main, next, v1]
 jobs:
+  unit:
+    name: API Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: pnpm i
+      - name: Run Vitest tests
+        run: pnpm exec vitest
+      - name: Run Typecheck
+        run: pnpm -r run typecheck
   e2e:
     name: E2E Tests
     timeout-minutes: 60
@@ -41,21 +60,5 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-${{ matrix.os }}
-          path: playwright-report/
+          path: test-results/
           retention-days: 14
-  unit:
-    name: API Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Install dependencies
-        run: pnpm i
-      - name: Run Vitest tests
-        run: pnpm exec vitest
-      - name: Run Typecheck
-        run: pnpm -r run typecheck
