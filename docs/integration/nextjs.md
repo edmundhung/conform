@@ -7,9 +7,9 @@ Here is a login form example integrating with [Next.js](https://nextjs.org). You
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-	email: z.string().email(),
-	password: z.string(),
-	remember: z.boolean().optional(),
+  email: z.string().email(),
+  password: z.string(),
+  remember: z.boolean().optional(),
 });
 
 // action.ts
@@ -20,15 +20,15 @@ import { parseWithZod } from '@conform-to/zod';
 import { loginSchema } from '@/app/schema';
 
 export async function login(prevState: unknown, formData: FormData) {
-	const submission = parseWithZod(formData, {
-		schema: loginSchema,
-	});
+  const submission = parseWithZod(formData, {
+    schema: loginSchema,
+  });
 
-	if (submission.status !== 'success') {
-		return submission.reply();
-	}
+  if (submission.status !== 'success') {
+    return submission.reply();
+  }
 
-	redirect('/dashboard');
+  redirect('/dashboard');
 }
 
 // form.tsx
@@ -41,56 +41,56 @@ import { login } from '@/app/actions';
 import { loginSchema } from '@/app/schema';
 
 export function LoginForm() {
-	const [lastResult, action] = useFormState(login, undefined);
-	const [form, fields] = useForm({
-		// Sync the result of last submission
-		lastResult,
+  const [lastResult, action] = useFormState(login, undefined);
+  const [form, fields] = useForm({
+    // Sync the result of last submission
+    lastResult,
 
-		// Reuse the validation logic on the client
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: loginSchema });
-		},
+    // Reuse the validation logic on the client
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: loginSchema });
+    },
 
-		// Validate the form on blur event triggered
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
-	});
+    // Validate the form on blur event triggered
+    shouldValidate: 'onBlur',
+    shouldRevalidate: 'onInput',
+  });
 
-	return (
-		<form id={form.id} onSubmit={form.onSubmit} action={action} noValidate>
-			<div>
-				<label>Email</label>
-				<input
-					type="email"
-					key={fields.email.key}
-					name={fields.email.name}
-					defaultValue={fields.email.initialValue}
-				/>
-				<div>{fields.email.errors}</div>
-			</div>
-			<div>
-				<label>Password</label>
-				<input
-					type="password"
-					key={fields.password.key}
-					name={fields.password.name}
-					defaultValue={fields.password.initialValue}
-				/>
-				<div>{fields.password.errors}</div>
-			</div>
-			<label>
-				<div>
-					<span>Remember me</span>
-					<input
-						type="checkbox"
-						key={fields.remember.key}
-						name={fields.remember.name}
-						defaultChecked={fields.remember.initialValue === 'on'}
-					/>
-				</div>
-			</label>
-			<button>Login</button>
-		</form>
-	);
+  return (
+    <form id={form.id} onSubmit={form.onSubmit} action={action} noValidate>
+      <div>
+        <label>Email</label>
+        <input
+          type="email"
+          key={fields.email.key}
+          name={fields.email.name}
+          defaultValue={fields.email.initialValue}
+        />
+        <div>{fields.email.errors}</div>
+      </div>
+      <div>
+        <label>Password</label>
+        <input
+          type="password"
+          key={fields.password.key}
+          name={fields.password.name}
+          defaultValue={fields.password.initialValue}
+        />
+        <div>{fields.password.errors}</div>
+      </div>
+      <label>
+        <div>
+          <span>Remember me</span>
+          <input
+            type="checkbox"
+            key={fields.remember.key}
+            name={fields.remember.name}
+            defaultChecked={fields.remember.initialValue === 'on'}
+          />
+        </div>
+      </label>
+      <button>Login</button>
+    </form>
+  );
 }
 ```
