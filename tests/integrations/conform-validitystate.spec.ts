@@ -1,5 +1,5 @@
 import { type Page, test, expect } from '@playwright/test';
-import { getPlayground } from '../helpers';
+import { getPlayground } from './helpers';
 
 async function setupField(page: Page, constraint: object, secret?: any) {
 	const playground = getPlayground(page);

@@ -37,7 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	return {
 		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
-		isStrcitMode: Boolean(process.env.CI),
+		isStrictMode: Boolean(process.env.NODE_ENV === 'production'),
 	};
 }
 
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Example() {
-	const { noClientValidate, isStrcitMode: strict } =
+	const { noClientValidate, isStrictMode: strict } =
 		useLoaderData<typeof loader>();
 	const actionData = useActionData<typeof action>();
 	const [form, fields] = useForm({

@@ -1,4 +1,5 @@
 import { type Page, test, expect } from '@playwright/test';
+import { cut, paste, selectAll } from './helpers';
 
 async function getForm(
 	page: Page,
@@ -125,7 +126,7 @@ test('works with keyboard events', async ({ page }) => {
 	];
 
 	// Cut out 'c'
-	await form.nativeInput.press('Control+x');
+	await cut(form.nativeInput);
 	await expect(form.nativeLogs).toHaveText(logs2);
 	await expect(form.baseLogs).toHaveText(logs2);
 
@@ -145,7 +146,7 @@ test('works with keyboard events', async ({ page }) => {
 	];
 
 	// Paste the 'c' back
-	await form.nativeInput.press('Control+v');
+	await paste(form.nativeInput);
 	await expect(form.nativeLogs).toHaveText(logs3);
 	await expect(form.baseLogs).toHaveText(logs3);
 
@@ -164,8 +165,7 @@ test('works with keyboard events', async ({ page }) => {
 		createLog('change', 3),
 	];
 
-	// Select all text
-	await form.nativeInput.press('Control+a');
+	await selectAll(form.nativeInput);
 	await expect(form.nativeLogs).toHaveText(logs4);
 	await expect(form.baseLogs).toHaveText(logs4);
 

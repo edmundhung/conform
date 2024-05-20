@@ -1,5 +1,5 @@
 import { type Page, type Locator, test, expect } from '@playwright/test';
-import { getPlayground } from '../helpers';
+import { getPlayground, selectAll } from './helpers';
 
 function getFieldset(form: Locator) {
 	return {
@@ -74,7 +74,7 @@ async function runTest(page: Page, javaScriptEnabled: boolean) {
 		'Title is required',
 	]);
 
-	await fieldset.email.press('Control+a');
+	await selectAll(fieldset.email);
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('u');
 	if (!javaScriptEnabled) {
@@ -86,7 +86,7 @@ async function runTest(page: Page, javaScriptEnabled: boolean) {
 		'Title is required',
 	]);
 
-	await fieldset.email.press('Control+a');
+	await selectAll(fieldset.email);
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('i');
 	if (!javaScriptEnabled) {
@@ -98,7 +98,7 @@ async function runTest(page: Page, javaScriptEnabled: boolean) {
 		'Title is required',
 	]);
 
-	await fieldset.email.press('Control+a');
+	await selectAll(fieldset.email);
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('d');
 	if (!javaScriptEnabled) {
@@ -117,7 +117,7 @@ async function runTest(page: Page, javaScriptEnabled: boolean) {
 
 	await expect(playground.error).toHaveText(['Email is already used', '']);
 
-	await fieldset.email.press('Control+a');
+	await selectAll(fieldset.email);
 	await fieldset.email.press('ArrowRight');
 	await fieldset.email.type('e');
 	await playground.submit.click();

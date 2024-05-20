@@ -1,5 +1,5 @@
 import { type Page, type Locator, test, expect } from '@playwright/test';
-import { getPlayground } from '../helpers';
+import { getPlayground, selectAll } from './helpers';
 
 function getUsernameInput(container: Locator) {
 	return container.locator('[name="username"]');
@@ -22,7 +22,7 @@ async function runTest(page: Page) {
 		'At least 1 number',
 	]);
 
-	await username.press('Control+a');
+	await selectAll(username);
 	await username.press('ArrowRight');
 	await username.type('C');
 
@@ -33,7 +33,7 @@ async function runTest(page: Page) {
 		'At least 1 number',
 	]);
 
-	await username.press('Control+a');
+	await selectAll(username);
 	await username.press('ArrowRight');
 	await username.type('on');
 	await playground.submit.click();
@@ -42,13 +42,13 @@ async function runTest(page: Page) {
 		'At least 1 number',
 	]);
 
-	await username.press('Control+a');
+	await selectAll(username);
 	await username.press('ArrowRight');
 	await username.type('form');
 	await playground.submit.click();
 	await expect(playground.error).toHaveText(['At least 1 number']);
 
-	await username.press('Control+a');
+	await selectAll(username);
 	await username.press('ArrowRight');
 	await username.type('2023');
 	await playground.submit.click();
