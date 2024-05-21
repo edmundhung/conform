@@ -275,14 +275,14 @@ export function replySubmission<FormError>(
 			? normalize<Record<string, FormError | null>>({
 					'': options.formErrors ?? null,
 					...options.fieldErrors,
-			  })
+				})
 			: null;
 	const error =
 		context.error || extraError
 			? {
 					...context.error,
 					...extraError,
-			  }
+				}
 			: undefined;
 
 	return {

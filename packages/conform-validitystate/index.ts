@@ -128,28 +128,28 @@ export type InferType<Schema extends FormConstraints> = {
 	[Key in keyof Schema]: Schema[Key] extends RequiredField<StringConstraint>
 		? string
 		: Schema[Key] extends OptionalField<StringConstraint>
-		? string | undefined
-		: Schema[Key] extends RequiredField<StringArrayConstraint>
-		? string[]
-		: Schema[Key] extends OptionalField<StringArrayConstraint>
-		? string[] | undefined
-		: Schema[Key] extends RequiredField<NumberConstraint>
-		? number
-		: Schema[Key] extends OptionalField<NumberConstraint>
-		? number | undefined
-		: Schema[Key] extends RequiredField<FileConstraint>
-		? File
-		: Schema[Key] extends OptionalField<BooleanConstraint>
-		? File | undefined
-		: Schema[Key] extends RequiredField<FileArrayConstraint>
-		? File[]
-		: Schema[Key] extends OptionalField<FileArrayConstraint>
-		? File[] | undefined
-		: Schema[Key] extends
-				| RequiredField<BooleanConstraint>
-				| OptionalField<BooleanConstraint>
-		? boolean
-		: any;
+			? string | undefined
+			: Schema[Key] extends RequiredField<StringArrayConstraint>
+				? string[]
+				: Schema[Key] extends OptionalField<StringArrayConstraint>
+					? string[] | undefined
+					: Schema[Key] extends RequiredField<NumberConstraint>
+						? number
+						: Schema[Key] extends OptionalField<NumberConstraint>
+							? number | undefined
+							: Schema[Key] extends RequiredField<FileConstraint>
+								? File
+								: Schema[Key] extends OptionalField<BooleanConstraint>
+									? File | undefined
+									: Schema[Key] extends RequiredField<FileArrayConstraint>
+										? File[]
+										: Schema[Key] extends OptionalField<FileArrayConstraint>
+											? File[] | undefined
+											: Schema[Key] extends
+														| RequiredField<BooleanConstraint>
+														| OptionalField<BooleanConstraint>
+												? boolean
+												: any;
 };
 
 /**
@@ -530,8 +530,8 @@ export function parse<
 						constraint.type === 'email'
 							? isValidEmail(payload)
 							: constraint.type === 'url'
-							? isValidURL(payload)
-							: true,
+								? isValidURL(payload)
+								: true,
 					);
 					report('tooShort', payload.length >= (constraint.minLength ?? 0));
 					report(

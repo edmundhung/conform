@@ -107,7 +107,7 @@ export default function RecrusiveList() {
 							subcategories: [{ name: 'Subcategory 2.1' }],
 						},
 					],
-			  }
+				}
 			: undefined,
 		onValidate: !noClientValidate
 			? ({ formData }) => parseWithZod(formData, { schema: categorySchema })

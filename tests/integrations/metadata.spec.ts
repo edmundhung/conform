@@ -423,11 +423,11 @@ async function validateMetadata(
 							},
 							null,
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -461,7 +461,7 @@ async function validateMetadata(
 							name: 'Conform',
 						},
 						null,
-				  ]
+					]
 				: [null, null],
 			value: [
 				{
@@ -529,11 +529,11 @@ async function validateMetadata(
 							},
 							null,
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -568,7 +568,7 @@ async function validateMetadata(
 							url: 'https://conform.guide',
 						},
 						null,
-				  ]
+					]
 				: [null, null],
 			value: [
 				{
@@ -641,11 +641,11 @@ async function validateMetadata(
 								url: 'https://conform.guide',
 							},
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -685,7 +685,7 @@ async function validateMetadata(
 							name: 'Super cool website',
 							url: 'https://conform.guide',
 						},
-				  ]
+					]
 				: [null, null],
 			value: [
 				{
@@ -764,11 +764,11 @@ async function validateMetadata(
 								url: 'https://remix.guide',
 							},
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -807,7 +807,7 @@ async function validateMetadata(
 							name: 'Super cool website',
 							url: 'https://remix.guide',
 						},
-				  ]
+					]
 				: [null, null],
 			value: [
 				{
@@ -889,11 +889,11 @@ async function validateMetadata(
 								url: 'https://remix.guide',
 							},
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -932,7 +932,7 @@ async function validateMetadata(
 							name: 'Super cool website',
 							url: 'https://remix.guide',
 						},
-				  ]
+					]
 				: [null, null],
 			value: [
 				{
@@ -1006,11 +1006,11 @@ async function validateMetadata(
 								url: 'https://remix.guide',
 							},
 						],
-				  }
+					}
 				: {
 						title: 'Test',
 						bookmarks: [null, null],
-				  },
+					},
 			value: {
 				title: 'Projects',
 				bookmarks: [
@@ -1050,7 +1050,7 @@ async function validateMetadata(
 							name: 'Super cool website',
 							url: 'https://remix.guide',
 						},
-				  ]
+					]
 				: [null, null],
 			value: [
 				{

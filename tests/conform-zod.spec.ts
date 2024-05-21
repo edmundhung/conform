@@ -738,15 +738,18 @@ describe('conform-zod', () => {
 				test: z.number({ invalid_type_error: 'invalid' }),
 			});
 			const schemaWithCustomPreprocess = z.object({
-				test: z.preprocess((value) => {
-					if (typeof value !== 'string') {
-						return value;
-					} else if (value === '') {
-						return undefined;
-					} else {
-						return value.replace(/,/g, '');
-					}
-				}, z.number({ invalid_type_error: 'invalid' })),
+				test: z.preprocess(
+					(value) => {
+						if (typeof value !== 'string') {
+							return value;
+						} else if (value === '') {
+							return undefined;
+						} else {
+							return value.replace(/,/g, '');
+						}
+					},
+					z.number({ invalid_type_error: 'invalid' }),
+				),
 			});
 			const formData = createFormData([['test', '1,234.5']]);
 

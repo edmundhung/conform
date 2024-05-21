@@ -86,20 +86,20 @@ type SubfieldMetadata<
 > = [Schema] extends [Primitive]
 	? {}
 	: [Schema] extends [Array<infer Item> | null | undefined]
-	? {
-			getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
-	  }
-	: [Schema] extends [Record<string, any> | null | undefined]
-	? {
-			getFieldset: () => Required<{
-				[Key in keyof Combine<Schema>]: FieldMetadata<
-					Combine<Schema>[Key],
-					FormSchema,
-					FormError
-				>;
-			}>;
-	  }
-	: {};
+		? {
+				getFieldList: () => Array<FieldMetadata<Item, FormSchema, FormError>>;
+			}
+		: [Schema] extends [Record<string, any> | null | undefined]
+			? {
+					getFieldset: () => Required<{
+						[Key in keyof Combine<Schema>]: FieldMetadata<
+							Combine<Schema>[Key],
+							FormSchema,
+							FormError
+						>;
+					}>;
+				}
+			: {};
 
 export type FieldMetadata<
 	Schema = unknown,
