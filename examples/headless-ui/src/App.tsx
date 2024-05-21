@@ -227,7 +227,7 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 		? people
 		: people.filter((person) =>
 				person.name.toLowerCase().includes(query.toLowerCase()),
-		  );
+			);
 
 	return (
 		<Combobox

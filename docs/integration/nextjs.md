@@ -11,9 +11,10 @@ export const loginSchema = z.object({
   password: z.string(),
   remember: z.boolean().optional(),
 });
+```
 
-// action.ts
-('use server');
+```tsx
+'use server'; // action.ts
 
 import { redirect } from 'next/navigation';
 import { parseWithZod } from '@conform-to/zod';
@@ -30,9 +31,10 @@ export async function login(prevState: unknown, formData: FormData) {
 
   redirect('/dashboard');
 }
+```
 
-// form.tsx
-('use client');
+```tsx
+'use client'; // form.tsx
 
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';

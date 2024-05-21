@@ -121,11 +121,11 @@ export function setValue(
 		const newValue =
 			index != lastIndex
 				? Object.prototype.hasOwnProperty.call(pointer, key) &&
-				  pointer[key] !== null
+					pointer[key] !== null
 					? pointer[key]
 					: typeof nextKey === 'number'
-					? []
-					: {}
+						? []
+						: {}
 				: valueFn(pointer[key]);
 
 		pointer[key] = newValue;

@@ -52,12 +52,15 @@ export type DefaultValue<Schema> = Schema extends
 	| undefined
 	? Schema | string | null | undefined
 	: Schema extends File
-	? null | undefined
-	: Schema extends Array<infer Item>
-	? Array<DefaultValue<Item>> | null | undefined
-	: Schema extends Record<string, any>
-	? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
-	: string | null | undefined;
+		? null | undefined
+		: Schema extends Array<infer Item>
+			? Array<DefaultValue<Item>> | null | undefined
+			: Schema extends Record<string, any>
+				?
+						| { [Key in keyof Schema]?: DefaultValue<Schema[Key]> }
+						| null
+						| undefined
+				: string | null | undefined;
 
 export type FormValue<Schema> = Schema extends
 	| string
@@ -69,14 +72,17 @@ export type FormValue<Schema> = Schema extends
 	| undefined
 	? string | undefined
 	: Schema extends File
-	? File | undefined
-	: Schema extends File[]
-	? File | Array<File> | undefined
-	: Schema extends Array<infer Item>
-	? string | Array<FormValue<Item>> | undefined
-	: Schema extends Record<string, any>
-	? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | null | undefined
-	: unknown;
+		? File | undefined
+		: Schema extends File[]
+			? File | Array<File> | undefined
+			: Schema extends Array<infer Item>
+				? string | Array<FormValue<Item>> | undefined
+				: Schema extends Record<string, any>
+					?
+							| { [Key in keyof Schema]?: FormValue<Schema[Key]> }
+							| null
+							| undefined
+					: unknown;
 
 const error = Symbol('error');
 const field = Symbol('field');
@@ -241,18 +247,18 @@ export type FormContext<
 	>['payload']
 		? (<FieldSchema = Schema>(
 				payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
-		  ) => void) & {
+			) => void) & {
 				getButtonProps<FieldSchema = Schema>(
 					payload?: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 				): ControlButtonProps;
-		  }
+			}
 		: (<FieldSchema = Schema>(
 				payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
-		  ) => void) & {
+			) => void) & {
 				getButtonProps<FieldSchema = Schema>(
 					payload: Extract<Intent<FieldSchema>, { type: Type }>['payload'],
 				): ControlButtonProps;
-		  };
+			};
 };
 
 function createFormMeta<Schema, FormError, FormValue>(
@@ -278,7 +284,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 			: {
 					'': generateId(),
 					...getDefaultKey(defaultValue),
-			  },
+				},
 		// The `lastResult` should comes from the server which we won't expect the error to be null
 		// We can consider adding a warning if it happens
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
@@ -655,14 +661,14 @@ export function createFormContext<
 			next.initialValue === next.defaultValue
 				? defaultValue
 				: !state || prev.initialValue !== next.initialValue
-				? createValueProxy(next.initialValue)
-				: state.initialValue;
+					? createValueProxy(next.initialValue)
+					: state.initialValue;
 		const value =
 			next.value === next.initialValue
 				? initialValue
 				: !state || prev.value !== next.value
-				? createValueProxy(next.value)
-				: state.value;
+					? createValueProxy(next.value)
+					: state.value;
 
 		return {
 			submissionStatus: next.submissionStatus,
@@ -689,7 +695,7 @@ export function createFormContext<
 							defaultValue,
 							value,
 							(key) => latestOptions.shouldDirtyConsider?.(key) ?? true,
-					  )
+						)
 					: state.dirty,
 		};
 	}
@@ -1053,8 +1059,8 @@ export function createFormContext<
 					const element = isFieldElement(node)
 						? node
 						: node instanceof HTMLElement
-						? node.querySelector<FieldElement>('input,select,textarea')
-						: null;
+							? node.querySelector<FieldElement>('input,select,textarea')
+							: null;
 
 					if (element?.form === form) {
 						updateFormValue(form);

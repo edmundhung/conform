@@ -30,7 +30,7 @@ body:
       label: Steps to Reproduce the Bug or Issue
       description: |
         Describe the steps we have to take to reproduce the behavior.
-        If possible, please provide a repostiory or a link to a sandbox.   
+        If possible, please provide a repostiory or a link to a sandbox.
       placeholder: |
         1. With this snippet '...'
         2. Click on '....'

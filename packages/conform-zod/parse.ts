@@ -119,7 +119,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 								result.error,
 								options.formatError ??
 									((issues) => issues.map((issue) => issue.message)),
-						  )
+							)
 						: undefined,
 				};
 			};

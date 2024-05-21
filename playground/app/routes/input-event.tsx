@@ -108,9 +108,7 @@ export default function Example() {
 				<div className="flex-1">
 					base-input logs
 					<ul id="base-input">
-						{logsByName['base-input']?.map((log, i) => (
-							<li key={i}>{log}</li>
-						))}
+						{logsByName['base-input']?.map((log, i) => <li key={i}>{log}</li>)}
 					</ul>
 				</div>
 			</div>

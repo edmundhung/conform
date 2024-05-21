@@ -1,9 +1,0 @@
-singleQuote: true
-useTabs: true
-trailingComma: all
-overrides:
-  - files:
-      - '*.md'
-    options:
-      useTabs: false
-      tabWidth: 2
