@@ -61,7 +61,7 @@ export default function Example() {
 					}).map((props) => (
 						<label key={props.key}>
 							<input {...props} />
-							{props.value}
+							{props.defaultValue}
 						</label>
 					))}
 				</Field>
