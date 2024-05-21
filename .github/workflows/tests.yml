@@ -11,12 +11,13 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
       - name: Run Vitest tests
@@ -43,12 +44,13 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
       - name: Install Playwright Browsers
