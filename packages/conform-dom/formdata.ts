@@ -33,7 +33,13 @@ export function getPaths(name: string): Array<string | number> {
 	return name
 		.split(/\.|(\[\d*\])/)
 		.reduce<Array<string | number>>((result, segment) => {
-			if (typeof segment !== 'undefined' && segment !== '') {
+			if (
+				typeof segment !== 'undefined' &&
+				segment !== '' &&
+				segment !== '__proto__' &&
+				segment !== 'constructor' &&
+				segment !== 'prototype'
+			) {
 				if (segment.startsWith('[') && segment.endsWith(']')) {
 					const index = segment.slice(1, -1);
 
@@ -87,7 +93,11 @@ export function setValue(
 		const nextKey = paths[index + 1];
 		const newValue =
 			index != lastIndex
-				? pointer[key] ?? (typeof nextKey === 'number' ? [] : {})
+				? Object.prototype.hasOwnProperty.call(pointer, key)
+					? pointer[key]
+					: typeof nextKey === 'number'
+					? []
+					: {}
 				: valueFn(pointer[key]);
 
 		pointer[key] = newValue;
