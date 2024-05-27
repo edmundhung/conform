@@ -259,10 +259,9 @@ export function getInputProps<Schema, Options extends InputOptions>(
 	if (typeof options.value === 'undefined' || options.value) {
 		if (options.type === 'checkbox' || options.type === 'radio') {
 			props.value = typeof options.value === 'string' ? options.value : 'on';
-			props.defaultChecked =
-				typeof metadata.initialValue === 'boolean'
-					? metadata.initialValue
-					: metadata.initialValue === props.value;
+			props.defaultChecked = Array.isArray(metadata.initialValue)
+				? metadata.initialValue.includes(options.value)
+				: metadata.initialValue === props.value;
 		} else if (typeof metadata.initialValue === 'string') {
 			props.defaultValue = metadata.initialValue;
 		}

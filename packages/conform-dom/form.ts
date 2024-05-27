@@ -346,7 +346,7 @@ function handleIntent<Error>(
 			const name = formatName(intent.payload.name, intent.payload.index);
 
 			if (typeof value !== 'undefined') {
-				updateValue(meta, name ?? '', serialize(value));
+				updateValue(meta, name ?? '', value);
 			}
 
 			if (typeof validated !== 'undefined') {
