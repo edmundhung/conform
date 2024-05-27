@@ -63,7 +63,7 @@ importers:
         version: 2.8.2(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.2.0))(@types/react@18.3.1)(react@18.2.0))(@types/react@18.3.1)(framer-motion@7.10.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@emotion/react':
         specifier: ^11.10.5
         version: 11.11.1(@types/react@18.3.1)(react@18.2.0)
@@ -100,7 +100,7 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@headlessui/react':
         specifier: ^1.7.13
         version: 1.7.19(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -149,7 +149,7 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@emotion/react':
         specifier: ^11.10.0
         version: 11.11.1(@types/react@18.3.1)(react@18.2.0)
@@ -186,10 +186,10 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@conform-to/zod':
         specifier: 1.1.3
-        version: 1.1.3(zod@3.21.4)
+        version: link:../../packages/conform-zod
       next:
         specifier: 14.0.4
         version: 14.0.4(@babel/core@7.23.5)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -226,10 +226,10 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: ^1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@conform-to/zod':
         specifier: ^1.1.3
-        version: 1.1.3(zod@3.21.4)
+        version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
         version: 1.0.4(@types/react-dom@18.3.0)(@types/react@18.3.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -308,10 +308,10 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@conform-to/zod':
         specifier: 1.1.3
-        version: 1.1.3(zod@3.21.4)
+        version: link:../../packages/conform-zod
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -351,10 +351,10 @@ importers:
     dependencies:
       '@conform-to/react':
         specifier: 1.1.3
-        version: 1.1.3(react@18.2.0)
+        version: link:../../packages/conform-react
       '@conform-to/zod':
         specifier: 1.1.3
-        version: 1.1.3(zod@3.21.4)
+        version: link:../../packages/conform-zod
       '@remix-run/node':
         specifier: ^1.19.3
         version: 1.19.3
@@ -624,7 +624,7 @@ importers:
     dependencies:
       '@conform-to/dom':
         specifier: 1.1.3
-        version: 1.1.3
+        version: link:../conform-dom
     devDependencies:
       '@babel/core':
         specifier: ^7.17.8
@@ -685,7 +685,7 @@ importers:
     dependencies:
       '@conform-to/dom':
         specifier: 1.1.3
-        version: 1.1.3
+        version: link:../conform-dom
     devDependencies:
       '@babel/core':
         specifier: ^7.17.8
@@ -716,7 +716,7 @@ importers:
     dependencies:
       '@conform-to/dom':
         specifier: 1.1.3
-        version: 1.1.3
+        version: link:../conform-dom
     devDependencies:
       '@babel/core':
         specifier: ^7.17.8
@@ -2787,28 +2787,6 @@ packages:
       {
         integrity: sha512-OB1jIyPOzyOcuZFHWhsQnkRLN6u8+jmU9X3T4KZlGgn3Ivw8pBiswhLOp+yFeChR3Y4/5+V0hPFRko5SReordg==,
       }
-
-  '@conform-to/dom@1.1.3':
-    resolution:
-      {
-        integrity: sha512-QvOh00m/5USP1WT/KC0eorevQKcjfrEuzQC9NrDuMolH5Crc46tt3Nz7GGKB2yyeSyG6q3W/9uZ2isJRlTn03Q==,
-      }
-
-  '@conform-to/react@1.1.3':
-    resolution:
-      {
-        integrity: sha512-URnXSddgyixQdxI3+lDghwUS1fQxQk/l+mORvWwbz/EPgtJse2H2JptJ2nUh6qEjNbpPcgEEEmIqqiz8bSqX4g==,
-      }
-    peerDependencies:
-      react: '>=18'
-
-  '@conform-to/zod@1.1.3':
-    resolution:
-      {
-        integrity: sha512-1hQxEEBgLTRWNTauN1PhTWidXx8OUxr4LUyLLYX2RYrflDGnOsUHdzHgiyhL0epuVe7oOSptyaqBD+/fLMOpEw==,
-      }
-    peerDependencies:
-      zod: ^3.21.0
 
   '@cspotcode/source-map-support@0.8.1':
     resolution:
@@ -18815,18 +18793,6 @@ snapshots:
     optional: true
 
   '@cloudflare/workers-types@4.20240502.0': {}
-
-  '@conform-to/dom@1.1.3': {}
-
-  '@conform-to/react@1.1.3(react@18.2.0)':
-    dependencies:
-      '@conform-to/dom': 1.1.3
-      react: 18.2.0
-
-  '@conform-to/zod@1.1.3(zod@3.21.4)':
-    dependencies:
-      '@conform-to/dom': 1.1.3
-      zod: 3.21.4
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
