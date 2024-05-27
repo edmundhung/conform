@@ -166,13 +166,12 @@ export function parse<FormValue, FormError>(
 		switch (intent.type) {
 			case 'update': {
 				const name = formatName(intent.payload.name, intent.payload.index);
-				const value = serialize(intent.payload.value);
+				const value = intent.payload.value;
 
-				if (typeof value !== 'undefined') {
+				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
 						setValue(context.payload, name, () => value);
 					} else {
-						// @ts-expect-error FIXME - it must be an object if there is no name
 						context.payload = value;
 					}
 				}
@@ -188,16 +187,7 @@ export function parse<FormValue, FormError>(
 				}
 				break;
 			}
-			case 'insert': {
-				setListValue(context.payload, {
-					type: intent.type,
-					payload: {
-						...intent.payload,
-						defaultValue: serialize(intent.payload.defaultValue),
-					},
-				});
-				break;
-			}
+			case 'insert':
 			case 'remove':
 			case 'reorder': {
 				setListValue(context.payload, intent);
@@ -395,7 +385,26 @@ export function getIntent(
 }
 
 export function serializeIntent<Schema>(intent: Intent<Schema>): string {
-	return JSON.stringify(intent);
+	switch (intent.type) {
+		case 'insert':
+			return JSON.stringify({
+				type: intent.type,
+				payload: {
+					...intent.payload,
+					defaultValue: serialize(intent.payload.defaultValue),
+				},
+			});
+		case 'update':
+			return JSON.stringify({
+				type: intent.type,
+				payload: {
+					...intent.payload,
+					value: serialize(intent.payload.value),
+				},
+			});
+		default:
+			return JSON.stringify(intent);
+	}
 }
 
 export function updateList(
