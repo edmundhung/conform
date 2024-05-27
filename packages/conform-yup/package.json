@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with yup",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -33,8 +33,10 @@
 	"bugs": {
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
+	"dependencies": {
+		"@conform-to/dom": "workspace:*"
+	},
 	"peerDependencies": {
-		"@conform-to/dom": "1.1.3",
 		"yup": ">=0.32.0"
 	},
 	"devDependencies": {
