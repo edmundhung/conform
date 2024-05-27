@@ -14,9 +14,24 @@ To set up a nested field, just call the `getFieldset()` method from the parent f
 
 ```tsx
 import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  address: z.object({
+    street: z.string(),
+    zipcode: z.string(),
+    city: z.string(),
+    country: z.string(),
+  }),
+});
 
 function Example() {
-  const [form, fields] = useForm();
+  const [form, fields] = useForm({
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema });
+    },
+  });
   const address = fields.address.getFieldset();
 
   return (
@@ -41,9 +56,19 @@ When you need to setup a list of fields, you can call the `getFieldList()` metho
 
 ```tsx
 import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  tasks: z.array(z.string()),
+});
 
 function Example() {
-  const [form, fields] = useForm();
+  const [form, fields] = useForm({
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema });
+    },
+  });
   const tasks = fields.tasks.getFieldList();
 
   return (
@@ -68,9 +93,24 @@ You can also combine both `getFieldset()` and `getFieldList()` for nested array.
 
 ```tsx
 import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  todos: z.array(
+    z.object({
+      title: z.string(),
+      notes: z.string(),
+    }),
+  ),
+});
 
 function Example() {
-  const [form, fields] = useForm();
+  const [form, fields] = useForm({
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema });
+    },
+  });
   const todos = fields.todos.getFieldList();
 
   return (
