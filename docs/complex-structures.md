@@ -13,9 +13,9 @@ However, there is no need to set the name attribute of each field manually. Conf
 To set up a nested field, just call the `getFieldset()` method from the parent field metadata to get access to each child field with name infered automatically.
 
 ```tsx
-import { useForm } from "@conform-to/react";
-import { parseWithZod } from "@conform-to/zod";
-import { z } from "zod";
+import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 
 const schema = z.object({
   address: z.object({
@@ -55,9 +55,9 @@ function Example() {
 When you need to setup a list of fields, you can call the `getFieldList()` method from the parent field metadata to get access to each item field with name infered automatically as well. If you want to modify the items in the list, you can also use the `insert`, `remove` and `reorder` intents as explained in the [Intent button](./intent-button#form-controls) page.
 
 ```tsx
-import { useForm } from "@conform-to/react";
-import { parseWithZod } from "@conform-to/zod";
-import { z } from "zod";
+import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 
 const schema = z.object({
   tasks: z.array(z.string()),
@@ -92,9 +92,9 @@ function Example() {
 You can also combine both `getFieldset()` and `getFieldList()` for nested array.
 
 ```tsx
-import { useForm } from "@conform-to/react";
-import { parseWithZod } from "@conform-to/zod";
-import { z } from "zod";
+import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 
 const schema = z.object({
   todos: z.array(
