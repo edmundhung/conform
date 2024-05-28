@@ -20,20 +20,20 @@
 		"@conform-to/validitystate": "workspace:*",
 		"@conform-to/yup": "workspace:*",
 		"@conform-to/zod": "workspace:*",
-		"@playwright/test": "^1.44.0",
+		"@playwright/test": "^1.44.1",
 		"@remix-run/eslint-config": "^1.19.3",
 		"@types/node": "^20.10.4",
 		"husky": "^8.0.3",
 		"lint-staged": "^13.1.2",
 		"prettier": "^3.2.5",
 		"typescript": "^5.2.2",
-		"vitest": "^1.1.0",
+		"vitest": "^1.6.0",
 		"yup": "^0.32.11",
 		"zod": "3.21.4"
 	},
 	"packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",
-		"*.{js,jsx,ts,tsx,css,json,yaml,md}": "prettier --ignore-path .gitignore --write"
+		"*.{js,jsx,ts,tsx,css,json,yaml,md}": "prettier --write"
 	}
 }
