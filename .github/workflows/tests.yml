@@ -2,6 +2,11 @@ name: Tests
 on:
   push:
     branches: [main, next, v1]
+    paths-ignore:
+      - 'README'
+      - 'docs/**'
+      - 'examples/**'
+      - 'guide/**'
   pull_request:
     branches: [main, next, v1]
 jobs:
