@@ -1,6 +1,7 @@
 {
 	"private": true,
 	"sideEffects": false,
+	"name": "conform-guide",
 	"type": "module",
 	"scripts": {
 		"build": "remix build",
