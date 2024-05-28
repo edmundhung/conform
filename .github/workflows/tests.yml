@@ -1,14 +1,19 @@
 name: Tests
 on:
   push:
-    branches: [main, next, v1]
+    branches: [main, next]
     paths-ignore:
       - 'README'
       - 'docs/**'
       - 'examples/**'
       - 'guide/**'
   pull_request:
-    branches: [main, next, v1]
+    branches: [main, next]
+    paths-ignore:
+      - 'README'
+      - 'docs/**'
+      - 'examples/**'
+      - 'guide/**'
 jobs:
   e2e:
     name: E2E Tests
