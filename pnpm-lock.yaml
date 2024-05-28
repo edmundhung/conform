@@ -28,9 +28,6 @@ importers:
       '@remix-run/eslint-config':
         specifier: ^1.19.3
         version: 1.19.3(eslint@8.57.0)(react@18.2.0)(typescript@5.4.5)
-      '@remix-run/node':
-        specifier: ^1.19.3
-        version: 1.19.3
       '@types/node':
         specifier: ^20.10.4
         version: 20.11.20
