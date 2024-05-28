@@ -1,5 +1,5 @@
 {
-	"name": "@conform-to/playground",
+	"name": "@conform-example/playground",
 	"private": true,
 	"sideEffects": false,
 	"scripts": {

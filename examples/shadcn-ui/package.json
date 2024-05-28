@@ -1,5 +1,5 @@
 {
-	"name": "shadcn-ui",
+	"name": "@conform-example/shadcn-ui",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
