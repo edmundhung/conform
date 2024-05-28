@@ -15,6 +15,7 @@
 		"prepare": "husky install"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.27.5",
 		"@conform-to/dom": "workspace:*",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/validitystate": "workspace:*",

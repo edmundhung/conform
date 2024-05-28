@@ -1,0 +1,21 @@
+{
+	"$schema": "https://unpkg.com/@changesets/config@3.0.1/schema.json",
+	"changelog": [
+		"@changesets/changelog-github",
+		{ "repo": "edmundhung/conform" }
+	],
+	"commit": false,
+	"fixed": [
+		[
+			"@conform-to/dom",
+			"@conform-to/react",
+			"@conform-to/yup",
+			"@conform-to/zod"
+		]
+	],
+	"linked": [],
+	"access": "public",
+	"baseBranch": "main",
+	"updateInternalDependencies": "patch",
+	"ignore": []
+}
