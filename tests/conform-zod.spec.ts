@@ -1,15 +1,14 @@
-import { beforeEach, describe, test, expect } from 'vitest';
+import { beforeEach, vi, describe, test, expect } from 'vitest';
 import {
 	getZodConstraint,
 	parseWithZod,
 	conformZodMessage,
 } from '@conform-to/zod';
 import { z } from 'zod';
-import { installGlobals } from '@remix-run/node';
 import { createFormData } from './helpers';
 
 beforeEach(() => {
-	installGlobals();
+	vi.unstubAllGlobals();
 });
 
 describe('conform-zod', () => {
@@ -831,8 +830,8 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 
-			// @ts-expect-error To test if File is not defined in certain environment
-			delete global.File;
+			// To test if File is not defined in certain environment
+			vi.stubGlobal('File', undefined);
 
 			expect(() => parseWithZod(createFormData([]), { schema })).not.toThrow();
 		});

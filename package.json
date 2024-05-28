@@ -22,7 +22,6 @@
 		"@conform-to/zod": "workspace:*",
 		"@playwright/test": "^1.44.0",
 		"@remix-run/eslint-config": "^1.19.3",
-		"@remix-run/node": "^1.19.3",
 		"@types/node": "^20.10.4",
 		"husky": "^8.0.3",
 		"lint-staged": "^13.1.2",
