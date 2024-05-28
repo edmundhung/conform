@@ -45,10 +45,7 @@ function configurePackage() {
 				extensions: ['.ts', '.tsx'],
 			}),
 			copy({
-				targets: [
-					{ src: `../../README`, dest: sourceDir },
-					{ src: `../../LICENSE`, dest: sourceDir },
-				],
+				targets: [{ src: `../../README`, dest: sourceDir }],
 			}),
 		],
 	};

@@ -4,5 +4,6 @@
 !*.d.ts
 
 # config / build result
+rollup.config.js
 tsconfig.json
 *.tsbuildinfo
