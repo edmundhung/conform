@@ -102,7 +102,7 @@ export function getZodConstraint(
 			constraint.multiple = true;
 			updateConstraint(def.type, data, `${name}[]`);
 		} else if (def.typeName === 'ZodString') {
-			let _schema = schema as ZodString;
+			const _schema = schema as ZodString;
 			if (_schema.minLength !== null) {
 				constraint.minLength = _schema.minLength ?? undefined;
 			}
@@ -116,7 +116,7 @@ export function getZodConstraint(
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.typeName === 'ZodNumber') {
-			let _schema = schema as ZodNumber;
+			const _schema = schema as ZodNumber;
 			if (_schema.minValue !== null) {
 				constraint.min = _schema.minValue;
 			}
@@ -139,7 +139,7 @@ export function getZodConstraint(
 		}
 	}
 
-	let result: Record<string, Constraint> = {};
+	const result: Record<string, Constraint> = {};
 
 	updateConstraint(schema, result);
 

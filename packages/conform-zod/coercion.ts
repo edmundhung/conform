@@ -104,7 +104,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	}
 
 	let schema: ZodTypeAny = type;
-	let def = (type as ZodFirstPartySchemaTypes)._def;
+	const def = (type as ZodFirstPartySchemaTypes)._def;
 
 	if (
 		def.typeName === 'ZodString' ||

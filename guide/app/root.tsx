@@ -18,7 +18,7 @@ import { Guide } from '~/layout';
 import { getMetadata } from '~/util';
 import stylesUrl from '~/styles.css';
 
-export let links: LinksFunction = () => {
+export const links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
