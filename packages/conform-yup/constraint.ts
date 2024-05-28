@@ -13,21 +13,25 @@ function _parseStringFieldTests(def: SchemaDescription): Constraint {
 		switch (test.name) {
 			case 'required': {
 				constraint.required = true;
+				break;
 			}
 			case 'min': {
 				if (!constraint.minLength && test.params?.min) {
 					constraint.minLength = Number(test.params?.min);
 				}
+				break;
 			}
 			case 'max': {
 				if (!constraint.maxLength && test.params?.max) {
 					constraint.maxLength = Number(test.params.max);
 				}
+				break;
 			}
 			case 'matches': {
 				if (!constraint.pattern && test.params?.regex instanceof RegExp) {
 					constraint.pattern = test.params.regex.source;
 				}
+				break;
 			}
 			default:
 				break;

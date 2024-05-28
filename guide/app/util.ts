@@ -79,11 +79,11 @@ export function getLanguage(code: string | undefined): Language {
 }
 
 function base64DecodeUtf8(base64String: string) {
-	var binaryString = atob(base64String);
-	var charCodeArray = Array.from(binaryString).map((char) =>
+	const binaryString = atob(base64String);
+	const charCodeArray = Array.from(binaryString).map((char) =>
 		char.charCodeAt(0),
 	);
-	var uintArray = new Uint8Array(charCodeArray);
+	const uintArray = new Uint8Array(charCodeArray);
 	return new TextDecoder('utf-8').decode(uintArray);
 }
 

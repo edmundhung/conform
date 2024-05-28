@@ -41,7 +41,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-	let { content } = useLoaderData<typeof loader>();
+	const { content } = useLoaderData<typeof loader>();
 
 	return <Markdown content={content} />;
 }

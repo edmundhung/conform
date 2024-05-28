@@ -10,7 +10,7 @@ import {
 } from '@remix-run/react';
 import stylesUrl from '~/styles.css';
 
-export let links: LinksFunction = () => {
+export const links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 

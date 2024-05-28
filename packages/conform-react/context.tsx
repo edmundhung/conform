@@ -478,8 +478,8 @@ export function createFormContext<
 >(
 	options: FormOptions<Schema, FormError, FormValue>,
 ): FormContext<Schema, FormError, FormValue> {
-	let { onSubmit, ...rest } = options;
-	const context = createBaseFormContext(rest);
+	let { onSubmit } = options;
+	const context = createBaseFormContext(options);
 
 	return {
 		...context,

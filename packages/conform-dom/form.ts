@@ -469,7 +469,7 @@ function createStateProxy<State>(
 ): Record<string, State> {
 	const cache: Record<string, State> = {};
 	return new Proxy(cache, {
-		get(_, name: string | Symbol, receiver) {
+		get(_, name: string | symbol, receiver) {
 			if (typeof name !== 'string') {
 				return;
 			}
@@ -640,7 +640,7 @@ export function createFormContext<
 		callback: () => void;
 		getSubject?: () => SubscriptionSubject | undefined;
 	}> = [];
-	let latestOptions = options;
+	const latestOptions = options;
 	let meta = createFormMeta(options);
 	let state = createFormState(meta);
 
