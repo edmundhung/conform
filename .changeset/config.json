@@ -1,9 +1,6 @@
 {
 	"$schema": "https://unpkg.com/@changesets/config@3.0.1/schema.json",
-	"changelog": [
-		"@changesets/changelog-github",
-		{ "repo": "edmundhung/conform" }
-	],
+	"changelog": false,
 	"commit": false,
 	"fixed": [
 		[
