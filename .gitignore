@@ -39,4 +39,4 @@ node_modules/
 .DS_Store
 
 # Changeset generated files
-changelog.md
+CHANGELOG.md
