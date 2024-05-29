@@ -1,7 +1,8 @@
 _virtual
+!rollup.config.js
 *.cjs
 *.d.ts
 *.js
 *.mjs
+LICENSE
 README
-!rollup.config.js
