@@ -88,7 +88,7 @@ export default function Login() {
 
 ### The default value might be out of sync if you reset the form from the action
 
-If the default value of the form comes from the loader and you are trying to reset the form on the action, there is a chance you will see the form reset to the previous default value. This is Conform will reset the form the moment actionData is updated while Remix is still revalidating the loader data. To fix this, you can wait for the state to be `idle` (e.g. `navigation.state` or `fetcher.state`) before passing the `lastResult` to Conform like this:
+If the default value of the form comes from the loader and you are trying to reset the form on the action, there is a chance you will see the form reset to the previous default value. As Conform will reset the form the moment action data is updated while Remix is still revalidating the loader data. To fix this, you can wait for the state to be `idle` (e.g. `navigation.state` or `fetcher.state`) before passing the `lastResult` to Conform like this:
 
 ```tsx
 export default function Example() {
@@ -101,6 +101,9 @@ export default function Example() {
 
     // Sync the result of last submission only when the state is idle
     lastResult: navigation.state === 'idle' ? lastResult : null,
+
+    // or, if you are using a fetcher:
+    // lastResult: fetcher.state === 'idle' ? lastResult : null,
 
     // ...
   });
