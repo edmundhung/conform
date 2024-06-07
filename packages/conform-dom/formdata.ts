@@ -129,9 +129,9 @@ export function setValue(
 				: valueFn(pointer[key]);
 		if (
 			Object.isExtensible(pointer) &&
-			!!nextKey &&
-			!(Object.isSealed(pointer) && !(nextKey in pointer)) &&
-			!(Object.isFrozen(pointer) && !(nextKey in pointer))
+			!!key &&
+			!(Object.isSealed(pointer) && !(key in pointer)) &&
+			!(Object.isFrozen(pointer) && !(key in pointer))
 		) {
 			pointer[key] = newValue;
 		}
