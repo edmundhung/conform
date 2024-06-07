@@ -127,16 +127,36 @@ export function setValue(
 						? []
 						: {}
 				: valueFn(pointer[key]);
-		if (
-			Object.isExtensible(pointer) &&
-			!!key &&
-			!(Object.isSealed(pointer) && !(key in pointer)) &&
-			!(Object.isFrozen(pointer) && !(key in pointer))
-		) {
+
+		if (canAddProperty(pointer, key)) {
 			pointer[key] = newValue;
 		}
 		pointer = pointer[key];
 	}
+}
+
+function canAddProperty(
+	obj: Object | Array<unknown>,
+	property: string | number,
+): boolean {
+	const propertyStr =
+		typeof property === 'number' ? property.toString() : property;
+	if (Object.prototype.hasOwnProperty.call(obj, propertyStr)) {
+		const descriptor = Object.getOwnPropertyDescriptor(obj, propertyStr);
+		if (descriptor && !descriptor.writable) {
+			return false;
+		}
+	}
+	if (!Object.isExtensible(obj)) {
+		return false;
+	}
+	if (Object.isSealed(obj) && !(propertyStr in obj)) {
+		return false;
+	}
+	if (Object.isFrozen(obj) && !(propertyStr in obj)) {
+		return false;
+	}
+	return true;
 }
 
 /**
