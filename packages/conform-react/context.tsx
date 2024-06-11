@@ -29,6 +29,7 @@ import {
 	useSyncExternalStore,
 	useRef,
 } from 'react';
+import { flushSync } from 'react-dom';
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
@@ -484,20 +485,22 @@ export function createFormContext<
 	return {
 		...context,
 		submit(event) {
-			const submitEvent = event.nativeEvent as SubmitEvent;
-			const result = context.submit(submitEvent);
+			flushSync(() => {
+				const submitEvent = event.nativeEvent as SubmitEvent;
+				const result = context.submit(submitEvent);
 
-			if (
-				!result.submission ||
-				result.submission.status === 'success' ||
-				result.submission.error === null
-			) {
-				if (!result.formData.has(INTENT)) {
-					onSubmit?.(event, result);
+				if (
+					!result.submission ||
+					result.submission.status === 'success' ||
+					result.submission.error === null
+				) {
+					if (!result.formData.has(INTENT)) {
+						onSubmit?.(event, result);
+					}
+				} else {
+					event.preventDefault();
 				}
-			} else {
-				event.preventDefault();
-			}
+			});
 		},
 		onUpdate(options) {
 			onSubmit = options.onSubmit;
