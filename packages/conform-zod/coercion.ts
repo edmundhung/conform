@@ -34,10 +34,6 @@ export function coerceString(
 		return value;
 	}
 
-	if (value === '') {
-		return undefined;
-	}
-
 	if (typeof transform !== 'function') {
 		return value;
 	}
