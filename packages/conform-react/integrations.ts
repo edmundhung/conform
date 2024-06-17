@@ -19,8 +19,8 @@ export function getFieldElements(
 	const elements = !field
 		? []
 		: field instanceof Element
-			? [field]
-			: Array.from(field.values());
+		? [field]
+		: Array.from(field.values());
 
 	return elements.filter(
 		(
@@ -306,8 +306,26 @@ export function useControl<
 		change(value);
 	};
 
+	const refCallback: RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	> = (element) => {
+		register(element);
+
+		if (!element) {
+			return;
+		}
+
+		const prevKey = element.dataset.conform;
+		const nextKey = `${meta.key ?? ''}`;
+
+		if (prevKey !== nextKey) {
+			element.dataset.conform = nextKey;
+			updateFieldValue(element, value ?? '');
+		}
+	};
+
 	return {
-		register,
+		register: refCallback,
 		value,
 		change: handleChange,
 		focus,
