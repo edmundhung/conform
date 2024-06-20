@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'vitest';
 import {
+	unstable_createFormContext as createFormContext,
 	parse,
 	getPaths,
 	formatPaths,
@@ -8,9 +8,20 @@ import {
 	STATE,
 	serializeIntent,
 } from '@conform-to/dom';
+
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 import { createFormData } from './helpers';
 
 describe('conform-dom', () => {
+	const { requestSubmit } = HTMLFormElement.prototype;
+
+	beforeAll(() => {
+		// @ts-ignore
+		HTMLFormElement.prototype.requestSubmit = undefined;
+	});
+	afterAll(() => {
+		HTMLFormElement.prototype.requestSubmit = requestSubmit;
+	});
 	test('parse()', () => {
 		const successSubmission = parse(
 			new URLSearchParams([
@@ -331,5 +342,73 @@ describe('conform-dom', () => {
 		expect(isPrefix('tasks[0].content', 'tasks[0].content')).toBe(true);
 		expect(isPrefix('tasks[0].content', 'tasks[1].content')).toBe(false);
 		expect(isPrefix('tasks[0].content', 'tasks[0].completed')).toBe(false);
+	});
+
+	test('createFormContext', () => {
+		const form = document.createElement('form');
+		form.id = 'test';
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.name = 'name';
+		input.value = 'value';
+		form.appendChild(input);
+		document.body.appendChild(form);
+		expect(document.forms.namedItem('test')).toBe(form);
+		const formContext = createFormContext({
+			formId: form.id,
+		});
+		expect(formContext.getFormId()).toBe('test');
+		expect(formContext.getSerializedState()).toEqual(
+			JSON.stringify({ validated: {} }),
+		);
+		formContext.update({
+			name: 'value',
+			value: 'new value',
+		});
+		expect(formContext.getState()).toEqual({
+			constraint: {},
+			defaultValue: {},
+			dirty: {},
+			error: {},
+			initialValue: {},
+			key: {},
+			submissionStatus: undefined,
+			valid: {},
+			validated: {},
+			value: {},
+		});
+		expect(formContext.observe()()).toBe(undefined);
+		expect(formContext.insert({ name: 'value', defaultValue: undefined })).toBe(
+			undefined,
+		);
+		expect(formContext.onBlur(new Event('blur'))).toBe(undefined);
+		expect(formContext.onInput(new Event('input'))).toBe(undefined);
+		expect(formContext.onReset(new Event('reset'))).toBe(undefined);
+		expect(formContext.onUpdate({ formId: 'new-id' })).toBe(undefined);
+		expect(formContext.getFormId()).toBe('new-id');
+		expect(formContext.onUpdate({ formId: 'test' })).toBe(undefined);
+		expect(formContext.remove({ name: 'value', index: 0 })).toBe(undefined);
+		expect(formContext.reorder({ name: 'value', from: 0, to: 1 })).toBe(
+			undefined,
+		);
+		expect(formContext.reset()).toBe(undefined);
+		const testSubmitEvent = new SubmitEvent('submit');
+		Object.defineProperty(testSubmitEvent, 'currentTarget', {
+			get: () => form,
+		});
+		Object.defineProperty(testSubmitEvent, 'target', {
+			get: () => form,
+		});
+		expect(formContext.submit(testSubmitEvent)).toEqual({
+			action: '/',
+			encType: 'application/x-www-form-urlencoded',
+			formData: new FormData(form),
+			method: 'GET',
+		});
+		expect(formContext.subscribe(() => {})()).toBe(undefined);
+		expect(formContext.update({ name: 'value', value: 'new value' })).toBe(
+			undefined,
+		);
+		expect(formContext.validate()).toBe(undefined);
 	});
 });
