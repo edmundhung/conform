@@ -1,0 +1,33 @@
+name: NodeJS with Grunt
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+create:
+  build: application
+    runs-on: ubuntu-latest
+
+    strategy: help what is the community
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+
+    steps:child's hand gently holding a single petal 11 symbolizing growth and connection.
+• Option 3: An abstract flower formed by puzzle pieces, each piece representing a different challenge or strength associated with autism.
+• Option 4: A watercolor illustration of a blossoming flower with a butterfly hovering nearby, conveying a sense of transformation and hope.
+I'll share the full designs with you soon, along with a link to the contest page where you can view them in detail and provide feedback to the designers.
+We have several more days left in the contest, so we can expect even more creative submissions.
+I'm confident we'll find the perfect icon that embodies the spirit of "Being to End" and resonates with your target audience.
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Build being to end 
+      run: |
+        npm install
+        grunt
