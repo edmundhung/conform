@@ -572,25 +572,29 @@ function createDirtyProxy(
 	value: Record<string, unknown>,
 	shouldDirtyConsider: (name: string) => boolean,
 ): Record<string, boolean> {
-	return createStateProxy(
-		(name) =>
-			JSON.stringify(defaultValue[name]) !==
-			JSON.stringify(value[name], (key, value) => {
-				if (name === '' && key === '' && value) {
-					return Object.entries(value).reduce<
-						Record<string, unknown> | undefined
-					>((result, [name, value]) => {
-						if (!shouldDirtyConsider(name)) {
-							return result;
-						}
+	return createStateProxy((name) => {
+		const replacer = (key: string, value: any) => {
+			if (name === '' && key === '' && value) {
+				return Object.entries(value).reduce<
+					Record<string, unknown> | undefined
+				>((result, [name, value]) => {
+					if (!shouldDirtyConsider(name)) {
+						return result;
+					}
 
-						return Object.assign(result ?? {}, { [name]: value });
-					}, undefined);
-				}
+					return Object.assign(result ?? {}, { [name]: value });
+				}, undefined);
+			}
 
-				return value;
-			}),
-	);
+			return value;
+		};
+
+		const result =
+			JSON.stringify(defaultValue[name], replacer) !==
+			JSON.stringify(value[name], replacer);
+
+		return result;
+	});
 }
 
 function shouldNotify<Schema>(
