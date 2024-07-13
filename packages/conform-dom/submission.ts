@@ -14,9 +14,14 @@ export type SubmissionState = {
 	validated: Record<string, boolean>;
 };
 
+export type SubmissionPayload<Entry extends FormDataEntryValue> =
+	| Entry
+	| SubmissionPayload<Entry>[]
+	| { [key: string]: SubmissionPayload<Entry> };
+
 export type SubmissionContext<Value = null, FormError = string[]> = {
 	intent: Intent | null;
-	payload: Record<string, unknown>;
+	payload: Record<string, SubmissionPayload<FormDataEntryValue>>;
 	fields: Set<string>;
 	value?: Value;
 	error?: Record<string, FormError | null> | null;
@@ -26,13 +31,13 @@ export type SubmissionContext<Value = null, FormError = string[]> = {
 export type Submission<Schema, FormError = string[], FormValue = Schema> =
 	| {
 			status: 'success';
-			payload: Record<string, unknown>;
+			payload: Record<string, SubmissionPayload<FormDataEntryValue>>;
 			value: FormValue;
 			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  }
 	| {
 			status: 'error' | undefined;
-			payload: Record<string, unknown>;
+			payload: Record<string, SubmissionPayload<FormDataEntryValue>>;
 			error: Record<string, FormError | null> | null;
 			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  };
@@ -40,7 +45,7 @@ export type Submission<Schema, FormError = string[], FormValue = Schema> =
 export type SubmissionResult<FormError = string[]> = {
 	status?: 'error' | 'success';
 	intent?: Intent;
-	initialValue?: Record<string, unknown> | null;
+	initialValue?: Record<string, SubmissionPayload<string>> | null;
 	fields?: string[];
 	error?: Record<string, FormError | null>;
 	state?: SubmissionState;
@@ -275,15 +280,20 @@ export function replySubmission<FormError>(
 				}
 			: undefined;
 
+	const initialValue =
+		(normalize(
+			context.payload,
+			// We can't serialize the file and send it back from the server, but we can preserve it in the client
+			typeof document !== 'undefined',
+			// We need the file on the client because it's treated as the form value
+			// But we will exclude the File type for now as it's only used by the internal
+			// form state and we will remove the need to preserve the file on the client soon
+		) as Record<string, SubmissionPayload<string>>) ?? {};
+
 	return {
 		status: context.intent ? undefined : error ? 'error' : 'success',
 		intent: context.intent ? context.intent : undefined,
-		initialValue:
-			normalize(
-				context.payload,
-				// We can't serialize the file and send it back from the server, but we can preserve it in the client
-				typeof document !== 'undefined',
-			) ?? {},
+		initialValue,
 		error,
 		state: context.state,
 		fields: Array.from(context.fields),
