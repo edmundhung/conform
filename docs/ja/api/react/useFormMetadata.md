@@ -1,6 +1,6 @@
 # useFormMetadata
 
-[FormProvider](./FormProvider.md) に設定されたコンテキストを購読することで、フォームのメタデータを返す React フックです。
+[FormProvider](./FormProvider.md) に設定されたコンテキストを登録することで、フォームのメタデータを返す React フックです。
 
 ```tsx
 const form = useFormMetadata(formId);
