@@ -27,7 +27,7 @@ Yup スキーマ、または Yup スキーマを返す関数のいずれかで�
 ```tsx
 import { parseWithYup } from '@conform-to/zod';
 import { useForm } from '@conform-to/react';
-import * as yup from 'zod';
+import * as yup from 'yup';
 
 const schema = yup.object({
   email: yup.string().email(),
