@@ -25,7 +25,7 @@ Yup スキーマ、または Yup スキーマを返す関数のいずれかで�
 ## 例
 
 ```tsx
-import { parseWithYup } from '@conform-to/zod';
+import { parseWithYup } from '@conform-to/yup';
 import { useForm } from '@conform-to/react';
 import * as yup from 'yup';
 
