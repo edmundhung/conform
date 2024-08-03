@@ -28,6 +28,7 @@ import {
 	useContext,
 	useSyncExternalStore,
 	useRef,
+	useEffect,
 } from 'react';
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
@@ -152,7 +153,67 @@ export function useFormState<FormError>(
 		[form, subjectRef],
 	);
 
-	return useSyncExternalStore(subscribe, form.getState, form.getState);
+	const state = useSyncExternalStore(subscribe, form.getState, form.getState);
+
+	useEffect(() => {
+		const formId = form.getFormId();
+		const formElement = document.forms.namedItem(formId);
+		const scope = subjectRef?.current.key;
+
+		if (!formElement || !scope) {
+			return;
+		}
+
+		const getAll = (value: unknown) => {
+			if (typeof value === 'string') {
+				return [value];
+			}
+
+			if (
+				Array.isArray(value) &&
+				value.every((item) => typeof item === 'string')
+			) {
+				return value;
+			}
+
+			return undefined;
+		};
+		const get = (value: unknown) => getAll(value)?.[0];
+
+		for (const element of formElement.elements) {
+			if (
+				(element instanceof HTMLInputElement ||
+					element instanceof HTMLTextAreaElement ||
+					element instanceof HTMLSelectElement) &&
+				scope.name?.includes(element.name)
+			) {
+				const prev = element.dataset.conform;
+				const next = state.key[element.name];
+				const defaultValue = state.initialValue[element.name];
+
+				if (typeof prev === 'undefined' || prev !== next) {
+					element.dataset.conform = next;
+
+					if ('options' in element) {
+						const value = getAll(defaultValue) ?? [];
+
+						for (const option of element.options) {
+							option.selected = value.includes(option.value);
+						}
+					} else if (
+						'checked' in element &&
+						(element.type === 'checkbox' || element.type === 'radio')
+					) {
+						element.checked = get(defaultValue) === element.value;
+					} else {
+						element.value = get(defaultValue) ?? '';
+					}
+				}
+			}
+		}
+	}, [form, state, subjectRef]);
+
+	return state;
 }
 
 export function FormProvider(props: {
@@ -307,9 +368,14 @@ export function getMetadata<
 						case 'initialValue':
 						case 'value':
 						case 'valid':
-						case 'dirty':
+						case 'dirty': {
+							if (key === 'initialValue') {
+								// If `initialValue` is subscribed, it's likely that we will want the field to be updated
+								updateSubjectRef(subjectRef, 'key', 'name', name);
+							}
 							updateSubjectRef(subjectRef, key, 'name', name);
 							break;
+						}
 						case 'errors':
 						case 'allErrors':
 							updateSubjectRef(
