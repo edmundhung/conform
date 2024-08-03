@@ -63,6 +63,7 @@ export function getEventTarget(
 
 export function createDummySelect(
 	form: HTMLFormElement,
+	key: Key | null | undefined,
 	name: string,
 	value?: string | string[] | undefined,
 ): HTMLSelectElement {
@@ -71,7 +72,7 @@ export function createDummySelect(
 
 	select.name = name;
 	select.multiple = true;
-	select.dataset.conform = 'true';
+	select.dataset.conform = `${key ?? 'true'}`;
 
 	// To make sure the input is hidden but still focusable
 	select.setAttribute('aria-hidden', 'true');
@@ -98,7 +99,7 @@ export function createDummySelect(
 export function isDummySelect(
 	element: HTMLElement,
 ): element is HTMLSelectElement {
-	return element.dataset.conform === 'true';
+	return typeof element.dataset.conform !== 'undefined';
 }
 
 export function updateFieldValue(
@@ -345,7 +346,7 @@ export function useInputControl<
 			typeof value !== 'undefined' &&
 			(!Array.isArray(value) || value.length > 0)
 		) {
-			element = createDummySelect(form, meta.name, value);
+			element = createDummySelect(form, meta.key, meta.name, value);
 		}
 
 		register(element);
