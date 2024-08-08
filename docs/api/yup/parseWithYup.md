@@ -25,9 +25,9 @@ Set it to **true** if you want to parse the form data with **validate** method f
 ## Example
 
 ```tsx
-import { parseWithYup } from '@conform-to/zod';
+import { parseWithYup } from '@conform-to/yup';
 import { useForm } from '@conform-to/react';
-import * as yup from 'zod';
+import * as yup from 'yup';
 
 const schema = yup.object({
   email: yup.string().email(),
