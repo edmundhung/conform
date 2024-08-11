@@ -70,11 +70,7 @@ function Example() {
       <div>
         <label>Mutliple Files</label>
         <input type="file" name={fields.files.name} multiple />
-        <div>
-          {Object.entries(fields.files.allErrors).flatMap(
-            ([, messages]) => messages,
-          )}
-        </div>
+        <div>{Object.values(fields.files.allErrors).flat()}</div>
       </div>
       <button>Upload</button>
     </form>

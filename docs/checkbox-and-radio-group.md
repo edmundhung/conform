@@ -37,7 +37,7 @@ function Example() {
 
 ## Checkbox
 
-Setting up a checkbox group would be similar to a radio group except the initialValue can be either a string or an array because of missing information on the server side whether the checkbox is a boolean or a group. You can derive the **defaultChecked** value from the initialValue as shown below.
+Setting up a checkbox group would be similar to a radio group except the initialValue can be either a string or an array because of missing information on the server side whether the checkbox is a boolean or a group. You can derive the **defaultChecked** value from the initialValue as shown below. As the errors from both yup and zod are mapped based on the corresponding paths and the errors of each option will be mapped to its corresponding index, e.g. `answer[0]` instead of the array itself, e.g. `answers`. If you want to display all the errors, you can consider using the **allErrors** property on the field metadata instead.
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -65,7 +65,7 @@ function Example() {
             />
           </div>
         ))}
-        <div>{fields.answer.errors}</div>
+        <div>{Object.values(fields.answer.allErrors).flat()}</div>
       </fieldset>
       <button>Submit</button>
     </form>
