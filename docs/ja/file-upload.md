@@ -37,7 +37,7 @@ function Example() {
 
 ## 複数のファイル
 
-複数のファイルをアップロードできるようにするには、ファイル入力に **multiple** 属性を設定する必要があります。フィールドメタデータのエラーが各ファイルのすべてのエラーを含んでいない可能性があることに注意することが重要です。 yup および zod からのエラーは、対応するパスに基づいてマッピングされ、各ファイルのエラーは、配列自体（例： `files` ）ではなく、対応するインデックス（例： `files[0]` ）にマッピングされます。すべてのエラーを表示したい場合は、フィールドメタデータの **allErrors** プロパティを代わりに使用することを検討できます。
+複数のファイルをアップロードできるようにするには、ファイル入力に **multiple** 属性を設定する必要があります。フィールドメタデータのエラーが各ファイルのすべてのエラーを含んでいない可能性があることに注意することが重要です。 yup および zod からのエラーは、対応するパスに基づいてマッピングされ、各選択のエラーは、配列自体（例： `files` ）ではなく、対応するインデックス（例： `files[0]` ）にマッピングされます。すべてのエラーを表示したい場合は、フィールドメタデータの **allErrors** プロパティを代わりに使用することを検討できます。
 
 ```tsx
 import { useForm } from '@conform-to/react';
@@ -70,11 +70,7 @@ function Example() {
       <div>
         <label>Mutliple Files</label>
         <input type="file" name={fields.files.name} multiple />
-        <div>
-          {Object.entries(fields.files.allErrors).flatMap(
-            ([, messages]) => messages,
-          )}
-        </div>
+        <div>{Object.values(fields.files.allErrors).flat()}</div>
       </div>
       <button>Upload</button>
     </form>
