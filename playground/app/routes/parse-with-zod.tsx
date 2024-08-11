@@ -9,20 +9,31 @@ import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { Playground, Field } from '~/components';
 import { z } from 'zod';
 
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type Literal = z.infer<typeof literalSchema>;
+type Json = Literal | { [key: string]: Json } | Json[];
+const jsonSchema: z.ZodType<Json> = z.lazy(() =>
+	z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]),
+);
+
 const schema = z.object({
 	username: z.string().min(3, 'Username is too short'),
-	profile: z.preprocess(
-		(json) => {
-			if (typeof json === 'string' && json !== '') {
-				return JSON.parse(json);
+	profile: z
+		.string({ required_error: 'required' })
+		.transform((json, ctx) => {
+			if (typeof json === 'string') {
+				try {
+					return JSON.parse(json);
+				} catch (error) {
+					ctx.addIssue({
+						code: 'custom',
+						message: 'invalid',
+					});
+					return z.never;
+				}
 			}
-
-			return;
-		},
-		z.object({
-			age: z.number().int().positive(),
-		}),
-	),
+		})
+		.pipe(jsonSchema),
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
