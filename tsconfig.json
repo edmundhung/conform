@@ -1,4 +1,7 @@
 {
+	"compilerOptions": {
+		"experimentalDecorators": true
+	},
 	"references": [
 		{ "path": "./packages/conform-dom" },
 		{ "path": "./packages/conform-yup" },

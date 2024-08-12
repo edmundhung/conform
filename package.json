@@ -12,10 +12,12 @@
 		"test:api": "vitest --watch",
 		"test:e2e": "playwright test --ui",
 		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",
+		"format": "prettier --write ./packages",
 		"prepare": "husky install"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.5",
+		"@conform-to/class-validator": "workspace:*",
 		"@conform-to/dom": "workspace:*",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/validitystate": "workspace:*",
@@ -25,6 +27,7 @@
 		"@types/node": "^20.10.4",
 		"@typescript-eslint/eslint-plugin": "^7.11.0",
 		"@typescript-eslint/parser": "^7.11.0",
+		"class-validator": "0.14.1",
 		"eslint": "^8.57.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
 		"eslint-plugin-import": "^2.29.1",

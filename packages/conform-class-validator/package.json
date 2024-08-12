@@ -1,0 +1,62 @@
+{
+	"name": "@conform-to/class-validator",
+	"description": "Conform helpers for integrating with class-validator",
+	"homepage": "https://conform.guide",
+	"license": "MIT",
+	"version": "0.1.0",
+	"main": "index.js",
+	"module": "index.mjs",
+	"types": "index.d.ts",
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"module": "./index.mjs",
+			"import": "./index.mjs",
+			"require": "./index.js",
+			"default": "./index.mjs"
+		}
+	},
+	"scripts": {
+		"build:js": "rollup -c",
+		"build:ts": "tsc",
+		"build": "pnpm run \"/^build:.*/\"",
+		"dev:js": "pnpm run build:js --watch",
+		"dev:ts": "pnpm run build:ts --watch",
+		"dev": "pnpm run \"/^dev:.*/\"",
+		"prepare": "pnpm run build"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conform",
+		"directory": "packages/conform-class-validator"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conform/issues"
+	},
+	"dependencies": {
+		"@conform-to/dom": "workspace:*"
+	},
+	"peerDependencies": {
+		"class-validator": "^0.14.1"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.17.8",
+		"@babel/preset-env": "^7.20.2",
+		"@babel/preset-typescript": "^7.20.2",
+		"@rollup/plugin-babel": "^5.3.1",
+		"@rollup/plugin-node-resolve": "^13.3.0",
+		"rollup-plugin-copy": "^3.4.0",
+		"rollup": "^2.79.1",
+		"class-validator": "^0.14.1"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"html",
+		"progressive-enhancement",
+		"validation",
+		"class-validator"
+	],
+	"sideEffects": false
+}

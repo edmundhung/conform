@@ -4,6 +4,7 @@
 	"commit": false,
 	"fixed": [
 		[
+			"@conform-to/class-validator",
 			"@conform-to/dom",
 			"@conform-to/react",
 			"@conform-to/yup",

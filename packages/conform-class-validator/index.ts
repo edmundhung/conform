@@ -1,0 +1,1 @@
+export { parseWithClassValidator } from './parse';
