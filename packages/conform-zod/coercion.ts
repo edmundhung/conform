@@ -23,6 +23,12 @@ import type {
 } from 'zod';
 
 /**
+ * A special string value to represent empty strings
+ * Used to prevent empty strings from being coerced to undefined when using `.default()`
+ */
+const EMPTY_STRING = '__EMPTY_STRING__';
+
+/**
  * Helpers for coercing string value
  * Modify the value only if it's a string, otherwise return the value as-is
  */
@@ -36,6 +42,10 @@ export function coerceString(
 
 	if (value === '') {
 		return undefined;
+	}
+
+	if (value === EMPTY_STRING) {
+		return '';
 	}
 
 	if (typeof transform !== 'function') {
@@ -212,6 +222,15 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodDefault({
 					...def,
+					defaultValue: () => {
+						const value = def.defaultValue();
+
+						if (value === '') {
+							return EMPTY_STRING;
+						}
+
+						return value;
+					},
 					innerType: enableTypeCoercion(def.innerType, cache),
 				}),
 			);

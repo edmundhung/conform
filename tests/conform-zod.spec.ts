@@ -846,6 +846,8 @@ describe('conform-zod', () => {
 				d: z.date().default(defaultDate),
 				e: z.instanceof(File).default(defaultFile),
 				f: z.array(z.string()).default(['foo', 'bar']),
+				g: z.string().nullable().default(null),
+				h: z.string().default(''),
 			});
 			const emptyFile = new File([], '');
 
@@ -878,6 +880,36 @@ describe('conform-zod', () => {
 					d: defaultDate,
 					e: defaultFile,
 					f: ['foo', 'bar'],
+					g: null,
+					h: '',
+				},
+				reply: expect.any(Function),
+			});
+
+			const today = new Date();
+			const schema2 = z.object({
+				a: z.string().email('invalid').default(''),
+				b: z.number().gt(10, 'invalid').default(0),
+				c: z
+					.boolean()
+					.refine((value) => !!value, 'invalid')
+					.default(false),
+				d: z.date().min(today, 'invalid').default(defaultDate),
+				e: z
+					.instanceof(File)
+					.refine((file) => file.size > 100, 'invalid')
+					.default(defaultFile),
+			});
+
+			expect(parseWithZod(createFormData([]), { schema: schema2 })).toEqual({
+				status: 'error',
+				payload: {},
+				error: {
+					a: ['invalid'],
+					b: ['invalid'],
+					c: ['invalid'],
+					d: ['invalid'],
+					e: ['invalid'],
 				},
 				reply: expect.any(Function),
 			});
