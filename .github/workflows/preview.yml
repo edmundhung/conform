@@ -1,11 +1,13 @@
-name: Preview Changes
+name: Preview
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
-  preview:
-    name: Preview Changes
+  release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -20,4 +22,4 @@ jobs:
       - name: Install dependencies
         run: pnpm i
       - name: Publish to pkg.pr.new
-        run: pnpx pkg-pr-new publish './packages/*'
+        run: pnpx pkg-pr-new publish --compact './packages/*' --template './examples/*'
