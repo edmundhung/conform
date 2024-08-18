@@ -2,17 +2,16 @@ import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
 import { cz, flattenErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import {
 	createNameBuilder,
 	createDictionary,
-	getKey,
 	getErrors,
 	getListKeys,
 	getInput,
 	form,
-	configure,
 	getDefaultValue,
+	isTouched,
 } from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
@@ -40,11 +39,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (!result.success || submission.intent) {
 		const error = flattenErrors(result, submission.fields);
-
-		return form.report(submission, {
+		const submissionResult = form.report(submission, {
 			formErrors: error.formErrors,
 			fieldErrors: error.fieldErrors,
 		});
+
+		return submissionResult;
 	}
 
 	return form.report(submission, {
@@ -54,26 +54,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Example() {
 	const result = useActionData<typeof action>();
+	const formRef = useRef<HTMLFormElement>(null);
 	const [state, update] = useFormState(form, {
 		result,
+		formRef,
 		defaultValue: {
 			title: 'Example',
 			content: 'Hello world!',
 		},
 	});
-	const formRef = useRef<HTMLFormElement>(null);
 	const fields = createNameBuilder<z.input<typeof schema>>();
 	const defaultValue = getDefaultValue(state);
 	const errors = getErrors(state);
 	const listKeys = createDictionary((name) => getListKeys(name, state));
-
-	useEffect(() => {
-		// To configure all form fields based on the current state
-		return configure(formRef.current, (name) => ({
-			key: getKey(name, state),
-			defaultValue: defaultValue.getAll(name) ?? '',
-		}));
-	}, [state, defaultValue]);
 
 	return (
 		<Form
@@ -89,16 +82,20 @@ export default function Example() {
 					event.preventDefault();
 				}
 
+				const error = flattenErrors(result, submission.fields);
+				const SubmissionResult = form.report(submission, {
+					formErrors: error.formErrors,
+					fieldErrors: error.fieldErrors,
+				});
+
 				flushSync(() => {
-					update(
-						form.report(submission, flattenErrors(result, submission.fields)),
-					);
+					update(SubmissionResult);
 				});
 			}}
 			onInput={(event: React.FormEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (!input || !state.touched.includes(input.name)) {
+				if (!input || !isTouched(state, input.name)) {
 					return;
 				}
 
@@ -110,7 +107,7 @@ export default function Example() {
 			onBlur={(event: React.FocusEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (!input || state.touched.includes(input.name)) {
+				if (!input || isTouched(state, input.name)) {
 					return;
 				}
 

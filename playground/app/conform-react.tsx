@@ -15,6 +15,7 @@ import {
 	type DefaultValue,
 	getInput,
 	deepEqual,
+	configure,
 } from './conform-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
@@ -31,6 +32,7 @@ export function useFormState<
 >(
 	form: Form<Controls>,
 	options: {
+		formRef?: RefObject<HTMLFormElement>;
 		result?: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
 		defaultValue?: DefaultValue<Schema>;
 	},
@@ -47,7 +49,7 @@ export function useFormState<
 			lastResultRef.current = result;
 			setState((state) =>
 				form.update(state, {
-					...optionsRef.current,
+					defaultValue: optionsRef.current.defaultValue,
 					result,
 				}),
 			);
@@ -64,6 +66,11 @@ export function useFormState<
 			update(options.result);
 		}
 	}, [options.result, update]);
+
+	useEffect(() => {
+		// To update the form fields based on the current state
+		configure(options.formRef?.current, state);
+	}, [options.formRef, state]);
 
 	return [state, update] as const;
 }

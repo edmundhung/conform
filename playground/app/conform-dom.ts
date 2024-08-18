@@ -466,6 +466,19 @@ export function getDefaultValue(
 	return createSearchParams(state.initialValue);
 }
 
+export function isTouched(
+	state: Pick<FormState<unknown, unknown>, 'touched'>,
+	name: string,
+) {
+	const result =
+		// If field / fieldset is touched
+		state.touched.includes(name) ||
+		// If child field is touched
+		state.touched.some((field) => isPrefix(field, name));
+
+	return result;
+}
+
 export function getErrors<ErrorShape>(
 	state: Pick<
 		FormState<unknown, ErrorShape>,
@@ -475,12 +488,7 @@ export function getErrors<ErrorShape>(
 	return Object.entries(state.serverError ?? state.clientError).reduce<
 		Record<string, ErrorShape>
 	>((result, [name, value]) => {
-		if (
-			// If field / fieldset is touched
-			state.touched.includes(name) ||
-			// If child field is touched
-			state.touched.some((field) => isPrefix(field, name))
-		) {
+		if (isTouched(state, name)) {
 			result[name] = value;
 		}
 
@@ -744,55 +752,55 @@ export function defineControl<Payload>(
  * @param state
  */
 export function configure(
-	formElement: HTMLFormElement | null,
-	getMetadata: (name: string) => {
-		defaultValue: string | string[] | undefined;
-		key: string | undefined;
-	},
+	formElement: HTMLFormElement | null | undefined,
+	state: FormState<unknown, unknown>,
 ): void {
 	if (!formElement) {
 		return;
 	}
 
-	const isCheckboxOrRadio = (
-		element: HTMLInputElement | HTMLTextAreaElement,
-	): element is HTMLInputElement =>
-		element.type === 'checkbox' || element.type === 'radio';
-	const get = (value: string | string[] | undefined) =>
-		typeof value === 'string' ? value : value?.[0];
-	const getAll = (value: string | string[] | undefined) =>
-		typeof value === 'string' ? [value] : value;
+	const getAll = (value: unknown) => {
+		if (typeof value === 'string') {
+			return [value];
+		}
+
+		if (
+			Array.isArray(value) &&
+			value.every((item) => typeof item === 'string')
+		) {
+			return value;
+		}
+
+		return undefined;
+	};
+	const get = (value: unknown) => getAll(value)?.[0];
 
 	for (const element of formElement.elements) {
 		if (
 			element instanceof HTMLInputElement ||
-			element instanceof HTMLTextAreaElement
+			element instanceof HTMLTextAreaElement ||
+			element instanceof HTMLSelectElement
 		) {
-			const metadata = getMetadata(element.name);
 			const prev = element.dataset.conform;
-			const next = metadata.key;
+			const next = getKey(element.name, state);
+			const defaultValue = getValue(state.initialValue, element.name);
 
 			if (typeof prev === 'undefined' || prev !== next) {
 				element.dataset.conform = next;
 
-				if (isCheckboxOrRadio(element)) {
-					element.checked = get(metadata.defaultValue) === element.value;
+				if ('options' in element) {
+					const value = getAll(defaultValue) ?? [];
+
+					for (const option of element.options) {
+						option.selected = value.includes(option.value);
+					}
+				} else if (
+					(element.type === 'checkbox' || element.type === 'radio') &&
+					'checked' in element
+				) {
+					element.checked = get(defaultValue) === element.value;
 				} else {
-					element.value = get(metadata.defaultValue) ?? '';
-				}
-			}
-		} else if (element instanceof HTMLSelectElement) {
-			const metadata = getMetadata(element.name);
-			const prev = element.dataset.conform;
-			const next = metadata.key;
-
-			if (typeof prev === 'undefined' || prev !== next) {
-				const value = getAll(metadata.defaultValue) ?? [];
-
-				element.dataset.conform = next;
-
-				for (const option of element.options) {
-					option.selected = value.includes(option.value);
+					element.value = get(defaultValue) ?? '';
 				}
 			}
 		}
