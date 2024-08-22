@@ -135,7 +135,7 @@ Be aware that both intents requires setting up the inputs with the **key** from 
 To manipulate a field list, you can use the **insert**, **remove** and **reorder** intents.
 
 ```tsx
-import { useForm } from '@conform-to/react';
+import { useForm, getInputProps } from '@conform-to/react';
 
 export default function Tasks() {
   const [form, fields] = useForm();
@@ -146,7 +146,7 @@ export default function Tasks() {
       <ul>
         {tasks.map((task, index) => (
           <li key={task.key}>
-            <input name={task.name} />
+            <input {...getInputProps(task, { type: "text"})} />
             <button
               {...form.reorder.getButtonProps({
                 name: fields.tasks.name,
