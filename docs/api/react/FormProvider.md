@@ -42,13 +42,13 @@ function Example() {
 
 ### FormProvider can be nested
 
-This is useful if you need to have one form inside another due to layout constraint.
+This is useful if you need to have one form inside another due to layout constraints.
 
 ```tsx
 import { FormProvider, useForm } from '@conform-to/react';
 
 function Field({ name, formId }) {
-  //  useField will looks for the closest FormContext if no formId is provided
+  //  useField will look for the closest FormContext if no formId is provided
   const [meta] = useField(name, { formId });
 
   return <input name={meta.name} form={meta.form} />;
@@ -74,7 +74,7 @@ function Child() {
       <form id={form.id} />
       <Field name={fields.title.name} />
 
-      {/* This will looks for the form context with the id 'parent' instead */}
+      {/* This will look for the form context with the id 'parent' instead */}
       <Field name={fields.bar.name} formId="parent" />
     </FormProvider>
   );
