@@ -28,18 +28,24 @@ export const ToggleGroupConform = ({
 				onFocus={() => {
 					toggleGroupRef.current?.focus();
 				}}
-			/> : control.value ? (control.value as string[]).map(v => <input
-				// use the same name as the field, html form will handle the rest
-				name={meta.name} 
+			/> : <select
+				multiple
+				name={meta.name}
 				className="sr-only"
-				tabIndex={-1}
-				value={v}
-				// we just care the value to be submitted
-				onChange={() => { }}
+				ref={control.register}
 				onFocus={() => {
 					toggleGroupRef.current?.focus();
 				}}
-			/>) : null}
+				defaultValue={meta.initialValue}
+				tabIndex={-1}
+			>
+				{items.map((item) => (
+					<option value={item.value} key={item.value}>
+						{item.label}
+					</option>
+				))}
+			</select>
+			}
 
 			<ToggleGroup
 				{...props}
