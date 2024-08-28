@@ -44,6 +44,7 @@ const UserSubscriptionSchema = z.object({
 	accountType: z.enum(['personal', 'business'], {
 		required_error: 'You must select an account type',
 	}),
+	accountTypes: z.array(z.enum(['personal', 'business'])),
 	interests: z
 		.array(z.string())
 		.min(3, 'You must select at least three interest'),
@@ -54,7 +55,11 @@ function App() {
 	const [form, fields] = useForm({
 		id: 'signup',
 		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: UserSubscriptionSchema });
+			const result = parseWithZod(formData, { schema: UserSubscriptionSchema });
+			if (result.status==='error') {
+				console.error(result);
+			}
+			return result
 		},
 		onSubmit(e) {
 			e.preventDefault();
@@ -162,6 +167,21 @@ function App() {
 					/>
 					{fields.accountType.errors && (
 						<FieldError>{fields.accountType.errors}</FieldError>
+					)}
+				</Field>
+				<Field>
+					<Label htmlFor={fields.accountTypes.id}>Account types</Label>
+					<ToggleGroupConform
+						type="multiple"
+						meta={fields.accountTypes}
+						items={[
+							{ value: 'personal', label: 'Personal' },
+							{ value: 'business', label: 'Business' },
+							{ value: 'business2', label: 'Business2' },
+						]}
+					/>
+					{fields.accountTypes.errors && (
+						<FieldError>{fields.accountTypes.errors}</FieldError>
 					)}
 				</Field>
 				<Field>
