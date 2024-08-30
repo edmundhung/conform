@@ -247,7 +247,10 @@ export function replySubmission<FormError>(
 		(context.intent?.type === 'reset' &&
 			(context.intent.payload.name ?? '') === '')
 	) {
-		return { initialValue: null };
+		return { 
+			initialValue: null,
+			status: context.intent ? undefined : error ? 'error' : 'success'
+		};
 	}
 
 	if ('hideFields' in options && options.hideFields) {
