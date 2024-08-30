@@ -247,6 +247,21 @@ export function replySubmission<FormError>(
 		(context.intent?.type === 'reset' &&
 			(context.intent.payload.name ?? '') === '')
 	) {
+		const extraError =
+			'formErrors' in options || 'fieldErrors' in options
+				? normalize<Record<string, FormError | null>>({
+						'': options.formErrors ?? null,
+						...options.fieldErrors,
+					})
+				: null;
+		const error =
+			context.error || extraError
+				? {
+						...context.error,
+						...extraError,
+					}
+				: undefined;
+
 		return { 
 			initialValue: null,
 			status: context.intent ? undefined : error ? 'error' : 'success'
