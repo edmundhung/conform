@@ -55,11 +55,7 @@ function App() {
 	const [form, fields] = useForm({
 		id: 'signup',
 		onValidate({ formData }) {
-			const result = parseWithZod(formData, { schema: UserSubscriptionSchema });
-			if (result.status==='error') {
-				console.error(result);
-			}
-			return result
+			return parseWithZod(formData, { schema: UserSubscriptionSchema });
 		},
 		onSubmit(e) {
 			e.preventDefault();
