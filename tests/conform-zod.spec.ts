@@ -1103,6 +1103,92 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 		});
+
+		test('json schema', () => {
+			// Copied from https://github.com/colinhacks/zod?tab=readme-ov-file#json-type
+			const literalSchema = z.union([
+				z.string(),
+				z.number(),
+				z.boolean(),
+				z.null(),
+			]);
+			type Literal = z.infer<typeof literalSchema>;
+			type Json = Literal | { [key: string]: Json } | Json[];
+			const jsonSchema: z.ZodType<Json> = z.lazy(() =>
+				z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]),
+			);
+			const schema = z.object({
+				example: z
+					.string({ required_error: 'required' })
+					.transform((json, ctx) => {
+						if (typeof json === 'string') {
+							try {
+								return JSON.parse(json);
+							} catch (error) {
+								ctx.addIssue({
+									code: 'custom',
+									message: 'invalid',
+								});
+								return z.never;
+							}
+						}
+					})
+					.pipe(jsonSchema),
+			});
+
+			expect(
+				parseWithZod(createFormData([['example', '']]), { schema }),
+			).toEqual({
+				status: 'error',
+				payload: {
+					example: '',
+				},
+				error: {
+					example: ['required'],
+				},
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['example', 'abc']]), { schema }),
+			).toEqual({
+				status: 'error',
+				payload: {
+					example: 'abc',
+				},
+				error: {
+					example: ['invalid'],
+				},
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(
+					createFormData([
+						[
+							'example',
+							JSON.stringify({ test: 'hello world', number: 123, flag: false }),
+						],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					example: JSON.stringify({
+						test: 'hello world',
+						number: 123,
+						flag: false,
+					}),
+				},
+				value: {
+					example: {
+						test: 'hello world',
+						number: 123,
+						flag: false,
+					},
+				},
+				reply: expect.any(Function),
+			});
+		});
 	});
 
 	test('parseWithZod with errorMap', () => {
