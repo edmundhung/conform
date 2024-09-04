@@ -1,6 +1,6 @@
 # useField
 
-[FormProvider](./FormProvider.md) に設定されたコンテキストを購読することで、フィールドメタデータを返す React フックです。これは **最も近い** [FormProvider](./FormProvider.md) に基づいています。
+[FormProvider](./FormProvider.md) に設定されたコンテキストを登録することで、フィールドメタデータを返す React フックです。これは **最も近い** [FormProvider](./FormProvider.md) に基づいています。
 
 ```tsx
 const [meta, form] = useField(name, options);
