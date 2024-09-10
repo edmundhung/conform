@@ -80,7 +80,6 @@ export type FormValue<Schema> = Schema extends
 				: Schema extends Record<string, any>
 					?
 							| { [Key in keyof Schema]?: FormValue<Schema[Key]> }
-							| null
 							| undefined
 					: unknown;
 
