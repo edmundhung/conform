@@ -33,7 +33,7 @@ jobs:
         with:
           title: 'release: bump packages version'
           commit: 'release: bump packages version'
-          version: pnpm exec changeset version && pnpm install --lockfile-only
+          version: pnpm run version
           publish: pnpm publish -r
           createGithubReleases: false
         env:
