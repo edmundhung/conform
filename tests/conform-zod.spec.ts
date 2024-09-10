@@ -524,6 +524,56 @@ describe('conform-zod', () => {
 			});
 		});
 
+		test('z.object', () => {
+			const schema = z.object({
+				a: z.object({
+					text: z.string({
+						required_error: 'required',
+					}),
+					flag: z.boolean({
+						required_error: 'required',
+					}),
+				}),
+				b: z
+					.object({
+						text: z.string({
+							required_error: 'required',
+						}),
+						flag: z.boolean({
+							required_error: 'required',
+						}),
+					})
+					.optional(),
+			});
+
+			expect(parseWithZod(createFormData([]), { schema })).toEqual({
+				status: 'error',
+				payload: {},
+				error: {
+					'a.text': ['required'],
+					'a.flag': ['required'],
+				},
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['b.text', '']]), { schema }),
+			).toEqual({
+				status: 'error',
+				payload: {
+					b: {
+						text: '',
+					},
+				},
+				error: {
+					'a.text': ['required'],
+					'a.flag': ['required'],
+					'b.text': ['required'],
+					'b.flag': ['required'],
+				},
+				reply: expect.any(Function),
+			});
+		});
+
 		test('z.array', () => {
 			const createSchema = (
 				element: z.ZodTypeAny = z.string({

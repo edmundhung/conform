@@ -185,17 +185,28 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 				}),
 			);
 	} else if (def.typeName === 'ZodObject') {
-		const shape = Object.fromEntries(
-			Object.entries(def.shape()).map(([key, def]) => [
-				key,
-				// @ts-expect-error see message above
-				enableTypeCoercion(def, cache),
-			]),
-		);
-		schema = new ZodObject({
-			...def,
-			shape: () => shape,
-		});
+		schema = any()
+			.transform((value) => {
+				if (typeof value === 'undefined') {
+					// Defaults it to an empty object
+					return {};
+				}
+
+				return value;
+			})
+			.pipe(
+				new ZodObject({
+					...def,
+					shape: () =>
+						Object.fromEntries(
+							Object.entries(def.shape()).map(([key, def]) => [
+								key,
+								// @ts-expect-error see message above
+								enableTypeCoercion(def, cache),
+							]),
+						),
+				}),
+			);
 	} else if (def.typeName === 'ZodEffects') {
 		if (isFileSchema(type as unknown as ZodEffects<any, any, any>)) {
 			schema = any()
