@@ -44,6 +44,7 @@ const UserSubscriptionSchema = z.object({
 	accountType: z.enum(['personal', 'business'], {
 		required_error: 'You must select an account type',
 	}),
+	accountTypes: z.array(z.enum(['personal', 'business'])).min(1,'You must select at least one account type'),
 	interests: z
 		.array(z.string())
 		.min(3, 'You must select at least three interest'),
@@ -162,6 +163,22 @@ function App() {
 					/>
 					{fields.accountType.errors && (
 						<FieldError>{fields.accountType.errors}</FieldError>
+					)}
+				</Field>
+				<Field>
+					<Label htmlFor={fields.accountTypes.id}>Account types</Label>
+					<ToggleGroupConform
+						type="multiple"
+						meta={fields.accountTypes}
+						items={[
+							{ value: 'personal', label: 'Personal' },
+							{ value: 'business', label: 'Business' },
+							{ value: 'business2', label: 'Business2' },
+						]}
+					/>
+					{fields.accountTypes.allErrors && (
+						<FieldError>{
+							Object.values(fields.accountTypes.allErrors).flat()}</FieldError>
 					)}
 				</Field>
 				<Field>
