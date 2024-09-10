@@ -86,9 +86,7 @@ const schema = z.object({
 
 ### Default values
 
-Conform already preprocesses empty values to `undefined`. Add `.transform()` to your schema to define a default value that will be returned instead.
-
-Zod will return the default value if the input is `undefined` after preprocessing. This also has the effect of changing the schema return type.
+Conform will always strip empty values to `undefined`. If you need a default value, please use `.transform()` to define a fallback value that will be returned instead.
 
 ```tsx
 const schema = z.object({

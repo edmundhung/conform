@@ -23,8 +23,8 @@ import type {
 } from 'zod';
 
 /**
- * A special string value to represent empty strings
- * Used to prevent empty strings from being coerced to undefined when using `.default()`
+ * A special string value to represent empty string
+ * Used to prevent empty string from being stripped to undefined when using `.default()`
  */
 const EMPTY_STRING = '__EMPTY_STRING__';
 
@@ -91,7 +91,7 @@ export function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 }
 
 /**
- * @deprecated Conform coerce empty strings to undefined by default
+ * @deprecated Conform strip empty string to undefined by default
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
 	return (value: unknown) => coerceString(value, fn);
@@ -99,7 +99,7 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
 
 /**
  * Reconstruct the provided schema with additional preprocessing steps
- * This coerce empty values to undefined and transform strings to the correct type
+ * This strips empty values to undefined and coerces string to the correct type
  */
 export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
