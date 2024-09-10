@@ -2,4 +2,4 @@
 '@conform-to/zod': minor
 ---
 
-fix number and bigint coercion
+feat(conform-zod): bigint coercion support
