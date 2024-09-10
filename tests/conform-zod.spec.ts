@@ -405,6 +405,74 @@ describe('conform-zod', () => {
 			});
 		});
 
+		test('z.bigint', () => {
+			const schema = z.object({
+				test: z
+					.bigint({ required_error: 'required', invalid_type_error: 'invalid' })
+					.min(1n, 'min')
+					.max(10n, 'max')
+					.multipleOf(2n, 'step'),
+			});
+			const file = new File([], '');
+
+			expect(parseWithZod(createFormData([]), { schema })).toEqual({
+				status: 'error',
+				payload: {},
+				error: { test: ['required'] },
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['test', '']]), {
+					schema,
+				}),
+			).toEqual({
+				status: 'error',
+				payload: { test: '' },
+				error: { test: ['required'] },
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['test', 'abc']]), {
+					schema,
+				}),
+			).toEqual({
+				status: 'error',
+				payload: { test: 'abc' },
+				error: { test: ['invalid'] },
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['test', file]]), {
+					schema,
+				}),
+			).toEqual({
+				status: 'error',
+				payload: { test: file },
+				error: { test: ['invalid'] },
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['test', '5']]), {
+					schema,
+				}),
+			).toEqual({
+				status: 'error',
+				payload: { test: '5' },
+				error: { test: ['step'] },
+				reply: expect.any(Function),
+			});
+			expect(
+				parseWithZod(createFormData([['test', ' ']]), {
+					schema,
+				}),
+			).toEqual({
+				status: 'error',
+				payload: { test: ' ' },
+				error: { test: ['invalid'] },
+				reply: expect.any(Function),
+			});
+		});
+
 		test('z.date', () => {
 			const schema = z.object({
 				test: z

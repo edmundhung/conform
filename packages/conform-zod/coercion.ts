@@ -129,7 +129,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		schema = any()
 			.transform((value) =>
 				coerceString(value, (text) =>
-					text.trim() === '' ? Number.NaN : Number(text),
+					text.trim() === '' ? text : Number(text),
 				),
 			)
 			.pipe(type);
@@ -142,14 +142,14 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	} else if (def.typeName === 'ZodDate') {
 		schema = any()
 			.transform((value) =>
-				coerceString(value, (timestamp) => {
-					const date = new Date(timestamp);
+				coerceString(value, (text) => {
+					const date = new Date(text);
 
 					// z.date() does not expose a quick way to set invalid_date error
 					// This gets around it by returning the original string if it's invalid
 					// See https://github.com/colinhacks/zod/issues/1526
 					if (isNaN(date.getTime())) {
-						return timestamp;
+						return text;
 					}
 
 					return date;
@@ -158,7 +158,18 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(type);
 	} else if (def.typeName === 'ZodBigInt') {
 		schema = any()
-			.transform((value) => coerceString(value, BigInt))
+			.transform((value) =>
+				coerceString(value, (text) => {
+					if (text.trim() === '') {
+						return text;
+					}
+					try {
+						return BigInt(text);
+					} catch {
+						return text;
+					}
+				}),
+			)
 			.pipe(type);
 	} else if (def.typeName === 'ZodArray') {
 		schema = any()
