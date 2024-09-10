@@ -23,6 +23,12 @@ import type {
 } from 'zod';
 
 /**
+ * A special string value to represent empty string
+ * Used to prevent empty string from being stripped to undefined when using `.default()`
+ */
+const EMPTY_STRING = '__EMPTY_STRING__';
+
+/**
  * Helpers for coercing string value
  * Modify the value only if it's a string, otherwise return the value as-is
  */
@@ -36,6 +42,10 @@ export function coerceString(
 
 	if (value === '') {
 		return undefined;
+	}
+
+	if (value === EMPTY_STRING) {
+		return '';
 	}
 
 	if (typeof transform !== 'function') {
@@ -81,7 +91,7 @@ export function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 }
 
 /**
- * @deprecated Conform coerce empty strings to undefined by default
+ * @deprecated Conform strip empty string to undefined by default
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
 	return (value: unknown) => coerceString(value, fn);
@@ -89,7 +99,7 @@ export function ifNonEmptyString(fn: (text: string) => unknown) {
 
 /**
  * Reconstruct the provided schema with additional preprocessing steps
- * This coerce empty values to undefined and transform strings to the correct type
+ * This strips empty values to undefined and coerces string to the correct type
  */
 export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
@@ -212,6 +222,15 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodDefault({
 					...def,
+					defaultValue: () => {
+						const value = def.defaultValue();
+
+						if (value === '') {
+							return EMPTY_STRING;
+						}
+
+						return value;
+					},
 					innerType: enableTypeCoercion(def.innerType, cache),
 				}),
 			);

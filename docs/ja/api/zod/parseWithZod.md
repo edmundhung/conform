@@ -86,14 +86,18 @@ const schema = z.object({
 
 ### デフォルト値
 
-Conform はすでに空の値を `undefined` に前処理しています。 `.default()` をスキーマに追加して、代わりに返されるデフォルト値を定義します。
-
-Zod は、前処理後の入力が `undefined` の場合、デフォルト値を返します。これはスキーマの戻り値の型を変更する効果もあります。
+Conform は常に空の文字列を削除し、それらを「undefined」にします。 `.transform()` をスキーマに追加して、代わりに返されるデフォルト値を定義します。
 
 ```tsx
 const schema = z.object({
-  foo: z.string(), // string | undefined
-  bar: z.string().default('bar'), // string
-  baz: z.string().nullable().default(null), // string | null
+  foo: z.string().optional(), // string | undefined
+  bar: z
+    .string()
+    .optional()
+    .transform((value) => value ?? ''), // string
+  baz: z
+    .string()
+    .optional()
+    .transform((value) => value ?? null), // string | null
 });
 ```
