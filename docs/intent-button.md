@@ -148,7 +148,7 @@ export default function Tasks() {
           const taskFields = task.getFieldset();
           return (
             <li key={task.key}>
-              <fieldset key={task.key} {...getFieldsetProps(task)}>
+              <fieldset {...getFieldsetProps(task)}>
                 <input {...getInputProps(taskFields.content, { type: "text" })} />
                 <button
                   {...form.reorder.getButtonProps({
