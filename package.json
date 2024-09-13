@@ -11,7 +11,7 @@
 		"test": "pnpm run \"/^test:.*/\"",
 		"test:api": "vitest --watch",
 		"test:e2e": "playwright test --ui",
-		"version": "changeset version && pnpm install --lockfile-only",
+		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
 		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"
 	},
