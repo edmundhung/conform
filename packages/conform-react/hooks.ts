@@ -135,8 +135,13 @@ export function useForm<
 				const next = stateSnapshot.key[element.name];
 				const defaultValue = stateSnapshot.initialValue[element.name];
 
-				if (prev === 'managed') {
-					// Skip fields managed by useInputControl()
+				if (
+					prev === 'managed' ||
+					element.type === 'submit' ||
+					element.type === 'reset' ||
+					element.type === 'button'
+				) {
+					// Skip buttons and fields managed by useInputControl()
 					continue;
 				}
 
