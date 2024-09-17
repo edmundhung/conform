@@ -179,7 +179,8 @@ export function useForm<
 						'checked' in element &&
 						(element.type === 'checkbox' || element.type === 'radio')
 					) {
-						element.checked = get(defaultValue) === element.value;
+						element.checked =
+							getAll(defaultValue)?.includes(element.value) ?? false;
 					} else {
 						element.value = get(defaultValue) ?? '';
 					}
