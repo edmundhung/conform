@@ -214,6 +214,8 @@ export function getFormControlProps<Schema>(
 	options?: FormControlOptions,
 ): FormControlProps {
 	return simplify({
+		// let Conform updates the field value for us
+		'data-conform': '',
 		required: metadata.required || undefined,
 		...getFieldsetProps(metadata, options),
 	});

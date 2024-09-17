@@ -1,5 +1,5 @@
 import { type FormId, type FieldName } from '@conform-to/dom';
-import { useEffect, useId, useState, useLayoutEffect } from 'react';
+import { useEffect, useId, useState, useLayoutEffect, useRef } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -61,6 +61,14 @@ export function useForm<
 			 * Default to `true`.
 			 */
 			defaultNoValidate?: boolean;
+
+			/**
+			 * Define if the input could be updated by conform.
+			 * Default to inputs that are configured using the `getInputProps`, `getSelectProps` or `getTextareaProps` helpers.
+			 */
+			shouldManageInput?: (
+				element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+			) => boolean;
 		}
 	>,
 ): [
@@ -69,6 +77,7 @@ export function useForm<
 ] {
 	const { id, ...formConfig } = options;
 	const formId = useFormId<Schema, FormError>(id);
+	const shouldManageInputRef = useRef(options.shouldManageInput);
 	const [context] = useState(() =>
 		createFormContext({ ...formConfig, formId }),
 	);
@@ -89,6 +98,9 @@ export function useForm<
 
 	useSafeLayoutEffect(() => {
 		context.onUpdate({ ...formConfig, formId });
+
+		// Update ref to shouldManageInput so it will be used in the next state update
+		shouldManageInputRef.current = options.shouldManageInput;
 	});
 
 	const subjectRef = useSubjectRef({
@@ -109,6 +121,14 @@ export function useForm<
 			return;
 		}
 
+		// Default to manage inputs that is configured using the `getInputProps` helpers
+		// The data attribute is just an implementation detail and should not be used by the user
+		// We will likely make this a opt-out feature in v2
+		const defaultShouldManageInput = (
+			element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+		) => typeof element.dataset.conform !== 'undefined';
+		const shouldManageInput =
+			shouldManageInputRef.current ?? defaultShouldManageInput;
 		const getAll = (value: unknown) => {
 			if (typeof value === 'string') {
 				return [value];
@@ -131,19 +151,20 @@ export function useForm<
 				element instanceof HTMLTextAreaElement ||
 				element instanceof HTMLSelectElement
 			) {
-				const prev = element.dataset.conform;
-				const next = stateSnapshot.key[element.name];
-				const defaultValue = stateSnapshot.initialValue[element.name];
-
 				if (
-					prev === 'managed' ||
+					element.dataset.conform === 'managed' ||
 					element.type === 'submit' ||
 					element.type === 'reset' ||
-					element.type === 'button'
+					element.type === 'button' ||
+					!shouldManageInput(element)
 				) {
 					// Skip buttons and fields managed by useInputControl()
 					continue;
 				}
+
+				const prev = element.dataset.conform;
+				const next = stateSnapshot.key[element.name];
+				const defaultValue = stateSnapshot.initialValue[element.name];
 
 				if (typeof prev === 'undefined' || prev !== next) {
 					element.dataset.conform = next;
