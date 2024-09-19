@@ -1,7 +1,7 @@
 import type { FormMetadata, FieldMetadata, Metadata, Pretty } from './context';
 
 type FormControlProps = {
-	key?: string;
+	key: string | undefined;
 	id: string;
 	name: string;
 	form: string;
@@ -214,6 +214,7 @@ export function getFormControlProps<Schema>(
 	options?: FormControlOptions,
 ): FormControlProps {
 	return simplify({
+		key: metadata.key,
 		required: metadata.required || undefined,
 		...getFieldsetProps(metadata, options),
 	});

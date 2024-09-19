@@ -71,7 +71,7 @@ export function createDummySelect(
 
 	select.name = name;
 	select.multiple = true;
-	select.dataset.conform = 'managed';
+	select.dataset.conform = 'true';
 
 	// To make sure the input is hidden but still focusable
 	select.setAttribute('aria-hidden', 'true');
@@ -98,7 +98,7 @@ export function createDummySelect(
 export function isDummySelect(
 	element: HTMLElement,
 ): element is HTMLSelectElement {
-	return element.dataset.conform === 'managed';
+	return element.dataset.conform === 'true';
 }
 
 export function updateFieldValue(
@@ -306,8 +306,26 @@ export function useControl<
 		change(value);
 	};
 
+	const refCallback: RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	> = (element) => {
+		register(element);
+
+		if (!element) {
+			return;
+		}
+
+		const prevKey = element.dataset.conform;
+		const nextKey = `${meta.key ?? ''}`;
+
+		if (prevKey !== nextKey) {
+			element.dataset.conform = nextKey;
+			updateFieldValue(element, value ?? '');
+		}
+	};
+
 	return {
-		register,
+		register: refCallback,
 		value,
 		change: handleChange,
 		focus,

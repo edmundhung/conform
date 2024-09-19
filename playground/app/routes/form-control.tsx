@@ -128,12 +128,6 @@ export default function FormControl() {
 						>
 							Reset form
 						</button>
-						<input
-							type="submit"
-							className="rounded-md border p-2 hover:border-black"
-							name="example"
-							value="Submit"
-						/>
 					</div>
 				</Playground>
 			</Form>

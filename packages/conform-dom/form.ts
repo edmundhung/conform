@@ -78,9 +78,7 @@ export type FormValue<Schema> = Schema extends
 			: Schema extends Array<infer Item>
 				? string | Array<FormValue<Item>> | undefined
 				: Schema extends Record<string, any>
-					?
-							| { [Key in keyof Schema]?: FormValue<Schema[Key]> }
-							| undefined
+					? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | undefined
 					: unknown;
 
 const error = Symbol('error');
@@ -278,7 +276,12 @@ function createFormMeta<Schema, FormError, FormValue>(
 		value: initialValue,
 		constraint: options.constraint ?? {},
 		validated: lastResult?.state?.validated ?? {},
-		key: getDefaultKey(defaultValue),
+		key: !initialized
+			? getDefaultKey(defaultValue)
+			: {
+					'': generateId(),
+					...getDefaultKey(defaultValue),
+				},
 		// The `lastResult` should comes from the server which we won't expect the error to be null
 		// We can consider adding a warning if it happens
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
@@ -295,20 +298,15 @@ function getDefaultKey(
 ): Record<string, string> {
 	return Object.entries(flatten(defaultValue, { prefix })).reduce<
 		Record<string, string>
-	>(
-		(result, [key, value]) => {
-			if (Array.isArray(value)) {
-				for (let i = 0; i < value.length; i++) {
-					result[formatName(key, i)] = generateId();
-				}
+	>((result, [key, value]) => {
+		if (Array.isArray(value)) {
+			for (let i = 0; i < value.length; i++) {
+				result[formatName(key, i)] = generateId();
 			}
+		}
 
-			return result;
-		},
-		{
-			[prefix ?? '']: generateId(),
-		},
-	);
+		return result;
+	}, {});
 }
 
 function setFieldsValidated<Error>(
@@ -440,8 +438,10 @@ function updateValue<Error>(
 	if (name === '') {
 		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
-		meta.key = getDefaultKey(value as Record<string, unknown>);
-
+		meta.key = {
+			...getDefaultKey(value as Record<string, unknown>),
+			'': generateId(),
+		};
 		return;
 	}
 

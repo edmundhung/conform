@@ -91,81 +91,10 @@ export function useForm<
 		context.onUpdate({ ...formConfig, formId });
 	});
 
-	const subjectRef = useSubjectRef({
-		key: {
-			// Subscribe to all key changes so it will re-render and
-			// update the field value as soon as the DOM is updated
-			prefix: [''],
-		},
-	});
+	const subjectRef = useSubjectRef();
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
-
-	useEffect(() => {
-		const formElement = document.forms.namedItem(formId);
-
-		if (!formElement) {
-			return;
-		}
-
-		const getAll = (value: unknown) => {
-			if (typeof value === 'string') {
-				return [value];
-			}
-
-			if (
-				Array.isArray(value) &&
-				value.every((item) => typeof item === 'string')
-			) {
-				return value;
-			}
-
-			return undefined;
-		};
-		const get = (value: unknown) => getAll(value)?.[0];
-
-		for (const element of formElement.elements) {
-			if (
-				element instanceof HTMLInputElement ||
-				element instanceof HTMLTextAreaElement ||
-				element instanceof HTMLSelectElement
-			) {
-				const prev = element.dataset.conform;
-				const next = stateSnapshot.key[element.name];
-				const defaultValue = stateSnapshot.initialValue[element.name];
-
-				if (
-					prev === 'managed' ||
-					element.type === 'submit' ||
-					element.type === 'reset' ||
-					element.type === 'button'
-				) {
-					// Skip buttons and fields managed by useInputControl()
-					continue;
-				}
-
-				if (typeof prev === 'undefined' || prev !== next) {
-					element.dataset.conform = next;
-
-					if ('options' in element) {
-						const value = getAll(defaultValue) ?? [];
-
-						for (const option of element.options) {
-							option.selected = value.includes(option.value);
-						}
-					} else if (
-						'checked' in element &&
-						(element.type === 'checkbox' || element.type === 'radio')
-					) {
-						element.checked = get(defaultValue) === element.value;
-					} else {
-						element.value = get(defaultValue) ?? '';
-					}
-				}
-			}
-		}
-	}, [formId, stateSnapshot]);
 
 	return [form, form.getFieldset()];
 }
