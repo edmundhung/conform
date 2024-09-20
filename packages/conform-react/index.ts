@@ -9,6 +9,7 @@ export {
 } from '@conform-to/dom';
 export {
 	type FieldMetadata,
+	type FieldsetMetadata,
 	type FormMetadata,
 	FormProvider,
 	FormStateInput,

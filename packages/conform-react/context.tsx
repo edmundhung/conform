@@ -60,6 +60,17 @@ export type Metadata<
 	dirty: boolean;
 };
 
+export type FieldsetMetadata<
+	Schema extends Record<string, unknown> = Record<string, unknown>,
+	FormError = string[],
+> = Required<{
+	[Key in keyof Combine<Schema>]: FieldMetadata<
+		Combine<Schema>[Key],
+		Schema,
+		FormError
+	>;
+}>;
+
 export type FormMetadata<
 	Schema extends Record<string, unknown> = Record<string, unknown>,
 	FormError = string[],
@@ -68,13 +79,7 @@ export type FormMetadata<
 		id: FormId<Schema, FormError>;
 		context: Wrapped<FormContext<Schema, FormError>>;
 		status?: 'success' | 'error';
-		getFieldset: () => Required<{
-			[Key in keyof Combine<Schema>]: FieldMetadata<
-				Combine<Schema>[Key],
-				Schema,
-				FormError
-			>;
-		}>;
+		getFieldset: () => FieldsetMetadata<Schema, FormError>;
 		onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 		noValidate: boolean;
 	};
