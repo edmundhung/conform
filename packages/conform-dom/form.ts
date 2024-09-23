@@ -832,6 +832,7 @@ export function createFormContext<
 			!isFieldElement(element) ||
 			element.form !== form ||
 			!element.form.isConnected ||
+			!element.isConnected ||
 			element.name === ''
 		) {
 			return null;
