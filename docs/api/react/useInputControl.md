@@ -40,23 +40,23 @@ The field metadata or an options object that includes `key`, `name`, `formId` an
 
 ## Returns
 
-The input control. This gives you access to both the input value and three different event dispatchers.
+An input control object. This gives you access to both the input value and helpers to simulate browser events programmatically.
 
 ### `value`
 
-The value on the input. This can be used to set up a controlled input.
+The current value of the input, used for setting up a controlled input.
 
 ### `change(value: string)`
 
-A method to be called when the value should be changed. This will dispatch both the [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) event on behalf of the input with the new value.
+Updates the input value and simulates both the [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events. Use this when you need to change the input value programmatically.
 
 ### `blur()`
 
-A method to be called when the user leaves the input. This will dispatch both the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) event on behalf of the input.
+Simulates the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events as if the user left the input. This does not actually removes keyboard focus from the current element; it just triggers the events.
 
 ### `focus()`
 
-A method to be called when . This will dispatch both the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) event on behalf of the input.
+Simulates the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events as if the user focused on the input. This does not move the actual keyboard focus to the input. Use native DOM methods like `inputElement.focus()` for real focus control.
 
 ## Tips
 
