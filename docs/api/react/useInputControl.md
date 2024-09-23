@@ -52,11 +52,11 @@ Updates the input value and simulates both the [change](https://developer.mozill
 
 ### `blur()`
 
-Simulates the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events as if the user left the input. This does not actually focus the input; it just triggers the events.
+Simulates the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events as if the user left the input. This does not actually removes keyboard focus from the current element; it just triggers the events.
 
 ### `focus()`
 
-Simulates the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events as if the user focused on the input. Note: This does not move the actual browser focus to the input. Use native DOM methods like `inputElement.focus()` for real focus control.
+Simulates the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events as if the user focused on the input. This does not move the actual keyboard focus to the input. Use native DOM methods like `inputElement.focus()` for real focus control.
 
 ## Tips
 
