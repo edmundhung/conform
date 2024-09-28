@@ -136,9 +136,21 @@ To manipulate a field list, you can use the **insert**, **remove** and **reorder
 
 ```tsx
 import { useForm } from '@conform-to/react';
+import { parseWithZod } from "@conform-to/zod";
+import { z } from "zod";
+
+const todosSchema = z.object({
+  title: z.string(),
+  tasks: z.array(z.string()),
+});
 
 export default function Tasks() {
-  const [form, fields] = useForm();
+  const [form, fields] = useForm({
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema: todosSchema });
+    },
+    shouldValidate: "onBlur",
+  });
   const tasks = fields.tasks.getFieldList();
 
   return (
