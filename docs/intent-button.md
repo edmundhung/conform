@@ -135,42 +135,37 @@ Be aware that both intents requires setting up the inputs with the **key** from 
 To manipulate a field list, you can use the **insert**, **remove** and **reorder** intents.
 
 ```tsx
-import { useForm, getFormProps, getInputProps } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
 
 export default function Tasks() {
   const [form, fields] = useForm();
   const tasks = fields.tasks.getFieldList();
 
   return (
-    <form {...getFormProps(form)}>
+    <form id={form.id} onSubmit={form.onSubmit}>
       <ul>
-        {tasks.map((task, index) => {
-          const taskFields = task.getFieldset();
-          return (
-            <li key={task.key}>
-              <fieldset {...getFieldsetProps(task)}>
-                <input {...getInputProps(taskFields.content, { type: "text" })} />
-                <button
-                  {...form.reorder.getButtonProps({
-                    name: fields.tasks.name,
-                    from: index,
-                    to: 0,
-                  })}
-                >
-                  Move to top
-                </button>
-                <button
-                  {...form.remove.getButtonProps({
-                    name: fields.tasks.name,
-                    index,
-                  })}
-                >
-                  Delete
-                </button>
-              </fieldset>
-            </li>			
-          )
-        })}
+        {tasks.map((task, index) => (
+          <li key={task.key}>
+            <input name={task.name} />
+            <button
+              {...form.reorder.getButtonProps({
+                name: fields.tasks.name,
+                from: index,
+                to: 0,
+              })}
+            >
+              Move to top
+            </button>
+            <button
+              {...form.remove.getButtonProps({
+                name: fields.tasks.name,
+                index,
+              })}
+            >
+              Delete
+            </button>
+          </li>
+        ))}
       </ul>
       <button
         {...form.insert.getButtonProps({
