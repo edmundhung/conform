@@ -78,9 +78,7 @@ export type FormValue<Schema> = Schema extends
 			: Schema extends Array<infer Item>
 				? string | Array<FormValue<Item>> | undefined
 				: Schema extends Record<string, any>
-					?
-							| { [Key in keyof Schema]?: FormValue<Schema[Key]> }
-							| undefined
+					? { [Key in keyof Schema]?: FormValue<Schema[Key]> } | undefined
 					: unknown;
 
 const error = Symbol('error');

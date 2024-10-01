@@ -19,8 +19,8 @@ export function getFieldElements(
 	const elements = !field
 		? []
 		: field instanceof Element
-		? [field]
-		: Array.from(field.values());
+			? [field]
+			: Array.from(field.values());
 
 	return elements.filter(
 		(

@@ -87,7 +87,7 @@ importers:
         specifier: ^2.4.2
         version: 2.8.2(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.2.0))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.1)(react@18.2.0))(@types/react@18.3.1)(react@18.2.0))(@types/react@18.3.1)(framer-motion@7.10.3(react-dom@18.2.0(react@18.2.0))(react@18.2.0))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@emotion/react':
         specifier: ^11.10.5
@@ -124,7 +124,7 @@ importers:
   examples/headless-ui:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@headlessui/react':
         specifier: ^1.7.13
@@ -173,7 +173,7 @@ importers:
   examples/material-ui:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@emotion/react':
         specifier: ^11.10.0
@@ -210,10 +210,10 @@ importers:
   examples/nextjs:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-zod
       next:
         specifier: 14.0.4
@@ -250,10 +250,10 @@ importers:
   examples/radix-ui:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
@@ -329,10 +329,10 @@ importers:
   examples/react-router:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-zod
       react:
         specifier: ^18.2.0
@@ -372,10 +372,10 @@ importers:
   examples/remix:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-zod
       '@remix-run/node':
         specifier: ^1.19.3
@@ -427,10 +427,10 @@ importers:
   examples/shadcn-ui:
     dependencies:
       '@conform-to/react':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.1.5
+        specifier: 1.2.2
         version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
@@ -2923,6 +2923,7 @@ packages:
   '@humanwhocodes/config-array@0.11.14':
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
     engines: {node: '>=10.10.0'}
+    deprecated: Use @eslint/config-array instead
 
   '@humanwhocodes/module-importer@1.0.1':
     resolution: {integrity: sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA==}
@@ -2930,6 +2931,7 @@ packages:
 
   '@humanwhocodes/object-schema@2.0.2':
     resolution: {integrity: sha512-6EwiSjwWYP7pTckG6I5eyFANjPhmPjUX9JRLUSfNPC7FX7zK9gyZAfUEaECL6ALTpGX5AjnBq3C9XmVWPitNpw==}
+    deprecated: Use @eslint/object-schema instead
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -6890,12 +6892,15 @@ packages:
 
   glob@7.1.6:
     resolution: {integrity: sha512-LwaxwyZ72Lk7vZINtNNrywX0ZuLyStrdDtabefZKAY5ZGJhVtgdznluResxNmPitE0SAO+O26sWTHeKSI2wMBA==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.1.7:
     resolution: {integrity: sha512-OvD9ENzPLbegENnYP5UUfJIirTg4+XwMWGaQfQTY0JenxNvvIKP3U3/tAQSPIu/lHxXYSZmpXlUHeqAIdKzBLQ==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
+    deprecated: Glob versions prior to v9 are no longer supported
 
   global-modules@2.0.0:
     resolution: {integrity: sha512-NGbfmJBp9x8IxyJSd1P+otYK8vonoJactOogrVfFRIAEY1ukil8RSKDz2Yo7wh1oihl51l/r6W4epkeKJHqL8A==}
@@ -7198,6 +7203,7 @@ packages:
 
   inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
+    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
   inherits@2.0.3:
     resolution: {integrity: sha512-x00IRNXNy63jwGkJmzPigoySHbaqpNuzKbBOmzK+g2OdZpQ9w+sxCN+VSB3ja7IAge2OP2qpfxTjeNcyjmW1uw==}
@@ -9380,6 +9386,10 @@ packages:
   q@1.5.1:
     resolution: {integrity: sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==}
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
+    deprecated: |-
+      You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
+
+      (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
 
   qs@6.11.0:
     resolution: {integrity: sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==}
