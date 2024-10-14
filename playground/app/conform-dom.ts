@@ -539,194 +539,171 @@ export type FormIntent<Controls extends Record<string, FormControl<any>>> =
 		}[Extract<keyof Controls, string>]
 	>;
 
-export function defineForm<
-	Controls extends Record<string, FormControl<any>>,
->(form: {
-	initialize: <Schema, ErrorShape>(context: {
-		defaultValue?: DefaultValue<Schema>;
-		result?: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-	}) => FormState<Schema, ErrorShape>;
-	onUpdate: <Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		context: {
-			result: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-			defaultValue?: DefaultValue<Schema>;
-		},
-	) => FormState<Schema, ErrorShape>;
-	onSubmit: <Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		context: {
-			result: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-			defaultValue?: DefaultValue<Schema>;
-		},
-	) => FormState<Schema, ErrorShape>;
-	controls: Controls;
-}): Form<Controls> {
-	const controlName = '__control__';
+export function report<Intent, ErrorShape>(
+	submission: Submission<Intent | null>,
+	options?: {
+		formErrors?: ErrorShape;
+		fieldErrors?: Record<string, ErrorShape>;
+	},
+): SubmissionResult<Intent | null, ErrorShape> {
+	const errors = options
+		? Object.assign(
+				options.formErrors ? { '': options.formErrors } : {},
+				options.fieldErrors,
+			)
+		: {};
 
 	return {
-		control: controlName,
-		initialize(context) {
-			let state = form.initialize(context);
-
-			if (context.result) {
-				if (context.result.intent) {
-					const type = context.result.intent.type;
-					const control = form.controls?.[type];
-
-					if (typeof control === 'undefined') {
-						throw new Error(`The intent type "${type}" is not defined`);
-					}
-
-					state = control.onSubmit(state, {
-						result: {
-							...context.result,
-							intent: context.result.intent,
-						},
-						reset: () =>
-							this.initialize({
-								...context,
-								result: undefined,
-							}),
-					});
-				} else {
-					state = form.onSubmit(state, {
-						result: context.result,
-						defaultValue: context.defaultValue,
-					});
-				}
-			}
-
-			return state;
-		},
-		update(state, context) {
-			const currentState = form.onUpdate(state, context);
-
-			if (context.result.intent) {
-				const type = context.result.intent.type;
-				const control = form.controls?.[type];
-
-				if (typeof control === 'undefined') {
-					throw new Error(`The intent type "${type}" is not defined`);
-				}
-
-				return control.onSubmit(currentState, {
-					result: {
-						...context.result,
-						intent: context.result.intent,
-					},
-					reset: () =>
-						this.initialize({
-							...context,
-							result: undefined,
-						}),
-				});
-			}
-
-			return form.onSubmit(currentState, context);
-		},
-		report(submission, options) {
-			const errors = options
-				? Object.assign(
-						options.formErrors ? { '': options.formErrors } : {},
-						options.fieldErrors,
-					)
-				: {};
-
-			return {
-				type: typeof document !== 'undefined' ? 'client' : 'server',
-				submittedValue: submission.submittedValue,
-				errors,
-				fields: submission.fields.concat(
-					Object.keys(errors).filter((key) =>
-						submission.fields.every((field) => !isPrefix(field, key)),
-					),
-				),
-				intent: submission.intent,
-			};
-		},
-		getSubmission(formData) {
-			const initialValue: Record<string, any> = {};
-			const submission: Submission<FormIntent<Controls> | null> = {
-				submittedValue: initialValue,
-				value: initialValue,
-				fields: [],
-				intent: null,
-			};
-
-			for (const [name, value] of formData.entries()) {
-				if (name !== controlName) {
-					setValue(submission.submittedValue, name, value, true);
-					submission.fields.push(name);
-				}
-			}
-
-			// Deduplicate fields
-			submission.fields = Array.from(new Set(submission.fields));
-
-			const controlValue = formData.get(controlName);
-
-			if (typeof controlValue === 'string') {
-				const [type, data] = controlValue.split('/');
-				const control = type ? form.controls?.[type] : null;
-
-				if (control) {
-					const payload = control.deserialize(data ?? '');
-					// @ts-expect-error The intent type should match the control
-					submission.intent = {
-						type,
-						payload,
-					};
-
-					if (typeof control.onParse === 'function') {
-						submission.value = control.onParse(
-							submission.submittedValue,
-							payload,
-						);
-					}
-				}
-			}
-
-			return submission;
-		},
-		serialize(intent) {
-			const control = form.controls?.[intent.type];
-			const payload =
-				typeof control?.serialize === 'function'
-					? control.serialize(intent.payload)
-					: intent.payload ?? '';
-
-			return [intent.type, payload].join('/');
-		},
-		dispatch(formElement, intent) {
-			if (!formElement) {
-				throw new Error('Form element not found');
-			}
-
-			const submitter = document.createElement('button');
-
-			submitter.name = controlName;
-			submitter.value = this.serialize(intent);
-			submitter.hidden = true;
-			submitter.formNoValidate = true;
-
-			formElement.appendChild(submitter);
-
-			if (typeof formElement.requestSubmit === 'function') {
-				formElement.requestSubmit(submitter);
-			} else {
-				const event = new SubmitEvent('submit', {
-					bubbles: true,
-					cancelable: true,
-					submitter,
-				});
-
-				formElement.dispatchEvent(event);
-			}
-
-			formElement.removeChild(submitter);
-		},
+		type: typeof document !== 'undefined' ? 'client' : 'server',
+		submittedValue: submission.submittedValue,
+		errors,
+		fields: submission.fields.concat(
+			Object.keys(errors).filter((key) =>
+				submission.fields.every((field) => !isPrefix(field, key)),
+			),
+		),
+		intent: submission.intent,
 	};
+}
+
+export function resolve(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName: string;
+		updateValue?(submittedValue: Record<string, any>, intent: string): Record<string, any> | null;
+	},
+): Submission<string | null>;
+export function resolve<Intent = string>(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName: string;
+		parseIntent(intentValue: string): Intent | null;
+		updateValue?(submittedValue: Record<string, any>, intent: Intent): Record<string, any> | null;
+	},
+): Submission<Intent | null>;
+export function resolve<Intent = string>(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName: string;
+		parseIntent?(intentValue: string): Intent | null;
+		updateValue?(submittedValue: Record<string, any>, intent: Intent | string): Record<string, any> | null;
+	},
+): Submission<Intent | string | null> {
+	const initialValue: Record<string, any> = {};
+	const submission: Submission<Intent | string | null> = {
+		submittedValue: initialValue,
+		value: initialValue,
+		fields: [],
+		intent: null,
+	};
+
+	for (const [name, value] of formData.entries()) {
+		if (name !== options?.intentName) {
+			setValue(submission.submittedValue, name, value, true);
+			submission.fields.push(name);
+		}
+	}
+
+	// Deduplicate fields
+	submission.fields = Array.from(new Set(submission.fields));
+
+	if (options) {
+		const intentValue = formData.get(options.intentName);
+
+		if (typeof intentValue === 'string') {
+			const intent = options.parseIntent?.(intentValue) ?? intentValue;
+	
+			if (intent) {
+				submission.intent = intent;
+				submission.value = options.updateValue?.(initialValue, intent) ?? initialValue;
+			}
+		}
+	}
+	
+
+	return submission;
+}
+
+export function handleFormSubmit<Schema, ErrorShape, Intent>(
+	state: FormState<Schema, ErrorShape>,
+	result: SubmissionResult<Intent | null, ErrorShape>
+): FormState<Schema, ErrorShape> {
+	return Object.assign({}, state, {
+		touched: deepEqual(state.touched, result.fields)
+			? state.touched
+			: result.fields,
+	});
+}
+
+export function initializeFormState<Schema, ErrorShape, Intent>({
+	defaultValue,
+	result,
+	controls,
+}: {
+	defaultValue?: DefaultValue<Schema>;
+	result?: SubmissionResult<Intent | null, ErrorShape>;
+	controls?: FormControls<Intent>;
+}): FormState<Schema, ErrorShape> {
+	let state: FormState<Schema, ErrorShape> = {
+		keyByPath: createKey(defaultValue),
+		defaultValue: defaultValue ?? null,
+		initialValue: result?.submittedValue ?? defaultValue ?? {},
+		submittedValue: result?.submittedValue ?? null,
+		serverError:
+			result?.type === 'server' && result.errors ? result.errors : null,
+		clientError:
+			result?.type === 'client' && result.errors ? result.errors : {},
+		touched: [],
+	};
+
+	if (result) {
+		if (result.intent) {
+			state = controls.onSubmit(state, result, {
+				reset: () => initializeFormState({ defaultValue, controls }),
+			});
+		} else {
+			state = handleFormSubmit(state, result);
+		}
+	}
+
+	return state;
+}
+
+export function updateFormState<Schema, ErrorShape, Intent>(
+	state: FormState<Schema, ErrorShape>,
+	{
+		result,
+		defaultValue,
+		controls,
+	}: {
+		result: SubmissionResult<Intent | null, ErrorShape>;
+		defaultValue?: DefaultValue<Schema>;
+		controls?: FormControls<Intent>;
+	},
+) {
+	const currentState = merge(state, {
+		clientError:
+			result.type === 'client' && !deepEqual(state.clientError, result.errors)
+				? result.errors
+				: state.clientError,
+		serverError:
+			result.type === 'server' && !deepEqual(state.serverError, result.errors)
+				? result.errors
+				: result.type === 'client' &&
+					  !deepEqual(state.submittedValue, result.submittedValue)
+					? null
+					: state.serverError,
+		submittedValue:
+			result.type === 'server' ? result.submittedValue : state.submittedValue,
+	});
+
+	if (result.intent && controls) {
+		return controls.onSubmit(currentState, result, {
+			reset: () => initializeFormState({ defaultValue, controls }),
+		});
+	}
+
+	return handleFormSubmit(currentState, result);
 }
 
 export type PartialRequired<T, K extends keyof T> = Pretty<
@@ -735,6 +712,24 @@ export type PartialRequired<T, K extends keyof T> = Pretty<
 
 export type ControlPayload<Type> =
 	Type extends FormControl<infer Payload> ? Payload : never;
+
+export type FormControls<Intent> = any;
+
+export function createFormControls() {
+
+}
+
+export const controls = createFormControls({
+	validate: validateControl,
+	status: {
+		onInitialize() {
+			return null;
+		},
+		onSubmit() {
+			
+		},
+	},
+});
 
 export function defineControl<Payload>(
 	options: PartialRequired<FormControl<Payload>, 'serialize' | 'deserialize'>,
@@ -1244,45 +1239,3 @@ export const controls = {
 	remove: removeControl,
 	reorder: reorderControl,
 };
-
-export const form = defineForm({
-	// @ts-expect-error The DefaultValue type is buggy
-	initialize({ defaultValue, result }) {
-		return {
-			keyByPath: createKey(defaultValue),
-			defaultValue: defaultValue ?? null,
-			initialValue: result?.submittedValue ?? defaultValue ?? {},
-			submittedValue: result?.submittedValue ?? null,
-			serverError:
-				result?.type === 'server' && result.errors ? result.errors : null,
-			clientError:
-				result?.type === 'client' && result.errors ? result.errors : {},
-			touched: [],
-		};
-	},
-	onUpdate(state, { result }) {
-		return merge(state, {
-			clientError:
-				result.type === 'client' && !deepEqual(state.clientError, result.errors)
-					? result.errors
-					: state.clientError,
-			serverError:
-				result.type === 'server' && !deepEqual(state.serverError, result.errors)
-					? result.errors
-					: result.type === 'client' &&
-						  !deepEqual(state.submittedValue, result.submittedValue)
-						? null
-						: state.serverError,
-			submittedValue:
-				result.type === 'server' ? result.submittedValue : state.submittedValue,
-		});
-	},
-	onSubmit(state, { result }) {
-		return Object.assign({}, state, {
-			touched: deepEqual(state.touched, result.fields)
-				? state.touched
-				: result.fields,
-		});
-	},
-	controls,
-});

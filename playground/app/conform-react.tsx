@@ -9,13 +9,12 @@ import {
 } from 'react';
 import {
 	type SubmissionResult,
-	type Form,
-	type FormControl,
-	type FormIntent,
 	type DefaultValue,
 	getInput,
 	deepEqual,
 	configure,
+	initializeFormState,
+	updateFormState,
 } from './conform-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
@@ -26,29 +25,28 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 }
 
 export function useFormState<
-	Controls extends Record<string, FormControl<any>>,
 	Schema,
 	ErrorShape,
+	Intent,
 >(
-	form: Form<Controls>,
 	options: {
 		formRef?: RefObject<HTMLFormElement>;
-		result?: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
+		result?: SubmissionResult<Intent | null, ErrorShape>;
 		defaultValue?: DefaultValue<Schema>;
 	},
 ) {
-	const [state, setState] = useState(() => form.initialize(options));
+	const [state, setState] = useState(() => initializeFormState(options));
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(options.result);
 	const update = useCallback(
-		(result: SubmissionResult<FormIntent<Controls> | null, ErrorShape>) => {
+		(result: SubmissionResult<Intent | null, ErrorShape>) => {
 			if (result === lastResultRef.current) {
 				return;
 			}
 
 			lastResultRef.current = result;
 			setState((state) =>
-				form.update(state, {
+				updateFormState(state, {
 					defaultValue: optionsRef.current.defaultValue,
 					result,
 				}),

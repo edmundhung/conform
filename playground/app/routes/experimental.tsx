@@ -1,22 +1,13 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
-import { cz, flattenErrors } from '~/conform-zod';
+import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
-import {
-	createNameBuilder,
-	createDictionary,
-	getErrors,
-	getListKeys,
-	getInput,
-	form,
-	getDefaultValue,
-	isTouched,
-} from '~/conform-dom';
+import { resolve, report, getInput, controls, configure } from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
 
-const schema = cz(
+const schema = coerceZodFormData(
 	z.object({
 		title: z.string().min(3).max(20),
 		content: z.string().nonempty(),
@@ -34,39 +25,33 @@ const schema = cz(
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = form.getSubmission(formData);
+	const submission = resolve(formData, controls);
 	const result = schema.safeParse(submission.value);
 
-	if (!result.success || submission.intent) {
-		const error = flattenErrors(result, submission.fields);
-		const submissionResult = form.report(submission, {
+	if (!result.success) {
+        const error = flattenZodErrors(result, submission.fields);
+		const formResult = report(submission, {
 			formErrors: error.formErrors,
-			fieldErrors: error.fieldErrors,
+            fieldErrors: error.fieldErrors,
 		});
 
-		return submissionResult;
+        return formResult;
 	}
 
-	return form.report(submission, {
-		formErrors: ['Server error'],
+	return report(submission, {
+		formErrors: ['Something went wrong'],
 	});
 }
 
 export default function Example() {
 	const result = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
-	const [state, update] = useFormState(form, {
-		result,
-		formRef,
-		defaultValue: {
-			title: 'Example',
-			content: 'Hello world!',
-		},
-	});
-	const fields = createNameBuilder<z.input<typeof schema>>();
-	const defaultValue = getDefaultValue(state);
-	const errors = getErrors(state);
-	const listKeys = createDictionary((name) => getListKeys(name, state));
+    const [state, update] = useFormState({
+        result,
+        controls,
+        formRef,
+		configure,
+    })
 
 	return (
 		<Form
@@ -75,141 +60,67 @@ export default function Example() {
 			ref={formRef}
 			onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
 				const formData = getFormData(event);
-				const submission = form.getSubmission(formData);
+				const submission = resolve(formData, control);
 				const result = schema.safeParse(submission.value);
 
-				if (!result.success || submission.intent !== null) {
+				if (!result.success || submission.intent) {
 					event.preventDefault();
 				}
 
-				const error = flattenErrors(result, submission.fields);
-				const SubmissionResult = form.report(submission, {
+				const error = flattenZodErrors(result, submission.fields);
+				const formResult = report(submission, {
 					formErrors: error.formErrors,
 					fieldErrors: error.fieldErrors,
 				});
 
 				flushSync(() => {
-					update(SubmissionResult);
+					update(formResult);
 				});
 			}}
 			onInput={(event: React.FormEvent<HTMLElement>) => {
-				const input = getInput(event.target, formRef.current);
+                const input = getInput(event.target, formRef.current);
 
-				if (!input || !isTouched(state, input.name)) {
-					return;
-				}
-
-				form.dispatch(formRef.current, {
-					type: 'validate',
-					payload: { name: input.name },
-				});
+                if (input && state.touched.includes(input.name)) {
+                    controls.submit(formRef.current, {
+                        type: 'validate',
+                        payload: {
+                            name: input.name
+                        },
+                    });
+                }
 			}}
 			onBlur={(event: React.FocusEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (!input || isTouched(state, input.name)) {
-					return;
-				}
-
-				form.dispatch(formRef.current, {
-					type: 'validate',
-					payload: { name: input.name },
-				});
+                if (input && !state.touched.includes(input.name)) {
+                    controls.submit(formRef.current, {
+                        type: 'validate',
+                        payload: {
+                            name: input.name
+                        },
+                    });
+                }
 			}}
 		>
-			<div>{errors[fields.$name]}</div>
+			<div>{state.errors.formErrors}</div>
 			<div>
-				Title
+				Username
 				<input
-					name={fields.title.$name}
-					defaultValue={defaultValue.get(fields.title.$name) ?? ''}
+					name="username"
+					defaultValue={state.defaultValue.username}
 				/>
-				<div>{errors[fields.title.$name]}</div>
+				<div>{state.errors.fieldErrors.username}</div>
 			</div>
-			<div>
-				Content
-				<textarea
-					name={fields.content.$name}
-					defaultValue={defaultValue.get(fields.content.$name) ?? ''}
+            <div>
+				Password
+				<input
+					name="password"
+					defaultValue={state.defaultValue.password}
 				/>
-				<div>Content Error: {errors[fields.content.$name]}</div>
-			</div>
-			<div>Tasks error: {errors[fields.tasks.$name]}</div>
-			{listKeys[fields.tasks.$name]?.map((key, index) => (
-				<fieldset key={key}>
-					<input
-						name={fields.tasks(index).title.$name}
-						defaultValue={
-							defaultValue.get(fields.tasks(index).title.$name) ?? ''
-						}
-					/>
-					<div>{errors[fields.tasks(index).title.$name]}</div>
-					<input
-						type="checkbox"
-						name={fields.tasks(index).done.$name}
-						defaultChecked={
-							defaultValue.get(fields.tasks(index).done.$name) === 'on'
-						}
-					/>
-					<div>{errors[fields.tasks(index).done.$name]}</div>
-					<div>
-						<button
-							name={form.control}
-							value={form.serialize({
-								type: 'remove',
-								payload: {
-									name: fields.tasks.$name,
-									index,
-								},
-							})}
-						>
-							Remove
-						</button>
-					</div>
-					<div>
-						<button
-							name={form.control}
-							value={form.serialize({
-								type: 'reorder',
-								payload: {
-									name: fields.tasks.$name,
-									from: index,
-									to: 0,
-								},
-							})}
-						>
-							Move to top
-						</button>
-					</div>
-				</fieldset>
-			))}
-			<div>
-				<button
-					name={form.control}
-					value={form.serialize({
-						type: 'insert',
-						payload: {
-							name: fields.tasks.$name,
-							defaultValue: { title: 'Example', done: true },
-						},
-					})}
-				>
-					Insert task
-				</button>
+				<div>{state.errors.fieldErrors.password}</div>
 			</div>
 			<div>
 				<button>Submit</button>
-			</div>
-			<div>
-				<button
-					name={form.control}
-					value={form.serialize({
-						type: 'update',
-						payload: { name: fields.title.$name, value: 'Test' },
-					})}
-				>
-					Update title
-				</button>
 			</div>
 			<div>
 				<button

@@ -85,7 +85,7 @@ function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
  * Reconstruct the provided zod schema with extra preprocessing logic for form data
  * Includes stripping empty string and automatic type coercion
  */
-export function cz<Schema extends ZodTypeAny>(
+export function coerceZodFormData<Schema extends ZodTypeAny>(
 	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
 ): ZodType<output<Schema>, any, input<Schema>> {
@@ -165,7 +165,7 @@ export function cz<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodArray({
 					...def,
-					type: cz(def.type, cache),
+					type: coerceZodFormData(def.type, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodObject') {
@@ -173,7 +173,7 @@ export function cz<Schema extends ZodTypeAny>(
 			Object.entries(def.shape()).map(([key, def]) => [
 				key,
 				// @ts-expect-error see message above
-				cz(def, cache),
+				coerceZodFormData(def, cache),
 			]),
 		);
 		schema = new ZodObject({
@@ -188,7 +188,7 @@ export function cz<Schema extends ZodTypeAny>(
 		} else {
 			schema = new ZodEffects({
 				...def,
-				schema: cz(def.schema, cache),
+				schema: coerceZodFormData(def.schema, cache),
 			});
 		}
 	} else if (def.typeName === 'ZodOptional') {
@@ -197,7 +197,7 @@ export function cz<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodOptional({
 					...def,
-					innerType: cz(def.innerType, cache),
+					innerType: coerceZodFormData(def.innerType, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodDefault') {
@@ -206,55 +206,55 @@ export function cz<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodDefault({
 					...def,
-					innerType: cz(def.innerType, cache),
+					innerType: coerceZodFormData(def.innerType, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,
-			innerType: cz(def.innerType, cache),
+			innerType: coerceZodFormData(def.innerType, cache),
 		});
 	} else if (def.typeName === 'ZodIntersection') {
 		schema = new ZodIntersection({
 			...def,
-			left: cz(def.left, cache),
-			right: cz(def.right, cache),
+			left: coerceZodFormData(def.left, cache),
+			right: coerceZodFormData(def.right, cache),
 		});
 	} else if (def.typeName === 'ZodUnion') {
 		schema = new ZodUnion({
 			...def,
-			options: def.options.map((option: ZodTypeAny) => cz(option, cache)),
+			options: def.options.map((option: ZodTypeAny) => coerceZodFormData(option, cache)),
 		});
 	} else if (def.typeName === 'ZodDiscriminatedUnion') {
 		schema = new ZodDiscriminatedUnion({
 			...def,
-			options: def.options.map((option: ZodTypeAny) => cz(option, cache)),
+			options: def.options.map((option: ZodTypeAny) => coerceZodFormData(option, cache)),
 			optionsMap: new Map(
 				Array.from(def.optionsMap.entries()).map(([discriminator, option]) => [
 					discriminator,
-					cz(option, cache) as ZodDiscriminatedUnionOption<any>,
+					coerceZodFormData(option, cache) as ZodDiscriminatedUnionOption<any>,
 				]),
 			),
 		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
 			...def,
-			items: def.items.map((item: ZodTypeAny) => cz(item, cache)),
+			items: def.items.map((item: ZodTypeAny) => coerceZodFormData(item, cache)),
 		});
 	} else if (def.typeName === 'ZodNullable') {
 		schema = new ZodNullable({
 			...def,
-			innerType: cz(def.innerType, cache),
+			innerType: coerceZodFormData(def.innerType, cache),
 		});
 	} else if (def.typeName === 'ZodPipeline') {
 		schema = new ZodPipeline({
 			...def,
-			in: cz(def.in, cache),
-			out: cz(def.out, cache),
+			in: coerceZodFormData(def.in, cache),
+			out: coerceZodFormData(def.out, cache),
 		});
 	} else if (def.typeName === 'ZodLazy') {
 		const inner = def.getter();
-		schema = lazy(() => cz(inner, cache));
+		schema = lazy(() => coerceZodFormData(inner, cache));
 	}
 
 	if (type !== schema) {
@@ -264,14 +264,14 @@ export function cz<Schema extends ZodTypeAny>(
 	return schema;
 }
 
-export function flattenErrors(
+export function flattenZodErrors(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 ): {
 	formErrors?: string[];
 	fieldErrors?: Record<string, string[]>;
 };
-export function flattenErrors<ErrorShape>(
+export function flattenZodErrors<ErrorShape>(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 	formatIssues: (issues: ZodIssue[]) => ErrorShape,
@@ -279,7 +279,7 @@ export function flattenErrors<ErrorShape>(
 	formErrors?: ErrorShape;
 	fieldErrors?: Record<string, ErrorShape>;
 };
-export function flattenErrors<ErrorShape>(
+export function flattenZodErrors<ErrorShape>(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 	formatIssues?: (issues: ZodIssue[]) => ErrorShape,
