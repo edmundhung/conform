@@ -570,7 +570,10 @@ export function resolve(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName: string;
-		updateValue?(submittedValue: Record<string, any>, intent: string): Record<string, any> | null;
+		updateValue?(
+			submittedValue: Record<string, any>,
+			intent: string,
+		): Record<string, any> | null;
 	},
 ): Submission<string | null>;
 export function resolve<Intent = string>(
@@ -578,7 +581,10 @@ export function resolve<Intent = string>(
 	options?: {
 		intentName: string;
 		parseIntent(intentValue: string): Intent | null;
-		updateValue?(submittedValue: Record<string, any>, intent: Intent): Record<string, any> | null;
+		updateValue?(
+			submittedValue: Record<string, any>,
+			intent: Intent,
+		): Record<string, any> | null;
 	},
 ): Submission<Intent | null>;
 export function resolve<Intent = string>(
@@ -586,7 +592,10 @@ export function resolve<Intent = string>(
 	options?: {
 		intentName: string;
 		parseIntent?(intentValue: string): Intent | null;
-		updateValue?(submittedValue: Record<string, any>, intent: Intent | string): Record<string, any> | null;
+		updateValue?(
+			submittedValue: Record<string, any>,
+			intent: Intent | string,
+		): Record<string, any> | null;
 	},
 ): Submission<Intent | string | null> {
 	const initialValue: Record<string, any> = {};
@@ -612,21 +621,21 @@ export function resolve<Intent = string>(
 
 		if (typeof intentValue === 'string') {
 			const intent = options.parseIntent?.(intentValue) ?? intentValue;
-	
+
 			if (intent) {
 				submission.intent = intent;
-				submission.value = options.updateValue?.(initialValue, intent) ?? initialValue;
+				submission.value =
+					options.updateValue?.(initialValue, intent) ?? initialValue;
 			}
 		}
 	}
-	
 
 	return submission;
 }
 
 export function handleFormSubmit<Schema, ErrorShape, Intent>(
 	state: FormState<Schema, ErrorShape>,
-	result: SubmissionResult<Intent | null, ErrorShape>
+	result: SubmissionResult<Intent | null, ErrorShape>,
 ): FormState<Schema, ErrorShape> {
 	return Object.assign({}, state, {
 		touched: deepEqual(state.touched, result.fields)
@@ -657,10 +666,17 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 	};
 
 	if (result) {
-		if (result.intent) {
-			state = controls.onSubmit(state, result, {
-				reset: () => initializeFormState({ defaultValue, controls }),
-			});
+		if (result.intent && controls) {
+			state = controls.onSubmit(
+				state,
+				{
+					...result,
+					intent: result.intent,
+				},
+				{
+					reset: () => initializeFormState({ defaultValue, controls }),
+				},
+			);
 		} else {
 			state = handleFormSubmit(state, result);
 		}
@@ -698,9 +714,16 @@ export function updateFormState<Schema, ErrorShape, Intent>(
 	});
 
 	if (result.intent && controls) {
-		return controls.onSubmit(currentState, result, {
-			reset: () => initializeFormState({ defaultValue, controls }),
-		});
+		return controls.onSubmit(
+			currentState,
+			{
+				...result,
+				intent: result.intent,
+			},
+			{
+				reset: () => initializeFormState({ defaultValue, controls }),
+			},
+		);
 	}
 
 	return handleFormSubmit(currentState, result);
@@ -713,23 +736,23 @@ export type PartialRequired<T, K extends keyof T> = Pretty<
 export type ControlPayload<Type> =
 	Type extends FormControl<infer Payload> ? Payload : never;
 
-export type FormControls<Intent> = any;
-
-export function createFormControls() {
-
-}
-
-export const controls = createFormControls({
-	validate: validateControl,
-	status: {
-		onInitialize() {
-			return null;
+export type FormControls<Intent> = {
+	intentName: string;
+	parseIntent(intent: string): Intent | null;
+	updateValue(
+		submittedValue: Record<string, any>,
+		intent: Intent,
+	): Record<string, any> | null;
+	serialize(intent: Intent): string;
+	dispatch(formElement: HTMLFormElement | null, intent: Intent): void;
+	onSubmit<Schema, ErrorShape>(
+		state: FormState<Schema, ErrorShape>,
+		result: SubmissionResult<Intent, ErrorShape>,
+		context: {
+			reset(): FormState<Schema, ErrorShape>;
 		},
-		onSubmit() {
-			
-		},
-	},
-});
+	): FormState<Schema, ErrorShape>;
+};
 
 export function defineControl<Payload>(
 	options: PartialRequired<FormControl<Payload>, 'serialize' | 'deserialize'>,
@@ -1231,11 +1254,102 @@ export const reorderControl = defineControl<{
 	},
 });
 
-export const controls = {
+export const controls = createFormControls({
 	validate: validateControl,
 	update: updateControl,
 	reset: resetControl,
 	insert: insertControl,
 	remove: removeControl,
 	reorder: reorderControl,
-};
+});
+
+export function createFormControls<
+	Controls extends Record<string, FormControl<any>>,
+>(
+	controls: Controls,
+	options?: {
+		intentName?: string;
+	},
+): FormControls<FormIntent<Controls>> {
+	const intentName = options?.intentName ?? '__intent__';
+
+	return {
+		intentName,
+		// @ts-expect-error Not sure how to match the types
+		parseIntent(intent) {
+			const [type, data] = intent.split('/');
+			const control = type ? controls[type] : null;
+
+			if (!control) {
+				return null;
+			}
+
+			return {
+				type,
+				payload: control.deserialize(data ?? ''),
+			};
+		},
+		serialize(intent) {
+			const control = controls[intent.type];
+			const payload =
+				typeof control?.serialize === 'function'
+					? control.serialize(intent.payload)
+					: intent.payload ?? '';
+
+			return [intent.type, payload].join('/');
+		},
+		dispatch(formElement, intent) {
+			if (!formElement) {
+				throw new Error('Form element not found');
+			}
+
+			const submitter = document.createElement('button');
+
+			submitter.name = intentName;
+			submitter.value = this.serialize(intent);
+			submitter.hidden = true;
+			submitter.formNoValidate = true;
+
+			formElement.appendChild(submitter);
+
+			if (typeof formElement.requestSubmit === 'function') {
+				formElement.requestSubmit(submitter);
+			} else {
+				const event = new SubmitEvent('submit', {
+					bubbles: true,
+					cancelable: true,
+					submitter,
+				});
+
+				formElement.dispatchEvent(event);
+			}
+
+			formElement.removeChild(submitter);
+		},
+		updateValue(submittedValue, intent) {
+			const type = intent.type;
+			const control = controls[type];
+
+			if (typeof control === 'undefined') {
+				throw new Error(`The intent type "${type}" is not defined`);
+			}
+
+			return (
+				control.onParse?.(submittedValue, intent.payload) ?? submittedValue
+			);
+		},
+		onSubmit(state, result, context) {
+			const type = result.intent.type;
+			const control = controls[type];
+
+			if (typeof control === 'undefined') {
+				throw new Error(`The intent type "${type}" is not defined`);
+			}
+
+			return control.onSubmit(state, {
+				result,
+				reset: context.reset,
+			});
+		},
+	};
+}

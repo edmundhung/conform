@@ -10,6 +10,7 @@ import {
 import {
 	type SubmissionResult,
 	type DefaultValue,
+	type FormControls,
 	getInput,
 	deepEqual,
 	configure,
@@ -24,17 +25,12 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	return formData;
 }
 
-export function useFormState<
-	Schema,
-	ErrorShape,
-	Intent,
->(
-	options: {
-		formRef?: RefObject<HTMLFormElement>;
-		result?: SubmissionResult<Intent | null, ErrorShape>;
-		defaultValue?: DefaultValue<Schema>;
-	},
-) {
+export function useFormState<Schema, ErrorShape, Intent>(options: {
+	formRef?: RefObject<HTMLFormElement>;
+	controls?: FormControls<Intent>;
+	result?: SubmissionResult<Intent | null, ErrorShape>;
+	defaultValue?: DefaultValue<Schema>;
+}) {
 	const [state, setState] = useState(() => initializeFormState(options));
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(options.result);
@@ -48,6 +44,7 @@ export function useFormState<
 			setState((state) =>
 				updateFormState(state, {
 					defaultValue: optionsRef.current.defaultValue,
+					controls: optionsRef.current.controls,
 					result,
 				}),
 			);

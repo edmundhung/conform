@@ -3,7 +3,17 @@ import { z } from 'zod';
 import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
-import { resolve, report, getInput, controls, configure } from '~/conform-dom';
+import {
+	resolve,
+	report,
+	getInput,
+	controls,
+	createDictionary,
+	createNameBuilder,
+	getDefaultValue,
+	getErrors,
+	getListKeys,
+} from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
 
@@ -29,13 +39,13 @@ export async function action({ request }: ActionFunctionArgs) {
 	const result = schema.safeParse(submission.value);
 
 	if (!result.success) {
-        const error = flattenZodErrors(result, submission.fields);
+		const error = flattenZodErrors(result, submission.fields);
 		const formResult = report(submission, {
 			formErrors: error.formErrors,
-            fieldErrors: error.fieldErrors,
+			fieldErrors: error.fieldErrors,
 		});
 
-        return formResult;
+		return formResult;
 	}
 
 	return report(submission, {
@@ -46,12 +56,15 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Example() {
 	const result = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
-    const [state, update] = useFormState({
-        result,
-        controls,
-        formRef,
-		configure,
-    })
+	const [state, update] = useFormState({
+		result,
+		controls,
+		formRef,
+	});
+	const fields = createNameBuilder<z.input<typeof schema>>();
+	const defaultValue = getDefaultValue(state);
+	const errors = getErrors(state);
+	const listKeys = createDictionary((name) => getListKeys(name, state));
 
 	return (
 		<Form
@@ -60,7 +73,7 @@ export default function Example() {
 			ref={formRef}
 			onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
 				const formData = getFormData(event);
-				const submission = resolve(formData, control);
+				const submission = resolve(formData, controls);
 				const result = schema.safeParse(submission.value);
 
 				if (!result.success || submission.intent) {
@@ -78,54 +91,131 @@ export default function Example() {
 				});
 			}}
 			onInput={(event: React.FormEvent<HTMLElement>) => {
-                const input = getInput(event.target, formRef.current);
+				const input = getInput(event.target, formRef.current);
 
-                if (input && state.touched.includes(input.name)) {
-                    controls.submit(formRef.current, {
-                        type: 'validate',
-                        payload: {
-                            name: input.name
-                        },
-                    });
-                }
+				if (input && state.touched.includes(input.name)) {
+					controls.dispatch(formRef.current, {
+						type: 'validate',
+						payload: {
+							name: input.name,
+						},
+					});
+				}
 			}}
 			onBlur={(event: React.FocusEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-                if (input && !state.touched.includes(input.name)) {
-                    controls.submit(formRef.current, {
-                        type: 'validate',
-                        payload: {
-                            name: input.name
-                        },
-                    });
-                }
+				if (input && !state.touched.includes(input.name)) {
+					controls.dispatch(formRef.current, {
+						type: 'validate',
+						payload: {
+							name: input.name,
+						},
+					});
+				}
 			}}
 		>
-			<div>{state.errors.formErrors}</div>
+			<div>{errors[fields.$name]}</div>
 			<div>
-				Username
+				Title
 				<input
-					name="username"
-					defaultValue={state.defaultValue.username}
+					name={fields.title.$name}
+					defaultValue={defaultValue.get(fields.title.$name) ?? ''}
 				/>
-				<div>{state.errors.fieldErrors.username}</div>
+				<div>{errors[fields.title.$name]}</div>
 			</div>
-            <div>
-				Password
-				<input
-					name="password"
-					defaultValue={state.defaultValue.password}
+			<div>
+				Content
+				<textarea
+					name={fields.content.$name}
+					defaultValue={defaultValue.get(fields.content.$name) ?? ''}
 				/>
-				<div>{state.errors.fieldErrors.password}</div>
+				<div>Content Error: {errors[fields.content.$name]}</div>
+			</div>
+			<div>Tasks error: {errors[fields.tasks.$name]}</div>
+			{listKeys[fields.tasks.$name]?.map((key, index) => (
+				<fieldset key={key}>
+					<input
+						name={fields.tasks(index).title.$name}
+						defaultValue={
+							defaultValue.get(fields.tasks(index).title.$name) ?? ''
+						}
+					/>
+					<div>{errors[fields.tasks(index).title.$name]}</div>
+					<input
+						type="checkbox"
+						name={fields.tasks(index).done.$name}
+						defaultChecked={
+							defaultValue.get(fields.tasks(index).done.$name) === 'on'
+						}
+					/>
+					<div>{errors[fields.tasks(index).done.$name]}</div>
+					<div>
+						<button
+							name={controls.intentName}
+							value={controls.serialize({
+								type: 'remove',
+								payload: {
+									name: fields.tasks.$name,
+									index,
+								},
+							})}
+						>
+							Remove
+						</button>
+					</div>
+					<div>
+						<button
+							name={controls.intentName}
+							value={controls.serialize({
+								type: 'reorder',
+								payload: {
+									name: fields.tasks.$name,
+									from: index,
+									to: 0,
+								},
+							})}
+						>
+							Move to top
+						</button>
+					</div>
+				</fieldset>
+			))}
+			<div>
+				<button
+					name={controls.intentName}
+					value={controls.serialize({
+						type: 'insert',
+						payload: {
+							name: fields.tasks.$name,
+							defaultValue: { title: 'Example', done: true },
+						},
+					})}
+				>
+					Insert task
+				</button>
 			</div>
 			<div>
 				<button>Submit</button>
 			</div>
 			<div>
 				<button
-					name={form.control}
-					value={form.serialize({
+					name={controls.intentName}
+					value={controls.serialize({
+						type: 'update',
+						payload: { name: fields.title.$name, value: 'Test' },
+					})}
+				>
+					Update title
+				</button>
+			</div>
+			<div>
+				<button>Submit</button>
+			</div>
+			<div>
+				<button
+					name={controls.intentName}
+					value={controls.serialize({
 						type: 'reset',
 					})}
 				>
