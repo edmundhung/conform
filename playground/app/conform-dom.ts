@@ -1,14 +1,18 @@
 export type Submission<Intent> = {
 	fields: string[];
-	submittedValue: Record<string, any>;
-	value: Record<string, any> | null;
+	value: Record<string, FormValue> | null;
 	intent: Intent | null;
 };
+
+export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
+	| Entry
+	| FormValue<Entry>[]
+	| { [key: string]: FormValue<Entry> };
 
 export type SubmissionResult<Intent, ErrorShape> = {
 	type: 'client' | 'server';
 	fields: string[];
-	submittedValue: Record<string, any>;
+	value: Record<string, FormValue> | null;
 	intent: Intent;
 	errors: Record<string, ErrorShape>;
 };
@@ -29,37 +33,13 @@ export type DefaultValue<Schema> = Schema extends
 			? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
 			: unknown;
 
-export type FormValue<Schema> = Schema extends
-	| string
-	| number
-	| boolean
-	| Date
-	| bigint
-	| null
-	| undefined
-	? Schema extends string | number | boolean | Date | bigint
-		? string | undefined
-		: undefined
-	: Schema extends File
-		? File | undefined
-		: Schema extends File[]
-			? Array<File> | undefined
-			: Schema extends Array<infer Item>
-				? Array<FormValue<Item>> | undefined
-				: Schema extends Record<string, any>
-					?
-							| { [Key in keyof Schema]?: FormValue<Schema[Key]> }
-							| null
-							| undefined
-					: unknown;
-
 export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
 	serverError: Record<string, ErrorShape> | null;
 	clientError: Record<string, ErrorShape>;
 	keyByPath: Record<string, string>;
-	initialValue: Record<string, any>;
-	submittedValue: Record<string, any> | null;
+	initialValue: Record<string, FormValue>;
+	submittedValue: Record<string, FormValue> | null;
 	touched: string[];
 };
 
@@ -73,9 +53,23 @@ export function isPlainObject(
 	);
 }
 
-export function serialize<Schema>(value: Schema): FormValue<Schema> {
+export type SerialziedValue<Schema> = Schema extends null
+	? undefined
+	: Schema extends number | bigint
+		? string
+		: Schema extends boolean
+			? string | undefined
+			: Schema extends Date
+				? string
+				: Schema extends Array<infer Item>
+					? Array<SerialziedValue<Item>>
+					: Schema extends Record<string, any>
+						? { [key in keyof Schema]: SerialziedValue<Schema[key]> }
+						: Schema;
+
+export function serialize<Schema>(value: Schema): SerialziedValue<Schema> {
 	if (isPlainObject(value)) {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return Object.entries(value).reduce<Record<string, unknown>>(
 			(result, [key, value]) => {
 				result[key] = serialize(value);
@@ -84,19 +78,19 @@ export function serialize<Schema>(value: Schema): FormValue<Schema> {
 			{},
 		);
 	} else if (Array.isArray(value)) {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value.map(serialize);
 	} else if (value instanceof Date) {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value.toISOString();
 	} else if (typeof value === 'boolean') {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value ? 'on' : undefined;
 	} else if (typeof value === 'number' || typeof value === 'bigint') {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value.toString();
 	} else {
-		// @ts-expect-error FIXME
+		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value ?? undefined;
 	}
 }
@@ -555,7 +549,7 @@ export function report<Intent, ErrorShape>(
 
 	return {
 		type: typeof document !== 'undefined' ? 'client' : 'server',
-		submittedValue: submission.submittedValue,
+		value: submission.value,
 		errors,
 		fields: submission.fields.concat(
 			Object.keys(errors).filter((key) =>
@@ -600,7 +594,6 @@ export function resolve<Intent = string>(
 ): Submission<Intent | string | null> {
 	const initialValue: Record<string, any> = {};
 	const submission: Submission<Intent | string | null> = {
-		submittedValue: initialValue,
 		value: initialValue,
 		fields: [],
 		intent: null,
@@ -608,7 +601,7 @@ export function resolve<Intent = string>(
 
 	for (const [name, value] of formData.entries()) {
 		if (name !== options?.intentName) {
-			setValue(submission.submittedValue, name, value, true);
+			setValue(initialValue, name, value, true);
 			submission.fields.push(name);
 		}
 	}
@@ -656,8 +649,8 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 	let state: FormState<Schema, ErrorShape> = {
 		keyByPath: createKey(defaultValue),
 		defaultValue: defaultValue ?? null,
-		initialValue: result?.submittedValue ?? defaultValue ?? {},
-		submittedValue: result?.submittedValue ?? null,
+		initialValue: result?.value ?? defaultValue ?? {},
+		submittedValue: result?.value ?? null,
 		serverError:
 			result?.type === 'server' && result.errors ? result.errors : null,
 		clientError:
@@ -706,11 +699,11 @@ export function updateFormState<Schema, ErrorShape, Intent>(
 			result.type === 'server' && !deepEqual(state.serverError, result.errors)
 				? result.errors
 				: result.type === 'client' &&
-					  !deepEqual(state.submittedValue, result.submittedValue)
+					  !deepEqual(state.submittedValue, result.value)
 					? null
 					: state.serverError,
 		submittedValue:
-			result.type === 'server' ? result.submittedValue : state.submittedValue,
+			result.type === 'server' ? result.value : state.submittedValue,
 	});
 
 	if (result.intent && controls) {
