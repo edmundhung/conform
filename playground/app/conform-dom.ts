@@ -9,10 +9,14 @@ export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
 	| FormValue<Entry>[]
 	| { [key: string]: FormValue<Entry> };
 
-export type SubmissionResult<Intent, ErrorShape> = {
+export type SubmissionResult<
+	Intent,
+	ErrorShape,
+	FormValueType extends FormDataEntryValue = FormDataEntryValue,
+> = {
 	type: 'client' | 'server';
 	fields: string[];
-	value: Record<string, FormValue> | null;
+	value: Record<string, FormValue<FormValueType>> | null;
 	intent: Intent;
 	errors: Record<string, ErrorShape>;
 };
@@ -490,36 +494,6 @@ export function getErrors<ErrorShape>(
 	}, {});
 }
 
-export type Form<Controls extends Record<string, FormControl<any>>> = {
-	control: string;
-	initialize<Schema, ErrorShape>(context: {
-		result?: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-		defaultValue?: DefaultValue<Schema>;
-	}): FormState<Schema, ErrorShape>;
-	update<Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		context: {
-			result: SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-			defaultValue?: DefaultValue<Schema>;
-		},
-	): FormState<Schema, ErrorShape>;
-	getSubmission(
-		formData: FormData | URLSearchParams,
-	): Submission<FormIntent<Controls> | null>;
-	report<ErrorShape>(
-		submission: Submission<FormIntent<Controls> | null>,
-		options?: {
-			formErrors?: ErrorShape;
-			fieldErrors?: Record<string, ErrorShape>;
-		},
-	): SubmissionResult<FormIntent<Controls> | null, ErrorShape>;
-	serialize(intent: FormIntent<Controls>): string;
-	dispatch(
-		formElement: HTMLFormElement | null,
-		intent: FormIntent<Controls>,
-	): void;
-};
-
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
 export type FormIntent<Controls extends Record<string, FormControl<any>>> =
@@ -535,9 +509,26 @@ export type FormIntent<Controls extends Record<string, FormControl<any>>> =
 
 export function report<Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
+	options: {
+		formErrors?: ErrorShape;
+		fieldErrors?: Record<string, ErrorShape>;
+		keepFile: true;
+	},
+): SubmissionResult<Intent | null, ErrorShape, FormDataEntryValue>;
+export function report<Intent, ErrorShape>(
+	submission: Submission<Intent | null>,
 	options?: {
 		formErrors?: ErrorShape;
 		fieldErrors?: Record<string, ErrorShape>;
+		keepFile?: false;
+	},
+): SubmissionResult<Intent | null, ErrorShape, string>;
+export function report<Intent, ErrorShape>(
+	submission: Submission<Intent | null>,
+	options?: {
+		formErrors?: ErrorShape;
+		fieldErrors?: Record<string, ErrorShape>;
+		includeFiles?: boolean;
 	},
 ): SubmissionResult<Intent | null, ErrorShape> {
 	const errors = options
@@ -549,7 +540,10 @@ export function report<Intent, ErrorShape>(
 
 	return {
 		type: typeof document !== 'undefined' ? 'client' : 'server',
-		value: submission.value,
+		value: !options?.includeFiles
+			? // TODO: remove all files from submission.value
+				submission.value
+			: submission.value,
 		errors,
 		fields: submission.fields.concat(
 			Object.keys(errors).filter((key) =>
