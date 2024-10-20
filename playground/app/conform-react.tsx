@@ -11,7 +11,6 @@ import {
 	type SubmissionResult,
 	type DefaultValue,
 	type FormControls,
-	getInput,
 	deepEqual,
 	configure,
 	initializeFormState,
@@ -34,6 +33,7 @@ export function useFormState<Schema, ErrorShape, Intent>(options: {
 	const [state, setState] = useState(() => initializeFormState(options));
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(options.result);
+	const lastStateRef = useRef(state);
 	const update = useCallback(
 		(result: SubmissionResult<Intent | null, ErrorShape>) => {
 			if (result === lastResultRef.current) {
@@ -53,14 +53,28 @@ export function useFormState<Schema, ErrorShape, Intent>(options: {
 	);
 
 	useEffect(() => {
-		optionsRef.current = options;
-	});
-
-	useEffect(() => {
 		if (options.result) {
 			update(options.result);
 		}
 	}, [options.result, update]);
+
+	useEffect(() => {
+		optionsRef.current = options;
+		lastStateRef.current = state;
+	});
+
+	useEffect(() => {
+		const subscriber = getFormSubscriber();
+		const unsubscribe = subscriber.subscribe('dom', (formElement) => {
+			if (formElement === options.formRef?.current) {
+				configure(options.formRef?.current, lastStateRef.current);
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	}, []);
 
 	useEffect(() => {
 		// To update the form fields based on the current state
@@ -93,76 +107,49 @@ export function useRefQuery<Type>(query: () => Type | null): RefObject<Type> {
 	return ref;
 }
 
+export function useFormData(
+	formRef: RefObject<HTMLFormElement>,
+): FormData | undefined;
 export function useFormData<Value>(
 	formRef: RefObject<HTMLFormElement>,
-	select?: (formData: FormData, currentValue: Value) => Value,
-): Value | undefined {
-	const [value, setValue] = useState<Value>();
+	select: (formData: FormData, currentValue: Value) => Value,
+): Value | undefined;
+export function useFormData<Value>(
+	formRef: RefObject<HTMLFormElement>,
+	select?: (
+		formData: FormData,
+		currentValue: Value | FormData | undefined,
+	) => Value,
+): Value | FormData | undefined {
+	const [value, setValue] = useState<Value | FormData>();
 
 	useEffect(() => {
-		const updateFormValue = (formElement: HTMLFormElement) => {
-			const formData = new FormData(formElement);
-
-			// @ts-expect-error When select is undefined, the value is always FormData
-			setValue((currentValue) => select?.(formData, currentValue) ?? formData);
-		};
-		const handleFormEvent = (event: Event) => {
-			const formElement = formRef.current;
-
-			if (!formElement) {
-				return;
-			}
-
-			if (event.target === formElement || getInput(event.target, formElement)) {
-				updateFormValue(formElement);
+		const updateFormValue = (formData: FormData) => {
+			if (typeof select !== 'function') {
+				setValue(formData);
+			} else {
+				setValue((currentValue) => select(formData, currentValue));
 			}
 		};
 
-		const observer = new MutationObserver((mutations) => {
-			const formElement = formRef.current;
-
-			if (!formElement) {
-				return;
-			}
-
-			for (const mutation of mutations) {
-				const nodes =
-					mutation.type === 'childList'
-						? [...mutation.addedNodes, ...mutation.removedNodes]
-						: [mutation.target];
-
-				for (const node of nodes) {
-					if (getInput(node, formElement)) {
-						updateFormValue(formElement);
-						return;
-					}
+		const subscriber = getFormSubscriber();
+		const unsubscribe = subscriber.subscribe(
+			'formData',
+			(formElement, formData) => {
+				if (formElement === formRef.current) {
+					updateFormValue(formData);
 				}
-			}
-		});
-
-		observer.observe(document.body, {
-			subtree: true,
-			childList: true,
-			attributes: true,
-			attributeFilter: ['form', 'name', 'data-conform'],
-		});
-
-		document.addEventListener('input', handleFormEvent);
-		document.addEventListener('reset', handleFormEvent);
-		document.addEventListener('submit', handleFormEvent);
+			},
+		);
 
 		const formElement = formRef.current;
 
 		if (formElement) {
-			updateFormValue(formElement);
+			updateFormValue(new FormData(formElement));
 		}
 
 		return () => {
-			observer.disconnect();
-
-			document.removeEventListener('input', handleFormEvent);
-			document.removeEventListener('reset', handleFormEvent);
-			document.removeEventListener('submit', handleFormEvent);
+			unsubscribe();
 		};
 	}, [formRef, select]);
 
@@ -252,25 +239,34 @@ export function updateFieldValue(
 	element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-export function useCustomInput(initialValue: string): {
+export function useInput(initialValue: string): {
 	value: string;
-	change(value: string): void;
-	focus(): void;
-	blur(): void;
+	changed(value: string): void;
+	focused(): void;
+	blurred(): void;
 	register: RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 };
-export function useCustomInput(initialValue: string[]): {
+export function useInput(initialValue: string[]): {
 	value: string[];
-	change(value: string[]): void;
-	focus(): void;
-	blur(): void;
+	changed(value: string[]): void;
+	focused(): void;
+	blurred(): void;
 	register: RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 };
-export function useCustomInput(initialValue: string | string[]) {
+export function useInput(initialValue?: string | string[]): {
+	value: string | string[] | undefined;
+	changed(value: string | string[]): void;
+	focused(): void;
+	blurred(): void;
+	register: RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	>;
+};
+export function useInput(initialValue?: string | string[]) {
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -290,69 +286,54 @@ export function useCustomInput(initialValue: string | string[]) {
 				eventDispatched.current[event.type] = true;
 			}
 		};
-		const updateValue = () => {
-			const element = inputRef.current;
+		const updateValue = (
+			element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+		) => {
+			const isMultipleSelect =
+				element instanceof HTMLSelectElement && element.multiple;
+			const value = isMultipleSelect
+				? Array.from(element.selectedOptions).map((option) => option.value)
+				: element.value;
 
-			if (element) {
-				const isMultipleSelect =
-					element instanceof HTMLSelectElement && element.multiple;
-				const value = isMultipleSelect
-					? Array.from(element.selectedOptions).map((option) => option.value)
-					: element.value;
+			setValue((prevValue) => {
+				const isArray = Array.isArray(prevValue);
 
-				setValue((prevValue) => {
-					const isArray = Array.isArray(prevValue);
+				if (isArray && !isMultipleSelect) {
+					// eslint-disable-next-line no-console
+					console.log('Only multiple select can work with array value');
+					return prevValue;
+				}
 
-					if (isArray && !isMultipleSelect) {
-						// eslint-disable-next-line no-console
-						console.log('Only multiple select can work with array value');
-						return prevValue;
-					}
+				if (deepEqual(prevValue, value)) {
+					return prevValue;
+				}
 
-					if (deepEqual(prevValue, value)) {
-						return prevValue;
-					}
-
-					return value;
-				});
-			}
+				return value;
+			});
 		};
 
-		const observer = new MutationObserver((mutations) => {
-			for (const mutation of mutations) {
-				if (mutation.target === inputRef.current) {
-					updateValue();
-					return;
-				}
+		const subscriber = getFormSubscriber();
+		const unsubscribe = subscriber.subscribe('input', (element) => {
+			if (element === inputRef.current) {
+				updateValue(inputRef.current);
 			}
 		});
 
 		if (inputRef.current) {
-			observer.observe(inputRef.current, {
-				attributes: true,
-				attributeFilter: ['data-conform'],
-			});
-			updateValue();
+			updateValue(inputRef.current);
 		}
 
-		observerRef.current = observer;
-		document.addEventListener('input', updateValue);
-		document.addEventListener('focusin', deduplicateEvent, true);
-		document.addEventListener('focusout', deduplicateEvent, true);
-
 		return () => {
-			observer.disconnect();
-			observerRef.current = null;
-			document.removeEventListener('input', updateValue);
+			unsubscribe();
 			document.removeEventListener('focusin', deduplicateEvent, true);
 			document.removeEventListener('focusout', deduplicateEvent, true);
 		};
 	}, []);
 
 	const control = useMemo<{
-		change(value: string | string[]): void;
-		focus(): void;
-		blur(): void;
+		changed(value: string | string[]): void;
+		focused(): void;
+		blurred(): void;
 		register: RefCallback<
 			HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 		>;
@@ -374,14 +355,14 @@ export function useCustomInput(initialValue: string | string[]) {
 					});
 				}
 			},
-			change(value) {
+			changed(value) {
 				const element = inputRef.current;
 
 				if (element) {
 					updateFieldValue(element, value);
 				}
 			},
-			focus() {
+			focused() {
 				if (!eventDispatched.current.focusin) {
 					return;
 				}
@@ -399,7 +380,7 @@ export function useCustomInput(initialValue: string | string[]) {
 
 				eventDispatched.current.focusin = false;
 			},
-			blur() {
+			blurred() {
 				if (!eventDispatched.current.focusout) {
 					return;
 				}
@@ -421,9 +402,178 @@ export function useCustomInput(initialValue: string | string[]) {
 
 	return {
 		value,
-		change: control.change,
-		focus: control.focus,
-		blur: control.blur,
+		changed: control.changed,
+		focused: control.focused,
+		blurred: control.blurred,
 		register: control.register,
 	};
+}
+
+export type FormSubscription =
+	| {
+			type: 'formData';
+			callback: (formElement: HTMLFormElement, formData: FormData) => void;
+	  }
+	| { type: 'dom'; callback: (formElement: HTMLFormElement) => void }
+	| {
+			type: 'input';
+			callback: (
+				inputElement:
+					| HTMLInputElement
+					| HTMLSelectElement
+					| HTMLTextAreaElement,
+			) => void;
+	  };
+
+export function createFormSubscriber() {
+	const subscriptions = new Set<FormSubscription>();
+	const observer = new MutationObserver(handleMutation);
+
+	function isInput(
+		element: unknown,
+	): element is HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement {
+		return (
+			element instanceof HTMLInputElement ||
+			element instanceof HTMLTextAreaElement ||
+			element instanceof HTMLSelectElement
+		);
+	}
+
+	function handleInput(event: Event) {
+		if (isInput(event.target)) {
+			emitInputChange(event.target);
+
+			if (event.target.form) {
+				emitFormDataChange(event.target.form);
+			}
+		}
+	}
+
+	function handleReset(event: Event) {
+		if (event.target instanceof HTMLFormElement) {
+			emitFormDataChange(event.target);
+		}
+	}
+
+	function handleSubmit(event: SubmitEvent): void {
+		if (event.target instanceof HTMLFormElement) {
+			emitFormDataChange(event.target, event.submitter);
+		}
+	}
+
+	function handleMutation(mutations: MutationRecord[]): void {
+		const formElements = new Set<HTMLFormElement>();
+		const inputElements = new Set<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>();
+
+		for (const mutation of mutations) {
+			if (mutation.target instanceof HTMLFormElement) {
+				formElements.add(mutation.target);
+			} else if (isInput(mutation.target)) {
+				inputElements.add(mutation.target);
+
+				if (mutation.target.form) {
+					formElements.add(mutation.target.form);
+				}
+			}
+		}
+
+		for (const formElement of formElements) {
+			emitFormDataChange(formElement);
+			emitDomChange(formElement);
+		}
+
+		for (const inputElement of inputElements) {
+			emitInputChange(inputElement);
+		}
+	}
+
+	function emitFormDataChange(
+		formElement: HTMLFormElement,
+		submitter?: HTMLElement | null,
+	) {
+		const formData = new FormData(formElement, submitter);
+
+		for (const subscriber of subscriptions) {
+			if (subscriber.type === 'formData') {
+				subscriber.callback(formElement, formData);
+			}
+		}
+	}
+
+	function emitDomChange(formElement: HTMLFormElement) {
+		for (const subscriber of subscriptions) {
+			if (subscriber.type === 'dom') {
+				subscriber.callback(formElement);
+			}
+		}
+	}
+
+	function emitInputChange(
+		inputElement: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+	) {
+		for (const subscriber of subscriptions) {
+			if (subscriber.type === 'input') {
+				subscriber.callback(inputElement);
+			}
+		}
+	}
+
+	function initialize() {
+		document.addEventListener('input', handleInput);
+		document.addEventListener('reset', handleReset);
+		document.addEventListener('submit', handleSubmit);
+		observer.observe(document.body, {
+			subtree: true,
+			childList: true,
+			attributes: true,
+			attributeFilter: ['form', 'name', 'data-conform'],
+		});
+	}
+
+	function disconnect() {
+		document.removeEventListener('input', handleInput);
+		document.removeEventListener('reset', handleReset);
+		document.removeEventListener('submit', handleSubmit);
+		observer.disconnect();
+	}
+
+	return {
+		subscribe<Type extends FormSubscription['type']>(
+			type: Type,
+			callback: Extract<FormSubscription, { type: Type }>['callback'],
+		) {
+			if (subscriptions.size === 0) {
+				initialize();
+			}
+
+			// @ts-expect-error FIXME
+			const subscription: FormSubscription = { type, callback };
+
+			subscriptions.add(subscription);
+
+			return () => {
+				subscriptions.delete(subscription);
+
+				if (subscriptions.size === 0) {
+					disconnect();
+				}
+			};
+		},
+		dispose() {
+			subscriptions.clear();
+			disconnect();
+		},
+	};
+}
+
+let formSubscriber: ReturnType<typeof createFormSubscriber> | null = null;
+
+export function getFormSubscriber() {
+	if (!formSubscriber) {
+		formSubscriber = createFormSubscriber();
+	}
+
+	return formSubscriber;
 }
