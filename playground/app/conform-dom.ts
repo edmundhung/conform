@@ -1118,6 +1118,39 @@ export const controls = createFormControls({
 	list: listControl,
 });
 
+export function dispatchIntent(
+	formElement: HTMLFormElement | null,
+	intentName: string,
+	intentValue: string,
+): void {
+	if (!formElement) {
+		throw new Error('Form element not found');
+	}
+
+	const submitter = document.createElement('button');
+
+	submitter.name = intentName;
+	submitter.value = intentValue;
+	submitter.hidden = true;
+	submitter.formNoValidate = true;
+
+	formElement.appendChild(submitter);
+
+	if (typeof formElement.requestSubmit === 'function') {
+		formElement.requestSubmit(submitter);
+	} else {
+		const event = new SubmitEvent('submit', {
+			bubbles: true,
+			cancelable: true,
+			submitter,
+		});
+
+		formElement.dispatchEvent(event);
+	}
+
+	formElement.removeChild(submitter);
+}
+
 export function createFormControls<
 	Controls extends Record<string, FormControl<any>>,
 >(
@@ -1154,32 +1187,7 @@ export function createFormControls<
 			return [intent.type, payload].join('/');
 		},
 		dispatch(formElement, intent) {
-			if (!formElement) {
-				throw new Error('Form element not found');
-			}
-
-			const submitter = document.createElement('button');
-
-			submitter.name = intentName;
-			submitter.value = this.serialize(intent);
-			submitter.hidden = true;
-			submitter.formNoValidate = true;
-
-			formElement.appendChild(submitter);
-
-			if (typeof formElement.requestSubmit === 'function') {
-				formElement.requestSubmit(submitter);
-			} else {
-				const event = new SubmitEvent('submit', {
-					bubbles: true,
-					cancelable: true,
-					submitter,
-				});
-
-				formElement.dispatchEvent(event);
-			}
-
-			formElement.removeChild(submitter);
+			dispatchIntent(formElement, intentName, this.serialize(intent));
 		},
 		updateValue(submittedValue, intent) {
 			const type = intent.type;
