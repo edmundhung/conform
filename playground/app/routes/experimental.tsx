@@ -8,11 +8,8 @@ import {
 	report,
 	getInput,
 	controls,
-	createDictionary,
-	createNameBuilder,
-	getDefaultValue,
-	getErrors,
-	getListKeys,
+	getFormMetadata,
+	isTouched,
 } from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
@@ -41,30 +38,29 @@ export async function action({ request }: ActionFunctionArgs) {
 	if (!result.success) {
 		const error = flattenZodErrors(result, submission.fields);
 		const formResult = report(submission, {
-			formErrors: error.formErrors,
-			fieldErrors: error.fieldErrors,
+			formError: error.formError,
+			fieldError: error.fieldError,
 		});
 
 		return formResult;
 	}
 
 	return report(submission, {
-		formErrors: ['Something went wrong'],
+		formError: ['Something went wrong'],
 	});
 }
 
 export default function Example() {
 	const result = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
-	const [state, update] = useFormState({
+	const [state, update] = useFormState<z.input<typeof schema>, string[], any>({
 		result,
 		controls,
 		formRef,
 	});
-	const fields = createNameBuilder<z.input<typeof schema>>();
-	const defaultValue = getDefaultValue(state);
-	const errors = getErrors(state);
-	const listKeys = createDictionary((name) => getListKeys(name, state));
+	const form = getFormMetadata(state);
+	const fields = form.getFieldset();
+	const taskFields = fields.tasks.getFieldList();
 
 	return (
 		<Form
@@ -82,8 +78,8 @@ export default function Example() {
 
 				const error = flattenZodErrors(result, submission.fields);
 				const formResult = report(submission, {
-					formErrors: error.formErrors,
-					fieldErrors: error.fieldErrors,
+					formError: error.formError,
+					fieldError: error.fieldError,
 				});
 
 				flushSync(() => {
@@ -93,7 +89,7 @@ export default function Example() {
 			onInput={(event: React.FormEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (input && state.touched.includes(input.name)) {
+				if (input && isTouched(state, input.name)) {
 					controls.dispatch(formRef.current, {
 						type: 'validate',
 						payload: {
@@ -105,7 +101,7 @@ export default function Example() {
 			onBlur={(event: React.FocusEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (input && !state.touched.includes(input.name)) {
+				if (input && !isTouched(state, input.name)) {
 					controls.dispatch(formRef.current, {
 						type: 'validate',
 						payload: {
@@ -115,79 +111,79 @@ export default function Example() {
 				}
 			}}
 		>
-			<div>{errors[fields.$name]}</div>
+			<div>{form.error}</div>
 			<div>
 				Title
 				<input
-					name={fields.title.$name}
-					defaultValue={defaultValue.get(fields.title.$name) ?? ''}
+					name={fields.title.name}
+					defaultValue={fields.title.defaultValue}
 				/>
-				<div>{errors[fields.title.$name]}</div>
+				<div>{fields.title.error}</div>
 			</div>
 			<div>
 				Content
 				<textarea
-					name={fields.content.$name}
-					defaultValue={defaultValue.get(fields.content.$name) ?? ''}
+					name={fields.content.name}
+					defaultValue={fields.content.defaultValue}
 				/>
-				<div>Content Error: {errors[fields.content.$name]}</div>
+				<div>Content Error: {fields.content.error}</div>
 			</div>
-			<div>Tasks error: {errors[fields.tasks.$name]}</div>
-			{listKeys[fields.tasks.$name]?.map((key, index) => (
-				<fieldset key={key}>
-					<input
-						name={fields.tasks(index).title.$name}
-						defaultValue={
-							defaultValue.get(fields.tasks(index).title.$name) ?? ''
-						}
-					/>
-					<div>{errors[fields.tasks(index).title.$name]}</div>
-					<input
-						type="checkbox"
-						name={fields.tasks(index).done.$name}
-						defaultChecked={
-							defaultValue.get(fields.tasks(index).done.$name) === 'on'
-						}
-					/>
-					<div>{errors[fields.tasks(index).done.$name]}</div>
-					<div>
-						<button
-							name={controls.intentName}
-							value={controls.serialize({
-								type: 'remove',
-								payload: {
-									name: fields.tasks.$name,
-									index,
-								},
-							})}
-						>
-							Remove
-						</button>
-					</div>
-					<div>
-						<button
-							name={controls.intentName}
-							value={controls.serialize({
-								type: 'reorder',
-								payload: {
-									name: fields.tasks.$name,
-									from: index,
-									to: 0,
-								},
-							})}
-						>
-							Move to top
-						</button>
-					</div>
-				</fieldset>
-			))}
+			<div>Tasks error: {fields.tasks.error}</div>
+			{taskFields.map((taskField, index) => {
+				const task = taskField.getFieldset();
+
+				return (
+					<fieldset key={taskField.key}>
+						<input
+							name={task.title.name}
+							defaultValue={task.title.defaultValue}
+						/>
+						<div>{task.title.error}</div>
+						<input
+							type="checkbox"
+							name={task.done.name}
+							defaultChecked={task.done.defaultValue === 'on'}
+						/>
+						<div>{task.done.error}</div>
+						<div>
+							<button
+								name={controls.intentName}
+								value={controls.serialize({
+									type: 'remove',
+									payload: {
+										name: fields.tasks.name,
+										index,
+									},
+								})}
+							>
+								Remove
+							</button>
+						</div>
+						<div>
+							<button
+								name={controls.intentName}
+								value={controls.serialize({
+									type: 'reorder',
+									payload: {
+										name: fields.tasks.name,
+										from: index,
+										to: 0,
+									},
+								})}
+							>
+								Move to top
+							</button>
+						</div>
+					</fieldset>
+				);
+			})}
 			<div>
 				<button
 					name={controls.intentName}
 					value={controls.serialize({
 						type: 'insert',
 						payload: {
-							name: fields.tasks.$name,
+							name: fields.tasks.name,
 							defaultValue: { title: 'Example', done: true },
 						},
 					})}
@@ -203,7 +199,7 @@ export default function Example() {
 					name={controls.intentName}
 					value={controls.serialize({
 						type: 'update',
-						payload: { name: fields.title.$name, value: 'Test' },
+						payload: { name: fields.title.name, value: 'Test' },
 					})}
 				>
 					Update title

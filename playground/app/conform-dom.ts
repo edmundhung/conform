@@ -9,6 +9,11 @@ export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
 	| FormValue<Entry>[]
 	| { [key: string]: FormValue<Entry> };
 
+export type FormError<ErrorShape> = {
+	formError: ErrorShape | null;
+	fieldError: Record<string, ErrorShape>;
+};
+
 export type SubmissionResult<
 	Intent,
 	ErrorShape,
@@ -17,8 +22,8 @@ export type SubmissionResult<
 	type: 'client' | 'server';
 	fields: string[];
 	value: Record<string, FormValue<FormValueType>> | null;
+	error: FormError<ErrorShape>;
 	intent: Intent;
-	errors: Record<string, ErrorShape>;
 };
 
 export type DefaultValue<Schema> = Schema extends
@@ -39,8 +44,8 @@ export type DefaultValue<Schema> = Schema extends
 
 export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
-	serverError: Record<string, ErrorShape> | null;
-	clientError: Record<string, ErrorShape>;
+	serverError: FormError<ErrorShape> | null;
+	clientError: FormError<ErrorShape> | null;
 	keyByPath: Record<string, string>;
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
@@ -219,43 +224,6 @@ export function formatName(prefix: string | undefined, path?: string | number) {
 	return typeof path !== 'undefined'
 		? formatPaths([...getPaths(prefix), path])
 		: prefix ?? '';
-}
-
-type NameBuilder<Schema> = {
-	$name: string;
-} & (Schema extends Array<infer Item>
-	? (index: number) => NameBuilder<Item>
-	: Schema extends Record<string, any>
-		? {
-				[key in keyof Schema]-?: NameBuilder<Schema[key]>;
-			}
-		: {});
-
-export function createNameBuilder<Schema>(
-	prefix?: string,
-): NameBuilder<Schema> {
-	// @ts-expect-error The proxy will extend the object
-	return new Proxy(
-		Object.assign(
-			(number: number) => createNameBuilder(formatName(prefix, number)),
-			{
-				$name: prefix ?? '',
-			},
-		),
-		{
-			get(target, key, receiver) {
-				if (Object.prototype.hasOwnProperty.call(target, key)) {
-					return Reflect.get(target, key, receiver);
-				}
-
-				if (typeof key !== 'string') {
-					return;
-				}
-
-				return createNameBuilder(formatName(prefix, key));
-			},
-		},
-	);
 }
 
 export function createKey(
@@ -458,12 +426,6 @@ export function merge<State extends Record<string, any>>(
 	return Object.assign({}, state, update);
 }
 
-export function getDefaultValue(
-	state: Pick<FormState<unknown, unknown>, 'initialValue'>,
-): URLSearchParams {
-	return createSearchParams(state.initialValue);
-}
-
 export function isTouched(
 	state: Pick<FormState<unknown, unknown>, 'touched'>,
 	name: string,
@@ -475,23 +437,6 @@ export function isTouched(
 		state.touched.some((field) => isPrefix(field, name));
 
 	return result;
-}
-
-export function getErrors<ErrorShape>(
-	state: Pick<
-		FormState<unknown, ErrorShape>,
-		'clientError' | 'serverError' | 'touched'
-	>,
-): Record<string, ErrorShape> {
-	return Object.entries(state.serverError ?? state.clientError).reduce<
-		Record<string, ErrorShape>
-	>((result, [name, value]) => {
-		if (isTouched(state, name)) {
-			result[name] = value;
-		}
-
-		return result;
-	}, {});
 }
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
@@ -510,43 +455,39 @@ export type FormIntent<Controls extends Record<string, FormControl<any>>> =
 export function report<Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options: {
-		formErrors?: ErrorShape;
-		fieldErrors?: Record<string, ErrorShape>;
+		formError?: ErrorShape;
+		fieldError?: Record<string, ErrorShape>;
 		keepFile: true;
 	},
 ): SubmissionResult<Intent | null, ErrorShape, FormDataEntryValue>;
 export function report<Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options?: {
-		formErrors?: ErrorShape;
-		fieldErrors?: Record<string, ErrorShape>;
+		formError?: ErrorShape;
+		fieldError?: Record<string, ErrorShape>;
 		keepFile?: false;
 	},
 ): SubmissionResult<Intent | null, ErrorShape, string>;
 export function report<Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options?: {
-		formErrors?: ErrorShape;
-		fieldErrors?: Record<string, ErrorShape>;
+		formError?: ErrorShape;
+		fieldError?: Record<string, ErrorShape>;
 		includeFiles?: boolean;
 	},
 ): SubmissionResult<Intent | null, ErrorShape> {
-	const errors = options
-		? Object.assign(
-				options.formErrors ? { '': options.formErrors } : {},
-				options.fieldErrors,
-			)
-		: {};
-
 	return {
 		type: typeof document !== 'undefined' ? 'client' : 'server',
 		value: !options?.includeFiles
 			? // TODO: remove all files from submission.value
 				submission.value
 			: submission.value,
-		errors,
+		error: {
+			formError: options?.formError ?? null,
+			fieldError: options?.fieldError ?? {},
+		},
 		fields: submission.fields.concat(
-			Object.keys(errors).filter((key) =>
+			Object.keys(options?.fieldError ?? {}).filter((key) =>
 				submission.fields.every((field) => !isPrefix(field, key)),
 			),
 		),
@@ -646,9 +587,9 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 		initialValue: result?.value ?? defaultValue ?? {},
 		submittedValue: result?.value ?? null,
 		serverError:
-			result?.type === 'server' && result.errors ? result.errors : null,
+			result?.type === 'server' && result.error ? result.error : null,
 		clientError:
-			result?.type === 'client' && result.errors ? result.errors : {},
+			result?.type === 'client' && result.error ? result.error : null,
 		touched: [],
 	};
 
@@ -686,12 +627,12 @@ export function updateFormState<Schema, ErrorShape, Intent>(
 ) {
 	const currentState = merge(state, {
 		clientError:
-			result.type === 'client' && !deepEqual(state.clientError, result.errors)
-				? result.errors
+			result.type === 'client' && !deepEqual(state.clientError, result.error)
+				? result.error
 				: state.clientError,
 		serverError:
-			result.type === 'server' && !deepEqual(state.serverError, result.errors)
-				? result.errors
+			result.type === 'server' && !deepEqual(state.serverError, result.error)
+				? result.error
 				: result.type === 'client' &&
 					  !deepEqual(state.submittedValue, result.value)
 					? null
@@ -833,46 +774,6 @@ export function getInput(
 	return target;
 }
 
-export function createSearchParams(data: unknown): URLSearchParams {
-	const dictionary = flatten(serialize(data), {
-		select(value) {
-			if (
-				typeof value === 'string' ||
-				(Array.isArray(value) &&
-					value.every((item) => typeof item === 'string'))
-			) {
-				return value;
-			}
-
-			return;
-		},
-	});
-	const entries = Object.entries(dictionary).flatMap(([name, value]) => {
-		if (Array.isArray(value)) {
-			return value.map((item) => [name, item]);
-		}
-
-		return [[name, value]];
-	});
-
-	return new URLSearchParams(entries);
-}
-
-export function createDictionary<State>(
-	fn: (name: string, proxy: Record<string, State>) => State,
-): Record<string, State> {
-	const cache: Record<string, State> = {};
-	return new Proxy(cache, {
-		get(_, name: string | symbol, receiver) {
-			if (typeof name !== 'string') {
-				return;
-			}
-
-			return (cache[name] ??= fn(name, receiver));
-		},
-	});
-}
-
 export function getKey(
 	name: string,
 	state: Pick<FormState<unknown, unknown>, 'keyByPath'>,
@@ -891,19 +792,6 @@ export function getKey(
 	}
 
 	return `${parentKey}/${currentKey ?? paths.at(-1)}`;
-}
-
-export function getListKeys(
-	name: string,
-	state: Pick<FormState<unknown, unknown>, 'keyByPath' | 'initialValue'>,
-): Array<string | undefined> {
-	const value = getValue(state.initialValue, name);
-
-	if (!Array.isArray(value)) {
-		return [];
-	}
-
-	return value.map((_, index) => getKey(formatName(name, index), state));
 }
 
 export const validateControl = defineControl<{ name?: string }>({
@@ -1339,4 +1227,183 @@ export function createFormControls<
 			});
 		},
 	};
+}
+
+const error = Symbol('error');
+const field = Symbol('field');
+const form = Symbol('form');
+
+export type FormId<
+	Schema extends Record<string, unknown> = Record<string, unknown>,
+	Error = string[],
+> = string & {
+	[error]?: Error;
+	[form]?: Schema;
+};
+
+export type FieldName<
+	FieldSchema,
+	FormSchema extends Record<string, unknown> = Record<string, unknown>,
+	Error = string[],
+> = string & {
+	[field]?: FieldSchema;
+	[error]?: Error;
+	[form]?: FormSchema;
+};
+
+export type FieldConstraint = {
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	min?: string | number;
+	max?: string | number;
+	step?: string | number;
+	multiple?: boolean;
+	pattern?: string;
+};
+
+type BaseCombine<
+	T,
+	K extends PropertyKey = T extends unknown ? keyof T : never,
+> = T extends unknown ? T & Partial<Record<Exclude<K, keyof T>, never>> : never;
+
+export type Combine<T> = {
+	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
+};
+
+export type FieldMetadata<
+	Schema,
+	FormSchema extends Record<string, unknown>,
+	ErrorShape = string[],
+> = Pretty<
+	{
+		// id: string;
+		// errorId: string;
+		// descriptionId: string;
+		key: string | undefined;
+		name: FieldName<Schema, FormSchema, ErrorShape>;
+		defaultValue: string | string[] | undefined;
+		touched: boolean;
+		error: ErrorShape | undefined;
+	} & FieldConstraint &
+		([Schema] extends [Date | File]
+			? {}
+			: [Schema] extends [Array<infer Item> | null | undefined]
+				? {
+						getFieldList: () => Array<
+							FieldMetadata<Item, FormSchema, ErrorShape>
+						>;
+					}
+				: [Schema] extends [Record<string, unknown> | null | undefined]
+					? {
+							getFieldset: () => FieldsetMetadata<
+								Schema,
+								FormSchema,
+								ErrorShape
+							>;
+						}
+					: {})
+>;
+
+export type FieldsetMetadata<
+	Schema,
+	FormSchema extends Record<string, unknown>,
+	ErrorShape = string[],
+> = Required<{
+	[Key in keyof Combine<Schema>]: FieldMetadata<
+		Combine<Schema>[Key],
+		FormSchema,
+		ErrorShape
+	>;
+}>;
+
+export type FormMetadata<
+	Schema extends Record<string, unknown> = Record<string, unknown>,
+	ErrorShape = string[],
+> = Pretty<
+	FieldMetadata<Schema, Schema, ErrorShape> & {
+		status: 'success' | 'error' | undefined;
+		fieldError: Record<string, ErrorShape> | null;
+	}
+>;
+
+export function getFormMetadata<
+	Schema extends Record<string, unknown>,
+	ErrorShape,
+>(state: FormState<Schema, ErrorShape>): FormMetadata<Schema, ErrorShape> {
+	const error = state.serverError ?? state.clientError;
+
+	function createMetadata(name = '') {
+		return {
+			name,
+			get key() {
+				return getKey(name, state);
+			},
+			get defaultValue() {
+				const serializedValue = serialize(state.initialValue);
+				const value = getValue(serializedValue, name);
+
+				if (
+					typeof value !== 'string' &&
+					(!Array.isArray(value) ||
+						value.some((item) => typeof item !== 'string'))
+				) {
+					return;
+				}
+
+				return value;
+			},
+			get touched() {
+				return isTouched(state, name);
+			},
+			get error() {
+				const result = name ? error?.fieldError[name] : error?.formError;
+
+				if (!result || !isTouched(state, name)) {
+					return;
+				}
+
+				return result;
+			},
+			get getFieldset() {
+				return () =>
+					new Proxy({} as any, {
+						get(target, key, receiver) {
+							if (typeof key === 'string') {
+								const fieldName = formatName(name, key);
+
+								return Object.assign(createMetadata(fieldName), {
+									get getFieldList() {
+										return () => {
+											const value =
+												getValue(state.initialValue, fieldName) ?? [];
+
+											if (!Array.isArray(value)) {
+												throw new Error(
+													`Failed to get the field list; The value at "${fieldName}" is not an array`,
+												);
+											}
+
+											return Array(value.length)
+												.fill(0)
+												.map((_, index) =>
+													createMetadata(formatName(fieldName, index)),
+												);
+										};
+									},
+								});
+							}
+
+							return Reflect.get(target, key, receiver);
+						},
+					});
+			},
+		};
+	}
+
+	// @ts-expect-error FIXME
+	return Object.assign(createMetadata(), {
+		status: undefined,
+		fieldError: error?.fieldError ?? null,
+	});
 }

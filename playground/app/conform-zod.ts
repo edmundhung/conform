@@ -223,12 +223,16 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 	} else if (def.typeName === 'ZodUnion') {
 		schema = new ZodUnion({
 			...def,
-			options: def.options.map((option: ZodTypeAny) => coerceZodFormData(option, cache)),
+			options: def.options.map((option: ZodTypeAny) =>
+				coerceZodFormData(option, cache),
+			),
 		});
 	} else if (def.typeName === 'ZodDiscriminatedUnion') {
 		schema = new ZodDiscriminatedUnion({
 			...def,
-			options: def.options.map((option: ZodTypeAny) => coerceZodFormData(option, cache)),
+			options: def.options.map((option: ZodTypeAny) =>
+				coerceZodFormData(option, cache),
+			),
 			optionsMap: new Map(
 				Array.from(def.optionsMap.entries()).map(([discriminator, option]) => [
 					discriminator,
@@ -239,7 +243,9 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
 			...def,
-			items: def.items.map((item: ZodTypeAny) => coerceZodFormData(item, cache)),
+			items: def.items.map((item: ZodTypeAny) =>
+				coerceZodFormData(item, cache),
+			),
 		});
 	} else if (def.typeName === 'ZodNullable') {
 		schema = new ZodNullable({
@@ -268,24 +274,24 @@ export function flattenZodErrors(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 ): {
-	formErrors?: string[];
-	fieldErrors?: Record<string, string[]>;
+	formError?: string[];
+	fieldError?: Record<string, string[]>;
 };
 export function flattenZodErrors<ErrorShape>(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 	formatIssues: (issues: ZodIssue[]) => ErrorShape,
 ): {
-	formErrors?: ErrorShape;
-	fieldErrors?: Record<string, ErrorShape>;
+	formError?: ErrorShape;
+	fieldError?: Record<string, ErrorShape>;
 };
 export function flattenZodErrors<ErrorShape>(
 	result: SafeParseReturnType<any, any> | null,
 	fields: string[],
 	formatIssues?: (issues: ZodIssue[]) => ErrorShape,
 ): {
-	formErrors?: string[] | ErrorShape;
-	fieldErrors?: Record<string, string[] | ErrorShape>;
+	formError?: string[] | ErrorShape;
+	fieldError?: Record<string, string[] | ErrorShape>;
 } {
 	if (!result || result.success) {
 		return {};
@@ -312,7 +318,7 @@ export function flattenZodErrors<ErrorShape>(
 	);
 
 	return {
-		formErrors,
-		fieldErrors,
+		formError: formErrors,
+		fieldError: fieldErrors,
 	};
 }
