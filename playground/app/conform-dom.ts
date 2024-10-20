@@ -949,183 +949,165 @@ export function updateListIndex(
 	return name;
 }
 
-export const insertControl = defineControl<{
-	name: string;
-	index?: number;
-	defaultValue?: any;
-}>({
+export const listControl = defineControl<
+	| {
+			action: 'insert';
+			name: string;
+			index?: number;
+			defaultValue?: any;
+	  }
+	| {
+			action: 'remove';
+			name: string;
+			index: number;
+	  }
+	| {
+			action: 'reorder';
+			name: string;
+			from: number;
+			to: number;
+	  }
+>({
 	onParse(value, payload) {
 		const data = getValue(value, payload.name) ?? [];
 
 		if (!Array.isArray(data)) {
 			throw new Error(
-				`Failed to insert value; The data at "${payload.name}" is not an array`,
+				`Update list value failed; The value at "${payload.name}" is not an array`,
 			);
 		}
 
-		const index = payload.index ?? data.length;
+		// Clone the array to before mutating
 		const list = Array.from(data);
 
-		list.splice(index, 0, payload.defaultValue);
+		switch (payload.action) {
+			case 'insert': {
+				list.splice(payload.index ?? list.length, 0, payload.defaultValue);
+				break;
+			}
+			case 'remove': {
+				list.splice(payload.index, 1);
+				break;
+			}
+			case 'reorder': {
+				list.splice(payload.to, 0, ...list.splice(payload.from, 1));
+				break;
+			}
+		}
 
 		return modifyNestedData(value, list, payload.name);
 	},
 	onSubmit(state, { result }) {
 		const payload = result.intent.payload;
-		const value = getValue(state.initialValue, payload.name) ?? [];
-
-		if (!Array.isArray(value)) {
-			throw new Error(
-				`Failed to insert value; The initialValue at "${payload.name}" is not an array`,
-			);
-		}
-
-		const index = payload.index ?? value.length;
-		const list = Array.from(value);
-		const listPaths = getPaths(payload.name);
-		const adjustIndex = (currentIndex: number) =>
-			index <= currentIndex ? currentIndex + 1 : currentIndex;
-
-		list.splice(payload.index ?? list.length, 0, payload.defaultValue);
-
-		return merge(state, {
-			keyByPath: createKey(
-				payload.defaultValue,
-				formatName(payload.name, index),
-				mapKeys(state.keyByPath, (key) =>
-					updateListIndex(listPaths, key, adjustIndex),
-				),
-			),
-			touched: addItems(
-				mapItems(state.touched, (key) =>
-					updateListIndex(listPaths, key, adjustIndex),
-				),
-				[payload.name],
-			),
-			initialValue: modifyNestedData(state.initialValue, list, payload.name),
-		});
-	},
-});
-
-export const removeControl = defineControl<{ name: string; index: number }>({
-	onParse(value, payload) {
-		const data = getValue(value, payload.name) ?? [];
+		const data = getValue(state.initialValue, payload.name) ?? [];
 
 		if (!Array.isArray(data)) {
 			throw new Error(
-				`Failed to remove item; The value at "${payload.name}" is not an array`,
+				`Update state failed; The initialValue at "${payload.name}" is not an array`,
 			);
 		}
 
 		const list = Array.from(data);
-
-		list.splice(payload.index, 1);
-
-		return modifyNestedData(value, list, payload.name);
-	},
-	onSubmit(state, { result }) {
-		const payload = result.intent.payload;
-		const value = getValue(state.initialValue, payload.name) ?? [];
-
-		if (!Array.isArray(value)) {
-			throw new Error(
-				`Failed to remove item; The initialValue at "${payload.name}" is not an array`,
-			);
-		}
-
-		const list = Array.from(value);
 		const listPaths = getPaths(payload.name);
-		const adjustIndex = (currentIndex: number) => {
-			if (payload.index === currentIndex) {
-				return null;
+
+		switch (payload.action) {
+			case 'insert': {
+				const index = payload.index ?? list.length;
+				const adjustIndex = (currentIndex: number) =>
+					index <= currentIndex ? currentIndex + 1 : currentIndex;
+
+				list.splice(payload.index ?? list.length, 0, payload.defaultValue);
+
+				return merge(state, {
+					keyByPath: createKey(
+						payload.defaultValue,
+						formatName(payload.name, index),
+						mapKeys(state.keyByPath, (key) =>
+							updateListIndex(listPaths, key, adjustIndex),
+						),
+					),
+					touched: addItems(
+						mapItems(state.touched, (key) =>
+							updateListIndex(listPaths, key, adjustIndex),
+						),
+						[payload.name],
+					),
+					initialValue: modifyNestedData(
+						state.initialValue,
+						list,
+						payload.name,
+					),
+				});
 			}
+			case 'remove': {
+				const adjustIndex = (currentIndex: number) => {
+					if (payload.index === currentIndex) {
+						return null;
+					}
 
-			return payload.index < currentIndex ? currentIndex - 1 : currentIndex;
-		};
+					return payload.index < currentIndex ? currentIndex - 1 : currentIndex;
+				};
 
-		list.splice(payload.index, 1);
+				list.splice(payload.index, 1);
 
-		return merge(state, {
-			keyByPath: mapKeys(state.keyByPath, (key) =>
-				updateListIndex(listPaths, key, adjustIndex),
-			),
-			touched: addItems(
-				mapItems(state.touched, (key) =>
-					updateListIndex(listPaths, key, adjustIndex),
-				),
-				[payload.name],
-			),
-			initialValue: modifyNestedData(state.initialValue, list, payload.name),
-		});
-	},
-});
+				return merge(state, {
+					keyByPath: mapKeys(state.keyByPath, (key) =>
+						updateListIndex(listPaths, key, adjustIndex),
+					),
+					touched: addItems(
+						mapItems(state.touched, (key) =>
+							updateListIndex(listPaths, key, adjustIndex),
+						),
+						[payload.name],
+					),
+					initialValue: modifyNestedData(
+						state.initialValue,
+						list,
+						payload.name,
+					),
+				});
+			}
+			case 'reorder': {
+				const adjustIndex = (currentIndex: number) => {
+					if (payload.from === payload.to) {
+						return currentIndex;
+					}
 
-export const reorderControl = defineControl<{
-	name: string;
-	from: number;
-	to: number;
-}>({
-	onParse(value, payload) {
-		const data = getValue(value, payload.name) ?? [];
+					if (currentIndex === payload.from) {
+						return payload.to;
+					}
 
-		if (!Array.isArray(data)) {
-			throw new Error(
-				`Failed to reorder items; The value at "${payload.name}" is not an array`,
-			);
+					if (payload.from < payload.to) {
+						return currentIndex > payload.from && currentIndex <= payload.to
+							? currentIndex - 1
+							: currentIndex;
+					}
+
+					return currentIndex >= payload.to && currentIndex < payload.from
+						? currentIndex + 1
+						: currentIndex;
+				};
+
+				list.splice(payload.to, 0, ...list.splice(payload.from, 1));
+
+				return merge(state, {
+					keyByPath: mapKeys(state.keyByPath, (key) =>
+						updateListIndex(listPaths, key, adjustIndex),
+					),
+					touched: addItems(
+						mapItems(state.touched, (item) =>
+							updateListIndex(listPaths, item, adjustIndex),
+						),
+						[payload.name],
+					),
+					initialValue: modifyNestedData(
+						state.initialValue,
+						list,
+						payload.name,
+					),
+				});
+			}
 		}
-
-		const list = Array.from(data);
-
-		list.splice(payload.to, 0, ...list.splice(payload.from, 1));
-
-		return modifyNestedData(value, list, payload.name);
-	},
-	onSubmit(state, { result }) {
-		const payload = result.intent.payload;
-		const value = getValue(state.initialValue, payload.name) ?? [];
-
-		if (!Array.isArray(value)) {
-			throw new Error(
-				`Failed to insert value; The initialValue at "${payload.name}" is not an array`,
-			);
-		}
-
-		const list = Array.from(value);
-		const listPaths = getPaths(payload.name);
-		const adjustIndex = (currentIndex: number) => {
-			if (payload.from === payload.to) {
-				return currentIndex;
-			}
-
-			if (currentIndex === payload.from) {
-				return payload.to;
-			}
-
-			if (payload.from < payload.to) {
-				return currentIndex > payload.from && currentIndex <= payload.to
-					? currentIndex - 1
-					: currentIndex;
-			}
-
-			return currentIndex >= payload.to && currentIndex < payload.from
-				? currentIndex + 1
-				: currentIndex;
-		};
-
-		list.splice(payload.to, 0, ...list.splice(payload.from, 1));
-
-		return merge(state, {
-			keyByPath: mapKeys(state.keyByPath, (key) =>
-				updateListIndex(listPaths, key, adjustIndex),
-			),
-			touched: addItems(
-				mapItems(state.touched, (item) =>
-					updateListIndex(listPaths, item, adjustIndex),
-				),
-				[payload.name],
-			),
-			initialValue: modifyNestedData(state.initialValue, list, payload.name),
-		});
 	},
 });
 
@@ -1133,9 +1115,7 @@ export const controls = createFormControls({
 	validate: validateControl,
 	update: updateControl,
 	reset: resetControl,
-	insert: insertControl,
-	remove: removeControl,
-	reorder: reorderControl,
+	list: listControl,
 });
 
 export function createFormControls<
@@ -1277,9 +1257,6 @@ export type FieldMetadata<
 	ErrorShape = string[],
 > = Pretty<
 	{
-		// id: string;
-		// errorId: string;
-		// descriptionId: string;
 		key: string | undefined;
 		name: FieldName<Schema, FormSchema, ErrorShape>;
 		defaultValue: string | string[] | undefined;

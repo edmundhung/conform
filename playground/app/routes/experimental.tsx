@@ -149,8 +149,9 @@ export default function Example() {
 							<button
 								name={controls.intentName}
 								value={controls.serialize({
-									type: 'remove',
+									type: 'list',
 									payload: {
+										action: 'remove',
 										name: fields.tasks.name,
 										index,
 									},
@@ -163,8 +164,9 @@ export default function Example() {
 							<button
 								name={controls.intentName}
 								value={controls.serialize({
-									type: 'reorder',
+									type: 'list',
 									payload: {
+										action: 'reorder',
 										name: fields.tasks.name,
 										from: index,
 										to: 0,
@@ -181,8 +183,9 @@ export default function Example() {
 				<button
 					name={controls.intentName}
 					value={controls.serialize({
-						type: 'insert',
+						type: 'list',
 						payload: {
+							action: 'insert',
 							name: fields.tasks.name,
 							defaultValue: { title: 'Example', done: true },
 						},
