@@ -1,4 +1,5 @@
 import {
+	DependencyList,
 	RefCallback,
 	RefObject,
 	useCallback,
@@ -113,6 +114,7 @@ export function useFormData(
 export function useFormData<Value>(
 	formRef: RefObject<HTMLFormElement>,
 	select: (formData: FormData, currentValue: Value) => Value,
+	deps: DependencyList,
 ): Value | undefined;
 export function useFormData<Value>(
 	formRef: RefObject<HTMLFormElement>,
@@ -120,16 +122,17 @@ export function useFormData<Value>(
 		formData: FormData,
 		currentValue: Value | FormData | undefined,
 	) => Value,
+	deps?: DependencyList,
 ): Value | FormData | undefined {
 	const [value, setValue] = useState<Value | FormData>();
+	const selectFormData = useCallback(
+		select ?? ((formData: FormData) => formData),
+		deps ?? [],
+	);
 
 	useEffect(() => {
 		const updateFormValue = (formData: FormData) => {
-			if (typeof select !== 'function') {
-				setValue(formData);
-			} else {
-				setValue((currentValue) => select(formData, currentValue));
-			}
+			setValue((currentValue) => selectFormData(formData, currentValue));
 		};
 
 		const subscriber = getFormSubscriber();
@@ -151,7 +154,7 @@ export function useFormData<Value>(
 		return () => {
 			unsubscribe();
 		};
-	}, [formRef, select]);
+	}, [formRef, selectFormData]);
 
 	return value;
 }
@@ -274,7 +277,6 @@ export function useInput(initialValue?: string | string[]) {
 		| null
 		| undefined
 	>();
-	const observerRef = useRef<MutationObserver | null>(null);
 	const [value, setValue] = useState(initialValue);
 	const eventDispatched = useRef<Record<string, boolean>>({});
 
@@ -341,19 +343,6 @@ export function useInput(initialValue?: string | string[]) {
 		return {
 			register(element) {
 				inputRef.current = element;
-
-				if (!observerRef.current) {
-					return;
-				}
-
-				observerRef.current.disconnect();
-
-				if (element) {
-					observerRef.current.observe(element, {
-						attributes: true,
-						attributeFilter: ['data-conform'],
-					});
-				}
 			},
 			changed(value) {
 				const element = inputRef.current;
@@ -410,11 +399,11 @@ export function useInput(initialValue?: string | string[]) {
 }
 
 export type FormSubscription =
+	| { type: 'dom'; callback: (formElement: HTMLFormElement) => void }
 	| {
 			type: 'formData';
 			callback: (formElement: HTMLFormElement, formData: FormData) => void;
 	  }
-	| { type: 'dom'; callback: (formElement: HTMLFormElement) => void }
 	| {
 			type: 'input';
 			callback: (
@@ -560,10 +549,6 @@ export function createFormSubscriber() {
 					disconnect();
 				}
 			};
-		},
-		dispose() {
-			subscriptions.clear();
-			disconnect();
 		},
 	};
 }

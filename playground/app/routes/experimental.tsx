@@ -33,16 +33,16 @@ const schema = coerceZodFormData(
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = resolve(formData, controls);
-	const result = schema.safeParse(submission.value);
+	const parseResult = schema.safeParse(submission.value);
 
-	if (!result.success) {
-		const error = flattenZodErrors(result, submission.fields);
-		const formResult = report(submission, {
+	if (!parseResult.success) {
+		const error = flattenZodErrors(parseResult, submission.fields);
+		const result = report(submission, {
 			formError: error.formError,
 			fieldError: error.fieldError,
 		});
 
-		return formResult;
+		return result;
 	}
 
 	return report(submission, {
