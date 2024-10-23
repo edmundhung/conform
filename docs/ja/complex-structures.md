@@ -60,7 +60,7 @@ import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
 
 const schema = z.object({
-  todos: z.array(
+  tasks: z.array(
     z.object({
       title: z.string(),
       notes: z.string(),
