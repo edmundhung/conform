@@ -480,7 +480,7 @@ export function createFormSubscriber() {
 
 	function emitFormDataChange(
 		formElement: HTMLFormElement,
-		submitter?: HTMLElement | null,
+		submitter: HTMLElement | null = null,
 	) {
 		const formData = new FormData(formElement, submitter);
 
@@ -512,7 +512,8 @@ export function createFormSubscriber() {
 	function initialize() {
 		document.addEventListener('input', handleInput);
 		document.addEventListener('reset', handleReset);
-		document.addEventListener('submit', handleSubmit);
+		// Capture submit event during the capturing pharse to ensure that the submitter is available
+		document.addEventListener('submit', handleSubmit, true);
 		observer.observe(document.body, {
 			subtree: true,
 			childList: true,
@@ -524,7 +525,7 @@ export function createFormSubscriber() {
 	function disconnect() {
 		document.removeEventListener('input', handleInput);
 		document.removeEventListener('reset', handleReset);
-		document.removeEventListener('submit', handleSubmit);
+		document.removeEventListener('submit', handleSubmit, true);
 		observer.disconnect();
 	}
 

@@ -9,7 +9,6 @@ import {
 	getInput,
 	controls,
 	getFormMetadata,
-	isTouched,
 } from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
@@ -70,26 +69,26 @@ export default function Example() {
 			onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
 				const formData = getFormData(event);
 				const submission = resolve(formData, controls);
-				const result = schema.safeParse(submission.value);
+				const parseResult = schema.safeParse(submission.value);
 
-				if (!result.success || submission.intent) {
+				if (!parseResult.success || submission.intent) {
 					event.preventDefault();
 				}
 
-				const error = flattenZodErrors(result, submission.fields);
-				const formResult = report(submission, {
+				const error = flattenZodErrors(parseResult, submission.fields);
+				const result = report(submission, {
 					formError: error.formError,
 					fieldError: error.fieldError,
 				});
 
 				flushSync(() => {
-					update(formResult);
+					update(result);
 				});
 			}}
 			onInput={(event: React.FormEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (input && isTouched(state, input.name)) {
+				if (input && state.touchedFields.includes(input.name)) {
 					controls.dispatch(formRef.current, {
 						type: 'validate',
 						payload: {
@@ -101,7 +100,7 @@ export default function Example() {
 			onBlur={(event: React.FocusEvent<HTMLElement>) => {
 				const input = getInput(event.target, formRef.current);
 
-				if (input && !isTouched(state, input.name)) {
+				if (input && !state.touchedFields.includes(input.name)) {
 					controls.dispatch(formRef.current, {
 						type: 'validate',
 						payload: {

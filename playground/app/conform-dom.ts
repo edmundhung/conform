@@ -22,7 +22,7 @@ export type SubmissionResult<
 	type: 'client' | 'server';
 	fields: string[];
 	value: Record<string, FormValue<FormValueType>> | null;
-	error: FormError<ErrorShape>;
+	error: FormError<ErrorShape> | null;
 	intent: Intent;
 };
 
@@ -46,10 +46,10 @@ export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
 	serverError: FormError<ErrorShape> | null;
 	clientError: FormError<ErrorShape> | null;
-	keyByPath: Record<string, string>;
+	versionByBranch: Record<string, string>;
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
-	touched: string[];
+	touchedFields: string[];
 };
 
 export function isPlainObject(
@@ -104,7 +104,7 @@ export function serialize<Schema>(value: Schema): SerialziedValue<Schema> {
 	}
 }
 
-export function generateId(): string {
+export function generateVersion(): string {
 	return Math.floor(Date.now() * Math.random()).toString(36);
 }
 
@@ -113,15 +113,13 @@ export function generateId(): string {
  */
 export function flatten<Value>(
 	data: unknown,
-	options: {
-		select: (value: unknown) => Value;
-		prefix?: string;
-	},
+	select: (value: unknown) => Value,
+	prefix?: string,
 ): Record<string, NonNullable<Value>> {
 	const result: Record<string, NonNullable<Value>> = {};
 
 	function process(data: unknown, prefix: string) {
-		const value = options.select(data);
+		const value = select(data);
 
 		if (typeof value !== 'undefined' && value !== null) {
 			result[prefix] = value;
@@ -139,7 +137,7 @@ export function flatten<Value>(
 	}
 
 	if (data) {
-		process(data, options.prefix ?? '');
+		process(data, prefix ?? '');
 	}
 
 	return result;
@@ -160,13 +158,7 @@ export function getPaths(name: string | undefined): Array<string | number> {
 	return name
 		.split(/\.|(\[\d*\])/)
 		.reduce<Array<string | number>>((result, segment) => {
-			if (
-				typeof segment !== 'undefined' &&
-				segment !== '' &&
-				segment !== '__proto__' &&
-				segment !== 'constructor' &&
-				segment !== 'prototype'
-			) {
+			if (typeof segment !== 'undefined' && segment !== '') {
 				if (segment.startsWith('[') && segment.endsWith(']')) {
 					const index = segment.slice(1, -1);
 
@@ -226,30 +218,34 @@ export function formatName(prefix: string | undefined, path?: string | number) {
 		: prefix ?? '';
 }
 
-export function createKey(
+export function updateVersionByBranch(
+	currentVersionByBranch: Record<string, string>,
 	defaultValue: unknown,
 	prefix: string = '',
-	currentKey: Record<string, string> = {},
 ): Record<string, string> {
-	const initialKey = prefix
-		? mapKeys(currentKey, (key) => (!isPrefix(key, prefix) ? key : null))
-		: {};
-	const result = Object.entries(
-		flatten(defaultValue, {
-			select(value) {
-				return Array.isArray(value) ? value : null;
-			},
-			prefix,
-		}),
-	).reduce<Record<string, string>>((result, [key, value]) => {
-		for (let i = 0; i < value.length; i++) {
-			result[formatName(key, i)] = generateId();
-		}
+	const arrayByName = flatten(
+		defaultValue,
+		(value) => (Array.isArray(value) ? value : null),
+		prefix,
+	);
+	const result = Object.entries(arrayByName).reduce<Record<string, string>>(
+		(result, [name, array]) => {
+			const paths = getPaths(name);
 
-		return result;
-	}, initialKey);
+			for (let i = 0; i < array.length; i++) {
+				result[formatPaths(paths.concat(i))] = generateVersion();
+			}
 
-	result[prefix] = generateId();
+			return result;
+		},
+		prefix
+			? mapKeys(currentVersionByBranch, (key) =>
+					!isPrefix(key, prefix) ? key : null,
+				)
+			: currentVersionByBranch,
+	);
+
+	result[prefix] = generateVersion();
 
 	return result;
 }
@@ -322,12 +318,40 @@ export function deepEqual<Value>(prev: Value, next: Value): boolean {
 }
 
 /**
+ * As identity function that returns the input value
+ */
+function identiy<Value>(value: Value): Value {
+	return value;
+}
+
+/**
+ * Create a shallow clone of the value
+ * This allows us to create a new object without mutating the original object
+ */
+function shallowClone<Value>(value: Value): Value {
+	if (Array.isArray(value)) {
+		return value.slice() as Value;
+	} else if (isPlainObject(value)) {
+		return { ...value } as Value;
+	}
+
+	if (value && typeof value === 'object') {
+		throw new Error(`${value} is not supported`);
+	}
+
+	return value;
+}
+
+/**
  * Retrive the value from a target object by following the paths
  */
-export function getValue(target: unknown, name: string): unknown {
+export function getValue(
+	target: unknown,
+	paths: Array<string | number>,
+): unknown {
 	let pointer = target;
 
-	for (const path of getPaths(name)) {
+	for (const path of paths) {
 		if (typeof pointer === 'undefined' || pointer == null) {
 			break;
 		}
@@ -350,74 +374,67 @@ export function getValue(target: unknown, name: string): unknown {
 	return pointer;
 }
 
-/**
- * Assign a value to a target object by following the paths
- */
-export function setValue<Target extends Record<string, any>>(
-	target: Target,
-	name: string,
-	value: unknown | ((currentValue?: unknown) => unknown),
-	mutate?: boolean,
-): Target {
-	if (name === '') {
-		if (mutate) {
-			throw new Error('Cannot mutate the object root');
-		}
-
-		return typeof value === 'function' ? value(target) : value;
+export function setValue<Data extends Record<string, any>>(
+	data: Data,
+	paths: Array<string | number>,
+	value: unknown | ((currentValue: unknown) => unknown),
+	handle: <Value>(value: Value) => Value = identiy,
+): Data {
+	if (paths.length === 0) {
+		throw new Error('Setting value to the object root is not supported');
 	}
 
-	const paths = getPaths(name);
-	const length = paths.length;
-	const lastIndex = length - 1;
-	const result = mutate ? target : Object.assign({}, target);
+	// Clone the paths to prevent mutation
+	const remainingPaths = paths.slice();
+	const result = handle(data);
 
-	let index = -1;
-	let pointer: any = result;
+	let target: any = result;
 
-	while (pointer !== null && ++index < length) {
-		const key = paths[index] as string | number;
-		const nextKey = paths[index + 1];
-		const newValue =
-			index != lastIndex
-				? Object.prototype.hasOwnProperty.call(pointer, key) &&
-					pointer[key] !== null
-					? mutate
-						? pointer[key]
-						: Array.isArray(pointer[key])
-							? Array.from(pointer[key])
-							: Object.assign({}, pointer[key])
-					: typeof nextKey === 'number'
-						? []
-						: {}
-				: typeof value === 'function'
-					? value(pointer[key])
-					: value;
+	while (remainingPaths.length > 0) {
+		const path = remainingPaths.shift();
+		const nextPath = remainingPaths[0];
 
-		pointer[key] = newValue;
-		pointer = pointer[key];
+		if (typeof path === 'undefined' || path in Object.prototype) {
+			break;
+		}
+
+		const nextValue = getValue(target, [path]);
+
+		if (typeof nextPath === 'undefined') {
+			target[path] = typeof value === 'function' ? value(nextValue) : value;
+		} else {
+			target[path] = handle(
+				nextValue ?? (typeof nextPath === 'number' ? [] : {}),
+			);
+		}
+
+		target = target[path];
 	}
 
 	return result;
 }
 
-export function modifyNestedData<Value extends Record<string, any>>(
-	value: Value,
-	data: unknown,
+export function modify<Data extends Record<string, any>>(
+	data: Data,
 	name: string,
-): Value {
-	const currentData = getValue(value, name);
+	value: unknown,
+): Data {
+	const paths = getPaths(name);
+	const currentData = getValue(data, paths);
 
-	if (deepEqual(currentData, data)) {
-		return value;
+	if (deepEqual(currentData, value)) {
+		return data;
 	}
 
-	return setValue(value, name, data);
+	return setValue(data, paths, value, shallowClone);
 }
 
+/**
+ * Create a copy of the object with the updated fields if there is any change
+ */
 export function merge<State extends Record<string, any>>(
 	state: State,
-	update: Record<string, unknown>, // FIXME: This should be Partial<State>
+	update: Partial<State>,
 ): State {
 	if (Object.entries(update).every(([key, value]) => state[key] === value)) {
 		return state;
@@ -426,17 +443,18 @@ export function merge<State extends Record<string, any>>(
 	return Object.assign({}, state, update);
 }
 
-export function isTouched(
-	state: Pick<FormState<unknown, unknown>, 'touched'>,
-	name: string,
-) {
-	const result =
-		// If field / fieldset is touched
-		state.touched.includes(name) ||
-		// If child field is touched
-		state.touched.some((field) => isPrefix(field, name));
+/**
+ * Determine if the field is touched
+ *
+ * This checks if the field is in the list of touched fields,
+ * or if there is any child field that is touched, i.e. form / fieldset
+ */
+export function isTouched(touchedFields: string[], name = '') {
+	if (touchedFields.includes(name)) {
+		return true;
+	}
 
-	return result;
+	return touchedFields.some((field) => isPrefix(field, name));
 }
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
@@ -482,11 +500,16 @@ export function report<Intent, ErrorShape>(
 			? // TODO: remove all files from submission.value
 				submission.value
 			: submission.value,
-		error: {
-			formError: options?.formError ?? null,
-			fieldError: options?.fieldError ?? {},
-		},
+		error:
+			options?.formError || options?.fieldError
+				? {
+						formError: options?.formError ?? null,
+						fieldError: options?.fieldError ?? {},
+					}
+				: null,
 		fields: submission.fields.concat(
+			// Sometimes we couldn't find out all the fields from the submission, e.g. unchecked checkboxes
+			// But the schema might have an error on those fields, so we need to include them
 			Object.keys(options?.fieldError ?? {}).filter((key) =>
 				submission.fields.every((field) => !isPrefix(field, key)),
 			),
@@ -528,21 +551,28 @@ export function resolve<Intent = string>(
 	},
 ): Submission<Intent | string | null> {
 	const initialValue: Record<string, any> = {};
-	const submission: Submission<Intent | string | null> = {
-		value: initialValue,
-		fields: [],
-		intent: null,
-	};
+	const fields = new Set<string>();
 
 	for (const [name, value] of formData.entries()) {
 		if (name !== options?.intentName) {
-			setValue(initialValue, name, value, true);
-			submission.fields.push(name);
+			setValue(initialValue, getPaths(name), (currentValue: unknown) => {
+				if (typeof currentValue === 'undefined') {
+					return value;
+				} else if (Array.isArray(currentValue)) {
+					return currentValue.concat(value);
+				} else {
+					return [currentValue, value];
+				}
+			});
+			fields.add(name);
 		}
 	}
 
-	// Deduplicate fields
-	submission.fields = Array.from(new Set(submission.fields));
+	const submission: Submission<Intent | string | null> = {
+		value: initialValue,
+		fields: Array.from(fields),
+		intent: null,
+	};
 
 	if (options) {
 		const intentValue = formData.get(options.intentName);
@@ -565,9 +595,9 @@ export function handleFormSubmit<Schema, ErrorShape, Intent>(
 	state: FormState<Schema, ErrorShape>,
 	result: SubmissionResult<Intent | null, ErrorShape>,
 ): FormState<Schema, ErrorShape> {
-	return Object.assign({}, state, {
-		touched: deepEqual(state.touched, result.fields)
-			? state.touched
+	return merge(state, {
+		touchedFields: deepEqual(state.touchedFields, result.fields)
+			? state.touchedFields
 			: result.fields,
 	});
 }
@@ -582,7 +612,7 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 	controls?: FormControls<Intent>;
 }): FormState<Schema, ErrorShape> {
 	let state: FormState<Schema, ErrorShape> = {
-		keyByPath: createKey(defaultValue),
+		versionByBranch: updateVersionByBranch({}, defaultValue),
 		defaultValue: defaultValue ?? null,
 		initialValue: result?.value ?? defaultValue ?? {},
 		submittedValue: result?.value ?? null,
@@ -590,7 +620,7 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 			result?.type === 'server' && result.error ? result.error : null,
 		clientError:
 			result?.type === 'client' && result.error ? result.error : null,
-		touched: [],
+		touchedFields: [],
 	};
 
 	if (result) {
@@ -728,8 +758,9 @@ export function configure(
 			element instanceof HTMLSelectElement
 		) {
 			const prev = element.dataset.conform;
-			const next = getKey(element.name, state);
-			const defaultValue = getValue(state.initialValue, element.name);
+			const next = generateKey(state.versionByBranch, element.name);
+			const paths = getPaths(element.name);
+			const defaultValue = getValue(state.initialValue, paths);
 
 			if (typeof prev === 'undefined' || prev !== next) {
 				element.dataset.conform = next;
@@ -774,24 +805,23 @@ export function getInput(
 	return target;
 }
 
-export function getKey(
+export function generateKey(
+	versionByBranch: Record<string, string>,
 	name: string,
-	state: Pick<FormState<unknown, unknown>, 'keyByPath'>,
 ): string | undefined {
-	const currentKey = state.keyByPath[name];
 	const paths = getPaths(name);
+	let key = versionByBranch[name];
 
-	if (paths.length === 0) {
-		return currentKey;
+	if (paths.length > 0) {
+		const parentKey = generateKey(
+			versionByBranch,
+			formatPaths(paths.slice(0, -1)),
+		);
+
+		key = `${parentKey}/${key ?? paths.at(-1)}`;
 	}
 
-	const parentKey = getKey(formatPaths(paths.slice(0, -1)), state);
-
-	if (typeof parentKey === 'undefined') {
-		return currentKey;
-	}
-
-	return `${parentKey}/${currentKey ?? paths.at(-1)}`;
+	return key;
 }
 
 export const validateControl = defineControl<{ name?: string }>({
@@ -804,23 +834,21 @@ export const validateControl = defineControl<{ name?: string }>({
 	onSubmit(state, { result }) {
 		const name = result.intent.payload.name ?? '';
 
-		state.touched;
-
 		if (name === '') {
 			return merge(state, {
-				touched: deepEqual(state.touched, result.fields)
-					? state.touched
+				touchedFields: deepEqual(state.touchedFields, result.fields)
+					? state.touchedFields
 					: result.fields,
 			});
 		}
 
-		if (state.touched.includes(name)) {
+		if (state.touchedFields.includes(name)) {
 			return state;
 		}
 
 		return {
 			...state,
-			touched: state.touched.concat(name),
+			touchedFields: state.touchedFields.concat(name),
 		};
 	},
 });
@@ -831,10 +859,10 @@ export const updateControl = defineControl<{
 	value?: any;
 }>({
 	onParse(value, payload) {
-		return modifyNestedData(
+		return modify(
 			value,
-			payload.value,
 			formatName(payload.name, payload.index),
+			payload.value,
 		);
 	},
 	onSubmit(state, { result }) {
@@ -842,8 +870,12 @@ export const updateControl = defineControl<{
 		const name = formatName(payload.name, payload.index);
 
 		return merge(state, {
-			keyByPath: createKey(payload.value, name, state.keyByPath),
-			initialValue: modifyNestedData(state.initialValue, payload.value, name),
+			versionByBranch: updateVersionByBranch(
+				state.versionByBranch,
+				payload.value,
+				name,
+			),
+			initialValue: modify(state.initialValue, name, payload.value),
 		});
 	},
 });
@@ -969,7 +1001,8 @@ export const listControl = defineControl<
 	  }
 >({
 	onParse(value, payload) {
-		const data = getValue(value, payload.name) ?? [];
+		const paths = getPaths(payload.name);
+		const data = getValue(value, paths) ?? [];
 
 		if (!Array.isArray(data)) {
 			throw new Error(
@@ -995,11 +1028,12 @@ export const listControl = defineControl<
 			}
 		}
 
-		return modifyNestedData(value, list, payload.name);
+		return modify(value, payload.name, list);
 	},
 	onSubmit(state, { result }) {
 		const payload = result.intent.payload;
-		const data = getValue(state.initialValue, payload.name) ?? [];
+		const paths = getPaths(payload.name);
+		const data = getValue(state.initialValue, paths) ?? [];
 
 		if (!Array.isArray(data)) {
 			throw new Error(
@@ -1019,24 +1053,20 @@ export const listControl = defineControl<
 				list.splice(payload.index ?? list.length, 0, payload.defaultValue);
 
 				return merge(state, {
-					keyByPath: createKey(
-						payload.defaultValue,
-						formatName(payload.name, index),
-						mapKeys(state.keyByPath, (key) =>
+					versionByBranch: updateVersionByBranch(
+						mapKeys(state.versionByBranch, (key) =>
 							updateListIndex(listPaths, key, adjustIndex),
 						),
+						payload.defaultValue,
+						formatName(payload.name, index),
 					),
-					touched: addItems(
-						mapItems(state.touched, (key) =>
+					touchedFields: addItems(
+						mapItems(state.touchedFields, (key) =>
 							updateListIndex(listPaths, key, adjustIndex),
 						),
 						[payload.name],
 					),
-					initialValue: modifyNestedData(
-						state.initialValue,
-						list,
-						payload.name,
-					),
+					initialValue: modify(state.initialValue, payload.name, list),
 				});
 			}
 			case 'remove': {
@@ -1051,20 +1081,16 @@ export const listControl = defineControl<
 				list.splice(payload.index, 1);
 
 				return merge(state, {
-					keyByPath: mapKeys(state.keyByPath, (key) =>
+					versionByBranch: mapKeys(state.versionByBranch, (key) =>
 						updateListIndex(listPaths, key, adjustIndex),
 					),
-					touched: addItems(
-						mapItems(state.touched, (key) =>
+					touchedFields: addItems(
+						mapItems(state.touchedFields, (key) =>
 							updateListIndex(listPaths, key, adjustIndex),
 						),
 						[payload.name],
 					),
-					initialValue: modifyNestedData(
-						state.initialValue,
-						list,
-						payload.name,
-					),
+					initialValue: modify(state.initialValue, payload.name, list),
 				});
 			}
 			case 'reorder': {
@@ -1091,20 +1117,16 @@ export const listControl = defineControl<
 				list.splice(payload.to, 0, ...list.splice(payload.from, 1));
 
 				return merge(state, {
-					keyByPath: mapKeys(state.keyByPath, (key) =>
+					versionByBranch: mapKeys(state.versionByBranch, (key) =>
 						updateListIndex(listPaths, key, adjustIndex),
 					),
-					touched: addItems(
-						mapItems(state.touched, (item) =>
+					touchedFields: addItems(
+						mapItems(state.touchedFields, (item) =>
 							updateListIndex(listPaths, item, adjustIndex),
 						),
 						[payload.name],
 					),
-					initialValue: modifyNestedData(
-						state.initialValue,
-						list,
-						payload.name,
-					),
+					initialValue: modify(state.initialValue, payload.name, list),
 				});
 			}
 		}
@@ -1322,11 +1344,12 @@ export function getFormMetadata<
 		return {
 			name,
 			get key() {
-				return getKey(name, state);
+				return generateKey(state.versionByBranch, name);
 			},
 			get defaultValue() {
 				const serializedValue = serialize(state.initialValue);
-				const value = getValue(serializedValue, name);
+				const paths = getPaths(name);
+				const value = getValue(serializedValue, paths);
 
 				if (
 					typeof value !== 'string' &&
@@ -1339,12 +1362,12 @@ export function getFormMetadata<
 				return value;
 			},
 			get touched() {
-				return isTouched(state, name);
+				return isTouched(state.touchedFields, name);
 			},
 			get error() {
 				const result = name ? error?.fieldError[name] : error?.formError;
 
-				if (!result || !isTouched(state, name)) {
+				if (!result || !isTouched(state.touchedFields, name)) {
 					return;
 				}
 
@@ -1360,8 +1383,8 @@ export function getFormMetadata<
 								return Object.assign(createMetadata(fieldName), {
 									get getFieldList() {
 										return () => {
-											const value =
-												getValue(state.initialValue, fieldName) ?? [];
+											const paths = getPaths(fieldName);
+											const value = getValue(state.initialValue, paths) ?? [];
 
 											if (!Array.isArray(value)) {
 												throw new Error(
