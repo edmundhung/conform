@@ -173,6 +173,14 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
+	 * Define if the input could be updated by conform.
+	 * Default to inputs that are configured using the `getInputProps`, `getSelectProps` or `getTextareaProps` helpers.
+	 */
+	shouldManageInput?: (
+		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	) => boolean;
+
+	/**
 	 * Define if conform should considered the field for dirty state.
 	 * e.g. Excluding form fields that are not managed by Conform, such as CSRF token
 	 */
@@ -230,6 +238,7 @@ export type FormContext<
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
+	updateFormElement(state: FormState<FormError>): void;
 	observe(): () => void;
 	subscribe(
 		callback: () => void,
@@ -276,12 +285,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		value: initialValue,
 		constraint: options.constraint ?? {},
 		validated: lastResult?.state?.validated ?? {},
-		key: !initialized
-			? getDefaultKey(defaultValue)
-			: {
-					'': generateId(),
-					...getDefaultKey(defaultValue),
-				},
+		key: getDefaultKey(defaultValue),
 		// The `lastResult` should comes from the server which we won't expect the error to be null
 		// We can consider adding a warning if it happens
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
@@ -298,15 +302,20 @@ function getDefaultKey(
 ): Record<string, string> {
 	return Object.entries(flatten(defaultValue, { prefix })).reduce<
 		Record<string, string>
-	>((result, [key, value]) => {
-		if (Array.isArray(value)) {
-			for (let i = 0; i < value.length; i++) {
-				result[formatName(key, i)] = generateId();
+	>(
+		(result, [key, value]) => {
+			if (Array.isArray(value)) {
+				for (let i = 0; i < value.length; i++) {
+					result[formatName(key, i)] = generateId();
+				}
 			}
-		}
 
-		return result;
-	}, {});
+			return result;
+		},
+		{
+			[prefix ?? '']: generateId(),
+		},
+	);
 }
 
 function setFieldsValidated<Error>(
@@ -438,10 +447,8 @@ function updateValue<Error>(
 	if (name === '') {
 		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
-		meta.key = {
-			...getDefaultKey(value as Record<string, unknown>),
-			'': generateId(),
-		};
+		meta.key = getDefaultKey(value as Record<string, unknown>);
+
 		return;
 	}
 
@@ -1038,6 +1045,81 @@ export function createFormContext<
 		});
 	}
 
+	function updateFormElement(stateSnapshot: FormState<FormError>) {
+		const formElement = getFormElement();
+
+		if (!formElement) {
+			return;
+		}
+
+		// Default to manage inputs that is configured using the `getInputProps` helpers
+		// The data attribute is just an implementation detail and should not be used by the user
+		// We will likely make this a opt-out feature in v2
+		const defaultShouldManageInput = (
+			element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+		) => typeof element.dataset.conform !== 'undefined';
+		const shouldManageInput =
+			latestOptions.shouldManageInput ?? defaultShouldManageInput;
+		const getAll = (value: unknown) => {
+			if (typeof value === 'string') {
+				return [value];
+			}
+
+			if (
+				Array.isArray(value) &&
+				value.every((item) => typeof item === 'string')
+			) {
+				return value;
+			}
+
+			return undefined;
+		};
+		const get = (value: unknown) => getAll(value)?.[0];
+
+		for (const element of formElement.elements) {
+			if (
+				element instanceof HTMLInputElement ||
+				element instanceof HTMLTextAreaElement ||
+				element instanceof HTMLSelectElement
+			) {
+				if (
+					element.dataset.conform === 'managed' ||
+					element.type === 'submit' ||
+					element.type === 'reset' ||
+					element.type === 'button' ||
+					!shouldManageInput(element)
+				) {
+					// Skip buttons and fields managed by useInputControl()
+					continue;
+				}
+
+				const prev = element.dataset.conform;
+				const next = stateSnapshot.key[element.name];
+				const defaultValue = stateSnapshot.initialValue[element.name];
+
+				if (typeof prev === 'undefined' || prev !== next) {
+					element.dataset.conform = next;
+
+					if ('options' in element) {
+						const value = getAll(defaultValue) ?? [];
+
+						for (const option of element.options) {
+							option.selected = value.includes(option.value);
+						}
+					} else if (
+						'checked' in element &&
+						(element.type === 'checkbox' || element.type === 'radio')
+					) {
+						element.checked =
+							getAll(defaultValue)?.includes(element.value) ?? false;
+					} else {
+						element.value = get(defaultValue) ?? '';
+					}
+				}
+			}
+		}
+	}
+
 	function observe() {
 		const observer = new MutationObserver((mutations) => {
 			const form = getFormElement();
@@ -1061,6 +1143,7 @@ export function createFormContext<
 
 					if (element?.form === form) {
 						updateFormValue(form);
+						updateFormElement(state);
 						return;
 					}
 				}
@@ -1094,6 +1177,7 @@ export function createFormContext<
 		insert: createFormControl('insert'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),
+		updateFormElement,
 		subscribe,
 		getState,
 		getSerializedState,

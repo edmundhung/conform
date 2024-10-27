@@ -91,10 +91,20 @@ export function useForm<
 		context.onUpdate({ ...formConfig, formId });
 	});
 
-	const subjectRef = useSubjectRef();
+	const subjectRef = useSubjectRef({
+		key: {
+			// Subscribe to all key changes so it will re-render and
+			// update the field value as soon as the DOM is updated
+			prefix: [''],
+		},
+	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+
+	useEffect(() => {
+		context.updateFormElement(stateSnapshot);
+	}, [context, stateSnapshot]);
 
 	return [form, form.getFieldset()];
 }

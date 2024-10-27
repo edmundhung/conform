@@ -35,7 +35,10 @@ function getProps(metadata: FieldMetadata<any>) {
 describe('conform-react', () => {
 	test('getInputProps', () => {
 		const metadata = createFieldMetadata();
-		const props = getProps(metadata);
+		const props = {
+			'data-conform': '',
+			...getProps(metadata),
+		};
 
 		expect(
 			getInputProps(
@@ -159,7 +162,10 @@ describe('conform-react', () => {
 
 	test('getTextareaProps', () => {
 		const metadata = createFieldMetadata();
-		const props = getProps(metadata);
+		const props = {
+			'data-conform': '',
+			...getProps(metadata),
+		};
 
 		expect(getTextareaProps(metadata)).toEqual(props);
 		expect(
@@ -229,7 +235,10 @@ describe('conform-react', () => {
 
 	test('getSelectProps', () => {
 		const metadata = createFieldMetadata();
-		const props = getProps(metadata);
+		const props = {
+			'data-conform': '',
+			...getProps(metadata),
+		};
 
 		expect(getSelectProps(metadata)).toEqual(props);
 		expect(
