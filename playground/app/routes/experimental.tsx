@@ -4,11 +4,17 @@ import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import { useRef } from 'react';
 import {
+	type FormIntent,
 	resolve,
 	report,
 	getInput,
-	controls,
+	combineFormControls,
+	validateControl,
+	resetControl,
+	updateControl,
+	listControl,
 	getFormMetadata,
+	deserializeIntent,
 } from '~/conform-dom';
 import { getFormData, useFormState } from '~/conform-react';
 import { flushSync } from 'react-dom';
@@ -29,9 +35,30 @@ const schema = coerceZodFormData(
 	}),
 );
 
+const control = combineFormControls([
+	validateControl,
+	resetControl,
+	updateControl,
+	listControl,
+]);
+
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = resolve(formData, controls);
+	const submission = resolve(formData, {
+		intentName: 'intent',
+		parseIntent(value) {
+			const intent = deserializeIntent(value);
+
+			if (control.isValid(intent)) {
+				return intent;
+			}
+
+			return null;
+		},
+		updateValue(submittedValue, intent) {
+			return control.updateValue(submittedValue, intent);
+		},
+	});
 	const parseResult = schema.safeParse(submission.value);
 
 	if (!parseResult.success) {
@@ -52,9 +79,13 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Example() {
 	const result = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
-	const [state, update] = useFormState<z.input<typeof schema>, string[], any>({
+	const { state, update, intent } = useFormState<
+		z.infer<typeof schema>,
+		string[],
+		FormIntent<typeof control>
+	>({
 		result,
-		controls,
+		control,
 		formRef,
 	});
 	const form = getFormMetadata(state);
@@ -68,7 +99,21 @@ export default function Example() {
 			ref={formRef}
 			onSubmit={(event: React.FormEvent<HTMLFormElement>) => {
 				const formData = getFormData(event);
-				const submission = resolve(formData, controls);
+				const submission = resolve(formData, {
+					intentName: 'intent',
+					parseIntent(value) {
+						const intent = deserializeIntent(value);
+
+						if (control.isValid(intent)) {
+							return intent;
+						}
+
+						return null;
+					},
+					updateValue(submittedValue, intent) {
+						return control.updateValue(submittedValue, intent);
+					},
+				});
 				const parseResult = schema.safeParse(submission.value);
 
 				if (!parseResult.success || submission.intent) {
@@ -89,7 +134,7 @@ export default function Example() {
 				const input = getInput(event.target, formRef.current);
 
 				if (input && state.touchedFields.includes(input.name)) {
-					controls.dispatch(formRef.current, {
+					intent.submit({
 						type: 'validate',
 						payload: {
 							name: input.name,
@@ -101,7 +146,7 @@ export default function Example() {
 				const input = getInput(event.target, formRef.current);
 
 				if (input && !state.touchedFields.includes(input.name)) {
-					controls.dispatch(formRef.current, {
+					intent.submit({
 						type: 'validate',
 						payload: {
 							name: input.name,
@@ -146,11 +191,10 @@ export default function Example() {
 						<div>{task.done.error}</div>
 						<div>
 							<button
-								name={controls.intentName}
-								value={controls.serialize({
-									type: 'list',
+								name={intent.name}
+								value={intent.serialize({
+									type: 'remove',
 									payload: {
-										action: 'remove',
 										name: fields.tasks.name,
 										index,
 									},
@@ -161,11 +205,10 @@ export default function Example() {
 						</div>
 						<div>
 							<button
-								name={controls.intentName}
-								value={controls.serialize({
-									type: 'list',
+								name={intent.name}
+								value={intent.serialize({
+									type: 'reorder',
 									payload: {
-										action: 'reorder',
 										name: fields.tasks.name,
 										from: index,
 										to: 0,
@@ -180,11 +223,10 @@ export default function Example() {
 			})}
 			<div>
 				<button
-					name={controls.intentName}
-					value={controls.serialize({
-						type: 'list',
+					name={intent.name}
+					value={intent.serialize({
+						type: 'insert',
 						payload: {
-							action: 'insert',
 							name: fields.tasks.name,
 							defaultValue: { title: 'Example', done: true },
 						},
@@ -198,8 +240,8 @@ export default function Example() {
 			</div>
 			<div>
 				<button
-					name={controls.intentName}
-					value={controls.serialize({
+					name={intent.name}
+					value={intent.serialize({
 						type: 'update',
 						payload: { name: fields.title.name, value: 'Test' },
 					})}
@@ -212,8 +254,8 @@ export default function Example() {
 			</div>
 			<div>
 				<button
-					name={controls.intentName}
-					value={controls.serialize({
+					name={intent.name}
+					value={intent.serialize({
 						type: 'reset',
 					})}
 				>

@@ -11,11 +11,14 @@ import {
 import {
 	type SubmissionResult,
 	type DefaultValue,
-	type FormControls,
+	type FormControl,
+	type BaseIntent,
 	deepEqual,
 	configure,
 	initializeFormState,
 	updateFormState,
+	requestControl,
+	serializeIntent,
 } from './conform-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
@@ -25,13 +28,19 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	return formData;
 }
 
-export function useFormState<Schema, ErrorShape, Intent>(options: {
+export function useFormState<
+	Schema,
+	ErrorShape,
+	Intent extends BaseIntent,
+>(options: {
 	formRef?: RefObject<HTMLFormElement>;
-	controls?: FormControls<Intent>;
+	control?: FormControl<Intent>;
 	result?: SubmissionResult<Intent | null, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
+	intentName?: string;
 }) {
 	const [state, setState] = useState(() => initializeFormState(options));
+	const intentName = options.intentName ?? '__intent__';
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(options.result);
 	const lastStateRef = useRef(state);
@@ -45,7 +54,7 @@ export function useFormState<Schema, ErrorShape, Intent>(options: {
 			setState((state) =>
 				updateFormState(state, {
 					defaultValue: optionsRef.current.defaultValue,
-					controls: optionsRef.current.controls,
+					control: optionsRef.current.control,
 					result,
 				}),
 			);
@@ -82,7 +91,23 @@ export function useFormState<Schema, ErrorShape, Intent>(options: {
 		configure(options.formRef?.current, state);
 	}, [options.formRef, state]);
 
-	return [state, update] as const;
+	return {
+		state,
+		update,
+		intent: {
+			name: intentName,
+			submit(intent: Intent) {
+				requestControl(
+					options.formRef?.current,
+					intentName,
+					serializeIntent(intent),
+				);
+			},
+			serialize(intent: Intent) {
+				return serializeIntent(intent);
+			},
+		},
+	};
 }
 
 export function useRefQuery<Type>(query: () => Type | null): RefObject<Type> {

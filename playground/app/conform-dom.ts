@@ -250,26 +250,6 @@ export function updateVersionByBranch(
 	return result;
 }
 
-export type SubmissionIntent<Payload, Type = string> = undefined extends Payload
-	? { type: Type; payload?: Payload }
-	: { type: Type; payload: Payload };
-
-export type FormControl<Payload> = {
-	serialize(payload: Payload): string;
-	deserialize(value: string): Payload;
-	onParse?(
-		value: Record<string, unknown>,
-		payload: Payload,
-	): Record<string, unknown> | null;
-	onSubmit<Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		context: {
-			result: SubmissionResult<SubmissionIntent<Payload>, ErrorShape>;
-			reset: () => FormState<Schema, ErrorShape>;
-		},
-	): FormState<Schema, ErrorShape>;
-};
-
 export function deepEqual<Value>(prev: Value, next: Value): boolean {
 	if (prev === next) {
 		return true;
@@ -459,17 +439,6 @@ export function isTouched(touchedFields: string[], name = '') {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export type FormIntent<Controls extends Record<string, FormControl<any>>> =
-	Pretty<
-		{
-			[Type in keyof Controls]: Controls[Type] extends FormControl<
-				infer Payload
-			>
-				? SubmissionIntent<Payload, Type>
-				: never;
-		}[Extract<keyof Controls, string>]
-	>;
-
 export function report<Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options: {
@@ -522,32 +491,33 @@ export function resolve(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName: string;
+		parseIntent?: undefined;
 		updateValue?(
-			submittedValue: Record<string, any>,
+			submittedValue: Record<string, FormValue>,
 			intent: string,
-		): Record<string, any> | null;
+		): Record<string, FormValue> | null;
 	},
 ): Submission<string | null>;
-export function resolve<Intent = string>(
+export function resolve<Intent>(
 	formData: FormData | URLSearchParams,
-	options?: {
+	options: {
 		intentName: string;
 		parseIntent(intentValue: string): Intent | null;
 		updateValue?(
-			submittedValue: Record<string, any>,
+			submittedValue: Record<string, FormValue>,
 			intent: Intent,
-		): Record<string, any> | null;
+		): Record<string, FormValue> | null;
 	},
 ): Submission<Intent | null>;
-export function resolve<Intent = string>(
+export function resolve<Intent>(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName: string;
-		parseIntent?(intentValue: string): Intent | null;
+		parseIntent?(intentValue: string): Intent | string | null;
 		updateValue?(
-			submittedValue: Record<string, any>,
+			submittedValue: Record<string, FormValue>,
 			intent: Intent | string,
-		): Record<string, any> | null;
+		): Record<string, FormValue> | null;
 	},
 ): Submission<Intent | string | null> {
 	const initialValue: Record<string, any> = {};
@@ -602,14 +572,18 @@ export function handleFormSubmit<Schema, ErrorShape, Intent>(
 	});
 }
 
-export function initializeFormState<Schema, ErrorShape, Intent>({
+export function initializeFormState<
+	Schema,
+	ErrorShape,
+	Intent extends BaseIntent,
+>({
 	defaultValue,
 	result,
-	controls,
+	control,
 }: {
 	defaultValue?: DefaultValue<Schema>;
 	result?: SubmissionResult<Intent | null, ErrorShape>;
-	controls?: FormControls<Intent>;
+	control?: FormControl<Intent>;
 }): FormState<Schema, ErrorShape> {
 	let state: FormState<Schema, ErrorShape> = {
 		versionByBranch: updateVersionByBranch({}, defaultValue),
@@ -624,17 +598,11 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 	};
 
 	if (result) {
-		if (result.intent && controls) {
-			state = controls.onSubmit(
-				state,
-				{
-					...result,
-					intent: result.intent,
-				},
-				{
-					reset: () => initializeFormState({ defaultValue, controls }),
-				},
-			);
+		if (result.intent && control) {
+			state = control.onSubmit(state, {
+				result: Object.assign({}, result, { intent: result.intent }),
+				reset: () => initializeFormState({ defaultValue, control }),
+			});
 		} else {
 			state = handleFormSubmit(state, result);
 		}
@@ -643,16 +611,16 @@ export function initializeFormState<Schema, ErrorShape, Intent>({
 	return state;
 }
 
-export function updateFormState<Schema, ErrorShape, Intent>(
+export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 	state: FormState<Schema, ErrorShape>,
 	{
 		result,
 		defaultValue,
-		controls,
+		control,
 	}: {
 		result: SubmissionResult<Intent | null, ErrorShape>;
 		defaultValue?: DefaultValue<Schema>;
-		controls?: FormControls<Intent>;
+		control?: FormControl<Intent>;
 	},
 ) {
 	const currentState = merge(state, {
@@ -671,55 +639,14 @@ export function updateFormState<Schema, ErrorShape, Intent>(
 			result.type === 'server' ? result.value : state.submittedValue,
 	});
 
-	if (result.intent && controls) {
-		return controls.onSubmit(
-			currentState,
-			{
-				...result,
-				intent: result.intent,
-			},
-			{
-				reset: () => initializeFormState({ defaultValue, controls }),
-			},
-		);
+	if (result.intent && control) {
+		return control.onSubmit(currentState, {
+			result: Object.assign({}, result, { intent: result.intent }),
+			reset: () => initializeFormState({ defaultValue, control }),
+		});
 	}
 
 	return handleFormSubmit(currentState, result);
-}
-
-export type PartialRequired<T, K extends keyof T> = Pretty<
-	Omit<T, K> & Partial<Pick<T, K>>
->;
-
-export type ControlPayload<Type> =
-	Type extends FormControl<infer Payload> ? Payload : never;
-
-export type FormControls<Intent> = {
-	intentName: string;
-	parseIntent(intent: string): Intent | null;
-	updateValue(
-		submittedValue: Record<string, any>,
-		intent: Intent,
-	): Record<string, any> | null;
-	serialize(intent: Intent): string;
-	dispatch(formElement: HTMLFormElement | null, intent: Intent): void;
-	onSubmit<Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		result: SubmissionResult<Intent, ErrorShape>,
-		context: {
-			reset(): FormState<Schema, ErrorShape>;
-		},
-	): FormState<Schema, ErrorShape>;
-};
-
-export function defineControl<Payload>(
-	options: PartialRequired<FormControl<Payload>, 'serialize' | 'deserialize'>,
-): FormControl<Payload> {
-	return {
-		serialize: options.serialize ?? JSON.stringify,
-		deserialize: options.deserialize ?? JSON.parse,
-		...options,
-	};
 }
 
 /**
@@ -824,76 +751,112 @@ export function generateKey(
 	return key;
 }
 
-export const validateControl = defineControl<{ name?: string }>({
-	serialize(payload) {
-		return payload.name ?? '';
-	},
-	deserialize(value) {
-		return { name: value };
-	},
-	onSubmit(state, { result }) {
-		const name = result.intent.payload.name ?? '';
-
-		if (name === '') {
-			return merge(state, {
-				touchedFields: deepEqual(state.touchedFields, result.fields)
-					? state.touchedFields
-					: result.fields,
-			});
-		}
-
-		if (state.touchedFields.includes(name)) {
-			return state;
+export const validateControl = createFormControl(
+	(intent) => {
+		if (
+			intent.type !== 'validate' ||
+			!isPlainObject(intent.payload) ||
+			(typeof intent.payload.name !== 'string' &&
+				typeof intent.payload.name !== 'undefined')
+		) {
+			return null;
 		}
 
 		return {
-			...state,
-			touchedFields: state.touchedFields.concat(name),
-		};
+			type: 'validate',
+			payload: {
+				name: intent.payload.name,
+			},
+		} as const;
 	},
-});
+	{
+		onSubmit(state, { result }) {
+			const name = result.intent.payload.name ?? '';
 
-export const updateControl = defineControl<{
-	name: string;
-	index?: number;
-	value?: any;
-}>({
-	onParse(value, payload) {
-		return modify(
-			value,
-			formatName(payload.name, payload.index),
-			payload.value,
-		);
-	},
-	onSubmit(state, { result }) {
-		const payload = result.intent.payload;
-		const name = formatName(payload.name, payload.index);
+			if (name === '') {
+				return merge(state, {
+					touchedFields: deepEqual(state.touchedFields, result.fields)
+						? state.touchedFields
+						: result.fields,
+				});
+			}
 
-		return merge(state, {
-			versionByBranch: updateVersionByBranch(
-				state.versionByBranch,
-				payload.value,
-				name,
-			),
-			initialValue: modify(state.initialValue, name, payload.value),
-		});
-	},
-});
+			if (state.touchedFields.includes(name)) {
+				return state;
+			}
 
-export const resetControl = defineControl<undefined>({
-	serialize() {
-		return '';
+			return {
+				...state,
+				touchedFields: state.touchedFields.concat(name),
+			};
+		},
 	},
-	deserialize() {
-		return;
+);
+
+export const updateControl = createFormControl(
+	(intent) => {
+		if (
+			intent.type !== 'update' ||
+			!isPlainObject(intent.payload) ||
+			typeof intent.payload.name !== 'string' ||
+			(typeof intent.payload.index !== 'undefined' &&
+				typeof intent.payload.index !== 'number')
+		) {
+			return null;
+		}
+
+		return {
+			type: intent.type,
+			payload: {
+				name: intent.payload.name,
+				index: intent.payload.index,
+				value: intent.payload.value,
+			},
+		} as const;
 	},
-	onParse() {
-		return null;
+	{
+		updateValue(value, intent) {
+			return modify(
+				value,
+				formatName(intent.payload.name, intent.payload.index),
+				intent.payload.value,
+			);
+		},
+		onSubmit(state, { result }) {
+			const payload = result.intent.payload;
+			const name = formatName(payload.name, payload.index);
+
+			return merge(state, {
+				versionByBranch: updateVersionByBranch(
+					state.versionByBranch,
+					payload.value,
+					name,
+				),
+				initialValue: modify(state.initialValue, name, payload.value),
+			});
+		},
 	},
-	onSubmit(_, { reset }) {
-		return reset();
+);
+
+export const resetControl = createFormControl(
+	(intent) => {
+		if (intent.type !== 'reset' || intent.payload !== undefined) {
+			return null;
+		}
+
+		return {
+			type: intent.type,
+		} as const;
 	},
-});
+	{
+		updateValue() {
+			return null;
+		},
+		onSubmit(_, { reset }) {
+			return reset();
+		},
+	},
+);
 
 export function mapKeys<Value>(
 	obj: Record<string, Value>,
@@ -981,167 +944,236 @@ export function updateListIndex(
 	return name;
 }
 
-export const listControl = defineControl<
-	| {
-			action: 'insert';
-			name: string;
-			index?: number;
-			defaultValue?: any;
-	  }
-	| {
-			action: 'remove';
-			name: string;
-			index: number;
-	  }
-	| {
-			action: 'reorder';
-			name: string;
-			from: number;
-			to: number;
-	  }
->({
-	onParse(value, payload) {
-		const paths = getPaths(payload.name);
-		const data = getValue(value, paths) ?? [];
-
-		if (!Array.isArray(data)) {
-			throw new Error(
-				`Update list value failed; The value at "${payload.name}" is not an array`,
-			);
+export const listControl = createFormControl(
+	(intent) => {
+		if (
+			isPlainObject(intent.payload) &&
+			typeof intent.payload.name === 'string'
+		) {
+			switch (intent.type) {
+				case 'insert': {
+					if (
+						typeof intent.payload.index === 'undefined' ||
+						typeof intent.payload.index === 'number'
+					) {
+						return {
+							type: intent.type,
+							payload: {
+								name: intent.payload.name,
+								index: intent.payload.index,
+								defaultValue: intent.payload.defaultValue,
+							},
+						};
+					}
+					break;
+				}
+				case 'remove': {
+					if (typeof intent.payload.index === 'number') {
+						return {
+							type: intent.type,
+							payload: {
+								name: intent.payload.name,
+								index: intent.payload.index,
+							},
+						};
+					}
+					break;
+				}
+				case 'reorder': {
+					if (
+						typeof intent.payload.from === 'number' &&
+						typeof intent.payload.to === 'number'
+					) {
+						return {
+							type: intent.type,
+							payload: {
+								name: intent.payload.name,
+								from: intent.payload.from,
+								to: intent.payload.to,
+							},
+						};
+					}
+					break;
+				}
+			}
 		}
 
-		// Clone the array to before mutating
-		const list = Array.from(data);
-
-		switch (payload.action) {
-			case 'insert': {
-				list.splice(payload.index ?? list.length, 0, payload.defaultValue);
-				break;
-			}
-			case 'remove': {
-				list.splice(payload.index, 1);
-				break;
-			}
-			case 'reorder': {
-				list.splice(payload.to, 0, ...list.splice(payload.from, 1));
-				break;
-			}
-		}
-
-		return modify(value, payload.name, list);
+		return null;
 	},
-	onSubmit(state, { result }) {
-		const payload = result.intent.payload;
-		const paths = getPaths(payload.name);
-		const data = getValue(state.initialValue, paths) ?? [];
+	{
+		updateValue(value, intent) {
+			const paths = getPaths(intent.payload.name);
+			const data = getValue(value, paths) ?? [];
 
-		if (!Array.isArray(data)) {
-			throw new Error(
-				`Update state failed; The initialValue at "${payload.name}" is not an array`,
-			);
-		}
-
-		const list = Array.from(data);
-		const listPaths = getPaths(payload.name);
-
-		switch (payload.action) {
-			case 'insert': {
-				const index = payload.index ?? list.length;
-				const adjustIndex = (currentIndex: number) =>
-					index <= currentIndex ? currentIndex + 1 : currentIndex;
-
-				list.splice(payload.index ?? list.length, 0, payload.defaultValue);
-
-				return merge(state, {
-					versionByBranch: updateVersionByBranch(
-						mapKeys(state.versionByBranch, (key) =>
-							updateListIndex(listPaths, key, adjustIndex),
-						),
-						payload.defaultValue,
-						formatName(payload.name, index),
-					),
-					touchedFields: addItems(
-						mapItems(state.touchedFields, (key) =>
-							updateListIndex(listPaths, key, adjustIndex),
-						),
-						[payload.name],
-					),
-					initialValue: modify(state.initialValue, payload.name, list),
-				});
+			if (!Array.isArray(data)) {
+				throw new Error(
+					`Update list value failed; The value at "${intent.payload.name}" is not an array`,
+				);
 			}
-			case 'remove': {
-				const adjustIndex = (currentIndex: number) => {
-					if (payload.index === currentIndex) {
-						return null;
-					}
 
-					return payload.index < currentIndex ? currentIndex - 1 : currentIndex;
-				};
+			// Clone the array to before mutating
+			const list = Array.from(data);
 
-				list.splice(payload.index, 1);
-
-				return merge(state, {
-					versionByBranch: mapKeys(state.versionByBranch, (key) =>
-						updateListIndex(listPaths, key, adjustIndex),
-					),
-					touchedFields: addItems(
-						mapItems(state.touchedFields, (key) =>
-							updateListIndex(listPaths, key, adjustIndex),
-						),
-						[payload.name],
-					),
-					initialValue: modify(state.initialValue, payload.name, list),
-				});
+			switch (intent.type) {
+				case 'insert': {
+					list.splice(
+						intent.payload.index ?? list.length,
+						0,
+						intent.payload.defaultValue,
+					);
+					break;
+				}
+				case 'remove': {
+					list.splice(intent.payload.index, 1);
+					break;
+				}
+				case 'reorder': {
+					list.splice(
+						intent.payload.to,
+						0,
+						...list.splice(intent.payload.from, 1),
+					);
+					break;
+				}
 			}
-			case 'reorder': {
-				const adjustIndex = (currentIndex: number) => {
-					if (payload.from === payload.to) {
-						return currentIndex;
-					}
 
-					if (currentIndex === payload.from) {
-						return payload.to;
-					}
+			return modify(value, intent.payload.name, list);
+		},
+		onSubmit(state, { result }) {
+			const intent = result.intent;
+			const paths = getPaths(intent.payload.name);
+			const data = getValue(state.initialValue, paths) ?? [];
 
-					if (payload.from < payload.to) {
-						return currentIndex > payload.from && currentIndex <= payload.to
+			if (!Array.isArray(data)) {
+				throw new Error(
+					`Update state failed; The initialValue at "$intent.payload.name}" is not an array`,
+				);
+			}
+
+			const list = Array.from(data);
+			const listPaths = getPaths(intent.payload.name);
+
+			switch (intent.type) {
+				case 'insert': {
+					const index = intent.payload.index ?? list.length;
+					const adjustIndex = (currentIndex: number) =>
+						index <= currentIndex ? currentIndex + 1 : currentIndex;
+
+					list.splice(
+						intent.payload.index ?? list.length,
+						0,
+						intent.payload.defaultValue,
+					);
+
+					return merge(state, {
+						versionByBranch: updateVersionByBranch(
+							mapKeys(state.versionByBranch, (key) =>
+								updateListIndex(listPaths, key, adjustIndex),
+							),
+							intent.payload.defaultValue,
+							formatName(intent.payload.name, index),
+						),
+						touchedFields: addItems(
+							mapItems(state.touchedFields, (key) =>
+								updateListIndex(listPaths, key, adjustIndex),
+							),
+							[intent.payload.name],
+						),
+						initialValue: modify(state.initialValue, intent.payload.name, list),
+					});
+				}
+				case 'remove': {
+					const adjustIndex = (currentIndex: number) => {
+						if (intent.payload.index === currentIndex) {
+							return null;
+						}
+
+						return intent.payload.index < currentIndex
 							? currentIndex - 1
 							: currentIndex;
-					}
+					};
 
-					return currentIndex >= payload.to && currentIndex < payload.from
-						? currentIndex + 1
-						: currentIndex;
-				};
+					list.splice(intent.payload.index, 1);
 
-				list.splice(payload.to, 0, ...list.splice(payload.from, 1));
-
-				return merge(state, {
-					versionByBranch: mapKeys(state.versionByBranch, (key) =>
-						updateListIndex(listPaths, key, adjustIndex),
-					),
-					touchedFields: addItems(
-						mapItems(state.touchedFields, (item) =>
-							updateListIndex(listPaths, item, adjustIndex),
+					return merge(state, {
+						versionByBranch: mapKeys(state.versionByBranch, (key) =>
+							updateListIndex(listPaths, key, adjustIndex),
 						),
-						[payload.name],
-					),
-					initialValue: modify(state.initialValue, payload.name, list),
-				});
+						touchedFields: addItems(
+							mapItems(state.touchedFields, (key) =>
+								updateListIndex(listPaths, key, adjustIndex),
+							),
+							[intent.payload.name],
+						),
+						initialValue: modify(state.initialValue, intent.payload.name, list),
+					});
+				}
+				case 'reorder': {
+					const adjustIndex = (currentIndex: number) => {
+						if (intent.payload.from === intent.payload.to) {
+							return currentIndex;
+						}
+
+						if (currentIndex === intent.payload.from) {
+							return intent.payload.to;
+						}
+
+						if (intent.payload.from < intent.payload.to) {
+							return currentIndex > intent.payload.from &&
+								currentIndex <= intent.payload.to
+								? currentIndex - 1
+								: currentIndex;
+						}
+
+						return currentIndex >= intent.payload.to &&
+							currentIndex < intent.payload.from
+							? currentIndex + 1
+							: currentIndex;
+					};
+
+					list.splice(
+						intent.payload.to,
+						0,
+						...list.splice(intent.payload.from, 1),
+					);
+
+					return merge(state, {
+						versionByBranch: mapKeys(state.versionByBranch, (key) =>
+							updateListIndex(listPaths, key, adjustIndex),
+						),
+						touchedFields: addItems(
+							mapItems(state.touchedFields, (item) =>
+								updateListIndex(listPaths, item, adjustIndex),
+							),
+							[intent.payload.name],
+						),
+						initialValue: modify(state.initialValue, intent.payload.name, list),
+					});
+				}
 			}
-		}
+		},
 	},
-});
+);
 
-export const controls = createFormControls({
-	validate: validateControl,
-	update: updateControl,
-	reset: resetControl,
-	list: listControl,
-});
+export function requestSubmit(
+	formElement: HTMLFormElement,
+	submitter?: HTMLInputElement | HTMLButtonElement | null,
+): void {
+	if (typeof formElement.requestSubmit === 'function') {
+		formElement.requestSubmit(submitter);
+	} else {
+		const event = new SubmitEvent('submit', {
+			bubbles: true,
+			cancelable: true,
+			submitter,
+		});
 
-export function dispatchIntent(
-	formElement: HTMLFormElement | null,
+		formElement.dispatchEvent(event);
+	}
+}
+
+export function requestControl(
+	formElement: HTMLFormElement | null | undefined,
 	intentName: string,
 	intentValue: string,
 ): void {
@@ -1157,84 +1189,135 @@ export function dispatchIntent(
 	submitter.formNoValidate = true;
 
 	formElement.appendChild(submitter);
-
-	if (typeof formElement.requestSubmit === 'function') {
-		formElement.requestSubmit(submitter);
-	} else {
-		const event = new SubmitEvent('submit', {
-			bubbles: true,
-			cancelable: true,
-			submitter,
-		});
-
-		formElement.dispatchEvent(event);
-	}
-
+	requestSubmit(formElement, submitter);
 	formElement.removeChild(submitter);
 }
 
-export function createFormControls<
-	Controls extends Record<string, FormControl<any>>,
->(
-	controls: Controls,
-	options?: {
-		intentName?: string;
-	},
-): FormControls<FormIntent<Controls>> {
-	const intentName = options?.intentName ?? '__intent__';
+export type BaseIntent<Type extends string = string> = {
+	type: Type;
+	payload?: unknown;
+};
+
+export function serializeIntent(intent: BaseIntent): string {
+	if (!intent.payload) {
+		return intent.type;
+	}
+
+	return [intent.type, JSON.stringify(intent.payload)].join('/');
+}
+
+export function deserializeIntent(value: string): BaseIntent {
+	const [type = value, stringifiedPayload] = value.split('/');
+
+	let payload = stringifiedPayload;
+
+	if (stringifiedPayload) {
+		try {
+			payload = JSON.parse(stringifiedPayload);
+		} catch {
+			// Ignore the error
+		}
+	}
 
 	return {
-		intentName,
-		// @ts-expect-error Not sure how to match the types
-		parseIntent(intent) {
-			const [type, data] = intent.split('/');
-			const control = type ? controls[type] : null;
+		type,
+		payload,
+	};
+}
 
-			if (!control) {
-				return null;
-			}
+export type FormIntent<Control extends FormControl<any>> =
+	Control extends FormControl<infer Intent> ? Intent : never;
 
-			return {
-				type,
-				payload: control.deserialize(data ?? ''),
-			};
+export type FormControl<Intent extends BaseIntent> = {
+	isValid(intent: BaseIntent): intent is Intent;
+	updateValue(
+		submittedValue: Record<string, FormValue>,
+		intent: Intent,
+	): Record<string, FormValue> | null;
+	onSubmit<Schema, ErrorShape>(
+		state: FormState<Schema, ErrorShape>,
+		context: {
+			result: SubmissionResult<Intent, ErrorShape>;
+			reset(): FormState<Schema, ErrorShape>;
 		},
-		serialize(intent) {
-			const control = controls[intent.type];
-			const payload =
-				typeof control?.serialize === 'function'
-					? control.serialize(intent.payload)
-					: intent.payload ?? '';
+	): FormState<Schema, ErrorShape>;
+};
 
-			return [intent.type, payload].join('/');
-		},
-		dispatch(formElement, intent) {
-			dispatchIntent(formElement, intentName, this.serialize(intent));
+type Simplify<T> = Pretty<
+	{
+		[K in keyof T as undefined extends T[K] ? K : never]?: T[K] extends object
+			? Simplify<T[K]>
+			: T[K];
+	} & {
+		[K in keyof T as undefined extends T[K] ? never : K]: T[K] extends object
+			? Simplify<T[K]>
+			: T[K];
+	}
+>;
+
+export function createFormControl<Intent extends BaseIntent>(
+	resolve: (intent: BaseIntent) => Intent | null,
+	options: Partial<Omit<FormControl<Simplify<Intent>>, 'isValid'>>,
+): FormControl<Simplify<Intent>> {
+	return {
+		isValid(intent): intent is Intent {
+			return resolve(intent) !== null;
 		},
 		updateValue(submittedValue, intent) {
-			const type = intent.type;
-			const control = controls[type];
-
-			if (typeof control === 'undefined') {
-				throw new Error(`The intent type "${type}" is not defined`);
+			if (typeof options.updateValue !== 'function') {
+				return submittedValue;
 			}
 
-			return (
-				control.onParse?.(submittedValue, intent.payload) ?? submittedValue
-			);
+			return options.updateValue(submittedValue, intent);
 		},
-		onSubmit(state, result, context) {
-			const type = result.intent.type;
-			const control = controls[type];
-
-			if (typeof control === 'undefined') {
-				throw new Error(`The intent type "${type}" is not defined`);
+		onSubmit(state, context) {
+			if (typeof options.onSubmit !== 'function') {
+				return state;
 			}
 
-			return control.onSubmit(state, {
-				result,
-				reset: context.reset,
-			});
+			return options.onSubmit(state, context);
+		},
+	};
+}
+
+export function combineFormControls<Controls extends Array<FormControl<any>>>(
+	controls: Controls,
+): FormControl<Controls extends Array<FormControl<infer T>> ? T : never> {
+	return {
+		isValid(intent): intent is any {
+			for (const control of controls) {
+				if (control.isValid(intent)) {
+					return true;
+				}
+			}
+
+			return false;
+		},
+		updateValue(submittedValue, intent) {
+			for (const control of controls) {
+				if (control.isValid(intent)) {
+					const result = control.updateValue(submittedValue, intent);
+
+					if (result === null) {
+						return result;
+					}
+
+					submittedValue = result;
+				}
+			}
+
+			return submittedValue;
+		},
+		onSubmit(state, context) {
+			let result = state;
+
+			for (const control of controls) {
+				if (control.isValid(context.result.intent)) {
+					result = control.onSubmit(result, context);
+				}
+			}
+
+			return result;
 		},
 	};
 }
