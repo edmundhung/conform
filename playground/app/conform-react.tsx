@@ -28,17 +28,29 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	return formData;
 }
 
-export function useFormState<
-	Schema,
-	ErrorShape,
+export type FormOptions<
+	Schema extends Record<string, unknown>,
 	Intent extends BaseIntent,
->(options: {
+	ErrorShape,
+> = {
 	formRef?: RefObject<HTMLFormElement>;
 	control?: FormControl<Intent>;
 	result?: SubmissionResult<Intent | null, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
 	intentName?: string;
-}) {
+};
+
+export type FormIntent<Intent> = {
+	name: string;
+	submit(intent: Intent): void;
+	serialize(intent: Intent): string;
+};
+
+export function useFormState<
+	Schema extends Record<string, unknown>,
+	Intent extends BaseIntent,
+	ErrorShape,
+>(options: FormOptions<Schema, Intent, ErrorShape>) {
 	const [state, setState] = useState(() => initializeFormState(options));
 	const intentName = options.intentName ?? '__intent__';
 	const optionsRef = useRef(options);

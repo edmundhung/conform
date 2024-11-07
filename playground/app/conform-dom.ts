@@ -1225,7 +1225,7 @@ export function deserializeIntent(value: string): BaseIntent {
 	};
 }
 
-export type FormIntent<Control extends FormControl<any>> =
+export type FormControlIntent<Control extends FormControl<any>> =
 	Control extends FormControl<infer Intent> ? Intent : never;
 
 export type FormControl<Intent extends BaseIntent> = {
@@ -1322,28 +1322,6 @@ export function combineFormControls<Controls extends Array<FormControl<any>>>(
 	};
 }
 
-const error = Symbol('error');
-const field = Symbol('field');
-const form = Symbol('form');
-
-export type FormId<
-	Schema extends Record<string, unknown> = Record<string, unknown>,
-	Error = string[],
-> = string & {
-	[error]?: Error;
-	[form]?: Schema;
-};
-
-export type FieldName<
-	FieldSchema,
-	FormSchema extends Record<string, unknown> = Record<string, unknown>,
-	Error = string[],
-> = string & {
-	[field]?: FieldSchema;
-	[error]?: Error;
-	[form]?: FormSchema;
-};
-
 export type FieldConstraint = {
 	required?: boolean;
 	minLength?: number;
@@ -1364,137 +1342,150 @@ export type Combine<T> = {
 	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
 };
 
-export type FieldMetadata<
-	Schema,
-	FormSchema extends Record<string, unknown>,
-	ErrorShape = string[],
-> = Pretty<
-	{
-		key: string | undefined;
-		name: FieldName<Schema, FormSchema, ErrorShape>;
-		defaultValue: string | string[] | undefined;
-		touched: boolean;
-		error: ErrorShape | undefined;
-	} & FieldConstraint &
-		([Schema] extends [Date | File]
-			? {}
-			: [Schema] extends [Array<infer Item> | null | undefined]
+export type Field<Schema, Metadata extends Record<string, unknown>> = Metadata &
+	([Schema] extends [Date | File]
+		? {}
+		: [Schema] extends [Array<infer Item> | null | undefined]
+			? {
+					getFieldList: () => Array<Field<Item, Metadata>>;
+				}
+			: [Schema] extends [Record<string, unknown> | null | undefined]
 				? {
-						getFieldList: () => Array<
-							FieldMetadata<Item, FormSchema, ErrorShape>
-						>;
+						getFieldset: () => Fieldset<Schema, Metadata>;
 					}
-				: [Schema] extends [Record<string, unknown> | null | undefined]
-					? {
-							getFieldset: () => FieldsetMetadata<
-								Schema,
-								FormSchema,
-								ErrorShape
-							>;
-						}
-					: {})
->;
+				: {});
 
-export type FieldsetMetadata<
-	Schema,
-	FormSchema extends Record<string, unknown>,
-	ErrorShape = string[],
-> = Required<{
-	[Key in keyof Combine<Schema>]: FieldMetadata<
-		Combine<Schema>[Key],
-		FormSchema,
-		ErrorShape
-	>;
-}>;
+export type Fieldset<Schema, Metadata extends Record<string, unknown>> = {
+	[Key in keyof Combine<Schema>]-?: Field<Combine<Schema>[Key], Metadata>;
+};
 
 export type FormMetadata<
-	Schema extends Record<string, unknown> = Record<string, unknown>,
-	ErrorShape = string[],
-> = Pretty<
-	FieldMetadata<Schema, Schema, ErrorShape> & {
-		status: 'success' | 'error' | undefined;
-		fieldError: Record<string, ErrorShape> | null;
-	}
->;
+	Schema extends Record<string, unknown>,
+	ErrorShape,
+	Props extends Record<string, unknown>,
+> = {
+	defaultValue: DefaultValue<Schema> | null;
+	key: string | null;
+	touched: boolean;
+	error: ErrorShape | null;
+	fieldError: Record<string, ErrorShape> | null;
+	props: Props;
+};
 
 export function getFormMetadata<
 	Schema extends Record<string, unknown>,
 	ErrorShape,
->(state: FormState<Schema, ErrorShape>): FormMetadata<Schema, ErrorShape> {
+	Props extends Record<string, unknown>,
+>(
+	state: FormState<Schema, ErrorShape>,
+	props: Props,
+): FormMetadata<Schema, ErrorShape, Props> {
+	const name = '';
 	const error = state.serverError ?? state.clientError;
 
-	function createMetadata(name = '') {
-		return {
-			name,
-			get key() {
-				return generateKey(state.versionByBranch, name);
+	return {
+		defaultValue: state.defaultValue,
+		error: error?.formError ?? null,
+		fieldError: error?.fieldError ?? null,
+		get key() {
+			return generateKey(state.versionByBranch, name) ?? null;
+		},
+		get touched() {
+			return isTouched(state.touchedFields, name);
+		},
+		props,
+	};
+}
+
+export function getFieldMetadata<
+	Schema extends Record<string, unknown>,
+	ErrorShape,
+>(state: FormState<Schema, ErrorShape>, name: string) {
+	const error = state.serverError ?? state.clientError;
+
+	return {
+		get name() {
+			return name;
+		},
+		get key() {
+			return generateKey(state.versionByBranch, name);
+		},
+		get defaultValue() {
+			const paths = getPaths(name);
+			const value = getValue(state.initialValue, paths);
+			const serializedValue = serialize(value);
+
+			if (
+				typeof serializedValue !== 'string' &&
+				(!Array.isArray(serializedValue) ||
+					serializedValue.some((item) => typeof item !== 'string'))
+			) {
+				return;
+			}
+
+			return serializedValue;
+		},
+		get touched() {
+			return isTouched(state.touchedFields, name);
+		},
+		get error() {
+			const result = name ? error?.fieldError[name] : error?.formError;
+
+			if (!result || !isTouched(state.touchedFields, name)) {
+				return;
+			}
+
+			return result;
+		},
+	};
+}
+
+export function getFieldset<
+	Schema extends Record<string, unknown>,
+	ErrorShape,
+	Metadata extends Record<string, unknown> = {},
+	FieldSchema = Schema,
+>(
+	state: FormState<Schema, ErrorShape>,
+	options?: {
+		name?: string;
+		metadata?: (state: FormState<Schema, ErrorShape>, name: string) => Metadata;
+	},
+): Fieldset<FieldSchema, Metadata> {
+	function createField(name: string) {
+		const metadata = options?.metadata?.(state, name) ?? {};
+
+		return Object.assign(metadata, {
+			getFieldset() {
+				return getFieldset(state, {
+					...options,
+					name,
+				});
 			},
-			get defaultValue() {
-				const serializedValue = serialize(state.initialValue);
+			getFieldList() {
 				const paths = getPaths(name);
-				const value = getValue(serializedValue, paths);
+				const value = getValue(state.initialValue, paths) ?? [];
 
-				if (
-					typeof value !== 'string' &&
-					(!Array.isArray(value) ||
-						value.some((item) => typeof item !== 'string'))
-				) {
-					return;
+				if (!Array.isArray(value)) {
+					throw new Error(
+						`The value of "${name}" is not an array. Are you looking for getFieldset()?`,
+					);
 				}
 
-				return value;
+				return Array(value.length)
+					.fill(0)
+					.map((_, index) => createField(formatName(name, index)));
 			},
-			get touched() {
-				return isTouched(state.touchedFields, name);
-			},
-			get error() {
-				const result = name ? error?.fieldError[name] : error?.formError;
-
-				if (!result || !isTouched(state.touchedFields, name)) {
-					return;
-				}
-
-				return result;
-			},
-			get getFieldset() {
-				return () =>
-					new Proxy({} as any, {
-						get(target, key, receiver) {
-							if (typeof key === 'string') {
-								const fieldName = formatName(name, key);
-
-								return Object.assign(createMetadata(fieldName), {
-									get getFieldList() {
-										return () => {
-											const paths = getPaths(fieldName);
-											const value = getValue(state.initialValue, paths) ?? [];
-
-											if (!Array.isArray(value)) {
-												throw new Error(
-													`Failed to get the field list; The value at "${fieldName}" is not an array`,
-												);
-											}
-
-											return Array(value.length)
-												.fill(0)
-												.map((_, index) =>
-													createMetadata(formatName(fieldName, index)),
-												);
-										};
-									},
-								});
-							}
-
-							return Reflect.get(target, key, receiver);
-						},
-					});
-			},
-		};
+		});
 	}
 
-	// @ts-expect-error FIXME
-	return Object.assign(createMetadata(), {
-		status: undefined,
-		fieldError: error?.fieldError ?? null,
+	return new Proxy({} as any, {
+		get(target, key, receiver) {
+			if (typeof key !== 'string') {
+				return Reflect.get(target, key, receiver);
+			}
+
+			return createField(formatName(options?.name, key));
+		},
 	});
 }
