@@ -650,18 +650,20 @@ export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 }
 
 /**
- * Configure all form fields based on the current state
- * @param formElement
- * @param state
+ * Synchronizes the form elements with the provided state.
+ *
+ * This function iterates through all input, select, and textarea elements within the specified
+ * form and updates their values and attributes based on the given `FormState`. It ensures that
+ * the form reflects the current state accurately, handling different input types and their
+ * corresponding attributes.
  */
-export function configure(
-	formElement: HTMLFormElement | null | undefined,
+export function syncFormState(
+	formElement: HTMLFormElement,
 	state: FormState<unknown, unknown>,
+	shouldUpdateElement?: (
+		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	) => boolean,
 ): void {
-	if (!formElement) {
-		return;
-	}
-
 	const getAll = (value: unknown) => {
 		if (typeof value === 'string') {
 			return [value];
@@ -680,9 +682,10 @@ export function configure(
 
 	for (const element of formElement.elements) {
 		if (
-			element instanceof HTMLInputElement ||
-			element instanceof HTMLTextAreaElement ||
-			element instanceof HTMLSelectElement
+			(element instanceof HTMLInputElement ||
+				element instanceof HTMLTextAreaElement ||
+				element instanceof HTMLSelectElement) &&
+			(shouldUpdateElement?.(element) ?? true)
 		) {
 			const prev = element.dataset.conform;
 			const next = generateKey(state.versionByBranch, element.name);
