@@ -37,6 +37,9 @@ export type FormOptions<
 	control?: FormControl<Intent>;
 	result?: SubmissionResult<Intent | null, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
+	shouldSyncElement?: (
+		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	) => boolean;
 	intentName?: string;
 };
 
@@ -88,8 +91,12 @@ export function useFormState<
 	useEffect(
 		() =>
 			formObserver.onInputMounted((formElement) => {
-				if (formElement === options.formRef?.current) {
-					syncFormState(formElement, lastStateRef.current);
+				if (formElement === optionsRef.current.formRef?.current) {
+					syncFormState(
+						formElement,
+						lastStateRef.current,
+						optionsRef.current.shouldSyncElement,
+					);
 				}
 			}),
 		[],
@@ -99,7 +106,7 @@ export function useFormState<
 		const formElement = options.formRef?.current;
 
 		if (formElement) {
-			syncFormState(formElement, state);
+			syncFormState(formElement, state, optionsRef.current.shouldSyncElement);
 		}
 	}, [options.formRef, state]);
 
