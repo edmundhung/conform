@@ -11,7 +11,7 @@ import {
 	getFormMetadata,
 	getFieldset,
 	report,
-	getInput,
+	isInput,
 	getFieldMetadata,
 } from './conform-dom';
 import { type FormOptions, getFormData, useFormState } from './conform-react';
@@ -90,26 +90,28 @@ export function useForm<Schema extends Record<string, any>>(
 					update(result);
 				});
 			},
-			onInput(event: React.FormEvent<HTMLElement>) {
-				const input = getInput(event.target, formRef.current);
-
-				if (input && state.touchedFields.includes(input.name)) {
+			onInput(event: React.FormEvent<HTMLFormElement>) {
+				if (
+					isInput(event.target, formRef.current) &&
+					state.touchedFields.includes(event.target.name)
+				) {
 					intent.submit({
 						type: 'validate',
 						payload: {
-							name: input.name,
+							name: event.target.name,
 						},
 					});
 				}
 			},
-			onBlur(event: React.FocusEvent<HTMLElement>) {
-				const input = getInput(event.target, formRef.current);
-
-				if (input && !state.touchedFields.includes(input.name)) {
+			onBlur(event: React.FocusEvent<HTMLFormElement>) {
+				if (
+					isInput(event.target, formRef.current) &&
+					!state.touchedFields.includes(event.target.name)
+				) {
 					intent.submit({
 						type: 'validate',
 						payload: {
-							name: input.name,
+							name: event.target.name,
 						},
 					});
 				}

@@ -719,20 +719,20 @@ export function syncFormState(
  * @param target Event target
  * @param formElement The form element associated with
  */
-export function getInput(
+export function isInput(
 	target: unknown,
 	formElement: HTMLFormElement | null,
-): HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null {
-	const isInput =
-		target instanceof HTMLInputElement ||
-		target instanceof HTMLTextAreaElement ||
-		target instanceof HTMLSelectElement;
-
-	if (!formElement || !isInput || target.form !== formElement) {
-		return null;
-	}
-
-	return target;
+): target is
+	| HTMLInputElement
+	| HTMLTextAreaElement
+	| (HTMLSelectElement & { form: HTMLFormElement }) {
+	return (
+		formElement !== null &&
+		(target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement) &&
+		target.form !== formElement
+	);
 }
 
 export function generateKey(
