@@ -304,6 +304,7 @@ export type ValidateIntent<Schema = any> = {
 	type: 'validate';
 	payload: {
 		name?: FieldName<Schema>;
+		recursive?: boolean;
 	};
 };
 
