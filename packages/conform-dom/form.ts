@@ -17,6 +17,8 @@ import {
 	getFormEncType,
 	getFormMethod,
 	requestSubmit,
+	syncFieldValue,
+	syncFieldConstraint,
 } from './dom';
 import { clone, generateId, invariant } from './util';
 import {
@@ -230,7 +232,7 @@ export type FormContext<
 	onInput(event: Event): void;
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
-	observe(): () => void;
+	syncFormValue(): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -276,12 +278,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		value: initialValue,
 		constraint: options.constraint ?? {},
 		validated: lastResult?.state?.validated ?? {},
-		key: !initialized
-			? getDefaultKey(defaultValue)
-			: {
-					'': generateId(),
-					...getDefaultKey(defaultValue),
-				},
+		key: getDefaultKey(defaultValue),
 		// The `lastResult` should comes from the server which we won't expect the error to be null
 		// We can consider adding a warning if it happens
 		error: (lastResult?.error as Record<string, FormError>) ?? {},
@@ -298,15 +295,20 @@ function getDefaultKey(
 ): Record<string, string> {
 	return Object.entries(flatten(defaultValue, { prefix })).reduce<
 		Record<string, string>
-	>((result, [key, value]) => {
-		if (Array.isArray(value)) {
-			for (let i = 0; i < value.length; i++) {
-				result[formatName(key, i)] = generateId();
+	>(
+		(result, [key, value]) => {
+			if (Array.isArray(value)) {
+				for (let i = 0; i < value.length; i++) {
+					result[formatName(key, i)] = generateId();
+				}
 			}
-		}
 
-		return result;
-	}, {});
+			return result;
+		},
+		{
+			[prefix ?? '']: generateId(),
+		},
+	);
 }
 
 function setFieldsValidated<Error>(
@@ -438,10 +440,8 @@ function updateValue<Error>(
 	if (name === '') {
 		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
-		meta.key = {
-			...getDefaultKey(value as Record<string, unknown>),
-			'': generateId(),
-		};
+		meta.key = getDefaultKey(value as Record<string, unknown>);
+
 		return;
 	}
 
@@ -827,13 +827,7 @@ export function createFormContext<
 		const form = getFormElement();
 		const element = event.target;
 
-		if (
-			!form ||
-			!isFieldElement(element) ||
-			element.form !== form ||
-			!element.form.isConnected ||
-			element.name === ''
-		) {
+		if (!form || !isFieldElement(element) || element.form !== form) {
 			return null;
 		}
 
@@ -854,15 +848,19 @@ export function createFormContext<
 			: shouldValidate === eventName;
 	}
 
-	function updateFormValue(form: HTMLFormElement) {
-		const formData = new FormData(form);
-		const result = getSubmissionContext(formData);
+	function syncFormValue() {
+		const formElement = getFormElement();
 
-		updateFormMeta({
-			...meta,
-			isValueUpdated: true,
-			value: result.payload,
-		});
+		if (formElement) {
+			const formData = new FormData(formElement);
+			const result = getSubmissionContext(formData);
+
+			updateFormMeta({
+				...meta,
+				isValueUpdated: true,
+				value: result.payload,
+			});
+		}
 	}
 
 	function onInput(event: Event) {
@@ -873,7 +871,7 @@ export function createFormContext<
 		}
 
 		if (event.defaultPrevented || !willValidate(element, 'onInput')) {
-			updateFormValue(element.form);
+			syncFormValue();
 		} else {
 			dispatch({
 				type: 'validate',
@@ -1038,47 +1036,6 @@ export function createFormContext<
 		});
 	}
 
-	function observe() {
-		const observer = new MutationObserver((mutations) => {
-			const form = getFormElement();
-
-			if (!form) {
-				return;
-			}
-
-			for (const mutation of mutations) {
-				const nodes =
-					mutation.type === 'childList'
-						? [...mutation.addedNodes, ...mutation.removedNodes]
-						: [mutation.target];
-
-				for (const node of nodes) {
-					const element = isFieldElement(node)
-						? node
-						: node instanceof HTMLElement
-							? node.querySelector<FieldElement>('input,select,textarea')
-							: null;
-
-					if (element?.form === form) {
-						updateFormValue(form);
-						return;
-					}
-				}
-			}
-		});
-
-		observer.observe(document, {
-			subtree: true,
-			childList: true,
-			attributes: true,
-			attributeFilter: ['form', 'name'],
-		});
-
-		return () => {
-			observer.disconnect();
-		};
-	}
-
 	return {
 		getFormId() {
 			return meta.formId;
@@ -1094,9 +1051,40 @@ export function createFormContext<
 		insert: createFormControl('insert'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),
+		syncFormValue,
 		subscribe,
 		getState,
 		getSerializedState,
-		observe,
 	};
+}
+
+export function syncFormState<FormError>(
+	formElement: HTMLFormElement,
+	stateSnapshot: FormState<FormError>,
+	/**
+	 * Default to manage inputs that is configured using the `getInputProps` helpers
+	 */
+	shouldSyncElement: (element: FieldElement) => boolean = (element) =>
+		typeof element.dataset.conform !== 'undefined',
+) {
+	for (const element of formElement.elements) {
+		if (
+			isFieldElement(element) &&
+			element.dataset.conform !== 'managed' &&
+			shouldSyncElement(element)
+		) {
+			const prev = element.dataset.conform;
+			const next = stateSnapshot.key[element.name];
+
+			if (typeof prev === 'undefined' || prev !== next) {
+				element.dataset.conform = next;
+
+				syncFieldValue(element, stateSnapshot.initialValue[element.name]);
+				syncFieldConstraint(
+					element,
+					stateSnapshot.constraint[element.name] ?? {},
+				);
+			}
+		}
+	}
 }

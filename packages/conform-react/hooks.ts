@@ -1,5 +1,10 @@
-import { type FormId, type FieldName } from '@conform-to/dom';
-import { useEffect, useId, useState, useLayoutEffect } from 'react';
+import {
+	type FormId,
+	type FieldName,
+	unstable_createFormObserver as createFormObserver,
+	unstable_syncFormState as syncFormState,
+} from '@conform-to/dom';
+import { useEffect, useId, useState, useLayoutEffect, useRef } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -12,6 +17,8 @@ import {
 	getFieldMetadata,
 	getFormMetadata,
 } from './context';
+
+export const formObserver = createFormObserver();
 
 /**
  * useLayoutEffect is client-only.
@@ -61,6 +68,14 @@ export function useForm<
 			 * Default to `true`.
 			 */
 			defaultNoValidate?: boolean;
+
+			/**
+			 * Define if the input could be updated by conform.
+			 * Default to inputs that are configured using the `getInputProps`, `getSelectProps` or `getTextareaProps` helpers.
+			 */
+			shouldSyncElement?: (
+				element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+			) => boolean;
 		}
 	>,
 ): [
@@ -68,13 +83,25 @@ export function useForm<
 	ReturnType<FormMetadata<Schema, FormError>['getFieldset']>,
 ] {
 	const { id, ...formConfig } = options;
+	const optionsRef = useRef(options);
 	const formId = useFormId<Schema, FormError>(id);
 	const [context] = useState(() =>
 		createFormContext({ ...formConfig, formId }),
 	);
 
 	useSafeLayoutEffect(() => {
-		const disconnect = context.observe();
+		const formId = context.getFormId();
+		const disconnect = formObserver.onFieldMounted((formElement) => {
+			if (formElement === document.forms.namedItem(formId)) {
+				syncFormState(
+					formElement,
+					context.getState(),
+					optionsRef.current.shouldSyncElement,
+				);
+				// syncFormState must happen before syncFormValue to ensure the newly mounted field have the correct default value set
+				context.syncFormValue();
+			}
+		});
 		document.addEventListener('input', context.onInput);
 		document.addEventListener('focusout', context.onBlur);
 		document.addEventListener('reset', context.onReset);
@@ -88,13 +115,33 @@ export function useForm<
 	}, [context]);
 
 	useSafeLayoutEffect(() => {
+		optionsRef.current = options;
 		context.onUpdate({ ...formConfig, formId });
 	});
 
-	const subjectRef = useSubjectRef();
+	const subjectRef = useSubjectRef({
+		key: {
+			// Subscribe to all key changes so it will re-render and
+			// update the field value as soon as the DOM is updated
+			prefix: [''],
+		},
+	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+
+	useEffect(() => {
+		const formId = context.getFormId();
+		const formElement = document.forms.namedItem(formId);
+
+		if (formElement) {
+			syncFormState(
+				formElement,
+				stateSnapshot,
+				optionsRef.current.shouldSyncElement,
+			);
+		}
+	}, [context, stateSnapshot]);
 
 	return [form, form.getFieldset()];
 }

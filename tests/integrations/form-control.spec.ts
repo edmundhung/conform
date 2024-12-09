@@ -14,12 +14,16 @@ function getFieldset(form: Locator) {
 		clearMessage: form.locator('button:text("Clear message")'),
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
+		inputButton: form.locator('input[type="submit"]'),
 	};
 }
 
 async function runValidationScenario(page: Page) {
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
+
+	// Conform should not overwrite the value of any input buttons
+	await expect(fieldset.inputButton).toHaveValue('Submit');
 
 	await expect(playground.error).toHaveText(['', '', '']);
 
