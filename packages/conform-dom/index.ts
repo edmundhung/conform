@@ -12,7 +12,12 @@ export {
 	type SubscriptionSubject,
 	type SubscriptionScope,
 	createFormContext as unstable_createFormContext,
+	syncFormState as unstable_syncFormState,
 } from './form';
+export {
+	type FormObserver,
+	createFormObserver as unstable_createFormObserver,
+} from './observer';
 export { type FieldElement, isFieldElement } from './dom';
 export {
 	type Submission,

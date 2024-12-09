@@ -1,4 +1,9 @@
-import { type FormId, type FieldName } from '@conform-to/dom';
+import {
+	type FormId,
+	type FieldName,
+	unstable_createFormObserver as createFormObserver,
+	unstable_syncFormState as syncFormState,
+} from '@conform-to/dom';
 import { useEffect, useId, useState, useLayoutEffect } from 'react';
 import {
 	type FormMetadata,
@@ -12,6 +17,8 @@ import {
 	getFieldMetadata,
 	getFormMetadata,
 } from './context';
+
+export const formObserver = createFormObserver();
 
 /**
  * useLayoutEffect is client-only.
@@ -74,7 +81,14 @@ export function useForm<
 	);
 
 	useSafeLayoutEffect(() => {
-		const disconnect = context.observe();
+		const formId = context.getFormId();
+		const disconnect = formObserver.onFieldMounted((formElement) => {
+			if (formElement === document.forms.namedItem(formId)) {
+				syncFormState(formElement, context.getState());
+				// syncFormState must happen before syncFormValue to ensure the newly mounted field have the correct default value set
+				context.syncFormValue();
+			}
+		});
 		document.addEventListener('input', context.onInput);
 		document.addEventListener('focusout', context.onBlur);
 		document.addEventListener('reset', context.onReset);
@@ -103,7 +117,12 @@ export function useForm<
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
 
 	useEffect(() => {
-		context.updateFormElement(stateSnapshot);
+		const formId = context.getFormId();
+		const formElement = document.forms.namedItem(formId);
+
+		if (formElement) {
+			syncFormState(formElement, stateSnapshot);
+		}
 	}, [context, stateSnapshot]);
 
 	return [form, form.getFieldset()];
