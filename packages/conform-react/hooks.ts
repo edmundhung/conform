@@ -4,7 +4,7 @@ import {
 	unstable_createFormObserver as createFormObserver,
 	unstable_syncFormState as syncFormState,
 } from '@conform-to/dom';
-import { useEffect, useId, useState, useLayoutEffect } from 'react';
+import { useEffect, useId, useState, useLayoutEffect, useRef } from 'react';
 import {
 	type FormMetadata,
 	type FieldMetadata,
@@ -68,6 +68,14 @@ export function useForm<
 			 * Default to `true`.
 			 */
 			defaultNoValidate?: boolean;
+
+			/**
+			 * Define if the input could be updated by conform.
+			 * Default to inputs that are configured using the `getInputProps`, `getSelectProps` or `getTextareaProps` helpers.
+			 */
+			shouldSyncElement?: (
+				element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+			) => boolean;
 		}
 	>,
 ): [
@@ -75,6 +83,7 @@ export function useForm<
 	ReturnType<FormMetadata<Schema, FormError>['getFieldset']>,
 ] {
 	const { id, ...formConfig } = options;
+	const optionsRef = useRef(options);
 	const formId = useFormId<Schema, FormError>(id);
 	const [context] = useState(() =>
 		createFormContext({ ...formConfig, formId }),
@@ -84,7 +93,11 @@ export function useForm<
 		const formId = context.getFormId();
 		const disconnect = formObserver.onFieldMounted((formElement) => {
 			if (formElement === document.forms.namedItem(formId)) {
-				syncFormState(formElement, context.getState());
+				syncFormState(
+					formElement,
+					context.getState(),
+					optionsRef.current.shouldSyncElement,
+				);
 				// syncFormState must happen before syncFormValue to ensure the newly mounted field have the correct default value set
 				context.syncFormValue();
 			}
@@ -102,6 +115,7 @@ export function useForm<
 	}, [context]);
 
 	useSafeLayoutEffect(() => {
+		optionsRef.current = options;
 		context.onUpdate({ ...formConfig, formId });
 	});
 
@@ -121,7 +135,11 @@ export function useForm<
 		const formElement = document.forms.namedItem(formId);
 
 		if (formElement) {
-			syncFormState(formElement, stateSnapshot);
+			syncFormState(
+				formElement,
+				stateSnapshot,
+				optionsRef.current.shouldSyncElement,
+			);
 		}
 	}, [context, stateSnapshot]);
 

@@ -175,14 +175,6 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
-	 * Define if the input could be updated by conform.
-	 * Default to inputs that are configured using the `getInputProps`, `getSelectProps` or `getTextareaProps` helpers.
-	 */
-	shouldSyncElement?: (
-		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	) => boolean;
-
-	/**
 	 * Define if conform should considered the field for dirty state.
 	 * e.g. Excluding form fields that are not managed by Conform, such as CSRF token
 	 */
