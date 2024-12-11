@@ -118,7 +118,6 @@ export type Constraint = {
 
 export type FormMeta<FormError> = {
 	formId: string;
-	isResetting: boolean;
 	isValueUpdated: boolean;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
@@ -272,7 +271,6 @@ function createFormMeta<Schema, FormError, FormValue>(
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
 		formId: options.formId,
-		isResetting: !!isResetting,
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -671,7 +669,6 @@ export function createFormContext<
 
 		return {
 			submissionStatus: next.submissionStatus,
-			isResetting: next.isResetting,
 			defaultValue,
 			initialValue,
 			value,
@@ -1091,7 +1088,7 @@ export function syncFormState<FormError>(
 				syncFieldValue(
 					element,
 					stateSnapshot.initialValue[element.name],
-					isInitializing || stateSnapshot.isResetting,
+					stateSnapshot.defaultValue[element.name],
 				);
 			}
 		}

@@ -4,7 +4,8 @@ import { getPlayground } from './helpers';
 function getFieldset(form: Locator) {
 	return {
 		token: form.locator('[name="token"]'),
-		text: form.locator('[name="text"]'),
+		text: form.locator('[name="input.text"]'),
+		number: form.locator('[name="input.number"]'),
 		textarea: form.locator('[name="textarea"]'),
 		select: form.locator('[name="select"]'),
 		multiSelect: form.locator('[name="multiSelect"]'),
@@ -15,9 +16,12 @@ function getFieldset(form: Locator) {
 }
 
 async function assertFieldsetValue(
-	form: Locator,
+	fieldset: ReturnType<typeof getFieldset>,
 	value: {
-		text: string;
+		input: {
+			text: string;
+			number: number;
+		};
 		textarea: string;
 		select: string;
 		multiSelect: string[];
@@ -26,12 +30,11 @@ async function assertFieldsetValue(
 		radioGroup: string;
 	},
 ) {
-	const fieldset = getFieldset(form);
-
 	// This check if Conform omit the token field based on the shouldSyncElement option
 	await expect(fieldset.token).toHaveValue('1-0624770');
 
-	await expect(fieldset.text).toHaveValue(value.text);
+	await expect(fieldset.text).toHaveValue(value.input.text);
+	await expect(fieldset.number).toHaveValue(value.input.number.toString());
 	await expect(fieldset.textarea).toHaveValue(value.textarea);
 	await expect(fieldset.select).toHaveValue(value.select);
 	await expect(fieldset.multiSelect).toHaveValues(value.multiSelect);
@@ -63,11 +66,18 @@ test('sync fields value', async ({ page }) => {
 	await page.goto('/sync-form-state');
 
 	const playground = getPlayground(page);
+	const fieldset = getFieldset(playground.container);
 	const updateValueButton = playground.container.locator(
 		'button:text("Update value")',
 	);
+	const toggleNumberFieldButton = playground.container.locator(
+		'button:text("Toggle number field")',
+	);
 	const defaultValue = {
-		text: 'Hello World',
+		input: {
+			text: 'Hello World',
+			number: 2,
+		},
 		textarea: 'Once upon a time',
 		select: 'green',
 		multiSelect: ['banana', 'cherry'],
@@ -76,7 +86,10 @@ test('sync fields value', async ({ page }) => {
 		radioGroup: 'Deutsch',
 	};
 	const valueToBeSet = {
-		text: 'Updated',
+		input: {
+			text: 'Updated',
+			number: 3,
+		},
 		textarea: 'Some text here',
 		select: 'blue',
 		multiSelect: ['apple', 'cherry'],
@@ -85,7 +98,10 @@ test('sync fields value', async ({ page }) => {
 		radioGroup: 'English',
 	};
 	const newDefaultValue = {
-		text: 'Default text',
+		input: {
+			text: 'Default text',
+			number: 4,
+		},
 		textarea: 'You need to write something here',
 		select: 'red',
 		multiSelect: ['apple', 'banana', 'cherry'],
@@ -94,19 +110,30 @@ test('sync fields value', async ({ page }) => {
 		radioGroup: 'Français',
 	};
 
-	await assertFieldsetValue(playground.container, defaultValue);
+	await assertFieldsetValue(fieldset, defaultValue);
 	await updateValueButton.click();
-	await assertFieldsetValue(playground.container, valueToBeSet);
+	await assertFieldsetValue(fieldset, valueToBeSet);
+
+	// Check if mounting/unmounting the number field will break the sync
+	await toggleNumberFieldButton.click();
+	await expect(fieldset.number).not.toBeAttached();
+	await toggleNumberFieldButton.click();
+	// FIXME: The value of the number field should be the default value?
+	// We need a better way to differentiate default value vs last submitted value vs value user set
+	await expect(fieldset.number).toHaveValue(
+		valueToBeSet.input.number.toString(),
+	);
+
 	await playground.reset.click();
-	await assertFieldsetValue(playground.container, defaultValue);
+	await assertFieldsetValue(fieldset, defaultValue);
 	await updateValueButton.click();
-	await assertFieldsetValue(playground.container, valueToBeSet);
+	await assertFieldsetValue(fieldset, valueToBeSet);
 	await playground.submit.click();
-	await assertFieldsetValue(playground.container, newDefaultValue);
+	await assertFieldsetValue(fieldset, newDefaultValue);
 	await updateValueButton.click();
-	await assertFieldsetValue(playground.container, valueToBeSet);
+	await assertFieldsetValue(fieldset, valueToBeSet);
 	await playground.reset.click();
-	await assertFieldsetValue(playground.container, newDefaultValue);
+	await assertFieldsetValue(fieldset, newDefaultValue);
 });
 
 test('sync validation attributes', async ({ page }) => {
@@ -120,16 +147,18 @@ test('sync validation attributes', async ({ page }) => {
 	await expect(fieldset.text).toHaveJSProperty('maxLength', 30);
 	await expect(fieldset.text).toHaveJSProperty('pattern', '[a-zA-Z]+');
 	await expect(fieldset.text).toHaveJSProperty('multiple', false);
-	await expect(fieldset.text).toHaveJSProperty('min', '5');
-	await expect(fieldset.text).toHaveJSProperty('max', '10');
-	await expect(fieldset.text).toHaveJSProperty('step', '1');
+
+	await expect(fieldset.number).toHaveJSProperty('required', false);
+	await expect(fieldset.number).toHaveJSProperty('min', '5');
+	await expect(fieldset.number).toHaveJSProperty('max', '10');
+	await expect(fieldset.number).toHaveJSProperty('step', '1');
 
 	await expect(fieldset.textarea).toHaveJSProperty('required', true);
 	await expect(fieldset.textarea).toHaveJSProperty('minLength', 10);
 	await expect(fieldset.textarea).toHaveJSProperty('maxLength', 1000);
 
 	await expect(fieldset.select).toHaveJSProperty('required', true);
-	await expect(fieldset.multiSelect).toHaveJSProperty('required', true);
+	await expect(fieldset.multiSelect).toHaveJSProperty('required', false);
 	await expect(fieldset.multiSelect).toHaveJSProperty('multiple', true);
 
 	await expect(fieldset.checkbox).toHaveJSProperty('required', true);

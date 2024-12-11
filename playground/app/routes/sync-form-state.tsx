@@ -3,21 +3,21 @@ import { parseWithZod } from '@conform-to/zod';
 import type { ActionFunctionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
+import { useState } from 'react';
 import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 const schema = z.object({
-	text: z.string({ required_error: 'Text is required' }),
-	textarea: z.string({ required_error: 'Textarea is required' }),
-	select: z.string({ required_error: 'Select is required' }),
-	multiSelect: z.array(z.string(), {
-		required_error: 'Multi select is required',
+	input: z.object({
+		text: z.string(),
+		number: z.number(),
 	}),
-	checkbox: z.boolean({ required_error: 'Checkbox is required' }),
-	checkboxGroup: z.array(z.string(), {
-		required_error: 'Checkbox group is required',
-	}),
-	radioGroup: z.string({ required_error: 'Radio is required' }),
+	textarea: z.string(),
+	select: z.string(),
+	multiSelect: z.array(z.string()),
+	checkbox: z.boolean(),
+	checkboxGroup: z.array(z.string()),
+	radioGroup: z.string(),
 });
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -29,7 +29,10 @@ export async function action({ request }: ActionFunctionArgs) {
 			resetForm: true,
 		}),
 		defaultValue: {
-			text: 'Default text',
+			input: {
+				text: 'Default text',
+				number: 4,
+			},
 			textarea: 'You need to write something here',
 			select: 'red',
 			multiSelect: ['apple', 'banana', 'cherry'],
@@ -47,7 +50,10 @@ export default function Example() {
 		shouldValidate: 'onBlur',
 		onValidate: ({ formData }) => parseWithZod(formData, { schema }),
 		defaultValue: actionData?.defaultValue ?? {
-			text: 'Hello World',
+			input: {
+				text: 'Hello World',
+				number: 2,
+			},
 			textarea: 'Once upon a time',
 			select: 'green',
 			multiSelect: ['banana', 'cherry'],
@@ -56,11 +62,13 @@ export default function Example() {
 			radioGroup: 'Deutsch',
 		},
 		constraint: {
-			text: {
+			'input.text': {
 				required: true,
 				minLength: 5,
 				maxLength: 30,
 				pattern: '[a-zA-Z]+',
+			},
+			'input.number': {
 				min: 5,
 				max: 10,
 				step: 1,
@@ -74,7 +82,6 @@ export default function Example() {
 				required: true,
 			},
 			multiSelect: {
-				required: true,
 				multiple: true,
 			},
 			checkbox: {
@@ -91,6 +98,8 @@ export default function Example() {
 			return element.name !== 'token';
 		},
 	});
+	const inputFields = fields.input.getFieldset();
+	const [showNumberField, setShowNumberField] = useState(true);
 
 	return (
 		<Form method="post" {...getFormProps(form)}>
@@ -98,9 +107,14 @@ export default function Example() {
 				<Field label="Token">
 					<input name="token" defaultValue="1-0624770" />
 				</Field>
-				<Field label="Text" meta={fields.text}>
-					<input name={fields.text.name} />
+				<Field label="Text" meta={inputFields.text}>
+					<input name={inputFields.text.name} />
 				</Field>
+				{showNumberField ? (
+					<Field label="Number" meta={inputFields.number}>
+						<input type="number" name={inputFields.number.name} />
+					</Field>
+				) : null}
 				<Field label="Textarea" meta={fields.textarea}>
 					<textarea name={fields.textarea.name} />
 				</Field>
@@ -121,7 +135,7 @@ export default function Example() {
 				<Field label="Checkbox" meta={fields.checkbox}>
 					<label className="inline-block">
 						<input type="checkbox" name={fields.checkbox.name} />
-						<span className="p-2">It works</span>
+						<span className="p-2">Show number field</span>
 					</label>
 				</Field>
 				<Field label="Checkbox group" meta={fields.checkboxGroup}>
@@ -147,7 +161,10 @@ export default function Example() {
 				<button
 					{...form.update.getButtonProps({
 						value: {
-							text: 'Updated',
+							input: {
+								text: 'Updated',
+								number: 3,
+							},
 							textarea: 'Some text here',
 							select: 'blue',
 							multiSelect: ['apple', 'cherry'],
@@ -158,6 +175,13 @@ export default function Example() {
 					})}
 				>
 					Update value
+				</button>
+				<hr />
+				<button
+					type="button"
+					onClick={() => setShowNumberField((prev) => !prev)}
+				>
+					Toggle number field
 				</button>
 			</Playground>
 		</Form>

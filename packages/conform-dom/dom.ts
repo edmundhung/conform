@@ -143,9 +143,9 @@ export function requestSubmit(
 export function syncFieldValue(
 	element: FieldElement,
 	value: unknown,
-	updateDefaultValue: boolean,
+	defaultValue: unknown,
 ): void {
-	const fieldValue =
+	const getInputValue = (value: unknown): string[] =>
 		typeof value === 'string'
 			? [value]
 			: Array.isArray(value) && value.every((item) => typeof item === 'string')
@@ -154,27 +154,22 @@ export function syncFieldValue(
 
 	if (element instanceof HTMLSelectElement) {
 		for (const option of element.options) {
-			option.selected = fieldValue.includes(option.value);
-
-			if (updateDefaultValue) {
-				option.defaultSelected = option.selected;
-			}
+			option.selected = getInputValue(value).includes(option.value);
+			option.defaultSelected = getInputValue(defaultValue).includes(
+				option.value,
+			);
 		}
 	} else if (
 		element instanceof HTMLInputElement &&
 		(element.type === 'checkbox' || element.type === 'radio')
 	) {
-		element.checked = fieldValue.includes(element.value);
-
-		if (updateDefaultValue) {
-			element.defaultChecked = element.checked;
-		}
+		element.checked = getInputValue(value).includes(element.value);
+		element.defaultChecked = getInputValue(defaultValue).includes(
+			element.value,
+		);
 	} else {
-		element.value = fieldValue[0] ?? '';
-
-		if (updateDefaultValue) {
-			element.defaultValue = element.value;
-		}
+		element.value = getInputValue(value)[0] ?? '';
+		element.defaultValue = getInputValue(defaultValue)[0] ?? '';
 	}
 }
 
