@@ -118,6 +118,7 @@ export type Constraint = {
 
 export type FormMeta<FormError> = {
 	formId: string;
+	isResetting: boolean;
 	isValueUpdated: boolean;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
@@ -262,15 +263,16 @@ export type FormContext<
 
 function createFormMeta<Schema, FormError, FormValue>(
 	options: FormOptions<Schema, FormError, FormValue>,
-	initialized?: boolean,
+	isResetting?: boolean,
 ): FormMeta<FormError> {
-	const lastResult = !initialized ? options.lastResult : undefined;
+	const lastResult = !isResetting ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
 		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
 		formId: options.formId,
+		isResetting: !!isResetting,
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -669,6 +671,7 @@ export function createFormContext<
 
 		return {
 			submissionStatus: next.submissionStatus,
+			isResetting: next.isResetting,
 			defaultValue,
 			initialValue,
 			value,
@@ -1075,14 +1078,20 @@ export function syncFormState<FormError>(
 		) {
 			const prev = element.dataset.conform;
 			const next = stateSnapshot.key[element.name];
+			const isInitializing = typeof prev === 'undefined';
 
-			if (typeof prev === 'undefined' || prev !== next) {
+			if (isInitializing || prev !== next) {
 				element.dataset.conform = next;
 
-				syncFieldValue(element, stateSnapshot.initialValue[element.name]);
+				// Sync the field constraint first to make sure multiple attribute is applied first before the value
 				syncFieldConstraint(
 					element,
 					stateSnapshot.constraint[element.name] ?? {},
+				);
+				syncFieldValue(
+					element,
+					stateSnapshot.initialValue[element.name],
+					isInitializing || stateSnapshot.isResetting,
 				);
 			}
 		}
