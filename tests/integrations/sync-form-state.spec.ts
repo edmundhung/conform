@@ -3,6 +3,7 @@ import { getPlayground } from './helpers';
 
 function getFieldset(form: Locator) {
 	return {
+		token: form.locator('[name="token"]'),
 		text: form.locator('[name="text"]'),
 		textarea: form.locator('[name="textarea"]'),
 		select: form.locator('[name="select"]'),
@@ -26,6 +27,9 @@ async function assertFieldsetValue(
 	},
 ) {
 	const fieldset = getFieldset(form);
+
+	// This check if Conform omit the token field based on the shouldSyncElement option
+	await expect(fieldset.token).toHaveValue('1-0624770');
 
 	await expect(fieldset.text).toHaveValue(value.text);
 	await expect(fieldset.textarea).toHaveValue(value.textarea);
