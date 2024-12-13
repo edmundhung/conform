@@ -141,7 +141,7 @@ export function requestSubmit(
  * Synchronizes the field elements with the provided state
  */
 export function syncFieldValue(
-	element: FieldElement,
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	value: unknown,
 	defaultValue: unknown,
 ): void {
@@ -183,7 +183,7 @@ export function syncFieldValue(
 }
 
 export function syncFieldConstraint(
-	element: FieldElement,
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	constraint: {
 		required?: boolean;
 		minLength?: number;
@@ -200,7 +200,7 @@ export function syncFieldConstraint(
 		// If the element is a part of the checkbox group, it is unclear whether all checkboxes are required or only one.
 		!(
 			element.type === 'checkbox' &&
-			element.form.elements.namedItem(element.name) instanceof RadioNodeList
+			element.form?.elements.namedItem(element.name) instanceof RadioNodeList
 		)
 	) {
 		element.required = constraint.required;
