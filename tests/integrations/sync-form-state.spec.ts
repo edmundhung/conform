@@ -6,6 +6,7 @@ function getFieldset(form: Locator) {
 		token: form.locator('[name="token"]'),
 		text: form.locator('[name="input.text"]'),
 		number: form.locator('[name="input.number"]'),
+		files: form.locator('[name="input.files"]'),
 		textarea: form.locator('[name="textarea"]'),
 		select: form.locator('[name="select"]'),
 		multiSelect: form.locator('[name="multiSelect"]'),
@@ -35,6 +36,7 @@ async function assertFieldsetValue(
 
 	await expect(fieldset.text).toHaveValue(value.input.text);
 	await expect(fieldset.number).toHaveValue(value.input.number.toString());
+	await expect(fieldset.files).toHaveValue('');
 	await expect(fieldset.textarea).toHaveValue(value.textarea);
 	await expect(fieldset.select).toHaveValue(value.select);
 	await expect(fieldset.multiSelect).toHaveValues(value.multiSelect);
@@ -152,6 +154,9 @@ test('sync validation attributes', async ({ page }) => {
 	await expect(fieldset.number).toHaveJSProperty('min', '5');
 	await expect(fieldset.number).toHaveJSProperty('max', '10');
 	await expect(fieldset.number).toHaveJSProperty('step', '1');
+
+	await expect(fieldset.files).toHaveJSProperty('required', true);
+	await expect(fieldset.files).toHaveJSProperty('multiple', true);
 
 	await expect(fieldset.textarea).toHaveJSProperty('required', true);
 	await expect(fieldset.textarea).toHaveJSProperty('minLength', 10);

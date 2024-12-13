@@ -152,21 +152,30 @@ export function syncFieldValue(
 				? value
 				: [];
 
-	if (element instanceof HTMLSelectElement) {
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				element.checked = getInputValue(value).includes(element.value);
+				element.defaultChecked = getInputValue(defaultValue).includes(
+					element.value,
+				);
+				break;
+			case 'file':
+				// Do nothing for now
+				break;
+			default:
+				element.value = getInputValue(value)[0] ?? '';
+				element.defaultValue = getInputValue(defaultValue)[0] ?? '';
+				break;
+		}
+	} else if (element instanceof HTMLSelectElement) {
 		for (const option of element.options) {
 			option.selected = getInputValue(value).includes(option.value);
 			option.defaultSelected = getInputValue(defaultValue).includes(
 				option.value,
 			);
 		}
-	} else if (
-		element instanceof HTMLInputElement &&
-		(element.type === 'checkbox' || element.type === 'radio')
-	) {
-		element.checked = getInputValue(value).includes(element.value);
-		element.defaultChecked = getInputValue(defaultValue).includes(
-			element.value,
-		);
 	} else {
 		element.value = getInputValue(value)[0] ?? '';
 		element.defaultValue = getInputValue(defaultValue)[0] ?? '';

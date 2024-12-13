@@ -10,6 +10,7 @@ import { Playground, Field } from '~/components';
 const schema = z.object({
 	input: z.object({
 		text: z.string(),
+		files: z.instanceof(File).array(),
 		number: z.number(),
 	}),
 	textarea: z.string(),
@@ -32,6 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			input: {
 				text: 'Default text',
 				number: 4,
+				files: [],
 			},
 			textarea: 'You need to write something here',
 			select: 'red',
@@ -53,6 +55,7 @@ export default function Example() {
 			input: {
 				text: 'Hello World',
 				number: 2,
+				files: [],
 			},
 			textarea: 'Once upon a time',
 			select: 'green',
@@ -72,6 +75,10 @@ export default function Example() {
 				min: 5,
 				max: 10,
 				step: 1,
+			},
+			'input.files': {
+				required: true,
+				multiple: true,
 			},
 			textarea: {
 				required: true,
@@ -115,6 +122,9 @@ export default function Example() {
 						<input type="number" name={inputFields.number.name} />
 					</Field>
 				) : null}
+				<Field label="Files" meta={inputFields.files}>
+					<input type="file" name={inputFields.files.name} />
+				</Field>
 				<Field label="Textarea" meta={fields.textarea}>
 					<textarea name={fields.textarea.name} />
 				</Field>
