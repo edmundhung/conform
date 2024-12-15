@@ -107,6 +107,18 @@ export default function FormControl() {
 						<button
 							className="rounded-md border p-2 hover:border-black"
 							{...form.update.getButtonProps({
+								name: form.name,
+								value: {
+									name: 'Partial update',
+									message: 'This works!',
+								},
+							})}
+						>
+							Partial update
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							{...form.update.getButtonProps({
 								name: fields.message.name,
 								value: '',
 								validated: true,

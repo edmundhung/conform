@@ -14,6 +14,7 @@ function getFieldset(form: Locator) {
 		clearMessage: form.locator('button:text("Clear message")'),
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
+		partialUpdate: form.locator('button:text("Partial update")'),
 	};
 }
 
@@ -74,6 +75,11 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.message).toHaveValue(
 		'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
 	);
+
+	await fieldset.partialUpdate.click();
+	await expect(fieldset.name).toHaveValue('Partial update');
+	await expect(fieldset.number).toHaveValue('13579');
+	await expect(fieldset.message).toHaveValue('This works!');
 }
 
 test.describe('With JS', () => {

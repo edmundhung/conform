@@ -440,7 +440,10 @@ function updateValue<Error>(
 	value: unknown,
 ): void {
 	if (name === '') {
-		meta.value = value as Record<string, unknown>;
+		meta.value = Object.assign({}, meta.value, value) as Record<
+			string,
+			unknown
+		>;
 		meta.key = {
 			...getDefaultKey(value as Record<string, unknown>),
 			'': generateId(),
@@ -451,7 +454,13 @@ function updateValue<Error>(
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
-	setValue(meta.value, name, () => value);
+	setValue(meta.value, name, (currentValue) => {
+		if (isPlainObject(currentValue)) {
+			return Object.assign({}, currentValue, value);
+		}
+
+		return value;
+	});
 
 	if (isPlainObject(value) || Array.isArray(value)) {
 		setState(meta.key, name, () => undefined);
