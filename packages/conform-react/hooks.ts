@@ -91,10 +91,20 @@ export function useForm<
 		context.onUpdate({ ...formConfig, formId });
 	});
 
-	const subjectRef = useSubjectRef();
+	const subjectRef = useSubjectRef({
+		lastIntent: true,
+	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+
+	useEffect(() => {
+		if (!stateSnapshot.lastIntent) {
+			return;
+		}
+
+		context.runSideEffect(stateSnapshot.lastIntent);
+	}, [context, stateSnapshot.lastIntent]);
 
 	return [form, form.getFieldset()];
 }

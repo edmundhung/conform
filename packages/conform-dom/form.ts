@@ -117,6 +117,7 @@ export type Constraint = {
 export type FormMeta<FormError> = {
 	formId: string;
 	isValueUpdated: boolean;
+	lastIntent: Intent | null;
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
@@ -199,6 +200,7 @@ export type SubscriptionSubject = {
 } & {
 	formId?: boolean;
 	status?: boolean;
+	lastIntent?: boolean;
 };
 
 export type SubscriptionScope = {
@@ -231,6 +233,7 @@ export type FormContext<
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
 	observe(): () => void;
+	runSideEffect(intent: Intent): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -260,15 +263,16 @@ export type FormContext<
 
 function createFormMeta<Schema, FormError, FormValue>(
 	options: FormOptions<Schema, FormError, FormValue>,
-	initialized?: boolean,
+	isResetting?: boolean,
 ): FormMeta<FormError> {
-	const lastResult = !initialized ? options.lastResult : undefined;
+	const lastResult = !isResetting ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
 		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
 		formId: options.formId,
+		lastIntent: isResetting ? { type: 'reset', payload: {} } : null,
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -276,7 +280,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		value: initialValue,
 		constraint: options.constraint ?? {},
 		validated: lastResult?.state?.validated ?? {},
-		key: !initialized
+		key: !isResetting
 			? getDefaultKey(defaultValue)
 			: {
 					'': generateId(),
@@ -436,7 +440,6 @@ function updateValue<Error>(
 	value: unknown,
 ): void {
 	if (name === '') {
-		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
 		meta.key = {
 			...getDefaultKey(value as Record<string, unknown>),
@@ -445,11 +448,9 @@ function updateValue<Error>(
 		return;
 	}
 
-	meta.initialValue = clone(meta.initialValue);
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
-	setValue(meta.initialValue, name, () => value);
 	setValue(meta.value, name, () => value);
 
 	if (isPlainObject(value) || Array.isArray(value)) {
@@ -669,6 +670,7 @@ export function createFormContext<
 
 		return {
 			submissionStatus: next.submissionStatus,
+			lastIntent: next.lastIntent,
 			defaultValue,
 			initialValue,
 			value,
@@ -707,7 +709,7 @@ export function createFormContext<
 		state = nextState;
 
 		const cache: Record<
-			Exclude<keyof SubscriptionSubject, 'formId' | 'status'>,
+			Exclude<keyof SubscriptionSubject, 'formId' | 'status' | 'lastIntent'>,
 			Record<string, boolean>
 		> = {
 			value: {},
@@ -726,6 +728,7 @@ export function createFormContext<
 				(subject.formId && prevMeta.formId !== nextMeta.formId) ||
 				(subject.status &&
 					prevState.submissionStatus !== nextState.submissionStatus) ||
+				(subject.lastIntent && prevMeta.lastIntent !== nextMeta.lastIntent) ||
 				shouldNotify(
 					prevState.error,
 					nextState.error,
@@ -938,6 +941,7 @@ export function createFormContext<
 		}, {});
 		const update: FormMeta<FormError> = {
 			...meta,
+			lastIntent: result.intent ?? null,
 			isValueUpdated: false,
 			submissionStatus: result.status,
 			value: result.initialValue,
@@ -1038,7 +1042,22 @@ export function createFormContext<
 		});
 	}
 
+	function getFieldElements(node: Node, form: HTMLFormElement): FieldElement[] {
+		if (isFieldElement(node) && node.form === form) {
+			return [node];
+		}
+
+		if (node instanceof HTMLElement) {
+			return Array.from(
+				node.querySelectorAll<FieldElement>('input,select,textarea'),
+			).filter((element) => element.form === form);
+		}
+
+		return [];
+	}
+
 	function observe() {
+		const initializedElements = new Set<FieldElement>();
 		const observer = new MutationObserver((mutations) => {
 			const form = getFormElement();
 
@@ -1046,26 +1065,79 @@ export function createFormContext<
 				return;
 			}
 
+			let shouldUpdateFormValue = false;
+
 			for (const mutation of mutations) {
-				const nodes =
-					mutation.type === 'childList'
-						? [...mutation.addedNodes, ...mutation.removedNodes]
-						: [mutation.target];
+				switch (mutation.type) {
+					case 'childList': {
+						for (const node of mutation.addedNodes) {
+							const elements = getFieldElements(node, form);
 
-				for (const node of nodes) {
-					const element = isFieldElement(node)
-						? node
-						: node instanceof HTMLElement
-							? node.querySelector<FieldElement>('input,select,textarea')
-							: null;
+							for (const element of elements) {
+								const value = getValue(meta.initialValue, element.name);
+								const defaultValue =
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined;
 
-					if (element?.form === form) {
-						updateFormValue(form);
-						return;
+								if (!initializedElements.has(element)) {
+									updateField(element, {
+										value: defaultValue,
+										defaultValue,
+										constraint: meta.constraint[element.name],
+									});
+									initializedElements.add(element);
+								}
+
+								shouldUpdateFormValue = true;
+							}
+						}
+						for (const node of mutation.removedNodes) {
+							const elements = getFieldElements(node, form);
+
+							if (elements.length > 0) {
+								shouldUpdateFormValue = true;
+							}
+						}
+						break;
+					}
+					default: {
+						const elements = getFieldElements(mutation.target, form);
+
+						if (elements.length > 0) {
+							shouldUpdateFormValue = true;
+						}
+						break;
 					}
 				}
 			}
+
+			if (shouldUpdateFormValue) {
+				updateFormValue(form);
+			}
 		});
+
+		for (const element of getFormElement()?.elements ?? []) {
+			if (isFieldElement(element)) {
+				const value = getValue(meta.defaultValue, element.name);
+				const defaultValue =
+					typeof value === 'string' ||
+					(Array.isArray(value) &&
+						value.every((item) => typeof item === 'string'))
+						? value
+						: undefined;
+
+				updateField(element, {
+					value: defaultValue,
+					defaultValue,
+					constraint: meta.constraint[element.name],
+				});
+
+				initializedElements.add(element);
+			}
+		}
 
 		observer.observe(document, {
 			subtree: true,
@@ -1077,6 +1149,67 @@ export function createFormContext<
 		return () => {
 			observer.disconnect();
 		};
+	}
+
+	function runSideEffect(lastIntent: Intent) {
+		const formElement = getFormElement();
+
+		if (!formElement) {
+			return;
+		}
+
+		switch (lastIntent.type) {
+			case 'update': {
+				const name = formatName(
+					lastIntent.payload.name,
+					lastIntent.payload.index,
+				);
+
+				for (const element of formElement.elements) {
+					if (isFieldElement(element)) {
+						const value =
+							element.name === name
+								? lastIntent.payload.value
+								: flatten(lastIntent.payload.value, { prefix: name })[
+										element.name
+									];
+
+						updateField(element, {
+							value:
+								typeof value === 'string' ||
+								(Array.isArray(value) &&
+									value.every((item) => typeof item === 'string'))
+									? value
+									: undefined,
+						});
+					}
+				}
+				break;
+			}
+			case 'reset': {
+				const prefix = formatName(
+					lastIntent.payload.name,
+					lastIntent.payload.index,
+				);
+
+				for (const element of formElement.elements) {
+					if (isFieldElement(element) && isPrefix(element.name, prefix)) {
+						const value = getValue(meta.defaultValue, element.name);
+
+						updateField(element, {
+							defaultValue:
+								typeof value === 'string' ||
+								(Array.isArray(value) &&
+									value.every((item) => typeof item === 'string'))
+									? value
+									: undefined,
+						});
+						resetField(element);
+					}
+				}
+				break;
+			}
+		}
 	}
 
 	return {
@@ -1094,9 +1227,149 @@ export function createFormContext<
 		insert: createFormControl('insert'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),
+		runSideEffect,
 		subscribe,
 		getState,
 		getSerializedState,
 		observe,
 	};
+}
+
+export function resetField(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): void {
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				element.checked = element.defaultChecked;
+				break;
+			case 'file':
+				element.value = '';
+				break;
+			default:
+				element.value = element.defaultValue;
+				break;
+		}
+	} else if (element instanceof HTMLSelectElement) {
+		for (const option of element.options) {
+			option.selected = option.defaultSelected;
+		}
+	} else {
+		element.value = element.defaultValue;
+	}
+}
+
+export function updateField(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	options: {
+		value?: string | string[];
+		defaultValue?: string | string[];
+		constraint?: {
+			required?: boolean;
+			minLength?: number;
+			maxLength?: number;
+			min?: string | number;
+			max?: string | number;
+			step?: string | number;
+			multiple?: boolean;
+			pattern?: string;
+		};
+	},
+) {
+	const value =
+		typeof options.value === 'undefined'
+			? null
+			: Array.isArray(options.value)
+				? options.value
+				: [options.value];
+	const defaultValue =
+		typeof options.defaultValue === 'undefined'
+			? null
+			: Array.isArray(options.defaultValue)
+				? options.defaultValue
+				: [options.defaultValue];
+
+	if (options.constraint) {
+		const { constraint } = options;
+
+		if (
+			typeof constraint.required !== 'undefined' &&
+			// If the element is a part of the checkbox group, it is unclear whether all checkboxes are required or only one.
+			!(
+				element.type === 'checkbox' &&
+				element.form?.elements.namedItem(element.name) instanceof RadioNodeList
+			)
+		) {
+			element.required = constraint.required;
+		}
+
+		if (typeof constraint.multiple !== 'undefined' && 'multiple' in element) {
+			element.multiple = constraint.multiple;
+		}
+
+		if (typeof constraint.minLength !== 'undefined' && 'minLength' in element) {
+			element.minLength = constraint.minLength;
+		}
+
+		if (typeof constraint.maxLength !== 'undefined' && 'maxLength' in element) {
+			element.maxLength = constraint.maxLength;
+		}
+		if (typeof constraint.min !== 'undefined' && 'min' in element) {
+			element.min = `${constraint.min}`;
+		}
+
+		if (typeof constraint.max !== 'undefined' && 'max' in element) {
+			element.max = `${constraint.max}`;
+		}
+
+		if (typeof constraint.step !== 'undefined' && 'step' in element) {
+			element.step = `${constraint.step}`;
+		}
+
+		if (typeof constraint.pattern !== 'undefined' && 'pattern' in element) {
+			element.pattern = constraint.pattern;
+		}
+	}
+
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				if (value) {
+					element.checked = value.includes(element.value);
+				}
+				if (defaultValue) {
+					element.defaultChecked = defaultValue.includes(element.value);
+				}
+				break;
+			case 'file':
+				// Do nothing for now
+				break;
+			default:
+				if (value) {
+					element.value = value[0] ?? '';
+				}
+				if (defaultValue) {
+					element.defaultValue = defaultValue[0] ?? '';
+				}
+				break;
+		}
+	} else if (element instanceof HTMLSelectElement) {
+		for (const option of element.options) {
+			if (value) {
+				option.selected = value.includes(option.value);
+			}
+			if (defaultValue) {
+				option.defaultSelected = defaultValue.includes(option.value);
+			}
+		}
+	} else {
+		if (value) {
+			element.value = value[0] ?? '';
+		}
+		if (defaultValue) {
+			element.defaultValue = defaultValue[0] ?? '';
+		}
+	}
 }
