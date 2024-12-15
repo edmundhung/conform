@@ -117,7 +117,7 @@ export type Constraint = {
 export type FormMeta<FormError> = {
 	formId: string;
 	isValueUpdated: boolean;
-	lastIntent: Intent | null;
+	pendingIntents: Intent[];
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
@@ -233,7 +233,7 @@ export type FormContext<
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
 	observe(): () => void;
-	runSideEffect(intent: Intent): void;
+	runSideEffect(intents: Intent[]): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -272,7 +272,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
 		formId: options.formId,
-		lastIntent: isResetting ? { type: 'reset', payload: {} } : null,
+		pendingIntents: isResetting ? [{ type: 'reset', payload: {} }] : [],
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -300,9 +300,9 @@ function getDefaultKey(
 	defaultValue: Record<string, unknown> | Array<unknown>,
 	prefix?: string,
 ): Record<string, string> {
-	return Object.entries(flatten(defaultValue, { prefix })).reduce<
-		Record<string, string>
-	>((result, [key, value]) => {
+	return Object.entries(
+		flatten(defaultValue, { resolve: normalize, prefix }),
+	).reduce<Record<string, string>>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
 				result[formatName(key, i)] = generateId();
@@ -648,6 +648,7 @@ export function createFormContext<
 		getSubject?: () => SubscriptionSubject | undefined;
 	}> = [];
 	const latestOptions = options;
+	const processedIntents = new Set<Intent>();
 	let meta = createFormMeta(options);
 	let state = createFormState(meta);
 
@@ -679,7 +680,7 @@ export function createFormContext<
 
 		return {
 			submissionStatus: next.submissionStatus,
-			lastIntent: next.lastIntent,
+			pendingIntents: next.pendingIntents,
 			defaultValue,
 			initialValue,
 			value,
@@ -737,7 +738,8 @@ export function createFormContext<
 				(subject.formId && prevMeta.formId !== nextMeta.formId) ||
 				(subject.status &&
 					prevState.submissionStatus !== nextState.submissionStatus) ||
-				(subject.lastIntent && prevMeta.lastIntent !== nextMeta.lastIntent) ||
+				(subject.lastIntent &&
+					prevMeta.pendingIntents !== nextMeta.pendingIntents) ||
 				shouldNotify(
 					prevState.error,
 					nextState.error,
@@ -912,6 +914,7 @@ export function createFormContext<
 	}
 
 	function reset() {
+		processedIntents.clear();
 		updateFormMeta(createFormMeta(latestOptions, true));
 	}
 
@@ -948,9 +951,16 @@ export function createFormContext<
 
 			return result;
 		}, {});
+		const pendingIntents =
+			result.intent ||
+			meta.pendingIntents.some((intent) => processedIntents.has(intent))
+				? meta.pendingIntents
+						.filter((intent) => !processedIntents.has(intent))
+						.concat(result.intent ? [result.intent] : [])
+				: meta.pendingIntents;
 		const update: FormMeta<FormError> = {
 			...meta,
-			lastIntent: result.intent ?? null,
+			pendingIntents,
 			isValueUpdated: false,
 			submissionStatus: result.status,
 			value: result.initialValue,
@@ -1160,64 +1170,59 @@ export function createFormContext<
 		};
 	}
 
-	function runSideEffect(lastIntent: Intent) {
+	function runSideEffect(intents: Intent[]) {
 		const formElement = getFormElement();
 
 		if (!formElement) {
 			return;
 		}
 
-		switch (lastIntent.type) {
-			case 'update': {
-				const name = formatName(
-					lastIntent.payload.name,
-					lastIntent.payload.index,
-				);
+		for (const intent of intents) {
+			switch (intent.type) {
+				case 'update': {
+					const flattenedValue = flatten(intent.payload.value, {
+						prefix: formatName(intent.payload.name, intent.payload.index),
+					});
 
-				for (const element of formElement.elements) {
-					if (isFieldElement(element)) {
-						const value =
-							element.name === name
-								? lastIntent.payload.value
-								: flatten(lastIntent.payload.value, { prefix: name })[
-										element.name
-									];
+					for (const element of formElement.elements) {
+						if (isFieldElement(element)) {
+							const value = flattenedValue[element.name];
 
-						updateField(element, {
-							value:
-								typeof value === 'string' ||
-								(Array.isArray(value) &&
-									value.every((item) => typeof item === 'string'))
-									? value
-									: undefined,
-						});
+							updateField(element, {
+								value:
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined,
+							});
+						}
 					}
+					break;
 				}
-				break;
-			}
-			case 'reset': {
-				const prefix = formatName(
-					lastIntent.payload.name,
-					lastIntent.payload.index,
-				);
+				case 'reset': {
+					const prefix = formatName(intent.payload.name, intent.payload.index);
 
-				for (const element of formElement.elements) {
-					if (isFieldElement(element) && isPrefix(element.name, prefix)) {
-						const value = getValue(meta.defaultValue, element.name);
+					for (const element of formElement.elements) {
+						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
+							const value = getValue(meta.defaultValue, element.name);
 
-						updateField(element, {
-							defaultValue:
-								typeof value === 'string' ||
-								(Array.isArray(value) &&
-									value.every((item) => typeof item === 'string'))
-									? value
-									: undefined,
-						});
-						resetField(element);
+							updateField(element, {
+								defaultValue:
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined,
+							});
+							resetField(element);
+						}
 					}
+					break;
 				}
-				break;
 			}
+
+			processedIntents.add(intent);
 		}
 	}
 

@@ -99,12 +99,8 @@ export function useForm<
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
 
 	useEffect(() => {
-		if (!stateSnapshot.lastIntent) {
-			return;
-		}
-
-		context.runSideEffect(stateSnapshot.lastIntent);
-	}, [context, stateSnapshot.lastIntent]);
+		context.runSideEffect(stateSnapshot.pendingIntents);
+	}, [context, stateSnapshot.pendingIntents]);
 
 	return [form, form.getFieldset()];
 }

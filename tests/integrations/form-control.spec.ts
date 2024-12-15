@@ -15,10 +15,11 @@ function getFieldset(form: Locator) {
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
 		partialUpdate: form.locator('button:text("Partial update")'),
+		multipleUpdates: form.locator('button:text("Multiple updates")'),
 	};
 }
 
-async function runValidationScenario(page: Page) {
+async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
@@ -80,17 +81,24 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.name).toHaveValue('Partial update');
 	await expect(fieldset.number).toHaveValue('13579');
 	await expect(fieldset.message).toHaveValue('This works!');
+
+	if (hasClientValidation) {
+		await fieldset.multipleUpdates.click();
+		await expect(fieldset.name).toHaveValue('Partial update');
+		await expect(fieldset.number).toHaveValue('987');
+		await expect(fieldset.message).toHaveValue('Updated message');
+	}
 }
 
 test.describe('With JS', () => {
 	test('Client Validation', async ({ page }) => {
 		await page.goto('/form-control');
-		await runValidationScenario(page);
+		await runValidationScenario(page, true);
 	});
 
 	test('Server Validation', async ({ page }) => {
 		await page.goto('/form-control?noClientValidate=yes');
-		await runValidationScenario(page);
+		await runValidationScenario(page, false);
 	});
 });
 
@@ -99,6 +107,6 @@ test.describe('No JS', () => {
 
 	test('Validation', async ({ page }) => {
 		await page.goto('/form-control');
-		await runValidationScenario(page);
+		await runValidationScenario(page, false);
 	});
 });

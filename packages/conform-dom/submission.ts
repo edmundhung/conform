@@ -514,10 +514,10 @@ export function setState(
 			resolve(data) {
 				if (isPlainObject(data) || Array.isArray(data)) {
 					// @ts-expect-error
-					return data[root] ?? null;
+					return normalize(data[root] ?? null);
 				}
 
-				return data;
+				return normalize(data);
 			},
 			prefix: name,
 		}),
