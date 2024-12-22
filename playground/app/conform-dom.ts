@@ -46,10 +46,10 @@ export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
 	serverError: FormError<ErrorShape> | null;
 	clientError: FormError<ErrorShape> | null;
-	versionByBranch: Record<string, string>;
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
 	touchedFields: string[];
+	keys: Record<string, string>;
 };
 
 export function isPlainObject(
@@ -104,7 +104,7 @@ export function serialize<Schema>(value: Schema): SerialziedValue<Schema> {
 	}
 }
 
-export function generateVersion(): string {
+export function generateKey(): string {
 	return Math.floor(Date.now() * Math.random()).toString(36);
 }
 
@@ -218,9 +218,9 @@ export function formatName(prefix: string | undefined, path?: string | number) {
 		: prefix ?? '';
 }
 
-export function updateVersionByBranch(
-	currentVersionByBranch: Record<string, string>,
+export function getKeys(
 	defaultValue: unknown,
+	prevkeys: Record<string, string> = {},
 	prefix: string = '',
 ): Record<string, string> {
 	const arrayByName = flatten(
@@ -233,19 +233,15 @@ export function updateVersionByBranch(
 			const paths = getPaths(name);
 
 			for (let i = 0; i < array.length; i++) {
-				result[formatPaths(paths.concat(i))] = generateVersion();
+				result[formatPaths(paths.concat(i))] = generateKey();
 			}
 
 			return result;
 		},
 		prefix
-			? mapKeys(currentVersionByBranch, (key) =>
-					!isPrefix(key, prefix) ? key : null,
-				)
-			: currentVersionByBranch,
+			? mapKeys(prevkeys, (key) => (!isPrefix(key, prefix) ? key : null))
+			: prevkeys,
 	);
-
-	result[prefix] = generateVersion();
 
 	return result;
 }
@@ -586,7 +582,7 @@ export function initializeFormState<
 	control?: FormControl<Intent>;
 }): FormState<Schema, ErrorShape> {
 	let state: FormState<Schema, ErrorShape> = {
-		versionByBranch: updateVersionByBranch({}, defaultValue),
+		keys: getKeys(defaultValue),
 		defaultValue: defaultValue ?? null,
 		initialValue: result?.value ?? defaultValue ?? {},
 		submittedValue: result?.value ?? null,
@@ -650,108 +646,20 @@ export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 }
 
 /**
- * Synchronizes the form elements with the provided state.
- *
- * This function iterates through all input, select, and textarea elements within the specified
- * form and updates their values and attributes based on the given `FormState`. It ensures that
- * the form reflects the current state accurately, handling different input types and their
- * corresponding attributes.
- */
-export function syncFormState(
-	formElement: HTMLFormElement,
-	state: FormState<unknown, unknown>,
-	shouldUpdateElement?: (
-		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	) => boolean,
-): void {
-	const getAll = (value: unknown) => {
-		if (typeof value === 'string') {
-			return [value];
-		}
-
-		if (
-			Array.isArray(value) &&
-			value.every((item) => typeof item === 'string')
-		) {
-			return value;
-		}
-
-		return undefined;
-	};
-	const get = (value: unknown) => getAll(value)?.[0];
-
-	for (const element of formElement.elements) {
-		if (
-			(element instanceof HTMLInputElement ||
-				element instanceof HTMLTextAreaElement ||
-				element instanceof HTMLSelectElement) &&
-			(shouldUpdateElement?.(element) ?? true)
-		) {
-			const prev = element.dataset.conform;
-			const next = generateKey(state.versionByBranch, element.name);
-			const paths = getPaths(element.name);
-			const defaultValue = getValue(state.initialValue, paths);
-
-			if (typeof prev === 'undefined' || prev !== next) {
-				element.dataset.conform = next;
-
-				if ('options' in element) {
-					const value = getAll(defaultValue) ?? [];
-
-					for (const option of element.options) {
-						option.selected = value.includes(option.value);
-					}
-				} else if (
-					(element.type === 'checkbox' || element.type === 'radio') &&
-					'checked' in element
-				) {
-					element.checked = get(defaultValue) === element.value;
-				} else {
-					element.value = get(defaultValue) ?? '';
-				}
-			}
-		}
-	}
-}
-
-/**
  * Check if the event target is an input element in the form
  * @param target Event target
  * @param formElement The form element associated with
  */
 export function isInput(
 	target: unknown,
-	formElement: HTMLFormElement | null,
-): target is
-	| HTMLInputElement
-	| HTMLTextAreaElement
-	| (HTMLSelectElement & { form: HTMLFormElement }) {
+	formElement?: HTMLFormElement | null,
+): target is HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement {
 	return (
-		formElement !== null &&
 		(target instanceof HTMLInputElement ||
 			target instanceof HTMLTextAreaElement ||
 			target instanceof HTMLSelectElement) &&
-		target.form !== formElement
+		(formElement ? target.form === formElement : target.form !== null)
 	);
-}
-
-export function generateKey(
-	versionByBranch: Record<string, string>,
-	name: string,
-): string | undefined {
-	const paths = getPaths(name);
-	let key = versionByBranch[name];
-
-	if (paths.length > 0) {
-		const parentKey = generateKey(
-			versionByBranch,
-			formatPaths(paths.slice(0, -1)),
-		);
-
-		key = `${parentKey}/${key ?? paths.at(-1)}`;
-	}
-
-	return key;
 }
 
 export const validateControl = createFormControl(
@@ -825,18 +733,27 @@ export const updateControl = createFormControl(
 				intent.payload.value,
 			);
 		},
-		onSubmit(state, { result }) {
-			const payload = result.intent.payload;
-			const name = formatName(payload.name, payload.index);
+		applyFormElement(formElement, intent) {
+			const flattenedValue = flatten(
+				intent.payload.value,
+				(value) => value,
+				formatName(intent.payload.name, intent.payload.index),
+			);
 
-			return merge(state, {
-				versionByBranch: updateVersionByBranch(
-					state.versionByBranch,
-					payload.value,
-					name,
-				),
-				initialValue: modify(state.initialValue, name, payload.value),
-			});
+			for (const element of formElement.elements) {
+				if (isInput(element)) {
+					const value = serialize(flattenedValue[element.name]);
+
+					updateField(element, {
+						value:
+							typeof value === 'string' ||
+							(Array.isArray(value) &&
+								value.every((item) => typeof item === 'string'))
+								? value
+								: undefined,
+					});
+				}
+			}
 		},
 	},
 );
@@ -857,6 +774,9 @@ export const resetControl = createFormControl(
 		},
 		onSubmit(_, { reset }) {
 			return reset();
+		},
+		applyFormElement(formElement) {
+			formElement.reset();
 		},
 	},
 );
@@ -915,36 +835,40 @@ export function mapItems<Item>(
 	return updated;
 }
 
-export function updateListIndex(
-	listPaths: Array<string | number>,
-	name: string,
-	adjustIndex: (index: number) => number | null,
-): string | null {
-	const paths = getPaths(name);
+export function createUpdateListIndex(
+	listName: string,
+	update: (index: number) => number | null,
+): (name: string) => string {
+	const listPaths = getPaths(listName);
 
-	if (
-		paths.length > listPaths.length &&
-		listPaths.every((path, index) => paths[index] === path)
-	) {
-		const currentIndex = paths[listPaths.length];
+	return (name: string) => {
+		const paths = getPaths(name);
 
-		if (typeof currentIndex === 'number') {
-			const newIndex = adjustIndex(currentIndex);
+		if (
+			paths.length > listPaths.length &&
+			listPaths.every((path, index) => paths[index] === path)
+		) {
+			const currentIndex = paths[listPaths.length];
 
-			if (newIndex === null) {
-				return null;
-			}
+			if (typeof currentIndex === 'number') {
+				const newIndex = update(currentIndex);
 
-			if (newIndex !== currentIndex) {
-				// Replace the index
-				paths.splice(listPaths.length, 1, newIndex);
+				if (newIndex === null) {
+					// To remove the item instead of updating it
+					return null;
+				}
 
-				return formatPaths(paths);
+				if (newIndex !== currentIndex) {
+					// Replace the index
+					paths.splice(listPaths.length, 1, newIndex);
+
+					return formatPaths(paths);
+				}
 			}
 		}
-	}
 
-	return name;
+		return name;
+	};
 }
 
 export const listControl = createFormControl(
@@ -1049,18 +973,22 @@ export const listControl = createFormControl(
 
 			if (!Array.isArray(data)) {
 				throw new Error(
-					`Update state failed; The initialValue at "$intent.payload.name}" is not an array`,
+					`Update state failed; The initialValue at "${intent.payload.name}" is not an array`,
 				);
 			}
 
+			// Make a copy of the currnet list data
 			const list = Array.from(data);
-			const listPaths = getPaths(intent.payload.name);
 
 			switch (intent.type) {
 				case 'insert': {
 					const index = intent.payload.index ?? list.length;
-					const adjustIndex = (currentIndex: number) =>
-						index <= currentIndex ? currentIndex + 1 : currentIndex;
+					const itemName = formatName(intent.payload.name, index);
+					const updateListIndex = createUpdateListIndex(
+						intent.payload.name,
+						(currentIndex) =>
+							index <= currentIndex ? currentIndex + 1 : currentIndex,
+					);
 
 					list.splice(
 						intent.payload.index ?? list.length,
@@ -1069,70 +997,71 @@ export const listControl = createFormControl(
 					);
 
 					return merge(state, {
-						versionByBranch: updateVersionByBranch(
-							mapKeys(state.versionByBranch, (key) =>
-								updateListIndex(listPaths, key, adjustIndex),
+						keys: {
+							...getKeys(
+								intent.payload.defaultValue,
+								mapKeys(state.keys, updateListIndex),
+								itemName,
 							),
-							intent.payload.defaultValue,
-							formatName(intent.payload.name, index),
-						),
+							[itemName]: generateKey(),
+						},
 						touchedFields: addItems(
-							mapItems(state.touchedFields, (key) =>
-								updateListIndex(listPaths, key, adjustIndex),
-							),
+							mapItems(state.touchedFields, updateListIndex),
 							[intent.payload.name],
 						),
 						initialValue: modify(state.initialValue, intent.payload.name, list),
 					});
 				}
 				case 'remove': {
-					const adjustIndex = (currentIndex: number) => {
-						if (intent.payload.index === currentIndex) {
-							return null;
-						}
+					const updateListIndex = createUpdateListIndex(
+						intent.payload.name,
+						(currentIndex) => {
+							if (intent.payload.index === currentIndex) {
+								return null;
+							}
 
-						return intent.payload.index < currentIndex
-							? currentIndex - 1
-							: currentIndex;
-					};
+							return intent.payload.index < currentIndex
+								? currentIndex - 1
+								: currentIndex;
+						},
+					);
 
 					list.splice(intent.payload.index, 1);
 
 					return merge(state, {
-						versionByBranch: mapKeys(state.versionByBranch, (key) =>
-							updateListIndex(listPaths, key, adjustIndex),
-						),
+						keys: mapKeys(state.keys, updateListIndex),
 						touchedFields: addItems(
-							mapItems(state.touchedFields, (key) =>
-								updateListIndex(listPaths, key, adjustIndex),
-							),
+							mapItems(state.touchedFields, updateListIndex),
 							[intent.payload.name],
 						),
 						initialValue: modify(state.initialValue, intent.payload.name, list),
 					});
 				}
 				case 'reorder': {
-					const adjustIndex = (currentIndex: number) => {
-						if (intent.payload.from === intent.payload.to) {
-							return currentIndex;
-						}
+					const updateListIndex = createUpdateListIndex(
+						intent.payload.name,
+						(currentIndex) => {
+							if (intent.payload.from === intent.payload.to) {
+								return currentIndex;
+							}
 
-						if (currentIndex === intent.payload.from) {
-							return intent.payload.to;
-						}
+							if (currentIndex === intent.payload.from) {
+								return intent.payload.to;
+							}
 
-						if (intent.payload.from < intent.payload.to) {
-							return currentIndex > intent.payload.from &&
-								currentIndex <= intent.payload.to
-								? currentIndex - 1
+							if (intent.payload.from < intent.payload.to) {
+								return currentIndex > intent.payload.from &&
+									currentIndex <= intent.payload.to
+									? currentIndex - 1
+									: currentIndex;
+							}
+
+							return currentIndex >= intent.payload.to &&
+								currentIndex < intent.payload.from
+								? currentIndex + 1
 								: currentIndex;
-						}
-
-						return currentIndex >= intent.payload.to &&
-							currentIndex < intent.payload.from
-							? currentIndex + 1
-							: currentIndex;
-					};
+						},
+					);
 
 					list.splice(
 						intent.payload.to,
@@ -1141,13 +1070,9 @@ export const listControl = createFormControl(
 					);
 
 					return merge(state, {
-						versionByBranch: mapKeys(state.versionByBranch, (key) =>
-							updateListIndex(listPaths, key, adjustIndex),
-						),
+						keys: mapKeys(state.keys, updateListIndex),
 						touchedFields: addItems(
-							mapItems(state.touchedFields, (item) =>
-								updateListIndex(listPaths, item, adjustIndex),
-							),
+							mapItems(state.touchedFields, updateListIndex),
 							[intent.payload.name],
 						),
 						initialValue: modify(state.initialValue, intent.payload.name, list),
@@ -1244,6 +1169,9 @@ export type FormControl<Intent extends BaseIntent> = {
 			reset(): FormState<Schema, ErrorShape>;
 		},
 	): FormState<Schema, ErrorShape>;
+	getSideEffect(
+		intent: Intent,
+	): ((formElement: HTMLFormElement) => void) | null;
 };
 
 type Simplify<T> = Pretty<
@@ -1260,7 +1188,20 @@ type Simplify<T> = Pretty<
 
 export function createFormControl<Intent extends BaseIntent>(
 	resolve: (intent: BaseIntent) => Intent | null,
-	options: Partial<Omit<FormControl<Simplify<Intent>>, 'isValid'>>,
+	options: {
+		updateValue?: (
+			submittedValue: Record<string, FormValue>,
+			intent: Intent,
+		) => Record<string, FormValue> | null;
+		onSubmit?: <Schema, ErrorShape>(
+			state: FormState<Schema, ErrorShape>,
+			context: {
+				result: SubmissionResult<Intent, ErrorShape>;
+				reset(): FormState<Schema, ErrorShape>;
+			},
+		) => FormState<Schema, ErrorShape>;
+		applyFormElement?: (formElement: HTMLFormElement, intent: Intent) => void;
+	},
 ): FormControl<Simplify<Intent>> {
 	return {
 		isValid(intent): intent is Intent {
@@ -1279,6 +1220,13 @@ export function createFormControl<Intent extends BaseIntent>(
 			}
 
 			return options.onSubmit(state, context);
+		},
+		getSideEffect(intent) {
+			if (typeof options.applyFormElement !== 'function') {
+				return null;
+			}
+
+			return (formElement) => options.applyFormElement(formElement, intent);
 		},
 	};
 }
@@ -1302,7 +1250,7 @@ export function combineFormControls<Controls extends Array<FormControl<any>>>(
 					const result = control.updateValue(submittedValue, intent);
 
 					if (result === null) {
-						return result;
+						return null;
 					}
 
 					submittedValue = result;
@@ -1321,6 +1269,29 @@ export function combineFormControls<Controls extends Array<FormControl<any>>>(
 			}
 
 			return result;
+		},
+		getSideEffect(intent) {
+			const sideEffects: Array<(formElement: HTMLFormElement) => void> = [];
+
+			for (const control of controls) {
+				if (control.isValid(intent)) {
+					const sideEffect = control.getSideEffect(intent);
+
+					if (sideEffect) {
+						sideEffects.push(sideEffect);
+					}
+				}
+			}
+
+			if (sideEffects.length === 0) {
+				return null;
+			}
+
+			return (formElement) => {
+				for (const sideEffect of sideEffects) {
+					sideEffect(formElement);
+				}
+			};
 		},
 	};
 }
@@ -1368,7 +1339,6 @@ export type FormMetadata<
 	Props extends Record<string, unknown>,
 > = {
 	defaultValue: DefaultValue<Schema> | null;
-	key: string | null;
 	touched: boolean;
 	error: ErrorShape | null;
 	fieldError: Record<string, ErrorShape> | null;
@@ -1390,9 +1360,6 @@ export function getFormMetadata<
 		defaultValue: state.defaultValue,
 		error: error?.formError ?? null,
 		fieldError: error?.fieldError ?? null,
-		get key() {
-			return generateKey(state.versionByBranch, name) ?? null;
-		},
 		get touched() {
 			return isTouched(state.touchedFields, name);
 		},
@@ -1411,7 +1378,7 @@ export function getFieldMetadata<
 			return name;
 		},
 		get key() {
-			return generateKey(state.versionByBranch, name);
+			return state.keys[name];
 		},
 		get defaultValue() {
 			const paths = getPaths(name);
@@ -1491,4 +1458,153 @@ export function getFieldset<
 			return createField(formatName(options?.name, key));
 		},
 	});
+}
+
+/**
+ * Updates the DOM element based on the given options
+ */
+export function updateField(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	options: {
+		value?: string | string[];
+		defaultValue?: string | string[];
+		constraint?: {
+			required?: boolean;
+			minLength?: number;
+			maxLength?: number;
+			min?: string | number;
+			max?: string | number;
+			step?: string | number;
+			multiple?: boolean;
+			pattern?: string;
+		};
+	},
+) {
+	const value =
+		typeof options.value === 'undefined'
+			? null
+			: Array.isArray(options.value)
+				? options.value
+				: [options.value];
+	const defaultValue =
+		typeof options.defaultValue === 'undefined'
+			? null
+			: Array.isArray(options.defaultValue)
+				? options.defaultValue
+				: [options.defaultValue];
+
+	if (options.constraint) {
+		const { constraint } = options;
+
+		if (
+			typeof constraint.required !== 'undefined' &&
+			// If the element is a part of the checkbox group, it is unclear whether all checkboxes are required or only one.
+			!(
+				element.type === 'checkbox' &&
+				element.form?.elements.namedItem(element.name) instanceof RadioNodeList
+			)
+		) {
+			element.required = constraint.required;
+		}
+
+		if (typeof constraint.multiple !== 'undefined' && 'multiple' in element) {
+			element.multiple = constraint.multiple;
+		}
+
+		if (typeof constraint.minLength !== 'undefined' && 'minLength' in element) {
+			element.minLength = constraint.minLength;
+		}
+
+		if (typeof constraint.maxLength !== 'undefined' && 'maxLength' in element) {
+			element.maxLength = constraint.maxLength;
+		}
+		if (typeof constraint.min !== 'undefined' && 'min' in element) {
+			element.min = `${constraint.min}`;
+		}
+
+		if (typeof constraint.max !== 'undefined' && 'max' in element) {
+			element.max = `${constraint.max}`;
+		}
+
+		if (typeof constraint.step !== 'undefined' && 'step' in element) {
+			element.step = `${constraint.step}`;
+		}
+
+		if (typeof constraint.pattern !== 'undefined' && 'pattern' in element) {
+			element.pattern = constraint.pattern;
+		}
+	}
+
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				if (value) {
+					element.checked = value.includes(element.value);
+				}
+				if (defaultValue) {
+					element.defaultChecked = defaultValue.includes(element.value);
+				}
+				break;
+			case 'file':
+				// Do nothing for now
+				break;
+			default:
+				if (value) {
+					element.value = value[0] ?? '';
+				}
+				if (defaultValue) {
+					element.defaultValue = defaultValue[0] ?? '';
+				}
+				break;
+		}
+	} else if (element instanceof HTMLSelectElement) {
+		for (const option of element.options) {
+			if (value) {
+				option.selected = value.includes(option.value);
+			}
+			if (defaultValue) {
+				option.defaultSelected = defaultValue.includes(option.value);
+			}
+		}
+	} else {
+		if (value) {
+			element.value = value[0] ?? '';
+		}
+		if (defaultValue) {
+			element.defaultValue = defaultValue[0] ?? '';
+		}
+	}
+
+	// Update the element attribute to notify that this is changed by Conform
+	element.dataset.conform = generateKey();
+}
+
+/**
+ * Reset the field to its default value
+ * For file input, it will clear the selected file
+ */
+export function resetField(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): void {
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				element.checked = element.defaultChecked;
+				break;
+			case 'file':
+				element.value = '';
+				break;
+			default:
+				element.value = element.defaultValue;
+				break;
+		}
+	} else if (element instanceof HTMLSelectElement) {
+		for (const option of element.options) {
+			option.selected = option.defaultSelected;
+		}
+	} else {
+		element.value = element.defaultValue;
+	}
 }

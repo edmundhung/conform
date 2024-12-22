@@ -14,11 +14,14 @@ import {
 	type FormControl,
 	type BaseIntent,
 	deepEqual,
-	syncFormState,
+	updateField,
 	initializeFormState,
 	updateFormState,
 	requestControl,
 	serializeIntent,
+	getFieldMetadata,
+	isInput,
+	FormState,
 } from './conform-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
@@ -33,7 +36,7 @@ export type FormOptions<
 	Intent extends BaseIntent,
 	ErrorShape,
 > = {
-	formRef?: RefObject<HTMLFormElement>;
+	formRef?: FormRef;
 	control?: FormControl<Intent>;
 	result?: SubmissionResult<Intent | null, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
@@ -55,6 +58,9 @@ export function useFormState<
 	ErrorShape,
 >(options: FormOptions<Schema, Intent, ErrorShape>) {
 	const [state, setState] = useState(() => initializeFormState(options));
+	const [runSideEffect, setSideEffect] = useState<
+		((formElement: HTMLFormElement) => void) | null
+	>(null);
 	const intentName = options.intentName ?? '__intent__';
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(options.result);
@@ -66,13 +72,24 @@ export function useFormState<
 			}
 
 			lastResultRef.current = result;
+
+			const { defaultValue, control } = optionsRef.current;
+
 			setState((state) =>
 				updateFormState(state, {
-					defaultValue: optionsRef.current.defaultValue,
-					control: optionsRef.current.control,
+					defaultValue,
+					control,
 					result,
 				}),
 			);
+
+			if (result.intent) {
+				const sideEffectFn = control?.getSideEffect(result.intent);
+
+				if (sideEffectFn) {
+					setSideEffect(() => sideEffectFn);
+				}
+			}
 		},
 		[],
 	);
@@ -88,27 +105,31 @@ export function useFormState<
 		lastStateRef.current = state;
 	});
 
-	useEffect(
-		() =>
-			formObserver.onInputMounted((formElement) => {
-				if (formElement === optionsRef.current.formRef?.current) {
-					syncFormState(
-						formElement,
-						lastStateRef.current,
-						optionsRef.current.shouldSyncElement,
-					);
-				}
-			}),
-		[],
-	);
-
 	useEffect(() => {
-		const formElement = options.formRef?.current;
+		const formElement = getFormElement(options.formRef);
 
 		if (formElement) {
-			syncFormState(formElement, state, optionsRef.current.shouldSyncElement);
+			for (const element of formElement.elements) {
+				if (isInput(element, formElement)) {
+					initializeElement(element, lastStateRef.current);
+				}
+			}
 		}
-	}, [options.formRef, state]);
+
+		return formObserver.onInputMounted((element) =>
+			initializeElement(element, lastStateRef.current),
+		);
+	}, []);
+
+	useEffect(() => {
+		const formElement = getFormElement(options.formRef);
+
+		if (!formElement) {
+			return;
+		}
+
+		return runSideEffect?.(formElement);
+	}, [options.formRef, runSideEffect]);
 
 	return {
 		state,
@@ -116,11 +137,9 @@ export function useFormState<
 		intent: {
 			name: intentName,
 			submit(intent: Intent) {
-				requestControl(
-					options.formRef?.current,
-					intentName,
-					serializeIntent(intent),
-				);
+				const formElement = getFormElement(options.formRef);
+
+				requestControl(formElement, intentName, serializeIntent(intent));
 			},
 			serialize(intent: Intent) {
 				return serializeIntent(intent);
@@ -152,18 +171,33 @@ export function useRefQuery<Type>(query: () => Type | null): RefObject<Type> {
 	return ref;
 }
 
-type FormReference = string | RefObject<HTMLFormElement>;
+type FormRef =
+	| RefObject<
+			| HTMLFormElement
+			| HTMLFieldSetElement
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLButtonElement
+	  >
+	| string;
 
-function getFormElement(formRef: FormReference): HTMLFormElement | null {
+function getFormElement(formRef: FormRef | undefined): HTMLFormElement | null {
 	if (typeof formRef === 'string') {
 		return document.forms.namedItem(formRef);
 	}
 
-	return formRef.current;
+	const element = formRef?.current;
+
+	if (element instanceof HTMLFormElement) {
+		return element;
+	}
+
+	return element?.form ?? null;
 }
 
 export function useFormData<Value>(
-	formRef: RefObject<HTMLFormElement> | string,
+	formRef: FormRef,
 	select: (formData: FormData, currentValue: Value | undefined) => Value,
 ): Value | undefined {
 	const previous = useRef<Value>();
@@ -184,8 +218,8 @@ export function useFormData<Value>(
 				return;
 			}
 
-			const snapshot = formObserver.getFormDataSnapshot(formElement);
-			const value = select(snapshot, previous.current);
+			const formData = new FormData(formElement);
+			const value = select(formData, previous.current);
 
 			return value;
 		},
@@ -280,7 +314,7 @@ export function updateFieldValue(
 	element.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-export function useInput(initialValue: string): {
+export function useInputControl(initialValue: string): {
 	value: string;
 	changed(value: string): void;
 	focused(): void;
@@ -289,7 +323,7 @@ export function useInput(initialValue: string): {
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 };
-export function useInput(initialValue: string[]): {
+export function useInputControl(initialValue: string[]): {
 	value: string[];
 	changed(value: string[]): void;
 	focused(): void;
@@ -298,7 +332,7 @@ export function useInput(initialValue: string[]): {
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 };
-export function useInput(initialValue?: string | string[]): {
+export function useInputControl(initialValue?: string | string[]): {
 	value: string | string[] | undefined;
 	changed(value: string | string[]): void;
 	focused(): void;
@@ -307,7 +341,7 @@ export function useInput(initialValue?: string | string[]): {
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
 };
-export function useInput(initialValue?: string | string[]) {
+export function useInputControl(initialValue?: string | string[]) {
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -329,6 +363,10 @@ export function useInput(initialValue?: string | string[]) {
 		),
 		() => {
 			if (!inputRef.current) {
+				// eslint-disable-next-line no-console
+				console.log(
+					'No input element is registered yet; Did you forget to call the `register` function?',
+				);
 				return initialValue;
 			}
 
@@ -439,7 +477,11 @@ export type FormObserver = {
 	 * @param callback - Function invoked with the newly mounted input elements.
 	 * @returns A function to unsubscribe the callback.
 	 */
-	onInputMounted(callback: (formElement: HTMLFormElement) => void): () => void;
+	onInputMounted(
+		callback: (
+			inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+		) => void,
+	): () => void;
 
 	/**
 	 * Subscribes to the event when an input element's value changes.
@@ -461,13 +503,6 @@ export type FormObserver = {
 	onFormDataChanged(
 		callback: (formElement: HTMLFormElement, formData: FormData) => void,
 	): () => void;
-
-	/**
-	 * Retrieves the form data for a given form element.
-	 * @param formElement - The form element.
-	 * @returns The FormData snapshot.
-	 */
-	getFormDataSnapshot(formElement: HTMLFormElement): FormData;
 };
 
 export function createFormObserver(): FormObserver {
@@ -480,19 +515,8 @@ export function createFormObserver(): FormObserver {
 	const formDataChangedCallbacks = new Set<
 		Parameters<FormObserver['onFormDataChanged']>[0]
 	>();
-	const snapshot = new Map<HTMLFormElement, FormData>();
 
 	let observer: MutationObserver | null = null;
-
-	function isInput(
-		element: unknown,
-	): element is HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement {
-		return (
-			element instanceof HTMLInputElement ||
-			element instanceof HTMLTextAreaElement ||
-			element instanceof HTMLSelectElement
-		);
-	}
 
 	function handleInput(event: Event) {
 		const element = event.target;
@@ -520,23 +544,43 @@ export function createFormObserver(): FormObserver {
 
 	function handleMutation(mutations: MutationRecord[]): void {
 		const formDataChanged = new Set<HTMLFormElement>();
-		const inputElementMoutned = new Set<HTMLFormElement>();
+		const inputElementMoutned = new Set<
+			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+		>();
 		const inputElementChanged = new Set<
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>();
+		const getInputs = (node: Node) => {
+			if (isInput(node)) {
+				return [node];
+			}
 
+			if (node instanceof Element) {
+				return Array.from(
+					node.querySelectorAll<
+						HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+					>('input,select,textarea'),
+				);
+			}
+
+			return [];
+		};
 		for (const mutation of mutations) {
 			switch (mutation.type) {
 				case 'childList':
 					for (const node of mutation.addedNodes) {
-						if (isInput(node) && node.form) {
-							inputElementMoutned.add(node.form);
-							formDataChanged.add(node.form);
+						for (const input of getInputs(node)) {
+							if (input.form) {
+								inputElementMoutned.add(input);
+								formDataChanged.add(input.form);
+							}
 						}
 					}
 					for (const node of mutation.removedNodes) {
-						if (isInput(node) && node.form) {
-							formDataChanged.add(node.form);
+						for (const input of getInputs(node)) {
+							if (input.form) {
+								formDataChanged.add(input.form);
+							}
 						}
 					}
 					break;
@@ -560,14 +604,16 @@ export function createFormObserver(): FormObserver {
 			emitInputChanged(inputElement);
 		}
 
-		for (const formElement of inputElementMoutned) {
-			emitInputMounted(formElement);
+		for (const inputElement of inputElementMoutned) {
+			emitInputMounted(inputElement);
 		}
 	}
 
-	function emitInputMounted(formElement: HTMLFormElement) {
+	function emitInputMounted(
+		inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	) {
 		for (const callback of inputMountedCallbacks) {
-			callback(formElement);
+			callback(inputElement);
 		}
 	}
 
@@ -584,8 +630,6 @@ export function createFormObserver(): FormObserver {
 		submitter: HTMLElement | null = null,
 	) {
 		const formData = new FormData(formElement, submitter);
-
-		snapshot.set(formElement, formData);
 
 		for (const callback of formDataChangedCallbacks) {
 			callback(formElement, formData);
@@ -655,17 +699,25 @@ export function createFormObserver(): FormObserver {
 				destroy();
 			};
 		},
-		getFormDataSnapshot(formElement) {
-			let formData = snapshot.get(formElement);
-
-			if (!formData) {
-				formData = new FormData(formElement);
-				snapshot.set(formElement, formData);
-			}
-
-			return formData;
-		},
 	};
 }
 
 export const formObserver = createFormObserver();
+
+export function initializeElement(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	state: FormState<Record<string, unknown>, unknown>,
+): void {
+	// Skip elements that are already initialized
+	if (element.dataset.conform) {
+		return;
+	}
+
+	const field = getFieldMetadata(state, element.name);
+
+	updateField(element, {
+		value: field.defaultValue,
+		defaultValue: field.defaultValue,
+		constraint: {},
+	});
+}

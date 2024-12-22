@@ -1,5 +1,6 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
+import { useInputControl, useFormData } from '~/conform-react';
 import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import { useForm, resolve, report } from '~/form';
@@ -43,8 +44,16 @@ export default function Example() {
 	const result = useActionData<typeof action>();
 	const { form, fields, intent } = useForm(schema, {
 		result,
+		defaultValue: {
+			// title: "Example",
+			tasks: [{ title: 'Test', done: true }],
+		},
 	});
+	const title = useFormData('example', (formData) =>
+		formData.get(fields.title.name)?.toString(),
+	);
 	const taskFields = fields.tasks.getFieldList();
+	const titleControl = useInputControl(fields.title.defaultValue);
 
 	return (
 		<Form id="example" method="post" {...form.props}>
@@ -52,9 +61,12 @@ export default function Example() {
 			<div>
 				Title
 				<input
+					ref={titleControl.register}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue}
 				/>
+				<div>Control: {titleControl.value}</div>
+				<div>FormData: {title}</div>
 				<div>{fields.title.error}</div>
 			</div>
 			<div>
@@ -68,7 +80,6 @@ export default function Example() {
 			<div>Tasks error: {fields.tasks.error}</div>
 			{taskFields.map((taskField, index) => {
 				const task = taskField.getFieldset();
-
 				return (
 					<fieldset key={taskField.key}>
 						<input
