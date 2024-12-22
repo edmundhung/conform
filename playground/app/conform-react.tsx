@@ -38,7 +38,12 @@ export type FormOptions<
 > = {
 	formRef?: FormRef;
 	control?: FormControl<Intent>;
-	result?: SubmissionResult<Intent | null, ErrorShape>;
+	result?: SubmissionResult<
+		Schema,
+		Intent | null,
+		ErrorShape,
+		FormDataEntryValue
+	>;
 	defaultValue?: DefaultValue<Schema>;
 	shouldSyncElement?: (
 		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
@@ -66,7 +71,14 @@ export function useFormState<
 	const lastResultRef = useRef(options.result);
 	const lastStateRef = useRef(state);
 	const update = useCallback(
-		(result: SubmissionResult<Intent | null, ErrorShape>) => {
+		(
+			result: SubmissionResult<
+				Schema,
+				Intent | null,
+				ErrorShape,
+				FormDataEntryValue
+			>,
+		) => {
 			if (result === lastResultRef.current) {
 				return;
 			}

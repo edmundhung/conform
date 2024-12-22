@@ -1,9 +1,30 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
-import { useInputControl, useFormData } from '~/conform-react';
+import {
+	useInputControl,
+	useFormData,
+	getFormData,
+	useFormState,
+} from '~/conform-react';
 import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
-import { useForm, resolve, report } from '~/form';
+import {
+	type FormControlIntent,
+	combineFormControls,
+	listControl,
+	resetControl,
+	updateControl,
+	validateControl,
+	deserializeIntent,
+	getFormMetadata,
+	getFieldset,
+	report,
+	resolve as baseResolve,
+	isInput,
+	getFieldMetadata,
+} from '~/conform-dom';
+import { flushSync } from 'react-dom';
+import { useRef } from 'react';
 
 const schema = coerceZodFormData(
 	z.object({
@@ -21,6 +42,40 @@ const schema = coerceZodFormData(
 	}),
 );
 
+export const intentName = '__intent__';
+
+export const control = combineFormControls([
+	validateControl,
+	resetControl,
+	updateControl,
+	listControl,
+]);
+
+export type Intent = FormControlIntent<typeof control>;
+
+export function resolve(formData: FormData | URLSearchParams) {
+	const submission = baseResolve(formData, {
+		intentName,
+		parseIntent(value) {
+			const intent = deserializeIntent(value);
+
+			if (control.isValid(intent)) {
+				return intent;
+			}
+
+			return null;
+		},
+	});
+
+	if (submission.value && submission.intent) {
+		submission.value = control.updateValue(submission.value, submission.intent);
+	}
+
+	return submission;
+}
+
+export { report };
+
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = resolve(formData);
@@ -30,23 +85,79 @@ export async function action({ request }: ActionFunctionArgs) {
 		const error = flattenZodErrors(parseResult, submission.fields);
 
 		return report(submission, {
-			formError: error.formError,
-			fieldError: error.fieldError,
+			error,
 		});
 	}
 
-	return report(submission, {
-		formError: ['Something went wrong'],
-	});
+	throw new Error('Something went wrong');
+
+	// return report(submission, {
+	// 	formError: ['Something went wrong'],
+	// });
 }
 
 export default function Example() {
 	const result = useActionData<typeof action>();
-	const { form, fields, intent } = useForm(schema, {
+	const formRef = useRef<HTMLFormElement>(null);
+	const { state, update, intent } = useFormState({
 		result,
+		formRef,
 		defaultValue: {
-			// title: "Example",
 			tasks: [{ title: 'Test', done: true }],
+		},
+		control,
+		intentName,
+	});
+	const form = getFormMetadata(state, {
+		ref: formRef,
+		onSubmit(event: React.FormEvent<HTMLFormElement>) {
+			const formData = getFormData(event);
+			const submission = resolve(formData);
+			const parseResult = schema.safeParse(submission.value);
+
+			if (!parseResult.success || submission.intent) {
+				event.preventDefault();
+			}
+
+			const error = flattenZodErrors(parseResult, submission.fields);
+			const result = report(submission, {
+				error,
+			});
+
+			flushSync(() => {
+				update(result);
+			});
+		},
+		onInput(event: React.FormEvent<HTMLFormElement>) {
+			if (
+				isInput(event.target, formRef.current) &&
+				state.touchedFields.includes(event.target.name)
+			) {
+				intent.submit({
+					type: 'validate',
+					payload: {
+						name: event.target.name,
+					},
+				});
+			}
+		},
+		onBlur(event: React.FocusEvent<HTMLFormElement>) {
+			if (
+				isInput(event.target, formRef.current) &&
+				!state.touchedFields.includes(event.target.name)
+			) {
+				intent.submit({
+					type: 'validate',
+					payload: {
+						name: event.target.name,
+					},
+				});
+			}
+		},
+	});
+	const fields = getFieldset(state, {
+		metadata(state, name) {
+			return getFieldMetadata(state, name);
 		},
 	});
 	const title = useFormData('example', (formData) =>

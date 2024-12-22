@@ -25,6 +25,7 @@ import type {
 	output,
 } from 'zod';
 import { formatPaths, isPrefix } from './conform-dom';
+import type { FormError } from './conform-dom';
 
 /**
  * Helpers for coercing string value
@@ -270,31 +271,22 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 	return schema;
 }
 
-export function flattenZodErrors(
-	result: SafeParseReturnType<any, any> | null,
+export function flattenZodErrors<Schema>(
+	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
-): {
-	formError?: string[];
-	fieldError?: Record<string, string[]>;
-};
-export function flattenZodErrors<ErrorShape>(
-	result: SafeParseReturnType<any, any> | null,
+): FormError<string[], Schema> | null;
+export function flattenZodErrors<Schema, ErrorShape>(
+	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
 	formatIssues: (issues: ZodIssue[]) => ErrorShape,
-): {
-	formError?: ErrorShape;
-	fieldError?: Record<string, ErrorShape>;
-};
-export function flattenZodErrors<ErrorShape>(
-	result: SafeParseReturnType<any, any> | null,
+): FormError<ErrorShape, Schema> | null;
+export function flattenZodErrors<Schema, ErrorShape>(
+	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
 	formatIssues?: (issues: ZodIssue[]) => ErrorShape,
-): {
-	formError?: string[] | ErrorShape;
-	fieldError?: Record<string, string[] | ErrorShape>;
-} {
-	if (!result || result.success) {
-		return {};
+): FormError<string[] | ErrorShape, Schema> | null {
+	if (result.success) {
+		return null;
 	}
 
 	const issueMap = result.error.issues.reduce<Record<string, ZodIssue[]>>(
@@ -320,5 +312,5 @@ export function flattenZodErrors<ErrorShape>(
 	return {
 		formError: formErrors,
 		fieldError: fieldErrors,
-	};
+	} as FormError<string[] | ErrorShape, Schema>;
 }

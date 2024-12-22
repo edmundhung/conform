@@ -9,20 +9,22 @@ export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
 	| FormValue<Entry>[]
 	| { [key: string]: FormValue<Entry> };
 
-export type FormError<ErrorShape> = {
+export type FormError<ErrorShape, Schema> = {
 	formError: ErrorShape | null;
 	fieldError: Record<string, ErrorShape>;
+	'#schema': Schema;
 };
 
 export type SubmissionResult<
+	Schema,
 	Intent,
 	ErrorShape,
-	FormValueType extends FormDataEntryValue = FormDataEntryValue,
+	FormValueType extends FormDataEntryValue, //= FormDataEntryValue,
 > = {
 	type: 'client' | 'server';
 	fields: string[];
 	value: Record<string, FormValue<FormValueType>> | null;
-	error: FormError<ErrorShape> | null;
+	error: FormError<ErrorShape, Schema> | null;
 	intent: Intent;
 };
 
@@ -44,8 +46,8 @@ export type DefaultValue<Schema> = Schema extends
 
 export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
-	serverError: FormError<ErrorShape> | null;
-	clientError: FormError<ErrorShape> | null;
+	serverError: FormError<ErrorShape, Schema> | null;
+	clientError: FormError<ErrorShape, Schema> | null;
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
 	touchedFields: string[];
@@ -435,47 +437,38 @@ export function isTouched(touchedFields: string[], name = '') {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export function report<Intent, ErrorShape>(
+export function report<Schema, Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options: {
-		formError?: ErrorShape;
-		fieldError?: Record<string, ErrorShape>;
+		error?: FormError<ErrorShape, Schema> | null;
 		keepFile: true;
 	},
-): SubmissionResult<Intent | null, ErrorShape, FormDataEntryValue>;
-export function report<Intent, ErrorShape>(
+): SubmissionResult<Schema, Intent | null, ErrorShape, FormDataEntryValue>;
+export function report<Schema, Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options?: {
-		formError?: ErrorShape;
-		fieldError?: Record<string, ErrorShape>;
+		error?: FormError<ErrorShape, Schema> | null;
 		keepFile?: false;
 	},
-): SubmissionResult<Intent | null, ErrorShape, string>;
-export function report<Intent, ErrorShape>(
+): SubmissionResult<Schema, Intent | null, ErrorShape, string>;
+export function report<Schema, Intent, ErrorShape>(
 	submission: Submission<Intent | null>,
 	options?: {
-		formError?: ErrorShape;
-		fieldError?: Record<string, ErrorShape>;
+		error?: FormError<ErrorShape, Schema> | null;
 		includeFiles?: boolean;
 	},
-): SubmissionResult<Intent | null, ErrorShape> {
+): SubmissionResult<Schema, Intent | null, ErrorShape, FormDataEntryValue> {
 	return {
 		type: typeof document !== 'undefined' ? 'client' : 'server',
 		value: !options?.includeFiles
 			? // TODO: remove all files from submission.value
 				submission.value
 			: submission.value,
-		error:
-			options?.formError || options?.fieldError
-				? {
-						formError: options?.formError ?? null,
-						fieldError: options?.fieldError ?? {},
-					}
-				: null,
+		error: options?.error ?? null,
 		fields: submission.fields.concat(
 			// Sometimes we couldn't find out all the fields from the submission, e.g. unchecked checkboxes
 			// But the schema might have an error on those fields, so we need to include them
-			Object.keys(options?.fieldError ?? {}).filter((key) =>
+			Object.keys(options?.error?.fieldError ?? {}).filter((key) =>
 				submission.fields.every((field) => !isPrefix(field, key)),
 			),
 		),
@@ -559,7 +552,12 @@ export function resolve<Intent>(
 
 export function handleFormSubmit<Schema, ErrorShape, Intent>(
 	state: FormState<Schema, ErrorShape>,
-	result: SubmissionResult<Intent | null, ErrorShape>,
+	result: SubmissionResult<
+		Schema,
+		Intent | null,
+		ErrorShape,
+		FormDataEntryValue
+	>,
 ): FormState<Schema, ErrorShape> {
 	return merge(state, {
 		touchedFields: deepEqual(state.touchedFields, result.fields)
@@ -578,7 +576,12 @@ export function initializeFormState<
 	control,
 }: {
 	defaultValue?: DefaultValue<Schema>;
-	result?: SubmissionResult<Intent | null, ErrorShape>;
+	result?: SubmissionResult<
+		Schema,
+		Intent | null,
+		ErrorShape,
+		FormDataEntryValue
+	>;
 	control?: FormControl<Intent>;
 }): FormState<Schema, ErrorShape> {
 	let state: FormState<Schema, ErrorShape> = {
@@ -1165,7 +1168,7 @@ export type FormControl<Intent extends BaseIntent> = {
 	onSubmit<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape>,
 		context: {
-			result: SubmissionResult<Intent, ErrorShape>;
+			result: SubmissionResult<Schema, Intent, ErrorShape, FormDataEntryValue>;
 			reset(): FormState<Schema, ErrorShape>;
 		},
 	): FormState<Schema, ErrorShape>;
