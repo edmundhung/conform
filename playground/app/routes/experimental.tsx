@@ -19,7 +19,7 @@ import {
 	getFormMetadata,
 	getFieldset,
 	report,
-	resolve as baseResolve,
+	resolve,
 	isInput,
 	getFieldMetadata,
 } from '~/conform-dom';
@@ -53,8 +53,8 @@ export const control = combineFormControls([
 
 export type Intent = FormControlIntent<typeof control>;
 
-export function resolve(formData: FormData | URLSearchParams) {
-	const submission = baseResolve(formData, {
+export function parseSubmission(formData: FormData | URLSearchParams) {
+	return resolve(formData, {
 		intentName,
 		parseIntent(value) {
 			const intent = deserializeIntent(value);
@@ -65,35 +65,28 @@ export function resolve(formData: FormData | URLSearchParams) {
 
 			return null;
 		},
+		updateValue(value, intent) {
+			return control.updateValue(value, intent);
+		},
 	});
-
-	if (submission.value && submission.intent) {
-		submission.value = control.updateValue(submission.value, submission.intent);
-	}
-
-	return submission;
 }
-
-export { report };
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = resolve(formData);
-	const parseResult = schema.safeParse(submission.value);
+	const submission = parseSubmission(formData);
+	const result = schema.safeParse(submission.value);
 
-	if (!parseResult.success) {
-		const error = flattenZodErrors(parseResult, submission.fields);
-
+	if (!result.success) {
 		return report(submission, {
-			error,
+			error: flattenZodErrors(result, submission.fields),
 		});
 	}
 
-	throw new Error('Something went wrong');
-
-	// return report(submission, {
-	// 	formError: ['Something went wrong'],
-	// });
+	return report<typeof submission, z.input<typeof schema>>(submission, {
+		error: {
+			formError: ['Something went wrong'],
+		},
+	});
 }
 
 export default function Example() {
@@ -112,20 +105,19 @@ export default function Example() {
 		ref: formRef,
 		onSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const formData = getFormData(event);
-			const submission = resolve(formData);
-			const parseResult = schema.safeParse(submission.value);
+			const submission = parseSubmission(formData);
+			const result = schema.safeParse(submission.value);
 
-			if (!parseResult.success || submission.intent) {
+			if (!result.success || submission.intent) {
 				event.preventDefault();
 			}
 
-			const error = flattenZodErrors(parseResult, submission.fields);
-			const result = report(submission, {
-				error,
+			const submissionResult = report(submission, {
+				error: flattenZodErrors(result, submission.fields),
 			});
 
 			flushSync(() => {
-				update(result);
+				update(submissionResult);
 			});
 		},
 		onInput(event: React.FormEvent<HTMLFormElement>) {

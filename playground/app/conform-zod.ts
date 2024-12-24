@@ -274,19 +274,21 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 export function flattenZodErrors<Schema>(
 	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
-): FormError<string[], Schema> | null;
+): FormError<Schema, string[]>;
 export function flattenZodErrors<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
 	formatIssues: (issues: ZodIssue[]) => ErrorShape,
-): FormError<ErrorShape, Schema> | null;
+): FormError<Schema, ErrorShape>;
 export function flattenZodErrors<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
 	fields: string[],
 	formatIssues?: (issues: ZodIssue[]) => ErrorShape,
-): FormError<string[] | ErrorShape, Schema> | null {
+): FormError<Schema, string[] | ErrorShape> {
 	if (result.success) {
-		return null;
+		return {
+			fieldError: {},
+		};
 	}
 
 	const issueMap = result.error.issues.reduce<Record<string, ZodIssue[]>>(
@@ -302,7 +304,7 @@ export function flattenZodErrors<Schema, ErrorShape>(
 		{},
 	);
 
-	const { '': formErrors, ...fieldErrors } = Object.fromEntries(
+	const { '': formError, ...fieldError } = Object.fromEntries(
 		Object.entries(issueMap).map(([name, issues]) => [
 			name,
 			formatIssues?.(issues) ?? issues.map((issue) => issue.message),
@@ -310,7 +312,7 @@ export function flattenZodErrors<Schema, ErrorShape>(
 	);
 
 	return {
-		formError: formErrors,
-		fieldError: fieldErrors,
-	} as FormError<string[] | ErrorShape, Schema>;
+		formError,
+		fieldError,
+	} as FormError<Schema, string[] | ErrorShape>;
 }

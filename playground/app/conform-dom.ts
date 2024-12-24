@@ -1,31 +1,25 @@
-export type Submission<Intent> = {
-	fields: string[];
-	value: Record<string, FormValue> | null;
-	intent: Intent | null;
-};
-
 export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
 	| Entry
 	| FormValue<Entry>[]
 	| { [key: string]: FormValue<Entry> };
 
-export type FormError<ErrorShape, Schema> = {
-	formError: ErrorShape | null;
+export type FormError<Schema, ErrorShape> = {
+	formError?: ErrorShape | null;
 	fieldError: Record<string, ErrorShape>;
-	'#schema': Schema;
+	'#schema'?: Schema;
 };
 
-export type SubmissionResult<
-	Schema,
+export type Submission<
 	Intent,
-	ErrorShape,
-	FormValueType extends FormDataEntryValue, //= FormDataEntryValue,
+	Schema = unknown,
+	ErrorShape = unknown,
+	FormValueType extends FormDataEntryValue = FormDataEntryValue,
 > = {
 	type: 'client' | 'server';
 	fields: string[];
 	value: Record<string, FormValue<FormValueType>> | null;
-	error: FormError<ErrorShape, Schema> | null;
 	intent: Intent;
+	error?: FormError<Schema, ErrorShape> | null;
 };
 
 export type DefaultValue<Schema> = Schema extends
@@ -46,8 +40,8 @@ export type DefaultValue<Schema> = Schema extends
 
 export type FormState<Schema, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
-	serverError: FormError<ErrorShape, Schema> | null;
-	clientError: FormError<ErrorShape, Schema> | null;
+	serverError: FormError<Schema, ErrorShape> | null;
+	clientError: FormError<Schema, ErrorShape> | null;
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
 	touchedFields: string[];
@@ -437,34 +431,100 @@ export function isTouched(touchedFields: string[], name = '') {
 
 export type Pretty<T> = { [K in keyof T]: T[K] } & {};
 
-export function report<Schema, Intent, ErrorShape>(
-	submission: Submission<Intent | null>,
+export type Fallback<MainType, FallbackType> = unknown extends MainType
+	? FallbackType
+	: MainType;
+
+export type SubmissionSchema<SubmissionType> =
+	SubmissionType extends Submission<any, infer Schema, any, any>
+		? Schema
+		: unknown;
+
+export type SubmissionErrorShape<SubmissionType> =
+	SubmissionType extends Submission<any, any, infer ErrorShape, any>
+		? ErrorShape
+		: unknown;
+
+export function report<
+	SubmissionType extends Submission<any, any, any>,
+	Schema,
+	ErrorShape = string[],
+>(
+	submission: SubmissionType,
 	options: {
-		error?: FormError<ErrorShape, Schema> | null;
+		error?: Partial<
+			FormError<
+				Fallback<SubmissionSchema<SubmissionType>, Schema>,
+				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
+			>
+		> | null;
 		keepFile: true;
 	},
-): SubmissionResult<Schema, Intent | null, ErrorShape, FormDataEntryValue>;
-export function report<Schema, Intent, ErrorShape>(
-	submission: Submission<Intent | null>,
-	options?: {
-		error?: FormError<ErrorShape, Schema> | null;
+): Submission<
+	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	Fallback<SubmissionSchema<SubmissionType>, Schema>,
+	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
+	SubmissionType extends Submission<any, any, any, infer FormValueType>
+		? FormValueType
+		: FormDataEntryValue
+>;
+export function report<
+	SubmissionType extends Submission<any, any, any>,
+	Schema,
+	ErrorShape = string[],
+>(
+	submission: SubmissionType,
+	options: {
+		error?: Partial<
+			FormError<
+				Fallback<SubmissionSchema<SubmissionType>, Schema>,
+				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
+			>
+		> | null;
 		keepFile?: false;
 	},
-): SubmissionResult<Schema, Intent | null, ErrorShape, string>;
-export function report<Schema, Intent, ErrorShape>(
-	submission: Submission<Intent | null>,
-	options?: {
-		error?: FormError<ErrorShape, Schema> | null;
-		includeFiles?: boolean;
+): Submission<
+	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	Fallback<SubmissionSchema<SubmissionType>, Schema>,
+	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
+	string
+>;
+export function report<
+	SubmissionType extends Submission<any, any, any>,
+	Schema,
+	ErrorShape = string[],
+>(
+	submission: SubmissionType,
+	options: {
+		error?: Partial<
+			FormError<
+				Fallback<SubmissionSchema<SubmissionType>, Schema>,
+				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
+			>
+		> | null;
+		keepFile?: boolean;
 	},
-): SubmissionResult<Schema, Intent | null, ErrorShape, FormDataEntryValue> {
+): Submission<
+	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	Fallback<SubmissionSchema<SubmissionType>, Schema>,
+	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
+	SubmissionType extends Submission<any, any, any, infer FormValueType>
+		? FormValueType
+		: FormDataEntryValue
+> {
 	return {
-		type: typeof document !== 'undefined' ? 'client' : 'server',
-		value: !options?.includeFiles
-			? // TODO: remove all files from submission.value
-				submission.value
-			: submission.value,
-		error: options?.error ?? null,
+		type: submission.type,
+		// @ts-expect-error TODO: remove all files from submission.value
+		value: options.keepFile ? submission.value : submission.value,
+		error:
+			typeof options.error === 'undefined'
+				? submission.error
+				: options.error === null
+					? null
+					: {
+							formError: options.error.formError ?? null,
+							fieldError: options.error.fieldError ?? {},
+						},
 		fields: submission.fields.concat(
 			// Sometimes we couldn't find out all the fields from the submission, e.g. unchecked checkboxes
 			// But the schema might have an error on those fields, so we need to include them
@@ -528,6 +588,7 @@ export function resolve<Intent>(
 	}
 
 	const submission: Submission<Intent | string | null> = {
+		type: typeof document !== 'undefined' ? 'client' : 'server',
 		value: initialValue,
 		fields: Array.from(fields),
 		intent: null,
@@ -552,12 +613,7 @@ export function resolve<Intent>(
 
 export function handleFormSubmit<Schema, ErrorShape, Intent>(
 	state: FormState<Schema, ErrorShape>,
-	result: SubmissionResult<
-		Schema,
-		Intent | null,
-		ErrorShape,
-		FormDataEntryValue
-	>,
+	result: Submission<Intent | null, Schema, ErrorShape>,
 ): FormState<Schema, ErrorShape> {
 	return merge(state, {
 		touchedFields: deepEqual(state.touchedFields, result.fields)
@@ -576,12 +632,7 @@ export function initializeFormState<
 	control,
 }: {
 	defaultValue?: DefaultValue<Schema>;
-	result?: SubmissionResult<
-		Schema,
-		Intent | null,
-		ErrorShape,
-		FormDataEntryValue
-	>;
+	result?: Submission<Intent | null, Schema, ErrorShape>;
 	control?: FormControl<Intent>;
 }): FormState<Schema, ErrorShape> {
 	let state: FormState<Schema, ErrorShape> = {
@@ -617,7 +668,7 @@ export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 		defaultValue,
 		control,
 	}: {
-		result: SubmissionResult<Intent | null, ErrorShape>;
+		result: Submission<Intent | null, Schema, ErrorShape>;
 		defaultValue?: DefaultValue<Schema>;
 		control?: FormControl<Intent>;
 	},
@@ -625,11 +676,11 @@ export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 	const currentState = merge(state, {
 		clientError:
 			result.type === 'client' && !deepEqual(state.clientError, result.error)
-				? result.error
+				? result.error ?? state.clientError
 				: state.clientError,
 		serverError:
 			result.type === 'server' && !deepEqual(state.serverError, result.error)
-				? result.error
+				? result.error ?? state.serverError
 				: result.type === 'client' &&
 					  !deepEqual(state.submittedValue, result.value)
 					? null
@@ -1168,7 +1219,7 @@ export type FormControl<Intent extends BaseIntent> = {
 	onSubmit<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape>,
 		context: {
-			result: SubmissionResult<Schema, Intent, ErrorShape, FormDataEntryValue>;
+			result: Submission<Intent, Schema, ErrorShape>;
 			reset(): FormState<Schema, ErrorShape>;
 		},
 	): FormState<Schema, ErrorShape>;
@@ -1199,7 +1250,7 @@ export function createFormControl<Intent extends BaseIntent>(
 		onSubmit?: <Schema, ErrorShape>(
 			state: FormState<Schema, ErrorShape>,
 			context: {
-				result: SubmissionResult<Intent, ErrorShape>;
+				result: Submission<Intent, Schema, ErrorShape>;
 				reset(): FormState<Schema, ErrorShape>;
 			},
 		) => FormState<Schema, ErrorShape>;

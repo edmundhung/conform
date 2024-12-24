@@ -9,7 +9,7 @@ import {
 	useSyncExternalStore,
 } from 'react';
 import {
-	type SubmissionResult,
+	type Submission,
 	type DefaultValue,
 	type FormControl,
 	type BaseIntent,
@@ -38,12 +38,7 @@ export type FormOptions<
 > = {
 	formRef?: FormRef;
 	control?: FormControl<Intent>;
-	result?: SubmissionResult<
-		Schema,
-		Intent | null,
-		ErrorShape,
-		FormDataEntryValue
-	>;
+	result?: Submission<Intent | null, Schema, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
 	shouldSyncElement?: (
 		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
@@ -71,14 +66,7 @@ export function useFormState<
 	const lastResultRef = useRef(options.result);
 	const lastStateRef = useRef(state);
 	const update = useCallback(
-		(
-			result: SubmissionResult<
-				Schema,
-				Intent | null,
-				ErrorShape,
-				FormDataEntryValue
-			>,
-		) => {
+		(result: Submission<Intent | null, Schema, ErrorShape>) => {
 			if (result === lastResultRef.current) {
 				return;
 			}
