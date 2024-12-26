@@ -12,10 +12,10 @@ import {
 	validateControl,
 	getFormMetadata,
 	getFieldset,
-	report,
+	getFieldMetadata,
 	parseSubmission,
 	isInput,
-	getFieldMetadata,
+	update,
 } from '~/conform-dom';
 import { useRef } from 'react';
 
@@ -52,12 +52,12 @@ export async function action({ request }: ActionFunctionArgs) {
 	const result = schema.safeParse(submission.value);
 
 	if (!result.success) {
-		return report(submission, {
+		return update(submission, {
 			error: flattenZodErrors(result, submission.fields),
 		});
 	}
 
-	return report<typeof submission, z.input<typeof schema>>(submission, {
+	return update<typeof submission, z.input<typeof schema>>(submission, {
 		error: {
 			formError: ['Something went wrong'],
 		},
@@ -77,7 +77,7 @@ export default function Example() {
 		onValidate(submission) {
 			const result = schema.safeParse(submission.value);
 
-			return report(submission, {
+			return update(submission, {
 				error: flattenZodErrors(result, submission.fields),
 			});
 		},

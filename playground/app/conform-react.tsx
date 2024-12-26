@@ -150,10 +150,15 @@ export function useForm<
 
 					return null;
 				},
-				updateValue(value, intent) {
-					return options.control?.updateValue(value, intent) ?? value;
-				},
 			});
+
+			if (submission.value && submission.intent && options.control) {
+				submission.value = options.control.updateValue(
+					submission.value,
+					submission.intent,
+				);
+			}
+
 			const result = optionsRef.current.onValidate?.(submission) ?? submission;
 
 			if (result.error || result.intent) {

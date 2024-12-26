@@ -445,7 +445,7 @@ export type SubmissionErrorShape<SubmissionType> =
 		? ErrorShape
 		: unknown;
 
-export function report<
+export function update<
 	SubmissionType extends Submission<any, any, any>,
 	Schema,
 	ErrorShape = string[],
@@ -468,7 +468,7 @@ export function report<
 		? FormValueType
 		: FormDataEntryValue
 >;
-export function report<
+export function update<
 	SubmissionType extends Submission<any, any, any>,
 	Schema,
 	ErrorShape = string[],
@@ -489,7 +489,7 @@ export function report<
 	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
 	string
 >;
-export function report<
+export function update<
 	SubmissionType extends Submission<any, any, any>,
 	Schema,
 	ErrorShape = string[],
@@ -544,10 +544,6 @@ export function parseSubmission(
 	options: {
 		intentName: string;
 		parseIntent?: undefined;
-		updateValue?(
-			submittedValue: Record<string, FormValue>,
-			intent: string,
-		): Record<string, FormValue> | null;
 	},
 ): Submission<string | null>;
 export function parseSubmission<Intent, Schema, ErrorShape>(
@@ -555,10 +551,6 @@ export function parseSubmission<Intent, Schema, ErrorShape>(
 	options: {
 		intentName: string;
 		parseIntent(intentValue: string): Intent | null;
-		updateValue?(
-			submittedValue: Record<string, FormValue>,
-			intent: Intent,
-		): Record<string, FormValue> | null;
 	},
 ): Submission<Intent | null, Schema, ErrorShape>;
 export function parseSubmission<Intent, Schema, ErrorShape>(
@@ -566,10 +558,6 @@ export function parseSubmission<Intent, Schema, ErrorShape>(
 	options?: {
 		intentName: string;
 		parseIntent?(intentValue: string): Intent | string | null;
-		updateValue?(
-			submittedValue: Record<string, FormValue>,
-			intent: Intent | string,
-		): Record<string, FormValue> | null;
 	},
 ): Submission<Intent | string | null, Schema, ErrorShape> {
 	const initialValue: Record<string, any> = {};
@@ -605,8 +593,6 @@ export function parseSubmission<Intent, Schema, ErrorShape>(
 
 			if (intent) {
 				submission.intent = intent;
-				submission.value =
-					options.updateValue?.(initialValue, intent) ?? initialValue;
 			}
 		}
 	}
