@@ -10,7 +10,7 @@ export type FormError<Schema, ErrorShape> = {
 };
 
 export type Submission<
-	Intent,
+	Intent = null,
 	Schema = unknown,
 	ErrorShape = unknown,
 	FormValueType extends FormDataEntryValue = FormDataEntryValue,
@@ -536,9 +536,12 @@ export function report<
 	};
 }
 
-export function resolve(
+export function parseSubmission(
 	formData: FormData | URLSearchParams,
-	options?: {
+): Submission;
+export function parseSubmission(
+	formData: FormData | URLSearchParams,
+	options: {
 		intentName: string;
 		parseIntent?: undefined;
 		updateValue?(
@@ -547,7 +550,7 @@ export function resolve(
 		): Record<string, FormValue> | null;
 	},
 ): Submission<string | null>;
-export function resolve<Intent>(
+export function parseSubmission<Intent, Schema, ErrorShape>(
 	formData: FormData | URLSearchParams,
 	options: {
 		intentName: string;
@@ -557,8 +560,8 @@ export function resolve<Intent>(
 			intent: Intent,
 		): Record<string, FormValue> | null;
 	},
-): Submission<Intent | null>;
-export function resolve<Intent>(
+): Submission<Intent | null, Schema, ErrorShape>;
+export function parseSubmission<Intent, Schema, ErrorShape>(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName: string;
@@ -568,7 +571,7 @@ export function resolve<Intent>(
 			intent: Intent | string,
 		): Record<string, FormValue> | null;
 	},
-): Submission<Intent | string | null> {
+): Submission<Intent | string | null, Schema, ErrorShape> {
 	const initialValue: Record<string, any> = {};
 	const fields = new Set<string>();
 
@@ -587,7 +590,7 @@ export function resolve<Intent>(
 		}
 	}
 
-	const submission: Submission<Intent | string | null> = {
+	const submission: Submission<Intent | string | null, Schema, ErrorShape> = {
 		type: typeof document !== 'undefined' ? 'client' : 'server',
 		value: initialValue,
 		fields: Array.from(fields),
@@ -675,15 +678,18 @@ export function updateFormState<Schema, ErrorShape, Intent extends BaseIntent>(
 ) {
 	const currentState = merge(state, {
 		clientError:
-			result.type === 'client' && !deepEqual(state.clientError, result.error)
-				? result.error ?? state.clientError
+			result.type === 'client' &&
+			typeof result.error !== 'undefined' &&
+			!deepEqual(state.clientError, result.error)
+				? result.error
 				: state.clientError,
 		serverError:
-			result.type === 'server' && !deepEqual(state.serverError, result.error)
-				? result.error ?? state.serverError
-				: result.type === 'client' &&
-					  !deepEqual(state.submittedValue, result.value)
-					? null
+			result.type === 'client' && !deepEqual(state.submittedValue, result.value)
+				? null
+				: result.type === 'server' &&
+					  typeof result.error !== 'undefined' &&
+					  !deepEqual(state.serverError, result.error)
+					? result.error
 					: state.serverError,
 		submittedValue:
 			result.type === 'server' ? result.value : state.submittedValue,
@@ -720,23 +726,20 @@ export const validateControl = createFormControl(
 	(intent) => {
 		if (
 			intent.type !== 'validate' ||
-			!isPlainObject(intent.payload) ||
-			(typeof intent.payload.name !== 'string' &&
-				typeof intent.payload.name !== 'undefined')
+			(typeof intent.payload !== 'string' &&
+				typeof intent.payload !== 'undefined')
 		) {
 			return null;
 		}
 
 		return {
 			type: 'validate',
-			payload: {
-				name: intent.payload.name,
-			},
+			payload: intent.payload,
 		} as const;
 	},
 	{
 		onSubmit(state, { result }) {
-			const name = result.intent.payload.name ?? '';
+			const name = result.intent.payload ?? '';
 
 			if (name === '') {
 				return merge(state, {

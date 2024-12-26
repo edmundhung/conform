@@ -22,7 +22,10 @@ import {
 	getFieldMetadata,
 	isInput,
 	FormState,
+	parseSubmission,
+	deserializeIntent,
 } from './conform-dom';
+import { flushSync } from 'react-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	const submitEvent = event.nativeEvent as SubmitEvent;
@@ -36,14 +39,15 @@ export type FormOptions<
 	Intent extends BaseIntent,
 	ErrorShape,
 > = {
-	formRef?: FormRef;
 	control?: FormControl<Intent>;
-	result?: Submission<Intent | null, Schema, ErrorShape>;
+	result?:
+		| Submission<Intent | null, Schema, ErrorShape>
+		| Submission<null, Schema, ErrorShape>;
 	defaultValue?: DefaultValue<Schema>;
-	shouldSyncElement?: (
-		element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	) => boolean;
 	intentName?: string;
+	onValidate?: (
+		submission: Submission<Intent | null, Schema, ErrorShape>,
+	) => Submission<Intent | null, Schema, ErrorShape>;
 };
 
 export type FormIntent<Intent> = {
@@ -52,11 +56,11 @@ export type FormIntent<Intent> = {
 	serialize(intent: Intent): string;
 };
 
-export function useFormState<
+export function useForm<
 	Schema extends Record<string, unknown>,
 	Intent extends BaseIntent,
 	ErrorShape,
->(options: FormOptions<Schema, Intent, ErrorShape>) {
+>(formRef: FormRef, options: FormOptions<Schema, Intent, ErrorShape>) {
 	const [state, setState] = useState(() => initializeFormState(options));
 	const [runSideEffect, setSideEffect] = useState<
 		((formElement: HTMLFormElement) => void) | null
@@ -106,7 +110,7 @@ export function useFormState<
 	});
 
 	useEffect(() => {
-		const formElement = getFormElement(options.formRef);
+		const formElement = getFormElement(formRef);
 
 		if (formElement) {
 			for (const element of formElement.elements) {
@@ -122,22 +126,48 @@ export function useFormState<
 	}, []);
 
 	useEffect(() => {
-		const formElement = getFormElement(options.formRef);
+		const formElement = getFormElement(formRef);
 
 		if (!formElement) {
 			return;
 		}
 
 		return runSideEffect?.(formElement);
-	}, [options.formRef, runSideEffect]);
+	}, [formRef, runSideEffect]);
 
 	return {
 		state,
-		update,
+		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+			const formData = getFormData(event);
+			const submission = parseSubmission<Intent, Schema, ErrorShape>(formData, {
+				intentName,
+				parseIntent(value) {
+					const intent = deserializeIntent(value);
+
+					if (options.control?.isValid(intent)) {
+						return intent;
+					}
+
+					return null;
+				},
+				updateValue(value, intent) {
+					return options.control?.updateValue(value, intent) ?? value;
+				},
+			});
+			const result = optionsRef.current.onValidate?.(submission) ?? submission;
+
+			if (result.error || result.intent) {
+				event.preventDefault();
+			}
+
+			flushSync(() => {
+				update(result);
+			});
+		},
 		intent: {
 			name: intentName,
 			submit(intent: Intent) {
-				const formElement = getFormElement(options.formRef);
+				const formElement = getFormElement(formRef);
 
 				requestControl(formElement, intentName, serializeIntent(intent));
 			},
