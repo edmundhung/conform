@@ -1,6 +1,6 @@
 import {
-	RefCallback,
-	RefObject,
+	type RefCallback,
+	type RefObject,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -12,18 +12,14 @@ import {
 	type Submission,
 	type DefaultValue,
 	type FormControl,
-	type BaseIntent,
+	initializeElement,
 	deepEqual,
-	updateField,
-	initializeFormState,
-	updateFormState,
-	requestControl,
-	serializeIntent,
-	getFieldMetadata,
+	requestIntent,
 	isInput,
-	FormState,
 	parseSubmission,
-	deserializeIntent,
+	defaultFormControl,
+	FormState,
+	FormControlIntent,
 } from './conform-dom';
 import { flushSync } from 'react-dom';
 
@@ -34,61 +30,144 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	return formData;
 }
 
-export type FormOptions<
-	Schema extends Record<string, unknown>,
-	Intent extends BaseIntent,
-	ErrorShape,
-> = {
-	control?: FormControl<Intent>;
-	result?:
-		| Submission<Intent | null, Schema, ErrorShape>
-		| Submission<null, Schema, ErrorShape>;
-	defaultValue?: DefaultValue<Schema>;
-	intentName?: string;
-	onValidate?: (
-		submission: Submission<Intent | null, Schema, ErrorShape>,
-	) => Submission<Intent | null, Schema, ErrorShape>;
-};
-
 export type FormIntent<Intent> = {
 	name: string;
 	submit(intent: Intent): void;
 	serialize(intent: Intent): string;
 };
 
-export function useForm<
-	Schema extends Record<string, unknown>,
-	Intent extends BaseIntent,
-	ErrorShape,
->(formRef: FormRef, options: FormOptions<Schema, Intent, ErrorShape>) {
-	const [state, setState] = useState(() => initializeFormState(options));
+const defaultIntentName = '__intent__';
+
+export function useForm<Schema, ErrorShape, Intent>(
+	formRef: FormRef,
+	options: {
+		control: FormControl<Intent>;
+		result?:
+			| Submission<Intent | null, Schema, ErrorShape>
+			| Submission<null, Schema, ErrorShape>;
+		defaultValue?: DefaultValue<Schema>;
+		intentName?: string;
+		onValidate?: (
+			submission: Submission<Intent | null, Schema, ErrorShape>,
+		) => Submission<Intent | null, Schema, ErrorShape>;
+	},
+): {
+	state: FormState<Schema, ErrorShape>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	intent: FormIntent<Intent>;
+};
+export function useForm<Schema, ErrorShape>(
+	formRef: FormRef,
+	options?: {
+		control?: undefined;
+		result?:
+			| Submission<
+					FormControlIntent<typeof defaultFormControl> | null,
+					Schema,
+					ErrorShape
+			  >
+			| Submission<null, Schema, ErrorShape>;
+		defaultValue?: DefaultValue<Schema>;
+		intentName?: string;
+		onValidate?: (
+			submission: Submission<
+				FormControlIntent<typeof defaultFormControl> | null,
+				Schema,
+				ErrorShape
+			>,
+		) => Submission<
+			FormControlIntent<typeof defaultFormControl> | null,
+			Schema,
+			ErrorShape
+		>;
+	},
+): {
+	state: FormState<Schema, ErrorShape>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	intent: FormIntent<FormControlIntent<typeof defaultFormControl>>;
+};
+export function useForm<Schema, ErrorShape, Intent>(
+	formRef: FormRef,
+	options?: {
+		control?: FormControl<
+			Intent | FormControlIntent<typeof defaultFormControl>
+		>;
+		result?:
+			| Submission<
+					Intent | FormControlIntent<typeof defaultFormControl> | null,
+					Schema,
+					ErrorShape
+			  >
+			| Submission<null, Schema, ErrorShape>;
+		defaultValue?: DefaultValue<Schema>;
+		intentName?: string;
+		onValidate?: (
+			submission: Submission<
+				Intent | FormControlIntent<typeof defaultFormControl> | null,
+				Schema,
+				ErrorShape
+			>,
+		) => Submission<
+			Intent | FormControlIntent<typeof defaultFormControl> | null,
+			Schema,
+			ErrorShape
+		>;
+	},
+): {
+	state: FormState<Schema, ErrorShape>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	intent: FormIntent<Intent | FormControlIntent<typeof defaultFormControl>>;
+} {
+	const {
+		intentName = defaultIntentName,
+		control = defaultFormControl,
+		defaultValue,
+		result,
+	} = options ?? {};
+	const [state, setState] = useState(() =>
+		control.initializeState({
+			defaultValue,
+			result,
+		}),
+	);
+	const optionsRef = useRef(options);
+	const lastStateRef = useRef(state);
+	const lastResultRef = useRef(result);
+	const intent = useFormIntent(formRef, {
+		intentName,
+		control,
+	});
 	const [runSideEffect, setSideEffect] = useState<
 		((formElement: HTMLFormElement) => void) | null
 	>(null);
-	const intentName = options.intentName ?? '__intent__';
-	const optionsRef = useRef(options);
-	const lastResultRef = useRef(options.result);
-	const lastStateRef = useRef(state);
+
 	const update = useCallback(
-		(result: Submission<Intent | null, Schema, ErrorShape>) => {
+		(
+			result: Submission<
+				Intent | FormControlIntent<typeof defaultFormControl> | null,
+				Schema,
+				ErrorShape
+			>,
+		) => {
 			if (result === lastResultRef.current) {
 				return;
 			}
 
 			lastResultRef.current = result;
 
-			const { defaultValue, control } = optionsRef.current;
+			const { control = defaultFormControl, defaultValue } =
+				optionsRef.current ?? {};
 
 			setState((state) =>
-				updateFormState(state, {
-					defaultValue,
-					control,
+				control.updateState(state, {
 					result,
+					reset: () =>
+						control.initializeState<Schema, ErrorShape>({ defaultValue }),
 				}),
 			);
 
 			if (result.intent) {
-				const sideEffectFn = control?.getSideEffect(result.intent);
+				const sideEffectFn = control.getSideEffect(result.intent);
 
 				if (sideEffectFn) {
 					setSideEffect(() => sideEffectFn);
@@ -97,12 +176,6 @@ export function useForm<
 		},
 		[],
 	);
-
-	useEffect(() => {
-		if (options.result) {
-			update(options.result);
-		}
-	}, [options.result, update]);
 
 	useEffect(() => {
 		optionsRef.current = options;
@@ -126,6 +199,12 @@ export function useForm<
 	}, []);
 
 	useEffect(() => {
+		if (result) {
+			update(result);
+		}
+	}, [result, update]);
+
+	useEffect(() => {
 		const formElement = getFormElement(formRef);
 
 		if (!formElement) {
@@ -139,27 +218,18 @@ export function useForm<
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const formData = getFormData(event);
-			const submission = parseSubmission<Intent, Schema, ErrorShape>(formData, {
+			const submission = parseSubmission<
+				Intent | FormControlIntent<typeof defaultFormControl>,
+				Schema,
+				ErrorShape
+			>(formData, {
 				intentName,
-				parseIntent(value) {
-					const intent = deserializeIntent(value);
-
-					if (options.control?.isValid(intent)) {
-						return intent;
-					}
-
-					return null;
-				},
+				parseIntent: control.parseIntent,
 			});
-
-			if (submission.value && submission.intent && options.control) {
-				submission.value = options.control.updateValue(
-					submission.value,
-					submission.intent,
-				);
-			}
-
-			const result = optionsRef.current.onValidate?.(submission) ?? submission;
+			const updatedSubmission = control.updateSubmission(submission);
+			const result =
+				optionsRef.current?.onValidate?.(updatedSubmission) ??
+				updatedSubmission;
 
 			if (result.error || result.intent) {
 				event.preventDefault();
@@ -169,41 +239,38 @@ export function useForm<
 				update(result);
 			});
 		},
-		intent: {
-			name: intentName,
-			submit(intent: Intent) {
-				const formElement = getFormElement(formRef);
-
-				requestControl(formElement, intentName, serializeIntent(intent));
-			},
-			serialize(intent: Intent) {
-				return serializeIntent(intent);
-			},
-		},
+		intent,
 	};
 }
 
-export function useRefQuery<Type>(query: () => Type | null): RefObject<Type> {
-	const ref = useRef<Type>(null);
-	const queryRef = useRef(query);
+export function useFormIntent<
+	Intent = FormControlIntent<typeof defaultFormControl>,
+>(
+	formRef: FormRef,
+	options?: {
+		intentName?: string;
+		control?: FormControl<
+			Intent | FormControlIntent<typeof defaultFormControl>
+		>;
+	},
+): FormIntent<Intent> {
+	const { intentName = defaultIntentName, control = defaultFormControl } =
+		options ?? {};
 
-	useEffect(() => {
-		Object.defineProperty(ref, 'current', {
-			get() {
-				return queryRef.current();
+	return useMemo(
+		() => ({
+			name: intentName,
+			serialize(intent: Intent) {
+				return control.serializeIntent(intent);
 			},
-			set() {
-				// eslint-disable-next-line no-console
-				console.log('The element ref is immutable');
+			submit(intent: Intent) {
+				const formElement = getFormElement(formRef);
+
+				requestIntent(formElement, intentName, control.serializeIntent(intent));
 			},
-		});
-	}, []);
-
-	useEffect(() => {
-		queryRef.current = query;
-	}, [query]);
-
-	return ref;
+		}),
+		[formRef, intentName, control],
+	);
 }
 
 type FormRef =
@@ -738,21 +805,3 @@ export function createFormObserver(): FormObserver {
 }
 
 export const formObserver = createFormObserver();
-
-export function initializeElement(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	state: FormState<Record<string, unknown>, unknown>,
-): void {
-	// Skip elements that are already initialized
-	if (element.dataset.conform) {
-		return;
-	}
-
-	const field = getFieldMetadata(state, element.name);
-
-	updateField(element, {
-		value: field.defaultValue,
-		defaultValue: field.defaultValue,
-		constraint: {},
-	});
-}

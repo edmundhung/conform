@@ -4,12 +4,6 @@ import { useInputControl, useFormData, useForm } from '~/conform-react';
 import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import {
-	type FormControlIntent,
-	combineFormControls,
-	listControl,
-	resetControl,
-	updateControl,
-	validateControl,
 	getFormMetadata,
 	getFieldset,
 	getFieldMetadata,
@@ -35,17 +29,6 @@ const schema = coerceZodFormData(
 	}),
 );
 
-export const intentName = '__intent__';
-
-export const control = combineFormControls([
-	validateControl,
-	resetControl,
-	updateControl,
-	listControl,
-]);
-
-export type Intent = FormControlIntent<typeof control>;
-
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData);
@@ -69,10 +52,9 @@ export default function Example() {
 	const formRef = useRef<HTMLFormElement>(null);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
-		control,
-		intentName,
 		defaultValue: {
-			tasks: [{ title: 'Test', done: true }],
+			title: 'Example',
+			tasks: [{ title: 'Test', done: false }],
 		},
 		onValidate(submission) {
 			const result = schema.safeParse(submission.value);
@@ -88,7 +70,7 @@ export default function Example() {
 			return getFieldMetadata(state, name);
 		},
 	});
-	const title = useFormData('example', (formData) =>
+	const title = useFormData(formRef, (formData) =>
 		formData.get(fields.title.name)?.toString(),
 	);
 	const taskFields = fields.tasks.getFieldList();
@@ -96,7 +78,6 @@ export default function Example() {
 
 	return (
 		<Form
-			id="example"
 			method="post"
 			ref={formRef}
 			onSubmit={handleSubmit}
