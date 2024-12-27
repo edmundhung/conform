@@ -57,11 +57,10 @@ export default function Example() {
 			tasks: [{ title: 'Test', done: false }],
 		},
 		onValidate(submission) {
-			const result = schema.safeParse(submission.value);
-
-			return update(submission, {
-				error: flattenZodErrors(result, submission.fields),
-			});
+			return flattenZodErrors(
+				schema.safeParse(submission.value),
+				submission.fields,
+			);
 		},
 	});
 	const form = getFormMetadata(state, {});
