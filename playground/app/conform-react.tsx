@@ -13,15 +13,17 @@ import {
 	type DefaultValue,
 	type FormControl,
 	type FormControlIntent,
+	type FormControlAdditionalState,
 	type FormError,
 	type FormState,
+	type UnknownIntent,
 	initializeElement,
 	deepEqual,
 	requestIntent,
 	isInput,
 	parseSubmission,
 	defaultFormControl,
-	update,
+	report,
 } from './conform-dom';
 import { flushSync } from 'react-dom';
 
@@ -40,13 +42,19 @@ export type FormIntent<Intent> = {
 
 const defaultIntentName = '__intent__';
 
-export function useForm<Schema, ErrorShape, Intent>(
+export function useForm<
+	Schema,
+	ErrorShape,
+	Intent extends UnknownIntent,
+	AdditionalState extends Record<string, unknown> = {},
+>(
 	formRef: FormRef,
 	options: {
-		control: FormControl<Intent>;
+		control: FormControl<Intent, AdditionalState>;
 		result?:
 			| Submission<Intent | null, Schema, ErrorShape>
-			| Submission<null, Schema, ErrorShape>;
+			| Submission<null, Schema, ErrorShape>
+			| null;
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
@@ -54,8 +62,10 @@ export function useForm<Schema, ErrorShape, Intent>(
 		) => FormError<Schema, ErrorShape> | null;
 	},
 ): {
-	state: FormState<Schema, ErrorShape>;
-	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	state: FormState<Schema, ErrorShape, AdditionalState>;
+	handleSubmit(
+		event: React.FormEvent<HTMLFormElement>,
+	): Submission<Intent | null, Schema, ErrorShape>;
 	intent: FormIntent<Intent>;
 };
 export function useForm<Schema, ErrorShape = string[]>(
@@ -68,7 +78,8 @@ export function useForm<Schema, ErrorShape = string[]>(
 					Schema,
 					ErrorShape
 			  >
-			| Submission<null, Schema, ErrorShape>;
+			| Submission<null, Schema, ErrorShape>
+			| null;
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
@@ -80,15 +91,31 @@ export function useForm<Schema, ErrorShape = string[]>(
 		) => FormError<Schema, ErrorShape> | null;
 	},
 ): {
-	state: FormState<Schema, ErrorShape>;
-	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	state: FormState<
+		Schema,
+		ErrorShape,
+		FormControlAdditionalState<typeof defaultFormControl>
+	>;
+	handleSubmit(
+		event: React.FormEvent<HTMLFormElement>,
+	): Submission<
+		FormControlIntent<typeof defaultFormControl> | null,
+		Schema,
+		ErrorShape
+	>;
 	intent: FormIntent<FormControlIntent<typeof defaultFormControl>>;
 };
-export function useForm<Schema, ErrorShape, Intent>(
+export function useForm<
+	Schema,
+	ErrorShape,
+	Intent extends UnknownIntent,
+	AdditionalState extends Record<string, unknown> = {},
+>(
 	formRef: FormRef,
 	options?: {
 		control?: FormControl<
-			Intent | FormControlIntent<typeof defaultFormControl>
+			Intent | FormControlIntent<typeof defaultFormControl>,
+			AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 		>;
 		result?:
 			| Submission<
@@ -96,7 +123,8 @@ export function useForm<Schema, ErrorShape, Intent>(
 					Schema,
 					ErrorShape
 			  >
-			| Submission<null, Schema, ErrorShape>;
+			| Submission<null, Schema, ErrorShape>
+			| null;
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
@@ -108,8 +136,18 @@ export function useForm<Schema, ErrorShape, Intent>(
 		) => FormError<Schema, ErrorShape> | null;
 	},
 ): {
-	state: FormState<Schema, ErrorShape>;
-	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
+	state: FormState<
+		Schema,
+		ErrorShape,
+		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
+	>;
+	handleSubmit(
+		event: React.FormEvent<HTMLFormElement>,
+	): Submission<
+		Intent | FormControlIntent<typeof defaultFormControl> | null,
+		Schema,
+		ErrorShape
+	>;
 	intent: FormIntent<Intent | FormControlIntent<typeof defaultFormControl>>;
 } {
 	const {
@@ -135,7 +173,7 @@ export function useForm<Schema, ErrorShape, Intent>(
 		((formElement: HTMLFormElement) => void) | null
 	>(null);
 
-	const report = useCallback(
+	const update = useCallback(
 		(
 			result: Submission<
 				Intent | FormControlIntent<typeof defaultFormControl> | null,
@@ -155,8 +193,11 @@ export function useForm<Schema, ErrorShape, Intent>(
 			setState((state) =>
 				control.updateState(state, {
 					result,
-					reset: () =>
-						control.initializeState<Schema, ErrorShape>({ defaultValue }),
+					reset() {
+						return control.initializeState<Schema, ErrorShape>({
+							defaultValue,
+						});
+					},
 				}),
 			);
 
@@ -181,22 +222,22 @@ export function useForm<Schema, ErrorShape, Intent>(
 
 		if (formElement) {
 			for (const element of formElement.elements) {
-				if (isInput(element, formElement)) {
-					initializeElement(element, lastStateRef.current);
+				if (isInput(element)) {
+					initializeElement(element, lastStateRef.current.initialValue);
 				}
 			}
 		}
 
 		return formObserver.onInputMounted((element) =>
-			initializeElement(element, lastStateRef.current),
+			initializeElement(element, lastStateRef.current.initialValue),
 		);
 	}, []);
 
 	useEffect(() => {
 		if (result) {
-			report(result);
+			update(result);
 		}
-	}, [result, report]);
+	}, [result, update]);
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -212,17 +253,13 @@ export function useForm<Schema, ErrorShape, Intent>(
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const formData = getFormData(event);
-			const submission = parseSubmission<
-				Intent | FormControlIntent<typeof defaultFormControl>,
-				Schema,
-				ErrorShape
-			>(formData, {
+			const submission = parseSubmission<Schema, ErrorShape>(formData, {
 				intentName,
-				parseIntent: control.parseIntent,
 			});
-			const updatedSubmission = control.updateSubmission(submission);
-			const error = optionsRef.current?.onValidate?.(updatedSubmission);
-			const result = update(updatedSubmission, {
+			const refinedSubmission = control.refineSubmission(submission);
+			const error = optionsRef.current?.onValidate?.(refinedSubmission);
+			const result = report(refinedSubmission, {
+				keepFile: true,
 				error,
 			});
 
@@ -231,15 +268,17 @@ export function useForm<Schema, ErrorShape, Intent>(
 			}
 
 			flushSync(() => {
-				report(result);
+				update(result);
 			});
+
+			return result;
 		},
 		intent,
 	};
 }
 
 export function useFormIntent<
-	Intent = FormControlIntent<typeof defaultFormControl>,
+	Intent extends UnknownIntent = FormControlIntent<typeof defaultFormControl>,
 >(
 	formRef: FormRef,
 	options?: {

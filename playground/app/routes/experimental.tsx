@@ -9,7 +9,10 @@ import {
 	getFieldMetadata,
 	parseSubmission,
 	isInput,
-	update,
+	report,
+	createFormControl,
+	defaultFormControl,
+	FormControlIntent,
 } from '~/conform-dom';
 import { useRef } from 'react';
 
@@ -29,18 +32,60 @@ const schema = coerceZodFormData(
 	}),
 );
 
+const control = createFormControl<
+	| FormControlIntent<typeof defaultFormControl>
+	| { type: 'test'; payload: string },
+	{ status: 'success' | 'error' | null }
+>(() => {
+	return {
+		...defaultFormControl,
+		parseIntent(intent) {
+			if (intent.type === 'test' && typeof intent.payload === 'string') {
+				return {
+					type: 'test',
+					payload: intent.payload,
+				};
+			}
+
+			return defaultFormControl.parseIntent(intent);
+		},
+		initializeState(options) {
+			return {
+				...defaultFormControl.initializeState(options),
+				status: null,
+			};
+		},
+		updateState(state, { result, reset }) {
+			return {
+				...defaultFormControl.updateState(state, {
+					result,
+					reset,
+				}),
+				status:
+					result.error === undefined
+						? state.status
+						: result.intent
+							? null
+							: result.error
+								? 'error'
+								: 'success',
+			};
+		},
+	};
+});
+
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData);
 	const result = schema.safeParse(submission.value);
 
 	if (!result.success) {
-		return update(submission, {
+		return report(submission, {
 			error: flattenZodErrors(result, submission.fields),
 		});
 	}
 
-	return update<typeof submission, z.input<typeof schema>>(submission, {
+	return report<typeof submission, z.input<typeof schema>>(submission, {
 		error: {
 			formError: ['Something went wrong'],
 		},
@@ -52,6 +97,7 @@ export default function Example() {
 	const formRef = useRef<HTMLFormElement>(null);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
+		control,
 		defaultValue: {
 			title: 'Example',
 			tasks: [{ title: 'Test', done: false }],
