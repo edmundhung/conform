@@ -34,7 +34,7 @@ export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	return formData;
 }
 
-export type FormIntent<Intent> = {
+export type FormIntentDispatcher<Intent> = {
 	name: string;
 	submit(intent: Intent): void;
 	serialize(intent: Intent): string;
@@ -58,7 +58,7 @@ export function useForm<
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
-			submission: Submission<Intent | null, Schema, ErrorShape>,
+			submission: Submission<Intent | null>,
 		) => FormError<Schema, ErrorShape> | null;
 	},
 ): {
@@ -66,7 +66,7 @@ export function useForm<
 	handleSubmit(
 		event: React.FormEvent<HTMLFormElement>,
 	): Submission<Intent | null, Schema, ErrorShape>;
-	intent: FormIntent<Intent>;
+	intent: FormIntentDispatcher<Intent>;
 };
 export function useForm<Schema, ErrorShape = string[]>(
 	formRef: FormRef,
@@ -83,11 +83,9 @@ export function useForm<Schema, ErrorShape = string[]>(
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
-			submission: Submission<
-				FormControlIntent<typeof defaultFormControl> | null,
-				Schema,
-				ErrorShape
-			>,
+			submission: Submission<FormControlIntent<
+				typeof defaultFormControl
+			> | null>,
 		) => FormError<Schema, ErrorShape> | null;
 	},
 ): {
@@ -103,7 +101,7 @@ export function useForm<Schema, ErrorShape = string[]>(
 		Schema,
 		ErrorShape
 	>;
-	intent: FormIntent<FormControlIntent<typeof defaultFormControl>>;
+	intent: FormIntentDispatcher<FormControlIntent<typeof defaultFormControl>>;
 };
 export function useForm<
 	Schema,
@@ -129,9 +127,7 @@ export function useForm<
 		intentName?: string;
 		onValidate?: (
 			submission: Submission<
-				Intent | FormControlIntent<typeof defaultFormControl> | null,
-				Schema,
-				ErrorShape
+				Intent | FormControlIntent<typeof defaultFormControl> | null
 			>,
 		) => FormError<Schema, ErrorShape> | null;
 	},
@@ -148,7 +144,9 @@ export function useForm<
 		Schema,
 		ErrorShape
 	>;
-	intent: FormIntent<Intent | FormControlIntent<typeof defaultFormControl>>;
+	intent: FormIntentDispatcher<
+		Intent | FormControlIntent<typeof defaultFormControl>
+	>;
 } {
 	const {
 		intentName = defaultIntentName,
@@ -253,7 +251,7 @@ export function useForm<
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const formData = getFormData(event);
-			const submission = parseSubmission<Schema, ErrorShape>(formData, {
+			const submission = parseSubmission(formData, {
 				intentName,
 			});
 			const refinedSubmission = control.refineSubmission(submission);
@@ -287,7 +285,7 @@ export function useFormIntent<
 			Intent | FormControlIntent<typeof defaultFormControl>
 		>;
 	},
-): FormIntent<Intent> {
+): FormIntentDispatcher<Intent> {
 	const { intentName = defaultIntentName, control = defaultFormControl } =
 		options ?? {};
 
