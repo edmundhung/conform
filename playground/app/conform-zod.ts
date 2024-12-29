@@ -19,10 +19,7 @@ import type {
 	ZodDiscriminatedUnionOption,
 	ZodFirstPartySchemaTypes,
 	ZodIssue,
-	ZodType,
 	ZodTypeAny,
-	input,
-	output,
 } from 'zod';
 import { formatPaths } from './conform-dom';
 import type { FormError } from './conform-dom';
@@ -89,13 +86,13 @@ function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 export function coerceZodFormData<Schema extends ZodTypeAny>(
 	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
-): ZodType<output<Schema>, any, input<Schema>> {
+): Schema {
 	const result = cache.get(type);
 
 	// Returns the cached schema if it's already processed
 	// To prevent infinite recursion caused by z.lazy()
 	if (result) {
-		return result;
+		return result as Schema;
 	}
 
 	let schema: ZodTypeAny = type;
@@ -268,7 +265,7 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 		cache.set(type, schema);
 	}
 
-	return schema;
+	return schema as Schema;
 }
 
 export function flattenZodError<Schema>(

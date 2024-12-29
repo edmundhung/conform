@@ -1427,7 +1427,7 @@ export function createFieldset<
 	});
 }
 
-export function getFieldset<Schema extends Record<string, unknown>, ErrorShape>(
+export function getFieldset<Schema, ErrorShape>(
 	state: FormState<Schema, ErrorShape>,
 ): Fieldset<
 	Schema,
