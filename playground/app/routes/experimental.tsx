@@ -1,12 +1,11 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
 import { useInputControl, useFormData, useForm } from '~/conform-react';
-import { coerceZodFormData, flattenZodErrors } from '~/conform-zod';
+import { coerceZodFormData, flattenZodError } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import {
 	getFormMetadata,
 	getFieldset,
-	getFieldMetadata,
 	parseSubmission,
 	isInput,
 	report,
@@ -81,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (!result.success) {
 		return report(submission, {
-			error: flattenZodErrors(result, submission.fields),
+			error: flattenZodError(result),
 		});
 	}
 
@@ -103,18 +102,11 @@ export default function Example() {
 			tasks: [{ title: 'Test', done: false }],
 		},
 		onValidate(submission) {
-			return flattenZodErrors(
-				schema.safeParse(submission.value),
-				submission.fields,
-			);
+			return flattenZodError(schema.safeParse(submission.value));
 		},
 	});
-	const form = getFormMetadata(state, {});
-	const fields = getFieldset(state, {
-		metadata(state, name) {
-			return getFieldMetadata(state, name);
-		},
-	});
+	const form = getFormMetadata(state);
+	const fields = getFieldset(state);
 	const title = useFormData(formRef, (formData) =>
 		formData.get(fields.title.name)?.toString(),
 	);
@@ -224,7 +216,7 @@ export default function Example() {
 						type: 'insert',
 						payload: {
 							name: fields.tasks.name,
-							defaultValue: { title: 'Example', done: true },
+							defaultValue: { title: 'Example' },
 						},
 					})}
 				>

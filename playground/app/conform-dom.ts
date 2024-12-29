@@ -4,7 +4,7 @@ export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
 	| { [key: string]: FormValue<Entry> };
 
 export type FormError<Schema, ErrorShape> = {
-	formError?: ErrorShape | null;
+	formError: ErrorShape | null;
 	fieldError: Record<string, ErrorShape>;
 	'#schema'?: Schema;
 };
@@ -456,6 +456,7 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
+		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -479,6 +480,7 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
+		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -500,6 +502,7 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
+		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -517,7 +520,7 @@ export function report<
 		: FormDataEntryValue
 > {
 	return {
-		type: submission.type,
+		type: options.type ?? submission.type,
 		// @ts-expect-error TODO: remove all files from submission.value
 		value: options.keepFile ? submission.value : submission.value,
 		error:
@@ -529,13 +532,7 @@ export function report<
 							formError: options.error.formError ?? null,
 							fieldError: options.error.fieldError ?? {},
 						},
-		fields: submission.fields.concat(
-			// Sometimes we couldn't find out all the fields from the submission, e.g. unchecked checkboxes
-			// But the schema might have an error on those fields, so we need to include them
-			Object.keys(options?.error?.fieldError ?? {}).filter((key) =>
-				submission.fields.every((field) => !isPrefix(field, key)),
-			),
-		),
+		fields: submission.fields,
 		intent: submission.intent,
 	};
 }
@@ -662,7 +659,7 @@ export function mapItems<Item>(
 	return updated;
 }
 
-export function createUpdateListIndex(
+export function configureListIndexUpdate(
 	listName: string,
 	update: (index: number) => number | null,
 ): (name: string) => string | null {
@@ -963,16 +960,41 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 		return null;
 	}
 
+	function getFields(submission: Submission<UnknownIntent | null>): string[] {
+		const fields = submission.fields;
+
+		// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
+		// But the schema might have an error on those fields, so we need to include them
+		if (submission.error) {
+			for (const name of Object.keys(submission.error.fieldError)) {
+				// If the error is set as a child of an actual field, exclude it
+				// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
+				if (fields.find((field) => name !== field && isPrefix(name, field))) {
+					continue;
+				}
+
+				// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
+				if (fields.every((field) => !isPrefix(field, name))) {
+					fields.push(name);
+				}
+			}
+		}
+
+		return fields;
+	}
+
 	function handleSubmission<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape>,
 		result: Submission<UnknownIntent | null, Schema, ErrorShape>,
 		reset?: () => FormState<Schema, ErrorShape>,
 	): FormState<Schema, ErrorShape> {
 		if (!result.intent) {
+			const fields = getFields(result);
+
 			return merge(state, {
-				touchedFields: deepEqual(state.touchedFields, result.fields)
+				touchedFields: deepEqual(state.touchedFields, fields)
 					? state.touchedFields
-					: result.fields,
+					: fields,
 			});
 		}
 
@@ -987,10 +1009,12 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 					const name = intent.payload ?? '';
 
 					if (name === '') {
+						const fields = getFields(result);
+
 						return merge(state, {
-							touchedFields: deepEqual(state.touchedFields, result.fields)
+							touchedFields: deepEqual(state.touchedFields, fields)
 								? state.touchedFields
-								: result.fields,
+								: fields,
 						});
 					}
 
@@ -1007,7 +1031,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 					const list = getList(state.initialValue, intent.payload.name);
 					const index = intent.payload.index ?? list.length;
 					const itemName = formatName(intent.payload.name, index);
-					const updateListIndex = createUpdateListIndex(
+					const updateListIndex = configureListIndexUpdate(
 						intent.payload.name,
 						(currentIndex) =>
 							index <= currentIndex ? currentIndex + 1 : currentIndex,
@@ -1037,7 +1061,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				}
 				case 'remove': {
 					const list = getList(state.initialValue, intent.payload.name);
-					const updateListIndex = createUpdateListIndex(
+					const updateListIndex = configureListIndexUpdate(
 						intent.payload.name,
 						(currentIndex) => {
 							if (intent.payload.index === currentIndex) {
@@ -1063,7 +1087,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				}
 				case 'reorder': {
 					const list = getList(state.initialValue, intent.payload.name);
-					const updateListIndex = createUpdateListIndex(
+					const updateListIndex = configureListIndexUpdate(
 						intent.payload.name,
 						(currentIndex) => {
 							if (intent.payload.from === intent.payload.to) {
@@ -1301,27 +1325,17 @@ export type Fieldset<Schema, Metadata extends Record<string, unknown>> = {
 	[Key in keyof Combine<Schema>]-?: Field<Combine<Schema>[Key], Metadata>;
 };
 
-export type FormMetadata<
-	Schema extends Record<string, unknown>,
-	ErrorShape,
-	Props extends Record<string, unknown>,
-> = {
+export type FormMetadata<Schema extends Record<string, unknown>, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
 	touched: boolean;
 	error: ErrorShape | null;
 	fieldError: Record<string, ErrorShape> | null;
-	props: Props;
 };
 
 export function getFormMetadata<
 	Schema extends Record<string, unknown>,
 	ErrorShape,
-	Props extends Record<string, unknown>,
->(
-	state: FormState<Schema, ErrorShape>,
-	props: Props,
-): FormMetadata<Schema, ErrorShape, Props> {
-	const name = '';
+>(state: FormState<Schema, ErrorShape>): FormMetadata<Schema, ErrorShape> {
 	const error = state.serverError ?? state.clientError;
 
 	return {
@@ -1329,14 +1343,13 @@ export function getFormMetadata<
 		error: error?.formError ?? null,
 		fieldError: error?.fieldError ?? null,
 		get touched() {
-			return isTouched(state.touchedFields, name);
+			return isTouched(state.touchedFields);
 		},
-		props,
 	};
 }
 
 export function getDefaultValue(
-	initialValue: unknown,
+	initialValue: Record<string, unknown>,
 	name: string,
 ): string | string[] | undefined {
 	const paths = getPaths(name);
@@ -1354,62 +1367,41 @@ export function getDefaultValue(
 	return serializedValue;
 }
 
-export function getFieldMetadata<
-	Schema extends Record<string, unknown>,
-	ErrorShape,
->(state: FormState<Schema, ErrorShape>, name: string) {
-	const error = state.serverError ?? state.clientError;
+export function getError<ErrorShape>(
+	error: FormError<unknown, ErrorShape> | null,
+	touchedFields: string[],
+	name?: string,
+): ErrorShape | undefined {
+	if (!isTouched(touchedFields, name) || !error) {
+		return;
+	}
 
-	return {
-		get name() {
-			return name;
-		},
-		get key() {
-			return state.keys[name];
-		},
-		get defaultValue() {
-			return getDefaultValue(state.initialValue, name);
-		},
-		get touched() {
-			return isTouched(state.touchedFields, name);
-		},
-		get error() {
-			const result = name ? error?.fieldError[name] : error?.formError;
-
-			if (!result || !isTouched(state.touchedFields, name)) {
-				return;
-			}
-
-			return result;
-		},
-	};
+	return (name ? error.fieldError[name] : error.formError) ?? undefined;
 }
 
-export function getFieldset<
-	Schema extends Record<string, unknown>,
-	ErrorShape,
-	Metadata extends Record<string, unknown> = {},
-	FieldSchema = Schema,
+export function createFieldset<
+	Schema,
+	Metadata extends Record<string, unknown>,
 >(
-	state: FormState<Schema, ErrorShape>,
-	options?: {
+	initialValue: Record<string, unknown>,
+	options: {
 		name?: string;
-		metadata?: (state: FormState<Schema, ErrorShape>, name: string) => Metadata;
+		defineMetadata?: (name: string) => Metadata;
 	},
-): Fieldset<FieldSchema, Metadata> {
+): Fieldset<Schema, Metadata> {
 	function createField(name: string) {
-		const metadata = options?.metadata?.(state, name) ?? {};
+		const metadata = options?.defineMetadata?.(name) ?? {};
 
 		return Object.assign(metadata, {
 			getFieldset() {
-				return getFieldset(state, {
+				return createFieldset(initialValue, {
 					...options,
 					name,
 				});
 			},
 			getFieldList() {
 				const paths = getPaths(name);
-				const value = getValue(state.initialValue, paths) ?? [];
+				const value = getValue(initialValue, paths) ?? [];
 
 				if (!Array.isArray(value)) {
 					throw new Error(
@@ -1431,6 +1423,43 @@ export function getFieldset<
 			}
 
 			return createField(formatName(options?.name, key));
+		},
+	});
+}
+
+export function getFieldset<Schema extends Record<string, unknown>, ErrorShape>(
+	state: FormState<Schema, ErrorShape>,
+): Fieldset<
+	Schema,
+	Readonly<{
+		name: string;
+		key: string | undefined;
+		defaultValue: string | string[] | undefined;
+		touched: boolean;
+		error: ErrorShape | undefined;
+	}>
+> {
+	return createFieldset(state.initialValue, {
+		defineMetadata(name) {
+			const error = state.serverError ?? state.clientError;
+
+			return {
+				get name() {
+					return name;
+				},
+				get key() {
+					return state.keys[name];
+				},
+				get defaultValue() {
+					return getDefaultValue(state.initialValue, name);
+				},
+				get touched() {
+					return isTouched(state.touchedFields, name);
+				},
+				get error() {
+					return getError(error, state.touchedFields, name);
+				},
+			};
 		},
 	});
 }
@@ -1583,7 +1612,7 @@ export function resetField(
 
 export function initializeElement(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	initialValue: unknown,
+	initialValue: Record<string, unknown>,
 ): void {
 	// Skip elements that are already initialized
 	if (element.dataset.conform) {

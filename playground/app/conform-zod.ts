@@ -24,7 +24,7 @@ import type {
 	input,
 	output,
 } from 'zod';
-import { formatPaths, isPrefix } from './conform-dom';
+import { formatPaths } from './conform-dom';
 import type { FormError } from './conform-dom';
 
 /**
@@ -271,46 +271,34 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 	return schema;
 }
 
-export function flattenZodErrors<Schema>(
+export function flattenZodError<Schema>(
 	result: SafeParseReturnType<Schema, any>,
-	fields: string[],
 ): FormError<Schema, string[]> | null;
-export function flattenZodErrors<Schema, ErrorShape>(
+export function flattenZodError<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
-	fields: string[],
-	formatIssues: (issues: ZodIssue[]) => ErrorShape,
-): FormError<Schema, ErrorShape> | null;
-export function flattenZodErrors<Schema, ErrorShape>(
+	formatIssue: (issue: ZodIssue) => ErrorShape,
+): FormError<Schema, ErrorShape[]> | null;
+export function flattenZodError<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
-	fields: string[],
-	formatIssues?: (issues: ZodIssue[]) => ErrorShape,
-): FormError<Schema, string[] | ErrorShape> | null {
+	formatIssue?: (issue: ZodIssue) => ErrorShape,
+): FormError<Schema, Array<string | ErrorShape>> | null {
 	if (result.success) {
 		return null;
 	}
 
-	const issueMap = result.error.issues.reduce<Record<string, ZodIssue[]>>(
-		(result, issue) => {
-			const name = formatPaths(issue.path);
-			const field = fields.find((field) => isPrefix(name, field)) ?? name;
-			const prevValue = result[field] ?? [];
+	const { '': formError = null, ...fieldError } = result.error.issues.reduce<
+		Record<string, Array<string | ErrorShape>>
+	>((result, issue) => {
+		const name = formatPaths(issue.path);
+		const prevValue = result[name] ?? [];
 
-			result[field] = prevValue.concat(issue);
+		result[name] = prevValue.concat(formatIssue?.(issue) ?? issue.message);
 
-			return result;
-		},
-		{},
-	);
-
-	const { '': formError, ...fieldError } = Object.fromEntries(
-		Object.entries(issueMap).map(([name, issues]) => [
-			name,
-			formatIssues?.(issues) ?? issues.map((issue) => issue.message),
-		]),
-	);
+		return result;
+	}, {});
 
 	return {
 		formError,
 		fieldError,
-	} as FormError<Schema, string[] | ErrorShape>;
+	};
 }
