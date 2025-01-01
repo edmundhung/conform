@@ -12,24 +12,40 @@ import {
 	createFormControl,
 	defaultFormControl,
 	FormControlIntent,
+	memoize,
 } from '~/conform-dom';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
-const schema = coerceZodFormData(
-	z.object({
-		title: z.string().min(3).max(20),
-		content: z.string().nonempty(),
-		tasks: z
-			.array(
-				z.object({
-					title: z.string().nonempty(),
-					done: z.boolean(),
-				}),
-			)
-			.min(1)
-			.max(3),
-	}),
-);
+function createSchema(constraint: {
+	isTitleUnique: (title: string) => Promise<boolean>;
+}) {
+	return coerceZodFormData(
+		z.object({
+			title: z
+				.string({ required_error: 'Title is required' })
+				.min(4)
+				.regex(
+					/^[a-zA-Z0-9]+$/,
+					'Invalid title: only letters or numbers are allowed',
+				)
+				.pipe(
+					z.string().refine((title) => constraint.isTitleUnique(title), {
+						message: 'Title is already used',
+					}),
+				),
+			content: z.string(),
+			tasks: z
+				.array(
+					z.object({
+						title: z.string().nonempty(),
+						done: z.boolean(),
+					}),
+				)
+				.min(1)
+				.max(3),
+		}),
+	);
+}
 
 const control = createFormControl<
 	| FormControlIntent<typeof defaultFormControl>
@@ -76,7 +92,16 @@ const control = createFormControl<
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData);
-	const result = schema.safeParse(submission.value);
+	const schema = createSchema({
+		isTitleUnique(title) {
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(title !== 'Test');
+				}, 1000);
+			});
+		},
+	});
+	const result = await schema.safeParseAsync(submission.value);
 
 	if (!result.success) {
 		return report(submission, {
@@ -94,6 +119,21 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Example() {
 	const result = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
+	const schema = useMemo(() => {
+		const isTitleUnique = memoize(async (title: string) => {
+			const response = await fetch('/api', {
+				method: 'POST',
+				body: JSON.stringify({ title }),
+			});
+			const result = await response.json();
+
+			return result.success;
+		});
+
+		return createSchema({
+			isTitleUnique,
+		});
+	}, []);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
 		control,
@@ -101,8 +141,10 @@ export default function Example() {
 			title: 'Example',
 			tasks: [{ title: 'Test', done: false }],
 		},
-		onValidate(submission) {
-			return flattenZodError(schema.safeParse(submission.value));
+		async onValidate(submission) {
+			const result = await schema.safeParseAsync(submission.value);
+
+			return flattenZodError(result);
 		},
 	});
 	const form = getFormMetadata(state);

@@ -23,7 +23,6 @@ import {
 	isInput,
 	parseSubmission,
 	defaultFormControl,
-	report,
 } from './conform-dom';
 import { flushSync } from 'react-dom';
 
@@ -59,7 +58,14 @@ export function useForm<
 		intentName?: string;
 		onValidate?: (
 			submission: Submission<Intent | null>,
-		) => FormError<Schema, ErrorShape> | null;
+			ctx: {
+				formElement: HTMLFormElement;
+			},
+		) =>
+			| FormError<Schema, ErrorShape>
+			| null
+			| Promise<FormError<Schema, ErrorShape> | null>
+			| undefined;
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
@@ -86,7 +92,14 @@ export function useForm<Schema, ErrorShape = string[]>(
 			submission: Submission<FormControlIntent<
 				typeof defaultFormControl
 			> | null>,
-		) => FormError<Schema, ErrorShape> | null;
+			ctx: {
+				formElement: HTMLFormElement;
+			},
+		) =>
+			| FormError<Schema, ErrorShape>
+			| null
+			| Promise<FormError<Schema, ErrorShape> | null>
+			| undefined;
 	},
 ): {
 	state: FormState<
@@ -129,7 +142,14 @@ export function useForm<
 			submission: Submission<
 				Intent | FormControlIntent<typeof defaultFormControl> | null
 			>,
-		) => FormError<Schema, ErrorShape> | null;
+			ctx: {
+				formElement: HTMLFormElement;
+			},
+		) =>
+			| FormError<Schema, ErrorShape>
+			| null
+			| Promise<FormError<Schema, ErrorShape> | null>
+			| undefined;
 	},
 ): {
 	state: FormState<
@@ -163,6 +183,7 @@ export function useForm<
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
 	const lastResultRef = useRef(result);
+	const abortControllerRef = useRef<AbortController | null>(null);
 	const intent = useFormIntent(formRef, {
 		intentName,
 		control,
@@ -217,6 +238,9 @@ export function useForm<
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
+		const unsubscribe = formObserver.onInputMounted((element) =>
+			initializeElement(element, lastStateRef.current.initialValue),
+		);
 
 		if (formElement) {
 			for (const element of formElement.elements) {
@@ -226,9 +250,12 @@ export function useForm<
 			}
 		}
 
-		return formObserver.onInputMounted((element) =>
-			initializeElement(element, lastStateRef.current.initialValue),
-		);
+		return () => {
+			// Clean up the subscription
+			unsubscribe();
+			// Cancal pending validation request
+			abortControllerRef.current?.abort('The component is unmounted');
+		};
 	}, []);
 
 	useEffect(() => {
@@ -251,25 +278,59 @@ export function useForm<
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const formData = getFormData(event);
-			const submission = parseSubmission(formData, {
-				intentName,
-			});
-			const refinedSubmission = control.refineSubmission(submission);
-			const error = optionsRef.current?.onValidate?.(refinedSubmission);
-			const result = report(refinedSubmission, {
-				keepFile: true,
-				error,
+			const submission = control.refineSubmission<Schema, ErrorShape>(
+				parseSubmission(formData, {
+					intentName,
+				}),
+			);
+			const validationResult = optionsRef.current?.onValidate?.(submission, {
+				formElement: event.currentTarget,
 			});
 
-			if (result.error || result.intent) {
-				event.preventDefault();
+			if (abortControllerRef.current) {
+				abortControllerRef.current?.abort('A new submission is made');
+				abortControllerRef.current = null;
 			}
 
-			flushSync(() => {
-				update(result);
-			});
+			// If the validation result is undefined, fallback to server validation
+			if (typeof validationResult === 'undefined') {
+				return submission;
+			}
 
-			return result;
+			if (validationResult instanceof Promise) {
+				const abortController = new AbortController();
+
+				// Keep track of the abort controller so we can cancel the previous request if a new one is made
+				abortControllerRef.current = abortController;
+
+				// Update the form when the validation result is resolved
+				validationResult.then((error) => {
+					// Update the form with the validation result
+					// There is no need to flush the update in this case
+					if (!abortController.signal.aborted) {
+						update({
+							...submission,
+							error,
+						});
+					}
+				});
+
+				if (submission.intent) {
+					event.preventDefault();
+				}
+			} else {
+				submission.error = validationResult;
+
+				flushSync(() => {
+					update(submission);
+				});
+
+				if (submission.error || submission.intent) {
+					event.preventDefault();
+				}
+			}
+
+			return submission;
 		},
 		intent,
 	};
@@ -334,8 +395,8 @@ export function useFormData<Value>(
 	formRef: FormRef,
 	select: (formData: FormData, currentValue: Value | undefined) => Value,
 ): Value | undefined {
-	const previous = useRef<Value>();
-	const result = useSyncExternalStore(
+	const valueRef = useRef<Value>();
+	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
 				formObserver.onFormDataChanged(({ formElement }) => {
@@ -353,16 +414,15 @@ export function useFormData<Value>(
 			}
 
 			const formData = new FormData(formElement);
-			const value = select(formData, previous.current);
 
-			return value;
+			return select(formData, valueRef.current);
 		},
 		() => undefined,
 	);
 
-	previous.current = result;
+	valueRef.current = value;
 
-	return result;
+	return value;
 }
 
 export function updateFieldValue(

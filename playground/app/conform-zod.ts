@@ -273,23 +273,31 @@ export function flattenZodError<Schema>(
 ): FormError<Schema, string[]> | null;
 export function flattenZodError<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
-	formatIssue: (issue: ZodIssue) => ErrorShape,
-): FormError<Schema, ErrorShape[]> | null;
+	formatIssues: (issue: ZodIssue[], name: string) => ErrorShape,
+): FormError<Schema, ErrorShape> | null;
 export function flattenZodError<Schema, ErrorShape>(
 	result: SafeParseReturnType<Schema, any>,
-	formatIssue?: (issue: ZodIssue) => ErrorShape,
-): FormError<Schema, Array<string | ErrorShape>> | null {
+	formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape,
+): FormError<Schema, Array<string> | ErrorShape> | null {
 	if (result.success) {
 		return null;
 	}
 
-	const { '': formError = null, ...fieldError } = result.error.issues.reduce<
-		Record<string, Array<string | ErrorShape>>
-	>((result, issue) => {
-		const name = formatPaths(issue.path);
-		const prevValue = result[name] ?? [];
+	const error: Record<string, ZodIssue[]> = {};
 
-		result[name] = prevValue.concat(formatIssue?.(issue) ?? issue.message);
+	for (const issue of result.error.issues) {
+		const name = formatPaths(issue.path);
+
+		error[name] ??= [];
+		error[name].push(issue);
+	}
+
+	const { '': formError = null, ...fieldError } = Object.entries(error).reduce<
+		Record<string, Array<string> | ErrorShape>
+	>((result, [name, issues]) => {
+		result[name] = formatIssues
+			? formatIssues(issues, name)
+			: issues.map((issue) => issue.message);
 
 		return result;
 	}, {});

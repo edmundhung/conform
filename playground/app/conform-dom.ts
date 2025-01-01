@@ -811,14 +811,14 @@ export function createFormControl<
 export type DefaultFormIntent =
 	| {
 			type: 'validate';
-			payload: string | undefined;
+			payload?: string | undefined;
 	  }
 	| {
 			type: 'update';
 			payload: {
 				name: string;
 				index?: number;
-				value: unknown;
+				value?: unknown;
 			};
 	  }
 	| {
@@ -829,7 +829,7 @@ export type DefaultFormIntent =
 			payload: {
 				name: string;
 				index?: number;
-				defaultValue: unknown;
+				defaultValue?: unknown;
 			};
 	  }
 	| {
@@ -1379,6 +1379,20 @@ export function getError<ErrorShape>(
 	return (name ? error.fieldError[name] : error.formError) ?? undefined;
 }
 
+export function getListInitialValue(
+	initialValue: Record<string, unknown>,
+	name: string,
+) {
+	const paths = getPaths(name);
+	const value = getValue(initialValue, paths) ?? [];
+
+	if (!Array.isArray(value)) {
+		throw new Error(`The value of "${name}" is not an array`);
+	}
+
+	return value;
+}
+
 export function createFieldset<
 	Schema,
 	Metadata extends Record<string, unknown>,
@@ -1400,16 +1414,9 @@ export function createFieldset<
 				});
 			},
 			getFieldList() {
-				const paths = getPaths(name);
-				const value = getValue(initialValue, paths) ?? [];
+				const list = getListInitialValue(initialValue, name);
 
-				if (!Array.isArray(value)) {
-					throw new Error(
-						`The value of "${name}" is not an array. Are you looking for getFieldset()?`,
-					);
-				}
-
-				return Array(value.length)
+				return Array(list.length)
 					.fill(0)
 					.map((_, index) => createField(formatName(name, index)));
 			},
@@ -1627,4 +1634,57 @@ export function initializeElement(
 	});
 
 	element.dataset.conform = generateKey();
+}
+
+export type Memoized<T extends (...args: any) => any> = {
+	(this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>;
+	clearCache: () => void;
+};
+
+export function memoize<T extends (...args: any) => any>(
+	fn: T,
+	isEqual: (
+		prevArgs: Parameters<T>,
+		nextArgs: Parameters<T>,
+	) => boolean = deepEqual,
+): Memoized<T> {
+	let cache: {
+		this: ThisParameterType<T>;
+		args: Parameters<T>;
+		result: ReturnType<T>;
+	} | null = null;
+
+	function memoized(this: ThisParameterType<T>, ...args: Parameters<T>) {
+		// Check if new arguments match last arguments including the context (this)
+		if (cache && cache.this === this && isEqual(cache.args, args)) {
+			return cache.result;
+		}
+
+		let result = fn.apply(this, args);
+
+		if (result instanceof Promise) {
+			result = result.catch((e) => {
+				// If the promise is rejected, clear the cache so that the next call will re-invoke fn
+				cache = null;
+
+				// Re-throw the exception so that it can be handled by the caller
+				throw e;
+			});
+		}
+
+		// Update the cache
+		cache = {
+			this: this,
+			args,
+			result,
+		};
+
+		return result;
+	}
+
+	memoized.clearCache = function clearCache() {
+		cache = null;
+	};
+
+	return memoized;
 }
