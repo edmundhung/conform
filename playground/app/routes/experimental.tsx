@@ -70,9 +70,10 @@ const control = createFormControl<
 				status: null,
 			};
 		},
-		updateState(state, { result, reset }) {
+		updateState(state, { type, result, reset }) {
 			return {
 				...defaultFormControl.updateState(state, {
+					type,
 					result,
 					reset,
 				}),
@@ -91,19 +92,21 @@ const control = createFormControl<
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parseSubmission(formData);
+	const submission = control.refineSubmission(
+		parseSubmission(formData, { intentName: 'intent' }),
+	);
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
 				setTimeout(() => {
-					resolve(title !== 'Test');
+					resolve(title === 'Test');
 				}, 1000);
 			});
 		},
 	});
 	const result = await schema.safeParseAsync(submission.value);
 
-	if (!result.success) {
+	if (!result.success || submission.intent) {
 		return report(submission, {
 			error: flattenZodError(result),
 		});
@@ -123,11 +126,11 @@ export default function Example() {
 		const isTitleUnique = memoize(async (title: string) => {
 			const response = await fetch('/api', {
 				method: 'POST',
-				body: JSON.stringify({ title }),
+				body: JSON.stringify(title),
 			});
 			const result = await response.json();
 
-			return result.success;
+			return result === 'Test';
 		});
 
 		return createSchema({
@@ -137,6 +140,7 @@ export default function Example() {
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
 		control,
+		intentName: 'intent',
 		defaultValue: {
 			title: 'Example',
 			tasks: [{ title: 'Test', done: false }],

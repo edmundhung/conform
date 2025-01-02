@@ -15,7 +15,6 @@ export type Submission<
 	ErrorShape = unknown,
 	FormValueType extends FormDataEntryValue = FormDataEntryValue,
 > = {
-	type: 'client' | 'server';
 	fields: string[];
 	value: Record<string, FormValue<FormValueType>> | null;
 	intent: Intent;
@@ -456,7 +455,6 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
-		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -480,7 +478,6 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
-		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -502,7 +499,6 @@ export function report<
 >(
 	submission: SubmissionType,
 	options: {
-		type?: SubmissionType['type'];
 		error?: Partial<
 			FormError<
 				Fallback<SubmissionSchema<SubmissionType>, Schema>,
@@ -520,7 +516,6 @@ export function report<
 		: FormDataEntryValue
 > {
 	return {
-		type: options.type ?? submission.type,
 		// @ts-expect-error TODO: remove all files from submission.value
 		value: options.keepFile ? submission.value : submission.value,
 		error:
@@ -571,7 +566,6 @@ export function parseSubmission<Schema, ErrorShape>(
 	}
 
 	const submission: Submission<string | null, Schema, ErrorShape> = {
-		type: typeof document !== 'undefined' ? 'client' : 'server',
 		value: initialValue,
 		fields: Array.from(fields),
 		intent: null,
@@ -784,6 +778,7 @@ export type FormControl<
 	updateState<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape, AdditionalState>,
 		ctx: {
+			type: 'server' | 'client';
 			result: Submission<UnknownIntent | null, Schema, ErrorShape>;
 			reset: () => FormState<Schema, ErrorShape, AdditionalState>;
 		},
@@ -983,22 +978,12 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 		return fields;
 	}
 
-	function handleSubmission<Schema, ErrorShape>(
+	function handleIntent<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape>,
 		result: Submission<UnknownIntent | null, Schema, ErrorShape>,
 		reset?: () => FormState<Schema, ErrorShape>,
 	): FormState<Schema, ErrorShape> {
-		if (!result.intent) {
-			const fields = getFields(result);
-
-			return merge(state, {
-				touchedFields: deepEqual(state.touchedFields, fields)
-					? state.touchedFields
-					: fields,
-			});
-		}
-
-		const intent = parseIntent(result.intent);
+		const intent = result.intent ? parseIntent(result.intent) : null;
 
 		if (intent) {
 			switch (intent.type) {
@@ -1146,41 +1131,48 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				defaultValue: defaultValue ?? null,
 				initialValue: result?.value ?? defaultValue ?? {},
 				submittedValue: result?.value ?? null,
-				serverError:
-					result?.type === 'server' && result.error ? result.error : null,
-				clientError:
-					result?.type === 'client' && result.error ? result.error : null,
-				touchedFields: [],
+				serverError: result?.error ?? null,
+				clientError: null,
+				touchedFields: result?.intent === null ? getFields(result) : [],
 			};
 
 			if (!result) {
 				return state;
 			}
 
-			return handleSubmission(state, result);
+			return handleIntent(state, result);
 		},
-		updateState(state, { result, reset }) {
+		updateState(state, { type, result, reset }) {
+			const fields = getFields(result);
 			const updatedState = merge(state, {
 				clientError:
-					result.type === 'client' &&
+					type === 'client' &&
 					typeof result.error !== 'undefined' &&
 					!deepEqual(state.clientError, result.error)
 						? result.error
 						: state.clientError,
 				serverError:
-					result.type === 'client' &&
+					type === 'client' &&
+					typeof result.error !== 'undefined' &&
 					!deepEqual(state.submittedValue, result.value)
 						? null
-						: result.type === 'server' &&
+						: type === 'server' &&
 							  typeof result.error !== 'undefined' &&
 							  !deepEqual(state.serverError, result.error)
 							? result.error
 							: state.serverError,
-				submittedValue:
-					result.type === 'server' ? result.value : state.submittedValue,
+				submittedValue: type === 'server' ? result.value : state.submittedValue,
+				touchedFields:
+					result?.intent === null && !deepEqual(state.touchedFields, fields)
+						? fields
+						: state.touchedFields,
 			});
 
-			return handleSubmission(updatedState, result, reset);
+			if (type === 'server') {
+				return updatedState;
+			}
+
+			return handleIntent(updatedState, result, reset);
 		},
 		deserializeIntent(value) {
 			return deserializeIntent(value);

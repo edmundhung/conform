@@ -5,14 +5,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	await new Promise((resolve) => {
 		const min = 200;
-		const max = 5000;
+		const max = 2000;
 		setTimeout(resolve, Math.floor(Math.random() * (max - min + 1)) + min);
 	});
 
-	return new Response(
-		JSON.stringify({
-			data,
-			sucess: false,
-		}),
-	);
+	return new Response(JSON.stringify(data));
 }

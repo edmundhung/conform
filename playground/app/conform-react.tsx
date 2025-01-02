@@ -24,7 +24,6 @@ import {
 	parseSubmission,
 	defaultFormControl,
 } from './conform-dom';
-import { flushSync } from 'react-dom';
 
 export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
 	const submitEvent = event.nativeEvent as SubmitEvent;
@@ -199,6 +198,9 @@ export function useForm<
 				Schema,
 				ErrorShape
 			>,
+			options: {
+				type: 'server' | 'client';
+			},
 		) => {
 			if (result === lastResultRef.current) {
 				return;
@@ -211,6 +213,7 @@ export function useForm<
 
 			setState((state) =>
 				control.updateState(state, {
+					type: options.type,
 					result,
 					reset() {
 						return control.initializeState<Schema, ErrorShape>({
@@ -220,7 +223,7 @@ export function useForm<
 				}),
 			);
 
-			if (result.intent) {
+			if (options.type === 'client' && result.intent) {
 				const sideEffectFn = control.getSideEffect(result.intent);
 
 				if (sideEffectFn) {
@@ -260,7 +263,7 @@ export function useForm<
 
 	useEffect(() => {
 		if (result) {
-			update(result);
+			update(result, { type: 'server' });
 		}
 	}, [result, update]);
 
@@ -292,12 +295,18 @@ export function useForm<
 				abortControllerRef.current = null;
 			}
 
-			// If the validation result is undefined, fallback to server validation
-			if (typeof validationResult === 'undefined') {
-				return submission;
+			const isAsyncValidation = validationResult instanceof Promise;
+			const isResetting = submission.value === null;
+
+			if (!isAsyncValidation) {
+				submission.error = validationResult;
 			}
 
-			if (validationResult instanceof Promise) {
+			update(submission, {
+				type: 'client',
+			});
+
+			if (!isResetting && isAsyncValidation) {
 				const abortController = new AbortController();
 
 				// Keep track of the abort controller so we can cancel the previous request if a new one is made
@@ -308,26 +317,25 @@ export function useForm<
 					// Update the form with the validation result
 					// There is no need to flush the update in this case
 					if (!abortController.signal.aborted) {
-						update({
-							...submission,
-							error,
-						});
+						update(
+							{
+								...submission,
+								error,
+							},
+							{
+								type: 'server',
+							},
+						);
 					}
 				});
+			}
 
-				if (submission.intent) {
-					event.preventDefault();
-				}
-			} else {
-				submission.error = validationResult;
-
-				flushSync(() => {
-					update(submission);
-				});
-
-				if (submission.error || submission.intent) {
-					event.preventDefault();
-				}
+			if (
+				isResetting ||
+				(typeof submission.error !== 'undefined' &&
+					(submission.intent || submission.error !== null))
+			) {
+				event.preventDefault();
 			}
 
 			return submission;
