@@ -25,11 +25,20 @@ import {
 	defaultFormControl,
 } from './conform-dom';
 
-export function getFormData(event: React.FormEvent<HTMLFormElement>): FormData {
-	const submitEvent = event.nativeEvent as SubmitEvent;
-	const formData = new FormData(event.currentTarget, submitEvent.submitter);
+export function getSubmitEvent(
+	event: React.FormEvent<HTMLFormElement>,
+): SubmitEvent {
+	if (event.type !== 'submit') {
+		throw new Error('The event is not a submit event');
+	}
 
-	return formData;
+	return event.nativeEvent as SubmitEvent;
+}
+
+export function getSubmitter(
+	event: React.FormEvent<HTMLFormElement>,
+): HTMLElement | null {
+	return getSubmitEvent(event).submitter;
 }
 
 export type FormIntentDispatcher<Intent> = {
@@ -68,9 +77,7 @@ export function useForm<
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
-	handleSubmit(
-		event: React.FormEvent<HTMLFormElement>,
-	): Submission<Intent | null, Schema, ErrorShape>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: FormIntentDispatcher<Intent>;
 };
 export function useForm<Schema, ErrorShape = string[]>(
@@ -106,13 +113,7 @@ export function useForm<Schema, ErrorShape = string[]>(
 		ErrorShape,
 		FormControlAdditionalState<typeof defaultFormControl>
 	>;
-	handleSubmit(
-		event: React.FormEvent<HTMLFormElement>,
-	): Submission<
-		FormControlIntent<typeof defaultFormControl> | null,
-		Schema,
-		ErrorShape
-	>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: FormIntentDispatcher<FormControlIntent<typeof defaultFormControl>>;
 };
 export function useForm<
@@ -156,13 +157,7 @@ export function useForm<
 		ErrorShape,
 		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 	>;
-	handleSubmit(
-		event: React.FormEvent<HTMLFormElement>,
-	): Submission<
-		Intent | FormControlIntent<typeof defaultFormControl> | null,
-		Schema,
-		ErrorShape
-	>;
+	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: FormIntentDispatcher<
 		Intent | FormControlIntent<typeof defaultFormControl>
 	>;
@@ -280,21 +275,29 @@ export function useForm<
 	return {
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-			const formData = getFormData(event);
-			const submission = control.refineSubmission<Schema, ErrorShape>(
-				parseSubmission(formData, {
-					intentName,
-				}),
-			);
-			const validationResult = optionsRef.current?.onValidate?.(submission, {
-				formElement: event.currentTarget,
-			});
-
 			if (abortControllerRef.current) {
 				abortControllerRef.current?.abort('A new submission is made');
 				abortControllerRef.current = null;
 			}
 
+			const formElement = event.currentTarget;
+			const submitter = getSubmitter(event);
+			const formData = new FormData(formElement, submitter);
+			const submission = control.refineSubmission<Schema, ErrorShape>(
+				parseSubmission(formData, {
+					intentName,
+				}),
+			);
+
+			// Skip the default behavior if the event is not cancelable
+			// Used by async validation to re-submit the form if no error is found and the form is meant to be submitted
+			if (!event.cancelable) {
+				return;
+			}
+
+			const validationResult = optionsRef.current?.onValidate?.(submission, {
+				formElement,
+			});
 			const isAsyncValidation = validationResult instanceof Promise;
 			const isResetting = submission.value === null;
 
@@ -318,27 +321,36 @@ export function useForm<
 					// There is no need to flush the update in this case
 					if (!abortController.signal.aborted) {
 						update(
-							{
-								...submission,
-								error,
-							},
+							{ ...submission, error },
 							{
 								type: 'server',
 							},
 						);
+
+						if (error === null && !submission.intent) {
+							// As formElement.requestSubmit() requires an additional macrotask to trigger the submit handler
+							// We will dispatch the submit event manually
+							const event = new SubmitEvent('submit', {
+								bubbles: true,
+								// We make the event non-cancelable so it will be submitted without validation
+								cancelable: false,
+								submitter,
+							});
+
+							formElement.dispatchEvent(event);
+						}
 					}
 				});
 			}
 
 			if (
 				isResetting ||
+				isAsyncValidation ||
 				(typeof submission.error !== 'undefined' &&
 					(submission.intent || submission.error !== null))
 			) {
 				event.preventDefault();
 			}
-
-			return submission;
 		},
 		intent,
 	};
