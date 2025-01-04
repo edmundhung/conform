@@ -23,6 +23,7 @@ import {
 	isInput,
 	parseSubmission,
 	defaultFormControl,
+	FormValue,
 } from './conform-dom';
 
 export function getSubmitEvent(
@@ -65,7 +66,7 @@ export function useForm<
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
-			submission: Submission<Intent | null>,
+			value: Record<string, FormValue>,
 			ctx: {
 				formElement: HTMLFormElement;
 			},
@@ -74,6 +75,15 @@ export function useForm<
 			| null
 			| Promise<FormError<Schema, ErrorShape> | null>
 			| undefined;
+		onSubmit?: (
+			event: React.FormEvent<HTMLFormElement>,
+			ctx: {
+				submission: Submission<Intent | null, Schema, ErrorShape>;
+			},
+		) =>
+			| Promise<Submission<Intent | null, Schema, ErrorShape>>
+			| undefined
+			| void;
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
@@ -95,9 +105,7 @@ export function useForm<Schema, ErrorShape = string[]>(
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
-			submission: Submission<FormControlIntent<
-				typeof defaultFormControl
-			> | null>,
+			value: Record<string, FormValue>,
 			ctx: {
 				formElement: HTMLFormElement;
 			},
@@ -106,6 +114,25 @@ export function useForm<Schema, ErrorShape = string[]>(
 			| null
 			| Promise<FormError<Schema, ErrorShape> | null>
 			| undefined;
+		onSubmit?: (
+			event: React.FormEvent<HTMLFormElement>,
+			ctx: {
+				submission: Submission<
+					FormControlIntent<typeof defaultFormControl> | null,
+					Schema,
+					ErrorShape
+				>;
+			},
+		) =>
+			| Promise<
+					Submission<
+						FormControlIntent<typeof defaultFormControl> | null,
+						Schema,
+						ErrorShape
+					>
+			  >
+			| undefined
+			| void;
 	},
 ): {
 	state: FormState<
@@ -139,9 +166,7 @@ export function useForm<
 		defaultValue?: DefaultValue<Schema>;
 		intentName?: string;
 		onValidate?: (
-			submission: Submission<
-				Intent | FormControlIntent<typeof defaultFormControl> | null
-			>,
+			value: Record<string, FormValue>,
 			ctx: {
 				formElement: HTMLFormElement;
 			},
@@ -150,6 +175,25 @@ export function useForm<
 			| null
 			| Promise<FormError<Schema, ErrorShape> | null>
 			| undefined;
+		onSubmit?: (
+			event: React.FormEvent<HTMLFormElement>,
+			ctx: {
+				submission: Submission<
+					Intent | FormControlIntent<typeof defaultFormControl> | null,
+					Schema,
+					ErrorShape
+				>;
+			},
+		) =>
+			| Promise<
+					Submission<
+						Intent | FormControlIntent<typeof defaultFormControl> | null,
+						Schema,
+						ErrorShape
+					>
+			  >
+			| undefined
+			| void;
 	},
 ): {
 	state: FormState<
@@ -177,6 +221,7 @@ export function useForm<
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
 	const lastResultRef = useRef(result);
+	const submitEventRef = useRef<SubmitEvent | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const intent = useFormIntent(formRef, {
 		intentName,
@@ -275,10 +320,11 @@ export function useForm<
 	return {
 		state,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-			if (abortControllerRef.current) {
-				abortControllerRef.current?.abort('A new submission is made');
-				abortControllerRef.current = null;
-			}
+			const abortController = new AbortController();
+
+			// Keep track of the abort controller so we can cancel the previous request if a new one is made
+			abortControllerRef.current?.abort('A new submission is made');
+			abortControllerRef.current = abortController;
 
 			const formElement = event.currentTarget;
 			const submitter = getSubmitter(event);
@@ -289,67 +335,78 @@ export function useForm<
 				}),
 			);
 
-			// Skip the default behavior if the event is not cancelable
-			// Used by async validation to re-submit the form if no error is found and the form is meant to be submitted
-			if (!event.cancelable) {
-				return;
-			}
+			// The form might be re-submitted manually if there was an async validation
+			if (event.nativeEvent === submitEventRef.current) {
+				submission.error = null;
+			} else {
+				const formError =
+					submission.value !== null
+						? optionsRef.current?.onValidate?.(submission.value, {
+								formElement,
+							})
+						: // Treat it as a valid submission if the value is null (form reset)
+							null;
 
-			const validationResult = optionsRef.current?.onValidate?.(submission, {
-				formElement,
-			});
-			const isAsyncValidation = validationResult instanceof Promise;
-			const isResetting = submission.value === null;
+				// If the validation is async
+				if (formError instanceof Promise) {
+					// Update the form when the validation result is resolved
+					formError.then((error) => {
+						// Update the form with the validation result
+						// There is no need to flush the update in this case
+						if (!abortController.signal.aborted) {
+							update(
+								{ ...submission, error },
+								{
+									type: 'server',
+								},
+							);
 
-			if (!isAsyncValidation) {
-				submission.error = validationResult;
-			}
+							// If the form is meant to be submitted and there is no error
+							if (error === null && !submission.intent) {
+								const event = new SubmitEvent('submit', {
+									bubbles: true,
+									cancelable: true,
+									submitter,
+								});
 
-			update(submission, {
-				type: 'client',
-			});
-
-			if (!isResetting && isAsyncValidation) {
-				const abortController = new AbortController();
-
-				// Keep track of the abort controller so we can cancel the previous request if a new one is made
-				abortControllerRef.current = abortController;
-
-				// Update the form when the validation result is resolved
-				validationResult.then((error) => {
-					// Update the form with the validation result
-					// There is no need to flush the update in this case
-					if (!abortController.signal.aborted) {
-						update(
-							{ ...submission, error },
-							{
-								type: 'server',
-							},
-						);
-
-						if (error === null && !submission.intent) {
-							// As formElement.requestSubmit() requires an additional macrotask to trigger the submit handler
-							// We will dispatch the submit event manually
-							const event = new SubmitEvent('submit', {
-								bubbles: true,
-								// We make the event non-cancelable so it will be submitted without validation
-								cancelable: false,
-								submitter,
-							});
-
-							formElement.dispatchEvent(event);
+								// Keep track of the submit event so we can skip validation on the next submit
+								submitEventRef.current = event;
+								formElement.dispatchEvent(event);
+							}
 						}
-					}
+					});
+				} else {
+					submission.error = formError;
+				}
+
+				update(submission, {
+					type: 'client',
 				});
+
+				if (
+					// If client validation happens
+					typeof formError !== 'undefined' &&
+					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
+					(submission.intent || formError !== null)
+				) {
+					event.preventDefault();
+				}
 			}
 
-			if (
-				isResetting ||
-				isAsyncValidation ||
-				(typeof submission.error !== 'undefined' &&
-					(submission.intent || submission.error !== null))
-			) {
-				event.preventDefault();
+			if (!event.isDefaultPrevented()) {
+				const serverResult = optionsRef.current?.onSubmit?.(event, {
+					submission,
+				});
+
+				if (serverResult) {
+					serverResult.then((result) => {
+						if (!abortController.signal.aborted) {
+							update(result, {
+								type: 'server',
+							});
+						}
+					});
+				}
 			}
 		},
 		intent,

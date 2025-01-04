@@ -142,13 +142,30 @@ export default function Example() {
 		control,
 		intentName: 'intent',
 		defaultValue: {
-			title: 'Example',
+			// title: 'Example',
 			tasks: [{ title: 'Test', done: false }],
 		},
-		async onValidate(submission) {
-			const result = await schema.safeParseAsync(submission.value);
+		async onValidate(value) {
+			const result = await schema.safeParseAsync(value);
+			const error = flattenZodError(result);
 
-			return flattenZodError(result);
+			return error;
+		},
+		async onSubmit(event, { submission }) {
+			event.preventDefault();
+
+			const response = await fetch(
+				'/experimental?_data=routes%2Fexperimental&custom',
+				{
+					method: 'POST',
+					body: new FormData(event.currentTarget),
+				},
+			);
+			const result = await response.json();
+
+			return report(submission, {
+				error: result.error,
+			});
 		},
 	});
 	const form = getFormMetadata(state);
