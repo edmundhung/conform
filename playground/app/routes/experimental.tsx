@@ -190,10 +190,7 @@ export default function Example() {
 					isInput(event.target, formRef.current) &&
 					state.touchedFields.includes(event.target.name)
 				) {
-					intent.submit({
-						type: 'validate',
-						payload: event.target.name,
-					});
+					intent.validate(event.target.name);
 				}
 			}}
 			onBlur={(event) => {
@@ -201,10 +198,7 @@ export default function Example() {
 					isInput(event.target, formRef.current) &&
 					!state.touchedFields.includes(event.target.name)
 				) {
-					intent.submit({
-						type: 'validate',
-						payload: event.target.name,
-					});
+					intent.validate(event.target.name);
 				}
 			}}
 		>
@@ -246,29 +240,27 @@ export default function Example() {
 						<div>{task.done.error}</div>
 						<div>
 							<button
-								name={intent.name}
-								value={intent.serialize({
-									type: 'remove',
-									payload: {
+								type="button"
+								onClick={() => {
+									intent.remove({
 										name: fields.tasks.name,
 										index,
-									},
-								})}
+									});
+								}}
 							>
 								Remove
 							</button>
 						</div>
 						<div>
 							<button
-								name={intent.name}
-								value={intent.serialize({
-									type: 'reorder',
-									payload: {
+								type="button"
+								onClick={() => {
+									intent.reorder({
 										name: fields.tasks.name,
 										from: index,
 										to: 0,
-									},
-								})}
+									});
+								}}
 							>
 								Move to top
 							</button>
@@ -278,14 +270,13 @@ export default function Example() {
 			})}
 			<div>
 				<button
-					name={intent.name}
-					value={intent.serialize({
-						type: 'insert',
-						payload: {
+					type="button"
+					onClick={() => {
+						intent.insert({
 							name: fields.tasks.name,
 							defaultValue: { title: 'Example' },
-						},
-					})}
+						});
+					}}
 				>
 					Insert task
 				</button>
@@ -295,11 +286,13 @@ export default function Example() {
 			</div>
 			<div>
 				<button
-					name={intent.name}
-					value={intent.serialize({
-						type: 'update',
-						payload: { name: fields.title.name, value: 'Test' },
-					})}
+					type="button"
+					onClick={() => {
+						intent.update({
+							name: fields.title.name,
+							value: 'Test',
+						});
+					}}
 				>
 					Update title
 				</button>
@@ -309,19 +302,13 @@ export default function Example() {
 				<button
 					type="button"
 					onClick={() => {
-						intent.submit({
-							type: 'update',
-							payload: {
-								name: fields.title.name,
-								value: 'Update',
-							},
+						intent.update({
+							name: fields.title.name,
+							value: 'Update',
 						});
-						intent.submit({
-							type: 'update',
-							payload: {
-								name: fields.content.name,
-								value: 'Including the content',
-							},
+						intent.update({
+							name: fields.content.name,
+							value: 'Including the content',
 						});
 					}}
 				>
@@ -333,10 +320,10 @@ export default function Example() {
 			</div>
 			<div>
 				<button
-					name={intent.name}
-					value={intent.serialize({
-						type: 'reset',
-					})}
+					type="button"
+					onClick={() => {
+						intent.reset();
+					}}
 				>
 					Reset form
 				</button>

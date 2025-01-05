@@ -43,10 +43,13 @@ export function getSubmitter(
 	return getSubmitEvent(event).submitter;
 }
 
-export type FormIntentDispatcher<Intent> = {
-	name: string;
-	submit(intent: Intent): void;
-	serialize(intent: Intent): string;
+export type IntentDispatcher<Intent extends UnknownIntent> = {
+	[Type in Intent['type']]: undefined extends Extract<
+		Intent,
+		{ type: Type }
+	>['payload']
+		? (payload?: Extract<Intent, { type: Type }>['payload']) => void
+		: (payload: Extract<Intent, { type: Type }>['payload']) => void;
 };
 
 const defaultIntentName = '__intent__';
@@ -89,7 +92,7 @@ export function useForm<
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: FormIntentDispatcher<Intent>;
+	intent: IntentDispatcher<Intent>;
 };
 export function useForm<Schema, ErrorShape = string[]>(
 	formRef: FormRef,
@@ -142,7 +145,7 @@ export function useForm<Schema, ErrorShape = string[]>(
 		FormControlAdditionalState<typeof defaultFormControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: FormIntentDispatcher<FormControlIntent<typeof defaultFormControl>>;
+	intent: IntentDispatcher<FormControlIntent<typeof defaultFormControl>>;
 };
 export function useForm<
 	Schema,
@@ -203,7 +206,7 @@ export function useForm<
 		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: FormIntentDispatcher<
+	intent: IntentDispatcher<
 		Intent | FormControlIntent<typeof defaultFormControl>
 	>;
 } {
@@ -227,7 +230,7 @@ export function useForm<
 	>([]);
 	const submitEventRef = useRef<SubmitEvent | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
-	const intent = useFormIntent(formRef, {
+	const intent = useIntent(formRef, {
 		intentName,
 		control,
 	});
@@ -458,7 +461,7 @@ export function useForm<
 	};
 }
 
-export function useFormIntent<
+export function useIntent<
 	Intent extends UnknownIntent = FormControlIntent<typeof defaultFormControl>,
 >(
 	formRef: FormRef,
@@ -468,22 +471,33 @@ export function useFormIntent<
 			Intent | FormControlIntent<typeof defaultFormControl>
 		>;
 	},
-): FormIntentDispatcher<Intent> {
+): IntentDispatcher<Intent> {
 	const { intentName = defaultIntentName, control = defaultFormControl } =
 		options ?? {};
 
 	return useMemo(
-		() => ({
-			name: intentName,
-			serialize(intent: Intent) {
-				return control.serializeIntent(intent);
-			},
-			submit(intent: Intent) {
-				const formElement = getFormElement(formRef);
+		() =>
+			new Proxy<IntentDispatcher<Intent>>({} as any, {
+				get(target, type, receiver) {
+					if (typeof type === 'string') {
+						// @ts-expect-error We are creating an intent dispatcher on the fly
+						target[type] ??= (payload: unknown) => {
+							const formElement = getFormElement(formRef);
 
-				requestIntent(formElement, intentName, control.serializeIntent(intent));
-			},
-		}),
+							requestIntent(
+								formElement,
+								intentName,
+								control.serializeIntent({
+									type,
+									payload,
+								}),
+							);
+						};
+					}
+
+					return Reflect.get(target, type, receiver);
+				},
+			}),
 		[formRef, intentName, control],
 	);
 }

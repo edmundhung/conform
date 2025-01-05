@@ -807,7 +807,7 @@ export function createFormControl<
 export type DefaultFormIntent =
 	| {
 			type: 'validate';
-			payload?: string | undefined;
+			payload?: string;
 	  }
 	| {
 			type: 'update';
