@@ -24,6 +24,7 @@ import {
 	parseSubmission,
 	defaultFormControl,
 	FormValue,
+	refineSubmission,
 } from './conform-dom';
 
 export function getSubmitEvent(
@@ -221,6 +222,9 @@ export function useForm<
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
 	const lastResultRef = useRef(result);
+	const pendingIntentsRef = useRef<
+		Array<Intent | FormControlIntent<typeof defaultFormControl>>
+	>([]);
 	const submitEventRef = useRef<SubmitEvent | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const intent = useFormIntent(formRef, {
@@ -264,10 +268,31 @@ export function useForm<
 			);
 
 			if (options.type === 'client' && result.intent) {
-				const sideEffectFn = control.getSideEffect(result.intent);
+				const runSideEffect = control.getSideEffect(result.intent);
 
-				if (sideEffectFn) {
-					setSideEffect(() => sideEffectFn);
+				if (runSideEffect) {
+					const pendingIntents = pendingIntentsRef.current;
+
+					pendingIntentsRef.current = pendingIntents.concat(result.intent);
+
+					setSideEffect(
+						(
+							runPrevSideEffect:
+								| ((formElement: HTMLFormElement) => void)
+								| null,
+						) => {
+							return (formElement: HTMLFormElement) => {
+								if (pendingIntents.length > 0) {
+									runPrevSideEffect?.(formElement);
+								}
+
+								runSideEffect(formElement);
+								pendingIntentsRef.current = pendingIntentsRef.current.filter(
+									(intent) => intent !== result.intent,
+								);
+							};
+						},
+					);
 				}
 			}
 		},
@@ -329,10 +354,19 @@ export function useForm<
 			const formElement = event.currentTarget;
 			const submitter = getSubmitter(event);
 			const formData = new FormData(formElement, submitter);
-			const submission = control.refineSubmission<Schema, ErrorShape>(
+			const pendingIntents = pendingIntentsRef.current;
+			const submission = refineSubmission<
+				Schema,
+				ErrorShape,
+				Intent | FormControlIntent<typeof defaultFormControl>
+			>(
 				parseSubmission(formData, {
 					intentName,
 				}),
+				{
+					control,
+					pendingIntents,
+				},
 			);
 
 			// The form might be re-submitted manually if there was an async validation
@@ -346,6 +380,17 @@ export function useForm<
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
 							null;
+
+				if (
+					typeof formError === 'undefined' &&
+					submission.intent !== null &&
+					pendingIntents.length > 0
+				) {
+					// eslint-disable-next-line no-console
+					console.error(
+						'Dispatching multiple intents within a single handler requires client validation; Please either provide a onValidate handler or wrap each intent in a flushSync callback',
+					);
+				}
 
 				// If the validation is async
 				if (formError instanceof Promise) {

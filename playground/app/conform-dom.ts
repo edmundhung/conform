@@ -786,9 +786,10 @@ export type FormControl<
 	serializeIntent(intent: UnknownIntent): string;
 	deserializeIntent(value: string): UnknownIntent;
 	parseIntent(intent: UnknownIntent): Intent | null;
-	refineSubmission<Schema, ErrorShape>(
-		submission: Submission<string | null, Schema, ErrorShape>,
-	): Submission<Intent | null, Schema, ErrorShape>;
+	updateValue(
+		value: Record<string, FormValue>,
+		intent: Intent,
+	): Record<string, FormValue> | null;
 	getSideEffect(
 		intent: Intent,
 	): ((formElement: HTMLFormElement) => void) | null;
@@ -842,6 +843,41 @@ export type DefaultFormIntent =
 				to: number;
 			};
 	  };
+
+export function refineSubmission<
+	Schema,
+	ErrorShape,
+	Intent extends UnknownIntent,
+>(
+	submission: Submission<string | null, Schema, ErrorShape>,
+	options: {
+		control: FormControl<Intent, any>;
+		pendingIntents?: Intent[];
+	},
+): Submission<Intent | null, Schema, ErrorShape> {
+	const { control, pendingIntents = [] } = options;
+
+	const unknownIntent = submission.intent
+		? control.deserializeIntent(submission.intent)
+		: null;
+	const intent = unknownIntent ? control.parseIntent(unknownIntent) : null;
+
+	let value: Record<string, FormValue> | null = submission.value;
+
+	for (const pendingIntent of pendingIntents.concat(intent ?? [])) {
+		if (value === null) {
+			break;
+		}
+
+		value = control.updateValue(value, pendingIntent);
+	}
+
+	return {
+		...submission,
+		value,
+		intent,
+	};
+}
 
 export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 	function getList(initialValue: unknown, name: string) {
@@ -1181,63 +1217,45 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			return serializeIntent(intent);
 		},
 		parseIntent,
-		refineSubmission(submission) {
-			const unknownIntent = submission.intent
-				? deserializeIntent(submission.intent)
-				: null;
-			const intent = unknownIntent ? parseIntent(unknownIntent) : null;
+		updateValue(value, intent) {
+			switch (intent.type) {
+				case 'reset': {
+					return null;
+				}
+				case 'update': {
+					return modify(
+						value,
+						formatName(intent.payload.name, intent.payload.index),
+						intent.payload.value,
+					);
+				}
+				case 'insert': {
+					const list = getList(value, intent.payload.name);
+					list.splice(
+						intent.payload.index ?? list.length,
+						0,
+						intent.payload.defaultValue,
+					);
 
-			let value = submission.value;
-
-			if (value) {
-				switch (intent?.type) {
-					case 'reset': {
-						value = null;
-						break;
-					}
-					case 'update': {
-						value = modify(
-							value,
-							formatName(intent.payload.name, intent.payload.index),
-							intent.payload.value,
-						);
-						break;
-					}
-					case 'insert': {
-						const list = getList(value, intent.payload.name);
-						list.splice(
-							intent.payload.index ?? list.length,
-							0,
-							intent.payload.defaultValue,
-						);
-
-						value = modify(value, intent.payload.name, list);
-						break;
-					}
-					case 'remove': {
-						const list = getList(value, intent.payload.name);
-						list.splice(intent.payload.index, 1);
-						value = modify(value, intent.payload.name, list);
-						break;
-					}
-					case 'reorder': {
-						const list = getList(value, intent.payload.name);
-						list.splice(
-							intent.payload.to,
-							0,
-							...list.splice(intent.payload.from, 1),
-						);
-						value = modify(value, intent.payload.name, list);
-						break;
-					}
+					return modify(value, intent.payload.name, list);
+				}
+				case 'remove': {
+					const list = getList(value, intent.payload.name);
+					list.splice(intent.payload.index, 1);
+					return modify(value, intent.payload.name, list);
+				}
+				case 'reorder': {
+					const list = getList(value, intent.payload.name);
+					list.splice(
+						intent.payload.to,
+						0,
+						...list.splice(intent.payload.from, 1),
+					);
+					return modify(value, intent.payload.name, list);
 				}
 			}
 
-			return {
-				...submission,
-				value,
-				intent,
-			};
+			return value;
 		},
 		getSideEffect(intent) {
 			switch (intent?.type) {

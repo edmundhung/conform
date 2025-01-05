@@ -9,10 +9,11 @@ import {
 	parseSubmission,
 	isInput,
 	report,
-	createFormControl,
-	defaultFormControl,
-	FormControlIntent,
+	// createFormControl,
+	defaultFormControl as control,
+	// FormControlIntent,
 	memoize,
+	refineSubmission,
 } from '~/conform-dom';
 import { useMemo, useRef } from 'react';
 
@@ -47,53 +48,56 @@ function createSchema(constraint: {
 	);
 }
 
-const control = createFormControl<
-	| FormControlIntent<typeof defaultFormControl>
-	| { type: 'test'; payload: string },
-	{ status: 'success' | 'error' | null }
->(() => {
-	return {
-		...defaultFormControl,
-		parseIntent(intent) {
-			if (intent.type === 'test' && typeof intent.payload === 'string') {
-				return {
-					type: 'test',
-					payload: intent.payload,
-				};
-			}
+// const control = createFormControl<
+// 	| FormControlIntent<typeof defaultFormControl>
+// 	| { type: 'test'; payload: string },
+// 	{ status: 'success' | 'error' | null }
+// >(() => {
+// 	return {
+// 		...defaultFormControl,
+// 		parseIntent(intent) {
+// 			if (intent.type === 'test' && typeof intent.payload === 'string') {
+// 				return {
+// 					type: 'test',
+// 					payload: intent.payload,
+// 				};
+// 			}
 
-			return defaultFormControl.parseIntent(intent);
-		},
-		initializeState(options) {
-			return {
-				...defaultFormControl.initializeState(options),
-				status: null,
-			};
-		},
-		updateState(state, { type, result, reset }) {
-			return {
-				...defaultFormControl.updateState(state, {
-					type,
-					result,
-					reset,
-				}),
-				status:
-					result.error === undefined
-						? state.status
-						: result.intent
-							? null
-							: result.error
-								? 'error'
-								: 'success',
-			};
-		},
-	};
-});
+// 			return defaultFormControl.parseIntent(intent);
+// 		},
+// 		initializeState(options) {
+// 			return {
+// 				...defaultFormControl.initializeState(options),
+// 				status: null,
+// 			};
+// 		},
+// 		updateState(state, { type, result, reset }) {
+// 			return {
+// 				...defaultFormControl.updateState(state, {
+// 					type,
+// 					result,
+// 					reset,
+// 				}),
+// 				status:
+// 					result.error === undefined
+// 						? state.status
+// 						: result.intent
+// 							? null
+// 							: result.error
+// 								? 'error'
+// 								: 'success',
+// 			};
+// 		},
+// 	};
+// });
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = control.refineSubmission(
+	const submission = refineSubmission(
 		parseSubmission(formData, { intentName: 'intent' }),
+		{
+			control,
+		},
 	);
 	const schema = createSchema({
 		isTitleUnique(title) {
@@ -298,6 +302,30 @@ export default function Example() {
 					})}
 				>
 					Update title
+				</button>
+			</div>
+
+			<div>
+				<button
+					type="button"
+					onClick={() => {
+						intent.submit({
+							type: 'update',
+							payload: {
+								name: fields.title.name,
+								value: 'Update',
+							},
+						});
+						intent.submit({
+							type: 'update',
+							payload: {
+								name: fields.content.name,
+								value: 'Including the content',
+							},
+						});
+					}}
+				>
+					Update multiple things
 				</button>
 			</div>
 			<div>
