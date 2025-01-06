@@ -24,7 +24,7 @@ import {
 	parseSubmission,
 	defaultFormControl,
 	FormValue,
-	refineSubmission,
+	applyIntent,
 } from './conform-dom';
 
 export function getSubmitEvent(
@@ -384,10 +384,10 @@ export function useForm<
 			const submitter = getSubmitter(event);
 			const formData = new FormData(formElement, submitter);
 			const pendingIntents = pendingIntentsRef.current;
-			const submission = refineSubmission<
+			const submission = applyIntent<
+				Intent | FormControlIntent<typeof defaultFormControl>,
 				Schema,
-				ErrorShape,
-				Intent | FormControlIntent<typeof defaultFormControl>
+				ErrorShape
 			>(
 				parseSubmission(formData, {
 					intentName,

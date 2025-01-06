@@ -10,10 +10,9 @@ import {
 	isInput,
 	report,
 	// createFormControl,
-	defaultFormControl as control,
 	// FormControlIntent,
 	memoize,
-	refineSubmission,
+	applyIntent,
 } from '~/conform-dom';
 import { useMemo, useRef } from 'react';
 
@@ -93,12 +92,7 @@ function createSchema(constraint: {
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = refineSubmission(
-		parseSubmission(formData, { intentName: 'intent' }),
-		{
-			control,
-		},
-	);
+	const submission = applyIntent(parseSubmission(formData));
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
@@ -142,8 +136,6 @@ export default function Example() {
 	}, []);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
-		control,
-		intentName: 'intent',
 		defaultValue: {
 			// title: 'Example',
 			tasks: [{ title: 'Test', done: false }],

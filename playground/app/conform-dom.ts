@@ -10,7 +10,7 @@ export type FormError<Schema, ErrorShape> = {
 };
 
 export type Submission<
-	Intent = null,
+	Intent = string | null,
 	Schema = unknown,
 	ErrorShape = unknown,
 	FormValueType extends FormDataEntryValue = FormDataEntryValue,
@@ -532,26 +532,18 @@ export function report<
 	};
 }
 
-export function parseSubmission<Schema, ErrorShape>(
-	formData: FormData | URLSearchParams,
-): Submission<null, Schema, ErrorShape>;
-export function parseSubmission<Schema, ErrorShape>(
-	formData: FormData | URLSearchParams,
-	options: {
-		intentName: string;
-	},
-): Submission<string | null, Schema, ErrorShape>;
-export function parseSubmission<Schema, ErrorShape>(
+export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName: string;
 	},
-): Submission<string | null, Schema, ErrorShape> {
+): Submission<string | null> {
+	const { intentName = '__intent__' } = options ?? {};
 	const initialValue: Record<string, any> = {};
 	const fields = new Set<string>();
 
 	for (const [name, value] of formData.entries()) {
-		if (name !== options?.intentName) {
+		if (name !== intentName) {
 			setValue(initialValue, getPaths(name), (currentValue: unknown) => {
 				if (typeof currentValue === 'undefined') {
 					return value;
@@ -565,7 +557,7 @@ export function parseSubmission<Schema, ErrorShape>(
 		}
 	}
 
-	const submission: Submission<string | null, Schema, ErrorShape> = {
+	const submission: Submission<string | null> = {
 		value: initialValue,
 		fields: Array.from(fields),
 		intent: null,
@@ -844,18 +836,47 @@ export type DefaultFormIntent =
 			};
 	  };
 
-export function refineSubmission<
+export function applyIntent<Schema, ErrorShape>(
+	submission:
+		| Submission<string | null>
+		| Submission<string | null, Schema, ErrorShape>,
+	options?: {
+		control?: undefined;
+		pendingIntents?: Array<FormControlIntent<typeof defaultFormControl>>;
+	},
+): Submission<
+	FormControlIntent<typeof defaultFormControl> | null,
 	Schema,
-	ErrorShape,
-	Intent extends UnknownIntent,
->(
-	submission: Submission<string | null, Schema, ErrorShape>,
+	ErrorShape
+>;
+export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
+	submission:
+		| Submission<string | null>
+		| Submission<string | null, Schema, ErrorShape>,
 	options: {
 		control: FormControl<Intent, any>;
-		pendingIntents?: Intent[];
+		pendingIntents?: Array<Intent>;
 	},
-): Submission<Intent | null, Schema, ErrorShape> {
-	const { control, pendingIntents = [] } = options;
+): Submission<Intent | null, Schema, ErrorShape>;
+export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
+	submission:
+		| Submission<string | null>
+		| Submission<string | null, Schema, ErrorShape>,
+	options?: {
+		control?: FormControl<
+			Intent | FormControlIntent<typeof defaultFormControl>,
+			any
+		>;
+		pendingIntents?: Array<
+			Intent | FormControlIntent<typeof defaultFormControl>
+		>;
+	},
+): Submission<
+	Intent | FormControlIntent<typeof defaultFormControl> | null,
+	Schema,
+	ErrorShape
+> {
+	const { control = defaultFormControl, pendingIntents = [] } = options ?? {};
 
 	const unknownIntent = submission.intent
 		? control.deserializeIntent(submission.intent)
@@ -874,6 +895,7 @@ export function refineSubmission<
 
 	return {
 		...submission,
+		error: undefined,
 		value,
 		intent,
 	};
