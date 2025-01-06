@@ -268,19 +268,31 @@ export function coerceZodFormData<Schema extends ZodTypeAny>(
 	return schema as Schema;
 }
 
-export function flattenZodError<Schema>(
-	result: SafeParseReturnType<Schema, any>,
-): FormError<Schema, string[]> | null;
-export function flattenZodError<Schema, ErrorShape>(
-	result: SafeParseReturnType<Schema, any>,
+export function resolveZodResult<Input, Output>(
+	result: SafeParseReturnType<Input, Output>,
+): {
+	value?: Output;
+	error: FormError<Input, string[]> | null;
+};
+export function resolveZodResult<Input, Output, ErrorShape>(
+	result: SafeParseReturnType<Input, Output>,
 	formatIssues: (issue: ZodIssue[], name: string) => ErrorShape,
-): FormError<Schema, ErrorShape> | null;
-export function flattenZodError<Schema, ErrorShape>(
-	result: SafeParseReturnType<Schema, any>,
+): {
+	value?: Output;
+	error: FormError<Input, ErrorShape> | null;
+};
+export function resolveZodResult<Input, Output, ErrorShape>(
+	result: SafeParseReturnType<Input, Output>,
 	formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape,
-): FormError<Schema, Array<string> | ErrorShape> | null {
+): {
+	value?: Output;
+	error: FormError<Input, Array<string> | ErrorShape> | null;
+} {
 	if (result.success) {
-		return null;
+		return {
+			value: result.data,
+			error: null,
+		};
 	}
 
 	const error: Record<string, ZodIssue[]> = {};
@@ -303,7 +315,9 @@ export function flattenZodError<Schema, ErrorShape>(
 	}, {});
 
 	return {
-		formError,
-		fieldError,
+		error: {
+			formError,
+			fieldError,
+		},
 	};
 }

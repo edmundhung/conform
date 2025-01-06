@@ -1,7 +1,7 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
 import { useInputControl, useFormData, useForm } from '~/conform-react';
-import { coerceZodFormData, flattenZodError } from '~/conform-zod';
+import { coerceZodFormData, resolveZodResult } from '~/conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import {
 	getFormMetadata,
@@ -111,9 +111,8 @@ export async function action({ request }: ActionFunctionArgs) {
 	const result = await schema.safeParseAsync(submission.value);
 
 	if (!result.success || submission.intent) {
-		return report(submission, {
-			error: flattenZodError(result),
-		});
+		const { error } = resolveZodResult(result);
+		return report(submission, { error });
 	}
 
 	return report<typeof submission, z.input<typeof schema>>(submission, {
@@ -151,9 +150,8 @@ export default function Example() {
 		},
 		async onValidate(value) {
 			const result = await schema.safeParseAsync(value);
-			const error = flattenZodError(result);
 
-			return error;
+			return resolveZodResult(result);
 		},
 		async onSubmit(event, { submission }) {
 			event.preventDefault();

@@ -59,6 +59,7 @@ export function useForm<
 	ErrorShape,
 	Intent extends UnknownIntent,
 	AdditionalState extends Record<string, unknown> = {},
+	Value = unknown,
 >(
 	formRef: FormRef,
 	options: {
@@ -75,14 +76,21 @@ export function useForm<
 				formElement: HTMLFormElement;
 			},
 		) =>
-			| FormError<Schema, ErrorShape>
-			| null
-			| Promise<FormError<Schema, ErrorShape> | null>
+			| {
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }
+			| Promise<{
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }>
 			| undefined;
 		onSubmit?: (
 			event: React.FormEvent<HTMLFormElement>,
 			ctx: {
 				submission: Submission<Intent | null, Schema, ErrorShape>;
+				formData: FormData;
+				value: Value | undefined;
 			},
 		) =>
 			| Promise<Submission<Intent | null, Schema, ErrorShape>>
@@ -94,7 +102,7 @@ export function useForm<
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
-export function useForm<Schema, ErrorShape = string[]>(
+export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	formRef: FormRef,
 	options?: {
 		control?: undefined;
@@ -114,9 +122,14 @@ export function useForm<Schema, ErrorShape = string[]>(
 				formElement: HTMLFormElement;
 			},
 		) =>
-			| FormError<Schema, ErrorShape>
-			| null
-			| Promise<FormError<Schema, ErrorShape> | null>
+			| {
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }
+			| Promise<{
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }>
 			| undefined;
 		onSubmit?: (
 			event: React.FormEvent<HTMLFormElement>,
@@ -126,6 +139,8 @@ export function useForm<Schema, ErrorShape = string[]>(
 					Schema,
 					ErrorShape
 				>;
+				formData: FormData;
+				value: Value | undefined;
 			},
 		) =>
 			| Promise<
@@ -152,6 +167,7 @@ export function useForm<
 	ErrorShape,
 	Intent extends UnknownIntent,
 	AdditionalState extends Record<string, unknown> = {},
+	Value = unknown,
 >(
 	formRef: FormRef,
 	options?: {
@@ -175,9 +191,14 @@ export function useForm<
 				formElement: HTMLFormElement;
 			},
 		) =>
-			| FormError<Schema, ErrorShape>
-			| null
-			| Promise<FormError<Schema, ErrorShape> | null>
+			| {
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }
+			| Promise<{
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }>
 			| undefined;
 		onSubmit?: (
 			event: React.FormEvent<HTMLFormElement>,
@@ -187,6 +208,8 @@ export function useForm<
 					Schema,
 					ErrorShape
 				>;
+				formData: FormData;
+				value: Value | undefined;
 			},
 		) =>
 			| Promise<
@@ -228,7 +251,10 @@ export function useForm<
 	const pendingIntentsRef = useRef<
 		Array<Intent | FormControlIntent<typeof defaultFormControl>>
 	>([]);
-	const submitEventRef = useRef<SubmitEvent | null>(null);
+	const lastAsyncResultRef = useRef<{
+		event: SubmitEvent;
+		value: Value | undefined;
+	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const intent = useIntent(formRef, {
 		intentName,
@@ -372,20 +398,23 @@ export function useForm<
 				},
 			);
 
+			let value: Value | undefined;
+
 			// The form might be re-submitted manually if there was an async validation
-			if (event.nativeEvent === submitEventRef.current) {
+			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
+				value = lastAsyncResultRef.current.value;
 				submission.error = null;
 			} else {
-				const formError =
+				const validationResult =
 					submission.value !== null
 						? optionsRef.current?.onValidate?.(submission.value, {
 								formElement,
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
-							null;
+							{ error: null };
 
 				if (
-					typeof formError === 'undefined' &&
+					typeof validationResult === 'undefined' &&
 					submission.intent !== null &&
 					pendingIntents.length > 0
 				) {
@@ -396,9 +425,9 @@ export function useForm<
 				}
 
 				// If the validation is async
-				if (formError instanceof Promise) {
+				if (validationResult instanceof Promise) {
 					// Update the form when the validation result is resolved
-					formError.then((error) => {
+					validationResult.then(({ value, error }) => {
 						// Update the form with the validation result
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
@@ -418,13 +447,17 @@ export function useForm<
 								});
 
 								// Keep track of the submit event so we can skip validation on the next submit
-								submitEventRef.current = event;
+								lastAsyncResultRef.current = {
+									event,
+									value,
+								};
 								formElement.dispatchEvent(event);
 							}
 						}
 					});
-				} else {
-					submission.error = formError;
+				} else if (typeof validationResult !== 'undefined') {
+					submission.error = validationResult.error;
+					value = validationResult.value;
 				}
 
 				update(submission, {
@@ -433,9 +466,9 @@ export function useForm<
 
 				if (
 					// If client validation happens
-					typeof formError !== 'undefined' &&
+					typeof validationResult !== 'undefined' &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(submission.intent || formError !== null)
+					(submission.intent || validationResult !== null)
 				) {
 					event.preventDefault();
 				}
@@ -444,6 +477,8 @@ export function useForm<
 			if (!event.isDefaultPrevented()) {
 				const serverResult = optionsRef.current?.onSubmit?.(event, {
 					submission,
+					formData,
+					value,
 				});
 
 				if (serverResult) {
