@@ -137,22 +137,22 @@ export default function Example() {
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
 		defaultValue: {
-			// title: 'Example',
-			tasks: [{ title: 'Test', done: false }],
+			title: 'Example',
+			tasks: [{ title: 'Test', done: true }],
 		},
 		async onValidate(value) {
 			const result = await schema.safeParseAsync(value);
 
 			return resolveZodResult(result);
 		},
-		async onSubmit(event, { submission }) {
+		async onSubmit(event, { submission, formData }) {
 			event.preventDefault();
 
 			const response = await fetch(
 				'/experimental?_data=routes%2Fexperimental&custom',
 				{
 					method: 'POST',
-					body: new FormData(event.currentTarget),
+					body: formData,
 				},
 			);
 			const result = await response.json();
@@ -195,21 +195,14 @@ export default function Example() {
 			<div>{form.error}</div>
 			<div>
 				Title
-				<input
-					ref={titleControl.register}
-					name={fields.title.name}
-					defaultValue={fields.title.defaultValue}
-				/>
+				<input ref={titleControl.register} name={fields.title.name} />
 				<div>Control: {titleControl.value}</div>
 				<div>FormData: {title}</div>
 				<div>{fields.title.error}</div>
 			</div>
 			<div>
 				Content
-				<textarea
-					name={fields.content.name}
-					defaultValue={fields.content.defaultValue}
-				/>
+				<textarea name={fields.content.name} defaultValue="Hello World!" />
 				<div>Content Error: {fields.content.error}</div>
 			</div>
 			<div>Tasks error: {fields.tasks.error}</div>
@@ -217,16 +210,9 @@ export default function Example() {
 				const task = taskField.getFieldset();
 				return (
 					<fieldset key={taskField.key}>
-						<input
-							name={task.title.name}
-							defaultValue={task.title.defaultValue}
-						/>
+						<input name={task.title.name} />
 						<div>{task.title.error}</div>
-						<input
-							type="checkbox"
-							name={task.done.name}
-							defaultChecked={task.done.defaultValue === 'on'}
-						/>
+						<input type="checkbox" name={task.done.name} />
 						<div>{task.done.error}</div>
 						<div>
 							<button

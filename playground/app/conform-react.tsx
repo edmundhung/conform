@@ -12,7 +12,7 @@ import {
 	type Submission,
 	type DefaultValue,
 	type FormControl,
-	type FormControlIntent,
+	type DefaultFormIntent,
 	type FormControlAdditionalState,
 	type FormError,
 	type FormState,
@@ -25,6 +25,7 @@ import {
 	defaultFormControl,
 	FormValue,
 	applyIntent,
+	merge,
 } from './conform-dom';
 
 export function getSubmitEvent(
@@ -107,11 +108,7 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	options?: {
 		control?: undefined;
 		result?:
-			| Submission<
-					FormControlIntent<typeof defaultFormControl> | null,
-					Schema,
-					ErrorShape
-			  >
+			| Submission<DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
 		defaultValue?: DefaultValue<Schema>;
@@ -134,22 +131,12 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 		onSubmit?: (
 			event: React.FormEvent<HTMLFormElement>,
 			ctx: {
-				submission: Submission<
-					FormControlIntent<typeof defaultFormControl> | null,
-					Schema,
-					ErrorShape
-				>;
+				submission: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
 				formData: FormData;
 				value: Value | undefined;
 			},
 		) =>
-			| Promise<
-					Submission<
-						FormControlIntent<typeof defaultFormControl> | null,
-						Schema,
-						ErrorShape
-					>
-			  >
+			| Promise<Submission<DefaultFormIntent | null, Schema, ErrorShape>>
 			| undefined
 			| void;
 	},
@@ -160,7 +147,7 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 		FormControlAdditionalState<typeof defaultFormControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<FormControlIntent<typeof defaultFormControl>>;
+	intent: IntentDispatcher<DefaultFormIntent>;
 };
 export function useForm<
 	Schema,
@@ -172,15 +159,11 @@ export function useForm<
 	formRef: FormRef,
 	options?: {
 		control?: FormControl<
-			Intent | FormControlIntent<typeof defaultFormControl>,
+			Intent | DefaultFormIntent,
 			AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 		>;
 		result?:
-			| Submission<
-					Intent | FormControlIntent<typeof defaultFormControl> | null,
-					Schema,
-					ErrorShape
-			  >
+			| Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
 		defaultValue?: DefaultValue<Schema>;
@@ -204,7 +187,7 @@ export function useForm<
 			event: React.FormEvent<HTMLFormElement>,
 			ctx: {
 				submission: Submission<
-					Intent | FormControlIntent<typeof defaultFormControl> | null,
+					Intent | DefaultFormIntent | null,
 					Schema,
 					ErrorShape
 				>;
@@ -213,11 +196,7 @@ export function useForm<
 			},
 		) =>
 			| Promise<
-					Submission<
-						Intent | FormControlIntent<typeof defaultFormControl> | null,
-						Schema,
-						ErrorShape
-					>
+					Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
 			  >
 			| undefined
 			| void;
@@ -229,9 +208,7 @@ export function useForm<
 		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<
-		Intent | FormControlIntent<typeof defaultFormControl>
-	>;
+	intent: IntentDispatcher<Intent | DefaultFormIntent>;
 } {
 	const {
 		intentName = defaultIntentName,
@@ -239,18 +216,20 @@ export function useForm<
 		defaultValue,
 		result,
 	} = options ?? {};
-	const [state, setState] = useState(() =>
-		control.initializeState({
+	const [{ state, sideEffect }, update] = useState<{
+		state: FormState<Schema, ErrorShape, {} | AdditionalState>;
+		sideEffect: ((formElement: HTMLFormElement) => void) | null;
+	}>(() => ({
+		state: control.initializeState({
 			defaultValue,
 			result,
 		}),
-	);
+		sideEffect: null,
+	}));
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
 	const lastResultRef = useRef(result);
-	const pendingIntentsRef = useRef<
-		Array<Intent | FormControlIntent<typeof defaultFormControl>>
-	>([]);
+	const pendingIntentsRef = useRef<Array<Intent | DefaultFormIntent>>([]);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		value: Value | undefined;
@@ -260,17 +239,9 @@ export function useForm<
 		intentName,
 		control,
 	});
-	const [runSideEffect, setSideEffect] = useState<
-		((formElement: HTMLFormElement) => void) | null
-	>(null);
-
-	const update = useCallback(
+	const handleSubmission = useCallback(
 		(
-			result: Submission<
-				Intent | FormControlIntent<typeof defaultFormControl> | null,
-				Schema,
-				ErrorShape
-			>,
+			result: Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>,
 			options: {
 				type: 'server' | 'client';
 			},
@@ -284,8 +255,8 @@ export function useForm<
 			const { control = defaultFormControl, defaultValue } =
 				optionsRef.current ?? {};
 
-			setState((state) =>
-				control.updateState(state, {
+			update((context) => {
+				const state = control.updateState(context.state, {
 					type: options.type,
 					result,
 					reset() {
@@ -293,37 +264,35 @@ export function useForm<
 							defaultValue,
 						});
 					},
-				}),
-			);
+				});
+				let sideEffect = context.sideEffect;
 
-			if (options.type === 'client' && result.intent) {
-				const runSideEffect = control.getSideEffect(result.intent);
+				if (options.type === 'client' && result.intent) {
+					const newSideEffect = control.getSideEffect(state, result.intent);
 
-				if (runSideEffect) {
-					const pendingIntents = pendingIntentsRef.current;
+					if (newSideEffect) {
+						const pendingIntents = pendingIntentsRef.current;
 
-					pendingIntentsRef.current = pendingIntents.concat(result.intent);
+						pendingIntentsRef.current = pendingIntents.concat(result.intent);
 
-					setSideEffect(
-						(
-							runPrevSideEffect:
-								| ((formElement: HTMLFormElement) => void)
-								| null,
-						) => {
-							return (formElement: HTMLFormElement) => {
-								if (pendingIntents.length > 0) {
-									runPrevSideEffect?.(formElement);
-								}
+						sideEffect = (formElement: HTMLFormElement): void => {
+							if (pendingIntents.length > 0) {
+								context.sideEffect?.(formElement);
+							}
 
-								runSideEffect(formElement);
-								pendingIntentsRef.current = pendingIntentsRef.current.filter(
-									(intent) => intent !== result.intent,
-								);
-							};
-						},
-					);
+							newSideEffect(formElement);
+							pendingIntentsRef.current = pendingIntentsRef.current.filter(
+								(intent) => intent !== result.intent,
+							);
+						};
+					}
 				}
-			}
+
+				return merge(context, {
+					state,
+					sideEffect,
+				});
+			});
 		},
 		[],
 	);
@@ -336,13 +305,17 @@ export function useForm<
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
 		const unsubscribe = formObserver.onInputMounted((element) =>
-			initializeElement(element, lastStateRef.current.initialValue),
+			initializeElement(element, {
+				initialValue: lastStateRef.current.initialValue,
+			}),
 		);
 
 		if (formElement) {
 			for (const element of formElement.elements) {
 				if (isInput(element)) {
-					initializeElement(element, lastStateRef.current.initialValue);
+					initializeElement(element, {
+						initialValue: lastStateRef.current.initialValue,
+					});
 				}
 			}
 		}
@@ -357,9 +330,9 @@ export function useForm<
 
 	useEffect(() => {
 		if (result) {
-			update(result, { type: 'server' });
+			handleSubmission(result, { type: 'server' });
 		}
-	}, [result, update]);
+	}, [result, handleSubmission]);
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -368,8 +341,8 @@ export function useForm<
 			return;
 		}
 
-		return runSideEffect?.(formElement);
-	}, [formRef, runSideEffect]);
+		return sideEffect?.(formElement);
+	}, [formRef, sideEffect]);
 
 	return {
 		state,
@@ -385,7 +358,7 @@ export function useForm<
 			const formData = new FormData(formElement, submitter);
 			const pendingIntents = pendingIntentsRef.current;
 			const submission = applyIntent<
-				Intent | FormControlIntent<typeof defaultFormControl>,
+				Intent | DefaultFormIntent,
 				Schema,
 				ErrorShape
 			>(
@@ -431,7 +404,7 @@ export function useForm<
 						// Update the form with the validation result
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
-							update(
+							handleSubmission(
 								{ ...submission, error },
 								{
 									type: 'server',
@@ -460,7 +433,7 @@ export function useForm<
 					value = validationResult.value;
 				}
 
-				update(submission, {
+				handleSubmission(submission, {
 					type: 'client',
 				});
 
@@ -484,7 +457,7 @@ export function useForm<
 				if (serverResult) {
 					serverResult.then((result) => {
 						if (!abortController.signal.aborted) {
-							update(result, {
+							handleSubmission(result, {
 								type: 'server',
 							});
 						}
@@ -496,15 +469,11 @@ export function useForm<
 	};
 }
 
-export function useIntent<
-	Intent extends UnknownIntent = FormControlIntent<typeof defaultFormControl>,
->(
+export function useIntent<Intent extends UnknownIntent = DefaultFormIntent>(
 	formRef: FormRef,
 	options?: {
 		intentName?: string;
-		control?: FormControl<
-			Intent | FormControlIntent<typeof defaultFormControl>
-		>;
+		control?: FormControl<Intent | DefaultFormIntent>;
 	},
 ): IntentDispatcher<Intent> {
 	const { intentName = defaultIntentName, control = defaultFormControl } =

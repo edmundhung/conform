@@ -782,7 +782,8 @@ export type FormControl<
 		value: Record<string, FormValue>,
 		intent: Intent,
 	): Record<string, FormValue> | null;
-	getSideEffect(
+	getSideEffect<Schema, ErrorShape>(
+		state: FormState<Schema, ErrorShape, AdditionalState>,
 		intent: Intent,
 	): ((formElement: HTMLFormElement) => void) | null;
 };
@@ -806,7 +807,7 @@ export type DefaultFormIntent =
 			payload: {
 				name: string;
 				index?: number;
-				value?: unknown;
+				value: FormValue<string>;
 			};
 	  }
 	| {
@@ -934,6 +935,8 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				if (
 					isPlainObject(intent.payload) &&
 					typeof intent.payload.name === 'string' &&
+					typeof intent.payload.value !== 'undefined' &&
+					intent.payload.value !== null &&
 					(typeof intent.payload.index === 'undefined' ||
 						typeof intent.payload.index === 'number')
 				) {
@@ -942,7 +945,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 						payload: {
 							name: intent.payload.name,
 							index: intent.payload.index,
-							value: intent.payload.value,
+							value: intent.payload.value as any,
 						},
 					};
 				}
@@ -1047,6 +1050,16 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			switch (intent.type) {
 				case 'reset': {
 					return reset?.() ?? state;
+				}
+				case 'update': {
+					const name = formatName(intent.payload.name, intent.payload.index);
+
+					return merge(state, {
+						initialValue:
+							name === ''
+								? (intent.payload.value as Record<string, FormValue>)
+								: modify(state.initialValue, name, intent.payload.value),
+					});
 				}
 				case 'validate': {
 					const name = intent.payload ?? '';
@@ -1279,10 +1292,18 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 
 			return value;
 		},
-		getSideEffect(intent) {
+		getSideEffect(state, intent) {
 			switch (intent?.type) {
 				case 'reset': {
 					return (formElement) => {
+						for (const element of formElement.elements) {
+							if (isInput(element)) {
+								initializeElement(element, {
+									initialValue: state.initialValue,
+									isResetting: true,
+								});
+							}
+						}
 						formElement.reset();
 					};
 				}
@@ -1381,7 +1402,7 @@ export function getFormMetadata<
 }
 
 export function getDefaultValue(
-	initialValue: Record<string, unknown>,
+	initialValue: unknown,
 	name: string,
 ): string | string[] | undefined {
 	const paths = getPaths(name);
@@ -1620,49 +1641,23 @@ export function updateField(
 	}
 }
 
-/**
- * Reset the field to its default value
- * For file input, it will clear the selected file
- */
-export function resetField(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (element instanceof HTMLInputElement) {
-		switch (element.type) {
-			case 'checkbox':
-			case 'radio':
-				element.checked = element.defaultChecked;
-				break;
-			case 'file':
-				element.value = '';
-				break;
-			default:
-				element.value = element.defaultValue;
-				break;
-		}
-	} else if (element instanceof HTMLSelectElement) {
-		for (const option of element.options) {
-			option.selected = option.defaultSelected;
-		}
-	} else {
-		element.value = element.defaultValue;
-	}
-}
-
 export function initializeElement(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	initialValue: Record<string, unknown>,
+	config: {
+		initialValue: Record<string, unknown>;
+		isResetting?: boolean;
+	},
 ): void {
 	// Skip elements that are already initialized
-	if (element.dataset.conform) {
+	if (!config.isResetting && element.dataset.conform) {
 		return;
 	}
 
-	const defaultValue = getDefaultValue(initialValue, element.name);
+	const defaultValue = getDefaultValue(config.initialValue, element.name);
 
 	updateField(element, {
 		defaultValue,
-		value: defaultValue,
+		value: !config.isResetting ? defaultValue : undefined,
 	});
 
 	element.dataset.conform = generateKey();
