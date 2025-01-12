@@ -25,7 +25,7 @@ import {
 	defaultFormControl,
 	FormValue,
 	applyIntent,
-	merge,
+	updateObject,
 } from './conform-dom';
 
 export function getSubmitEvent(
@@ -216,15 +216,18 @@ export function useForm<
 		defaultValue,
 		result,
 	} = options ?? {};
-	const [{ state, sideEffect }, update] = useState<{
+	const [{ state, sideEffects }, updateForm] = useState<{
 		state: FormState<Schema, ErrorShape, {} | AdditionalState>;
-		sideEffect: ((formElement: HTMLFormElement) => void) | null;
+		sideEffects: Array<{
+			intent: Intent | DefaultFormIntent;
+			state: FormState<Schema, ErrorShape, {} | AdditionalState>;
+		}>;
 	}>(() => ({
 		state: control.initializeState({
 			defaultValue,
 			result,
 		}),
-		sideEffect: null,
+		sideEffects: [],
 	}));
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
@@ -255,8 +258,19 @@ export function useForm<
 			const { control = defaultFormControl, defaultValue } =
 				optionsRef.current ?? {};
 
-			update((context) => {
-				const state = control.updateState(context.state, {
+			const pendingIntents = pendingIntentsRef.current;
+
+			// If there is an intent and it has a side effect, add it to the pending intents
+			if (
+				options.type === 'client' &&
+				result.intent &&
+				control.hasSideEffect(result.intent)
+			) {
+				pendingIntents.push(result.intent);
+			}
+
+			updateForm((form) => {
+				const state = control.updateState(form.state, {
 					type: options.type,
 					result,
 					reset() {
@@ -265,32 +279,22 @@ export function useForm<
 						});
 					},
 				});
-				let sideEffect = context.sideEffect;
 
-				if (options.type === 'client' && result.intent) {
-					const newSideEffect = control.getSideEffect(state, result.intent);
+				let sideEffects = form.sideEffects;
 
-					if (newSideEffect) {
-						const pendingIntents = pendingIntentsRef.current;
-
-						pendingIntentsRef.current = pendingIntents.concat(result.intent);
-
-						sideEffect = (formElement: HTMLFormElement): void => {
-							if (pendingIntents.length > 0) {
-								context.sideEffect?.(formElement);
-							}
-
-							newSideEffect(formElement);
-							pendingIntentsRef.current = pendingIntentsRef.current.filter(
-								(intent) => intent !== result.intent,
-							);
-						};
-					}
+				// If the result has an intent and it is in the pending intents, it must have some side effect
+				if (result.intent && pendingIntents.includes(result.intent)) {
+					sideEffects = sideEffects
+						.filter((sideEffect) => pendingIntents.includes(sideEffect.intent))
+						.concat({
+							intent: result.intent,
+							state,
+						});
 				}
 
-				return merge(context, {
+				return updateObject(form, {
 					state,
-					sideEffect,
+					sideEffects,
 				});
 			});
 		},
@@ -338,11 +342,25 @@ export function useForm<
 		const formElement = getFormElement(formRef);
 
 		if (!formElement) {
+			// eslint-disable-next-line no-console
+			console.error('Side effect failed; Form element is not found');
 			return;
 		}
 
-		return sideEffect?.(formElement);
-	}, [formRef, sideEffect]);
+		const pendingIntents = pendingIntentsRef.current;
+
+		for (const sideEffect of sideEffects) {
+			// Ensure that the side effect is only applied once
+			if (!pendingIntents.includes(sideEffect.intent)) {
+				continue;
+			}
+
+			control.applySideEffect(formElement, sideEffect.intent, sideEffect.state);
+
+			// Remove the intent from the pending intents
+			pendingIntents.splice(pendingIntents.indexOf(sideEffect.intent), 1);
+		}
+	}, [formRef, sideEffects, control]);
 
 	return {
 		state,
@@ -356,7 +374,6 @@ export function useForm<
 			const formElement = event.currentTarget;
 			const submitter = getSubmitter(event);
 			const formData = new FormData(formElement, submitter);
-			const pendingIntents = pendingIntentsRef.current;
 			const submission = applyIntent<
 				Intent | DefaultFormIntent,
 				Schema,
@@ -367,7 +384,7 @@ export function useForm<
 				}),
 				{
 					control,
-					pendingIntents,
+					pendingIntents: pendingIntentsRef.current,
 				},
 			);
 
@@ -385,17 +402,6 @@ export function useForm<
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
 							{ error: null };
-
-				if (
-					typeof validationResult === 'undefined' &&
-					submission.intent !== null &&
-					pendingIntents.length > 0
-				) {
-					// eslint-disable-next-line no-console
-					console.error(
-						'Dispatching multiple intents within a single handler requires client validation; Please either provide a onValidate handler or wrap each intent in a flushSync callback',
-					);
-				}
 
 				// If the validation is async
 				if (validationResult instanceof Promise) {

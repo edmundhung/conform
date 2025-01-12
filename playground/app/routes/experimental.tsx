@@ -13,6 +13,7 @@ import {
 	// FormControlIntent,
 	memoize,
 	applyIntent,
+	defaultFormControl,
 } from '~/conform-dom';
 import { useMemo, useRef } from 'react';
 
@@ -92,7 +93,11 @@ function createSchema(constraint: {
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = applyIntent(parseSubmission(formData));
+	const submission = applyIntent(
+		parseSubmission(formData, {
+			intentName: 'intent',
+		}),
+	);
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
@@ -105,8 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	const result = await schema.safeParseAsync(submission.value);
 
 	if (!result.success || submission.intent) {
-		const { error } = resolveZodResult(result);
-		return report(submission, { error });
+		return report(submission, resolveZodResult(result));
 	}
 
 	return report<typeof submission, z.input<typeof schema>>(submission, {
@@ -136,8 +140,10 @@ export default function Example() {
 	}, []);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		result,
+		intentName: 'intent',
 		defaultValue: {
 			title: 'Example',
+			content: 'Hello World!',
 			tasks: [{ title: 'Test', done: true }],
 		},
 		async onValidate(value) {
@@ -195,14 +201,21 @@ export default function Example() {
 			<div>{form.error}</div>
 			<div>
 				Title
-				<input ref={titleControl.register} name={fields.title.name} />
+				<input
+					ref={titleControl.register}
+					name={fields.title.name}
+					defaultValue={fields.title.defaultValue}
+				/>
 				<div>Control: {titleControl.value}</div>
 				<div>FormData: {title}</div>
 				<div>{fields.title.error}</div>
 			</div>
 			<div>
 				Content
-				<textarea name={fields.content.name} defaultValue="Hello World!" />
+				<textarea
+					name={fields.content.name}
+					defaultValue={fields.content.defaultValue}
+				/>
 				<div>Content Error: {fields.content.error}</div>
 			</div>
 			<div>Tasks error: {fields.tasks.error}</div>
@@ -210,9 +223,16 @@ export default function Example() {
 				const task = taskField.getFieldset();
 				return (
 					<fieldset key={taskField.key}>
-						<input name={task.title.name} />
+						<input
+							name={task.title.name}
+							defaultValue={task.title.defaultValue}
+						/>
 						<div>{task.title.error}</div>
-						<input type="checkbox" name={task.done.name} />
+						<input
+							type="checkbox"
+							name={task.done.name}
+							defaultChecked={task.done.defaultValue === 'on'}
+						/>
 						<div>{task.done.error}</div>
 						<div>
 							<button
@@ -246,13 +266,14 @@ export default function Example() {
 			})}
 			<div>
 				<button
-					type="button"
-					onClick={() => {
-						intent.insert({
+					name="intent"
+					value={defaultFormControl.serializeIntent({
+						type: 'insert',
+						payload: {
 							name: fields.tasks.name,
 							defaultValue: { title: 'Example' },
-						});
-					}}
+						},
+					})}
 				>
 					Insert task
 				</button>
@@ -276,19 +297,35 @@ export default function Example() {
 
 			<div>
 				<button
+					name="intent"
+					value={defaultFormControl.serializeIntent({
+						type: 'update',
+						payload: {
+							value: {
+								title: 'Update title',
+								content: 'And the content',
+							},
+						},
+					})}
+				>
+					Partial update
+				</button>
+			</div>
+			<div>
+				<button
 					type="button"
 					onClick={() => {
 						intent.update({
 							name: fields.title.name,
-							value: 'Update',
+							value: 'Update title in one intent',
 						});
 						intent.update({
 							name: fields.content.name,
-							value: 'Including the content',
+							value: 'Update content in another intent',
 						});
 					}}
 				>
-					Update multiple things
+					Multiple updates
 				</button>
 			</div>
 			<div>

@@ -61,46 +61,72 @@ export function isPlainObject(
 	);
 }
 
-export type SerialziedValue<Schema> = Schema extends null
-	? undefined
-	: Schema extends number | bigint
-		? string
-		: Schema extends boolean
-			? string | undefined
-			: Schema extends Date
-				? string
-				: Schema extends Array<infer Item>
-					? Array<SerialziedValue<Item>>
-					: Schema extends Record<string, any>
-						? { [key in keyof Schema]: SerialziedValue<Schema[key]> }
-						: Schema;
+export function mergeObjects<
+	Obj extends Record<string | number | symbol, unknown>,
+>(obj1: Obj, obj2: Obj, overwrite: boolean) {
+	let result = obj1;
 
-export function serialize<Schema>(value: Schema): SerialziedValue<Schema> {
+	for (const key in obj2) {
+		const val1 = obj1[key];
+		const val2 = obj2[key];
+
+		let value = val2 ?? val1;
+
+		// If both ojects have the same key, determine how to merge
+		if (Object.prototype.hasOwnProperty.call(obj1, key)) {
+			if (Array.isArray(val1) && Array.isArray(val2)) {
+				value = val2;
+			} else if (isPlainObject(val1) && isPlainObject(val2)) {
+				value = mergeObjects(val1, val2, overwrite);
+			} else {
+				value = overwrite ? val2 : val1;
+			}
+		}
+
+		if (result[key] !== value) {
+			if (result === obj1) {
+				// If the result is still the same object, clone it
+				result = setValue(obj1, [key], value, shallowClone);
+			} else {
+				// Otherwise, update the result object
+				result[key] = value;
+			}
+		}
+	}
+
+	return result;
+}
+
+export type SerializedValue =
+	| string
+	| undefined
+	| SerializedValue[]
+	| { [key: string]: SerializedValue };
+
+export function defaultSerialize(value: unknown): SerializedValue {
+	if (typeof value === 'string') {
+		return value;
+	}
+
 	if (isPlainObject(value)) {
-		// @ts-expect-error Please submit a PR if you know how to fix this
-		return Object.entries(value).reduce<Record<string, unknown>>(
+		return Object.entries(value).reduce<Record<string, SerializedValue>>(
 			(result, [key, value]) => {
-				result[key] = serialize(value);
+				result[key] = defaultSerialize(value);
 				return result;
 			},
 			{},
 		);
 	} else if (Array.isArray(value)) {
-		// @ts-expect-error Please submit a PR if you know how to fix this
-		return value.map(serialize);
+		return value.map(defaultSerialize);
 	} else if (value instanceof Date) {
-		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value.toISOString();
 	} else if (typeof value === 'boolean') {
-		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value ? 'on' : undefined;
 	} else if (typeof value === 'number' || typeof value === 'bigint') {
-		// @ts-expect-error Please submit a PR if you know how to fix this
 		return value.toString();
-	} else {
-		// @ts-expect-error Please submit a PR if you know how to fix this
-		return value ?? undefined;
 	}
+
+	return undefined;
 }
 
 export function generateKey(): string {
@@ -389,33 +415,49 @@ export function setValue<Data extends Record<string, any>>(
 	return result;
 }
 
-export function modify<Data extends Record<string, any>>(
-	data: Data,
+export function modify<Data>(
+	data: Record<string, Data>,
 	name: string,
-	value: unknown,
-): Data {
-	const paths = getPaths(name);
-	const currentData = getValue(data, paths);
+	value: Data | Record<string, Data>,
+	overwrite = true,
+): Record<string, Data> {
+	if (name === '') {
+		if (!isPlainObject(value)) {
+			throw new Error('The value must be an object');
+		}
 
-	if (deepEqual(currentData, value)) {
+		return mergeObjects(data, value, overwrite);
+	}
+
+	const paths = getPaths(name);
+	const prevValue = getValue(data, paths);
+	const nextValue =
+		isPlainObject(prevValue) && isPlainObject(value)
+			? mergeObjects(prevValue, value, overwrite)
+			: value;
+
+	if (deepEqual(prevValue, nextValue)) {
 		return data;
 	}
 
-	return setValue(data, paths, value, shallowClone);
+	return setValue(data, paths, nextValue, shallowClone);
 }
 
 /**
- * Create a copy of the object with the updated fields if there is any change
+ * Create a copy of the object with the updated properties if there is any change
  */
-export function merge<State extends Record<string, any>>(
-	state: State,
-	update: Partial<State>,
-): State {
-	if (Object.entries(update).every(([key, value]) => state[key] === value)) {
-		return state;
+export function updateObject<Obj extends Record<string, any>>(
+	obj: Obj,
+	update: Partial<Obj>,
+): Obj {
+	if (
+		obj === update ||
+		Object.entries(update).every(([key, value]) => obj[key] === value)
+	) {
+		return obj;
 	}
 
-	return Object.assign({}, state, update);
+	return Object.assign({}, obj, update);
 }
 
 /**
@@ -782,10 +824,12 @@ export type FormControl<
 		value: Record<string, FormValue>,
 		intent: Intent,
 	): Record<string, FormValue> | null;
-	getSideEffect<Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape, AdditionalState>,
+	hasSideEffect(intent: Intent): boolean;
+	applySideEffect<Schema, ErrorShape>(
+		formElement: HTMLFormElement,
 		intent: Intent,
-	): ((formElement: HTMLFormElement) => void) | null;
+		state: FormState<Schema, ErrorShape, AdditionalState>,
+	): void;
 };
 
 export function createFormControl<
@@ -805,7 +849,7 @@ export type DefaultFormIntent =
 	| {
 			type: 'update';
 			payload: {
-				name: string;
+				name?: string;
 				index?: number;
 				value: FormValue<string>;
 			};
@@ -917,6 +961,26 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 		return Array.from(data);
 	}
 
+	function isNonNullable<T>(value: T): value is NonNullable<T> {
+		return value !== null && value !== undefined;
+	}
+
+	function isString(value: unknown): value is string {
+		return typeof value === 'string';
+	}
+
+	function isNumber(value: unknown): value is number {
+		return typeof value === 'number';
+	}
+
+	function isOptionalString(value: unknown): value is string | undefined {
+		return typeof value === 'undefined' || typeof value === 'string';
+	}
+
+	function isOptionalNumber(value: unknown): value is number | undefined {
+		return typeof value === 'undefined' || typeof value === 'number';
+	}
+
 	function parseIntent(intent: UnknownIntent): DefaultFormIntent | null {
 		switch (intent.type) {
 			case 'validate': {
@@ -934,18 +998,16 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			case 'update': {
 				if (
 					isPlainObject(intent.payload) &&
-					typeof intent.payload.name === 'string' &&
-					typeof intent.payload.value !== 'undefined' &&
-					intent.payload.value !== null &&
-					(typeof intent.payload.index === 'undefined' ||
-						typeof intent.payload.index === 'number')
+					isOptionalString(intent.payload.name) &&
+					isNonNullable(intent.payload.value) &&
+					isOptionalNumber(intent.payload.index)
 				) {
 					return {
 						type: 'update',
 						payload: {
 							name: intent.payload.name,
 							index: intent.payload.index,
-							value: intent.payload.value as any,
+							value: intent.payload.value,
 						},
 					};
 				}
@@ -962,9 +1024,8 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			case 'insert': {
 				if (
 					isPlainObject(intent.payload) &&
-					typeof intent.payload.name === 'string' &&
-					(typeof intent.payload.index === 'undefined' ||
-						typeof intent.payload.index === 'number')
+					isString(intent.payload.name) &&
+					isOptionalNumber(intent.payload.index)
 				) {
 					return {
 						type: 'insert',
@@ -980,8 +1041,8 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			case 'remove': {
 				if (
 					isPlainObject(intent.payload) &&
-					typeof intent.payload.name === 'string' &&
-					typeof intent.payload.index === 'number'
+					isString(intent.payload.name) &&
+					isNumber(intent.payload.index)
 				) {
 					return {
 						type: 'remove',
@@ -996,9 +1057,9 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			case 'reorder': {
 				if (
 					isPlainObject(intent.payload) &&
-					typeof intent.payload.name === 'string' &&
-					typeof intent.payload.from === 'number' &&
-					typeof intent.payload.to === 'number'
+					isString(intent.payload.name) &&
+					isNumber(intent.payload.from) &&
+					isNumber(intent.payload.to)
 				) {
 					return {
 						type: 'reorder',
@@ -1042,24 +1103,35 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 	function handleIntent<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape>,
 		result: Submission<UnknownIntent | null, Schema, ErrorShape>,
-		reset?: () => FormState<Schema, ErrorShape>,
-	): FormState<Schema, ErrorShape> {
+		initialized = false,
+	): FormState<Schema, ErrorShape> | null {
 		const intent = result.intent ? parseIntent(result.intent) : null;
 
 		if (intent) {
 			switch (intent.type) {
 				case 'reset': {
-					return reset?.() ?? state;
+					return null;
 				}
 				case 'update': {
-					const name = formatName(intent.payload.name, intent.payload.index);
+					if (!initialized) {
+						return state;
+					}
 
-					return merge(state, {
-						initialValue:
-							name === ''
-								? (intent.payload.value as Record<string, FormValue>)
-								: modify(state.initialValue, name, intent.payload.value),
-					});
+					const initialValue = modify(
+						state.initialValue,
+						formatName(intent.payload.name, intent.payload.index),
+						intent.payload.value,
+						false,
+					);
+
+					if (state.initialValue === initialValue) {
+						return state;
+					}
+
+					return {
+						...state,
+						initialValue,
+					};
 				}
 				case 'validate': {
 					const name = intent.payload ?? '';
@@ -1067,11 +1139,12 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 					if (name === '') {
 						const fields = getFields(result);
 
-						return merge(state, {
+						return {
+							...state,
 							touchedFields: deepEqual(state.touchedFields, fields)
 								? state.touchedFields
 								: fields,
-						});
+						};
 					}
 
 					if (state.touchedFields.includes(name)) {
@@ -1086,20 +1159,29 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				case 'insert': {
 					const list = getList(state.initialValue, intent.payload.name);
 					const index = intent.payload.index ?? list.length;
-					const itemName = formatName(intent.payload.name, index);
 					const updateListIndex = configureListIndexUpdate(
 						intent.payload.name,
 						(currentIndex) =>
 							index <= currentIndex ? currentIndex + 1 : currentIndex,
 					);
-
-					list.splice(
-						intent.payload.index ?? list.length,
-						0,
-						intent.payload.defaultValue,
+					const touchedFields = addItems(
+						mapItems(state.touchedFields, updateListIndex),
+						[intent.payload.name],
 					);
 
-					return merge(state, {
+					if (!initialized) {
+						return {
+							...state,
+							touchedFields,
+						};
+					}
+
+					list.splice(index, 0, intent.payload.defaultValue);
+
+					const itemName = formatName(intent.payload.name, index);
+
+					return {
+						...state,
 						keys: {
 							...getKeys(
 								intent.payload.defaultValue,
@@ -1108,12 +1190,14 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 							),
 							[itemName]: generateKey(),
 						},
-						touchedFields: addItems(
-							mapItems(state.touchedFields, updateListIndex),
-							[intent.payload.name],
+						initialValue: modify(
+							state.initialValue,
+							intent.payload.name,
+							list,
+							false,
 						),
-						initialValue: modify(state.initialValue, intent.payload.name, list),
-					});
+						touchedFields,
+					};
 				}
 				case 'remove': {
 					const list = getList(state.initialValue, intent.payload.name);
@@ -1129,17 +1213,31 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 								: currentIndex;
 						},
 					);
+					const touchedFields = addItems(
+						mapItems(state.touchedFields, updateListIndex),
+						[intent.payload.name],
+					);
+
+					if (!initialized) {
+						return {
+							...state,
+							touchedFields,
+						};
+					}
 
 					list.splice(intent.payload.index, 1);
 
-					return merge(state, {
+					return {
+						...state,
 						keys: mapKeys(state.keys, updateListIndex),
-						touchedFields: addItems(
-							mapItems(state.touchedFields, updateListIndex),
-							[intent.payload.name],
+						initialValue: modify(
+							state.initialValue,
+							intent.payload.name,
+							list,
+							false,
 						),
-						initialValue: modify(state.initialValue, intent.payload.name, list),
-					});
+						touchedFields,
+					};
 				}
 				case 'reorder': {
 					const list = getList(state.initialValue, intent.payload.name);
@@ -1167,6 +1265,17 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 								: currentIndex;
 						},
 					);
+					const touchedFields = addItems(
+						mapItems(state.touchedFields, updateListIndex),
+						[intent.payload.name],
+					);
+
+					if (!initialized) {
+						return {
+							...state,
+							touchedFields,
+						};
+					}
 
 					list.splice(
 						intent.payload.to,
@@ -1174,14 +1283,17 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 						...list.splice(intent.payload.from, 1),
 					);
 
-					return merge(state, {
+					return {
+						...state,
 						keys: mapKeys(state.keys, updateListIndex),
-						touchedFields: addItems(
-							mapItems(state.touchedFields, updateListIndex),
-							[intent.payload.name],
+						initialValue: modify(
+							state.initialValue,
+							intent.payload.name,
+							list,
+							false,
 						),
-						initialValue: modify(state.initialValue, intent.payload.name, list),
-					});
+						touchedFields,
+					};
 				}
 			}
 		}
@@ -1197,10 +1309,11 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			defaultValue?: DefaultValue<Schema>;
 			result?: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
 		}) {
+			const initialValue = result?.value ?? defaultValue ?? {};
 			const state: FormState<Schema, ErrorShape> = {
-				keys: getKeys(defaultValue),
+				keys: getKeys(initialValue),
 				defaultValue: defaultValue ?? null,
-				initialValue: result?.value ?? defaultValue ?? {},
+				initialValue: initialValue,
 				submittedValue: result?.value ?? null,
 				serverError: result?.error ?? null,
 				clientError: null,
@@ -1211,11 +1324,11 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				return state;
 			}
 
-			return handleIntent(state, result);
+			return updateObject(state, handleIntent(state, result) ?? state);
 		},
 		updateState(state, { type, result, reset }) {
 			const fields = getFields(result);
-			const updatedState = merge(state, {
+			const updatedState = updateObject(state, {
 				clientError:
 					type === 'client' &&
 					typeof result.error !== 'undefined' &&
@@ -1243,7 +1356,10 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				return updatedState;
 			}
 
-			return handleIntent(updatedState, result, reset);
+			return updateObject(
+				updatedState,
+				handleIntent(updatedState, result, true) ?? reset(),
+			);
 		},
 		deserializeIntent(value) {
 			return deserializeIntent(value);
@@ -1292,51 +1408,50 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 
 			return value;
 		},
-		getSideEffect(state, intent) {
-			switch (intent?.type) {
+		hasSideEffect(intent) {
+			return intent.type === 'reset' || intent.type === 'update';
+		},
+		applySideEffect(formElement, intent, state) {
+			switch (intent.type) {
 				case 'reset': {
-					return (formElement) => {
-						for (const element of formElement.elements) {
-							if (isInput(element)) {
-								initializeElement(element, {
-									initialValue: state.initialValue,
-									isResetting: true,
-								});
-							}
+					for (const element of formElement.elements) {
+						if (isInput(element)) {
+							initializeElement(element, {
+								initialValue: state.initialValue,
+								isResetting: true,
+							});
 						}
-						formElement.reset();
-					};
+					}
+					formElement.reset();
+					break;
 				}
 				case 'update': {
-					return (formElement) => {
-						const flattenedValue = flatten(
-							intent.payload.value,
-							(value) => value,
-							formatName(intent.payload.name, intent.payload.index),
-						);
+					const flattenedValue = flatten(
+						intent.payload.value,
+						(value) => value,
+						formatName(intent.payload.name, intent.payload.index),
+					);
 
-						for (const element of formElement.elements) {
-							if (isInput(element)) {
-								const value = serialize(flattenedValue[element.name]);
+					for (const element of formElement.elements) {
+						if (isInput(element)) {
+							const value = defaultSerialize(flattenedValue[element.name]);
 
-								updateField(element, {
-									value:
-										typeof value === 'string' ||
-										(Array.isArray(value) &&
-											value.every((item) => typeof item === 'string'))
-											? value
-											: undefined,
-								});
+							updateField(element, {
+								value:
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined,
+							});
 
-								// Update the element attribute to notify that this is changed by Conform
-								element.dataset.conform = generateKey();
-							}
+							// Update the element attribute to notify that this is changed by Conform
+							element.dataset.conform = generateKey();
 						}
-					};
+					}
+					break;
 				}
 			}
-
-			return null;
 		},
 	};
 });
@@ -1404,6 +1519,7 @@ export function getFormMetadata<
 export function getDefaultValue(
 	initialValue: unknown,
 	name: string,
+	serialize: (value: unknown) => SerializedValue = defaultSerialize,
 ): string | string[] | undefined {
 	const paths = getPaths(name);
 	const value = getValue(initialValue, paths);
