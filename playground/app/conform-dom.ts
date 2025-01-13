@@ -801,6 +801,32 @@ export type FormControlAdditionalState<Control extends FormControl<any>> =
 		? AdditionalState
 		: never;
 
+export type FormIntentHandler<
+	Intent extends UnknownIntent | null,
+	AdditionalState extends {} = {},
+> = {
+	isApplicable(intent: UnknownIntent | null): boolean;
+	updateState<Schema, ErrorShape>(
+		state: FormState<Schema, ErrorShape, AdditionalState>,
+		ctx: {
+			type: 'server' | 'client';
+			result: Submission<Intent, Schema, ErrorShape>;
+			reset: () => FormState<Schema, ErrorShape, AdditionalState>;
+		},
+	): FormState<Schema, ErrorShape, AdditionalState>;
+	updateValue?: (
+		value: Record<string, FormValue>,
+		intent: Intent,
+	) => Record<string, FormValue> | null;
+	sideEffect?: <Schema, ErrorShape>(
+		formElement: HTMLFormElement,
+		ctx: {
+			intent: Intent;
+			state: FormState<Schema, ErrorShape, AdditionalState>;
+		},
+	) => void;
+};
+
 export type FormControl<
 	Intent extends UnknownIntent,
 	AdditionalState extends {} = {},
@@ -946,361 +972,430 @@ export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
 	};
 }
 
-export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
-	function getList(initialValue: unknown, name: string) {
-		const paths = getPaths(name);
-		const data = getValue(initialValue, paths) ?? [];
+function isNonNullable<T>(value: T): value is NonNullable<T> {
+	return value !== null && value !== undefined;
+}
 
-		if (!Array.isArray(data)) {
-			throw new Error(
-				`Update state failed; The initialValue at "${name}" is not an array`,
-			);
-		}
+function isString(value: unknown): value is string {
+	return typeof value === 'string';
+}
 
-		// Make a copy of the currnet list data
-		return Array.from(data);
+function isNumber(value: unknown): value is number {
+	return typeof value === 'number';
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+	return typeof value === 'undefined' || typeof value === 'string';
+}
+
+function isOptionalNumber(value: unknown): value is number | undefined {
+	return typeof value === 'undefined' || typeof value === 'number';
+}
+
+function getList(initialValue: unknown, name: string) {
+	const paths = getPaths(name);
+	const data = getValue(initialValue, paths) ?? [];
+
+	if (!Array.isArray(data)) {
+		throw new Error(
+			`Update state failed; The initialValue at "${name}" is not an array`,
+		);
 	}
 
-	function isNonNullable<T>(value: T): value is NonNullable<T> {
-		return value !== null && value !== undefined;
-	}
+	// Make a copy of the currnet list data
+	return Array.from(data);
+}
 
-	function isString(value: unknown): value is string {
-		return typeof value === 'string';
-	}
+function getFields(submission: Submission<UnknownIntent | null>): string[] {
+	const fields = submission.fields;
 
-	function isNumber(value: unknown): value is number {
-		return typeof value === 'number';
-	}
-
-	function isOptionalString(value: unknown): value is string | undefined {
-		return typeof value === 'undefined' || typeof value === 'string';
-	}
-
-	function isOptionalNumber(value: unknown): value is number | undefined {
-		return typeof value === 'undefined' || typeof value === 'number';
-	}
-
-	function parseIntent(intent: UnknownIntent): DefaultFormIntent | null {
-		switch (intent.type) {
-			case 'validate': {
-				if (
-					typeof intent.payload === 'string' ||
-					typeof intent.payload === 'undefined'
-				) {
-					return {
-						type: 'validate',
-						payload: intent.payload,
-					};
-				}
-				break;
+	// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
+	// But the schema might have an error on those fields, so we need to include them
+	if (submission.error) {
+		for (const name of Object.keys(submission.error.fieldError)) {
+			// If the error is set as a child of an actual field, exclude it
+			// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
+			if (fields.find((field) => name !== field && isPrefix(name, field))) {
+				continue;
 			}
-			case 'update': {
-				if (
-					isPlainObject(intent.payload) &&
-					isOptionalString(intent.payload.name) &&
-					isNonNullable(intent.payload.value) &&
-					isOptionalNumber(intent.payload.index)
-				) {
-					return {
-						type: 'update',
-						payload: {
-							name: intent.payload.name,
-							index: intent.payload.index,
-							value: intent.payload.value,
-						},
-					};
-				}
-				break;
-			}
-			case 'reset': {
-				if (intent.payload === undefined) {
-					return {
-						type: 'reset',
-					};
-				}
-				break;
-			}
-			case 'insert': {
-				if (
-					isPlainObject(intent.payload) &&
-					isString(intent.payload.name) &&
-					isOptionalNumber(intent.payload.index)
-				) {
-					return {
-						type: 'insert',
-						payload: {
-							name: intent.payload.name,
-							index: intent.payload.index,
-							defaultValue: intent.payload.defaultValue,
-						},
-					};
-				}
-				break;
-			}
-			case 'remove': {
-				if (
-					isPlainObject(intent.payload) &&
-					isString(intent.payload.name) &&
-					isNumber(intent.payload.index)
-				) {
-					return {
-						type: 'remove',
-						payload: {
-							name: intent.payload.name,
-							index: intent.payload.index,
-						},
-					};
-				}
-				break;
-			}
-			case 'reorder': {
-				if (
-					isPlainObject(intent.payload) &&
-					isString(intent.payload.name) &&
-					isNumber(intent.payload.from) &&
-					isNumber(intent.payload.to)
-				) {
-					return {
-						type: 'reorder',
-						payload: {
-							name: intent.payload.name,
-							from: intent.payload.from,
-							to: intent.payload.to,
-						},
-					};
-				}
-				break;
+
+			// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
+			if (fields.every((field) => !isPrefix(field, name))) {
+				fields.push(name);
 			}
 		}
+	}
 
+	return fields;
+}
+
+const validateIntentHandler: FormIntentHandler<{
+	type: 'validate';
+	payload?: string;
+} | null> = {
+	isApplicable(intent) {
+		return (
+			intent !== null &&
+			intent.type === 'validate' &&
+			isOptionalString(intent.payload)
+		);
+	},
+	updateState(state, { result }) {
+		const name = result.intent?.payload ?? '';
+
+		if (name === '') {
+			const fields = getFields(result);
+
+			return {
+				...state,
+				touchedFields: deepEqual(state.touchedFields, fields)
+					? state.touchedFields
+					: fields,
+			};
+		}
+
+		if (state.touchedFields.includes(name)) {
+			return state;
+		}
+
+		return {
+			...state,
+			touchedFields: state.touchedFields.concat(name),
+		};
+	},
+};
+
+const resetIntentHandler: FormIntentHandler<{ type: 'reset' }> = {
+	isApplicable(intent) {
+		return intent === null || intent.type === 'reset';
+	},
+	updateState(_, { reset }) {
+		return reset();
+	},
+	updateValue() {
 		return null;
-	}
-
-	function getFields(submission: Submission<UnknownIntent | null>): string[] {
-		const fields = submission.fields;
-
-		// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
-		// But the schema might have an error on those fields, so we need to include them
-		if (submission.error) {
-			for (const name of Object.keys(submission.error.fieldError)) {
-				// If the error is set as a child of an actual field, exclude it
-				// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
-				if (fields.find((field) => name !== field && isPrefix(name, field))) {
-					continue;
-				}
-
-				// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
-				if (fields.every((field) => !isPrefix(field, name))) {
-					fields.push(name);
-				}
+	},
+	sideEffect(formElement, { state }) {
+		for (const element of formElement.elements) {
+			if (isInput(element)) {
+				initializeElement(element, {
+					initialValue: state.initialValue,
+					isResetting: true,
+				});
 			}
 		}
+		formElement.reset();
+	},
+};
 
-		return fields;
-	}
+const updateIntentHandler: FormIntentHandler<{
+	type: 'update';
+	payload: {
+		name?: string;
+		index?: number;
+		value: FormValue<string>;
+	};
+}> = {
+	isApplicable(intent) {
+		return (
+			intent !== null &&
+			intent.type === 'update' &&
+			isPlainObject(intent.payload) &&
+			isOptionalString(intent.payload.name) &&
+			isNonNullable(intent.payload.value) &&
+			isOptionalNumber(intent.payload.index)
+		);
+	},
+	updateState(state, { type, result }) {
+		if (type === 'server') {
+			return state;
+		}
 
-	function handleIntent<Schema, ErrorShape>(
-		state: FormState<Schema, ErrorShape>,
-		result: Submission<UnknownIntent | null, Schema, ErrorShape>,
-		initialized = false,
-	): FormState<Schema, ErrorShape> | null {
-		const intent = result.intent ? parseIntent(result.intent) : null;
+		const intent = result.intent;
+		const initialValue = modify(
+			state.initialValue,
+			formatName(intent.payload.name, intent.payload.index),
+			intent.payload.value,
+			false,
+		);
 
+		if (state.initialValue === initialValue) {
+			return state;
+		}
+
+		return {
+			...state,
+			initialValue,
+		};
+	},
+	updateValue(value, intent) {
+		return modify(
+			value,
+			formatName(intent.payload.name, intent.payload.index),
+			intent.payload.value,
+		);
+	},
+	sideEffect(formElement, { intent }) {
+		const flattenedValue = flatten(
+			intent.payload.value,
+			(value) => value,
+			formatName(intent.payload.name, intent.payload.index),
+		);
+
+		for (const element of formElement.elements) {
+			if (isInput(element)) {
+				const value = defaultSerialize(flattenedValue[element.name]);
+
+				updateField(element, {
+					value:
+						typeof value === 'string' ||
+						(Array.isArray(value) &&
+							value.every((item) => typeof item === 'string'))
+							? value
+							: undefined,
+				});
+
+				// Update the element attribute to notify that this is changed by Conform
+				element.dataset.conform = generateKey();
+			}
+		}
+	},
+};
+
+const listIntentHandler: FormIntentHandler<
+	| {
+			type: 'insert';
+			payload: {
+				name: string;
+				index?: number;
+				defaultValue?: unknown;
+			};
+	  }
+	| {
+			type: 'remove';
+			payload: {
+				name: string;
+				index: number;
+			};
+	  }
+	| {
+			type: 'reorder';
+			payload: {
+				name: string;
+				from: number;
+				to: number;
+			};
+	  }
+> = {
+	isApplicable(intent) {
 		if (intent) {
 			switch (intent.type) {
-				case 'reset': {
-					return null;
-				}
-				case 'update': {
-					if (!initialized) {
-						return state;
-					}
-
-					const initialValue = modify(
-						state.initialValue,
-						formatName(intent.payload.name, intent.payload.index),
-						intent.payload.value,
-						false,
+				case 'insert':
+					return (
+						isPlainObject(intent.payload) &&
+						isString(intent.payload.name) &&
+						isOptionalNumber(intent.payload.index)
 					);
-
-					if (state.initialValue === initialValue) {
-						return state;
-					}
-
-					return {
-						...state,
-						initialValue,
-					};
-				}
-				case 'validate': {
-					const name = intent.payload ?? '';
-
-					if (name === '') {
-						const fields = getFields(result);
-
-						return {
-							...state,
-							touchedFields: deepEqual(state.touchedFields, fields)
-								? state.touchedFields
-								: fields,
-						};
-					}
-
-					if (state.touchedFields.includes(name)) {
-						return state;
-					}
-
-					return {
-						...state,
-						touchedFields: state.touchedFields.concat(name),
-					};
-				}
-				case 'insert': {
-					const list = getList(state.initialValue, intent.payload.name);
-					const index = intent.payload.index ?? list.length;
-					const updateListIndex = configureListIndexUpdate(
-						intent.payload.name,
-						(currentIndex) =>
-							index <= currentIndex ? currentIndex + 1 : currentIndex,
+				case 'remove':
+					return (
+						isPlainObject(intent.payload) &&
+						isString(intent.payload.name) &&
+						isNumber(intent.payload.index)
 					);
-					const touchedFields = addItems(
-						mapItems(state.touchedFields, updateListIndex),
-						[intent.payload.name],
+				case 'reorder':
+					return (
+						isPlainObject(intent.payload) &&
+						isString(intent.payload.name) &&
+						isNumber(intent.payload.from) &&
+						isNumber(intent.payload.to)
 					);
-
-					if (!initialized) {
-						return {
-							...state,
-							touchedFields,
-						};
-					}
-
-					list.splice(index, 0, intent.payload.defaultValue);
-
-					const itemName = formatName(intent.payload.name, index);
-
-					return {
-						...state,
-						keys: {
-							...getKeys(
-								intent.payload.defaultValue,
-								mapKeys(state.keys, updateListIndex),
-								itemName,
-							),
-							[itemName]: generateKey(),
-						},
-						initialValue: modify(
-							state.initialValue,
-							intent.payload.name,
-							list,
-							false,
-						),
-						touchedFields,
-					};
-				}
-				case 'remove': {
-					const list = getList(state.initialValue, intent.payload.name);
-					const updateListIndex = configureListIndexUpdate(
-						intent.payload.name,
-						(currentIndex) => {
-							if (intent.payload.index === currentIndex) {
-								return null;
-							}
-
-							return intent.payload.index < currentIndex
-								? currentIndex - 1
-								: currentIndex;
-						},
-					);
-					const touchedFields = addItems(
-						mapItems(state.touchedFields, updateListIndex),
-						[intent.payload.name],
-					);
-
-					if (!initialized) {
-						return {
-							...state,
-							touchedFields,
-						};
-					}
-
-					list.splice(intent.payload.index, 1);
-
-					return {
-						...state,
-						keys: mapKeys(state.keys, updateListIndex),
-						initialValue: modify(
-							state.initialValue,
-							intent.payload.name,
-							list,
-							false,
-						),
-						touchedFields,
-					};
-				}
-				case 'reorder': {
-					const list = getList(state.initialValue, intent.payload.name);
-					const updateListIndex = configureListIndexUpdate(
-						intent.payload.name,
-						(currentIndex) => {
-							if (intent.payload.from === intent.payload.to) {
-								return currentIndex;
-							}
-
-							if (currentIndex === intent.payload.from) {
-								return intent.payload.to;
-							}
-
-							if (intent.payload.from < intent.payload.to) {
-								return currentIndex > intent.payload.from &&
-									currentIndex <= intent.payload.to
-									? currentIndex - 1
-									: currentIndex;
-							}
-
-							return currentIndex >= intent.payload.to &&
-								currentIndex < intent.payload.from
-								? currentIndex + 1
-								: currentIndex;
-						},
-					);
-					const touchedFields = addItems(
-						mapItems(state.touchedFields, updateListIndex),
-						[intent.payload.name],
-					);
-
-					if (!initialized) {
-						return {
-							...state,
-							touchedFields,
-						};
-					}
-
-					list.splice(
-						intent.payload.to,
-						0,
-						...list.splice(intent.payload.from, 1),
-					);
-
-					return {
-						...state,
-						keys: mapKeys(state.keys, updateListIndex),
-						initialValue: modify(
-							state.initialValue,
-							intent.payload.name,
-							list,
-							false,
-						),
-						touchedFields,
-					};
-				}
 			}
 		}
 
-		return state;
-	}
+		return false;
+	},
+	updateState(state, { type, result }) {
+		const intent = result.intent;
 
+		switch (intent.type) {
+			case 'insert': {
+				const list = getList(state.initialValue, intent.payload.name);
+				const index = intent.payload.index ?? list.length;
+				const updateListIndex = configureListIndexUpdate(
+					intent.payload.name,
+					(currentIndex) =>
+						index <= currentIndex ? currentIndex + 1 : currentIndex,
+				);
+				const touchedFields = addItems(
+					mapItems(state.touchedFields, updateListIndex),
+					[intent.payload.name],
+				);
+
+				if (type === 'server') {
+					return {
+						...state,
+						touchedFields,
+					};
+				}
+
+				list.splice(index, 0, intent.payload.defaultValue);
+
+				const itemName = formatName(intent.payload.name, index);
+
+				return {
+					...state,
+					keys: {
+						...getKeys(
+							intent.payload.defaultValue,
+							mapKeys(state.keys, updateListIndex),
+							itemName,
+						),
+						[itemName]: generateKey(),
+					},
+					initialValue: modify(
+						state.initialValue,
+						intent.payload.name,
+						list,
+						false,
+					),
+					touchedFields,
+				};
+			}
+			case 'remove': {
+				const list = getList(state.initialValue, intent.payload.name);
+				const updateListIndex = configureListIndexUpdate(
+					intent.payload.name,
+					(currentIndex) => {
+						if (intent.payload.index === currentIndex) {
+							return null;
+						}
+
+						return intent.payload.index < currentIndex
+							? currentIndex - 1
+							: currentIndex;
+					},
+				);
+				const touchedFields = addItems(
+					mapItems(state.touchedFields, updateListIndex),
+					[intent.payload.name],
+				);
+
+				if (type === 'server') {
+					return {
+						...state,
+						touchedFields,
+					};
+				}
+
+				list.splice(intent.payload.index, 1);
+
+				return {
+					...state,
+					keys: mapKeys(state.keys, updateListIndex),
+					initialValue: modify(
+						state.initialValue,
+						intent.payload.name,
+						list,
+						false,
+					),
+					touchedFields,
+				};
+			}
+			case 'reorder': {
+				const list = getList(state.initialValue, intent.payload.name);
+				const updateListIndex = configureListIndexUpdate(
+					intent.payload.name,
+					(currentIndex) => {
+						if (intent.payload.from === intent.payload.to) {
+							return currentIndex;
+						}
+
+						if (currentIndex === intent.payload.from) {
+							return intent.payload.to;
+						}
+
+						if (intent.payload.from < intent.payload.to) {
+							return currentIndex > intent.payload.from &&
+								currentIndex <= intent.payload.to
+								? currentIndex - 1
+								: currentIndex;
+						}
+
+						return currentIndex >= intent.payload.to &&
+							currentIndex < intent.payload.from
+							? currentIndex + 1
+							: currentIndex;
+					},
+				);
+				const touchedFields = addItems(
+					mapItems(state.touchedFields, updateListIndex),
+					[intent.payload.name],
+				);
+
+				if (type === 'server') {
+					return {
+						...state,
+						touchedFields,
+					};
+				}
+
+				list.splice(
+					intent.payload.to,
+					0,
+					...list.splice(intent.payload.from, 1),
+				);
+
+				return {
+					...state,
+					keys: mapKeys(state.keys, updateListIndex),
+					initialValue: modify(
+						state.initialValue,
+						intent.payload.name,
+						list,
+						false,
+					),
+					touchedFields,
+				};
+			}
+		}
+	},
+	updateValue(value, intent) {
+		switch (intent.type) {
+			case 'insert': {
+				const list = getList(value, intent.payload.name);
+				list.splice(
+					intent.payload.index ?? list.length,
+					0,
+					intent.payload.defaultValue,
+				);
+
+				return modify(value, intent.payload.name, list);
+			}
+			case 'remove': {
+				const list = getList(value, intent.payload.name);
+				list.splice(intent.payload.index, 1);
+				return modify(value, intent.payload.name, list);
+			}
+			case 'reorder': {
+				const list = getList(value, intent.payload.name);
+				list.splice(
+					intent.payload.to,
+					0,
+					...list.splice(intent.payload.from, 1),
+				);
+				return modify(value, intent.payload.name, list);
+			}
+		}
+	},
+};
+
+export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
+	const intentHandlers: Array<FormIntentHandler<any>> = [
+		validateIntentHandler,
+		resetIntentHandler,
+		updateIntentHandler,
+		listIntentHandler,
+	];
 	return {
 		initializeState<Schema, ErrorShape>({
 			defaultValue,
@@ -1310,25 +1405,35 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			result?: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
 		}) {
 			const initialValue = result?.value ?? defaultValue ?? {};
-			const state: FormState<Schema, ErrorShape> = {
+
+			let state: FormState<Schema, ErrorShape> = {
 				keys: getKeys(initialValue),
 				defaultValue: defaultValue ?? null,
 				initialValue: initialValue,
 				submittedValue: result?.value ?? null,
 				serverError: result?.error ?? null,
 				clientError: null,
-				touchedFields: result?.intent === null ? getFields(result) : [],
+				touchedFields: [],
 			};
 
 			if (!result) {
 				return state;
 			}
 
-			return updateObject(state, handleIntent(state, result) ?? state);
+			for (const handler of intentHandlers) {
+				if (handler.isApplicable(result.intent)) {
+					state = handler.updateState(state, {
+						type: 'server',
+						result,
+						reset: () => state,
+					});
+				}
+			}
+
+			return state;
 		},
 		updateState(state, { type, result, reset }) {
-			const fields = getFields(result);
-			const updatedState = updateObject(state, {
+			let newState = updateObject(state, {
 				clientError:
 					type === 'client' &&
 					typeof result.error !== 'undefined' &&
@@ -1346,20 +1451,23 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 							? result.error
 							: state.serverError,
 				submittedValue: type === 'server' ? result.value : state.submittedValue,
-				touchedFields:
-					result?.intent === null && !deepEqual(state.touchedFields, fields)
-						? fields
-						: state.touchedFields,
 			});
 
-			if (type === 'server') {
-				return updatedState;
+			if (type === 'server' || !result.intent) {
+				return newState;
 			}
 
-			return updateObject(
-				updatedState,
-				handleIntent(updatedState, result, true) ?? reset(),
-			);
+			for (const handler of intentHandlers) {
+				if (handler.isApplicable(result.intent)) {
+					newState = handler.updateState(newState, {
+						type,
+						result,
+						reset,
+					});
+				}
+			}
+
+			return updateObject(state, newState);
 		},
 		deserializeIntent(value) {
 			return deserializeIntent(value);
@@ -1367,89 +1475,54 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 		serializeIntent(intent) {
 			return serializeIntent(intent);
 		},
-		parseIntent,
-		updateValue(value, intent) {
-			switch (intent.type) {
-				case 'reset': {
-					return null;
-				}
-				case 'update': {
-					return modify(
-						value,
-						formatName(intent.payload.name, intent.payload.index),
-						intent.payload.value,
-					);
-				}
-				case 'insert': {
-					const list = getList(value, intent.payload.name);
-					list.splice(
-						intent.payload.index ?? list.length,
-						0,
-						intent.payload.defaultValue,
-					);
-
-					return modify(value, intent.payload.name, list);
-				}
-				case 'remove': {
-					const list = getList(value, intent.payload.name);
-					list.splice(intent.payload.index, 1);
-					return modify(value, intent.payload.name, list);
-				}
-				case 'reorder': {
-					const list = getList(value, intent.payload.name);
-					list.splice(
-						intent.payload.to,
-						0,
-						...list.splice(intent.payload.from, 1),
-					);
-					return modify(value, intent.payload.name, list);
+		parseIntent(intent) {
+			for (const handler of intentHandlers) {
+				if (handler.isApplicable(intent)) {
+					return intent as DefaultFormIntent;
 				}
 			}
 
-			return value;
+			return null;
+		},
+		updateValue(value, intent) {
+			let result: Record<string, FormValue> = value;
+
+			for (const handler of intentHandlers) {
+				if (
+					typeof handler.updateValue === 'function' &&
+					handler.isApplicable(intent)
+				) {
+					const nextValue = handler.updateValue(result, intent);
+
+					if (nextValue === null) {
+						return null;
+					}
+
+					result = nextValue;
+				}
+			}
+
+			return result;
 		},
 		hasSideEffect(intent) {
-			return intent.type === 'reset' || intent.type === 'update';
+			for (const handler of intentHandlers) {
+				if (
+					typeof handler.sideEffect === 'function' &&
+					handler.isApplicable(intent)
+				) {
+					return true;
+				}
+			}
+
+			return false;
 		},
 		applySideEffect(formElement, intent, state) {
-			switch (intent.type) {
-				case 'reset': {
-					for (const element of formElement.elements) {
-						if (isInput(element)) {
-							initializeElement(element, {
-								initialValue: state.initialValue,
-								isResetting: true,
-							});
-						}
-					}
-					formElement.reset();
-					break;
-				}
-				case 'update': {
-					const flattenedValue = flatten(
-						intent.payload.value,
-						(value) => value,
-						formatName(intent.payload.name, intent.payload.index),
-					);
-
-					for (const element of formElement.elements) {
-						if (isInput(element)) {
-							const value = defaultSerialize(flattenedValue[element.name]);
-
-							updateField(element, {
-								value:
-									typeof value === 'string' ||
-									(Array.isArray(value) &&
-										value.every((item) => typeof item === 'string'))
-										? value
-										: undefined,
-							});
-
-							// Update the element attribute to notify that this is changed by Conform
-							element.dataset.conform = generateKey();
-						}
-					}
-					break;
+			for (const handler of intentHandlers) {
+				if (
+					typeof handler.sideEffect === 'function' &&
+					handler.isApplicable(intent)
+				) {
+					handler.sideEffect(formElement, { intent, state });
 				}
 			}
 		},
