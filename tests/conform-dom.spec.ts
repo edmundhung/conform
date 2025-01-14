@@ -7,6 +7,7 @@ import {
 	INTENT,
 	STATE,
 	serializeIntent,
+	isFieldElement,
 } from '@conform-to/dom';
 import { createFormData } from './helpers';
 
@@ -331,5 +332,21 @@ describe('conform-dom', () => {
 		expect(isPrefix('tasks[0].content', 'tasks[0].content')).toBe(true);
 		expect(isPrefix('tasks[0].content', 'tasks[1].content')).toBe(false);
 		expect(isPrefix('tasks[0].content', 'tasks[0].completed')).toBe(false);
+	});
+
+	test('isFieldElement()', () => {
+		function createInput(type?: string) {
+			const element = document.createElement('input');
+
+			if (type) {
+				element.type = type;
+			}
+
+			return element;
+		}
+
+		expect(isFieldElement(null)).toBe(false);
+		expect(isFieldElement(createInput())).toBe(true);
+		expect(isFieldElement(createInput('button'))).toBe(false);
 	});
 });
