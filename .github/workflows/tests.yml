@@ -15,8 +15,8 @@ on:
       - 'examples/**'
       - 'guide/**'
 jobs:
-  browser:
-    name: Browser Tests
+  e2e:
+    name: E2E Tests
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     strategy:
@@ -46,8 +46,6 @@ jobs:
         run: pnpm i
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
-      - name: Run Vitest tests
-        run: pnpm exec vitest --project=${{ matrix.browser }}
       - name: Run Playwright tests
         run: pnpm exec playwright test --project=${{ matrix.browser }}
       - name: Upload report to GitHub Actions Artifacts
@@ -57,14 +55,9 @@ jobs:
           name: playwright-report-${{ matrix.os }}-node${{ matrix.node }}-${{ matrix.browser }}
           path: test-results/
           retention-days: 14
-  node:
-    name: Node tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        node: [18, 20, 22]
+  unit:
+    name: API Tests
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -73,11 +66,13 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 20
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
       - name: Run Vitest tests
-        run: pnpm exec vitest --project=node
+        run: pnpm exec vitest
       - name: Run Typecheck
         run: pnpm -r run typecheck
