@@ -70,6 +70,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
       - name: Run Vitest tests
         run: pnpm exec vitest
       - name: Run Typecheck
