@@ -18,19 +18,13 @@ First, let's define the schema. Here is a zod schema that we will use to validat
 import { z } from 'zod';
 
 const schema = z.object({
-  // The preprocess step is required for zod to perform the required check properly
-  // as the value of an empty input is usually an empty string
-  email: z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    z.string({ required_error: 'Email is required' }).email('Email is invalid'),
-  ),
-  message: z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    z
-      .string({ required_error: 'Message is required' })
-      .min(10, 'Message is too short')
-      .max(100, 'Message is too long'),
-  ),
+  email: z
+    .string({ required_error: 'Email is required' })
+    .email('Email is invalid'),
+  message: z
+    .string({ required_error: 'Message is required' })
+    .min(10, 'Message is too short')
+    .max(100, 'Message is too long'),
 });
 ```
 

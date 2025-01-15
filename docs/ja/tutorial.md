@@ -18,19 +18,13 @@ npm install @conform-to/react @conform-to/zod --save
 import { z } from 'zod';
 
 const schema = z.object({
-  // zodが必要なチェックを適切に実行するためには、前処理ステップが必要です。
-  // 空の入力の値は通常、空の文字列であるためです。
-  email: z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    z.string({ required_error: 'Email is required' }).email('Email is invalid'),
-  ),
-  message: z.preprocess(
-    (value) => (value === '' ? undefined : value),
-    z
-      .string({ required_error: 'Message is required' })
-      .min(10, 'Message is too short')
-      .max(100, 'Message is too long'),
-  ),
+  email: z
+    .string({ required_error: 'Email is required' })
+    .email('Email is invalid'),
+  message: z
+    .string({ required_error: 'Message is required' })
+    .min(10, 'Message is too short')
+    .max(100, 'Message is too long'),
 });
 ```
 
