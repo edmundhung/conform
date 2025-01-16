@@ -214,7 +214,7 @@ export function getFormControlProps<Schema>(
 	options?: FormControlOptions,
 ): FormControlProps {
 	return simplify({
-		key: metadata.key,
+		key: undefined,
 		required: metadata.required || undefined,
 		...getFieldsetProps(metadata, options),
 	});

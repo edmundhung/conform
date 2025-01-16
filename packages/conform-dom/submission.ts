@@ -175,9 +175,18 @@ export function parse<FormValue, FormError>(
 
 				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
-						setValue(context.payload, name, () => value);
+						setValue(context.payload, name, (currentValue) => {
+							if (isPlainObject(currentValue)) {
+								return Object.assign({}, currentValue, value);
+							}
+
+							return value;
+						});
 					} else {
-						context.payload = value;
+						context.payload = {
+							...context.payload,
+							...value,
+						};
 					}
 				}
 				break;
@@ -505,10 +514,10 @@ export function setState(
 			resolve(data) {
 				if (isPlainObject(data) || Array.isArray(data)) {
 					// @ts-expect-error
-					return data[root] ?? null;
+					return normalize(data[root] ?? null);
 				}
 
-				return data;
+				return normalize(data);
 			},
 			prefix: name,
 		}),

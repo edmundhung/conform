@@ -210,7 +210,11 @@ export function updateSubjectRef(
 	scope?: keyof SubscriptionScope,
 	name?: string,
 ): void {
-	if (subject === 'status' || subject === 'formId') {
+	if (
+		subject === 'status' ||
+		subject === 'formId' ||
+		subject === 'lastIntent'
+	) {
 		ref.current[subject] = true;
 	} else if (typeof scope !== 'undefined' && typeof name !== 'undefined') {
 		ref.current[subject] = {
