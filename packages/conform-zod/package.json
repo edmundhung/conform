@@ -1,9 +1,9 @@
 {
-	"name": "@conform-to/zod",
-	"description": "Conform helpers for integrating with Zod",
+	"name": "conform-zod",
+	"description": "A utility library for parsing form data and deriving validation attributes using Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.2.2",
+	"version": "0.0.1",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
@@ -34,7 +34,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "workspace:*"
+		"conform-dom": "workspace:*"
 	},
 	"peerDependencies": {
 		"zod": "^3.21.0"

@@ -1,0 +1,9 @@
+# ignore all .ts, .tsx files except .d.ts
+*.ts
+*.tsx
+!*.d.ts
+
+# config / build result
+rollup.config.js
+tsconfig.json
+*.tsbuildinfo

@@ -1,9 +1,9 @@
 {
-	"name": "@conform-to/dom",
-	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
+	"name": "conform-dom",
+	"description": "A utility library for progressively-enhanced HTML forms",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.2.2",
+	"version": "0.0.1",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
