@@ -1,27 +1,4 @@
-/**
- * Construct a form data with the submitter value.
- * It utilizes the submitter argument on the FormData constructor from modern browsers
- * with fallback to append the submitter value in case it is not unsupported.
- *
- * @see https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData#parameters
- */
-export function getFormData(
-	form: HTMLFormElement,
-	submitter?: HTMLInputElement | HTMLButtonElement | null,
-): FormData {
-	const payload = new FormData(form, submitter);
-
-	if (submitter && submitter.type === 'submit' && submitter.name !== '') {
-		const entries = payload.getAll(submitter.name);
-
-		// This assumes the submitter value to be always unique, which should be fine in most cases
-		if (!entries.includes(submitter.value)) {
-			payload.append(submitter.name, submitter.value);
-		}
-	}
-
-	return payload;
-}
+import { isPlainObject } from './util';
 
 /**
  * Returns the paths from a name based on the JS syntax convention
@@ -61,7 +38,10 @@ export function getPaths(name: string | undefined): Array<string | number> {
  * Returns a formatted name from the paths based on the JS syntax convention
  * @example
  * ```js
- * const name = formatPaths(['todos', 0, 'content']); // "todos[0].content"
+ * formatPaths([]); // ""
+ * formatPaths(['email']); // "email"
+ * formatPaths(['address', 'city']); // "address.city"
+ * formatPaths(['todos', 0, 'content']); // "todos[0].content"
  * ```
  */
 export function formatPaths(paths: Array<string | number>): string {
@@ -79,67 +59,58 @@ export function formatPaths(paths: Array<string | number>): string {
 }
 
 /**
- * Format based on a prefix and a path
- */
-export function formatName(prefix: string | undefined, path?: string | number) {
-	return typeof path !== 'undefined'
-		? formatPaths([...getPaths(prefix), path])
-		: prefix ?? '';
-}
-
-/**
- * Check if a name match the prefix paths
- */
-export function isPrefix(name: string, prefix: string) {
-	const paths = getPaths(name);
-	const prefixPaths = getPaths(prefix);
-
-	return (
-		paths.length >= prefixPaths.length &&
-		prefixPaths.every((path, index) => paths[index] === path)
-	);
-}
-
-/**
  * Assign a value to a target object by following the paths
  */
-export function setValue(
-	target: Record<string, any>,
-	name: string,
-	valueFn: (currentValue?: unknown) => unknown,
-) {
-	const paths = getPaths(name);
-	const length = paths.length;
-	const lastIndex = length - 1;
-
-	let index = -1;
-	let pointer = target;
-
-	while (pointer != null && ++index < length) {
-		const key = paths[index] as string | number;
-		const nextKey = paths[index + 1];
-		const newValue =
-			index != lastIndex
-				? Object.prototype.hasOwnProperty.call(pointer, key) &&
-					pointer[key] !== null
-					? pointer[key]
-					: typeof nextKey === 'number'
-						? []
-						: {}
-				: valueFn(pointer[key]);
-
-		pointer[key] = newValue;
-		pointer = pointer[key];
+export function setValue<Data extends Record<string, any>>(
+	data: Data,
+	paths: Array<string | number>,
+	value: unknown | ((currentValue: unknown) => unknown),
+	handle: <Value>(value: Value) => Value = (i) => i,
+): Data {
+	if (paths.length === 0) {
+		throw new Error('Setting value to the object root is not supported');
 	}
+
+	// Clone the paths to prevent mutation
+	const remainingPaths = paths.slice();
+	const result = handle(data);
+
+	let target: any = result;
+
+	while (remainingPaths.length > 0) {
+		const path = remainingPaths.shift();
+		const nextPath = remainingPaths[0];
+
+		if (typeof path === 'undefined' || path in Object.prototype) {
+			break;
+		}
+
+		const nextValue = getValue(target, [path]);
+
+		if (typeof nextPath === 'undefined') {
+			target[path] = typeof value === 'function' ? value(nextValue) : value;
+		} else {
+			target[path] = handle(
+				nextValue ?? (typeof nextPath === 'number' ? [] : {}),
+			);
+		}
+
+		target = target[path];
+	}
+
+	return result;
 }
 
 /**
  * Retrive the value from a target object by following the paths
  */
-export function getValue(target: unknown, name: string): unknown {
+export function getValue(
+	target: unknown,
+	paths: Array<string | number>,
+): unknown {
 	let pointer = target;
 
-	for (const path of getPaths(name)) {
+	for (const path of paths) {
 		if (typeof pointer === 'undefined' || pointer == null) {
 			break;
 		}
@@ -153,132 +124,11 @@ export function getValue(target: unknown, name: string): unknown {
 		} else if (Array.isArray(pointer) && typeof path === 'number') {
 			pointer = pointer[path];
 		} else {
-			return;
+			throw new Error(
+				`Failed to access the value; The path ${path} from ${name} is invalid`,
+			);
 		}
 	}
 
 	return pointer;
-}
-
-/**
- * Check if the value is a plain object
- */
-export function isPlainObject(
-	obj: unknown,
-): obj is Record<string | number | symbol, unknown> {
-	return (
-		!!obj &&
-		obj.constructor === Object &&
-		Object.getPrototypeOf(obj) === Object.prototype
-	);
-}
-
-/**
- * Check if the value is a File
- */
-export function isFile(obj: unknown): obj is File {
-	// Skip checking if File is not defined
-	if (typeof File === 'undefined') {
-		return false;
-	}
-
-	return obj instanceof File;
-}
-
-/**
- * Normalize value by removing empty object or array, empty string and null values
- */
-export function normalize<Type extends Record<string, unknown>>(
-	value: Type,
-	acceptFile?: boolean,
-): Type | undefined;
-export function normalize<Type extends Array<unknown>>(
-	value: Type,
-	acceptFile?: boolean,
-): Type | undefined;
-export function normalize(
-	value: unknown,
-	acceptFile?: boolean,
-): unknown | undefined;
-export function normalize<
-	Type extends Record<string, unknown> | Array<unknown>,
->(
-	value: Type,
-	acceptFile = true,
-): Record<string, unknown> | Array<unknown> | undefined {
-	if (isPlainObject(value)) {
-		const obj = Object.keys(value)
-			.sort()
-			.reduce<Record<string, unknown>>((result, key) => {
-				const data = normalize(value[key], acceptFile);
-
-				if (typeof data !== 'undefined') {
-					result[key] = data;
-				}
-
-				return result;
-			}, {});
-
-		if (Object.keys(obj).length === 0) {
-			return;
-		}
-
-		return obj;
-	}
-
-	if (Array.isArray(value)) {
-		if (value.length === 0) {
-			return undefined;
-		}
-
-		return value.map((item) => normalize(item, acceptFile));
-	}
-
-	if (
-		(typeof value === 'string' && value === '') ||
-		value === null ||
-		(isFile(value) && (!acceptFile || value.size === 0))
-	) {
-		return;
-	}
-
-	return value;
-}
-
-/**
- * Flatten a tree into a dictionary
- */
-export function flatten(
-	data: unknown,
-	options: {
-		resolve?: (data: unknown) => unknown;
-		prefix?: string;
-	} = {},
-): Record<string, unknown> {
-	const result: Record<string, unknown> = {};
-	const resolve = options.resolve ?? ((data) => data);
-
-	function process(data: unknown, prefix: string) {
-		const value = normalize(resolve(data));
-
-		if (typeof value !== 'undefined') {
-			result[prefix] = value;
-		}
-
-		if (Array.isArray(data)) {
-			for (let i = 0; i < data.length; i++) {
-				process(data[i], `${prefix}[${i}]`);
-			}
-		} else if (isPlainObject(data)) {
-			for (const [key, value] of Object.entries(data)) {
-				process(value, prefix ? `${prefix}.${key}` : key);
-			}
-		}
-	}
-
-	if (data) {
-		process(data, options.prefix ?? '');
-	}
-
-	return result;
 }

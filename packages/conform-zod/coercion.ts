@@ -91,17 +91,10 @@ export function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 }
 
 /**
- * @deprecated Conform strip empty string to undefined by default
- */
-export function ifNonEmptyString(fn: (text: string) => unknown) {
-	return (value: unknown) => coerceString(value, fn);
-}
-
-/**
  * Reconstruct the provided schema with additional preprocessing steps
  * This strips empty values to undefined and coerces string to the correct type
  */
-export function enableTypeCoercion<Schema extends ZodTypeAny>(
+export function coerceZodFormData<Schema extends ZodTypeAny>(
 	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
 ): ZodType<output<Schema>> {
@@ -192,7 +185,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodArray({
 					...def,
-					type: enableTypeCoercion(def.type, cache),
+					type: coerceZodFormData(def.type, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodObject') {
@@ -213,7 +206,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 							Object.entries(def.shape()).map(([key, def]) => [
 								key,
 								// @ts-expect-error see message above
-								enableTypeCoercion(def, cache),
+								coerceZodFormData(def, cache),
 							]),
 						),
 				}),
@@ -226,7 +219,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		} else {
 			schema = new ZodEffects({
 				...def,
-				schema: enableTypeCoercion(def.schema, cache),
+				schema: coerceZodFormData(def.schema, cache),
 			});
 		}
 	} else if (def.typeName === 'ZodOptional') {
@@ -235,7 +228,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(
 				new ZodOptional({
 					...def,
-					innerType: enableTypeCoercion(def.innerType, cache),
+					innerType: coerceZodFormData(def.innerType, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodDefault') {
@@ -253,37 +246,37 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 
 						return value;
 					},
-					innerType: enableTypeCoercion(def.innerType, cache),
+					innerType: coerceZodFormData(def.innerType, cache),
 				}),
 			);
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,
-			innerType: enableTypeCoercion(def.innerType, cache),
+			innerType: coerceZodFormData(def.innerType, cache),
 		});
 	} else if (def.typeName === 'ZodIntersection') {
 		schema = new ZodIntersection({
 			...def,
-			left: enableTypeCoercion(def.left, cache),
-			right: enableTypeCoercion(def.right, cache),
+			left: coerceZodFormData(def.left, cache),
+			right: coerceZodFormData(def.right, cache),
 		});
 	} else if (def.typeName === 'ZodUnion') {
 		schema = new ZodUnion({
 			...def,
 			options: def.options.map((option: ZodTypeAny) =>
-				enableTypeCoercion(option, cache),
+				coerceZodFormData(option, cache),
 			),
 		});
 	} else if (def.typeName === 'ZodDiscriminatedUnion') {
 		schema = new ZodDiscriminatedUnion({
 			...def,
 			options: def.options.map((option: ZodTypeAny) =>
-				enableTypeCoercion(option, cache),
+				coerceZodFormData(option, cache),
 			),
 			optionsMap: new Map(
 				Array.from(def.optionsMap.entries()).map(([discriminator, option]) => [
 					discriminator,
-					enableTypeCoercion(option, cache) as ZodDiscriminatedUnionOption<any>,
+					coerceZodFormData(option, cache) as ZodDiscriminatedUnionOption<any>,
 				]),
 			),
 		});
@@ -291,23 +284,23 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		schema = new ZodTuple({
 			...def,
 			items: def.items.map((item: ZodTypeAny) =>
-				enableTypeCoercion(item, cache),
+				coerceZodFormData(item, cache),
 			),
 		});
 	} else if (def.typeName === 'ZodNullable') {
 		schema = new ZodNullable({
 			...def,
-			innerType: enableTypeCoercion(def.innerType, cache),
+			innerType: coerceZodFormData(def.innerType, cache),
 		});
 	} else if (def.typeName === 'ZodPipeline') {
 		schema = new ZodPipeline({
 			...def,
-			in: enableTypeCoercion(def.in, cache),
-			out: enableTypeCoercion(def.out, cache),
+			in: coerceZodFormData(def.in, cache),
+			out: coerceZodFormData(def.out, cache),
 		});
 	} else if (def.typeName === 'ZodLazy') {
 		const inner = def.getter();
-		schema = lazy(() => enableTypeCoercion(inner, cache));
+		schema = lazy(() => coerceZodFormData(inner, cache));
 	}
 
 	if (type !== schema) {

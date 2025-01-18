@@ -1,26 +1,21 @@
 export {
-	type Combine,
-	type Constraint,
-	type ControlButtonProps,
-	type FormId,
-	type FieldName,
-	type DefaultValue,
-	type FormValue,
-	type FormOptions,
-	type FormState,
-	type FormContext,
-	type SubscriptionSubject,
-	type SubscriptionScope,
-	createFormContext as unstable_createFormContext,
-} from './form';
-export { type FieldElement, isFieldElement } from './dom';
+	isInput,
+	getFormData,
+	getFormAction,
+	getFormEncType,
+	getFormMethod,
+	dispatchSubmitEvent,
+	requestSubmit,
+	requestIntent,
+	updateField,
+} from './dom';
 export {
 	type Submission,
-	type SubmissionResult,
-	type Intent,
-	INTENT,
-	STATE,
-	serializeIntent,
-	parse,
+	type FormValue,
+	type FormError,
+	DEFAULT_INTENT,
+	parseSubmission,
+	report,
 } from './submission';
-export { getPaths, formatPaths, isPrefix } from './formdata';
+export { getPaths, formatPaths, getValue, setValue } from './formdata';
+export { isPlainObject } from './util';

@@ -7,10 +7,15 @@ export function invariant(
 	}
 }
 
-export function generateId(): string {
-	return (Date.now() * Math.random()).toString(36);
-}
-
-export function clone<Data>(data: Data): Data {
-	return JSON.parse(JSON.stringify(data));
+/**
+ * Check if the value is a plain object
+ */
+export function isPlainObject(
+	obj: unknown,
+): obj is Record<string | number | symbol, unknown> {
+	return (
+		!!obj &&
+		obj.constructor === Object &&
+		Object.getPrototypeOf(obj) === Object.prototype
+	);
 }

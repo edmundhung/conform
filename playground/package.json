@@ -9,6 +9,9 @@
 		"typecheck": "tsc"
 	},
 	"dependencies": {
+		"conform-dom": "workspace:*",
+		"conform-react": "workspace:*",
+		"conform-zod": "workspace:*",
 		"@conform-to/dom": "workspace:*",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/validitystate": "workspace:*",

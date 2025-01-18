@@ -1,29 +1,27 @@
 export {
 	type Submission,
-	type SubmissionResult,
-	type DefaultValue,
-	type Intent,
-	type FormId,
-	type FieldName,
-	parse,
-} from '@conform-to/dom';
+	type FormError,
+	type FormValue,
+	parseSubmission,
+	report,
+	isInput,
+} from 'conform-dom';
 export {
-	type FieldMetadata,
-	type FormMetadata,
-	FormProvider,
-	FormStateInput,
-} from './context';
-export { useForm, useFormMetadata, useField } from './hooks';
+	validateIntentHandler,
+	resetIntentHandler,
+	updateIntentHandler,
+	listIntentHandler,
+	defaultFormControl,
+	applyIntent,
+} from './control';
 export {
-	Control as unstable_Control,
-	useControl as unstable_useControl,
-	useInputControl,
-} from './integrations';
-export {
-	getFormProps,
-	getFieldsetProps,
-	getInputProps,
-	getSelectProps,
-	getTextareaProps,
-	getCollectionProps,
-} from './helpers';
+	defaultSerialize,
+	isTouched,
+	getFormMetadata,
+	getError,
+	getFieldset,
+	getListInitialValue,
+	getDefaultValue,
+	createFieldset,
+} from './metadata';
+export { useForm, useFormData, useIntent, useCustomInput } from './hooks';
