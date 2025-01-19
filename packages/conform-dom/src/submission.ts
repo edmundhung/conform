@@ -42,6 +42,35 @@ export type SubmissionErrorShape<SubmissionType> =
  */
 export const DEFAULT_INTENT = '__intent__';
 
+/**
+ * Parse `FormData` or `URLSearchParams` into a submission object.
+ * This function structures the form values based on the naming convention.
+ * It also includes all the field names and the intent if the `intentName` option is provided.
+ *
+ * @example
+ * ```ts
+ * const formData = new FormData();
+ *
+ * formData.append('email', 'test@example.com');
+ * formData.append('password', 'secret');
+ *
+ * parseSubmission(formData)
+ * // {
+ * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   fields: ['email', 'password'],
+ * //   intent: null,
+ * // }
+ *
+ * // If you have an intent field
+ * formData.append('intent', 'login');
+ * parseSubmission(formData, { intentName: 'intent' })
+ * // {
+ * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   fields: ['email', 'password'],
+ * //   intent: 'login',
+ * // }
+ * ```
+ */
 export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
@@ -84,6 +113,36 @@ export function parseSubmission(
 	return submission;
 }
 
+/**
+ * Update the submission with the an optional error or to reset the form value.
+ * This function will remove all files in the submission value by default to
+ * avoid serialization issues over the network and the overhead of sending files back.
+ * You can specify `keepFile: true` to keep the file if needed.
+ *
+ * @example
+ * ```ts
+ * // Report the submission with the field errors
+ * report(submission, {
+ *  error: {
+ *    fieldError: {
+ *      email: ['Invalid email format'],
+ *      password: ['Password is required'],
+ *    },
+ * })
+ *
+ * // Report the submission with a form error
+ * report(submission, {
+ *   error: {
+ *     formError: ['Invalid credentials'],
+ *   },
+ * })
+ *
+ * // Reset the form
+ * report(submission, {
+ *   reset: true,
+ * })
+ * ```
+ */
 export function report<
 	SubmissionType extends Submission<any, any, any>,
 	Schema,
@@ -97,10 +156,14 @@ export function report<
 				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
 			>
 		> | null;
+		reset?: boolean;
 		keepFile: true;
 	},
 ): Submission<
-	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	| (SubmissionType extends Submission<infer Intent, any, any>
+			? Intent
+			: unknown)
+	| null,
 	Fallback<SubmissionSchema<SubmissionType>, Schema>,
 	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
 	SubmissionType extends Submission<any, any, any, infer FormValueType>
@@ -120,10 +183,14 @@ export function report<
 				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
 			>
 		> | null;
+		reset?: boolean;
 		keepFile?: false;
 	},
 ): Submission<
-	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	| (SubmissionType extends Submission<infer Intent, any, any>
+			? Intent
+			: unknown)
+	| null,
 	Fallback<SubmissionSchema<SubmissionType>, Schema>,
 	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
 	string
@@ -141,16 +208,28 @@ export function report<
 				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
 			>
 		> | null;
+		reset?: boolean;
 		keepFile?: boolean;
 	},
 ): Submission<
-	SubmissionType extends Submission<infer Intent, any, any> ? Intent : unknown,
+	| (SubmissionType extends Submission<infer Intent, any, any>
+			? Intent
+			: unknown)
+	| null,
 	Fallback<SubmissionSchema<SubmissionType>, Schema>,
 	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
 	SubmissionType extends Submission<any, any, any, infer FormValueType>
 		? FormValueType
 		: FormDataEntryValue
 > {
+	if (options.reset) {
+		return {
+			value: null,
+			fields: [],
+			intent: null,
+		};
+	}
+
 	return {
 		// @ts-expect-error TODO: remove all files from submission.value
 		value: options.keepFile ? submission.value : submission.value,

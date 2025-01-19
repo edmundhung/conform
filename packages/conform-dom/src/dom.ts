@@ -1,9 +1,25 @@
 /**
- * A type guard to check if the event target is an input element.
- * If the form element is provided, it will check if the input element is associated with the form.
+ * A type guard to check if the event target is an input element with an associated form.
+ * If the form element is provided, it will ensure the input element is associated with the form.
  *
- * @param target Event target
- * @param formElement The form element associated with
+ * @example
+ * ```ts
+ * function handleInput(event: Event) {
+ *   // Check if the event target is an input element
+ *   if (isInput(event.target)) {
+ *     // event.target is HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+ *   }
+ *
+ *   // If you are listening to the event higher up in the DOM tree
+ *   if (isInput(event.target, formElement)) {
+ *     // Only if the input element is associated with the specified form element
+ *   }
+ * }
+ * ```
+ *
+ * @param target The event target
+ * @param formElement The associated form element (optional)
+ * @returns True if the target is an input element associated with the form, otherwise false
  */
 export function isInput(
 	target: unknown,
@@ -19,7 +35,28 @@ export function isInput(
 
 /**
  * Resolves the action from the submit event
- * with respect to the submitter `formaction` attribute.
+ * with respect to the submitter's `formaction` attribute.
+ *
+ * @example
+ * Imagine a form with two buttons: Update and Delete
+ * ```html
+ * <form action="/update">
+ *   <button>Update</button>
+ *   <button formaction="/delete">Delete</button>
+ * </form>
+ * ```
+ *
+ * You can resolve the action based on the submitter element in the submit event.
+ * ```ts
+ * function handleSubmit(event: SubmitEvent) {
+ *   // If the "Update" button is clicked, it will return "/update"
+ *   // If the "Delete" button is clicked, it will return "/delete"
+ *   const action = getFormAction(event);
+ * }
+ * ```
+ *
+ * @param event The submit event
+ * @returns The resolved action URL
  */
 export function getFormAction(event: SubmitEvent): string {
 	const form = event.target as HTMLFormElement;
@@ -37,7 +74,10 @@ export function getFormAction(event: SubmitEvent): string {
 
 /**
  * Resolves the encoding type from the submit event
- * with respect to the submitter `formenctype` attribute.
+ * with respect to the submitter's `formenctype` attribute.
+ *
+ * @param event The submit event
+ * @returns The resolved encoding type
  */
 export function getFormEncType(
 	event: SubmitEvent,
@@ -58,7 +98,28 @@ export function getFormEncType(
 
 /**
  * Resolves the method from the submit event
- * with respect to the submitter `formmethod` attribute.
+ * with respect to the submitter's `formmethod` attribute.
+ *
+ * @example
+ * Imagine a form with two buttons: Update and Delete
+ * ```html
+ * <form method="POST">
+ *   <button>Update</button>
+ *   <button formmethod="DELETE">Delete</button>
+ * </form>
+ * ```
+ *
+ * You can resolve the method based on the submitter element in the submit event.
+ * ```ts
+ * function handleSubmit(event: SubmitEvent) {
+ *   // If the "Update" button is clicked, it will return "POST"
+ *   // If the "Delete" button is clicked, it will return "DELETE"
+ *   const method = getFormMethod(event);
+ * }
+ * ```
+ *
+ * @param event The submit event
+ * @returns The resolved method
  */
 export function getFormMethod(
 	event: SubmitEvent,
@@ -84,28 +145,27 @@ export function getFormMethod(
 }
 
 /**
- * Dispatch a submit event on the form element.
- * @param formElement {HTMLFormElement} The form element to dispatch the submit event
- * @param submitter {HTMLInputElement | HTMLButtonElement | null} The submitter element
+ * Creates a submit event that behaves like a real form submission.
+ *
+ * @param submitter The submitter element (optional)
+ * @returns The created submit event
  */
-export function dispatchSubmitEvent(
-	formElement: HTMLFormElement,
+export function createSubmitEvent(
 	submitter?: HTMLInputElement | HTMLButtonElement | null,
-): void {
-	const event = new SubmitEvent('submit', {
+): SubmitEvent {
+	return new SubmitEvent('submit', {
 		bubbles: true,
 		cancelable: true,
 		submitter,
 	});
-
-	formElement.dispatchEvent(event);
 }
 
 /**
- * Trigger form submit with an optional submitter.
+ * Triggers form submission with an optional submitter.
  * If the `formElement.requestSubmit()` method is not available, it will dispatch a submit event instead.
- * @param formElement {HTMLFormElement} The form element to submit
- * @param submitter {HTMLInputElement | HTMLButtonElement | null} The submitter element
+ *
+ * @param formElement The form element to submit
+ * @param submitter The submitter element (optional)
  */
 export function requestSubmit(
 	formElement: HTMLFormElement,
@@ -114,15 +174,17 @@ export function requestSubmit(
 	if (typeof formElement.requestSubmit === 'function') {
 		formElement.requestSubmit(submitter);
 	} else {
-		dispatchSubmitEvent(formElement, submitter);
+		formElement.dispatchEvent(createSubmitEvent(submitter));
 	}
 }
 
 /**
- * Trigger form submit with an intent value.
- * @param formElement {HTMLFormElement} The form element to submit
- * @param intentName {string} The name of the intent field
- * @param intentValue {string} The value of the intent field
+ * Triggers form submission with an intent value. This is achieved by
+ * creating a hidden button element with the intent value and then submitting it with the form.
+ *
+ * @param formElement The form element to submit
+ * @param intentName The name of the intent field
+ * @param intentValue The value of the intent field
  */
 export function requestIntent(
 	formElement: HTMLFormElement,
@@ -142,11 +204,15 @@ export function requestIntent(
 }
 
 /**
- * Construct a form data with the submitter value.
+ * Constructs form data with the submitter value.
  * It utilizes the submitter argument on the FormData constructor from modern browsers
- * with fallback to append the submitter value in case it is not unsupported.
+ * with a fallback to append the submitter value if it is not supported.
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData#parameters
+ *
+ * @param form The form element
+ * @param submitter The submitter element (optional)
+ * @returns The constructed FormData object
  */
 export function getFormData(
 	form: HTMLFormElement,
@@ -167,9 +233,10 @@ export function getFormData(
 }
 
 /**
- * Updates the DOM element based on the given options
- * @param element {HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement} The form element to update
- * @param options {Object} The options to update the form element
+ * Updates the DOM element based on the given options.
+ *
+ * @param element The form element to update
+ * @param options The options to update the form element
  */
 export function updateField(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,

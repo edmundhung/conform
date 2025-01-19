@@ -1,10 +1,10 @@
 export {
+	createSubmitEvent,
 	isInput,
 	getFormData,
 	getFormAction,
 	getFormEncType,
 	getFormMethod,
-	dispatchSubmitEvent,
 	requestSubmit,
 	requestIntent,
 	updateField,

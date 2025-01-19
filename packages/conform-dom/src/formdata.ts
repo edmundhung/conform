@@ -4,7 +4,10 @@ import { isPlainObject, shallowClone } from './util';
  * Returns the paths from a name based on the JS syntax convention
  * @example
  * ```js
- * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
+ * getPaths(''); // []
+ * getPaths('todos[0].content'); // ['todos', 0, 'content']
+ * getPaths('address.city'); // ['address', 'city']
+ * getPaths('cells[0][1][2]'); // ['cells', 0, 1, 2]
  * ```
  */
 export function getPaths(name: string | undefined): Array<string | number> {
