@@ -79,13 +79,13 @@ export function getName(prefix: string | undefined, path?: string | number) {
 /**
  * Check if a name match the prefix paths
  */
-export function isChildField(fieldName: string, parentName: string) {
-	const fieldPaths = getPaths(fieldName);
+export function isChildField(childName: string, parentName: string) {
+	const childPaths = getPaths(childName);
 	const parentPaths = getPaths(parentName);
 
 	return (
-		fieldPaths.length > parentPaths.length &&
-		parentPaths.every((path, index) => fieldPaths[index] === path)
+		childPaths.length > parentPaths.length &&
+		parentPaths.every((path, index) => childPaths[index] === path)
 	);
 }
 

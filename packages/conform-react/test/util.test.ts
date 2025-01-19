@@ -6,6 +6,7 @@ import {
 	configureListIndexUpdate,
 	mapItems,
 	mapKeys,
+	isChildField,
 } from '../src/util';
 
 test('mergeObjects()', () => {
@@ -254,4 +255,27 @@ test('configureListIndexUpdate()', () => {
 	expect(increaseIndex('tasks[0]')).toEqual('tasks[0]');
 	expect(increaseIndex('')).toEqual('');
 	expect(increaseIndex('[0]')).toEqual('[1]');
+});
+
+test('isChildField()', () => {
+	expect(isChildField('', '')).toBe(false);
+	expect(isChildField('address', '')).toBe(true);
+	expect(isChildField('address', 'address')).toBe(false);
+	expect(isChildField('address', 'address.city')).toBe(false);
+	expect(isChildField('address.city', '')).toBe(true);
+	expect(isChildField('address.city', 'address')).toBe(true);
+	expect(isChildField('address.city', 'address.city')).toBe(false);
+	expect(isChildField('address.city', 'address.street')).toBe(false);
+	expect(isChildField('address.city.zipcode', '')).toBe(true);
+	expect(isChildField('address.city.zipcode', 'address.city')).toBe(true);
+	expect(isChildField('tasks[0]', '')).toBe(true);
+	expect(isChildField('tasks[0]', 'tasks')).toBe(true);
+	expect(isChildField('tasks[0]', 'tasks[0]')).toBe(false);
+	expect(isChildField('tasks[0]', 'tasks[1]')).toBe(false);
+	expect(isChildField('tasks[0].content', '')).toBe(true);
+	expect(isChildField('tasks[0].content', 'tasks')).toBe(true);
+	expect(isChildField('tasks[0].content', 'tasks[0]')).toBe(true);
+	expect(isChildField('tasks[0].content', 'tasks[0].content')).toBe(false);
+	expect(isChildField('tasks[0].content', 'tasks[1].content')).toBe(false);
+	expect(isChildField('tasks[0].content', 'tasks[0].completed')).toBe(false);
 });
