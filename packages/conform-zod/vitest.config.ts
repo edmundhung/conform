@@ -8,6 +8,6 @@ export default defineConfig({
 			name: 'chromium',
 			headless: true,
 		},
-		include: ['*.test.ts'],
+		include: ['test/**/*.test.ts'],
 	},
 });

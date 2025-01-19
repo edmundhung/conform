@@ -40,3 +40,6 @@ node_modules/
 
 # Changeset generated files
 CHANGELOG.md
+
+# Vitest
+__screenshots__/

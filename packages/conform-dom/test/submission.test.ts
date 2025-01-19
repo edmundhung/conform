@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { parseSubmission } from './submission';
+import { parseSubmission } from '../src/submission';
 
 function createFormData(
 	entries: Array<[string, FormDataEntryValue]>,

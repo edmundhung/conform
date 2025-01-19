@@ -6,7 +6,7 @@ import {
 	configureListIndexUpdate,
 	mapItems,
 	mapKeys,
-} from './util';
+} from '../src/util';
 
 test('mergeObjects()', () => {
 	// merge for string, different data types, list, new object, undefined, null

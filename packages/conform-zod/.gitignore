@@ -5,3 +5,4 @@ _virtual
 *.mjs
 README
 !rollup.config.js
+dist/

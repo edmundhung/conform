@@ -1,4 +1,6 @@
 # ignore all .ts, .tsx files except .d.ts
+src/
+test/
 *.ts
 *.tsx
 !*.d.ts

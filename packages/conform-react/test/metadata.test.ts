@@ -4,7 +4,7 @@ import {
 	getDefaultValue,
 	getError,
 	isTouched,
-} from './metadata';
+} from '../src/metadata';
 
 test('defaultSerialize()', () => {
 	const value = {

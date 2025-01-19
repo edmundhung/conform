@@ -5,8 +5,8 @@ import copy from 'rollup-plugin-copy';
 
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage() {
-	let sourceDir = '.';
-	let outputDir = sourceDir;
+	let sourceDir = path.resolve('.', 'src');
+	let outputDir = path.resolve('.', 'dist');
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {

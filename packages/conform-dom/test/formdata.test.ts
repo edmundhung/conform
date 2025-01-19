@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest';
-import { getPaths, formatPaths, setValue, getValue } from './formdata';
+import { getPaths, formatPaths, setValue, getValue } from '../src/formdata';
 
 test('getPaths()', () => {
 	expect(getPaths(undefined)).toEqual([]);

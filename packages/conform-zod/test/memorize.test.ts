@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { memorize } from './memorize';
+import { memorize } from '../src/memorize';
 
 test('memoize()', () => {
 	const mock = vi.fn((a: number, b: number) => a + b);
