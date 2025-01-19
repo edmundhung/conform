@@ -224,7 +224,7 @@ export function mergeObjects<
 		if (result[key] !== value) {
 			if (result === obj1) {
 				// If the result is still the same object, clone it
-				result = setValue(obj1, [key], value, shallowClone);
+				result = setValue(obj1, [key], value, { clone: true });
 			} else {
 				// Otherwise, update the result object
 				result[key] = value;
@@ -233,24 +233,6 @@ export function mergeObjects<
 	}
 
 	return result;
-}
-
-/**
- * Create a shallow clone of the value
- * This allows us to create a new object without mutating the original object
- */
-export function shallowClone<Value>(value: Value): Value {
-	if (Array.isArray(value)) {
-		return value.slice() as Value;
-	} else if (isPlainObject(value)) {
-		return { ...value } as Value;
-	}
-
-	if (value && typeof value === 'object') {
-		throw new Error(`${value} is not supported`);
-	}
-
-	return value;
 }
 
 /**

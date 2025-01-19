@@ -25,7 +25,6 @@ import {
 	isPrefix,
 	mapKeys,
 	mergeObjects,
-	shallowClone,
 	updateObject,
 } from './util';
 
@@ -138,7 +137,7 @@ export function modify<Data>(
 		return data;
 	}
 
-	return setValue(data, paths, nextValue, shallowClone);
+	return setValue(data, paths, nextValue, { clone: true });
 }
 
 export type UnknownIntent = {

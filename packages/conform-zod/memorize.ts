@@ -3,12 +3,26 @@ export type Memorized<T extends (...args: any) => any> = {
 	clearCache: () => void;
 };
 
+export function defaultEqualityCheck(prevArgs: any[], nextArgs: any[]) {
+	if (prevArgs.length !== nextArgs.length) {
+		return false;
+	}
+
+	for (let i = 0; i < prevArgs.length; i++) {
+		if (!Object.is(prevArgs[i], nextArgs[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 export function memorize<T extends (...args: any) => any>(
 	fn: T,
 	isEqual: (
 		prevArgs: Parameters<T>,
 		nextArgs: Parameters<T>,
-	) => boolean = Object.is,
+	) => boolean = defaultEqualityCheck,
 ): Memorized<T> {
 	let cache: {
 		this: ThisParameterType<T>;

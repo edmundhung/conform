@@ -1,4 +1,4 @@
-import { isPlainObject } from './util';
+import { isPlainObject, shallowClone } from './util';
 
 /**
  * Returns the paths from a name based on the JS syntax convention
@@ -65,7 +65,9 @@ export function setValue<Data extends Record<string, any>>(
 	data: Data,
 	paths: Array<string | number>,
 	value: unknown | ((currentValue: unknown) => unknown),
-	handle: <Value>(value: Value) => Value = (i) => i,
+	options?: {
+		clone?: boolean;
+	},
 ): Data {
 	if (paths.length === 0) {
 		throw new Error('Setting value to the object root is not supported');
@@ -73,6 +75,7 @@ export function setValue<Data extends Record<string, any>>(
 
 	// Clone the paths to prevent mutation
 	const remainingPaths = paths.slice();
+	const handle = options?.clone ? shallowClone : (i: any) => i;
 	const result = handle(data);
 
 	let target: any = result;

@@ -19,3 +19,21 @@ export function isPlainObject(
 		Object.getPrototypeOf(obj) === Object.prototype
 	);
 }
+
+/**
+ * Create a shallow clone of the value
+ * This allows us to create a new object without mutating the original object
+ */
+export function shallowClone<Value>(value: Value): Value {
+	if (Array.isArray(value)) {
+		return value.slice() as Value;
+	} else if (isPlainObject(value)) {
+		return { ...value } as Value;
+	}
+
+	if (value && typeof value === 'object') {
+		throw new Error(`${value} is not supported`);
+	}
+
+	return value;
+}
