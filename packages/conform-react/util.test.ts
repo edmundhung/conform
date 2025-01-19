@@ -115,7 +115,10 @@ test('flatten()', () => {
 	});
 
 	expect(
-		flatten(value, (value) => (Array.isArray(value) ? value : null), 'prefix'),
+		flatten(value, {
+			select: (value) => (Array.isArray(value) ? value : null),
+			prefix: 'prefix',
+		}),
 	).toEqual({
 		'prefix.file': value.file,
 		'prefix.task': value.task,

@@ -1,7 +1,7 @@
 import type { FormError } from 'conform-dom';
 import { getPaths, getValue, isPlainObject } from 'conform-dom';
 import type { DefaultValue, FormState } from './control';
-import { formatName, isPrefix } from './util';
+import { getName, isChildField } from './util';
 
 type BaseCombine<
 	T,
@@ -12,8 +12,10 @@ export type Combine<T> = {
 	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
 };
 
-export type Field<Schema, Metadata extends Record<string, unknown>> = Metadata &
-	([Schema] extends [Date | File]
+export type Field<
+	Schema,
+	Metadata extends Record<string, unknown>,
+> = Metadata & { key: string | undefined } & ([Schema] extends [Date | File]
 		? {}
 		: [Schema] extends [Array<infer Item> | null | undefined]
 			? {
@@ -79,7 +81,7 @@ export function isTouched(touchedFields: string[], name = '') {
 		return true;
 	}
 
-	return touchedFields.some((field) => isPrefix(field, name));
+	return touchedFields.some((field) => isChildField(field, name));
 }
 
 export function getFormMetadata<
@@ -140,40 +142,37 @@ export function getListInitialValue(
 export function createFieldset<
 	Schema,
 	Metadata extends Record<string, unknown>,
->(
-	initialValue: Record<string, unknown>,
-	options: {
-		name?: string;
-		defineMetadata?: (name: string) => Metadata;
-	},
-): Fieldset<Schema, Metadata> {
-	function createField(name: string) {
+>(options: {
+	keys?: Record<string, string[]>;
+	name?: string;
+	defineMetadata?: (name: string) => Metadata;
+}): Fieldset<Schema, Metadata> {
+	function createField(name: string, key?: string) {
 		const metadata = options?.defineMetadata?.(name) ?? {};
 
 		return Object.assign(metadata, {
+			key,
 			getFieldset() {
-				return createFieldset(initialValue, {
+				return createFieldset({
 					...options,
 					name,
 				});
 			},
 			getFieldList() {
-				const list = getListInitialValue(initialValue, name);
+				const keys = options.keys?.[name] ?? [];
 
-				return Array(list.length)
-					.fill(0)
-					.map((_, index) => createField(formatName(name, index)));
+				return keys.map((key, index) => createField(getName(name, index), key));
 			},
 		});
 	}
 
 	return new Proxy({} as any, {
-		get(target, key, receiver) {
-			if (typeof key !== 'string') {
-				return Reflect.get(target, key, receiver);
+		get(target, name, receiver) {
+			if (typeof name !== 'string') {
+				return Reflect.get(target, name, receiver);
 			}
 
-			return createField(formatName(options?.name, key));
+			return createField(getName(options?.name, name));
 		},
 	});
 }
@@ -184,22 +183,19 @@ export function getFieldset<Schema, ErrorShape>(
 	Schema,
 	Readonly<{
 		name: string;
-		key: string | undefined;
 		defaultValue: string | string[] | undefined;
 		touched: boolean;
 		error: ErrorShape | undefined;
 	}>
 > {
-	return createFieldset(state.initialValue, {
+	return createFieldset({
+		keys: state.keys,
 		defineMetadata(name) {
 			const error = state.serverError ?? state.clientError;
 
 			return {
 				get name() {
 					return name;
-				},
-				get key() {
-					return state.keys[name];
 				},
 				get defaultValue() {
 					return getDefaultValue(state.initialValue, name);

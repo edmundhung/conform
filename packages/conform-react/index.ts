@@ -20,7 +20,6 @@ export {
 	getFormMetadata,
 	getError,
 	getFieldset,
-	getListInitialValue,
 	getDefaultValue,
 	createFieldset,
 } from './metadata';

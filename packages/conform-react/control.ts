@@ -1,7 +1,6 @@
 import type { FormError, FormValue, Submission } from 'conform-dom';
 import {
 	isInput,
-	formatPaths,
 	getPaths,
 	getValue,
 	isPlainObject,
@@ -12,7 +11,7 @@ import { getDefaultValue, defaultSerialize } from './metadata';
 import {
 	addItems,
 	configureListIndexUpdate,
-	formatName,
+	getName,
 	getList,
 	isNonNullable,
 	isNumber,
@@ -22,10 +21,13 @@ import {
 	mapItems,
 	deepEqual,
 	flatten,
-	isPrefix,
+	isChildField,
 	mapKeys,
 	mergeObjects,
 	updateObject,
+	insertItem,
+	reorderItems,
+	removeItem,
 } from './util';
 
 export type DefaultValue<Schema> = Schema extends
@@ -55,7 +57,7 @@ export type FormState<
 	initialValue: Record<string, FormValue>;
 	submittedValue: Record<string, FormValue> | null;
 	touchedFields: string[];
-	keys: Record<string, string>;
+	keys: Record<string, string[]>;
 } & State;
 
 export function generateKey(): string {
@@ -84,32 +86,36 @@ export function initializeElement(
 	element.dataset.conform = generateKey();
 }
 
-export function getKeys(
+export function deriveKeys(
 	defaultValue: unknown,
-	prevkeys: Record<string, string> = {},
 	prefix: string = '',
-): Record<string, string> {
-	const arrayByName = flatten(
-		defaultValue,
-		(value) => (Array.isArray(value) ? value : null),
-		prefix,
-	);
-	const result = Object.entries(arrayByName).reduce<Record<string, string>>(
-		(result, [name, array]) => {
-			const paths = getPaths(name);
-
-			for (let i = 0; i < array.length; i++) {
-				result[formatPaths(paths.concat(i))] = generateKey();
-			}
-
-			return result;
+): Record<string, string[]> {
+	const arrayByName = flatten(defaultValue, {
+		select(value) {
+			return Array.isArray(value) ? value : null;
 		},
-		prefix
-			? mapKeys(prevkeys, (key) => (!isPrefix(key, prefix) ? key : null))
-			: prevkeys,
-	);
+		prefix,
+	});
+
+	const result: Record<string, string[]> = {};
+
+	for (const [name, array] of Object.entries(arrayByName)) {
+		result[name] = array.map(() => generateKey());
+	}
 
 	return result;
+}
+
+export function updateKeys(
+	keys: Record<string, string[]> = {},
+	keyToBeRemoved: string,
+	updateKey: (key: string) => string | null,
+): Record<string, string[]> {
+	return mapKeys(keys, (field) =>
+		field === keyToBeRemoved || isChildField(field, keyToBeRemoved)
+			? null
+			: updateKey(field),
+	);
 }
 
 export function modify<Data>(
@@ -180,12 +186,14 @@ function getFields(submission: Submission<UnknownIntent | null>): string[] {
 		for (const name of Object.keys(submission.error.fieldError)) {
 			// If the error is set as a child of an actual field, exclude it
 			// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
-			if (fields.find((field) => name !== field && isPrefix(name, field))) {
+			if (fields.find((field) => field !== name && isChildField(name, field))) {
 				continue;
 			}
 
 			// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
-			if (fields.every((field) => !isPrefix(field, name))) {
+			if (
+				fields.every((field) => field !== name && !isChildField(field, name))
+			) {
 				fields.push(name);
 			}
 		}
@@ -279,7 +287,7 @@ export const updateIntentHandler: FormIntentHandler<{
 		const intent = result.intent;
 		const initialValue = modify(
 			state.initialValue,
-			formatName(intent.payload.name, intent.payload.index),
+			getName(intent.payload.name, intent.payload.index),
 			intent.payload.value,
 			false,
 		);
@@ -296,16 +304,14 @@ export const updateIntentHandler: FormIntentHandler<{
 	updateValue(value, intent) {
 		return modify(
 			value,
-			formatName(intent.payload.name, intent.payload.index),
+			getName(intent.payload.name, intent.payload.index),
 			intent.payload.value,
 		);
 	},
 	sideEffect(formElement, { intent }) {
-		const flattenedValue = flatten(
-			intent.payload.value,
-			(value) => value,
-			formatName(intent.payload.name, intent.payload.index),
-		);
+		const flattenedValue = flatten(intent.payload.value, {
+			prefix: getName(intent.payload.name, intent.payload.index),
+		});
 
 		for (const element of formElement.elements) {
 			if (isInput(element)) {
@@ -396,19 +402,21 @@ export const listIntentHandler: FormIntentHandler<
 					};
 				}
 
-				list.splice(index, 0, intent.payload.defaultValue);
+				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+				const itemName = getName(intent.payload.name, index);
 
-				const itemName = formatName(intent.payload.name, index);
+				insertItem(listKeys, generateKey(), index);
+				insertItem(list, intent.payload.defaultValue, index);
 
 				return {
 					...state,
 					keys: {
-						...getKeys(
-							intent.payload.defaultValue,
-							mapKeys(state.keys, updateListIndex),
-							itemName,
-						),
-						[itemName]: generateKey(),
+						// Remove all child keys
+						...updateKeys(state.keys, itemName, updateListIndex),
+						// Update existing list keys
+						[intent.payload.name]: listKeys,
+						// Add new keys derived from the inserted value
+						...deriveKeys(intent.payload.defaultValue, itemName),
 					},
 					initialValue: modify(
 						state.initialValue,
@@ -445,11 +453,23 @@ export const listIntentHandler: FormIntentHandler<
 					};
 				}
 
-				list.splice(intent.payload.index, 1);
+				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+
+				removeItem(listKeys, intent.payload.index);
+				removeItem(list, intent.payload.index);
 
 				return {
 					...state,
-					keys: mapKeys(state.keys, updateListIndex),
+					keys: {
+						// Remove all child keys
+						...updateKeys(
+							state.keys,
+							getName(intent.payload.name, intent.payload.index),
+							updateListIndex,
+						),
+						// Update existing list keys
+						[intent.payload.name]: listKeys,
+					},
 					initialValue: modify(
 						state.initialValue,
 						intent.payload.name,
@@ -497,15 +517,23 @@ export const listIntentHandler: FormIntentHandler<
 					};
 				}
 
-				list.splice(
-					intent.payload.to,
-					0,
-					...list.splice(intent.payload.from, 1),
-				);
+				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+
+				reorderItems(listKeys, intent.payload.from, intent.payload.to);
+				reorderItems(list, intent.payload.from, intent.payload.to);
 
 				return {
 					...state,
-					keys: mapKeys(state.keys, updateListIndex),
+					keys: {
+						// Remove all child keys
+						...updateKeys(
+							state.keys,
+							getName(intent.payload.name, intent.payload.from),
+							updateListIndex,
+						),
+						// Update existing list keys
+						[intent.payload.name]: listKeys,
+					},
 					initialValue: modify(
 						state.initialValue,
 						intent.payload.name,
@@ -521,26 +549,21 @@ export const listIntentHandler: FormIntentHandler<
 		switch (intent.type) {
 			case 'insert': {
 				const list = getList(value, intent.payload.name);
-				list.splice(
-					intent.payload.index ?? list.length,
-					0,
+				insertItem(
+					list,
 					intent.payload.defaultValue,
+					intent.payload.index ?? list.length,
 				);
-
 				return modify(value, intent.payload.name, list);
 			}
 			case 'remove': {
 				const list = getList(value, intent.payload.name);
-				list.splice(intent.payload.index, 1);
+				removeItem(list, intent.payload.index);
 				return modify(value, intent.payload.name, list);
 			}
 			case 'reorder': {
 				const list = getList(value, intent.payload.name);
-				list.splice(
-					intent.payload.to,
-					0,
-					...list.splice(intent.payload.from, 1),
-				);
+				reorderItems(list, intent.payload.from, intent.payload.to);
 				return modify(value, intent.payload.name, list);
 			}
 		}
@@ -745,7 +768,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			const initialValue = result?.value ?? defaultValue ?? {};
 
 			let state: FormState<Schema, ErrorShape> = {
-				keys: getKeys(initialValue),
+				keys: deriveKeys(initialValue),
 				defaultValue: defaultValue ?? null,
 				initialValue: initialValue,
 				submittedValue: result?.value ?? null,

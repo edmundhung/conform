@@ -40,17 +40,37 @@ export function getList(initialValue: unknown, name: string) {
 	return Array.from(data);
 }
 
+export function insertItem<Item>(
+	list: Array<Item>,
+	item: Item,
+	index: number,
+): void {
+	list.splice(index, 0, item);
+}
+
+export function removeItem(list: Array<unknown>, index: number): void {
+	list.splice(index, 1);
+}
+
+export function reorderItems(
+	list: Array<unknown>,
+	fromIndex: number,
+	toIndex: number,
+): void {
+	list.splice(toIndex, 0, ...list.splice(fromIndex, 1));
+}
+
 /**
  * Format based on a prefix and a path
  * @example
  * ```js
- * formatName(undefined, 'todos'); // "todos"
- * formatName('todos', 0); // "todos[0]"
- * formatName('todos[0]', 'content'); // "todos[0].content"
- * formatName('todos[0].content', undefined); // "todos[0].content"
+ * getName(undefined, 'todos'); // "todos"
+ * getName('todos', 0); // "todos[0]"
+ * getName('todos[0]', 'content'); // "todos[0].content"
+ * getName('todos[0].content', undefined); // "todos[0].content"
  * ```
  */
-export function formatName(prefix: string | undefined, path?: string | number) {
+export function getName(prefix: string | undefined, path?: string | number) {
 	return typeof path !== 'undefined'
 		? formatPaths([...getPaths(prefix), path])
 		: prefix ?? '';
@@ -59,30 +79,42 @@ export function formatName(prefix: string | undefined, path?: string | number) {
 /**
  * Check if a name match the prefix paths
  */
-export function isPrefix(name: string, prefix: string) {
-	if (name === prefix) {
-		return true;
-	}
-
-	const paths = getPaths(name);
-	const prefixPaths = getPaths(prefix);
+export function isChildField(fieldName: string, parentName: string) {
+	const fieldPaths = getPaths(fieldName);
+	const parentPaths = getPaths(parentName);
 
 	return (
-		paths.length > prefixPaths.length &&
-		prefixPaths.every((path, index) => paths[index] === path)
+		fieldPaths.length > parentPaths.length &&
+		parentPaths.every((path, index) => fieldPaths[index] === path)
 	);
 }
 
 /**
  * Flatten a tree into a dictionary
  */
+export function flatten(
+	data: unknown,
+	options?: {
+		select?: undefined;
+		prefix?: string;
+	},
+): Record<string, unknown>;
 export function flatten<Value>(
 	data: unknown,
-	// @ts-expect-error ?
-	select: (value: unknown) => Value = identiy,
-	prefix?: string,
-): Record<string, NonNullable<Value>> {
-	const result: Record<string, NonNullable<Value>> = {};
+	options: {
+		select: (value: unknown) => Value | null;
+		prefix?: string;
+	},
+): Record<string, Value>;
+export function flatten<Value>(
+	data: unknown,
+	options?: {
+		select?: (value: unknown) => Value | null;
+		prefix?: string;
+	},
+): Record<string, Value | unknown> {
+	const result: Record<string, Value | unknown> = {};
+	const select = options?.select ?? identiy;
 
 	function process(data: unknown, prefix: string) {
 		const value = select(data);
@@ -103,7 +135,7 @@ export function flatten<Value>(
 	}
 
 	if (data) {
-		process(data, prefix ?? '');
+		process(data, options?.prefix ?? '');
 	}
 
 	return result;
