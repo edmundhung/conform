@@ -569,6 +569,55 @@ export function useFormData<Value>(
 	return value;
 }
 
+export const visuallyHiddenProps: {
+	/**
+	 * CSS Style to make the input element visually hidden
+	 */
+	style: React.CSSProperties;
+	/**
+	 * Hidden input should not be focusable
+	 */
+	tabIndex: -1;
+	/**
+	 * Hidden input should not be announced by screen readers
+	 */
+	'aria-hidden': true;
+} = {
+	style: {
+		position: 'absolute',
+		width: '1px',
+		height: '1px',
+		padding: 0,
+		margin: '-1px',
+		overflow: 'hidden',
+		clip: 'rect(0,0,0,0)',
+		whiteSpace: 'nowrap',
+		border: 0,
+	},
+	tabIndex: -1,
+	'aria-hidden': true,
+};
+
+export function useCustomInput(initialValue: string): {
+	value: string;
+	changed(value: string): void;
+	focused(): void;
+	blurred(): void;
+	register: React.RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	>;
+	visuallyHiddenProps: typeof visuallyHiddenProps;
+};
+export function useCustomInput(initialValue: string[]): {
+	value: string[];
+	changed(value: string[]): void;
+	focused(): void;
+	blurred(): void;
+	register: React.RefCallback<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
+	>;
+	visuallyHiddenProps: typeof visuallyHiddenProps;
+};
 export function useCustomInput(initialValue?: string | string[] | undefined): {
 	value: string | string[] | undefined;
 	changed(value: string | string[]): void;
@@ -577,17 +626,7 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 	register: React.RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
-};
-export function useCustomInput<Value extends string | string[]>(
-	initialValue: Value,
-): {
-	value: Value;
-	changed(value: Value): void;
-	focused(): void;
-	blurred(): void;
-	register: React.RefCallback<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
-	>;
+	visuallyHiddenProps: typeof visuallyHiddenProps;
 };
 export function useCustomInput(initialValue?: string | string[] | undefined): {
 	value: string | string[] | undefined;
@@ -597,6 +636,7 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 	register: React.RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
+	visuallyHiddenProps: typeof visuallyHiddenProps;
 } {
 	const inputRef = useRef<
 		| HTMLInputElement
@@ -606,7 +646,7 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 		| undefined
 	>();
 	const previous = useRef<string | string[] | undefined>(initialValue);
-	const eventDispatched = useRef<Record<string, boolean>>({});
+	const eventDispatching = useRef<Record<string, boolean>>({});
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
@@ -651,17 +691,28 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 	previous.current = value;
 
 	useEffect(() => {
-		const deduplicateEvent = (event: Event) => {
-			const element = inputRef.current;
+		const createDeduplciateEventHandler =
+			(isDispatching: boolean) => (event: Event) => {
+				const element = inputRef.current;
 
-			if (element && event.target === element) {
-				eventDispatched.current[event.type] = true;
-			}
-		};
+				if (element && event.target === element) {
+					eventDispatching.current[event.type] = isDispatching;
+				}
+			};
+
+		const startEventHandler = createDeduplciateEventHandler(true);
+		const completedEventHandler = createDeduplciateEventHandler(false);
+
+		document.addEventListener('focusin', startEventHandler, true);
+		document.addEventListener('focusout', startEventHandler, true);
+		document.addEventListener('focusin', completedEventHandler);
+		document.addEventListener('focusout', completedEventHandler);
 
 		return () => {
-			document.removeEventListener('focusin', deduplicateEvent, true);
-			document.removeEventListener('focusout', deduplicateEvent, true);
+			document.removeEventListener('focusin', startEventHandler, true);
+			document.removeEventListener('focusout', startEventHandler, true);
+			document.removeEventListener('focusin', completedEventHandler);
+			document.removeEventListener('focusout', completedEventHandler);
 		};
 	}, []);
 
@@ -685,7 +736,7 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 				}
 			},
 			focused() {
-				if (!eventDispatched.current.focusin) {
+				if (eventDispatching.current.focusin) {
 					return;
 				}
 
@@ -697,15 +748,13 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 							bubbles: true,
 						}),
 					);
-					element.dispatchEvent(new FocusEvent('focus'));
 				}
-
-				eventDispatched.current.focusin = false;
 			},
 			blurred() {
-				if (!eventDispatched.current.focusout) {
+				if (eventDispatching.current.focusout) {
 					return;
 				}
+
 				const element = inputRef.current;
 
 				if (element) {
@@ -714,10 +763,7 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 							bubbles: true,
 						}),
 					);
-					element.dispatchEvent(new FocusEvent('blur'));
 				}
-
-				eventDispatched.current.focusout = false;
 			},
 		};
 	}, []);
@@ -728,5 +774,6 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 		focused: control.focused,
 		blurred: control.blurred,
 		register: control.register,
+		visuallyHiddenProps,
 	};
 }

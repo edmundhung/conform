@@ -29,6 +29,7 @@ export function isInput(
 		(target instanceof HTMLInputElement ||
 			target instanceof HTMLTextAreaElement ||
 			target instanceof HTMLSelectElement) &&
+		target.name !== '' &&
 		(formElement ? target.form === formElement : target.form !== null)
 	);
 }

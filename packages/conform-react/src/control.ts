@@ -247,15 +247,15 @@ export const resetIntentHandler: FormIntentHandler<{ type: 'reset' }> = {
 	updateValue() {
 		return null;
 	},
-	sideEffect(formElement) {
-		// for (const element of formElement.elements) {
-		//     if (isInput(element)) {
-		//         initializeElement(element, {
-		//             initialValue: state.initialValue,
-		//             isResetting: true,
-		//         });
-		//     }
-		// }
+	sideEffect(formElement, { state }) {
+		for (const element of formElement.elements) {
+			if (isInput(element)) {
+				initializeElement(element, {
+					initialValue: state.initialValue,
+					isResetting: true,
+				});
+			}
+		}
 		formElement.reset();
 	},
 };

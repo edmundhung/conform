@@ -1,141 +1,166 @@
 import {
-	type FieldName,
-	FormProvider,
+	type FormError,
+	getFieldset,
+	isInput,
 	useForm,
-	useField,
-	useInputControl,
-	parse,
-} from '@conform-to/react';
+	useCustomInput,
+} from 'conform-react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 export default function Example() {
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
-		onValidate({ formData }) {
-			return parse(formData, {
-				resolve(value) {
-					const error: Record<string, string[]> = {};
-
-					if (!value.owner) {
-						error.owner = ['Please select an owner'];
-					}
-
-					if (!value.assignee) {
-						error.assignee = ['Please select an assignee'];
-					}
-
-					if (!value.enabled) {
-						error.enabled = ['Please enable the switch'];
-					}
-
-					if (!value.color) {
-						error.color = ['Please select a color'];
-					}
-
-					if (Object.entries(error).length > 0) {
-						return { error };
-					}
-
-					return { value };
+	const formRef = useRef<HTMLFormElement>(null);
+	const { state, handleSubmit, intent } = useForm(formRef, {
+		onValidate(value) {
+			const error: FormError<
+				{
+					owner: string[];
+					assignee: string;
+					enabled: boolean;
+					color: string;
 				},
-			});
+				string
+			> = {
+				formError: null,
+				fieldError: {},
+			};
+
+			if (!value.owner) {
+				error.fieldError.owner = 'Please select an owner';
+			}
+
+			if (!value.assignee) {
+				error.fieldError.assignee = 'Please select an assignee';
+			}
+
+			if (!value.enabled) {
+				error.fieldError.enabled = 'Please enable the switch';
+			}
+
+			if (!value.color) {
+				error.fieldError.color = 'Please select a color';
+			}
+
+			if (Object.entries(error.fieldError).length > 0) {
+				return {
+					error,
+				};
+			}
+
+			return {
+				error: null,
+			};
 		},
 	});
+	const fields = getFieldset(state);
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">
-			<FormProvider context={form.context}>
-				<form
-					className="space-y-8 divide-y divide-gray-200"
-					id={form.id}
-					onSubmit={form.onSubmit}
-					noValidate
-				>
-					<div className="space-y-8 divide-y divide-gray-200">
+			<form
+				className="space-y-8 divide-y divide-gray-200"
+				ref={formRef}
+				onSubmit={handleSubmit}
+				onBlur={(event) => {
+					if (
+						isInput(event.target) &&
+						!state.touchedFields.includes(event.target.name)
+					) {
+						intent.validate(event.target.name);
+					}
+				}}
+				onInput={(event) => {
+					if (
+						isInput(event.target) &&
+						state.touchedFields.includes(event.target.name)
+					) {
+						intent.validate(event.target.name);
+					}
+				}}
+				noValidate
+			>
+				<div className="space-y-8 divide-y divide-gray-200">
+					<div>
 						<div>
-							<div>
-								<h3 className="text-lg font-medium leading-6 text-gray-900">
-									Headless UI Example
-								</h3>
-								<p className="mt-1 text-sm text-gray-500">
-									This shows you how to integrate Conform with headless-ui
-									components, such as ListBox, Combobox, Switch and RadioGroup.
+							<h3 className="text-lg font-medium leading-6 text-gray-900">
+								Headless UI Example
+							</h3>
+							<p className="mt-1 text-sm text-gray-500">
+								This shows you how to integrate Conform with headless-ui
+								components, such as ListBox, Combobox, Switch and RadioGroup.
+							</p>
+						</div>
+
+						<div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+							<div className="sm:col-span-6">
+								<label className="block text-sm font-medium text-gray-700">
+									Owner (List box)
+								</label>
+								<div className="mt-1">
+									<ExampleListBox name={fields.owner.name} />
+								</div>
+								<p className="mt-2 text-sm text-red-500">
+									{fields.owner.error}
 								</p>
 							</div>
 
-							<div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-								<div className="sm:col-span-6">
-									<label className="block text-sm font-medium text-gray-700">
-										Owner (List box)
-									</label>
-									<div className="mt-1">
-										<ExampleListBox name={fields.owner.name} />
-									</div>
-									<p className="mt-2 text-sm text-red-500">
-										{fields.owner.errors}
-									</p>
+							<div className="sm:col-span-6">
+								<label className="block text-sm font-medium text-gray-700">
+									Assigned to (Combobox)
+								</label>
+								<div className="mt-1">
+									<ExampleCombobox name={fields.assignee.name} />
 								</div>
+								<p className="mt-2 text-sm text-red-500">
+									{fields.assignee.error}
+								</p>
+							</div>
 
-								<div className="sm:col-span-6">
-									<label className="block text-sm font-medium text-gray-700">
-										Assigned to (Combobox)
-									</label>
-									<div className="mt-1">
-										<ExampleCombobox name={fields.assignee.name} />
-									</div>
-									<p className="mt-2 text-sm text-red-500">
-										{fields.assignee.errors}
-									</p>
+							<div className="sm:col-span-6">
+								<label className="block text-sm font-medium text-gray-700">
+									Enabled (Switch)
+								</label>
+								<div className="mt-1">
+									<ExampleSwitch name={fields.enabled.name} />
 								</div>
+								<p className="mt-2 text-sm text-red-500">
+									{fields.enabled.error}
+								</p>
+							</div>
 
-								<div className="sm:col-span-6">
-									<label className="block text-sm font-medium text-gray-700">
-										Enabled (Switch)
-									</label>
-									<div className="mt-1">
-										<ExampleSwitch name={fields.enabled.name} />
-									</div>
-									<p className="mt-2 text-sm text-red-500">
-										{fields.enabled.errors}
-									</p>
+							<div className="sm:col-span-6">
+								<label className="block text-sm font-medium text-gray-700">
+									Color (Radio Group)
+								</label>
+								<div className="mt-1">
+									<ExampleRadioGroup name={fields.color.name} />
 								</div>
-
-								<div className="sm:col-span-6">
-									<label className="block text-sm font-medium text-gray-700">
-										Color (Radio Group)
-									</label>
-									<div className="mt-1">
-										<ExampleRadioGroup name={fields.color.name} />
-									</div>
-									<p className="mt-2 text-sm text-red-500">
-										{fields.color.errors}
-									</p>
-								</div>
+								<p className="mt-2 text-sm text-red-500">
+									{fields.color.error}
+								</p>
 							</div>
 						</div>
 					</div>
+				</div>
 
-					<div className="pt-5">
-						<div className="flex justify-end">
-							<button
-								type="reset"
-								className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-							>
-								Reset
-							</button>
-							<button
-								type="submit"
-								className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-							>
-								Save
-							</button>
-						</div>
+				<div className="pt-5">
+					<div className="flex justify-end">
+						<button
+							type="button"
+							className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+							onClick={() => intent.reset()}
+						>
+							Reset
+						</button>
+						<button
+							type="submit"
+							className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+						>
+							Save
+						</button>
 					</div>
-				</form>
-			</FormProvider>
+				</div>
+			</form>
 		</main>
 	);
 }
@@ -152,20 +177,27 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-function ExampleListBox(props: { name: FieldName<string[]> }) {
-	const [meta] = useField(props.name);
-	const control = useInputControl(meta);
-	const value =
-		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+function ExampleListBox(props: { name: string }) {
+	const input = useCustomInput([]);
 
 	return (
-		<Listbox value={value} onChange={control.change} multiple>
-			<div className="relative mt-1">
+		<Listbox
+			value={input.value}
+			onChange={(value) => input.changed(value)}
+			multiple
+		>
+			<select
+				{...input.visuallyHiddenProps}
+				ref={input.register}
+				name={props.name}
+				multiple
+			/>
+			<div className="relative mt-1" onBlur={() => input.blurred()}>
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
-						{value.length === 0
+						{input.value.length === 0
 							? 'Please select'
-							: value
+							: input.value
 									.map((id) => people.find((p) => p.id.toString() === id)?.name)
 									.join(', ')}
 					</span>
@@ -219,11 +251,10 @@ function ExampleListBox(props: { name: FieldName<string[]> }) {
 	);
 }
 
-function ExampleCombobox(props: { name: FieldName<string> }) {
+function ExampleCombobox(props: { name: string }) {
 	const [query, setQuery] = useState('');
-	const [meta] = useField(props.name);
-	const control = useInputControl(meta);
-	const filteredPeople = !control.value
+	const input = useCustomInput('');
+	const filteredPeople = !input.value
 		? people
 		: people.filter((person) =>
 				person.name.toLowerCase().includes(query.toLowerCase()),
@@ -232,11 +263,17 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 	return (
 		<Combobox
 			as="div"
-			value={control.value ?? ''}
-			onChange={control.change}
+			value={input.value ?? ''}
+			onChange={(value) => input.changed(value ?? '')}
+			onBlur={() => input.blurred()}
 			nullable
 		>
 			<div className="relative mt-1">
+				<input
+					{...input.visuallyHiddenProps}
+					name={props.name}
+					ref={input.register}
+				/>
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
 					onChange={(event) => setQuery(event.target.value)}
@@ -296,34 +333,40 @@ function ExampleCombobox(props: { name: FieldName<string> }) {
 	);
 }
 
-function ExampleSwitch(props: { name: FieldName<boolean> }) {
-	const [meta] = useField(props.name);
-	const control = useInputControl(meta);
+function ExampleSwitch(props: { name: string }) {
+	const input = useCustomInput('');
 
 	return (
-		<Switch
-			checked={control.value === 'on'}
-			onChange={(state) => control.change(state ? 'on' : '')}
-			className={classNames(
-				control.value ? 'bg-indigo-600' : 'bg-gray-200',
-				'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
-			)}
-		>
-			<span className="sr-only">Use setting</span>
-			<span
-				aria-hidden="true"
-				className={classNames(
-					control.value ? 'translate-x-5' : 'translate-x-0',
-					'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-				)}
+		<>
+			<input
+				{...input.visuallyHiddenProps}
+				name={props.name}
+				ref={input.register}
 			/>
-		</Switch>
+			<Switch
+				checked={input.value === 'on'}
+				onChange={(state) => input.changed(state ? 'on' : '')}
+				onBlur={() => input.blurred()}
+				className={classNames(
+					input.value ? 'bg-indigo-600' : 'bg-gray-200',
+					'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
+				)}
+			>
+				<span className="sr-only">Use setting</span>
+				<span
+					aria-hidden="true"
+					className={classNames(
+						input.value ? 'translate-x-5' : 'translate-x-0',
+						'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+					)}
+				/>
+			</Switch>
+		</>
 	);
 }
 
-function ExampleRadioGroup(props: { name: FieldName<string> }) {
-	const [meta] = useField(props.name);
-	const control = useInputControl(meta);
+function ExampleRadioGroup(props: { name: string }) {
+	const input = useCustomInput('');
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{
@@ -341,7 +384,16 @@ function ExampleRadioGroup(props: { name: FieldName<string> }) {
 	];
 
 	return (
-		<RadioGroup value={control.value ?? ''} onChange={control.change}>
+		<RadioGroup
+			value={input.value ?? ''}
+			onChange={(value) => input.changed(value)}
+			onBlur={() => input.blurred()}
+		>
+			<input
+				{...input.visuallyHiddenProps}
+				name={props.name}
+				ref={input.register}
+			/>
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option
