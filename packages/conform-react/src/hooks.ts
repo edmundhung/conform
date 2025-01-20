@@ -67,7 +67,7 @@ export function useForm<
 	formRef: FormRef,
 	options: {
 		control: FormControl<Intent, AdditionalState>;
-		result?:
+		lastResult?:
 			| Submission<Intent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
@@ -94,6 +94,9 @@ export function useForm<
 				submission: Submission<Intent | null, Schema, ErrorShape>;
 				formData: FormData;
 				value: Value | undefined;
+				update: (
+					submission: Submission<Intent | null, Schema, ErrorShape>,
+				) => void;
 			},
 		) =>
 			| Promise<Submission<Intent | null, Schema, ErrorShape>>
@@ -109,7 +112,7 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	formRef: FormRef,
 	options?: {
 		control?: undefined;
-		result?:
+		lastResult?:
 			| Submission<DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
@@ -136,6 +139,9 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 				submission: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
 				formData: FormData;
 				value: Value | undefined;
+				update: (
+					submission: Submission<DefaultFormIntent | null, Schema, ErrorShape>,
+				) => void;
 			},
 		) =>
 			| Promise<Submission<DefaultFormIntent | null, Schema, ErrorShape>>
@@ -164,7 +170,7 @@ export function useForm<
 			Intent | DefaultFormIntent,
 			AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 		>;
-		result?:
+		lastResult?:
 			| Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
@@ -195,6 +201,13 @@ export function useForm<
 				>;
 				formData: FormData;
 				value: Value | undefined;
+				update: (
+					submission: Submission<
+						Intent | DefaultFormIntent | null,
+						Schema,
+						ErrorShape
+					>,
+				) => void;
 			},
 		) =>
 			| Promise<
@@ -216,7 +229,7 @@ export function useForm<
 		intentName = DEFAULT_INTENT,
 		control = defaultFormControl,
 		defaultValue,
-		result,
+		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
 		state: FormState<Schema, ErrorShape, {} | AdditionalState>;
@@ -227,13 +240,13 @@ export function useForm<
 	}>(() => ({
 		state: control.initializeState({
 			defaultValue,
-			result,
+			result: lastResult,
 		}),
 		sideEffects: [],
 	}));
 	const optionsRef = useRef(options);
 	const lastStateRef = useRef(state);
-	const lastResultRef = useRef(result);
+	const lastResultRef = useRef(lastResult);
 	const pendingIntentsRef = useRef<Array<Intent | DefaultFormIntent>>([]);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
@@ -332,13 +345,13 @@ export function useForm<
 			// Cancal pending validation request
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
-	}, []);
+	}, [formRef]);
 
 	useEffect(() => {
-		if (result) {
-			handleSubmission(result, { type: 'server' });
+		if (lastResult) {
+			handleSubmission(lastResult, { type: 'server' });
 		}
-	}, [result, handleSubmission]);
+	}, [lastResult, handleSubmission]);
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -449,7 +462,7 @@ export function useForm<
 					// If client validation happens
 					typeof validationResult !== 'undefined' &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(submission.intent || validationResult !== null)
+					(submission.intent || submission.error !== null)
 				) {
 					event.preventDefault();
 				}
@@ -460,6 +473,8 @@ export function useForm<
 					submission,
 					formData,
 					value,
+					update: (submission) =>
+						handleSubmission(submission, { type: 'server' }),
 				});
 
 				if (serverResult) {
@@ -533,7 +548,7 @@ export function useFormData<Value>(
 						callback();
 					}
 				}),
-			[],
+			[formRef],
 		),
 		() => {
 			const formElement = getFormElement(formRef);

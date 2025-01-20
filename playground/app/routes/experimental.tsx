@@ -122,7 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Example() {
-	const result = useActionData<typeof action>();
+	const lastResult = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
 	const schema = useMemo(() => {
 		const isTitleUnique = memorize(async (title: string) => {
@@ -140,7 +140,7 @@ export default function Example() {
 		});
 	}, []);
 	const { state, handleSubmit, intent } = useForm(formRef, {
-		result,
+		lastResult,
 		intentName: 'intent',
 		defaultValue: {
 			title: 'Example',

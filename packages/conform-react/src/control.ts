@@ -208,9 +208,8 @@ export const validateIntentHandler: FormIntentHandler<{
 } | null> = {
 	isApplicable(intent) {
 		return (
-			intent !== null &&
-			intent.type === 'validate' &&
-			isOptionalString(intent.payload)
+			intent === null ||
+			(intent.type === 'validate' && isOptionalString(intent.payload))
 		);
 	},
 	updateState(state, { result }) {
@@ -240,7 +239,7 @@ export const validateIntentHandler: FormIntentHandler<{
 
 export const resetIntentHandler: FormIntentHandler<{ type: 'reset' }> = {
 	isApplicable(intent) {
-		return intent === null || intent.type === 'reset';
+		return intent !== null && intent.type === 'reset';
 	},
 	updateState(_, { reset }) {
 		return reset();
@@ -814,7 +813,7 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				submittedValue: type === 'server' ? result.value : state.submittedValue,
 			});
 
-			if (type === 'server' || !result.intent) {
+			if (type === 'server') {
 				return newState;
 			}
 

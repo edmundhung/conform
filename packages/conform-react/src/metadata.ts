@@ -185,6 +185,7 @@ export function getFieldset<Schema, ErrorShape>(
 		name: string;
 		defaultValue: string | string[] | undefined;
 		touched: boolean;
+		valid: boolean;
 		error: ErrorShape | undefined;
 	}>
 > {
@@ -202,6 +203,11 @@ export function getFieldset<Schema, ErrorShape>(
 				},
 				get touched() {
 					return isTouched(state.touchedFields, name);
+				},
+				get valid() {
+					return (
+						typeof getError(error, state.touchedFields, name) === 'undefined'
+					);
 				},
 				get error() {
 					return getError(error, state.touchedFields, name);

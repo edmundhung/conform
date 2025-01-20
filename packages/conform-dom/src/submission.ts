@@ -73,8 +73,20 @@ export const DEFAULT_INTENT = '__intent__';
  */
 export function parseSubmission(
 	formData: FormData | URLSearchParams,
-	options?: {
+	options: {
 		intentName: string;
+	},
+): Submission<string | null>;
+export function parseSubmission(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName?: undefined;
+	},
+): Submission<null>;
+export function parseSubmission(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName?: string;
 	},
 ): Submission<string | null> {
 	const { intentName = DEFAULT_INTENT } = options ?? {};
