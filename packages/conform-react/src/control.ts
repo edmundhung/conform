@@ -64,23 +64,26 @@ export function generateKey(): string {
 	return Math.floor(Date.now() * Math.random()).toString(36);
 }
 
+export function initializeForm(
+	formElement: HTMLFormElement,
+	initialValue: Record<string, unknown>,
+): void {
+	for (const element of formElement.elements) {
+		if (isInput(element)) {
+			initializeElement(element, initialValue);
+		}
+	}
+}
+
 export function initializeElement(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	config: {
-		initialValue: Record<string, unknown>;
-		isResetting?: boolean;
-	},
+	initialValue: Record<string, unknown>,
 ): void {
-	// Skip elements that are already initialized
-	if (!config.isResetting && element.dataset.conform) {
-		return;
-	}
-
-	const defaultValue = getDefaultValue(config.initialValue, element.name);
+	const defaultValue = getDefaultValue(initialValue, element.name);
 
 	updateField(element, {
 		defaultValue,
-		value: !config.isResetting ? defaultValue : undefined,
+		value: defaultValue,
 	});
 
 	element.dataset.conform = generateKey();
@@ -247,15 +250,7 @@ export const resetIntentHandler: FormIntentHandler<{ type: 'reset' }> = {
 	updateValue() {
 		return null;
 	},
-	sideEffect(formElement, { state }) {
-		for (const element of formElement.elements) {
-			if (isInput(element)) {
-				initializeElement(element, {
-					initialValue: state.initialValue,
-					isResetting: true,
-				});
-			}
-		}
+	sideEffect(formElement) {
 		formElement.reset();
 	},
 };

@@ -33,6 +33,14 @@ export type FormObserver = {
 	onFormDataChanged(
 		callback: (formElement: HTMLFormElement, formData: FormData) => void,
 	): () => void;
+
+	/**
+	 * Subscribes to the event when a form reset.
+	 *
+	 * @param callback - Function invoked with the form element.
+	 * @returns A function to unsubscribe the callback.
+	 */
+	onFormReset(callback: (formElement: HTMLFormElement) => void): () => void;
 };
 
 export const formObserver = createFormObserver();
@@ -43,6 +51,9 @@ export function createFormObserver(): FormObserver {
 	>();
 	const inputChangedCallbacks = new Set<
 		Parameters<FormObserver['onInputChanged']>[0]
+	>();
+	const formResetCallbacks = new Set<
+		Parameters<FormObserver['onFormReset']>[0]
 	>();
 	const formDataChangedCallbacks = new Set<
 		Parameters<FormObserver['onFormDataChanged']>[0]
@@ -65,6 +76,7 @@ export function createFormObserver(): FormObserver {
 	function handleReset(event: Event) {
 		if (event.target instanceof HTMLFormElement) {
 			emitFormDataChanged(event.target);
+			emitFormReset(event.target);
 		}
 	}
 
@@ -168,6 +180,12 @@ export function createFormObserver(): FormObserver {
 		}
 	}
 
+	function emitFormReset(formElement: HTMLFormElement) {
+		for (const callback of formResetCallbacks) {
+			callback(formElement);
+		}
+	}
+
 	function initialize() {
 		// If there are no subscribers yet, listen for input, reset, and submit events globally
 		if (
@@ -219,6 +237,15 @@ export function createFormObserver(): FormObserver {
 
 			return () => {
 				inputChangedCallbacks.delete(callback);
+				destroy();
+			};
+		},
+		onFormReset(callback) {
+			initialize();
+			formResetCallbacks.add(callback);
+
+			return () => {
+				formResetCallbacks.delete(callback);
 				destroy();
 			};
 		},

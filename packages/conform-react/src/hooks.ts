@@ -9,7 +9,6 @@ import {
 import type { FormError, FormValue } from 'conform-dom';
 import {
 	DEFAULT_INTENT,
-	isInput,
 	parseSubmission,
 	requestIntent,
 	Submission,
@@ -22,7 +21,12 @@ import type {
 	FormControlAdditionalState,
 	UnknownIntent,
 } from './control';
-import { applyIntent, defaultFormControl, initializeElement } from './control';
+import {
+	applyIntent,
+	defaultFormControl,
+	initializeElement,
+	initializeForm,
+} from './control';
 import {
 	deepEqual,
 	FormRef,
@@ -323,25 +327,23 @@ export function useForm<
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
-		const unsubscribe = formObserver.onInputMounted((element) =>
-			initializeElement(element, {
-				initialValue: lastStateRef.current.initialValue,
-			}),
-		);
+		const unsubscribeInputMounted = formObserver.onInputMounted((element) => {
+			if (!element.dataset.conform) {
+				initializeElement(element, lastStateRef.current.initialValue);
+			}
+		});
+		const unsubscribeFormReset = formObserver.onFormReset((formElement) => {
+			initializeForm(formElement, lastStateRef.current.initialValue);
+		});
 
 		if (formElement) {
-			for (const element of formElement.elements) {
-				if (isInput(element)) {
-					initializeElement(element, {
-						initialValue: lastStateRef.current.initialValue,
-					});
-				}
-			}
+			initializeForm(formElement, lastStateRef.current.initialValue);
 		}
 
 		return () => {
 			// Clean up the subscription
-			unsubscribe();
+			unsubscribeInputMounted();
+			unsubscribeFormReset();
 			// Cancal pending validation request
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
