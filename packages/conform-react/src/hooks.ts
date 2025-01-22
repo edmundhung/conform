@@ -672,9 +672,18 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 			const prev = previous.current;
 			const isMultipleSelect =
 				element instanceof HTMLSelectElement && element.multiple;
+			const isRadioOrCheckbox =
+				element instanceof HTMLInputElement &&
+				(element.type === 'radio' || element.type === 'checkbox');
 			const value = isMultipleSelect
 				? Array.from(element.selectedOptions).map((option) => option.value)
-				: [element.value];
+				: [
+						isRadioOrCheckbox
+							? element.checked
+								? element.value
+								: ''
+							: element.value,
+					];
 			const needsArray =
 				typeof initialValue !== 'undefined'
 					? Array.isArray(initialValue)
