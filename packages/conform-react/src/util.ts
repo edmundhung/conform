@@ -382,85 +382,179 @@ export function getFormElement(
 	return element?.form ?? null;
 }
 
+/**
+ * Updates the DOM element with the provided value.
+ *
+ * @param element The form element to update
+ * @param options The options to update the form element
+ */
 export function updateFieldValue(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	value: string | string[],
-): void {
-	if (
-		element instanceof HTMLInputElement &&
-		(element.type === 'checkbox' || element.type === 'radio')
-	) {
-		const wasChecked = element.checked;
-		const willChecked = Array.isArray(value)
-			? value.includes(element.value)
-			: element.value === value;
+	options: {
+		value?: string | string[];
+		defaultValue?: string | string[];
+	},
+) {
+	const value =
+		typeof options.value === 'undefined'
+			? null
+			: Array.isArray(options.value)
+				? options.value
+				: [options.value];
+	const defaultValue =
+		typeof options.defaultValue === 'undefined'
+			? null
+			: Array.isArray(options.defaultValue)
+				? options.defaultValue
+				: [options.defaultValue];
 
-		if (wasChecked !== willChecked) {
-			element.click();
-			return;
+	if (element instanceof HTMLInputElement) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				if (value) {
+					element.checked = value.includes(element.value);
+				}
+				if (defaultValue) {
+					element.defaultChecked = defaultValue.includes(element.value);
+				}
+				break;
+			case 'file':
+				// Do nothing for now
+				break;
+			default:
+				if (value) {
+					element.value = value[0] ?? '';
+				}
+				if (defaultValue) {
+					element.defaultValue = defaultValue[0] ?? '';
+				}
+				break;
 		}
 	} else if (element instanceof HTMLSelectElement) {
-		let updated = false;
-		const selectedValue = Array.isArray(value) ? [...value] : [value];
-
 		for (const option of element.options) {
-			const index = selectedValue.indexOf(option.value);
-			const selected = index > -1;
+			if (value) {
+				const index = value.indexOf(option.value);
+				const selected = index > -1;
 
-			// Update the selected state of the option
-			if (option.selected !== selected) {
-				option.selected = selected;
-				updated = true;
+				// Update the selected state of the option
+				if (option.selected !== selected) {
+					option.selected = selected;
+				}
+
+				// Remove the option from the value array
+				if (selected) {
+					value.splice(index, 1);
+				}
 			}
-			// Remove the option from the selected array
-			if (selected) {
-				selectedValue.splice(index, 1);
+			if (defaultValue) {
+				const index = defaultValue.indexOf(option.value);
+				const selected = index > -1;
+
+				// Update the selected state of the option
+				if (option.selected !== selected) {
+					option.defaultSelected = selected;
+				}
+
+				// Remove the option from the defaultValue array
+				if (selected) {
+					defaultValue.splice(index, 1);
+				}
 			}
 		}
 
-		// Add the remaining options to the select element
-		for (const option of selectedValue) {
-			updated = true;
+		// We have already removed all selected options from the value and defaultValue array at this point
+		const missingOptions = new Set([...(value ?? []), ...(defaultValue ?? [])]);
 
-			if (typeof option === 'string') {
-				element.options.add(new Option(option, option, false, true));
-			}
-		}
-
-		if (!updated) {
-			return;
+		for (const optionValue of missingOptions) {
+			element.options.add(
+				new Option(
+					optionValue,
+					optionValue,
+					defaultValue?.includes(optionValue),
+					value?.includes(optionValue),
+				),
+			);
 		}
 	} else {
-		// No `change` event will be triggered on React if `element.value` is already updated
-		if (element.value === value) {
-			return;
-		}
+		if (value) {
+			/**
+			 * Triggering react custom change event
+			 * Solution based on dom-testing-library
+			 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+			 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+			 */
+			const inputValue = value[0] ?? '';
+			const { set: valueSetter } =
+				Object.getOwnPropertyDescriptor(element, 'value') || {};
+			const prototype = Object.getPrototypeOf(element);
+			const { set: prototypeValueSetter } =
+				Object.getOwnPropertyDescriptor(prototype, 'value') || {};
 
-		/**
-		 * Triggering react custom change event
-		 * Solution based on dom-testing-library
-		 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-		 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
-		 */
-		const { set: valueSetter } =
-			Object.getOwnPropertyDescriptor(element, 'value') || {};
-		const prototype = Object.getPrototypeOf(element);
-		const { set: prototypeValueSetter } =
-			Object.getOwnPropertyDescriptor(prototype, 'value') || {};
-
-		if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-			prototypeValueSetter.call(element, value);
-		} else {
-			if (valueSetter) {
-				valueSetter.call(element, value);
+			if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+				prototypeValueSetter.call(element, inputValue);
 			} else {
-				throw new Error('The given element does not have a value setter');
+				if (valueSetter) {
+					valueSetter.call(element, inputValue);
+				} else {
+					throw new Error('The given element does not have a value setter');
+				}
 			}
 		}
+		if (defaultValue) {
+			element.defaultValue = defaultValue[0] ?? '';
+		}
+	}
+}
+
+export function updateValidationAttributes(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	attributes: {
+		required?: boolean;
+		minLength?: number;
+		maxLength?: number;
+		min?: string | number;
+		max?: string | number;
+		step?: string | number;
+		multiple?: boolean;
+		pattern?: string;
+	},
+): void {
+	if (
+		typeof attributes.required !== 'undefined' &&
+		// If the element is a part of the checkbox group, it is unclear whether all checkboxes are required or only one.
+		!(
+			element.type === 'checkbox' &&
+			element.form?.elements.namedItem(element.name) instanceof RadioNodeList
+		)
+	) {
+		element.required = attributes.required;
 	}
 
-	// Dispatch input event with the updated input value
-	element.dispatchEvent(new InputEvent('input', { bubbles: true }));
-	// Dispatch change event (necessary for select to update the selected option)
-	element.dispatchEvent(new Event('change', { bubbles: true }));
+	if (typeof attributes.multiple !== 'undefined' && 'multiple' in element) {
+		element.multiple = attributes.multiple;
+	}
+
+	if (typeof attributes.minLength !== 'undefined' && 'minLength' in element) {
+		element.minLength = attributes.minLength;
+	}
+
+	if (typeof attributes.maxLength !== 'undefined' && 'maxLength' in element) {
+		element.maxLength = attributes.maxLength;
+	}
+	if (typeof attributes.min !== 'undefined' && 'min' in element) {
+		element.min = `${attributes.min}`;
+	}
+
+	if (typeof attributes.max !== 'undefined' && 'max' in element) {
+		element.max = `${attributes.max}`;
+	}
+
+	if (typeof attributes.step !== 'undefined' && 'step' in element) {
+		element.step = `${attributes.step}`;
+	}
+
+	if (typeof attributes.pattern !== 'undefined' && 'pattern' in element) {
+		element.pattern = attributes.pattern;
+	}
 }

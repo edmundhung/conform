@@ -34,6 +34,7 @@ export type Fieldset<Schema, Metadata extends Record<string, unknown>> = {
 export type FormMetadata<Schema extends Record<string, unknown>, ErrorShape> = {
 	defaultValue: DefaultValue<Schema> | null;
 	touched: boolean;
+	valid: boolean;
 	error: ErrorShape | null;
 	fieldError: Record<string, ErrorShape> | null;
 };
@@ -97,18 +98,21 @@ export function getFormMetadata<
 		get touched() {
 			return isTouched(state.touchedFields);
 		},
+		get valid() {
+			return error === null;
+		},
 	};
 }
 
-export function getDefaultValue(
-	initialValue: unknown,
+export function getSerializedValue(
+	valueObject: unknown,
 	name: string,
 	serialize: (
 		value: unknown,
 	) => string | string[] | undefined = defaultSerialize,
 ): string | string[] | undefined {
 	const paths = getPaths(name);
-	const value = getValue(initialValue, paths);
+	const value = getValue(valueObject, paths);
 
 	return serialize(value);
 }
@@ -179,11 +183,15 @@ export function createFieldset<
 
 export function getFieldset<Schema, ErrorShape>(
 	state: FormState<Schema, ErrorShape>,
+	options?: {
+		serialize?: (value: unknown) => string | string[] | undefined;
+	},
 ): Fieldset<
 	Schema,
 	Readonly<{
 		name: string;
-		defaultValue: string | string[] | undefined;
+		defaultValue: string | undefined;
+		defaultSelected: string[] | undefined;
 		touched: boolean;
 		valid: boolean;
 		error: ErrorShape | undefined;
@@ -199,7 +207,24 @@ export function getFieldset<Schema, ErrorShape>(
 					return name;
 				},
 				get defaultValue() {
-					return getDefaultValue(state.initialValue, name);
+					const value = getSerializedValue(
+						state.initialValue,
+						name,
+						options?.serialize,
+					);
+					const result = typeof value === 'string' ? value : value?.[0];
+
+					return result;
+				},
+				get defaultSelected() {
+					const value = getSerializedValue(
+						state.initialValue,
+						name,
+						options?.serialize,
+					);
+					const result = typeof value === 'string' ? [value] : value;
+
+					return result;
 				},
 				get touched() {
 					return isTouched(state.touchedFields, name);

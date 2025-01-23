@@ -5,9 +5,8 @@ import {
 	getValue,
 	isPlainObject,
 	setValue,
-	updateField,
 } from 'conform-dom';
-import { getDefaultValue, defaultSerialize } from './metadata';
+import { getSerializedValue, defaultSerialize } from './metadata';
 import {
 	addItems,
 	configureListIndexUpdate,
@@ -28,6 +27,7 @@ import {
 	insertItem,
 	reorderItems,
 	removeItem,
+	updateFieldValue,
 } from './util';
 
 export type DefaultValue<Schema> = Schema extends
@@ -79,9 +79,9 @@ export function initializeElement(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	initialValue: Record<string, unknown>,
 ): void {
-	const defaultValue = getDefaultValue(initialValue, element.name);
+	const defaultValue = getSerializedValue(initialValue, element.name);
 
-	updateField(element, {
+	updateFieldValue(element, {
 		defaultValue,
 		value: defaultValue,
 	});
@@ -309,7 +309,7 @@ export const updateIntentHandler: FormIntentHandler<{
 
 		for (const element of formElement.elements) {
 			if (isInput(element)) {
-				updateField(element, {
+				updateFieldValue(element, {
 					value: defaultSerialize(flattenedValue[element.name]),
 				});
 

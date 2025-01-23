@@ -20,7 +20,7 @@ export {
 	getFormMetadata,
 	getError,
 	getFieldset,
-	getDefaultValue,
+	getSerializedValue,
 	createFieldset,
 } from './metadata';
 export { useForm, useFormData, useIntent, useCustomInput } from './hooks';

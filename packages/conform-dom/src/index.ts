@@ -7,7 +7,6 @@ export {
 	getFormMethod,
 	requestSubmit,
 	requestIntent,
-	updateField,
 } from './dom';
 export {
 	type Submission,

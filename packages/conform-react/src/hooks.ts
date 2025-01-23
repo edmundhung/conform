@@ -694,12 +694,12 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 				return prev;
 			}
 
+			previous.current = next;
+
 			return next;
 		},
 		() => initialValue,
 	);
-
-	previous.current = value;
 
 	useEffect(() => {
 		const createDeduplciateEventHandler =
@@ -743,7 +743,14 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 				const element = inputRef.current;
 
 				if (element) {
-					updateFieldValue(element, value);
+					updateFieldValue(element, {
+						value,
+					});
+
+					// Dispatch input event with the updated input value
+					element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+					// Dispatch change event (necessary for select to update the selected option)
+					element.dispatchEvent(new Event('change', { bubbles: true }));
 				}
 			},
 			focused() {
