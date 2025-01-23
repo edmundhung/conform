@@ -3,13 +3,15 @@
 	"private": true,
 	"dependencies": {
 		"@chakra-ui/react": "^2.4.2",
-		"@conform-to/react": "1.2.2",
+		"conform-react": "0.0.1",
+		"conform-zod": "0.0.1",
 		"@emotion/react": "^11.10.5",
 		"@emotion/styled": "^11.10.5",
 		"framer-motion": "^7.6.19",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-scripts": "5.0.1"
+		"react-scripts": "5.0.1",
+		"zod": "3.21.4"
 	},
 	"devDependencies": {
 		"@types/node": "^16.18.14",

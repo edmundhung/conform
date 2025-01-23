@@ -2,13 +2,15 @@
 	"name": "@conform-example/material-ui",
 	"private": true,
 	"dependencies": {
-		"@conform-to/react": "1.2.2",
+		"conform-react": "0.0.1",
+		"conform-zod": "0.0.1",
 		"@emotion/react": "^11.10.0",
 		"@emotion/styled": "^11.10.0",
 		"@mui/material": "^5.10.2",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-scripts": "5.0.1"
+		"react-scripts": "5.0.1",
+		"zod": "3.21.4"
 	},
 	"devDependencies": {
 		"@types/node": "^16.18.14",
