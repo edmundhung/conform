@@ -3,11 +3,13 @@
 	"private": true,
 	"dependencies": {
 		"conform-react": "0.0.1",
+		"conform-zod": "0.0.1",
 		"@headlessui/react": "^1.7.13",
 		"@heroicons/react": "^2.0.18",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-scripts": "5.0.1"
+		"react-scripts": "5.0.1",
+		"zod": "3.21.4"
 	},
 	"devDependencies": {
 		"@headlessui/tailwindcss": "^0.1.2",

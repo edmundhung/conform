@@ -3,12 +3,12 @@ import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import { z } from 'zod';
 import {
-	Checkbox,
-	RadioGroup,
-	Slider,
-	Switch,
-	ToggleGroup,
-	Select,
+	ExampleCheckbox,
+	ExampleRadioGroup,
+	ExampleSlider,
+	ExampleSwitch,
+	ExampleToggleGroup,
+	ExampleSelect,
 } from './form';
 
 const schema = coerceZodFormData(
@@ -74,7 +74,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Checkbox</h2>
 					<div className="flex items-center gap-2">
-						<Checkbox name={fields.isTermsAgreed.name} />
+						<ExampleCheckbox name={fields.isTermsAgreed.name} />
 						<label>Accept terms and conditions.</label>
 					</div>
 					<span className="text-red-800">{fields.isTermsAgreed.error}</span>
@@ -83,7 +83,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Radio Group</h2>
 					<div className="flex flex-col gap-2">
 						Car type:
-						<RadioGroup
+						<ExampleRadioGroup
 							name={fields.carType.name}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
@@ -98,7 +98,7 @@ export function App() {
 				<div className="flex flex-col gap-2 items-start">
 					<h2 className="text-medium text-amber-600">Select</h2>
 					<label>Country</label>
-					<Select
+					<ExampleSelect
 						name={fields.userCountry.name}
 						placeholder="Select a country 🗺"
 						items={[
@@ -113,7 +113,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Slider</h2>
 					<div className="flex flex-col gap-2">
 						Estimated kilometers per year:
-						<Slider
+						<ExampleSlider
 							name={fields.estimatedKilometersPerYear.name}
 							max={10_000}
 						/>
@@ -125,7 +125,7 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Switch</h2>
 					<div className="flex items-center gap-2">
-						<Switch name={fields.hasAdditionalDriver.name} />
+						<ExampleSwitch name={fields.hasAdditionalDriver.name} />
 						<label>Has additional driver</label>
 					</div>
 					<span className="text-red-800">
@@ -136,7 +136,7 @@ export function App() {
 					<h2 className="font-medium text-amber-600">Toggle group</h2>
 					<div className="flex flex-col gap-2">
 						Desired contract type:
-						<ToggleGroup
+						<ExampleToggleGroup
 							name={fields.desiredContractType.name}
 							items={[
 								{ value: 'full', label: 'Full' },

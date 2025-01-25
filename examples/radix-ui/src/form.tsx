@@ -13,13 +13,17 @@ import * as RadixRadioGroup from '@radix-ui/react-radio-group';
 import clsx from 'clsx';
 import { type ElementRef, useRef } from 'react';
 
-type SelectProps = {
+type ExampleSelectProps = {
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder?: string;
 };
 
-export function Select({ name, items, placeholder }: SelectProps) {
+export function ExampleSelect({
+	name,
+	items,
+	placeholder,
+}: ExampleSelectProps) {
 	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);
 	const input = useCustomInput('');
 
@@ -90,12 +94,12 @@ export function Select({ name, items, placeholder }: SelectProps) {
 	);
 }
 
-type ToggleGroupProps = {
+type ExampleToggleGroupProps = {
 	name: string;
 	items: Array<{ label: string; value: string }>;
 };
 
-export function ToggleGroup({ name, items }: ToggleGroupProps) {
+export function ExampleToggleGroup({ name, items }: ExampleToggleGroupProps) {
 	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
 	const input = useCustomInput('');
 
@@ -134,11 +138,11 @@ export function ToggleGroup({ name, items }: ToggleGroupProps) {
 	);
 }
 
-type SwitchProps = {
+type ExampleSwitchProps = {
 	name: string;
 };
 
-export function Switch({ name }: SwitchProps) {
+export function ExampleSwitch({ name }: ExampleSwitchProps) {
 	const switchRef = useRef<ElementRef<typeof RadixSwitch.Root>>(null);
 	const input = useCustomInput('');
 
@@ -167,12 +171,12 @@ export function Switch({ name }: SwitchProps) {
 	);
 }
 
-type SliderProps = {
+type ExampleSliderProps = {
 	name: string;
 	max?: number;
 };
 
-export function Slider({ name, max = 100 }: SliderProps) {
+export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
 	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
 	const input = useCustomInput('');
 
@@ -209,12 +213,12 @@ export function Slider({ name, max = 100 }: SliderProps) {
 	);
 }
 
-type RadioGroupProps = {
+type ExampleRadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 };
 
-export function RadioGroup({ name, items }: RadioGroupProps) {
+export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
 	const input = useCustomInput('');
 
@@ -259,12 +263,12 @@ export function RadioGroup({ name, items }: RadioGroupProps) {
 	);
 }
 
-type CheckboxProps = {
+type ExampleCheckboxProps = {
 	name: string;
 	value?: string;
 };
 
-export function Checkbox({ name, value = 'on' }: CheckboxProps) {
+export function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<ElementRef<typeof RadixCheckbox.Root>>(null);
 	const input = useCustomInput('');
 

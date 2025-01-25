@@ -1,14 +1,12 @@
-import { getFieldset, isInput, useCustomInput, useForm } from 'conform-react';
+import { getFieldset, isInput, useForm } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
 import {
 	TextField,
 	Button,
-	MenuItem,
 	Stack,
 	Container,
 	Typography,
-	Autocomplete,
 	Checkbox,
 	FormControl,
 	FormControlLabel,
@@ -17,11 +15,15 @@ import {
 	FormLabel,
 	RadioGroup,
 	Radio,
-	Rating,
-	Slider,
 	Switch,
 } from '@mui/material';
 import { useRef } from 'react';
+import {
+	ExampleSelect,
+	ExampleAutocomplete,
+	ExampleRating,
+	ExampleSlider,
+} from './form';
 
 const schema = coerceZodFormData(
 	z.object({
@@ -30,7 +32,7 @@ const schema = coerceZodFormData(
 		language: z.string(),
 		movie: z.string(),
 		subscribe: z.boolean(),
-		active: z.boolean(),
+		active: z.string(),
 		enabled: z.boolean(),
 		score: z.number(),
 		progress: z.number().min(3).max(7),
@@ -178,123 +180,5 @@ export default function ExampleForm() {
 				</Stack>
 			</form>
 		</Container>
-	);
-}
-
-type ExampleSelectProps = {
-	name: string;
-	label: string;
-	error: string[] | undefined;
-};
-
-function ExampleSelect({ label, name, error }: ExampleSelectProps) {
-	const input = useCustomInput('');
-
-	return (
-		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
-			<TextField
-				label={label}
-				value={input.value}
-				onChange={(event) => input.changed(event.target.value)}
-				onBlur={() => input.blurred()}
-				error={!!error}
-				helperText={error}
-				select
-			>
-				<MenuItem value="">Please select</MenuItem>
-				<MenuItem value="english">English</MenuItem>
-				<MenuItem value="deutsch">Deutsch</MenuItem>
-				<MenuItem value="japanese">Japanese</MenuItem>
-			</TextField>
-		</>
-	);
-}
-
-type ExampleAutocompleteProps = {
-	name: string;
-	label: string;
-	error: string[] | undefined;
-};
-
-function ExampleAutocomplete({ label, name, error }: ExampleAutocompleteProps) {
-	const input = useCustomInput('');
-	const options = ['The Godfather', 'Pulp Fiction'];
-
-	return (
-		<Autocomplete
-			disablePortal
-			options={options}
-			value={input.value}
-			onChange={(_, option) => input.changed(option ?? '')}
-			onBlur={() => input.blurred()}
-			renderInput={(params) => (
-				<TextField
-					{...params}
-					inputRef={input.register}
-					label={label}
-					name={name}
-					error={!!error}
-					helperText={error}
-				/>
-			)}
-		/>
-	);
-}
-
-type ExampleRatingProps = {
-	label: string;
-	name: string;
-	error: string[] | undefined;
-};
-
-function ExampleRating({ name, label, error }: ExampleRatingProps) {
-	const input = useCustomInput('');
-
-	return (
-		<FormControl variant="standard" error={!!error}>
-			<FormLabel>{label}</FormLabel>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
-			<Rating
-				value={input.value ? Number(input.value) : null}
-				onChange={(_, value) => {
-					input.changed(value?.toString() ?? '');
-				}}
-				onBlur={() => input.blurred()}
-			/>
-			<FormHelperText>{error}</FormHelperText>
-		</FormControl>
-	);
-}
-
-type ExampleSliderProps = {
-	label: string;
-	name: string;
-	error: string[] | undefined;
-};
-
-function ExampleSlider({ name, label, error }: ExampleSliderProps) {
-	const input = useCustomInput('');
-
-	return (
-		<FormControl variant="standard" error={!!error}>
-			<FormLabel>{label}</FormLabel>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
-			<Slider
-				min={0}
-				max={10}
-				step={1}
-				value={input.value ? Number(input.value) : 0}
-				onChange={(_, value) => {
-					if (Array.isArray(value)) {
-						return;
-					}
-
-					input.changed(value.toString());
-				}}
-				onBlur={() => input.blurred()}
-			/>
-			<FormHelperText>{error}</FormHelperText>
-		</FormControl>
 	);
 }

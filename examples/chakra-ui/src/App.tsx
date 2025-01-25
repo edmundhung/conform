@@ -1,4 +1,4 @@
-import { getFieldset, isInput, useCustomInput, useForm } from 'conform-react';
+import { getFieldset, isInput, useForm } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import {
@@ -10,13 +10,6 @@ import {
 	Select,
 	Button,
 	Container,
-	NumberInput,
-	NumberInputField,
-	NumberInputStepper,
-	NumberIncrementStepper,
-	NumberDecrementStepper,
-	PinInput,
-	PinInputField,
 	Editable,
 	EditableInput,
 	EditablePreview,
@@ -25,13 +18,10 @@ import {
 	Radio,
 	Textarea,
 	Switch,
-	Slider,
-	SliderTrack,
-	SliderFilledTrack,
-	SliderThumb,
 	Heading,
 	Text,
 } from '@chakra-ui/react';
+import { ExampleNumberInput, ExamplePinInput, ExampleSlider } from './form';
 import { z } from 'zod';
 
 const schema = coerceZodFormData(
@@ -40,12 +30,12 @@ const schema = coerceZodFormData(
 		language: z.string(),
 		description: z.string(),
 		quantity: z.number(),
-		pin: z.number(),
+		pin: z.string(),
 		title: z.string(),
 		subscribe: z.boolean(),
 		enabled: z.boolean(),
 		progress: z.number().min(3).max(7),
-		active: z.string().refine((flag) => flag === 'yes', 'Please answer yes'),
+		active: z.string(),
 	}),
 );
 
@@ -110,7 +100,7 @@ export default function Example() {
 							required
 						>
 							<option value="english">English</option>
-							<option value="deutsche">Deutsch</option>
+							<option value="german">German</option>
 							<option value="japanese">Japanese</option>
 						</Select>
 						<FormErrorMessage>{fields.language.error}</FormErrorMessage>
@@ -175,7 +165,11 @@ export default function Example() {
 					</FormControl>
 
 					<Stack direction="row" justifyContent="flex-end">
-						<Button type="reset" variant="outline">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => intent.reset()}
+						>
 							Reset
 						</Button>
 						<Button type="submit" variant="solid">
@@ -185,80 +179,5 @@ export default function Example() {
 				</Stack>
 			</form>
 		</Container>
-	);
-}
-
-type ExampleNumberProps = {
-	name: string;
-};
-
-function ExampleNumberInput({ name }: ExampleNumberProps) {
-	const input = useCustomInput('');
-
-	return (
-		<NumberInput
-			isRequired
-			name={name}
-			value={input.value ?? ''}
-			onChange={(value) => input.changed(value)}
-			onBlur={() => input.blurred()}
-		>
-			<NumberInputField ref={input.register} />
-			<NumberInputStepper>
-				<NumberIncrementStepper />
-				<NumberDecrementStepper />
-			</NumberInputStepper>
-		</NumberInput>
-	);
-}
-
-type ExamplePinProps = {
-	name: string;
-};
-
-function ExamplePinInput({ name }: ExamplePinProps) {
-	const input = useCustomInput('');
-
-	return (
-		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
-			<PinInput
-				type="alphanumeric"
-				value={input.value ?? ''}
-				onChange={(value) => input.changed(value)}
-			>
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
-			</PinInput>
-		</>
-	);
-}
-
-type ExampleSliderProps = {
-	name: string;
-};
-
-function ExampleSlider({ name }: ExampleSliderProps) {
-	const input = useCustomInput('');
-
-	return (
-		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
-			<Slider
-				min={0}
-				max={10}
-				step={1}
-				value={input.value ? Number(input.value) : 0}
-				onChange={(number) => input.changed(number.toString())}
-				onBlur={() => input.blurred()}
-			>
-				<SliderTrack>
-					<SliderFilledTrack />
-				</SliderTrack>
-				<SliderThumb />
-			</Slider>
-		</>
 	);
 }

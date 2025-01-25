@@ -8,10 +8,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-	RadioGroup as ShadcnRadioGroup,
-	RadioGroupItem,
-} from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
 	Command,
 	CommandEmpty,
@@ -21,24 +18,21 @@ import {
 } from '@/components/ui/command';
 import {
 	SelectTrigger,
-	Select as ShadcnSelect,
+	Select,
 	SelectValue,
 	SelectContent,
 	SelectItem,
 } from '@/components/ui/select';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 import {
-	InputOTP as ShadcnInputOTP,
+	InputOTP,
 	InputOTPGroup,
 	InputOTPSlot,
 } from '@/components/ui/input-otp';
-import {
-	ToggleGroup as ShadcnToggleGroup,
-	ToggleGroupItem,
-} from '@/components/ui/toggle-group';
-import { Switch as ShadcnSwitch } from '@/components/ui/switch';
-import { Slider as ShadcnSlider } from '@/components/ui/slider';
-import { Checkbox as ShadcnCheckbox } from '@/components/ui/checkbox';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useCustomInput } from 'conform-react';
 import { Label } from '@/components/ui/label';
@@ -62,11 +56,11 @@ function FieldError({ children }: FieldErrorProps) {
 	return <div className="text-sm text-red-600">{children}</div>;
 }
 
-type DatePickerProps = {
+type ExampleDatePickerProps = {
 	name: string;
 };
 
-function DatePicker({ name }: DatePickerProps) {
+function ExampleDatePicker({ name }: ExampleDatePickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const input = useCustomInput('');
 
@@ -127,11 +121,11 @@ const countries = [
 	{ label: 'Uruguay', value: 'UY' },
 ];
 
-type CountryPickerProps = {
+type ExampleCountryPickerProps = {
 	name: string;
 };
 
-function CountryPicker({ name }: CountryPickerProps) {
+function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const input = useCustomInput('');
 
@@ -162,16 +156,16 @@ function CountryPicker({ name }: CountryPickerProps) {
 						)}
 					>
 						{input.value
-							? countries.find((language) => language.value === input.value)
+							? countries.find((country) => country.value === input.value)
 									?.label
-							: 'Select language'}
+							: 'Select country'}
 						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-[200px] p-0">
 					<Command>
-						<CommandInput placeholder="Search language..." />
-						<CommandEmpty>No language found.</CommandEmpty>
+						<CommandInput placeholder="Search country..." />
+						<CommandEmpty>No country found.</CommandEmpty>
 						<CommandGroup>
 							{countries.map((country) => (
 								<CommandItem
@@ -200,13 +194,13 @@ function CountryPicker({ name }: CountryPickerProps) {
 	);
 }
 
-type RadioGroupProps = {
+type ExampleRadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 };
 
-function RadioGroup({ name, items }: RadioGroupProps) {
-	const radioGroupRef = useRef<React.ElementRef<typeof ShadcnRadioGroup>>(null);
+function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
+	const radioGroupRef = useRef<React.ElementRef<typeof RadioGroup>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -217,7 +211,7 @@ function RadioGroup({ name, items }: RadioGroupProps) {
 				name={name}
 				onFocus={() => radioGroupRef.current?.focus()}
 			/>
-			<ShadcnRadioGroup
+			<RadioGroup
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
 				value={input.value ?? ''}
@@ -232,18 +226,18 @@ function RadioGroup({ name, items }: RadioGroupProps) {
 						</div>
 					);
 				})}
-			</ShadcnRadioGroup>
+			</RadioGroup>
 		</>
 	);
 }
 
-type CheckboxProps = {
+type ExampleCheckboxProps = {
 	name: string;
 	value?: string;
 };
 
-function Checkbox({ name, value = 'on' }: CheckboxProps) {
-	const checkboxRef = useRef<React.ElementRef<typeof ShadcnCheckbox>>(null);
+function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
+	const checkboxRef = useRef<React.ElementRef<typeof Checkbox>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -256,7 +250,7 @@ function Checkbox({ name, value = 'on' }: CheckboxProps) {
 				value={value}
 				onFocus={() => input.focused()}
 			/>
-			<ShadcnCheckbox
+			<Checkbox
 				ref={checkboxRef}
 				value={value}
 				checked={value === input.value}
@@ -270,13 +264,13 @@ function Checkbox({ name, value = 'on' }: CheckboxProps) {
 	);
 }
 
-type SelectProps = {
+type ExampleSelectProps = {
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder: string;
 };
 
-function Select({ name, items, placeholder }: SelectProps) {
+function ExampleSelect({ name, items, placeholder }: ExampleSelectProps) {
 	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
 	const input = useCustomInput('');
 
@@ -293,7 +287,7 @@ function Select({ name, items, placeholder }: SelectProps) {
 					<option key={option.value} value={option.value} />
 				))}
 			</select>
-			<ShadcnSelect
+			<Select
 				value={input.value}
 				onValueChange={(value) => input.changed(value)}
 				onOpenChange={(open) => {
@@ -314,17 +308,17 @@ function Select({ name, items, placeholder }: SelectProps) {
 						);
 					})}
 				</SelectContent>
-			</ShadcnSelect>
+			</Select>
 		</>
 	);
 }
 
-type SliderProps = {
+type ExampleSliderProps = {
 	name: string;
 };
 
-function Slider({ name }: SliderProps) {
-	const sliderRef = useRef<React.ElementRef<typeof ShadcnSlider>>(null);
+function ExampleSlider({ name }: ExampleSliderProps) {
+	const sliderRef = useRef<React.ElementRef<typeof Slider>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -342,7 +336,7 @@ function Slider({ name }: SliderProps) {
 				}}
 			/>
 			<div className="flex items-center gap-4">
-				<ShadcnSlider
+				<Slider
 					ref={sliderRef}
 					step={1}
 					value={[input.value === '' ? 0 : parseFloat(input.value)]}
@@ -358,12 +352,12 @@ function Slider({ name }: SliderProps) {
 	);
 }
 
-type SwitchProps = {
+type ExampleSwitchProps = {
 	name: string;
 };
 
-function Switch({ name }: SwitchProps) {
-	const switchRef = useRef<React.ElementRef<typeof ShadcnSwitch>>(null);
+function ExampleSwitch({ name }: ExampleSwitchProps) {
+	const switchRef = useRef<React.ElementRef<typeof Switch>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -374,7 +368,7 @@ function Switch({ name }: SwitchProps) {
 				ref={input.register}
 				onFocus={() => switchRef.current?.focus()}
 			/>
-			<ShadcnSwitch
+			<Switch
 				ref={switchRef}
 				checked={input.value === 'on'}
 				onCheckedChange={(checked) => {
@@ -387,14 +381,16 @@ function Switch({ name }: SwitchProps) {
 	);
 }
 
-type SingleToggleGroupProps = {
+type ExampleSingleToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 };
 
-function SingleToggleGroup({ name, items }: SingleToggleGroupProps) {
-	const toggleGroupRef =
-		useRef<React.ElementRef<typeof ShadcnToggleGroup>>(null);
+function ExampleSingleToggleGroup({
+	name,
+	items,
+}: ExampleSingleToggleGroupProps) {
+	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -405,7 +401,7 @@ function SingleToggleGroup({ name, items }: SingleToggleGroupProps) {
 				ref={input.register}
 				onFocus={() => toggleGroupRef.current?.focus()}
 			/>
-			<ShadcnToggleGroup
+			<ToggleGroup
 				type="single"
 				ref={toggleGroupRef}
 				value={input.value}
@@ -419,19 +415,21 @@ function SingleToggleGroup({ name, items }: SingleToggleGroupProps) {
 						{item.label}
 					</ToggleGroupItem>
 				))}
-			</ShadcnToggleGroup>
+			</ToggleGroup>
 		</>
 	);
 }
 
-type MultiToggleGroupProps = {
+type ExampleMultiToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 };
 
-function MultiToggleGroup({ name, items }: MultiToggleGroupProps) {
-	const toggleGroupRef =
-		useRef<React.ElementRef<typeof ShadcnToggleGroup>>(null);
+function ExampleMultiToggleGroup({
+	name,
+	items,
+}: ExampleMultiToggleGroupProps) {
+	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
 	const input = useCustomInput([]);
 
 	return (
@@ -443,7 +441,7 @@ function MultiToggleGroup({ name, items }: MultiToggleGroupProps) {
 				ref={input.register}
 				onFocus={() => toggleGroupRef.current?.focus()}
 			/>
-			<ShadcnToggleGroup
+			<ToggleGroup
 				type="multiple"
 				ref={toggleGroupRef}
 				value={input.value}
@@ -457,23 +455,23 @@ function MultiToggleGroup({ name, items }: MultiToggleGroupProps) {
 						{item.label}
 					</ToggleGroupItem>
 				))}
-			</ShadcnToggleGroup>
+			</ToggleGroup>
 		</>
 	);
 }
 
-type InputOTPProps = {
+type ExampleInputOTPProps = {
 	name: string;
 	length: number;
 	pattern?: string;
 };
 
-function InputOTP({
+function ExampleInputOTP({
 	name,
 	length = 6,
 	pattern = REGEXP_ONLY_DIGITS_AND_CHARS,
-}: InputOTPProps) {
-	const inputOTPRef = useRef<React.ElementRef<typeof ShadcnInputOTP>>(null);
+}: ExampleInputOTPProps) {
+	const inputOTPRef = useRef<React.ElementRef<typeof InputOTP>>(null);
 	const input = useCustomInput('');
 
 	return (
@@ -484,7 +482,7 @@ function InputOTP({
 				name={name}
 				onFocus={() => inputOTPRef.current?.focus()}
 			/>
-			<ShadcnInputOTP
+			<InputOTP
 				ref={inputOTPRef}
 				value={input.value}
 				onChange={(value) => input.changed(value)}
@@ -497,7 +495,7 @@ function InputOTP({
 						<InputOTPSlot key={index} index={index} />
 					))}
 				</InputOTPGroup>
-			</ShadcnInputOTP>
+			</InputOTP>
 		</>
 	);
 }
@@ -509,14 +507,14 @@ export {
 	Button,
 	Input,
 	Textarea,
-	DatePicker,
-	CountryPicker,
-	RadioGroup,
-	Checkbox,
-	Select,
-	Slider,
-	Switch,
-	SingleToggleGroup,
-	MultiToggleGroup,
-	InputOTP,
+	ExampleDatePicker as DatePicker,
+	ExampleCountryPicker as CountryPicker,
+	ExampleRadioGroup as RadioGroup,
+	ExampleCheckbox as Checkbox,
+	ExampleSelect as Select,
+	ExampleSlider as Slider,
+	ExampleSwitch as Switch,
+	ExampleSingleToggleGroup as SingleToggleGroup,
+	ExampleMultiToggleGroup as MultiToggleGroup,
+	ExampleInputOTP as InputOTP,
 };
