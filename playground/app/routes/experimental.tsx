@@ -151,7 +151,7 @@ export default function Example() {
 
 			return resolveZodResult(result);
 		},
-		async onSubmit(event, { submission, formData }) {
+		async onSubmit(event, { submission, formData, update }) {
 			event.preventDefault();
 
 			const response = await fetch(
@@ -163,9 +163,11 @@ export default function Example() {
 			);
 			const result = await response.json();
 
-			return report(submission, {
-				error: result.error,
-			});
+			update(
+				report(submission, {
+					error: result.error,
+				}),
+			);
 		},
 	});
 	const [form, fields] = getMetadata(initialValue, state);

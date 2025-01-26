@@ -60,6 +60,34 @@ export type IntentDispatcher<Intent extends UnknownIntent> = {
 		: (payload: Extract<Intent, { type: Type }>['payload']) => void;
 };
 
+export type SubmitContext<Schema, ErrorShape, Intent, Value> = {
+	submission: Submission<Intent | null, Schema, ErrorShape>;
+	formData: FormData;
+	value: Value | undefined;
+	update: (submission: Submission<Intent | null, Schema, ErrorShape>) => void;
+};
+
+export type ValidateHandler<Schema, ErrorShape, Value> = (
+	value: Record<string, FormValue>,
+	ctx: {
+		formElement: HTMLFormElement;
+	},
+) =>
+	| {
+			value?: Value;
+			error: FormError<Schema, ErrorShape> | null;
+	  }
+	| Promise<{
+			value?: Value;
+			error: FormError<Schema, ErrorShape> | null;
+	  }>
+	| undefined;
+
+export type SubmitHandler<Schema, ErrorShape, Intent, Value> = (
+	event: React.FormEvent<HTMLFormElement>,
+	ctx: SubmitContext<Schema, ErrorShape, Intent, Value>,
+) => void | Promise<void>;
+
 export function useForm<
 	Schema,
 	ErrorShape,
@@ -76,35 +104,8 @@ export function useForm<
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
-		onValidate?: (
-			value: Record<string, FormValue>,
-			ctx: {
-				formElement: HTMLFormElement;
-			},
-		) =>
-			| {
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }
-			| Promise<{
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }>
-			| undefined;
-		onSubmit?: (
-			event: React.FormEvent<HTMLFormElement>,
-			ctx: {
-				submission: Submission<Intent | null, Schema, ErrorShape>;
-				formData: FormData;
-				value: Value | undefined;
-				update: (
-					submission: Submission<Intent | null, Schema, ErrorShape>,
-				) => void;
-			},
-		) =>
-			| Promise<Submission<Intent | null, Schema, ErrorShape>>
-			| undefined
-			| void;
+		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<Schema, ErrorShape, Intent, Value>;
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
@@ -122,35 +123,8 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
-		onValidate?: (
-			value: Record<string, FormValue>,
-			ctx: {
-				formElement: HTMLFormElement;
-			},
-		) =>
-			| {
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }
-			| Promise<{
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }>
-			| undefined;
-		onSubmit?: (
-			event: React.FormEvent<HTMLFormElement>,
-			ctx: {
-				submission: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
-				formData: FormData;
-				value: Value | undefined;
-				update: (
-					submission: Submission<DefaultFormIntent | null, Schema, ErrorShape>,
-				) => void;
-			},
-		) =>
-			| Promise<Submission<DefaultFormIntent | null, Schema, ErrorShape>>
-			| undefined
-			| void;
+		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<Schema, ErrorShape, DefaultFormIntent, Value>;
 	},
 ): {
 	state: FormState<
@@ -181,45 +155,13 @@ export function useForm<
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
-		onValidate?: (
-			value: Record<string, FormValue>,
-			ctx: {
-				formElement: HTMLFormElement;
-			},
-		) =>
-			| {
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }
-			| Promise<{
-					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
-			  }>
-			| undefined;
-		onSubmit?: (
-			event: React.FormEvent<HTMLFormElement>,
-			ctx: {
-				submission: Submission<
-					Intent | DefaultFormIntent | null,
-					Schema,
-					ErrorShape
-				>;
-				formData: FormData;
-				value: Value | undefined;
-				update: (
-					submission: Submission<
-						Intent | DefaultFormIntent | null,
-						Schema,
-						ErrorShape
-					>,
-				) => void;
-			},
-		) =>
-			| Promise<
-					Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
-			  >
-			| undefined
-			| void;
+		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<
+			Schema,
+			ErrorShape,
+			Intent | DefaultFormIntent,
+			Value
+		>;
 	},
 ): {
 	state: FormState<
@@ -448,23 +390,16 @@ export function useForm<
 			}
 
 			if (!event.isDefaultPrevented()) {
-				const serverResult = optionsRef.current?.onSubmit?.(event, {
+				optionsRef.current?.onSubmit?.(event, {
 					submission,
 					formData,
 					value,
-					update: (submission) =>
-						handleSubmission(submission, { type: 'server' }),
-				});
-
-				if (serverResult) {
-					serverResult.then((result) => {
+					update: (submission) => {
 						if (!abortController.signal.aborted) {
-							handleSubmission(result, {
-								type: 'server',
-							});
+							handleSubmission(submission, { type: 'server' });
 						}
-					});
-				}
+					},
+				});
 			}
 		},
 		intent,
