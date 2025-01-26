@@ -546,11 +546,11 @@ export function useFormData<Value>(
 	return value;
 }
 
-export const visuallyHiddenProps: {
+export const visuallyHiddenProps: Readonly<{
 	/**
 	 * CSS Style to make the input element visually hidden
 	 */
-	style: React.CSSProperties;
+	style: Readonly<React.CSSProperties>;
 	/**
 	 * Hidden input should not be focusable
 	 */
@@ -559,8 +559,8 @@ export const visuallyHiddenProps: {
 	 * Hidden input should not be announced by screen readers
 	 */
 	'aria-hidden': true;
-} = {
-	style: {
+}> = Object.freeze({
+	style: Object.freeze({
 		position: 'absolute',
 		width: '1px',
 		height: '1px',
@@ -570,43 +570,14 @@ export const visuallyHiddenProps: {
 		clip: 'rect(0,0,0,0)',
 		whiteSpace: 'nowrap',
 		border: 0,
-	},
+	}),
 	tabIndex: -1,
 	'aria-hidden': true,
-};
+});
 
-export function useCustomInput(initialValue: string): {
-	value: string;
-	changed(value: string): void;
-	focused(): void;
-	blurred(): void;
-	register: React.RefCallback<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
-	>;
-	visuallyHiddenProps: typeof visuallyHiddenProps;
-};
-export function useCustomInput(initialValue: string[]): {
-	value: string[];
-	changed(value: string[]): void;
-	focused(): void;
-	blurred(): void;
-	register: React.RefCallback<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
-	>;
-	visuallyHiddenProps: typeof visuallyHiddenProps;
-};
-export function useCustomInput(initialValue?: string | string[] | undefined): {
-	value: string | string[] | undefined;
-	changed(value: string | string[]): void;
-	focused(): void;
-	blurred(): void;
-	register: React.RefCallback<
-		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
-	>;
-	visuallyHiddenProps: typeof visuallyHiddenProps;
-};
-export function useCustomInput(initialValue?: string | string[] | undefined): {
-	value: string | string[] | undefined;
+export function useCustomInput(initialValue?: string | string[] | null): {
+	value: string | undefined;
+	selected: string[] | undefined;
 	changed(value: string | string[]): void;
 	focused(): void;
 	blurred(): void;
@@ -622,7 +593,11 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 		| null
 		| undefined
 	>();
-	const previous = useRef<string | string[] | undefined>(initialValue);
+	const previousValue = useRef(
+		typeof initialValue === 'string'
+			? [initialValue]
+			: initialValue ?? undefined,
+	);
 	const eventDispatching = useRef<Record<string, boolean>>({});
 	const value = useSyncExternalStore(
 		useCallback(
@@ -635,45 +610,35 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 			[],
 		),
 		() => {
+			const prev = previousValue.current;
+
 			if (!inputRef.current) {
-				// eslint-disable-next-line no-console
-				console.log(
-					'No input element is registered yet; Did you forget to call the `register` function?',
-				);
-				return initialValue;
+				return prev;
 			}
 
 			const element = inputRef.current;
-			const prev = previous.current;
 			const isMultipleSelect =
 				element instanceof HTMLSelectElement && element.multiple;
 			const isRadioOrCheckbox =
 				element instanceof HTMLInputElement &&
 				(element.type === 'radio' || element.type === 'checkbox');
-			const value = isMultipleSelect
+			const next = isMultipleSelect
 				? Array.from(element.selectedOptions).map((option) => option.value)
-				: [
-						isRadioOrCheckbox
-							? element.checked
-								? element.value
-								: ''
-							: element.value,
-					];
-			const needsArray =
-				typeof initialValue !== 'undefined'
-					? Array.isArray(initialValue)
-					: isMultipleSelect;
-			const next = needsArray ? value : value[0];
+				: isRadioOrCheckbox
+					? element.checked
+						? [element.value]
+						: []
+					: [element.value];
 
 			if (deepEqual(prev, next)) {
 				return prev;
 			}
 
-			previous.current = next;
+			previousValue.current = next;
 
 			return next;
 		},
-		() => initialValue,
+		() => previousValue.current,
 	);
 
 	useEffect(() => {
@@ -762,7 +727,8 @@ export function useCustomInput(initialValue?: string | string[] | undefined): {
 	}, []);
 
 	return {
-		value,
+		value: value?.[0],
+		selected: value,
 		changed: control.changed,
 		focused: control.focused,
 		blurred: control.blurred,

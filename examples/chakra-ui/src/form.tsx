@@ -18,7 +18,7 @@ type ExampleNumberProps = {
 };
 
 export function ExampleNumberInput({ name }: ExampleNumberProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<NumberInput
@@ -42,7 +42,7 @@ type ExamplePinProps = {
 };
 
 export function ExamplePinInput({ name }: ExamplePinProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -66,7 +66,7 @@ type ExampleSliderProps = {
 };
 
 export function ExampleSlider({ name }: ExampleSliderProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>

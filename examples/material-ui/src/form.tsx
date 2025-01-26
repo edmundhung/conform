@@ -17,14 +17,14 @@ type ExampleSelectProps = {
 };
 
 export function ExampleSelect({ label, name, error }: ExampleSelectProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
 			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
 			<TextField
 				label={label}
-				value={input.value}
+				value={input.value ?? ''}
 				onChange={(event) => input.changed(event.target.value)}
 				onBlur={() => input.blurred()}
 				error={!!error}
@@ -51,14 +51,14 @@ export function ExampleAutocomplete({
 	name,
 	error,
 }: ExampleAutocompleteProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
 		<Autocomplete
 			disablePortal
 			options={options}
-			value={input.value !== '' ? input.value : null}
+			value={input.value ? input.value : null}
 			onChange={(_, option) => input.changed(option ?? '')}
 			onBlur={() => input.blurred()}
 			renderInput={(params) => (
@@ -82,7 +82,7 @@ type ExampleRatingProps = {
 };
 
 export function ExampleRating({ name, label, error }: ExampleRatingProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<FormControl variant="standard" error={!!error}>
@@ -109,7 +109,7 @@ type ExampleSliderProps = {
 };
 
 export function ExampleSlider({ name, label, error }: ExampleSliderProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<FormControl variant="standard" error={!!error}>

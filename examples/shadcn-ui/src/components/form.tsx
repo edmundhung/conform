@@ -55,7 +55,7 @@ type ExampleDatePickerProps = {
 
 function ExampleDatePicker({ name }: ExampleDatePickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -120,7 +120,7 @@ type ExampleCountryPickerProps = {
 
 function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -196,7 +196,7 @@ type ExampleRadioGroupProps = {
 
 function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<React.ElementRef<typeof RadioGroup>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -233,7 +233,7 @@ type ExampleCheckboxProps = {
 
 function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<React.ElementRef<typeof Checkbox>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -248,7 +248,7 @@ function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
 			<Checkbox
 				ref={checkboxRef}
 				value={value}
-				checked={value === input.value}
+				checked={input.value === value}
 				onCheckedChange={(checked) => {
 					input.changed(checked ? value : '');
 				}}
@@ -267,7 +267,7 @@ type ExampleSelectProps = {
 
 function ExampleSelect({ name, items, placeholder }: ExampleSelectProps) {
 	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -314,7 +314,7 @@ type ExampleSliderProps = {
 
 function ExampleSlider({ name }: ExampleSliderProps) {
 	const sliderRef = useRef<React.ElementRef<typeof Slider>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -334,7 +334,7 @@ function ExampleSlider({ name }: ExampleSliderProps) {
 				<Slider
 					ref={sliderRef}
 					step={1}
-					value={[input.value === '' ? 0 : parseFloat(input.value)]}
+					value={[input.value ? parseFloat(input.value) : 0]}
 					onValueChange={(numbers) => {
 						input.changed(numbers[0]?.toString());
 					}}
@@ -353,7 +353,7 @@ type ExampleSwitchProps = {
 
 function ExampleSwitch({ name }: ExampleSwitchProps) {
 	const switchRef = useRef<React.ElementRef<typeof Switch>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -386,7 +386,7 @@ function ExampleSingleToggleGroup({
 	items,
 }: ExampleSingleToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -425,7 +425,7 @@ function ExampleMultiToggleGroup({
 	items,
 }: ExampleMultiToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const input = useCustomInput([]);
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -439,7 +439,7 @@ function ExampleMultiToggleGroup({
 			<ToggleGroup
 				type="multiple"
 				ref={toggleGroupRef}
-				value={input.value}
+				value={input.selected ?? []}
 				onValueChange={(value) => {
 					input.changed(value);
 				}}
@@ -467,7 +467,7 @@ function ExampleInputOTP({
 	pattern = REGEXP_ONLY_DIGITS_AND_CHARS,
 }: ExampleInputOTPProps) {
 	const inputOTPRef = useRef<React.ElementRef<typeof InputOTP>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -479,7 +479,7 @@ function ExampleInputOTP({
 			/>
 			<InputOTP
 				ref={inputOTPRef}
-				value={input.value}
+				value={input.value ?? ''}
 				onChange={(value) => input.changed(value)}
 				onBlur={() => input.blurred()}
 				maxLength={6}

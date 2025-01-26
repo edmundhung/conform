@@ -20,11 +20,11 @@ type ExampleListBoxProps = {
 };
 
 export function ExampleListBox({ name }: ExampleListBoxProps) {
-	const input = useCustomInput([]);
+	const input = useCustomInput();
 
 	return (
 		<Listbox
-			value={input.value}
+			value={input.selected ?? []}
 			onChange={(value) => input.changed(value)}
 			multiple
 		>
@@ -99,7 +99,7 @@ type ExampleComboboxProps = {
 
 export function ExampleCombobox({ name }: ExampleComboboxProps) {
 	const [query, setQuery] = useState('');
-	const input = useCustomInput('');
+	const input = useCustomInput();
 	const filteredPeople = !input.value
 		? people
 		: people.filter((person) =>
@@ -184,7 +184,7 @@ type ExampleSwitchProps = {
 };
 
 export function ExampleSwitch({ name }: ExampleSwitchProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -216,7 +216,7 @@ type ExampleRadioGroupProps = {
 };
 
 export function ExampleRadioGroup({ name }: ExampleRadioGroupProps) {
-	const input = useCustomInput('');
+	const input = useCustomInput();
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{

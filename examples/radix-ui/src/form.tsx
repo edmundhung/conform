@@ -25,7 +25,7 @@ export function ExampleSelect({
 	placeholder,
 }: ExampleSelectProps) {
 	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -101,7 +101,7 @@ type ExampleToggleGroupProps = {
 
 export function ExampleToggleGroup({ name, items }: ExampleToggleGroupProps) {
 	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -144,7 +144,7 @@ type ExampleSwitchProps = {
 
 export function ExampleSwitch({ name }: ExampleSwitchProps) {
 	const switchRef = useRef<ElementRef<typeof RadixSwitch.Root>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -178,7 +178,7 @@ type ExampleSliderProps = {
 
 export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
 	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<div className="flex items-center gap-4">
@@ -191,7 +191,7 @@ export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
 				}}
 			/>
 			<RadixSlider.Root
-				value={[input.value === '' ? 0 : parseFloat(input.value)]}
+				value={[input.value ? parseFloat(input.value) : 0]}
 				className="relative flex items-center select-none touch-none w-full h-5"
 				max={max}
 				onValueChange={(value) => {
@@ -220,7 +220,7 @@ type ExampleRadioGroupProps = {
 
 export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
@@ -235,7 +235,7 @@ export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 			<RadixRadioGroup.Root
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
-				value={input.value}
+				value={input.value ?? ''}
 				onValueChange={(value) => input.changed(value)}
 				onBlur={() => input.blurred()}
 			>
@@ -270,7 +270,7 @@ type ExampleCheckboxProps = {
 
 export function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<ElementRef<typeof RadixCheckbox.Root>>(null);
-	const input = useCustomInput('');
+	const input = useCustomInput();
 
 	return (
 		<>
