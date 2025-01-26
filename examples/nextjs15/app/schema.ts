@@ -24,7 +24,6 @@ export const loginSchema = coerceZodFormData(
 );
 
 export function createSignupSchema(checks: {
-	// isUsernameUnique is only defined on the server
 	isUsernameUnique: (username: string) => Promise<boolean>;
 }) {
 	const isUsernameUnique = memorize(checks.isUsernameUnique);

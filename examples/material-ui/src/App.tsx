@@ -1,4 +1,4 @@
-import { getFieldset, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useForm } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
 import {
@@ -51,7 +51,7 @@ export default function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [, fields] = getMetadata(initialValue, state);
 
 	return (
 		<Container maxWidth="sm">
@@ -91,14 +91,14 @@ export default function App() {
 						label="Email (TextField)"
 						type="email"
 						name="email"
-						error={!fields.email.valid}
+						error={fields.email.invalid}
 						helperText={fields.email.error}
 					/>
 
 					<TextField
 						label="Description (TextField - multline)"
 						name={fields.description.name}
-						error={!fields.description.valid}
+						error={fields.description.invalid}
 						helperText={fields.description.error}
 						inputProps={{
 							minLength: 10,
@@ -121,7 +121,7 @@ export default function App() {
 					<FormControl
 						component="fieldset"
 						variant="standard"
-						error={!fields.subscribe.valid}
+						error={fields.subscribe.invalid}
 					>
 						<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
 						<FormGroup>
@@ -133,7 +133,7 @@ export default function App() {
 						<FormHelperText>{fields.subscribe.error}</FormHelperText>
 					</FormControl>
 
-					<FormControl variant="standard" error={!fields.active.valid}>
+					<FormControl variant="standard" error={fields.active.invalid}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<RadioGroup name={fields.active.name}>
 							<FormControlLabel value="yes" control={<Radio />} label="Yes" />

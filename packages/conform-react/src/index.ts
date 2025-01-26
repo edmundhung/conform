@@ -17,10 +17,9 @@ export {
 export {
 	defaultSerialize,
 	isTouched,
-	getFormMetadata,
 	getError,
-	getFieldset,
 	getSerializedValue,
+	getMetadata,
 	createFieldset,
 } from './metadata';
 export { useForm, useFormData, useIntent, useCustomInput } from './hooks';

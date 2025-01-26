@@ -1,63 +1,103 @@
-import { useForm, getFormProps, getInputProps } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
-import { json, redirect } from '@remix-run/node';
+import {
+	getMetadata,
+	isInput,
+	parseSubmission,
+	report,
+	useForm,
+} from 'conform-react';
+import { coerceZodFormData, resolveZodResult } from 'conform-zod';
+import type { ActionFunctionArgs } from '@remix-run/node';
+import { redirect } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
 import { z } from 'zod';
+import { useRef } from 'react';
 
-const schema = z.object({
-	email: z.string().email(),
-	password: z.string(),
-	remember: z.boolean().optional(),
-});
+const schema = coerceZodFormData(
+	z.object({
+		email: z.string().email(),
+		password: z.string(),
+		remember: z.boolean().default(false),
+	}),
+);
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parseWithZod(formData, { schema });
+	const submission = parseSubmission(formData);
+	const result = schema.safeParse(submission.value);
 
-	if (submission.status !== 'success') {
-		return json(submission.reply());
+	if (!result.success) {
+		return {
+			result: report(submission, resolveZodResult(result)),
+		};
 	}
 
-	return redirect(`/?value=${JSON.stringify(submission.value)}`);
+	throw redirect(`/?value=${JSON.stringify(result.data)}`);
 }
 
 export default function Login() {
+	const formRef = useRef<HTMLFormElement>(null);
 	const fetcher = useFetcher<typeof action>();
-	const [form, fields] = useForm({
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
-		lastResult: fetcher.data,
-
+		lastResult: fetcher.data?.result,
 		// Reuse the validation logic on the client
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
+		onValidate(value) {
+			return resolveZodResult(schema.safeParse(value));
 		},
-
-		shouldRevalidate: 'onBlur',
 	});
+	const [, fields] = getMetadata(initialValue, state);
 
 	return (
-		<fetcher.Form method="post" {...getFormProps(form)}>
+		<fetcher.Form
+			method="post"
+			ref={formRef}
+			onSubmit={handleSubmit}
+			onInput={(event) => {
+				if (
+					isInput(event.target) &&
+					state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			onBlur={(event) => {
+				if (
+					isInput(event.target) &&
+					!state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			noValidate
+		>
 			<div>
 				<label>Email</label>
 				<input
-					className={!fields.email.valid ? 'error' : ''}
-					{...getInputProps(fields.email, { type: 'email' })}
+					type="email"
+					className={fields.email.invalid ? 'error' : ''}
+					name={fields.email.name}
+					defaultValue={fields.email.defaultValue}
 				/>
-				<div>{fields.email.errors}</div>
+				<div>{fields.email.error}</div>
 			</div>
 			<div>
 				<label>Password</label>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...getInputProps(fields.password, { type: 'password' })}
+					type="password"
+					className={fields.password.invalid ? 'error' : ''}
+					name={fields.password.name}
+					defaultValue={fields.password.defaultValue}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{fields.password.error}</div>
 			</div>
 			<label>
 				<div>
 					<span>Remember me</span>
-					<input {...getInputProps(fields.remember, { type: 'checkbox' })} />
+					<input
+						type="checkbox"
+						name={fields.remember.name}
+						defaultChecked={fields.remember.defaultValue === 'on'}
+					/>
 				</div>
 			</label>
 			<hr />

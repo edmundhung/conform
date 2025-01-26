@@ -1,4 +1,4 @@
-import { getFieldset, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useForm } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -43,7 +43,7 @@ export default function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [, fields] = getMetadata(initialValue, state);
 
 	return (
 		<main className="flex flex-col gap-4 p-12 font-sans">

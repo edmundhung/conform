@@ -1,35 +1,43 @@
 {
-	"name": "@conform-example/remix",
+	"name": "remix",
 	"private": true,
-	"license": "MIT",
 	"sideEffects": false,
+	"type": "module",
 	"scripts": {
-		"build": "remix build",
-		"dev": "remix dev",
-		"start": "remix-serve build"
+		"build": "remix vite:build",
+		"dev": "remix vite:dev",
+		"lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+		"start": "remix-serve ./build/server/index.js",
+		"typecheck": "tsc"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.2.2",
-		"@conform-to/zod": "1.2.2",
-		"@remix-run/node": "^1.19.3",
-		"@remix-run/react": "^1.19.3",
-		"@remix-run/serve": "^1.19.3",
-		"clsx": "^1.2.0",
-		"isbot": "^3",
+		"@remix-run/node": "^2.15.2",
+		"@remix-run/react": "^2.15.2",
+		"@remix-run/serve": "^2.15.2",
+		"conform-react": "0.0.1",
+		"conform-zod": "0.0.1",
+		"isbot": "^4.1.0",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"zod": "3.21.4"
 	},
 	"devDependencies": {
-		"@remix-run/dev": "^1.19.3",
-		"@remix-run/eslint-config": "^1.19.3",
-		"@types/react": "^18.0.28",
-		"@types/react-dom": "^18.0.11",
-		"cross-env": "^7.0.3",
-		"eslint": "^8.57.0",
-		"typescript": "^4.9.5"
+		"@remix-run/dev": "^2.15.2",
+		"@types/react": "^18.2.20",
+		"@types/react-dom": "^18.2.7",
+		"@typescript-eslint/eslint-plugin": "^6.7.4",
+		"@typescript-eslint/parser": "^6.7.4",
+		"eslint": "^8.38.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-import": "^2.28.1",
+		"eslint-plugin-jsx-a11y": "^6.7.1",
+		"eslint-plugin-react": "^7.33.2",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"typescript": "^5.1.6",
+		"vite": "^5.1.0",
+		"vite-tsconfig-paths": "^4.2.1"
 	},
 	"engines": {
-		"node": "20.x"
+		"node": ">=20.0.0"
 	}
 }

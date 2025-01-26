@@ -1,114 +1,185 @@
+import type { ActionFunctionArgs } from '@remix-run/node';
 import {
+	Form,
+	useActionData,
+	useLoaderData,
+	useNavigation,
+} from '@remix-run/react';
+import {
+	getMetadata,
+	isInput,
+	parseSubmission,
+	report,
 	useForm,
-	getFormProps,
-	getInputProps,
-	getFieldsetProps,
-} from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
-import { json, redirect } from '@remix-run/node';
-import { Form, useActionData } from '@remix-run/react';
+} from 'conform-react';
+import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
+import { useRef } from 'react';
+import { createInMemoryStore } from '../store';
 
-const taskSchema = z.object({
-	content: z.string(),
-	completed: z.boolean().optional(),
-});
+const taskSchema = coerceZodFormData(
+	z.object({
+		content: z.string(),
+		completed: z.boolean().default(false),
+	}),
+);
 
-const todosSchema = z.object({
-	title: z.string(),
-	tasks: z.array(taskSchema).nonempty(),
-});
+const todosSchema = coerceZodFormData(
+	z.object({
+		title: z.string(),
+		tasks: z.array(taskSchema).nonempty(),
+	}),
+);
 
-export async function action({ request }: ActionArgs) {
+const todos = createInMemoryStore<z.infer<typeof todosSchema>>();
+
+export async function loader() {
+	return {
+		todos: await todos.getValue(),
+	};
+}
+
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parseWithZod(formData, {
-		schema: todosSchema,
-	});
+	const submission = parseSubmission(formData);
+	const result = todosSchema.safeParse(submission.value);
 
-	if (submission.status !== 'success') {
-		return json(submission.reply());
+	if (!result.success) {
+		return {
+			result: report(submission, resolveZodResult(result)),
+		};
 	}
 
-	return redirect(`/?value=${JSON.stringify(submission.value)}`);
+	await todos.setValue(result.data);
+
+	return {
+		result: report<typeof submission, z.input<typeof todosSchema>>(submission, {
+			reset: true,
+		}),
+	};
 }
 
 export default function Example() {
-	const lastResult = useActionData<typeof action>();
-	const [form, fields] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: todosSchema });
+	const loaderData = useLoaderData<typeof loader>();
+	const actionData = useActionData<typeof action>();
+	const navigation = useNavigation();
+	const formRef = useRef<HTMLFormElement>(null);
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+		// If we reset the form after a successful submission, we need to
+		// keep in mind that the default value (loader) will be updated
+		// only after the submsionn result (action) is received. We need to
+		// delay when useForm receives last submission result to avoid
+		// resetting the form too early.
+		lastResult: navigation.state === 'idle' ? actionData?.result : null,
+		defaultValue: loaderData.todos,
+		onValidate(value) {
+			return resolveZodResult(todosSchema.safeParse(value));
 		},
-		shouldValidate: 'onBlur',
 	});
+	const [, fields] = getMetadata(initialValue, state);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form
+			method="post"
+			ref={formRef}
+			onSubmit={handleSubmit}
+			onInput={(event) => {
+				if (
+					isInput(event.target) &&
+					state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			onBlur={(event) => {
+				if (
+					isInput(event.target) &&
+					!state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			noValidate
+		>
 			<div>
 				<label>Title</label>
 				<input
-					className={!fields.title.valid ? 'error' : ''}
-					{...getInputProps(fields.title, { type: 'text' })}
+					className={fields.title.invalid ? 'error' : ''}
+					name={fields.title.name}
+					defaultValue={fields.title.defaultValue ?? ''}
 				/>
-				<div>{fields.title.errors}</div>
+				<div>{fields.title.error}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fields.tasks.errors}</div>
+			<div className="form-error">{fields.tasks.error}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
 				return (
-					<fieldset key={task.key} {...getFieldsetProps(task)}>
+					<fieldset key={task.key}>
 						<div>
 							<label>Task #{index + 1}</label>
 							<input
-								className={!taskFields.content.valid ? 'error' : ''}
-								{...getInputProps(taskFields.content, { type: 'text' })}
+								className={taskFields.content.invalid ? 'error' : ''}
+								name={taskFields.content.name}
+								defaultValue={taskFields.content.defaultValue}
 							/>
-							<div>{taskFields.content.errors}</div>
+							<div>{taskFields.content.error}</div>
 						</div>
 						<div>
 							<label>
 								<span>Completed</span>
 								<input
-									className={!taskFields.completed.valid ? 'error' : ''}
-									{...getInputProps(taskFields.completed, {
-										type: 'checkbox',
-									})}
+									type="checkbox"
+									className={taskFields.completed.invalid ? 'error' : ''}
+									name={taskFields.completed.name}
+									defaultChecked={taskFields.completed.defaultValue === 'on'}
 								/>
 							</label>
 						</div>
 						<button
-							{...form.remove.getButtonProps({
-								name: fields.tasks.name,
-								index,
-							})}
+							type="button"
+							onClick={() => {
+								intent.remove({ name: fields.tasks.name, index });
+							}}
 						>
 							Delete
 						</button>
 						<button
-							{...form.reorder.getButtonProps({
-								name: fields.tasks.name,
-								from: index,
-								to: 0,
-							})}
+							type="button"
+							onClick={() => {
+								intent.reorder({
+									name: fields.tasks.name,
+									from: index,
+									to: 0,
+								});
+							}}
 						>
 							Move to top
 						</button>
 						<button
-							{...form.update.getButtonProps({
-								name: task.name,
-								value: { content: '' },
-							})}
+							type="button"
+							onClick={() => {
+								intent.update({
+									name: task.name,
+									value: { content: '' },
+								});
+							}}
 						>
 							Clear
 						</button>
 					</fieldset>
 				);
 			})}
-			<button {...form.insert.getButtonProps({ name: fields.tasks.name })}>
+			<button
+				type="button"
+				onClick={() =>
+					intent.insert({
+						name: fields.tasks.name,
+					})
+				}
+			>
 				Add task
 			</button>
 			<hr />

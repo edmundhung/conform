@@ -1,4 +1,4 @@
-import { getFieldset, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useForm } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import {
@@ -51,15 +51,13 @@ export default function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [, fields] = getMetadata(initialValue, state);
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
 			<form
 				ref={formRef}
-				onSubmit={(event) => {
-					handleSubmit(event);
-				}}
+				onSubmit={handleSubmit}
 				onBlur={(event) => {
 					if (
 						isInput(event.target) &&
@@ -86,13 +84,13 @@ export default function App() {
 						</Text>
 					</header>
 
-					<FormControl isInvalid={!fields.email.valid}>
+					<FormControl isInvalid={fields.email.invalid}>
 						<FormLabel>Email (Input)</FormLabel>
 						<Input type="email" name={fields.email.name} required />
 						<FormErrorMessage>{fields.email.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.language.valid}>
+					<FormControl isInvalid={fields.language.invalid}>
 						<FormLabel>Language (Select)</FormLabel>
 						<Select
 							name={fields.language.name}
@@ -106,25 +104,25 @@ export default function App() {
 						<FormErrorMessage>{fields.language.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.description.valid}>
+					<FormControl isInvalid={fields.description.invalid}>
 						<FormLabel>Description (Textarea)</FormLabel>
 						<Textarea name={fields.description.name} required />
 						<FormErrorMessage>{fields.description.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.quantity.valid}>
+					<FormControl isInvalid={fields.quantity.invalid}>
 						<FormLabel>Quantity (NumberInput)</FormLabel>
 						<ExampleNumberInput name={fields.quantity.name} />
 						<FormErrorMessage>{fields.quantity.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.pin.valid}>
+					<FormControl isInvalid={fields.pin.invalid}>
 						<FormLabel>PIN (PinInput)</FormLabel>
 						<ExamplePinInput name={fields.pin.name} />
 						<FormErrorMessage>{fields.pin.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.title.valid}>
+					<FormControl isInvalid={fields.title.invalid}>
 						<FormLabel>Title (Editable)</FormLabel>
 						<Editable placeholder="No content">
 							<EditablePreview />
@@ -133,7 +131,7 @@ export default function App() {
 						<FormErrorMessage>{fields.title.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.subscribe.valid}>
+					<FormControl isInvalid={fields.subscribe.invalid}>
 						<FormLabel>Subscribe (Checkbox)</FormLabel>
 						<Checkbox name={fields.subscribe.name} value="on" required>
 							Newsletter
@@ -141,19 +139,19 @@ export default function App() {
 						<FormErrorMessage>{fields.subscribe.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.enabled.valid}>
+					<FormControl isInvalid={fields.enabled.invalid}>
 						<FormLabel>Enabled (Switch)</FormLabel>
 						<Switch name={fields.enabled.name} value="on" required />
 						<FormErrorMessage>{fields.enabled.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.progress.valid}>
+					<FormControl isInvalid={fields.progress.invalid}>
 						<FormLabel>Progress (Slider)</FormLabel>
 						<ExampleSlider name={fields.progress.name} />
 						<FormErrorMessage>{fields.progress.error}</FormErrorMessage>
 					</FormControl>
 
-					<FormControl isInvalid={!fields.active.valid}>
+					<FormControl isInvalid={fields.active.invalid}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<RadioGroup name={fields.active.name}>
 							<Stack spacing={5} direction="row">

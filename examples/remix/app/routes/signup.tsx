@@ -1,140 +1,164 @@
-import type { Intent } from '@conform-to/react';
-import { getFormProps, getInputProps, useForm } from '@conform-to/react';
-import { parseWithZod, conformZodMessage } from '@conform-to/zod';
-import type { ActionArgs } from '@remix-run/node';
-import { json, redirect } from '@remix-run/node';
+import {
+	getMetadata,
+	isInput,
+	parseSubmission,
+	report,
+	useForm,
+} from 'conform-react';
+import { coerceZodFormData, memorize, resolveZodResult } from 'conform-zod';
+import { ActionFunctionArgs, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
+import { useMemo, useRef } from 'react';
 
 // Instead of sharing a schema, prepare a schema creator
-function createSchema(
-	intent: Intent | null,
-	options?: {
-		// isUsernameUnique is only defined on the server
-		isUsernameUnique: (username: string) => Promise<boolean>;
-	},
-) {
-	return z
-		.object({
-			username: z
-				.string({ required_error: 'Username is required' })
-				.regex(
-					/^[a-zA-Z0-9]+$/,
-					'Invalid username: only letters or numbers are allowed',
-				)
-				// Pipe the schema so it runs only if the username is valid
-				.pipe(
-					z.string().superRefine((username, ctx) => {
-						const isValidatingUsername =
-							intent === null ||
-							(intent.type === 'validate' &&
-								intent.payload.name === 'username');
+export function createSignupSchema(checks: {
+	isUsernameUnique: (username: string) => Promise<boolean>;
+}) {
+	const isUsernameUnique = memorize(checks.isUsernameUnique);
 
-						if (!isValidatingUsername) {
-							ctx.addIssue({
-								code: 'custom',
-								message: conformZodMessage.VALIDATION_SKIPPED,
-							});
-							return;
-						}
-
-						if (typeof options?.isUsernameUnique !== 'function') {
-							ctx.addIssue({
-								code: 'custom',
-								message: conformZodMessage.VALIDATION_UNDEFINED,
-								fatal: true,
-							});
-							return;
-						}
-
-						return options.isUsernameUnique(username).then((isUnique) => {
-							if (!isUnique) {
-								ctx.addIssue({
-									code: 'custom',
-									message: 'Username is already used',
-								});
-							}
-						});
+	return coerceZodFormData(
+		z
+			.object({
+				username: z
+					.string({ required_error: 'Username is required' })
+					.regex(
+						/^[a-zA-Z0-9]+$/,
+						'Invalid username: only letters or numbers are allowed',
+					)
+					.refine((username) => isUsernameUnique(username), {
+						message: 'Username is already used. How about "example"?',
 					}),
-				),
-		})
-		.and(
-			z
-				.object({
-					password: z.string({ required_error: 'Password is required' }),
-					confirmPassword: z.string({
-						required_error: 'Confirm password is required',
+			})
+			.and(
+				z
+					.object({
+						password: z.string({ required_error: 'Password is required' }),
+						confirmPassword: z.string({
+							required_error: 'Confirm password is required',
+						}),
+					})
+					.refine((data) => data.password === data.confirmPassword, {
+						message: 'Password does not match',
+						path: ['confirmPassword'],
 					}),
-				})
-				.refine((data) => data.password === data.confirmPassword, {
-					message: 'Password does not match',
-					path: ['confirmPassword'],
-				}),
-		);
+			),
+	);
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = await parseWithZod(formData, {
-		schema: (intent) =>
-			// create the zod schema based on the intent
-			createSchema(intent, {
-				isUsernameUnique(username) {
-					return new Promise((resolve) => {
-						setTimeout(() => {
-							resolve(username !== 'admin');
-						}, Math.random() * 300);
-					});
-				},
-			}),
-		async: true,
+	const schema = createSignupSchema({
+		isUsernameUnique(username) {
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(username === 'example');
+				}, Math.random() * 1000);
+			});
+		},
 	});
+	const submission = parseSubmission(formData);
+	const result = await schema.safeParseAsync(submission.value);
 
-	if (submission.status !== 'success') {
-		return json(submission.reply());
+	if (!result.success) {
+		return {
+			result: report(submission, resolveZodResult(result)),
+		};
 	}
 
-	return redirect(`/?value=${JSON.stringify(submission.value)}`);
+	if (Math.random() < 0.7) {
+		return {
+			result: report<typeof submission, z.input<typeof schema>>(submission, {
+				error: {
+					formError: ['Server error: Please try again later'],
+				},
+			}),
+		};
+	}
+
+	throw redirect(`/?value=${JSON.stringify(result.data)}`);
 }
 
 export default function Signup() {
-	const lastResult = useActionData<typeof action>();
-	const [form, fields] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, {
-				// Create the schema without `isUsernameUnique` defined
-				schema: (intent) => createSchema(intent),
-			});
+	const actionData = useActionData<typeof action>();
+	const schema = useMemo(
+		() =>
+			createSignupSchema({
+				async isUsernameUnique(username) {
+					await new Promise((resolve) => {
+						setTimeout(resolve, Math.random() * 500);
+					});
+
+					return username === 'example';
+				},
+			}),
+		[],
+	);
+	const formRef = useRef<HTMLFormElement>(null);
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+		// Sync the result of last submission
+		lastResult: actionData?.result,
+		// Reuse the validation logic on the client
+		async onValidate(value) {
+			const result = await schema.safeParseAsync(value);
+			return resolveZodResult(result);
 		},
-		shouldValidate: 'onBlur',
 	});
+	const [form, fields] = getMetadata(initialValue, state);
 
 	return (
-		<Form method="post" {...getFormProps(form)}>
+		<Form
+			method="post"
+			ref={formRef}
+			onSubmit={handleSubmit}
+			onInput={(event) => {
+				if (
+					isInput(event.target) &&
+					state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			onBlur={(event) => {
+				if (
+					isInput(event.target) &&
+					!state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			noValidate
+		>
+			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>
 				<input
-					className={!fields.username.valid ? 'error' : ''}
-					{...getInputProps(fields.username, { type: 'text' })}
+					type="text"
+					className={fields.username.invalid ? 'error' : ''}
+					name={fields.username.name}
+					defaultValue={fields.username.defaultValue}
 				/>
-				<div>{fields.username.errors}</div>
+				<div>{fields.username.error}</div>
 			</label>
 			<label>
 				<div>Password</div>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
-					{...getInputProps(fields.password, { type: 'password' })}
+					type="password"
+					className={fields.password.invalid ? 'error' : ''}
+					name={fields.password.name}
+					defaultValue={fields.password.defaultValue}
 				/>
-				<div>{fields.password.errors}</div>
+				<div>{fields.password.error}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!fields.confirmPassword.valid ? 'error' : ''}
-					{...getInputProps(fields.confirmPassword, { type: 'password' })}
+					type="password"
+					className={fields.confirmPassword.invalid ? 'error' : ''}
+					name={fields.confirmPassword.name}
+					defaultValue={fields.confirmPassword.defaultValue}
 				/>
-				<div>{fields.confirmPassword.errors}</div>
+				<div>{fields.confirmPassword.error}</div>
 			</label>
 			<hr />
 			<button>Signup</button>

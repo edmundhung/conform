@@ -1,28 +1,27 @@
-import type { V2_MetaFunction, LinksFunction } from '@remix-run/node';
 import {
 	Link,
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
 	ScrollRestoration,
 } from '@remix-run/react';
-import stylesUrl from '~/styles.css';
+import type { LinksFunction, MetaFunction } from '@remix-run/node';
+import stylesUrl from './styles.css?url';
 
 export const links: LinksFunction = () => {
 	return [{ rel: 'stylesheet', href: stylesUrl }];
 };
 
-export const meta: V2_MetaFunction = () => [
+export const meta: MetaFunction = () => [
 	{
 		charset: 'utf-8',
-		title: 'Remix - Conform Example',
+		title: 'Conform / Remix Example',
 		viewport: 'width=device-width,initial-scale=1',
 	},
 ];
 
-export default function App() {
+export function Layout({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en">
 			<head>
@@ -30,36 +29,41 @@ export default function App() {
 				<Links />
 			</head>
 			<body>
-				<main>
-					<h1>Remix Example</h1>
-
-					<p>
-						This example demonstrates some of the features of Conform including{' '}
-						<strong>client validation</strong>, <strong>nested list</strong>,
-						and <strong>async validation with zod</strong>.
-					</p>
-
-					<ul>
-						<li>
-							<Link to="login">Login</Link> (
-							<Link to="login-fetcher">with useFetcher</Link>)
-						</li>
-						<li>
-							<Link to="todos">Todo list</Link>
-						</li>
-						<li>
-							<Link to="signup">Signup</Link>
-						</li>
-					</ul>
-
-					<hr />
-
-					<Outlet />
-				</main>
+				{children}
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 			</body>
 		</html>
+	);
+}
+
+export default function App() {
+	return (
+		<main>
+			<h1>Remix Example</h1>
+
+			<p>
+				This example demonstrates some of the features of Conform including{' '}
+				<strong>client validation</strong>, <strong>nested list</strong>, and{' '}
+				<strong>async validation with zod</strong>.
+			</p>
+
+			<ul>
+				<li>
+					<Link to="login">Login</Link> (
+					<Link to="login-fetcher">with useFetcher</Link>)
+				</li>
+				<li>
+					<Link to="todos">Todo list</Link>
+				</li>
+				<li>
+					<Link to="signup">Signup</Link>
+				</li>
+			</ul>
+
+			<hr />
+
+			<Outlet />
+		</main>
 	);
 }

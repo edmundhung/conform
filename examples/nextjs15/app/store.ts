@@ -12,7 +12,7 @@ declare global {
 global.inMemoryDemoStore = {};
 
 export async function getTodos() {
-	await setTimeout(Math.random() * 10);
+	await setTimeout(Math.random() * 100);
 
 	return Promise.resolve(global.inMemoryDemoStore.todos);
 }
@@ -20,7 +20,7 @@ export async function getTodos() {
 export async function updateTodos(
 	todos: z.infer<typeof todosSchema>,
 ): Promise<void> {
-	await setTimeout(Math.random() * 100);
+	await setTimeout(Math.random() * 1000);
 
 	global.inMemoryDemoStore.todos = todos;
 }

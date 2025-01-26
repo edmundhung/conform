@@ -724,8 +724,10 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 				serverError:
 					type === 'server'
 						? // Update server error only if the error is different from the previous one
-							result.error && !deepEqual(state.serverError, result.error)
-							? result.error
+							result.error
+							? !deepEqual(state.serverError, result.error)
+								? result.error
+								: state.serverError
 							: null
 						: // Reset server error only if the submitted value is different
 							typeof result.error !== 'undefined' &&

@@ -6,8 +6,7 @@ import {
 	useCustomInput,
 	useFormData,
 	useForm,
-	getFormMetadata,
-	getFieldset,
+	getMetadata,
 	parseSubmission,
 	isInput,
 	report,
@@ -169,8 +168,7 @@ export default function Example() {
 			});
 		},
 	});
-	const form = getFormMetadata(state);
-	const fields = getFieldset(initialValue, state);
+	const [form, fields] = getMetadata(initialValue, state);
 	const title = useFormData(formRef, (formData) =>
 		formData.get(fields.title.name)?.toString(),
 	);
@@ -184,7 +182,7 @@ export default function Example() {
 			onSubmit={handleSubmit}
 			onInput={(event) => {
 				if (
-					isInput(event.target, formRef.current) &&
+					isInput(event.target) &&
 					state.touchedFields.includes(event.target.name)
 				) {
 					intent.validate(event.target.name);
@@ -192,7 +190,7 @@ export default function Example() {
 			}}
 			onBlur={(event) => {
 				if (
-					isInput(event.target, formRef.current) &&
+					isInput(event.target) &&
 					!state.touchedFields.includes(event.target.name)
 				) {
 					intent.validate(event.target.name);

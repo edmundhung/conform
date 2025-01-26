@@ -2,7 +2,7 @@
 
 import { useFormStatus } from 'react-dom';
 import { login, signup, createTodos } from '@/app/actions';
-import { getFieldset, isInput, isTouched, useForm } from 'conform-react';
+import { getMetadata, isInput, isTouched, useForm } from 'conform-react';
 import { resolveZodResult } from 'conform-zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
 import { useMemo, useRef, useActionState } from 'react';
@@ -25,12 +25,10 @@ export function TodoForm({
 		lastResult,
 		defaultValue,
 		onValidate(value) {
-			const result = todosSchema.safeParse(value);
-
-			return resolveZodResult(result);
+			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [, fields] = getMetadata(initialValue, state);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -39,7 +37,18 @@ export function TodoForm({
 			action={action}
 			onSubmit={handleSubmit}
 			onBlur={(event) => {
-				if (isInput(event.target)) {
+				if (
+					isInput(event.target) &&
+					!state.touchedFields.includes(event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
+			onInput={(event) => {
+				if (
+					isInput(event.target) &&
+					state.touchedFields.includes(event.target.name)
+				) {
 					intent.validate(event.target.name);
 				}
 			}}
@@ -47,7 +56,7 @@ export function TodoForm({
 			<div>
 				<label>Title</label>
 				<input
-					className={!fields.title.valid ? 'error' : ''}
+					className={fields.title.invalid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue ?? ''}
 				/>
@@ -63,7 +72,7 @@ export function TodoForm({
 						<div>
 							<label>Task #{index + 1}</label>
 							<input
-								className={!taskFields.content.valid ? 'error' : ''}
+								className={taskFields.content.invalid ? 'error' : ''}
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
 							/>
@@ -74,7 +83,7 @@ export function TodoForm({
 								<span>Completed</span>
 								<input
 									type="checkbox"
-									className={!taskFields.completed.valid ? 'error' : ''}
+									className={taskFields.completed.invalid ? 'error' : ''}
 									name={taskFields.completed.name}
 									defaultChecked={taskFields.completed.defaultValue === 'on'}
 								/>
@@ -138,19 +147,29 @@ export function LoginForm() {
 		lastResult,
 		// Reuse the validation logic on the client
 		onValidate(value) {
-			const result = loginSchema.safeParse(value);
-			return resolveZodResult(result);
+			return resolveZodResult(loginSchema.safeParse(value));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [, fields] = getMetadata(initialValue, state);
 
 	return (
 		<form
 			ref={formRef}
 			action={action}
 			onSubmit={handleSubmit}
+			onInput={(event) => {
+				if (
+					isInput(event.target) &&
+					isTouched(state.touchedFields, event.target.name)
+				) {
+					intent.validate(event.target.name);
+				}
+			}}
 			onBlur={(event) => {
-				if (isInput(event.target)) {
+				if (
+					isInput(event.target) &&
+					!isTouched(state.touchedFields, event.target.name)
+				) {
 					intent.validate(event.target.name);
 				}
 			}}
@@ -158,7 +177,7 @@ export function LoginForm() {
 			<div>
 				<label>Email</label>
 				<input
-					className={!fields.email.valid ? 'error' : ''}
+					className={fields.email.invalid ? 'error' : ''}
 					name={fields.email.name}
 					type="text"
 				/>
@@ -167,7 +186,7 @@ export function LoginForm() {
 			<div>
 				<label>Password</label>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
+					className={fields.password.invalid ? 'error' : ''}
 					name={fields.password.name}
 				/>
 				<div>{fields.password.error}</div>
@@ -192,12 +211,7 @@ export function SignupForm() {
 			createSignupSchema({
 				async isUsernameUnique(username) {
 					await new Promise((resolve) => {
-						const min = 200;
-						const max = 2000;
-						setTimeout(
-							resolve,
-							Math.floor(Math.random() * (max - min + 1)) + min,
-						);
+						setTimeout(resolve, Math.random() * 500);
 					});
 
 					return username === 'example';
@@ -211,7 +225,7 @@ export function SignupForm() {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
 	});
-	const fields = getFieldset(initialValue, state);
+	const [form, fields] = getMetadata(initialValue, state);
 
 	return (
 		<form
@@ -235,11 +249,11 @@ export function SignupForm() {
 				}
 			}}
 		>
-			<div className="form-error">{state.serverError?.formError}</div>
+			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>
 				<input
-					className={!fields.username.valid ? 'error' : ''}
+					className={fields.username.invalid ? 'error' : ''}
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
 					type="text"
@@ -249,7 +263,7 @@ export function SignupForm() {
 			<label>
 				<div>Password</div>
 				<input
-					className={!fields.password.valid ? 'error' : ''}
+					className={fields.password.invalid ? 'error' : ''}
 					type="password"
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
@@ -259,7 +273,7 @@ export function SignupForm() {
 			<label>
 				<div>Confirm Password</div>
 				<input
-					className={!fields.confirmPassword.valid ? 'error' : ''}
+					className={fields.confirmPassword.invalid ? 'error' : ''}
 					type="password"
 					name={fields.confirmPassword.name}
 					defaultValue={fields.password.defaultValue}

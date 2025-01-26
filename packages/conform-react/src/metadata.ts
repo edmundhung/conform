@@ -31,13 +31,6 @@ export type Fieldset<Schema, Metadata extends Record<string, unknown>> = {
 	[Key in keyof Combine<Schema>]-?: Field<Combine<Schema>[Key], Metadata>;
 };
 
-export type FormMetadata<ErrorShape> = {
-	touched: boolean;
-	valid: boolean;
-	error: ErrorShape | null;
-	fieldError: Record<string, ErrorShape> | null;
-};
-
 export function defaultSerialize(
 	value: unknown,
 ): string | string[] | undefined {
@@ -84,23 +77,6 @@ export function isTouched(touchedFields: string[], name = '') {
 	return touchedFields.some(
 		(field) => field !== name && getChildPaths(name, field) !== null,
 	);
-}
-
-export function getFormMetadata<ErrorShape>(
-	state: FormState<unknown, ErrorShape>,
-): FormMetadata<ErrorShape> {
-	const error = state.serverError ?? state.clientError;
-
-	return {
-		error: error?.formError ?? null,
-		fieldError: error?.fieldError ?? null,
-		get touched() {
-			return isTouched(state.touchedFields);
-		},
-		get valid() {
-			return error === null;
-		},
-	};
 }
 
 export function getSerializedValue(
@@ -178,65 +154,83 @@ export function createFieldset<
 	});
 }
 
-export function getFieldset<Schema, ErrorShape>(
+export function getMetadata<Schema, ErrorShape>(
 	defaultValue: Record<string, unknown> | null,
 	state: FormState<Schema, ErrorShape>,
 	options?: {
 		serialize?: (value: unknown) => string | string[] | undefined;
 	},
-): Fieldset<
-	Schema,
-	Readonly<{
-		name: string;
-		defaultValue: string | undefined;
-		defaultSelected: string[] | undefined;
+): [
+	{
 		touched: boolean;
-		valid: boolean;
+		invalid: boolean;
 		error: ErrorShape | undefined;
-	}>
-> {
-	return createFieldset({
-		defaultValue,
-		keys: state.keys,
-		defineMetadata(name) {
-			const error = state.serverError ?? state.clientError;
+		fieldError: Record<string, ErrorShape> | undefined;
+	},
+	Fieldset<
+		Schema,
+		Readonly<{
+			name: string;
+			defaultValue: string | undefined;
+			defaultSelected: string[] | undefined;
+			touched: boolean;
+			invalid: boolean;
+			error: ErrorShape | undefined;
+		}>
+	>,
+] {
+	const error = state.serverError ?? state.clientError;
 
-			return {
-				get name() {
-					return name;
-				},
-				get defaultValue() {
-					const value = getSerializedValue(
-						defaultValue,
-						name,
-						options?.serialize,
-					);
-					const result = typeof value === 'string' ? value : value?.[0];
-
-					return result;
-				},
-				get defaultSelected() {
-					const value = getSerializedValue(
-						defaultValue,
-						name,
-						options?.serialize,
-					);
-					const result = typeof value === 'string' ? [value] : value;
-
-					return result;
-				},
-				get touched() {
-					return isTouched(state.touchedFields, name);
-				},
-				get valid() {
-					return (
-						typeof getError(error, state.touchedFields, name) === 'undefined'
-					);
-				},
-				get error() {
-					return getError(error, state.touchedFields, name);
-				},
-			};
+	return [
+		{
+			error: error?.formError ?? undefined,
+			fieldError: error?.fieldError,
+			get touched() {
+				return isTouched(state.touchedFields);
+			},
+			get invalid() {
+				return error !== null;
+			},
 		},
-	});
+		createFieldset({
+			defaultValue,
+			keys: state.keys,
+			defineMetadata(name) {
+				return {
+					get name() {
+						return name;
+					},
+					get defaultValue() {
+						const value = getSerializedValue(
+							defaultValue,
+							name,
+							options?.serialize,
+						);
+						const result = typeof value === 'string' ? value : value?.[0];
+
+						return result;
+					},
+					get defaultSelected() {
+						const value = getSerializedValue(
+							defaultValue,
+							name,
+							options?.serialize,
+						);
+						const result = typeof value === 'string' ? [value] : value;
+
+						return result;
+					},
+					get touched() {
+						return isTouched(state.touchedFields, name);
+					},
+					get invalid() {
+						return typeof this.error !== 'undefined';
+					},
+					get error() {
+						return getError(error, state.touchedFields, name);
+					},
+				};
+			},
+		}),
+	];
 }

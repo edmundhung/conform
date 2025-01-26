@@ -37,9 +37,9 @@ export function ExampleListBox({ name }: ExampleListBoxProps) {
 			<div className="relative mt-1" onBlur={() => input.blurred()}>
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
-						{input.value.length === 0
+						{!input.selected || input.selected.length === 0
 							? 'Please select'
-							: input.value
+							: input.selected
 									.map((id) => people.find((p) => p.id.toString() === id)?.name)
 									.join(', ')}
 					</span>
