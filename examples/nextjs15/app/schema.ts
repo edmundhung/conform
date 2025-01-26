@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const taskSchema = coerceZodFormData(
 	z.object({
 		content: z.string(),
-		completed: z.boolean().optional(),
+		completed: z.boolean().default(false),
 	}),
 );
 
@@ -39,7 +39,7 @@ export function createSignupSchema(checks: {
 						'Invalid username: only letters or numbers are allowed',
 					)
 					.refine((username) => isUsernameUnique(username), {
-						message: 'Username is already used',
+						message: 'Username is already used. How about "example"?',
 					}),
 			})
 			.and(

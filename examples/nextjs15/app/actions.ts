@@ -5,6 +5,8 @@ import { parseSubmission, report } from 'conform-react';
 import { resolveZodResult } from 'conform-zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
 import { z } from 'zod';
+import { updateTodos } from './store';
+import { revalidatePath } from 'next/cache';
 
 export async function login(_: unknown, formData: FormData) {
 	const submission = parseSubmission(formData);
@@ -14,7 +16,7 @@ export async function login(_: unknown, formData: FormData) {
 		return report(submission, resolveZodResult(result));
 	}
 
-	redirect(`/?value=${JSON.stringify(submission.value)}`);
+	redirect(`/?value=${JSON.stringify(result.data)}`);
 }
 
 export async function createTodos(_: unknown, formData: FormData) {
@@ -25,7 +27,12 @@ export async function createTodos(_: unknown, formData: FormData) {
 		return report(submission, resolveZodResult(result));
 	}
 
-	redirect(`/?value=${JSON.stringify(submission.value)}`);
+	await updateTodos(result.data);
+	await revalidatePath('/todos');
+
+	return report<typeof submission, z.input<typeof todosSchema>>(submission, {
+		reset: true,
+	});
 }
 
 export async function signup(_: unknown, formData: FormData) {
@@ -33,7 +40,7 @@ export async function signup(_: unknown, formData: FormData) {
 		isUsernameUnique(username) {
 			return new Promise((resolve) => {
 				setTimeout(() => {
-					resolve(username === 'example' && Math.random() < 0.2);
+					resolve(username === 'example');
 				}, Math.random() * 500);
 			});
 		},
@@ -45,8 +52,13 @@ export async function signup(_: unknown, formData: FormData) {
 		return report(submission, resolveZodResult(result));
 	}
 
-	return report<typeof submission, z.input<typeof schema>>(submission, {
-		reset: true,
-	});
-	// redirect(`/?value=${JSON.stringify(submission.value)}`);
+	if (Math.random() < 0.3) {
+		return report<typeof submission, z.input<typeof schema>>(submission, {
+			error: {
+				formError: ['Server error: Please try again later'],
+			},
+		});
+	}
+
+	redirect(`/?value=${JSON.stringify(result.data)}`);
 }

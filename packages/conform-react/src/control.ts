@@ -788,6 +788,10 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 			return state;
 		},
 		updateState(state, { type, result, reset }) {
+			if (result.value === null) {
+				return reset();
+			}
+
 			let newState = updateObject(state, {
 				clientError:
 					type === 'client' &&

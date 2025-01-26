@@ -1,3 +1,5 @@
+'use client';
+
 import {
 	useCallback,
 	useEffect,
@@ -75,7 +77,7 @@ export function useForm<
 			| Submission<Intent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
-		defaultValue?: DefaultValue<Schema>;
+		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: (
 			value: Record<string, FormValue>,
@@ -120,7 +122,7 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 			| Submission<DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
-		defaultValue?: DefaultValue<Schema>;
+		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: (
 			value: Record<string, FormValue>,
@@ -178,7 +180,7 @@ export function useForm<
 			| Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
 			| Submission<null, Schema, ErrorShape>
 			| null;
-		defaultValue?: DefaultValue<Schema>;
+		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: (
 			value: Record<string, FormValue>,

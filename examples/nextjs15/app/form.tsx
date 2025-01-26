@@ -6,6 +6,7 @@ import { getFieldset, isInput, isTouched, useForm } from 'conform-react';
 import { resolveZodResult } from 'conform-zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
 import { useMemo, useRef, useActionState, startTransition } from 'react';
+import type { z } from 'zod';
 
 function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
 	const { pending } = useFormStatus();
@@ -13,18 +14,44 @@ function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
 	return <button {...props} disabled={pending || props.disabled} />;
 }
 
-export function TodoForm() {
+export function TodoForm({
+	defaultValue,
+}: {
+	defaultValue?: z.infer<typeof todosSchema> | null;
+}) {
 	const [lastResult, action] = useActionState(createTodos, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const {
+		state,
+		defaultValue: submittedValue,
+		handleSubmit,
+		intent,
+	} = useForm(formRef, {
 		lastResult,
+		defaultValue,
 		onValidate(value) {
 			const result = todosSchema.safeParse(value);
 
 			return resolveZodResult(result);
 		},
+		onSubmit(event, { formData, update }) {
+			const formElement = event.currentTarget;
+
+			startTransition(async () => {
+				const submission = await createTodos(null, formData);
+
+				startTransition(() => {
+					if (!submission.value) {
+						requestFormReset(formElement);
+					}
+
+					update(submission);
+				});
+			});
+			event.preventDefault();
+		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(submittedValue ?? {}, state);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -124,7 +151,12 @@ export function TodoForm() {
 export function LoginForm() {
 	const [lastResult, action] = useActionState(login, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const {
+		state,
+		defaultValue: submittedValue,
+		handleSubmit,
+		intent,
+	} = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult,
 		// Reuse the validation logic on the client
@@ -133,7 +165,7 @@ export function LoginForm() {
 			return resolveZodResult(result);
 		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(submittedValue ?? {}, state);
 
 	return (
 		<form
@@ -196,7 +228,12 @@ export function SignupForm() {
 			}),
 		[],
 	);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const {
+		state,
+		defaultValue: submittedValue,
+		handleSubmit,
+		intent,
+	} = useForm(formRef, {
 		lastResult,
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
@@ -218,7 +255,7 @@ export function SignupForm() {
 			event.preventDefault();
 		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(submittedValue ?? {}, state);
 
 	return (
 		<form
@@ -242,6 +279,7 @@ export function SignupForm() {
 				}
 			}}
 		>
+			<div className="form-error">{state.serverError?.formError}</div>
 			<label>
 				<div>Username</div>
 				<input

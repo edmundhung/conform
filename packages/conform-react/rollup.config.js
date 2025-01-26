@@ -2,6 +2,7 @@ import path from 'node:path';
 import babel from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
+import preserveDirectives from "rollup-plugin-preserve-directives";
 
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage() {
@@ -48,6 +49,9 @@ function configurePackage() {
 			copy({
 				targets: [{ src: `../../README`, dest: sourceDir }],
 			}),
+			preserveDirectives({
+				include: ["./src/hooks.ts"],
+			}),
 		],
 	};
 
@@ -87,6 +91,9 @@ function configurePackage() {
 			}),
 			nodeResolve({
 				extensions: ['.ts', '.tsx'],
+			}),
+			preserveDirectives({
+				include: ["./src/hooks.ts"],
 			}),
 		],
 	};
