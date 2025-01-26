@@ -32,7 +32,9 @@ import {
 	updateFieldValue,
 	updateObject,
 } from './util';
-import { formObserver } from './observer';
+import { createFormObserver } from './observer';
+
+export const formObserver = createFormObserver();
 
 export function useNoValidate(defaultNoValidate = true): boolean {
 	const [noValidate, setNoValidate] = useState(defaultNoValidate);
@@ -520,7 +522,7 @@ export function useFormData<Value>(
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
-				formObserver.onFormDataChanged(({ formElement }) => {
+				formObserver.onFormDataChanged((formElement) => {
 					if (formElement === getFormElement(formRef)) {
 						callback();
 					}
@@ -602,8 +604,8 @@ export function useCustomInput(initialValue?: string | string[] | null): {
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
-				formObserver.onInputChanged((inputElement) => {
-					if (inputElement === inputRef.current) {
+				formObserver.onInputUpdated((element) => {
+					if (element === inputRef.current) {
 						callback();
 					}
 				}),

@@ -204,7 +204,11 @@ export default function App() {
 
 				<div className="flex gap-2">
 					<Button type="submit">Submit</Button>
-					<Button type="reset" variant="outline" onClick={() => intent.reset()}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => intent.reset()}
+					>
 						Reset
 					</Button>
 				</div>

@@ -1,93 +1,82 @@
 import { isInput } from 'conform-dom';
 
-export type FormObserver = {
-	/**
-	 * Subscribes to the event when a new input element is mounted (added to the DOM).
-	 *
-	 * @param callback - Function invoked with the newly mounted input elements.
-	 * @returns A function to unsubscribe the callback.
-	 */
-	onInputMounted(
-		callback: (
+function createEventEmitter<Callback extends (...args: any) => void>(
+	initialize: () => void,
+	destroy: () => void,
+) {
+	const callbacks = new Set<Callback>();
+
+	return {
+		size: callbacks.size,
+		emit(...args: Parameters<Callback>) {
+			for (const callback of callbacks) {
+				callback(...args);
+			}
+		},
+		subscribe(callback: Callback) {
+			initialize();
+			callbacks.add(callback);
+
+			return () => {
+				destroy();
+				callbacks.delete(callback);
+			};
+		},
+	};
+}
+
+export function createFormObserver() {
+	const inputUpdated = createEventEmitter<
+		(
 			inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-		) => void,
-	): () => void;
-
-	/**
-	 * Subscribes to the event when an input element's value changes.
-	 * @param callback - Function invoked with the input element.
-	 * @returns A function to unsubscribe the callback.
-	 */
-	onInputChanged(
-		callback: (
-			inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-		) => void,
-	): () => void;
-
-	/**
-	 * Subscribes to the event when a form's value changes.
-	 *
-	 * @param callback - Function invoked with the form element and its FormData.
-	 * @returns A function to unsubscribe the callback.
-	 */
-	onFormDataChanged(
-		callback: (formElement: HTMLFormElement, formData: FormData) => void,
-	): () => void;
-
-	/**
-	 * Subscribes to the event when a form reset.
-	 *
-	 * @param callback - Function invoked with the form element.
-	 * @returns A function to unsubscribe the callback.
-	 */
-	onFormReset(callback: (formElement: HTMLFormElement) => void): () => void;
-};
-
-export const formObserver = createFormObserver();
-
-export function createFormObserver(): FormObserver {
-	const inputMountedCallbacks = new Set<
-		Parameters<FormObserver['onInputMounted']>[0]
-	>();
-	const inputChangedCallbacks = new Set<
-		Parameters<FormObserver['onInputChanged']>[0]
-	>();
-	const formResetCallbacks = new Set<
-		Parameters<FormObserver['onFormReset']>[0]
-	>();
-	const formDataChangedCallbacks = new Set<
-		Parameters<FormObserver['onFormDataChanged']>[0]
-	>();
+		) => void
+	>(initialize, destroy);
+	const formDataChanged = createEventEmitter<
+		(formElement: HTMLFormElement) => void
+	>(initialize, destroy);
 
 	let observer: MutationObserver | null = null;
+	let resetTimeout: NodeJS.Timeout | null = null;
 
 	function handleInput(event: Event) {
 		const element = event.target;
 
 		if (isInput(element)) {
-			emitInputChanged(element);
+			inputUpdated.emit(element);
 
 			if (element.form) {
-				emitFormDataChanged(element.form);
+				formDataChanged.emit(element.form);
 			}
 		}
 	}
 
 	function handleReset(event: Event) {
 		if (event.target instanceof HTMLFormElement) {
-			emitFormDataChanged(event.target);
-			emitFormReset(event.target);
+			const formElement = event.target;
+			// Reset event is fired before the form is reset, so we need to wait for the next tick
+			resetTimeout = setTimeout(() => {
+				formDataChanged.emit(formElement);
+
+				for (const element of formElement.elements) {
+					if (isInput(element)) {
+						inputUpdated.emit(element);
+					}
+				}
+
+				// Clear the timeout
+				resetTimeout = null;
+			});
 		}
 	}
 
 	function handleSubmit(event: SubmitEvent): void {
 		if (event.target instanceof HTMLFormElement) {
-			emitFormDataChanged(event.target, event.submitter);
+			formDataChanged.emit(event.target);
 		}
 	}
 
 	function handleMutation(mutations: MutationRecord[]): void {
-		const formDataChanged = new Set<HTMLFormElement>();
+		const formElementAffected = new Set<HTMLFormElement>();
 		const inputElementMoutned = new Set<
 			HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 		>();
@@ -116,14 +105,14 @@ export function createFormObserver(): FormObserver {
 						for (const input of getInputs(node)) {
 							if (input.form) {
 								inputElementMoutned.add(input);
-								formDataChanged.add(input.form);
+								formElementAffected.add(input.form);
 							}
 						}
 					}
 					for (const node of mutation.removedNodes) {
 						for (const input of getInputs(node)) {
 							if (input.form) {
-								formDataChanged.add(input.form);
+								formElementAffected.add(input.form);
 							}
 						}
 					}
@@ -133,65 +122,29 @@ export function createFormObserver(): FormObserver {
 						inputElementChanged.add(mutation.target);
 
 						if (mutation.target.form) {
-							formDataChanged.add(mutation.target.form);
+							formElementAffected.add(mutation.target.form);
 						}
 					}
 					break;
 			}
 		}
 
-		for (const formElement of formDataChanged) {
-			emitFormDataChanged(formElement);
+		for (const formElement of formElementAffected) {
+			formDataChanged.emit(formElement);
 		}
 
 		for (const inputElement of inputElementChanged) {
-			emitInputChanged(inputElement);
+			inputUpdated.emit(inputElement);
 		}
 
 		for (const inputElement of inputElementMoutned) {
-			emitInputMounted(inputElement);
-		}
-	}
-
-	function emitInputMounted(
-		inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	) {
-		for (const callback of inputMountedCallbacks) {
-			callback(inputElement);
-		}
-	}
-
-	function emitInputChanged(
-		inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	) {
-		for (const callback of inputChangedCallbacks) {
-			callback(inputElement);
-		}
-	}
-
-	function emitFormDataChanged(
-		formElement: HTMLFormElement,
-		submitter: HTMLElement | null = null,
-	) {
-		const formData = new FormData(formElement, submitter);
-
-		for (const callback of formDataChangedCallbacks) {
-			callback(formElement, formData);
-		}
-	}
-
-	function emitFormReset(formElement: HTMLFormElement) {
-		for (const callback of formResetCallbacks) {
-			callback(formElement);
+			inputUpdated.emit(inputElement);
 		}
 	}
 
 	function initialize() {
 		// If there are no subscribers yet, listen for input, reset, and submit events globally
-		if (
-			formDataChangedCallbacks.size === 0 &&
-			inputMountedCallbacks.size === 0
-		) {
+		if (formDataChanged.size === 0 && inputUpdated.size === 0) {
 			// Listen for input, reset, and submit events
 			document.addEventListener('input', handleInput);
 			document.addEventListener('reset', handleReset);
@@ -209,11 +162,12 @@ export function createFormObserver(): FormObserver {
 	}
 
 	function destroy() {
+		if (resetTimeout) {
+			clearTimeout(resetTimeout);
+		}
+
 		// If there are no subscribers left, remove event listeners and disconnect the observer
-		if (
-			formDataChangedCallbacks.size === 0 &&
-			inputMountedCallbacks.size === 0
-		) {
+		if (formDataChanged.size === 0 && inputUpdated.size === 0) {
 			document.removeEventListener('input', handleInput);
 			document.removeEventListener('reset', handleReset);
 			document.removeEventListener('submit', handleSubmit, true);
@@ -222,41 +176,7 @@ export function createFormObserver(): FormObserver {
 	}
 
 	return {
-		onInputMounted(callback) {
-			initialize();
-			inputMountedCallbacks.add(callback);
-
-			return () => {
-				inputMountedCallbacks.delete(callback);
-				destroy();
-			};
-		},
-		onInputChanged(callback) {
-			initialize();
-			inputChangedCallbacks.add(callback);
-
-			return () => {
-				inputChangedCallbacks.delete(callback);
-				destroy();
-			};
-		},
-		onFormReset(callback) {
-			initialize();
-			formResetCallbacks.add(callback);
-
-			return () => {
-				formResetCallbacks.delete(callback);
-				destroy();
-			};
-		},
-		onFormDataChanged(callback) {
-			initialize();
-			formDataChangedCallbacks.add(callback);
-
-			return () => {
-				formDataChangedCallbacks.delete(callback);
-				destroy();
-			};
-		},
+		onInputUpdated: inputUpdated.subscribe,
+		onFormDataChanged: formDataChanged.subscribe,
 	};
 }
