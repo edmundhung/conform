@@ -18,9 +18,9 @@ const schema = coerceZodFormData(
 	}),
 );
 
-export default function Example() {
+export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		onValidate(value) {
 			const result = schema.safeParse(value);
 			return resolveZodResult(result);
@@ -30,7 +30,7 @@ export default function Example() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(initialValue, state);
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">

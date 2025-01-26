@@ -58,7 +58,7 @@ export function ExampleAutocomplete({
 		<Autocomplete
 			disablePortal
 			options={options}
-			value={input.value}
+			value={input.value !== '' ? input.value : null}
 			onChange={(_, option) => input.changed(option ?? '')}
 			onBlur={() => input.blurred()}
 			renderInput={(params) => (

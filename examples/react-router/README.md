@@ -6,6 +6,6 @@ This example demonstrates some of the features of Conform including **client val
 
 <!-- sandbox src="/examples/react-router?module=/src/login.tsx" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/react-router?file=/app/routes/index.tsx).
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/react-router).
 
 <!-- /sandbox -->

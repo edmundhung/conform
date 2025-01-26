@@ -6,6 +6,6 @@ This example demonstrates some of the features of Conform including **client val
 
 <!-- sandbox src="/examples/remix?module=/app/root.tsx" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/remix?file=/app/root.tsx).
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/remix).
 
 <!-- /sandbox -->

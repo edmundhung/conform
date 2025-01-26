@@ -19,7 +19,7 @@ import {
 	SingleToggleGroup,
 	MultiToggleGroup,
 	InputOTP,
-} from '@/components/form';
+} from './components/form';
 
 const schema = coerceZodFormData(
 	z.object({
@@ -44,9 +44,9 @@ const schema = coerceZodFormData(
 	}),
 );
 
-function App() {
+export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		defaultValue: {
 			isAdult: true,
 			gender: 'female',
@@ -62,7 +62,7 @@ function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(initialValue, state);
 
 	return (
 		<div className="flex flex-col gap-6 p-10">
@@ -212,5 +212,3 @@ function App() {
 		</div>
 	);
 }
-
-export default App;

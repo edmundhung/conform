@@ -27,9 +27,9 @@ const schema = coerceZodFormData(
 	}),
 );
 
-export function App() {
+export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		defaultValue: {
 			carType: 'hatchback',
 			desiredContractType: 'part',
@@ -43,7 +43,7 @@ export function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const fields = getFieldset(state);
+	const fields = getFieldset(initialValue, state);
 
 	return (
 		<main className="flex flex-col gap-4 p-12 font-sans">

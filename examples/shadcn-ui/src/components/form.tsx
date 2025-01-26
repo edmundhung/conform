@@ -1,43 +1,36 @@
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from './ui/button';
+import { Calendar } from './ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
 	CommandInput,
 	CommandItem,
-} from '@/components/ui/command';
+	CommandList,
+} from './ui/command';
 import {
 	SelectTrigger,
 	Select,
 	SelectValue,
 	SelectContent,
 	SelectItem,
-} from '@/components/ui/select';
+} from './ui/select';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
-import {
-	InputOTP,
-	InputOTPGroup,
-	InputOTPSlot,
-} from '@/components/ui/input-otp';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from './ui/input-otp';
+import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
+import { Switch } from './ui/switch';
+import { Slider } from './ui/slider';
+import { Checkbox } from './ui/checkbox';
+import { cn } from '../lib/utils';
 import { useCustomInput } from 'conform-react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Check, ChevronsUpDown } from 'lucide-react';
 
 type FieldProps = {
@@ -130,7 +123,7 @@ function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 	const input = useCustomInput('');
 
 	return (
-		<div>
+		<>
 			<input
 				{...input.visuallyHiddenProps}
 				ref={input.register}
@@ -165,32 +158,34 @@ function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 				<PopoverContent className="w-[200px] p-0">
 					<Command>
 						<CommandInput placeholder="Search country..." />
-						<CommandEmpty>No country found.</CommandEmpty>
-						<CommandGroup>
-							{countries.map((country) => (
-								<CommandItem
-									value={country.label}
-									key={country.value}
-									onSelect={() => {
-										input.changed(country.value);
-									}}
-								>
-									<Check
-										className={cn(
-											'mr-2 h-4 w-4',
-											country.value === input.value
-												? 'opacity-100'
-												: 'opacity-0',
-										)}
-									/>
-									{country.label}
-								</CommandItem>
-							))}
-						</CommandGroup>
+						<CommandList>
+							<CommandEmpty>No country found.</CommandEmpty>
+							<CommandGroup>
+								{countries.map((country) => (
+									<CommandItem
+										value={country.label}
+										key={country.value}
+										onSelect={() => {
+											input.changed(country.value);
+										}}
+									>
+										<Check
+											className={cn(
+												'mr-2 h-4 w-4',
+												country.value === input.value
+													? 'opacity-100'
+													: 'opacity-0',
+											)}
+										/>
+										{country.label}
+									</CommandItem>
+								))}
+							</CommandGroup>
+						</CommandList>
 					</Command>
 				</PopoverContent>
 			</Popover>
-		</div>
+		</>
 	);
 }
 
