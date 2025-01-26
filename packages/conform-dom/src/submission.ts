@@ -18,6 +18,7 @@ export type Submission<
 	FormValueType extends FormDataEntryValue = FormDataEntryValue,
 > = {
 	fields: string[];
+	initialValue: Record<string, FormValue<FormValueType>>;
 	value: Record<string, FormValue<FormValueType>> | null;
 	intent: Intent;
 	error?: FormError<Schema, ErrorShape> | null;
@@ -109,6 +110,7 @@ export function parseSubmission(
 	}
 
 	const submission: Submission<string | null> = {
+		initialValue,
 		value: initialValue,
 		fields: Array.from(fields),
 		intent: null,
@@ -236,6 +238,8 @@ export function report<
 > {
 	if (options.reset) {
 		return {
+			// @ts-expect-error TODO: remove all files from submission.initialValue
+			initialValue: submission.initialValue,
 			value: null,
 			fields: [],
 			intent: null,
@@ -243,6 +247,10 @@ export function report<
 	}
 
 	return {
+		// @ts-expect-error TODO: remove all files from submission.value
+		initialValue: options.keepFile
+			? submission.initialValue
+			: submission.initialValue,
 		// @ts-expect-error TODO: remove all files from submission.value
 		value: options.keepFile ? submission.value : submission.value,
 		error:

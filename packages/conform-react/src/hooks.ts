@@ -23,12 +23,7 @@ import type {
 	FormControlAdditionalState,
 	UnknownIntent,
 } from './control';
-import {
-	applyIntent,
-	defaultFormControl,
-	initializeElement,
-	initializeForm,
-} from './control';
+import { applyIntent, defaultFormControl } from './control';
 import {
 	deepEqual,
 	FormRef,
@@ -111,6 +106,7 @@ export function useForm<
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
+	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
@@ -160,6 +156,7 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 		ErrorShape,
 		FormControlAdditionalState<typeof defaultFormControl>
 	>;
+	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<DefaultFormIntent>;
 };
@@ -228,13 +225,14 @@ export function useForm<
 		ErrorShape,
 		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 	>;
+	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent | DefaultFormIntent>;
 } {
 	const {
 		intentName = DEFAULT_INTENT,
 		control = defaultFormControl,
-		defaultValue,
+		defaultValue = null,
 		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
@@ -244,14 +242,10 @@ export function useForm<
 			state: FormState<Schema, ErrorShape, {} | AdditionalState>;
 		}>;
 	}>(() => ({
-		state: control.initializeState({
-			defaultValue,
-			result: lastResult,
-		}),
+		state: control.initializeState(lastResult),
 		sideEffects: [],
 	}));
 	const optionsRef = useRef(options);
-	const lastStateRef = useRef(state);
 	const lastResultRef = useRef(lastResult);
 	const pendingIntentsRef = useRef<Array<Intent | DefaultFormIntent>>([]);
 	const lastAsyncResultRef = useRef<{
@@ -276,9 +270,7 @@ export function useForm<
 
 			lastResultRef.current = result;
 
-			const { control = defaultFormControl, defaultValue } =
-				optionsRef.current ?? {};
-
+			const { control = defaultFormControl } = optionsRef.current ?? {};
 			const pendingIntents = pendingIntentsRef.current;
 
 			// If there is an intent and it has a side effect, add it to the pending intents
@@ -295,9 +287,7 @@ export function useForm<
 					type: options.type,
 					result,
 					reset() {
-						return control.initializeState<Schema, ErrorShape>({
-							defaultValue,
-						});
+						return control.initializeState<Schema, ErrorShape>();
 					},
 				});
 
@@ -324,32 +314,14 @@ export function useForm<
 
 	useEffect(() => {
 		optionsRef.current = options;
-		lastStateRef.current = state;
 	});
 
 	useEffect(() => {
-		const formElement = getFormElement(formRef);
-		const unsubscribeInputMounted = formObserver.onInputMounted((element) => {
-			if (!element.dataset.conform) {
-				initializeElement(element, lastStateRef.current.initialValue);
-			}
-		});
-		const unsubscribeFormReset = formObserver.onFormReset((formElement) => {
-			initializeForm(formElement, lastStateRef.current.initialValue);
-		});
-
-		if (formElement) {
-			initializeForm(formElement, lastStateRef.current.initialValue);
-		}
-
 		return () => {
-			// Clean up the subscription
-			unsubscribeInputMounted();
-			unsubscribeFormReset();
 			// Cancal pending validation request
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
-	}, [formRef]);
+	}, []);
 
 	useEffect(() => {
 		if (lastResult) {
@@ -383,6 +355,7 @@ export function useForm<
 
 	return {
 		state,
+		initialValue: state.updatedValue ?? defaultValue ?? null,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const abortController = new AbortController();
 

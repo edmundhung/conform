@@ -1,11 +1,11 @@
 'use client';
 
-import { requestFormReset, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { login, signup, createTodos } from '@/app/actions';
 import { getFieldset, isInput, isTouched, useForm } from 'conform-react';
 import { resolveZodResult } from 'conform-zod';
 import { todosSchema, loginSchema, createSignupSchema } from '@/app/schema';
-import { useMemo, useRef, useActionState, startTransition } from 'react';
+import { useMemo, useRef, useActionState } from 'react';
 import type { z } from 'zod';
 
 function Button(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -21,12 +21,7 @@ export function TodoForm({
 }) {
 	const [lastResult, action] = useActionState(createTodos, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const {
-		state,
-		defaultValue: submittedValue,
-		handleSubmit,
-		intent,
-	} = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
 		defaultValue,
 		onValidate(value) {
@@ -34,24 +29,8 @@ export function TodoForm({
 
 			return resolveZodResult(result);
 		},
-		onSubmit(event, { formData, update }) {
-			const formElement = event.currentTarget;
-
-			startTransition(async () => {
-				const submission = await createTodos(null, formData);
-
-				startTransition(() => {
-					if (!submission.value) {
-						requestFormReset(formElement);
-					}
-
-					update(submission);
-				});
-			});
-			event.preventDefault();
-		},
 	});
-	const fields = getFieldset(submittedValue ?? {}, state);
+	const fields = getFieldset(initialValue, state);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -70,6 +49,7 @@ export function TodoForm({
 				<input
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
+					defaultValue={fields.title.defaultValue ?? ''}
 				/>
 				<div>{fields.title.error}</div>
 			</div>
@@ -85,6 +65,7 @@ export function TodoForm({
 							<input
 								className={!taskFields.content.valid ? 'error' : ''}
 								name={taskFields.content.name}
+								defaultValue={taskFields.content.defaultValue}
 							/>
 							<div>{taskFields.content.error}</div>
 						</div>
@@ -92,9 +73,10 @@ export function TodoForm({
 							<label>
 								<span>Completed</span>
 								<input
-									className={!taskFields.completed.valid ? 'error' : ''}
 									type="checkbox"
+									className={!taskFields.completed.valid ? 'error' : ''}
 									name={taskFields.completed.name}
+									defaultChecked={taskFields.completed.defaultValue === 'on'}
 								/>
 							</label>
 						</div>
@@ -151,12 +133,7 @@ export function TodoForm({
 export function LoginForm() {
 	const [lastResult, action] = useActionState(login, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const {
-		state,
-		defaultValue: submittedValue,
-		handleSubmit,
-		intent,
-	} = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult,
 		// Reuse the validation logic on the client
@@ -165,7 +142,7 @@ export function LoginForm() {
 			return resolveZodResult(result);
 		},
 	});
-	const fields = getFieldset(submittedValue ?? {}, state);
+	const fields = getFieldset(initialValue, state);
 
 	return (
 		<form
@@ -228,34 +205,13 @@ export function SignupForm() {
 			}),
 		[],
 	);
-	const {
-		state,
-		defaultValue: submittedValue,
-		handleSubmit,
-		intent,
-	} = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
-		onSubmit(event, { formData, update }) {
-			const formElement = event.currentTarget;
-
-			startTransition(async () => {
-				const submission = await signup(null, formData);
-
-				startTransition(() => {
-					if (!submission.value) {
-						requestFormReset(formElement);
-					}
-
-					update(submission);
-				});
-			});
-			event.preventDefault();
-		},
 	});
-	const fields = getFieldset(submittedValue ?? {}, state);
+	const fields = getFieldset(initialValue, state);
 
 	return (
 		<form

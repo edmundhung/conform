@@ -52,7 +52,7 @@ export async function signup(_: unknown, formData: FormData) {
 		return report(submission, resolveZodResult(result));
 	}
 
-	if (Math.random() < 0.3) {
+	if (Math.random() < 0.7) {
 		return report<typeof submission, z.input<typeof schema>>(submission, {
 			error: {
 				formError: ['Server error: Please try again later'],

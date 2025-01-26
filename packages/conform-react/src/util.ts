@@ -26,18 +26,18 @@ export function isOptionalNumber(value: unknown): value is number | undefined {
 	return typeof value === 'undefined' || typeof value === 'number';
 }
 
-export function getList(initialValue: unknown, name: string) {
+export function getListValue(
+	formValue: Record<string, unknown> | null,
+	name: string,
+): Array<unknown> {
 	const paths = getPaths(name);
-	const data = getValue(initialValue, paths) ?? [];
+	const value = getValue(formValue, paths) ?? [];
 
-	if (!Array.isArray(data)) {
-		throw new Error(
-			`Update state failed; The initialValue at "${name}" is not an array`,
-		);
+	if (!Array.isArray(value)) {
+		throw new Error(`The value of "${name}" is not an array`);
 	}
 
-	// Make a copy of the currnet list data
-	return Array.from(data);
+	return value;
 }
 
 export function insertItem<Item>(
@@ -77,68 +77,27 @@ export function getName(prefix: string | undefined, path?: string | number) {
 }
 
 /**
- * Check if a name match the prefix paths
+ * Compare the parent and child paths to get the relative paths
+ * Returns null if the child paths do not start with the parent paths
  */
-export function isChildField(childName: string, parentName: string) {
+export function getChildPaths(
+	parentNameOrPaths: string | Array<string | number>,
+	childName: string,
+) {
+	const parentPaths =
+		typeof parentNameOrPaths === 'string'
+			? getPaths(parentNameOrPaths)
+			: parentNameOrPaths;
 	const childPaths = getPaths(childName);
-	const parentPaths = getPaths(parentName);
 
-	return (
-		childPaths.length > parentPaths.length &&
+	if (
+		childPaths.length >= parentPaths.length &&
 		parentPaths.every((path, index) => childPaths[index] === path)
-	);
-}
-
-/**
- * Flatten a tree into a dictionary
- */
-export function flatten(
-	data: unknown,
-	options?: {
-		select?: undefined;
-		prefix?: string;
-	},
-): Record<string, unknown>;
-export function flatten<Value>(
-	data: unknown,
-	options: {
-		select: (value: unknown) => Value | null;
-		prefix?: string;
-	},
-): Record<string, Value>;
-export function flatten<Value>(
-	data: unknown,
-	options?: {
-		select?: (value: unknown) => Value | null;
-		prefix?: string;
-	},
-): Record<string, Value | unknown> {
-	const result: Record<string, Value | unknown> = {};
-	const select = options?.select ?? identiy;
-
-	function process(data: unknown, prefix: string) {
-		const value = select(data);
-
-		if (typeof value !== 'undefined' && value !== null) {
-			result[prefix] = value;
-		}
-
-		if (Array.isArray(data)) {
-			for (let i = 0; i < data.length; i++) {
-				process(data[i], `${prefix}[${i}]`);
-			}
-		} else if (isPlainObject(data)) {
-			for (const [key, value] of Object.entries(data)) {
-				process(value, prefix ? `${prefix}.${key}` : key);
-			}
-		}
+	) {
+		return childPaths.slice(parentPaths.length);
 	}
 
-	if (data) {
-		process(data, options?.prefix ?? '');
-	}
-
-	return result;
+	return null;
 }
 
 export function configureListIndexUpdate(
@@ -233,7 +192,7 @@ export function deepEqual<Value>(prev: Value, next: Value): boolean {
 
 export function mergeObjects<
 	Obj extends Record<string | number | symbol, unknown>,
->(obj1: Obj, obj2: Obj, overwrite: boolean) {
+>(obj1: Obj, obj2: Obj) {
 	let result = obj1;
 
 	for (const key in obj2) {
@@ -247,9 +206,9 @@ export function mergeObjects<
 			if (Array.isArray(val1) && Array.isArray(val2)) {
 				value = val2;
 			} else if (isPlainObject(val1) && isPlainObject(val2)) {
-				value = mergeObjects(val1, val2, overwrite);
+				value = mergeObjects(val1, val2);
 			} else {
-				value = overwrite ? val2 : val1;
+				value = val2;
 			}
 		}
 

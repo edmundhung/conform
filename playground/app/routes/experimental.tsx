@@ -139,7 +139,7 @@ export default function Example() {
 			isTitleUnique,
 		});
 	}, []);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
 		intentName: 'intent',
 		defaultValue: {
@@ -170,7 +170,7 @@ export default function Example() {
 		},
 	});
 	const form = getFormMetadata(state);
-	const fields = getFieldset(state);
+	const fields = getFieldset(initialValue, state);
 	const title = useFormData(formRef, (formData) =>
 		formData.get(fields.title.name)?.toString(),
 	);

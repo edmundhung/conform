@@ -6,12 +6,12 @@ import {
 	isPlainObject,
 	setValue,
 } from 'conform-dom';
-import { getSerializedValue, defaultSerialize } from './metadata';
+import { defaultSerialize, getDefaultListKey } from './metadata';
 import {
 	addItems,
 	configureListIndexUpdate,
 	getName,
-	getList,
+	getListValue,
 	isNonNullable,
 	isNumber,
 	isOptionalNumber,
@@ -19,8 +19,6 @@ import {
 	isString,
 	mapItems,
 	deepEqual,
-	flatten,
-	isChildField,
 	mapKeys,
 	mergeObjects,
 	updateObject,
@@ -28,6 +26,7 @@ import {
 	reorderItems,
 	removeItem,
 	updateFieldValue,
+	getChildPaths,
 } from './util';
 
 export type DefaultValue<Schema> = Schema extends
@@ -51,11 +50,10 @@ export type FormState<
 	ErrorShape,
 	State extends Record<string, unknown> = {},
 > = {
-	defaultValue: DefaultValue<Schema> | null;
+	updatedValue: Record<string, unknown> | null;
+	submittedValue: Record<string, FormValue> | null;
 	serverError: FormError<Schema, ErrorShape> | null;
 	clientError: FormError<Schema, ErrorShape> | null;
-	initialValue: Record<string, FormValue>;
-	submittedValue: Record<string, FormValue> | null;
 	touchedFields: string[];
 	keys: Record<string, string[]>;
 } & State;
@@ -64,60 +62,13 @@ export function generateKey(): string {
 	return Math.floor(Date.now() * Math.random()).toString(36);
 }
 
-export function initializeForm(
-	formElement: HTMLFormElement,
-	initialValue: Record<string, unknown>,
-): void {
-	for (const element of formElement.elements) {
-		if (isInput(element)) {
-			initializeElement(element, initialValue);
-		}
-	}
-}
-
-export function initializeElement(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	initialValue: Record<string, unknown>,
-): void {
-	const defaultValue = getSerializedValue(initialValue, element.name);
-
-	updateFieldValue(element, {
-		defaultValue,
-		value: defaultValue,
-	});
-
-	element.dataset.conform = generateKey();
-}
-
-export function deriveKeys(
-	defaultValue: unknown,
-	prefix: string = '',
-): Record<string, string[]> {
-	const arrayByName = flatten(defaultValue, {
-		select(value) {
-			return Array.isArray(value) ? value : null;
-		},
-		prefix,
-	});
-
-	const result: Record<string, string[]> = {};
-
-	for (const [name, array] of Object.entries(arrayByName)) {
-		result[name] = array.map(() => generateKey());
-	}
-
-	return result;
-}
-
 export function updateKeys(
 	keys: Record<string, string[]> = {},
 	keyToBeRemoved: string,
 	updateKey: (key: string) => string | null,
 ): Record<string, string[]> {
 	return mapKeys(keys, (field) =>
-		field === keyToBeRemoved || isChildField(field, keyToBeRemoved)
-			? null
-			: updateKey(field),
+		getChildPaths(keyToBeRemoved, field) !== null ? null : updateKey(field),
 	);
 }
 
@@ -125,21 +76,20 @@ export function modify<Data>(
 	data: Record<string, Data>,
 	name: string,
 	value: Data | Record<string, Data>,
-	overwrite = true,
 ): Record<string, Data> {
 	if (name === '') {
 		if (!isPlainObject(value)) {
 			throw new Error('The value must be an object');
 		}
 
-		return mergeObjects(data, value, overwrite);
+		return mergeObjects(data, value);
 	}
 
 	const paths = getPaths(name);
 	const prevValue = getValue(data, paths);
 	const nextValue =
 		isPlainObject(prevValue) && isPlainObject(value)
-			? mergeObjects(prevValue, value, overwrite)
+			? mergeObjects(prevValue, value)
 			: value;
 
 	if (deepEqual(prevValue, nextValue)) {
@@ -189,14 +139,16 @@ function getFields(submission: Submission<UnknownIntent | null>): string[] {
 		for (const name of Object.keys(submission.error.fieldError)) {
 			// If the error is set as a child of an actual field, exclude it
 			// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
-			if (fields.find((field) => field !== name && isChildField(name, field))) {
+			if (
+				fields.find(
+					(field) => field !== name && getChildPaths(field, name) !== null,
+				)
+			) {
 				continue;
 			}
 
 			// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
-			if (
-				fields.every((field) => field !== name && !isChildField(field, name))
-			) {
+			if (fields.every((field) => getChildPaths(name, field) === null)) {
 				fields.push(name);
 			}
 		}
@@ -278,21 +230,9 @@ export const updateIntentHandler: FormIntentHandler<{
 			return state;
 		}
 
-		const intent = result.intent;
-		const initialValue = modify(
-			state.initialValue,
-			getName(intent.payload.name, intent.payload.index),
-			intent.payload.value,
-			false,
-		);
-
-		if (state.initialValue === initialValue) {
-			return state;
-		}
-
 		return {
 			...state,
-			initialValue,
+			updatedValue: result.value,
 		};
 	},
 	updateValue(value, intent) {
@@ -303,18 +243,21 @@ export const updateIntentHandler: FormIntentHandler<{
 		);
 	},
 	sideEffect(formElement, { intent }) {
-		const flattenedValue = flatten(intent.payload.value, {
-			prefix: getName(intent.payload.name, intent.payload.index),
-		});
+		const name = getName(intent.payload.name, intent.payload.index);
+		const parentPaths = getPaths(name);
 
 		for (const element of formElement.elements) {
 			if (isInput(element)) {
-				updateFieldValue(element, {
-					value: defaultSerialize(flattenedValue[element.name]),
-				});
+				const paths = getChildPaths(parentPaths, element.name);
 
-				// Update the element attribute to notify that this is changed by Conform
-				element.dataset.conform = generateKey();
+				if (paths) {
+					updateFieldValue(element, {
+						value: defaultSerialize(getValue(intent.payload.value, paths)),
+					});
+
+					// Update the element attribute to notify that this is changed by Conform
+					element.dataset.conform = generateKey();
+				}
 			}
 		}
 	},
@@ -374,10 +317,11 @@ export const listIntentHandler: FormIntentHandler<
 	},
 	updateState(state, { type, result }) {
 		const intent = result.intent;
+		const formValue = state.updatedValue ?? result.initialValue;
 
 		switch (intent.type) {
 			case 'insert': {
-				const list = getList(state.initialValue, intent.payload.name);
+				const list = getListValue(formValue, intent.payload.name);
 				const index = intent.payload.index ?? list.length;
 				const updateListIndex = configureListIndexUpdate(
 					intent.payload.name,
@@ -395,12 +339,13 @@ export const listIntentHandler: FormIntentHandler<
 						touchedFields,
 					};
 				}
-
-				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+				const listKeys = Array.from(
+					state.keys[intent.payload.name] ??
+						getDefaultListKey(formValue, intent.payload.name),
+				);
 				const itemName = getName(intent.payload.name, index);
 
 				insertItem(listKeys, generateKey(), index);
-				insertItem(list, intent.payload.defaultValue, index);
 
 				return {
 					...state,
@@ -409,20 +354,12 @@ export const listIntentHandler: FormIntentHandler<
 						...updateKeys(state.keys, itemName, updateListIndex),
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
-						// Add new keys derived from the inserted value
-						...deriveKeys(intent.payload.defaultValue, itemName),
 					},
-					initialValue: modify(
-						state.initialValue,
-						intent.payload.name,
-						list,
-						false,
-					),
+					updatedValue: result.value,
 					touchedFields,
 				};
 			}
 			case 'remove': {
-				const list = getList(state.initialValue, intent.payload.name);
 				const updateListIndex = configureListIndexUpdate(
 					intent.payload.name,
 					(currentIndex) => {
@@ -447,10 +384,12 @@ export const listIntentHandler: FormIntentHandler<
 					};
 				}
 
-				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+				const listKeys = Array.from(
+					state.keys[intent.payload.name] ??
+						getDefaultListKey(formValue, intent.payload.name),
+				);
 
 				removeItem(listKeys, intent.payload.index);
-				removeItem(list, intent.payload.index);
 
 				return {
 					...state,
@@ -464,17 +403,11 @@ export const listIntentHandler: FormIntentHandler<
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
 					},
-					initialValue: modify(
-						state.initialValue,
-						intent.payload.name,
-						list,
-						false,
-					),
+					updatedValue: result.value,
 					touchedFields,
 				};
 			}
 			case 'reorder': {
-				const list = getList(state.initialValue, intent.payload.name);
 				const updateListIndex = configureListIndexUpdate(
 					intent.payload.name,
 					(currentIndex) => {
@@ -511,10 +444,12 @@ export const listIntentHandler: FormIntentHandler<
 					};
 				}
 
-				const listKeys = Array.from(state.keys[intent.payload.name] ?? []);
+				const listKeys = Array.from(
+					state.keys[intent.payload.name] ??
+						getDefaultListKey(formValue, intent.payload.name),
+				);
 
 				reorderItems(listKeys, intent.payload.from, intent.payload.to);
-				reorderItems(list, intent.payload.from, intent.payload.to);
 
 				return {
 					...state,
@@ -528,12 +463,7 @@ export const listIntentHandler: FormIntentHandler<
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
 					},
-					initialValue: modify(
-						state.initialValue,
-						intent.payload.name,
-						list,
-						false,
-					),
+					updatedValue: result.value,
 					touchedFields,
 				};
 			}
@@ -542,7 +472,7 @@ export const listIntentHandler: FormIntentHandler<
 	updateValue(value, intent) {
 		switch (intent.type) {
 			case 'insert': {
-				const list = getList(value, intent.payload.name);
+				const list = Array.from<any>(getListValue(value, intent.payload.name));
 				insertItem(
 					list,
 					intent.payload.defaultValue,
@@ -551,12 +481,12 @@ export const listIntentHandler: FormIntentHandler<
 				return modify(value, intent.payload.name, list);
 			}
 			case 'remove': {
-				const list = getList(value, intent.payload.name);
+				const list = Array.from<any>(getListValue(value, intent.payload.name));
 				removeItem(list, intent.payload.index);
 				return modify(value, intent.payload.name, list);
 			}
 			case 'reorder': {
-				const list = getList(value, intent.payload.name);
+				const list = Array.from<any>(getListValue(value, intent.payload.name));
 				reorderItems(list, intent.payload.from, intent.payload.to);
 				return modify(value, intent.payload.name, list);
 			}
@@ -603,10 +533,9 @@ export type FormControl<
 	Intent extends UnknownIntent,
 	AdditionalState extends {} = {},
 > = {
-	initializeState<Schema, ErrorShape>(options: {
-		result?: Submission<UnknownIntent | null, Schema, ErrorShape> | null;
-		defaultValue?: DefaultValue<Schema>;
-	}): FormState<Schema, ErrorShape, AdditionalState>;
+	initializeState<Schema, ErrorShape>(
+		lastResult?: Submission<UnknownIntent | null, Schema, ErrorShape> | null,
+	): FormState<Schema, ErrorShape, AdditionalState>;
 	updateState<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape, AdditionalState>,
 		ctx: {
@@ -752,19 +681,12 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 		listIntentHandler,
 	];
 	return {
-		initializeState<Schema, ErrorShape>({
-			defaultValue,
-			result,
-		}: {
-			defaultValue?: DefaultValue<Schema>;
-			result?: Submission<DefaultFormIntent | null, Schema, ErrorShape>;
-		}) {
-			const initialValue = result?.value ?? defaultValue ?? {};
-
+		initializeState<Schema, ErrorShape>(
+			result?: Submission<DefaultFormIntent | null, Schema, ErrorShape>,
+		) {
 			let state: FormState<Schema, ErrorShape> = {
-				keys: deriveKeys(initialValue),
-				defaultValue: defaultValue ?? null,
-				initialValue: initialValue,
+				keys: {},
+				updatedValue: result?.value ?? null,
 				submittedValue: result?.value ?? null,
 				serverError: result?.error ?? null,
 				clientError: null,
@@ -800,16 +722,22 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 						? result.error
 						: state.clientError,
 				serverError:
-					type === 'client' &&
-					typeof result.error !== 'undefined' &&
-					!deepEqual(state.submittedValue, result.value)
-						? null
-						: type === 'server' &&
-							  typeof result.error !== 'undefined' &&
-							  !deepEqual(state.serverError, result.error)
+					type === 'server'
+						? // Update server error only if the error is different from the previous one
+							result.error && !deepEqual(state.serverError, result.error)
 							? result.error
+							: null
+						: // Reset server error only if the submitted value is different
+							typeof result.error !== 'undefined' &&
+							  !deepEqual(state.submittedValue, result.value)
+							? null
 							: state.serverError,
-				submittedValue: type === 'server' ? result.value : state.submittedValue,
+				submittedValue:
+					type === 'server' ? result.initialValue : state.submittedValue,
+				updatedValue:
+					type === 'client' && result.intent === null
+						? result.value
+						: state.updatedValue,
 			});
 
 			if (type === 'server') {

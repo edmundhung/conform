@@ -1,7 +1,7 @@
 import type { FormError } from 'conform-dom';
 import { getPaths, getValue, isPlainObject } from 'conform-dom';
-import type { DefaultValue, FormState } from './control';
-import { getName, isChildField } from './util';
+import type { FormState } from './control';
+import { getListValue, getName, getChildPaths } from './util';
 
 type BaseCombine<
 	T,
@@ -31,8 +31,7 @@ export type Fieldset<Schema, Metadata extends Record<string, unknown>> = {
 	[Key in keyof Combine<Schema>]-?: Field<Combine<Schema>[Key], Metadata>;
 };
 
-export type FormMetadata<Schema extends Record<string, unknown>, ErrorShape> = {
-	defaultValue: DefaultValue<Schema> | null;
+export type FormMetadata<ErrorShape> = {
 	touched: boolean;
 	valid: boolean;
 	error: ErrorShape | null;
@@ -82,17 +81,17 @@ export function isTouched(touchedFields: string[], name = '') {
 		return true;
 	}
 
-	return touchedFields.some((field) => isChildField(field, name));
+	return touchedFields.some(
+		(field) => field !== name && getChildPaths(name, field) !== null,
+	);
 }
 
-export function getFormMetadata<
-	Schema extends Record<string, unknown>,
-	ErrorShape,
->(state: FormState<Schema, ErrorShape>): FormMetadata<Schema, ErrorShape> {
+export function getFormMetadata<ErrorShape>(
+	state: FormState<unknown, ErrorShape>,
+): FormMetadata<ErrorShape> {
 	const error = state.serverError ?? state.clientError;
 
 	return {
-		defaultValue: state.defaultValue,
 		error: error?.formError ?? null,
 		fieldError: error?.fieldError ?? null,
 		get touched() {
@@ -129,24 +128,18 @@ export function getError<ErrorShape>(
 	return (name ? error.fieldError[name] : error.formError) ?? undefined;
 }
 
-export function getListInitialValue(
-	initialValue: Record<string, unknown>,
+export function getDefaultListKey(
+	formValue: Record<string, unknown> | null,
 	name: string,
-) {
-	const paths = getPaths(name);
-	const value = getValue(initialValue, paths) ?? [];
-
-	if (!Array.isArray(value)) {
-		throw new Error(`The value of "${name}" is not an array`);
-	}
-
-	return value;
+): string[] {
+	return getListValue(formValue, name).map((_, index) => getName(name, index));
 }
 
 export function createFieldset<
 	Schema,
 	Metadata extends Record<string, unknown>,
 >(options: {
+	defaultValue?: Record<string, unknown> | null;
 	keys?: Record<string, string[]>;
 	name?: string;
 	defineMetadata?: (name: string) => Metadata;
@@ -163,9 +156,13 @@ export function createFieldset<
 				});
 			},
 			getFieldList() {
-				const keys = options.keys?.[name] ?? [];
+				const keys =
+					options.keys?.[name] ??
+					getDefaultListKey(options.defaultValue ?? {}, name);
 
-				return keys.map((key, index) => createField(getName(name, index), key));
+				return keys.map((key, index) => {
+					return createField(getName(name, index), key);
+				});
 			},
 		});
 	}
@@ -182,6 +179,7 @@ export function createFieldset<
 }
 
 export function getFieldset<Schema, ErrorShape>(
+	defaultValue: Record<string, unknown> | null,
 	state: FormState<Schema, ErrorShape>,
 	options?: {
 		serialize?: (value: unknown) => string | string[] | undefined;
@@ -198,6 +196,7 @@ export function getFieldset<Schema, ErrorShape>(
 	}>
 > {
 	return createFieldset({
+		defaultValue,
 		keys: state.keys,
 		defineMetadata(name) {
 			const error = state.serverError ?? state.clientError;
@@ -208,7 +207,7 @@ export function getFieldset<Schema, ErrorShape>(
 				},
 				get defaultValue() {
 					const value = getSerializedValue(
-						state.initialValue,
+						defaultValue,
 						name,
 						options?.serialize,
 					);
@@ -218,7 +217,7 @@ export function getFieldset<Schema, ErrorShape>(
 				},
 				get defaultSelected() {
 					const value = getSerializedValue(
-						state.initialValue,
+						defaultValue,
 						name,
 						options?.serialize,
 					);
