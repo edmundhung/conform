@@ -12,8 +12,8 @@ import {
 	report,
 	// createFormControl,
 	// FormControlIntent,
-	applyIntent,
 	defaultFormControl,
+	applyIntent,
 } from 'conform-react';
 import { useMemo, useRef } from 'react';
 
@@ -93,11 +93,10 @@ function createSchema(constraint: {
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = applyIntent(
-		parseSubmission(formData, {
-			intentName: 'intent',
-		}),
-	);
+	const submission = parseSubmission(formData, {
+		intentName: 'intent',
+	});
+	const [intent, value] = applyIntent(submission);
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
@@ -107,13 +106,17 @@ export async function action({ request }: ActionFunctionArgs) {
 			});
 		},
 	});
-	const result = await schema.safeParseAsync(submission.value);
+	const result = await schema.safeParseAsync(value);
 
-	if (!result.success || submission.intent) {
-		return report(submission, resolveZodResult(result));
+	if (!result.success || intent) {
+		return report(submission, {
+			error: resolveZodResult(result),
+			value,
+			intent,
+		});
 	}
 
-	return report<typeof submission, z.input<typeof schema>>(submission, {
+	return report(submission, {
 		error: {
 			formError: ['Something went wrong'],
 		},
@@ -147,9 +150,7 @@ export default function Example() {
 			tasks: [{ title: 'Test', done: true }],
 		},
 		async onValidate(value) {
-			const result = await schema.safeParseAsync(value);
-
-			return resolveZodResult(result);
+			return resolveZodResult(await schema.safeParseAsync(value));
 		},
 		async onSubmit(event, { submission, formData, update }) {
 			event.preventDefault();

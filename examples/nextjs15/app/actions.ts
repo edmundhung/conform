@@ -13,7 +13,9 @@ export async function login(_: unknown, formData: FormData) {
 	const result = loginSchema.safeParse(submission.value);
 
 	if (!result.success) {
-		return report(submission, resolveZodResult(result));
+		return report(submission, {
+			error: resolveZodResult(result),
+		});
 	}
 
 	redirect(`/?value=${JSON.stringify(result.data)}`);
@@ -24,13 +26,15 @@ export async function createTodos(_: unknown, formData: FormData) {
 	const result = todosSchema.safeParse(submission.value);
 
 	if (!result.success) {
-		return report(submission, resolveZodResult(result));
+		return report(submission, {
+			error: resolveZodResult(result),
+		});
 	}
 
 	await updateTodos(result.data);
 	await revalidatePath('/todos');
 
-	return report<typeof submission, z.input<typeof todosSchema>>(submission, {
+	return report<z.input<typeof todosSchema>>(submission, {
 		reset: true,
 	});
 }
@@ -49,11 +53,13 @@ export async function signup(_: unknown, formData: FormData) {
 	const result = await schema.safeParseAsync(submission.value);
 
 	if (!result.success) {
-		return report(submission, resolveZodResult(result));
+		return report(submission, {
+			error: resolveZodResult(result),
+		});
 	}
 
 	if (Math.random() < 0.7) {
-		return report<typeof submission, z.input<typeof schema>>(submission, {
+		return report<z.infer<typeof schema>>(submission, {
 			error: {
 				formError: ['Server error: Please try again later'],
 			},

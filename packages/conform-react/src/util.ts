@@ -1,5 +1,6 @@
 import {
 	formatPaths,
+	FormError,
 	getPaths,
 	getValue,
 	isPlainObject,
@@ -141,6 +142,27 @@ export function configureListIndexUpdate(
  */
 export function identiy<Value>(value: Value): Value {
 	return value;
+}
+
+export function resolveValidateResult<Schema, ErrorShape, Value>(
+	result:
+		| FormError<Schema, ErrorShape>
+		| null
+		| {
+				error: FormError<Schema, ErrorShape> | null;
+				value?: Value;
+		  },
+): {
+	error: FormError<Schema, ErrorShape> | null;
+	value?: Value;
+} {
+	if (result !== null && 'error' in result) {
+		return result;
+	}
+
+	return {
+		error: result,
+	};
 }
 
 export function deepEqual<Value>(prev: Value, next: Value): boolean {

@@ -8,12 +8,17 @@ import {
 	useState,
 	useSyncExternalStore,
 } from 'react';
-import type { FormError, FormValue } from 'conform-dom';
+import type {
+	FormError,
+	FormValue,
+	Submission,
+	SubmissionResult,
+} from 'conform-dom';
 import {
 	DEFAULT_INTENT,
 	parseSubmission,
+	report,
 	requestIntent,
-	Submission,
 } from 'conform-dom';
 import type {
 	DefaultValue,
@@ -29,6 +34,7 @@ import {
 	FormRef,
 	getFormElement,
 	getSubmitEvent,
+	resolveValidateResult,
 	updateFieldValue,
 	updateObject,
 } from './util';
@@ -61,10 +67,10 @@ export type IntentDispatcher<Intent extends UnknownIntent> = {
 };
 
 export type SubmitContext<Schema, ErrorShape, Intent, Value> = {
-	submission: Submission<Intent | null, Schema, ErrorShape>;
+	submission: Submission;
 	formData: FormData;
 	value: Value | undefined;
-	update: (submission: Submission<Intent | null, Schema, ErrorShape>) => void;
+	update: (result: SubmissionResult<Schema, ErrorShape, Intent | null>) => void;
 };
 
 export type ValidateHandler<Schema, ErrorShape, Value> = (
@@ -73,14 +79,20 @@ export type ValidateHandler<Schema, ErrorShape, Value> = (
 		formElement: HTMLFormElement;
 	},
 ) =>
+	| FormError<Schema, ErrorShape>
+	| null
 	| {
 			value?: Value;
 			error: FormError<Schema, ErrorShape> | null;
 	  }
-	| Promise<{
-			value?: Value;
-			error: FormError<Schema, ErrorShape> | null;
-	  }>
+	| Promise<
+			| FormError<Schema, ErrorShape>
+			| null
+			| {
+					value?: Value;
+					error: FormError<Schema, ErrorShape> | null;
+			  }
+	  >
 	| undefined;
 
 export type SubmitHandler<Schema, ErrorShape, Intent, Value> = (
@@ -99,8 +111,8 @@ export function useForm<
 	options: {
 		control: FormControl<Intent, AdditionalState>;
 		lastResult?:
-			| Submission<Intent | null, Schema, ErrorShape>
-			| Submission<null, Schema, ErrorShape>
+			| SubmissionResult<Schema, ErrorShape, Intent | null>
+			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
@@ -118,8 +130,8 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	options?: {
 		control?: undefined;
 		lastResult?:
-			| Submission<DefaultFormIntent | null, Schema, ErrorShape>
-			| Submission<null, Schema, ErrorShape>
+			| SubmissionResult<Schema, ErrorShape, DefaultFormIntent | null>
+			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
@@ -150,8 +162,8 @@ export function useForm<
 			AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 		>;
 		lastResult?:
-			| Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>
-			| Submission<null, Schema, ErrorShape>
+			| SubmissionResult<Schema, ErrorShape, Intent | DefaultFormIntent | null>
+			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
 		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
@@ -203,7 +215,11 @@ export function useForm<
 	});
 	const handleSubmission = useCallback(
 		(
-			result: Submission<Intent | DefaultFormIntent | null, Schema, ErrorShape>,
+			result: SubmissionResult<
+				Schema,
+				ErrorShape,
+				Intent | DefaultFormIntent | null
+			>,
 			options: {
 				type: 'server' | 'client';
 			},
@@ -310,44 +326,49 @@ export function useForm<
 			const formElement = event.currentTarget;
 			const submitEvent = getSubmitEvent(event);
 			const formData = new FormData(formElement, submitEvent.submitter);
-			const submission = applyIntent<
-				Intent | DefaultFormIntent,
+			const submission = parseSubmission(formData, {
+				intentName,
+			});
+			const [intent, intentValue] = applyIntent(submission, {
+				control,
+				pendingIntents: pendingIntentsRef.current,
+			});
+			const submissionResult = report<
 				Schema,
-				ErrorShape
-			>(
-				parseSubmission(formData, {
-					intentName,
-				}),
-				{
-					control,
-					pendingIntents: pendingIntentsRef.current,
-				},
-			);
+				ErrorShape,
+				Intent | DefaultFormIntent | null
+			>(submission, {
+				keepFile: true,
+				value: intentValue,
+				intent,
+			});
 
 			let value: Value | undefined;
 
 			// The form might be re-submitted manually if there was an async validation
 			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
 				value = lastAsyncResultRef.current.value;
-				submission.error = null;
+				submissionResult.error = null;
 			} else {
-				const validationResult =
-					submission.value !== null
-						? optionsRef.current?.onValidate?.(submission.value, {
+				const validateResult =
+					intentValue !== null
+						? optionsRef.current?.onValidate?.(intentValue, {
 								formElement,
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
 							{ error: null };
 
 				// If the validation is async
-				if (validationResult instanceof Promise) {
+				if (validateResult instanceof Promise) {
 					// Update the form when the validation result is resolved
-					validationResult.then(({ value, error }) => {
+					validateResult.then((result) => {
+						const { error, value } = resolveValidateResult(result);
+
 						// Update the form with the validation result
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
 							handleSubmission(
-								{ ...submission, error },
+								{ ...submissionResult, error },
 								{
 									type: 'server',
 								},
@@ -370,20 +391,22 @@ export function useForm<
 							}
 						}
 					});
-				} else if (typeof validationResult !== 'undefined') {
-					submission.error = validationResult.error;
-					value = validationResult.value;
+				} else if (typeof validateResult !== 'undefined') {
+					const result = resolveValidateResult(validateResult);
+
+					submissionResult.error = result.error;
+					value = result.value;
 				}
 
-				handleSubmission(submission, {
+				handleSubmission(submissionResult, {
 					type: 'client',
 				});
 
 				if (
 					// If client validation happens
-					typeof validationResult !== 'undefined' &&
+					typeof validateResult !== 'undefined' &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(submission.intent || submission.error !== null)
+					(submissionResult.intent || submissionResult.error !== null)
 				) {
 					event.preventDefault();
 				}
@@ -394,9 +417,9 @@ export function useForm<
 					submission,
 					formData,
 					value,
-					update: (submission) => {
+					update: (result) => {
 						if (!abortController.signal.aborted) {
-							handleSubmission(submission, { type: 'server' });
+							handleSubmission(result, { type: 'server' });
 						}
 					},
 				});

@@ -62,13 +62,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (!result.success) {
 		return {
-			result: report(submission, resolveZodResult(result)),
+			result: report(submission, {
+				error: resolveZodResult(result),
+			}),
 		};
 	}
 
 	if (Math.random() < 0.7) {
 		return {
-			result: report<typeof submission, z.input<typeof schema>>(submission, {
+			result: report<z.input<typeof schema>>(submission, {
 				error: {
 					formError: ['Server error: Please try again later'],
 				},

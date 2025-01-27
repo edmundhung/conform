@@ -10,6 +10,7 @@ export {
 } from './dom';
 export {
 	type Submission,
+	type SubmissionResult,
 	type FormValue,
 	type FormError,
 	DEFAULT_INTENT,

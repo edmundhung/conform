@@ -3,29 +3,17 @@ import { formatPaths, type FormError } from 'conform-dom';
 
 export function resolveZodResult<Input, Output>(
 	result: SafeParseReturnType<Input, Output>,
-): {
-	value?: Output;
-	error: FormError<Input, string[]> | null;
-};
+): FormError<Input, string[]> | null;
 export function resolveZodResult<Input, Output, ErrorShape>(
 	result: SafeParseReturnType<Input, Output>,
 	formatIssues: (issue: ZodIssue[], name: string) => ErrorShape,
-): {
-	value?: Output;
-	error: FormError<Input, ErrorShape> | null;
-};
+): FormError<Input, ErrorShape> | null;
 export function resolveZodResult<Input, Output, ErrorShape>(
 	result: SafeParseReturnType<Input, Output>,
 	formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape,
-): {
-	value?: Output;
-	error: FormError<Input, Array<string> | ErrorShape> | null;
-} {
+): FormError<Input, Array<string> | ErrorShape> | null {
 	if (result.success) {
-		return {
-			value: result.data,
-			error: null,
-		};
+		return null;
 	}
 
 	const error: Record<string, ZodIssue[]> = {};
@@ -48,9 +36,7 @@ export function resolveZodResult<Input, Output, ErrorShape>(
 	}, {});
 
 	return {
-		error: {
-			formError,
-			fieldError,
-		},
+		formError,
+		fieldError,
 	};
 }

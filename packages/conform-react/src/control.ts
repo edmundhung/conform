@@ -1,4 +1,9 @@
-import type { FormError, FormValue, Submission } from 'conform-dom';
+import type {
+	FormError,
+	FormValue,
+	Submission,
+	SubmissionResult,
+} from 'conform-dom';
 import {
 	isInput,
 	getPaths,
@@ -113,7 +118,7 @@ export type FormIntentHandler<
 		state: FormState<Schema, ErrorShape, AdditionalState>,
 		ctx: {
 			type: 'server' | 'client';
-			result: Submission<Intent, Schema, ErrorShape>;
+			result: SubmissionResult<Schema, ErrorShape, Intent>;
 			reset: () => FormState<Schema, ErrorShape, AdditionalState>;
 		},
 	): FormState<Schema, ErrorShape, AdditionalState>;
@@ -130,13 +135,13 @@ export type FormIntentHandler<
 	) => void;
 };
 
-function getFields(submission: Submission<UnknownIntent | null>): string[] {
-	const fields = submission.fields;
+function getFields(result: SubmissionResult): string[] {
+	const fields = result.fields;
 
 	// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
 	// But the schema might have an error on those fields, so we need to include them
-	if (submission.error) {
-		for (const name of Object.keys(submission.error.fieldError)) {
+	if (result.error) {
+		for (const name of Object.keys(result.error.fieldError)) {
 			// If the error is set as a child of an actual field, exclude it
 			// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
 			if (
@@ -232,7 +237,7 @@ export const updateIntentHandler: FormIntentHandler<{
 
 		return {
 			...state,
-			updatedValue: result.value,
+			updatedValue: result.value ?? result.submittedValue,
 		};
 	},
 	updateValue(value, intent) {
@@ -317,7 +322,7 @@ export const listIntentHandler: FormIntentHandler<
 	},
 	updateState(state, { type, result }) {
 		const intent = result.intent;
-		const formValue = state.updatedValue ?? result.initialValue;
+		const formValue = state.updatedValue ?? result.submittedValue;
 
 		switch (intent.type) {
 			case 'insert': {
@@ -355,7 +360,7 @@ export const listIntentHandler: FormIntentHandler<
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
 					},
-					updatedValue: result.value,
+					updatedValue: result.value ?? result.submittedValue,
 					touchedFields,
 				};
 			}
@@ -403,7 +408,7 @@ export const listIntentHandler: FormIntentHandler<
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
 					},
-					updatedValue: result.value,
+					updatedValue: result.value ?? result.submittedValue,
 					touchedFields,
 				};
 			}
@@ -463,7 +468,7 @@ export const listIntentHandler: FormIntentHandler<
 						// Update existing list keys
 						[intent.payload.name]: listKeys,
 					},
-					updatedValue: result.value,
+					updatedValue: result.value ?? result.submittedValue,
 					touchedFields,
 				};
 			}
@@ -534,13 +539,17 @@ export type FormControl<
 	AdditionalState extends {} = {},
 > = {
 	initializeState<Schema, ErrorShape>(
-		lastResult?: Submission<UnknownIntent | null, Schema, ErrorShape> | null,
+		lastResult?: SubmissionResult<
+			Schema,
+			ErrorShape,
+			UnknownIntent | null
+		> | null,
 	): FormState<Schema, ErrorShape, AdditionalState>;
 	updateState<Schema, ErrorShape>(
 		state: FormState<Schema, ErrorShape, AdditionalState>,
 		ctx: {
 			type: 'server' | 'client';
-			result: Submission<UnknownIntent | null, Schema, ErrorShape>;
+			result: SubmissionResult<Schema, ErrorShape, UnknownIntent | null>;
 			reset: () => FormState<Schema, ErrorShape, AdditionalState>;
 		},
 	): FormState<Schema, ErrorShape, AdditionalState>;
@@ -608,32 +617,25 @@ export type DefaultFormIntent =
 			};
 	  };
 
-export function applyIntent<Schema, ErrorShape>(
-	submission:
-		| Submission<string | null>
-		| Submission<string | null, Schema, ErrorShape>,
+export function applyIntent(
+	submission: Submission,
 	options?: {
 		control?: undefined;
 		pendingIntents?: Array<FormControlIntent<typeof defaultFormControl>>;
 	},
-): Submission<
+): [
 	FormControlIntent<typeof defaultFormControl> | null,
-	Schema,
-	ErrorShape
->;
-export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
-	submission:
-		| Submission<string | null>
-		| Submission<string | null, Schema, ErrorShape>,
+	Record<string, FormValue> | null,
+];
+export function applyIntent<Intent extends UnknownIntent>(
+	submission: Submission,
 	options: {
 		control: FormControl<Intent, any>;
 		pendingIntents?: Array<Intent>;
 	},
-): Submission<Intent | null, Schema, ErrorShape>;
-export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
-	submission:
-		| Submission<string | null>
-		| Submission<string | null, Schema, ErrorShape>,
+): [Intent | null, Record<string, FormValue> | null];
+export function applyIntent<Intent extends UnknownIntent>(
+	submission: Submission,
 	options?: {
 		control?: FormControl<
 			Intent | FormControlIntent<typeof defaultFormControl>,
@@ -643,17 +645,19 @@ export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
 			Intent | FormControlIntent<typeof defaultFormControl>
 		>;
 	},
-): Submission<
+): [
 	Intent | FormControlIntent<typeof defaultFormControl> | null,
-	Schema,
-	ErrorShape
-> {
+	Record<string, FormValue> | null,
+] {
 	const { control = defaultFormControl, pendingIntents = [] } = options ?? {};
 
-	const unknownIntent = submission.intent
-		? control.deserializeIntent(submission.intent)
-		: null;
-	const intent = unknownIntent ? control.parseIntent(unknownIntent) : null;
+	if (!submission.intent) {
+		return [null, submission.value];
+	}
+
+	const intent = control.parseIntent(
+		control.deserializeIntent(submission.intent),
+	);
 
 	let value: Record<string, FormValue> | null = submission.value;
 
@@ -665,12 +669,7 @@ export function applyIntent<Intent extends UnknownIntent, Schema, ErrorShape>(
 		value = control.updateValue(value, pendingIntent);
 	}
 
-	return {
-		...submission,
-		error: undefined,
-		value,
-		intent,
-	};
+	return [intent, value];
 }
 
 export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
@@ -682,28 +681,26 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 	];
 	return {
 		initializeState<Schema, ErrorShape>(
-			result?: Submission<DefaultFormIntent | null, Schema, ErrorShape>,
+			result?: SubmissionResult<Schema, ErrorShape, DefaultFormIntent | null>,
 		) {
 			let state: FormState<Schema, ErrorShape> = {
 				keys: {},
-				updatedValue: result?.value ?? null,
-				submittedValue: result?.value ?? null,
+				updatedValue: result?.value ?? result?.submittedValue ?? null,
+				submittedValue: result?.value ?? result?.submittedValue ?? null,
 				serverError: result?.error ?? null,
 				clientError: null,
 				touchedFields: [],
 			};
 
-			if (!result) {
-				return state;
-			}
-
-			for (const handler of intentHandlers) {
-				if (handler.isApplicable(result.intent)) {
-					state = handler.updateState(state, {
-						type: 'server',
-						result,
-						reset: () => state,
-					});
+			if (result) {
+				for (const handler of intentHandlers) {
+					if (handler.isApplicable(result.intent)) {
+						state = handler.updateState(state, {
+							type: 'server',
+							result,
+							reset: () => state,
+						});
+					}
 				}
 			}
 
@@ -731,14 +728,19 @@ export const defaultFormControl = createFormControl<DefaultFormIntent>(() => {
 							: null
 						: // Reset server error only if the submitted value is different
 							typeof result.error !== 'undefined' &&
-							  !deepEqual(state.submittedValue, result.value)
+							  !deepEqual(
+									state.submittedValue,
+									result.value ?? result.submittedValue,
+							  )
 							? null
 							: state.serverError,
 				submittedValue:
-					type === 'server' ? result.initialValue : state.submittedValue,
+					type === 'server'
+						? result.value ?? result.submittedValue
+						: state.submittedValue,
 				updatedValue:
 					type === 'client' && result.intent === null
-						? result.value
+						? result.value ?? result.submittedValue
 						: state.updatedValue,
 			});
 

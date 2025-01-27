@@ -27,7 +27,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (!result.success) {
 		return {
-			result: report(submission, resolveZodResult(result)),
+			result: report(submission, {
+				error: resolveZodResult(result),
+			}),
 		};
 	}
 

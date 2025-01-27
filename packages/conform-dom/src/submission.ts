@@ -11,32 +11,24 @@ export type FormError<Schema, ErrorShape> = {
 	'#schema'?: Schema;
 };
 
-export type Submission<
-	Intent = string | null,
-	Schema = unknown,
-	ErrorShape = unknown,
-	FormValueType extends FormDataEntryValue = FormDataEntryValue,
-> = {
+export type Submission = {
 	fields: string[];
-	initialValue: Record<string, FormValue<FormValueType>>;
-	value: Record<string, FormValue<FormValueType>> | null;
-	intent: Intent;
-	error?: FormError<Schema, ErrorShape> | null;
+	value: Record<string, FormValue<FormDataEntryValue>>;
+	intent: string | null;
 };
 
-export type Fallback<MainType, FallbackType> = unknown extends MainType
-	? FallbackType
-	: MainType;
-
-export type SubmissionSchema<SubmissionType> =
-	SubmissionType extends Submission<any, infer Schema, any, any>
-		? Schema
-		: unknown;
-
-export type SubmissionErrorShape<SubmissionType> =
-	SubmissionType extends Submission<any, any, infer ErrorShape, any>
-		? ErrorShape
-		: unknown;
+export type SubmissionResult<
+	Schema = unknown,
+	ErrorShape = unknown,
+	Intent = unknown,
+	FormValueType extends FormDataEntryValue = FormDataEntryValue,
+> = {
+	submittedValue: Record<string, FormValue<FormValueType>>;
+	fields: string[];
+	intent: Intent;
+	value?: Record<string, FormValue<FormValueType>> | null;
+	error?: FormError<Schema, ErrorShape> | null;
+};
 
 /**
  * The name to be used when submitting a form control
@@ -74,29 +66,21 @@ export const DEFAULT_INTENT = '__intent__';
  */
 export function parseSubmission(
 	formData: FormData | URLSearchParams,
-	options: {
-		intentName: string;
-	},
-): Submission<string | null>;
-export function parseSubmission(
-	formData: FormData | URLSearchParams,
-	options?: {
-		intentName?: undefined;
-	},
-): Submission<null>;
-export function parseSubmission(
-	formData: FormData | URLSearchParams,
 	options?: {
 		intentName?: string;
 	},
-): Submission<string | null> {
+): Submission {
 	const { intentName = DEFAULT_INTENT } = options ?? {};
-	const initialValue: Record<string, any> = {};
 	const fields = new Set<string>();
+	const submission: Submission = {
+		value: {},
+		fields: [],
+		intent: null,
+	};
 
 	for (const [name, value] of formData.entries()) {
 		if (name !== intentName) {
-			setValue(initialValue, getPaths(name), (currentValue: unknown) => {
+			setValue(submission.value, getPaths(name), (currentValue: unknown) => {
 				if (typeof currentValue === 'undefined') {
 					return value;
 				} else if (Array.isArray(currentValue)) {
@@ -109,12 +93,7 @@ export function parseSubmission(
 		}
 	}
 
-	const submission: Submission<string | null> = {
-		initialValue,
-		value: initialValue,
-		fields: Array.from(fields),
-		intent: null,
-	};
+	submission.fields = Array.from(fields);
 
 	if (intentName) {
 		const intent = formData.get(intentName);
@@ -157,112 +136,58 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<
-	SubmissionType extends Submission<any, any, any>,
-	Schema,
-	ErrorShape = string[],
->(
-	submission: SubmissionType,
+export function report<Schema, ErrorShape = string[], Intent = null>(
+	submission: Submission,
 	options: {
-		error?: Partial<
-			FormError<
-				Fallback<SubmissionSchema<SubmissionType>, Schema>,
-				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
-			>
-		> | null;
+		error?: Partial<FormError<Schema, ErrorShape>> | null;
+		value?: Record<string, FormValue<FormDataEntryValue>> | null;
+		intent?: Intent;
 		reset?: boolean;
 		keepFile: true;
 	},
-): Submission<
-	| (SubmissionType extends Submission<infer Intent, any, any>
-			? Intent
-			: unknown)
-	| null,
-	Fallback<SubmissionSchema<SubmissionType>, Schema>,
-	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
-	SubmissionType extends Submission<any, any, any, infer FormValueType>
-		? FormValueType
-		: FormDataEntryValue
->;
-export function report<
-	SubmissionType extends Submission<any, any, any>,
-	Schema,
-	ErrorShape = string[],
->(
-	submission: SubmissionType,
+): SubmissionResult<Schema, ErrorShape, Intent | null, FormDataEntryValue>;
+export function report<Schema, ErrorShape = string[], Intent = null>(
+	submission: Submission,
 	options: {
-		error?: Partial<
-			FormError<
-				Fallback<SubmissionSchema<SubmissionType>, Schema>,
-				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
-			>
-		> | null;
+		error?: Partial<FormError<Schema, ErrorShape>> | null;
+		value?: Record<string, FormValue<FormDataEntryValue>> | null;
+		intent?: Intent;
 		reset?: boolean;
 		keepFile?: false;
 	},
-): Submission<
-	| (SubmissionType extends Submission<infer Intent, any, any>
-			? Intent
-			: unknown)
-	| null,
-	Fallback<SubmissionSchema<SubmissionType>, Schema>,
-	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
-	string
->;
-export function report<
-	SubmissionType extends Submission<any, any, any>,
-	Schema,
-	ErrorShape = string[],
->(
-	submission: SubmissionType,
+): SubmissionResult<Schema, ErrorShape, Intent | null, string>;
+export function report<Schema, ErrorShape = string[], Intent = null>(
+	submission: Submission,
 	options: {
-		error?: Partial<
-			FormError<
-				Fallback<SubmissionSchema<SubmissionType>, Schema>,
-				Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>
-			>
-		> | null;
+		error?: Partial<FormError<Schema, ErrorShape>> | null;
+		value?: Record<string, FormValue<FormDataEntryValue>> | null;
+		intent?: Intent;
 		reset?: boolean;
 		keepFile?: boolean;
 	},
-): Submission<
-	| (SubmissionType extends Submission<infer Intent, any, any>
-			? Intent
-			: unknown)
-	| null,
-	Fallback<SubmissionSchema<SubmissionType>, Schema>,
-	Fallback<SubmissionErrorShape<SubmissionType>, ErrorShape>,
-	SubmissionType extends Submission<any, any, any, infer FormValueType>
-		? FormValueType
-		: FormDataEntryValue
-> {
+): SubmissionResult<Schema, ErrorShape, Intent | null, FormDataEntryValue> {
 	if (options.reset) {
 		return {
-			// @ts-expect-error TODO: remove all files from submission.initialValue
-			initialValue: submission.initialValue,
-			value: null,
-			fields: [],
+			submittedValue: submission.value,
+			fields: submission.fields,
 			intent: null,
+			value: null,
 		};
 	}
 
+	// options.keepFile
+
 	return {
-		// @ts-expect-error TODO: remove all files from submission.value
-		initialValue: options.keepFile
-			? submission.initialValue
-			: submission.initialValue,
-		// @ts-expect-error TODO: remove all files from submission.value
-		value: options.keepFile ? submission.value : submission.value,
+		submittedValue: submission.value,
+		value: submission.value !== options.value ? options.value : undefined,
 		error:
-			typeof options.error === 'undefined'
-				? submission.error
-				: options.error === null
-					? null
-					: {
-							formError: options.error.formError ?? null,
-							fieldError: options.error.fieldError ?? {},
-						},
+			typeof options.error === 'undefined' || options.error === null
+				? options.error
+				: {
+						formError: options.error.formError ?? null,
+						fieldError: options.error.fieldError ?? {},
+					},
+		intent: options.intent ?? null,
 		fields: submission.fields,
-		intent: submission.intent,
 	};
 }

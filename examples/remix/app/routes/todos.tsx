@@ -46,14 +46,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (!result.success) {
 		return {
-			result: report(submission, resolveZodResult(result)),
+			result: report(submission, {
+				error: resolveZodResult(result),
+			}),
 		};
 	}
 
 	await todos.setValue(result.data);
 
 	return {
-		result: report<typeof submission, z.input<typeof todosSchema>>(submission, {
+		result: report<z.input<typeof todosSchema>>(submission, {
 			reset: true,
 		}),
 	};
