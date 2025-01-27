@@ -97,7 +97,7 @@ export default function Signup() {
 		[],
 	);
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult: actionData?.result,
 		// Reuse the validation logic on the client
@@ -106,7 +106,7 @@ export default function Signup() {
 			return resolveZodResult(result);
 		},
 	});
-	const [form, fields] = getMetadata(initialValue, state);
+	const { form, fields } = getMetadata(state);
 
 	return (
 		<Form

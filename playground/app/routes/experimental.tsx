@@ -141,14 +141,9 @@ export default function Example() {
 			isTitleUnique,
 		});
 	}, []);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
 		intentName: 'intent',
-		defaultValue: {
-			title: 'Example',
-			content: 'Hello World!',
-			tasks: [{ title: 'Test', done: true }],
-		},
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
@@ -171,7 +166,13 @@ export default function Example() {
 			);
 		},
 	});
-	const [form, fields] = getMetadata(initialValue, state);
+	const { form, fields } = getMetadata(state, {
+		defaultValue: {
+			title: 'Example',
+			content: 'Hello World!',
+			tasks: [{ title: 'Test', done: true }],
+		},
+	});
 	const title = useFormData(formRef, (formData) =>
 		formData.get(fields.title.name)?.toString(),
 	);

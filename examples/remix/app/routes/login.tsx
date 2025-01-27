@@ -40,7 +40,7 @@ export default function Login() {
 	// Last submission returned by the server
 	const actionData = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult: actionData?.result,
 		// Reuse the validation logic on the client
@@ -48,7 +48,7 @@ export default function Login() {
 			return resolveZodResult(schema.safeParse(value));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state);
 
 	return (
 		<Form

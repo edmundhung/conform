@@ -39,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function Login() {
 	const formRef = useRef<HTMLFormElement>(null);
 	const fetcher = useFetcher<typeof action>();
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult: fetcher.data?.result,
 		// Reuse the validation logic on the client
@@ -47,7 +47,7 @@ export default function Login() {
 			return resolveZodResult(schema.safeParse(value));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state);
 
 	return (
 		<fetcher.Form

@@ -66,19 +66,20 @@ export default function Example() {
 	const actionData = useActionData<typeof action>();
 	const navigation = useNavigation();
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		// If we reset the form after a successful submission, we need to
 		// keep in mind that the default value (loader) will be updated
 		// only after the submsionn result (action) is received. We need to
 		// delay when useForm receives last submission result to avoid
 		// resetting the form too early.
 		lastResult: navigation.state === 'idle' ? actionData?.result : null,
-		defaultValue: loaderData.todos,
 		onValidate(value) {
 			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state, {
+		defaultValue: loaderData.todos,
+	});
 	const tasks = fields.tasks.getFieldList();
 
 	return (

@@ -46,13 +46,7 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
-		defaultValue: {
-			isAdult: true,
-			gender: 'female',
-			accountType: 'business',
-			interests: ['ember', 'react', 'next'],
-		},
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		onValidate(value) {
 			const result = schema.safeParse(value);
 			return resolveZodResult(result);
@@ -62,7 +56,14 @@ export default function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state, {
+		defaultValue: {
+			isAdult: true,
+			gender: 'female',
+			accountType: 'business',
+			interests: ['ember', 'react', 'next'],
+		},
+	});
 
 	return (
 		<div className="flex flex-col gap-6 p-10">

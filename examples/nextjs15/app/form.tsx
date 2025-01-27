@@ -21,14 +21,13 @@ export function TodoForm({
 }) {
 	const [lastResult, action] = useActionState(createTodos, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
-		defaultValue,
 		onValidate(value) {
 			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state, { defaultValue });
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -142,7 +141,7 @@ export function TodoForm({
 export function LoginForm() {
 	const [lastResult, action] = useActionState(login, null);
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		// Sync the result of last submission
 		lastResult,
 		// Reuse the validation logic on the client
@@ -150,7 +149,7 @@ export function LoginForm() {
 			return resolveZodResult(loginSchema.safeParse(value));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state, initialValue);
 
 	return (
 		<form
@@ -219,13 +218,13 @@ export function SignupForm() {
 			}),
 		[],
 	);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		lastResult,
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
 	});
-	const [form, fields] = getMetadata(initialValue, state);
+	const { form, fields } = getMetadata(state, initialValue);
 
 	return (
 		<form

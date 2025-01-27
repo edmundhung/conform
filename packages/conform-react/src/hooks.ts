@@ -21,7 +21,6 @@ import {
 	requestIntent,
 } from 'conform-dom';
 import type {
-	DefaultValue,
 	FormControl,
 	FormState,
 	DefaultFormIntent,
@@ -114,14 +113,12 @@ export function useForm<
 			| SubmissionResult<Schema, ErrorShape, Intent | null>
 			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
-		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<Schema, ErrorShape, Intent, Value>;
 	},
 ): {
 	state: FormState<Schema, ErrorShape, AdditionalState>;
-	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
@@ -133,7 +130,6 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 			| SubmissionResult<Schema, ErrorShape, DefaultFormIntent | null>
 			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
-		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<Schema, ErrorShape, DefaultFormIntent, Value>;
@@ -144,7 +140,6 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 		ErrorShape,
 		FormControlAdditionalState<typeof defaultFormControl>
 	>;
-	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<DefaultFormIntent>;
 };
@@ -165,7 +160,6 @@ export function useForm<
 			| SubmissionResult<Schema, ErrorShape, Intent | DefaultFormIntent | null>
 			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
-		defaultValue?: NoInfer<DefaultValue<Schema>>;
 		intentName?: string;
 		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<
@@ -181,14 +175,12 @@ export function useForm<
 		ErrorShape,
 		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
 	>;
-	initialValue: Record<string, unknown> | null;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent | DefaultFormIntent>;
 } {
 	const {
 		intentName = DEFAULT_INTENT,
 		control = defaultFormControl,
-		defaultValue = null,
 		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
@@ -315,7 +307,6 @@ export function useForm<
 
 	return {
 		state,
-		initialValue: state.updatedValue ?? defaultValue ?? null,
 		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 			const abortController = new AbortController();
 

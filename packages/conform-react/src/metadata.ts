@@ -1,6 +1,6 @@
 import type { FormError } from 'conform-dom';
 import { getPaths, getValue, isPlainObject } from 'conform-dom';
-import type { FormState } from './control';
+import type { DefaultValue, FormState } from './control';
 import { getListValue, getName, getChildPaths } from './util';
 
 type BaseCombine<
@@ -115,7 +115,7 @@ export function createFieldset<
 	Schema,
 	Metadata extends Record<string, unknown>,
 >(options: {
-	defaultValue?: Record<string, unknown> | null;
+	initialValue?: Record<string, unknown> | null;
 	keys?: Record<string, string[]>;
 	name?: string;
 	defineMetadata?: (name: string) => Metadata;
@@ -134,7 +134,7 @@ export function createFieldset<
 			getFieldList() {
 				const keys =
 					options.keys?.[name] ??
-					getDefaultListKey(options.defaultValue ?? {}, name);
+					getDefaultListKey(options.initialValue ?? {}, name);
 
 				return keys.map((key, index) => {
 					return createField(getName(name, index), key);
@@ -155,19 +155,19 @@ export function createFieldset<
 }
 
 export function getMetadata<Schema, ErrorShape>(
-	defaultValue: Record<string, unknown> | null,
 	state: FormState<Schema, ErrorShape>,
 	options?: {
+		defaultValue?: DefaultValue<Schema>;
 		serialize?: (value: unknown) => string | string[] | undefined;
 	},
-): [
-	{
+): {
+	form: {
 		touched: boolean;
 		invalid: boolean;
 		error: ErrorShape | undefined;
 		fieldError: Record<string, ErrorShape> | undefined;
-	},
-	Fieldset<
+	};
+	fields: Fieldset<
 		Schema,
 		Readonly<{
 			name: string;
@@ -177,12 +177,13 @@ export function getMetadata<Schema, ErrorShape>(
 			invalid: boolean;
 			error: ErrorShape | undefined;
 		}>
-	>,
-] {
+	>;
+} {
 	const error = state.serverError ?? state.clientError;
+	const initialValue = state.updatedValue ?? options?.defaultValue ?? null;
 
-	return [
-		{
+	return {
+		form: {
 			error: error?.formError ?? undefined,
 			fieldError: error?.fieldError,
 			get touched() {
@@ -192,8 +193,8 @@ export function getMetadata<Schema, ErrorShape>(
 				return error !== null;
 			},
 		},
-		createFieldset({
-			defaultValue,
+		fields: createFieldset({
+			initialValue,
 			keys: state.keys,
 			defineMetadata(name) {
 				return {
@@ -202,7 +203,7 @@ export function getMetadata<Schema, ErrorShape>(
 					},
 					get defaultValue() {
 						const value = getSerializedValue(
-							defaultValue,
+							initialValue,
 							name,
 							options?.serialize,
 						);
@@ -212,7 +213,7 @@ export function getMetadata<Schema, ErrorShape>(
 					},
 					get defaultSelected() {
 						const value = getSerializedValue(
-							defaultValue,
+							initialValue,
 							name,
 							options?.serialize,
 						);
@@ -232,5 +233,5 @@ export function getMetadata<Schema, ErrorShape>(
 				};
 			},
 		}),
-	];
+	};
 }

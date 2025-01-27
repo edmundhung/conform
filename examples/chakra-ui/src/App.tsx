@@ -41,7 +41,7 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, initialValue, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useForm(formRef, {
 		onValidate(value) {
 			const result = schema.safeParse(value);
 			return resolveZodResult(result);
@@ -51,7 +51,7 @@ export default function App() {
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const [, fields] = getMetadata(initialValue, state);
+	const { fields } = getMetadata(state);
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
