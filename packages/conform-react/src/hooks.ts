@@ -554,7 +554,7 @@ export const visuallyHiddenProps: Readonly<{
 	'aria-hidden': true,
 });
 
-export function useCustomInput(initialValue?: string | string[] | null): {
+export function useCustomInput(defaultValue?: string | string[] | null): {
 	value: string | undefined;
 	selected: string[] | undefined;
 	changed(value: string | string[]): void;
@@ -565,6 +565,10 @@ export function useCustomInput(initialValue?: string | string[] | null): {
 	>;
 	visuallyHiddenProps: typeof visuallyHiddenProps;
 } {
+	const initialValue =
+		typeof defaultValue === 'string'
+			? [defaultValue]
+			: defaultValue ?? undefined;
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -572,52 +576,53 @@ export function useCustomInput(initialValue?: string | string[] | null): {
 		| null
 		| undefined
 	>();
-	const previousValue = useRef(
-		typeof initialValue === 'string'
-			? [initialValue]
-			: initialValue ?? undefined,
-	);
+	const isResetRef = useRef(false);
+	const previousValueRef = useRef(initialValue);
 	const eventDispatching = useRef<Record<string, boolean>>({});
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
-				formObserver.onInputUpdated((element) => {
+				formObserver.onInputUpdated((element, reason) => {
 					if (element === inputRef.current) {
+						// As not every UI library will reset the input value when the reset event is dispatched
+						// We will update the value manually to force the UI library to update the input value
+						isResetRef.current = reason === 'reset';
 						callback();
 					}
 				}),
 			[],
 		),
 		() => {
-			const prev = previousValue.current;
+			const prev = previousValueRef.current;
 
-			if (!inputRef.current) {
-				return prev;
+			let next = initialValue;
+
+			if (inputRef.current && !isResetRef.current) {
+				const element = inputRef.current;
+				const isMultipleSelect =
+					element instanceof HTMLSelectElement && element.multiple;
+				const isRadioOrCheckbox =
+					element instanceof HTMLInputElement &&
+					(element.type === 'radio' || element.type === 'checkbox');
+
+				next = isMultipleSelect
+					? Array.from(element.selectedOptions).map((option) => option.value)
+					: isRadioOrCheckbox
+						? element.checked
+							? [element.value]
+							: []
+						: [element.value];
 			}
-
-			const element = inputRef.current;
-			const isMultipleSelect =
-				element instanceof HTMLSelectElement && element.multiple;
-			const isRadioOrCheckbox =
-				element instanceof HTMLInputElement &&
-				(element.type === 'radio' || element.type === 'checkbox');
-			const next = isMultipleSelect
-				? Array.from(element.selectedOptions).map((option) => option.value)
-				: isRadioOrCheckbox
-					? element.checked
-						? [element.value]
-						: []
-					: [element.value];
 
 			if (deepEqual(prev, next)) {
 				return prev;
 			}
 
-			previousValue.current = next;
+			previousValueRef.current = next;
 
 			return next;
 		},
-		() => previousValue.current,
+		() => previousValueRef.current,
 	);
 
 	useEffect(() => {

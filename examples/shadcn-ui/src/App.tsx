@@ -48,8 +48,7 @@ export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
 	const { state, handleSubmit, intent } = useForm(formRef, {
 		onValidate(value) {
-			const result = schema.safeParse(value);
-			return resolveZodResult(result);
+			return resolveZodResult(schema.safeParse(value));
 		},
 		onSubmit(e, { value }) {
 			e.preventDefault();

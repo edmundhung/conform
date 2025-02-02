@@ -29,6 +29,7 @@ export function createFormObserver() {
 	const inputUpdated = createEventEmitter<
 		(
 			inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+			reason?: 'reset',
 		) => void
 	>(initialize, destroy);
 	const formDataChanged = createEventEmitter<
@@ -59,7 +60,7 @@ export function createFormObserver() {
 
 				for (const element of formElement.elements) {
 					if (isInput(element)) {
-						inputUpdated.emit(element);
+						inputUpdated.emit(element, 'reset');
 					}
 				}
 
