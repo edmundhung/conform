@@ -10,9 +10,7 @@ import {
 	parseSubmission,
 	isInput,
 	report,
-	// createFormControl,
-	// FormControlIntent,
-	defaultFormControl,
+	baseControl,
 	applyIntent,
 } from 'conform-react';
 import { useMemo, useRef } from 'react';
@@ -48,55 +46,64 @@ function createSchema(constraint: {
 	return coerceZodFormData(schema);
 }
 
-// const control = createFormControl<
-// 	| FormControlIntent<typeof defaultFormControl>
-// 	| { type: 'test'; payload: string },
-// 	{ status: 'success' | 'error' | null }
-// >(() => {
-// 	return {
-// 		...defaultFormControl,
-// 		parseIntent(intent) {
-// 			if (intent.type === 'test' && typeof intent.payload === 'string') {
-// 				return {
-// 					type: 'test',
-// 					payload: intent.payload,
-// 				};
-// 			}
-
-// 			return defaultFormControl.parseIntent(intent);
-// 		},
-// 		initializeState(options) {
-// 			return {
-// 				...defaultFormControl.initializeState(options),
-// 				status: null,
-// 			};
-// 		},
-// 		updateState(state, { type, result, reset }) {
-// 			return {
-// 				...defaultFormControl.updateState(state, {
-// 					type,
-// 					result,
-// 					reset,
-// 				}),
-// 				status:
-// 					result.error === undefined
-// 						? state.status
-// 						: result.intent
-// 							? null
-// 							: result.error
-// 								? 'error'
-// 								: 'success',
-// 			};
-// 		},
-// 	};
-// });
+const control = baseControl.extend<
+	{
+		status: 'success' | 'error' | null;
+	},
+	{
+		type: 'randomize';
+	}
+>({
+	onInitializeState(state) {
+		return {
+			...state,
+			custom: {
+				status: null,
+			},
+		};
+	},
+	onUpdateState(state, { result }) {
+		return {
+			...state,
+			custom: {
+				...state.custom,
+				status:
+					result.error === undefined
+						? state.custom.status
+						: result.error
+							? 'error'
+							: 'success',
+			},
+		};
+	},
+	onParseIntent(intent) {
+		if (intent.type === 'randomize') {
+			return {
+				type: 'update',
+				payload: {
+					value: {
+						content: Math.floor(Date.now() * Math.random()).toString(36),
+						tasks: [
+							{
+								title: Math.floor(Date.now() * Math.random()).toString(36),
+								done: Math.random() > 0.5 ? 'on' : '',
+							},
+						],
+					},
+				},
+			};
+		}
+	},
+});
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData, {
 		intentName: 'intent',
 	});
-	const [intent, value] = applyIntent(submission);
+	const [intent, value] = applyIntent(submission, {
+		control,
+	});
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
@@ -142,6 +149,7 @@ export default function Example() {
 		});
 	}, []);
 	const { state, handleSubmit, intent } = useForm(formRef, {
+		control,
 		lastResult,
 		intentName: 'intent',
 		async onValidate(value) {
@@ -201,7 +209,8 @@ export default function Example() {
 				}
 			}}
 		>
-			<div>{form.error}</div>
+			<div>FormError: {form.error}</div>
+			<div>FormStatus: {form.status}</div>
 			<div>
 				Title
 				<input
@@ -270,7 +279,7 @@ export default function Example() {
 			<div>
 				<button
 					name="intent"
-					value={defaultFormControl.serializeIntent({
+					value={control.serializeIntent({
 						type: 'insert',
 						payload: {
 							name: fields.tasks.name,
@@ -297,11 +306,21 @@ export default function Example() {
 					Update title
 				</button>
 			</div>
+			<div>
+				<button
+					name="intent"
+					value={control.serializeIntent({
+						type: 'randomize',
+					})}
+				>
+					Set random value
+				</button>
+			</div>
 
 			<div>
 				<button
 					name="intent"
-					value={defaultFormControl.serializeIntent({
+					value={control.serializeIntent({
 						type: 'update',
 						payload: {
 							value: {

@@ -154,8 +154,8 @@ export function createFieldset<
 	});
 }
 
-export function getMetadata<Schema, ErrorShape>(
-	state: FormState<Schema, ErrorShape>,
+export function getMetadata<Schema, ErrorShape, CustomState extends {}>(
+	state: FormState<Schema, ErrorShape, CustomState>,
 	options?: {
 		defaultValue?: DefaultValue<Schema>;
 		serialize?: (value: unknown) => string | string[] | undefined;
@@ -166,7 +166,7 @@ export function getMetadata<Schema, ErrorShape>(
 		invalid: boolean;
 		error: ErrorShape | undefined;
 		fieldError: Record<string, ErrorShape> | undefined;
-	};
+	} & CustomState;
 	fields: Fieldset<
 		Schema,
 		Readonly<{
@@ -180,7 +180,7 @@ export function getMetadata<Schema, ErrorShape>(
 	>;
 } {
 	const error = state.serverError ?? state.clientError;
-	const initialValue = state.updatedValue ?? options?.defaultValue ?? null;
+	const initialValue = state.initialValue ?? options?.defaultValue ?? null;
 
 	return {
 		form: {
@@ -192,6 +192,7 @@ export function getMetadata<Schema, ErrorShape>(
 			get invalid() {
 				return error !== null;
 			},
+			...state.custom,
 		},
 		fields: createFieldset({
 			initialValue,

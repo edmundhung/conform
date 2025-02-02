@@ -23,11 +23,11 @@ import {
 import type {
 	FormControl,
 	FormState,
-	DefaultFormIntent,
-	FormControlAdditionalState,
+	FormControlIntent,
+	FormControlCustomState,
 	UnknownIntent,
 } from './control';
-import { applyIntent, defaultFormControl } from './control';
+import { applyIntent, baseControl } from './control';
 import {
 	deepEqual,
 	FormRef,
@@ -103,12 +103,12 @@ export function useForm<
 	Schema,
 	ErrorShape,
 	Intent extends UnknownIntent,
-	AdditionalState extends Record<string, unknown> = {},
+	CustomState extends Record<string, unknown> = {},
 	Value = unknown,
 >(
 	formRef: FormRef,
 	options: {
-		control: FormControl<Intent, AdditionalState>;
+		control: FormControl<Intent, CustomState>;
 		lastResult?:
 			| SubmissionResult<Schema, ErrorShape, Intent | null>
 			| SubmissionResult<Schema, ErrorShape, null>
@@ -118,7 +118,7 @@ export function useForm<
 		onSubmit?: SubmitHandler<Schema, ErrorShape, Intent, Value>;
 	},
 ): {
-	state: FormState<Schema, ErrorShape, AdditionalState>;
+	state: FormState<Schema, ErrorShape, CustomState>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
@@ -127,21 +127,30 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	options?: {
 		control?: undefined;
 		lastResult?:
-			| SubmissionResult<Schema, ErrorShape, DefaultFormIntent | null>
+			| SubmissionResult<
+					Schema,
+					ErrorShape,
+					FormControlIntent<typeof baseControl> | null
+			  >
 			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
 		intentName?: string;
 		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<Schema, ErrorShape, DefaultFormIntent, Value>;
+		onSubmit?: SubmitHandler<
+			Schema,
+			ErrorShape,
+			FormControlIntent<typeof baseControl>,
+			Value
+		>;
 	},
 ): {
 	state: FormState<
 		Schema,
 		ErrorShape,
-		FormControlAdditionalState<typeof defaultFormControl>
+		FormControlCustomState<typeof baseControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<DefaultFormIntent>;
+	intent: IntentDispatcher<FormControlIntent<typeof baseControl>>;
 };
 export function useForm<
 	Schema,
@@ -153,11 +162,15 @@ export function useForm<
 	formRef: FormRef,
 	options?: {
 		control?: FormControl<
-			Intent | DefaultFormIntent,
-			AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
+			Intent | FormControlIntent<typeof baseControl>,
+			AdditionalState | FormControlCustomState<typeof baseControl>
 		>;
 		lastResult?:
-			| SubmissionResult<Schema, ErrorShape, Intent | DefaultFormIntent | null>
+			| SubmissionResult<
+					Schema,
+					ErrorShape,
+					Intent | FormControlIntent<typeof baseControl> | null
+			  >
 			| SubmissionResult<Schema, ErrorShape, null>
 			| null;
 		intentName?: string;
@@ -165,7 +178,7 @@ export function useForm<
 		onSubmit?: SubmitHandler<
 			Schema,
 			ErrorShape,
-			Intent | DefaultFormIntent,
+			Intent | FormControlIntent<typeof baseControl>,
 			Value
 		>;
 	},
@@ -173,29 +186,43 @@ export function useForm<
 	state: FormState<
 		Schema,
 		ErrorShape,
-		AdditionalState | FormControlAdditionalState<typeof defaultFormControl>
+		AdditionalState | FormControlCustomState<typeof baseControl>
 	>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<Intent | DefaultFormIntent>;
+	intent: IntentDispatcher<Intent | FormControlIntent<typeof baseControl>>;
 } {
 	const {
 		intentName = DEFAULT_INTENT,
-		control = defaultFormControl,
+		control = baseControl,
 		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
 		state: FormState<Schema, ErrorShape, {} | AdditionalState>;
 		sideEffects: Array<{
-			intent: Intent | DefaultFormIntent;
+			intent: Intent | FormControlIntent<typeof baseControl>;
 			state: FormState<Schema, ErrorShape, {} | AdditionalState>;
 		}>;
-	}>(() => ({
-		state: control.initializeState(lastResult),
-		sideEffects: [],
-	}));
+	}>(() => {
+		let state = control.initializeState<Schema, ErrorShape>();
+
+		if (lastResult) {
+			state = control.updateState(state, {
+				type: 'server',
+				result: lastResult,
+				reset: () => state,
+			});
+		}
+
+		return {
+			state,
+			sideEffects: [],
+		};
+	});
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(lastResult);
-	const pendingIntentsRef = useRef<Array<Intent | DefaultFormIntent>>([]);
+	const pendingIntentsRef = useRef<
+		Array<Intent | FormControlIntent<typeof baseControl>>
+	>([]);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		value: Value | undefined;
@@ -210,7 +237,7 @@ export function useForm<
 			result: SubmissionResult<
 				Schema,
 				ErrorShape,
-				Intent | DefaultFormIntent | null
+				Intent | FormControlIntent<typeof baseControl> | null
 			>,
 			options: {
 				type: 'server' | 'client';
@@ -222,7 +249,7 @@ export function useForm<
 
 			lastResultRef.current = result;
 
-			const { control = defaultFormControl } = optionsRef.current ?? {};
+			const { control = baseControl } = optionsRef.current ?? {};
 			const pendingIntents = pendingIntentsRef.current;
 
 			// If there is an intent and it has a side effect, add it to the pending intents
@@ -327,7 +354,7 @@ export function useForm<
 			const submissionResult = report<
 				Schema,
 				ErrorShape,
-				Intent | DefaultFormIntent | null
+				Intent | FormControlIntent<typeof baseControl> | null
 			>(submission, {
 				keepFile: true,
 				value: intentValue,
@@ -420,15 +447,16 @@ export function useForm<
 	};
 }
 
-export function useIntent<Intent extends UnknownIntent = DefaultFormIntent>(
+export function useIntent<
+	Intent extends UnknownIntent = FormControlIntent<typeof baseControl>,
+>(
 	formRef: FormRef,
 	options?: {
 		intentName?: string;
-		control?: FormControl<Intent | DefaultFormIntent>;
+		control?: FormControl<Intent | FormControlIntent<typeof baseControl>>;
 	},
 ): IntentDispatcher<Intent> {
-	const { intentName = DEFAULT_INTENT, control = defaultFormControl } =
-		options ?? {};
+	const { intentName = DEFAULT_INTENT, control = baseControl } = options ?? {};
 
 	return useMemo(
 		() =>

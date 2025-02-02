@@ -6,14 +6,7 @@ export {
 	report,
 	isInput,
 } from 'conform-dom';
-export {
-	validateIntentHandler,
-	resetIntentHandler,
-	updateIntentHandler,
-	listIntentHandler,
-	defaultFormControl,
-	applyIntent,
-} from './control';
+export { baseControl, applyIntent } from './control';
 export {
 	defaultSerialize,
 	isTouched,
