@@ -344,6 +344,7 @@ export type FormRef =
 			| HTMLSelectElement
 			| HTMLTextAreaElement
 			| HTMLButtonElement
+			| null
 	  >
 	| string;
 
