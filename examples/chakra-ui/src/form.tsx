@@ -1,4 +1,4 @@
-import { useCustomInput } from 'conform-react';
+import { useInput } from 'conform-react';
 import {
 	NumberInput,
 	NumberInputField,
@@ -15,10 +15,11 @@ import {
 
 type ExampleNumberProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-export function ExampleNumberInput({ name }: ExampleNumberProps) {
-	const input = useCustomInput();
+export function ExampleNumberInput({ name, defaultValue }: ExampleNumberProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<NumberInput
@@ -27,6 +28,7 @@ export function ExampleNumberInput({ name }: ExampleNumberProps) {
 			value={input.value ?? ''}
 			onChange={(value) => input.changed(value)}
 			onBlur={() => input.blurred()}
+			defaultValue={defaultValue}
 		>
 			<NumberInputField ref={input.register} />
 			<NumberInputStepper>
@@ -39,14 +41,20 @@ export function ExampleNumberInput({ name }: ExampleNumberProps) {
 
 type ExamplePinProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-export function ExamplePinInput({ name }: ExamplePinProps) {
-	const input = useCustomInput();
+export function ExamplePinInput({ name, defaultValue }: ExamplePinProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<PinInput
 				type="alphanumeric"
 				value={input.value ?? ''}
@@ -63,14 +71,20 @@ export function ExamplePinInput({ name }: ExamplePinProps) {
 
 type ExampleSliderProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-export function ExampleSlider({ name }: ExampleSliderProps) {
-	const input = useCustomInput();
+export function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<Slider
 				min={0}
 				max={10}

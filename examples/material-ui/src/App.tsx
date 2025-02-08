@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
 import {
@@ -41,16 +41,23 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		onValidate(value) {
 			return resolveZodResult(schema.safeParse(value));
 		},
-		onSubmit(e, { value }) {
-			e.preventDefault();
+		onSubmit(event, { value }) {
+			event.preventDefault();
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const { fields } = getMetadata(state);
+	const { fields } = getMetadata(state, {
+		defaultValue: {
+			language: 'german',
+			movie: 'The Godfather',
+			score: 5,
+			progress: 10,
+		},
+	});
 
 	return (
 		<Container maxWidth="sm">
@@ -109,12 +116,14 @@ export default function App() {
 						label="Language (Select)"
 						name={fields.language.name}
 						error={fields.language.error}
+						defaultValue={fields.language.defaultValue}
 					/>
 
 					<ExampleAutocomplete
 						label="Movie (Autocomplete)"
 						name={fields.movie.name}
 						error={fields.movie.error}
+						defaultValue={fields.movie.defaultValue}
 					/>
 
 					<FormControl
@@ -156,12 +165,14 @@ export default function App() {
 						label="Score (Rating)"
 						name={fields.score.name}
 						error={fields.score.error}
+						defaultValue={fields.score.defaultValue}
 					/>
 
 					<ExampleSlider
 						label="Progress (Slider)"
 						name={fields.progress.name}
 						error={fields.progress.error}
+						defaultValue={fields.progress.defaultValue}
 					/>
 
 					<Stack direction="row" justifyContent="flex-end" spacing={2}>

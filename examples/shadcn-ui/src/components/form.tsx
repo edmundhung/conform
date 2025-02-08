@@ -27,7 +27,7 @@ import { Switch } from './ui/switch';
 import { Slider } from './ui/slider';
 import { Checkbox } from './ui/checkbox';
 import { cn } from '../lib/utils';
-import { useCustomInput } from 'conform-react';
+import { useInput } from 'conform-react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -51,11 +51,12 @@ function FieldError({ children }: FieldErrorProps) {
 
 type ExampleDatePickerProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-function ExampleDatePicker({ name }: ExampleDatePickerProps) {
+function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -63,6 +64,7 @@ function ExampleDatePicker({ name }: ExampleDatePickerProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => triggerRef.current?.focus()}
 			/>
 			<Popover
@@ -116,11 +118,15 @@ const countries = [
 
 type ExampleCountryPickerProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
+function ExampleCountryPicker({
+	name,
+	defaultValue,
+}: ExampleCountryPickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -128,6 +134,7 @@ function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => triggerRef.current?.focus()}
 			/>
 			<Popover
@@ -192,11 +199,16 @@ function ExampleCountryPicker({ name }: ExampleCountryPickerProps) {
 type ExampleRadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
+	defaultValue?: string;
 };
 
-function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
+function ExampleRadioGroup({
+	name,
+	items,
+	defaultValue,
+}: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<React.ElementRef<typeof RadioGroup>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -204,6 +216,7 @@ function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => radioGroupRef.current?.focus()}
 			/>
 			<RadioGroup
@@ -229,18 +242,24 @@ function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 type ExampleCheckboxProps = {
 	name: string;
 	value?: string;
+	defaultChecked?: boolean;
 };
 
-function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
+function ExampleCheckbox({
+	name,
+	value = 'on',
+	defaultChecked,
+}: ExampleCheckboxProps) {
 	const checkboxRef = useRef<React.ElementRef<typeof Checkbox>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultChecked ? value : '');
 
 	return (
 		<>
 			<input
+				type="checkbox"
 				{...input.visuallyHiddenProps}
 				ref={input.register}
-				type="checkbox"
+				defaultChecked={defaultChecked}
 				name={name}
 				value={value}
 				onFocus={() => input.focused()}
@@ -263,11 +282,17 @@ type ExampleSelectProps = {
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder: string;
+	defaultValue?: string[];
 };
 
-function ExampleSelect({ name, items, placeholder }: ExampleSelectProps) {
+function ExampleSelect({
+	name,
+	items,
+	placeholder,
+	defaultValue,
+}: ExampleSelectProps) {
 	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -276,6 +301,7 @@ function ExampleSelect({ name, items, placeholder }: ExampleSelectProps) {
 				name={name}
 				ref={input.register}
 				onFocus={() => selectRef.current?.focus()}
+				defaultValue={defaultValue}
 			>
 				<option value="" />
 				{items.map((option) => (
@@ -310,17 +336,19 @@ function ExampleSelect({ name, items, placeholder }: ExampleSelectProps) {
 
 type ExampleSliderProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-function ExampleSlider({ name }: ExampleSliderProps) {
+function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 	const sliderRef = useRef<React.ElementRef<typeof Slider>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
 			<input
 				{...input.visuallyHiddenProps}
 				name={name}
+				defaultValue={defaultValue}
 				ref={input.register}
 				onFocus={() => {
 					const sliderSpan =
@@ -349,25 +377,33 @@ function ExampleSlider({ name }: ExampleSliderProps) {
 
 type ExampleSwitchProps = {
 	name: string;
+	value?: string;
+	defaultChecked?: boolean;
 };
 
-function ExampleSwitch({ name }: ExampleSwitchProps) {
+function ExampleSwitch({
+	name,
+	value = 'on',
+	defaultChecked,
+}: ExampleSwitchProps) {
 	const switchRef = useRef<React.ElementRef<typeof Switch>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultChecked ? value : '');
 
 	return (
 		<>
 			<input
+				type="checkbox"
 				{...input.visuallyHiddenProps}
 				name={name}
+				defaultChecked={defaultChecked}
 				ref={input.register}
 				onFocus={() => switchRef.current?.focus()}
 			/>
 			<Switch
 				ref={switchRef}
-				checked={input.value === 'on'}
+				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? 'on' : '');
+					input.changed(checked ? value : '');
 				}}
 				onBlur={() => input.blurred()}
 				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
@@ -379,20 +415,23 @@ function ExampleSwitch({ name }: ExampleSwitchProps) {
 type ExampleSingleToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
+	defaultValue?: string;
 };
 
 function ExampleSingleToggleGroup({
 	name,
 	items,
+	defaultValue,
 }: ExampleSingleToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
 			<input
 				{...input.visuallyHiddenProps}
 				name={name}
+				defaultValue={defaultValue}
 				ref={input.register}
 				onFocus={() => toggleGroupRef.current?.focus()}
 			/>
@@ -418,14 +457,16 @@ function ExampleSingleToggleGroup({
 type ExampleMultiToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
+	defaultValue?: string[];
 };
 
 function ExampleMultiToggleGroup({
 	name,
 	items,
+	defaultValue,
 }: ExampleMultiToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -435,7 +476,10 @@ function ExampleMultiToggleGroup({
 				name={name}
 				ref={input.register}
 				onFocus={() => toggleGroupRef.current?.focus()}
-			/>
+				defaultValue={defaultValue}
+			>
+				{defaultValue?.map((item) => <option key={item} value={item} />)}
+			</select>
 			<ToggleGroup
 				type="multiple"
 				ref={toggleGroupRef}
@@ -459,15 +503,17 @@ type ExampleInputOTPProps = {
 	name: string;
 	length: number;
 	pattern?: string;
+	defaultValue?: string;
 };
 
 function ExampleInputOTP({
 	name,
 	length = 6,
 	pattern = REGEXP_ONLY_DIGITS_AND_CHARS,
+	defaultValue,
 }: ExampleInputOTPProps) {
 	const inputOTPRef = useRef<React.ElementRef<typeof InputOTP>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -475,6 +521,7 @@ function ExampleInputOTP({
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => inputOTPRef.current?.focus()}
 			/>
 			<InputOTP

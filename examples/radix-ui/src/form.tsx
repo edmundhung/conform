@@ -1,4 +1,4 @@
-import { useCustomInput } from 'conform-react';
+import { useInput } from 'conform-react';
 import {
 	CheckIcon,
 	ChevronDownIcon,
@@ -17,15 +17,17 @@ type ExampleSelectProps = {
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder?: string;
+	defaultValue?: string;
 };
 
 export function ExampleSelect({
 	name,
 	items,
 	placeholder,
+	defaultValue,
 }: ExampleSelectProps) {
 	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -33,6 +35,7 @@ export function ExampleSelect({
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => {
 					selectRef.current?.focus();
 				}}
@@ -97,11 +100,16 @@ export function ExampleSelect({
 type ExampleToggleGroupProps = {
 	name: string;
 	items: Array<{ label: string; value: string }>;
+	defaultValue?: string;
 };
 
-export function ExampleToggleGroup({ name, items }: ExampleToggleGroupProps) {
+export function ExampleToggleGroup({
+	name,
+	items,
+	defaultValue,
+}: ExampleToggleGroupProps) {
 	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -109,6 +117,7 @@ export function ExampleToggleGroup({ name, items }: ExampleToggleGroupProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => {
 					toggleGroupRef.current?.focus();
 				}}
@@ -140,27 +149,35 @@ export function ExampleToggleGroup({ name, items }: ExampleToggleGroupProps) {
 
 type ExampleSwitchProps = {
 	name: string;
+	value?: string;
+	defaultChecked?: boolean;
 };
 
-export function ExampleSwitch({ name }: ExampleSwitchProps) {
+export function ExampleSwitch({
+	name,
+	value = 'on',
+	defaultChecked,
+}: ExampleSwitchProps) {
 	const switchRef = useRef<ElementRef<typeof RadixSwitch.Root>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultChecked ? value : '');
 
 	return (
 		<>
 			<input
+				type="checkbox"
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultChecked={defaultChecked}
 				onFocus={() => {
 					switchRef.current?.focus();
 				}}
 			/>
 			<RadixSwitch.Root
 				ref={switchRef}
-				checked={input.value === 'on'}
+				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? 'on' : '');
+					input.changed(checked ? value : '');
 				}}
 				onBlur={() => input.blurred()}
 				className="w-[42px] h-[25px] bg-amber-700/30 rounded-full relative focus:ring-2 focus:ring-amber-500 data-[state=checked]:bg-amber-700 outline-none cursor-default"
@@ -174,11 +191,16 @@ export function ExampleSwitch({ name }: ExampleSwitchProps) {
 type ExampleSliderProps = {
 	name: string;
 	max?: number;
+	defaultValue?: string;
 };
 
-export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
+export function ExampleSlider({
+	name,
+	max = 100,
+	defaultValue,
+}: ExampleSliderProps) {
 	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<div className="flex items-center gap-4">
@@ -186,6 +208,7 @@ export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => {
 					thumbRef.current?.focus();
 				}}
@@ -216,11 +239,16 @@ export function ExampleSlider({ name, max = 100 }: ExampleSliderProps) {
 type ExampleRadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
+	defaultValue?: string;
 };
 
-export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
+export function ExampleRadioGroup({
+	name,
+	items,
+	defaultValue,
+}: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 
 	return (
 		<>
@@ -228,6 +256,7 @@ export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				onFocus={() => {
 					radioGroupRef.current?.focus();
 				}}
@@ -266,21 +295,28 @@ export function ExampleRadioGroup({ name, items }: ExampleRadioGroupProps) {
 type ExampleCheckboxProps = {
 	name: string;
 	value?: string;
+	defaultChecked?: boolean;
 };
 
-export function ExampleCheckbox({ name, value = 'on' }: ExampleCheckboxProps) {
+export function ExampleCheckbox({
+	name,
+	value = 'on',
+	defaultChecked,
+}: ExampleCheckboxProps) {
 	const checkboxRef = useRef<ElementRef<typeof RadixCheckbox.Root>>(null);
-	const input = useCustomInput();
+	const input = useInput(defaultChecked ? value : '');
 
 	return (
 		<>
 			<input
+				type="checkbox"
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
 				onFocus={() => {
 					checkboxRef.current?.focus();
 				}}
+				defaultChecked={defaultChecked}
 			/>
 			<RadixCheckbox.Root
 				ref={checkboxRef}

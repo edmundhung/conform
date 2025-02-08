@@ -1,14 +1,9 @@
-import {
-	getMetadata,
-	isInput,
-	parseSubmission,
-	report,
-	useForm,
-} from 'conform-react';
+import { parseSubmission, report } from 'conform-react';
 import { coerceZodFormData, memorize, resolveZodResult } from 'conform-zod';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { Form, redirect } from 'react-router';
 import { z } from 'zod';
+import { useForm } from '~/template';
 import type { Route } from './+types/signup';
 
 // Instead of sharing a schema, prepare a schema creator
@@ -95,41 +90,16 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 			}),
 		[],
 	);
-	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
-		// Sync the result of last submission
+	const { form, fields } = useForm({
 		lastResult: actionData?.result,
-		// Reuse the validation logic on the client
 		async onValidate(value) {
 			const result = await schema.safeParseAsync(value);
 			return resolveZodResult(result);
 		},
 	});
-	const { form, fields } = getMetadata(state);
 
 	return (
-		<Form
-			method="post"
-			ref={formRef}
-			onSubmit={handleSubmit}
-			onInput={(event) => {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			onBlur={(event) => {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			noValidate
-		>
+		<Form {...form.props} method="post">
 			<div className="form-error">{form.error}</div>
 			<label>
 				<div>Username</div>

@@ -1,4 +1,4 @@
-import { useCustomInput } from 'conform-react';
+import { useInput } from 'conform-react';
 import { Listbox, Combobox, Switch, RadioGroup } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
@@ -17,10 +17,11 @@ function classNames(...classes: Array<string | boolean>): string {
 
 type ExampleListBoxProps = {
 	name: string;
+	defaultValue?: string[];
 };
 
-export function ExampleListBox({ name }: ExampleListBoxProps) {
-	const input = useCustomInput();
+export function ExampleListBox({ name, defaultValue }: ExampleListBoxProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<Listbox
@@ -32,8 +33,11 @@ export function ExampleListBox({ name }: ExampleListBoxProps) {
 				{...input.visuallyHiddenProps}
 				ref={input.register}
 				name={name}
+				defaultValue={defaultValue}
 				multiple
-			/>
+			>
+				{defaultValue?.map((item) => <option key={item} value={item} />)}
+			</select>
 			<div className="relative mt-1" onBlur={() => input.blurred()}>
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
@@ -95,11 +99,12 @@ export function ExampleListBox({ name }: ExampleListBoxProps) {
 
 type ExampleComboboxProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-export function ExampleCombobox({ name }: ExampleComboboxProps) {
+export function ExampleCombobox({ name, defaultValue }: ExampleComboboxProps) {
 	const [query, setQuery] = useState('');
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 	const filteredPeople = !input.value
 		? people
 		: people.filter((person) =>
@@ -119,6 +124,7 @@ export function ExampleCombobox({ name }: ExampleComboboxProps) {
 					{...input.visuallyHiddenProps}
 					name={name}
 					ref={input.register}
+					defaultValue={defaultValue}
 				/>
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
@@ -181,17 +187,29 @@ export function ExampleCombobox({ name }: ExampleComboboxProps) {
 
 type ExampleSwitchProps = {
 	name: string;
+	value?: string;
+	defaultChecked?: boolean;
 };
 
-export function ExampleSwitch({ name }: ExampleSwitchProps) {
-	const input = useCustomInput();
+export function ExampleSwitch({
+	name,
+	value = 'on',
+	defaultChecked,
+}: ExampleSwitchProps) {
+	const input = useInput(defaultChecked ? value : '');
 
 	return (
 		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				type="checkbox"
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultChecked={defaultChecked}
+			/>
 			<Switch
-				checked={input.value === 'on'}
-				onChange={(state) => input.changed(state ? 'on' : '')}
+				checked={input.value === value}
+				onChange={(state) => input.changed(state ? value : '')}
 				onBlur={() => input.blurred()}
 				className={classNames(
 					input.value ? 'bg-indigo-600' : 'bg-gray-200',
@@ -213,10 +231,14 @@ export function ExampleSwitch({ name }: ExampleSwitchProps) {
 
 type ExampleRadioGroupProps = {
 	name: string;
+	defaultValue?: string;
 };
 
-export function ExampleRadioGroup({ name }: ExampleRadioGroupProps) {
-	const input = useCustomInput();
+export function ExampleRadioGroup({
+	name,
+	defaultValue,
+}: ExampleRadioGroupProps) {
+	const input = useInput(defaultValue);
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
 		{
@@ -239,7 +261,12 @@ export function ExampleRadioGroup({ name }: ExampleRadioGroupProps) {
 			onChange={(value) => input.changed(value)}
 			onBlur={() => input.blurred()}
 		>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option

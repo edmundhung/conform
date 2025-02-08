@@ -1,16 +1,10 @@
-import {
-	getMetadata,
-	isInput,
-	parseSubmission,
-	report,
-	useForm,
-} from 'conform-react';
+import { parseSubmission, report } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import type { ActionFunctionArgs } from '@remix-run/node';
 import { redirect } from '@remix-run/node';
 import { useFetcher } from '@remix-run/react';
 import { z } from 'zod';
-import { useRef } from 'react';
+import { useForm } from '../template';
 
 const schema = coerceZodFormData(
 	z.object({
@@ -37,41 +31,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Login() {
-	const formRef = useRef<HTMLFormElement>(null);
 	const fetcher = useFetcher<typeof action>();
-	const { state, handleSubmit, intent } = useForm(formRef, {
-		// Sync the result of last submission
+	const { form, fields } = useForm({
 		lastResult: fetcher.data?.result,
-		// Reuse the validation logic on the client
 		onValidate(value) {
 			return resolveZodResult(schema.safeParse(value));
 		},
 	});
-	const { fields } = getMetadata(state);
 
 	return (
-		<fetcher.Form
-			method="post"
-			ref={formRef}
-			onSubmit={handleSubmit}
-			onInput={(event) => {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			onBlur={(event) => {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			noValidate
-		>
+		<fetcher.Form {...form.props} method="post">
 			<div>
 				<label>Email</label>
 				<input

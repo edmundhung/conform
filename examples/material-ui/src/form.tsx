@@ -1,4 +1,4 @@
-import { useCustomInput } from 'conform-react';
+import { useInput } from 'conform-react';
 import {
 	TextField,
 	MenuItem,
@@ -14,14 +14,25 @@ type ExampleSelectProps = {
 	name: string;
 	label: string;
 	error: string[] | undefined;
+	defaultValue?: string;
 };
 
-export function ExampleSelect({ label, name, error }: ExampleSelectProps) {
-	const input = useCustomInput();
+export function ExampleSelect({
+	label,
+	name,
+	error,
+	defaultValue,
+}: ExampleSelectProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<TextField
 				label={label}
 				value={input.value ?? ''}
@@ -33,7 +44,7 @@ export function ExampleSelect({ label, name, error }: ExampleSelectProps) {
 			>
 				<MenuItem value="">Please select</MenuItem>
 				<MenuItem value="english">English</MenuItem>
-				<MenuItem value="deutsch">Deutsch</MenuItem>
+				<MenuItem value="german">German</MenuItem>
 				<MenuItem value="japanese">Japanese</MenuItem>
 			</TextField>
 		</>
@@ -44,14 +55,16 @@ type ExampleAutocompleteProps = {
 	name: string;
 	label: string;
 	error: string[] | undefined;
+	defaultValue?: string;
 };
 
 export function ExampleAutocomplete({
 	label,
 	name,
 	error,
+	defaultValue,
 }: ExampleAutocompleteProps) {
-	const input = useCustomInput();
+	const input = useInput(defaultValue);
 	const options = ['The Godfather', 'Pulp Fiction'];
 
 	return (
@@ -69,6 +82,7 @@ export function ExampleAutocomplete({
 					name={name}
 					error={!!error}
 					helperText={error}
+					defaultValue={defaultValue}
 				/>
 			)}
 		/>
@@ -79,15 +93,26 @@ type ExampleRatingProps = {
 	label: string;
 	name: string;
 	error: string[] | undefined;
+	defaultValue?: string;
 };
 
-export function ExampleRating({ name, label, error }: ExampleRatingProps) {
-	const input = useCustomInput();
+export function ExampleRating({
+	name,
+	label,
+	error,
+	defaultValue,
+}: ExampleRatingProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<FormControl variant="standard" error={!!error}>
 			<FormLabel>{label}</FormLabel>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<div>
 				<Rating
 					value={input.value ? Number(input.value) : null}
@@ -106,15 +131,26 @@ type ExampleSliderProps = {
 	label: string;
 	name: string;
 	error: string[] | undefined;
+	defaultValue?: string;
 };
 
-export function ExampleSlider({ name, label, error }: ExampleSliderProps) {
-	const input = useCustomInput();
+export function ExampleSlider({
+	name,
+	label,
+	error,
+	defaultValue,
+}: ExampleSliderProps) {
+	const input = useInput(defaultValue);
 
 	return (
 		<FormControl variant="standard" error={!!error}>
 			<FormLabel>{label}</FormLabel>
-			<input {...input.visuallyHiddenProps} name={name} ref={input.register} />
+			<input
+				{...input.visuallyHiddenProps}
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+			/>
 			<Slider
 				min={0}
 				max={10}

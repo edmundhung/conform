@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
-import { todosSchema } from './schema';
+import { todosSchema } from './_schema';
 
 declare global {
 	// eslint-disable-next-line no-var

@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -46,17 +46,23 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		onValidate(value) {
 			return resolveZodResult(schema.safeParse(value));
 		},
-		onSubmit(e, { value }) {
-			e.preventDefault();
+		onSubmit(event, { value }) {
+			event.preventDefault();
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
 	const { fields } = getMetadata(state, {
 		defaultValue: {
+			dateOfBirth: new Date('2000-01-01'),
+			country: 'US',
+			agreeToTerms: true,
+			job: 'developer',
+			age: 20,
+			code: '000000',
 			isAdult: true,
 			gender: 'female',
 			accountType: 'business',
@@ -96,18 +102,25 @@ export default function App() {
 				</Field>
 				<Field>
 					<Label>Birth date</Label>
-					<DatePicker name={fields.dateOfBirth.name} />
+					<DatePicker
+						name={fields.dateOfBirth.name}
+						defaultValue={fields.dateOfBirth.defaultValue}
+					/>
 					<FieldError>{fields.dateOfBirth.error}</FieldError>
 				</Field>
 				<Field>
 					<Label>Country</Label>
-					<CountryPicker name={fields.country.name} />
+					<CountryPicker
+						name={fields.country.name}
+						defaultValue={fields.country.defaultValue}
+					/>
 					<FieldError>{fields.country.error}</FieldError>
 				</Field>
 				<Field>
 					<Label>Gender</Label>
 					<RadioGroup
 						name={fields.gender.name}
+						defaultValue={fields.gender.defaultValue}
 						items={[
 							{ value: 'male', label: 'male' },
 							{ value: 'female', label: 'female' },
@@ -118,7 +131,10 @@ export default function App() {
 				</Field>
 				<Field>
 					<div className="flex gap-2 items-center">
-						<Checkbox name={fields.agreeToTerms.name} />
+						<Checkbox
+							name={fields.agreeToTerms.name}
+							defaultChecked={fields.agreeToTerms.defaultValue === 'on'}
+						/>
 						<Label>Agree to terms</Label>
 					</div>
 					<FieldError>{fields.agreeToTerms.error}</FieldError>
@@ -128,6 +144,7 @@ export default function App() {
 					<Select
 						placeholder="Select a job"
 						name={fields.job.name}
+						defaultValue={fields.job.defaultSelected}
 						items={[
 							{ value: 'developer', name: 'Developer' },
 							{ value: 'designer', name: 'Design' },
@@ -138,13 +155,19 @@ export default function App() {
 				</Field>
 				<Field>
 					<Label>Age</Label>
-					<Slider name={fields.age.name} />
+					<Slider
+						name={fields.age.name}
+						defaultValue={fields.age.defaultValue}
+					/>
 					<FieldError>{fields.age.error}</FieldError>
 				</Field>
 				<Field>
 					<div className="flex items-center gap-2">
 						<Label>Is adult</Label>
-						<Switch name={fields.isAdult.name} />
+						<Switch
+							name={fields.isAdult.name}
+							defaultChecked={fields.isAdult.defaultValue === 'on'}
+						/>
 					</div>
 					<FieldError>{fields.isAdult.error}</FieldError>
 				</Field>
@@ -157,6 +180,7 @@ export default function App() {
 					<Label>Account type</Label>
 					<SingleToggleGroup
 						name={fields.accountType.name}
+						defaultValue={fields.accountType.defaultValue}
 						items={[
 							{ value: 'personal', label: 'Personal' },
 							{ value: 'business', label: 'Business' },
@@ -168,6 +192,7 @@ export default function App() {
 					<Label>Account types</Label>
 					<MultiToggleGroup
 						name={fields.accountTypes.name}
+						defaultValue={fields.accountType.defaultSelected}
 						items={[
 							{ value: 'personal', label: 'Personal' },
 							{ value: 'business', label: 'Business' },
@@ -190,7 +215,13 @@ export default function App() {
 						{ value: 'glimmer', name: 'Glimmer' },
 					].map((option) => (
 						<div key={option.value} className="flex items-center gap-2">
-							<Checkbox name={fields.interests.name} value={option.value} />
+							<Checkbox
+								name={fields.interests.name}
+								value={option.value}
+								defaultChecked={fields.interests.defaultSelected?.includes(
+									option.value,
+								)}
+							/>
 							<label>{option.name}</label>
 						</div>
 					))}
@@ -198,7 +229,11 @@ export default function App() {
 				</Field>
 				<Field>
 					<Label>Code</Label>
-					<InputOTP name={fields.code.name} length={6} />
+					<InputOTP
+						name={fields.code.name}
+						defaultValue={fields.code.defaultValue}
+						length={6}
+					/>
 					<FieldError>{fields.code.error}</FieldError>
 				</Field>
 

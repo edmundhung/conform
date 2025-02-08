@@ -158,6 +158,10 @@ export function getMetadata<Schema, ErrorShape, CustomState extends {}>(
 	state: FormState<Schema, ErrorShape, CustomState>,
 	options?: {
 		defaultValue?: DefaultValue<Schema>;
+		formProps?: React.DetailedHTMLProps<
+			React.FormHTMLAttributes<HTMLFormElement>,
+			HTMLFormElement
+		>;
 		serialize?: (value: unknown) => string | string[] | undefined;
 	},
 ): {
@@ -166,6 +170,12 @@ export function getMetadata<Schema, ErrorShape, CustomState extends {}>(
 		invalid: boolean;
 		error: ErrorShape | undefined;
 		fieldError: Record<string, ErrorShape> | undefined;
+		props:
+			| React.DetailedHTMLProps<
+					React.FormHTMLAttributes<HTMLFormElement>,
+					HTMLFormElement
+			  >
+			| undefined;
 	} & CustomState;
 	fields: Fieldset<
 		Schema,
@@ -192,6 +202,7 @@ export function getMetadata<Schema, ErrorShape, CustomState extends {}>(
 			get invalid() {
 				return error !== null;
 			},
+			props: options?.formProps,
 			...state.custom,
 		},
 		fields: createFieldset({

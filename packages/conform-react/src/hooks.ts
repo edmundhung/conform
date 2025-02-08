@@ -8,12 +8,7 @@ import {
 	useState,
 	useSyncExternalStore,
 } from 'react';
-import type {
-	FormError,
-	FormValue,
-	Submission,
-	SubmissionResult,
-} from 'conform-dom';
+import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
 import {
 	DEFAULT_INTENT,
 	parseSubmission,
@@ -66,10 +61,13 @@ export type IntentDispatcher<Intent extends UnknownIntent> = {
 };
 
 export type SubmitContext<Schema, ErrorShape, Intent, Value> = {
-	submission: Submission;
 	formData: FormData;
-	value: Value | undefined;
-	update: (result: SubmissionResult<Schema, ErrorShape, Intent | null>) => void;
+	value: NonNullable<Value>;
+	intent: Intent | null | undefined;
+	update: (options: {
+		error?: Partial<FormError<Schema, ErrorShape>> | null;
+		reset?: boolean;
+	}) => void;
 };
 
 export type ValidateHandler<Schema, ErrorShape, Value> = (
@@ -99,7 +97,7 @@ export type SubmitHandler<Schema, ErrorShape, Intent, Value> = (
 	ctx: SubmitContext<Schema, ErrorShape, Intent, Value>,
 ) => void | Promise<void>;
 
-export function useForm<
+export function useFormControl<
 	Schema,
 	ErrorShape,
 	Intent extends UnknownIntent,
@@ -122,7 +120,7 @@ export function useForm<
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
-export function useForm<Schema, ErrorShape = string[], Value = unknown>(
+export function useFormControl<Schema, ErrorShape = string[], Value = unknown>(
 	formRef: FormRef,
 	options?: {
 		control?: undefined;
@@ -152,12 +150,12 @@ export function useForm<Schema, ErrorShape = string[], Value = unknown>(
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<FormControlIntent<typeof baseControl>>;
 };
-export function useForm<
+export function useFormControl<
 	Schema,
 	ErrorShape,
 	Intent extends UnknownIntent,
 	AdditionalState extends Record<string, unknown> = {},
-	Value = unknown,
+	Value = never,
 >(
 	formRef: FormRef,
 	options?: {
@@ -432,11 +430,25 @@ export function useForm<
 
 			if (!event.isDefaultPrevented()) {
 				optionsRef.current?.onSubmit?.(event, {
-					submission,
 					formData,
-					value,
-					update: (result) => {
+					intent,
+					get value() {
+						if (typeof value === 'undefined' || value === null) {
+							throw new Error(
+								'Value is not available; Please make sure you have included the value in the onValidate handler',
+							);
+						}
+
+						return value;
+					},
+					update(options) {
 						if (!abortController.signal.aborted) {
+							const result = report(submission, {
+								...options,
+								keepFile: true,
+								value: intentValue,
+								intent,
+							});
 							handleSubmission(result, { type: 'server' });
 						}
 					},
@@ -554,7 +566,7 @@ export const visuallyHiddenProps: Readonly<{
 	'aria-hidden': true,
 });
 
-export function useCustomInput(defaultValue?: string | string[] | null): {
+export function useInput(defaultValue?: string | string[] | null): {
 	value: string | undefined;
 	selected: string[] | undefined;
 	changed(value: string | string[]): void;

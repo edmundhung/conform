@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { coerceZodFormData, resolveZodResult, memorize } from 'conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import {
-	useCustomInput,
+	useInput,
 	useFormData,
-	useForm,
+	useFormControl,
 	getMetadata,
 	parseSubmission,
 	isInput,
@@ -148,14 +148,14 @@ export default function Example() {
 			isTitleUnique,
 		});
 	}, []);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		control,
 		lastResult,
 		intentName: 'intent',
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
-		async onSubmit(event, { submission, formData, update }) {
+		async onSubmit(event, { formData, update }) {
 			event.preventDefault();
 
 			const response = await fetch(
@@ -167,11 +167,9 @@ export default function Example() {
 			);
 			const result = await response.json();
 
-			update(
-				report(submission, {
-					error: result.error,
-				}),
-			);
+			update({
+				error: result.error,
+			});
 		},
 	});
 	const { form, fields } = getMetadata(state, {
@@ -185,7 +183,7 @@ export default function Example() {
 		formData.get(fields.title.name)?.toString(),
 	);
 	const taskFields = fields.tasks.getFieldList();
-	const titleControl = useCustomInput(fields.title.defaultValue);
+	const titleControl = useInput(fields.title.defaultValue);
 
 	return (
 		<Form

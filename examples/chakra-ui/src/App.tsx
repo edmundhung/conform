@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import {
@@ -41,16 +41,24 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		onValidate(value) {
-			return resolveZodResult(schema.safeParse(value));
+			return resolveZodResult(schema.safeParse(value), {
+				includeValue: true,
+			});
 		},
-		onSubmit(e, { value }) {
-			e.preventDefault();
+		onSubmit(event, { value }) {
+			event.preventDefault();
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const { fields } = getMetadata(state);
+	const { fields } = getMetadata(state, {
+		defaultValue: {
+			quantity: 6,
+			pin: '0000',
+			progress: 3,
+		},
+	});
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
@@ -111,13 +119,19 @@ export default function App() {
 
 					<FormControl isInvalid={fields.quantity.invalid}>
 						<FormLabel>Quantity (NumberInput)</FormLabel>
-						<ExampleNumberInput name={fields.quantity.name} />
+						<ExampleNumberInput
+							name={fields.quantity.name}
+							defaultValue={fields.quantity.defaultValue}
+						/>
 						<FormErrorMessage>{fields.quantity.error}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.pin.invalid}>
 						<FormLabel>PIN (PinInput)</FormLabel>
-						<ExamplePinInput name={fields.pin.name} />
+						<ExamplePinInput
+							name={fields.pin.name}
+							defaultValue={fields.pin.defaultValue}
+						/>
 						<FormErrorMessage>{fields.pin.error}</FormErrorMessage>
 					</FormControl>
 
@@ -146,7 +160,10 @@ export default function App() {
 
 					<FormControl isInvalid={fields.progress.invalid}>
 						<FormLabel>Progress (Slider)</FormLabel>
-						<ExampleSlider name={fields.progress.name} />
+						<ExampleSlider
+							name={fields.progress.name}
+							defaultValue={fields.progress.defaultValue}
+						/>
 						<FormErrorMessage>{fields.progress.error}</FormErrorMessage>
 					</FormControl>
 

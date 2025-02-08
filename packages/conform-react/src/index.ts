@@ -1,12 +1,20 @@
 export {
 	type Submission,
+	type SubmissionResult,
 	type FormError,
 	type FormValue,
 	parseSubmission,
 	report,
 	isInput,
 } from 'conform-dom';
-export { baseControl, applyIntent } from './control';
+export {
+	type DefaultValue,
+	type UnknownIntent,
+	type FormControlIntent,
+	type FormControlCustomState,
+	baseControl,
+	applyIntent,
+} from './control';
 export {
 	defaultSerialize,
 	isTouched,
@@ -15,4 +23,11 @@ export {
 	getMetadata,
 	createFieldset,
 } from './metadata';
-export { useForm, useFormData, useIntent, useCustomInput } from './hooks';
+export {
+	type ValidateHandler,
+	type SubmitHandler,
+	useFormControl,
+	useFormData,
+	useIntent,
+	useInput,
+} from './hooks';

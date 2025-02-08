@@ -1,14 +1,8 @@
-import {
-	getMetadata,
-	isInput,
-	parseSubmission,
-	report,
-	useForm,
-} from 'conform-react';
+import { parseSubmission, report } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
-import { useRef } from 'react';
 import { Form, redirect } from 'react-router';
 import { z } from 'zod';
+import { useForm } from '~/template';
 import type { Route } from './+types/login';
 
 const schema = coerceZodFormData(
@@ -36,8 +30,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {
-	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { form, fields } = useForm({
 		// Sync the result of last submission
 		lastResult: actionData?.result,
 		// Reuse the validation logic on the client
@@ -45,31 +38,9 @@ export default function Login({ actionData }: Route.ComponentProps) {
 			return resolveZodResult(schema.safeParse(value));
 		},
 	});
-	const { fields } = getMetadata(state);
 
 	return (
-		<Form
-			method="post"
-			ref={formRef}
-			onSubmit={handleSubmit}
-			onInput={(event) => {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			onBlur={(event) => {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			noValidate
-		>
+		<Form {...form.props} method="post">
 			<div>
 				<label>Email</label>
 				<input

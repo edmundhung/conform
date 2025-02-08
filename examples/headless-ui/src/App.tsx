@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -20,16 +20,23 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		onValidate(value) {
 			return resolveZodResult(schema.safeParse(value));
 		},
-		onSubmit(e, { value }) {
-			e.preventDefault();
+		onSubmit(event, { value }) {
+			event.preventDefault();
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
-	const { fields } = getMetadata(state);
+	const { fields } = getMetadata(state, {
+		defaultValue: {
+			owner: ['2', '4'],
+			assignee: '1',
+			enabled: true,
+			color: 'Pink',
+		},
+	});
 
 	return (
 		<main className="max-w-lg mx-auto py-8 px-4">
@@ -73,7 +80,10 @@ export default function App() {
 									Owner (List box)
 								</label>
 								<div className="mt-1">
-									<ExampleListBox name={fields.owner.name} />
+									<ExampleListBox
+										name={fields.owner.name}
+										defaultValue={fields.owner.defaultSelected}
+									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fields.owner.error}
@@ -85,7 +95,10 @@ export default function App() {
 									Assigned to (Combobox)
 								</label>
 								<div className="mt-1">
-									<ExampleCombobox name={fields.assignee.name} />
+									<ExampleCombobox
+										name={fields.assignee.name}
+										defaultValue={fields.assignee.defaultValue}
+									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fields.assignee.error}
@@ -97,7 +110,10 @@ export default function App() {
 									Enabled (Switch)
 								</label>
 								<div className="mt-1">
-									<ExampleSwitch name={fields.enabled.name} />
+									<ExampleSwitch
+										name={fields.enabled.name}
+										defaultChecked={fields.enabled.defaultValue === 'on'}
+									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fields.enabled.error}
@@ -109,7 +125,10 @@ export default function App() {
 									Color (Radio Group)
 								</label>
 								<div className="mt-1">
-									<ExampleRadioGroup name={fields.color.name} />
+									<ExampleRadioGroup
+										name={fields.color.name}
+										defaultValue={fields.color.defaultValue}
+									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
 									{fields.color.error}

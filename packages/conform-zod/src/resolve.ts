@@ -4,39 +4,86 @@ import { formatPaths, type FormError } from 'conform-dom';
 export function resolveZodResult<Input, Output>(
 	result: SafeParseReturnType<Input, Output>,
 ): FormError<Input, string[]> | null;
+export function resolveZodResult<Input, Output>(
+	result: SafeParseReturnType<Input, Output>,
+	options: {
+		includeValue: true;
+		formatIssues?: undefined;
+	},
+): {
+	error: FormError<Input, string[]> | null;
+	value: Output | undefined;
+};
 export function resolveZodResult<Input, Output, ErrorShape>(
 	result: SafeParseReturnType<Input, Output>,
-	formatIssues: (issue: ZodIssue[], name: string) => ErrorShape,
+	options: {
+		includeValue: true;
+		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
+	},
+): {
+	error: FormError<Input, ErrorShape> | null;
+	value: Output | undefined;
+};
+export function resolveZodResult<Input, Output, ErrorShape>(
+	result: SafeParseReturnType<Input, Output>,
+	options: {
+		includeValue?: false;
+		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
+	},
 ): FormError<Input, ErrorShape> | null;
 export function resolveZodResult<Input, Output, ErrorShape>(
 	result: SafeParseReturnType<Input, Output>,
-	formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape,
-): FormError<Input, Array<string> | ErrorShape> | null {
-	if (result.success) {
-		return null;
+	options?: {
+		includeValue?: boolean;
+		formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape;
+	},
+):
+	| FormError<Input, Array<string> | ErrorShape>
+	| null
+	| {
+			error: FormError<Input, Array<string> | ErrorShape> | null;
+			value: Output | undefined;
+	  } {
+	let error: FormError<Input, Array<string> | ErrorShape> | null = null;
+	let value: Output | undefined = undefined;
+
+	if (!result.success) {
+		const errorByName: Record<string, ZodIssue[]> = {};
+
+		for (const issue of result.error.issues) {
+			const name = formatPaths(issue.path);
+
+			errorByName[name] ??= [];
+			errorByName[name].push(issue);
+		}
+
+		const { '': formError = null, ...fieldError } = Object.entries(
+			errorByName,
+		).reduce<Record<string, Array<string> | ErrorShape>>(
+			(result, [name, issues]) => {
+				result[name] = options?.formatIssues
+					? options.formatIssues(issues, name)
+					: issues.map((issue) => issue.message);
+
+				return result;
+			},
+			{},
+		);
+
+		error = {
+			formError,
+			fieldError,
+		};
+	} else {
+		value = result.data;
 	}
 
-	const error: Record<string, ZodIssue[]> = {};
-
-	for (const issue of result.error.issues) {
-		const name = formatPaths(issue.path);
-
-		error[name] ??= [];
-		error[name].push(issue);
+	if (!options?.includeValue) {
+		return error;
 	}
-
-	const { '': formError = null, ...fieldError } = Object.entries(error).reduce<
-		Record<string, Array<string> | ErrorShape>
-	>((result, [name, issues]) => {
-		result[name] = formatIssues
-			? formatIssues(issues, name)
-			: issues.map((issue) => issue.message);
-
-		return result;
-	}, {});
 
 	return {
-		formError,
-		fieldError,
+		error,
+		value,
 	};
 }

@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useForm } from 'conform-react';
+import { getMetadata, isInput, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import { z } from 'zod';
@@ -29,18 +29,22 @@ const schema = coerceZodFormData(
 
 export default function App() {
 	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { state, handleSubmit, intent } = useFormControl(formRef, {
 		onValidate(value) {
 			return resolveZodResult(schema.safeParse(value));
 		},
-		onSubmit(e, { value }) {
-			e.preventDefault();
+		onSubmit(event, { value }) {
+			event.preventDefault();
 			alert(JSON.stringify(value, null, 2));
 		},
 	});
 	const { fields } = getMetadata(state, {
 		defaultValue: {
+			isTermsAgreed: true,
 			carType: 'hatchback',
+			userCountry: 'canada',
+			estimatedKilometersPerYear: 2000,
+			hasAdditionalDriver: false,
 			desiredContractType: 'part',
 		},
 	});
@@ -74,7 +78,10 @@ export default function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Checkbox</h2>
 					<div className="flex items-center gap-2">
-						<ExampleCheckbox name={fields.isTermsAgreed.name} />
+						<ExampleCheckbox
+							name={fields.isTermsAgreed.name}
+							defaultChecked={fields.isTermsAgreed.defaultValue === 'on'}
+						/>
 						<label>Accept terms and conditions.</label>
 					</div>
 					<span className="text-red-800">{fields.isTermsAgreed.error}</span>
@@ -85,6 +92,7 @@ export default function App() {
 						Car type:
 						<ExampleRadioGroup
 							name={fields.carType.name}
+							defaultValue={fields.carType.defaultValue}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
 								{ value: 'hatchback', label: 'Hatchback' },
@@ -100,6 +108,7 @@ export default function App() {
 					<label>Country</label>
 					<ExampleSelect
 						name={fields.userCountry.name}
+						defaultValue={fields.userCountry.defaultValue}
 						placeholder="Select a country 🗺"
 						items={[
 							{ name: 'USA', value: 'usa' },
@@ -115,6 +124,7 @@ export default function App() {
 						Estimated kilometers per year:
 						<ExampleSlider
 							name={fields.estimatedKilometersPerYear.name}
+							defaultValue={fields.estimatedKilometersPerYear.defaultValue}
 							max={10_000}
 						/>
 						<span className="text-red-800">
@@ -125,7 +135,10 @@ export default function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Switch</h2>
 					<div className="flex items-center gap-2">
-						<ExampleSwitch name={fields.hasAdditionalDriver.name} />
+						<ExampleSwitch
+							name={fields.hasAdditionalDriver.name}
+							defaultChecked={fields.isTermsAgreed.defaultValue === 'on'}
+						/>
 						<label>Has additional driver</label>
 					</div>
 					<span className="text-red-800">
@@ -138,6 +151,7 @@ export default function App() {
 						Desired contract type:
 						<ExampleToggleGroup
 							name={fields.desiredContractType.name}
+							defaultValue={fields.desiredContractType.defaultValue}
 							items={[
 								{ value: 'full', label: 'Full' },
 								{ value: 'part', label: 'Part time' },

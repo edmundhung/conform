@@ -42,22 +42,18 @@ export default function App() {
 		<main>
 			<h1>Remix Example</h1>
 
-			<p>
-				This example demonstrates some of the features of Conform including{' '}
-				<strong>client validation</strong>, <strong>nested list</strong>, and{' '}
-				<strong>async validation with zod</strong>.
-			</p>
+			<p>This example demonstrates the following features:</p>
 
 			<ul>
 				<li>
-					<Link to="login">Login</Link> (
+					<Link to="login">Basic form with client validation</Link> (
 					<Link to="login-fetcher">with useFetcher</Link>)
 				</li>
 				<li>
-					<Link to="todos">Todo list</Link>
+					<Link to="signup">Async validation</Link>
 				</li>
 				<li>
-					<Link to="signup">Signup</Link>
+					<Link to="todos">Dynamic form with data persistence</Link>
 				</li>
 			</ul>
 

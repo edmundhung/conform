@@ -5,16 +5,10 @@ import {
 	useLoaderData,
 	useNavigation,
 } from '@remix-run/react';
-import {
-	getMetadata,
-	isInput,
-	parseSubmission,
-	report,
-	useForm,
-} from 'conform-react';
+import { parseSubmission, report } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
-import { useRef } from 'react';
+import { useForm } from '../template';
 import { createInMemoryStore } from '../store';
 
 const taskSchema = coerceZodFormData(
@@ -65,46 +59,22 @@ export default function Example() {
 	const loaderData = useLoaderData<typeof loader>();
 	const actionData = useActionData<typeof action>();
 	const navigation = useNavigation();
-	const formRef = useRef<HTMLFormElement>(null);
-	const { state, handleSubmit, intent } = useForm(formRef, {
+	const { form, fields, intent } = useForm({
 		// If we reset the form after a successful submission, we need to
 		// keep in mind that the default value (loader) will be updated
 		// only after the submsionn result (action) is received. We need to
 		// delay when useForm receives last submission result to avoid
 		// resetting the form too early.
 		lastResult: navigation.state === 'idle' ? actionData?.result : null,
+		defaultValue: loaderData.todos,
 		onValidate(value) {
 			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
-	const { fields } = getMetadata(state, {
-		defaultValue: loaderData.todos,
-	});
 	const tasks = fields.tasks.getFieldList();
 
 	return (
-		<Form
-			method="post"
-			ref={formRef}
-			onSubmit={handleSubmit}
-			onInput={(event) => {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			onBlur={(event) => {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
-					intent.validate(event.target.name);
-				}
-			}}
-			noValidate
-		>
+		<Form {...form.props} method="post">
 			<div>
 				<label>Title</label>
 				<input
