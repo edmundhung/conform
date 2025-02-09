@@ -11,7 +11,7 @@ import {
 	isPlainObject,
 	setValue,
 } from 'conform-dom';
-import { defaultSerialize, getDefaultListKey } from './metadata';
+import { serialize, getDefaultListKey } from './metadata';
 import {
 	addItems,
 	configureListIndexUpdate,
@@ -34,7 +34,7 @@ import {
 	getChildPaths,
 } from './util';
 
-export type DefaultValue<Schema> = Schema extends
+export type DefaultValue<FormShape> = FormShape extends
 	| string
 	| number
 	| boolean
@@ -43,22 +43,25 @@ export type DefaultValue<Schema> = Schema extends
 	| bigint
 	| null
 	| undefined
-	? Schema | null | undefined
-	: Schema extends Array<infer Item> | null | undefined
+	? FormShape | null | undefined
+	: FormShape extends Array<infer Item> | null | undefined
 		? Array<DefaultValue<Item>> | null | undefined
-		: Schema extends Record<string, any> | null | undefined
-			? { [Key in keyof Schema]?: DefaultValue<Schema[Key]> } | null | undefined
+		: FormShape extends Record<string, any> | null | undefined
+			?
+					| { [Key in keyof FormShape]?: DefaultValue<FormShape[Key]> }
+					| null
+					| undefined
 			: unknown;
 
 export type FormState<
-	Schema,
+	FormShape,
 	ErrorShape,
 	CustomState extends Record<string, unknown> = {},
 > = {
 	initialValue: Record<string, unknown> | null;
-	submittedValue: Record<string, FormValue> | null;
-	serverError: FormError<Schema, ErrorShape> | null;
-	clientError: FormError<Schema, ErrorShape> | null;
+	submittedValue: Record<string, unknown> | null;
+	serverError: FormError<FormShape, ErrorShape> | null;
+	clientError: FormError<FormShape, ErrorShape> | null;
 	touchedFields: string[];
 	keys: Record<string, string[]>;
 	custom: CustomState;
@@ -110,55 +113,6 @@ export type UnknownIntent = {
 	payload?: unknown;
 };
 
-export type FormIntentHandler<
-	Intent extends UnknownIntent | null,
-	AdditionalState extends {} = {},
-> = {
-	isApplicable(intent: UnknownIntent | null): boolean;
-	updateState<Schema, ErrorShape, State extends AdditionalState>(
-		state: FormState<Schema, ErrorShape, State>,
-		ctx: FormAction<Schema, ErrorShape, State, Intent>,
-	): FormState<Schema, ErrorShape, State>;
-	updateValue?: (
-		value: Record<string, FormValue>,
-		intent: Intent,
-	) => Record<string, FormValue> | null;
-	sideEffect?: <Schema, ErrorShape>(
-		formElement: HTMLFormElement,
-		ctx: {
-			intent: Intent;
-			state: FormState<Schema, ErrorShape, AdditionalState>;
-		},
-	) => void;
-};
-
-function getFields(result: SubmissionResult): string[] {
-	const fields = result.fields;
-
-	// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
-	// But the schema might have an error on those fields, so we need to include them
-	if (result.error) {
-		for (const name of Object.keys(result.error.fieldError)) {
-			// If the error is set as a child of an actual field, exclude it
-			// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
-			if (
-				fields.find(
-					(field) => field !== name && getChildPaths(field, name) !== null,
-				)
-			) {
-				continue;
-			}
-
-			// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
-			if (fields.every((field) => getChildPaths(name, field) === null)) {
-				fields.push(name);
-			}
-		}
-	}
-
-	return fields;
-}
-
 export function serializeIntent(intent: UnknownIntent): string {
 	if (!intent.payload) {
 		return intent.type;
@@ -193,29 +147,29 @@ export type FormControlCustomState<Control extends FormControl<any, any>> =
 	Control extends FormControl<any, infer CustomState> ? CustomState : never;
 
 export type FormAction<
-	Schema,
+	FormShape,
 	ErrorShape,
-	CustomState extends {},
-	Intent extends UnknownIntent | null = UnknownIntent | null,
+	Intent,
+	CustomState extends Record<string, unknown>,
 > = {
 	type: 'server' | 'client';
-	result: SubmissionResult<Schema, ErrorShape, Intent>;
-	reset: () => FormState<Schema, ErrorShape, CustomState>;
+	result: SubmissionResult<FormShape, ErrorShape, Intent>;
+	reset: () => FormState<FormShape, ErrorShape, CustomState>;
 };
 
 export type FormControl<
 	Intent extends UnknownIntent = never,
 	CustomState extends {} = {},
 > = {
-	initializeState<Schema, ErrorShape>(): FormState<
-		Schema,
+	initializeState<FormShape, ErrorShape>(): FormState<
+		FormShape,
 		ErrorShape,
 		CustomState
 	>;
-	updateState<Schema, ErrorShape, State extends CustomState>(
-		state: FormState<Schema, ErrorShape, State>,
-		action: FormAction<Schema, ErrorShape, State, UnknownIntent | null>,
-	): FormState<Schema, ErrorShape, State>;
+	updateState<FormShape, ErrorShape, State extends CustomState>(
+		state: FormState<FormShape, ErrorShape, State>,
+		action: FormAction<FormShape, ErrorShape, UnknownIntent | null, State>,
+	): FormState<FormShape, ErrorShape, State>;
 	serializeIntent(intent: UnknownIntent): string;
 	deserializeIntent(value: string): UnknownIntent;
 	parseIntent(intent: UnknownIntent): Intent | undefined;
@@ -224,41 +178,41 @@ export type FormControl<
 		intent: UnknownIntent,
 	): Record<string, FormValue> | null;
 	hasSideEffect(intent: UnknownIntent): boolean;
-	applySideEffect<Schema, ErrorShape>(
+	applySideEffect<FormShape, ErrorShape>(
 		formElement: HTMLFormElement,
 		intent: UnknownIntent,
-		state: FormState<Schema, ErrorShape, CustomState>,
+		state: FormState<FormShape, ErrorShape, CustomState>,
 	): void;
 	extend<
 		NewCustomState extends {} = {},
 		NewIntent extends UnknownIntent = never,
 	>(config: {
-		onInitializeState: <Schema, ErrorShape>(
-			initialState: FormState<Schema, ErrorShape, CustomState>,
-		) => FormState<Schema, ErrorShape, CustomState & NewCustomState>;
+		onInitializeState: <FormShape, ErrorShape>(
+			initialState: FormState<FormShape, ErrorShape, CustomState>,
+		) => FormState<FormShape, ErrorShape, CustomState & NewCustomState>;
 		onUpdateState: <
-			Schema,
+			FormShape,
 			ErrorShape,
 			AdditionalState extends CustomState & NewCustomState,
 		>(
-			state: FormState<Schema, ErrorShape, AdditionalState>,
+			state: FormState<FormShape, ErrorShape, AdditionalState>,
 			action: FormAction<
-				Schema,
+				FormShape,
 				ErrorShape,
-				AdditionalState,
-				NewIntent | Intent | null
+				NewIntent | Intent | null,
+				AdditionalState
 			>,
-		) => FormState<Schema, ErrorShape, AdditionalState>;
+		) => FormState<FormShape, ErrorShape, AdditionalState>;
 		onParseIntent?: (intent: UnknownIntent) => Intent | NewIntent | undefined;
 		onUpdateValue?: (
 			value: Record<string, FormValue>,
 			intent: NewIntent | Intent,
 		) => Record<string, FormValue> | null | undefined;
 		hasSideEffect?: (intent: NewIntent | Intent) => boolean | undefined;
-		onApplySideEffect?: <Schema, ErrorShape>(
+		onApplySideEffect?: <FormShape, ErrorShape>(
 			formElement: HTMLFormElement,
 			intent: NewIntent | Intent,
-			state: FormState<Schema, ErrorShape, CustomState & NewCustomState>,
+			state: FormState<FormShape, ErrorShape, CustomState & NewCustomState>,
 		) => void;
 	}): FormControl<Intent | NewIntent, CustomState & NewCustomState>;
 };
@@ -322,6 +276,10 @@ export function applyIntent<Intent extends UnknownIntent>(
 	return [intent, value];
 }
 
+export type FieldName<FieldShape> = string & {
+	'~field'?: FieldShape;
+};
+
 export type ResetIntent = {
 	type: 'reset';
 };
@@ -336,7 +294,7 @@ export type UpdateIntent = {
 	payload: {
 		name?: string;
 		index?: number;
-		value: FormValue<string>;
+		value: FormValue<string | number | boolean | null>;
 	};
 };
 
@@ -344,22 +302,22 @@ export type ListIntent =
 	| {
 			type: 'insert';
 			payload: {
-				name: string;
+				name: FieldName<any[]>;
 				index?: number;
-				defaultValue?: unknown;
+				defaultValue?: FormValue<string | number | boolean | null>;
 			};
 	  }
 	| {
 			type: 'remove';
 			payload: {
-				name: string;
+				name: FieldName<any[]>;
 				index: number;
 			};
 	  }
 	| {
 			type: 'reorder';
 			payload: {
-				name: string;
+				name: FieldName<any[]>;
 				from: number;
 				to: number;
 			};
@@ -445,8 +403,8 @@ export const bareControl: FormControl = {
 
 		return {
 			...this,
-			initializeState: <Schema, ErrorShape>() => {
-				const initialState = control.initializeState<Schema, ErrorShape>();
+			initializeState: <FormShape, ErrorShape>() => {
+				const initialState = control.initializeState<FormShape, ErrorShape>();
 				return onInitializeState(initialState);
 			},
 			updateState: (state, action) => {
@@ -562,7 +520,31 @@ export const baseControl = bareControl
 				const name = result.intent?.payload ?? '';
 
 				if (name === '') {
-					const fields = getFields(result);
+					const fields = result.fields;
+
+					// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
+					// But the schema might have an error on those fields, so we need to include them
+					if (result.error) {
+						for (const name of Object.keys(result.error.fieldError)) {
+							// If the error is set as a child of an actual field, exclude it
+							// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
+							if (
+								fields.find(
+									(field) =>
+										field !== name && getChildPaths(field, name) !== null,
+								)
+							) {
+								continue;
+							}
+
+							// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
+							if (
+								fields.every((field) => getChildPaths(name, field) === null)
+							) {
+								fields.push(name);
+							}
+						}
+					}
 
 					return {
 						...state,
@@ -633,7 +615,7 @@ export const baseControl = bareControl
 
 						if (paths) {
 							updateFieldValue(element, {
-								value: defaultSerialize(getValue(intent.payload.value, paths)),
+								value: serialize(getValue(intent.payload.value, paths)),
 							});
 
 							// Update the element attribute to notify that this is changed by Conform

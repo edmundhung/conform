@@ -12,6 +12,7 @@ import {
 	report,
 	baseControl,
 	applyIntent,
+	isTouched,
 } from 'conform-react';
 import { useMemo, useRef } from 'react';
 
@@ -190,19 +191,13 @@ export default function Example() {
 			method="post"
 			ref={formRef}
 			onSubmit={handleSubmit}
-			onInput={(event) => {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
+			onBlur={(event) => {
+				if (isInput(event.target) && !isTouched(state, event.target.name)) {
 					intent.validate(event.target.name);
 				}
 			}}
-			onBlur={(event) => {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
+			onInput={(event) => {
+				if (isInput(event.target) && isTouched(state, event.target.name)) {
 					intent.validate(event.target.name);
 				}
 			}}

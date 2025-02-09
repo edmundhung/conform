@@ -9,12 +9,7 @@ import {
 	useSyncExternalStore,
 } from 'react';
 import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
-import {
-	DEFAULT_INTENT,
-	parseSubmission,
-	report,
-	requestIntent,
-} from 'conform-dom';
+import { parseSubmission, report, requestIntent } from 'conform-dom';
 import type {
 	FormControl,
 	FormState,
@@ -60,45 +55,49 @@ export type IntentDispatcher<Intent extends UnknownIntent> = {
 		: (payload: Extract<Intent, { type: Type }>['payload']) => void;
 };
 
-export type SubmitContext<Schema, ErrorShape, Intent, Value> = {
+export type SubmitContext<FormShape, ErrorShape, Value> = {
 	formData: FormData;
 	value: NonNullable<Value>;
-	intent: Intent | null | undefined;
 	update: (options: {
-		error?: Partial<FormError<Schema, ErrorShape>> | null;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		reset?: boolean;
 	}) => void;
 };
 
-export type ValidateHandler<Schema, ErrorShape, Value> = (
+export type ValidateHandler<FormShape, ErrorShape, Value> = (
 	value: Record<string, FormValue>,
 	ctx: {
 		formElement: HTMLFormElement;
 	},
 ) =>
-	| FormError<Schema, ErrorShape>
+	| FormError<FormShape, ErrorShape>
 	| null
 	| {
 			value?: Value;
-			error: FormError<Schema, ErrorShape> | null;
+			error: FormError<FormShape, ErrorShape> | null;
 	  }
 	| Promise<
-			| FormError<Schema, ErrorShape>
+			| FormError<FormShape, ErrorShape>
 			| null
 			| {
 					value?: Value;
-					error: FormError<Schema, ErrorShape> | null;
+					error: FormError<FormShape, ErrorShape> | null;
 			  }
 	  >
 	| undefined;
 
-export type SubmitHandler<Schema, ErrorShape, Intent, Value> = (
+export type SubmitHandler<FormShape, ErrorShape, Value> = (
 	event: React.FormEvent<HTMLFormElement>,
-	ctx: SubmitContext<Schema, ErrorShape, Intent, Value>,
+	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;
 
+/**
+ * The default intent name
+ */
+export const DEFAULT_INTENT = '__intent__';
+
 export function useFormControl<
-	Schema,
+	FormShape,
 	ErrorShape,
 	Intent extends UnknownIntent,
 	CustomState extends Record<string, unknown> = {},
@@ -108,42 +107,41 @@ export function useFormControl<
 	options: {
 		control: FormControl<Intent, CustomState>;
 		lastResult?:
-			| SubmissionResult<Schema, ErrorShape, Intent | null>
-			| SubmissionResult<Schema, ErrorShape, null>
+			| SubmissionResult<FormShape, ErrorShape, Intent | null>
+			| SubmissionResult<FormShape, ErrorShape, null>
 			| null;
 		intentName?: string;
-		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<Schema, ErrorShape, Intent, Value>;
+		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
-	state: FormState<Schema, ErrorShape, CustomState>;
+	state: FormState<FormShape, ErrorShape, CustomState>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
-export function useFormControl<Schema, ErrorShape = string[], Value = unknown>(
+export function useFormControl<
+	FormShape,
+	ErrorShape = string[],
+	Value = unknown,
+>(
 	formRef: FormRef,
 	options?: {
 		control?: undefined;
 		lastResult?:
 			| SubmissionResult<
-					Schema,
+					FormShape,
 					ErrorShape,
 					FormControlIntent<typeof baseControl> | null
 			  >
-			| SubmissionResult<Schema, ErrorShape, null>
+			| SubmissionResult<FormShape, ErrorShape, null>
 			| null;
 		intentName?: string;
-		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<
-			Schema,
-			ErrorShape,
-			FormControlIntent<typeof baseControl>,
-			Value
-		>;
+		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
 	state: FormState<
-		Schema,
+		FormShape,
 		ErrorShape,
 		FormControlCustomState<typeof baseControl>
 	>;
@@ -151,7 +149,7 @@ export function useFormControl<Schema, ErrorShape = string[], Value = unknown>(
 	intent: IntentDispatcher<FormControlIntent<typeof baseControl>>;
 };
 export function useFormControl<
-	Schema,
+	FormShape,
 	ErrorShape,
 	Intent extends UnknownIntent,
 	AdditionalState extends Record<string, unknown> = {},
@@ -165,24 +163,19 @@ export function useFormControl<
 		>;
 		lastResult?:
 			| SubmissionResult<
-					Schema,
+					FormShape,
 					ErrorShape,
 					Intent | FormControlIntent<typeof baseControl> | null
 			  >
-			| SubmissionResult<Schema, ErrorShape, null>
+			| SubmissionResult<FormShape, ErrorShape, null>
 			| null;
 		intentName?: string;
-		onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<
-			Schema,
-			ErrorShape,
-			Intent | FormControlIntent<typeof baseControl>,
-			Value
-		>;
+		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
 	state: FormState<
-		Schema,
+		FormShape,
 		ErrorShape,
 		AdditionalState | FormControlCustomState<typeof baseControl>
 	>;
@@ -195,13 +188,13 @@ export function useFormControl<
 		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
-		state: FormState<Schema, ErrorShape, {} | AdditionalState>;
+		state: FormState<FormShape, ErrorShape, {} | AdditionalState>;
 		sideEffects: Array<{
 			intent: Intent | FormControlIntent<typeof baseControl>;
-			state: FormState<Schema, ErrorShape, {} | AdditionalState>;
+			state: FormState<FormShape, ErrorShape, {} | AdditionalState>;
 		}>;
 	}>(() => {
-		let state = control.initializeState<Schema, ErrorShape>();
+		let state = control.initializeState<FormShape, ErrorShape>();
 
 		if (lastResult) {
 			state = control.updateState(state, {
@@ -233,7 +226,7 @@ export function useFormControl<
 	const handleSubmission = useCallback(
 		(
 			result: SubmissionResult<
-				Schema,
+				FormShape,
 				ErrorShape,
 				Intent | FormControlIntent<typeof baseControl> | null
 			>,
@@ -264,7 +257,7 @@ export function useFormControl<
 					type: options.type,
 					result,
 					reset() {
-						return control.initializeState<Schema, ErrorShape>();
+						return control.initializeState<FormShape, ErrorShape>();
 					},
 				});
 
@@ -350,11 +343,10 @@ export function useFormControl<
 				pendingIntents: pendingIntentsRef.current,
 			});
 			const submissionResult = report<
-				Schema,
+				FormShape,
 				ErrorShape,
 				Intent | FormControlIntent<typeof baseControl> | null
 			>(submission, {
-				keepFile: true,
 				value: intentValue,
 				intent,
 			});
@@ -428,14 +420,15 @@ export function useFormControl<
 				}
 			}
 
-			if (!event.isDefaultPrevented()) {
+			// We might not prevent form submission if server validation is required
+			// But the `onSubmit` handler should be triggered only if there is no intent
+			if (!event.isDefaultPrevented() && intent === null) {
 				optionsRef.current?.onSubmit?.(event, {
 					formData,
-					intent,
 					get value() {
 						if (typeof value === 'undefined' || value === null) {
 							throw new Error(
-								'Value is not available; Please make sure you have included the value in the onValidate handler',
+								'`value` is not available; Please make sure you have included the value in the `onValidate` result.',
 							);
 						}
 
@@ -445,7 +438,6 @@ export function useFormControl<
 						if (!abortController.signal.aborted) {
 							const result = report(submission, {
 								...options,
-								keepFile: true,
 								value: intentValue,
 								intent,
 							});

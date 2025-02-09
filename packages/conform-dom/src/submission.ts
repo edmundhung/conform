@@ -1,14 +1,19 @@
 import { setValue, getPaths } from './formdata';
+import { stripFiles } from './util';
 
-export type FormValue<Entry extends FormDataEntryValue = FormDataEntryValue> =
-	| Entry
-	| FormValue<Entry>[]
-	| { [key: string]: FormValue<Entry> };
+export type FormValue<
+	Entry extends string | number | boolean | File | null =
+		| string
+		| number
+		| boolean
+		| File
+		| null,
+> = Entry | FormValue<Entry | null>[] | { [key: string]: FormValue<Entry> };
 
-export type FormError<Schema, ErrorShape> = {
+export type FormError<FormShape, ErrorShape> = {
 	formError: ErrorShape | null;
 	fieldError: Record<string, ErrorShape>;
-	'#schema'?: Schema;
+	'~type'?: FormShape;
 };
 
 export type Submission = {
@@ -17,23 +22,13 @@ export type Submission = {
 	intent: string | null;
 };
 
-export type SubmissionResult<
-	Schema = unknown,
-	ErrorShape = unknown,
-	Intent = unknown,
-	FormValueType extends FormDataEntryValue = FormDataEntryValue,
-> = {
-	submittedValue: Record<string, FormValue<FormValueType>>;
+export type SubmissionResult<FormShape, ErrorShape, Intent> = {
+	submittedValue: Record<string, FormValue<string>>;
 	fields: string[];
 	intent: Intent;
-	value?: Record<string, FormValue<FormValueType>> | null;
-	error?: FormError<Schema, ErrorShape> | null;
+	value?: Record<string, FormValue<string | number | boolean | null>> | null;
+	error?: FormError<FormShape, ErrorShape> | null;
 };
-
-/**
- * The name to be used when submitting a form control
- */
-export const DEFAULT_INTENT = '__intent__';
 
 /**
  * Parse `FormData` or `URLSearchParams` into a submission object.
@@ -70,7 +65,7 @@ export function parseSubmission(
 		intentName?: string;
 	},
 ): Submission {
-	const { intentName = DEFAULT_INTENT } = options ?? {};
+	const intentName = options?.intentName;
 	const fields = new Set<string>();
 	const submission: Submission = {
 		value: {},
@@ -136,57 +131,38 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<Schema, ErrorShape = string[], Intent = null>(
+export function report<FormShape, ErrorShape = string[], Intent = null>(
 	submission: Submission,
 	options: {
-		error?: Partial<FormError<Schema, ErrorShape>> | null;
-		value?: Record<string, FormValue<FormDataEntryValue>> | null;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
 		intent?: Intent;
 		reset?: boolean;
-		keepFile: true;
 	},
-): SubmissionResult<Schema, ErrorShape, Intent | null, FormDataEntryValue>;
-export function report<Schema, ErrorShape = string[], Intent = null>(
-	submission: Submission,
-	options: {
-		error?: Partial<FormError<Schema, ErrorShape>> | null;
-		value?: Record<string, FormValue<FormDataEntryValue>> | null;
-		intent?: Intent;
-		reset?: boolean;
-		keepFile?: false;
-	},
-): SubmissionResult<Schema, ErrorShape, Intent | null, string>;
-export function report<Schema, ErrorShape = string[], Intent = null>(
-	submission: Submission,
-	options: {
-		error?: Partial<FormError<Schema, ErrorShape>> | null;
-		value?: Record<string, FormValue<FormDataEntryValue>> | null;
-		intent?: Intent;
-		reset?: boolean;
-		keepFile?: boolean;
-	},
-): SubmissionResult<Schema, ErrorShape, Intent | null, FormDataEntryValue> {
+): SubmissionResult<FormShape, ErrorShape, Intent | null> {
+	const submittedValue = stripFiles(submission.value);
+
 	if (options.reset) {
 		return {
-			submittedValue: submission.value,
+			submittedValue,
 			fields: submission.fields,
 			intent: null,
 			value: null,
 		};
 	}
 
-	// options.keepFile
-
 	return {
-		submittedValue: submission.value,
-		value: submission.value !== options.value ? options.value : undefined,
-		error:
-			typeof options.error === 'undefined' || options.error === null
-				? options.error
-				: {
-						formError: options.error.formError ?? null,
-						fieldError: options.error.fieldError ?? {},
-					},
+		submittedValue,
+		value:
+			options.value && submission.value !== options.value
+				? stripFiles(options.value)
+				: undefined,
+		error: !options.error
+			? options.error
+			: {
+					formError: options.error.formError ?? null,
+					fieldError: options.error.fieldError ?? {},
+				},
 		intent: options.intent ?? null,
 		fields: submission.fields,
 	};

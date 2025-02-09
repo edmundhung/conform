@@ -13,7 +13,6 @@ export {
 	type SubmissionResult,
 	type FormValue,
 	type FormError,
-	DEFAULT_INTENT,
 	parseSubmission,
 	report,
 } from './submission';

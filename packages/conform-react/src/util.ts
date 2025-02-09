@@ -144,16 +144,16 @@ export function identiy<Value>(value: Value): Value {
 	return value;
 }
 
-export function resolveValidateResult<Schema, ErrorShape, Value>(
+export function resolveValidateResult<FormShape, ErrorShape, Value>(
 	result:
-		| FormError<Schema, ErrorShape>
+		| FormError<FormShape, ErrorShape>
 		| null
 		| {
-				error: FormError<Schema, ErrorShape> | null;
+				error: FormError<FormShape, ErrorShape> | null;
 				value?: Value;
 		  },
 ): {
-	error: FormError<Schema, ErrorShape> | null;
+	error: FormError<FormShape, ErrorShape> | null;
 	value?: Value;
 } {
 	if (result !== null && 'error' in result) {

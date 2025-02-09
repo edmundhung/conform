@@ -1,11 +1,4 @@
-export function invariant(
-	expectedCondition: boolean,
-	message: string,
-): asserts expectedCondition {
-	if (!expectedCondition) {
-		throw new Error(message);
-	}
-}
+import type { FormValue } from './submission';
 
 /**
  * Check if the value is a plain object
@@ -36,4 +29,24 @@ export function shallowClone<Value>(value: Value): Value {
 	}
 
 	return value;
+}
+
+/*
+ * Removes File object from the FormValue.
+ * Used to avoid serialzing/sending File object back to the client.
+ */
+export function stripFiles<
+	Type extends string | number | boolean | File | null,
+>(
+	value: Record<string, FormValue<Type>>,
+): Record<string, FormValue<Exclude<Type, File>>> {
+	const json = JSON.stringify(value, (_, value) => {
+		// If the current value is a File, return undefined to omit it
+		if (typeof File !== 'undefined' && value instanceof File) {
+			return undefined;
+		}
+		return value;
+	});
+
+	return JSON.parse(json);
 }

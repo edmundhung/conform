@@ -16,7 +16,7 @@ export {
 	applyIntent,
 } from './control';
 export {
-	defaultSerialize,
+	serialize,
 	isTouched,
 	getError,
 	getSerializedValue,

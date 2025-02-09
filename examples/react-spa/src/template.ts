@@ -7,28 +7,24 @@ import {
 	baseControl,
 	getMetadata,
 	isInput,
+	isTouched,
 	useFormControl,
 } from 'conform-react';
 import { useRef } from 'react';
 
-type FormOptions<Schema, ErrorShape, Value> = {
+type FormOptions<FormShape, ErrorShape, Value> = {
 	lastResult?: SubmissionResult<
-		Schema,
+		FormShape,
 		ErrorShape,
 		FormControlIntent<typeof baseControl> | null
 	> | null;
-	defaultValue?: NoInfer<DefaultValue<Schema>>;
-	onSubmit?: SubmitHandler<
-		Schema,
-		ErrorShape,
-		FormControlIntent<typeof baseControl>,
-		Value
-	>;
-	onValidate?: ValidateHandler<Schema, ErrorShape, Value>;
+	defaultValue?: NoInfer<DefaultValue<FormShape>>;
+	onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
+	onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
 };
 
-export function useForm<Schema, ErrorShape, Value>(
-	options: FormOptions<Schema, ErrorShape, Value>,
+export function useForm<FormShape, ErrorShape, Value>(
+	options: FormOptions<FormShape, ErrorShape, Value>,
 ) {
 	const formRef = useRef<HTMLFormElement>(null);
 	const { state, handleSubmit, intent } = useFormControl(formRef, {
@@ -42,18 +38,12 @@ export function useForm<Schema, ErrorShape, Value>(
 			ref: formRef,
 			onSubmit: handleSubmit,
 			onBlur(event) {
-				if (
-					isInput(event.target) &&
-					!state.touchedFields.includes(event.target.name)
-				) {
+				if (isInput(event.target) && !isTouched(state, event.target.name)) {
 					intent.validate(event.target.name);
 				}
 			},
 			onInput(event) {
-				if (
-					isInput(event.target) &&
-					state.touchedFields.includes(event.target.name)
-				) {
+				if (isInput(event.target) && isTouched(state, event.target.name)) {
 					intent.validate(event.target.name);
 				}
 			},

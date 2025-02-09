@@ -1,10 +1,20 @@
 import { expect, test } from 'vitest';
 import {
-	defaultSerialize,
-	getDefaultValue,
+	serialize,
+	getSerializedValue,
 	getError,
 	isTouched,
 } from '../src/metadata';
+
+const defaultState = {
+	initialValue: null,
+	submittedValue: null,
+	serverError: null,
+	clientError: null,
+	touchedFields: [],
+	keys: {},
+	custom: {},
+};
 
 test('defaultSerialize()', () => {
 	const value = {
@@ -27,18 +37,18 @@ test('defaultSerialize()', () => {
 		bigint: '1',
 		regexp: '/[0-9]/',
 	};
-	expect(defaultSerialize(value)).toEqual(undefined);
-	expect(defaultSerialize(value.string)).toEqual(result.string);
-	expect(defaultSerialize(value.array)).toEqual(result.array);
-	expect(defaultSerialize(value.mixed)).toEqual(result.mixed);
-	expect(defaultSerialize(value.date)).toEqual(result.date);
-	expect(defaultSerialize(value.boolean)).toEqual(result.boolean);
-	expect(defaultSerialize(value.number)).toEqual(result.number);
-	expect(defaultSerialize(value.bigint)).toEqual(result.bigint);
-	expect(defaultSerialize(value.regexp)).toEqual(result.regexp);
+	expect(serialize(value)).toEqual(undefined);
+	expect(serialize(value.string)).toEqual(result.string);
+	expect(serialize(value.array)).toEqual(result.array);
+	expect(serialize(value.mixed)).toEqual(result.mixed);
+	expect(serialize(value.date)).toEqual(result.date);
+	expect(serialize(value.boolean)).toEqual(result.boolean);
+	expect(serialize(value.number)).toEqual(result.number);
+	expect(serialize(value.bigint)).toEqual(result.bigint);
+	expect(serialize(value.regexp)).toEqual(result.regexp);
 });
 
-test('getDefaultValue()', () => {
+test('getSerializedValue()', () => {
 	const value = {
 		date: 'today',
 		count: 1,
@@ -51,56 +61,63 @@ test('getDefaultValue()', () => {
 		],
 	};
 
-	expect(getDefaultValue(value, 'date')).toEqual('today');
-	expect(getDefaultValue(value, 'tasks[0].title')).toEqual('test');
-	expect(getDefaultValue(value, 'tasks[0].by')).toEqual(['Tom', 'Mary']);
+	expect(getSerializedValue(value, 'date')).toEqual('today');
+	expect(getSerializedValue(value, 'tasks[0].title')).toEqual('test');
+	expect(getSerializedValue(value, 'tasks[0].by')).toEqual(['Tom', 'Mary']);
 
 	// should get values as string or string[] only
-	expect(getDefaultValue(value, '')).toEqual(undefined);
-	expect(getDefaultValue(value, 'tasks')).toEqual(undefined);
-	expect(getDefaultValue(value, 'tasks[0]')).toEqual(undefined);
-	expect(getDefaultValue(undefined, 'count')).toEqual(undefined);
+	expect(getSerializedValue(value, '')).toEqual(undefined);
+	expect(getSerializedValue(value, 'tasks')).toEqual(undefined);
+	expect(getSerializedValue(value, 'tasks[0]')).toEqual(undefined);
+	expect(getSerializedValue(undefined, 'count')).toEqual(undefined);
 
 	// should return undefined if no such paths
-	expect(getDefaultValue(value, 'tasks[0].deadline')).toEqual(undefined);
+	expect(getSerializedValue(value, 'tasks[0].deadline')).toEqual(undefined);
 
 	// number values should be serialized
-	expect(getDefaultValue(value, 'count')).toEqual('1');
-	expect(getDefaultValue(value, 'tasks[0].workingHour')).toEqual(['1', '2']);
+	expect(getSerializedValue(value, 'count')).toEqual('1');
+	expect(getSerializedValue(value, 'tasks[0].workingHour')).toEqual(['1', '2']);
 
 	// serialize cases
-	expect(getDefaultValue(value, 'count', () => 'i')).toEqual('i');
+	expect(getSerializedValue(value, 'count', () => 'i')).toEqual('i');
 	expect(
-		getDefaultValue(value, 'tasks[0].workingHour', (value) =>
+		getSerializedValue(value, 'tasks[0].workingHour', (value) =>
 			value?.toString(),
 		),
 	).toEqual('1,2');
-	expect(getDefaultValue(value, 'count', () => undefined)).toEqual(undefined);
-	expect(getDefaultValue(value, 'tasks[0].workingHour', () => [])).toEqual([]);
+	expect(getSerializedValue(value, 'count', () => undefined)).toEqual(
+		undefined,
+	);
+	expect(getSerializedValue(value, 'tasks[0].workingHour', () => [])).toEqual(
+		[],
+	);
 });
 
 test('isTouched()', () => {
-	const touchedFields = [
-		'email',
-		'tasks[0]',
-		'tasks[0].title',
-		'tasks[2].title',
-		'address.city',
-	];
+	const state = {
+		...defaultState,
+		touchedFields: [
+			'email',
+			'tasks[0]',
+			'tasks[0].title',
+			'tasks[2].title',
+			'address.city',
+		],
+	};
 
-	expect(isTouched(touchedFields, '')).toEqual(true);
-	expect(isTouched(touchedFields, 'email')).toEqual(true);
-	expect(isTouched(touchedFields, 'tasks[0].title')).toEqual(true);
-	expect(isTouched(touchedFields, 'tasks[1]')).toEqual(false);
-	expect(isTouched(touchedFields, 'tasks[2]')).toEqual(true);
-	expect(isTouched(touchedFields, 'tasks')).toEqual(true);
-	expect(isTouched(touchedFields, 'address')).toEqual(true);
-	expect(isTouched(touchedFields, 'address.city')).toEqual(true);
-	expect(isTouched(touchedFields, 'address.country')).toEqual(false);
-	expect(isTouched(touchedFields)).toEqual(true);
-	expect(isTouched([], '')).toEqual(false);
-	expect(isTouched([], 'email')).toEqual(false);
-	expect(isTouched([])).toEqual(false);
+	expect(isTouched(state, '')).toEqual(true);
+	expect(isTouched(state, 'email')).toEqual(true);
+	expect(isTouched(state, 'tasks[0].title')).toEqual(true);
+	expect(isTouched(state, 'tasks[1]')).toEqual(false);
+	expect(isTouched(state, 'tasks[2]')).toEqual(true);
+	expect(isTouched(state, 'tasks')).toEqual(true);
+	expect(isTouched(state, 'address')).toEqual(true);
+	expect(isTouched(state, 'address.city')).toEqual(true);
+	expect(isTouched(state, 'address.country')).toEqual(false);
+	expect(isTouched(state)).toEqual(true);
+	expect(isTouched(state, '')).toEqual(false);
+	expect(isTouched(state, 'email')).toEqual(false);
+	expect(isTouched(state)).toEqual(false);
 });
 
 test('getError()', () => {
@@ -118,16 +135,38 @@ test('getError()', () => {
 	};
 	const touchedFields = ['email', 'address.city'];
 
-	expect(getError(error, touchedFields, 'password')).toEqual(undefined);
-	expect(getError(error, [], 'password')).toEqual(undefined);
-	expect(getError(error, touchedFields, 'address.city')).toEqual(undefined);
-	expect(getError(error, touchedFields, 'email')).toEqual(
-		error.fieldError.email,
+	expect(
+		getError(
+			{ ...defaultState, clientError: error, touchedFields },
+			'password',
+		),
+	).toEqual(undefined);
+	expect(getError({ ...defaultState, clientError: error }, 'password')).toEqual(
+		undefined,
 	);
-	expect(getError(error, touchedFields, '')).toEqual(error.formError);
-	expect(getError(error, touchedFields)).toEqual(error.formError);
-	expect(getError(noFormError, touchedFields, '')).toEqual(undefined);
-	expect(getError(noFormError, touchedFields)).toEqual(undefined);
-	expect(getError(null, touchedFields, '')).toEqual(undefined);
-	expect(getError(null, touchedFields, 'email')).toEqual(undefined);
+	expect(
+		getError(
+			{ ...defaultState, clientError: error, touchedFields },
+			'address.city',
+		),
+	).toEqual(undefined);
+	expect(
+		getError({ ...defaultState, clientError: error, touchedFields }, 'email'),
+	).toEqual(error.fieldError.email);
+	expect(
+		getError({ ...defaultState, clientError: error, touchedFields }, ''),
+	).toEqual(error.formError);
+	expect(
+		getError({ ...defaultState, clientError: error, touchedFields }),
+	).toEqual(error.formError);
+	expect(
+		getError({ ...defaultState, clientError: noFormError, touchedFields }, ''),
+	).toEqual(undefined);
+	expect(
+		getError({ ...defaultState, clientError: noFormError, touchedFields }),
+	).toEqual(undefined);
+	expect(getError({ ...defaultState, touchedFields }, '')).toEqual(undefined);
+	expect(getError({ ...defaultState, touchedFields }, 'email')).toEqual(
+		undefined,
+	);
 });

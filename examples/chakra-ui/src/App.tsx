@@ -1,4 +1,4 @@
-import { getMetadata, isInput, useFormControl } from 'conform-react';
+import { getMetadata, isInput, isTouched, useFormControl } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { useRef } from 'react';
 import {
@@ -66,18 +66,12 @@ export default function App() {
 				ref={formRef}
 				onSubmit={handleSubmit}
 				onBlur={(event) => {
-					if (
-						isInput(event.target) &&
-						!state.touchedFields.includes(event.target.name)
-					) {
+					if (isInput(event.target) && !isTouched(state, event.target.name)) {
 						intent.validate(event.target.name);
 					}
 				}}
 				onInput={(event) => {
-					if (
-						isInput(event.target) &&
-						state.touchedFields.includes(event.target.name)
-					) {
+					if (isInput(event.target) && isTouched(state, event.target.name)) {
 						intent.validate(event.target.name);
 					}
 				}}
