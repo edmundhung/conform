@@ -36,7 +36,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          npm i -g corepack@latest
+          corepack enable
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -62,7 +64,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          npm i -g corepack@latest
+          corepack enable
       - name: Setup node
         uses: actions/setup-node@v4
         with:
