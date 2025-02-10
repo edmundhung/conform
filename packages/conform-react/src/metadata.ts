@@ -68,7 +68,7 @@ export function serialize(value: unknown): string | string[] | undefined {
  * This checks if the field is in the list of touched fields,
  * or if there is any child field that is touched, i.e. form / fieldset
  */
-export function isTouched(state: FormState<any, any, any>, name = '') {
+export function isTouched(state: FormState<any, any>, name = '') {
 	if (state.touchedFields.includes(name)) {
 		return true;
 	}
@@ -92,7 +92,7 @@ export function getSerializedValue(
 }
 
 export function getError<ErrorShape>(
-	state: FormState<any, ErrorShape, any>,
+	state: FormState<any, ErrorShape>,
 	name?: string,
 ): ErrorShape | undefined {
 	const error = state.serverError ?? state.clientError;
@@ -158,13 +158,12 @@ export function createFieldset<
 export function getMetadata<
 	FormShape,
 	ErrorShape,
-	CustomState extends Record<string, unknown>,
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
 	>,
 >(
-	state: FormState<FormShape, ErrorShape, CustomState>,
+	state: FormState<FormShape, ErrorShape>,
 	options?: {
 		defaultValue?: DefaultValue<FormShape>;
 		formProps?: FormProps;
@@ -177,7 +176,7 @@ export function getMetadata<
 		error: ErrorShape | undefined;
 		fieldError: Record<string, ErrorShape>;
 		props: FormProps | undefined;
-	} & CustomState;
+	};
 	fields: Fieldset<
 		FormShape,
 		Readonly<{
@@ -217,7 +216,6 @@ export function getMetadata<
 				return typeof this.error !== 'undefined';
 			},
 			props: options?.formProps,
-			...state.custom,
 		},
 		fields: createFieldset({
 			initialValue,

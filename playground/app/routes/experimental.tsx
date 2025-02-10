@@ -47,64 +47,12 @@ function createSchema(constraint: {
 	return coerceZodFormData(schema);
 }
 
-const control = baseControl.extend<
-	{
-		status: 'success' | 'error' | null;
-	},
-	{
-		type: 'randomize';
-	}
->({
-	onInitializeState(state) {
-		return {
-			...state,
-			custom: {
-				status: null,
-			},
-		};
-	},
-	onUpdateState(state, { result }) {
-		return {
-			...state,
-			custom: {
-				...state.custom,
-				status:
-					result.error === undefined
-						? state.custom.status
-						: result.error
-							? 'error'
-							: 'success',
-			},
-		};
-	},
-	onParseIntent(intent) {
-		if (intent.type === 'randomize') {
-			return {
-				type: 'update',
-				payload: {
-					value: {
-						content: Math.floor(Date.now() * Math.random()).toString(36),
-						tasks: [
-							{
-								title: Math.floor(Date.now() * Math.random()).toString(36),
-								done: Math.random() > 0.5 ? 'on' : '',
-							},
-						],
-					},
-				},
-			};
-		}
-	},
-});
-
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData, {
 		intentName: 'intent',
 	});
-	const [intent, value] = applyIntent(submission, {
-		control,
-	});
+	const [intent, value] = applyIntent(submission);
 	const schema = createSchema({
 		isTitleUnique(title) {
 			return new Promise((resolve) => {
@@ -150,7 +98,6 @@ export default function Example() {
 		});
 	}, []);
 	const { state, handleSubmit, intent } = useFormControl(formRef, {
-		control,
 		lastResult,
 		intentName: 'intent',
 		async onValidate(value) {
@@ -203,7 +150,6 @@ export default function Example() {
 			}}
 		>
 			<div>FormError: {form.error}</div>
-			<div>FormStatus: {form.status}</div>
 			<div>
 				Title
 				<input
@@ -272,7 +218,7 @@ export default function Example() {
 			<div>
 				<button
 					name="intent"
-					value={control.serializeIntent({
+					value={baseControl.serializeIntent({
 						type: 'insert',
 						payload: {
 							name: fields.tasks.name,
@@ -302,18 +248,7 @@ export default function Example() {
 			<div>
 				<button
 					name="intent"
-					value={control.serializeIntent({
-						type: 'randomize',
-					})}
-				>
-					Set random value
-				</button>
-			</div>
-
-			<div>
-				<button
-					name="intent"
-					value={control.serializeIntent({
+					value={baseControl.serializeIntent({
 						type: 'update',
 						payload: {
 							value: {

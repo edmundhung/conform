@@ -251,7 +251,7 @@ export function mergeObjects<
 /**
  * Create a copy of the object with the updated properties if there is any change
  */
-export function updateObject<Obj extends Record<string, any>>(
+export function mutate<Obj extends Record<string, any>>(
 	obj: Obj,
 	update: Partial<Obj>,
 ): Obj {

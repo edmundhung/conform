@@ -16,18 +16,23 @@ export type FormError<FormShape, ErrorShape> = {
 	'~type'?: FormShape;
 };
 
-export type Submission = {
-	fields: string[];
-	value: Record<string, FormValue<FormDataEntryValue>>;
-	intent: string | null;
-};
+export type Submission<Entry extends FormDataEntryValue = FormDataEntryValue> =
+	{
+		value: Record<string, FormValue<Entry>>;
+		fields: string[];
+		intent: string | null;
+	};
 
-export type SubmissionResult<FormShape, ErrorShape, Intent> = {
-	submittedValue: Record<string, FormValue<string>>;
-	fields: string[];
-	intent: Intent;
-	value?: Record<string, FormValue<string | number | boolean | null>> | null;
+export type SubmissionResult<
+	FormShape,
+	ErrorShape,
+	Intent,
+	Entry extends FormDataEntryValue = FormDataEntryValue,
+> = {
+	submission: Submission<Entry>;
+	value?: Record<string, FormValue<Entry | number | boolean | null>> | null;
 	error?: FormError<FormShape, ErrorShape> | null;
+	intent?: Intent | null | undefined;
 };
 
 /**
@@ -131,31 +136,57 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<FormShape, ErrorShape = string[], Intent = null>(
+export function report<FormShape, ErrorShape = string[], Intent = never>(
 	submission: Submission,
 	options: {
+		keepFile?: false;
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
-		intent?: Intent;
+		intent?: Intent | null;
 		reset?: boolean;
 	},
-): SubmissionResult<FormShape, ErrorShape, Intent | null> {
-	const submittedValue = stripFiles(submission.value);
+): SubmissionResult<FormShape, ErrorShape, Intent, string>;
+export function report<FormShape, ErrorShape = string[], Intent = never>(
+	submission: Submission,
+	options: {
+		keepFile: true;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
+		intent?: Intent | null;
+		reset?: boolean;
+	},
+): SubmissionResult<FormShape, ErrorShape, Intent>;
+export function report<FormShape, ErrorShape = string[], Intent = never>(
+	submission: Submission,
+	options: {
+		keepFile?: boolean;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
+		intent?: Intent | null;
+		reset?: boolean;
+	},
+): SubmissionResult<FormShape, ErrorShape, Intent> {
+	const cleanSubmission = options.keepFile
+		? submission
+		: {
+				...submission,
+				value: stripFiles(submission.value),
+			};
 
 	if (options.reset) {
 		return {
-			submittedValue,
-			fields: submission.fields,
-			intent: null,
+			submission: cleanSubmission,
 			value: null,
 		};
 	}
 
 	return {
-		submittedValue,
+		submission: cleanSubmission,
 		value:
 			options.value && submission.value !== options.value
-				? stripFiles(options.value)
+				? options.keepFile
+					? options.value
+					: stripFiles(options.value)
 				: undefined,
 		error: !options.error
 			? options.error
@@ -163,7 +194,6 @@ export function report<FormShape, ErrorShape = string[], Intent = null>(
 					formError: options.error.formError ?? null,
 					fieldError: options.error.fieldError ?? {},
 				},
-		intent: options.intent ?? null,
-		fields: submission.fields,
+		intent: options.intent,
 	};
 }

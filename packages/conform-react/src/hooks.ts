@@ -14,7 +14,6 @@ import type {
 	FormControl,
 	FormState,
 	FormControlIntent,
-	FormControlCustomState,
 	UnknownIntent,
 } from './control';
 import { applyIntent, baseControl } from './control';
@@ -25,7 +24,7 @@ import {
 	getSubmitEvent,
 	resolveValidateResult,
 	updateFieldValue,
-	updateObject,
+	mutate,
 } from './util';
 import { createFormObserver } from './observer';
 
@@ -100,51 +99,40 @@ export function useFormControl<
 	FormShape,
 	ErrorShape,
 	Intent extends UnknownIntent,
-	CustomState extends Record<string, unknown> = {},
-	Value = unknown,
+	Value = undefined,
 >(
 	formRef: FormRef,
 	options: {
-		control: FormControl<Intent, CustomState>;
-		lastResult?:
-			| SubmissionResult<FormShape, ErrorShape, Intent | null>
-			| SubmissionResult<FormShape, ErrorShape, null>
-			| null;
+		control: FormControl<Intent>;
+		lastResult?: SubmissionResult<FormShape, ErrorShape, Intent> | null;
 		intentName?: string;
-		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
-	state: FormState<FormShape, ErrorShape, CustomState>;
+	state: FormState<FormShape, ErrorShape>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent>;
 };
 export function useFormControl<
 	FormShape,
 	ErrorShape = string[],
-	Value = unknown,
+	Value = undefined,
 >(
 	formRef: FormRef,
-	options?: {
+	options: {
 		control?: undefined;
-		lastResult?:
-			| SubmissionResult<
-					FormShape,
-					ErrorShape,
-					FormControlIntent<typeof baseControl> | null
-			  >
-			| SubmissionResult<FormShape, ErrorShape, null>
-			| null;
+		lastResult?: SubmissionResult<
+			FormShape,
+			ErrorShape,
+			FormControlIntent<typeof baseControl>
+		> | null;
 		intentName?: string;
-		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
-	state: FormState<
-		FormShape,
-		ErrorShape,
-		FormControlCustomState<typeof baseControl>
-	>;
+	state: FormState<FormShape, ErrorShape>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<FormControlIntent<typeof baseControl>>;
 };
@@ -152,33 +140,22 @@ export function useFormControl<
 	FormShape,
 	ErrorShape,
 	Intent extends UnknownIntent,
-	AdditionalState extends Record<string, unknown> = {},
-	Value = never,
+	Value = undefined,
 >(
 	formRef: FormRef,
-	options?: {
-		control?: FormControl<
-			Intent | FormControlIntent<typeof baseControl>,
-			AdditionalState | FormControlCustomState<typeof baseControl>
-		>;
-		lastResult?:
-			| SubmissionResult<
-					FormShape,
-					ErrorShape,
-					Intent | FormControlIntent<typeof baseControl> | null
-			  >
-			| SubmissionResult<FormShape, ErrorShape, null>
-			| null;
+	options: {
+		control?: FormControl<Intent | FormControlIntent<typeof baseControl>>;
+		lastResult?: SubmissionResult<
+			FormShape,
+			ErrorShape,
+			Intent | FormControlIntent<typeof baseControl>
+		> | null;
 		intentName?: string;
-		onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
+		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
 	},
 ): {
-	state: FormState<
-		FormShape,
-		ErrorShape,
-		AdditionalState | FormControlCustomState<typeof baseControl>
-	>;
+	state: FormState<FormShape, ErrorShape>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
 	intent: IntentDispatcher<Intent | FormControlIntent<typeof baseControl>>;
 } {
@@ -188,10 +165,10 @@ export function useFormControl<
 		lastResult,
 	} = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
-		state: FormState<FormShape, ErrorShape, {} | AdditionalState>;
+		state: FormState<FormShape, ErrorShape>;
 		sideEffects: Array<{
 			intent: Intent | FormControlIntent<typeof baseControl>;
-			state: FormState<FormShape, ErrorShape, {} | AdditionalState>;
+			run: (formElement: HTMLFormElement) => void;
 		}>;
 	}>(() => {
 		let state = control.initializeState<FormShape, ErrorShape>();
@@ -212,8 +189,8 @@ export function useFormControl<
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(lastResult);
 	const pendingIntentsRef = useRef<
-		Array<Intent | FormControlIntent<typeof baseControl>>
-	>([]);
+		Set<Intent | FormControlIntent<typeof baseControl>>
+	>(new Set());
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		value: Value | undefined;
@@ -228,7 +205,7 @@ export function useFormControl<
 			result: SubmissionResult<
 				FormShape,
 				ErrorShape,
-				Intent | FormControlIntent<typeof baseControl> | null
+				Intent | FormControlIntent<typeof baseControl>
 			>,
 			options: {
 				type: 'server' | 'client';
@@ -241,16 +218,6 @@ export function useFormControl<
 			lastResultRef.current = result;
 
 			const { control = baseControl } = optionsRef.current ?? {};
-			const pendingIntents = pendingIntentsRef.current;
-
-			// If there is an intent and it has a side effect, add it to the pending intents
-			if (
-				options.type === 'client' &&
-				result.intent &&
-				control.hasSideEffect(result.intent)
-			) {
-				pendingIntents.push(result.intent);
-			}
 
 			updateForm((form) => {
 				const state = control.updateState(form.state, {
@@ -260,20 +227,33 @@ export function useFormControl<
 						return control.initializeState<FormShape, ErrorShape>();
 					},
 				});
+				const intent = result.intent;
 
 				let sideEffects = form.sideEffects;
 
-				// If the result has an intent and it is in the pending intents, it must have some side effect
-				if (result.intent && pendingIntents.includes(result.intent)) {
-					sideEffects = sideEffects
-						.filter((sideEffect) => pendingIntents.includes(sideEffect.intent))
-						.concat({
-							intent: result.intent,
-							state,
-						});
+				if (options.type === 'client' && intent) {
+					const sideEffect = control.getSideEffect(intent, state);
+
+					if (sideEffect) {
+						sideEffects = sideEffects
+							// We will clean up the side effect only when there is new side effect
+							// To minimize unnecessary re-renders
+							.filter((sideEffect) =>
+								pendingIntentsRef.current.has(sideEffect.intent),
+							)
+							.concat({
+								intent,
+								run(formElement) {
+									sideEffect(formElement);
+									pendingIntentsRef.current.delete(intent);
+								},
+							});
+
+						pendingIntentsRef.current.add(intent);
+					}
 				}
 
-				return updateObject(form, {
+				return mutate(form, {
 					state,
 					sideEffects,
 				});
@@ -308,18 +288,8 @@ export function useFormControl<
 			return;
 		}
 
-		const pendingIntents = pendingIntentsRef.current;
-
 		for (const sideEffect of sideEffects) {
-			// Ensure that the side effect is only applied once
-			if (!pendingIntents.includes(sideEffect.intent)) {
-				continue;
-			}
-
-			control.applySideEffect(formElement, sideEffect.intent, sideEffect.state);
-
-			// Remove the intent from the pending intents
-			pendingIntents.splice(pendingIntents.indexOf(sideEffect.intent), 1);
+			sideEffect.run(formElement);
 		}
 	}, [formRef, sideEffects, control]);
 
@@ -338,16 +308,17 @@ export function useFormControl<
 			const submission = parseSubmission(formData, {
 				intentName,
 			});
-			const [intent, intentValue] = applyIntent(submission, {
+			const [intent, formValue] = applyIntent(submission, {
 				control,
-				pendingIntents: pendingIntentsRef.current,
+				pendingIntents: Array.from(pendingIntentsRef.current),
 			});
 			const submissionResult = report<
 				FormShape,
 				ErrorShape,
-				Intent | FormControlIntent<typeof baseControl> | null
+				Intent | FormControlIntent<typeof baseControl>
 			>(submission, {
-				value: intentValue,
+				keepFile: true,
+				value: formValue,
 				intent,
 			});
 
@@ -359,8 +330,8 @@ export function useFormControl<
 				submissionResult.error = null;
 			} else {
 				const validateResult =
-					intentValue !== null
-						? optionsRef.current?.onValidate?.(intentValue, {
+					formValue !== null
+						? optionsRef.current?.onValidate?.(formValue, {
 								formElement,
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
@@ -369,8 +340,8 @@ export function useFormControl<
 				// If the validation is async
 				if (validateResult instanceof Promise) {
 					// Update the form when the validation result is resolved
-					validateResult.then((result) => {
-						const { error, value } = resolveValidateResult(result);
+					validateResult.then((data) => {
+						const { error, value } = resolveValidateResult(data);
 
 						// Update the form with the validation result
 						// There is no need to flush the update in this case
@@ -438,8 +409,7 @@ export function useFormControl<
 						if (!abortController.signal.aborted) {
 							const result = report(submission, {
 								...options,
-								value: intentValue,
-								intent,
+								keepFile: true,
 							});
 							handleSubmission(result, { type: 'server' });
 						}

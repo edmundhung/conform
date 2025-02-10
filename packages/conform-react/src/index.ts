@@ -11,7 +11,6 @@ export {
 	type DefaultValue,
 	type UnknownIntent,
 	type FormControlIntent,
-	type FormControlCustomState,
 	baseControl,
 	applyIntent,
 } from './control';
