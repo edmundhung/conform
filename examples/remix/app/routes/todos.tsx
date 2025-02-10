@@ -5,7 +5,7 @@ import {
 	useLoaderData,
 	useNavigation,
 } from '@remix-run/react';
-import { parseSubmission, report } from 'conform-react';
+import { parseSubmission, report, useFormData, isDirty } from 'conform-react';
 import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
 import { useForm } from '../template';
@@ -71,6 +71,11 @@ export default function Example() {
 			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
+	const dirty = useFormData(form.props.ref, (formData) =>
+		isDirty(formData, {
+			defaultValue: loaderData.todos,
+		}),
+	);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -156,7 +161,7 @@ export default function Example() {
 				Add task
 			</button>
 			<hr />
-			<button>Save</button>
+			<button disabled={!dirty}>Save</button>
 		</Form>
 	);
 }

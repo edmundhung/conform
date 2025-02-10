@@ -11,7 +11,7 @@ import {
 	isPlainObject,
 	setValue,
 } from 'conform-dom';
-import { serialize, getDefaultListKey } from './metadata';
+import { getDefaultListKey } from './metadata';
 import {
 	addItems,
 	configureListIndexUpdate,
@@ -32,6 +32,8 @@ import {
 	removeItem,
 	updateFieldValue,
 	getChildPaths,
+	generateKey,
+	serialize,
 } from './util';
 
 export type DefaultValue<FormShape> = FormShape extends
@@ -61,10 +63,6 @@ export type FormState<FormShape, ErrorShape> = {
 	touchedFields: string[];
 	keys: Record<string, string[]>;
 };
-
-export function generateKey(): string {
-	return Math.floor(Date.now() * Math.random()).toString(36);
-}
 
 export function updateKeys(
 	keys: Record<string, string[]> = {},

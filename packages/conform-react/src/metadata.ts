@@ -1,6 +1,6 @@
-import { getPaths, getValue, isPlainObject } from 'conform-dom';
+import { getPaths, getValue } from 'conform-dom';
 import type { DefaultValue, FieldName, FormState } from './control';
-import { getListValue, getName, getChildPaths } from './util';
+import { getListValue, getName, getChildPaths, serialize } from './util';
 
 type BaseCombine<
 	T,
@@ -31,36 +31,6 @@ export type Field<
 export type Fieldset<FormShape, Metadata extends Record<string, unknown>> = {
 	[Key in keyof Combine<FormShape>]-?: Field<Combine<FormShape>[Key], Metadata>;
 };
-
-export function serialize(value: unknown): string | string[] | undefined {
-	if (typeof value === 'string') {
-		return value;
-	} else if (isPlainObject(value)) {
-		return;
-	} else if (Array.isArray(value)) {
-		const result: string[] = [];
-
-		for (const item of value) {
-			const serializedItem = serialize(item);
-
-			if (typeof serializedItem !== 'string') {
-				return;
-			}
-
-			result.push(serializedItem);
-		}
-
-		return result;
-	} else if (value instanceof Date) {
-		return value.toISOString();
-	} else if (typeof value === 'boolean') {
-		return value ? 'on' : undefined;
-	} else if (typeof value === 'number' || typeof value === 'bigint') {
-		return value.toString();
-	}
-
-	return value?.toString();
-}
 
 /**
  * Determine if the field is touched
@@ -161,7 +131,7 @@ export function getMetadata<
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
-	>,
+	> = {},
 >(
 	state: FormState<FormShape, ErrorShape>,
 	options?: {
@@ -175,7 +145,7 @@ export function getMetadata<
 		invalid: boolean;
 		error: ErrorShape | undefined;
 		fieldError: Record<string, ErrorShape>;
-		props: FormProps | undefined;
+		props: FormProps;
 	};
 	fields: Fieldset<
 		FormShape,
@@ -215,7 +185,9 @@ export function getMetadata<
 			get invalid() {
 				return typeof this.error !== 'undefined';
 			},
-			props: options?.formProps,
+			get props(): FormProps {
+				return options?.formProps ?? ({} as FormProps);
+			},
 		},
 		fields: createFieldset({
 			initialValue,

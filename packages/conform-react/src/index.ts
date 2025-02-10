@@ -15,7 +15,6 @@ export {
 	applyIntent,
 } from './control';
 export {
-	serialize,
 	isTouched,
 	getError,
 	getSerializedValue,
@@ -30,3 +29,4 @@ export {
 	useIntent,
 	useInput,
 } from './hooks';
+export { serialize, isDirty } from './util';

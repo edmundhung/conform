@@ -4,6 +4,7 @@ import {
 	getPaths,
 	getValue,
 	isPlainObject,
+	parseSubmission,
 	setValue,
 } from 'conform-dom';
 
@@ -539,4 +540,120 @@ export function updateValidationAttributes(
 	if (typeof attributes.pattern !== 'undefined' && 'pattern' in element) {
 		element.pattern = attributes.pattern;
 	}
+}
+
+/**
+ * Check if the value is a File
+ */
+export function isFile(obj: unknown): obj is File {
+	// Skip checking if File is not defined
+	if (typeof File === 'undefined') {
+		return false;
+	}
+
+	return obj instanceof File;
+}
+
+export function generateKey(): string {
+	return Math.floor(Date.now() * Math.random()).toString(36);
+}
+
+export function serialize(value: unknown): string | string[] | undefined {
+	if (typeof value === 'string') {
+		return value;
+	} else if (isPlainObject(value)) {
+		return;
+	} else if (Array.isArray(value)) {
+		const result: string[] = [];
+
+		for (const item of value) {
+			const serializedItem = serialize(item);
+
+			if (typeof serializedItem !== 'string') {
+				return;
+			}
+
+			result.push(serializedItem);
+		}
+
+		return result;
+	} else if (value instanceof Date) {
+		return value.toISOString();
+	} else if (typeof value === 'boolean') {
+		return value ? 'on' : undefined;
+	} else if (typeof value === 'number' || typeof value === 'bigint') {
+		return value.toString();
+	}
+
+	return value?.toString();
+}
+
+export function normalize<Value extends Record<string, unknown>>(
+	value: Value,
+	serialize: (value: unknown) => string | string[] | undefined,
+): Record<string, unknown> {
+	const fileStore = new Map<string, File>();
+	const json = JSON.stringify(value, (_, value) => {
+		if (isPlainObject(value)) {
+			if (Object.keys(value).length === 0) {
+				return undefined;
+			}
+
+			return value;
+		} else if (Array.isArray(value)) {
+			if (value.length === 0) {
+				return undefined;
+			} else if (value.length === 1 && typeof value[0] === 'string') {
+				return value[0];
+			}
+
+			return value;
+		} else if (isFile(value)) {
+			if (value.name === '' && value.size === 0) {
+				return undefined;
+			}
+
+			// File can not be serialized, so we store it in a map and replace it with a key
+			const key = generateKey();
+			fileStore.set(key, value);
+
+			return key;
+		} else if (typeof value === 'string' && value === '') {
+			return undefined;
+		}
+
+		return serialize(value);
+	});
+
+	return JSON.parse(json, (_, value) => {
+		if (typeof value === 'string' && fileStore.has(value)) {
+			return fileStore.get(value);
+		}
+
+		return value;
+	});
+}
+
+export function isDirty(
+	formData: FormData | URLSearchParams | null,
+	options?: {
+		defaultValue?: Record<string, unknown> | null;
+		serialize?: (value: unknown) => string | string[] | undefined;
+		skipEntry?: (name: string) => boolean;
+	},
+): boolean {
+	if (!formData) {
+		return false;
+	}
+
+	const { value } = parseSubmission(formData, {
+		skipEntry: options?.skipEntry,
+	});
+	const defaultValue = options?.defaultValue;
+	const serializeFn = options?.serialize ?? serialize;
+
+	return !deepEqual(
+		normalize(value, serializeFn),
+		defaultValue ? normalize(defaultValue, serializeFn) : {},
+	);
 }

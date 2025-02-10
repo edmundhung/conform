@@ -6,6 +6,7 @@ import type { z } from 'zod';
 import { useForm } from '@/app/_template';
 import { createTodos } from './_action';
 import { todosSchema } from './_schema';
+import { isDirty, useFormData } from 'conform-react';
 
 export function TodoForm({
 	defaultValue,
@@ -20,6 +21,15 @@ export function TodoForm({
 			return resolveZodResult(todosSchema.safeParse(value));
 		},
 	});
+	const dirty = useFormData(form.props.ref, (formData) =>
+		isDirty(formData, {
+			defaultValue,
+			skipEntry(name) {
+				// We need to skip NextJS internal fields when checking for dirty state
+				return name.startsWith('$ACTION_');
+			},
+		}),
+	);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -105,7 +115,7 @@ export function TodoForm({
 				Add task
 			</button>
 			<hr />
-			<button>Save</button>
+			<button disabled={!dirty}>Save</button>
 		</form>
 	);
 }

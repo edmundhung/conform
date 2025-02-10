@@ -2,6 +2,7 @@ import { coerceZodFormData, resolveZodResult } from 'conform-zod';
 import { z } from 'zod';
 import { useForm } from '../template';
 import { useState } from 'react';
+import { isDirty, useFormData } from 'conform-react';
 
 const taskSchema = coerceZodFormData(
 	z.object({
@@ -58,6 +59,11 @@ export default function Todos() {
 			}
 		},
 	});
+	const dirty = useFormData(form.props.ref, (formData) =>
+		isDirty(formData, {
+			defaultValue,
+		}),
+	);
 	const tasks = fields.tasks.getFieldList();
 
 	return (
@@ -143,7 +149,7 @@ export default function Todos() {
 				Add task
 			</button>
 			<hr />
-			<button>Save</button>
+			<button disabled={!dirty}>Save</button>
 		</form>
 	);
 }

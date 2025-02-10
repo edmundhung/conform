@@ -68,6 +68,7 @@ export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
 		intentName?: string;
+		skipEntry?: (name: string) => boolean;
 	},
 ): Submission {
 	const intentName = options?.intentName;
@@ -79,7 +80,7 @@ export function parseSubmission(
 	};
 
 	for (const [name, value] of formData.entries()) {
-		if (name !== intentName) {
+		if (name !== intentName && !options?.skipEntry?.(name)) {
 			setValue(submission.value, getPaths(name), (currentValue: unknown) => {
 				if (typeof currentValue === 'undefined') {
 					return value;

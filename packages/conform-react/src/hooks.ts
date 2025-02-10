@@ -467,8 +467,8 @@ export function useIntent<
 
 export function useFormData<Value>(
 	formRef: FormRef,
-	select: (formData: FormData, currentValue: Value | undefined) => Value,
-): Value | undefined {
+	select: (formData: FormData | null, currentValue: Value | undefined) => Value,
+): Value {
 	const valueRef = useRef<Value>();
 	const value = useSyncExternalStore(
 		useCallback(
@@ -482,16 +482,11 @@ export function useFormData<Value>(
 		),
 		() => {
 			const formElement = getFormElement(formRef);
-
-			if (!formElement) {
-				return;
-			}
-
-			const formData = new FormData(formElement);
+			const formData = formElement ? new FormData(formElement) : null;
 
 			return select(formData, valueRef.current);
 		},
-		() => undefined,
+		() => select(null, undefined),
 	);
 
 	valueRef.current = value;
