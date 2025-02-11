@@ -127,8 +127,9 @@ export default function Example() {
 			tasks: [{ title: 'Test', done: true }],
 		},
 	});
-	const title = useFormData(formRef, (formData) =>
-		formData.get(fields.title.name)?.toString(),
+	const title = useFormData(
+		formRef,
+		(formData) => formData?.get(fields.title.name)?.toString() ?? '',
 	);
 	const taskFields = fields.tasks.getFieldList();
 	const titleControl = useInput(fields.title.defaultValue);

@@ -453,7 +453,7 @@ export function useIntent<
 								control.serializeIntent({
 									type,
 									payload,
-								}),
+								} as Intent),
 							);
 						};
 					}

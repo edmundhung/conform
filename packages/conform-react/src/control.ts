@@ -111,17 +111,24 @@ export function serializeIntent(intent: UnknownIntent): string {
 		return intent.type;
 	}
 
-	return [intent.type, JSON.stringify(intent.payload)].join('/');
+	return `${intent.type}(${JSON.stringify(intent.payload)})`;
 }
 
 export function deserializeIntent(value: string): UnknownIntent {
-	const [type = value, stringifiedPayload] = value.split('/');
+	let type = value;
+	let payload: unknown;
+	let serializedPayload: string | undefined;
 
-	let payload = stringifiedPayload;
+	const openParenIndex = value.indexOf('(');
 
-	if (stringifiedPayload) {
+	if (openParenIndex > 0 && value[value.length - 1] === ')') {
+		type = value.slice(0, openParenIndex);
+		serializedPayload = value.slice(openParenIndex + 1, -1);
+	}
+
+	if (serializedPayload) {
 		try {
-			payload = JSON.parse(stringifiedPayload);
+			payload = JSON.parse(serializedPayload);
 		} catch {
 			// Ignore the error
 		}
@@ -136,7 +143,7 @@ export function deserializeIntent(value: string): UnknownIntent {
 export type FormControlIntent<Control extends FormControl<any>> =
 	Control extends FormControl<infer Intent> ? Intent : never;
 
-export type FormAction<FormShape, ErrorShape, Intent> = {
+export type FormContext<FormShape, ErrorShape, Intent> = {
 	type: 'server' | 'client';
 	result: SubmissionResult<FormShape, ErrorShape, Intent>;
 	reset: () => FormState<FormShape, ErrorShape>;
@@ -146,11 +153,10 @@ export type FormControl<Intent extends UnknownIntent = never> = {
 	initializeState<FormShape, ErrorShape>(): FormState<FormShape, ErrorShape>;
 	updateState<FormShape, ErrorShape>(
 		state: FormState<FormShape, ErrorShape>,
-		action: FormAction<FormShape, ErrorShape, Intent>,
+		ctx: FormContext<FormShape, ErrorShape, Intent>,
 	): FormState<FormShape, ErrorShape>;
-	serializeIntent(intent: UnknownIntent): string;
-	deserializeIntent(value: string): UnknownIntent;
-	parseIntent(intent: UnknownIntent): Intent | undefined;
+	serializeIntent(intent: Intent): string;
+	parseIntent(value: string): Intent | undefined;
 	updateValue(
 		value: Record<string, FormValue>,
 		intent: Intent,
@@ -194,9 +200,7 @@ export function applyIntent<Intent extends UnknownIntent>(
 		return [null, submission.value];
 	}
 
-	const intent = control.parseIntent(
-		control.deserializeIntent(submission.intent),
-	);
+	const intent = control.parseIntent(submission.intent);
 
 	let value: Record<string, FormValue> | null = submission.value;
 
@@ -517,13 +521,12 @@ export const baseControl: FormControl<
 
 		return mutate(prev, next);
 	},
-	deserializeIntent(value) {
-		return deserializeIntent(value);
-	},
 	serializeIntent(intent) {
 		return serializeIntent(intent);
 	},
-	parseIntent(intent) {
+	parseIntent(value) {
+		const intent = deserializeIntent(value);
+
 		if (intent.type === 'reset') {
 			return intent as ResetIntent;
 		} else if (intent.type === 'validate' && isOptionalString(intent.payload)) {
