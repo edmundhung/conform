@@ -1,9 +1,9 @@
-export default function Index({
+export default async function Index({
 	searchParams,
 }: {
-	searchParams: { [key: string]: string | string[] | undefined };
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-	const value = searchParams['value'];
+	const { value } = await searchParams;
 
 	if (!value) {
 		return null;
