@@ -270,12 +270,16 @@ export function useInputEvent(): {
 }
 
 export function useInputValue<
-	Value extends string | string[] | Array<string | undefined>,
+	Value extends string | string[] | Array<string | boolean | Date | undefined>,
 >(options: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
 	const initializeValue = ():
 		| (Value extends string ? Value : string | string[])
 		| undefined => {
-		if (typeof options.initialValue === 'string') {
+		if (
+			typeof options.initialValue === 'string' ||
+			typeof options.initialValue === 'boolean' ||
+			options.initialValue instanceof Date
+		) {
 			// @ts-expect-error FIXME: To ensure that the type of value is also `string | undefined` if initialValue is not an array
 			return options.initialValue;
 		}
