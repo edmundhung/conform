@@ -1,9 +1,9 @@
 import { expect, test, vi } from 'vitest';
-import { memorize } from '../src/memorize';
+import { memoize } from '../src/memoize';
 
 test('memoize()', () => {
 	const mock = vi.fn((a: number, b: number) => a + b);
-	const fn = memorize(mock);
+	const fn = memoize(mock);
 
 	expect(fn(5, 2)).toEqual(7);
 	expect(mock).toHaveBeenNthCalledWith(1, 5, 2);

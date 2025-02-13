@@ -138,13 +138,6 @@ export function configureListIndexUpdate(
 	};
 }
 
-/**
- * As identity function that returns the input value
- */
-export function identiy<Value>(value: Value): Value {
-	return value;
-}
-
 export function resolveValidateResult<FormShape, ErrorShape, Value>(
 	result:
 		| FormError<FormShape, ErrorShape>
@@ -271,60 +264,41 @@ export function mapKeys<Value>(
 	fn: (key: string) => string | null,
 ) {
 	const result: Record<string, Value> = {};
-	let hasNoChange = true;
 
 	for (const [key, value] of Object.entries(obj)) {
 		const name = fn(key);
-		if (name !== key) {
-			hasNoChange = false;
-		}
 
 		if (name !== null) {
 			result[name] = value;
 		}
 	}
 
-	if (hasNoChange) {
-		return obj;
-	}
-
 	return result;
 }
 
-export function addItems<Item>(list: Array<Item>, items: Array<Item>) {
-	return items.reduce((result, item) => {
-		if (result.includes(item)) {
-			return result;
-		}
+export function addItem<Item>(list: Array<Item>, item: Item) {
+	if (list.includes(item)) {
+		return list;
+	}
 
-		return result.concat(item);
-	}, list);
+	return list.concat(item);
 }
 
 export function mapItems<Item>(
 	list: Array<NonNullable<Item>>,
 	fn: (value: Item) => Item | null,
 ): Array<Item> {
-	let hasNoChange = true;
-	const updated = list.reduce<Array<Item>>((result, item) => {
-		const value = fn(item);
+	const result: Array<Item> = [];
 
-		if (value !== item || value === null) {
-			hasNoChange = false;
-		}
+	for (const item of list) {
+		const value = fn(item);
 
 		if (value !== null) {
 			result.push(value);
 		}
-
-		return result;
-	}, []);
-
-	if (hasNoChange) {
-		return list;
 	}
 
-	return updated;
+	return result;
 }
 
 export function getSubmitEvent(

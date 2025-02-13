@@ -1,4 +1,4 @@
-export type Memorized<T extends (...args: any) => any> = {
+export type Memoized<T extends (...args: any) => any> = {
 	(this: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T>;
 	clearCache: () => void;
 };
@@ -17,20 +17,20 @@ export function defaultEqualityCheck(prevArgs: any[], nextArgs: any[]) {
 	return true;
 }
 
-export function memorize<T extends (...args: any) => any>(
+export function memoize<T extends (...args: any) => any>(
 	fn: T,
 	isEqual: (
 		prevArgs: Parameters<T>,
 		nextArgs: Parameters<T>,
 	) => boolean = defaultEqualityCheck,
-): Memorized<T> {
+): Memoized<T> {
 	let cache: {
 		this: ThisParameterType<T>;
 		args: Parameters<T>;
 		result: ReturnType<T>;
 	} | null = null;
 
-	function memorized(this: ThisParameterType<T>, ...args: Parameters<T>) {
+	function memoized(this: ThisParameterType<T>, ...args: Parameters<T>) {
 		// Check if new arguments match last arguments including the context (this)
 		if (cache && cache.this === this && isEqual(cache.args, args)) {
 			return cache.result;
@@ -58,9 +58,9 @@ export function memorize<T extends (...args: any) => any>(
 		return result;
 	}
 
-	memorized.clearCache = function clearCache() {
+	memoized.clearCache = function clearCache() {
 		cache = null;
 	};
 
-	return memorized;
+	return memoized;
 }

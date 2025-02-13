@@ -1,5 +1,5 @@
 import { parseSubmission, report } from 'conform-react';
-import { coerceZodFormData, memorize, resolveZodResult } from 'conform-zod';
+import { coerceZodFormData, memoize, resolveZodResult } from 'conform-zod';
 import { ActionFunctionArgs, redirect } from '@remix-run/node';
 import { Form, useActionData } from '@remix-run/react';
 import { z } from 'zod';
@@ -10,7 +10,7 @@ import { useForm } from '../template';
 export function createSignupSchema(checks: {
 	isUsernameUnique: (username: string) => Promise<boolean>;
 }) {
-	const isUsernameUnique = memorize(checks.isUsernameUnique);
+	const isUsernameUnique = memoize(checks.isUsernameUnique);
 
 	return coerceZodFormData(
 		z

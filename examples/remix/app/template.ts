@@ -1,10 +1,9 @@
 import {
 	type SubmissionResult,
-	type FormControlIntent,
+	type FormIntent,
 	type DefaultValue,
 	type SubmitHandler,
 	type ValidateHandler,
-	baseControl,
 	getMetadata,
 	isInput,
 	isTouched,
@@ -13,14 +12,10 @@ import {
 import { useRef } from 'react';
 
 type FormOptions<FormShape, ErrorShape, Value> = {
-	lastResult?: SubmissionResult<
-		FormShape,
-		ErrorShape,
-		FormControlIntent<typeof baseControl> | null
-	> | null;
+	lastResult?: SubmissionResult<FormShape, ErrorShape, FormIntent> | null;
 	defaultValue?: NoInfer<DefaultValue<FormShape>>;
+	onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 	onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
-	onValidate?: ValidateHandler<FormShape, ErrorShape, Value>;
 };
 
 export function useForm<FormShape, ErrorShape, Value>(

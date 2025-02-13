@@ -1,10 +1,10 @@
-import { memorize, coerceZodFormData } from 'conform-zod';
+import { memoize, coerceZodFormData } from 'conform-zod';
 import { z } from 'zod';
 
 export function createSignupSchema(checks: {
 	isUsernameUnique: (username: string) => Promise<boolean>;
 }) {
-	const isUsernameUnique = memorize(checks.isUsernameUnique);
+	const isUsernameUnique = memoize(checks.isUsernameUnique);
 
 	return coerceZodFormData(
 		z

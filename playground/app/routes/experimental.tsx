@@ -1,6 +1,6 @@
 import { type ActionFunctionArgs } from '@remix-run/node';
 import { z } from 'zod';
-import { coerceZodFormData, resolveZodResult, memorize } from 'conform-zod';
+import { coerceZodFormData, resolveZodResult, memoize } from 'conform-zod';
 import { Form, useActionData } from '@remix-run/react';
 import {
 	useInput,
@@ -10,7 +10,7 @@ import {
 	parseSubmission,
 	isInput,
 	report,
-	baseControl,
+	control,
 	applyIntent,
 	isTouched,
 } from 'conform-react';
@@ -83,7 +83,7 @@ export default function Example() {
 	const lastResult = useActionData<typeof action>();
 	const formRef = useRef<HTMLFormElement>(null);
 	const schema = useMemo(() => {
-		const isTitleUnique = memorize(async (title: string) => {
+		const isTitleUnique = memoize(async (title: string) => {
 			const response = await fetch('/api', {
 				method: 'POST',
 				body: JSON.stringify(title),
@@ -219,7 +219,7 @@ export default function Example() {
 			<div>
 				<button
 					name="intent"
-					value={baseControl.serializeIntent({
+					value={control.serializeIntent({
 						type: 'insert',
 						payload: {
 							name: fields.tasks.name,
@@ -249,7 +249,7 @@ export default function Example() {
 			<div>
 				<button
 					name="intent"
-					value={baseControl.serializeIntent({
+					value={control.serializeIntent({
 						type: 'update',
 						payload: {
 							value: {

@@ -10,13 +10,8 @@ import {
 } from 'react';
 import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
 import { parseSubmission, report, requestIntent } from 'conform-dom';
-import type {
-	FormControl,
-	FormState,
-	FormControlIntent,
-	UnknownIntent,
-} from './control';
-import { applyIntent, baseControl } from './control';
+import type { FormIntent, FormState, UnknownIntent } from './control';
+import { applyIntent, control } from './control';
 import {
 	deepEqual,
 	FormRef,
@@ -95,16 +90,10 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
  */
 export const DEFAULT_INTENT = '__intent__';
 
-export function useFormControl<
-	FormShape,
-	ErrorShape,
-	Intent extends UnknownIntent,
-	Value = undefined,
->(
+export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 	formRef: FormRef,
-	options: {
-		control: FormControl<Intent>;
-		lastResult?: SubmissionResult<FormShape, ErrorShape, Intent> | null;
+	options?: {
+		lastResult?: SubmissionResult<FormShape, ErrorShape, FormIntent> | null;
 		intentName?: string;
 		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
@@ -112,62 +101,13 @@ export function useFormControl<
 ): {
 	state: FormState<FormShape, ErrorShape>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<Intent>;
-};
-export function useFormControl<
-	FormShape,
-	ErrorShape = string[],
-	Value = undefined,
->(
-	formRef: FormRef,
-	options: {
-		control?: undefined;
-		lastResult?: SubmissionResult<
-			FormShape,
-			ErrorShape,
-			FormControlIntent<typeof baseControl>
-		> | null;
-		intentName?: string;
-		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
-	},
-): {
-	state: FormState<FormShape, ErrorShape>;
-	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<FormControlIntent<typeof baseControl>>;
-};
-export function useFormControl<
-	FormShape,
-	ErrorShape,
-	Intent extends UnknownIntent,
-	Value = undefined,
->(
-	formRef: FormRef,
-	options: {
-		control?: FormControl<Intent | FormControlIntent<typeof baseControl>>;
-		lastResult?: SubmissionResult<
-			FormShape,
-			ErrorShape,
-			Intent | FormControlIntent<typeof baseControl>
-		> | null;
-		intentName?: string;
-		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
-	},
-): {
-	state: FormState<FormShape, ErrorShape>;
-	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
-	intent: IntentDispatcher<Intent | FormControlIntent<typeof baseControl>>;
+	intent: IntentDispatcher<FormIntent>;
 } {
-	const {
-		intentName = DEFAULT_INTENT,
-		control = baseControl,
-		lastResult,
-	} = options ?? {};
+	const { intentName = DEFAULT_INTENT, lastResult } = options ?? {};
 	const [{ state, sideEffects }, updateForm] = useState<{
 		state: FormState<FormShape, ErrorShape>;
 		sideEffects: Array<{
-			intent: Intent | FormControlIntent<typeof baseControl>;
+			intent: FormIntent;
 			run: (formElement: HTMLFormElement) => void;
 		}>;
 	}>(() => {
@@ -188,25 +128,16 @@ export function useFormControl<
 	});
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(lastResult);
-	const pendingIntentsRef = useRef<
-		Set<Intent | FormControlIntent<typeof baseControl>>
-	>(new Set());
+	const pendingIntentsRef = useRef<Set<FormIntent>>(new Set());
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		value: Value | undefined;
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
-	const intent = useIntent(formRef, {
-		intentName,
-		control,
-	});
+	const intent = useIntent(formRef, { intentName });
 	const handleSubmission = useCallback(
 		(
-			result: SubmissionResult<
-				FormShape,
-				ErrorShape,
-				Intent | FormControlIntent<typeof baseControl>
-			>,
+			result: SubmissionResult<FormShape, ErrorShape, FormIntent>,
 			options: {
 				type: 'server' | 'client';
 			},
@@ -216,8 +147,6 @@ export function useFormControl<
 			}
 
 			lastResultRef.current = result;
-
-			const { control = baseControl } = optionsRef.current ?? {};
 
 			updateForm((form) => {
 				const state = control.updateState(form.state, {
@@ -291,7 +220,7 @@ export function useFormControl<
 		for (const sideEffect of sideEffects) {
 			sideEffect.run(formElement);
 		}
-	}, [formRef, sideEffects, control]);
+	}, [formRef, sideEffects]);
 
 	return {
 		state,
@@ -309,18 +238,16 @@ export function useFormControl<
 				intentName,
 			});
 			const [intent, formValue] = applyIntent(submission, {
-				control,
 				pendingIntents: Array.from(pendingIntentsRef.current),
 			});
-			const submissionResult = report<
-				FormShape,
-				ErrorShape,
-				Intent | FormControlIntent<typeof baseControl>
-			>(submission, {
-				keepFile: true,
-				value: formValue,
-				intent,
-			});
+			const submissionResult = report<FormShape, ErrorShape, FormIntent>(
+				submission,
+				{
+					keepFile: true,
+					value: formValue,
+					intent,
+				},
+			);
 
 			let value: Value | undefined;
 
@@ -347,9 +274,9 @@ export function useFormControl<
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
 							handleSubmission(
-								{ ...submissionResult, error },
+								{ ...submissionResult, error, intent: undefined },
 								{
-									type: 'server',
+									type: 'client',
 								},
 							);
 
@@ -421,20 +348,17 @@ export function useFormControl<
 	};
 }
 
-export function useIntent<
-	Intent extends UnknownIntent = FormControlIntent<typeof baseControl>,
->(
+export function useIntent(
 	formRef: FormRef,
 	options?: {
 		intentName?: string;
-		control?: FormControl<Intent | FormControlIntent<typeof baseControl>>;
 	},
-): IntentDispatcher<Intent> {
-	const { intentName = DEFAULT_INTENT, control = baseControl } = options ?? {};
+): IntentDispatcher<FormIntent> {
+	const intentName = options?.intentName ?? DEFAULT_INTENT;
 
 	return useMemo(
 		() =>
-			new Proxy<IntentDispatcher<Intent>>({} as any, {
+			new Proxy<IntentDispatcher<FormIntent>>({} as any, {
 				get(target, type, receiver) {
 					if (typeof type === 'string') {
 						// @ts-expect-error We are creating an intent dispatcher on the fly
@@ -453,7 +377,7 @@ export function useIntent<
 								control.serializeIntent({
 									type,
 									payload,
-								} as Intent),
+								} as FormIntent),
 							);
 						};
 					}
@@ -461,7 +385,7 @@ export function useIntent<
 					return Reflect.get(target, type, receiver);
 				},
 			}),
-		[formRef, intentName, control],
+		[formRef, intentName],
 	);
 }
 

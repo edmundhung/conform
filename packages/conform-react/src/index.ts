@@ -10,8 +10,8 @@ export {
 export {
 	type DefaultValue,
 	type UnknownIntent,
-	type FormControlIntent,
-	baseControl,
+	type FormIntent,
+	control,
 	applyIntent,
 } from './control';
 export {

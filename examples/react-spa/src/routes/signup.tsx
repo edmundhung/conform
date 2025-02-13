@@ -1,9 +1,9 @@
-import { coerceZodFormData, memorize, resolveZodResult } from 'conform-zod';
+import { coerceZodFormData, memoize, resolveZodResult } from 'conform-zod';
 import { useNavigate } from 'react-router';
 import { z } from 'zod';
 import { useForm } from '../template';
 
-const isUsernameUnique = memorize(async (username) => {
+const isUsernameUnique = memoize(async (username) => {
 	await new Promise((resolve) => {
 		setTimeout(resolve, Math.random() * 500);
 	});

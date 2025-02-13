@@ -1,9 +1,6 @@
 import { isInput } from 'conform-dom';
 
-function createEventEmitter<Callback extends (...args: any) => void>(
-	initialize: () => void,
-	destroy: () => void,
-) {
+function createEventEmitter<Callback extends (...args: any) => void>() {
 	const callbacks = new Set<Callback>();
 
 	return {
@@ -14,11 +11,9 @@ function createEventEmitter<Callback extends (...args: any) => void>(
 			}
 		},
 		subscribe(callback: Callback) {
-			initialize();
 			callbacks.add(callback);
 
 			return () => {
-				destroy();
 				callbacks.delete(callback);
 			};
 		},
@@ -26,15 +21,18 @@ function createEventEmitter<Callback extends (...args: any) => void>(
 }
 
 export function createFormObserver() {
-	const inputUpdated = createEventEmitter<
-		(
-			inputElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-			reason?: 'reset',
-		) => void
-	>(initialize, destroy);
-	const formDataChanged = createEventEmitter<
-		(formElement: HTMLFormElement) => void
-	>(initialize, destroy);
+	const inputUpdated =
+		createEventEmitter<
+			(
+				inputElement:
+					| HTMLInputElement
+					| HTMLSelectElement
+					| HTMLTextAreaElement,
+				reason?: 'reset',
+			) => void
+		>();
+	const formDataChanged =
+		createEventEmitter<(formElement: HTMLFormElement) => void>();
 
 	let observer: MutationObserver | null = null;
 	let resetTimeout: NodeJS.Timeout | null = null;
@@ -143,41 +141,49 @@ export function createFormObserver() {
 		}
 	}
 
-	function initialize() {
-		// If there are no subscribers yet, listen for input, reset, and submit events globally
-		if (formDataChanged.size === 0 && inputUpdated.size === 0) {
-			// Listen for input, reset, and submit events
-			document.addEventListener('input', handleInput);
-			document.addEventListener('reset', handleReset);
-			// Capture submit event during the capturing pharse to ensure that the submitter is available
-			document.addEventListener('submit', handleSubmit, true);
+	const autoInitialize = <Callback extends (...args: any) => void>(
+		subscribe: (callback: Callback) => () => void,
+	) => {
+		return (callback: Callback) => {
+			// If there are no subscribers yet, listen for input, reset, and submit events globally
+			if (inputUpdated.size + formDataChanged.size === 0) {
+				// Listen for input, reset, and submit events
+				document.addEventListener('input', handleInput);
+				document.addEventListener('reset', handleReset);
+				// Capture submit event during the capturing pharse to ensure that the submitter is available
+				document.addEventListener('submit', handleSubmit, true);
 
-			// Observe form and input changes
-			observer ??= new MutationObserver(handleMutation);
-			observer.observe(document.body, {
-				subtree: true,
-				childList: true,
-				attributeFilter: ['form', 'name', 'data-conform'],
-			});
-		}
-	}
+				// Observe form and input changes
+				observer ??= new MutationObserver(handleMutation);
+				observer.observe(document.body, {
+					subtree: true,
+					childList: true,
+					attributeFilter: ['form', 'name', 'data-conform'],
+				});
+			}
 
-	function destroy() {
-		if (resetTimeout) {
-			clearTimeout(resetTimeout);
-		}
+			const unsubscribe = subscribe(callback);
 
-		// If there are no subscribers left, remove event listeners and disconnect the observer
-		if (formDataChanged.size === 0 && inputUpdated.size === 0) {
-			document.removeEventListener('input', handleInput);
-			document.removeEventListener('reset', handleReset);
-			document.removeEventListener('submit', handleSubmit, true);
-			observer?.disconnect();
-		}
-	}
+			return () => {
+				unsubscribe();
+
+				// If there are no subscribers left, remove event listeners and disconnect the observer
+				if (inputUpdated.size + formDataChanged.size === 0) {
+					if (resetTimeout) {
+						clearTimeout(resetTimeout);
+					}
+
+					document.removeEventListener('input', handleInput);
+					document.removeEventListener('reset', handleReset);
+					document.removeEventListener('submit', handleSubmit, true);
+					observer?.disconnect();
+				}
+			};
+		};
+	};
 
 	return {
-		onInputUpdated: inputUpdated.subscribe,
-		onFormDataChanged: formDataChanged.subscribe,
+		onInputUpdated: autoInitialize(inputUpdated.subscribe),
+		onFormDataChanged: autoInitialize(formDataChanged.subscribe),
 	};
 }

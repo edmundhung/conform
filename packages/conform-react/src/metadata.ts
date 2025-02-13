@@ -14,9 +14,9 @@ export type Combine<T> = {
 export type Field<
 	FieldShape,
 	Metadata extends Record<string, unknown>,
-> = Metadata & { key: string | undefined; name: FieldName<FieldShape> } & ([
-		FieldShape,
-	] extends [Date | File]
+> = Metadata &
+	Readonly<{ key: string | undefined; name: FieldName<FieldShape> }> &
+	([FieldShape] extends [Date | File]
 		? {}
 		: [FieldShape] extends [Array<infer Item> | null | undefined]
 			? {
@@ -131,7 +131,7 @@ export function getMetadata<
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
-	> = {},
+	>,
 >(
 	state: FormState<FormShape, ErrorShape>,
 	options?: {
@@ -166,18 +166,17 @@ export function getMetadata<
 				return getError(state);
 			},
 			get fieldError() {
-				return state.touchedFields.reduce<Record<string, ErrorShape>>(
-					(result, field) => {
-						const error = getError(state, field);
+				const result: Record<string, ErrorShape> = {};
 
-						if (typeof error !== 'undefined') {
-							result[field] = error;
-						}
+				for (const name of state.touchedFields) {
+					const error = getError(state, name);
 
-						return result;
-					},
-					{},
-				);
+					if (typeof error !== 'undefined') {
+						result[name] = error;
+					}
+				}
+
+				return result;
 			},
 			get touched() {
 				return isTouched(state);
