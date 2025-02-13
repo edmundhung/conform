@@ -1253,6 +1253,50 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 		});
+
+		test('z.brand', () => {
+			const schema = z
+				.object({
+					a: z.string().brand(),
+					b: z.number().brand(),
+					c: z.boolean().brand(),
+					d: z.date().brand(),
+					e: z.instanceof(File).brand(),
+					f: z.string().optional().brand(),
+				})
+				.brand();
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', ''],
+						['b', ''],
+						['c', ''],
+						['d', ''],
+						['e', ''],
+						['f', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'error',
+				payload: {
+					a: '',
+					b: '',
+					c: '',
+					d: '',
+					e: '',
+					f: '',
+				},
+				error: {
+					a: ['Required'],
+					b: ['Required'],
+					c: ['Required'],
+					d: ['Required'],
+					e: ['Input not instance of File'],
+				},
+				reply: expect.any(Function),
+			});
+		});
 	});
 
 	test('parseWithZod with errorMap', () => {

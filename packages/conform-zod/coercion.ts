@@ -105,6 +105,9 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
 ): ZodType<output<Schema>> {
+	if (type._def.typeName === 'ZodBranded') {
+		type = type._def.type as Schema;
+	}
 	const result = cache.get(type);
 
 	// Return the cached schema if it's already processed
