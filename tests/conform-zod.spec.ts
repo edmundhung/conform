@@ -1254,7 +1254,7 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test('z.brand', () => {
+		test('schema.brand', () => {
 			const schema = z
 				.object({
 					a: z.string().brand(),
@@ -1293,6 +1293,42 @@ describe('conform-zod', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Input not instance of File'],
+				},
+				reply: expect.any(Function),
+			});
+			const coercionTypesSchema = z.object({
+				a: z.string().brand(),
+				b: z.number().brand(),
+				c: z.boolean().brand(),
+				d: z.date().brand(),
+				e: z.bigint().brand(),
+			});
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', 'hello world'],
+						['b', '42'],
+						['c', 'on'],
+						['d', '1970-01-01'],
+						['e', '0x1fffffffffffff'],
+					]),
+					{ schema: coercionTypesSchema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					a: 'hello world',
+					b: '42',
+					c: 'on',
+					d: '1970-01-01',
+					e: '0x1fffffffffffff',
+				},
+				value: {
+					a: 'hello world',
+					b: 42,
+					c: true,
+					d: new Date('1970-01-01'),
+					e: BigInt('0x1fffffffffffff'),
 				},
 				reply: expect.any(Function),
 			});
