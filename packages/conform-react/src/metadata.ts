@@ -1,6 +1,12 @@
 import { getPaths, getValue } from 'conform-dom';
 import type { DefaultValue, FieldName, FormState } from './control';
-import { getListValue, getName, getChildPaths, serialize } from './util';
+import {
+	getListValue,
+	getName,
+	getChildPaths,
+	serialize,
+	Prettify,
+} from './util';
 
 type BaseCombine<
 	T,
@@ -125,47 +131,57 @@ export function createFieldset<
 	});
 }
 
+export type DefaultFormMetadata<ErrorShape> = {
+	touched: boolean;
+	invalid: boolean;
+	errors: ErrorShape | undefined;
+	fieldErrors: Record<string, ErrorShape>;
+};
+
+export type DefaultFieldMetadata<ErrorShape> = {
+	defaultValue: string | undefined;
+	defaultSelected: string[] | undefined;
+	touched: boolean;
+	invalid: boolean;
+	errors: ErrorShape | undefined;
+};
+
 export function getMetadata<
 	FormShape,
 	ErrorShape,
-	FormProps extends React.DetailedHTMLProps<
-		React.FormHTMLAttributes<HTMLFormElement>,
-		HTMLFormElement
+	FormMetdata extends Record<string, unknown> = Prettify<
+		Readonly<DefaultFormMetadata<ErrorShape>>
+	>,
+	FieldMetadata extends Record<string, unknown> = Prettify<
+		Readonly<DefaultFieldMetadata<ErrorShape>>
 	>,
 >(
 	state: FormState<FormShape, ErrorShape>,
 	options?: {
 		defaultValue?: DefaultValue<FormShape>;
-		formProps?: FormProps;
 		serialize?: (value: unknown) => string | string[] | undefined;
+		defineFormMetadata?: (
+			metadata: Prettify<Readonly<DefaultFormMetadata<ErrorShape>>>,
+		) => FormMetdata;
+		defineFieldMetadata?: (
+			name: string,
+			metadata: Prettify<Readonly<DefaultFieldMetadata<ErrorShape>>>,
+		) => FieldMetadata;
 	},
 ): {
-	form: {
-		touched: boolean;
-		invalid: boolean;
-		error: ErrorShape | undefined;
-		fieldError: Record<string, ErrorShape>;
-		props: FormProps;
-	};
-	fields: Fieldset<
-		FormShape,
-		Readonly<{
-			defaultValue: string | undefined;
-			defaultSelected: string[] | undefined;
-			touched: boolean;
-			invalid: boolean;
-			error: ErrorShape | undefined;
-		}>
-	>;
+	form: Prettify<FormMetdata>;
+	fields: Fieldset<FormShape, Prettify<FieldMetadata>>;
 } {
-	const initialValue = state.initialValue ?? options?.defaultValue ?? null;
+	const initialValue = state.submittedValue ?? options?.defaultValue ?? null;
+	const defineFormMetadata = options?.defineFormMetadata ?? ((i) => i);
+	const defineFieldMetadata = options?.defineFieldMetadata ?? ((i) => i);
 
 	return {
-		form: {
-			get error() {
+		form: defineFormMetadata({
+			get errors() {
 				return getError(state);
 			},
-			get fieldError() {
+			get fieldErrors() {
 				const result: Record<string, ErrorShape> = {};
 
 				for (const name of state.touchedFields) {
@@ -182,17 +198,14 @@ export function getMetadata<
 				return isTouched(state);
 			},
 			get invalid() {
-				return typeof this.error !== 'undefined';
+				return typeof this.errors !== 'undefined';
 			},
-			get props(): FormProps {
-				return options?.formProps ?? ({} as FormProps);
-			},
-		},
+		}) as FormMetdata,
 		fields: createFieldset({
 			initialValue,
 			keys: state.keys,
 			defineMetadata(name) {
-				return {
+				return defineFieldMetadata(name, {
 					get defaultValue() {
 						const value = getSerializedValue(
 							initialValue,
@@ -215,12 +228,12 @@ export function getMetadata<
 						return isTouched(state, name);
 					},
 					get invalid() {
-						return typeof this.error !== 'undefined';
+						return typeof this.errors !== 'undefined';
 					},
-					get error() {
+					get errors() {
 						return getError(state, name);
 					},
-				};
+				}) as FieldMetadata;
 			},
 		}),
 	};

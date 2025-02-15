@@ -92,14 +92,14 @@ export default function App() {
 						type="email"
 						name="email"
 						error={fields.email.invalid}
-						helperText={fields.email.error}
+						helperText={fields.email.errors}
 					/>
 
 					<TextField
 						label="Description (TextField - multline)"
 						name={fields.description.name}
 						error={fields.description.invalid}
-						helperText={fields.description.error}
+						helperText={fields.description.errors}
 						inputProps={{
 							minLength: 10,
 						}}
@@ -109,14 +109,14 @@ export default function App() {
 					<ExampleSelect
 						label="Language (Select)"
 						name={fields.language.name}
-						error={fields.language.error}
+						error={fields.language.errors}
 						defaultValue={fields.language.defaultValue}
 					/>
 
 					<ExampleAutocomplete
 						label="Movie (Autocomplete)"
 						name={fields.movie.name}
-						error={fields.movie.error}
+						error={fields.movie.errors}
 						defaultValue={fields.movie.defaultValue}
 					/>
 
@@ -132,7 +132,7 @@ export default function App() {
 								label="Newsletter"
 							/>
 						</FormGroup>
-						<FormHelperText>{fields.subscribe.error}</FormHelperText>
+						<FormHelperText>{fields.subscribe.errors}</FormHelperText>
 					</FormControl>
 
 					<FormControl variant="standard" error={fields.active.invalid}>
@@ -141,7 +141,7 @@ export default function App() {
 							<FormControlLabel value="yes" control={<Radio />} label="Yes" />
 							<FormControlLabel value="no" control={<Radio />} label="No" />
 						</RadioGroup>
-						<FormHelperText>{fields.active.error}</FormHelperText>
+						<FormHelperText>{fields.active.errors}</FormHelperText>
 					</FormControl>
 
 					<FormControl variant="standard" error={Boolean(fields.enabled.error)}>
@@ -152,20 +152,20 @@ export default function App() {
 								label="Enabled"
 							/>
 						</FormGroup>
-						<FormHelperText>{fields.enabled.error}</FormHelperText>
+						<FormHelperText>{fields.enabled.errors}</FormHelperText>
 					</FormControl>
 
 					<ExampleRating
 						label="Score (Rating)"
 						name={fields.score.name}
-						error={fields.score.error}
+						error={fields.score.errors}
 						defaultValue={fields.score.defaultValue}
 					/>
 
 					<ExampleSlider
 						label="Progress (Slider)"
 						name={fields.progress.name}
-						error={fields.progress.error}
+						error={fields.progress.errors}
 						defaultValue={fields.progress.defaultValue}
 					/>
 

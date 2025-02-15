@@ -56,7 +56,7 @@ export type DefaultValue<FormShape> = FormShape extends
 			: unknown;
 
 export type FormState<FormShape, ErrorShape> = {
-	initialValue: Record<string, unknown> | null;
+	submittedValue: Record<string, unknown> | null;
 	serverValidatedValue: Record<string, unknown> | null;
 	serverError: FormError<FormShape, ErrorShape> | null;
 	clientError: FormError<FormShape, ErrorShape> | null;
@@ -141,7 +141,7 @@ export function deserializeIntent(value: string): UnknownIntent {
 }
 
 export type FormContext<FormShape, ErrorShape, Intent> = {
-	type: 'server' | 'client';
+	type: 'server' | 'client' | 'client-async';
 	result: SubmissionResult<FormShape, ErrorShape, Intent>;
 	reset: () => FormState<FormShape, ErrorShape>;
 };
@@ -249,44 +249,46 @@ function baseUpdate<FormShape, ErrorShape, Intent>(
 ): FormState<FormShape, ErrorShape> {
 	const value = result.value ?? result.submission.value;
 
-	if (type === 'client') {
-		return mutate(state, {
-			// Do not update the initialValue unless there is an intent
-			// This is important to prevent unnecessary re-renders with async validation
-			initialValue: !result.intent ? state.initialValue : value,
-			// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
-			clientError:
-				typeof result.error !== 'undefined' &&
-				!deepEqual(state.clientError, result.error)
-					? result.error
-					: state.clientError,
-			// Reset server error if form value is changed
+	if (type === 'server') {
+		return {
+			...state,
+			submittedValue: value,
+			// Update server error if the error is defined.
+			// There is no need to check if the error is different as we are updating other states as well
 			serverError:
-				typeof result.error !== 'undefined' &&
-				!deepEqual(state.serverValidatedValue, value)
-					? null
-					: state.serverError,
-		});
+				typeof result.error !== 'undefined' ? result.error : state.serverError,
+			// Keep track of the value that the serverError is based on
+			serverValidatedValue:
+				typeof result.error !== 'undefined'
+					? value
+					: state.serverValidatedValue,
+		};
 	}
 
-	return {
-		...state,
-		initialValue: value,
-		// Update server error if the error is defined.
-		// There is no need to check if the error is different as we are updating other states as well
+	return mutate(state, {
+		// Do not update the initialValue unless there is an intent
+		// This is important to prevent unnecessary re-renders with async validation
+		submittedValue: !result.intent ? state.submittedValue : value,
+		// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
+		clientError:
+			typeof result.error !== 'undefined' &&
+			!deepEqual(state.clientError, result.error)
+				? result.error
+				: state.clientError,
+		// Reset server error if form value is changed
 		serverError:
-			typeof result.error !== 'undefined' ? result.error : state.serverError,
-		// Keep track of the value that the serverError is based on
-		serverValidatedValue:
-			typeof result.error !== 'undefined' ? value : state.serverValidatedValue,
-	};
+			typeof result.error !== 'undefined' &&
+			!deepEqual(state.serverValidatedValue, value)
+				? null
+				: state.serverError,
+	});
 }
 
 export const control: FormControl<FormIntent> = {
 	initializeState() {
 		return {
 			keys: {},
-			initialValue: null,
+			submittedValue: null,
 			serverValidatedValue: null,
 			serverError: null,
 			clientError: null,
@@ -297,13 +299,13 @@ export const control: FormControl<FormIntent> = {
 		const { type, result, reset } = ctx;
 		const intent = result.intent;
 
-		if (result.value === null || intent?.type === 'reset') {
+		if (result.value === null) {
 			return reset();
 		}
 
 		// `sumission.value` might not be correct if there are pending intents
-		// This is why we use previous initialValue if it is available
-		const submittedValue = state.initialValue ?? result.submission.value;
+		// This is why we use previous submittedValue if it is available
+		const submittedValue = state.submittedValue ?? result.submission.value;
 		const value = result.value ?? result.submission.value;
 
 		if (intent === null || intent?.type === 'validate') {
@@ -345,12 +347,14 @@ export const control: FormControl<FormIntent> = {
 
 			return mutate(state, {
 				...baseUpdate(state, ctx),
-				// We don't want to update the initialValue when it is a client-side validation
+				// We don't want to update the submittedValue when it is a client-side validation
 				// As validate happens much more frequently than other intents, this will prevent unnecessary re-renders
-				initialValue: type === 'client' ? state.initialValue : value,
+				submittedValue: type !== 'server' ? state.submittedValue : value,
 				touchedFields,
 			});
-		} else if (intent?.type === 'insert') {
+		}
+
+		if (intent?.type === 'insert') {
 			const list = getListValue(submittedValue, intent.payload.name);
 			const index = intent.payload.index ?? list.length;
 			const updateListIndex = configureListIndexUpdate(
@@ -391,7 +395,9 @@ export const control: FormControl<FormIntent> = {
 				keys,
 				touchedFields,
 			};
-		} else if (intent?.type === 'remove') {
+		}
+
+		if (intent?.type === 'remove') {
 			const updateListIndex = configureListIndexUpdate(
 				intent.payload.name,
 				(currentIndex) => {
@@ -437,7 +443,9 @@ export const control: FormControl<FormIntent> = {
 				keys,
 				touchedFields,
 			};
-		} else if (intent?.type === 'reorder') {
+		}
+
+		if (intent?.type === 'reorder') {
 			const updateListIndex = configureListIndexUpdate(
 				intent.payload.name,
 				(currentIndex) => {

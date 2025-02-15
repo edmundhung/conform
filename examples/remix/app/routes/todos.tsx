@@ -87,10 +87,10 @@ export default function Example() {
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue ?? ''}
 				/>
-				<div>{fields.title.error}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<hr />
-			<div className="form-error">{fields.tasks.error}</div>
+			<div className="form-error">{fields.tasks.errors}</div>
 			{tasks.map((task, index) => {
 				const taskFields = task.getFieldset();
 
@@ -103,7 +103,7 @@ export default function Example() {
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
 							/>
-							<div>{taskFields.content.error}</div>
+							<div>{taskFields.content.errors}</div>
 						</div>
 						<div>
 							<label>

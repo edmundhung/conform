@@ -80,7 +80,7 @@ export default function App() {
 									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
-									{fields.owner.error}
+									{fields.owner.errors}
 								</p>
 							</div>
 
@@ -95,7 +95,7 @@ export default function App() {
 									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
-									{fields.assignee.error}
+									{fields.assignee.errors}
 								</p>
 							</div>
 
@@ -110,7 +110,7 @@ export default function App() {
 									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
-									{fields.enabled.error}
+									{fields.enabled.errors}
 								</p>
 							</div>
 
@@ -125,7 +125,7 @@ export default function App() {
 									/>
 								</div>
 								<p className="mt-2 text-sm text-red-500">
-									{fields.color.error}
+									{fields.color.errors}
 								</p>
 							</div>
 						</div>

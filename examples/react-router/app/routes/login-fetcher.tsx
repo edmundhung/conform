@@ -50,7 +50,7 @@ export default function LoginWithFetcher() {
 					name={fields.email.name}
 					defaultValue={fields.email.defaultValue}
 				/>
-				<div>{fields.email.error}</div>
+				<div>{fields.email.errors}</div>
 			</div>
 			<div>
 				<label>Password</label>
@@ -60,7 +60,7 @@ export default function LoginWithFetcher() {
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</div>
 			<label>
 				<div>

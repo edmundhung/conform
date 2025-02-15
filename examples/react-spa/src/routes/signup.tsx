@@ -83,7 +83,7 @@ export default function Signup() {
 
 	return (
 		<form {...form.props} method="post">
-			<div className="form-error">{form.error}</div>
+			<div className="form-error">{form.errors}</div>
 			<label>
 				<div>Username</div>
 				<input
@@ -92,7 +92,7 @@ export default function Signup() {
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
 				/>
-				<div>{fields.username.error}</div>
+				<div>{fields.username.errors}</div>
 			</label>
 			<label>
 				<div>Password</div>
@@ -102,7 +102,7 @@ export default function Signup() {
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
-				<div>{fields.password.error}</div>
+				<div>{fields.password.errors}</div>
 			</label>
 			<label>
 				<div>Confirm Password</div>
@@ -112,7 +112,7 @@ export default function Signup() {
 					name={fields.confirmPassword.name}
 					defaultValue={fields.confirmPassword.defaultValue}
 				/>
-				<div>{fields.confirmPassword.error}</div>
+				<div>{fields.confirmPassword.errors}</div>
 			</label>
 			<hr />
 			<button>Signup</button>

@@ -13,8 +13,9 @@ import { parseSubmission, report, requestIntent } from 'conform-dom';
 import type { FormIntent, FormState, UnknownIntent } from './control';
 import { applyIntent, control } from './control';
 import {
+	type Prettify,
+	type FormRef,
 	deepEqual,
-	FormRef,
 	getFormElement,
 	getSubmitEvent,
 	resolveValidateResult,
@@ -49,15 +50,6 @@ export type IntentDispatcher<Intent extends UnknownIntent> = {
 		: (payload: Extract<Intent, { type: Type }>['payload']) => void;
 };
 
-export type SubmitContext<FormShape, ErrorShape, Value> = {
-	formData: FormData;
-	value: NonNullable<Value>;
-	update: (options: {
-		error?: Partial<FormError<FormShape, ErrorShape>> | null;
-		reset?: boolean;
-	}) => void;
-};
-
 export type ValidateHandler<FormShape, ErrorShape, Value> = (
 	value: Record<string, FormValue>,
 	ctx: {
@@ -80,9 +72,46 @@ export type ValidateHandler<FormShape, ErrorShape, Value> = (
 	  >
 	| undefined;
 
+export type Formupdate<FormShape, ErrorShape> = {
+	type: 'server' | 'client' | 'client-async';
+	result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+	state: {
+		prev: FormState<FormShape, ErrorShape>;
+		next: FormState<FormShape, ErrorShape>;
+	};
+};
+
+export type UpdateHandler<FormShape, ErrorShape> = (
+	update: Formupdate<FormShape, ErrorShape>,
+) => void;
+
+export type FormStateHandler<
+	State,
+	FormShape = unknown,
+	ErrorShape = unknown,
+> = (
+	state: State,
+	update: {
+		type: 'server' | 'client' | 'client-async';
+		result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+		reset: () => State;
+		state: {
+			prev: FormState<FormShape, ErrorShape>;
+			next: FormState<FormShape, ErrorShape>;
+		};
+	},
+) => State;
+
 export type SubmitHandler<FormShape, ErrorShape, Value> = (
 	event: React.FormEvent<HTMLFormElement>,
-	ctx: SubmitContext<FormShape, ErrorShape, Value>,
+	ctx: {
+		formData: FormData;
+		value: NonNullable<Value>;
+		update: (options: {
+			error?: Partial<FormError<FormShape, ErrorShape>> | null;
+			reset?: boolean;
+		}) => void;
+	},
 ) => void | Promise<void>;
 
 /**
@@ -90,14 +119,17 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
  */
 export const DEFAULT_INTENT = '__intent__';
 
+export type FormControlOptions<FormShape, ErrorShape, Value> = {
+	lastResult?: SubmissionResult<FormShape, ErrorShape, FormIntent> | null;
+	intentName?: string;
+	onUpdate?: UpdateHandler<FormShape, ErrorShape>;
+	onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
+	onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
+};
+
 export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 	formRef: FormRef,
-	options?: {
-		lastResult?: SubmissionResult<FormShape, ErrorShape, FormIntent> | null;
-		intentName?: string;
-		onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
-		onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
-	},
+	options?: Prettify<FormControlOptions<FormShape, ErrorShape, Value>>,
 ): {
 	state: FormState<FormShape, ErrorShape>;
 	handleSubmit(event: React.FormEvent<HTMLFormElement>): void;
@@ -114,15 +146,26 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 		let state = control.initializeState<FormShape, ErrorShape>();
 
 		if (lastResult) {
-			state = control.updateState(state, {
+			const result = control.updateState(state, {
 				type: 'server',
 				result: lastResult,
 				reset: () => state,
 			});
+
+			options?.onUpdate?.({
+				type: 'server',
+				result: lastResult,
+				state: {
+					prev: state,
+					next: result,
+				},
+			});
+
+			state = result;
 		}
 
 		return {
-			state,
+			state: state,
 			sideEffects: [],
 		};
 	});
@@ -139,14 +182,10 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 		(
 			result: SubmissionResult<FormShape, ErrorShape, FormIntent>,
 			options: {
-				type: 'server' | 'client';
+				type: 'server' | 'client' | 'client-async';
 			},
 		) => {
-			if (result === lastResultRef.current) {
-				return;
-			}
-
-			lastResultRef.current = result;
+			const { onUpdate } = optionsRef.current ?? {};
 
 			updateForm((form) => {
 				const state = control.updateState(form.state, {
@@ -182,6 +221,15 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 					}
 				}
 
+				onUpdate?.({
+					type: options.type,
+					result,
+					state: {
+						prev: form.state,
+						next: state,
+					},
+				});
+
 				return mutate(form, {
 					state,
 					sideEffects,
@@ -203,8 +251,10 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 	}, []);
 
 	useEffect(() => {
-		if (lastResult) {
+		// To avoid re-applying the same result twice
+		if (lastResult && lastResult !== lastResultRef.current) {
 			handleSubmission(lastResult, { type: 'server' });
+			lastResultRef.current = lastResult;
 		}
 	}, [lastResult, handleSubmission]);
 
@@ -222,9 +272,8 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 		}
 	}, [formRef, sideEffects]);
 
-	return {
-		state,
-		handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+	const handleSubmit = useCallback(
+		(event: React.FormEvent<HTMLFormElement>) => {
 			const abortController = new AbortController();
 
 			// Keep track of the abort controller so we can cancel the previous request if a new one is made
@@ -237,28 +286,28 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 			const submission = parseSubmission(formData, {
 				intentName,
 			});
-			const [intent, formValue] = applyIntent(submission, {
+			const [intent, value] = applyIntent(submission, {
 				pendingIntents: Array.from(pendingIntentsRef.current),
 			});
 			const submissionResult = report<FormShape, ErrorShape, FormIntent>(
 				submission,
 				{
 					keepFile: true,
-					value: formValue,
+					value,
 					intent,
 				},
 			);
 
-			let value: Value | undefined;
+			let resultValue: Value | undefined;
 
 			// The form might be re-submitted manually if there was an async validation
 			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
-				value = lastAsyncResultRef.current.value;
+				resultValue = lastAsyncResultRef.current.value;
 				submissionResult.error = null;
 			} else {
 				const validateResult =
-					formValue !== null
-						? optionsRef.current?.onValidate?.(formValue, {
+					value !== null
+						? optionsRef.current?.onValidate?.(value, {
 								formElement,
 							})
 						: // Treat it as a valid submission if the value is null (form reset)
@@ -274,9 +323,9 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
 							handleSubmission(
-								{ ...submissionResult, error, intent: undefined },
+								{ ...submissionResult, error },
 								{
-									type: 'client',
+									type: 'client-async',
 								},
 							);
 
@@ -301,7 +350,7 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 					const result = resolveValidateResult(validateResult);
 
 					submissionResult.error = result.error;
-					value = result.value;
+					resultValue = result.value;
 				}
 
 				handleSubmission(submissionResult, {
@@ -324,13 +373,13 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 				optionsRef.current?.onSubmit?.(event, {
 					formData,
 					get value() {
-						if (typeof value === 'undefined' || value === null) {
+						if (typeof resultValue === 'undefined' || resultValue === null) {
 							throw new Error(
 								'`value` is not available; Please make sure you have included the value in the `onValidate` result.',
 							);
 						}
 
-						return value;
+						return resultValue;
 					},
 					update(options) {
 						if (!abortController.signal.aborted) {
@@ -344,6 +393,12 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 				});
 			}
 		},
+		[handleSubmission, intentName],
+	);
+
+	return {
+		state,
+		handleSubmit,
 		intent,
 	};
 }
@@ -387,6 +442,48 @@ export function useIntent(
 			}),
 		[formRef, intentName],
 	);
+}
+
+export function useFormState<State>(
+	handler: FormStateHandler<State>,
+	options: {
+		initialState: State | (() => State);
+	},
+) {
+	const argsRef = useRef([handler, options.initialState] as const);
+	const [state, setState] = useState(options.initialState);
+	const handleUpdate = useCallback(
+		<FormShape, ErrorShape>(update: Formupdate<FormShape, ErrorShape>) => {
+			const [handle, initialState] = argsRef.current;
+
+			setState((currentState) => {
+				const reset = (): State => {
+					if (typeof initialState === 'function') {
+						// @ts-expect-error initialState is a function
+						return initialState();
+					} else {
+						return initialState;
+					}
+				};
+
+				if (update.result.value === null) {
+					return reset();
+				}
+
+				return handle(currentState, {
+					...update,
+					reset,
+				});
+			});
+		},
+		[],
+	);
+
+	useEffect(() => {
+		argsRef.current = [handler, options.initialState];
+	});
+
+	return [state, handleUpdate] as const;
 }
 
 export function useFormData<Value>(
@@ -447,17 +544,33 @@ export const visuallyHiddenProps: Readonly<{
 	'aria-hidden': true,
 });
 
-export function useInput(defaultValue?: string | string[] | null): {
+export type InputControl = {
 	value: string | undefined;
 	selected: string[] | undefined;
-	changed(value: string | string[]): void;
-	focused(): void;
-	blurred(): void;
 	register: React.RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
+	/**
+	 * @deprecated Use `changed()` instead
+	 */
+	change(value: string | string[]): void;
+	/**
+	 * @deprecated Use `focused()` instead
+	 */
+	focus(): void;
+	/**
+	 * @deprecated Use `blurred()` instead
+	 */
+	blur(): void;
+	changed(value: string | string[]): void;
+	focused(): void;
+	blurred(): void;
 	visuallyHiddenProps: typeof visuallyHiddenProps;
-} {
+};
+
+export function useInput(
+	defaultValue?: string | string[] | null,
+): InputControl {
 	const initialValue =
 		typeof defaultValue === 'string'
 			? [defaultValue]
@@ -606,10 +719,13 @@ export function useInput(defaultValue?: string | string[] | null): {
 	return {
 		value: value?.[0],
 		selected: value,
+		register: control.register,
+		change: control.changed,
+		focus: control.focused,
+		blur: control.blurred,
 		changed: control.changed,
 		focused: control.focused,
 		blurred: control.blurred,
-		register: control.register,
 		visuallyHiddenProps,
 	};
 }

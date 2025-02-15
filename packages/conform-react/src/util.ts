@@ -8,6 +8,10 @@ import {
 	setValue,
 } from 'conform-dom';
 
+export type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
 export function isNonNullable<T>(value: T): value is NonNullable<T> {
 	return value !== null && value !== undefined;
 }

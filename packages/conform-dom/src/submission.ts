@@ -167,28 +167,20 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		reset?: boolean;
 	},
 ): SubmissionResult<FormShape, ErrorShape, Intent> {
-	const cleanSubmission = options.keepFile
-		? submission
-		: {
-				...submission,
-				value: stripFiles(submission.value),
-			};
-
-	if (options.reset) {
-		return {
-			submission: cleanSubmission,
-			value: null,
-		};
-	}
-
 	return {
-		submission: cleanSubmission,
-		value:
-			options.value && submission.value !== options.value
-				? options.keepFile
-					? options.value
-					: stripFiles(options.value)
-				: undefined,
+		submission: options.keepFile
+			? submission
+			: {
+					...submission,
+					value: stripFiles(submission.value),
+				},
+		value: options.reset
+			? null
+			: !options.value || submission.value === options.value
+				? undefined
+				: options.keepFile
+					? stripFiles(options.value)
+					: options.value,
 		error: !options.error
 			? options.error
 			: {

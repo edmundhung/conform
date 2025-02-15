@@ -88,7 +88,7 @@ export default function App() {
 					<FormControl isInvalid={fields.email.invalid}>
 						<FormLabel>Email (Input)</FormLabel>
 						<Input type="email" name={fields.email.name} required />
-						<FormErrorMessage>{fields.email.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.email.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.language.invalid}>
@@ -102,13 +102,13 @@ export default function App() {
 							<option value="german">German</option>
 							<option value="japanese">Japanese</option>
 						</Select>
-						<FormErrorMessage>{fields.language.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.language.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.description.invalid}>
 						<FormLabel>Description (Textarea)</FormLabel>
 						<Textarea name={fields.description.name} required />
-						<FormErrorMessage>{fields.description.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.description.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.quantity.invalid}>
@@ -117,7 +117,7 @@ export default function App() {
 							name={fields.quantity.name}
 							defaultValue={fields.quantity.defaultValue}
 						/>
-						<FormErrorMessage>{fields.quantity.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.quantity.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.pin.invalid}>
@@ -126,7 +126,7 @@ export default function App() {
 							name={fields.pin.name}
 							defaultValue={fields.pin.defaultValue}
 						/>
-						<FormErrorMessage>{fields.pin.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.pin.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.title.invalid}>
@@ -135,7 +135,7 @@ export default function App() {
 							<EditablePreview />
 							<EditableInput name={fields.title.name} required />
 						</Editable>
-						<FormErrorMessage>{fields.title.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.title.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.subscribe.invalid}>
@@ -143,13 +143,13 @@ export default function App() {
 						<Checkbox name={fields.subscribe.name} value="on" required>
 							Newsletter
 						</Checkbox>
-						<FormErrorMessage>{fields.subscribe.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.subscribe.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.enabled.invalid}>
 						<FormLabel>Enabled (Switch)</FormLabel>
 						<Switch name={fields.enabled.name} value="on" required />
-						<FormErrorMessage>{fields.enabled.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.enabled.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.progress.invalid}>
@@ -158,7 +158,7 @@ export default function App() {
 							name={fields.progress.name}
 							defaultValue={fields.progress.defaultValue}
 						/>
-						<FormErrorMessage>{fields.progress.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.progress.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={fields.active.invalid}>
@@ -169,7 +169,7 @@ export default function App() {
 								<Radio value="no">No</Radio>
 							</Stack>
 						</RadioGroup>
-						<FormErrorMessage>{fields.active.error}</FormErrorMessage>
+						<FormErrorMessage>{fields.active.errors}</FormErrorMessage>
 					</FormControl>
 
 					<Stack direction="row" justifyContent="flex-end">

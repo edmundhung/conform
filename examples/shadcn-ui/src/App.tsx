@@ -92,7 +92,7 @@ export default function App() {
 				<Field>
 					<Label>Name</Label>
 					<Input name={fields.name.name} type="text" />
-					<FieldError>{fields.name.error}</FieldError>
+					<FieldError>{fields.name.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Birth date</Label>
@@ -100,7 +100,7 @@ export default function App() {
 						name={fields.dateOfBirth.name}
 						defaultValue={fields.dateOfBirth.defaultValue}
 					/>
-					<FieldError>{fields.dateOfBirth.error}</FieldError>
+					<FieldError>{fields.dateOfBirth.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Country</Label>
@@ -108,7 +108,7 @@ export default function App() {
 						name={fields.country.name}
 						defaultValue={fields.country.defaultValue}
 					/>
-					<FieldError>{fields.country.error}</FieldError>
+					<FieldError>{fields.country.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Gender</Label>
@@ -121,7 +121,7 @@ export default function App() {
 							{ value: 'other', label: 'other' },
 						]}
 					/>
-					<FieldError>{fields.gender.error}</FieldError>
+					<FieldError>{fields.gender.errors}</FieldError>
 				</Field>
 				<Field>
 					<div className="flex gap-2 items-center">
@@ -131,7 +131,7 @@ export default function App() {
 						/>
 						<Label>Agree to terms</Label>
 					</div>
-					<FieldError>{fields.agreeToTerms.error}</FieldError>
+					<FieldError>{fields.agreeToTerms.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Job</Label>
@@ -145,7 +145,7 @@ export default function App() {
 							{ value: 'manager', name: 'Manager' },
 						]}
 					/>
-					<FieldError>{fields.job.error}</FieldError>
+					<FieldError>{fields.job.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Age</Label>
@@ -153,7 +153,7 @@ export default function App() {
 						name={fields.age.name}
 						defaultValue={fields.age.defaultValue}
 					/>
-					<FieldError>{fields.age.error}</FieldError>
+					<FieldError>{fields.age.errors}</FieldError>
 				</Field>
 				<Field>
 					<div className="flex items-center gap-2">
@@ -163,12 +163,12 @@ export default function App() {
 							defaultChecked={fields.isAdult.defaultValue === 'on'}
 						/>
 					</div>
-					<FieldError>{fields.isAdult.error}</FieldError>
+					<FieldError>{fields.isAdult.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Description</Label>
 					<Textarea name={fields.description.name} />
-					<FieldError>{fields.description.error}</FieldError>
+					<FieldError>{fields.description.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Account type</Label>
@@ -180,7 +180,7 @@ export default function App() {
 							{ value: 'business', label: 'Business' },
 						]}
 					/>
-					<FieldError>{fields.accountType.error}</FieldError>
+					<FieldError>{fields.accountType.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Account types</Label>
@@ -193,7 +193,7 @@ export default function App() {
 							{ value: 'business2', label: 'Business2' },
 						]}
 					/>
-					<FieldError>{fields.accountTypes.error}</FieldError>
+					<FieldError>{fields.accountTypes.errors}</FieldError>
 				</Field>
 				<Field>
 					<fieldset>Interests</fieldset>
@@ -219,7 +219,7 @@ export default function App() {
 							<label>{option.name}</label>
 						</div>
 					))}
-					<FieldError>{fields.interests.error}</FieldError>
+					<FieldError>{fields.interests.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label>Code</Label>
@@ -228,7 +228,7 @@ export default function App() {
 						defaultValue={fields.code.defaultValue}
 						length={6}
 					/>
-					<FieldError>{fields.code.error}</FieldError>
+					<FieldError>{fields.code.errors}</FieldError>
 				</Field>
 
 				<div className="flex gap-2">

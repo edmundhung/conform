@@ -84,7 +84,7 @@ export default function App() {
 						/>
 						<label>Accept terms and conditions.</label>
 					</div>
-					<span className="text-red-800">{fields.isTermsAgreed.error}</span>
+					<span className="text-red-800">{fields.isTermsAgreed.errors}</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Radio Group</h2>
@@ -100,7 +100,7 @@ export default function App() {
 								{ value: 'other', label: 'Other (not valid choice)' },
 							]}
 						/>
-						<span className="text-red-800">{fields.carType.error}</span>
+						<span className="text-red-800">{fields.carType.errors}</span>
 					</div>
 				</div>
 				<div className="flex flex-col gap-2 items-start">
@@ -116,7 +116,7 @@ export default function App() {
 							{ name: 'Mexico', value: 'mexico' },
 						]}
 					/>
-					<span className="text-red-800">{fields.userCountry.error}</span>
+					<span className="text-red-800">{fields.userCountry.errors}</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Slider</h2>
@@ -128,7 +128,7 @@ export default function App() {
 							max={10_000}
 						/>
 						<span className="text-red-800">
-							{fields.estimatedKilometersPerYear.error}
+							{fields.estimatedKilometersPerYear.errors}
 						</span>
 					</div>
 				</div>
@@ -142,7 +142,7 @@ export default function App() {
 						<label>Has additional driver</label>
 					</div>
 					<span className="text-red-800">
-						{fields.hasAdditionalDriver.error}
+						{fields.hasAdditionalDriver.errors}
 					</span>
 				</div>
 				<div className="flex flex-col gap-2">
@@ -159,7 +159,7 @@ export default function App() {
 							]}
 						/>
 						<span className="text-red-800">
-							{fields.desiredContractType.error}
+							{fields.desiredContractType.errors}
 						</span>
 					</div>
 				</div>

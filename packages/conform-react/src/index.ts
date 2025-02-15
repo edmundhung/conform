@@ -22,9 +22,12 @@ export {
 	createFieldset,
 } from './metadata';
 export {
+	type FormControlOptions,
 	type ValidateHandler,
+	type UpdateHandler,
 	type SubmitHandler,
 	useFormControl,
+	useFormState,
 	useFormData,
 	useIntent,
 	useInput,

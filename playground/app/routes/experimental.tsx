@@ -6,6 +6,7 @@ import {
 	useInput,
 	useFormData,
 	useFormControl,
+	useFormState,
 	getMetadata,
 	parseSubmission,
 	isInput,
@@ -14,7 +15,7 @@ import {
 	applyIntent,
 	isTouched,
 } from 'conform-react';
-import { useMemo, useRef } from 'react';
+import { useId, useMemo } from 'react';
 
 function createSchema(constraint: {
 	isTitleUnique: (title: string) => Promise<boolean>;
@@ -81,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Example() {
 	const lastResult = useActionData<typeof action>();
-	const formRef = useRef<HTMLFormElement>(null);
+	const formId = useId();
 	const schema = useMemo(() => {
 		const isTitleUnique = memoize(async (title: string) => {
 			const response = await fetch('/api', {
@@ -97,9 +98,29 @@ export default function Example() {
 			isTitleUnique,
 		});
 	}, []);
-	const { state, handleSubmit, intent } = useFormControl(formRef, {
+	const [status, updateStatus] = useFormState(
+		(status: 'success' | 'error' | null, { result }) => {
+			if (result.intent !== null) {
+				return null;
+			}
+
+			if (typeof result.error === 'undefined') {
+				return status;
+			}
+
+			return result.error === null ? 'success' : 'error';
+		},
+		{
+			initialState: null,
+		},
+	);
+	const { state, handleSubmit, intent } = useFormControl(formId, {
 		lastResult,
 		intentName: 'intent',
+		onUpdate(update) {
+			console.log('Update', update);
+			updateStatus(update);
+		},
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
 		},
@@ -126,31 +147,67 @@ export default function Example() {
 			content: 'Hello World!',
 			tasks: [{ title: 'Test', done: true }],
 		},
+		defineFormMetadata(metadata) {
+			return Object.assign(metadata, intent, {
+				get id() {
+					return formId;
+				},
+				get errorId() {
+					return `${this.id}-error`;
+				},
+				get props() {
+					return {
+						id: this.id,
+						noValidate: true,
+						onSubmit: handleSubmit,
+						onBlur(event) {
+							if (
+								isInput(event.target) &&
+								!isTouched(state, event.target.name)
+							) {
+								intent.validate(event.target.name);
+							}
+						},
+						onInput(event) {
+							if (
+								isInput(event.target) &&
+								isTouched(state, event.target.name)
+							) {
+								intent.validate(event.target.name);
+							}
+						},
+						'aria-invalid': metadata.invalid || undefined,
+						'aria-describedby': metadata.invalid ? this.errorId : undefined,
+					} satisfies React.DetailedHTMLProps<
+						React.FormHTMLAttributes<HTMLFormElement>,
+						HTMLFormElement
+					>;
+				},
+			});
+		},
+		defineFieldMetadata(name, metadata) {
+			return Object.assign(metadata, {
+				get id() {
+					return `${formId}-${name}`;
+				},
+				get errorId() {
+					return `${this.id}-error`;
+				},
+			});
+		},
 	});
+
 	const title = useFormData(
-		formRef,
+		formId,
 		(formData) => formData?.get(fields.title.name)?.toString() ?? '',
 	);
 	const taskFields = fields.tasks.getFieldList();
 	const titleControl = useInput(fields.title.defaultValue);
 
 	return (
-		<Form
-			method="post"
-			ref={formRef}
-			onSubmit={handleSubmit}
-			onBlur={(event) => {
-				if (isInput(event.target) && !isTouched(state, event.target.name)) {
-					intent.validate(event.target.name);
-				}
-			}}
-			onInput={(event) => {
-				if (isInput(event.target) && isTouched(state, event.target.name)) {
-					intent.validate(event.target.name);
-				}
-			}}
-		>
-			<div>FormError: {form.error}</div>
+		<Form method="post" {...form.props}>
+			<div>Status: {status}</div>
+			<div>FormError: {form.errors}</div>
 			<div>
 				Title
 				<input
@@ -160,7 +217,7 @@ export default function Example() {
 				/>
 				<div>Control: {titleControl.value}</div>
 				<div>FormData: {title}</div>
-				<div>{fields.title.error}</div>
+				<div>{fields.title.errors}</div>
 			</div>
 			<div>
 				Content
@@ -168,9 +225,9 @@ export default function Example() {
 					name={fields.content.name}
 					defaultValue={fields.content.defaultValue}
 				/>
-				<div>Content Error: {fields.content.error}</div>
+				<div>Content Error: {fields.content.errors}</div>
 			</div>
-			<div>Tasks error: {fields.tasks.error}</div>
+			<div>Tasks error: {fields.tasks.errors}</div>
 			{taskFields.map((taskField, index) => {
 				const task = taskField.getFieldset();
 				return (
@@ -179,13 +236,13 @@ export default function Example() {
 							name={task.title.name}
 							defaultValue={task.title.defaultValue}
 						/>
-						<div>{task.title.error}</div>
+						<div>{task.title.errors}</div>
 						<input
 							type="checkbox"
 							name={task.done.name}
 							defaultChecked={task.done.defaultValue === 'on'}
 						/>
-						<div>{task.done.error}</div>
+						<div>{task.done.errors}</div>
 						<div>
 							<button
 								type="button"
