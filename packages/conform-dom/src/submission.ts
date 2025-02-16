@@ -20,8 +20,8 @@ type Serializable<T> = T extends File
 			: T;
 
 export type FormError<FormShape, ErrorShape> = {
-	formError: ErrorShape | null;
-	fieldError: Record<string, ErrorShape>;
+	formErrors: ErrorShape | null;
+	fieldErrors: Record<string, ErrorShape>;
 	'~type'?: Serializable<FormShape>;
 };
 
@@ -127,7 +127,7 @@ export function parseSubmission(
  * // Report the submission with the field errors
  * report(submission, {
  *  error: {
- *    fieldError: {
+ *    fieldErrors: {
  *      email: ['Invalid email format'],
  *      password: ['Password is required'],
  *    },
@@ -136,7 +136,7 @@ export function parseSubmission(
  * // Report the submission with a form error
  * report(submission, {
  *   error: {
- *     formError: ['Invalid credentials'],
+ *     formErrors: ['Invalid credentials'],
  *   },
  * })
  *
@@ -189,8 +189,8 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 	const error = !options.error
 		? options.error
 		: {
-				formError: options.error.formError ?? null,
-				fieldError: options.error.fieldError ?? {},
+				formErrors: options.error.formErrors ?? null,
+				fieldErrors: options.error.fieldErrors ?? {},
 			};
 
 	if (options.hideFields) {

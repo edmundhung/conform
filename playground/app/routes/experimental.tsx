@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	return report(submission, {
 		error: {
-			formError: ['Something went wrong'],
+			formErrors: ['Something went wrong'],
 		},
 	});
 }
@@ -213,7 +213,7 @@ export default function Example() {
 	return (
 		<Form method="post" {...form.props}>
 			<div>Status: {status}</div>
-			<div>FormError: {form.errors}</div>
+			<div>formErrors: {form.errors}</div>
 			<div>
 				Title
 				<input

@@ -38,7 +38,7 @@ export default function Login() {
 			if (error) {
 				update({
 					error: {
-						formError: [error],
+						formErrors: [error],
 					},
 				});
 			} else {

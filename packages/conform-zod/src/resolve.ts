@@ -57,7 +57,7 @@ export function resolveZodResult<Input, Output, ErrorShape>(
 			errorByName[name].push(issue);
 		}
 
-		const { '': formError = null, ...fieldError } = Object.entries(
+		const { '': formErrors = null, ...fieldErrors } = Object.entries(
 			errorByName,
 		).reduce<Record<string, Array<string> | ErrorShape>>(
 			(result, [name, issues]) => {
@@ -71,8 +71,8 @@ export function resolveZodResult<Input, Output, ErrorShape>(
 		);
 
 		error = {
-			formError,
-			fieldError,
+			formErrors,
+			fieldErrors,
 		};
 	} else {
 		value = result.data;

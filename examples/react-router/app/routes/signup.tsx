@@ -67,7 +67,7 @@ export async function action({ request }: Route.ActionArgs) {
 		return {
 			result: report<z.input<typeof schema>>(submission, {
 				error: {
-					formError: ['Server error: Please try again later'],
+					formErrors: ['Server error: Please try again later'],
 				},
 			}),
 		};

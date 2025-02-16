@@ -49,7 +49,7 @@ export default function Todos() {
 			if (error) {
 				update({
 					error: {
-						formError: [error],
+						formErrors: [error],
 					},
 				});
 			} else {

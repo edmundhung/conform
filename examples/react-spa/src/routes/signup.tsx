@@ -70,7 +70,7 @@ export default function Signup() {
 			if (error) {
 				update({
 					error: {
-						formError: [error],
+						formErrors: [error],
 					},
 				});
 			} else {

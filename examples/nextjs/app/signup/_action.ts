@@ -26,7 +26,7 @@ export async function signup(_: unknown, formData: FormData) {
 	if (Math.random() < 0.7) {
 		return report<z.infer<typeof schema>>(submission, {
 			error: {
-				formError: ['Server error: Please try again later'],
+				formErrors: ['Server error: Please try again later'],
 			},
 		});
 	}

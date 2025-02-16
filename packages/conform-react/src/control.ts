@@ -332,7 +332,7 @@ export const control: FormControl = {
 				// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
 				// But the schema might have an error on those fields, so we need to include them
 				if (result.error) {
-					for (const name of Object.keys(result.error.fieldError)) {
+					for (const name of Object.keys(result.error.fieldErrors)) {
 						// If the error is set as a child of an actual field, exclude it
 						// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
 						if (

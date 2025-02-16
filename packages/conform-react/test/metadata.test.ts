@@ -122,14 +122,14 @@ test('isTouched()', () => {
 
 test('getError()', () => {
 	const error = {
-		formError: ['Invalid fields exist', 'Incompleted form'],
-		fieldError: {
+		formErrors: ['Invalid fields exist', 'Incompleted form'],
+		fieldErrors: {
 			email: ['Invalid email'],
 		},
 	};
-	const noFormError = {
-		formError: null,
-		fieldError: {
+	const noformErrors = {
+		formErrors: null,
+		fieldErrors: {
 			email: 'Invalid email',
 		},
 	};
@@ -152,18 +152,18 @@ test('getError()', () => {
 	).toEqual(undefined);
 	expect(
 		getError({ ...defaultState, clientError: error, touchedFields }, 'email'),
-	).toEqual(error.fieldError.email);
+	).toEqual(error.fieldErrors.email);
 	expect(
 		getError({ ...defaultState, clientError: error, touchedFields }, ''),
-	).toEqual(error.formError);
+	).toEqual(error.formErrors);
 	expect(
 		getError({ ...defaultState, clientError: error, touchedFields }),
-	).toEqual(error.formError);
+	).toEqual(error.formErrors);
 	expect(
-		getError({ ...defaultState, clientError: noFormError, touchedFields }, ''),
+		getError({ ...defaultState, clientError: noformErrors, touchedFields }, ''),
 	).toEqual(undefined);
 	expect(
-		getError({ ...defaultState, clientError: noFormError, touchedFields }),
+		getError({ ...defaultState, clientError: noformErrors, touchedFields }),
 	).toEqual(undefined);
 	expect(getError({ ...defaultState, touchedFields }, '')).toEqual(undefined);
 	expect(getError({ ...defaultState, touchedFields }, 'email')).toEqual(

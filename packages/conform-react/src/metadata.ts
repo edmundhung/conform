@@ -77,7 +77,7 @@ export function getError<ErrorShape>(
 		return;
 	}
 
-	return (name ? error.fieldError[name] : error.formError) ?? undefined;
+	return (name ? error.fieldErrors[name] : error.formErrors) ?? undefined;
 }
 
 export function getDefaultListKey(
