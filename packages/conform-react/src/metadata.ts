@@ -1,3 +1,4 @@
+import type { ValidationAttributes, Constraint } from 'conform-dom';
 import { getPaths, getValue } from 'conform-dom';
 import type { DefaultValue, FieldName, FormState } from './control';
 import {
@@ -138,12 +139,23 @@ export type DefaultFormMetadata<ErrorShape> = {
 	fieldErrors: Record<string, ErrorShape>;
 };
 
-export type DefaultFieldMetadata<ErrorShape> = {
+export type DefaultFieldMetadata<ErrorShape> = ValidationAttributes & {
 	defaultValue: string | undefined;
 	defaultSelected: string[] | undefined;
 	touched: boolean;
 	invalid: boolean;
 	errors: ErrorShape | undefined;
+};
+
+export const defaultValidationAttributes: ValidationAttributes = {
+	required: undefined,
+	minLength: undefined,
+	maxLength: undefined,
+	pattern: undefined,
+	min: undefined,
+	max: undefined,
+	step: undefined,
+	multiple: undefined,
 };
 
 export function getMetadata<
@@ -159,6 +171,7 @@ export function getMetadata<
 	state: FormState<FormShape, ErrorShape>,
 	options?: {
 		defaultValue?: DefaultValue<FormShape>;
+		constraint?: Constraint;
 		serialize?: (value: unknown) => string | string[] | undefined;
 		defineFormMetadata?: (
 			metadata: Prettify<Readonly<DefaultFormMetadata<ErrorShape>>>,
@@ -206,6 +219,8 @@ export function getMetadata<
 			keys: state.keys,
 			defineMetadata(name) {
 				return defineFieldMetadata(name, {
+					...defaultValidationAttributes,
+					...options?.constraint?.[name],
 					get defaultValue() {
 						const value = getSerializedValue(
 							initialValue,

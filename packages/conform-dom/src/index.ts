@@ -8,13 +8,14 @@ export {
 	requestSubmit,
 	requestIntent,
 } from './dom';
-export {
-	type Submission,
-	type SubmissionResult,
-	type FormValue,
-	type FormError,
-	parseSubmission,
-	report,
-} from './submission';
+export { parseSubmission, report } from './submission';
 export { getPaths, formatPaths, getValue, setValue } from './formdata';
 export { isPlainObject } from './util';
+export type {
+	Submission,
+	SubmissionResult,
+	FormValue,
+	FormError,
+	ValidationAttributes,
+	Constraint,
+} from './type';

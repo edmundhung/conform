@@ -1,48 +1,6 @@
 import { setValue, getPaths } from './formdata';
+import { FormError, FormValue, Submission, SubmissionResult } from './type';
 import { stripFiles } from './util';
-
-export type FormValue<
-	Entry extends string | number | boolean | File | null =
-		| string
-		| number
-		| boolean
-		| File
-		| null,
-> = Entry | FormValue<Entry | null>[] | { [key: string]: FormValue<Entry> };
-
-type WebFile = Pick<File, 'name' | 'size' | 'type' | 'lastModified'>;
-type Serializable<T> = T extends File
-	? WebFile
-	: T extends Array<infer U>
-		? Serializable<U>[]
-		: T extends object
-			? { [K in keyof T]: Serializable<T[K]> }
-			: T;
-
-export type FormError<FormShape, ErrorShape> = {
-	formErrors: ErrorShape | null;
-	fieldErrors: Record<string, ErrorShape>;
-	'~type'?: Serializable<FormShape>;
-};
-
-export type Submission<Entry extends FormDataEntryValue = FormDataEntryValue> =
-	{
-		value: Record<string, FormValue<Entry>>;
-		fields: string[];
-		intent: string | null;
-	};
-
-export type SubmissionResult<
-	FormShape,
-	ErrorShape,
-	Intent,
-	Entry extends FormDataEntryValue = FormDataEntryValue,
-> = {
-	submission: Submission<Entry>;
-	value?: Record<string, FormValue<Entry | number | boolean | null>> | null;
-	error?: FormError<FormShape, ErrorShape> | null;
-	intent?: Intent | null | undefined;
-};
 
 /**
  * Parse `FormData` or `URLSearchParams` into a submission object.

@@ -1,5 +1,4 @@
-import type { Constraint } from '@conform-to/dom';
-
+import type { ValidationAttributes, Constraint } from 'conform-dom';
 import type {
 	ZodTypeAny,
 	ZodFirstPartySchemaTypes,
@@ -7,7 +6,7 @@ import type {
 	ZodString,
 } from 'zod';
 
-const keys: Array<keyof Constraint> = [
+const attributes: Array<keyof ValidationAttributes> = [
 	'required',
 	'minLength',
 	'maxLength',
@@ -18,12 +17,10 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
-export function getZodConstraint(
-	schema: ZodTypeAny,
-): Record<string, Constraint> {
+export function getZodConstraint(schema: ZodTypeAny): Constraint {
 	function updateConstraint(
 		schema: ZodTypeAny,
-		data: Record<string, Constraint>,
+		data: Constraint,
 		name = '',
 	): void {
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
@@ -39,8 +36,8 @@ export function getZodConstraint(
 			// FIXME: What to do with .pipe()?
 			updateConstraint(def.out, data, name);
 		} else if (def.typeName === 'ZodIntersection') {
-			const leftResult: Record<string, Constraint> = {};
-			const rightResult: Record<string, Constraint> = {};
+			const leftResult: Constraint = {};
+			const rightResult: Constraint = {};
 
 			updateConstraint(def.left, leftResult, name);
 			updateConstraint(def.right, rightResult, name);
@@ -54,7 +51,7 @@ export function getZodConstraint(
 				data,
 				(def.options as ZodTypeAny[])
 					.map((option) => {
-						const result: Record<string, Constraint> = {};
+						const result: Constraint = {};
 
 						updateConstraint(option, result, name);
 
@@ -62,18 +59,18 @@ export function getZodConstraint(
 					})
 					.reduce((prev, next) => {
 						const list = new Set([...Object.keys(prev), ...Object.keys(next)]);
-						const result: Record<string, Constraint> = {};
+						const result: Constraint = {};
 
 						for (const name of list) {
 							const prevConstraint = prev[name];
 							const nextConstraint = next[name];
 
 							if (prevConstraint && nextConstraint) {
-								const constraint: Constraint = {};
+								const constraint: Partial<ValidationAttributes> = {};
 
 								result[name] = constraint;
 
-								for (const key of keys) {
+								for (const key of attributes) {
 									if (
 										typeof prevConstraint[key] !== 'undefined' &&
 										typeof nextConstraint[key] !== 'undefined' &&
@@ -139,7 +136,7 @@ export function getZodConstraint(
 		}
 	}
 
-	const result: Record<string, Constraint> = {};
+	const result: Constraint = {};
 
 	updateConstraint(schema, result);
 

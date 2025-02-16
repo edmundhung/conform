@@ -1,4 +1,4 @@
-import type { FormValue } from './submission';
+import type { FormValue } from './type';
 
 /**
  * Check if the value is a plain object

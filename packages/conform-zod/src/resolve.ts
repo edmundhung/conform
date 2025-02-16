@@ -1,5 +1,6 @@
 import type { SafeParseReturnType, ZodIssue } from 'zod';
-import { formatPaths, type FormError } from 'conform-dom';
+import type { FormError } from 'conform-dom';
+import { formatPaths } from 'conform-dom';
 
 export function resolveZodResult<Input, Output>(
 	result: SafeParseReturnType<Input, Output>,
