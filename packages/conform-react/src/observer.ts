@@ -32,7 +32,9 @@ export function createFormObserver() {
 			) => void
 		>();
 	const formDataChanged =
-		createEventEmitter<(formElement: HTMLFormElement) => void>();
+		createEventEmitter<
+			(formElement: HTMLFormElement, submitter: HTMLElement | null) => void
+		>();
 
 	let observer: MutationObserver | null = null;
 	let resetTimeout: NodeJS.Timeout | null = null;
@@ -44,7 +46,7 @@ export function createFormObserver() {
 			inputUpdated.emit(element);
 
 			if (element.form) {
-				formDataChanged.emit(element.form);
+				formDataChanged.emit(element.form, null);
 			}
 		}
 	}
@@ -54,7 +56,7 @@ export function createFormObserver() {
 			const formElement = event.target;
 			// Reset event is fired before the form is reset, so we need to wait for the next tick
 			resetTimeout = setTimeout(() => {
-				formDataChanged.emit(formElement);
+				formDataChanged.emit(formElement, null);
 
 				for (const element of formElement.elements) {
 					if (isInput(element)) {
@@ -70,7 +72,7 @@ export function createFormObserver() {
 
 	function handleSubmit(event: SubmitEvent): void {
 		if (event.target instanceof HTMLFormElement) {
-			formDataChanged.emit(event.target);
+			formDataChanged.emit(event.target, event.submitter);
 		}
 	}
 
@@ -129,7 +131,7 @@ export function createFormObserver() {
 		}
 
 		for (const formElement of formElementAffected) {
-			formDataChanged.emit(formElement);
+			formDataChanged.emit(formElement, null);
 		}
 
 		for (const inputElement of inputElementChanged) {

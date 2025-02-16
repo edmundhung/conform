@@ -9,7 +9,12 @@ import {
 	useSyncExternalStore,
 } from 'react';
 import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
-import { parseSubmission, report, requestIntent } from 'conform-dom';
+import {
+	getFormData,
+	parseSubmission,
+	report,
+	requestIntent,
+} from 'conform-dom';
 import type { FormIntent, FormState, UnknownIntent } from './control';
 import { applyIntent, control } from './control';
 import {
@@ -282,7 +287,7 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 
 			const formElement = event.currentTarget;
 			const submitEvent = getSubmitEvent(event);
-			const formData = new FormData(formElement, submitEvent.submitter);
+			const formData = getFormData(formElement, submitEvent.submitter);
 			const submission = parseSubmission(formData, {
 				intentName,
 			});
@@ -491,22 +496,19 @@ export function useFormData<Value>(
 	select: (formData: FormData | null, currentValue: Value | undefined) => Value,
 ): Value {
 	const valueRef = useRef<Value>();
+	const formDataRef = useRef<FormData | null>(null);
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
-				formObserver.onFormDataChanged((formElement) => {
+				formObserver.onFormDataChanged((formElement, submitter) => {
 					if (formElement === getFormElement(formRef)) {
+						formDataRef.current = getFormData(formElement, submitter);
 						callback();
 					}
 				}),
 			[formRef],
 		),
-		() => {
-			const formElement = getFormElement(formRef);
-			const formData = formElement ? new FormData(formElement) : null;
-
-			return select(formData, valueRef.current);
-		},
+		() => select(formDataRef.current, valueRef.current),
 		() => select(null, undefined),
 	);
 

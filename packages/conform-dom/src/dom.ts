@@ -205,6 +205,16 @@ export function requestIntent(
 }
 
 /**
+ * A type guard to checks if the element is a submitter element.
+ * A submitter element is either an input or button element with type submit.
+ */
+export function isSubmitter(
+	element: HTMLElement,
+): element is HTMLInputElement | HTMLButtonElement {
+	return 'type' in element && element.type === 'submit';
+}
+
+/**
  * Constructs form data with the submitter value.
  * It utilizes the submitter argument on the FormData constructor from modern browsers
  * with a fallback to append the submitter value if it is not supported.
@@ -217,16 +227,24 @@ export function requestIntent(
  */
 export function getFormData(
 	form: HTMLFormElement,
-	submitter?: HTMLInputElement | HTMLButtonElement | null,
+	submitter?: HTMLElement | null,
 ): FormData {
 	const payload = new FormData(form, submitter);
 
-	if (submitter && submitter.type === 'submit' && submitter.name !== '') {
-		const entries = payload.getAll(submitter.name);
+	if (submitter) {
+		if (!isSubmitter(submitter)) {
+			throw new TypeError(
+				'The submitter element must be a button or input element with type submit',
+			);
+		}
 
-		// This assumes the submitter value to be always unique, which should be fine in most cases
-		if (!entries.includes(submitter.value)) {
-			payload.append(submitter.name, submitter.value);
+		if (submitter.name) {
+			const entries = payload.getAll(submitter.name);
+
+			// This assumes the submitter value to be always unique, which should be fine in most cases
+			if (!entries.includes(submitter.value)) {
+				payload.append(submitter.name, submitter.value);
+			}
 		}
 	}
 
