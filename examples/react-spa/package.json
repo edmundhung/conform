@@ -10,8 +10,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"conform-react": "0.0.3",
-		"conform-zod": "0.0.3",
+		"conform-react": "0.0.4",
+		"conform-zod": "0.0.4",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-router": "^7.1.5",

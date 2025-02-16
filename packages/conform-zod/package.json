@@ -3,7 +3,7 @@
 	"description": "A utility library for parsing form data and deriving validation attributes using Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"main": "./dist/index.js",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.ts",
