@@ -15,7 +15,12 @@ import {
 	report,
 	requestIntent,
 } from 'conform-dom';
-import type { FormIntent, FormState, UnknownIntent } from './control';
+import type {
+	FormAction,
+	FormIntent,
+	FormState,
+	UnknownIntent,
+} from './control';
 import { applyIntent, control } from './control';
 import {
 	type Prettify,
@@ -77,17 +82,15 @@ export type ValidateHandler<FormShape, ErrorShape, Value> = (
 	  >
 	| undefined;
 
-export type Formupdate<FormShape, ErrorShape> = {
-	type: 'server' | 'client' | 'client-async';
-	result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
-	state: {
-		prev: FormState<FormShape, ErrorShape>;
-		next: FormState<FormShape, ErrorShape>;
-	};
-};
-
 export type UpdateHandler<FormShape, ErrorShape> = (
-	update: Formupdate<FormShape, ErrorShape>,
+	action: FormAction<
+		FormShape,
+		ErrorShape,
+		{
+			prevState: FormState<FormShape, ErrorShape>;
+			nextState: FormState<FormShape, ErrorShape>;
+		}
+	>,
 ) => void;
 
 export type FormStateHandler<
@@ -96,15 +99,15 @@ export type FormStateHandler<
 	ErrorShape = unknown,
 > = (
 	state: State,
-	update: {
-		type: 'server' | 'client' | 'client-async';
-		result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
-		reset: () => State;
-		state: {
-			prev: FormState<FormShape, ErrorShape>;
-			next: FormState<FormShape, ErrorShape>;
-		};
-	},
+	ctx: FormAction<
+		FormShape,
+		ErrorShape,
+		{
+			prevState: FormState<FormShape, ErrorShape>;
+			nextState: FormState<FormShape, ErrorShape>;
+			reset: () => State;
+		}
+	>,
 ) => State;
 
 export type SubmitHandler<FormShape, ErrorShape, Value> = (
@@ -125,11 +128,19 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
 export const DEFAULT_INTENT = '__intent__';
 
 export type FormControlOptions<FormShape, ErrorShape, Value> = {
-	lastResult?: SubmissionResult<FormShape, ErrorShape, FormIntent> | null;
+	lastResult?: SubmissionResult<
+		NoInfer<FormShape>,
+		NoInfer<ErrorShape>,
+		FormIntent
+	> | null;
 	intentName?: string;
-	onUpdate?: UpdateHandler<FormShape, ErrorShape>;
 	onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
-	onSubmit?: SubmitHandler<FormShape, ErrorShape, Value>;
+	onUpdate?: UpdateHandler<NoInfer<FormShape>, NoInfer<ErrorShape>>;
+	onSubmit?: SubmitHandler<
+		NoInfer<FormShape>,
+		NoInfer<ErrorShape>,
+		NoInfer<Value>
+	>;
 };
 
 export function useFormControl<FormShape, ErrorShape, Value = undefined>(
@@ -154,15 +165,17 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 			const result = control.updateState(state, {
 				type: 'server',
 				result: lastResult,
-				reset: () => state,
+				ctx: {
+					reset: () => state,
+				},
 			});
 
 			options?.onUpdate?.({
 				type: 'server',
 				result: lastResult,
-				state: {
-					prev: state,
-					next: result,
+				ctx: {
+					prevState: state,
+					nextState: result,
 				},
 			});
 
@@ -196,8 +209,10 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 				const state = control.updateState(form.state, {
 					type: options.type,
 					result,
-					reset() {
-						return control.initializeState<FormShape, ErrorShape>();
+					ctx: {
+						reset() {
+							return control.initializeState<FormShape, ErrorShape>();
+						},
 					},
 				});
 				const intent = result.intent;
@@ -229,9 +244,9 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 				onUpdate?.({
 					type: options.type,
 					result,
-					state: {
-						prev: form.state,
-						next: state,
+					ctx: {
+						prevState: form.state,
+						nextState: state,
 					},
 				});
 
@@ -458,7 +473,16 @@ export function useFormState<State>(
 	const argsRef = useRef([handler, options.initialState] as const);
 	const [state, setState] = useState(options.initialState);
 	const handleUpdate = useCallback(
-		<FormShape, ErrorShape>(update: Formupdate<FormShape, ErrorShape>) => {
+		<FormShape, ErrorShape>(
+			action: FormAction<
+				FormShape,
+				ErrorShape,
+				{
+					prevState: FormState<FormShape, ErrorShape>;
+					nextState: FormState<FormShape, ErrorShape>;
+				}
+			>,
+		) => {
 			const [handle, initialState] = argsRef.current;
 
 			setState((currentState) => {
@@ -471,13 +495,16 @@ export function useFormState<State>(
 					}
 				};
 
-				if (update.result.value === null) {
+				if (action.result.value === null) {
 					return reset();
 				}
 
 				return handle(currentState, {
-					...update,
-					reset,
+					...action,
+					ctx: {
+						...action.ctx,
+						reset,
+					},
 				});
 			});
 		},

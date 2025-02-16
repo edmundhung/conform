@@ -34,6 +34,12 @@ function createSchema(constraint: {
 				}),
 			),
 		content: z.string(),
+		file: z
+			.instanceof(File)
+			.optional()
+			.refine((file) => {
+				return !file || file.size <= 3 * 1024 * 1024;
+			}, 'File size must be less than 3MB'),
 		tasks: z
 			.array(
 				z.object({
@@ -117,12 +123,12 @@ export default function Example() {
 	const { state, handleSubmit, intent } = useFormControl(formId, {
 		lastResult,
 		intentName: 'intent',
-		onUpdate(update) {
-			console.log('Update', update);
-			updateStatus(update);
-		},
 		async onValidate(value) {
 			return resolveZodResult(await schema.safeParseAsync(value));
+		},
+		onUpdate(action) {
+			console.log(action);
+			updateStatus(action);
 		},
 		async onSubmit(event, { formData, update }) {
 			event.preventDefault();

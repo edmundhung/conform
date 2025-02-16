@@ -10,10 +10,19 @@ export type FormValue<
 		| null,
 > = Entry | FormValue<Entry | null>[] | { [key: string]: FormValue<Entry> };
 
+type WebFile = Pick<File, 'name' | 'size' | 'type' | 'lastModified'>;
+type Serializable<T> = T extends File
+	? WebFile
+	: T extends Array<infer U>
+		? Serializable<U>[]
+		: T extends object
+			? { [K in keyof T]: Serializable<T[K]> }
+			: T;
+
 export type FormError<FormShape, ErrorShape> = {
 	formError: ErrorShape | null;
 	fieldError: Record<string, ErrorShape>;
-	'~type'?: FormShape;
+	'~type'?: Serializable<FormShape>;
 };
 
 export type Submission<Entry extends FormDataEntryValue = FormDataEntryValue> =

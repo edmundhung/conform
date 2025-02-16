@@ -140,26 +140,30 @@ export function deserializeIntent(value: string): UnknownIntent {
 	};
 }
 
-export type FormContext<FormShape, ErrorShape, Intent> = {
+export type FormAction<FormShape, ErrorShape, Context> = {
 	type: 'server' | 'client' | 'client-async';
-	result: SubmissionResult<FormShape, ErrorShape, Intent>;
-	reset: () => FormState<FormShape, ErrorShape>;
+	result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+	ctx: Context;
 };
 
-export type FormControl<Intent extends UnknownIntent> = {
+export type FormControl = {
 	initializeState<FormShape, ErrorShape>(): FormState<FormShape, ErrorShape>;
 	updateState<FormShape, ErrorShape>(
 		state: FormState<FormShape, ErrorShape>,
-		ctx: FormContext<FormShape, ErrorShape, Intent>,
+		action: FormAction<
+			FormShape,
+			ErrorShape,
+			{ reset: () => FormState<FormShape, ErrorShape> }
+		>,
 	): FormState<FormShape, ErrorShape>;
-	serializeIntent(intent: Intent): string;
-	parseIntent(value: string): Intent | undefined;
+	serializeIntent(intent: FormIntent): string;
+	parseIntent(value: string): FormIntent | undefined;
 	updateValue(
 		value: Record<string, FormValue>,
-		intent: Intent,
+		intent: FormIntent,
 	): Record<string, FormValue> | null;
 	getSideEffect<FormShape, ErrorShape>(
-		intent: Intent,
+		intent: FormIntent,
 		state: FormState<FormShape, ErrorShape>,
 	): ((formElement: HTMLFormElement) => void) | null;
 };
@@ -243,9 +247,18 @@ export type FormIntent =
 	| UpdateIntent
 	| ListIntent;
 
-function baseUpdate<FormShape, ErrorShape, Intent>(
+function baseUpdate<FormShape, ErrorShape>(
 	state: FormState<FormShape, ErrorShape>,
-	{ type, result }: FormContext<FormShape, ErrorShape, Intent>,
+	{
+		type,
+		result,
+	}: FormAction<
+		FormShape,
+		ErrorShape,
+		{
+			reset: () => FormState<FormShape, ErrorShape>;
+		}
+	>,
 ): FormState<FormShape, ErrorShape> {
 	const value = result.value ?? result.submission.value;
 
@@ -284,7 +297,7 @@ function baseUpdate<FormShape, ErrorShape, Intent>(
 	});
 }
 
-export const control: FormControl<FormIntent> = {
+export const control: FormControl = {
 	initializeState() {
 		return {
 			keys: {},
@@ -295,12 +308,12 @@ export const control: FormControl<FormIntent> = {
 			touchedFields: [],
 		};
 	},
-	updateState(state, ctx) {
-		const { type, result, reset } = ctx;
+	updateState(state, action) {
+		const { type, result, ctx } = action;
 		const intent = result.intent;
 
 		if (result.value === null) {
-			return reset();
+			return ctx.reset();
 		}
 
 		// `sumission.value` might not be correct if there are pending intents
@@ -346,7 +359,7 @@ export const control: FormControl<FormIntent> = {
 			}
 
 			return mutate(state, {
-				...baseUpdate(state, ctx),
+				...baseUpdate(state, action),
 				// We don't want to update the submittedValue when it is a client-side validation
 				// As validate happens much more frequently than other intents, this will prevent unnecessary re-renders
 				submittedValue: type !== 'server' ? state.submittedValue : value,
@@ -391,7 +404,7 @@ export const control: FormControl<FormIntent> = {
 			}
 
 			return {
-				...baseUpdate(state, ctx),
+				...baseUpdate(state, action),
 				keys,
 				touchedFields,
 			};
@@ -439,7 +452,7 @@ export const control: FormControl<FormIntent> = {
 			}
 
 			return {
-				...baseUpdate(state, ctx),
+				...baseUpdate(state, action),
 				keys,
 				touchedFields,
 			};
@@ -499,13 +512,13 @@ export const control: FormControl<FormIntent> = {
 			}
 
 			return {
-				...baseUpdate(state, ctx),
+				...baseUpdate(state, action),
 				keys,
 				touchedFields,
 			};
 		}
 
-		return baseUpdate(state, ctx);
+		return baseUpdate(state, action);
 	},
 	serializeIntent(intent) {
 		return serializeIntent(intent);
