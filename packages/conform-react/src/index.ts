@@ -15,6 +15,8 @@ export {
 	applyIntent,
 } from './control';
 export {
+	type Fieldset,
+	type Field,
 	isTouched,
 	getError,
 	getSerializedValue,
