@@ -153,6 +153,7 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		intent?: Intent | null;
+		hideFields?: string[];
 		reset?: boolean;
 	},
 ): SubmissionResult<FormShape, ErrorShape, Intent, string>;
@@ -163,6 +164,7 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		intent?: Intent | null;
+		hideFields?: string[];
 		reset?: boolean;
 	},
 ): SubmissionResult<FormShape, ErrorShape, Intent>;
@@ -173,9 +175,35 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		intent?: Intent | null;
+		hideFields?: string[];
 		reset?: boolean;
 	},
 ): SubmissionResult<FormShape, ErrorShape, Intent> {
+	const value = options.reset
+		? null
+		: !options.value || submission.value === options.value
+			? undefined
+			: options.keepFile
+				? stripFiles(options.value)
+				: options.value;
+	const error = !options.error
+		? options.error
+		: {
+				formError: options.error.formError ?? null,
+				fieldError: options.error.fieldError ?? {},
+			};
+
+	if (options.hideFields) {
+		for (const name of options.hideFields) {
+			const paths = getPaths(name);
+
+			setValue(submission.value, paths, () => undefined);
+			if (value) {
+				setValue(value, paths, () => undefined);
+			}
+		}
+	}
+
 	return {
 		submission: options.keepFile
 			? submission
@@ -183,19 +211,8 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 					...submission,
 					value: stripFiles(submission.value),
 				},
-		value: options.reset
-			? null
-			: !options.value || submission.value === options.value
-				? undefined
-				: options.keepFile
-					? stripFiles(options.value)
-					: options.value,
-		error: !options.error
-			? options.error
-			: {
-					formError: options.error.formError ?? null,
-					fieldError: options.error.fieldError ?? {},
-				},
+		value,
+		error,
 		intent: options.intent,
 	};
 }
