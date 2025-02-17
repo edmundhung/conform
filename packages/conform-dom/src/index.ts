@@ -8,7 +8,7 @@ export {
 	requestSubmit,
 	requestIntent,
 } from './dom';
-export { parseSubmission, report } from './submission';
+export { parseSubmission, report, restoreResult } from './submission';
 export { getPaths, formatPaths, getValue, setValue } from './formdata';
 export { isPlainObject } from './util';
 export type {

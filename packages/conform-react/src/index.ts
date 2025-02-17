@@ -3,6 +3,7 @@ export {
 	type SubmissionResult,
 	type FormError,
 	type FormValue,
+	type Constraint,
 	parseSubmission,
 	report,
 	isInput,
