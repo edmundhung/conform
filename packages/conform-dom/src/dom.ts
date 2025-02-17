@@ -151,9 +151,7 @@ export function getFormMethod(
  * @param submitter The submitter element (optional)
  * @returns The created submit event
  */
-export function createSubmitEvent(
-	submitter?: HTMLInputElement | HTMLButtonElement | null,
-): SubmitEvent {
+export function createSubmitEvent(submitter?: HTMLElement | null): SubmitEvent {
 	return new SubmitEvent('submit', {
 		bubbles: true,
 		cancelable: true,

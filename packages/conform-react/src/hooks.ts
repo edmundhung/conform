@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
 import {
+	createSubmitEvent,
 	getFormData,
 	isInput,
 	parseSubmission,
@@ -257,8 +258,24 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 					sideEffects,
 				});
 			});
+
+			// We are currently focusing the first invalid input before the state is flushed
+			// Which seems to be safe to do so as we are not expecting the input element to be mounted/unmounted
+			// Is it necessary to trigger a re-render and do it in the `useEffect` hook?
+			if (result.error && result.intent === null) {
+				const formElement = getFormElement(formRef);
+
+				if (formElement) {
+					for (const element of formElement.elements) {
+						if (isInput(element) && result.error.fieldErrors[element.name]) {
+							element.focus();
+							break;
+						}
+					}
+				}
+			}
 		},
-		[],
+		[formRef],
 	);
 
 	useEffect(() => {
@@ -361,11 +378,7 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 
 							// If the form is meant to be submitted and there is no error
 							if (error === null && !submission.intent) {
-								const event = new SubmitEvent('submit', {
-									bubbles: true,
-									cancelable: true,
-									submitter: submitEvent.submitter,
-								});
+								const event = createSubmitEvent(submitEvent.submitter);
 
 								// Keep track of the submit event so we can skip validation on the next submit
 								lastAsyncResultRef.current = {
