@@ -9,8 +9,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"conform-react": "0.0.4",
-		"conform-zod": "0.0.4",
+		"conform-react": "0.0.5",
+		"conform-zod": "0.0.5",
 		"@emotion/react": "^11.10.0",
 		"@emotion/styled": "^11.10.0",
 		"@mui/material": "^5.10.2",

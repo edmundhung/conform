@@ -96,10 +96,10 @@ importers:
         specifier: ^11.10.5
         version: 11.11.0(@emotion/react@11.11.1(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       framer-motion:
         specifier: ^7.6.19
@@ -157,10 +157,10 @@ importers:
         specifier: ^2.0.18
         version: 2.1.3(react@18.3.1)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       react:
         specifier: ^18.3.1
@@ -227,10 +227,10 @@ importers:
         specifier: ^5.10.2
         version: 5.14.20(@emotion/react@11.11.1(@types/react@18.3.18)(react@18.3.1))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react@18.3.1))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       react:
         specifier: ^18.3.1
@@ -279,10 +279,10 @@ importers:
   examples/nextjs:
     dependencies:
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       next:
         specifier: 15.1.5
@@ -337,10 +337,10 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       react:
         specifier: ^18.3.1
@@ -401,10 +401,10 @@ importers:
         specifier: ^7.1.5
         version: 7.1.5(react-router@7.1.5(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(typescript@5.7.3)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       isbot:
         specifier: ^5.1.17
@@ -447,10 +447,10 @@ importers:
   examples/react-spa:
     dependencies:
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       react:
         specifier: ^19.0.0
@@ -511,10 +511,10 @@ importers:
         specifier: ^2.15.2
         version: 2.15.2(typescript@5.7.3)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       isbot:
         specifier: ^4.1.0
@@ -617,10 +617,10 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       conform-react:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-react
       conform-zod:
-        specifier: 0.0.4
+        specifier: 0.0.5
         version: link:../../packages/conform-zod
       date-fns:
         specifier: ^3.3.1
