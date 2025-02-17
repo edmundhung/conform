@@ -6,6 +6,7 @@ export {
 	type Constraint,
 	parseSubmission,
 	report,
+	restoreResult,
 	isInput,
 } from 'conform-dom';
 export {
