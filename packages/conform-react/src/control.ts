@@ -25,13 +25,12 @@ import {
 	mapItems,
 	deepEqual,
 	mapKeys,
-	mergeObjects,
 	insertItem,
 	reorderItems,
 	removeItem,
 	updateFieldValue,
 	getChildPaths,
-	generateKey,
+	generateRandomKey,
 	serialize,
 	mutate,
 } from './util';
@@ -67,10 +66,12 @@ export type FormState<FormShape, ErrorShape> = {
 export function updateKeys(
 	keys: Record<string, string[]> = {},
 	keyToBeRemoved: string,
-	updateKey: (key: string) => string | null,
+	updateKey?: (key: string) => string | null,
 ): Record<string, string[]> {
 	return mapKeys(keys, (field) =>
-		getChildPaths(keyToBeRemoved, field) !== null ? null : updateKey(field),
+		getChildPaths(keyToBeRemoved, field) !== null
+			? null
+			: updateKey?.(field) ?? field,
 	);
 }
 
@@ -84,21 +85,10 @@ export function modify<Data>(
 			throw new Error('The value must be an object');
 		}
 
-		return mergeObjects(data, value);
+		return value;
 	}
 
-	const paths = getPaths(name);
-	const prevValue = getValue(data, paths);
-	const nextValue =
-		isPlainObject(prevValue) && isPlainObject(value)
-			? mergeObjects(prevValue, value)
-			: value;
-
-	if (deepEqual(prevValue, nextValue)) {
-		return data;
-	}
-
-	return setValue(data, paths, nextValue, { clone: true });
+	return setValue(data, getPaths(name), value, { clone: true });
 }
 
 export type UnknownIntent = {
@@ -353,6 +343,22 @@ export const control: FormControl = {
 			});
 		}
 
+		if (intent?.type === 'update') {
+			let keys = state.keys;
+
+			// Update the keys only for client updates to avoid double updates if there is no client validation
+			if (type === 'client') {
+				const name = getName(intent.payload.name, intent.payload.index);
+				// Remove all child keys
+				keys = name === '' ? {} : updateKeys(state.keys, name);
+			}
+
+			return {
+				...baseUpdate(state, action),
+				keys,
+			};
+		}
+
 		if (intent?.type === 'insert') {
 			const list = getListValue(submittedValue, intent.payload.name);
 			const index = intent.payload.index ?? list.length;
@@ -368,14 +374,14 @@ export const control: FormControl = {
 
 			let keys = state.keys;
 
-			// Update the keys only for client updates to avoid double updates if the validation is server-side
+			// Update the keys only for client updates to avoid double updates if there is no client validation
 			if (type === 'client') {
 				const listKeys = Array.from(
 					state.keys[intent.payload.name] ??
 						getDefaultListKey(submittedValue, intent.payload.name),
 				);
 
-				insertItem(listKeys, generateKey(), index);
+				insertItem(listKeys, generateRandomKey(), index);
 
 				keys = {
 					// Remove all child keys
@@ -416,7 +422,7 @@ export const control: FormControl = {
 
 			let keys = state.keys;
 
-			// Update the keys only for client updates to avoid double updates if the validation is server-side
+			// Update the keys only for client updates to avoid double updates if there is no client validation
 			if (type === 'client') {
 				const listKeys = Array.from(
 					state.keys[intent.payload.name] ??
@@ -476,7 +482,7 @@ export const control: FormControl = {
 
 			let keys = state.keys;
 
-			// Update the keys only for client updates to avoid double updates if the validation is server-side
+			// Update the keys only for client updates to avoid double updates if there is no client validation
 			if (type === 'client') {
 				const listKeys = Array.from(
 					state.keys[intent.payload.name] ??
@@ -595,11 +601,11 @@ export const control: FormControl = {
 
 						if (paths) {
 							updateFieldValue(element, {
-								value: serialize(getValue(intent.payload.value, paths)),
+								value: serialize(getValue(intent.payload.value, paths)) ?? '',
 							});
 
 							// Update the element attribute to notify that this is changed by Conform
-							element.dataset.conform = generateKey();
+							element.dataset.conform = generateRandomKey();
 						}
 					}
 				}

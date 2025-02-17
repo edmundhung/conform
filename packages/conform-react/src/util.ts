@@ -5,7 +5,6 @@ import {
 	getValue,
 	isPlainObject,
 	parseSubmission,
-	setValue,
 } from 'conform-dom';
 
 export type Prettify<T> = {
@@ -208,42 +207,6 @@ export function deepEqual<Value>(prev: Value, next: Value): boolean {
 	}
 
 	return false;
-}
-
-export function mergeObjects<
-	Obj extends Record<string | number | symbol, unknown>,
->(obj1: Obj, obj2: Obj) {
-	let result = obj1;
-
-	for (const key in obj2) {
-		const val1 = obj1[key];
-		const val2 = obj2[key];
-
-		let value = val2;
-
-		// If both objects have the same key, determine how to merge
-		if (Object.prototype.hasOwnProperty.call(obj1, key)) {
-			if (Array.isArray(val1) && Array.isArray(val2)) {
-				value = val2;
-			} else if (isPlainObject(val1) && isPlainObject(val2)) {
-				value = mergeObjects(val1, val2);
-			} else {
-				value = val2;
-			}
-		}
-
-		if (result[key] !== value) {
-			if (result === obj1) {
-				// If the result is still the same object, clone it
-				result = setValue(obj1, [key], value, { clone: true });
-			} else {
-				// Otherwise, update the result object
-				result[key] = value;
-			}
-		}
-	}
-
-	return result;
 }
 
 /**
@@ -468,58 +431,6 @@ export function updateFieldValue(
 	}
 }
 
-export function updateValidationAttributes(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	attributes: {
-		required?: boolean;
-		minLength?: number;
-		maxLength?: number;
-		min?: string | number;
-		max?: string | number;
-		step?: string | number;
-		multiple?: boolean;
-		pattern?: string;
-	},
-): void {
-	if (
-		typeof attributes.required !== 'undefined' &&
-		// If the element is a part of the checkbox group, it is unclear whether all checkboxes are required or only one.
-		!(
-			element.type === 'checkbox' &&
-			element.form?.elements.namedItem(element.name) instanceof RadioNodeList
-		)
-	) {
-		element.required = attributes.required;
-	}
-
-	if (typeof attributes.multiple !== 'undefined' && 'multiple' in element) {
-		element.multiple = attributes.multiple;
-	}
-
-	if (typeof attributes.minLength !== 'undefined' && 'minLength' in element) {
-		element.minLength = attributes.minLength;
-	}
-
-	if (typeof attributes.maxLength !== 'undefined' && 'maxLength' in element) {
-		element.maxLength = attributes.maxLength;
-	}
-	if (typeof attributes.min !== 'undefined' && 'min' in element) {
-		element.min = `${attributes.min}`;
-	}
-
-	if (typeof attributes.max !== 'undefined' && 'max' in element) {
-		element.max = `${attributes.max}`;
-	}
-
-	if (typeof attributes.step !== 'undefined' && 'step' in element) {
-		element.step = `${attributes.step}`;
-	}
-
-	if (typeof attributes.pattern !== 'undefined' && 'pattern' in element) {
-		element.pattern = attributes.pattern;
-	}
-}
-
 /**
  * Check if the value is a File
  */
@@ -532,7 +443,10 @@ export function isFile(obj: unknown): obj is File {
 	return obj instanceof File;
 }
 
-export function generateKey(): string {
+/**
+ * A simple random key generator
+ */
+export function generateRandomKey(): string {
 	return Math.floor(Date.now() * Math.random()).toString(36);
 }
 
@@ -545,7 +459,9 @@ export function serialize(value: unknown): string | string[] | undefined {
 		const result: string[] = [];
 
 		for (const item of value) {
-			const serializedItem = serialize(item);
+			// People might set the defaultValue to `null` or `undefined`
+			// We will treat it as an empty string here
+			const serializedItem = serialize(item) ?? '';
 
 			if (typeof serializedItem !== 'string') {
 				return;
@@ -592,7 +508,7 @@ export function normalize<Value extends Record<string, unknown>>(
 			}
 
 			// File can not be serialized, so we store it in a map and replace it with a key
-			const key = generateKey();
+			const key = generateRandomKey();
 			fileStore.set(key, value);
 
 			return key;

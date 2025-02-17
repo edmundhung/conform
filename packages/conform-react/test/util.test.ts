@@ -1,6 +1,5 @@
 import { test, expect } from 'vitest';
 import {
-	mergeObjects,
 	flatten,
 	addItems,
 	configureListIndexUpdate,
@@ -8,77 +7,6 @@ import {
 	mapKeys,
 	isChildField,
 } from '../src/util';
-
-test('mergeObjects()', () => {
-	// merge for string, different data types, list, new object, undefined, null
-	const obj1 = {
-		email: 'tom@test.com',
-		lastLogin: 'Tuesday',
-		tasks: {
-			task1: 'buy coffee bean',
-			budget: undefined,
-			amount: null,
-			note: undefined,
-			by: ['Tom'],
-		},
-		counts: [1, 3, 5],
-	};
-	const obj2 = {
-		email: 'mary@test.com',
-		lastLogin: 2103,
-		tasks: {
-			task1: 'buy coffee bean',
-			task2: 'make coffee',
-			// Undefined value will be skipped
-			task3: undefined,
-			spend: null,
-			note: 'prefer medium roasted',
-			by: ['Tom', 'Mary'],
-		},
-		counts: [2],
-	};
-
-	// overwrite is true
-	// @ts-expect-error
-	expect(mergeObjects(obj1, obj2, true)).toEqual({
-		email: 'mary@test.com',
-		lastLogin: 2103,
-		tasks: {
-			task1: 'buy coffee bean',
-			task2: 'make coffee',
-			budget: undefined,
-			amount: null,
-			spend: null,
-			note: 'prefer medium roasted',
-			by: ['Tom', 'Mary'],
-		},
-		counts: [2],
-	});
-
-	// overwrite is false
-	// @ts-expect-error
-	expect(mergeObjects(obj1, obj2, false)).toEqual({
-		email: 'tom@test.com',
-		lastLogin: 'Tuesday',
-		tasks: {
-			task1: 'buy coffee bean',
-			task2: 'make coffee',
-			budget: undefined,
-			amount: null,
-			spend: null,
-			note: undefined,
-			by: ['Tom', 'Mary'],
-		},
-		counts: [2],
-	});
-
-	// No mutation if no changes
-	const obj3 = { email: 'abc@test.com', lastLogin: 'Webnesday' };
-	expect(mergeObjects(obj1, obj3, false)).toBe(obj1);
-
-	const obj4 = { email: 'tom@test.com', lastLogin: 'Tuesday' };
-	expect(mergeObjects(obj1, obj4, true)).toBe(obj1);
-});
 
 test('flatten()', () => {
 	const file1 = new File([], 'example.txt');

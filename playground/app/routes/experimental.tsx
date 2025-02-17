@@ -316,13 +316,16 @@ export default function Example() {
 						type: 'update',
 						payload: {
 							value: {
-								title: 'Update title',
-								content: 'And the content',
+								content: 'Test',
+								tasks: [
+									{ title: 'First', done: true },
+									{ title: 'Second', done: false },
+								],
 							},
 						},
 					})}
 				>
-					Partial update
+					Update form value
 				</button>
 			</div>
 			<div>

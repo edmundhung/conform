@@ -150,9 +150,9 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 ): SubmissionResult<FormShape, ErrorShape, Intent> {
 	const value = options.reset
 		? null
-		: !options.value || submission.value === options.value
+		: typeof options.value === 'undefined' || submission.value === options.value
 			? undefined
-			: options.keepFile
+			: options.value && options.keepFile
 				? stripFiles(options.value)
 				: options.value;
 	const error = !options.error
