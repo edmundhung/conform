@@ -31,21 +31,22 @@ export type FormError<FormShape, ErrorShape = string[]> = {
 /**
  * The data of a form submission.
  */
-export type Submission<Entry extends FormDataEntryValue = FormDataEntryValue> =
-	{
-		/**
-		 * The form value structured following the naming convention.
-		 */
-		value: Record<string, FormValue<Entry>>;
-		/**
-		 * The field names that are included in the FormData or URLSearchParams.
-		 */
-		fields: string[];
-		/**
-		 * The intent of the submission. This is usally included by specifying a name and value on a submit button.
-		 */
-		intent: string | null;
-	};
+export type Submission<
+	ValueType extends FormDataEntryValue = FormDataEntryValue,
+> = {
+	/**
+	 * The form value structured following the naming convention.
+	 */
+	value: Record<string, FormValue<ValueType>>;
+	/**
+	 * The field names that are included in the FormData or URLSearchParams.
+	 */
+	fields: string[];
+	/**
+	 * The intent of the submission. This is usally included by specifying a name and value on a submit button.
+	 */
+	intent: string | null;
+};
 
 /**
  * The result of a submission.
@@ -54,16 +55,18 @@ export type SubmissionResult<
 	FormShape,
 	ErrorShape,
 	Intent,
-	Entry extends FormDataEntryValue = FormDataEntryValue,
+	ValueType extends JsonPrimitive | FormDataEntryValue =
+		| JsonPrimitive
+		| FormDataEntryValue,
 > = {
 	/**
 	 * The corresponding submission.
 	 */
-	submission: Submission<Entry>;
+	submission: Submission<ValueType extends File ? FormDataEntryValue : string>;
 	/**
 	 * The result value of the submission. Defined only when the result value is different from the submitted value.
 	 */
-	value?: Record<string, FormValue<Entry | number | boolean | null>> | null;
+	value?: Record<string, FormValue<ValueType>> | null;
 	/**
 	 * The error of the result value or submission value.
 	 */

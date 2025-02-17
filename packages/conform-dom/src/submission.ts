@@ -1,5 +1,11 @@
 import { setValue, getPaths } from './formdata';
-import { FormError, FormValue, Submission, SubmissionResult } from './type';
+import {
+	FormError,
+	FormValue,
+	JsonPrimitive,
+	Submission,
+	SubmissionResult,
+} from './type';
 import { stripFiles } from './util';
 
 /**
@@ -114,7 +120,12 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		hideFields?: string[];
 		reset?: boolean;
 	},
-): SubmissionResult<FormShape, ErrorShape, Intent, string>;
+): SubmissionResult<
+	FormShape,
+	ErrorShape,
+	Intent,
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+>;
 export function report<FormShape, ErrorShape = string[], Intent = never>(
 	submission: Submission,
 	options: {
@@ -173,4 +184,49 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 		error,
 		intent: options.intent,
 	};
+}
+
+/**
+ * Restore the submission result with the specified value and error.
+ *
+ * @example
+ * ```ts
+ * restoreResult(initialValue, {
+ *   initialError: {
+ *     formErrors: ['...'],
+ *   },
+ * })
+ */
+export function restoreResult<FormShape, ErrorShape = string[]>(
+	initialValue: Record<string, FormValue>,
+	options?: {
+		initialError?: Partial<FormError<FormShape, ErrorShape>> | null;
+	},
+): SubmissionResult<
+	FormShape,
+	ErrorShape,
+	null,
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+> {
+	const fields: string[] = [];
+
+	if (options?.initialError?.formErrors) {
+		fields.push('');
+	}
+
+	if (options?.initialError?.fieldErrors) {
+		fields.push(...Object.keys(options.initialError.fieldErrors));
+	}
+
+	return report(
+		{
+			value: {},
+			fields,
+			intent: null,
+		},
+		{
+			value: initialValue,
+			error: options?.initialError,
+		},
+	);
 }

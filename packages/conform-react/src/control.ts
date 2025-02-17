@@ -333,21 +333,7 @@ export const control: FormControl = {
 				// But the schema might have an error on those fields, so we need to include them
 				if (result.error) {
 					for (const name of Object.keys(result.error.fieldErrors)) {
-						// If the error is set as a child of an actual field, exclude it
-						// e.g. A multi file input field (name="files") but the error is set on the first file (i.e. files[0])
-						if (
-							fields.find(
-								(field) =>
-									field !== name && getChildPaths(field, name) !== null,
-							)
-						) {
-							continue;
-						}
-
-						// If the name is not a child of any fields, this could be an unchecked checkbox or an empty multi select
-						if (fields.every((field) => getChildPaths(name, field) === null)) {
-							fields.push(name);
-						}
+						addItem(fields, name);
 					}
 				}
 

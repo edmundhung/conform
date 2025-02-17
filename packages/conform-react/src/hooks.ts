@@ -11,6 +11,7 @@ import {
 import type { FormError, FormValue, SubmissionResult } from 'conform-dom';
 import {
 	getFormData,
+	isInput,
 	parseSubmission,
 	report,
 	requestIntent,
@@ -31,6 +32,7 @@ import {
 	resolveValidateResult,
 	updateFieldValue,
 	mutate,
+	addItem,
 } from './util';
 import { createFormObserver } from './observer';
 
@@ -306,6 +308,14 @@ export function useFormControl<FormShape, ErrorShape, Value = undefined>(
 			const submission = parseSubmission(formData, {
 				intentName,
 			});
+
+			// Find all input fields in the form
+			for (const element of formElement.elements) {
+				if (isInput(element) && element.name) {
+					addItem(submission.fields, element.name);
+				}
+			}
+
 			const [intent, value] = applyIntent(submission, {
 				pendingIntents: Array.from(pendingIntentsRef.current),
 			});
