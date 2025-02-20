@@ -602,31 +602,20 @@ export type InputControl = {
 	register: React.RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;
-	/**
-	 * @deprecated Use `changed()` instead
-	 */
 	change(value: string | string[]): void;
-	/**
-	 * @deprecated Use `focused()` instead
-	 */
 	focus(): void;
-	/**
-	 * @deprecated Use `blurred()` instead
-	 */
 	blur(): void;
-	changed(value: string | string[]): void;
-	focused(): void;
-	blurred(): void;
 	visuallyHiddenProps: typeof visuallyHiddenProps;
 };
 
 export function useInput(
 	defaultValue?: string | string[] | null,
 ): InputControl {
-	const initialValue =
-		typeof defaultValue === 'string'
+	const initialValue = useMemo(() => {
+		return typeof defaultValue === 'string'
 			? [defaultValue]
 			: defaultValue ?? undefined;
+	}, [defaultValue]);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -634,53 +623,40 @@ export function useInput(
 		| null
 		| undefined
 	>();
-	const isResetRef = useRef(false);
-	const previousValueRef = useRef(initialValue);
+	const valueRef = useRef(initialValue);
 	const eventDispatching = useRef<Record<string, boolean>>({});
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) =>
 				formObserver.onInputUpdated((element, reason) => {
 					if (element === inputRef.current) {
-						// As not every UI library will reset the input value when the reset event is dispatched
-						// We will update the value manually to force the UI library to update the input value
-						isResetRef.current = reason === 'reset';
+						const prev = valueRef.current;
+						const next =
+							reason === 'reset'
+								? initialValue
+								: element instanceof HTMLSelectElement && element.multiple
+									? Array.from(element.selectedOptions).map(
+											(option) => option.value,
+										)
+									: element instanceof HTMLInputElement &&
+										  (element.type === 'radio' || element.type === 'checkbox')
+										? element.checked
+											? [element.value]
+											: []
+										: [element.value];
+
+						if (deepEqual(prev, next)) {
+							return;
+						}
+
+						valueRef.current = next;
 						callback();
 					}
 				}),
-			[],
+			[initialValue],
 		),
-		() => {
-			const prev = previousValueRef.current;
-
-			let next = initialValue;
-
-			if (inputRef.current && !isResetRef.current) {
-				const element = inputRef.current;
-				const isMultipleSelect =
-					element instanceof HTMLSelectElement && element.multiple;
-				const isRadioOrCheckbox =
-					element instanceof HTMLInputElement &&
-					(element.type === 'radio' || element.type === 'checkbox');
-
-				next = isMultipleSelect
-					? Array.from(element.selectedOptions).map((option) => option.value)
-					: isRadioOrCheckbox
-						? element.checked
-							? [element.value]
-							: []
-						: [element.value];
-			}
-
-			if (deepEqual(prev, next)) {
-				return prev;
-			}
-
-			previousValueRef.current = next;
-
-			return next;
-		},
-		() => previousValueRef.current,
+		() => valueRef.current,
+		() => valueRef.current,
 	);
 
 	useEffect(() => {
@@ -710,9 +686,9 @@ export function useInput(
 	}, []);
 
 	const control = useMemo<{
-		changed(value: string | string[]): void;
-		focused(): void;
-		blurred(): void;
+		change(value: string | string[]): void;
+		focus(): void;
+		blur(): void;
 		register: React.RefCallback<
 			HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 		>;
@@ -721,7 +697,7 @@ export function useInput(
 			register(element) {
 				inputRef.current = element;
 			},
-			changed(value) {
+			change(value) {
 				const element = inputRef.current;
 
 				if (element) {
@@ -735,7 +711,7 @@ export function useInput(
 					element.dispatchEvent(new Event('change', { bubbles: true }));
 				}
 			},
-			focused() {
+			focus() {
 				if (eventDispatching.current.focusin) {
 					return;
 				}
@@ -750,7 +726,7 @@ export function useInput(
 					);
 				}
 			},
-			blurred() {
+			blur() {
 				if (eventDispatching.current.focusout) {
 					return;
 				}
@@ -772,12 +748,9 @@ export function useInput(
 		value: value?.[0],
 		selected: value,
 		register: control.register,
-		change: control.changed,
-		focus: control.focused,
-		blur: control.blurred,
-		changed: control.changed,
-		focused: control.focused,
-		blurred: control.blurred,
+		change: control.change,
+		focus: control.focus,
+		blur: control.blur,
 		visuallyHiddenProps,
 	};
 }

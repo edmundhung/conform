@@ -42,10 +42,10 @@ export function ExampleSelect({
 			/>
 			<RadixSelect.Root
 				value={input.value ?? ''}
-				onValueChange={(value) => input.changed(value)}
+				onValueChange={(value) => input.change(value)}
 				onOpenChange={(open) => {
 					if (!open) {
-						input.blurred();
+						input.blur();
 					}
 				}}
 			>
@@ -129,8 +129,8 @@ export function ExampleToggleGroup({
 				className={
 					'flex flex-row items-center p-1 gap-0 bg-neutral-200 rounded-lg max-w-md'
 				}
-				onValueChange={(value) => input.changed(value)}
-				onBlur={() => input.blurred()}
+				onValueChange={(value) => input.change(value)}
+				onBlur={() => input.blur()}
 			>
 				{items.map((item) => (
 					<RadixToggleGroup.Item
@@ -177,9 +177,9 @@ export function ExampleSwitch({
 				ref={switchRef}
 				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? value : '');
+					input.change(checked ? value : '');
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 				className="w-[42px] h-[25px] bg-amber-700/30 rounded-full relative focus:ring-2 focus:ring-amber-500 data-[state=checked]:bg-amber-700 outline-none cursor-default"
 			>
 				<RadixSwitch.Thumb className="block size-5 bg-white rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
@@ -218,9 +218,9 @@ export function ExampleSlider({
 				className="relative flex items-center select-none touch-none w-full h-5"
 				max={max}
 				onValueChange={(value) => {
-					input.changed(value[0].toString());
+					input.change(value[0].toString());
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 				step={1}
 			>
 				<RadixSlider.Track className="bg-neutral-400 relative grow rounded-full h-1">
@@ -265,8 +265,8 @@ export function ExampleRadioGroup({
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
 				value={input.value ?? ''}
-				onValueChange={(value) => input.changed(value)}
-				onBlur={() => input.blurred()}
+				onValueChange={(value) => input.change(value)}
+				onBlur={() => input.blur()}
 			>
 				{items.map((item) => {
 					return (
@@ -322,9 +322,9 @@ export function ExampleCheckbox({
 				ref={checkboxRef}
 				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? value : '');
+					input.change(checked ? value : '');
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 				className="hover:bg-amber-50 flex size-5 appearance-none items-center justify-center rounded-md bg-white outline-none border focus:ring-amber-500 focus:ring-2"
 			>
 				<RadixCheckbox.Indicator className="text-amber-900">

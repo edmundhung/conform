@@ -26,8 +26,8 @@ export function ExampleNumberInput({ name, defaultValue }: ExampleNumberProps) {
 			isRequired
 			name={name}
 			value={input.value ?? ''}
-			onChange={(value) => input.changed(value)}
-			onBlur={() => input.blurred()}
+			onChange={(value) => input.change(value)}
+			onBlur={() => input.blur()}
 			defaultValue={defaultValue}
 		>
 			<NumberInputField ref={input.register} />
@@ -58,12 +58,12 @@ export function ExamplePinInput({ name, defaultValue }: ExamplePinProps) {
 			<PinInput
 				type="alphanumeric"
 				value={input.value ?? ''}
-				onChange={(value) => input.changed(value)}
+				onChange={(value) => input.change(value)}
 			>
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
-				<PinInputField onBlur={() => input.blurred()} />
+				<PinInputField onBlur={() => input.blur()} />
+				<PinInputField onBlur={() => input.blur()} />
+				<PinInputField onBlur={() => input.blur()} />
+				<PinInputField onBlur={() => input.blur()} />
 			</PinInput>
 		</>
 	);
@@ -90,8 +90,8 @@ export function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 				max={10}
 				step={1}
 				value={input.value ? Number(input.value) : 0}
-				onChange={(number) => input.changed(number.toString())}
-				onBlur={() => input.blurred()}
+				onChange={(number) => input.change(number.toString())}
+				onBlur={() => input.blur()}
 			>
 				<SliderTrack>
 					<SliderFilledTrack />

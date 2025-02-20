@@ -186,8 +186,10 @@ export function getMetadata<
 	fields: Fieldset<FormShape, Prettify<FieldMetadata>>;
 } {
 	const initialValue = state.submittedValue ?? options?.defaultValue ?? null;
-	const defineFormMetadata = options?.defineFormMetadata ?? ((i) => i);
-	const defineFieldMetadata = options?.defineFieldMetadata ?? ((i) => i);
+	const defineFormMetadata =
+		options?.defineFormMetadata ?? ((defaultMetadata) => defaultMetadata);
+	const defineFieldMetadata =
+		options?.defineFieldMetadata ?? ((_, defaultMetadata) => defaultMetadata);
 
 	return {
 		form: defineFormMetadata({

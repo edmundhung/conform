@@ -26,7 +26,7 @@ export function ExampleListBox({ name, defaultValue }: ExampleListBoxProps) {
 	return (
 		<Listbox
 			value={input.selected ?? []}
-			onChange={(value) => input.changed(value)}
+			onChange={(value) => input.change(value)}
 			multiple
 		>
 			<select
@@ -38,7 +38,7 @@ export function ExampleListBox({ name, defaultValue }: ExampleListBoxProps) {
 			>
 				{defaultValue?.map((item) => <option key={item} value={item} />)}
 			</select>
-			<div className="relative mt-1" onBlur={() => input.blurred()}>
+			<div className="relative mt-1" onBlur={() => input.blur()}>
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
 						{!input.selected || input.selected.length === 0
@@ -115,8 +115,8 @@ export function ExampleCombobox({ name, defaultValue }: ExampleComboboxProps) {
 		<Combobox
 			as="div"
 			value={input.value ?? ''}
-			onChange={(value) => input.changed(value ?? '')}
-			onBlur={() => input.blurred()}
+			onChange={(value) => input.change(value ?? '')}
+			onBlur={() => input.blur()}
 			nullable
 		>
 			<div className="relative mt-1">
@@ -209,8 +209,8 @@ export function ExampleSwitch({
 			/>
 			<Switch
 				checked={input.value === value}
-				onChange={(state) => input.changed(state ? value : '')}
-				onBlur={() => input.blurred()}
+				onChange={(state) => input.change(state ? value : '')}
+				onBlur={() => input.blur()}
 				className={classNames(
 					input.value ? 'bg-indigo-600' : 'bg-gray-200',
 					'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2',
@@ -258,8 +258,8 @@ export function ExampleRadioGroup({
 	return (
 		<RadioGroup
 			value={input.value ?? ''}
-			onChange={(value) => input.changed(value)}
-			onBlur={() => input.blurred()}
+			onChange={(value) => input.change(value)}
+			onBlur={() => input.blur()}
 		>
 			<input
 				{...input.visuallyHiddenProps}

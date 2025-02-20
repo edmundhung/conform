@@ -70,7 +70,7 @@ function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
 			<Popover
 				onOpenChange={(open) => {
 					if (!open) {
-						input.blurred();
+						input.blur();
 					}
 				}}
 			>
@@ -95,7 +95,7 @@ function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
 					<Calendar
 						mode="single"
 						selected={new Date(input.value ?? '')}
-						onSelect={(value) => input.changed(value?.toISOString() ?? '')}
+						onSelect={(value) => input.change(value?.toISOString() ?? '')}
 						initialFocus
 					/>
 				</PopoverContent>
@@ -140,7 +140,7 @@ function ExampleCountryPicker({
 			<Popover
 				onOpenChange={(open) => {
 					if (!open) {
-						input.blurred();
+						input.blur();
 					}
 				}}
 			>
@@ -173,7 +173,7 @@ function ExampleCountryPicker({
 										value={country.label}
 										key={country.value}
 										onSelect={() => {
-											input.changed(country.value);
+											input.change(country.value);
 										}}
 									>
 										<Check
@@ -223,8 +223,8 @@ function ExampleRadioGroup({
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
 				value={input.value ?? ''}
-				onValueChange={(value) => input.changed(value)}
-				onBlur={() => input.blurred()}
+				onValueChange={(value) => input.change(value)}
+				onBlur={() => input.blur()}
 			>
 				{items.map((item) => {
 					return (
@@ -262,16 +262,16 @@ function ExampleCheckbox({
 				defaultChecked={defaultChecked}
 				name={name}
 				value={value}
-				onFocus={() => input.focused()}
+				onFocus={() => input.focus()}
 			/>
 			<Checkbox
 				ref={checkboxRef}
 				value={value}
 				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? value : '');
+					input.change(checked ? value : '');
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 			/>
 		</>
@@ -310,10 +310,10 @@ function ExampleSelect({
 			</select>
 			<Select
 				value={input.value}
-				onValueChange={(value) => input.changed(value)}
+				onValueChange={(value) => input.change(value)}
 				onOpenChange={(open) => {
 					if (!open) {
-						input.blurred();
+						input.blur();
 					}
 				}}
 			>
@@ -364,9 +364,9 @@ function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 					step={1}
 					value={[input.value ? parseFloat(input.value) : 0]}
 					onValueChange={(numbers) => {
-						input.changed(numbers[0]?.toString());
+						input.change(numbers[0]?.toString());
 					}}
-					onBlur={() => input.blurred()}
+					onBlur={() => input.blur()}
 					className="w-[280px]"
 				/>
 				<div>{input.value}</div>
@@ -403,9 +403,9 @@ function ExampleSwitch({
 				ref={switchRef}
 				checked={input.value === value}
 				onCheckedChange={(checked) => {
-					input.changed(checked ? value : '');
+					input.change(checked ? value : '');
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 			/>
 		</>
@@ -440,9 +440,9 @@ function ExampleSingleToggleGroup({
 				ref={toggleGroupRef}
 				value={input.value}
 				onValueChange={(value) => {
-					input.changed(value);
+					input.change(value);
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 			>
 				{items.map((item) => (
 					<ToggleGroupItem key={item.value} value={item.value}>
@@ -485,9 +485,9 @@ function ExampleMultiToggleGroup({
 				ref={toggleGroupRef}
 				value={input.selected ?? []}
 				onValueChange={(value) => {
-					input.changed(value);
+					input.change(value);
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 			>
 				{items.map((item) => (
 					<ToggleGroupItem key={item.value} value={item.value}>
@@ -527,8 +527,8 @@ function ExampleInputOTP({
 			<InputOTP
 				ref={inputOTPRef}
 				value={input.value ?? ''}
-				onChange={(value) => input.changed(value)}
-				onBlur={() => input.blurred()}
+				onChange={(value) => input.change(value)}
+				onBlur={() => input.blur()}
 				maxLength={6}
 				pattern={pattern}
 			>

@@ -36,8 +36,8 @@ export function ExampleSelect({
 			<TextField
 				label={label}
 				value={input.value ?? ''}
-				onChange={(event) => input.changed(event.target.value)}
-				onBlur={() => input.blurred()}
+				onChange={(event) => input.change(event.target.value)}
+				onBlur={() => input.blur()}
 				error={!!error}
 				helperText={error}
 				select
@@ -72,8 +72,8 @@ export function ExampleAutocomplete({
 			disablePortal
 			options={options}
 			value={input.value ? input.value : null}
-			onChange={(_, option) => input.changed(option ?? '')}
-			onBlur={() => input.blurred()}
+			onChange={(_, option) => input.change(option ?? '')}
+			onBlur={() => input.blur()}
 			renderInput={(params) => (
 				<TextField
 					{...params}
@@ -82,7 +82,6 @@ export function ExampleAutocomplete({
 					name={name}
 					error={!!error}
 					helperText={error}
-					defaultValue={defaultValue}
 				/>
 			)}
 		/>
@@ -117,9 +116,9 @@ export function ExampleRating({
 				<Rating
 					value={input.value ? Number(input.value) : null}
 					onChange={(_, value) => {
-						input.changed(value?.toString() ?? '');
+						input.change(value?.toString() ?? '');
 					}}
-					onBlur={() => input.blurred()}
+					onBlur={() => input.blur()}
 				/>
 			</div>
 			<FormHelperText>{error}</FormHelperText>
@@ -161,9 +160,9 @@ export function ExampleSlider({
 						return;
 					}
 
-					input.changed(value.toString());
+					input.change(value.toString());
 				}}
-				onBlur={() => input.blurred()}
+				onBlur={() => input.blur()}
 			/>
 			<FormHelperText>{error}</FormHelperText>
 		</FormControl>

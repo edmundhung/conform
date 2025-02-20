@@ -144,7 +144,10 @@ export default function App() {
 						<FormHelperText>{fields.active.errors}</FormHelperText>
 					</FormControl>
 
-					<FormControl variant="standard" error={Boolean(fields.enabled.error)}>
+					<FormControl
+						variant="standard"
+						error={Boolean(fields.enabled.errors)}
+					>
 						<FormLabel>Enabled (Switch)</FormLabel>
 						<FormGroup>
 							<FormControlLabel
