@@ -7,7 +7,7 @@
  ╚══════╝  ╚═════╝  ╚═╝  ╚══╝ ╚═╝        ╚═════╝  ╚═╝   ╚═╝ ╚═╝   ╚═╝
 ```
 
-Version 1.2.2 / License MIT / Copyright (c) 2024 Edmund Hung
+Version 1.2.3 / License MIT / Copyright (c) 2024 Edmund Hung
 
 A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix and Next.js.
 
