@@ -1253,6 +1253,89 @@ describe('conform-zod', () => {
 				reply: expect.any(Function),
 			});
 		});
+
+		test('z.brand', () => {
+			const schema = z
+				.object({
+					a: z.string().brand(),
+					b: z.number().brand(),
+					c: z.boolean().brand(),
+					d: z.date().brand(),
+					e: z.instanceof(File).brand(),
+					f: z.string().optional().brand(),
+					g: z.string().brand().optional(),
+				})
+				.brand();
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', ''],
+						['b', ''],
+						['c', ''],
+						['d', ''],
+						['e', ''],
+						['f', ''],
+						['g', ''],
+					]),
+					{ schema },
+				),
+			).toEqual({
+				status: 'error',
+				payload: {
+					a: '',
+					b: '',
+					c: '',
+					d: '',
+					e: '',
+					f: '',
+					g: '',
+				},
+				error: {
+					a: ['Required'],
+					b: ['Required'],
+					c: ['Required'],
+					d: ['Required'],
+					e: ['Input not instance of File'],
+				},
+				reply: expect.any(Function),
+			});
+			const coercionTypesSchema = z.object({
+				a: z.string().brand(),
+				b: z.number().brand(),
+				c: z.boolean().brand(),
+				d: z.date().brand(),
+				e: z.bigint().brand(),
+			});
+			expect(
+				parseWithZod(
+					createFormData([
+						['a', 'hello world'],
+						['b', '42'],
+						['c', 'on'],
+						['d', '1970-01-01'],
+						['e', '0x1fffffffffffff'],
+					]),
+					{ schema: coercionTypesSchema },
+				),
+			).toEqual({
+				status: 'success',
+				payload: {
+					a: 'hello world',
+					b: '42',
+					c: 'on',
+					d: '1970-01-01',
+					e: '0x1fffffffffffff',
+				},
+				value: {
+					a: 'hello world',
+					b: 42,
+					c: true,
+					d: new Date('1970-01-01'),
+					e: BigInt('0x1fffffffffffff'),
+				},
+				reply: expect.any(Function),
+			});
+		});
 	});
 
 	test('parseWithZod with errorMap', () => {
