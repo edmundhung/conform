@@ -1254,7 +1254,7 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test('schema.brand', () => {
+		test('z.brand', () => {
 			const schema = z
 				.object({
 					a: z.string().brand(),
@@ -1263,6 +1263,7 @@ describe('conform-zod', () => {
 					d: z.date().brand(),
 					e: z.instanceof(File).brand(),
 					f: z.string().optional().brand(),
+					g: z.string().brand().optional(),
 				})
 				.brand();
 			expect(
@@ -1274,6 +1275,7 @@ describe('conform-zod', () => {
 						['d', ''],
 						['e', ''],
 						['f', ''],
+						['g', ''],
 					]),
 					{ schema },
 				),
@@ -1286,6 +1288,7 @@ describe('conform-zod', () => {
 					d: '',
 					e: '',
 					f: '',
+					g: '',
 				},
 				error: {
 					a: ['Required'],

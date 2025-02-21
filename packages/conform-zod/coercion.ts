@@ -13,6 +13,7 @@ import {
 	lazy,
 	any,
 	ZodCatch,
+	ZodBranded,
 } from 'zod';
 import type {
 	ZodDiscriminatedUnionOption,
@@ -105,9 +106,6 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
 	cache = new Map<ZodTypeAny, ZodTypeAny>(),
 ): ZodType<output<Schema>> {
-	if (type._def.typeName === 'ZodBranded') {
-		type = type._def.type as Schema;
-	}
 	const result = cache.get(type);
 
 	// Return the cached schema if it's already processed
@@ -289,6 +287,11 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 					enableTypeCoercion(option, cache) as ZodDiscriminatedUnionOption<any>,
 				]),
 			),
+		});
+	} else if (def.typeName === 'ZodBranded') {
+		schema = new ZodBranded({
+			...def,
+			type: enableTypeCoercion(def.type, cache),
 		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
