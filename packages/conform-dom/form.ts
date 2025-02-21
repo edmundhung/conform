@@ -173,7 +173,7 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
 	/**
-	 * Define if conform should considered the field for dirty state.
+	 * Define if conform should consider the field for dirty state.
 	 * e.g. Excluding form fields that are not managed by Conform, such as CSRF token
 	 */
 	shouldDirtyConsider?: (name: string) => boolean;

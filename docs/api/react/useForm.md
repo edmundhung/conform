@@ -36,7 +36,7 @@ Define when Conform should re-validate each field after it is validated. Default
 
 ### `shouldDirtyConsider`
 
-Define if Conform should considered the field for dirty state. e.g. Excluding form fields that are not managed by Conform such as CSRF token.
+Define if Conform should consider the field for dirty state. e.g. Excluding form fields that are not managed by Conform such as CSRF token.
 
 ### `onValidate`
 
