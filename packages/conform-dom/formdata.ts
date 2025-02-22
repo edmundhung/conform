@@ -259,7 +259,7 @@ export function flatten(
 	const resolve = options.resolve ?? ((data) => data);
 
 	function process(data: unknown, prefix: string) {
-		const value = normalize(resolve(data));
+		const value = resolve(data);
 
 		if (typeof value !== 'undefined') {
 			result[prefix] = value;
@@ -276,7 +276,7 @@ export function flatten(
 		}
 	}
 
-	if (data) {
+	if (typeof data !== 'undefined') {
 		process(data, options.prefix ?? '');
 	}
 
