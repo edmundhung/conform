@@ -484,7 +484,7 @@ export function createFormContext<
 	return {
 		...context,
 		submit(event) {
-			const submitEvent = event.nativeEvent as SubmitEvent;
+			const submitEvent = event as unknown as SubmitEvent;
 			const result = context.submit(submitEvent);
 
 			if (
