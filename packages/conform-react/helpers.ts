@@ -232,10 +232,10 @@ export function getFormControlProps<Schema>(
  * ```tsx
  * // To setup an uncontrolled input
  * <input {...getInputProps(metadata, { type: 'text' })} />
+ * // To setup an input without defaultValue
+ * <input {...getInputProps(metadata, { type: 'text', value: false })} />
  * // To setup an uncontrolled checkbox
  * <input {...getInputProps(metadata, { type: 'checkbox' })} />
- * // To setup an input without defaultValue
- * <input {...getInputProps(metadata, { value: false })} />
  * // To setup a radio button without defaultChecked state
  * <input {...getInputProps(metadata, { type: 'radio', value: false })} />
  * ```
@@ -257,13 +257,18 @@ export function getInputProps<Schema, Options extends InputOptions>(
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {
-		if (options.type === 'checkbox' || options.type === 'radio') {
-			props.value = typeof options.value === 'string' ? options.value : 'on';
-			props.defaultChecked = Array.isArray(metadata.initialValue)
-				? metadata.initialValue.includes(options.value)
-				: metadata.initialValue === props.value;
-		} else if (typeof metadata.initialValue === 'string') {
-			props.defaultValue = metadata.initialValue;
+		switch (options.type) {
+			case 'checkbox':
+			case 'radio':
+				props.value = typeof options.value === 'string' ? options.value : 'on';
+				props.defaultChecked = Array.isArray(metadata.initialValue)
+					? metadata.initialValue.includes(options.value)
+					: metadata.initialValue === props.value;
+				break;
+			case 'file':
+				break;
+			default:
+				props.defaultValue = metadata.initialValue?.toString();
 		}
 	}
 

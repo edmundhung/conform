@@ -155,6 +155,17 @@ describe('conform-react', () => {
 			...props,
 			type: 'file',
 		});
+		expect(
+			getInputProps(
+				// This happens in Playwright
+				// @ts-expect-error FIXME: To fix the type
+				{ ...metadata, initialValue: [undefined, undefined] },
+				{ type: 'file' },
+			),
+		).toEqual({
+			...props,
+			type: 'file',
+		});
 	});
 
 	test('getTextareaProps', () => {
