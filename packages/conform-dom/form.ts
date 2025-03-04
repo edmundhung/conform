@@ -949,13 +949,11 @@ export function createFormContext<
 
 			return result;
 		}, {});
-		const pendingIntents =
-			result.intent ||
-			meta.pendingIntents.some((intent) => processedIntents.has(intent))
-				? meta.pendingIntents
-						.filter((intent) => !processedIntents.has(intent))
-						.concat(result.intent ? [result.intent] : [])
-				: meta.pendingIntents;
+		const pendingIntents = result.intent
+			? meta.pendingIntents
+					.filter((intent) => !processedIntents.has(intent))
+					.concat(result.intent ? [result.intent] : [])
+			: meta.pendingIntents;
 		const update: FormMeta<FormError> = {
 			...meta,
 			pendingIntents,
