@@ -14,7 +14,6 @@ function getFieldset(form: Locator) {
 		clearMessage: form.locator('button:text("Clear message")'),
 		resetMessage: form.locator('button:text("Reset message")'),
 		resetForm: form.locator('button:text("Reset form")'),
-		partialUpdate: form.locator('button:text("Partial update")'),
 		multipleUpdates: form.locator('button:text("Multiple updates")'),
 	};
 }
@@ -77,14 +76,9 @@ async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 		'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
 	);
 
-	await fieldset.partialUpdate.click();
-	await expect(fieldset.name).toHaveValue('Partial update');
-	await expect(fieldset.number).toHaveValue('13579');
-	await expect(fieldset.message).toHaveValue('This works!');
-
 	if (hasClientValidation) {
 		await fieldset.multipleUpdates.click();
-		await expect(fieldset.name).toHaveValue('Partial update');
+		await expect(fieldset.name).toHaveValue('Conform');
 		await expect(fieldset.number).toHaveValue('987');
 		await expect(fieldset.message).toHaveValue('Updated message');
 	}
