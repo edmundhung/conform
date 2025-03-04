@@ -441,6 +441,7 @@ function updateValue<Error>(
 	value: unknown,
 ): void {
 	if (name === '') {
+		meta.initialValue = value as Record<string, unknown>;
 		meta.value = value as Record<string, unknown>;
 		meta.key = {
 			...getDefaultKey(value as Record<string, unknown>),
@@ -449,9 +450,11 @@ function updateValue<Error>(
 		return;
 	}
 
+	meta.initialValue = clone(meta.initialValue);
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
+	setValue(meta.initialValue, name, () => value);
 	setValue(meta.value, name, () => value);
 
 	if (isPlainObject(value) || Array.isArray(value)) {
@@ -1126,7 +1129,7 @@ export function createFormContext<
 										(Array.isArray(value) &&
 											value.every((item) => typeof item === 'string'))
 											? value
-											: undefined,
+											: '',
 								});
 
 								// Update the element attribute to notify that this is changed by Conform
@@ -1149,7 +1152,7 @@ export function createFormContext<
 									(Array.isArray(value) &&
 										value.every((item) => typeof item === 'string'))
 										? value
-										: undefined,
+										: '',
 							});
 							resetField(element);
 						}

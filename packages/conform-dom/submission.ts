@@ -175,18 +175,9 @@ export function parse<FormValue, FormError>(
 
 				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
-						setValue(context.payload, name, (currentValue) => {
-							if (isPlainObject(currentValue)) {
-								return Object.assign({}, currentValue, value);
-							}
-
-							return value;
-						});
+						setValue(context.payload, name, () => value);
 					} else {
-						context.payload = {
-							...context.payload,
-							...value,
-						};
+						context.payload = value;
 					}
 				}
 				break;
