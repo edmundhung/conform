@@ -952,7 +952,7 @@ export function createFormContext<
 		const pendingIntents = result.intent
 			? meta.pendingIntents
 					.filter((intent) => !processedIntents.has(intent))
-					.concat(result.intent ? [result.intent] : [])
+					.concat(result.intent)
 			: meta.pendingIntents;
 		const update: FormMeta<FormError> = {
 			...meta,
@@ -1143,16 +1143,17 @@ export function createFormContext<
 					for (const element of formElement.elements) {
 						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
 							const value = getValue(meta.defaultValue, element.name);
+							const defaultValue =
+								typeof value === 'string' ||
+								(Array.isArray(value) &&
+									value.every((item) => typeof item === 'string'))
+									? value
+									: '';
 
 							updateFieldValue(element, {
-								defaultValue:
-									typeof value === 'string' ||
-									(Array.isArray(value) &&
-										value.every((item) => typeof item === 'string'))
-										? value
-										: '',
+								defaultValue,
+								value: defaultValue,
 							});
-							resetField(element);
 						}
 					}
 					break;
@@ -1184,31 +1185,6 @@ export function createFormContext<
 		getSerializedState,
 		observe,
 	};
-}
-
-export function resetField(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (element instanceof HTMLInputElement) {
-		switch (element.type) {
-			case 'checkbox':
-			case 'radio':
-				element.checked = element.defaultChecked;
-				break;
-			case 'file':
-				element.value = '';
-				break;
-			default:
-				element.value = element.defaultValue;
-				break;
-		}
-	} else if (element instanceof HTMLSelectElement) {
-		for (const option of element.options) {
-			option.selected = option.defaultSelected;
-		}
-	} else {
-		element.value = element.defaultValue;
-	}
 }
 
 /**
