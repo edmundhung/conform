@@ -213,7 +213,7 @@ export function updateSubjectRef(
 	if (
 		subject === 'status' ||
 		subject === 'formId' ||
-		subject === 'lastIntent'
+		subject === 'pendingIntents'
 	) {
 		ref.current[subject] = true;
 	} else if (typeof scope !== 'undefined' && typeof name !== 'undefined') {

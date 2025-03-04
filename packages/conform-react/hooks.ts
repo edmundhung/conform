@@ -92,7 +92,7 @@ export function useForm<
 	});
 
 	const subjectRef = useSubjectRef({
-		lastIntent: true,
+		pendingIntents: true,
 	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);

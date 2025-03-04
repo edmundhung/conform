@@ -106,18 +106,6 @@ export default function FormControl() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							{...form.update.getButtonProps({
-								name: form.name,
-								value: {
-									name: 'Partial update',
-									message: 'This works!',
-								},
-							})}
-						>
-							Partial update
-						</button>
-						<button
-							className="rounded-md border p-2 hover:border-black"
 							type="button"
 							onClick={() => {
 								// We should wrap each form.update() in flushSync ideally
