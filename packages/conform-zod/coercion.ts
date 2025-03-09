@@ -9,7 +9,6 @@ import {
 	ZodEffects,
 	ZodNullable,
 	ZodOptional,
-	ZodDefault,
 	lazy,
 	any,
 	ZodCatch,
@@ -22,16 +21,10 @@ import type {
 } from 'zod';
 
 /**
- * A special string value to represent empty string
- * Used to prevent empty string from being stripped to undefined when using `.default()`
- */
-const EMPTY_STRING = '__EMPTY_STRING__';
-
-/**
  * Helpers for coercing string value
  * Modify the value only if it's a string, otherwise return the value as-is
  */
-function coerceString(value: unknown, transform?: (text: string) => unknown) {
+function coerceString(value: unknown) {
 	if (typeof value !== 'string') {
 		return value;
 	}
@@ -40,15 +33,7 @@ function coerceString(value: unknown, transform?: (text: string) => unknown) {
 		return undefined;
 	}
 
-	if (value === EMPTY_STRING) {
-		return '';
-	}
-
-	if (typeof transform !== 'function') {
-		return value;
-	}
-
-	return transform(value);
+	return value;
 }
 
 /**
@@ -66,6 +51,55 @@ function coerceFile(file: unknown) {
 	}
 
 	return file;
+}
+
+function coerceNumber(value: unknown) {
+	if (typeof value !== 'string') {
+		return value;
+	}
+
+	return value.trim() === '' ? value : Number(value);
+}
+
+function coerceBoolean(value: unknown) {
+	if (typeof value !== 'string') {
+		return value;
+	}
+
+	return value === 'on' ? true : value;
+}
+
+function coerceDate(value: unknown) {
+	if (typeof value !== 'string') {
+		return value;
+	}
+
+	const date = new Date(value);
+
+	// z.date() does not expose a quick way to set invalid_date error
+	// This gets around it by returning the original string if it's invalid
+	// See https://github.com/colinhacks/zod/issues/1526
+	if (isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date;
+}
+
+function coerceBigInt(value: unknown) {
+	if (typeof value !== 'string') {
+		return value;
+	}
+
+	if (value.trim() === '') {
+		return value;
+	}
+
+	try {
+		return BigInt(value);
+	} catch {
+		return value;
+	}
 }
 
 /**
@@ -90,7 +124,15 @@ function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
  * @deprecated Conform strip empty string to undefined by default
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
-	return (value: unknown) => coerceString(value, fn);
+	return (value: unknown) => {
+		let result = coerceString(value);
+
+		if (typeof result === 'string') {
+			result = fn(result);
+		}
+
+		return result;
+	};
 }
 
 /**
@@ -130,49 +172,19 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			.pipe(type);
 	} else if (def.typeName === 'ZodNumber') {
 		schema = any()
-			.transform((value) =>
-				coerceString(value, (text) =>
-					text.trim() === '' ? text : Number(text),
-				),
-			)
+			.transform((value) => coerceNumber(coerceString(value)))
 			.pipe(type);
 	} else if (def.typeName === 'ZodBoolean') {
 		schema = any()
-			.transform((value) =>
-				coerceString(value, (text) => (text === 'on' ? true : text)),
-			)
+			.transform((value) => coerceBoolean(coerceString(value)))
 			.pipe(type);
 	} else if (def.typeName === 'ZodDate') {
 		schema = any()
-			.transform((value) =>
-				coerceString(value, (text) => {
-					const date = new Date(text);
-
-					// z.date() does not expose a quick way to set invalid_date error
-					// This gets around it by returning the original string if it's invalid
-					// See https://github.com/colinhacks/zod/issues/1526
-					if (isNaN(date.getTime())) {
-						return text;
-					}
-
-					return date;
-				}),
-			)
+			.transform((value) => coerceDate(coerceString(value)))
 			.pipe(type);
 	} else if (def.typeName === 'ZodBigInt') {
 		schema = any()
-			.transform((value) =>
-				coerceString(value, (text) => {
-					if (text.trim() === '') {
-						return text;
-					}
-					try {
-						return BigInt(text);
-					} catch {
-						return text;
-					}
-				}),
-			)
+			.transform((value) => coerceBigInt(coerceString(value)))
 			.pipe(type);
 	} else if (def.typeName === 'ZodArray') {
 		schema = any()
@@ -242,23 +254,12 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 				}),
 			);
 	} else if (def.typeName === 'ZodDefault') {
+		const defaultValue = def.defaultValue();
 		schema = any()
 			.transform((value) => coerceFile(coerceString(value)))
-			.pipe(
-				new ZodDefault({
-					...def,
-					defaultValue: () => {
-						const value = def.defaultValue();
-
-						if (value === '') {
-							return EMPTY_STRING;
-						}
-
-						return value;
-					},
-					innerType: enableTypeCoercion(def.innerType, options),
-				}),
-			);
+			// Reconstruct `.default()` as `.optional().transform(value => value ?? defaultValue)`
+			.pipe(enableTypeCoercion(def.innerType, options).optional())
+			.transform((value) => value ?? defaultValue);
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,

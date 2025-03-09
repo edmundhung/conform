@@ -863,13 +863,13 @@ describe('conform-zod', () => {
 			});
 
 			expect(getResult(coerceFormValue(schema2).safeParse({}))).toEqual({
-				success: false,
-				error: {
-					a: ['invalid'],
-					b: ['invalid'],
-					c: ['invalid'],
-					d: ['invalid'],
-					e: ['invalid'],
+				success: true,
+				data: {
+					a: '',
+					b: 0,
+					c: false,
+					d: defaultDate,
+					e: defaultFile,
 				},
 			});
 		});
