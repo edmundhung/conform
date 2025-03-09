@@ -1,0 +1,66 @@
+{
+	"name": "@conform-to/valibot",
+	"description": "Conform helpers for integrating with Valibot",
+	"homepage": "https://conform.guide",
+	"license": "MIT",
+	"version": "1.2.2",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"module": "./dist/index.mjs",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"scripts": {
+		"build:js": "rollup -c",
+		"build:ts": "tsc --project ./tsconfig.build.json",
+		"build": "pnpm run \"/^build:.*/\"",
+		"dev:js": "pnpm run build:js --watch",
+		"dev:ts": "pnpm run build:ts --watch",
+		"dev": "pnpm run \"/^dev:.*/\"",
+		"test": "vitest",
+		"prepare": "pnpm run build"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edmundhung/conform",
+		"directory": "packages/conform-zod"
+	},
+	"bugs": {
+		"url": "https://github.com/edmundhung/conform/issues"
+	},
+	"dependencies": {
+		"@conform-to/dom": "workspace:*"
+	},
+	"peerDependencies": {
+		"valibot": ">= 0.32.0"
+	},
+	"devDependencies": {
+		"@babel/core": "^7.17.8",
+		"@babel/preset-env": "^7.20.2",
+		"@babel/preset-typescript": "^7.20.2",
+		"@rollup/plugin-babel": "^5.3.1",
+		"@rollup/plugin-node-resolve": "^13.3.0",
+		"rollup-plugin-copy": "^3.4.0",
+		"rollup": "^2.79.1",
+		"valibot": "^1.0.0-rc.3"
+	},
+	"keywords": [
+		"constraint-validation",
+		"form",
+		"form-validation",
+		"html",
+		"progressive-enhancement",
+		"validation",
+		"valibot"
+	],
+	"sideEffects": false
+}
