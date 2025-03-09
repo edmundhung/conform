@@ -82,21 +82,3 @@ const schema = z.object({
   }, z.number()),
 });
 ```
-
-### デフォルト値
-
-Conform は常に空の文字列を削除し、それらを「undefined」にします。 `.transform()` をスキーマに追加して、代わりに返されるデフォルト値を定義します。
-
-```tsx
-const schema = z.object({
-  foo: z.string().optional(), // string | undefined
-  bar: z
-    .string()
-    .optional()
-    .transform((value) => value ?? ''), // string
-  baz: z
-    .string()
-    .optional()
-    .transform((value) => value ?? null), // string | null
-});
-```

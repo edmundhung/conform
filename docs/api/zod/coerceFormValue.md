@@ -20,9 +20,13 @@ The following rules will be applied by default:
 
 The zod schema to be enhanced.
 
-### `options.skipCoercion`
+### `options.defaultCoercion`
 
-Optional. You can use it to skip type coercion for a specific schema.
+Optional. Set it if you want to [override the default behavior](#override-default-behavior).
+
+### `options.defineCoercion`
+
+Optional. Use it to [define custom coercion](#define-custom-coercion) for a specific schema.
 
 ## Example
 
@@ -59,25 +63,47 @@ function Example() {
 
 ### Override default behavior
 
-You can override the default coercion logic without disabling the type coercion by casting the value yourself inside `z.preprocess`.
+You can override the default coercion by specifying the `defaultCoercion` mapping in the options.
 
 ```ts
 const schema = coerceFormValue(
   z.object({
-    // Override how the `amount` field value is coerced
-    amount: z.preprocess((value) => {
-      // If no value is provided, return `undefined`
-      if (!value) {
-        return undefined;
-      }
-
-      // Clear the formatting and cast the value to number
-      return Number(value.trim().replace(/,/g, ''));
-    }, z.number()),
-
-    // Keep the default behavior
-    number: z.number(),
+    // ...
   }),
+  {
+    defaultCoercion: {
+      // To trim the value for all string-based fields
+      // e.g. `z.string()`, `z.number()` or `z.boolean()`
+      string: (value) => {
+        if (typeof value !== 'string') {
+          return value;
+        }
+
+        const result = value.trim();
+
+        // Treat it as `undefined` if the value is empty
+        if (result === '') {
+          return undefined;
+        }
+
+        return result;
+      },
+
+      // To override the default coercion with `z.number()`
+      number: (value) => {
+        // Pass the value as is if it's not a string
+        if (typeof value !== 'string') {
+          return value;
+        }
+
+        // Trim and remove commas before casting it to number
+        return Number(value.trim().replace(/,/g, ''));
+      },
+
+      // To disable coercion for `z.boolean()`
+      boolean: false,
+    },
+  },
 );
 ```
 
@@ -99,42 +125,46 @@ const schema = z.object({
 });
 ```
 
-### Skip coercion
+### Define custom coercion
 
-You can always skip the default coercion for a specific schema by setting the `skipCoercion` option.
+You can define custom coercion for a specific schema by setting the `defineCoercion` option.
 
 ```ts
-import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod';
+import {
+  parseWithZod,
+  unstable_coerceFormValue as coerceFormValue,
+} from '@conform-to/zod';
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
 import { json } from './schema';
 
+const metadata = z.object({
+  number: z.number(),
+  confirmed: z.boolean(),
+});
+
 const schema = coerceFormValue(
   z.object({
-    ref: z.number()
-    date: z.date(),
-    amount: z.preprocess((value) => {
-      // Ignore non-string values
-      if (typeof value !== 'string') {
-        return value;
-      }
-
-      // If it is an empty string, return `undefined`
-      if (!value) {
-        return undefined;
-      }
-
-      // Clear the formatting and cast the value to number
-      return Number(value.trim().replace(/,/g, ''));
-    }, z.number())
-    confirm: z.boolean(),
-    meta: json,
+    ref: z.string(),
+    metadata,
   }),
   {
-    skipCoercion(type) {
-      // To skip coercion for all fields defined with z.number() or jsonSchema
-      return type instanceof z.ZodNumber || type === json;
-    }
+    defineCoercion(type) {
+      // Customize how the `metadata` field value is coerced
+      if (type === metadata) {
+        return (value) => {
+          if (typeof value !== 'string') {
+            return value;
+          }
+
+          // Parse the value as JSON
+          return JSON.parse(value);
+        };
+      }
+
+      // Return `null` to keep the default behavior
+      return null;
+    },
   },
 );
 ```
