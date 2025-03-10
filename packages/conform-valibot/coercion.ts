@@ -92,7 +92,7 @@ function coerceNumber(value: unknown) {
 		return value;
 	}
 
-	return value.trim() === '' ? undefined : Number(value);
+	return value === '' ? undefined : Number(value);
 }
 
 /**
@@ -133,7 +133,7 @@ function coerceBigInt(value: unknown) {
 		return value;
 	}
 
-	if (value.trim() === '') {
+	if (value === '') {
 		return undefined;
 	}
 
