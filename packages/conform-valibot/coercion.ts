@@ -144,38 +144,6 @@ function coerceBigInt(value: unknown) {
 	}
 }
 
-function getDefaultCoercion(
-	type: GenericSchema | GenericSchemaAsync,
-	defaultCoercion: Record<DefaultCoercionType, CoercionFunction>,
-): CoercionFunction {
-	switch (type.type) {
-		case 'string':
-		case 'literal':
-		case 'enum':
-		case 'undefined': {
-			return defaultCoercion.string;
-		}
-		case 'number': {
-			return defaultCoercion.number;
-		}
-		case 'boolean': {
-			return defaultCoercion.boolean;
-		}
-		case 'date': {
-			return defaultCoercion.date;
-		}
-		case 'bigint': {
-			return defaultCoercion.bigint;
-		}
-		case 'blob':
-		case 'file': {
-			return defaultCoercion.file;
-		}
-	}
-
-	return defaultCoercion.string;
-}
-
 /**
  * Helpers for coercing array value
  * Modify the value only if it's an array, otherwise return the value as-is
@@ -285,10 +253,6 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 	transformAction: TransformAction<unknown, unknown> | undefined;
 	schema: GenericSchema | GenericSchemaAsync;
 } {
-	const coercion =
-		options.defineCoercion(type) ??
-		getDefaultCoercion(type, options.defaultCoercion);
-
 	if ('pipe' in type) {
 		const { transformAction, schema: coercedSchema } = enableTypeCoercion(
 			type.pipe[0],
@@ -302,28 +266,34 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		return { transformAction, schema };
 	}
 
+	const defineCoercionFn = options.defineCoercion(type);
+
+	if (defineCoercionFn) {
+		return coerce(type, defineCoercionFn);
+	}
+
 	switch (type.type) {
 		case 'string':
 		case 'literal':
 		case 'enum':
 		case 'undefined': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.string);
 		}
 		case 'number': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.number);
 		}
 		case 'boolean': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.boolean);
 		}
 		case 'date': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.date);
 		}
 		case 'bigint': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.bigint);
 		}
 		case 'file':
 		case 'blob': {
-			return coerce(type, coercion);
+			return coerce(type, options.defaultCoercion.file);
 		}
 		case 'array': {
 			const arraySchema = {
@@ -462,7 +432,7 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		}
 	}
 
-	return coerce(type, coercion);
+	return coerce(type, options.defaultCoercion.string);
 }
 
 /**
@@ -495,8 +465,8 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
  *     defaultCoercion: {
  *       number: false,
  *     },
- *     defineCoercion: (type) => {
- *       if (type.type === 'string') {
+ *     defineCoercion: (schema) => {
+ *       if (schema.type === 'string') {
  *         return (value) => value.trim();
  *       }
  *       return null;

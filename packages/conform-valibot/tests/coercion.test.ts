@@ -152,18 +152,23 @@ describe('coerceFormValue', () => {
 
 		describe('defineCoercion', () => {
 			test('defineCoercion for specific schema types', () => {
+				const meta = object({
+					text: string(),
+					num: number(),
+				});
 				const schema = object({
 					text: string(),
 					num: number(),
 					timestamp: date(),
 					yes: boolean(),
 					no: boolean(),
+					meta,
 				});
 
 				const defineCoercion = (
-					type: GenericSchema | GenericSchemaAsync,
+					schema: GenericSchema | GenericSchemaAsync,
 				): CoercionFunction | null => {
-					if (type.type === 'string') {
+					if (schema.type === 'string') {
 						return (value) => {
 							if (typeof value === 'string') {
 								return value.trim() === '' ? undefined : value.trim();
@@ -172,7 +177,7 @@ describe('coerceFormValue', () => {
 						};
 					}
 
-					if (type.type === 'boolean') {
+					if (schema.type === 'boolean') {
 						return (value) => {
 							if (typeof value === 'string') {
 								if (value === 'yes') {
@@ -181,6 +186,18 @@ describe('coerceFormValue', () => {
 								if (value === 'no') {
 									return false;
 								}
+							}
+							return value;
+						};
+					}
+
+					if (schema === meta) {
+						return (value) => {
+							if (value === undefined) {
+								return {
+									text: 'text',
+									num: 0,
+								};
 							}
 							return value;
 						};
@@ -199,6 +216,7 @@ describe('coerceFormValue', () => {
 					timestamp: '2023-01-01',
 					yes: 'yes',
 					no: 'no',
+					meta: undefined,
 				});
 				expect(getResult(result)).toEqual({
 					success: true,
@@ -208,6 +226,10 @@ describe('coerceFormValue', () => {
 						timestamp: new Date('2023-01-01'),
 						yes: true,
 						no: false,
+						meta: {
+							text: 'text',
+							num: 0,
+						},
 					},
 				});
 			});
