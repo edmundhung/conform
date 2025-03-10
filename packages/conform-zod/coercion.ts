@@ -360,17 +360,14 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
  * import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod';
  * import { z } from 'zod';
  *
- * // To coerce the form value with default behaviour
+ * // Coerce the form value with default behaviour
  * const schema = coerceFormValue(
  *   z.object({
- *     ref: z.number()
- *     date: z.date(),
- *     amount: z.number(),
- *     confirm: z.boolean(),
+ *     // ...
  *   })
  * );
  *
- * // To coerce the form value with number type disabled
+ * // Coerce the form value with default coercion overrided
  * const schema = coerceFormValue(
  *   z.object({
  *     ref: z.number()
@@ -379,9 +376,36 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
  *     confirm: z.boolean(),
  *   }),
  *   {
- *     coercionMap: {
- *       number: false,
- *     }
+ *     // Trim the value for all string-based fields
+ *     // e.g. `z.string()`, `z.number()` or `z.boolean()`
+ *     string: (value) => {
+ *       if (typeof value !== 'string') {
+ *          return value;
+ *       }
+ *
+ *       const result = value.trim();
+ *
+ *       // Treat it as `undefined` if the value is empty
+ *       if (result === '') {
+ *         return undefined;
+ *       }
+ *
+ *       return result;
+ *     },
+ *
+ *     // Override the default coercion with `z.number()`
+ *     number: (value) => {
+ *       // Pass the value as is if it's not a string
+ *       if (typeof value !== 'string') {
+ *         return value;
+ *       }
+ *
+ *       // Trim and remove commas before casting it to number
+ *       return Number(value.trim().replace(/,/g, ''));
+ *     },
+ *
+ *     // Disable coercion for `z.boolean()`
+ *     boolean: false,
  *   },
  * );
  * ```

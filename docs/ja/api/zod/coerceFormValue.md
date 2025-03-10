@@ -72,7 +72,7 @@ const schema = coerceFormValue(
   }),
   {
     defaultCoercion: {
-      // To trim the value for all string-based fields
+      // Trim the value for all string-based fields
       // e.g. `z.string()`, `z.number()` or `z.boolean()`
       string: (value) => {
         if (typeof value !== 'string') {
@@ -89,7 +89,7 @@ const schema = coerceFormValue(
         return result;
       },
 
-      // To override the default coercion with `z.number()`
+      // Override the default coercion with `z.number()`
       number: (value) => {
         // Pass the value as is if it's not a string
         if (typeof value !== 'string') {
@@ -100,7 +100,7 @@ const schema = coerceFormValue(
         return Number(value.trim().replace(/,/g, ''));
       },
 
-      // To disable coercion for `z.boolean()`
+      // Disable coercion for `z.boolean()`
       boolean: false,
     },
   },
