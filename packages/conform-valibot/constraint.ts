@@ -26,14 +26,19 @@ export function getValibotConstraint<
 		}
 		const constraint = name !== '' ? (data[name] as Constraint) : {};
 
-		if (schema.type === 'object') {
+		if (
+			schema.type === 'object' ||
+			schema.type === 'object_with_rest' ||
+			schema.type === 'strict_object' ||
+			schema.type === 'loose_object'
+		) {
 			// @ts-expect-error
 			for (const key in schema.entries) {
 				updateConstraint(
 					// @ts-expect-error
 					schema.entries[key],
 					data,
-					name ? `${name}.${key}` : key,
+					name !== '' ? `${name}.${key}` : key,
 				);
 			}
 		} else if (schema.type === 'intersect') {
@@ -116,15 +121,15 @@ export function getValibotConstraint<
 			if (maxLength && 'requirement' in maxLength) {
 				constraint.maxLength = maxLength.requirement as number;
 			}
-		} else if (schema.type === 'optional') {
+		} else if (
+			schema.type === 'optional' ||
+			schema.type === 'nullish' ||
+			schema.type === 'exact_optional'
+		) {
 			constraint.required = false;
 			// @ts-expect-error
 			updateConstraint(schema.wrapped, data, name);
-		} else if (schema.type === 'nullish') {
-			constraint.required = false;
-			// @ts-expect-error
-			updateConstraint(schema.wrapped, data, name);
-		} else if (schema.type === 'number') {
+		} else if (schema.type === 'number' || schema.type === 'bigint') {
 			// @ts-expect-error
 			const minValue = schema.pipe?.find(
 				// @ts-expect-error
@@ -153,7 +158,7 @@ export function getValibotConstraint<
 						: option,
 				)
 				.join('|');
-		} else if (schema.type === 'tuple') {
+		} else if (schema.type === 'tuple' || schema.type === 'tuple_with_rest') {
 			// @ts-expect-error
 			for (let i = 0; i < schema.items.length; i++) {
 				// @ts-expect-error

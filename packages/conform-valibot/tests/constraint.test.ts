@@ -1,12 +1,15 @@
 import {
 	array,
+	bigint,
 	boolean,
 	check,
 	date,
 	enum_,
+	exactOptional,
 	instance,
 	intersect,
 	literal,
+	looseObject,
 	maxLength,
 	maxValue,
 	minLength,
@@ -14,10 +17,13 @@ import {
 	nullish,
 	number,
 	object,
+	objectWithRest,
 	optional,
 	pipe,
+	strictObject,
 	string,
 	tuple,
+	tupleWithRest,
 	union,
 	variant,
 } from 'valibot';
@@ -32,60 +38,70 @@ enum TestEnum {
 
 describe('constraint', () => {
 	test('getValibotConstraint', () => {
-		const schema = pipe(
-			object({
-				text: pipe(
-					string('required'),
-					minLength(10, 'min'),
-					maxLength(100, 'max'),
-					check(() => false, 'refine'),
-				),
-				number: pipe(
-					number('required'),
-					minValue(1, 'min'),
-					maxValue(10, 'max'),
-					check((v) => v % 2 === 0, 'step'),
-				),
-				timestamp: optional(
-					pipe(
-						date(),
-						minValue(new Date(1), 'min'),
-						maxValue(new Date(), 'max'),
+		const baseSchema = {
+			text: pipe(
+				string('required'),
+				minLength(10, 'min'),
+				maxLength(100, 'max'),
+				check(() => false, 'refine'),
+			),
+			number: pipe(
+				number('required'),
+				minValue(1, 'min'),
+				maxValue(10, 'max'),
+				check((v) => v % 2 === 0, 'step'),
+			),
+			bigint: pipe(
+				bigint('required'),
+				minValue(BigInt(1), 'min'),
+				maxValue(BigInt(10), 'max'),
+			),
+			timestamp: optional(
+				pipe(date(), minValue(new Date(1), 'min'), maxValue(new Date(), 'max')),
+				new Date(),
+			),
+			flag: optional(boolean()),
+			exactOptionalFlag: exactOptional(boolean()),
+			options: pipe(array(enum_(TestEnum)), minLength(3, 'min')),
+			nested: pipe(
+				object({
+					key: pipe(
+						string(),
+						check(() => false, 'refine'),
 					),
-					new Date(),
-				),
-				flag: optional(boolean()),
-				options: pipe(array(enum_(TestEnum)), minLength(3, 'min')),
-				nested: pipe(
+				}),
+				check(() => false, 'refine'),
+			),
+			list: pipe(
+				array(
 					object({
 						key: pipe(
-							string(),
+							string('required'),
 							check(() => false, 'refine'),
 						),
 					}),
-					check(() => false, 'refine'),
 				),
-				list: pipe(
-					array(
-						object({
-							key: pipe(
-								string('required'),
-								check(() => false, 'refine'),
-							),
-						}),
-					),
-					maxLength(0, 'max'),
-				),
-				files: pipe(
-					array(instance(Date, 'Invalid file')),
-					minLength(1, 'required'),
-				),
-				tuple: tuple([
+				maxLength(0, 'max'),
+			),
+			files: pipe(
+				array(instance(Date, 'Invalid file')),
+				minLength(1, 'required'),
+			),
+			tuple: tuple([
+				pipe(string(), minLength(3, 'min')),
+				optional(pipe(number(), maxValue(100, 'max'))),
+			]),
+			tupleWithRest: tupleWithRest(
+				[
 					pipe(string(), minLength(3, 'min')),
 					optional(pipe(number(), maxValue(100, 'max'))),
-				]),
-				nullishString: nullish(string()),
-			}),
+				],
+				optional(pipe(number(), maxValue(100, 'max'))),
+			),
+			nullishString: nullish(string()),
+		};
+		const objectSchema = pipe(
+			object(baseSchema),
 			check(() => false, 'refine'),
 		);
 		const constraint = {
@@ -99,10 +115,18 @@ describe('constraint', () => {
 				min: 1,
 				max: 10,
 			},
+			bigint: {
+				required: true,
+				min: 1n,
+				max: 10n,
+			},
 			timestamp: {
 				required: false,
 			},
 			flag: {
+				required: false,
+			},
+			exactOptionalFlag: {
 				required: false,
 			},
 			options: {
@@ -139,6 +163,9 @@ describe('constraint', () => {
 			tuple: {
 				required: true,
 			},
+			tupleWithRest: {
+				required: true,
+			},
 			'tuple[0]': {
 				required: true,
 				minLength: 3,
@@ -147,12 +174,31 @@ describe('constraint', () => {
 				required: false,
 				max: 100,
 			},
+			'tupleWithRest[0]': {
+				required: true,
+				minLength: 3,
+			},
+			'tupleWithRest[1]': {
+				required: false,
+				max: 100,
+			},
 			nullishString: {
 				required: false,
 			},
 		};
 
-		expect(getValibotConstraint(schema)).toEqual(constraint);
+		expect(getValibotConstraint(objectSchema)).toEqual(constraint);
+
+		// objectWtthRest is supported
+		expect(
+			getValibotConstraint(objectWithRest(baseSchema, optional(number()))),
+		).toEqual(constraint);
+
+		// strictObject is supported
+		expect(getValibotConstraint(strictObject(baseSchema))).toEqual(constraint);
+
+		// looseObject is supported
+		expect(getValibotConstraint(looseObject(baseSchema))).toEqual(constraint);
 
 		// Non-object schemas will throw an error
 		expect(() => getValibotConstraint(string())).toThrow();
@@ -162,7 +208,7 @@ describe('constraint', () => {
 		expect(
 			getValibotConstraint(
 				intersect([
-					schema,
+					objectSchema,
 					object({ text: optional(string()), something: string() }),
 				]),
 			),
@@ -229,91 +275,5 @@ describe('constraint', () => {
 			baz: { required: true, minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
-
-		// // Recursive schema should be supported too
-		// const baseCategorySchema = z.object({
-		// 	name: z.string(),
-		//   });
-
-		// type Category = z.infer<typeof baseCategorySchema> & {
-		// 	subcategories: Category[];
-		// };
-
-		// const categorySchema: z.ZodType<Category> = baseCategorySchema.extend({
-		// 	subcategories: z.lazy(() => categorySchema.array()),
-		// });
-
-		// expect(
-		// 	getZodConstraint(categorySchema),
-		// ).toEqual({
-		// 	name: {
-		// 		required: true,
-		// 	},
-		// 	subcategories: {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'subcategories[].name': {
-		// 		required: true,
-		// 	},
-		// 	'subcategories[].subcategories': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'subcategories[].subcategories[].name': {
-		// 		required: true,
-		// 	},
-		// 	'subcategories[].subcategories[].subcategories': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-		// });
-
-		// type Condition = { type: 'filter' } | { type: 'group', conditions: Condition[] }
-
-		// const ConditionSchema: z.ZodType<Condition> = z.discriminatedUnion('type', [
-		// 	z.object({
-		// 		type: z.literal('filter')
-		// 	}),
-		// 	z.object({
-		// 		type: z.literal('group'),
-		// 		conditions: z.lazy(() => ConditionSchema.array()),
-		// 	}),
-		// ]);
-
-		// const FilterSchema = z.object({
-		// 	type: z.literal('group'),
-		// 	conditions: ConditionSchema.array(),
-		// })
-
-		// expect(
-		// 	getZodConstraint(FilterSchema),
-		// ).toEqual({
-		// 	type: {
-		// 		required: true,
-		// 	},
-		// 	conditions: {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'conditions[].type': {
-		// 		required: true,
-		// 	},
-		// 	'conditions[].conditions': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'conditions[].conditions[].type': {
-		// 		required: true,
-		// 	},
-		// 	'conditions[].conditions[].conditions': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-		// });
 	});
 });
