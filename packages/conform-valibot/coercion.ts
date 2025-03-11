@@ -432,7 +432,7 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		}
 	}
 
-	return coerce(type, options.defaultCoercion.string);
+	return coerce(type, (value) => value);
 }
 
 /**
