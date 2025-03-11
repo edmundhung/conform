@@ -72,23 +72,6 @@ const schema = coerceFormValue(
   }),
   {
     defaultCoercion: {
-      // Trim the value for all string-based fields
-      // e.g. `z.string()`, `z.number()` or `z.boolean()`
-      string: (value) => {
-        if (typeof value !== 'string') {
-          return value;
-        }
-
-        const result = value.trim();
-
-        // Treat it as `undefined` if the value is empty
-        if (result === '') {
-          return undefined;
-        }
-
-        return result;
-      },
-
       // Override the default coercion with `z.number()`
       number: (value) => {
         // Pass the value as is if it's not a string
@@ -162,7 +145,6 @@ const schema = coerceFormValue(
         };
       }
 
-      // Return `null` to keep the default behavior
       return null;
     },
   },

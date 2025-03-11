@@ -24,7 +24,7 @@ import type {
  * Helpers for coercing string value
  * Modify the value only if it's a string, otherwise return the value as-is
  */
-function coerceString(value: unknown) {
+function stripEmptyString(value: unknown) {
 	if (typeof value !== 'string') {
 		return value;
 	}
@@ -40,7 +40,7 @@ function coerceString(value: unknown) {
  * Helpers for coercing file
  * Modify the value only if it's a file, otherwise return the value as-is
  */
-function coerceFile(file: unknown) {
+function stripEmptyFile(file: unknown) {
 	if (
 		typeof File !== 'undefined' &&
 		file instanceof File &&
@@ -125,7 +125,7 @@ function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
 	return (value: unknown) => {
-		let result = coerceString(value);
+		let result = stripEmptyString(value);
 
 		if (typeof result === 'string') {
 			result = fn(result);
@@ -145,14 +145,11 @@ export type DefaultCoercionType =
 
 export type CoercionFunction = (value: unknown) => unknown;
 
-function composeCoercion(
-	a: CoercionFunction,
-	b: CoercionFunction,
-): CoercionFunction {
+function compose(a: CoercionFunction, b: CoercionFunction): CoercionFunction {
 	return (value) => b(a(value));
 }
 
-export function getDefaultCoercion(
+function selectDefaultCoercion(
 	type: ZodTypeAny,
 	defaultCoercion: Record<DefaultCoercionType, CoercionFunction>,
 ): CoercionFunction | null {
@@ -171,17 +168,19 @@ export function getDefaultCoercion(
 	) {
 		return defaultCoercion.file;
 	} else if (def.typeName === 'ZodNumber') {
-		return composeCoercion(defaultCoercion.string, defaultCoercion.number);
+		return defaultCoercion.number;
 	} else if (def.typeName === 'ZodBoolean') {
-		return composeCoercion(defaultCoercion.string, defaultCoercion.boolean);
+		return defaultCoercion.boolean;
 	} else if (def.typeName === 'ZodDate') {
-		return composeCoercion(defaultCoercion.string, defaultCoercion.date);
+		return defaultCoercion.date;
 	} else if (def.typeName === 'ZodBigInt') {
-		return composeCoercion(defaultCoercion.string, defaultCoercion.bigint);
+		return defaultCoercion.bigint;
 	}
 
 	return null;
 }
+
+const stripEmptyValue = compose(stripEmptyString, stripEmptyFile);
 
 /**
  * Reconstruct the provided schema with additional preprocessing steps
@@ -191,7 +190,6 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
 	options: {
 		cache: Map<ZodTypeAny, ZodTypeAny>;
-		defaultCoercion: Record<DefaultCoercionType, CoercionFunction>;
 		defineCoercion: (type: ZodTypeAny) => CoercionFunction | null;
 	},
 ): ZodTypeAny {
@@ -205,13 +203,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 
 	let schema: ZodTypeAny = type;
 	const def = (type as ZodFirstPartySchemaTypes)._def;
-	const coercion =
-		options.defineCoercion(type) ??
-		getDefaultCoercion(type, options.defaultCoercion);
-	const coerceStringOrFile = composeCoercion(
-		options.defaultCoercion.string,
-		options.defaultCoercion.file,
-	);
+	const coercion = options.defineCoercion(type);
 
 	if (coercion) {
 		schema = any().transform(coercion).pipe(type);
@@ -225,7 +217,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 
 				if (
 					typeof value === 'undefined' ||
-					typeof coerceStringOrFile(value) === 'undefined'
+					typeof stripEmptyValue(value) === 'undefined'
 				) {
 					return [];
 				}
@@ -269,7 +261,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		});
 	} else if (def.typeName === 'ZodOptional') {
 		schema = any()
-			.transform(coerceStringOrFile)
+			.transform(stripEmptyValue)
 			.pipe(
 				new ZodOptional({
 					...def,
@@ -279,7 +271,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	} else if (def.typeName === 'ZodDefault') {
 		const defaultValue = def.defaultValue();
 		schema = any()
-			.transform(coerceStringOrFile)
+			.transform(stripEmptyValue)
 			// Reconstruct `.default()` as `.optional().transform(value => value ?? defaultValue)`
 			.pipe(enableTypeCoercion(def.innerType, options).optional())
 			.transform((value) => value ?? defaultValue);
@@ -376,23 +368,6 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
  *     confirm: z.boolean(),
  *   }),
  *   {
- *     // Trim the value for all string-based fields
- *     // e.g. `z.string()`, `z.number()` or `z.boolean()`
- *     string: (value) => {
- *       if (typeof value !== 'string') {
- *          return value;
- *       }
- *
- *       const result = value.trim();
- *
- *       // Treat it as `undefined` if the value is empty
- *       if (result === '') {
- *         return undefined;
- *       }
- *
- *       return result;
- *     },
- *
  *     // Override the default coercion with `z.number()`
  *     number: (value) => {
  *       // Pass the value as is if it's not a string
@@ -419,32 +394,42 @@ export function coerceFormValue<Schema extends ZodTypeAny>(
 		defineCoercion?: (type: ZodTypeAny) => CoercionFunction | null;
 	},
 ): Schema {
-	const refineCoercion = (
-		providedCoercion: CoercionFunction | boolean | undefined,
-		defaultCoercion: CoercionFunction,
+	const getCoercion = (
+		type: DefaultCoercionType,
+		fallbackCoercion?: CoercionFunction,
 	): CoercionFunction => {
+		const providedCoercion = options?.defaultCoercion?.[type];
+
 		if (typeof providedCoercion === 'function') {
 			return providedCoercion;
 		}
 
-		// If the user explicitly disabled the coercion, return a noop function
-		if (providedCoercion === false) {
-			return (value) => value;
+		// If the user explicitly disabled the coercion or no fallback coercion, return a noop function
+		if (providedCoercion === false || !fallbackCoercion) {
+			return (value: unknown) => value;
 		}
 
-		return defaultCoercion;
+		return fallbackCoercion;
+	};
+	const defaultCoercion = {
+		string: compose(stripEmptyString, getCoercion('string')),
+		file: compose(stripEmptyFile, getCoercion('file')),
+		number: compose(stripEmptyString, getCoercion('number', coerceNumber)),
+		boolean: compose(stripEmptyString, getCoercion('boolean', coerceBoolean)),
+		date: compose(stripEmptyString, getCoercion('date', coerceDate)),
+		bigint: compose(stripEmptyString, getCoercion('bigint', coerceBigInt)),
 	};
 
 	return enableTypeCoercion(type, {
 		cache: new Map<ZodTypeAny, ZodTypeAny>(),
-		defaultCoercion: {
-			string: refineCoercion(options?.defaultCoercion?.string, coerceString),
-			file: refineCoercion(options?.defaultCoercion?.file, coerceFile),
-			number: refineCoercion(options?.defaultCoercion?.number, coerceNumber),
-			boolean: refineCoercion(options?.defaultCoercion?.boolean, coerceBoolean),
-			date: refineCoercion(options?.defaultCoercion?.date, coerceDate),
-			bigint: refineCoercion(options?.defaultCoercion?.bigint, coerceBigInt),
+		defineCoercion: (type) => {
+			let coercion = options?.defineCoercion?.(type) ?? null;
+
+			if (coercion === null) {
+				coercion = selectDefaultCoercion(type, defaultCoercion);
+			}
+
+			return coercion;
 		},
-		defineCoercion: options?.defineCoercion ?? (() => null),
 	}) as Schema;
 }

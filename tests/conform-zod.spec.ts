@@ -1136,7 +1136,7 @@ describe('conform-zod', () => {
 					required_error: 'required',
 					invalid_type_error: 'invalid',
 				}),
-				file: z.instanceof(File, { message: 'invalid' }),
+				file: z.instanceof(File, { message: 'message' }),
 			});
 
 			expect(
@@ -1152,21 +1152,22 @@ describe('conform-zod', () => {
 						},
 					}).safeParse({
 						title: '',
-						count: '',
-						amount: '',
-						date: '',
-						confirmed: '',
+						count: '123456',
+						amount: '9876543210',
+						date: '1970-01-01',
+						confirmed: 'on',
 						file: '',
 					}),
 				),
 			).toEqual({
 				success: false,
 				error: {
+					title: ['required'],
 					amount: ['invalid'],
 					count: ['invalid'],
 					date: ['invalid'],
 					confirmed: ['invalid'],
-					file: ['invalid'],
+					file: ['message'],
 				},
 			});
 
@@ -1188,31 +1189,6 @@ describe('conform-zod', () => {
 
 								return text;
 							},
-						},
-					}).safeParse({
-						title: ' ',
-						count: ' ',
-						amount: ' ',
-						date: ' ',
-						confirmed: ' ',
-						file: exampleFile,
-					}),
-				),
-			).toEqual({
-				success: false,
-				error: {
-					title: ['required'],
-					amount: ['required'],
-					count: ['required'],
-					date: ['required'],
-					confirmed: ['required'],
-				},
-			});
-
-			expect(
-				getResult(
-					coerceFormValue(schema, {
-						defaultCoercion: {
 							number(value) {
 								if (typeof value !== 'string') {
 									return value;
@@ -1231,9 +1207,9 @@ describe('conform-zod', () => {
 							},
 						},
 					}).safeParse({
-						title: 'example',
-						count: '123,456',
-						amount: '0',
+						title: ' example ',
+						count: ' 123,456 ',
+						amount: '9876543210',
 						date: '1970-01-01',
 						confirmed: 'true',
 						file: exampleFile,
@@ -1244,7 +1220,7 @@ describe('conform-zod', () => {
 				data: {
 					title: 'example',
 					count: 123456,
-					amount: 0n,
+					amount: 9876543210n,
 					date: new Date('1970-01-01'),
 					confirmed: true,
 					file: exampleFile,
