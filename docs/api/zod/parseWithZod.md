@@ -12,23 +12,25 @@ const submission = parseWithZod(payload, options);
 
 It could be either the **FormData** or **URLSearchParams** object depending on how the form is submitted.
 
-### `options`
-
-#### `schema`
+### `options.schema`
 
 Either a zod schema or a function that returns a zod schema.
 
-#### `async`
+### `options.async`
 
 Set it to **true** if you want to parse the form data with **safeParseAsync** method from the zod schema instead of **safeParse**.
 
-#### `errorMap`
+### `options.errorMap`
 
 A zod [error map](https://github.com/colinhacks/zod/blob/master/ERROR_HANDLING.md#contextual-error-map) to be used when parsing the form data.
 
-#### `formatError`
+### `options.formatError`
 
 A function that let you customize the error structure and include additional metadata as needed.
+
+### `options.disableAutoCoercion`
+
+Set it to **true** if you want to disable [automatic type coercion](#automatic-type-coercion) and manage how the form data is parsed yourself.
 
 ## Example
 
@@ -57,47 +59,40 @@ function Example() {
 
 ### Automatic type coercion
 
-Conform will strip empty value and coerce the form data to the expected type by introspecting the schema and inject an extra preprocessing step. The following rules will be applied:
+By default, `parseWithZod` will strip empty value and coerce form value to the correct type by introspecting the schema and inject extra preprocessing steps using the [coerceFormValue](./coerceFormValue) helper internally.
 
-1. If the value is an empty string / file, pass `undefined` to the schema
-2. If the schema is `z.string()`, pass the value as is
-3. If the schema is `z.number()`, trim the value and cast it with the `Number` constructor
-4. If the schema is `z.boolean()`, treat the value as `true` if it equals to `on`
-5. If the schema is `z.date()`, cast the value with the `Date` constructor
-6. If the schema is `z.bigint()`, cast the value with the `BigInt` constructor
-
-You can override this behavior by setting up your own `z.preprocess` step in the schema.
-
-> Note: There are several bug reports on Zod's repository regarding the behaviour of `z.preprocess` since v3.22, like https://github.com/colinhacks/zod/issues/2671 and https://github.com/colinhacks/zod/issues/2677. If you are experiencing any issues, please downgrade to v3.21.4.
+If you want to customize this behavior, you can disable automatic type coercion by setting `options.disableAutoCoercion` to `true` and manage it yourself.
 
 ```tsx
+import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react';
+import { z } from 'zod';
+
 const schema = z.object({
+  // Strip empty value and coerce the number yourself
   amount: z.preprocess((value) => {
-    // If no value is provided, return `undefined`
-    if (!value) {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    if (value === '') {
       return undefined;
     }
 
-    // Clear the formatting and cast the value to number
     return Number(value.trim().replace(/,/g, ''));
   }, z.number()),
 });
-```
 
-### Default values
+function Example() {
+  const [form, fields] = useForm({
+    onValidate({ formData }) {
+      return parseWithZod(formData, {
+        schema,
+        disableAutoCoercion: true,
+      });
+    },
+  });
 
-Conform will always strip empty values to `undefined`. If you need a default value, please use `.transform()` to define a fallback value that will be returned instead.
-
-```tsx
-const schema = z.object({
-  foo: z.string().optional(), // string | undefined
-  bar: z
-    .string()
-    .optional()
-    .transform((value) => value ?? ''), // string
-  baz: z
-    .string()
-    .optional()
-    .transform((value) => value ?? null), // string | null
-});
+  // ...
+}
 ```

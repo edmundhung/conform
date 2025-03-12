@@ -13,7 +13,7 @@ import {
 	type output,
 	type ZodIssue,
 } from 'zod';
-import { enableTypeCoercion } from './coercion';
+import { coerceFormValue } from './coercion';
 
 function getError<FormError>(
 	zodError: ZodError,
@@ -61,6 +61,7 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
 		errorMap?: ZodErrorMap;
+		disableAutoCoercion?: boolean;
 	},
 ): Submission<input<Schema>, string[], output<Schema>>;
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
@@ -70,6 +71,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		async?: false;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => FormError;
+		disableAutoCoercion?: boolean;
 	},
 ): Submission<input<Schema>, FormError, output<Schema>>;
 export function parseWithZod<Schema extends ZodTypeAny>(
@@ -78,6 +80,7 @@ export function parseWithZod<Schema extends ZodTypeAny>(
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
 		errorMap?: ZodErrorMap;
+		disableAutoCoercion?: boolean;
 	},
 ): Promise<Submission<input<Schema>, string[], output<Schema>>>;
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
@@ -87,6 +90,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		async: true;
 		errorMap?: ZodErrorMap;
 		formatError: (issues: Array<ZodIssue>) => FormError;
+		disableAutoCoercion?: boolean;
 	},
 ): Promise<Submission<input<Schema>, FormError, output<Schema>>>;
 export function parseWithZod<Schema extends ZodTypeAny, FormError>(
@@ -96,6 +100,7 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 		async?: boolean;
 		errorMap?: ZodErrorMap;
 		formatError?: (issues: Array<ZodIssue>) => FormError;
+		disableAutoCoercion?: boolean;
 	},
 ):
 	| Submission<input<Schema>, FormError | string[], output<Schema>>
@@ -103,11 +108,13 @@ export function parseWithZod<Schema extends ZodTypeAny, FormError>(
 	return parse(payload, {
 		resolve(payload, intent) {
 			const errorMap = options.errorMap;
-			const schema = enableTypeCoercion(
+			const baseSchema =
 				typeof options.schema === 'function'
 					? options.schema(intent)
-					: options.schema,
-			);
+					: options.schema;
+			const schema = !options.disableAutoCoercion
+				? coerceFormValue(baseSchema)
+				: baseSchema;
 
 			const resolveSubmission = <Input, Output>(
 				result: SafeParseReturnType<Input, Output>,
