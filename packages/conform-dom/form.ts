@@ -329,18 +329,21 @@ function handleIntent<Error>(
 		return;
 	}
 
+	const returnAllErrorsForFields: string[] = [];
+
 	switch (intent.type) {
 		case 'validate': {
-			if (intent.payload.name) {
-				if (typeof intent.payload.name === 'string') {
-					meta.validated[intent.payload.name] = true;
-				} else {
-					for (const name of intent.payload.name) {
-						meta.validated[name] = true;
-					}
+			const { name, allErrors = false } = intent.payload;
+			const fieldNames = typeof name === 'string' ? [name] : name ?? [];
+			if (fieldNames.length) {
+				for (const fieldName of fieldNames) {
+					meta.validated[fieldName] = true;
 				}
 			} else {
 				setFieldsValidated(meta, fields);
+			}
+			if (allErrors) {
+				returnAllErrorsForFields.push(...fieldNames);
 			}
 			break;
 		}
@@ -419,13 +422,16 @@ function handleIntent<Error>(
 		}
 	}
 
-	const validatedFields = fields?.filter((name) => meta.validated[name]) ?? [];
+	if (fields) {
+		const validatedFields = fields.filter((name) => meta.validated[name]);
+		returnAllErrorsForFields.push(...validatedFields);
+	}
 
 	meta.error = Object.entries(meta.error).reduce<Record<string, Error>>(
 		(result, [name, error]) => {
 			if (
 				meta.validated[name] ||
-				validatedFields.some((field) => isPrefix(name, field))
+				returnAllErrorsForFields.some((prefix) => isPrefix(name, prefix))
 			) {
 				result[name] = error;
 			}
