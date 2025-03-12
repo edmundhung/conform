@@ -51,10 +51,12 @@ function coerce<T extends GenericSchema | GenericSchemaAsync>(
 }
 
 /**
- * Helpers for coercing string value
- * Modify the value only if it's a string, otherwise return the value as-is
+ * Strip empty strings and convert them to undefined.
+ *
+ * @param value The value to be checked and coerced.
+ * @returns The coerced value or undefined if the input is an empty string.
  */
-function coerceString(value: unknown) {
+function stripEmptyString(value: unknown) {
 	if (typeof value !== 'string') {
 		return value;
 	}
@@ -67,10 +69,12 @@ function coerceString(value: unknown) {
 }
 
 /**
- * Helpers for coercing file
- * Modify the value only if it's a file, otherwise return the value as-is
+ * Strip empty files and convert them to undefined.
+ *
+ * @param file The file to be checked and coerced.
+ * @returns The coerced value or undefined if the input is an empty file.
  */
-function coerceFile(file: unknown) {
+function stripEmptyFile(file: unknown) {
 	if (
 		typeof File !== 'undefined' &&
 		file instanceof File &&
@@ -92,7 +96,7 @@ function coerceNumber(value: unknown) {
 		return value;
 	}
 
-	return value === '' ? undefined : Number(value);
+	return value.trim() === '' ? value : Number(value);
 }
 
 /**
@@ -133,8 +137,8 @@ function coerceBigInt(value: unknown) {
 		return value;
 	}
 
-	if (value === '') {
-		return undefined;
+	if (value.trim() === '') {
+		return value;
 	}
 
 	try {
@@ -158,7 +162,7 @@ function coerceArray<T extends GenericSchema | GenericSchemaAsync>(type: T) {
 
 		if (
 			typeof output === 'undefined' ||
-			typeof coerceFile(coerceString(output)) === 'undefined'
+			typeof stripEmptyFile(stripEmptyString(output)) === 'undefined'
 		) {
 			return [];
 		}
@@ -171,6 +175,16 @@ function coerceArray<T extends GenericSchema | GenericSchemaAsync>(type: T) {
 	}
 
 	return pipe(unknown, vTransform(transformFunction), type);
+}
+
+/**
+ * Compose two coercion functions
+ * @param a The first coercion function
+ * @param b The second coercion function
+ * @returns The composed coercion function
+ */
+function compose(a: CoercionFunction, b: CoercionFunction): CoercionFunction {
+	return (value) => b(a(value));
 }
 
 /**
@@ -488,29 +502,53 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 ): ReturnType<typeof enableTypeCoercion> {
 	return enableTypeCoercion(type, {
 		defaultCoercion: {
-			string: refineCoercion(options?.defaultCoercion?.string, coerceString),
-			file: refineCoercion(options?.defaultCoercion?.file, coerceFile),
-			number: refineCoercion(options?.defaultCoercion?.number, coerceNumber),
-			boolean: refineCoercion(options?.defaultCoercion?.boolean, coerceBoolean),
-			date: refineCoercion(options?.defaultCoercion?.date, coerceDate),
-			bigint: refineCoercion(options?.defaultCoercion?.bigint, coerceBigInt),
+			string: compose(
+				stripEmptyString,
+				getCoercion(options?.defaultCoercion?.string),
+			),
+			file: compose(
+				stripEmptyFile,
+				getCoercion(options?.defaultCoercion?.file),
+			),
+			number: compose(
+				stripEmptyString,
+				getCoercion(options?.defaultCoercion?.number, coerceNumber),
+			),
+			boolean: compose(
+				stripEmptyString,
+				getCoercion(options?.defaultCoercion?.boolean, coerceBoolean),
+			),
+			date: compose(
+				stripEmptyString,
+				getCoercion(options?.defaultCoercion?.date, coerceDate),
+			),
+			bigint: compose(
+				stripEmptyString,
+				getCoercion(options?.defaultCoercion?.bigint, coerceBigInt),
+			),
 		},
 		defineCoercion: options?.defineCoercion ?? (() => null),
 	});
 }
 
-const refineCoercion = (
+/**
+ * Get the coercion function from the provided coercion option
+ * @param providedCoercion The provided coercion option
+ * @param fallbackCoercion The fallback coercion function
+ * @returns The coercion function
+ */
+const getCoercion = (
 	providedCoercion: CoercionFunction | boolean | undefined,
-	defaultCoercion: CoercionFunction,
+	fallbackCoercion?: CoercionFunction,
 ): CoercionFunction => {
 	if (typeof providedCoercion === 'function') {
 		return providedCoercion;
 	}
 
-	// If the user explicitly disabled the coercion, return a noop function
-	if (providedCoercion === false) {
+	// If the user explicitly disabled the coercion or no fallback coercion, return a noop function
+	if (providedCoercion === false || fallbackCoercion === undefined) {
 		return (value) => value;
 	}
 
-	return defaultCoercion;
+	return fallbackCoercion;
 };

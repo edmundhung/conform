@@ -9,10 +9,10 @@ const enhancedSchema = coerceFormValue(schema, options);
 The following rules will be applied by default:
 
 1. If the value is an empty string / file, pass `undefined` to the schema
-2. If the schema is `v.number()`, cast the value with the `Number` constructor
+2. If the schema is `v.number()`, trim the value and cast it with the `Number` constructor
 3. If the schema is `v.boolean()`, treat the value as `true` if it equals to `on` (Browser default `value` of a checkbox / radio button)
 4. If the schema is `v.date()`, cast the value with the `Date` constructor
-5. If the schema is `v.bigint()`, cast the value with the `BigInt` constructor
+5. If the schema is `v.bigint()`, trim the value and cast the value with the `BigInt` constructor
 
 ## Parameters
 
@@ -72,22 +72,6 @@ const schema = coerceFormValue(
   }),
   {
     defaultCoercion: {
-      // Override the default coercion with `string()`
-      string: (value) => {
-        if (typeof value !== 'string') {
-          return value;
-        }
-
-        const result = value.trim();
-
-        // Treat it as `undefined` if the value is empty
-        if (result === '') {
-          return undefined;
-        }
-
-        return result;
-      },
-
       // Override the default coercion with `number()`
       number: (value) => {
         // Pass the value as is if it's not a string

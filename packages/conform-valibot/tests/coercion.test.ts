@@ -94,14 +94,14 @@ describe('coerceFormValue', () => {
 					if (typeof value !== 'string') {
 						return value;
 					}
-					return value === '' ? undefined : value.toUpperCase();
+					return value === '' ? value : value.toUpperCase();
 				};
 
 				const customNumberCoercion: CoercionFunction = (value) => {
 					if (typeof value !== 'string') {
 						return value;
 					}
-					return value.trim() === '' ? undefined : Number(value) * 2;
+					return value.trim() === '' ? value : Number(value) * 2;
 				};
 
 				const customDateCoercion: CoercionFunction = (value) => {

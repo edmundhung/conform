@@ -12,7 +12,7 @@ const enhancedSchema = coerceFormValue(schema, options);
 2. スキーマが `v.number()` の場合、値をトリムして `Number` コンストラクタでキャストします
 3. スキーマが `v.boolean()` の場合、値が `on`（ブラウザのチェックボックス/ラジオボタンのデフォルト `value`）と等しい場合、`true` として扱います
 4. スキーマが `v.date()` の場合、値を `Date` コンストラクタでキャストします
-5. スキーマが `v.bigint()` の場合、値を `BigInt` コンストラクタでキャストします
+5. スキーマが `v.bigint()` の場合、値をトリムして `BigInt` コンストラクタでキャストします
 
 ## パラメータ
 
@@ -72,22 +72,6 @@ const schema = coerceFormValue(
   }),
   {
     defaultCoercion: {
-      // `string()` のデフォルト変換をオーバーライドする
-      string: (value) => {
-        if (typeof value !== 'string') {
-          return value;
-        }
-
-        const result = value.trim();
-
-        // 値が空の場合は `undefined` として扱う
-        if (result === '') {
-          return undefined;
-        }
-
-        return result;
-      },
-
       // `number()` のデフォルト変換をオーバーライドする
       number: (value) => {
         // 文字列でない場合はそのまま値を渡す
