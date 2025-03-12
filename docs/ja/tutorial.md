@@ -157,12 +157,12 @@ export default function ContactUs() {
           name="email"
           defaultValue={result?.payload.email}
           required
-          aria-invalid={result?.error.email ? true : undefined}
+          aria-invalid={result?.fieldErrors.email ? true : undefined}
           aria-describedby={
-            result?.error.email ? 'contact-email-error' : undefined
+            result?.fieldErrors.email ? 'contact-email-error' : undefined
           }
         />
-        <div id="contact-email-error">{result?.error.email}</div>
+        <div id="contact-email-error">{result?.fieldErrors.email}</div>
       </div>
       <div>
         <label htmlFor="contact-message">Message</label>
@@ -173,12 +173,12 @@ export default function ContactUs() {
           required
           minLength={10}
           maxLength={100}
-          aria-invalid={result?.error.message ? true : undefined}
+          aria-invalid={result?.fieldErrors.message ? true : undefined}
           aria-describedby={
-            result?.error.message ? 'contact-email-message' : undefined
+            result?.fieldErrors.message ? 'contact-email-message' : undefined
           }
         />
-        <div id="contact-email-message">{result?.error.message}</div>
+        <div id="contact-email-message">{result?.fieldErrors.message}</div>
       </div>
       <button>Send</button>
     </Form>
