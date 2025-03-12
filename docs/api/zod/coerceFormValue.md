@@ -12,7 +12,7 @@ The following rules will be applied by default:
 2. If the schema is `z.number()`, trim the value and cast it with the `Number` constructor
 3. If the schema is `z.boolean()`, treat the value as `true` if it equals to `on` (Browser default `value` of a checkbox / radio button)
 4. If the schema is `z.date()`, cast the value with the `Date` constructor
-5. If the schema is `z.bigint()`, cast the value with the `BigInt` constructor
+5. If the schema is `z.bigint()`, trim the value and cast it with the `BigInt` constructor
 
 ## Parameters
 
