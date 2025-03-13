@@ -332,6 +332,14 @@ function handleIntent<Error>(
 	switch (intent.type) {
 		case 'validate': {
 			if (intent.payload.name) {
+				if (intent.payload.recursive) {
+					const allNames = Object.keys(meta.error).concat(fields ?? []);
+					for (const name of allNames) {
+						if (isPrefix(name, intent.payload.name)) {
+							meta.validated[name] = true;
+						}
+					}
+				}
 				meta.validated[intent.payload.name] = true;
 			} else {
 				setFieldsValidated(meta, fields);
