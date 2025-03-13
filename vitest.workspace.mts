@@ -22,4 +22,5 @@ export default defineWorkspace([
 			environment: 'node',
 		},
 	},
+	'packages/conform-valibot',
 ]);
