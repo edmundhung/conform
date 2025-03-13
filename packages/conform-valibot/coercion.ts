@@ -499,7 +499,7 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 			type: GenericSchema | GenericSchemaAsync,
 		) => CoercionFunction | null;
 	},
-): ReturnType<typeof enableTypeCoercion> {
+): T extends GenericSchema ? GenericSchema : GenericSchemaAsync {
 	return enableTypeCoercion(type, {
 		defaultCoercion: {
 			string: compose(
@@ -528,7 +528,7 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 			),
 		},
 		defineCoercion: options?.defineCoercion ?? (() => null),
-	});
+	}).schema;
 }
 
 /**

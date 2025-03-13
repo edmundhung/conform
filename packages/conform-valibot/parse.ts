@@ -66,7 +66,7 @@ export function parseWithValibot<
 					: config.schema;
 			const schema = config.disableAutoCoercion
 				? baseSchema
-				: coerceFormValue(baseSchema).schema;
+				: coerceFormValue(baseSchema);
 
 			const resolveResult = (
 				result: SafeParseResult<Schema>,

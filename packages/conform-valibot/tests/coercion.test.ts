@@ -23,7 +23,7 @@ describe('coerceFormValue', () => {
 			bigNumber: bigint(),
 		});
 
-		const { schema: coercedSchema } = coerceFormValue(schema);
+		const coercedSchema = coerceFormValue(schema);
 		const result = safeParse(coercedSchema as GenericSchema, {
 			text: 'hello',
 			num: '123',
@@ -54,7 +54,7 @@ describe('coerceFormValue', () => {
 					bigNumber: bigint(),
 				});
 
-				const { schema: coercedSchemaWithoutNumber } = coerceFormValue(schema, {
+				const coercedSchemaWithoutNumber = coerceFormValue(schema, {
 					defaultCoercion: {
 						number: false,
 						boolean: false,
@@ -63,7 +63,7 @@ describe('coerceFormValue', () => {
 					},
 				});
 
-				const result = safeParse(coercedSchemaWithoutNumber as GenericSchema, {
+				const result = safeParse(coercedSchemaWithoutNumber, {
 					text: 'hello',
 					num: '123',
 					flag: 'on',
@@ -121,7 +121,7 @@ describe('coerceFormValue', () => {
 					return data + BigInt(1);
 				};
 
-				const { schema: coercedSchema } = coerceFormValue(schema, {
+				const coercedSchema = coerceFormValue(schema, {
 					defaultCoercion: {
 						string: customStringCoercion,
 						number: customNumberCoercion,
@@ -130,7 +130,7 @@ describe('coerceFormValue', () => {
 					},
 				});
 
-				const result = safeParse(coercedSchema as GenericSchema, {
+				const result = safeParse(coercedSchema, {
 					text: 'hello',
 					num: '10',
 					flag: 'on',
@@ -206,11 +206,11 @@ describe('coerceFormValue', () => {
 					return null;
 				};
 
-				const { schema: coercedSchema } = coerceFormValue(schema, {
+				const coercedSchema = coerceFormValue(schema, {
 					defineCoercion,
 				});
 
-				const result = safeParse(coercedSchema as GenericSchema, {
+				const result = safeParse(coercedSchema, {
 					text: '  hello  ',
 					num: '123',
 					timestamp: '2023-01-01',
