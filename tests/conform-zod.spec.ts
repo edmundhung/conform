@@ -1179,7 +1179,6 @@ describe('conform-zod', () => {
 								if (typeof value !== 'string') {
 									return value;
 								}
-
 								// Trim the text
 								const text = value.trim();
 
@@ -1189,6 +1188,31 @@ describe('conform-zod', () => {
 
 								return text;
 							},
+						},
+					}).safeParse({
+						title: ' ',
+						count: ' ',
+						amount: ' ',
+						date: ' ',
+						confirmed: ' ',
+						file: exampleFile,
+					}),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					title: ['required'],
+					amount: ['required'],
+					count: ['required'],
+					date: ['required'],
+					confirmed: ['required'],
+				},
+			});
+
+			expect(
+				getResult(
+					coerceFormValue(schema, {
+						defaultCoercion: {
 							number(value) {
 								if (typeof value !== 'string') {
 									return value;
@@ -1218,7 +1242,7 @@ describe('conform-zod', () => {
 			).toEqual({
 				success: true,
 				data: {
-					title: 'example',
+					title: ' example ',
 					count: 123456,
 					amount: 9876543210n,
 					date: new Date('1970-01-01'),
@@ -1228,7 +1252,7 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test('define custom coercion', () => {
+		test('customize coercion', () => {
 			const Payment = z.object({
 				count: z.number({
 					required_error: 'required',
@@ -1252,7 +1276,7 @@ describe('conform-zod', () => {
 			expect(
 				getResult(
 					coerceFormValue(schema, {
-						defineCoercion(type) {
+						customize(type) {
 							if (type === Payment) {
 								return (value) => {
 									if (typeof value !== 'string') {

@@ -72,6 +72,23 @@ const schema = coerceFormValue(
   }),
   {
     defaultCoercion: {
+      // Trim the value for all string-based fields
+      // e.g. `z.string()`, `z.number()` or `z.boolean()`
+      string: (value) => {
+        if (typeof value !== 'string') {
+          return value;
+        }
+
+        const result = value.trim();
+
+        // Treat it as `undefined` if the value is empty
+        if (result === '') {
+          return undefined;
+        }
+
+        return result;
+      },
+
       // Override the default coercion with `z.number()`
       number: (value) => {
         // Pass the value as is if it's not a string
@@ -110,7 +127,7 @@ const schema = z.object({
 
 ### Define custom coercion
 
-You can define custom coercion for a specific schema by setting the `defineCoercion` option.
+You can customize coercion for a specific schema by setting the `customize` option.
 
 ```ts
 import {
@@ -132,7 +149,7 @@ const schema = coerceFormValue(
     metadata,
   }),
   {
-    defineCoercion(type) {
+    customize(type) {
       // Customize how the `metadata` field value is coerced
       if (type === metadata) {
         return (value) => {
@@ -145,6 +162,7 @@ const schema = coerceFormValue(
         };
       }
 
+      // Return `null` to keep the default behavior
       return null;
     },
   },
