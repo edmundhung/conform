@@ -150,8 +150,8 @@ describe('coerceFormValue', () => {
 			});
 		});
 
-		describe('defineCoercion', () => {
-			test('defineCoercion for specific schema types', () => {
+		describe('customize', () => {
+			test('customize for specific schema types', () => {
 				const meta = object({
 					text: string(),
 					num: number(),
@@ -165,7 +165,7 @@ describe('coerceFormValue', () => {
 					meta,
 				});
 
-				const defineCoercion = (
+				const customize = (
 					schema: GenericSchema | GenericSchemaAsync,
 				): CoercionFunction | null => {
 					if (schema.type === 'string') {
@@ -207,7 +207,7 @@ describe('coerceFormValue', () => {
 				};
 
 				const coercedSchema = coerceFormValue(schema, {
-					defineCoercion,
+					customize,
 				});
 
 				const result = safeParse(coercedSchema, {

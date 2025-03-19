@@ -24,7 +24,7 @@ export type DefaultCoercionType =
 
 type EnableTypeCoercionOptions = {
 	defaultCoercion: Record<DefaultCoercionType, CoercionFunction>;
-	defineCoercion: (
+	customize: (
 		type: GenericSchema | GenericSchemaAsync,
 	) => CoercionFunction | null;
 };
@@ -280,10 +280,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		return { transformAction, schema };
 	}
 
-	const defineCoercionFn = options.defineCoercion(type);
+	const customizeFn = options.customize(type);
 
-	if (defineCoercionFn) {
-		return coerce(type, defineCoercionFn);
+	if (customizeFn) {
+		return coerce(type, customizeFn);
 	}
 
 	switch (type.type) {
@@ -479,7 +479,7 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
  *     defaultCoercion: {
  *       number: false,
  *     },
- *     defineCoercion: (schema) => {
+ *     customize: (schema) => {
  *       if (schema.type === 'string') {
  *         return (value) => value.trim();
  *       }
@@ -495,7 +495,7 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 		defaultCoercion?: {
 			[key in DefaultCoercionType]?: CoercionFunction | boolean;
 		};
-		defineCoercion?: (
+		customize?: (
 			type: GenericSchema | GenericSchemaAsync,
 		) => CoercionFunction | null;
 	},
@@ -527,7 +527,7 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 				getCoercion(options?.defaultCoercion?.bigint, coerceBigInt),
 			),
 		},
-		defineCoercion: options?.defineCoercion ?? (() => null),
+		customize: options?.customize ?? (() => null),
 	}).schema;
 }
 

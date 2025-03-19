@@ -24,7 +24,7 @@ The valibot schema to be enhanced.
 
 Optional. Set it if you want to [override the default behavior](#override-default-behavior).
 
-### `options.defineCoercion`
+### `options.customize`
 
 Optional. Use it to [define custom coercion](#define-custom-coercion) for a specific schema.
 
@@ -104,7 +104,7 @@ const schema = object({
 
 ### Define custom coercion
 
-You can define custom coercion for a specific schema by setting the `defineCoercion` option.
+You can customize coercion for a specific schema by setting the `customize` option.
 
 ```ts
 import {
@@ -126,7 +126,7 @@ const schema = coerceFormValue(
     metadata,
   }),
   {
-    defineCoercion(schema) {
+    customize(schema) {
       // Customize how the `metadata` field value is coerced
       if (schema === metadata) {
         return (value) => {

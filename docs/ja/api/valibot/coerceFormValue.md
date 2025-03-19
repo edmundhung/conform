@@ -24,9 +24,9 @@ const enhancedSchema = coerceFormValue(schema, options);
 
 [デフォルトの動作をオーバーライド](#デフォルトの動作をオーバーライドする)したい場合に設定します。
 
-### `options.defineCoercion`
+### `options.customize`
 
-特定のスキーマに対して[カスタム変換を定義](#カスタム変換を定義する)するために使用します。
+特定のスキーマに対して[カスタム変換を定義する](#カスタム変換を定義する)するために使用します。
 
 ## 例
 
@@ -104,7 +104,7 @@ const schema = object({
 
 ### カスタム変換を定義する
 
-`defineCoercion` オプションを設定することで、特定のスキーマに対してカスタム変換を定義できます。
+`customize` オプションを設定することで、特定のスキーマに対してカスタム変換を定義できます。
 
 ```ts
 import {
@@ -126,7 +126,7 @@ const schema = coerceFormValue(
     metadata,
   }),
   {
-    defineCoercion(schema) {
+    customize(schema) {
       // `metadata` フィールドの値がどのように変換されるかをカスタマイズする
       if (schema === metadata) {
         return (value) => {
