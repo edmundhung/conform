@@ -206,15 +206,15 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 		options,
 	);
 
+	// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnkonwSchema` for coercion.
+	const unknown = { ...valibotUnknown(), expects: type.expects };
 	if (transformAction) {
-		// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnkonwSchema` for coercion.
-		const unknown = { ...valibotUnknown(), expects: type.expects };
 		const schema = type.async
 			? pipeAsync(unknown, transformAction, type)
 			: pipe(unknown, transformAction, type);
 
-		const default_ = 'default' in type ? type.default : undefined;
 		if (rewrap) {
+			const default_ = 'default' in type ? type.default : undefined;
 			return {
 				transformAction: undefined,
 				schema: type.reference(schema, default_),
@@ -228,10 +228,14 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 		...type,
 		wrapped: wrapSchema,
 	};
+	const transformActionForStripEmptyString = vTransform(stripEmptyString);
+	const schema = wrappedSchema.async
+		? pipeAsync(unknown, transformActionForStripEmptyString, wrappedSchema)
+		: pipe(unknown, transformActionForStripEmptyString, wrappedSchema);
 
 	return {
 		transformAction: undefined,
-		schema: wrappedSchema,
+		schema,
 	};
 }
 

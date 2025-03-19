@@ -8,6 +8,7 @@ import {
 	object,
 	string,
 	safeParse,
+	optional,
 } from 'valibot';
 import { describe, expect, test } from 'vitest';
 import { coerceFormValue, type CoercionFunction } from '../coercion';
@@ -158,6 +159,7 @@ describe('coerceFormValue', () => {
 				});
 				const schema = object({
 					text: string(),
+					optionalText: optional(string()),
 					num: number(),
 					timestamp: date(),
 					yes: boolean(),
@@ -212,6 +214,7 @@ describe('coerceFormValue', () => {
 
 				const result = safeParse(coercedSchema, {
 					text: '  hello  ',
+					optionalText: ' ',
 					num: '123',
 					timestamp: '2023-01-01',
 					yes: 'yes',
@@ -222,6 +225,7 @@ describe('coerceFormValue', () => {
 					success: true,
 					data: {
 						text: 'hello',
+						optionalText: undefined,
 						num: 123,
 						timestamp: new Date('2023-01-01'),
 						yes: true,

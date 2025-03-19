@@ -1,12 +1,14 @@
 import {
 	check,
 	isoDate,
+	literal,
 	nullable,
 	number,
 	object,
 	optional,
 	pipe,
 	string,
+	union,
 } from 'valibot';
 import { describe, expect, test } from 'vitest';
 import { parseWithValibot } from '../../../parse';
@@ -79,6 +81,39 @@ describe('wrap', () => {
 		expect(errorOutput2).toMatchObject({
 			error: {
 				'': ['key is not even'],
+			},
+		});
+	});
+
+	test('should pass wrapped union', () => {
+		const schema = object({
+			union: optional(union([number(), literal('test')])),
+		});
+
+		const output1 = parseWithValibot(createFormData('union', '30'), { schema });
+		expect(output1).toMatchObject({ status: 'success', value: { union: 30 } });
+
+		const output2 = parseWithValibot(createFormData('union', 'test'), {
+			schema,
+		});
+		expect(output2).toMatchObject({
+			status: 'success',
+			value: { union: 'test' },
+		});
+
+		const output3 = parseWithValibot(createFormData('union', ''), { schema });
+		expect(output3).toMatchObject({
+			status: 'success',
+			value: { union: undefined },
+		});
+
+		const errorOutput = parseWithValibot(
+			createFormData('union', 'non number'),
+			{ schema },
+		);
+		expect(errorOutput).toMatchObject({
+			error: {
+				union: expect.anything(),
 			},
 		});
 	});

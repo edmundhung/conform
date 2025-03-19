@@ -1,6 +1,7 @@
 import {
 	checkAsync,
 	isoDate,
+	literal,
 	nullableAsync,
 	number,
 	object,
@@ -8,6 +9,7 @@ import {
 	optionalAsync,
 	pipeAsync,
 	string,
+	unionAsync,
 } from 'valibot';
 import { describe, expect, test } from 'vitest';
 import { parseWithValibot } from '../../../parse';
@@ -102,6 +104,43 @@ describe('wrapAsync', () => {
 		expect(output).toMatchObject({
 			status: 'success',
 			value: { key: 'valid' },
+		});
+	});
+
+	test('should pass wrapped async union', async () => {
+		const schema = objectAsync({
+			union: optionalAsync(unionAsync([number(), literal('test')])),
+		});
+
+		const output1 = await parseWithValibot(createFormData('union', '30'), {
+			schema,
+		});
+		expect(output1).toMatchObject({ status: 'success', value: { union: 30 } });
+
+		const output2 = await parseWithValibot(createFormData('union', 'test'), {
+			schema,
+		});
+		expect(output2).toMatchObject({
+			status: 'success',
+			value: { union: 'test' },
+		});
+
+		const output3 = await parseWithValibot(createFormData('union', ''), {
+			schema,
+		});
+		expect(output3).toMatchObject({
+			status: 'success',
+			value: { union: undefined },
+		});
+
+		const errorOutput = await parseWithValibot(
+			createFormData('union', 'non number'),
+			{ schema },
+		);
+		expect(errorOutput).toMatchObject({
+			error: {
+				union: expect.anything(),
+			},
 		});
 	});
 });
