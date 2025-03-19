@@ -701,8 +701,8 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       valibot:
-        specifier: ^1.0.0-rc.3
-        version: 1.0.0-rc.3(typescript@5.4.5)
+        specifier: ^1.0.0
+        version: 1.0.0(typescript@5.4.5)
 
   packages/conform-validitystate:
     devDependencies:
@@ -11038,8 +11038,8 @@ packages:
     resolution: {integrity: sha512-FGtKtv3xIpR6BYhvgH8MI/y78oT7d8Au3ww4QIxymrCtZEh5b8gCw2siywE+puhEmuWKDtmfrvF5UlB298ut3w==}
     engines: {node: '>=10.12.0'}
 
-  valibot@1.0.0-rc.3:
-    resolution: {integrity: sha512-LT0REa7Iqx4QGcaHLiTiTkcmJqJ9QdpOy89HALFFBJgejTS64GQFRIbDF7e4f6pauQbo/myfKGmWXCLhMeM6+g==}
+  valibot@1.0.0:
+    resolution: {integrity: sha512-1Hc0ihzWxBar6NGeZv7fPLY0QuxFMyxwYR2sF1Blu7Wq7EnremwY2W02tit2ij2VJT8HcSkHAQqmFfl77f73Yw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -23897,7 +23897,7 @@ snapshots:
       convert-source-map: 1.9.0
       source-map: 0.7.4
 
-  valibot@1.0.0-rc.3(typescript@5.4.5):
+  valibot@1.0.0(typescript@5.4.5):
     optionalDependencies:
       typescript: 5.4.5
 

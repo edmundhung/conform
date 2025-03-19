@@ -51,7 +51,7 @@
 		"@rollup/plugin-node-resolve": "^13.3.0",
 		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.79.1",
-		"valibot": "^1.0.0-rc.3"
+		"valibot": "^1.0.0"
 	},
 	"keywords": [
 		"constraint-validation",
