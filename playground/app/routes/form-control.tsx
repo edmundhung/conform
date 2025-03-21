@@ -75,6 +75,14 @@ export default function FormControl() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
+							{...form.validate.getButtonProps({
+								name: [fields.name.name, fields.message.name],
+							})}
+						>
+							Validate Name And Message
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
 							{...form.update.getButtonProps({
 								name: fields.message.name,
 								value: 'Hello World',
