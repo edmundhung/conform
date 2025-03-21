@@ -50,6 +50,32 @@ A function to be called before the form is submitted. If **onValidate** is set, 
 
 Enable constraint validation before the DOM is hydrated. Default to **true**.
 
+## Returns
+
+### `form`
+
+The form metadata. The following is a description of the properties.
+
+#### `id`
+
+#### `errorId`
+
+#### `descriptionId`
+
+#### `name`
+
+#### `initialValue`
+
+#### `value`
+
+#### `errors`
+
+#### `allErrors`
+
+#### `valid`
+
+#### `dirty`
+
 ## Tips
 
 ### Client validation is optional
