@@ -8,6 +8,9 @@ function getFieldset(form: Locator) {
 		number: form.locator('[name="number"]'),
 		validateForm: form.locator('button:text("Validate Form")'),
 		validateMessage: form.locator('button:text("Validate Message")'),
+		validateNameAndMessage: form.locator(
+			'button:text("Validate Name And Message")',
+		),
 		updateMessage: form.locator('button:text("Update message")'),
 		updateNumber: form.locator('button:text("Update number")'),
 		updateForm: form.locator('button:text("Update form")'),
@@ -45,6 +48,19 @@ async function runValidationScenario(page: Page) {
 	await expect(fieldset.number).toHaveValue('123');
 
 	await fieldset.validateForm.click();
+	await expect(playground.error).toHaveText([
+		'Name is required',
+		'Message is required',
+		'',
+	]);
+
+	await fieldset.resetForm.click();
+	await expect(fieldset.name).toHaveValue('');
+	await expect(fieldset.number).toHaveValue('');
+	await expect(fieldset.message).toHaveValue('');
+	await expect(playground.error).toHaveText(['', '', '']);
+
+	await fieldset.validateNameAndMessage.click();
 	await expect(playground.error).toHaveText([
 		'Name is required',
 		'Message is required',
