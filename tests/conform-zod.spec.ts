@@ -2,14 +2,37 @@ import { beforeEach, vi, describe, test, expect } from 'vitest';
 import {
 	getZodConstraint,
 	parseWithZod,
+	unstable_coerceFormValue as coerceFormValue,
 	conformZodMessage,
 } from '@conform-to/zod';
-import { z } from 'zod';
+import { SafeParseReturnType, z } from 'zod';
 import { createFormData } from './helpers';
+import { formatPaths } from '@conform-to/dom';
 
 beforeEach(() => {
 	vi.unstubAllGlobals();
 });
+
+function getResult<Output>(
+	result: SafeParseReturnType<any, Output>,
+):
+	| { success: false; error: Record<string, string[]> }
+	| { success: true; data: Output } {
+	if (result.success) {
+		return { success: true, data: result.data };
+	}
+
+	const error: Record<string, string[]> = {};
+
+	for (const issue of result.error.issues) {
+		const name = formatPaths(issue.path);
+
+		error[name] ??= [];
+		error[name].push(issue.message);
+	}
+
+	return { success: false, error };
+}
 
 describe('conform-zod', () => {
 	test('getZodConstraint', () => {
@@ -286,309 +309,208 @@ describe('conform-zod', () => {
 		// });
 	});
 
-	describe('parseWithZod', () => {
+	describe('coerceFormValue', () => {
 		test('z.string', () => {
-			const schema = z.object({
-				test: z
-					.string({ required_error: 'required', invalid_type_error: 'invalid' })
-					.min(10, 'min')
-					.max(100, 'max')
-					.regex(/^[A-Z]{1-100}$/, 'regex')
-					.refine(() => false, 'refine'),
-			});
+			const schema = z
+				.string({ required_error: 'required', invalid_type_error: 'invalid' })
+				.min(10, 'min')
+				.max(100, 'max')
+				.regex(/^[A-Z]{1,100}$/, 'regex')
+				.refine((value) => value !== 'error', 'refine');
 			const file = new File([], '');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse('error'))).toEqual({
+				success: false,
+				error: {
+					'': ['min', 'regex', 'refine'],
+				},
 			});
 			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema,
-				}),
+				getResult(coerceFormValue(schema).safeParse('ABCDEFGHIJ')),
 			).toEqual({
-				status: 'error',
-
-				payload: { test: '' },
-				error: { test: ['required'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', file]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: file },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', 'xyz']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: 'xyz' },
-				error: { test: ['min', 'regex', 'refine'] },
-				reply: expect.any(Function),
+				success: true,
+				data: 'ABCDEFGHIJ',
 			});
 		});
 
 		test('z.number', () => {
-			const schema = z.object({
-				test: z
-					.number({ required_error: 'required', invalid_type_error: 'invalid' })
-					.min(1, 'min')
-					.max(10, 'max')
-					.step(2, 'step'),
-			});
+			const schema = z
+				.number({ required_error: 'required', invalid_type_error: 'invalid' })
+				.min(1, 'min')
+				.max(10, 'max')
+				.step(2, 'step');
 			const file = new File([], '');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: '' },
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', 'abc']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: 'abc' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', file]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: file },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('5'))).toEqual({
+				success: false,
+				error: {
+					'': ['step'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', '5']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: '5' },
-				error: { test: ['step'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(' '))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', ' ']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: ' ' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('6'))).toEqual({
+				success: true,
+				data: 6,
 			});
 		});
 
 		test('z.bigint', () => {
-			const schema = z.object({
-				test: z
-					.bigint({ required_error: 'required', invalid_type_error: 'invalid' })
-					.min(1n, 'min')
-					.max(10n, 'max')
-					.multipleOf(2n, 'step'),
-			});
+			const schema = z
+				.bigint({ required_error: 'required', invalid_type_error: 'invalid' })
+				.min(1n, 'min')
+				.max(10n, 'max')
+				.multipleOf(2n, 'step');
 			const file = new File([], '');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: '' },
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', 'abc']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: 'abc' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', file]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: file },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(' '))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', '5']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: '5' },
-				error: { test: ['step'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('5'))).toEqual({
+				success: false,
+				error: {
+					'': ['step'],
+				},
 			});
-			expect(
-				parseWithZod(createFormData([['test', ' ']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: ' ' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse('4'))).toEqual({
+				success: true,
+				data: 4n,
 			});
 		});
 
 		test('z.date', () => {
-			const schema = z.object({
-				test: z
-					.date({
-						required_error: 'required',
-						invalid_type_error: 'invalid',
-					})
-					.min(new Date(1), 'min')
-					.max(new Date(10), 'max'),
-			});
+			const schema = z
+				.date({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				})
+				.min(new Date(1), 'min')
+				.max(new Date(10), 'max');
 			const file = new File([], '');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse(' '))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
 			});
 			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema,
-				}),
+				getResult(coerceFormValue(schema).safeParse(new Date(0).toISOString())),
 			).toEqual({
-				status: 'error',
-				payload: { test: '' },
-				error: { test: ['required'] },
-				reply: expect.any(Function),
+				success: false,
+				error: {
+					'': ['min'],
+				},
 			});
 			expect(
-				parseWithZod(createFormData([['test', 'abc']]), {
-					schema,
-				}),
+				getResult(coerceFormValue(schema).safeParse(new Date(5).toISOString())),
 			).toEqual({
-				status: 'error',
-				payload: { test: 'abc' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', file]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: file },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', new Date(0).toISOString()]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: new Date(0).toISOString() },
-				error: { test: ['min'] },
-				reply: expect.any(Function),
+				success: true,
+				data: new Date(5),
 			});
 		});
 
 		test('z.boolean', () => {
-			const schema = z.object({
-				test: z.boolean({
-					required_error: 'required',
-					invalid_type_error: 'invalid',
-				}),
+			const schema = z.boolean({
+				required_error: 'required',
+				invalid_type_error: 'invalid',
 			});
 			const file = new File([], '');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['required'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: '' },
-				error: { test: ['required'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', file]]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: file },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', 'abc']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'error',
-				payload: { test: 'abc' },
-				error: { test: ['invalid'] },
-				reply: expect.any(Function),
-			});
-			expect(
-				parseWithZod(createFormData([['test', 'on']]), {
-					schema,
-				}),
-			).toEqual({
-				status: 'success',
-				payload: { test: 'on' },
-				value: {
-					test: true,
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
 				},
-				reply: expect.any(Function),
+			});
+			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse('true'))).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+			expect(getResult(coerceFormValue(schema).safeParse('on'))).toEqual({
+				success: true,
+				data: true,
 			});
 		});
 
@@ -598,9 +520,11 @@ describe('conform-zod', () => {
 					text: z.string({
 						required_error: 'required',
 					}),
-					flag: z.boolean({
-						required_error: 'required',
-					}),
+					flag: z
+						.boolean({
+							required_error: 'required',
+						})
+						.optional(),
 				}),
 				b: z
 					.object({
@@ -614,31 +538,51 @@ describe('conform-zod', () => {
 					.optional(),
 			});
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: false,
 				error: {
 					'a.text': ['required'],
-					'a.flag': ['required'],
 				},
-				reply: expect.any(Function),
 			});
 			expect(
-				parseWithZod(createFormData([['b.text', '']]), { schema }),
+				getResult(
+					coerceFormValue(schema).safeParse({
+						b: {
+							text: '',
+						},
+					}),
+				),
 			).toEqual({
-				status: 'error',
-				payload: {
-					b: {
-						text: '',
-					},
-				},
+				success: false,
 				error: {
 					'a.text': ['required'],
-					'a.flag': ['required'],
 					'b.text': ['required'],
 					'b.flag': ['required'],
 				},
-				reply: expect.any(Function),
+			});
+			expect(
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: {
+							text: 'foo',
+						},
+						b: {
+							text: 'bar',
+							flag: 'on',
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					a: {
+						text: 'foo',
+					},
+					b: {
+						text: 'bar',
+						flag: true,
+					},
+				},
 			});
 		});
 
@@ -649,254 +593,160 @@ describe('conform-zod', () => {
 					invalid_type_error: 'invalid',
 				}),
 			) =>
-				z.object({
-					test: z
-						.array(element, {
-							required_error: 'required',
-							invalid_type_error: 'invalid',
-						})
-						.min(1, 'min')
-						.max(1, 'max'),
-				});
+				z
+					.array(element, {
+						required_error: 'required',
+						invalid_type_error: 'invalid',
+					})
+					.min(1, 'min')
+					.max(1, 'max');
 
-			expect(
-				parseWithZod(createFormData([]), { schema: createSchema() }),
-			).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['min'] },
-				reply: expect.any(Function),
-			});
 			// Scenario: Multiple select (default option is empty string)
-			expect(
-				parseWithZod(createFormData([['test', '']]), {
-					schema: createSchema(),
-				}),
-			).toEqual({
-				status: 'error',
-				payload: {
-					test: '',
-				},
+			expect(getResult(coerceFormValue(createSchema()).safeParse(''))).toEqual({
+				success: false,
 				error: {
-					test: ['min'],
+					'': ['min'],
 				},
-				reply: expect.any(Function),
 			});
 			// Scenario: Checkbox group (Checked only one item)
-			expect(
-				parseWithZod(createFormData([['test', 'a']]), {
-					schema: createSchema(),
-				}),
-			).toEqual({
-				status: 'success',
-				payload: { test: 'a' },
-				value: { test: ['a'] },
-				reply: expect.any(Function),
-			});
+			expect(getResult(coerceFormValue(createSchema()).safeParse('a'))).toEqual(
+				{
+					success: true,
+					data: ['a'],
+				},
+			);
 			// Scenario: Checkbox group (Checked at least two items)
 			expect(
-				parseWithZod(
-					createFormData([
-						['test', 'a'],
-						['test', 'b'],
-					]),
-					{
-						schema: createSchema(),
-					},
-				),
+				getResult(coerceFormValue(createSchema()).safeParse(['a', 'b'])),
 			).toEqual({
-				status: 'error',
-				payload: { test: ['a', 'b'] },
+				success: false,
 				error: {
-					test: ['max'],
+					'': ['max'],
 				},
-				reply: expect.any(Function),
 			});
 			// Scenario: File upload (No file selected)
 			const emptyFile = new File([], '');
 			const textFile = new File(['helloword'], 'example.txt');
 
 			expect(
-				parseWithZod(createFormData([['test', emptyFile]]), {
-					schema: createSchema(z.instanceof(File)),
-				}),
+				getResult(
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse(
+						emptyFile,
+					),
+				),
 			).toEqual({
-				status: 'error',
-				payload: { test: emptyFile },
+				success: false,
 				error: {
-					test: ['min'],
+					'': ['min'],
 				},
-				reply: expect.any(Function),
 			});
 			// Scenario: File upload (Only one file selected)
 			expect(
-				parseWithZod(createFormData([['test', textFile]]), {
-					schema: createSchema(z.instanceof(File)),
-				}),
+				getResult(
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse(textFile),
+				),
 			).toEqual({
-				status: 'success',
-				payload: { test: textFile },
-				value: {
-					test: [textFile],
-				},
-				reply: expect.any(Function),
+				success: true,
+				data: [textFile],
 			});
 			// Scenario: File upload (At least two files selected)
 			expect(
-				parseWithZod(
-					createFormData([
-						['test', textFile],
-						['test', textFile],
+				getResult(
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse([
+						textFile,
+						textFile,
 					]),
-					{
-						schema: createSchema(z.instanceof(File)),
-					},
 				),
 			).toEqual({
-				status: 'error',
-				payload: { test: [textFile, textFile] },
+				success: false,
 				error: {
-					test: ['max'],
+					'': ['max'],
 				},
-				reply: expect.any(Function),
 			});
 			// Scenario: Only one input with the specific name
 			expect(
-				parseWithZod(createFormData([['test[0]', '']]), {
-					schema: createSchema(),
-				}),
+				getResult(coerceFormValue(createSchema()).safeParse([''])),
 			).toEqual({
-				status: 'error',
-				payload: { test: [''] },
+				success: false,
 				error: {
-					'test[0]': ['required'],
+					'[0]': ['required'],
 				},
-				reply: expect.any(Function),
 			});
 			// Scenario: Group of inputs with the same name
 			expect(
-				parseWithZod(
-					createFormData([
-						['test', 'foo'],
-						['test', ''],
-					]),
-					{
-						schema: createSchema(),
-					},
-				),
+				getResult(coerceFormValue(createSchema()).safeParse(['a', ''])),
 			).toEqual({
-				status: 'error',
-				payload: { test: ['foo', ''] },
+				success: false,
 				error: {
-					test: ['max'],
-					'test[1]': ['required'],
+					'': ['max'],
+					'[1]': ['required'],
 				},
-				reply: expect.any(Function),
 			});
 		});
 
 		test('z.instanceof(file)', () => {
-			const schema = z.object({
-				test: z.instanceof(File, { message: 'message' }),
-			});
+			const schema = z.instanceof(File, { message: 'required' });
 			const emptyFile = new File([], '');
 			const txtFile = new File(['hello', 'world'], 'example.txt');
 
-			expect(parseWithZod(createFormData([]), { schema })).toEqual({
-				status: 'error',
-				payload: {},
-				error: { test: ['message'] },
-				reply: expect.any(Function),
-			});
-			expect(parseWithZod(createFormData([['test', '']]), { schema })).toEqual({
-				status: 'error',
-				payload: {
-					test: '',
+			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
 				},
-				error: { test: ['message'] },
-				reply: expect.any(Function),
 			});
 			expect(
-				parseWithZod(createFormData([['test', 'helloworld']]), { schema }),
+				getResult(coerceFormValue(schema).safeParse('helloworld')),
 			).toEqual({
-				status: 'error',
-				payload: {
-					test: 'helloworld',
+				success: false,
+				error: {
+					'': ['required'],
 				},
-				error: { test: ['message'] },
-				reply: expect.any(Function),
 			});
-			expect(
-				parseWithZod(createFormData([['test', emptyFile]]), { schema }),
-			).toEqual({
-				status: 'error',
-				payload: {
-					test: emptyFile,
+			expect(getResult(coerceFormValue(schema).safeParse(emptyFile))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
 				},
-				error: { test: ['message'] },
-				reply: expect.any(Function),
 			});
-			expect(
-				parseWithZod(createFormData([['test', txtFile]]), { schema }),
-			).toEqual({
-				status: 'success',
-				payload: {
-					test: txtFile,
-				},
-				value: {
-					test: txtFile,
-				},
-				reply: expect.any(Function),
+			expect(getResult(coerceFormValue(schema).safeParse(txtFile))).toEqual({
+				success: true,
+				data: txtFile,
 			});
 		});
 
 		test('z.preprocess', () => {
-			const schemaWithNoPreprocess = z.object({
-				test: z.number({ invalid_type_error: 'invalid' }),
+			const schemaWithNoPreprocess = z.number({
+				invalid_type_error: 'invalid',
 			});
-			const schemaWithCustomPreprocess = z.object({
-				test: z.preprocess(
-					(value) => {
-						if (typeof value !== 'string') {
-							return value;
-						} else if (value === '') {
-							return undefined;
-						} else {
-							return value.replace(/,/g, '');
-						}
-					},
-					z.number({ invalid_type_error: 'invalid' }),
-				),
-			});
-			const formData = createFormData([['test', '1,234.5']]);
+			const schemaWithCustomPreprocess = z.preprocess(
+				(value) => {
+					if (typeof value !== 'string') {
+						return value;
+					} else if (value === '') {
+						return undefined;
+					} else {
+						return value.replace(/,/g, '');
+					}
+				},
+				z.number({ invalid_type_error: 'invalid' }),
+			);
 
 			expect(
-				parseWithZod(formData, {
-					schema: schemaWithNoPreprocess,
-				}),
+				getResult(coerceFormValue(schemaWithNoPreprocess).safeParse('1,234.5')),
 			).toEqual({
-				status: 'error',
-				payload: {
-					test: '1,234.5',
-				},
+				success: false,
 				error: {
-					test: ['invalid'],
+					'': ['invalid'],
 				},
-				reply: expect.any(Function),
 			});
 			expect(
-				parseWithZod(formData, {
-					schema: schemaWithCustomPreprocess,
-				}),
+				getResult(
+					coerceFormValue(schemaWithCustomPreprocess).safeParse('1,234.5'),
+				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					test: '1,234.5',
-				},
-				value: {
-					test: 1234.5,
-				},
-				reply: expect.any(Function),
+				success: true,
+				data: 1234.5,
 			});
 		});
 
@@ -912,31 +762,9 @@ describe('conform-zod', () => {
 			});
 			const emptyFile = new File([], '');
 
-			expect(
-				parseWithZod(
-					createFormData([
-						['a', ''],
-						['b', ''],
-						['c', ''],
-						['d', ''],
-						['e', emptyFile],
-						['f', ''],
-						['g', ''],
-					]),
-					{ schema },
-				),
-			).toEqual({
-				status: 'success',
-				payload: {
-					a: '',
-					b: '',
-					c: '',
-					d: '',
-					e: emptyFile,
-					f: '',
-					g: '',
-				},
-				value: {
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: true,
+				data: {
 					a: undefined,
 					b: undefined,
 					c: undefined,
@@ -945,13 +773,38 @@ describe('conform-zod', () => {
 					f: [],
 					g: undefined,
 				},
-				reply: expect.any(Function),
+			});
+			expect(
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: '',
+						b: '',
+						c: '',
+						d: '',
+						e: emptyFile,
+						f: '',
+						g: '',
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					a: undefined,
+					b: undefined,
+					c: undefined,
+					d: undefined,
+					e: undefined,
+					f: [],
+					g: undefined,
+				},
 			});
 
 			// To test if File is not defined in certain environment
 			vi.stubGlobal('File', undefined);
 
-			expect(() => parseWithZod(createFormData([]), { schema })).not.toThrow();
+			expect(() =>
+				getResult(coerceFormValue(schema).safeParse({})),
+			).not.toThrow();
 		});
 
 		test('z.default', () => {
@@ -970,28 +823,19 @@ describe('conform-zod', () => {
 			const emptyFile = new File([], '');
 
 			expect(
-				parseWithZod(
-					createFormData([
-						['a', ''],
-						['b', ''],
-						['c', ''],
-						['d', ''],
-						['e', emptyFile],
-						['f', ''],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: '',
+						b: '',
+						c: '',
+						d: '',
+						e: emptyFile,
+						f: '',
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					a: '',
-					b: '',
-					c: '',
-					d: '',
-					e: emptyFile,
-					f: '',
-				},
-				value: {
+				success: true,
+				data: {
 					a: 'text',
 					b: 123,
 					c: true,
@@ -1001,7 +845,6 @@ describe('conform-zod', () => {
 					g: null,
 					h: '',
 				},
-				reply: expect.any(Function),
 			});
 
 			const today = new Date();
@@ -1019,17 +862,15 @@ describe('conform-zod', () => {
 					.default(defaultFile),
 			});
 
-			expect(parseWithZod(createFormData([]), { schema: schema2 })).toEqual({
-				status: 'error',
-				payload: {},
-				error: {
-					a: ['invalid'],
-					b: ['invalid'],
-					c: ['invalid'],
-					d: ['invalid'],
-					e: ['invalid'],
+			expect(getResult(coerceFormValue(schema2).safeParse({}))).toEqual({
+				success: true,
+				data: {
+					a: '',
+					b: 0,
+					c: false,
+					d: defaultDate,
+					e: defaultFile,
 				},
-				reply: expect.any(Function),
 			});
 		});
 
@@ -1049,28 +890,19 @@ describe('conform-zod', () => {
 			const emptyFile = new File([], '');
 
 			expect(
-				parseWithZod(
-					createFormData([
-						['a', ''],
-						['b', ''],
-						['c', ''],
-						['d', ''],
-						['e', emptyFile],
-						['f', ''],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: '',
+						b: '',
+						c: '',
+						d: '',
+						e: emptyFile,
+						f: '',
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					a: '',
-					b: '',
-					c: '',
-					d: '',
-					e: emptyFile,
-					f: '',
-				},
-				value: {
+				success: true,
+				data: {
 					a: 'text',
 					b: 123,
 					c: true,
@@ -1078,32 +910,22 @@ describe('conform-zod', () => {
 					e: defaultFile,
 					f: ['foo', 'bar'],
 				},
-				reply: expect.any(Function),
 			});
+
 			expect(
-				parseWithZod(
-					createFormData([
-						['a', 'othertext'],
-						['b', '456'],
-						['c', 'on'],
-						['d', userDate.toISOString()],
-						['e', userFile],
-						['f', 'hello'],
-						['f', 'world'],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: 'othertext',
+						b: '456',
+						c: 'on',
+						d: userDate.toISOString(),
+						e: userFile,
+						f: ['hello', 'world'],
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					a: 'othertext',
-					b: '456',
-					c: 'on',
-					d: userDate.toISOString(),
-					e: userFile,
-					f: ['hello', 'world'],
-				},
-				value: {
+				success: true,
+				data: {
 					a: 'othertext',
 					b: 456,
 					c: true,
@@ -1111,7 +933,6 @@ describe('conform-zod', () => {
 					e: userFile,
 					f: ['hello', 'world'],
 				},
-				reply: expect.any(Function),
 			});
 		});
 
@@ -1131,59 +952,46 @@ describe('conform-zod', () => {
 			});
 
 			expect(
-				parseWithZod(
-					createFormData([
-						['category.name', ''],
-						['category.subcategories[0].name', ''],
-						['category.subcategories[0].subcategories[0].name', ''],
-						['category.subcategories[1].name', ''],
-						['node.name', ''],
-						['node.left.name', ''],
-						['node.left.left.name', ''],
-						['node.left.right.name', ''],
-						['node.right.name', ''],
-						['node.right.right.name', ''],
-					]),
-					{ schema },
-				),
-			).toEqual({
-				status: 'error',
-				payload: {
-					category: {
-						name: '',
-						subcategories: [
-							{
-								name: '',
-								subcategories: [
-									{
-										name: '',
-									},
-								],
-							},
-							{
-								name: '',
-							},
-						],
-					},
-					node: {
-						name: '',
-						left: {
+				getResult(
+					coerceFormValue(schema).safeParse({
+						category: {
+							name: '',
+							subcategories: [
+								{
+									name: '',
+									subcategories: [
+										{
+											name: '',
+										},
+									],
+								},
+								{
+									name: '',
+								},
+							],
+						},
+						node: {
 							name: '',
 							left: {
 								name: '',
+								left: {
+									name: '',
+								},
+								right: {
+									name: '',
+								},
 							},
 							right: {
 								name: '',
+								right: {
+									name: '',
+								},
 							},
 						},
-						right: {
-							name: '',
-							right: {
-								name: '',
-							},
-						},
-					},
-				},
+					}),
+				),
+			).toEqual({
+				success: false,
 				error: {
 					'category.name': ['required'],
 					'category.subcategories[0].name': ['required'],
@@ -1196,7 +1004,6 @@ describe('conform-zod', () => {
 					'node.right.name': ['required'],
 					'node.right.right.name': ['required'],
 				},
-				reply: expect.any(Function),
 			});
 		});
 
@@ -1213,44 +1020,32 @@ describe('conform-zod', () => {
 			]);
 
 			expect(
-				parseWithZod(
-					createFormData([
-						['type', 'a'],
-						['number', '1'],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						type: 'a',
+						number: '1',
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					type: 'a',
-					number: '1',
-				},
-				value: {
+				success: true,
+				data: {
 					type: 'a',
 					number: 1,
 				},
-				reply: expect.any(Function),
 			});
 			expect(
-				parseWithZod(
-					createFormData([
-						['type', 'b'],
-						['boolean', 'on'],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						type: 'b',
+						boolean: 'on',
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					type: 'b',
-					boolean: 'on',
-				},
-				value: {
+				success: true,
+				data: {
 					type: 'b',
 					boolean: true,
 				},
-				reply: expect.any(Function),
 			});
 		});
 
@@ -1261,79 +1056,254 @@ describe('conform-zod', () => {
 					b: z.number().brand(),
 					c: z.boolean().brand(),
 					d: z.date().brand(),
-					e: z.instanceof(File).brand(),
-					f: z.string().optional().brand(),
-					g: z.string().brand().optional(),
+					e: z.bigint().brand(),
+					f: z.instanceof(File).brand(),
+					g: z.string().optional().brand(),
+					h: z.string().brand().optional(),
 				})
 				.brand();
+			const defaultFile = new File(['hello', 'world'], 'example.txt');
+
 			expect(
-				parseWithZod(
-					createFormData([
-						['a', ''],
-						['b', ''],
-						['c', ''],
-						['d', ''],
-						['e', ''],
-						['f', ''],
-						['g', ''],
-					]),
-					{ schema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: '',
+						b: '',
+						c: '',
+						d: '',
+						e: '',
+						f: '',
+						g: '',
+						h: '',
+					}),
 				),
 			).toEqual({
-				status: 'error',
-				payload: {
-					a: '',
-					b: '',
-					c: '',
-					d: '',
-					e: '',
-					f: '',
-					g: '',
-				},
+				success: false,
 				error: {
 					a: ['Required'],
 					b: ['Required'],
 					c: ['Required'],
 					d: ['Required'],
-					e: ['Input not instance of File'],
+					e: ['Required'],
+					f: ['Input not instance of File'],
 				},
-				reply: expect.any(Function),
-			});
-			const coercionTypesSchema = z.object({
-				a: z.string().brand(),
-				b: z.number().brand(),
-				c: z.boolean().brand(),
-				d: z.date().brand(),
-				e: z.bigint().brand(),
 			});
 			expect(
-				parseWithZod(
-					createFormData([
-						['a', 'hello world'],
-						['b', '42'],
-						['c', 'on'],
-						['d', '1970-01-01'],
-						['e', '0x1fffffffffffff'],
-					]),
-					{ schema: coercionTypesSchema },
+				getResult(
+					coerceFormValue(schema).safeParse({
+						a: 'hello world',
+						b: '42',
+						c: 'on',
+						d: '1970-01-01',
+						e: '0x1fffffffffffff',
+						f: defaultFile,
+						g: '',
+						h: '',
+					}),
 				),
 			).toEqual({
-				status: 'success',
-				payload: {
-					a: 'hello world',
-					b: '42',
-					c: 'on',
-					d: '1970-01-01',
-					e: '0x1fffffffffffff',
-				},
-				value: {
+				success: true,
+				data: {
 					a: 'hello world',
 					b: 42,
 					c: true,
 					d: new Date('1970-01-01'),
 					e: BigInt('0x1fffffffffffff'),
+					f: defaultFile,
+					g: undefined,
+					h: undefined,
 				},
-				reply: expect.any(Function),
+			});
+		});
+
+		test('customize default coercion', () => {
+			const exampleFile = new File(['hello', 'world'], 'example.txt');
+			const schema = z.object({
+				title: z.string({ required_error: 'required' }),
+				count: z.number({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				amount: z.bigint({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				date: z.date({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				confirmed: z.boolean({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				file: z.instanceof(File, { message: 'message' }),
+			});
+
+			expect(
+				getResult(
+					coerceFormValue(schema, {
+						defaultCoercion: {
+							string: false,
+							number: false,
+							bigint: false,
+							date: false,
+							boolean: false,
+							file: false,
+						},
+					}).safeParse({
+						title: '',
+						count: '123456',
+						amount: '9876543210',
+						date: '1970-01-01',
+						confirmed: 'on',
+						file: '',
+					}),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					title: ['required'],
+					amount: ['invalid'],
+					count: ['invalid'],
+					date: ['invalid'],
+					confirmed: ['invalid'],
+					file: ['message'],
+				},
+			});
+
+			expect(
+				getResult(
+					coerceFormValue(schema, {
+						defaultCoercion: {
+							string(value) {
+								if (typeof value !== 'string') {
+									return value;
+								}
+								// Trim the text
+								const text = value.trim();
+
+								if (text === '') {
+									return undefined;
+								}
+
+								return text;
+							},
+						},
+					}).safeParse({
+						title: ' ',
+						count: ' ',
+						amount: ' ',
+						date: ' ',
+						confirmed: ' ',
+						file: exampleFile,
+					}),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					title: ['required'],
+					amount: ['required'],
+					count: ['required'],
+					date: ['required'],
+					confirmed: ['required'],
+				},
+			});
+
+			expect(
+				getResult(
+					coerceFormValue(schema, {
+						defaultCoercion: {
+							number(value) {
+								if (typeof value !== 'string') {
+									return value;
+								}
+
+								// Remove commas and space
+								return Number(value.trim().replace(/,/g, ''));
+							},
+							boolean(value) {
+								if (typeof value !== 'string') {
+									return value;
+								}
+
+								// Convert "true" to boolean instead of "on"
+								return value === 'true';
+							},
+						},
+					}).safeParse({
+						title: ' example ',
+						count: ' 123,456 ',
+						amount: '9876543210',
+						date: '1970-01-01',
+						confirmed: 'true',
+						file: exampleFile,
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					title: ' example ',
+					count: 123456,
+					amount: 9876543210n,
+					date: new Date('1970-01-01'),
+					confirmed: true,
+					file: exampleFile,
+				},
+			});
+		});
+
+		test('customize coercion', () => {
+			const Payment = z.object({
+				count: z.number({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				amount: z.bigint({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				date: z.date({
+					required_error: 'required',
+					invalid_type_error: 'invalid',
+				}),
+				confirmed: z.boolean({ invalid_type_error: 'invalid' }),
+			});
+			const schema = z.object({
+				title: z.string({ required_error: 'required' }),
+				payment: Payment,
+			});
+
+			expect(
+				getResult(
+					coerceFormValue(schema, {
+						customize(type) {
+							if (type === Payment) {
+								return (value) => {
+									if (typeof value !== 'string') {
+										return value;
+									}
+
+									return JSON.parse(value);
+								};
+							}
+
+							return null;
+						},
+					}).safeParse({
+						title: 'Test',
+						payment: JSON.stringify({
+							count: 123,
+							confirmed: true,
+							amount: '123456',
+						}),
+					}),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					'payment.amount': ['invalid'],
+					'payment.date': ['required'],
+				},
 			});
 		});
 	});
@@ -1484,6 +1454,49 @@ describe('conform-zod', () => {
 			...submission,
 			status: 'success',
 			value: submission.payload,
+		});
+	});
+
+	test('parseWithZod with disableAutoCoercion', async () => {
+		const schema = z.object({
+			text: z.string(),
+			number: z.number({ invalid_type_error: 'invalid' }),
+			boolean: z.boolean({ invalid_type_error: 'invalid' }),
+			bigint: z.bigint({ invalid_type_error: 'invalid' }),
+			date: z.date({ invalid_type_error: 'invalid' }),
+			file: z.instanceof(File, { message: 'invalid' }),
+		});
+		const formData = createFormData([
+			['text', 'abc'],
+			['number', '1'],
+			['boolean', 'on'],
+			['bigint', '1'],
+			['date', '1970-01-01'],
+			['file', new File([], '')],
+		]);
+
+		expect(
+			parseWithZod(formData, {
+				schema,
+				disableAutoCoercion: true,
+			}),
+		).toEqual({
+			status: 'error',
+			payload: {
+				text: 'abc',
+				number: '1',
+				boolean: 'on',
+				bigint: '1',
+				date: '1970-01-01',
+				file: new File([], ''),
+			},
+			error: {
+				number: ['invalid'],
+				boolean: ['invalid'],
+				bigint: ['invalid'],
+				date: ['invalid'],
+			},
+			reply: expect.any(Function),
 		});
 	});
 });
