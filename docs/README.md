@@ -34,5 +34,11 @@
     - [getYupConstraint](./api/yup/getYupConstraint.md)
   - @conform-to/zod
     - [parseWithZod](./api/zod/parseWithZod.md)
+    - [coerceFormValue](./api/zod/coerceFormValue.md)
     - [getZodConstraint](./api/zod/getZodConstraint.md)
     - [conformZodMessage](./api/zod/conformZodMessage.md)
+  - @conform-to/valibot
+    - [parseWithZod](./api/valibot/parseWithZod.md)
+    - [coerceFormValue](./api/valibot/coerceFormValue.md)
+    - [getZodConstraint](./api/valibot/getZodConstraint.md)
+    - [conformZodMessage](./api/valibot/conformZodMessage.md)

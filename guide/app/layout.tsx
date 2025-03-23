@@ -70,6 +70,21 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
+			title: 'Valibot Schema',
+			links: [
+				{ title: 'parseWithValibot', to: '/api/valibot/parseWithValibot' },
+				{ title: 'coerceFormValue', to: '/api/valibot/coerceFormValue' },
+				{
+					title: 'getValibotConstraint',
+					to: '/api/valibot/getValibotConstraint',
+				},
+				{
+					title: 'conformValibotMessage',
+					to: '/api/valibot/conformValibotMessage',
+				},
+			],
+		},
+		{
 			title: 'Yup Schema',
 			links: [
 				{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
@@ -138,6 +153,21 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'coerceFormValue', to: '/api/zod/coerceFormValue' },
 				{ title: 'getZodConstraint', to: '/api/zod/getZodConstraint' },
 				{ title: 'conformZodMessage', to: '/api/zod/conformZodMessage' },
+			],
+		},
+		{
+			title: 'Valibot スキーマ',
+			links: [
+				{ title: 'parseWithValibot', to: '/api/valibot/parseWithValibot' },
+				{ title: 'coerceFormValue', to: '/api/valibot/coerceFormValue' },
+				{
+					title: 'getValibotConstraint',
+					to: '/api/valibot/getValibotConstraint',
+				},
+				{
+					title: 'conformValibotMessage',
+					to: '/api/valibot/conformValibotMessage',
+				},
 			],
 		},
 		{
