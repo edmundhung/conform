@@ -101,6 +101,30 @@ export function isPrefix(name: string, prefix: string) {
 }
 
 /**
+ * Compare the parent and child paths to get the relative paths
+ * Returns null if the child paths do not start with the parent paths
+ */
+export function getChildPaths(
+	parentNameOrPaths: string | Array<string | number>,
+	childName: string,
+) {
+	const parentPaths =
+		typeof parentNameOrPaths === 'string'
+			? getPaths(parentNameOrPaths)
+			: parentNameOrPaths;
+	const childPaths = getPaths(childName);
+
+	if (
+		childPaths.length >= parentPaths.length &&
+		parentPaths.every((path, index) => childPaths[index] === path)
+	) {
+		return childPaths.slice(parentPaths.length);
+	}
+
+	return null;
+}
+
+/**
  * Assign a value to a target object by following the paths
  */
 export function setValue(
@@ -259,7 +283,7 @@ export function flatten(
 	const resolve = options.resolve ?? ((data) => data);
 
 	function process(data: unknown, prefix: string) {
-		const value = normalize(resolve(data));
+		const value = resolve(data);
 
 		if (typeof value !== 'undefined') {
 			result[prefix] = value;
@@ -276,7 +300,7 @@ export function flatten(
 		}
 	}
 
-	if (data) {
+	if (typeof data !== 'undefined') {
 		process(data, options.prefix ?? '');
 	}
 
