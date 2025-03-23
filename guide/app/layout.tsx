@@ -61,11 +61,18 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
-			title: 'Schema related',
+			title: 'Zod Schema',
 			links: [
 				{ title: 'parseWithZod', to: '/api/zod/parseWithZod' },
-				{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
+				{ title: 'coerceFormValue', to: '/api/zod/coerceFormValue' },
 				{ title: 'getZodConstraint', to: '/api/zod/getZodConstraint' },
+				{ title: 'conformZodMessage', to: '/api/zod/conformZodMessage' },
+			],
+		},
+		{
+			title: 'Yup Schema',
+			links: [
+				{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
 				{ title: 'getYupConstraint', to: '/api/yup/getYupConstraint' },
 			],
 		},
@@ -125,11 +132,18 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
-			title: 'スキーマ関連',
+			title: 'Zod スキーマ',
 			links: [
 				{ title: 'parseWithZod', to: '/api/zod/parseWithZod' },
-				{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
+				{ title: 'coerceFormValue', to: '/api/zod/coerceFormValue' },
 				{ title: 'getZodConstraint', to: '/api/zod/getZodConstraint' },
+				{ title: 'conformZodMessage', to: '/api/zod/conformZodMessage' },
+			],
+		},
+		{
+			title: 'Yup スキーマ',
+			links: [
+				{ title: 'parseWithYup', to: '/api/yup/parseWithYup' },
 				{ title: 'getYupConstraint', to: '/api/yup/getYupConstraint' },
 			],
 		},
