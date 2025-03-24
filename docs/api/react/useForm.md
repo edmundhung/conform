@@ -50,6 +50,89 @@ A function to be called before the form is submitted. If **onValidate** is set, 
 
 Enable constraint validation before the DOM is hydrated. Default to **true**.
 
+## Return Value
+
+### `form`
+
+This is the form metadata. It provides information necessary for the state and operation of the form.
+
+#### `id` (string)
+
+The `id` attribute set for the form element.
+
+#### `errorId` (string)
+
+The `id` attribute indicating the form’s error message.
+
+#### `descriptionId` (string)
+
+The `id` attribute indicating the form’s description.
+
+#### `name` (FieldName<Schema, FormSchema, FormError>)
+
+The name of the form.
+
+#### `initialValue` (FormValue<Schema>)
+
+The initial value of the form set by `useForm`.
+
+#### `value` (FormValue<Schema>)
+
+The current value of the form.
+
+#### `allErrors` (Record<string, FormError>)
+
+Validation errors for each field in the form. The key is the field name, and the value is an array of error messages.
+
+#### `valid` (boolean)
+
+Indicates whether the form is valid. If `true`, the form has passed validation checks.
+
+#### `dirty` (boolean)
+
+Indicates whether any field in the form has been focused at least once.
+
+#### `status` ('success' | 'error' | undefined)
+
+Indicates the submission result of the form. `success` means success, `error` means failure, and `undefined` means not submitted.
+
+#### `getFieldset` (function)
+
+A function that returns metadata for each field in the form.
+
+#### `onSubmit` (function)
+
+A function for submitting the form.
+
+#### `noValidate` (boolean)
+
+Indicates whether the browser’s default form validation is disabled. The default is `true`, meaning validation is handled via JavaScript.
+
+#### `validate` (object)
+
+Provides an intent for validation.
+
+#### `reset` (object)
+
+Provides an intent for resetting the form or fields.
+
+#### `update` (object)
+
+Provides an intent for modifying the form or fields.
+
+#### `reorder` (object)
+
+Provides an intent for changing the order of fields.
+
+#### `remove` (object)
+
+Provides an intent for removing fields from the form.
+
+#### `insert` (object)
+
+Provides an intent for inserting fields into the form.
+
+
 ## Tips
 
 ### Client validation is optional
