@@ -54,27 +54,83 @@ DOM がハイドレートされる前に制約バリデーションを有効に�
 
 ### `form`
 
-フォームメタデータです。以下にプロパティの説明が続きます。
+フォームメタデータです。フォームの状態や操作に必要な情報を提供します。
 
-#### `id`
+#### `id` (string)
 
-#### `errorId`
+フォーム要素に設定される id 属性です。
 
-#### `descriptionId`
+#### `errorId` (string)
 
-#### `name`
+フォームのエラーメッセージを示す id 属性です。
 
-#### `initialValue`
+#### `descriptionId` (string)
 
-#### `value`
+フォームの説明を示す id 属性です。
 
-#### `errors`
+#### `name` (FieldName<Schema, FormSchema, FormError>)
 
-#### `allErrors`
+フォームの名前です。
 
-#### `valid`
+#### `initialValue` (FormValue<Schema>)
 
-#### `dirty`
+`useForm`によって設定されたフォームの初期値です。
+
+#### `value` (FormValue<Schema>)
+
+フォームの現在の値です。
+
+#### `allErrors` (Record<string, FormError>)
+
+フォームにおけるフィールド毎のバリデーションエラーです。キーはフィールド名、値はエラーメッセージの配列です。
+
+#### `valid` (boolean)
+
+フォームが有効かどうかを示します。`true` の場合、フォームはバリデーションチェックを通過したことを示します。
+
+#### `dirty` (boolean)
+
+フォームのいずれかのフィールドが一度でもフォーカスされたかどうかを示します。
+
+#### `status` ('success' | 'error' | undefined)
+
+フォームの送信結果を示します。`success` は成功、`error` は失敗、`undefined` は未送信を表します。
+
+#### `getFieldset` (function)
+
+フォームの各フィールドメタデータを返す関数です。
+
+#### `onSubmit` (function)
+
+フォームを送信するための関数です。
+
+#### `noValidate` (boolean)
+
+ブラウザによるデフォルトのフォームのバリデーションが無効かどうかを示します。デフォルトはtrueで、JavaScriptによる検証を行います。
+
+#### `validate` (object)
+
+バリデーションのためのインテントを提供します。
+
+#### `reset` (object)
+
+フォームやフィールドをリセットするためのインテントを提供します。
+
+#### `update` (object)
+
+フォームやフィールドを変更するためのインテントを提供します。
+
+#### `reorder` (object)
+
+フィールドの順序を変更するためのインテントを提供します。
+
+#### `remove` (object)
+
+フォームからフィールドを削除するためのインテントを提供します。
+
+#### `insert` (object)
+
+フォームにフィールドを挿入するためのインテントを提供します。
 
 
 ## Tips
