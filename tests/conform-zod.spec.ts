@@ -1499,4 +1499,40 @@ describe('conform-zod', () => {
 			reply: expect.any(Function),
 		});
 	});
+
+	describe('parseWithZod with undefined values', () => {
+		const formData = createFormData([]);
+		test('z.discriminatedUnion', () => {
+			const schema = z.discriminatedUnion('type', [
+				z.object({
+					type: z.literal('a'),
+					number: z.number(),
+				}),
+				z.object({
+					type: z.literal('b'),
+					string: z.string(),
+				}),
+			]);
+			expect(parseWithZod(formData, { schema })).toEqual({
+				status: 'error',
+				payload: {},
+				error: {
+					type: ["Invalid discriminator value. Expected 'a' | 'b'"],
+				},
+				reply: expect.any(Function),
+			});
+
+			const nestedSchema = z.object({
+				nest: schema,
+			});
+			expect(parseWithZod(formData, { schema: nestedSchema })).toEqual({
+				status: 'error',
+				payload: {},
+				error: {
+					'nest.type': ["Invalid discriminator value. Expected 'a' | 'b'"],
+				},
+				reply: expect.any(Function),
+			});
+		});
+	});
 });

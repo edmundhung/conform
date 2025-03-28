@@ -297,21 +297,34 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			),
 		});
 	} else if (def.typeName === 'ZodDiscriminatedUnion') {
-		schema = new ZodDiscriminatedUnion({
-			...def,
-			options: def.options.map((option: ZodTypeAny) =>
-				enableTypeCoercion(option, options),
-			),
-			optionsMap: new Map(
-				Array.from(def.optionsMap.entries()).map(([discriminator, option]) => [
-					discriminator,
-					enableTypeCoercion(
-						option,
-						options,
-					) as ZodDiscriminatedUnionOption<any>,
-				]),
-			),
-		});
+		schema = any()
+			.transform((value) => {
+				if (typeof value === 'undefined') {
+					// Defaults it to an empty object
+					return {};
+				}
+
+				return value;
+			})
+			.pipe(
+				new ZodDiscriminatedUnion({
+					...def,
+					options: def.options.map((option: ZodTypeAny) =>
+						enableTypeCoercion(option, options),
+					),
+					optionsMap: new Map(
+						Array.from(def.optionsMap.entries()).map(
+							([discriminator, option]) => [
+								discriminator,
+								enableTypeCoercion(
+									option,
+									options,
+								) as ZodDiscriminatedUnionOption<any>,
+							],
+						),
+					),
+				}),
+			);
 	} else if (def.typeName === 'ZodBranded') {
 		schema = new ZodBranded({
 			...def,
