@@ -673,6 +673,37 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
 
+  packages/conform-valibot:
+    dependencies:
+      '@conform-to/dom':
+        specifier: workspace:^
+        version: link:../conform-dom
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.17.8
+        version: 7.23.5
+      '@babel/preset-env':
+        specifier: ^7.20.2
+        version: 7.23.5(@babel/core@7.23.5)
+      '@babel/preset-typescript':
+        specifier: ^7.20.2
+        version: 7.23.3(@babel/core@7.23.5)
+      '@rollup/plugin-babel':
+        specifier: ^5.3.1
+        version: 5.3.1(@babel/core@7.23.5)(@types/babel__core@7.20.5)(rollup@2.79.1)
+      '@rollup/plugin-node-resolve':
+        specifier: ^13.3.0
+        version: 13.3.0(rollup@2.79.1)
+      rollup:
+        specifier: ^2.79.1
+        version: 2.79.1
+      rollup-plugin-copy:
+        specifier: ^3.4.0
+        version: 3.5.0
+      valibot:
+        specifier: ^1.0.0
+        version: 1.0.0(typescript@5.4.5)
+
   packages/conform-validitystate:
     devDependencies:
       '@babel/core':
@@ -11010,6 +11041,14 @@ packages:
     resolution: {integrity: sha512-FGtKtv3xIpR6BYhvgH8MI/y78oT7d8Au3ww4QIxymrCtZEh5b8gCw2siywE+puhEmuWKDtmfrvF5UlB298ut3w==}
     engines: {node: '>=10.12.0'}
 
+  valibot@1.0.0:
+    resolution: {integrity: sha512-1Hc0ihzWxBar6NGeZv7fPLY0QuxFMyxwYR2sF1Blu7Wq7EnremwY2W02tit2ij2VJT8HcSkHAQqmFfl77f73Yw==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
 
@@ -11545,7 +11584,7 @@ snapshots:
       '@babel/traverse': 7.23.5
       '@babel/types': 7.23.5
       convert-source-map: 2.0.0
-      debug: 4.3.4
+      debug: 4.4.0
       gensync: 1.0.0-beta.2
       json5: 2.2.3
       semver: 6.3.1
@@ -11608,7 +11647,7 @@ snapshots:
       '@babel/core': 7.23.5
       '@babel/helper-compilation-targets': 7.22.15
       '@babel/helper-plugin-utils': 7.22.5
-      debug: 4.3.4
+      debug: 4.4.0
       lodash.debounce: 4.0.8
       resolve: 1.22.8
     transitivePeerDependencies:
@@ -12382,7 +12421,7 @@ snapshots:
       '@babel/helper-split-export-declaration': 7.22.6
       '@babel/parser': 7.23.5
       '@babel/types': 7.23.5
-      debug: 4.3.4
+      debug: 4.4.0
       globals: 11.12.0
     transitivePeerDependencies:
       - supports-color
@@ -14301,11 +14340,11 @@ snapshots:
   '@npmcli/fs@1.1.1':
     dependencies:
       '@gar/promisify': 1.1.3
-      semver: 7.5.4
+      semver: 7.6.2
 
   '@npmcli/fs@3.1.0':
     dependencies:
-      semver: 7.5.4
+      semver: 7.6.2
 
   '@npmcli/git@4.1.0':
     dependencies:
@@ -14315,7 +14354,7 @@ snapshots:
       proc-log: 3.0.0
       promise-inflight: 1.0.1
       promise-retry: 2.0.1
-      semver: 7.5.4
+      semver: 7.6.2
       which: 3.0.1
     transitivePeerDependencies:
       - bluebird
@@ -14337,7 +14376,7 @@ snapshots:
       json-parse-even-better-errors: 3.0.1
       normalize-package-data: 5.0.0
       proc-log: 3.0.0
-      semver: 7.5.4
+      semver: 7.6.2
     transitivePeerDependencies:
       - bluebird
 
@@ -15933,7 +15972,7 @@ snapshots:
       graphemer: 1.4.0
       ignore: 5.3.1
       natural-compare-lite: 1.4.0
-      semver: 7.5.4
+      semver: 7.6.2
       tsutils: 3.21.0(typescript@4.9.5)
     optionalDependencies:
       typescript: 4.9.5
@@ -16023,7 +16062,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 5.62.0(typescript@4.9.5)
       '@typescript-eslint/utils': 5.62.0(eslint@8.57.0)(typescript@4.9.5)
-      debug: 4.3.4
+      debug: 4.4.0
       eslint: 8.57.0
       tsutils: 3.21.0(typescript@4.9.5)
     optionalDependencies:
@@ -16053,7 +16092,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/visitor-keys': 5.62.0
-      debug: 4.3.4
+      debug: 4.4.0
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.6.2
@@ -16410,13 +16449,13 @@ snapshots:
 
   agent-base@6.0.2:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
   agent-base@7.1.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -17023,7 +17062,7 @@ snapshots:
 
   capnp-ts@0.7.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
       tslib: 2.6.2
     transitivePeerDependencies:
       - supports-color
@@ -19016,7 +19055,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.0.3
       data-uri-to-buffer: 6.0.1
-      debug: 4.3.4
+      debug: 4.4.0
       fs-extra: 8.1.0
     transitivePeerDependencies:
       - supports-color
@@ -19318,14 +19357,14 @@ snapshots:
     dependencies:
       '@tootallnate/once': 1.1.2
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
   http-proxy-agent@7.0.0:
     dependencies:
       agent-base: 7.1.0
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -19357,14 +19396,14 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.0
-      debug: 4.3.4
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -19715,7 +19754,7 @@ snapshots:
 
   istanbul-lib-source-maps@4.0.1:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
       istanbul-lib-coverage: 3.2.2
       source-map: 0.6.1
     transitivePeerDependencies:
@@ -20846,7 +20885,7 @@ snapshots:
   micromark@3.2.0:
     dependencies:
       '@types/debug': 4.1.12
-      debug: 4.3.4
+      debug: 4.4.0
       decode-named-character-reference: 1.0.2
       micromark-core-commonmark: 1.1.0
       micromark-factory-space: 1.1.0
@@ -21128,7 +21167,7 @@ snapshots:
     dependencies:
       hosted-git-info: 6.1.1
       is-core-module: 2.13.1
-      semver: 7.5.4
+      semver: 7.6.2
       validate-npm-package-license: 3.0.4
 
   normalize-path@3.0.0: {}
@@ -21369,7 +21408,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.0
-      debug: 4.3.4
+      debug: 4.4.0
       get-uri: 6.0.2
       http-proxy-agent: 7.0.0
       https-proxy-agent: 7.0.2
@@ -22977,7 +23016,7 @@ snapshots:
   socks-proxy-agent@8.0.2:
     dependencies:
       agent-base: 7.1.0
-      debug: 4.3.4
+      debug: 4.4.0
       socks: 2.7.1
     transitivePeerDependencies:
       - supports-color
@@ -23051,7 +23090,7 @@ snapshots:
 
   spdy-transport@3.0.0:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
       detect-node: 2.1.0
       hpack.js: 2.1.6
       obuf: 1.1.2
@@ -23062,7 +23101,7 @@ snapshots:
 
   spdy@4.0.2:
     dependencies:
-      debug: 4.3.4
+      debug: 4.4.0
       handle-thing: 2.0.1
       http-deceiver: 1.2.7
       select-hose: 2.0.0
@@ -23861,6 +23900,10 @@ snapshots:
       convert-source-map: 1.9.0
       source-map: 0.7.4
 
+  valibot@1.0.0(typescript@5.4.5):
+    optionalDependencies:
+      typescript: 5.4.5
+
   validate-npm-package-license@3.0.4:
     dependencies:
       spdx-correct: 3.2.0
@@ -23889,7 +23932,7 @@ snapshots:
   vite-node@0.28.5(@types/node@20.11.20)(terser@5.26.0):
     dependencies:
       cac: 6.7.14
-      debug: 4.3.4
+      debug: 4.4.0
       mlly: 1.4.2
       pathe: 1.1.2
       picocolors: 1.0.0
