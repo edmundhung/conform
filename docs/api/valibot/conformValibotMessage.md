@@ -19,7 +19,7 @@ You can skip an validation to use the previous result. On client validation, you
 ```tsx
 import type { Intent } from '@conform-to/react';
 import { useForm } from '@conform-to/react';
-import { parseWithValibot, conformValibotMessage } from 'conform-to-valibot';
+import { parseWithValibot, conformValibotMessage } from '@conform-to/valibot';
 import {
   check,
   forward,
