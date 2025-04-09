@@ -332,7 +332,13 @@ function handleIntent<Error>(
 	switch (intent.type) {
 		case 'validate': {
 			if (intent.payload.name) {
-				meta.validated[intent.payload.name] = true;
+				if (typeof intent.payload.name === 'string') {
+					meta.validated[intent.payload.name] = true;
+				} else {
+					for (const name of intent.payload.name) {
+						meta.validated[name] = true;
+					}
+				}
 			} else {
 				setFieldsValidated(meta, fields);
 			}
