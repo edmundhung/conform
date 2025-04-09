@@ -19,7 +19,7 @@
 ```tsx
 import type { Intent } from '@conform-to/react';
 import { useForm } from '@conform-to/react';
-import { parseWithValibot, conformValibotMessage } from 'conform-to-valibot';
+import { parseWithValibot, conformValibotMessage } from '@conform-to/valibot';
 import {
   check,
   forward,
