@@ -301,9 +301,9 @@ function getDefaultKey(
 	defaultValue: Record<string, unknown> | Array<unknown>,
 	prefix?: string,
 ): Record<string, string> {
-	return Object.entries(
-		flatten(defaultValue, { resolve: normalize, prefix }),
-	).reduce<Record<string, string>>((result, [key, value]) => {
+	return Object.entries(flatten(defaultValue, { prefix })).reduce<
+		Record<string, string>
+	>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
 				result[formatName(key, i)] = generateId();
