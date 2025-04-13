@@ -1209,37 +1209,24 @@ export function updateFieldValue(
 		typeof options.value === 'undefined'
 			? null
 			: Array.isArray(options.value)
-				? options.value
+				? Array.from(options.value)
 				: [options.value];
 	const defaultValue =
 		typeof options.defaultValue === 'undefined'
 			? null
 			: Array.isArray(options.defaultValue)
-				? options.defaultValue
+				? Array.from(options.defaultValue)
 				: [options.defaultValue];
 
-	if (element instanceof HTMLInputElement) {
-		switch (element.type) {
-			case 'checkbox':
-			case 'radio':
-				if (value) {
-					element.checked = value.includes(element.value);
-				}
-				if (defaultValue) {
-					element.defaultChecked = defaultValue.includes(element.value);
-				}
-				break;
-			case 'file':
-				// Do nothing for now
-				break;
-			default:
-				if (value) {
-					element.value = value[0] ?? '';
-				}
-				if (defaultValue) {
-					element.defaultValue = defaultValue[0] ?? '';
-				}
-				break;
+	if (
+		element instanceof HTMLInputElement &&
+		(element.type === 'checkbox' || element.type === 'radio')
+	) {
+		if (value) {
+			element.checked = value.includes(element.value);
+		}
+		if (defaultValue) {
+			element.defaultChecked = defaultValue.includes(element.value);
 		}
 	} else if (element instanceof HTMLSelectElement) {
 		// If the select element is not multiple and the value is an empty array, unset the selected index

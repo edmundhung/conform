@@ -1,3 +1,4 @@
+import { unstable_updateFieldValue as updateFieldValue } from '@conform-to/dom';
 import {
 	type Key,
 	type RefCallback,
@@ -101,65 +102,6 @@ export function isDummySelect(
 	return element.dataset.conform === 'true';
 }
 
-export function updateFieldValue(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	value: string | string[],
-): void {
-	if (
-		element instanceof HTMLInputElement &&
-		(element.type === 'checkbox' || element.type === 'radio')
-	) {
-		element.checked = Array.isArray(value)
-			? value.includes(element.value)
-			: element.value === value;
-	} else if (element instanceof HTMLSelectElement && element.multiple) {
-		const selectedValue = Array.isArray(value) ? [...value] : [value];
-
-		for (const option of element.options) {
-			const index = selectedValue.indexOf(option.value);
-			const selected = index > -1;
-
-			// Update the selected state of the option
-			option.selected = selected;
-			// Remove the option from the selected array
-			if (selected) {
-				selectedValue.splice(index, 1);
-			}
-		}
-
-		// Add the remaining options to the select element only if it's a dummy element managed by conform
-		if (isDummySelect(element)) {
-			for (const option of selectedValue) {
-				element.options.add(new Option(option, option, false, true));
-			}
-		}
-	} else if (element.value !== value) {
-		// No `change` event will be triggered on React if `element.value` is already updated
-
-		/**
-		 * Triggering react custom change event
-		 * Solution based on dom-testing-library
-		 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-		 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
-		 */
-		const { set: valueSetter } =
-			Object.getOwnPropertyDescriptor(element, 'value') || {};
-		const prototype = Object.getPrototypeOf(element);
-		const { set: prototypeValueSetter } =
-			Object.getOwnPropertyDescriptor(prototype, 'value') || {};
-
-		if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-			prototypeValueSetter.call(element, value);
-		} else {
-			if (valueSetter) {
-				valueSetter.call(element, value);
-			} else {
-				throw new Error('The given element does not have a value setter');
-			}
-		}
-	}
-}
-
 export function getInputValue(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): string | string[] | null {
@@ -239,7 +181,7 @@ export function useInputEvent(
 					const element = ref.current;
 
 					if (element) {
-						updateFieldValue(element, value);
+						updateFieldValue(element, { value });
 
 						// Dispatch input event with the updated input value
 						element.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -379,7 +321,7 @@ export function useControl<
 		// This is now handled mostly by the side effect
 		// But we still need to set the initial value for backward compatibility
 		if (!element.dataset.conform) {
-			updateFieldValue(element, value ?? '');
+			updateFieldValue(element, { value });
 		}
 	};
 
