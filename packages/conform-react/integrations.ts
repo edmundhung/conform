@@ -160,7 +160,30 @@ export function updateFieldValue(
 	}
 }
 
-export function useInputEvent(): {
+export function getInputValue(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): string | string[] | null {
+	if (element instanceof HTMLSelectElement) {
+		const value = Array.from(element.selectedOptions).map(
+			(option) => option.value,
+		);
+
+		return element.multiple ? value : value[0] ?? null;
+	}
+
+	if (
+		element instanceof HTMLInputElement &&
+		(element.type === 'radio' || element.type === 'checkbox')
+	) {
+		return element.checked ? element.value : null;
+	}
+
+	return element.value;
+}
+
+export function useInputEvent(
+	onUpdate: React.Dispatch<React.SetStateAction<string | string[] | undefined>>,
+): {
 	change(value: string | string[]): void;
 	focus(): void;
 	blur(): void;
@@ -175,6 +198,7 @@ export function useInputEvent(): {
 		| null
 		| undefined
 	>(null);
+	const observerRef = useRef<MutationObserver | null>(null);
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
@@ -264,9 +288,42 @@ export function useInputEvent(): {
 			},
 			register(element) {
 				ref.current = element;
+
+				if (observerRef.current) {
+					observerRef.current.disconnect();
+					observerRef.current = null;
+				}
+
+				if (!element) {
+					return;
+				}
+
+				observerRef.current = new MutationObserver((mutations) => {
+					for (const mutation of mutations) {
+						if (mutation.type === 'attributes') {
+							const nextValue = getInputValue(element) ?? undefined;
+							onUpdate((prevValue) => {
+								if (
+									nextValue === prevValue ||
+									// If the value is an array, check if the current value is the same as the new value
+									JSON.stringify(prevValue) === JSON.stringify(nextValue)
+								) {
+									return prevValue;
+								}
+
+								return nextValue;
+							});
+						}
+					}
+				});
+
+				observerRef.current.observe(element, {
+					attributes: true,
+					attributeFilter: ['data-conform'],
+				});
 			},
 		};
-	}, []);
+	}, [onUpdate]);
 }
 
 export function useInputValue<
@@ -298,7 +355,10 @@ export function useControl<
 	Value extends string | string[] | Array<string | undefined>,
 >(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
 	const [value, setValue] = useInputValue(meta);
-	const { register, change, focus, blur } = useInputEvent();
+	const { register, change, focus, blur } = useInputEvent(
+		// @ts-expect-error We will fix the type when stabilizing the API
+		setValue,
+	);
 	const handleChange = (
 		value: Value extends string ? Value : string | string[],
 	) => {
@@ -315,11 +375,10 @@ export function useControl<
 			return;
 		}
 
-		const prevKey = element.dataset.conform;
-		const nextKey = `${meta.key ?? ''}`;
-
-		if (prevKey !== nextKey) {
-			element.dataset.conform = nextKey;
+		// We were trying to sync the value based on key previously
+		// This is now handled mostly by the side effect
+		// But we still need to set the initial value for backward compatibility
+		if (!element.dataset.conform) {
 			updateFieldValue(element, value ?? '');
 		}
 	};
@@ -343,7 +402,10 @@ export function useInputControl<
 }) {
 	const [value, setValue] = useInputValue(meta);
 	const initializedRef = useRef(false);
-	const { register, change, focus, blur } = useInputEvent();
+	const { register, change, focus, blur } = useInputEvent(
+		// @ts-expect-error We will fix the type when stabilizing the API
+		setValue,
+	);
 
 	useEffect(() => {
 		const form = getFormElement(meta.formId);

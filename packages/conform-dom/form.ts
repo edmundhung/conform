@@ -1130,7 +1130,7 @@ export function createFormContext<
 											: '',
 								});
 
-								// Update the element attribute to notify that this is changed by Conform
+								// Update the element attribute to notify useControl / useInputControl hook
 								element.dataset.conform = generateId();
 							}
 						}
@@ -1148,12 +1148,17 @@ export function createFormContext<
 								(Array.isArray(value) &&
 									value.every((item) => typeof item === 'string'))
 									? value
-									: '';
+									: element instanceof HTMLSelectElement
+										? []
+										: '';
 
 							updateFieldValue(element, {
 								defaultValue,
 								value: defaultValue,
 							});
+
+							// Update the element attribute to notify useControl / useInputControl hook
+							element.dataset.conform = generateId();
 						}
 					}
 					break;
@@ -1237,6 +1242,12 @@ export function updateFieldValue(
 				break;
 		}
 	} else if (element instanceof HTMLSelectElement) {
+		// If the select element is not multiple and the value is an empty array, unset the selected index
+		// This is to prevent the select element from showing the first option as selected
+		if (value && value.length === 0 && !element.multiple) {
+			element.selectedIndex = -1;
+		}
+
 		for (const option of element.options) {
 			if (value) {
 				const index = value.indexOf(option.value);
