@@ -19,43 +19,54 @@ function createSchema(
 ) {
 	return z.object({
 		email: z
-			.string({ required_error: 'Email is required' })
-			.email({ message: 'Email is invalid' })
-			// Pipe another schema so it runs only if it is a valid email
-			.pipe(
-				z.string().superRefine((email, ctx) => {
-					if (
-						intent &&
-						(intent.type !== 'validate' || intent.payload.name !== 'email')
-					) {
-						ctx.addIssue({
-							code: 'custom',
-							message: conformZodMessage.VALIDATION_SKIPPED,
-						});
-						return;
+			.email({
+				error: (issue) => {
+					if (issue.input === undefined) {
+						return { message: 'Email is required' };
 					}
+					return { message: 'Email is invalid' };
+				},
+			})
+			// check another schema so it runs only if it is a valid email
+			.check((ctx) => {
+				if (ctx.issues.length > 0) {
+					return;
+				}
 
-					if (typeof constraints.isEmailUnique !== 'function') {
-						ctx.addIssue({
-							code: 'custom',
-							message: conformZodMessage.VALIDATION_UNDEFINED,
-							fatal: true,
-						});
-						return;
-					}
-
-					return constraints.isEmailUnique(email).then((isUnique) => {
-						if (!isUnique) {
-							ctx.addIssue({
-								code: 'custom',
-								message: 'Email is already used',
-							});
-						}
+				if (
+					intent &&
+					(intent.type !== 'validate' || intent.payload.name !== 'email')
+				) {
+					ctx.issues.push({
+						code: 'custom',
+						message: conformZodMessage.VALIDATION_SKIPPED,
+						input: ctx.value,
 					});
-				}),
-			),
+					return;
+				}
+
+				if (typeof constraints.isEmailUnique !== 'function') {
+					ctx.issues.push({
+						code: 'custom',
+						message: conformZodMessage.VALIDATION_UNDEFINED,
+						input: ctx.value,
+						fatal: true,
+					});
+					return;
+				}
+
+				return constraints.isEmailUnique(ctx.value).then((isUnique) => {
+					if (!isUnique) {
+						ctx.issues.push({
+							code: 'custom',
+							message: 'Email is already used',
+							input: ctx.value,
+						});
+					}
+				});
+			}),
 		title: z
-			.string({ required_error: 'Title is required' })
+			.string({ message: 'Title is required' })
 			.max(20, 'Title is too long'),
 	});
 }

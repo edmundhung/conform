@@ -14,9 +14,9 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 const schema = z.object({
-	name: z.string({ required_error: 'Name is required' }),
-	message: z.string({ required_error: 'Message is required' }),
-	number: z.number({ required_error: 'Number is required' }),
+	name: z.string({ message: 'Name is required' }),
+	message: z.string({ message: 'Message is required' }),
+	number: z.number({ message: 'Number is required' }),
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {

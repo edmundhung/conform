@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
 const JsonFile = z
-	.instanceof(File, { message: 'File is required' })
+	.file({ message: 'File is required' })
 	.refine(
 		(file) => file.type === 'application/json',
 		'Only JSON file is accepted',

@@ -21,10 +21,10 @@ import * as RadixCheckbox from '@radix-ui/react-checkbox';
 
 const schema = z.object({
 	color: z.enum(['red', 'green', 'blue'], {
-		required_error: 'Color is required',
+		message: 'Color is required',
 	}),
 	languages: z.string().array().min(1, 'Languages is required'),
-	tos: z.boolean({ required_error: 'Please accept the terms of service' }),
+	tos: z.boolean({ message: 'Please accept the terms of service' }),
 	options: z.array(z.string()).min(1, 'At least one option is required'),
 });
 
