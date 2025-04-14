@@ -31,9 +31,9 @@ export function getZodConstraint(
 			}
 			// } else if (def.type === 'ZodEffects') {
 			// 	updateConstraint(def.schema, data, name);
-			// } else if (def.type === 'ZodPipeline') {
-			// 	// FIXME: What to do with .pipe()?
-			// 	updateConstraint(def.out, data, name);
+		} else if (def.type === 'pipe') {
+			// FIXME: What to do with .pipe()?
+			updateConstraint(def.out, data, name);
 		} else if (def.type === 'intersection') {
 			const leftResult: Record<string, Constraint> = {};
 			const rightResult: Record<string, Constraint> = {};

@@ -5,7 +5,7 @@ import {
 	ZodUnion,
 	// ZodDiscriminatedUnion,
 	ZodTuple,
-	// ZodPipeline,
+	ZodPipe,
 	// ZodEffects,
 	ZodNullable,
 	ZodOptional,
@@ -324,12 +324,12 @@ export function enableTypeCoercion<Schema extends core.$ZodType>(
 			...def,
 			innerType: enableTypeCoercion(def.innerType, options),
 		});
-		// } else if (def.type === 'pipeline') {
-		// 	schema = new ZodPipeline({
-		// 		...def,
-		// 		in: enableTypeCoercion(def.in, options),
-		// 		out: enableTypeCoercion(def.out, options),
-		// 	});
+	} else if (def.type === 'pipe') {
+		schema = new ZodPipe({
+			...def,
+			in: enableTypeCoercion(def.in, options),
+			out: enableTypeCoercion(def.out, options),
+		});
 	} else if (def.type === 'lazy') {
 		const inner = def.getter();
 		schema = lazy(() => enableTypeCoercion(inner, options));

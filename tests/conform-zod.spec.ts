@@ -4,7 +4,7 @@ import {
 	parseWithZod,
 	unstable_coerceFormValue as coerceFormValue,
 	conformZodMessage,
-} from '../packages/conform-zod';
+} from '@conform-to/zod';
 import { type ZodSafeParseResult, z } from 'zod';
 import { createFormData } from './helpers';
 import { formatPaths } from '@conform-to/dom';
@@ -321,7 +321,15 @@ describe('conform-zod', () => {
 	describe('coerceFormValue', () => {
 		test('z.string', () => {
 			const schema = z
-				.string({ message: 'invalid' })
+				.string({
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+
+						return 'invalid';
+					},
+				})
 				.min(10, 'min')
 				.max(100, 'max')
 				.regex(/^[A-Z]{1,100}$/, { message: 'regex' })
@@ -331,7 +339,7 @@ describe('conform-zod', () => {
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
 				success: false,
 				error: {
-					'': ['invalid'],
+					'': ['required'],
 				},
 			});
 			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
@@ -356,7 +364,14 @@ describe('conform-zod', () => {
 
 		test('z.number', () => {
 			const schema = z
-				.number({ message: 'invalid' })
+				.number({
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
+				})
 				.min(1, 'min')
 				.max(10, 'max')
 				.step(2, 'step');
@@ -365,7 +380,7 @@ describe('conform-zod', () => {
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
 				success: false,
 				error: {
-					'': ['invalid'],
+					'': ['required'],
 				},
 			});
 			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
@@ -400,7 +415,14 @@ describe('conform-zod', () => {
 
 		test('z.bigint', () => {
 			const schema = z
-				.bigint({ message: 'invalid' })
+				.bigint({
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
+				})
 				.min(1n, 'min')
 				.max(10n, 'max')
 				.multipleOf(2n, 'step');
@@ -409,7 +431,7 @@ describe('conform-zod', () => {
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
 				success: false,
 				error: {
-					'': ['invalid'],
+					'': ['required'],
 				},
 			});
 			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
@@ -445,7 +467,12 @@ describe('conform-zod', () => {
 		test('z.date', () => {
 			const schema = z
 				.date({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				})
 				.min(new Date(1), 'min')
 				.max(new Date(10), 'max');
@@ -454,7 +481,7 @@ describe('conform-zod', () => {
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
 				success: false,
 				error: {
-					'': ['invalid'],
+					'': ['required'],
 				},
 			});
 			expect(getResult(coerceFormValue(schema).safeParse('abc'))).toEqual({
@@ -493,14 +520,19 @@ describe('conform-zod', () => {
 
 		test('z.boolean', () => {
 			const schema = z.boolean({
-				message: 'invalid',
+				error: (ctx) => {
+					if (ctx.input === undefined) {
+						return 'required';
+					}
+					return 'invalid';
+				},
 			});
 			const file = new File([], '');
 
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
 				success: false,
 				error: {
-					'': ['invalid'],
+					'': ['required'],
 				},
 			});
 			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
@@ -525,21 +557,21 @@ describe('conform-zod', () => {
 			const schema = z.object({
 				a: z.object({
 					text: z.string({
-						message: 'invalid',
+						message: 'required',
 					}),
 					flag: z
 						.boolean({
-							message: 'invalid',
+							message: 'required',
 						})
 						.optional(),
 				}),
 				b: z
 					.object({
 						text: z.string({
-							message: 'invalid',
+							message: 'required',
 						}),
 						flag: z.boolean({
-							message: 'invalid',
+							message: 'required',
 						}),
 					})
 					.optional(),
@@ -548,7 +580,7 @@ describe('conform-zod', () => {
 			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
 				success: false,
 				error: {
-					'a.text': ['invalid'],
+					'a.text': ['required'],
 				},
 			});
 			expect(
@@ -562,9 +594,9 @@ describe('conform-zod', () => {
 			).toEqual({
 				success: false,
 				error: {
-					'a.text': ['invalid'],
-					'b.text': ['invalid'],
-					'b.flag': ['invalid'],
+					'a.text': ['required'],
+					'b.text': ['required'],
+					'b.flag': ['required'],
 				},
 			});
 			expect(
@@ -596,7 +628,12 @@ describe('conform-zod', () => {
 		test('z.array', () => {
 			const createSchema = (
 				element: z.ZodTypeAny = z.string({
-					message: 'required',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 			) =>
 				z
@@ -720,7 +757,7 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test.skip('z.preprocess', () => {
+		test('z.preprocess', () => {
 			const schemaWithNoPreprocess = z.number({
 				message: 'invalid',
 			});
@@ -941,14 +978,14 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test.skip('z.lazy', () => {
+		test('z.lazy', () => {
 			const category = z.object({
 				name: z.string({ message: 'required' }),
 				subcategories: z.lazy(() => z.array(category)),
 			});
 			const node = z.object({
 				name: z.string({ message: 'required' }),
-				left: z.lazy(() => node).optional(),
+				left: z.lazy(() => node.optional()),
 				right: z.lazy(() => node.optional()),
 			});
 			const schema = z.object({
@@ -1054,14 +1091,14 @@ describe('conform-zod', () => {
 			});
 		});
 
-		test.skip('z.brand', () => {
+		test('z.brand', () => {
 			const schema = z
 				.object({
-					a: z.string().brand(),
-					b: z.number().brand(),
-					c: z.boolean().brand(),
-					d: z.date().brand(),
-					e: z.bigint().brand(),
+					a: z.string('Required').brand(),
+					b: z.number('Required').brand(),
+					c: z.boolean('Required').brand(),
+					d: z.date('Required').brand(),
+					e: z.bigint('Required').brand(),
 					f: z.instanceof(File).brand(),
 					g: z.string().optional().brand(),
 					h: z.string().brand().optional(),
@@ -1126,16 +1163,36 @@ describe('conform-zod', () => {
 			const schema = z.object({
 				title: z.string({ message: 'required' }),
 				count: z.number({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				amount: z.bigint({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				date: z.date({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				confirmed: z.boolean({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				file: z.file({ message: 'message' }),
 			});
@@ -1203,10 +1260,10 @@ describe('conform-zod', () => {
 				success: false,
 				error: {
 					title: ['required'],
-					amount: ['invalid'],
-					count: ['invalid'],
-					date: ['invalid'],
-					confirmed: ['invalid'],
+					amount: ['required'],
+					count: ['required'],
+					date: ['required'],
+					confirmed: ['required'],
 				},
 			});
 
@@ -1256,13 +1313,28 @@ describe('conform-zod', () => {
 		test('customize coercion', () => {
 			const Payment = z.object({
 				count: z.number({
-					message: 'required',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				amount: z.bigint({
-					message: 'invalid',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				date: z.date({
-					message: 'required',
+					error: (ctx) => {
+						if (ctx.input === undefined) {
+							return 'required';
+						}
+						return 'invalid';
+					},
 				}),
 				confirmed: z.boolean({ message: 'invalid' }),
 			});
