@@ -1,7 +1,12 @@
 name: Validate
 on:
-  workflow_call:
   workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Commit SHA / PR Number'
+        type: string
+        required: true
+  workflow_call:
     inputs:
       preview:
         description: 'Commit SHA / PR Number'
