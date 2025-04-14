@@ -25,3 +25,10 @@ jobs:
         run: pnpm i
       - name: Publish to pkg.pr.new
         run: pnpx pkg-pr-new publish --compact './packages/*' --template './examples/*'
+
+  validate:
+    name: Validate Preview
+    needs: [release]
+    uses: edmundhung/conform/.github/workflows/validate.yml@main
+    with:
+      preview: ${{ github.event.pull_request.number || github.sha }}
