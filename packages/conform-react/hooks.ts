@@ -91,10 +91,16 @@ export function useForm<
 		context.onUpdate({ ...formConfig, formId });
 	});
 
-	const subjectRef = useSubjectRef();
+	const subjectRef = useSubjectRef({
+		pendingIntents: true,
+	});
 	const stateSnapshot = useFormState(context, subjectRef);
 	const noValidate = useNoValidate(options.defaultNoValidate);
 	const form = getFormMetadata(context, subjectRef, stateSnapshot, noValidate);
+
+	useEffect(() => {
+		context.runSideEffect(stateSnapshot.pendingIntents);
+	}, [context, stateSnapshot.pendingIntents]);
 
 	return [form, form.getFieldset()];
 }

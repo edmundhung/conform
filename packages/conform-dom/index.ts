@@ -12,6 +12,7 @@ export {
 	type SubscriptionSubject,
 	type SubscriptionScope,
 	createFormContext as unstable_createFormContext,
+	updateFieldValue as unstable_updateFieldValue,
 } from './form';
 export { type FieldElement, isFieldElement } from './dom';
 export {
