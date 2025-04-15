@@ -4,35 +4,14 @@ import {
 	parseWithZod,
 	unstable_coerceFormValue as coerceFormValue,
 	conformZodMessage,
-} from '@conform-to/zod';
-import { type ZodSafeParseResult, z } from 'zod';
-import { createFormData } from './helpers';
-import { formatPaths } from '@conform-to/dom';
+} from '../';
+import { z } from 'zod';
+import { createFormData } from './helpers/FromData';
+import { getResult } from './helpers/zod';
 
 beforeEach(() => {
 	vi.unstubAllGlobals();
 });
-
-function getResult<Output>(
-	result: ZodSafeParseResult<Output>,
-):
-	| { success: false; error: Record<string, string[]> }
-	| { success: true; data: Output } {
-	if (result.success) {
-		return { success: true, data: result.data };
-	}
-
-	const error: Record<string, string[]> = {};
-
-	for (const issue of result.error.issues) {
-		const name = formatPaths(issue.path);
-
-		error[name] ??= [];
-		error[name].push(issue.message);
-	}
-
-	return { success: false, error };
-}
 
 describe('conform-zod', () => {
 	test('getZodConstraint', () => {
@@ -979,15 +958,28 @@ describe('conform-zod', () => {
 		});
 
 		test('z.lazy', () => {
-			const category = z.object({
+			const baseSchema = z.object({
 				name: z.string({ message: 'required' }),
-				subcategories: z.lazy(() => z.array(category)),
 			});
-			const node = z.object({
-				name: z.string({ message: 'required' }),
+
+			type Category = z.infer<typeof baseSchema> & {
+				subcategories: Category[];
+			};
+
+			const category: z.ZodType<Category, Category> = baseSchema.extend({
+				subcategories: z.lazy(() => category.array()),
+			});
+
+			type Node = z.infer<typeof baseSchema> & {
+				left: Node | undefined;
+				right: Node | undefined;
+			};
+
+			const node: z.ZodType<Node, Node> = baseSchema.extend({
 				left: z.lazy(() => node.optional()),
 				right: z.lazy(() => node.optional()),
 			});
+
 			const schema = z.object({
 				category,
 				node,
