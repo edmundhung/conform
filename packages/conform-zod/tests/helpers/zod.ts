@@ -1,8 +1,8 @@
-import { type ZodSafeParseResult } from 'zod';
+import type { util } from '@zod/core';
 import { formatPaths } from '@conform-to/dom';
 
 export function getResult<Output>(
-	result: ZodSafeParseResult<Output>,
+	result: util.SafeParseResult<Output>,
 ):
 	| { success: false; error: Record<string, string[]> }
 	| { success: true; data: Output } {

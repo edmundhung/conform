@@ -46,6 +46,8 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
+		"@zod/core": "0.5.1",
+		"@zod/mini": "4.0.0-beta.20250415T232143",
 		"rollup": "^2.79.1",
 		"rollup-plugin-copy": "^3.4.0",
 		"zod": "4.0.0-beta.20250415T232143"

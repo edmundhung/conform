@@ -780,6 +780,12 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^13.3.0
         version: 13.3.0(rollup@2.79.1)
+      '@zod/core':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@zod/mini':
+        specifier: 4.0.0-beta.20250415T232143
+        version: 4.0.0-beta.20250415T232143
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
@@ -4968,6 +4974,9 @@ packages:
 
   '@zod/core@0.5.1':
     resolution: {integrity: sha512-Iqa3r1weIYaG1pjR+vNhfmaQ+5YtdQEp839R7bil0CC30cwiExXuBI5AAEjZMMS2CzGcBlAWca+0+vxzUmdJ6Q==}
+
+  '@zod/mini@4.0.0-beta.20250415T232143':
+    resolution: {integrity: sha512-eHHe+lIvQJBga+Aa4LOKTZky/K5BnQuqPI3SMqIU+UeGJZdrrwWAmbYI0EjoPcHDc+71+PjKIPtbqj2CufJeFg==}
 
   '@zxing/text-encoding@0.9.0':
     resolution: {integrity: sha512-U/4aVJ2mxI0aDNI8Uq0wEhMgY+u4CNtEb0om3+y3+niDAsoTCOB33UF0sxpzqzdqXLqmvc+vZyAt4O8pPdfkwA==}
@@ -16410,6 +16419,10 @@ snapshots:
       '@zag-js/dom-query': 0.16.0
 
   '@zod/core@0.5.1': {}
+
+  '@zod/mini@4.0.0-beta.20250415T232143':
+    dependencies:
+      '@zod/core': 0.5.1
 
   '@zxing/text-encoding@0.9.0':
     optional: true
