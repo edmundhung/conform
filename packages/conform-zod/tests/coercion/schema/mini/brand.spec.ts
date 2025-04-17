@@ -49,7 +49,7 @@ describe('coercion', () => {
 						c: ['Required'],
 						d: ['Required'],
 						e: ['Required'],
-						f: ['Invalid input: expected file, received string'],
+						f: ['Invalid input'],
 					},
 				});
 				expect(

@@ -38,7 +38,8 @@
 		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
-		"zod": "^3.21.0"
+		"@zod/core": ">0.5.1",
+		"@zod/mini": ">4.0.0-beta.20250415T232143"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",

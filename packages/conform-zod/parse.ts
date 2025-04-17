@@ -4,21 +4,33 @@ import {
 	formatPaths,
 	parse,
 } from '@conform-to/dom';
-import {
-	type core,
-	type ZodSafeParseResult,
-	type ZodType,
-	type ZodError,
-	type input,
-	type output,
-} from 'zod';
+import type {
+	$ZodType,
+	$ZodIssue,
+	$ZodError,
+	$ZodErrorMap,
+	output,
+	input,
+	util,
+} from '@zod/core';
 import { coerceFormValue } from './coercion';
 
+interface ZodType extends $ZodType {
+	safeParse(
+		payload: Record<string, any>,
+		options?: { error?: $ZodErrorMap },
+	): util.SafeParseResult<output<this>>;
+	safeParseAsync(
+		payload: Record<string, any>,
+		options?: { error?: $ZodErrorMap },
+	): Promise<util.SafeParseResult<output<this>>>;
+}
+
 function getError<FormError>(
-	zodError: ZodError,
-	formatError: (issues: Array<core.$ZodIssue>) => FormError,
+	zodError: $ZodError,
+	formatError: (issues: Array<$ZodIssue>) => FormError,
 ): Record<string, FormError | null> | null {
-	const result: Record<string, core.$ZodIssue[] | null> = {};
+	const result: Record<string, $ZodIssue[] | null> = {};
 
 	for (const issue of zodError.issues) {
 		const name = formatPaths(issue.path);
@@ -59,7 +71,7 @@ export function parseWithZod<Schema extends ZodType>(
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
-		error?: core.$ZodErrorMap;
+		error?: $ZodErrorMap;
 		disableAutoCoercion?: boolean;
 	},
 ): Submission<input<Schema>, string[], output<Schema>>;
@@ -68,8 +80,8 @@ export function parseWithZod<Schema extends ZodType, FormError>(
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: false;
-		error?: core.$ZodErrorMap;
-		formatError: (issues: Array<core.$ZodIssue>) => FormError;
+		error?: $ZodErrorMap;
+		formatError: (issues: Array<$ZodIssue>) => FormError;
 		disableAutoCoercion?: boolean;
 	},
 ): Submission<input<Schema>, FormError, output<Schema>>;
@@ -78,7 +90,7 @@ export function parseWithZod<Schema extends ZodType>(
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
-		error?: core.$ZodErrorMap;
+		error?: $ZodErrorMap;
 		disableAutoCoercion?: boolean;
 	},
 ): Promise<Submission<input<Schema>, string[], output<Schema>>>;
@@ -87,8 +99,8 @@ export function parseWithZod<Schema extends ZodType, FormError>(
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async: true;
-		error?: core.$ZodErrorMap;
-		formatError: (issues: Array<core.$ZodIssue>) => FormError;
+		error?: $ZodErrorMap;
+		formatError: (issues: Array<$ZodIssue>) => FormError;
 		disableAutoCoercion?: boolean;
 	},
 ): Promise<Submission<input<Schema>, FormError, output<Schema>>>;
@@ -97,8 +109,8 @@ export function parseWithZod<Schema extends ZodType, FormError>(
 	options: {
 		schema: Schema | ((intent: Intent | null) => Schema);
 		async?: boolean;
-		error?: core.$ZodErrorMap;
-		formatError?: (issues: Array<core.$ZodIssue>) => FormError;
+		error?: $ZodErrorMap;
+		formatError?: (issues: Array<$ZodIssue>) => FormError;
 		disableAutoCoercion?: boolean;
 	},
 ):
@@ -116,7 +128,7 @@ export function parseWithZod<Schema extends ZodType, FormError>(
 				: baseSchema;
 
 			const resolveSubmission = (
-				result: ZodSafeParseResult<core.output<Schema>>,
+				result: util.SafeParseResult<output<Schema>>,
 			) => {
 				return {
 					value: result.success ? result.data : undefined,

@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 
-import type { core, ZodType, ZodNumber, ZodString } from 'zod';
+import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from '@zod/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -13,16 +13,14 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
-export function getZodConstraint(
-	schema: core.$ZodType,
-): Record<string, Constraint> {
+export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 	function updateConstraint(
-		schema: core.$ZodType,
+		schema: $ZodType,
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
-		const def = (schema as unknown as core.$ZodTypes)._zod.def;
+		const def = (schema as unknown as $ZodTypes)._zod.def;
 
 		if (def.type === 'object') {
 			for (const key in def.shape) {
@@ -47,7 +45,7 @@ export function getZodConstraint(
 		) {
 			Object.assign(
 				data,
-				(def.options as ZodType[])
+				(def.options as $ZodType[])
 					.map((option) => {
 						const result: Record<string, Constraint> = {};
 
@@ -97,12 +95,12 @@ export function getZodConstraint(
 			constraint.multiple = true;
 			updateConstraint(def.element, data, `${name}[]`);
 		} else if (def.type === 'string') {
-			const _schema = schema as ZodString;
-			if (_schema.minLength !== null) {
-				constraint.minLength = _schema.minLength ?? undefined;
+			const _schema = schema as $ZodString;
+			if (_schema._zod.computed.minimum !== null) {
+				constraint.minLength = _schema._zod.computed.minimum ?? undefined;
 			}
-			if (_schema.maxLength !== null) {
-				constraint.maxLength = _schema.maxLength;
+			if (_schema._zod.computed.maximum !== null) {
+				constraint.maxLength = _schema._zod.computed.maximum;
 			}
 		} else if (def.type === 'optional') {
 			constraint.required = false;
@@ -111,12 +109,12 @@ export function getZodConstraint(
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'number') {
-			const _schema = schema as ZodNumber;
-			if (_schema.minValue !== null) {
-				constraint.min = _schema.minValue;
+			const _schema = schema as $ZodNumber;
+			if (_schema._zod.computed.minimum !== null) {
+				constraint.min = _schema._zod.computed.minimum;
 			}
-			if (_schema.maxValue !== null) {
-				constraint.max = _schema.maxValue;
+			if (_schema._zod.computed.maximum !== null) {
+				constraint.max = _schema._zod.computed.maximum;
 			}
 		} else if (def.type === 'enum') {
 			constraint.pattern = Object.keys(def.entries)
