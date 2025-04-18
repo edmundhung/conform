@@ -4,25 +4,33 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "1.4.0",
-	"main": "index.js",
-	"module": "index.mjs",
-	"types": "index.d.ts",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./index.d.ts",
-			"module": "./index.mjs",
-			"import": "./index.mjs",
-			"require": "./index.js",
-			"default": "./index.mjs"
+			"types": "./dist/index.d.ts",
+			"module": "./dist/index.mjs",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"default": "./dist/index.mjs"
+		},
+		"./v4": {
+			"types": "./dist/v4/index.d.ts",
+			"module": "./dist/v4/index.mjs",
+			"import": "./dist/v4/index.mjs",
+			"require": "./dist/v4/index.js",
+			"default": "./dist/v4/index.mjs"
 		}
 	},
 	"scripts": {
 		"build:js": "rollup -c",
-		"build:ts": "tsc",
+		"build:ts": "tsc --project ./tsconfig.build.json",
 		"build": "pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
+		"test": "vitest",
 		"prepare": "pnpm run build"
 	},
 	"repository": {
@@ -37,7 +45,20 @@
 		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
+		"@zod/core": ">0.5.1",
+		"@zod/mini": ">4.0.0-beta.20250415T232143",
 		"zod": "^3.21.0"
+	},
+	"peerDependenciesMeta": {
+		"zod": {
+			"optional": true
+		},
+		"@zod/core": {
+			"optional": true
+		},
+		"@zod/mini": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -45,9 +66,12 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"rollup-plugin-copy": "^3.4.0",
+		"@zod/core": "0.5.1",
+		"@zod/mini": "4.0.0-beta.20250415T232143",
 		"rollup": "^2.79.1",
-		"zod": "3.21.4"
+		"rollup-plugin-copy": "^3.4.0",
+		"zod": "3.21.4",
+		"zod-4": "npm:zod@4.0.0-beta.20250415T232143"
 	},
 	"keywords": [
 		"constraint-validation",

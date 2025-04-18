@@ -64,7 +64,7 @@ export function getPaths(name: string | undefined): Array<string | number> {
  * const name = formatPaths(['todos', 0, 'content']); // "todos[0].content"
  * ```
  */
-export function formatPaths(paths: Array<string | number>): string {
+export function formatPaths(paths: Array<PropertyKey>): string {
 	return paths.reduce<string>((name, path) => {
 		if (typeof path === 'number') {
 			return `${name}[${Number.isNaN(path) ? '' : path}]`;
