@@ -106,25 +106,6 @@ export default function FormControl() {
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"
-							type="button"
-							onClick={() => {
-								// We should wrap each form.update() in flushSync ideally
-								// But this is not well documented, so people are likely doing this as "it looks working"
-								// This makes sure we are not breaking the existing code
-								form.update({
-									name: fields.message.name,
-									value: 'Updated message',
-								});
-								form.update({
-									name: fields.number.name,
-									value: 987,
-								});
-							}}
-						>
-							Multiple updates
-						</button>
-						<button
-							className="rounded-md border p-2 hover:border-black"
 							{...form.update.getButtonProps({
 								name: fields.message.name,
 								value: '',

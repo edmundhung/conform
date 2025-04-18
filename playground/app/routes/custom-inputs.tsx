@@ -33,7 +33,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	return {
 		legacy: url.searchParams.get('legacy') === 'yes',
-		noKey: url.searchParams.get('noKey') === 'yes',
 		noClientValidate: url.searchParams.get('noClientValidate') === 'yes',
 	};
 }
@@ -46,7 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Example() {
-	const { legacy, noKey, noClientValidate } = useLoaderData<typeof loader>();
+	const { legacy, noClientValidate } = useLoaderData<typeof loader>();
 	const lastResult = useActionData<typeof action>();
 	const [form, fields] = useForm({
 		id: 'example',
@@ -67,14 +66,12 @@ export default function Example() {
 								name={fields.color.name}
 								options={['red', 'green', 'blue']}
 								placeholder="Select a color"
-								noKey={noKey}
 							/>
 						) : (
 							<Select
 								name={fields.color.name}
 								options={['red', 'green', 'blue']}
 								placeholder="Select a color"
-								noKey={noKey}
 							/>
 						)}
 					</Field>
@@ -85,7 +82,6 @@ export default function Example() {
 								options={['English', 'Spanish', 'French']}
 								placeholder="Select languages"
 								multiple
-								noKey={noKey}
 							/>
 						) : (
 							<Select
@@ -93,7 +89,6 @@ export default function Example() {
 								options={['English', 'Spanish', 'French']}
 								placeholder="Select languages"
 								multiple
-								noKey={noKey}
 							/>
 						)}
 					</Field>
@@ -102,13 +97,11 @@ export default function Example() {
 							<OldCustomCheckbox
 								label="I accept the terms of service"
 								name={fields.tos.name}
-								noKey={noKey}
 							/>
 						) : (
 							<Checkbox
 								name={fields.tos.name}
 								label="I accept the terms of service"
-								noKey={noKey}
 							/>
 						)}
 					</Field>
@@ -117,13 +110,11 @@ export default function Example() {
 							<OldCustomMultipleCheckbox
 								name={fields.options.name}
 								options={['a', 'b', 'c', 'd']}
-								noKey={noKey}
 							/>
 						) : (
 							<CheckboxGroup
 								name={fields.options.name}
 								options={['a', 'b', 'c', 'd']}
-								noKey={noKey}
 							/>
 						)}
 					</Field>
@@ -142,21 +133,14 @@ function OldCustomSelect({
 	options,
 	placeholder,
 	multiple,
-	noKey,
 }: {
 	name: FieldName<string | string[]>;
 	placeholder: string;
 	options: string[];
 	multiple?: boolean;
-	noKey: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useInputControl({
-		key: noKey ? null : field.key,
-		initialValue: field.initialValue,
-		name: field.name,
-		formId: field.formId,
-	});
+	const control = useInputControl(field);
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
@@ -224,19 +208,12 @@ function OldCustomSelect({
 function OldCustomCheckbox({
 	name,
 	label,
-	noKey,
 }: {
 	name: FieldName<boolean>;
 	label: string;
-	noKey: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useInputControl({
-		key: noKey ? null : field.key,
-		initialValue: field.initialValue,
-		name: field.name,
-		formId: field.formId,
-	});
+	const control = useInputControl(field);
 
 	return (
 		<div className="flex items-center py-2">
@@ -262,19 +239,12 @@ function OldCustomCheckbox({
 function OldCustomMultipleCheckbox({
 	name,
 	options,
-	noKey,
 }: {
 	name: FieldName<string[]>;
 	options: string[];
-	noKey: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useInputControl({
-		key: noKey ? null : field.key,
-		initialValue: field.initialValue,
-		name: field.name,
-		formId: field.formId,
-	});
+	const control = useControl(field);
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
@@ -318,19 +288,14 @@ function Select({
 	options,
 	placeholder,
 	multiple,
-	noKey,
 }: {
 	name: FieldName<string | string[]>;
 	placeholder: string;
 	options: string[];
 	multiple?: boolean;
-	noKey: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useControl({
-		key: noKey ? null : field.key,
-		initialValue: field.initialValue,
-	});
+	const control = useInputControl(field);
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
 
@@ -411,17 +376,13 @@ function Select({
 function Checkbox({
 	name,
 	label,
-	noKey,
 }: {
 	name: FieldName<boolean>;
 	label: string;
 	noKey: boolean;
 }) {
 	const [field] = useField(name);
-	const control = useControl({
-		key: noKey ? null : field.key,
-		initialValue: field.initialValue,
-	});
+	const control = useControl(field);
 
 	return (
 		<div
@@ -451,11 +412,9 @@ function Checkbox({
 function CheckboxGroup({
 	name,
 	options,
-	noKey,
 }: {
 	name: FieldName<string[]>;
 	options: string[];
-	noKey: boolean;
 }) {
 	const [field] = useField(name);
 	const initialValue =
@@ -469,7 +428,7 @@ function CheckboxGroup({
 				<Control
 					key={option}
 					meta={{
-						key: noKey ? null : field.key,
+						key: field.key,
 						initialValue: initialValue.includes(option) ? option : '',
 					}}
 					render={(control) => (
