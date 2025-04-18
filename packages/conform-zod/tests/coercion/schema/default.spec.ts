@@ -13,7 +13,7 @@ describe('coercion', () => {
 				b: z.number().default(123),
 				c: z.boolean().default(true),
 				d: z.date().default(defaultDate),
-				e: z.file().default(defaultFile),
+				e: z.instanceof(File).default(defaultFile),
 				f: z.array(z.string()).default(['foo', 'bar']),
 				g: z.string().nullable().default(null),
 				h: z.string().default(''),
@@ -55,7 +55,7 @@ describe('coercion', () => {
 					.default(false),
 				d: z.date().min(today, 'invalid').default(defaultDate),
 				e: z
-					.file()
+					.instanceof(File)
 					.refine((file) => file.size > 100, 'invalid')
 					.default(defaultFile),
 			});

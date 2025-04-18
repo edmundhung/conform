@@ -15,7 +15,7 @@ describe('coercion', () => {
 				b: z.number().catch(123),
 				c: z.boolean().catch(true),
 				d: z.date().catch(defaultDate),
-				e: z.file().catch(defaultFile),
+				e: z.instanceof(File).catch(defaultFile),
 				f: z.array(z.string()).min(1).catch(['foo', 'bar']),
 			});
 			const emptyFile = new File([], '');

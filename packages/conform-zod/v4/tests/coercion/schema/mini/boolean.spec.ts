@@ -1,26 +1,20 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../../coercion';
-import { string, minLength, maxLength, regex, refine } from '@zod/mini';
-import { getResult } from '../../../helpers/zod';
+import { boolean } from '@zod/mini';
+import { getResult } from '../../../../../tests/helpers/zod';
 
 describe('coercion', () => {
 	describe('mini', () => {
-		describe('string', () => {
-			test('should pass strings', () => {
-				const schema = string({
+		describe('boolean', () => {
+			test('should pass boolean', () => {
+				const schema = boolean({
 					error: (ctx) => {
 						if (ctx.input === undefined) {
 							return 'required';
 						}
-
 						return 'invalid';
 					},
-				}).check(
-					minLength(10, 'min'),
-					maxLength(100, 'max'),
-					regex(/^[A-Z]{1,100}$/, { message: 'regex' }),
-					refine((value) => value !== 'error', 'refine'),
-				);
+				});
 				const file = new File([], '');
 
 				expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
@@ -35,17 +29,15 @@ describe('coercion', () => {
 						'': ['invalid'],
 					},
 				});
-				expect(getResult(coerceFormValue(schema).safeParse('error'))).toEqual({
+				expect(getResult(coerceFormValue(schema).safeParse('true'))).toEqual({
 					success: false,
 					error: {
-						'': ['min', 'regex', 'refine'],
+						'': ['invalid'],
 					},
 				});
-				expect(
-					getResult(coerceFormValue(schema).safeParse('ABCDEFGHIJ')),
-				).toEqual({
+				expect(getResult(coerceFormValue(schema).safeParse('on'))).toEqual({
 					success: true,
-					data: 'ABCDEFGHIJ',
+					data: true,
 				});
 			});
 		});

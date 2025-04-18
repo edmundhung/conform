@@ -7,18 +7,10 @@ describe('coercion', () => {
 	describe('z.string', () => {
 		test('should pass strings', () => {
 			const schema = z
-				.string({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-
-						return 'invalid';
-					},
-				})
+				.string({ required_error: 'required', invalid_type_error: 'invalid' })
 				.min(10, 'min')
 				.max(100, 'max')
-				.regex(/^[A-Z]{1,100}$/, { message: 'regex' })
+				.regex(/^[A-Z]{1,100}$/, 'regex')
 				.refine((value) => value !== 'error', 'refine');
 			const file = new File([], '');
 

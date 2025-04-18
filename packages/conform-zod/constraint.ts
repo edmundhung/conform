@@ -1,6 +1,11 @@
 import type { Constraint } from '@conform-to/dom';
 
-import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from '@zod/core';
+import type {
+	ZodTypeAny,
+	ZodFirstPartySchemaTypes,
+	ZodNumber,
+	ZodString,
+} from 'zod';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -13,26 +18,27 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
-export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
+export function getZodConstraint(
+	schema: ZodTypeAny,
+): Record<string, Constraint> {
 	function updateConstraint(
-		schema: $ZodType,
+		schema: ZodTypeAny,
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
-		const def = (schema as unknown as $ZodTypes)._zod.def;
+		const def = (schema as ZodFirstPartySchemaTypes)['_def'];
 
-		if (def.type === 'object') {
-			for (const key in def.shape) {
-				// @ts-expect-error
-				updateConstraint(def.shape[key], data, name ? `${name}.${key}` : key);
+		if (def.typeName === 'ZodObject') {
+			for (const key in def.shape()) {
+				updateConstraint(def.shape()[key], data, name ? `${name}.${key}` : key);
 			}
-			// } else if (def.type === 'ZodEffects') {
-			// 	updateConstraint(def.schema, data, name);
-		} else if (def.type === 'pipe') {
+		} else if (def.typeName === 'ZodEffects') {
+			updateConstraint(def.schema, data, name);
+		} else if (def.typeName === 'ZodPipeline') {
 			// FIXME: What to do with .pipe()?
 			updateConstraint(def.out, data, name);
-		} else if (def.type === 'intersection') {
+		} else if (def.typeName === 'ZodIntersection') {
 			const leftResult: Record<string, Constraint> = {};
 			const rightResult: Record<string, Constraint> = {};
 
@@ -41,11 +47,12 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 
 			Object.assign(data, leftResult, rightResult);
 		} else if (
-			def.type === 'union' // || def.type === 'discriminatedUnion'
+			def.typeName === 'ZodUnion' ||
+			def.typeName === 'ZodDiscriminatedUnion'
 		) {
 			Object.assign(
 				data,
-				(def.options as $ZodType[])
+				(def.options as ZodTypeAny[])
 					.map((option) => {
 						const result: Record<string, Constraint> = {};
 
@@ -91,44 +98,43 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 		} else if (name === '') {
 			// All the cases below are not allowed on root
 			throw new Error('Unsupported schema');
-		} else if (def.type === 'array') {
+		} else if (def.typeName === 'ZodArray') {
 			constraint.multiple = true;
-			updateConstraint(def.element, data, `${name}[]`);
-		} else if (def.type === 'string') {
-			const _schema = schema as $ZodString;
-			if (_schema._zod.computed.minimum !== null) {
-				constraint.minLength = _schema._zod.computed.minimum ?? undefined;
+			updateConstraint(def.type, data, `${name}[]`);
+		} else if (def.typeName === 'ZodString') {
+			const _schema = schema as ZodString;
+			if (_schema.minLength !== null) {
+				constraint.minLength = _schema.minLength ?? undefined;
 			}
-			if (_schema._zod.computed.maximum !== null) {
-				constraint.maxLength = _schema._zod.computed.maximum;
+			if (_schema.maxLength !== null) {
+				constraint.maxLength = _schema.maxLength;
 			}
-		} else if (def.type === 'optional') {
+		} else if (def.typeName === 'ZodOptional') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
-		} else if (def.type === 'default') {
+		} else if (def.typeName === 'ZodDefault') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
-		} else if (def.type === 'number') {
-			const _schema = schema as $ZodNumber;
-			if (_schema._zod.computed.minimum !== null) {
-				constraint.min = _schema._zod.computed.minimum;
+		} else if (def.typeName === 'ZodNumber') {
+			const _schema = schema as ZodNumber;
+			if (_schema.minValue !== null) {
+				constraint.min = _schema.minValue;
 			}
-			if (_schema._zod.computed.maximum !== null) {
-				constraint.max = _schema._zod.computed.maximum;
+			if (_schema.maxValue !== null) {
+				constraint.max = _schema.maxValue;
 			}
-		} else if (def.type === 'enum') {
-			constraint.pattern = Object.keys(def.entries)
+		} else if (def.typeName === 'ZodEnum') {
+			constraint.pattern = def.values
 				.map((option: string) =>
 					// To escape unsafe characters on regex
 					option.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'),
 				)
 				.join('|');
-		} else if (def.type === 'tuple') {
+		} else if (def.typeName === 'ZodTuple') {
 			for (let i = 0; i < def.items.length; i++) {
-				// @ts-expect-error
 				updateConstraint(def.items[i], data, `${name}[${i}]`);
 			}
-		} else if (def.type === 'lazy') {
+		} else if (def.typeName === 'ZodLazy') {
 			// FIXME: If you are interested in this, feel free to create a PR
 		}
 	}

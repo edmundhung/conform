@@ -7,7 +7,7 @@ describe('coercion', () => {
 	describe('z.preprocess', () => {
 		test('should pass preprocess', () => {
 			const schemaWithNoPreprocess = z.number({
-				message: 'invalid',
+				invalid_type_error: 'invalid',
 			});
 			const schemaWithCustomPreprocess = z.preprocess(
 				(value) => {
@@ -19,7 +19,7 @@ describe('coercion', () => {
 						return value.replace(/,/g, '');
 					}
 				},
-				z.number({ message: 'invalid' }),
+				z.number({ invalid_type_error: 'invalid' }),
 			);
 
 			expect(

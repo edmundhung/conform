@@ -7,15 +7,15 @@ describe('constraint', () => {
 		const schema = z
 			.object({
 				text: z
-					.string({ message: 'required' })
+					.string({ required_error: 'required' })
 					.min(10, 'min')
 					.max(100, 'max')
 					.refine(() => false, 'refine'),
 				number: z
-					.number({ message: 'required' })
+					.number({ required_error: 'required' })
 					.min(1, 'min')
 					.max(10, 'max')
-					.multipleOf(2, 'step'),
+					.step(2, 'step'),
 				timestamp: z
 					.date()
 					.min(new Date(1), 'min')
@@ -35,13 +35,15 @@ describe('constraint', () => {
 						z
 							.object({
 								key: z
-									.string({ message: 'required' })
+									.string({ required_error: 'required' })
 									.refine(() => false, 'refine'),
 							})
 							.refine(() => false, 'refine'),
 					)
 					.max(0, 'max'),
-				files: z.array(z.file({ message: 'Invalid file' })).min(1, 'required'),
+				files: z
+					.array(z.instanceof(File, { message: 'Invalid file' }))
+					.min(1, 'required'),
 				tuple: z.tuple([
 					z.string().min(3, 'min'),
 					z.number().max(100, 'max').optional(),
@@ -118,7 +120,7 @@ describe('constraint', () => {
 		// Intersection is supported
 		expect(
 			getZodConstraint(
-				schema.extend(
+				schema.and(
 					z.object({ text: z.string().optional(), something: z.string() }),
 				),
 			),
@@ -129,32 +131,26 @@ describe('constraint', () => {
 		});
 
 		// Union is supported
-		const baseSchema = z.object({
-			qux: z.string().min(1, 'min'),
-		});
 		expect(
 			getZodConstraint(
-				z.union([
-					baseSchema.extend(
+				z
+					.union([
 						z.object({
 							type: z.literal('a'),
 							foo: z.string().min(1, 'min'),
 							baz: z.string().min(1, 'min'),
 						}),
-					),
-					baseSchema.extend(
 						z.object({
 							type: z.literal('b'),
 							bar: z.string().min(1, 'min'),
 							baz: z.string().min(1, 'min'),
 						}),
+					])
+					.and(
+						z.object({
+							qux: z.string().min(1, 'min'),
+						}),
 					),
-				]),
-				// .and(
-				// 	z.object({
-				// 		qux: z.string().min(1, 'min'),
-				// 	}),
-				// ),
 			),
 		).toEqual({
 			type: { required: true },
@@ -167,27 +163,24 @@ describe('constraint', () => {
 		// Discriminated union is also supported
 		expect(
 			getZodConstraint(
-				z.discriminatedUnion('type', [
-					baseSchema.extend(
+				z
+					.discriminatedUnion('type', [
 						z.object({
 							type: z.literal('a'),
 							foo: z.string().min(1, 'min'),
 							baz: z.string().min(1, 'min'),
 						}),
-					),
-					baseSchema.extend(
 						z.object({
 							type: z.literal('b'),
 							bar: z.string().min(1, 'min'),
 							baz: z.string().min(1, 'min'),
 						}),
+					])
+					.and(
+						z.object({
+							qux: z.string().min(1, 'min'),
+						}),
 					),
-				]),
-				// .and(
-				// 	z.object({
-				// 		qux: z.string().min(1, 'min'),
-				// 	}),
-				// ),
 			),
 		).toEqual({
 			type: { required: true },

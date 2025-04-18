@@ -7,24 +7,24 @@ describe('coercion', () => {
 	describe('z.lazy', () => {
 		test('should pass lazy', () => {
 			const baseSchema = z.object({
-				name: z.string({ message: 'required' }),
+				name: z.string({ required_error: 'required' }),
 			});
 
 			type Category = z.infer<typeof baseSchema> & {
 				subcategories: Category[];
 			};
 
-			const category: z.ZodType<Category, Category> = baseSchema.extend({
+			const category: z.ZodType<Category> = baseSchema.extend({
 				subcategories: z.lazy(() => category.array()),
 			});
 
 			type Node = z.infer<typeof baseSchema> & {
-				left: Node | undefined;
-				right: Node | undefined;
+				left?: Node | undefined;
+				right?: Node | undefined;
 			};
 
-			const node: z.ZodType<Node, Node> = baseSchema.extend({
-				left: z.lazy(() => node.optional()),
+			const node: z.ZodType<Node> = baseSchema.extend({
+				left: z.lazy(() => node).optional(),
 				right: z.lazy(() => node.optional()),
 			});
 

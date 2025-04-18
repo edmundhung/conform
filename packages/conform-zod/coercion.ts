@@ -1,5 +1,24 @@
-import type { $ZodType, $ZodTypes } from '@zod/core';
-import { lazy, pipe, transform, union } from '@zod/mini';
+import {
+	ZodArray,
+	ZodObject,
+	ZodIntersection,
+	ZodUnion,
+	ZodDiscriminatedUnion,
+	ZodTuple,
+	ZodPipeline,
+	ZodEffects,
+	ZodNullable,
+	ZodOptional,
+	lazy,
+	any,
+	ZodCatch,
+	ZodBranded,
+} from 'zod';
+import type {
+	ZodDiscriminatedUnionOption,
+	ZodFirstPartySchemaTypes,
+	ZodTypeAny,
+} from 'zod';
 
 /**
  * Helpers for coercing string value
@@ -84,6 +103,24 @@ function coerceBigInt(value: unknown) {
 }
 
 /**
+ * A file schema is usually defined with `z.instanceof(File)`
+ * which is implemented with `z.custom()` based on ZodAny with a `superRefine` check
+ * @see https://github.com/colinhacks/zod/blob/eea05ae3dab628e7a834397414e5145e935e418b/src/types.ts#L5250-L5285
+ */
+function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
+	if (typeof File === 'undefined') {
+		return false;
+	}
+
+	return (
+		schema._def.effect.type === 'refinement' &&
+		schema.innerType()._def.typeName === 'ZodAny' &&
+		schema.safeParse(new File([], '')).success &&
+		!schema.safeParse('').success
+	);
+}
+
+/**
  * @deprecated Conform strip empty string to undefined by default
  */
 export function ifNonEmptyString(fn: (text: string) => unknown) {
@@ -117,26 +154,30 @@ function compose(
 }
 
 function selectDefaultCoercion(
-	type: $ZodType,
+	type: ZodTypeAny,
 	defaultCoercion: Record<DefaultCoercionType, CoercionFunction>,
 ): CoercionFunction | null {
-	const def = type._zod.def;
+	const def = (type as ZodFirstPartySchemaTypes)._def;
 
 	if (
-		def.type === 'string' ||
-		def.type === 'literal' ||
-		def.type === 'enum' // || def.type === 'nativeEnum'
+		def.typeName === 'ZodString' ||
+		def.typeName === 'ZodLiteral' ||
+		def.typeName === 'ZodEnum' ||
+		def.typeName === 'ZodNativeEnum'
 	) {
 		return defaultCoercion.string;
-	} else if (def.type === 'file') {
+	} else if (
+		def.typeName === 'ZodEffects' &&
+		isFileSchema(type as ZodEffects<any, any, any>)
+	) {
 		return defaultCoercion.file;
-	} else if (def.type === 'number') {
+	} else if (def.typeName === 'ZodNumber') {
 		return defaultCoercion.number;
-	} else if (def.type === 'boolean') {
+	} else if (def.typeName === 'ZodBoolean') {
 		return defaultCoercion.boolean;
-	} else if (def.type === 'date') {
+	} else if (def.typeName === 'ZodDate') {
 		return defaultCoercion.date;
-	} else if (def.type === 'bigint') {
+	} else if (def.typeName === 'ZodBigInt') {
 		return defaultCoercion.bigint;
 	}
 
@@ -147,14 +188,14 @@ function selectDefaultCoercion(
  * Reconstruct the provided schema with additional preprocessing steps
  * This strips empty values to undefined and coerces string to the correct type
  */
-export function enableTypeCoercion<Schema extends $ZodType>(
+export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	type: Schema,
 	options: {
-		cache: Map<$ZodType, $ZodType>;
-		coerce: (type: $ZodType) => CoercionFunction | null;
+		cache: Map<ZodTypeAny, ZodTypeAny>;
+		coerce: (type: ZodTypeAny) => CoercionFunction | null;
 		stripEmptyValue: CoercionFunction;
 	},
-): $ZodType {
+): ZodTypeAny {
 	const result = options.cache.get(type);
 
 	// Return the cached schema if it's already processed
@@ -163,18 +204,15 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 		return result;
 	}
 
-	let schema: $ZodType = type;
-	const zod = (type as unknown as $ZodTypes)._zod;
-	const def = zod.def;
-	const constr = zod.constr;
-
+	let schema: ZodTypeAny = type;
+	const def = (type as ZodFirstPartySchemaTypes)._def;
 	const coercion = options.coerce(type);
 
 	if (coercion) {
-		schema = pipe(transform(coercion), type);
-	} else if (def.type === 'array') {
-		schema = pipe(
-			transform((value) => {
+		schema = any().transform(coercion).pipe(type);
+	} else if (def.typeName === 'ZodArray') {
+		schema = any()
+			.transform((value) => {
 				// No preprocess needed if the value is already an array
 				if (Array.isArray(value)) {
 					return value;
@@ -189,82 +227,115 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 
 				// Wrap it in an array otherwise
 				return [value];
-			}),
-			new constr({
-				...def,
-				element: enableTypeCoercion(def.element, options),
-			}),
-		);
-	} else if (def.type === 'object') {
-		schema = pipe(
-			transform((value) => {
+			})
+			.pipe(
+				new ZodArray({
+					...def,
+					type: enableTypeCoercion(def.type, options),
+				}),
+			);
+	} else if (def.typeName === 'ZodObject') {
+		schema = any()
+			.transform((value) => {
 				if (typeof value === 'undefined') {
 					// Defaults it to an empty object
 					return {};
 				}
 
 				return value;
-			}),
-			new constr({
-				...def,
-				shape: Object.fromEntries(
-					Object.entries(def.shape).map(([key, def]) => [
-						key,
-						enableTypeCoercion(def, options),
-					]),
-				),
-			}),
-		);
-	} else if (def.type === 'optional') {
-		schema = pipe(
-			transform(options.stripEmptyValue),
-			new constr({
-				...def,
-				innerType: enableTypeCoercion(def.innerType, options),
-			}),
-		);
-	} else if (def.type === 'default') {
-		schema = pipe(
-			transform(options.stripEmptyValue),
-			new constr({
-				...def,
-				innerType: enableTypeCoercion(def.innerType, options),
-			}),
-		);
-	} else if (def.type === 'catch') {
-		schema = new constr({
+			})
+			.pipe(
+				new ZodObject({
+					...def,
+					shape: () =>
+						Object.fromEntries(
+							Object.entries(def.shape()).map(([key, def]) => [
+								key,
+								// @ts-expect-error see message above
+								enableTypeCoercion(def, options),
+							]),
+						),
+				}),
+			);
+	} else if (def.typeName === 'ZodEffects') {
+		schema = new ZodEffects({
+			...def,
+			schema: enableTypeCoercion(def.schema, options),
+		});
+	} else if (def.typeName === 'ZodOptional') {
+		schema = any()
+			.transform(options.stripEmptyValue)
+			.pipe(
+				new ZodOptional({
+					...def,
+					innerType: enableTypeCoercion(def.innerType, options),
+				}),
+			);
+	} else if (def.typeName === 'ZodDefault') {
+		const defaultValue = def.defaultValue();
+		schema = any()
+			.transform(options.stripEmptyValue)
+			// Reconstruct `.default()` as `.optional().transform(value => value ?? defaultValue)`
+			.pipe(enableTypeCoercion(def.innerType, options).optional())
+			.transform((value) => value ?? defaultValue);
+	} else if (def.typeName === 'ZodCatch') {
+		schema = new ZodCatch({
 			...def,
 			innerType: enableTypeCoercion(def.innerType, options),
 		});
-	} else if (def.type === 'intersection') {
-		schema = new constr({
+	} else if (def.typeName === 'ZodIntersection') {
+		schema = new ZodIntersection({
 			...def,
 			left: enableTypeCoercion(def.left, options),
 			right: enableTypeCoercion(def.right, options),
 		});
-	} else if (def.type === 'union') {
-		schema = union(
-			def.options.map((option) => enableTypeCoercion(option, options)),
-		);
-	} else if (def.type === 'tuple') {
-		schema = new constr({
+	} else if (def.typeName === 'ZodUnion') {
+		schema = new ZodUnion({
 			...def,
-			items: def.items.map((item: $ZodType) =>
+			options: def.options.map((option: ZodTypeAny) =>
+				enableTypeCoercion(option, options),
+			),
+		});
+	} else if (def.typeName === 'ZodDiscriminatedUnion') {
+		schema = new ZodDiscriminatedUnion({
+			...def,
+			options: def.options.map((option: ZodTypeAny) =>
+				enableTypeCoercion(option, options),
+			),
+			optionsMap: new Map(
+				Array.from(def.optionsMap.entries()).map(([discriminator, option]) => [
+					discriminator,
+					enableTypeCoercion(
+						option,
+						options,
+					) as ZodDiscriminatedUnionOption<any>,
+				]),
+			),
+		});
+	} else if (def.typeName === 'ZodBranded') {
+		schema = new ZodBranded({
+			...def,
+			type: enableTypeCoercion(def.type, options),
+		});
+	} else if (def.typeName === 'ZodTuple') {
+		schema = new ZodTuple({
+			...def,
+			items: def.items.map((item: ZodTypeAny) =>
 				enableTypeCoercion(item, options),
 			),
 		});
-	} else if (def.type === 'nullable') {
-		schema = new constr({
+	} else if (def.typeName === 'ZodNullable') {
+		schema = new ZodNullable({
 			...def,
 			innerType: enableTypeCoercion(def.innerType, options),
 		});
-	} else if (def.type === 'pipe') {
-		schema = new constr({
+	} else if (def.typeName === 'ZodPipeline') {
+		schema = new ZodPipeline({
 			...def,
 			in: enableTypeCoercion(def.in, options),
 			out: enableTypeCoercion(def.out, options),
 		});
-	} else if (def.type === 'lazy') {
+	} else if (def.typeName === 'ZodLazy') {
 		const inner = def.getter();
 		schema = lazy(() => enableTypeCoercion(inner, options));
 	}
@@ -334,13 +405,13 @@ export function enableTypeCoercion<Schema extends $ZodType>(
  * );
  * ```
  */
-export function coerceFormValue<Schema extends $ZodType>(
+export function coerceFormValue<Schema extends ZodTypeAny>(
 	type: Schema,
 	options?: {
 		defaultCoercion?: {
 			[key in DefaultCoercionType]?: CoercionFunction | boolean;
 		};
-		customize?: (type: $ZodType) => CoercionFunction | null;
+		customize?: (type: ZodTypeAny) => CoercionFunction | null;
 	},
 ): Schema {
 	const getCoercion = (
@@ -386,7 +457,7 @@ export function coerceFormValue<Schema extends $ZodType>(
 	};
 
 	return enableTypeCoercion(type, {
-		cache: new Map<$ZodType, $ZodType>(),
+		cache: new Map<ZodTypeAny, ZodTypeAny>(),
 		stripEmptyValue: compose(defaultCoercion.string, defaultCoercion.file),
 		coerce: (type) => {
 			let coercion = options?.customize?.(type) ?? null;

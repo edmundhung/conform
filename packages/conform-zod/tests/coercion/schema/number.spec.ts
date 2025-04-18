@@ -7,17 +7,10 @@ describe('coercion', () => {
 	describe('z.number', () => {
 		test('should pass numbers', () => {
 			const schema = z
-				.number({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
-				})
+				.number({ required_error: 'required', invalid_type_error: 'invalid' })
 				.min(1, 'min')
 				.max(10, 'max')
-				.multipleOf(2, 'step');
+				.step(2, 'step');
 			const file = new File([], '');
 
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({

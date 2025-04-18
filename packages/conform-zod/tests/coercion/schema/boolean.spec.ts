@@ -7,12 +7,8 @@ describe('coercion', () => {
 	describe('z.boolean', () => {
 		test('should pass boolean', () => {
 			const schema = z.boolean({
-				error: (ctx) => {
-					if (ctx.input === undefined) {
-						return 'required';
-					}
-					return 'invalid';
-				},
+				required_error: 'required',
+				invalid_type_error: 'invalid',
 			});
 			const file = new File([], '');
 

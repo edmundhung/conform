@@ -8,40 +8,24 @@ describe('coercion', () => {
 		test('customize default coercion', () => {
 			const exampleFile = new File(['hello', 'world'], 'example.txt');
 			const schema = z.object({
-				title: z.string({ message: 'required' }),
+				title: z.string({ required_error: 'required' }),
 				count: z.number({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 				amount: z.bigint({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 				date: z.date({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 				confirmed: z.boolean({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
-				file: z.file({ message: 'message' }),
+				file: z.instanceof(File, { message: 'message' }),
 			});
 
 			expect(
@@ -160,33 +144,21 @@ describe('coercion', () => {
 		test('customize coercion', () => {
 			const Payment = z.object({
 				count: z.number({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 				amount: z.bigint({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 				date: z.date({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
-				confirmed: z.boolean({ message: 'invalid' }),
+				confirmed: z.boolean({ invalid_type_error: 'invalid' }),
 			});
 			const schema = z.object({
-				title: z.string({ message: 'required' }),
+				title: z.string({ required_error: 'required' }),
 				payment: Payment,
 			});
 

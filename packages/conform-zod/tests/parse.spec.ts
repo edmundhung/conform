@@ -5,7 +5,7 @@ import { createFormData } from './helpers/FromData';
 
 describe('parse', () => {
 	describe('parseWithZod', () => {
-		test('parseWithZod with error', () => {
+		test('parseWithZod with errorMap', () => {
 			const schema = z.object({
 				text: z.string().min(5),
 			});
@@ -14,13 +14,13 @@ describe('parse', () => {
 			expect(
 				parseWithZod(formData, {
 					schema,
-					error(issue) {
-						if (issue.code === 'too_small' && issue.minimum === 5) {
+					errorMap(error, ctx) {
+						if (error.code === 'too_small' && error.minimum === 5) {
 							return { message: 'The field is too short' };
 						}
 
 						// fall back to default message!
-						return issue.message ?? null;
+						return { message: ctx.defaultError };
 					},
 				}),
 			).toEqual({
@@ -41,35 +41,35 @@ describe('parse', () => {
 				when = true,
 			) =>
 				z.object({
-					email: z.email().check((ctx) => {
-						if (!when) {
-							ctx.issues.push({
-								code: 'custom',
-								message: conformZodMessage.VALIDATION_SKIPPED,
-								input: ctx.value,
-							});
-							return;
-						}
-
-						if (typeof validate === 'undefined') {
-							ctx.issues.push({
-								code: 'custom',
-								message: conformZodMessage.VALIDATION_UNDEFINED,
-								input: ctx.value,
-							});
-							return;
-						}
-
-						return validate(ctx.value).then((valid) => {
-							if (!valid) {
-								ctx.issues.push({
+					email: z
+						.string()
+						.email()
+						.superRefine((email, ctx) => {
+							if (!when) {
+								ctx.addIssue({
 									code: 'custom',
-									message: 'Email is invalid',
-									input: ctx.value,
+									message: conformZodMessage.VALIDATION_SKIPPED,
 								});
+								return;
 							}
-						});
-					}),
+
+							if (typeof validate === 'undefined') {
+								ctx.addIssue({
+									code: 'custom',
+									message: conformZodMessage.VALIDATION_UNDEFINED,
+								});
+								return;
+							}
+
+							return validate(email).then((valid) => {
+								if (!valid) {
+									ctx.addIssue({
+										code: 'custom',
+										message: 'Email is invalid',
+									});
+								}
+							});
+						}),
 				});
 			const formData = createFormData([['email', 'test@example.com']]);
 			const submission = {
@@ -157,11 +157,11 @@ describe('parse', () => {
 		test('parseWithZod with disableAutoCoercion', async () => {
 			const schema = z.object({
 				text: z.string(),
-				number: z.number({ message: 'invalid' }),
-				boolean: z.boolean({ message: 'invalid' }),
-				bigint: z.bigint({ message: 'invalid' }),
-				date: z.date({ message: 'invalid' }),
-				file: z.file({ message: 'invalid' }),
+				number: z.number({ invalid_type_error: 'invalid' }),
+				boolean: z.boolean({ invalid_type_error: 'invalid' }),
+				bigint: z.bigint({ invalid_type_error: 'invalid' }),
+				date: z.date({ invalid_type_error: 'invalid' }),
+				file: z.instanceof(File, { message: 'invalid' }),
 			});
 			const formData = createFormData([
 				['text', 'abc'],

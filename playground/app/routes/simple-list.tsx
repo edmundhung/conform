@@ -14,9 +14,9 @@ import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
 	items: z
-		.string({ message: 'The field is required' })
+		.string({ required_error: 'The field is required' })
 		.min(2, 'At least 2 characters are required')
-		.regex(/^[^0-9]+$/, { message: 'Number is not allowed' })
+		.regex(/^[^0-9]+$/, 'Number is not allowed')
 		.array()
 		.min(1, 'At least one item is required')
 		.max(2, 'Maximum 2 items are allowed'),

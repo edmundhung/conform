@@ -14,6 +14,13 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.js",
 			"default": "./dist/index.mjs"
+		},
+		"./v4": {
+			"types": "./dist/v4/index.d.ts",
+			"module": "./dist/v4/index.mjs",
+			"import": "./dist/v4/index.mjs",
+			"require": "./dist/v4/index.js",
+			"default": "./dist/v4/index.mjs"
 		}
 	},
 	"scripts": {
@@ -39,7 +46,19 @@
 	},
 	"peerDependencies": {
 		"@zod/core": ">0.5.1",
-		"@zod/mini": ">4.0.0-beta.20250415T232143"
+		"@zod/mini": ">4.0.0-beta.20250415T232143",
+		"zod": "^3.21.0"
+	},
+	"peerDependenciesMeta": {
+		"zod": {
+			"optional": true
+		},
+		"@zod/core": {
+			"optional": true
+		},
+		"@zod/mini": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -51,7 +70,8 @@
 		"@zod/mini": "4.0.0-beta.20250415T232143",
 		"rollup": "^2.79.1",
 		"rollup-plugin-copy": "^3.4.0",
-		"zod": "4.0.0-beta.20250415T232143"
+		"zod": "3.21.4",
+		"zod-4": "npm:zod@4.0.0-beta.20250415T232143"
 	},
 	"keywords": [
 		"constraint-validation",

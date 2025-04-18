@@ -793,8 +793,11 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       zod:
-        specifier: 4.0.0-beta.20250415T232143
-        version: 4.0.0-beta.20250415T232143
+        specifier: 3.21.4
+        version: 3.21.4
+      zod-4:
+        specifier: npm:zod@4.0.0-beta.20250415T232143
+        version: zod@4.0.0-beta.20250415T232143
 
   playground:
     dependencies:
@@ -847,8 +850,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 4.0.0-beta.20250415T232143
-        version: 4.0.0-beta.20250415T232143
+        specifier: 3.21.4
+        version: 3.21.4
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.9.1

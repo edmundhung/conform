@@ -8,12 +8,8 @@ describe('coercion', () => {
 		test('should pass date', () => {
 			const schema = z
 				.date({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				})
 				.min(new Date(1), 'min')
 				.max(new Date(10), 'max');

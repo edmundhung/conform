@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../../coercion';
 import { pipe, transform, number } from '@zod/mini';
-import { getResult } from '../../../helpers/zod';
+import { getResult } from '../../../../../tests/helpers/zod';
 
 describe('coercion', () => {
 	describe('mini', () => {

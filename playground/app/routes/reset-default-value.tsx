@@ -8,10 +8,8 @@ import { Field, Playground } from '~/components';
 
 const schema = z
 	.object({
-		name: z.string({ message: 'Name is required' }),
-		code: z
-			.string()
-			.regex(/^#[A-Fa-f0-9]{6}$/, { message: 'The code is invalid' }),
+		name: z.string({ required_error: 'Name is required' }),
+		code: z.string().regex(/^#[A-Fa-f0-9]{6}$/, 'The code is invalid'),
 	})
 	.refine(
 		(data) => colors.find((c) => c.name === data.name && c.code === data.code),

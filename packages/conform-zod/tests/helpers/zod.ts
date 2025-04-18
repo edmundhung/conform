@@ -1,8 +1,9 @@
 import type { util } from '@zod/core';
 import { formatPaths } from '@conform-to/dom';
+import { SafeParseReturnType } from 'zod';
 
 export function getResult<Output>(
-	result: util.SafeParseResult<Output>,
+	result: util.SafeParseResult<Output> | SafeParseReturnType<any, Output>,
 ):
 	| { success: false; error: Record<string, string[]> }
 	| { success: true; data: Output } {

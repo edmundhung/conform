@@ -23,11 +23,9 @@ type Category = z.infer<typeof baseCategorySchema> & {
 	subcategories: Category[];
 };
 
-const categorySchema: z.ZodType<Category, Category> = baseCategorySchema.extend(
-	{
-		subcategories: z.lazy(() => categorySchema.array()),
-	},
-);
+const categorySchema: z.ZodType<Category> = baseCategorySchema.extend({
+	subcategories: z.lazy(() => categorySchema.array()),
+});
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);

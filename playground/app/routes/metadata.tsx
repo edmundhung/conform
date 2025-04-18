@@ -12,11 +12,13 @@ import { z } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
 const schema = z.object({
-	title: z.string({ message: 'Title is required' }),
+	title: z.string({ required_error: 'Title is required' }),
 	bookmarks: z
 		.object({
-			name: z.string({ message: 'Name is required' }),
-			url: z.string({ message: 'Url is required' }).url('Url is invalid'),
+			name: z.string({ required_error: 'Name is required' }),
+			url: z
+				.string({ required_error: 'Url is required' })
+				.url('Url is invalid'),
 		})
 		.array()
 		.refine(
@@ -25,9 +27,9 @@ const schema = z.object({
 				bookmarks.length,
 			'Bookmark URLs are repeated',
 		),
-	file: z.file({ message: 'File is required' }),
+	file: z.instanceof(File, { message: 'File is required' }),
 	files: z
-		.file()
+		.instanceof(File)
 		.array()
 		.min(1, 'At least 1 file is required')
 		.refine(

@@ -7,14 +7,7 @@ describe('coercion', () => {
 	describe('z.bigint', () => {
 		test('should pass bigint', () => {
 			const schema = z
-				.bigint({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
-				})
+				.bigint({ required_error: 'required', invalid_type_error: 'invalid' })
 				.min(1n, 'min')
 				.max(10n, 'max')
 				.multipleOf(2n, 'step');

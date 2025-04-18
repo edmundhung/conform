@@ -8,16 +8,18 @@ import { Playground, Field } from '~/components';
 
 const schema = z
 	.object({
-		email: z.string({ message: 'Email is required' }).email('Email is invalid'),
+		email: z
+			.string({ required_error: 'Email is required' })
+			.email('Email is invalid'),
 	})
 	.and(
 		z
 			.object({
 				password: z
-					.string({ message: 'Password is required' })
+					.string({ required_error: 'Password is required' })
 					.min(8, 'Password is too short'),
 				confirmPassword: z.string({
-					message: 'Confirm password is required',
+					required_error: 'Confirm password is required',
 				}),
 			})
 			.refine((data) => data.password === data.confirmPassword, {

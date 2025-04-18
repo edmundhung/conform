@@ -8,7 +8,7 @@ import {
 	file,
 	type ZodMiniType,
 } from '@zod/mini';
-import { getResult } from '../../../helpers/zod';
+import { getResult } from '../../../../../tests/helpers/zod';
 
 describe('coercion', () => {
 	describe('mini', () => {

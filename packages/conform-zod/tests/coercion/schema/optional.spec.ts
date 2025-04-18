@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { vi, describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
 import { z } from 'zod';
 import { getResult } from '../../helpers/zod';
@@ -11,7 +11,7 @@ describe('coercion', () => {
 				b: z.number().optional(),
 				c: z.boolean().optional(),
 				d: z.date().optional(),
-				e: z.file().optional(),
+				e: z.instanceof(File).optional(),
 				f: z.array(z.string().optional()),
 				g: z.array(z.string()).optional(),
 			});
@@ -53,6 +53,9 @@ describe('coercion', () => {
 					g: undefined,
 				},
 			});
+
+			// To test if File is not defined in certain environment
+			vi.stubGlobal('File', undefined);
 
 			expect(() =>
 				getResult(coerceFormValue(schema).safeParse({})),

@@ -4,9 +4,9 @@ import { z } from 'zod';
 import { getResult } from '../../helpers/zod';
 
 describe('coercion', () => {
-	describe('z.file', () => {
+	describe('z.instanceof(file)', () => {
 		test('should pass file', () => {
-			const schema = z.file({ message: 'required' });
+			const schema = z.instanceof(File, { message: 'required' });
 			const emptyFile = new File([], '');
 			const txtFile = new File(['hello', 'world'], 'example.txt');
 

@@ -14,9 +14,9 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 const schema = z.object({
-	name: z.string({ message: 'Name is required' }),
-	message: z.string({ message: 'Message is required' }),
-	number: z.number({ message: 'Number is required' }),
+	name: z.string({ required_error: 'Name is required' }),
+	message: z.string({ required_error: 'Message is required' }),
+	number: z.number({ required_error: 'Number is required' }),
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -103,6 +103,25 @@ export default function FormControl() {
 							})}
 						>
 							Update number
+						</button>
+						<button
+							className="rounded-md border p-2 hover:border-black"
+							type="button"
+							onClick={() => {
+								// We should wrap each form.update() in flushSync ideally
+								// But this is not well documented, so people are likely doing this as "it looks working"
+								// This makes sure we are not breaking the existing code
+								form.update({
+									name: fields.message.name,
+									value: 'Updated message',
+								});
+								form.update({
+									name: fields.number.name,
+									value: 987,
+								});
+							}}
+						>
+							Multiple updates
 						</button>
 						<button
 							className="rounded-md border p-2 hover:border-black"

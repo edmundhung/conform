@@ -8,12 +8,12 @@ describe('coercion', () => {
 		test('should pass brand', () => {
 			const schema = z
 				.object({
-					a: z.string('Required').brand(),
-					b: z.number('Required').brand(),
-					c: z.boolean('Required').brand(),
-					d: z.date('Required').brand(),
-					e: z.bigint('Required').brand(),
-					f: z.file().brand(),
+					a: z.string().brand(),
+					b: z.number().brand(),
+					c: z.boolean().brand(),
+					d: z.date().brand(),
+					e: z.bigint().brand(),
+					f: z.instanceof(File).brand(),
 					g: z.string().optional().brand(),
 					h: z.string().brand().optional(),
 				})
@@ -41,7 +41,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Input not instance of File'],
 				},
 			});
 			expect(

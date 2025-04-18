@@ -8,17 +8,14 @@ describe('coercion', () => {
 		test('should pass array', () => {
 			const createSchema = (
 				element: z.ZodTypeAny = z.string({
-					error: (ctx) => {
-						if (ctx.input === undefined) {
-							return 'required';
-						}
-						return 'invalid';
-					},
+					required_error: 'required',
+					invalid_type_error: 'invalid',
 				}),
 			) =>
 				z
 					.array(element, {
-						message: 'required',
+						required_error: 'required',
+						invalid_type_error: 'invalid',
 					})
 					.min(1, 'min')
 					.max(1, 'max');
@@ -51,7 +48,11 @@ describe('coercion', () => {
 			const textFile = new File(['helloword'], 'example.txt');
 
 			expect(
-				getResult(coerceFormValue(createSchema(z.file())).safeParse(emptyFile)),
+				getResult(
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse(
+						emptyFile,
+					),
+				),
 			).toEqual({
 				success: false,
 				error: {
@@ -60,7 +61,9 @@ describe('coercion', () => {
 			});
 			// Scenario: File upload (Only one file selected)
 			expect(
-				getResult(coerceFormValue(createSchema(z.file())).safeParse(textFile)),
+				getResult(
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse(textFile),
+				),
 			).toEqual({
 				success: true,
 				data: [textFile],
@@ -68,7 +71,7 @@ describe('coercion', () => {
 			// Scenario: File upload (At least two files selected)
 			expect(
 				getResult(
-					coerceFormValue(createSchema(z.file())).safeParse([
+					coerceFormValue(createSchema(z.instanceof(File))).safeParse([
 						textFile,
 						textFile,
 					]),

@@ -10,15 +10,17 @@ import { z } from 'zod';
 import { Playground, Field } from '~/components';
 
 const schema = z.object({
-	singleChoice: z.string({ message: 'Required' }),
+	singleChoice: z.string({ required_error: 'Required' }),
 	multipleChoice: z
 		.enum(['a', 'b', 'c'], {
-			error(issue) {
-				if (issue.code === 'invalid_value') {
+			errorMap(issue, ctx) {
+				if (issue.code === 'invalid_enum_value') {
 					return { message: 'Invalid' };
 				}
 
-				return issue.message ? { message: issue.message } : null;
+				return {
+					message: ctx.defaultError,
+				};
 			},
 		})
 		.array()

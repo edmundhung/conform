@@ -9,21 +9,21 @@ describe('coercion', () => {
 			const schema = z.object({
 				a: z.object({
 					text: z.string({
-						message: 'required',
+						required_error: 'required',
 					}),
 					flag: z
 						.boolean({
-							message: 'required',
+							required_error: 'required',
 						})
 						.optional(),
 				}),
 				b: z
 					.object({
 						text: z.string({
-							message: 'required',
+							required_error: 'required',
 						}),
 						flag: z.boolean({
-							message: 'required',
+							required_error: 'required',
 						}),
 					})
 					.optional(),
