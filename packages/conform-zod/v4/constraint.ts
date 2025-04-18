@@ -27,8 +27,6 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 				// @ts-expect-error
 				updateConstraint(def.shape[key], data, name ? `${name}.${key}` : key);
 			}
-			// } else if (def.type === 'ZodEffects') {
-			// 	updateConstraint(def.schema, data, name);
 		} else if (def.type === 'pipe') {
 			// FIXME: What to do with .pipe()?
 			updateConstraint(def.out, data, name);

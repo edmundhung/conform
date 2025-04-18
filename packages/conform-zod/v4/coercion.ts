@@ -243,6 +243,20 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 			right: enableTypeCoercion(def.right, options),
 		});
 	} else if (def.type === 'union') {
+		// From Zod v4, the `discriminatedUnion` schema is also defined as a `union`. I would like to use `constr`, i.e. `discriminatedUnion` like other schemas, but I can't do that.
+		// The reason is that `discriminatedUnion` cannot define the following schema.
+		// z.discriminatedUnion('type', [
+		//   z.any()
+		//     .transform(v => v == null ? {} : v)
+		//     .pipe(
+		//       z.object({
+		//         type: z.literal('a'),
+		//         number: z.number(),
+		//       })
+		//     ),
+		// ]);
+		// The `options` of `discriminatedUnion` basically defines the `object` schema, but `@conform-to/zod` requires `transform` to convert Object to an empty object when it is `undefined`, so the `union` schema is used.
+		// `discriminatedUnion` and `union` are strictly different schemas, but they behave similarly.
 		schema = union(
 			def.options.map((option) => enableTypeCoercion(option, options)),
 		);
