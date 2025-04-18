@@ -1,3 +1,4 @@
+import { unstable_updateFieldValue as updateFieldValue } from '@conform-to/dom';
 import {
 	type Key,
 	type RefCallback,
@@ -101,66 +102,30 @@ export function isDummySelect(
 	return element.dataset.conform === 'true';
 }
 
-export function updateFieldValue(
+export function getInputValue(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	value: string | string[],
-): void {
+): string | string[] | null {
+	if (element instanceof HTMLSelectElement) {
+		const value = Array.from(element.selectedOptions).map(
+			(option) => option.value,
+		);
+
+		return element.multiple ? value : value[0] ?? null;
+	}
+
 	if (
 		element instanceof HTMLInputElement &&
-		(element.type === 'checkbox' || element.type === 'radio')
+		(element.type === 'radio' || element.type === 'checkbox')
 	) {
-		element.checked = Array.isArray(value)
-			? value.includes(element.value)
-			: element.value === value;
-	} else if (element instanceof HTMLSelectElement && element.multiple) {
-		const selectedValue = Array.isArray(value) ? [...value] : [value];
-
-		for (const option of element.options) {
-			const index = selectedValue.indexOf(option.value);
-			const selected = index > -1;
-
-			// Update the selected state of the option
-			option.selected = selected;
-			// Remove the option from the selected array
-			if (selected) {
-				selectedValue.splice(index, 1);
-			}
-		}
-
-		// Add the remaining options to the select element only if it's a dummy element managed by conform
-		if (isDummySelect(element)) {
-			for (const option of selectedValue) {
-				element.options.add(new Option(option, option, false, true));
-			}
-		}
-	} else if (element.value !== value) {
-		// No `change` event will be triggered on React if `element.value` is already updated
-
-		/**
-		 * Triggering react custom change event
-		 * Solution based on dom-testing-library
-		 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-		 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
-		 */
-		const { set: valueSetter } =
-			Object.getOwnPropertyDescriptor(element, 'value') || {};
-		const prototype = Object.getPrototypeOf(element);
-		const { set: prototypeValueSetter } =
-			Object.getOwnPropertyDescriptor(prototype, 'value') || {};
-
-		if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-			prototypeValueSetter.call(element, value);
-		} else {
-			if (valueSetter) {
-				valueSetter.call(element, value);
-			} else {
-				throw new Error('The given element does not have a value setter');
-			}
-		}
+		return element.checked ? element.value : null;
 	}
+
+	return element.value;
 }
 
-export function useInputEvent(): {
+export function useInputEvent(
+	onUpdate: React.Dispatch<React.SetStateAction<string | string[] | undefined>>,
+): {
 	change(value: string | string[]): void;
 	focus(): void;
 	blur(): void;
@@ -175,6 +140,7 @@ export function useInputEvent(): {
 		| null
 		| undefined
 	>(null);
+	const observerRef = useRef<MutationObserver | null>(null);
 	const eventDispatched = useRef({
 		change: false,
 		focus: false,
@@ -215,7 +181,7 @@ export function useInputEvent(): {
 					const element = ref.current;
 
 					if (element) {
-						updateFieldValue(element, value);
+						updateFieldValue(element, { value });
 
 						// Dispatch input event with the updated input value
 						element.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -264,9 +230,42 @@ export function useInputEvent(): {
 			},
 			register(element) {
 				ref.current = element;
+
+				if (observerRef.current) {
+					observerRef.current.disconnect();
+					observerRef.current = null;
+				}
+
+				if (!element) {
+					return;
+				}
+
+				observerRef.current = new MutationObserver((mutations) => {
+					for (const mutation of mutations) {
+						if (mutation.type === 'attributes') {
+							const nextValue = getInputValue(element) ?? undefined;
+							onUpdate((prevValue) => {
+								if (
+									nextValue === prevValue ||
+									// If the value is an array, check if the current value is the same as the new value
+									JSON.stringify(prevValue) === JSON.stringify(nextValue)
+								) {
+									return prevValue;
+								}
+
+								return nextValue;
+							});
+						}
+					}
+				});
+
+				observerRef.current.observe(element, {
+					attributes: true,
+					attributeFilter: ['data-conform'],
+				});
 			},
 		};
-	}, []);
+	}, [onUpdate]);
 }
 
 export function useInputValue<
@@ -298,7 +297,10 @@ export function useControl<
 	Value extends string | string[] | Array<string | undefined>,
 >(meta: { key?: Key | null | undefined; initialValue?: Value | undefined }) {
 	const [value, setValue] = useInputValue(meta);
-	const { register, change, focus, blur } = useInputEvent();
+	const { register, change, focus, blur } = useInputEvent(
+		// @ts-expect-error We will fix the type when stabilizing the API
+		setValue,
+	);
 	const handleChange = (
 		value: Value extends string ? Value : string | string[],
 	) => {
@@ -315,12 +317,11 @@ export function useControl<
 			return;
 		}
 
-		const prevKey = element.dataset.conform;
-		const nextKey = `${meta.key ?? ''}`;
-
-		if (prevKey !== nextKey) {
-			element.dataset.conform = nextKey;
-			updateFieldValue(element, value ?? '');
+		// We were trying to sync the value based on key previously
+		// This is now handled mostly by the side effect
+		// But we still need to set the initial value for backward compatibility
+		if (!element.dataset.conform) {
+			updateFieldValue(element, { value });
 		}
 	};
 
@@ -343,7 +344,10 @@ export function useInputControl<
 }) {
 	const [value, setValue] = useInputValue(meta);
 	const initializedRef = useRef(false);
-	const { register, change, focus, blur } = useInputEvent();
+	const { register, change, focus, blur } = useInputEvent(
+		// @ts-expect-error We will fix the type when stabilizing the API
+		setValue,
+	);
 
 	useEffect(() => {
 		const form = getFormElement(meta.formId);

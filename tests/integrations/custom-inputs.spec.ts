@@ -89,3 +89,23 @@ test('Server Validation: useControl', async ({ page }) => {
 	await page.goto('/custom-inputs?noClientValidate=yes');
 	await runTest(page);
 });
+
+test('Client Validation: useInputControl with no key', async ({ page }) => {
+	await page.goto('/custom-inputs?legacy=yes&noKey=yes');
+	await runTest(page);
+});
+
+test('Server Validation: useInputControl with no key', async ({ page }) => {
+	await page.goto('/custom-inputs?legacy=yes&noClientValidate=yes&noKey=yes');
+	await runTest(page);
+});
+
+test('Client Validation: useControl with no key', async ({ page }) => {
+	await page.goto('/custom-inputs?noKey=yes');
+	await runTest(page);
+});
+
+test('Server Validation: useControl with no key', async ({ page }) => {
+	await page.goto('/custom-inputs?noClientValidate=yes&noKey=yes');
+	await runTest(page);
+});

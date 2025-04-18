@@ -9,6 +9,7 @@ import {
 	setValue,
 	normalize,
 	formatName,
+	getChildPaths,
 } from './formdata';
 import {
 	type FieldElement,
@@ -117,6 +118,7 @@ export type Constraint = {
 export type FormMeta<FormError> = {
 	formId: string;
 	isValueUpdated: boolean;
+	pendingIntents: Intent[];
 	submissionStatus?: 'error' | 'success';
 	defaultValue: Record<string, unknown>;
 	initialValue: Record<string, unknown>;
@@ -199,6 +201,7 @@ export type SubscriptionSubject = {
 } & {
 	formId?: boolean;
 	status?: boolean;
+	pendingIntents?: boolean;
 };
 
 export type SubscriptionScope = {
@@ -231,6 +234,7 @@ export type FormContext<
 	onBlur(event: Event): void;
 	onUpdate(options: Partial<FormOptions<Schema, FormError, FormValue>>): void;
 	observe(): () => void;
+	runSideEffect(intents: Intent[]): void;
 	subscribe(
 		callback: () => void,
 		getSubject?: () => SubscriptionSubject | undefined,
@@ -260,15 +264,16 @@ export type FormContext<
 
 function createFormMeta<Schema, FormError, FormValue>(
 	options: FormOptions<Schema, FormError, FormValue>,
-	initialized?: boolean,
+	isResetting?: boolean,
 ): FormMeta<FormError> {
-	const lastResult = !initialized ? options.lastResult : undefined;
+	const lastResult = !isResetting ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
 		? (serialize(options.defaultValue) as Record<string, unknown>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
 		formId: options.formId,
+		pendingIntents: isResetting ? [{ type: 'reset', payload: {} }] : [],
 		isValueUpdated: false,
 		submissionStatus: lastResult?.status,
 		defaultValue,
@@ -276,7 +281,7 @@ function createFormMeta<Schema, FormError, FormValue>(
 		value: initialValue,
 		constraint: options.constraint ?? {},
 		validated: lastResult?.state?.validated ?? {},
-		key: !initialized
+		key: !isResetting
 			? getDefaultKey(defaultValue)
 			: {
 					'': generateId(),
@@ -638,6 +643,7 @@ export function createFormContext<
 		getSubject?: () => SubscriptionSubject | undefined;
 	}> = [];
 	const latestOptions = options;
+	const processedIntents = new Set<Intent>();
 	let meta = createFormMeta(options);
 	let state = createFormState(meta);
 
@@ -669,6 +675,7 @@ export function createFormContext<
 
 		return {
 			submissionStatus: next.submissionStatus,
+			pendingIntents: next.pendingIntents,
 			defaultValue,
 			initialValue,
 			value,
@@ -707,7 +714,10 @@ export function createFormContext<
 		state = nextState;
 
 		const cache: Record<
-			Exclude<keyof SubscriptionSubject, 'formId' | 'status'>,
+			Exclude<
+				keyof SubscriptionSubject,
+				'formId' | 'status' | 'pendingIntents'
+			>,
 			Record<string, boolean>
 		> = {
 			value: {},
@@ -726,6 +736,8 @@ export function createFormContext<
 				(subject.formId && prevMeta.formId !== nextMeta.formId) ||
 				(subject.status &&
 					prevState.submissionStatus !== nextState.submissionStatus) ||
+				(subject.pendingIntents &&
+					prevMeta.pendingIntents !== nextMeta.pendingIntents) ||
 				shouldNotify(
 					prevState.error,
 					nextState.error,
@@ -900,6 +912,7 @@ export function createFormContext<
 	}
 
 	function reset() {
+		processedIntents.clear();
 		updateFormMeta(createFormMeta(latestOptions, true));
 	}
 
@@ -936,8 +949,14 @@ export function createFormContext<
 
 			return result;
 		}, {});
+		const pendingIntents = result.intent
+			? meta.pendingIntents
+					.filter((intent) => !processedIntents.has(intent))
+					.concat(result.intent)
+			: meta.pendingIntents;
 		const update: FormMeta<FormError> = {
 			...meta,
+			pendingIntents,
 			isValueUpdated: false,
 			submissionStatus: result.status,
 			value: result.initialValue,
@@ -1079,6 +1098,77 @@ export function createFormContext<
 		};
 	}
 
+	function runSideEffect(intents: Intent[]) {
+		const formElement = getFormElement();
+
+		if (!formElement) {
+			return;
+		}
+
+		for (const intent of intents) {
+			switch (intent.type) {
+				case 'update': {
+					const name = formatName(intent.payload.name, intent.payload.index);
+					const parentPaths = getPaths(name);
+
+					for (const element of formElement.elements) {
+						if (isFieldElement(element)) {
+							const paths = getChildPaths(parentPaths, element.name);
+
+							if (paths) {
+								const value = getValue(
+									intent.payload.value,
+									formatPaths(paths),
+								);
+
+								updateFieldValue(element, {
+									value:
+										typeof value === 'string' ||
+										(Array.isArray(value) &&
+											value.every((item) => typeof item === 'string'))
+											? value
+											: '',
+								});
+
+								// Update the element attribute to notify useControl / useInputControl hook
+								element.dataset.conform = generateId();
+							}
+						}
+					}
+					break;
+				}
+				case 'reset': {
+					const prefix = formatName(intent.payload.name, intent.payload.index);
+
+					for (const element of formElement.elements) {
+						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
+							const value = getValue(meta.defaultValue, element.name);
+							const defaultValue =
+								typeof value === 'string' ||
+								(Array.isArray(value) &&
+									value.every((item) => typeof item === 'string'))
+									? value
+									: element instanceof HTMLSelectElement
+										? []
+										: '';
+
+							updateFieldValue(element, {
+								defaultValue,
+								value: defaultValue,
+							});
+
+							// Update the element attribute to notify useControl / useInputControl hook
+							element.dataset.conform = generateId();
+						}
+					}
+					break;
+				}
+			}
+
+			processedIntents.add(intent);
+		}
+	}
+
 	return {
 		getFormId() {
 			return meta.formId;
@@ -1094,9 +1184,128 @@ export function createFormContext<
 		insert: createFormControl('insert'),
 		remove: createFormControl('remove'),
 		reorder: createFormControl('reorder'),
+		runSideEffect,
 		subscribe,
 		getState,
 		getSerializedState,
 		observe,
 	};
+}
+
+/**
+ * Updates the DOM element with the provided value.
+ *
+ * @param element The form element to update
+ * @param options The options to update the form element
+ */
+export function updateFieldValue(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	options: {
+		value?: string | string[];
+		defaultValue?: string | string[];
+	},
+) {
+	const value =
+		typeof options.value === 'undefined'
+			? null
+			: Array.isArray(options.value)
+				? Array.from(options.value)
+				: [options.value];
+	const defaultValue =
+		typeof options.defaultValue === 'undefined'
+			? null
+			: Array.isArray(options.defaultValue)
+				? Array.from(options.defaultValue)
+				: [options.defaultValue];
+
+	if (
+		element instanceof HTMLInputElement &&
+		(element.type === 'checkbox' || element.type === 'radio')
+	) {
+		if (value) {
+			element.checked = value.includes(element.value);
+		}
+		if (defaultValue) {
+			element.defaultChecked = defaultValue.includes(element.value);
+		}
+	} else if (element instanceof HTMLSelectElement) {
+		// If the select element is not multiple and the value is an empty array, unset the selected index
+		// This is to prevent the select element from showing the first option as selected
+		if (value && value.length === 0 && !element.multiple) {
+			element.selectedIndex = -1;
+		}
+
+		for (const option of element.options) {
+			if (value) {
+				const index = value.indexOf(option.value);
+				const selected = index > -1;
+
+				// Update the selected state of the option
+				if (option.selected !== selected) {
+					option.selected = selected;
+				}
+
+				// Remove the option from the value array
+				if (selected) {
+					value.splice(index, 1);
+				}
+			}
+			if (defaultValue) {
+				const index = defaultValue.indexOf(option.value);
+				const selected = index > -1;
+
+				// Update the selected state of the option
+				if (option.selected !== selected) {
+					option.defaultSelected = selected;
+				}
+
+				// Remove the option from the defaultValue array
+				if (selected) {
+					defaultValue.splice(index, 1);
+				}
+			}
+		}
+
+		// We have already removed all selected options from the value and defaultValue array at this point
+		const missingOptions = new Set([...(value ?? []), ...(defaultValue ?? [])]);
+
+		for (const optionValue of missingOptions) {
+			element.options.add(
+				new Option(
+					optionValue,
+					optionValue,
+					defaultValue?.includes(optionValue),
+					value?.includes(optionValue),
+				),
+			);
+		}
+	} else {
+		if (value) {
+			/**
+			 * Triggering react custom change event
+			 * Solution based on dom-testing-library
+			 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+			 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+			 */
+			const inputValue = value[0] ?? '';
+			const { set: valueSetter } =
+				Object.getOwnPropertyDescriptor(element, 'value') || {};
+			const prototype = Object.getPrototypeOf(element);
+			const { set: prototypeValueSetter } =
+				Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+			if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+				prototypeValueSetter.call(element, inputValue);
+			} else {
+				if (valueSetter) {
+					valueSetter.call(element, inputValue);
+				} else {
+					throw new Error('The given element does not have a value setter');
+				}
+			}
+		}
+		if (defaultValue) {
+			element.defaultValue = defaultValue[0] ?? '';
+		}
+	}
 }

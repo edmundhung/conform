@@ -1,0 +1,73 @@
+name: Validate
+on:
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Commit SHA / PR Number'
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      preview:
+        description: 'Commit SHA / PR Number'
+        type: string
+        required: true
+
+jobs:
+  epicstack:
+    name: Epic Stack
+    runs-on: ubuntu-22.04
+    steps:
+      - name: ⎔ Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bootstrap project
+        run: SKIP_DEPLOYMENT=true npx epicli new ./
+
+      - name: Install pre-release
+        run: |
+          npm i https://pkg.pr.new/@conform-to/react@${{ inputs.preview }} https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+
+      - name: Copy test env vars
+        run: cp .env.example .env
+
+      - name: Setup Database
+        run: npx prisma migrate deploy && npx prisma generate --sql
+
+      - name: Cache Database
+        id: db-cache
+        uses: actions/cache@v4
+        with:
+          path: prisma/data.db
+          key: db-cache-schema_${{ hashFiles('./prisma/schema.prisma')
+            }}-migrations_${{ hashFiles('./prisma/migrations/*/migration.sql')
+            }}
+
+      - name: Seed Database
+        if: steps.db-cache.outputs.cache-hit != 'true'
+        run: npx prisma migrate reset --force
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck --if-present
+
+      - name: Run vitest
+        run: npm run test -- --coverage
+
+      - name: Playwright tests
+        run: npx playwright test
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
