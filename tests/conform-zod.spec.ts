@@ -1047,6 +1047,22 @@ describe('conform-zod', () => {
 					boolean: true,
 				},
 			});
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					type: ["Invalid discriminator value. Expected 'a' | 'b'"],
+				},
+			});
+
+			const nestedSchema = z.object({
+				nest: schema,
+			});
+			expect(getResult(coerceFormValue(nestedSchema).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					'nest.type': ["Invalid discriminator value. Expected 'a' | 'b'"],
+				},
+			});
 		});
 
 		test('z.brand', () => {
