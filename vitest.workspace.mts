@@ -6,6 +6,7 @@ export default defineWorkspace([
 			name: 'browser',
 			browser: {
 				enabled: true,
+				headless: true,
 				provider: 'playwright',
 				name: 'chromium',
 			},
@@ -15,12 +16,10 @@ export default defineWorkspace([
 	{
 		test: {
 			name: 'node',
-			include: [
-				'tests/conform-yup.spec.ts',
-				'tests/conform-zod.spec.ts',
-			],
+			include: ['tests/conform-yup.spec.ts', 'tests/conform-zod.spec.ts'],
 			environment: 'node',
 		},
 	},
+	'packages/conform-dom',
 	'packages/conform-valibot',
 ]);
