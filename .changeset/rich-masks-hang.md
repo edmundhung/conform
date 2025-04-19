@@ -1,5 +1,5 @@
 ---
-'@conform-to/zod': patch
+'@conform-to/zod': minor
 ---
 
-Set empty object when zodDiscriminatedUnion is specified.
+feat: default value to an empty object when `z.discriminatedUnion()` is specified
