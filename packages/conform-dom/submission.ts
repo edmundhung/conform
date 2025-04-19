@@ -1,4 +1,9 @@
-import type { DefaultValue, FieldName, FormValue } from './form';
+import type {
+	DefaultValue,
+	FieldName,
+	FormValue,
+	SerializationOptions,
+} from './form';
 import {
 	normalize,
 	flatten,
@@ -394,14 +399,17 @@ export function getIntent(
 	return control;
 }
 
-export function serializeIntent<Schema>(intent: Intent<Schema>): string {
+export function serializeIntent<Schema>(
+	intent: Intent<Schema>,
+	options?: SerializationOptions,
+): string {
 	switch (intent.type) {
 		case 'insert':
 			return JSON.stringify({
 				type: intent.type,
 				payload: {
 					...intent.payload,
-					defaultValue: serialize(intent.payload.defaultValue),
+					defaultValue: serialize(intent.payload.defaultValue, options),
 				},
 			});
 		case 'update':
@@ -409,7 +417,7 @@ export function serializeIntent<Schema>(intent: Intent<Schema>): string {
 				type: intent.type,
 				payload: {
 					...intent.payload,
-					value: serialize(intent.payload.value),
+					value: serialize(intent.payload.value, options),
 				},
 			});
 		default:
@@ -542,33 +550,42 @@ export function setListState(
 	});
 }
 
-export function serialize<Schema>(defaultValue: Schema): FormValue<Schema> {
+export function serialize<Schema>(
+	defaultValue: Schema,
+	options?: SerializationOptions,
+): FormValue<Schema> {
 	if (isPlainObject(defaultValue)) {
-		// @ts-expect-error FIXME
 		return Object.entries(defaultValue).reduce<Record<string, unknown>>(
 			(result, [key, value]) => {
-				result[key] = serialize(value);
+				result[key] = serialize(value, options);
 				return result;
 			},
 			{},
-		);
+		) as FormValue<Schema>;
 	} else if (Array.isArray(defaultValue)) {
-		// @ts-expect-error FIXME
-		return defaultValue.map(serialize);
+		return defaultValue.map((value) =>
+			serialize(value, options),
+		) as FormValue<Schema>;
 	} else if (defaultValue instanceof Date) {
-		// @ts-expect-error FIXME
-		return defaultValue.toISOString();
+		return (
+			options?.dateFormat === 'preserve'
+				? defaultValue
+				: defaultValue.toISOString()
+		) as FormValue<Schema>;
 	} else if (typeof defaultValue === 'boolean') {
-		// @ts-expect-error FIXME
-		return defaultValue ? 'on' : undefined;
+		return (
+			options?.booleanFormat === 'preserve'
+				? defaultValue
+				: defaultValue
+					? 'on'
+					: undefined
+		) as FormValue<Schema>;
 	} else if (
 		typeof defaultValue === 'number' ||
 		typeof defaultValue === 'bigint'
 	) {
-		// @ts-expect-error FIXME
-		return defaultValue.toString();
+		return defaultValue.toString() as FormValue<Schema>;
 	} else {
-		// @ts-expect-error FIXME
-		return defaultValue ?? undefined;
+		return (defaultValue ?? undefined) as FormValue<Schema>;
 	}
 }
