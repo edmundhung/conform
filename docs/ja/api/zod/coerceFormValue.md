@@ -50,7 +50,7 @@ function Example() {
     onValidate({ formData }) {
       return parseWithZod(formData, {
         schema,
-        defaultTypeCoercion: false,
+        disableAutoCoercion: true,
       });
     },
   });
