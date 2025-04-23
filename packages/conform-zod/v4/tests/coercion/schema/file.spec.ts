@@ -1,12 +1,14 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
 import { z } from 'zod-4';
+import { file } from '@zod/mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
 	describe('z.file', () => {
 		test('should pass file', () => {
 			const schema = z.file({ message: 'required' });
+			const schemaWithMini = file({ message: 'required' });
 			const emptyFile = new File([], '');
 			const txtFile = new File(['hello', 'world'], 'example.txt');
 
@@ -16,6 +18,13 @@ describe('coercion', () => {
 					'': ['required'],
 				},
 			});
+			expect(getResult(coerceFormValue(schemaWithMini).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+
 			expect(
 				getResult(coerceFormValue(schema).safeParse('helloworld')),
 			).toEqual({
@@ -24,13 +33,37 @@ describe('coercion', () => {
 					'': ['required'],
 				},
 			});
+			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse('helloworld')),
+			).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+
 			expect(getResult(coerceFormValue(schema).safeParse(emptyFile))).toEqual({
 				success: false,
 				error: {
 					'': ['required'],
 				},
 			});
+			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse(emptyFile)),
+			).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+
 			expect(getResult(coerceFormValue(schema).safeParse(txtFile))).toEqual({
+				success: true,
+				data: txtFile,
+			});
+			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse(txtFile)),
+			).toEqual({
 				success: true,
 				data: txtFile,
 			});
