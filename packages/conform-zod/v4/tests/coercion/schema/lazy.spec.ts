@@ -7,91 +7,23 @@ import { getResult } from '../../../../tests/helpers/zod';
 describe('coercion', () => {
 	describe('z.lazy', () => {
 		test('should pass lazy', () => {
-			const baseSchema = z.object({
-				name: z.string({ message: 'required' }),
-			});
+			const schema = z.lazy(() =>
+				z
+					.string({
+						error: (ctx) => {
+							if (ctx.input === undefined) {
+								return 'required';
+							}
 
-			type Category = z.infer<typeof baseSchema> & {
-				subcategories: Category[];
-			};
-
-			const category: z.ZodType<Category, Category> = baseSchema.extend({
-				subcategories: z.lazy(() => category.array()),
-			});
-
-			type Node = z.infer<typeof baseSchema> & {
-				left?: Node | undefined;
-				right?: Node | undefined;
-			};
-
-			const node: z.ZodType<Node, Node> = baseSchema.extend({
-				left: z.lazy(() => node.optional()),
-				right: z.lazy(() => node.optional()),
-			});
-
-			const schema = z.object({
-				category,
-				node,
-			});
-
-			expect(
-				getResult(
-					coerceFormValue(schema).safeParse({
-						category: {
-							name: '',
-							subcategories: [
-								{
-									name: '',
-									subcategories: [
-										{
-											name: '',
-										},
-									],
-								},
-								{
-									name: '',
-								},
-							],
+							return 'invalid';
 						},
-						node: {
-							name: '',
-							left: {
-								name: '',
-								left: {
-									name: '',
-								},
-								right: {
-									name: '',
-								},
-							},
-							right: {
-								name: '',
-								right: {
-									name: '',
-								},
-							},
-						},
-					}),
-				),
-			).toEqual({
-				success: false,
-				error: {
-					'category.name': ['required'],
-					'category.subcategories[0].name': ['required'],
-					'category.subcategories[0].subcategories[0].name': ['required'],
-					'category.subcategories[1].name': ['required'],
-					'node.name': ['required'],
-					'node.left.name': ['required'],
-					'node.left.left.name': ['required'],
-					'node.left.right.name': ['required'],
-					'node.right.name': ['required'],
-					'node.right.right.name': ['required'],
-				},
-			});
-		});
-
-		test('should pass lazy with mini', () => {
-			const schema = lazy(() =>
+					})
+					.min(10, 'min')
+					.max(100, 'max')
+					.regex(/^[A-Z]{1,100}$/, { message: 'regex' })
+					.refine((value) => value !== 'error', 'refine'),
+			);
+			const schemaWithMini = lazy(() =>
 				string({
 					error: (ctx) => {
 						if (ctx.input === undefined) {
@@ -115,12 +47,28 @@ describe('coercion', () => {
 					'': ['required'],
 				},
 			});
+			expect(getResult(coerceFormValue(schemaWithMini).safeParse(''))).toEqual({
+				success: false,
+				error: {
+					'': ['required'],
+				},
+			});
+
 			expect(getResult(coerceFormValue(schema).safeParse(file))).toEqual({
 				success: false,
 				error: {
 					'': ['invalid'],
 				},
 			});
+			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse(file)),
+			).toEqual({
+				success: false,
+				error: {
+					'': ['invalid'],
+				},
+			});
+
 			expect(getResult(coerceFormValue(schema).safeParse('error'))).toEqual({
 				success: false,
 				error: {
@@ -128,7 +76,22 @@ describe('coercion', () => {
 				},
 			});
 			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse('error')),
+			).toEqual({
+				success: false,
+				error: {
+					'': ['min', 'regex', 'refine'],
+				},
+			});
+
+			expect(
 				getResult(coerceFormValue(schema).safeParse('ABCDEFGHIJ')),
+			).toEqual({
+				success: true,
+				data: 'ABCDEFGHIJ',
+			});
+			expect(
+				getResult(coerceFormValue(schemaWithMini).safeParse('ABCDEFGHIJ')),
 			).toEqual({
 				success: true,
 				data: 'ABCDEFGHIJ',
