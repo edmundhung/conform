@@ -50,7 +50,7 @@ function Example() {
     onValidate({ formData }) {
       return parseWithValibot(formData, {
         schema,
-        defaultTypeCoercion: false,
+        disableAutoCoercion: true,
       });
     },
   });
