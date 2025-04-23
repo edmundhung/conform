@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { parseWithZod, conformZodMessage } from '../parse';
 import { z } from 'zod';
-import { createFormData } from './helpers/FromData';
+import { createFormData } from '../../tests/helpers/FromData';
 
 describe('parse', () => {
 	describe('parseWithZod', () => {

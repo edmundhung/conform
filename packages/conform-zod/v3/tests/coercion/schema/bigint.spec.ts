@@ -1,18 +1,16 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
 import { z } from 'zod';
-import { getResult } from '../../helpers/zod';
+import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
-	describe('z.date', () => {
-		test('should pass date', () => {
+	describe('z.bigint', () => {
+		test('should pass bigint', () => {
 			const schema = z
-				.date({
-					required_error: 'required',
-					invalid_type_error: 'invalid',
-				})
-				.min(new Date(1), 'min')
-				.max(new Date(10), 'max');
+				.bigint({ required_error: 'required', invalid_type_error: 'invalid' })
+				.min(1n, 'min')
+				.max(10n, 'max')
+				.multipleOf(2n, 'step');
 			const file = new File([], '');
 
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
@@ -39,19 +37,15 @@ describe('coercion', () => {
 					'': ['invalid'],
 				},
 			});
-			expect(
-				getResult(coerceFormValue(schema).safeParse(new Date(0).toISOString())),
-			).toEqual({
+			expect(getResult(coerceFormValue(schema).safeParse('5'))).toEqual({
 				success: false,
 				error: {
-					'': ['min'],
+					'': ['step'],
 				},
 			});
-			expect(
-				getResult(coerceFormValue(schema).safeParse(new Date(5).toISOString())),
-			).toEqual({
+			expect(getResult(coerceFormValue(schema).safeParse('4'))).toEqual({
 				success: true,
-				data: new Date(5),
+				data: 4n,
 			});
 		});
 	});

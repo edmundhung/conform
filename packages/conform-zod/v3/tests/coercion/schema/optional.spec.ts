@@ -1,7 +1,7 @@
 import { vi, describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
 import { z } from 'zod';
-import { getResult } from '../../helpers/zod';
+import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
 	describe('z.optional', () => {
