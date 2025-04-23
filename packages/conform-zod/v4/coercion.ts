@@ -296,7 +296,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
  *
  * ```tsx
  * import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod';
- * import { z } from 'zod-4';
+ * import { z } from 'zod';
  *
  * // Coerce the form value with default behaviour
  * const schema = coerceFormValue(
