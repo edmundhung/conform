@@ -33,7 +33,16 @@ function getError<FormError>(
 	const result: Record<string, $ZodIssue[] | null> = {};
 
 	for (const issue of zodError.issues) {
-		const name = formatPaths(issue.path);
+		const name = formatPaths(
+			issue.path.map((path) => {
+				if (typeof path === 'symbol') {
+					throw new Error(
+						'@conform-to/zod does not support symbol paths. Please use a string or number instead.',
+					);
+				}
+				return path;
+			}),
+		);
 
 		switch (issue.message) {
 			case conformZodMessage.VALIDATION_UNDEFINED:
