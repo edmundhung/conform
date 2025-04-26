@@ -39,6 +39,18 @@ describe('strictObject', () => {
 				key2: expect.anything(),
 			},
 		});
+
+		const schema2 = strictObject({
+			nest: schema1,
+		});
+		const input4 = new FormData();
+		const output5 = parseWithValibot(input4, { schema: schema2 });
+		expect(output5).toMatchObject({
+			error: {
+				'nest.key1': expect.anything(),
+				'nest.key2': expect.anything(),
+			},
+		});
 	});
 
 	test('should pass objects with pipe', () => {

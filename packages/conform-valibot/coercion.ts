@@ -29,6 +29,13 @@ type EnableTypeCoercionOptions = {
 	) => CoercionFunction | null;
 };
 
+const OBJECT_SCHEMA_TYPES: string[] = [
+	'object',
+	'loose_object',
+	'strict_object',
+	'object_with_rest',
+];
+
 /**
  * Reconstruct the provided schema with additional preprocessing steps
  * This coerce empty values to undefined and transform strings to the correct type
@@ -371,8 +378,29 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 				// @ts-expect-error
 				options: type.options.map(
 					// @ts-expect-error
-					(option) =>
-						enableTypeCoercion(option as GenericSchema, options).schema,
+					(option) => {
+						// In the case of `object` schema, `pipe` like the following cannot be defined. Therefore, `enableTypeCoercion` cannot be executed, so only object property conversion is performed.
+						// variant('type', [
+						//   pipe(unknown(), transform(v => v), object({ type: literal('a'), a: string() })),
+						//   object({ type: literal('b'), b: number() }),
+						// ]);
+						if (OBJECT_SCHEMA_TYPES.includes(option.type)) {
+							return {
+								...option,
+								entries: Object.fromEntries(
+									Object.entries(option.entries).map(([key, def]) => [
+										key,
+										enableTypeCoercion(def as GenericSchema, options).schema,
+									]),
+								),
+								rest:
+									'rest' in option
+										? enableTypeCoercion(option.rest, options).schema
+										: undefined,
+							};
+						}
+						return enableTypeCoercion(option as GenericSchema, options).schema;
+					},
 				),
 			};
 			return {
@@ -412,40 +440,44 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		}
 		case 'loose_object':
 		case 'strict_object':
+		case 'object_with_rest':
 		case 'object': {
+			const childObjectSchemaKeys: string[] = [];
 			const objectSchema = {
 				...type,
 				entries: Object.fromEntries(
 					// @ts-expect-error
-					Object.entries(type.entries).map(([key, def]) => [
-						key,
-						enableTypeCoercion(def as GenericSchema, options).schema,
-					]),
+					Object.entries(type.entries).map(
+						// @ts-expect-error
+						([key, def]: [string, GenericSchema]) => {
+							if (OBJECT_SCHEMA_TYPES.includes(def.type)) {
+								childObjectSchemaKeys.push(key);
+							}
+							return [key, enableTypeCoercion(def, options).schema];
+						},
+					),
 				),
+				// `object_with_rest` schema requires conversion of `rest` property
+				rest:
+					'rest' in type
+						? // @ts-expect-error
+							enableTypeCoercion(type.rest, options).schema
+						: undefined,
 			};
-
 			return {
-				transformAction: undefined,
-				schema: objectSchema,
-			};
-		}
-		case 'object_with_rest': {
-			const objectWithRestSchema = {
-				...type,
-				entries: Object.fromEntries(
-					// @ts-expect-error
-					Object.entries(type.entries).map(([key, def]) => [
-						key,
-						enableTypeCoercion(def as GenericSchema, options).schema,
-					]),
-				),
-				// @ts-expect-error
-				rest: enableTypeCoercion(type.rest, options).schema,
-			};
+				schema: coerce(objectSchema, (value) => {
+					const ret: { [key: string]: unknown } = (value ?? {}) as {
+						[key: string]: unknown;
+					};
+					for (const key of childObjectSchemaKeys) {
+						if (!(key in ret)) {
+							ret[key] = {};
+						}
+					}
 
-			return {
+					return ret;
+				}).schema,
 				transformAction: undefined,
-				schema: objectWithRestSchema,
 			};
 		}
 	}
