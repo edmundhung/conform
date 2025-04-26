@@ -9,6 +9,12 @@ describe('optional', () => {
 			name: optional(string()),
 			age: optional(number()),
 		});
+
+		expect(parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: {},
+		});
+
 		const output = parseWithValibot(createFormData('age', ''), { schema });
 
 		expect(output).toMatchObject({

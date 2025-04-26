@@ -16,6 +16,12 @@ describe('nullishAsync', () => {
 			name: nullishAsync(string()),
 			age: nullishAsync(number()),
 		});
+
+		expect(await parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: {},
+		});
+
 		const output = await parseWithValibot(createFormData('age', ''), {
 			schema,
 		});

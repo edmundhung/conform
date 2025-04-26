@@ -1,4 +1,4 @@
-import { array, check, object, pipe, string } from 'valibot';
+import { array, check, nullish, number, object, pipe, string } from 'valibot';
 import { describe, expect, test } from 'vitest';
 import { parseWithValibot } from '../../../parse';
 import { createFormData } from '../../helpers/FormData';
@@ -57,6 +57,35 @@ describe('array', () => {
 		expect(outputWithPipe).toMatchObject({
 			status: 'success',
 			value: { select: ['1', '2', '3'] },
+		});
+	});
+
+	test('should pass array with nullish', () => {
+		const schema = object({
+			age: nullish(array(number())),
+		});
+
+		expect(parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: {},
+		});
+
+		const output = parseWithValibot(createFormData('age', ''), { schema });
+
+		expect(output).toMatchObject({
+			status: 'success',
+			value: { age: undefined },
+		});
+		expect(
+			parseWithValibot(createFormData('age', '20'), { schema }),
+		).toMatchObject({
+			status: 'success',
+			value: { age: [20] },
+		});
+		expect(
+			parseWithValibot(createFormData('age', 'non number'), { schema }),
+		).toMatchObject({
+			error: { 'age[0]': expect.anything() },
 		});
 	});
 });
