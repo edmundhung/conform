@@ -1,5 +1,5 @@
 ---
-'@conform-to/valibot': patch
+'@conform-to/valibot': minor
 ---
 
-fix: support nested fields with only checkboxes
+feat: support nested fields with only checkboxes
