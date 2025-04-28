@@ -1,4 +1,13 @@
-import { check, number, object, pipe, undefined_, union } from 'valibot';
+import {
+	check,
+	date,
+	nullish,
+	number,
+	object,
+	pipe,
+	undefined_,
+	union,
+} from 'valibot';
 import { describe, expect, test } from 'vitest';
 import { parseWithValibot } from '../../../parse';
 import { createFormData } from '../../helpers/FormData';
@@ -57,6 +66,35 @@ describe('union', () => {
 			schema,
 		});
 		expect(errorOutput2).toMatchObject({
+			error: { age: expect.anything() },
+		});
+	});
+
+	test('should pass union with nullish', () => {
+		const schema = object({
+			age: nullish(union([number(), date()])),
+		});
+
+		expect(parseWithValibot(new FormData(), { schema })).toMatchObject({
+			status: 'success',
+			value: {},
+		});
+
+		const output = parseWithValibot(createFormData('age', ''), { schema });
+
+		expect(output).toMatchObject({
+			status: 'success',
+			value: { age: undefined },
+		});
+		expect(
+			parseWithValibot(createFormData('age', '20'), { schema }),
+		).toMatchObject({
+			status: 'success',
+			value: { age: 20 },
+		});
+		expect(
+			parseWithValibot(createFormData('age', 'non number'), { schema }),
+		).toMatchObject({
 			error: { age: expect.anything() },
 		});
 	});
