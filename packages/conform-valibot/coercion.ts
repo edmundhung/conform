@@ -195,6 +195,36 @@ function compose(a: CoercionFunction, b: CoercionFunction): CoercionFunction {
 }
 
 /**
+ * Generate a piped schema with coercion
+ * @param type The schema to be coerced
+ * @param options The options for coercion
+ * @returns The coerced schema
+ */
+function generatePipedSchema<T extends GenericSchema | GenericSchemaAsync>(
+	type: T extends GenericSchema
+		? SchemaWithPipe<[T, ...PipeItem<unknown, unknown, BaseIssue<unknown>>[]]>
+		: SchemaWithPipeAsync<
+				[T, ...PipeItem<unknown, unknown, BaseIssue<unknown>>[]]
+			>,
+	options: EnableTypeCoercionOptions,
+): {
+	transformAction: TransformAction<unknown, unknown> | undefined;
+	schema: GenericSchema | GenericSchemaAsync;
+} {
+	const { transformAction, schema: coercedSchema } =
+		'pipe' in type.pipe[0]
+			? // @ts-expect-error
+				generatePipedSchema(type.pipe[0], options)
+			: enableTypeCoercion(type.pipe[0], options);
+	const schema = type.async
+		? pipeAsync(coercedSchema, ...type.pipe.slice(1))
+		: // @ts-expect-error `coercedSchema` must be sync here but TypeScript can't infer that.
+			pipe(coercedSchema, ...type.pipe.slice(1));
+
+	return { transformAction, schema };
+}
+
+/**
  * Generate a wrapped schema with coercion
  * @param type The schema to be coerced
  * @param options The options for coercion
@@ -285,19 +315,6 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 	transformAction: TransformAction<unknown, unknown> | undefined;
 	schema: GenericSchema | GenericSchemaAsync;
 } {
-	if ('pipe' in type) {
-		const { transformAction, schema: coercedSchema } = enableTypeCoercion(
-			type.pipe[0],
-			options,
-		);
-		const schema = type.async
-			? pipeAsync(coercedSchema, ...type.pipe.slice(1))
-			: // @ts-expect-error `coercedSchema` must be sync here but TypeScript can't infer that.
-				pipe(coercedSchema, ...type.pipe.slice(1));
-
-		return { transformAction, schema };
-	}
-
 	const customizeFn = options.customize(type);
 
 	if (customizeFn) {
@@ -328,6 +345,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			return coerce(type, options.defaultCoercion.file);
 		}
 		case 'array': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const arraySchema = {
 				...type,
 				// @ts-expect-error
@@ -339,6 +360,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			};
 		}
 		case 'exact_optional': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			// @ts-expect-error
 			const { schema: wrapSchema } = enableTypeCoercion(type.wrapped, options);
 
@@ -354,6 +379,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		}
 		case 'nullish':
 		case 'optional': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			return generateWrappedSchema(type, options, true);
 		}
 		case 'undefinedable':
@@ -361,10 +390,18 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		case 'non_optional':
 		case 'non_nullish':
 		case 'non_nullable': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			return generateWrappedSchema(type, options);
 		}
 		case 'union':
 		case 'intersect': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const unionSchema = {
 				...type,
 				// @ts-expect-error
@@ -380,6 +417,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			};
 		}
 		case 'variant': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const variantSchema = {
 				...type,
 				// @ts-expect-error
@@ -416,6 +457,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			};
 		}
 		case 'tuple': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const tupleSchema = {
 				...type,
 				// @ts-expect-error
@@ -430,6 +475,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			};
 		}
 		case 'tuple_with_rest': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const tupleWithRestSchema = {
 				...type,
 				// @ts-expect-error
@@ -449,6 +498,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		case 'strict_object':
 		case 'object_with_rest':
 		case 'object': {
+			if ('pipe' in type) {
+				return generatePipedSchema(type, options);
+			}
+
 			const childObjectSchemaKeys: string[] = [];
 			const objectSchema = {
 				...type,
