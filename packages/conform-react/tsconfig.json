@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+		"outDir": "./dist",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"target": "ES2022",
 		"module": "ES2022",
@@ -12,5 +13,6 @@
 		"emitDeclarationOnly": true,
 		"composite": true,
 		"skipLibCheck": true
-	}
+	},
+	"exclude": ["./tests/**", "./dist"]
 }
