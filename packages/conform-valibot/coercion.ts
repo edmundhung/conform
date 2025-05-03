@@ -290,6 +290,18 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 			type.pipe[0],
 			options,
 		);
+
+		if (transformAction) {
+			// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnkonwSchema` for coercion.
+			const unknown = { ...valibotUnknown(), expects: type.expects };
+			// Reuse `type` to preserve behavior added by Valibot `config` and/or `fallback` methods.
+			const schema = type.async
+				? pipeAsync(unknown, transformAction, type)
+				: pipe(unknown, transformAction, type);
+
+			return { transformAction, schema };
+		}
+
 		const schema = type.async
 			? pipeAsync(coercedSchema, ...type.pipe.slice(1))
 			: // @ts-expect-error `coercedSchema` must be sync here but TypeScript can't infer that.
