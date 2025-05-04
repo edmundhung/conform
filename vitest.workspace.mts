@@ -21,5 +21,6 @@ export default defineWorkspace([
 		},
 	},
 	'packages/conform-dom',
+	'packages/conform-react',
 	'packages/conform-valibot',
 ]);

@@ -329,7 +329,11 @@ export function useControl(options?: {
 					eventDispatched.current.change = true;
 
 					const inputValue =
-						typeof value === 'boolean' ? options?.value ?? 'on' : value;
+						typeof value === 'boolean'
+							? value
+								? options?.value ?? 'on'
+								: ''
+							: value;
 					const element = Array.isArray(inputRef.current)
 						? inputRef.current?.find((input) => {
 								const wasChecked = input.checked;
