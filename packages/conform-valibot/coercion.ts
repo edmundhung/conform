@@ -318,9 +318,20 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 
 	switch (type.type) {
 		case 'string':
-		case 'literal':
 		case 'enum':
 		case 'undefined': {
+			return coerce(type, options.defaultCoercion.string);
+		}
+		case 'literal': {
+			// @ts-expect-error
+			switch (typeof type.literal) {
+				case 'number':
+					return coerce(type, options.defaultCoercion.number);
+				case 'boolean':
+					return coerce(type, options.defaultCoercion.boolean);
+				case 'bigint':
+					return coerce(type, options.defaultCoercion.bigint);
+			}
 			return coerce(type, options.defaultCoercion.string);
 		}
 		case 'number': {
