@@ -54,6 +54,7 @@ describe('conform-zod', () => {
 					.max(new Date(), 'max')
 					.default(new Date()),
 				flag: z.boolean().optional(),
+				literalFlag: z.literal(true),
 				options: z
 					.array(z.enum(['a', 'b', 'c']).refine(() => false, 'refine'))
 					.min(3, 'min'),
@@ -98,6 +99,9 @@ describe('conform-zod', () => {
 			},
 			flag: {
 				required: false,
+			},
+			literalFlag: {
+				required: true,
 			},
 			options: {
 				required: true,
