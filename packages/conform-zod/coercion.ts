@@ -17,6 +17,7 @@ import {
 import type {
 	ZodDiscriminatedUnionOption,
 	ZodFirstPartySchemaTypes,
+	ZodLiteral,
 	ZodTypeAny,
 } from 'zod';
 
@@ -161,10 +162,22 @@ function selectDefaultCoercion(
 
 	if (
 		def.typeName === 'ZodString' ||
-		def.typeName === 'ZodLiteral' ||
 		def.typeName === 'ZodEnum' ||
 		def.typeName === 'ZodNativeEnum'
 	) {
+		return defaultCoercion.string;
+	} else if (def.typeName === 'ZodLiteral') {
+		const literalValue = (type as ZodLiteral<any>).value;
+
+		if (typeof literalValue === 'number') {
+			return defaultCoercion.number;
+		}
+		if (typeof literalValue === 'boolean') {
+			return defaultCoercion.boolean;
+		}
+		if (typeof literalValue === 'bigint') {
+			return defaultCoercion.bigint;
+		}
 		return defaultCoercion.string;
 	} else if (
 		def.typeName === 'ZodEffects' &&
