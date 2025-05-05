@@ -38,7 +38,7 @@
 		"url": "https://github.com/edmundhung/conform/issues"
 	},
 	"dependencies": {
-		"@conform-to/dom": "workspace:^"
+		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
 		"valibot": ">= 0.32.0"
