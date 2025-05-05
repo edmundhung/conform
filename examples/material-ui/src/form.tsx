@@ -23,11 +23,16 @@ export function ExampleSelect({
 	error,
 	defaultValue,
 }: ExampleSelectProps) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<>
-			<input name={name} ref={control.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<TextField
 				label={label}
 				value={control.value ?? ''}
@@ -96,12 +101,17 @@ export function ExampleRating({
 	error,
 	defaultValue,
 }: ExampleRatingProps) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<FormControl variant="standard" error={!!error}>
 			<FormLabel>{label}</FormLabel>
-			<input name={name} ref={control.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<div>
 				<Rating
 					value={control.value ? Number(control.value) : null}
@@ -129,12 +139,17 @@ export function ExampleSlider({
 	error,
 	defaultValue,
 }: ExampleSliderProps) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<FormControl variant="standard" error={!!error}>
 			<FormLabel>{label}</FormLabel>
-			<input name={name} ref={control.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<Slider
 				min={0}
 				max={10}

@@ -11,7 +11,12 @@ import {
 	SliderTrack,
 	SliderFilledTrack,
 	SliderThumb,
+	RadioGroup,
+	Editable,
+	EditableInput,
+	EditablePreview,
 } from '@chakra-ui/react';
+import { useRef } from 'react';
 
 type ExampleNumberProps = {
 	name: string;
@@ -28,7 +33,6 @@ export function ExampleNumberInput({ name, defaultValue }: ExampleNumberProps) {
 			value={control.value ?? ''}
 			onChange={(value) => control.change(value)}
 			onBlur={() => control.blur()}
-			defaultValue={defaultValue}
 		>
 			<NumberInputField ref={control.register} />
 			<NumberInputStepper>
@@ -45,17 +49,27 @@ type ExamplePinProps = {
 };
 
 export function ExamplePinInput({ name, defaultValue }: ExamplePinProps) {
-	const control = useControl({ defaultValue, hidden: true });
-
+	const ref = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
 	return (
 		<>
-			<input name={name} ref={control.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<PinInput
 				type="alphanumeric"
 				value={control.value ?? ''}
 				onChange={(value) => control.change(value)}
 			>
-				<PinInputField onBlur={() => control.blur()} />
+				<PinInputField ref={ref} onBlur={() => control.blur()} />
 				<PinInputField onBlur={() => control.blur()} />
 				<PinInputField onBlur={() => control.blur()} />
 				<PinInputField onBlur={() => control.blur()} />
@@ -70,11 +84,20 @@ type ExampleSliderProps = {
 };
 
 export function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
-	const control = useControl({ defaultValue, hidden: true });
+	const ref = useRef<HTMLDivElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus: () => ref.current?.focus(),
+	});
 
 	return (
 		<>
-			<input name={name} ref={control.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<Slider
 				min={0}
 				max={10}
@@ -86,8 +109,68 @@ export function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 				<SliderTrack>
 					<SliderFilledTrack />
 				</SliderTrack>
-				<SliderThumb />
+				<SliderThumb ref={ref} />
 			</Slider>
+		</>
+	);
+}
+
+export type ExampleRadioGroupProps = {
+	name: string;
+	defaultValue?: string;
+	children: React.ReactNode;
+};
+
+export function ExampleRadioGroup({
+	name,
+	defaultValue,
+	children,
+}: ExampleRadioGroupProps) {
+	const control = useControl({ defaultValue });
+
+	return (
+		<RadioGroup
+			name={name}
+			ref={(wrapper) => control.register(wrapper?.querySelectorAll('input'))}
+			value={control.value ?? ''}
+			onChange={(value) => control.change(value)}
+			onBlur={() => control.blur()}
+		>
+			{children}
+		</RadioGroup>
+	);
+}
+
+export type ExampleEditableProps = {
+	name: string;
+	defaultValue?: string;
+};
+
+export function ExampleEditable({ name, defaultValue }: ExampleEditableProps) {
+	const ref = useRef<HTMLSpanElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
+
+	return (
+		<>
+			<input
+				name={name}
+				ref={control.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
+			<Editable
+				placeholder="No content"
+				value={control.value ?? ''}
+				onChange={(value) => control.change(value)}
+			>
+				<EditablePreview ref={ref} />
+				<EditableInput />
+			</Editable>
 		</>
 	);
 }

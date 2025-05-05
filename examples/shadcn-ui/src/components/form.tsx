@@ -56,16 +56,16 @@ type ExampleDatePickerProps = {
 
 function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			triggerRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				onFocus={() => triggerRef.current?.focus()}
-			/>
+			<input ref={control.register} name={name} hidden />
 			<Popover
 				onOpenChange={(open) => {
 					if (!open) {
@@ -125,16 +125,16 @@ function ExampleCountryPicker({
 	defaultValue,
 }: ExampleCountryPickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			triggerRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				onFocus={() => triggerRef.current?.focus()}
-			/>
+			<input ref={control.register} name={name} hidden />
 			<Popover
 				onOpenChange={(open) => {
 					if (!open) {
@@ -206,16 +206,16 @@ function ExampleRadioGroup({
 	defaultValue,
 }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<React.ElementRef<typeof RadioGroup>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			radioGroupRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				onFocus={() => radioGroupRef.current?.focus()}
-			/>
+			<input ref={control.register} name={name} hidden />
 			<RadioGroup
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
@@ -248,21 +248,19 @@ function ExampleCheckbox({
 	defaultChecked,
 }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<React.ElementRef<typeof Checkbox>>(null);
-	const control = useControl({ defaultChecked, value, hidden: true });
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			checkboxRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				type="checkbox"
-				ref={control.register}
-				name={name}
-				value={value}
-				defaultChecked={defaultChecked}
-				onFocus={() => control.focus()}
-			/>
+			<input type="checkbox" ref={control.register} name={name} hidden />
 			<Checkbox
 				ref={checkboxRef}
-				value={value}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
@@ -286,16 +284,16 @@ function ExampleSelect({
 	defaultValue,
 }: ExampleSelectProps) {
 	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			selectRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<select
-				name={name}
-				ref={control.register}
-				onFocus={() => selectRef.current?.focus()}
-				defaultValue={defaultValue}
-			>
+			<select name={name} ref={control.register} hidden>
 				<option value="" />
 				{items.map((option) => (
 					<option key={option.value} value={option.value} />
@@ -334,22 +332,19 @@ type ExampleSliderProps = {
 
 function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 	const sliderRef = useRef<React.ElementRef<typeof Slider>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			const sliderSpan = sliderRef.current?.querySelector('[role="slider"]');
+			if (sliderSpan instanceof HTMLElement) {
+				sliderSpan.focus();
+			}
+		},
+	});
 
 	return (
 		<>
-			<input
-				name={name}
-				defaultValue={defaultValue}
-				ref={control.register}
-				onFocus={() => {
-					const sliderSpan =
-						sliderRef.current?.querySelector('[role="slider"]');
-					if (sliderSpan instanceof HTMLElement) {
-						sliderSpan.focus();
-					}
-				}}
-			/>
+			<input name={name} ref={control.register} hidden />
 			<div className="flex items-center gap-4">
 				<Slider
 					ref={sliderRef}
@@ -375,18 +370,17 @@ type ExampleSwitchProps = {
 
 function ExampleSwitch({ name, value, defaultChecked }: ExampleSwitchProps) {
 	const switchRef = useRef<React.ElementRef<typeof Switch>>(null);
-	const control = useControl({ defaultChecked, value, hidden: true });
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			switchRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				type="checkbox"
-				name={name}
-				defaultChecked={defaultChecked}
-				value={value}
-				ref={control.register}
-				onFocus={() => switchRef.current?.focus()}
-			/>
+			<input type="checkbox" name={name} ref={control.register} hidden />
 			<Switch
 				ref={switchRef}
 				checked={control.checked}
@@ -410,16 +404,16 @@ function ExampleSingleToggleGroup({
 	defaultValue,
 }: ExampleSingleToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			toggleGroupRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				name={name}
-				defaultValue={defaultValue}
-				ref={control.register}
-				onFocus={() => toggleGroupRef.current?.focus()}
-			/>
+			<input name={name} ref={control.register} hidden />
 			<ToggleGroup
 				type="single"
 				ref={toggleGroupRef}
@@ -451,17 +445,16 @@ function ExampleMultiToggleGroup({
 	defaultValue,
 }: ExampleMultiToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			toggleGroupRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<select
-				multiple
-				name={name}
-				ref={control.register}
-				onFocus={() => toggleGroupRef.current?.focus()}
-				defaultValue={defaultValue}
-			>
+			<select multiple name={name} ref={control.register} hidden>
 				{defaultValue?.map((item) => <option key={item} value={item} />)}
 			</select>
 			<ToggleGroup
@@ -497,16 +490,16 @@ function ExampleInputOTP({
 	defaultValue,
 }: ExampleInputOTPProps) {
 	const inputOTPRef = useRef<React.ElementRef<typeof InputOTP>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			inputOTPRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				onFocus={() => inputOTPRef.current?.focus()}
-			/>
+			<input ref={control.register} name={name} hidden />
 			<InputOTP
 				ref={inputOTPRef}
 				value={control.value ?? ''}

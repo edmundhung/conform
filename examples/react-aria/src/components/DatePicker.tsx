@@ -38,7 +38,7 @@ export function DatePicker({
 	firstDayOfWeek,
 	...props
 }: DatePickerProps<CalendarDateTime>) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<AriaDatePicker
@@ -67,7 +67,12 @@ export function DatePicker({
 					</Calendar>
 				</Dialog>
 			</Popover>
-			<input ref={control.register} name={name} defaultValue={defaultValue} />
+			<input
+				ref={control.register}
+				name={name}
+				defaultValue={defaultValue}
+				hidden
+			/>
 		</AriaDatePicker>
 	);
 }

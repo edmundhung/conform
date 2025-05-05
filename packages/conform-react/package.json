@@ -18,7 +18,7 @@
 	},
 	"scripts": {
 		"build:js": "rollup -c",
-		"build:ts": "tsc",
+		"build:ts": "tsc --project ./tsconfig.build.json",
 		"build": "pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",

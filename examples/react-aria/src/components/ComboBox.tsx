@@ -32,7 +32,7 @@ export function ComboBox<T extends object>({
 	children,
 	...props
 }: ComboBoxProps<T>) {
-	const control = useControl({ defaultValue: defaultInputValue, hidden: true });
+	const control = useControl({ defaultValue: defaultInputValue });
 
 	return (
 		<AriaComboBox {...props} onInputChange={(value) => control.change(value)}>
@@ -47,6 +47,7 @@ export function ComboBox<T extends object>({
 				name={name}
 				defaultValue={defaultInputValue}
 				ref={control.register}
+				hidden
 			/>
 			<Popover>
 				<ListBox>{children}</ListBox>

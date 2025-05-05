@@ -178,24 +178,16 @@ describe('updateFieldValue', () => {
 		const input = document.createElement('input');
 		input.type = 'text';
 
-		updateFieldValue(input, {
-			value: 'foo',
+		updateFieldValue(input, 'foo', {
+			defaultValue: true,
 		});
 		expect(input.value).toBe('foo');
-		expect(input.defaultValue).toBe('');
+		expect(input.defaultValue).toBe('foo');
 
-		updateFieldValue(input, {
-			defaultValue: 'bar',
-		});
-		expect(input.value).toBe('foo');
-		expect(input.defaultValue).toBe('bar');
-
-		updateFieldValue(input, {
-			value: null,
-		});
+		updateFieldValue(input, null);
 
 		expect(input.value).toBe('');
-		expect(input.defaultValue).toBe('bar');
+		expect(input.defaultValue).toBe('foo');
 	});
 
 	it('supports checkbox', () => {
@@ -203,28 +195,19 @@ describe('updateFieldValue', () => {
 		input.type = 'checkbox';
 		input.checked = false;
 
-		updateFieldValue(input, {
-			value: 'on',
-		});
+		updateFieldValue(input, 'on');
 
 		expect(input.checked).toBe(true);
 
 		input.value = 'test';
 		input.checked = false;
-		updateFieldValue(input, {
-			value: 'test',
-		});
-		expect(input.checked).toBe(true);
-
-		updateFieldValue(input, {
-			defaultValue: 'test',
+		updateFieldValue(input, 'test', {
+			defaultValue: true,
 		});
 		expect(input.checked).toBe(true);
 		expect(input.defaultChecked).toBe(true);
 
-		updateFieldValue(input, {
-			value: null,
-		});
+		updateFieldValue(input, null);
 		expect(input.checked).toBe(false);
 		expect(input.defaultChecked).toBe(true);
 	});
@@ -234,28 +217,19 @@ describe('updateFieldValue', () => {
 		input.type = 'radio';
 		input.checked = false;
 
-		updateFieldValue(input, {
-			value: 'on',
-		});
+		updateFieldValue(input, 'on');
 
 		expect(input.checked).toBe(true);
 
 		input.value = 'test';
 		input.checked = false;
-		updateFieldValue(input, {
-			value: 'test',
-		});
-		expect(input.checked).toBe(true);
-
-		updateFieldValue(input, {
-			defaultValue: 'test',
+		updateFieldValue(input, 'test', {
+			defaultValue: true,
 		});
 		expect(input.checked).toBe(true);
 		expect(input.defaultChecked).toBe(true);
 
-		updateFieldValue(input, {
-			value: null,
-		});
+		updateFieldValue(input, null);
 		expect(input.checked).toBe(false);
 		expect(input.defaultChecked).toBe(true);
 	});
@@ -268,9 +242,7 @@ describe('updateFieldValue', () => {
 			type: 'text/plain',
 		});
 
-		updateFieldValue(input, {
-			value: file,
-		});
+		updateFieldValue(input, file);
 
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.length).toBe(1);
@@ -280,22 +252,16 @@ describe('updateFieldValue', () => {
 		const file2 = new File(['SELECT * FROM users;'], 'example2.sql', {
 			type: 'text/plain',
 		});
-		updateFieldValue(input, {
-			value: [file, file2],
-		});
+		updateFieldValue(input, [file, file2]);
 
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.[1]).toEqual(file2);
 		expect(input.files?.length).toBe(2);
 
-		updateFieldValue(input, {
-			value: null,
-		});
+		updateFieldValue(input, null);
 		expect(input.files?.length).toBe(0);
 
-		updateFieldValue(input, {
-			value: createFileList([file, file2]),
-		});
+		updateFieldValue(input, createFileList([file, file2]));
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.[1]).toEqual(file2);
 		expect(input.files?.length).toBe(2);
@@ -312,79 +278,53 @@ describe('updateFieldValue', () => {
 
 		select.append(emptyOption, option1, option2);
 
-		updateFieldValue(select, {
-			value: 'option2',
-		});
+		updateFieldValue(select, 'option2');
 		expect(select.selectedIndex).toBe(2);
 
-		updateFieldValue(select, {
-			value: null,
-		});
+		updateFieldValue(select, null);
 		expect(select.selectedIndex).toBe(-1);
 
 		select.multiple = true;
-		updateFieldValue(select, {
-			value: ['option1', 'option2'],
-		});
+		updateFieldValue(select, ['option1', 'option2']);
 		expect(select.options.item(0)?.selected).toBe(false);
 		expect(select.options.item(1)?.selected).toBe(true);
 		expect(select.options.item(2)?.selected).toBe(true);
 		expect(select.options.length).toBe(3);
 
-		updateFieldValue(select, {
-			value: ['option3', 'option1'],
-		});
-		expect(select.options.item(0)?.selected).toBe(false);
-		expect(select.options.item(1)?.selected).toBe(true);
-		expect(select.options.item(2)?.selected).toBe(false);
-		expect(select.options.item(3)?.selected).toBe(true);
-		expect(select.options.length).toBe(4);
-
-		updateFieldValue(select, {
-			defaultValue: 'option2',
+		updateFieldValue(select, ['option3', 'option1'], {
+			defaultValue: true,
 		});
 		expect(select.options.item(0)?.selected).toBe(false);
 		expect(select.options.item(1)?.selected).toBe(true);
 		expect(select.options.item(2)?.selected).toBe(false);
 		expect(select.options.item(3)?.selected).toBe(true);
 		expect(select.options.item(0)?.defaultSelected).toBe(false);
-		expect(select.options.item(1)?.defaultSelected).toBe(false);
-		expect(select.options.item(2)?.defaultSelected).toBe(true);
-		expect(select.options.item(3)?.defaultSelected).toBe(false);
+		expect(select.options.item(1)?.defaultSelected).toBe(true);
+		expect(select.options.item(2)?.defaultSelected).toBe(false);
+		expect(select.options.item(3)?.defaultSelected).toBe(true);
+		expect(select.options.length).toBe(4);
 
-		updateFieldValue(select, {
-			value: null,
-		});
+		updateFieldValue(select, null);
 		expect(select.options.item(0)?.selected).toBe(false);
 		expect(select.options.item(1)?.selected).toBe(false);
 		expect(select.options.item(2)?.selected).toBe(false);
 		expect(select.options.item(3)?.selected).toBe(false);
 		expect(select.options.item(0)?.defaultSelected).toBe(false);
-		expect(select.options.item(1)?.defaultSelected).toBe(false);
-		expect(select.options.item(2)?.defaultSelected).toBe(true);
-		expect(select.options.item(3)?.defaultSelected).toBe(false);
+		expect(select.options.item(1)?.defaultSelected).toBe(true);
+		expect(select.options.item(2)?.defaultSelected).toBe(false);
+		expect(select.options.item(3)?.defaultSelected).toBe(true);
 	});
 
 	it('supports textarea', () => {
 		const textarea = document.createElement('textarea');
 
-		updateFieldValue(textarea, {
-			value: 'foo',
-		});
-		expect(textarea.value).toBe('foo');
-		expect(textarea.defaultValue).toBe('');
+		updateFieldValue(textarea, 'hello world', { defaultValue: true });
+		expect(textarea.value).toBe('hello world');
+		expect(textarea.defaultValue).toBe('hello world');
 
-		updateFieldValue(textarea, {
-			defaultValue: 'bar',
-		});
-		expect(textarea.value).toBe('foo');
-		expect(textarea.defaultValue).toBe('bar');
-
-		updateFieldValue(textarea, {
-			value: null,
-		});
+		updateFieldValue(textarea, null);
 		expect(textarea.value).toBe('');
-		expect(textarea.defaultValue).toBe('bar');
+		expect(textarea.defaultValue).toBe('hello world');
 	});
 });
 

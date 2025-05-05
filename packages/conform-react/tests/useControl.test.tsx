@@ -86,21 +86,17 @@ describe('useControl', () => {
 						defaultValue={props.defaultValue}
 						defaultChecked={props.defaultChecked}
 						value={props.value}
-						onInput={(event) => {
-							if (event.target instanceof HTMLInputElement) {
-								if (props.type === 'checkbox' || props.type === 'radio') {
-									props.onChange?.(event.target.value, event.target.checked);
-								} else if (props.type === 'file') {
-									props.onChange?.(
-										// We will only validate the file name as vitest wasn't able to assert the file objects in the input properly
-										// e.g. await expect.poll(() => getFiles(baseInput)).toEqual([new File()]); will pass as long as the file input is not empty
-										Array.from(event.target.files ?? []).map(
-											(file) => file.name,
-										),
-									);
-								} else {
-									props.onChange?.(event.target.value);
-								}
+						onChange={(event) => {
+							if (props.type === 'checkbox' || props.type === 'radio') {
+								props.onChange?.(event.target.value, event.target.checked);
+							} else if (props.type === 'file') {
+								props.onChange?.(
+									// We will only validate the file name as vitest wasn't able to assert the file objects in the input properly
+									// e.g. await expect.poll(() => getFiles(baseInput)).toEqual([new File()]); will pass as long as the file input is not empty
+									Array.from(event.target.files ?? []).map((file) => file.name),
+								);
+							} else {
+								props.onChange?.(event.target.value);
 							}
 						}}
 						onBlur={props.onBlur}

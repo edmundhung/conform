@@ -314,10 +314,12 @@ export function createGlobalFormsObserver() {
 
 export function change(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	value: string | string[] | File | File[] | FileList | undefined,
+	value: string | string[] | File | File[] | FileList | null,
 ): void {
 	// The value should be set to the element before dispatching the event
-	updateFieldValue(element, { value });
+	updateFieldValue(element, value, {
+		emitEvents: true,
+	});
 
 	// Dispatch input event with the updated input value
 	element.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -417,58 +419,89 @@ export function getFieldValue(
 
 /**
  * Updates the DOM element with the provided value.
- *
- * @param element The form element to update
- * @param options The options to update the form element
  */
 export function updateFieldValue(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	options: {
-		value?: string | string[] | File | File[] | FileList | null;
-		defaultValue?: string | string[] | null;
+	value: string | string[] | File | File[] | FileList | null | undefined,
+	options?: {
+		/**
+		 * Whether the default value should be updated. Set to true if you want to reset the field with a new default value.
+		 */
+		defaultValue?: boolean;
+		/**
+		 * Whether to emit events for the update. Set to true if you want to trigger the onChange event handler in React.
+		 */
+		emitEvents?: boolean;
 	},
-) {
-	let value: string[] | null = null;
-	let defaultValue: string[] | null = null;
-	let files: FileList | null = null;
-
-	if (options.value === null) {
-		value = [];
-		files = createFileList([]);
-	} else if (typeof options.value === 'string') {
-		value = [options.value];
-	} else if (
-		Array.isArray(options.value) &&
-		options.value.every((item) => typeof item === 'string')
-	) {
-		value = options.value;
-	} else if (options.value instanceof FileList) {
-		files = options.value;
-	} else if (typeof options.value !== 'undefined') {
-		files = createFileList(options.value);
+): void {
+	if (typeof value === 'undefined') {
+		return;
 	}
 
-	if (options.defaultValue === null) {
-		defaultValue = [];
-	} else if (typeof options.defaultValue === 'string') {
-		defaultValue = [options.defaultValue];
-	} else {
-		defaultValue = options.defaultValue ?? null;
+	function isStringArray(value: unknown): value is string[] {
+		return (
+			Array.isArray(value) &&
+			value.every((option): option is string => typeof option === 'string')
+		);
+	}
+
+	function resolveStrings(
+		value: string | string[] | File | File[] | FileList | null,
+	): string[] {
+		if (value === null) {
+			return [];
+		}
+
+		if (typeof value === 'string') {
+			return [value];
+		}
+
+		if (isStringArray(value)) {
+			return value;
+		}
+
+		throw new Error(
+			'The value provided for a string input must be a string or a string array',
+		);
+	}
+
+	function resovleFileList(
+		value: string | string[] | File | File[] | FileList | null,
+	): FileList {
+		if (value === null) {
+			return createFileList([]);
+		}
+
+		if (value instanceof FileList) {
+			return value;
+		}
+
+		if (typeof value !== 'string' && !isStringArray(value)) {
+			return createFileList(value);
+		}
+
+		throw new Error(
+			'The value provided for a file input must be a File, a File array or a FileList',
+		);
 	}
 
 	if (isInputElement(element)) {
 		switch (element.type) {
 			case 'file': {
-				element.files = files;
+				element.files = resovleFileList(value);
 				return;
 			}
 			case 'checkbox':
 			case 'radio': {
-				if (value) {
-					element.checked = value.includes(element.value);
+				const isChecked = resolveStrings(value).includes(element.value);
+
+				if (!options?.emitEvents) {
+					element.checked = isChecked;
+				} else if (element.checked !== isChecked) {
+					element.click();
 				}
-				if (defaultValue) {
-					element.defaultChecked = defaultValue.includes(element.value);
+				if (options?.defaultValue) {
+					element.defaultChecked = isChecked;
 				}
 				return;
 			}
@@ -476,75 +509,58 @@ export function updateFieldValue(
 	}
 
 	if (isSelectElement(element)) {
+		const selectedOptions = resolveStrings(value);
+
 		// If the select element is not multiple and the value is an empty array, unset the selected index
 		// This is to prevent the select element from showing the first option as selected
-		if (!element.multiple && value?.length === 0) {
+		if (!element.multiple && selectedOptions.length === 0) {
 			element.selectedIndex = -1;
 		}
 
 		for (const option of element.options) {
-			if (value) {
-				const index = value.indexOf(option.value);
-				const selected = index > -1;
+			const index = selectedOptions.indexOf(option.value);
+			const selected = index > -1;
 
-				// Update the selected state of the option
-				if (option.selected !== selected) {
-					option.selected = selected;
-				}
+			// Update the selected state of the option
+			option.selected = selected;
 
-				// Remove the option from the value array
-				if (selected) {
-					value.splice(index, 1);
-				}
+			if (options?.defaultValue) {
+				option.defaultSelected = selected;
 			}
-			if (defaultValue) {
-				const index = defaultValue.indexOf(option.value);
-				const selected = index > -1;
 
-				// Update the selected state of the option
-				if (option.selected !== selected) {
-					option.defaultSelected = selected;
-				}
-
-				// Remove the option from the defaultValue array
-				if (selected) {
-					defaultValue.splice(index, 1);
-				}
+			// Remove the available option from the selectedOptions
+			if (selected) {
+				selectedOptions.splice(index, 1);
 			}
 		}
 
 		// We have already removed all selected options from the value and defaultValue array at this point
-		const missingOptions = new Set<string>([
-			...(value ?? []),
-			...(defaultValue ?? []),
-		]);
+		const missingOptions = new Set<string>(selectedOptions);
 
 		for (const optionValue of missingOptions) {
 			element.options.add(
 				new Option(
 					optionValue,
 					optionValue,
-					defaultValue?.includes(optionValue),
-					value?.includes(optionValue),
+					options?.defaultValue ? true : undefined,
+					true,
 				),
 			);
 		}
 		return;
 	}
 
-	if (typeof options.value !== 'undefined') {
+	const inputValue = resolveStrings(value)[0] ?? '';
+
+	if (!options?.emitEvents) {
+		element.value = inputValue;
+	} else {
 		/**
 		 * Triggering react custom change event
 		 * Solution based on dom-testing-library
 		 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
 		 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
 		 */
-		const inputValue =
-			typeof options.value === 'string'
-				? options.value
-				: Array.isArray(options.value)
-					? options.value[0] ?? ''
-					: '';
 		const { set: valueSetter } =
 			Object.getOwnPropertyDescriptor(element, 'value') || {};
 		const prototype = Object.getPrototypeOf(element);
@@ -562,14 +578,7 @@ export function updateFieldValue(
 		}
 	}
 
-	if (typeof options.defaultValue !== 'undefined') {
-		const defaultValue =
-			typeof options.defaultValue === 'string'
-				? options.defaultValue
-				: Array.isArray(options.defaultValue)
-					? options.defaultValue[0] ?? ''
-					: '';
-
-		element.defaultValue = defaultValue;
+	if (options?.defaultValue) {
+		element.defaultValue = inputValue;
 	}
 }

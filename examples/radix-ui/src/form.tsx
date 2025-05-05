@@ -27,7 +27,12 @@ export function ExampleSelect({
 	defaultValue,
 }: ExampleSelectProps) {
 	const selectRef = useRef<ElementRef<typeof RadixSelect.Trigger>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			selectRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -35,9 +40,7 @@ export function ExampleSelect({
 				ref={control.register}
 				name={name}
 				defaultValue={defaultValue}
-				onFocus={() => {
-					selectRef.current?.focus();
-				}}
+				hidden
 			/>
 			<RadixSelect.Root
 				value={control.value ?? ''}
@@ -108,7 +111,12 @@ export function ExampleToggleGroup({
 	defaultValue,
 }: ExampleToggleGroupProps) {
 	const toggleGroupRef = useRef<ElementRef<typeof RadixToggleGroup.Root>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			toggleGroupRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -116,9 +124,7 @@ export function ExampleToggleGroup({
 				ref={control.register}
 				name={name}
 				defaultValue={defaultValue}
-				onFocus={() => {
-					toggleGroupRef.current?.focus();
-				}}
+				hidden
 			/>
 			<RadixToggleGroup.Root
 				type="single"
@@ -157,7 +163,13 @@ export function ExampleSwitch({
 	defaultChecked,
 }: ExampleSwitchProps) {
 	const switchRef = useRef<ElementRef<typeof RadixSwitch.Root>>(null);
-	const control = useControl({ defaultChecked, value, hidden: true });
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			switchRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -166,9 +178,7 @@ export function ExampleSwitch({
 				ref={control.register}
 				name={name}
 				defaultChecked={defaultChecked}
-				onFocus={() => {
-					switchRef.current?.focus();
-				}}
+				hidden
 			/>
 			<RadixSwitch.Root
 				ref={switchRef}
@@ -195,7 +205,12 @@ export function ExampleSlider({
 	defaultValue,
 }: ExampleSliderProps) {
 	const thumbRef = useRef<ElementRef<typeof RadixSlider.Thumb>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			thumbRef.current?.focus();
+		},
+	});
 
 	return (
 		<div className="flex items-center gap-4">
@@ -203,9 +218,7 @@ export function ExampleSlider({
 				ref={control.register}
 				name={name}
 				defaultValue={defaultValue}
-				onFocus={() => {
-					thumbRef.current?.focus();
-				}}
+				hidden
 			/>
 			<RadixSlider.Root
 				value={[control.value ? parseFloat(control.value) : 0]}
@@ -242,7 +255,12 @@ export function ExampleRadioGroup({
 	defaultValue,
 }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<ElementRef<typeof RadixRadioGroup.Root>>(null);
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			radioGroupRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -250,9 +268,7 @@ export function ExampleRadioGroup({
 				ref={control.register}
 				name={name}
 				defaultValue={defaultValue}
-				onFocus={() => {
-					radioGroupRef.current?.focus();
-				}}
+				hidden
 			/>
 			<RadixRadioGroup.Root
 				ref={radioGroupRef}
@@ -297,7 +313,13 @@ export function ExampleCheckbox({
 	defaultChecked,
 }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<ElementRef<typeof RadixCheckbox.Root>>(null);
-	const control = useControl({ defaultChecked, value, hidden: true });
+	const control = useControl({
+		defaultChecked,
+		value,
+		onFocus() {
+			checkboxRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -305,9 +327,7 @@ export function ExampleCheckbox({
 				type="checkbox"
 				ref={control.register}
 				name={name}
-				onFocus={() => {
-					checkboxRef.current?.focus();
-				}}
+				hidden
 				defaultChecked={defaultChecked}
 				value={value}
 			/>

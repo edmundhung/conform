@@ -18,7 +18,7 @@ export function ExampleListBox({
 	defaultValue,
 	options,
 }: ExampleListBoxProps) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<Listbox
@@ -30,6 +30,7 @@ export function ExampleListBox({
 				ref={control.register}
 				name={name}
 				defaultValue={defaultValue}
+				hidden
 				multiple
 			>
 				{defaultValue?.map((item) => <option key={item} value={item} />)}
@@ -105,7 +106,7 @@ export function ExampleCombobox({
 	options,
 }: ExampleComboboxProps) {
 	const [query, setQuery] = useState('');
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 	const filteredOptions = !control.value
 		? options
 		: options.filter((option) =>
@@ -121,7 +122,12 @@ export function ExampleCombobox({
 			nullable
 		>
 			<div className="relative mt-1">
-				<input name={name} ref={control.register} defaultValue={defaultValue} />
+				<input
+					name={name}
+					ref={control.register}
+					defaultValue={defaultValue}
+					hidden
+				/>
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
 					onChange={(event) => setQuery(event.target.value)}
@@ -192,7 +198,7 @@ export function ExampleSwitch({
 	value,
 	defaultChecked,
 }: ExampleSwitchProps) {
-	const control = useControl({ defaultChecked, value, hidden: true });
+	const control = useControl({ defaultChecked, value });
 
 	return (
 		<>
@@ -202,6 +208,7 @@ export function ExampleSwitch({
 				ref={control.register}
 				defaultChecked={defaultChecked}
 				value={value}
+				hidden
 			/>
 			<Switch
 				checked={control.checked}
@@ -236,7 +243,6 @@ export function ExampleRadioGroup({
 }: ExampleRadioGroupProps) {
 	const input = useControl({
 		defaultValue,
-		hidden: true,
 	});
 	const colors = [
 		{ name: 'Pink', bgColor: 'bg-pink-500', selectedColor: 'ring-pink-500' },
@@ -260,7 +266,12 @@ export function ExampleRadioGroup({
 			onChange={(value) => input.change(value)}
 			onBlur={() => input.blur()}
 		>
-			<input name={name} ref={input.register} defaultValue={defaultValue} />
+			<input
+				name={name}
+				ref={input.register}
+				defaultValue={defaultValue}
+				hidden
+			/>
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option

@@ -1122,14 +1122,14 @@ export function createFormContext<
 									formatPaths(paths),
 								);
 
-								updateFieldValue(element, {
-									value:
-										typeof value === 'string' ||
+								updateFieldValue(
+									element,
+									typeof value === 'string' ||
 										(Array.isArray(value) &&
 											value.every((item) => typeof item === 'string'))
-											? value
-											: '',
-								});
+										? value
+										: '',
+								);
 
 								// Update the element attribute to notify useControl / useInputControl hook
 								element.dataset.conform = generateId();
@@ -1143,19 +1143,16 @@ export function createFormContext<
 
 					for (const element of formElement.elements) {
 						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
-							const value = getValue(meta.defaultValue, element.name);
-							const defaultValue =
-								typeof value === 'string' ||
-								(Array.isArray(value) &&
-									value.every((item) => typeof item === 'string'))
-									? value
-									: element instanceof HTMLSelectElement
-										? []
-										: '';
+							const defaultValue = getValue(meta.defaultValue, element.name);
+							const value =
+								typeof defaultValue === 'string' ||
+								(Array.isArray(defaultValue) &&
+									defaultValue.every((item) => typeof item === 'string'))
+									? defaultValue
+									: null;
 
-							updateFieldValue(element, {
-								defaultValue,
-								value: defaultValue,
+							updateFieldValue(element, value, {
+								defaultValue: true,
 							});
 
 							// Update the element attribute to notify useControl / useInputControl hook

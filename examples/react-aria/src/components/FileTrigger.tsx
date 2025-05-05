@@ -27,7 +27,7 @@ export function FileTrigger({
 	children,
 	...props
 }: FileTriggerProps) {
-	const control = useControl({ hidden: true });
+	const control = useControl();
 
 	return (
 		<FieldErrorContext.Provider
@@ -61,7 +61,7 @@ export function FileTrigger({
 						color: 'var(--invalid-color)',
 					}}
 				/>
-				<input type="file" ref={control.register} name={props.name} />
+				<input type="file" ref={control.register} name={props.name} hidden />
 			</AriaFileTrigger>
 		</FieldErrorContext.Provider>
 	);

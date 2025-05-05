@@ -48,11 +48,15 @@ export function DateRangePicker({
 }: DateRangePickerProps<CalendarDate>) {
 	const startControl = useControl({
 		defaultValue: defaultValue?.start ?? defaultValue?.end,
-		hidden: true,
+		onFocus() {
+			controlRef.current?.focus();
+		},
 	});
 	const endControl = useControl({
 		defaultValue: defaultValue?.end ?? defaultValue?.start,
-		hidden: true,
+		onFocus() {
+			controlRef.current?.focus();
+		},
 	});
 	const controlRef = useRef<HTMLDivElement>(null);
 
@@ -62,13 +66,13 @@ export function DateRangePicker({
 				ref={startControl.register}
 				name={startName}
 				defaultValue={defaultValue?.start}
-				onFocus={() => controlRef.current?.focus()}
+				hidden
 			/>
 			<input
 				ref={endControl.register}
 				name={endName}
 				defaultValue={defaultValue?.end}
-				onFocus={() => controlRef.current?.focus()}
+				hidden
 			/>
 			<AriaDateRangePicker
 				{...props}

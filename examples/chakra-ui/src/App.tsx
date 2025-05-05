@@ -9,18 +9,20 @@ import {
 	Select,
 	Button,
 	Container,
-	Editable,
-	EditableInput,
-	EditablePreview,
 	Checkbox,
-	RadioGroup,
 	Radio,
 	Textarea,
 	Switch,
 	Heading,
 	Text,
 } from '@chakra-ui/react';
-import { ExampleNumberInput, ExamplePinInput, ExampleSlider } from './form';
+import {
+	ExampleEditable,
+	ExampleNumberInput,
+	ExamplePinInput,
+	ExampleRadioGroup,
+	ExampleSlider,
+} from './form';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -28,7 +30,7 @@ const schema = z.object({
 	language: z.string(),
 	description: z.string(),
 	quantity: z.number(),
-	pin: z.string(),
+	pin: z.string().min(4).max(4),
 	title: z.string(),
 	subscribe: z.boolean(),
 	enabled: z.boolean(),
@@ -109,10 +111,7 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.title.valid}>
 						<FormLabel>Title (Editable)</FormLabel>
-						<Editable placeholder="No content">
-							<EditablePreview />
-							<EditableInput name={fields.title.name} required />
-						</Editable>
+						<ExampleEditable name={fields.title.name} />
 						<FormErrorMessage>{fields.title.errors}</FormErrorMessage>
 					</FormControl>
 
@@ -141,21 +140,17 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.active.valid}>
 						<FormLabel>Active (Radio)</FormLabel>
-						<RadioGroup name={fields.active.name}>
+						<ExampleRadioGroup name={fields.active.name}>
 							<Stack spacing={5} direction="row">
 								<Radio value="yes">Yes</Radio>
 								<Radio value="no">No</Radio>
 							</Stack>
-						</RadioGroup>
+						</ExampleRadioGroup>
 						<FormErrorMessage>{fields.active.errors}</FormErrorMessage>
 					</FormControl>
 
 					<Stack direction="row" justifyContent="flex-end">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => form.reset()}
-						>
+						<Button type="reset" variant="outline" onClick={() => form.reset()}>
 							Reset
 						</Button>
 						<Button type="submit" variant="solid">

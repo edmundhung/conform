@@ -107,7 +107,8 @@ export default function App() {
 						<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
 						<FormGroup>
 							<FormControlLabel
-								control={<Checkbox name={fields.subscribe.name} />}
+								name={fields.subscribe.name}
+								control={<Checkbox />}
 								label="Newsletter"
 							/>
 						</FormGroup>
@@ -153,7 +154,7 @@ export default function App() {
 
 					<Stack direction="row" justifyContent="flex-end" spacing={2}>
 						<Button
-							type="button"
+							type="reset"
 							variant="outlined"
 							onClick={() => form.reset()}
 						>

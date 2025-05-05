@@ -38,7 +38,7 @@ export function Select<T extends object>({
 	items,
 	...props
 }: SelectProps<T>) {
-	const control = useControl({ defaultValue, hidden: true });
+	const control = useControl({ defaultValue });
 
 	return (
 		<AriaSelect
@@ -56,7 +56,12 @@ export function Select<T extends object>({
 			<Popover>
 				<ListBox items={items}>{children}</ListBox>
 			</Popover>
-			<select name={name} defaultValue={defaultValue} ref={control.register}>
+			<select
+				name={name}
+				defaultValue={defaultValue}
+				ref={control.register}
+				hidden
+			>
 				<option />
 			</select>
 		</AriaSelect>

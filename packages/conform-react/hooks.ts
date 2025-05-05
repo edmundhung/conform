@@ -30,7 +30,7 @@ import {
 	getFieldMetadata,
 	getFormMetadata,
 } from './context';
-import { normalizeFieldValue, setVisuallyHidden } from './util';
+import { focusable, initializeField, normalizeFieldValue } from './util';
 
 /**
  * useLayoutEffect is client-only.
@@ -194,7 +194,7 @@ export function useControl(options?: {
 	defaultValue?: string | string[] | File | File[] | null | undefined;
 	defaultChecked?: boolean | undefined;
 	value?: string;
-	hidden?: boolean;
+	onFocus?: () => void;
 }): Control {
 	const inputRef = useRef<
 		| HTMLInputElement
@@ -203,11 +203,12 @@ export function useControl(options?: {
 		| Array<HTMLInputElement>
 		| null
 	>(null);
-	const eventDispatched = useRef({
-		change: false,
-		focus: false,
-		blur: false,
-	});
+	const eventDispatched = useRef<{
+		change?: number;
+		focus?: number;
+		blur?: number;
+	}>({});
+
 	const snapshotRef = useRef<string[] | File[] | null | undefined>();
 
 	if (typeof snapshotRef.current === 'undefined') {
@@ -215,6 +216,13 @@ export function useControl(options?: {
 			options?.defaultChecked ? options.value ?? 'on' : options?.defaultValue,
 		);
 	}
+
+	const shouldHandleFocus = typeof options?.onFocus === 'function';
+	const optionsRef = useRef(options);
+
+	useEffect(() => {
+		optionsRef.current = options;
+	});
 
 	const value = useSyncExternalStore(
 		useCallback(
@@ -256,7 +264,19 @@ export function useControl(options?: {
 						? inputRef.current.some((item) => item === event.target)
 						: inputRef.current === event.target
 				) {
-					eventDispatched.current[listener] = true;
+					const timer = eventDispatched.current[listener];
+
+					if (timer) {
+						clearTimeout(timer);
+					}
+
+					eventDispatched.current[listener] = window.setTimeout(() => {
+						eventDispatched.current[listener] = undefined;
+					});
+
+					if (listener === 'focus') {
+						optionsRef.current?.onFocus?.();
+					}
 				}
 			};
 		};
@@ -275,10 +295,12 @@ export function useControl(options?: {
 		};
 	}, []);
 
-	const strings = value?.every((item) => typeof item === 'string')
+	const strings = value?.every(
+		(item): item is string => typeof item === 'string',
+	)
 		? value
 		: undefined;
-	const files = value?.every((item) => typeof item !== 'string')
+	const files = value?.every((item): item is File => typeof item !== 'string')
 		? value
 		: undefined;
 
@@ -294,9 +316,11 @@ export function useControl(options?: {
 				} else if (isFieldElement(element)) {
 					inputRef.current = element;
 
-					if (options?.hidden) {
-						setVisuallyHidden(element);
+					if (shouldHandleFocus) {
+						focusable(element);
 					}
+
+					initializeField(element, optionsRef.current);
 				} else {
 					const inputs = Array.from(element);
 					const name = inputs[0]?.name ?? '';
@@ -314,59 +338,57 @@ export function useControl(options?: {
 
 					inputRef.current = inputs;
 
-					if (options?.hidden) {
-						for (const input of inputs) {
-							setVisuallyHidden(input);
+					for (const input of inputs) {
+						if (shouldHandleFocus) {
+							focusable(input);
 						}
+
+						initializeField(input, optionsRef.current);
 					}
 				}
 			},
-			[options?.hidden],
+			[shouldHandleFocus],
 		),
-		change: useCallback(
-			(value) => {
-				if (!eventDispatched.current.change) {
-					eventDispatched.current.change = true;
+		change: useCallback((value) => {
+			if (!eventDispatched.current.change) {
+				const element = Array.isArray(inputRef.current)
+					? inputRef.current?.find((input) => {
+							const wasChecked = input.checked;
+							const isChecked = Array.isArray(value)
+								? value.some((item) => item === input.value)
+								: input.value === value;
 
-					const inputValue =
-						typeof value === 'boolean'
-							? value
-								? options?.value ?? 'on'
-								: ''
-							: value;
-					const element = Array.isArray(inputRef.current)
-						? inputRef.current?.find((input) => {
-								const wasChecked = input.checked;
-								const isChecked = Array.isArray(inputValue)
-									? inputValue.some((item) => item === input.value)
-									: input.value === value;
+							switch (input.type) {
+								case 'checkbox':
+									// We assume that only one checkbox can be checked at a time
+									// So we will pick the first element with checked state changed
+									return wasChecked !== isChecked;
+								case 'radio':
+									// We cannot uncheck a radio button
+									// So we will pick the first element that should be checked
+									return isChecked;
+								default:
+									return false;
+							}
+						})
+					: inputRef.current;
 
-								switch (input.type) {
-									case 'checkbox':
-										// We assume that only one checkbox can be checked at a time
-										// So we will pick the first element with checked state changed
-										return wasChecked !== isChecked;
-									case 'radio':
-										// We cannot uncheck a radio button
-										// So we will pick the first element that should be checked
-										return !wasChecked && isChecked;
-								}
-							})
-						: inputRef.current;
-
-					if (element) {
-						change(element, inputValue);
-					}
+				if (element) {
+					change(
+						element,
+						typeof value === 'boolean' ? (value ? element.value : null) : value,
+					);
 				}
+			}
 
-				eventDispatched.current.change = false;
-			},
-			[options?.value],
-		),
+			if (eventDispatched.current.change) {
+				clearTimeout(eventDispatched.current.change);
+			}
+
+			eventDispatched.current.change = undefined;
+		}, []),
 		focus: useCallback(() => {
 			if (!eventDispatched.current.focus) {
-				eventDispatched.current.focus = true;
-
 				const element = Array.isArray(inputRef.current)
 					? inputRef.current[0]
 					: inputRef.current;
@@ -376,12 +398,14 @@ export function useControl(options?: {
 				}
 			}
 
-			eventDispatched.current.focus = false;
+			if (eventDispatched.current.focus) {
+				clearTimeout(eventDispatched.current.focus);
+			}
+
+			eventDispatched.current.focus = undefined;
 		}, []),
 		blur: useCallback(() => {
 			if (!eventDispatched.current.blur) {
-				eventDispatched.current.blur = true;
-
 				const element = Array.isArray(inputRef.current)
 					? inputRef.current[0]
 					: inputRef.current;
@@ -391,7 +415,11 @@ export function useControl(options?: {
 				}
 			}
 
-			eventDispatched.current.blur = false;
+			if (eventDispatched.current.blur) {
+				clearTimeout(eventDispatched.current.blur);
+			}
+
+			eventDispatched.current.blur = undefined;
 		}, []),
 	};
 }
