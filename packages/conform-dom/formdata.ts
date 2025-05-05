@@ -306,3 +306,50 @@ export function flatten(
 
 	return result;
 }
+
+export function deepEqual<Value>(prev: Value, next: Value): boolean {
+	if (prev === next) {
+		return true;
+	}
+
+	if (!prev || !next) {
+		return false;
+	}
+
+	if (Array.isArray(prev) && Array.isArray(next)) {
+		if (prev.length !== next.length) {
+			return false;
+		}
+
+		for (let i = 0; i < prev.length; i++) {
+			if (!deepEqual(prev[i], next[i])) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	if (isPlainObject(prev) && isPlainObject(next)) {
+		const prevKeys = Object.keys(prev);
+		const nextKeys = Object.keys(next);
+
+		if (prevKeys.length !== nextKeys.length) {
+			return false;
+		}
+
+		for (const key of prevKeys) {
+			if (
+				!Object.prototype.hasOwnProperty.call(next, key) ||
+				// @ts-expect-error FIXME
+				!deepEqual(prev[key], next[key])
+			) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}

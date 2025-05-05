@@ -1,18 +1,18 @@
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
-import { Checkbox } from './ui/Checkbox';
-import { RadioGroup } from './ui/RadioGroup';
-import { Slider } from './ui/Slider';
-import { Switch } from './ui/Switch';
-import { ToggleGroup } from './ui/ToggleGroup';
-import { Select } from './ui/Select';
+import {
+	ExampleCheckbox,
+	ExampleRadioGroup,
+	ExampleSlider,
+	ExampleSwitch,
+	ExampleToggleGroup,
+	ExampleSelect,
+} from './form';
 
 const schema = z.object({
-	hasAgreedToTerms: z.boolean({
-		required_error: 'You must agree to the terms and conditions',
-	}),
-	selectedCarType: z.enum(['sedan', 'hatchback', 'suv']),
+	isTermsAgreed: z.boolean(),
+	carType: z.enum(['sedan', 'hatchback', 'suv']),
 	userCountry: z.enum(['usa', 'canada', 'mexico']),
 	estimatedKilometersPerYear: z.number().min(1).max(100000),
 	hasAdditionalDriver: z
@@ -24,43 +24,29 @@ const schema = z.object({
 	desiredContractType: z.enum(['full', 'part']),
 });
 
-export function App() {
-	const [
-		form,
-		{
-			hasAgreedToTerms,
-			selectedCarType,
-			userCountry,
-			estimatedKilometersPerYear,
-			hasAdditionalDriver,
-			desiredContractType,
-		},
-	] = useForm({
-		id: 'car-rent',
+export default function App() {
+	const [form, fields] = useForm({
+		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onInput',
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
-		onSubmit(e) {
-			e.preventDefault();
-			const form = e.currentTarget;
-			const formData = new FormData(form);
-			const data = Object.fromEntries(formData.entries());
-			alert(JSON.stringify(data, null, 2));
+		onSubmit(event, { submission }) {
+			event.preventDefault();
+
+			if (submission?.status === 'success') {
+				alert(JSON.stringify(submission.value, null, 2));
+			}
 		},
-		defaultValue: {
-			selectedCarType: 'sedan',
-			desiredContractType: 'full',
-		},
-		shouldRevalidate: 'onInput',
 	});
 
 	return (
 		<main className="flex flex-col gap-4 p-12 font-sans">
 			<form
-				method="POST"
 				id={form.id}
 				onSubmit={form.onSubmit}
 				className="bg-neutral-100 flex flex-col gap-12 p-12 rounded-lg mx-auto"
+				noValidate
 			>
 				<h1 className="font-bold text-4xl text-amber-800">
 					Radix UI + Conform
@@ -68,21 +54,21 @@ export function App() {
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Checkbox</h2>
 					<div className="flex items-center gap-2">
-						<Checkbox meta={hasAgreedToTerms} />
-						<label htmlFor={hasAgreedToTerms.id}>
-							Accept terms and conditions.
-						</label>
+						<ExampleCheckbox
+							name={fields.isTermsAgreed.name}
+							defaultChecked={fields.isTermsAgreed.defaultValue === 'on'}
+						/>
+						<label>Accept terms and conditions.</label>
 					</div>
-					{hasAgreedToTerms.errors && (
-						<span className="text-red-800">{hasAgreedToTerms.errors}</span>
-					)}
+					<span className="text-red-800">{fields.isTermsAgreed.errors}</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Radio Group</h2>
 					<div className="flex flex-col gap-2">
 						Car type:
-						<RadioGroup
-							meta={selectedCarType}
+						<ExampleRadioGroup
+							name={fields.carType.name}
+							defaultValue={fields.carType.defaultValue}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
 								{ value: 'hatchback', label: 'Hatchback' },
@@ -90,16 +76,15 @@ export function App() {
 								{ value: 'other', label: 'Other (not valid choice)' },
 							]}
 						/>
-						{selectedCarType.errors && (
-							<span className="text-red-800">{selectedCarType.errors}</span>
-						)}
+						<span className="text-red-800">{fields.carType.errors}</span>
 					</div>
 				</div>
 				<div className="flex flex-col gap-2 items-start">
 					<h2 className="text-medium text-amber-600">Select</h2>
-					<label htmlFor={userCountry.id}>Country</label>
-					<Select
-						meta={userCountry}
+					<label>Country</label>
+					<ExampleSelect
+						name={fields.userCountry.name}
+						defaultValue={fields.userCountry.defaultValue}
 						placeholder="Select a country 🗺"
 						items={[
 							{ name: 'USA', value: 'usa' },
@@ -107,53 +92,51 @@ export function App() {
 							{ name: 'Mexico', value: 'mexico' },
 						]}
 					/>
-					{userCountry.errors && (
-						<span className="text-red-800">{userCountry.errors}</span>
-					)}
+					<span className="text-red-800">{fields.userCountry.errors}</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Slider</h2>
 					<div className="flex flex-col gap-2">
 						Estimated kilometers per year:
-						<Slider
-							meta={estimatedKilometersPerYear}
-							ariaLabel="Estimated kilometers per year"
+						<ExampleSlider
+							name={fields.estimatedKilometersPerYear.name}
+							defaultValue={fields.estimatedKilometersPerYear.defaultValue}
 							max={10_000}
 						/>
-						{estimatedKilometersPerYear.errors && (
-							<span className="text-red-800">
-								{estimatedKilometersPerYear.errors}
-							</span>
-						)}
+						<span className="text-red-800">
+							{fields.estimatedKilometersPerYear.errors}
+						</span>
 					</div>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Switch</h2>
 					<div className="flex items-center gap-2">
-						<Switch meta={hasAdditionalDriver} />
-						<label htmlFor={hasAdditionalDriver.id}>
-							Has additional driver
-						</label>
+						<ExampleSwitch
+							name={fields.hasAdditionalDriver.name}
+							defaultChecked={fields.isTermsAgreed.defaultValue === 'on'}
+						/>
+						<label>Has additional driver</label>
 					</div>
-					{hasAdditionalDriver.errors && (
-						<span className="text-red-800">{hasAdditionalDriver.errors}</span>
-					)}
+					<span className="text-red-800">
+						{fields.hasAdditionalDriver.errors}
+					</span>
 				</div>
 				<div className="flex flex-col gap-2">
 					<h2 className="font-medium text-amber-600">Toggle group</h2>
 					<div className="flex flex-col gap-2">
 						Desired contract type:
-						<ToggleGroup
-							meta={desiredContractType}
+						<ExampleToggleGroup
+							name={fields.desiredContractType.name}
+							defaultValue={fields.desiredContractType.defaultValue}
 							items={[
 								{ value: 'full', label: 'Full' },
 								{ value: 'part', label: 'Part time' },
 								{ value: 'not valid', label: 'not Valid' },
 							]}
 						/>
-						{desiredContractType.errors && (
-							<span className="text-red-800">{desiredContractType.errors}</span>
-						)}
+						<span className="text-red-800">
+							{fields.desiredContractType.errors}
+						</span>
 					</div>
 				</div>
 				<div className="flex items-center gap-3">
@@ -161,11 +144,12 @@ export function App() {
 						type="submit"
 						className="bg-amber-800 px-3 py-2 rounded-lg text-white hover:opacity-90 grow"
 					>
-						Continue
+						Submit
 					</button>
 					<button
-						type="reset"
+						type="button"
 						className="text-amber-800 hover:opacity-90 px-3 py-2 border-neutral-300 border rounded-lg grow"
+						onClick={() => form.reset()}
 					>
 						Reset
 					</button>

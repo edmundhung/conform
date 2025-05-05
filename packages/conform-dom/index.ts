@@ -12,9 +12,18 @@ export {
 	type SubscriptionSubject,
 	type SubscriptionScope,
 	createFormContext as unstable_createFormContext,
-	updateFieldValue as unstable_updateFieldValue,
 } from './form';
-export { type FieldElement, isFieldElement } from './dom';
+export {
+	type FieldElement,
+	isFieldElement,
+	getFieldValue,
+	updateFieldValue as unstable_updateFieldValue,
+	createFileList,
+	createGlobalFormsObserver,
+	focus,
+	change,
+	blur,
+} from './dom';
 export {
 	type Submission,
 	type SubmissionResult,
@@ -24,4 +33,10 @@ export {
 	serializeIntent,
 	parse,
 } from './submission';
-export { getPaths, formatPaths, isPrefix } from './formdata';
+export {
+	getPaths,
+	formatPaths,
+	isPrefix,
+	deepEqual,
+	getFormData,
+} from './formdata';
