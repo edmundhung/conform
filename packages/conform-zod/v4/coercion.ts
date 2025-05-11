@@ -193,7 +193,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 			new constr({
 				...def,
 				element: enableTypeCoercion(def.element, options),
-			}),
+			}) as $ZodType<unknown, []>,
 		);
 	} else if (def.type === 'object') {
 		schema = pipe(
@@ -213,7 +213,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 						enableTypeCoercion(def, options),
 					]),
 				),
-			}),
+			}) as $ZodType<unknown, {}>,
 		);
 	} else if (def.type === 'optional') {
 		schema = pipe(
