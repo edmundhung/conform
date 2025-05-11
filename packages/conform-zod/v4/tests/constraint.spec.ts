@@ -22,6 +22,7 @@ describe('constraint', () => {
 					.max(new Date(), 'max')
 					.default(new Date()),
 				flag: z.boolean().optional(),
+				literalFlag: z.literal(true),
 				options: z
 					.array(z.enum(['a', 'b', 'c']).refine(() => false, 'refine'))
 					.min(3, 'min'),
@@ -64,6 +65,9 @@ describe('constraint', () => {
 			},
 			flag: {
 				required: false,
+			},
+			literalFlag: {
+				required: true,
 			},
 			options: {
 				required: true,
@@ -118,9 +122,7 @@ describe('constraint', () => {
 		// Intersection is supported
 		expect(
 			getZodConstraint(
-				schema.extend(
-					z.object({ text: z.string().optional(), something: z.string() }),
-				),
+				schema.extend({ text: z.string().optional(), something: z.string() }),
 			),
 		).toEqual({
 			...constraint,
@@ -135,20 +137,16 @@ describe('constraint', () => {
 		expect(
 			getZodConstraint(
 				z.union([
-					baseSchema.extend(
-						z.object({
-							type: z.literal('a'),
-							foo: z.string().min(1, 'min'),
-							baz: z.string().min(1, 'min'),
-						}),
-					),
-					baseSchema.extend(
-						z.object({
-							type: z.literal('b'),
-							bar: z.string().min(1, 'min'),
-							baz: z.string().min(1, 'min'),
-						}),
-					),
+					baseSchema.extend({
+						type: z.literal('a'),
+						foo: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
+					baseSchema.extend({
+						type: z.literal('b'),
+						bar: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
 				]),
 				// .and(
 				// 	z.object({
@@ -168,20 +166,16 @@ describe('constraint', () => {
 		expect(
 			getZodConstraint(
 				z.discriminatedUnion('type', [
-					baseSchema.extend(
-						z.object({
-							type: z.literal('a'),
-							foo: z.string().min(1, 'min'),
-							baz: z.string().min(1, 'min'),
-						}),
-					),
-					baseSchema.extend(
-						z.object({
-							type: z.literal('b'),
-							bar: z.string().min(1, 'min'),
-							baz: z.string().min(1, 'min'),
-						}),
-					),
+					baseSchema.extend({
+						type: z.literal('a'),
+						foo: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
+					baseSchema.extend({
+						type: z.literal('b'),
+						bar: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min'),
+					}),
 				]),
 				// .and(
 				// 	z.object({
