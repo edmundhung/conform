@@ -3,5 +3,5 @@ _virtual
 *.d.ts
 *.js
 *.mjs
-README
+README.md
 !rollup.config.js

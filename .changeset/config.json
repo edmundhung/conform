@@ -6,6 +6,7 @@
 		[
 			"@conform-to/dom",
 			"@conform-to/react",
+			"@conform-to/valibot",
 			"@conform-to/yup",
 			"@conform-to/zod"
 		]

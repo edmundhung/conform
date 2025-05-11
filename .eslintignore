@@ -39,7 +39,7 @@ node_modules/
 .DS_Store
 
 # Project files
-README
+README.md
 pnpm-lock.yaml
 
 # Build files

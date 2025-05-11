@@ -30,6 +30,14 @@ describe('objectWithRest', () => {
 			status: 'success',
 			value: { obj: { key1: 'test', key2: 123, key3: undefined } },
 		});
+
+		const input2 = new FormData();
+		const output3 = parseWithValibot(input2, { schema: schema1 });
+		expect(output3).toMatchObject({
+			error: {
+				'obj.key1': expect.anything(),
+			},
+		});
 	});
 
 	test('should pass objects with pipe', () => {

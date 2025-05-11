@@ -14,6 +14,7 @@ const menus: { [code: string]: Menu[] } = {
 			title: 'Getting Started',
 			links: [
 				{ title: 'Overview', to: '/' },
+				{ title: 'Installation', to: '/installation' },
 				{ title: 'Tutorial', to: '/tutorial' },
 				{ title: 'Upgrading to v1', to: '/upgrading-v1' },
 				{ title: 'GitHub', to: 'https://github.com/edmundhung/conform' },
