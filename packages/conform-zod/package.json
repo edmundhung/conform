@@ -49,7 +49,6 @@
 	},
 	"peerDependencies": {
 		"@zod/core": ">0.11.6",
-		"@zod/mini": ">4.0.0-beta.20250505T195954",
 		"zod": "^3.21.0"
 	},
 	"peerDependenciesMeta": {
@@ -57,9 +56,6 @@
 			"optional": true
 		},
 		"@zod/core": {
-			"optional": true
-		},
-		"@zod/mini": {
 			"optional": true
 		}
 	},

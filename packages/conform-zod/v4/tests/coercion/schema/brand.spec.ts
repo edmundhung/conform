@@ -61,7 +61,9 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					// The default error message for the file schema should be "Invalid input: expected file, received string", but the error seems to be different in the case of CJS.
+					// https://github.com/colinhacks/zod/issues/4262
+					f: ['Invalid input'],
 				},
 			});
 			expect(
@@ -85,7 +87,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Invalid input'],
 				},
 			});
 
