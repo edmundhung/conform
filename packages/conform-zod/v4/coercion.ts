@@ -124,9 +124,24 @@ function selectDefaultCoercion(
 
 	if (
 		def.type === 'string' ||
-		def.type === 'literal' ||
 		def.type === 'enum' // || def.type === 'nativeEnum'
 	) {
+		return defaultCoercion.string;
+	} else if (def.type === 'literal') {
+		if (!('values' in def)) {
+			return defaultCoercion.string;
+		}
+
+		const literalValue = [...(def.values as Set<unknown>)][0];
+		if (typeof literalValue === 'number') {
+			return defaultCoercion.number;
+		}
+		if (typeof literalValue === 'boolean') {
+			return defaultCoercion.boolean;
+		}
+		if (typeof literalValue === 'bigint') {
+			return defaultCoercion.bigint;
+		}
 		return defaultCoercion.string;
 	} else if (def.type === 'file') {
 		return defaultCoercion.file;
