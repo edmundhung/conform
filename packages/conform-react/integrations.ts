@@ -65,13 +65,13 @@ export function getEventTarget(
 export function createDummySelect(
 	form: HTMLFormElement,
 	name: string,
-	value?: string | string[] | undefined,
+	value: string | string[],
 ): HTMLSelectElement {
 	const select = document.createElement('select');
 	const options = typeof value === 'string' ? [value] : value ?? [];
 
 	select.name = name;
-	select.multiple = true;
+	select.multiple = Array.isArray(value);
 	select.dataset.conform = 'true';
 
 	// To make sure the input is hidden but still focusable

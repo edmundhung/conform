@@ -66,7 +66,20 @@ async function runTest(page: Page) {
 			tos: 'on',
 			options: expect.arrayContaining(['d', 'b']),
 		},
-		fields: ['color', 'languages', 'tos', 'options'],
+		fields: expect.arrayContaining(['color', 'languages', 'tos', 'options']),
+	});
+
+	await playground.container.getByText('Update value').click();
+	await playground.submit.click();
+	await expect.poll(playground.result).toStrictEqual({
+		status: 'success',
+		initialValue: {
+			color: 'red',
+			languages: expect.arrayContaining(['English', 'French']),
+			tos: 'on',
+			options: expect.arrayContaining(['a', 'b', 'c', 'd']),
+		},
+		fields: expect.arrayContaining(['color', 'languages', 'tos', 'options']),
 	});
 }
 
