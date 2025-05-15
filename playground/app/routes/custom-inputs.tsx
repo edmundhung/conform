@@ -127,6 +127,18 @@ export default function Example() {
 							/>
 						)}
 					</Field>
+					<button
+						{...form.update.getButtonProps({
+							value: {
+								color: 'red',
+								languages: ['English', 'French'],
+								tos: true,
+								options: ['a', 'b', 'c', 'd'],
+							},
+						})}
+					>
+						Update value
+					</button>
 				</Playground>
 			</Form>
 		</FormProvider>
@@ -159,6 +171,13 @@ function OldCustomSelect({
 	});
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+
+	// Added to make sure the value type matches the expected type
+	if (
+		multiple ? typeof control.value === 'string' : Array.isArray(control.value)
+	) {
+		throw new Error('Invalid value type');
+	}
 
 	return (
 		<Listbox
@@ -238,6 +257,11 @@ function OldCustomCheckbox({
 		formId: field.formId,
 	});
 
+	// Added to make sure the value type matches the expected type
+	if (Array.isArray(control.value)) {
+		throw new Error('Invalid value type');
+	}
+
 	return (
 		<div className="flex items-center py-2">
 			<RadixCheckbox.Root
@@ -277,6 +301,11 @@ function OldCustomMultipleCheckbox({
 	});
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+
+	// Added to make sure the value type matches the expected type
+	if (typeof control.value === 'string') {
+		throw new Error('Invalid value type');
+	}
 
 	return (
 		<div className="py-2 space-y-4">
@@ -333,6 +362,13 @@ function Select({
 	});
 	const value =
 		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+
+	// Added to make sure the value type matches the expected type
+	if (
+		multiple ? typeof control.value === 'string' : Array.isArray(control.value)
+	) {
+		throw new Error('Invalid value type');
+	}
 
 	return (
 		<Listbox
@@ -422,6 +458,11 @@ function Checkbox({
 		key: noKey ? null : field.key,
 		initialValue: field.initialValue,
 	});
+
+	// Added to make sure the value type matches the expected type
+	if (Array.isArray(control.value)) {
+		throw new Error('Invalid value type');
+	}
 
 	return (
 		<div
