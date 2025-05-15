@@ -1155,9 +1155,15 @@ export function createFormContext<
 								defaultValue: true,
 							});
 
-							// Update the element attribute to notify useControl / useInputControl hook
-							element.dataset.conform = generateId();
+							if (prefix !== '') {
+								// Update the element attribute to notify useControl / useInputControl hook
+								element.dataset.conform = generateId();
+							}
 						}
+					}
+
+					if (prefix === '') {
+						formElement.reset();
 					}
 					break;
 				}
