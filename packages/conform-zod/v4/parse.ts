@@ -12,7 +12,7 @@ import type {
 	output,
 	input,
 	util,
-} from '@zod/core';
+} from 'zod/v4/core';
 import { coerceFormValue } from './coercion';
 
 interface ZodType extends $ZodType {

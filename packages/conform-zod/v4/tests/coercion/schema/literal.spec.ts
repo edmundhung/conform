@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod-4';
+import { z } from 'zod/v4';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -21,10 +21,10 @@ describe('coercion', () => {
 			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input'],
-					b: ['Invalid input'],
-					c: ['Invalid input'],
-					e: ['Invalid input'],
+					a: ['Invalid input: expected "a"'],
+					b: ['Invalid input: expected 0'],
+					c: ['Invalid input: expected true'],
+					e: ['Invalid input: expected 9007199254740991n'],
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 					h: ['Invalid input'],
@@ -49,11 +49,11 @@ describe('coercion', () => {
 			).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input'],
-					b: ['Invalid input'],
-					c: ['Invalid input'],
-					d: ['Invalid input'],
-					e: ['Invalid input'],
+					a: ['Invalid input: expected "a"'],
+					b: ['Invalid input: expected 0'],
+					c: ['Invalid input: expected true'],
+					d: ['Invalid input: expected false'],
+					e: ['Invalid input: expected 9007199254740991n'],
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 				},

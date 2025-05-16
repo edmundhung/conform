@@ -1,5 +1,5 @@
-import type { $ZodType, $ZodTypes } from '@zod/core';
-import { lazy, pipe, transform, union } from './zod';
+import type { $ZodType, $ZodTypes } from 'zod/v4/core';
+import { lazy, pipe, transform, union } from 'zod/v4-mini';
 
 /**
  * Helpers for coercing string value

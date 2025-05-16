@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { getZodConstraint } from '../constraint';
-import { z } from 'zod-4';
+import { z } from 'zod/v4';
 
 describe('constraint', () => {
 	test('getZodConstraint', () => {

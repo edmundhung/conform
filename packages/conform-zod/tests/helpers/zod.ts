@@ -1,4 +1,4 @@
-import type { util } from '@zod/core';
+import type { util } from 'zod/v4/core';
 import { formatPaths } from '@conform-to/dom';
 import { SafeParseReturnType } from 'zod';
 
@@ -14,7 +14,12 @@ export function getResult<Output>(
 	const error: Record<string, string[]> = {};
 
 	for (const issue of result.error.issues) {
-		const name = formatPaths(issue.path);
+		if (typeof issue.path === 'symbol') {
+			throw new Error(
+				'@conform-to/zod does not support symbol paths. Please use a string or number instead.',
+			);
+		}
+		const name = formatPaths(issue.path as (string | number)[]);
 
 		error[name] ??= [];
 		error[name].push(issue.message);

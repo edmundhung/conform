@@ -48,16 +48,7 @@
 		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
-		"@zod/core": ">0.11.6",
 		"zod": "^3.21.0"
-	},
-	"peerDependenciesMeta": {
-		"zod": {
-			"optional": true
-		},
-		"@zod/core": {
-			"optional": true
-		}
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -65,12 +56,9 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"@zod/core": "0.11.6",
-		"@zod/mini": "4.0.0-beta.20250505T195954",
 		"rollup": "^2.79.1",
 		"rollup-plugin-copy": "^3.4.0",
-		"zod": "3.21.4",
-		"zod-4": "npm:zod@4.0.0-beta.20250505T195954"
+		"zod": "3.25.0-beta.20250516T044623"
 	},
 	"keywords": [
 		"constraint-validation",

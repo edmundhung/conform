@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 
-import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from '@zod/core';
+import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',

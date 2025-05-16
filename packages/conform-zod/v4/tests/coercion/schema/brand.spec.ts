@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod-4';
+import { z } from 'zod/v4';
 import {
 	object,
 	string,
@@ -10,7 +10,7 @@ import {
 	bigint,
 	file,
 	optional,
-} from '@zod/mini';
+} from 'zod/v4-mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -61,9 +61,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					// The default error message for the file schema should be "Invalid input: expected file, received string", but the error seems to be different in the case of CJS.
-					// https://github.com/colinhacks/zod/issues/4262
-					f: ['Invalid input'],
+					f: ['Invalid input: expected file, received string'],
 				},
 			});
 			expect(
@@ -87,7 +85,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input'],
+					f: ['Invalid input: expected file, received string'],
 				},
 			});
 

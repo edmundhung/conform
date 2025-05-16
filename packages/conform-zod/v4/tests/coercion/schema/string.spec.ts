@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod-4';
-import { string, minLength, maxLength, regex, refine } from '@zod/mini';
+import { z } from 'zod/v4';
+import { string, minLength, maxLength, regex, refine } from 'zod/v4-mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {

@@ -81,8 +81,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 4.0.0-beta.20250505T195954
-        version: 4.0.0-beta.20250505T195954
+        specifier: 3.21.4
+        version: 3.21.4
 
   examples/chakra-ui:
     dependencies:
@@ -780,12 +780,6 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^13.3.0
         version: 13.3.0(rollup@2.79.1)
-      '@zod/core':
-        specifier: 0.11.6
-        version: 0.11.6
-      '@zod/mini':
-        specifier: 4.0.0-beta.20250505T195954
-        version: 4.0.0-beta.20250505T195954
       rollup:
         specifier: ^2.79.1
         version: 2.79.1
@@ -793,11 +787,8 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       zod:
-        specifier: 3.21.4
-        version: 3.21.4
-      zod-4:
-        specifier: npm:zod@4.0.0-beta.20250505T195954
-        version: zod@4.0.0-beta.20250505T195954
+        specifier: 3.25.0-beta.20250516T044623
+        version: 3.25.0-beta.20250516T044623
 
   playground:
     dependencies:
@@ -4974,12 +4965,6 @@ packages:
 
   '@zag-js/focus-visible@0.16.0':
     resolution: {integrity: sha512-a7U/HSopvQbrDU4GLerpqiMcHKEkQkNPeDZJWz38cw/6Upunh41GjHetq5TB84hxyCaDzJ6q2nEdNoBQfC0FKA==}
-
-  '@zod/core@0.11.6':
-    resolution: {integrity: sha512-03Bv82fFSfjDAvMfdHHdGSS6SOJs0iCcJlWJv1kJHRtoTT02hZpyip/2Lk6oo4l4FtjuwTrsEQTwg/LD8I7dJA==}
-
-  '@zod/mini@4.0.0-beta.20250505T195954':
-    resolution: {integrity: sha512-ioybPtU4w4TqwHvJv0gkAiYNaBkZ/BaGHBpK7viCIRSE8BiiZucVZ8vS0YE04Qy1R120nAnFy1d+tD9ByMO0yw==}
 
   '@zxing/text-encoding@0.9.0':
     resolution: {integrity: sha512-U/4aVJ2mxI0aDNI8Uq0wEhMgY+u4CNtEb0om3+y3+niDAsoTCOB33UF0sxpzqzdqXLqmvc+vZyAt4O8pPdfkwA==}
@@ -11558,8 +11543,8 @@ packages:
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
-  zod@4.0.0-beta.20250505T195954:
-    resolution: {integrity: sha512-iB8WvxkobVIXMARvQu20fKvbS7mUTiYRpcD8OQV1xjRhxO0EEpYIRJBk6yfBzHAHEdOSDh3SxDITr5Eajr2vtg==}
+  zod@3.25.0-beta.20250516T044623:
+    resolution: {integrity: sha512-NjcetsH2m7GAPQV0hbYAXefUm8mqJf3W7dPBk41EHQrUcwmh5MCvOrIXXkl62CIKAFQyIgd4mukDEQVzBop9qw==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -16420,12 +16405,6 @@ snapshots:
   '@zag-js/focus-visible@0.16.0':
     dependencies:
       '@zag-js/dom-query': 0.16.0
-
-  '@zod/core@0.11.6': {}
-
-  '@zod/mini@4.0.0-beta.20250505T195954':
-    dependencies:
-      '@zod/core': 0.11.6
 
   '@zxing/text-encoding@0.9.0':
     optional: true
@@ -24613,8 +24592,6 @@ snapshots:
 
   zod@3.24.2: {}
 
-  zod@4.0.0-beta.20250505T195954:
-    dependencies:
-      '@zod/core': 0.11.6
+  zod@3.25.0-beta.20250516T044623: {}
 
   zwitch@2.0.4: {}
