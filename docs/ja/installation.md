@@ -14,8 +14,8 @@ FormDataの検証を行うには `parseWithZod` を使用します。
 
 ```ts
 import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
-import { z } from 'zod';
+import { parseWithZod } from '@conform-to/zod'; // もしくは、zod/v4かzod/v4-miniを使用する場合は `@conform-to/zod/v4` をインポートします。
+import { z } from 'zod'; // もしくは, zod/v4かzod/v4-mini
 
 const schema = z.object({
   email: z.string(),

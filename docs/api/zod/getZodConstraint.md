@@ -15,7 +15,7 @@ The zod schema to be introspected.
 ## Example
 
 ```tsx
-import { getZodConstraint } from '@conform-to/zod';
+import { getZodConstraint } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
 

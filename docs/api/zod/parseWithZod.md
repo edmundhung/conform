@@ -35,7 +35,7 @@ Set it to **true** if you want to disable [automatic type coercion](#automatic-t
 ## Example
 
 ```tsx
-import { parseWithZod } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
 
