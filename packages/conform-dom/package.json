@@ -3,7 +3,7 @@
 	"description": "A set of opinionated helpers built on top of the Constraint Validation API",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.5.0",
+	"version": "1.5.1",
 	"main": "index.js",
 	"module": "index.mjs",
 	"types": "index.d.ts",
