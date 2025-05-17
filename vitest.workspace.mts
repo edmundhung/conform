@@ -17,10 +17,10 @@ export default defineWorkspace([
 			name: 'node',
 			include: [
 				'tests/conform-yup.spec.ts',
-				'tests/conform-zod.spec.ts',
 			],
 			environment: 'node',
 		},
 	},
+	'packages/conform-zod',
 	'packages/conform-valibot',
 ]);

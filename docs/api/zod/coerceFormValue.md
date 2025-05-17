@@ -31,7 +31,7 @@ Optional. Use it to [define custom coercion](#define-custom-coercion) for a spec
 ## Example
 
 ```ts
-import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod';
+import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
 import { jsonSchema } from './jsonSchema';

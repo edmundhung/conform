@@ -14,8 +14,8 @@ To validate FormData, use `parseWithZod`.
 
 ```ts
 import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
-import { z } from 'zod';
+import { parseWithZod } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
+import { z } from 'zod'; // Or, zod/v4 or zod/v4-mini
 
 const schema = z.object({
   email: z.string(),
