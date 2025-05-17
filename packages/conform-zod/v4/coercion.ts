@@ -1,5 +1,5 @@
-import type { $ZodType, $ZodTypes } from 'zod/v4/core';
-import { lazy, pipe, transform, union } from 'zod/v4-mini';
+import type { $ZodObjectDef, $ZodType, $ZodTypes } from 'zod/v4/core';
+import { lazy, pipe, transform } from 'zod/v4-mini';
 
 /**
  * Helpers for coercing string value
@@ -257,24 +257,45 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 			left: enableTypeCoercion(def.left, options),
 			right: enableTypeCoercion(def.right, options),
 		});
-	} else if (def.type === 'union') {
-		// From Zod v4, the `discriminatedUnion` schema is also defined as a `union`. I would like to use `constr`, i.e. `discriminatedUnion` like other schemas, but I can't do that.
-		// The reason is that `discriminatedUnion` cannot define the following schema.
-		// z.discriminatedUnion('type', [
-		//   z.any()
-		//     .transform(v => v == null ? {} : v)
-		//     .pipe(
-		//       z.object({
-		//         type: z.literal('a'),
-		//         number: z.number(),
-		//       })
-		//     ),
-		// ]);
-		// The `options` of `discriminatedUnion` basically defines the `object` schema, but `@conform-to/zod` requires `transform` to convert Object to an empty object when it is `undefined`, so the `union` schema is used.
-		// `discriminatedUnion` and `union` are strictly different schemas, but they behave similarly.
-		schema = union(
-			def.options.map((option) => enableTypeCoercion(option, options)),
+		// The `type` of `discriminatedUnion` is defined as 'union', so it can be determined from the class name used.
+	} else if (
+		def.type === 'union' &&
+		[...zod.traits][0]?.includes('DiscriminatedUnion')
+	) {
+		schema = pipe(
+			transform((value) => {
+				if (typeof value === 'undefined') {
+					// Defaults it to an empty object
+					return {};
+				}
+
+				return value;
+			}),
+			new constr({
+				...def,
+				options: def.options.map((item, index) => {
+					const objectDef = item._zod.def as $ZodObjectDef;
+					const object = new item._zod.constr({
+						...objectDef,
+						shape: Object.fromEntries(
+							Object.entries(objectDef.shape).map(([key, def]) => {
+								return [key, enableTypeCoercion(def, options)];
+							}),
+						),
+					}) as $ZodType<unknown, {}>;
+
+					object._zod.disc = def.options[index]?._zod.disc;
+					return object;
+				}),
+			}) as $ZodType<unknown, {}>,
 		);
+	} else if (def.type === 'union') {
+		schema = new constr({
+			...def,
+			options: def.options.map((item: $ZodType) =>
+				enableTypeCoercion(item, options),
+			),
+		});
 	} else if (def.type === 'tuple') {
 		schema = new constr({
 			...def,

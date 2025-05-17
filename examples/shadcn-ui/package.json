@@ -34,7 +34,7 @@
 		"react-dom": "^18.2.0",
 		"tailwind-merge": "^2.2.1",
 		"tailwindcss-animate": "^1.0.7",
-		"zod": "3.25.0-beta.20250516T044623"
+		"zod": "3.25.0-beta.20250517T041047"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.20",

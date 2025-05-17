@@ -91,6 +91,40 @@ describe('coercion', () => {
 					boolean: true,
 				},
 			});
+
+			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					type: ['Invalid input'],
+				},
+			});
+			expect(getResult(coerceFormValue(schemaWithMini).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					type: ['Invalid input'],
+				},
+			});
+
+			const nestedSchema = z.object({
+				nest: schema,
+			});
+			const nestedSchemaWithMini = object({
+				nest: schemaWithMini,
+			});
+			expect(getResult(coerceFormValue(nestedSchema).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					'nest.type': ['Invalid input'],
+				},
+			});
+			expect(
+				getResult(coerceFormValue(nestedSchemaWithMini).safeParse({})),
+			).toEqual({
+				success: false,
+				error: {
+					'nest.type': ['Invalid input'],
+				},
+			});
 		});
 	});
 });
