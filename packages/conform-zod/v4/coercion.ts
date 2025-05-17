@@ -284,6 +284,9 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 						),
 					}) as $ZodType<unknown, {}>;
 
+					// The discriminate key is obtained from the defined Object.
+					// If you regenerate the Object schema, the `disc` property disappears. Therefore, set the one obtained from the original Object.
+					// https://github.com/colinhacks/zod/blob/94871b708300ab67c4964025354c5199d335e55a/packages/zod/src/v4/core/schemas.ts#L2055-L2070
 					object._zod.disc = def.options[index]?._zod.disc;
 					return object;
 				}),
