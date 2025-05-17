@@ -81,8 +81,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
 
   examples/chakra-ui:
     dependencies:
@@ -228,8 +228,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -289,8 +289,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@types/react':
         specifier: ^18.2.43
@@ -347,8 +347,8 @@ importers:
         specifier: ^6.15.0
         version: 6.23.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@rollup/plugin-replace':
         specifier: ^5.0.2
@@ -402,8 +402,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@remix-run/dev':
         specifier: ^1.19.3
@@ -502,8 +502,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.3)
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@types/node':
         specifier: ^20.11.20
@@ -787,8 +787,8 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
 
   playground:
     dependencies:
@@ -841,8 +841,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.0-beta.20250517T041047
-        version: 3.25.0-beta.20250517T041047
+        specifier: 3.25.0-beta.20250517T081109
+        version: 3.25.0-beta.20250517T081109
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.9.1
@@ -11540,8 +11540,8 @@ packages:
   zod@3.24.0:
     resolution: {integrity: sha512-Hz+wiY8yD0VLA2k/+nsg2Abez674dDGTai33SwNvMPuf9uIrBC9eFgIMQxBBbHFxVXi8W+5nX9DcAh9YNSQm/w==}
 
-  zod@3.25.0-beta.20250517T041047:
-    resolution: {integrity: sha512-MBM4WKy1HIgi16vS1YXehW0gZq1E7QOQtfkN39XkaCqc8A9NlXHL/pXjUc7g3jpgGS2uPHiuJw3rLiGqOqf7PQ==}
+  zod@3.25.0-beta.20250517T081109:
+    resolution: {integrity: sha512-vC7QXH43FCFXPU8L5bB15xhrQzxDVnqKFpdk2KcBBuiQl5IlqSEGvDNFw4BhkshwlMsLsuuYfhF1uuHYXrGOZQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -24587,6 +24587,6 @@ snapshots:
 
   zod@3.24.0: {}
 
-  zod@3.25.0-beta.20250517T041047: {}
+  zod@3.25.0-beta.20250517T081109: {}
 
   zwitch@2.0.4: {}
