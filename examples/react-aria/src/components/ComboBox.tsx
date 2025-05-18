@@ -49,6 +49,7 @@ export function ComboBox<T extends object>({
 				{...props}
 				inputValue={control.value ?? ''}
 				onInputChange={(value) => control.change(value)}
+				onBlur={() => control.blur()}
 			>
 				<Label>{label}</Label>
 				<div className="my-combobox-container">

@@ -128,6 +128,7 @@ export default function App() {
 						<Radio value="en">English</Radio>
 						<Radio value="de">German</Radio>
 						<Radio value="ja">Japanese</Radio>
+						<Radio value="invalid">Invalid</Radio>
 					</RadioGroup>
 				</div>
 
@@ -137,6 +138,7 @@ export default function App() {
 						name={fields.colors.name}
 						defaultValue={fields.colors.defaultOptions}
 						isInvalid={!fields.colors.valid}
+						errors={fields.colors.errors}
 					>
 						<Checkbox value="red">Red</Checkbox>
 						<Checkbox value="green">Green</Checkbox>
@@ -146,7 +148,7 @@ export default function App() {
 
 				<div>
 					<DatePicker
-						label="Date"
+						label="Publish Date"
 						granularity="second"
 						name={fields.date.name}
 						defaultValue={fields.date.defaultValue}
@@ -157,7 +159,7 @@ export default function App() {
 
 				<div>
 					<DateRangePicker
-						label="Date Range"
+						label="Event Dates"
 						startName={rangeFields.start.name}
 						endName={rangeFields.end.name}
 						defaultValue={{
@@ -192,10 +194,8 @@ export default function App() {
 						errors={fields.author.errors}
 						allowsCustomValue
 					>
-						<ComboBoxItem id="carmen">Carmen</ComboBoxItem>
-						<ComboBoxItem id="emily">Emily</ComboBoxItem>
-						<ComboBoxItem id="james">James</ComboBoxItem>
-						<ComboBoxItem id="peter">Peter</ComboBoxItem>
+						<ComboBoxItem id="edmundhung">edmundhung</ComboBoxItem>
+						<ComboBoxItem id="chimame">chimame</ComboBoxItem>
 					</ComboBox>
 				</div>
 

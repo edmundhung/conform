@@ -78,6 +78,10 @@ export function DateRangePicker({
 					startControl.change(value?.start.toString() ?? '');
 					endControl.change(value?.end.toString() ?? '');
 				}}
+				onBlur={() => {
+					startControl.blur();
+					endControl.blur();
+				}}
 			>
 				<Label ref={labelRef}>{label}</Label>
 				<Group>

@@ -49,11 +49,14 @@ export function Select<T extends object>({
 
 	return (
 		<>
-			<select name={name} ref={control.register} hidden />
+			<select name={name} ref={control.register} hidden>
+				<option />
+			</select>
 			<AriaSelect
 				{...props}
 				selectedKey={control.value ?? null}
-				onSelectionChange={(key) => control.change(key.toString())}
+				onSelectionChange={(key) => control.change(key?.toString() ?? '')}
+				onBlur={() => control.blur()}
 			>
 				<Label ref={labelRef}>{label}</Label>
 				<Button>

@@ -9,6 +9,7 @@ import {
 
 import './TextField.css';
 import { useControl } from '@conform-to/react';
+import { useRef } from 'react';
 
 export interface TextFieldProps extends AriaTextFieldProps {
 	label?: string;
@@ -24,8 +25,12 @@ export function TextField({
 	errors,
 	...props
 }: TextFieldProps) {
+	const inputRef = useRef<HTMLInputElement>(null);
 	const control = useControl({
 		defaultValue,
+		onFocus() {
+			inputRef.current?.focus();
+		},
 	});
 
 	return (
@@ -36,9 +41,10 @@ export function TextField({
 				{...props}
 				value={control.value ?? ''}
 				onChange={(value) => control.change(value)}
+				onBlur={() => control.blur()}
 			>
 				<Label>{label}</Label>
-				<Input />
+				<Input ref={inputRef} />
 
 				{description && <Text slot="description">{description}</Text>}
 				<FieldError>{errors}</FieldError>

@@ -10,7 +10,7 @@ import { Button } from './Button';
 
 import './DateField.css';
 import { useControl } from '@conform-to/react';
-import { useRef } from 'react';
+import { useId, useRef } from 'react';
 
 export interface FileTriggerProps extends AriaFileTriggerProps {
 	label?: string;
@@ -30,6 +30,7 @@ export function FileTrigger({
 	children,
 	...props
 }: FileTriggerProps) {
+	const id = useId();
 	const buttonRef = useRef<HTMLButtonElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -50,9 +51,16 @@ export function FileTrigger({
 				{...props}
 				onSelect={(files) => control.change(files ? Array.from(files) : [])}
 			>
-				<Label>{label}</Label>
+				<Label htmlFor={`${id}-button`}>{label}</Label>
 				<div>
-					<Button ref={buttonRef}>{children}</Button>
+					<Button
+						id={`${id}-button`}
+						ref={buttonRef}
+						aria-describedby={isInvalid ? `${id}-error` : undefined}
+						onBlur={() => control.blur()}
+					>
+						{children}
+					</Button>
 				</div>
 				{control.files ? (
 					<ul>
@@ -65,6 +73,7 @@ export function FileTrigger({
 				) : null}
 				{description && <Text slot="description">{description}</Text>}
 				<FieldError
+					id={`${id}-error`}
 					style={{
 						fontSize: '12px',
 						color: 'var(--invalid-color)',

@@ -1,4 +1,5 @@
 import { useControl } from '@conform-to/react';
+import { useRef } from 'react';
 import {
 	Button,
 	FieldError,
@@ -29,7 +30,13 @@ export function NumberField({
 	errors,
 	...props
 }: NumberFieldProps) {
-	const control = useControl({ defaultValue });
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			inputRef.current?.focus();
+		},
+	});
 
 	return (
 		<>
@@ -44,7 +51,7 @@ export function NumberField({
 				<Label>{label}</Label>
 				<Group>
 					<Button slot="decrement">-</Button>
-					<Input />
+					<Input ref={inputRef} />
 					<Button slot="increment">+</Button>
 				</Group>
 				{description && <Text slot="description">{description}</Text>}

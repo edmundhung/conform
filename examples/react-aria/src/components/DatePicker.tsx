@@ -52,6 +52,7 @@ export function DatePicker({
 			{...props}
 			value={control.value ? parseDateTime(control.value) : null}
 			onChange={(value) => control.change(value?.toString() ?? '')}
+			onBlur={() => control.blur()}
 		>
 			<Label ref={labelRef}>{label}</Label>
 			<Group>
