@@ -1,5 +1,6 @@
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
+import { useState } from 'react';
 import { z } from 'zod';
 import { DateRangePicker } from './components/DateRangePicker';
 import { NumberField } from './components/NumberField';
@@ -30,17 +31,50 @@ const schema = z.object({
 });
 
 export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
+		defaultValue: {
+			email: searchParams.get('email'),
+			price: searchParams.get('price'),
+			language: searchParams.get('language'),
+			colors: searchParams.getAll('colors'),
+			date: searchParams.get('date'),
+			range: {
+				start: searchParams.get('range.start'),
+				end: searchParams.get('range.end'),
+			},
+			category: searchParams.get('category'),
+			author: searchParams.get('author'),
+			acceptTerms: searchParams.get('acceptTerms'),
+		},
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
-		onSubmit(event, { submission }) {
+		onSubmit(event, { formData, submission }) {
 			event.preventDefault();
 
+			// Demo only - This emulates a GET request with the form data populated in the URL.
+			const url = new URL(document.URL);
+			const searchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					// Skip the file as it is not serializable
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = searchParams.toString();
+			window.history.pushState(null, '', url);
+
+			setSearchParams(searchParams);
+
 			if (submission?.status === 'success') {
-				alert(JSON.stringify(submission.value, null, 2));
+				setSubmittedValue(submission.value);
 			}
 		},
 	});
@@ -48,7 +82,12 @@ export default function App() {
 
 	return (
 		<main>
-			<form id={form.id} onSubmit={form.onSubmit} noValidate>
+			<form
+				id={form.id}
+				onSubmit={form.onSubmit}
+				onChange={() => setSubmittedValue(null)}
+				noValidate
+			>
 				<div>
 					<h3>React Aria Example</h3>
 					<p>
@@ -138,9 +177,9 @@ export default function App() {
 						isInvalid={!fields.category.valid}
 						errors={fields.category.errors}
 					>
-						<SelectItem>Announcement</SelectItem>
-						<SelectItem>Blog</SelectItem>
-						<SelectItem>Guide</SelectItem>
+						<SelectItem id="announcement">Announcement</SelectItem>
+						<SelectItem id="blog">Blog</SelectItem>
+						<SelectItem id="guide">Guide</SelectItem>
 					</Select>
 				</div>
 
@@ -148,15 +187,15 @@ export default function App() {
 					<ComboBox
 						label="Author"
 						name={fields.author.name}
-						defaultInputValue={fields.author.defaultValue}
+						defaultValue={fields.author.defaultValue}
 						isInvalid={!fields.author.valid}
 						errors={fields.author.errors}
 						allowsCustomValue
 					>
-						<ComboBoxItem>Carmen</ComboBoxItem>
-						<ComboBoxItem>Emily</ComboBoxItem>
-						<ComboBoxItem>James</ComboBoxItem>
-						<ComboBoxItem>Peter</ComboBoxItem>
+						<ComboBoxItem id="carmen">Carmen</ComboBoxItem>
+						<ComboBoxItem id="emily">Emily</ComboBoxItem>
+						<ComboBoxItem id="james">James</ComboBoxItem>
+						<ComboBoxItem id="peter">Peter</ComboBoxItem>
 					</ComboBox>
 				</div>
 
@@ -181,8 +220,15 @@ export default function App() {
 					</Checkbox>
 				</div>
 
+				{submittedValue ? (
+					<div>
+						<h4>Value submitted</h4>
+						<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+					</div>
+				) : null}
+
 				<footer>
-					<Button type="reset" onClick={() => form.reset()}>
+					<Button type="button" onClick={() => form.reset()}>
 						Reset
 					</Button>
 					<Button type="submit">Submit</Button>

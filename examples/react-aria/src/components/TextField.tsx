@@ -8,6 +8,7 @@ import {
 } from 'react-aria-components';
 
 import './TextField.css';
+import { useControl } from '@conform-to/react';
 
 export interface TextFieldProps extends AriaTextFieldProps {
 	label?: string;
@@ -17,16 +18,31 @@ export interface TextFieldProps extends AriaTextFieldProps {
 
 export function TextField({
 	label,
+	name,
+	defaultValue,
 	description,
 	errors,
 	...props
 }: TextFieldProps) {
+	const control = useControl({
+		defaultValue,
+	});
+
 	return (
-		<AriaTextField {...props}>
-			<Label>{label}</Label>
-			<Input />
-			{description && <Text slot="description">{description}</Text>}
-			<FieldError>{errors}</FieldError>
-		</AriaTextField>
+		<>
+			{/* The base input is used to make sure the TextField could reset to the latest default value */}
+			<input ref={control.register} name={name} hidden />
+			<AriaTextField
+				{...props}
+				value={control.value ?? ''}
+				onChange={(value) => control.change(value)}
+			>
+				<Label>{label}</Label>
+				<Input />
+
+				{description && <Text slot="description">{description}</Text>}
+				<FieldError>{errors}</FieldError>
+			</AriaTextField>
+		</>
 	);
 }

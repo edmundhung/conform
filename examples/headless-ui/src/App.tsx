@@ -1,5 +1,6 @@
 import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
+import { useState } from 'react';
 import { z } from 'zod';
 import {
 	ExampleListBox,
@@ -24,23 +25,42 @@ const options = [
 ];
 
 export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		defaultValue: {
-			owner: ['2', '4'],
-			assignee: '1',
-			enabled: true,
-			color: 'Pink',
+			owner: searchParams.getAll('owner'),
+			assignee: searchParams.get('assignee'),
+			enabled: searchParams.get('enabled'),
+			color: searchParams.get('color'),
 		},
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
-		onSubmit(event, { submission }) {
+		onSubmit(event, { formData, submission }) {
 			event.preventDefault();
 
+			// Demo only - This emulates a GET request with the form data populated in the URL.
+			const url = new URL(document.URL);
+			const searchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					// Skip the file as it is not serializable
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = searchParams.toString();
+			window.history.pushState(null, '', url);
+
+			setSearchParams(searchParams);
+
 			if (submission?.status === 'success') {
-				alert(JSON.stringify(submission.value, null, 2));
+				setSubmittedValue(submission.value);
 			}
 		},
 	});
@@ -51,84 +71,87 @@ export default function App() {
 				className="space-y-8 divide-y divide-gray-200"
 				id={form.id}
 				onSubmit={form.onSubmit}
+				onChange={() => setSubmittedValue(null)}
 				noValidate
 			>
-				<div className="space-y-8 divide-y divide-gray-200">
+				<div className="space-y-8">
 					<div>
-						<div>
-							<h3 className="text-lg font-medium leading-6 text-gray-900">
-								Headless UI Example
-							</h3>
-							<p className="mt-1 text-sm text-gray-500">
-								This shows you how to integrate Conform with headless-ui
-								components, such as ListBox, Combobox, Switch and RadioGroup.
+						<h3 className="text-lg font-medium leading-6 text-gray-900">
+							Headless UI Example
+						</h3>
+						<p className="mt-4 text-gray-500">
+							This example shows you how to integrate Conform with Headless UI.
+							When the form is submitted, the search params will be updated with
+							the form data and is set as the default value of the form.
+						</p>
+					</div>
+
+					<div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+						<div className="sm:col-span-6">
+							<label className="block text-sm font-medium text-gray-700">
+								Owner (List box)
+							</label>
+							<div className="mt-1">
+								<ExampleListBox
+									name={fields.owner.name}
+									defaultValue={fields.owner.defaultOptions}
+									options={options}
+								/>
+							</div>
+							<p className="mt-2 text-sm text-red-500">{fields.owner.errors}</p>
+						</div>
+
+						<div className="sm:col-span-6">
+							<label className="block text-sm font-medium text-gray-700">
+								Assigned to (Combobox)
+							</label>
+							<div className="mt-1">
+								<ExampleCombobox
+									name={fields.assignee.name}
+									defaultValue={fields.assignee.defaultValue}
+									options={options}
+								/>
+							</div>
+							<p className="mt-2 text-sm text-red-500">
+								{fields.assignee.errors}
 							</p>
 						</div>
 
-						<div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-							<div className="sm:col-span-6">
-								<label className="block text-sm font-medium text-gray-700">
-									Owner (List box)
-								</label>
-								<div className="mt-1">
-									<ExampleListBox
-										name={fields.owner.name}
-										defaultValue={fields.owner.defaultOptions}
-										options={options}
-									/>
-								</div>
-								<p className="mt-2 text-sm text-red-500">
-									{fields.owner.errors}
-								</p>
+						<div className="sm:col-span-6">
+							<label className="block text-sm font-medium text-gray-700">
+								Enabled (Switch)
+							</label>
+							<div className="mt-1">
+								<ExampleSwitch
+									name={fields.enabled.name}
+									defaultChecked={fields.enabled.defaultValue === 'on'}
+								/>
 							</div>
+							<p className="mt-2 text-sm text-red-500">
+								{fields.enabled.errors}
+							</p>
+						</div>
 
-							<div className="sm:col-span-6">
-								<label className="block text-sm font-medium text-gray-700">
-									Assigned to (Combobox)
-								</label>
-								<div className="mt-1">
-									<ExampleCombobox
-										name={fields.assignee.name}
-										defaultValue={fields.assignee.defaultValue}
-										options={options}
-									/>
-								</div>
-								<p className="mt-2 text-sm text-red-500">
-									{fields.assignee.errors}
-								</p>
+						<div className="sm:col-span-6">
+							<label className="block text-sm font-medium text-gray-700">
+								Color (Radio Group)
+							</label>
+							<div className="mt-1">
+								<ExampleRadioGroup
+									name={fields.color.name}
+									defaultValue={fields.color.defaultValue}
+								/>
 							</div>
-
-							<div className="sm:col-span-6">
-								<label className="block text-sm font-medium text-gray-700">
-									Enabled (Switch)
-								</label>
-								<div className="mt-1">
-									<ExampleSwitch
-										name={fields.enabled.name}
-										defaultChecked={fields.enabled.defaultValue === 'on'}
-									/>
-								</div>
-								<p className="mt-2 text-sm text-red-500">
-									{fields.enabled.errors}
-								</p>
-							</div>
-
-							<div className="sm:col-span-6">
-								<label className="block text-sm font-medium text-gray-700">
-									Color (Radio Group)
-								</label>
-								<div className="mt-1">
-									<ExampleRadioGroup
-										name={fields.color.name}
-										defaultValue={fields.color.defaultValue}
-									/>
-								</div>
-								<p className="mt-2 text-sm text-red-500">
-									{fields.color.errors}
-								</p>
-							</div>
+							<p className="mt-2 text-sm text-red-500">{fields.color.errors}</p>
 						</div>
 					</div>
+
+					{submittedValue ? (
+						<div className="text-sm">
+							<h4 className="mb-2">Value submitted</h4>
+							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+						</div>
+					) : null}
 				</div>
 
 				<div className="pt-5">

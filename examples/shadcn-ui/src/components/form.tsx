@@ -1,5 +1,9 @@
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import {
+	Calendar as CalendarIcon,
+	Check as CheckIcon,
+	ChevronsUpDown as ChevronsUpDownIcon,
+} from 'lucide-react';
 import { useRef } from 'react';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
@@ -31,7 +35,6 @@ import { useControl } from '@conform-to/react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-import { Check, ChevronsUpDown } from 'lucide-react';
 
 type FieldProps = {
 	children: React.ReactNode;
@@ -157,7 +160,7 @@ function ExampleCountryPicker({
 							? countries.find((country) => country.value === control.value)
 									?.label
 							: 'Select country'}
-						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+						<ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-[200px] p-0">
@@ -174,7 +177,7 @@ function ExampleCountryPicker({
 											control.change(country.value);
 										}}
 									>
-										<Check
+										<CheckIcon
 											className={cn(
 												'mr-2 h-4 w-4',
 												country.value === control.value
@@ -308,7 +311,7 @@ function ExampleSelect({
 					}
 				}}
 			>
-				<SelectTrigger>
+				<SelectTrigger ref={selectRef}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
@@ -454,16 +457,12 @@ function ExampleMultiToggleGroup({
 
 	return (
 		<>
-			<select multiple name={name} ref={control.register} hidden>
-				{defaultValue?.map((item) => <option key={item} value={item} />)}
-			</select>
+			<select multiple name={name} ref={control.register} hidden />
 			<ToggleGroup
 				type="multiple"
 				ref={toggleGroupRef}
 				value={control.options ?? []}
-				onValueChange={(value) => {
-					control.change(value);
-				}}
+				onValueChange={(value) => control.change(value)}
 				onBlur={() => control.blur()}
 			>
 				{items.map((item) => (

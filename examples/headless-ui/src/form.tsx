@@ -26,19 +26,11 @@ export function ExampleListBox({
 			onChange={(value) => control.change(value)}
 			multiple
 		>
-			<select
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-				multiple
-			>
-				{defaultValue?.map((item) => <option key={item} value={item} />)}
-			</select>
+			<select ref={control.register} name={name} hidden multiple />
 			<div className="relative mt-1" onBlur={() => control.blur()}>
 				<Listbox.Button className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm">
 					<span className="block truncate">
-						{!control.options
+						{!control.options || control.options.length === 0
 							? 'Please select'
 							: control.options
 									.map((value) => options.find((o) => o.value === value)?.label)
@@ -116,18 +108,13 @@ export function ExampleCombobox({
 	return (
 		<Combobox
 			as="div"
-			value={control.value ?? ''}
+			value={control.value ?? null}
 			onChange={(value) => control.change(value ?? '')}
 			onBlur={() => control.blur()}
 			nullable
 		>
 			<div className="relative mt-1">
-				<input
-					name={name}
-					ref={control.register}
-					defaultValue={defaultValue}
-					hidden
-				/>
+				<input name={name} ref={control.register} hidden />
 				<Combobox.Input
 					className="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
 					onChange={(event) => setQuery(event.target.value)}
@@ -147,7 +134,7 @@ export function ExampleCombobox({
 						{filteredOptions.map((option) => (
 							<Combobox.Option
 								key={option.value}
-								value={`${option.value}`}
+								value={option.value}
 								className={({ active }) =>
 									classNames(
 										'relative cursor-default select-none py-2 pl-3 pr-9',
@@ -204,10 +191,9 @@ export function ExampleSwitch({
 		<>
 			<input
 				type="checkbox"
+				className="hidden"
 				name={name}
 				ref={control.register}
-				defaultChecked={defaultChecked}
-				value={value}
 				hidden
 			/>
 			<Switch
@@ -266,12 +252,7 @@ export function ExampleRadioGroup({
 			onChange={(value) => input.change(value)}
 			onBlur={() => input.blur()}
 		>
-			<input
-				name={name}
-				ref={input.register}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input name={name} ref={input.register} hidden />
 			<div className="mt-4 flex items-center space-x-3">
 				{colors.map((color) => (
 					<RadioGroup.Option

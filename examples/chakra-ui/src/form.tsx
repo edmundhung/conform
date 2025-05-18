@@ -24,17 +24,22 @@ type ExampleNumberProps = {
 };
 
 export function ExampleNumberInput({ name, defaultValue }: ExampleNumberProps) {
-	const control = useControl({ defaultValue });
+	const inputRef = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			inputRef.current?.focus();
+		},
+	});
 
 	return (
 		<NumberInput
-			isRequired
-			name={name}
 			value={control.value ?? ''}
 			onChange={(value) => control.change(value)}
 			onBlur={() => control.blur()}
 		>
-			<NumberInputField ref={control.register} />
+			<input name={name} ref={control.register} hidden />
+			<NumberInputField ref={inputRef} />
 			<NumberInputStepper>
 				<NumberIncrementStepper />
 				<NumberDecrementStepper />
@@ -56,25 +61,19 @@ export function ExamplePinInput({ name, defaultValue }: ExamplePinProps) {
 			ref.current?.focus();
 		},
 	});
+
 	return (
-		<>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
-			/>
-			<PinInput
-				type="alphanumeric"
-				value={control.value ?? ''}
-				onChange={(value) => control.change(value)}
-			>
-				<PinInputField ref={ref} onBlur={() => control.blur()} />
-				<PinInputField onBlur={() => control.blur()} />
-				<PinInputField onBlur={() => control.blur()} />
-				<PinInputField onBlur={() => control.blur()} />
-			</PinInput>
-		</>
+		<PinInput
+			type="alphanumeric"
+			value={control.value ?? ''}
+			onChange={(value) => control.change(value)}
+		>
+			<input name={name} ref={control.register} hidden />
+			<PinInputField onBlur={() => control.blur()} ref={ref} />
+			<PinInputField onBlur={() => control.blur()} />
+			<PinInputField onBlur={() => control.blur()} />
+			<PinInputField onBlur={() => control.blur()} />
+		</PinInput>
 	);
 }
 
@@ -91,27 +90,20 @@ export function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 	});
 
 	return (
-		<>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
-			/>
-			<Slider
-				min={0}
-				max={10}
-				step={1}
-				value={control.value ? Number(control.value) : 0}
-				onChange={(number) => control.change(number.toString())}
-				onBlur={() => control.blur()}
-			>
-				<SliderTrack>
-					<SliderFilledTrack />
-				</SliderTrack>
-				<SliderThumb ref={ref} />
-			</Slider>
-		</>
+		<Slider
+			min={0}
+			max={10}
+			step={1}
+			value={control.value ? Number(control.value) : 0}
+			onChange={(number) => control.change(number.toString())}
+			onBlur={() => control.blur()}
+		>
+			<input name={name} ref={control.register} hidden />
+			<SliderTrack>
+				<SliderFilledTrack />
+			</SliderTrack>
+			<SliderThumb ref={ref} />
+		</Slider>
 	);
 }
 
@@ -156,21 +148,14 @@ export function ExampleEditable({ name, defaultValue }: ExampleEditableProps) {
 	});
 
 	return (
-		<>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
-			/>
-			<Editable
-				placeholder="No content"
-				value={control.value ?? ''}
-				onChange={(value) => control.change(value)}
-			>
-				<EditablePreview ref={ref} />
-				<EditableInput />
-			</Editable>
-		</>
+		<Editable
+			placeholder="No content"
+			value={control.value ?? ''}
+			onChange={(value) => control.change(value)}
+		>
+			<input name={name} ref={control.register} hidden />
+			<EditablePreview ref={ref} />
+			<EditableInput />
+		</Editable>
 	);
 }

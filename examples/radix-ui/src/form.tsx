@@ -4,12 +4,14 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 } from '@radix-ui/react-icons';
-import * as RadixSelect from '@radix-ui/react-select';
-import * as RadixToggleGroup from '@radix-ui/react-toggle-group';
-import * as RadixSwitch from '@radix-ui/react-switch';
-import * as RadixCheckbox from '@radix-ui/react-checkbox';
-import * as RadixSlider from '@radix-ui/react-slider';
-import * as RadixRadioGroup from '@radix-ui/react-radio-group';
+import {
+	Select as RadixSelect,
+	ToggleGroup as RadixToggleGroup,
+	Switch as RadixSwitch,
+	Checkbox as RadixCheckbox,
+	Slider as RadixSlider,
+	RadioGroup as RadixRadioGroup,
+} from 'radix-ui';
 import clsx from 'clsx';
 import { type ElementRef, useRef } from 'react';
 
@@ -36,12 +38,7 @@ export function ExampleSelect({
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input ref={control.register} name={name} hidden />
 			<RadixSelect.Root
 				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
@@ -53,7 +50,7 @@ export function ExampleSelect({
 			>
 				<RadixSelect.Trigger
 					ref={selectRef}
-					className="w-1/2 inline-flex items-center justify-between rounded-md px-4 py-2 gap-1 bg-white hover:bg-amber-700/30 focus:ring-2 focus:ring-amber-500 data-[placeholder]:text-neutral-400 outline-none"
+					className="w-1/2 inline-flex items-center justify-between rounded-md px-4 py-2 gap-1 bg-white border hover:bg-neutral-500/30 focus:ring-2 focus:ring-neutral-500 data-[placeholder]:text-neutral-400 outline-none"
 				>
 					<RadixSelect.Value placeholder={placeholder} />
 					<RadixSelect.Icon>
@@ -67,7 +64,7 @@ export function ExampleSelect({
 						sideOffset={5}
 						className="overflow-hidden bg-white rounded-md shadow-md w-[--radix-select-trigger-width]"
 					>
-						<RadixSelect.ScrollUpButton className="flex items-center justify-center h-6 bg-white text-amber-700 cursor-default">
+						<RadixSelect.ScrollUpButton className="flex items-center justify-center h-6 bg-white text-neutral-700 cursor-default">
 							<ChevronUpIcon />
 						</RadixSelect.ScrollUpButton>
 						<RadixSelect.Viewport className="p-1">
@@ -78,7 +75,7 @@ export function ExampleSelect({
 											value={item.value}
 											id={item.value}
 											key={item.value}
-											className="rounded-md flex items-center h-8 pr-4 pl-6 relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-amber-100"
+											className="rounded-md flex items-center h-8 pr-4 pl-6 relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-neutral-100"
 										>
 											<RadixSelect.ItemText>{item.name}</RadixSelect.ItemText>
 											<RadixSelect.ItemIndicator className="absolute left-0 w-6 inline-flex items-center justify-center">
@@ -89,7 +86,7 @@ export function ExampleSelect({
 								})}
 							</RadixSelect.Group>
 						</RadixSelect.Viewport>
-						<RadixSelect.ScrollDownButton className="flex items-center justify-center h-6 bg-white text-amber-700 cursor-default">
+						<RadixSelect.ScrollDownButton className="flex items-center justify-center h-6 bg-white text-neutral-700 cursor-default">
 							<ChevronDownIcon />
 						</RadixSelect.ScrollDownButton>
 					</RadixSelect.Content>
@@ -120,12 +117,7 @@ export function ExampleToggleGroup({
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input ref={control.register} name={name} hidden />
 			<RadixToggleGroup.Root
 				type="single"
 				value={control.value}
@@ -139,7 +131,7 @@ export function ExampleToggleGroup({
 				{items.map((item) => (
 					<RadixToggleGroup.Item
 						key={item.value}
-						className="p-1 hover:bg-amber-700/30 color-amber-100 data-[state=on]:bg-amber-800 data-[state=on]:text-white flex grow items-center justify-center bg-transparent first:rounded-l-lg last:rounded-r-lg focus:z-10 focus:ring-2 focus:outline-none  focus:ring-amber-500"
+						className="p-1 hover:bg-neutral-700/30 color-neutral-100 data-[state=on]:bg-neutral-800 data-[state=on]:text-white flex grow items-center justify-center bg-transparent first:rounded-l-lg last:rounded-r-lg focus:z-10 focus:ring-2 focus:outline-none  focus:ring-neutral-500"
 						value={item.value}
 						aria-label={item.label}
 					>
@@ -173,19 +165,13 @@ export function ExampleSwitch({
 
 	return (
 		<>
-			<input
-				type="checkbox"
-				ref={control.register}
-				name={name}
-				defaultChecked={defaultChecked}
-				hidden
-			/>
+			<input type="checkbox" ref={control.register} name={name} hidden />
 			<RadixSwitch.Root
 				ref={switchRef}
-				checked={control.value === value}
+				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
-				className="w-[42px] h-[25px] bg-amber-700/30 rounded-full relative focus:ring-2 focus:ring-amber-500 data-[state=checked]:bg-amber-700 outline-none cursor-default"
+				className="w-[42px] h-[25px] bg-neutral-700/30 rounded-full relative focus:ring-2 focus:ring-neutral-500 data-[state=checked]:bg-neutral-700 outline-none cursor-default"
 			>
 				<RadixSwitch.Thumb className="block size-5 bg-white rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px]" />
 			</RadixSwitch.Root>
@@ -214,12 +200,7 @@ export function ExampleSlider({
 
 	return (
 		<div className="flex items-center gap-4">
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input ref={control.register} name={name} hidden />
 			<RadixSlider.Root
 				value={[control.value ? parseFloat(control.value) : 0]}
 				className="relative flex items-center select-none touch-none w-full h-5"
@@ -231,11 +212,11 @@ export function ExampleSlider({
 				step={1}
 			>
 				<RadixSlider.Track className="bg-neutral-400 relative grow rounded-full h-1">
-					<RadixSlider.Range className="absolute bg-amber-700/40 rounded-full h-full" />
+					<RadixSlider.Range className="absolute bg-neutral-700/40 rounded-full h-full" />
 				</RadixSlider.Track>
 				<RadixSlider.Thumb
 					ref={thumbRef}
-					className="block size-5 shadow-md rounded-full bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 border"
+					className="block size-5 shadow-md rounded-full bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-500 border"
 				/>
 			</RadixSlider.Root>
 			<div>{control.value}</div>
@@ -264,12 +245,7 @@ export function ExampleRadioGroup({
 
 	return (
 		<>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input ref={control.register} name={name} hidden />
 			<RadixRadioGroup.Root
 				ref={radioGroupRef}
 				className="flex items-center gap-4"
@@ -285,12 +261,12 @@ export function ExampleRadioGroup({
 								value={item.value}
 								className={clsx(
 									'size-5 rounded-full outline-none cursor-default',
-									'border hover:bg-amber-50 focus:ring-amber-500 focus:ring-2',
+									'border hover:bg-neutral-50 focus:ring-neutral-500 focus:ring-2',
 									'flex items-center justify-center',
 									'bg-white',
 								)}
 							>
-								<RadixRadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:size-2.5 after:rounded-full after:bg-amber-700" />
+								<RadixRadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:size-2.5 after:rounded-full after:bg-neutral-700" />
 							</RadixRadioGroup.Item>
 							<label htmlFor={item.value}>{item.label}</label>
 						</div>
@@ -323,22 +299,15 @@ export function ExampleCheckbox({
 
 	return (
 		<>
-			<input
-				type="checkbox"
-				ref={control.register}
-				name={name}
-				hidden
-				defaultChecked={defaultChecked}
-				value={value}
-			/>
+			<input type="checkbox" ref={control.register} name={name} hidden />
 			<RadixCheckbox.Root
 				ref={checkboxRef}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
 				onBlur={() => control.blur()}
-				className="hover:bg-amber-50 flex size-5 appearance-none items-center justify-center rounded-md bg-white outline-none border focus:ring-amber-500 focus:ring-2"
+				className="hover:bg-neutral-50 flex size-5 appearance-none items-center justify-center rounded-md bg-white outline-none border focus:ring-neutral-500 focus:ring-2"
 			>
-				<RadixCheckbox.Indicator className="text-amber-900">
+				<RadixCheckbox.Indicator className="text-neutral-900">
 					<CheckIcon />
 				</RadixCheckbox.Indicator>
 			</RadixCheckbox.Root>

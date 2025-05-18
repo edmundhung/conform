@@ -14,6 +14,7 @@ import {
 } from 'react-aria-components';
 
 import './Select.css';
+import { useRef } from 'react';
 
 export interface SelectProps<T extends object>
 	extends Omit<
@@ -38,33 +39,34 @@ export function Select<T extends object>({
 	items,
 	...props
 }: SelectProps<T>) {
-	const control = useControl({ defaultValue });
+	const labelRef = useRef<HTMLLabelElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			labelRef.current?.click();
+		},
+	});
 
 	return (
-		<AriaSelect
-			{...props}
-			selectedKey={control.value ?? null}
-			onSelectionChange={(key) => control.change(key.toString())}
-		>
-			<Label>{label}</Label>
-			<Button>
-				<SelectValue />
-				<span aria-hidden="true">▼</span>
-			</Button>
-			{description && <Text slot="description">{description}</Text>}
-			<FieldError>{errors}</FieldError>
-			<Popover>
-				<ListBox items={items}>{children}</ListBox>
-			</Popover>
-			<select
-				name={name}
-				defaultValue={defaultValue}
-				ref={control.register}
-				hidden
+		<>
+			<select name={name} ref={control.register} hidden />
+			<AriaSelect
+				{...props}
+				selectedKey={control.value ?? null}
+				onSelectionChange={(key) => control.change(key.toString())}
 			>
-				<option />
-			</select>
-		</AriaSelect>
+				<Label ref={labelRef}>{label}</Label>
+				<Button>
+					<SelectValue />
+					<span aria-hidden="true">▼</span>
+				</Button>
+				{description && <Text slot="description">{description}</Text>}
+				<FieldError>{errors}</FieldError>
+				<Popover>
+					<ListBox items={items}>{children}</ListBox>
+				</Popover>
+			</AriaSelect>
+		</>
 	);
 }
 

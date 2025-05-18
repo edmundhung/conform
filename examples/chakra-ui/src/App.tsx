@@ -24,6 +24,7 @@ import {
 	ExampleSlider,
 } from './form';
 import { z } from 'zod';
+import { useState } from 'react';
 
 const schema = z.object({
 	email: z.string(),
@@ -39,17 +40,48 @@ const schema = z.object({
 });
 
 export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
+		defaultValue: {
+			email: searchParams.get('email'),
+			language: searchParams.get('language'),
+			description: searchParams.get('description'),
+			quantity: searchParams.get('quantity'),
+			pin: searchParams.get('pin'),
+			title: searchParams.get('title'),
+			subscribe: searchParams.get('subscribe'),
+			enabled: searchParams.get('enabled'),
+			progress: searchParams.get('progress'),
+			active: searchParams.get('active'),
+		},
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
-		onSubmit(event, { submission }) {
+		onSubmit(event, { formData, submission }) {
 			event.preventDefault();
 
+			// Demo only - This emulates a GET request with the form data populated in the URL.
+			const url = new URL(document.URL);
+			const searchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					// Skip the file as it is not serializable
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = searchParams.toString();
+			window.history.pushState(null, '', url);
+
+			setSearchParams(searchParams);
+
 			if (submission?.status === 'success') {
-				alert(JSON.stringify(submission.value, null, 2));
+				setSubmittedValue(submission.value);
 			}
 		},
 	});
@@ -60,14 +92,21 @@ export default function App() {
 				<Stack direction="column" spacing={8}>
 					<header>
 						<Heading mb={4}>Chakra UI Example</Heading>
-						<Text fontSize="xl">
-							This shows you how to integrate forms components with Conform.
+						<Text>
+							This example shows you how to integrate Chakra UI with Conform.
+							When the form is submitted, the search params will be updated with
+							the form data and is set as the default value of the form.
 						</Text>
 					</header>
 
 					<FormControl isInvalid={!fields.email.valid}>
 						<FormLabel>Email (Input)</FormLabel>
-						<Input type="email" name={fields.email.name} required />
+						<Input
+							type="email"
+							name={fields.email.name}
+							defaultValue={fields.email.defaultValue}
+							required
+						/>
 						<FormErrorMessage>{fields.email.errors}</FormErrorMessage>
 					</FormControl>
 
@@ -75,6 +114,7 @@ export default function App() {
 						<FormLabel>Language (Select)</FormLabel>
 						<Select
 							name={fields.language.name}
+							defaultValue={fields.language.defaultValue}
 							placeholder="Select option"
 							required
 						>
@@ -87,7 +127,11 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.description.valid}>
 						<FormLabel>Description (Textarea)</FormLabel>
-						<Textarea name={fields.description.name} required />
+						<Textarea
+							name={fields.description.name}
+							defaultValue={fields.description.defaultValue}
+							required
+						/>
 						<FormErrorMessage>{fields.description.errors}</FormErrorMessage>
 					</FormControl>
 
@@ -111,13 +155,21 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.title.valid}>
 						<FormLabel>Title (Editable)</FormLabel>
-						<ExampleEditable name={fields.title.name} />
+						<ExampleEditable
+							name={fields.title.name}
+							defaultValue={fields.title.defaultValue}
+						/>
 						<FormErrorMessage>{fields.title.errors}</FormErrorMessage>
 					</FormControl>
 
 					<FormControl isInvalid={!fields.subscribe.valid}>
 						<FormLabel>Subscribe (Checkbox)</FormLabel>
-						<Checkbox name={fields.subscribe.name} value="on" required>
+						<Checkbox
+							name={fields.subscribe.name}
+							value="on"
+							defaultChecked={fields.subscribe.defaultValue === 'on'}
+							required
+						>
 							Newsletter
 						</Checkbox>
 						<FormErrorMessage>{fields.subscribe.errors}</FormErrorMessage>
@@ -125,7 +177,12 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.enabled.valid}>
 						<FormLabel>Enabled (Switch)</FormLabel>
-						<Switch name={fields.enabled.name} value="on" required />
+						<Switch
+							name={fields.enabled.name}
+							value="on"
+							defaultChecked={fields.enabled.defaultValue === 'on'}
+							required
+						/>
 						<FormErrorMessage>{fields.enabled.errors}</FormErrorMessage>
 					</FormControl>
 
@@ -140,7 +197,10 @@ export default function App() {
 
 					<FormControl isInvalid={!fields.active.valid}>
 						<FormLabel>Active (Radio)</FormLabel>
-						<ExampleRadioGroup name={fields.active.name}>
+						<ExampleRadioGroup
+							name={fields.active.name}
+							defaultValue={fields.active.defaultValue}
+						>
 							<Stack spacing={5} direction="row">
 								<Radio value="yes">Yes</Radio>
 								<Radio value="no">No</Radio>
@@ -149,8 +209,19 @@ export default function App() {
 						<FormErrorMessage>{fields.active.errors}</FormErrorMessage>
 					</FormControl>
 
+					{submittedValue ? (
+						<div>
+							<Text mb={2}>Value submitted</Text>
+							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+						</div>
+					) : null}
+
 					<Stack direction="row" justifyContent="flex-end">
-						<Button type="reset" variant="outline" onClick={() => form.reset()}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => form.reset()}
+						>
 							Reset
 						</Button>
 						<Button type="submit" variant="solid">

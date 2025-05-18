@@ -1128,7 +1128,7 @@ export function createFormContext<
 										(Array.isArray(value) &&
 											value.every((item) => typeof item === 'string'))
 										? value
-										: '',
+										: null,
 								);
 
 								// Update the element attribute to notify useControl / useInputControl hook
@@ -1140,19 +1140,17 @@ export function createFormContext<
 				}
 				case 'reset': {
 					const prefix = formatName(intent.payload.name, intent.payload.index);
-
 					for (const element of formElement.elements) {
 						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
 							const defaultValue = getValue(meta.defaultValue, element.name);
-							const value =
-								typeof defaultValue === 'string' ||
-								(Array.isArray(defaultValue) &&
-									defaultValue.every((item) => typeof item === 'string'))
-									? defaultValue
-									: null;
 
-							updateFieldValue(element, value, {
-								defaultValue: true,
+							updateFieldValue(element, undefined, {
+								defaultValue:
+									typeof defaultValue === 'string' ||
+									(Array.isArray(defaultValue) &&
+										defaultValue.every((item) => typeof item === 'string'))
+										? defaultValue
+										: undefined,
 							});
 
 							if (prefix !== '') {

@@ -1,3 +1,4 @@
+import { useControl } from '@conform-to/react';
 import {
 	Button,
 	FieldError,
@@ -10,7 +11,6 @@ import {
 } from 'react-aria-components';
 
 import './NumberField.css';
-import { useControl } from '@conform-to/react';
 
 export interface NumberFieldProps
 	extends Omit<AriaNumberFieldProps, 'defaultValue' | 'value' | 'onChange'> {
@@ -32,20 +32,24 @@ export function NumberField({
 	const control = useControl({ defaultValue });
 
 	return (
-		<AriaNumberField
-			{...props}
-			value={control.value ? Number(control.value) : undefined}
-			onChange={(number) => control.change(number.toString())}
-			onBlur={() => control.blur()}
-		>
-			<Label>{label}</Label>
-			<Group>
-				<Button slot="decrement">-</Button>
-				<Input name={name} ref={control.register} />
-				<Button slot="increment">+</Button>
-			</Group>
-			{description && <Text slot="description">{description}</Text>}
-			<FieldError>{errors}</FieldError>
-		</AriaNumberField>
+		<>
+			{/* The base input is used to make sure the NumberField could reset to the latest default value */}
+			<input ref={control.register} name={name} hidden />
+			<AriaNumberField
+				{...props}
+				value={control.value ? Number(control.value) : undefined}
+				onChange={(number) => control.change(number.toString())}
+				onBlur={() => control.blur()}
+			>
+				<Label>{label}</Label>
+				<Group>
+					<Button slot="decrement">-</Button>
+					<Input />
+					<Button slot="increment">+</Button>
+				</Group>
+				{description && <Text slot="description">{description}</Text>}
+				<FieldError>{errors}</FieldError>
+			</AriaNumberField>
+		</>
 	);
 }

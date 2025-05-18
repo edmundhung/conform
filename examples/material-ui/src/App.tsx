@@ -2,26 +2,27 @@ import { useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import { z } from 'zod';
 import {
-	TextField,
 	Button,
 	Stack,
 	Container,
 	Typography,
-	Checkbox,
 	FormControl,
 	FormControlLabel,
 	FormGroup,
 	FormHelperText,
 	FormLabel,
-	RadioGroup,
 	Radio,
-	Switch,
+	MenuItem,
 } from '@mui/material';
+import { useState } from 'react';
 import {
-	ExampleSelect,
-	ExampleAutocomplete,
-	ExampleRating,
-	ExampleSlider,
+	TextField,
+	Autocomplete,
+	Checkbox,
+	RadioGroup,
+	Switch,
+	Rating,
+	Slider,
 } from './form';
 
 const schema = z.object({
@@ -37,17 +38,47 @@ const schema = z.object({
 });
 
 export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
+		defaultValue: {
+			email: searchParams.get('email'),
+			description: searchParams.get('description'),
+			language: searchParams.get('language'),
+			movie: searchParams.get('movie'),
+			subscribe: searchParams.get('subscribe'),
+			active: searchParams.get('active'),
+			enabled: searchParams.get('enabled'),
+			score: searchParams.get('score'),
+			progress: searchParams.get('progress'),
+		},
 		onValidate({ formData }) {
 			return parseWithZod(formData, { schema });
 		},
-		onSubmit(event, { submission }) {
+		onSubmit(event, { formData, submission }) {
 			event.preventDefault();
 
+			// Demo only - This emulates a GET request with the form data populated in the URL.
+			const url = new URL(document.URL);
+			const searchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					// Skip the file as it is not serializable
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = searchParams.toString();
+			window.history.pushState(null, '', url);
+
+			setSearchParams(searchParams);
+
 			if (submission?.status === 'success') {
-				alert(JSON.stringify(submission.value, null, 2));
+				setSubmittedValue(submission.value);
 			}
 		},
 	});
@@ -61,8 +92,9 @@ export default function App() {
 							Material UI Example
 						</Typography>
 						<Typography variant="subtitle1">
-							This example shows you how to integrate Inputs components with
-							Conform.
+							This example shows you how to integrate Conform with Material UI.
+							When the form is submitted, the search params will be updated with
+							the form data and is set as the default value of the form.
 						</Typography>
 					</header>
 
@@ -70,6 +102,7 @@ export default function App() {
 						label="Email (TextField)"
 						type="email"
 						name="email"
+						defaultValue={fields.email.defaultValue}
 						error={!fields.email.valid}
 						helperText={fields.email.errors}
 					/>
@@ -77,6 +110,7 @@ export default function App() {
 					<TextField
 						label="Description (TextField - multline)"
 						name={fields.description.name}
+						defaultValue={fields.description.defaultValue}
 						error={!fields.description.valid}
 						helperText={fields.description.errors}
 						inputProps={{
@@ -85,18 +119,26 @@ export default function App() {
 						multiline
 					/>
 
-					<ExampleSelect
+					<TextField
 						label="Language (Select)"
 						name={fields.language.name}
-						error={fields.language.errors}
 						defaultValue={fields.language.defaultValue}
-					/>
+						error={!fields.language.valid}
+						helperText={fields.language.errors}
+						select
+					>
+						<MenuItem value="">Please select</MenuItem>
+						<MenuItem value="english">English</MenuItem>
+						<MenuItem value="german">German</MenuItem>
+						<MenuItem value="japanese">Japanese</MenuItem>
+					</TextField>
 
-					<ExampleAutocomplete
+					<Autocomplete
 						label="Movie (Autocomplete)"
 						name={fields.movie.name}
-						error={fields.movie.errors}
+						options={['The Godfather', 'Pulp Fiction']}
 						defaultValue={fields.movie.defaultValue}
+						error={fields.movie.errors}
 					/>
 
 					<FormControl
@@ -107,8 +149,13 @@ export default function App() {
 						<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
 						<FormGroup>
 							<FormControlLabel
-								name={fields.subscribe.name}
-								control={<Checkbox />}
+								control={
+									<Checkbox
+										name={fields.subscribe.name}
+										value="on"
+										defaultChecked={fields.subscribe.defaultValue === 'on'}
+									/>
+								}
 								label="Newsletter"
 							/>
 						</FormGroup>
@@ -117,7 +164,10 @@ export default function App() {
 
 					<FormControl variant="standard" error={!fields.active.valid}>
 						<FormLabel>Active (Radio)</FormLabel>
-						<RadioGroup name={fields.active.name}>
+						<RadioGroup
+							name={fields.active.name}
+							defaultValue={fields.active.defaultValue}
+						>
 							<FormControlLabel value="yes" control={<Radio />} label="Yes" />
 							<FormControlLabel value="no" control={<Radio />} label="No" />
 						</RadioGroup>
@@ -131,30 +181,54 @@ export default function App() {
 						<FormLabel>Enabled (Switch)</FormLabel>
 						<FormGroup>
 							<FormControlLabel
-								control={<Switch name={fields.enabled.name} />}
 								label="Enabled"
+								control={
+									<Switch
+										name={fields.enabled.name}
+										value="on"
+										defaultChecked={fields.enabled.defaultValue === 'on'}
+									/>
+								}
 							/>
 						</FormGroup>
 						<FormHelperText>{fields.enabled.errors}</FormHelperText>
 					</FormControl>
 
-					<ExampleRating
-						label="Score (Rating)"
-						name={fields.score.name}
-						error={fields.score.errors}
-						defaultValue={fields.score.defaultValue}
-					/>
+					<FormControl
+						variant="standard"
+						error={Boolean(fields.progress.errors)}
+					>
+						<FormLabel>Progress (Slider)</FormLabel>
+						<Slider
+							name={fields.progress.name}
+							defaultValue={fields.progress.defaultValue}
+						/>
+						<FormHelperText>{fields.progress.errors}</FormHelperText>
+					</FormControl>
 
-					<ExampleSlider
-						label="Progress (Slider)"
-						name={fields.progress.name}
-						error={fields.progress.errors}
-						defaultValue={fields.progress.defaultValue}
-					/>
+					<FormControl variant="standard" error={Boolean(fields.score.errors)}>
+						<FormLabel>Score (Rating)</FormLabel>
+						<div>
+							<Rating
+								name={fields.score.name}
+								defaultValue={fields.score.defaultValue}
+							/>
+						</div>
+						<FormHelperText>{fields.score.errors}</FormHelperText>
+					</FormControl>
+
+					{submittedValue ? (
+						<div>
+							<Typography variant="body1" marginBottom={2}>
+								Value submitted
+							</Typography>
+							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+						</div>
+					) : null}
 
 					<Stack direction="row" justifyContent="flex-end" spacing={2}>
 						<Button
-							type="reset"
+							type="button"
 							variant="outlined"
 							onClick={() => form.reset()}
 						>

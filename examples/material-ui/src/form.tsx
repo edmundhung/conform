@@ -1,156 +1,215 @@
 import { useControl } from '@conform-to/react';
 import {
-	TextField,
-	MenuItem,
-	Autocomplete,
-	FormControl,
-	FormHelperText,
-	FormLabel,
-	Rating,
-	Slider,
+	TextField as MuiTextField,
+	Autocomplete as MuiAutocomplete,
+	Rating as MuiRating,
+	Slider as MuiSlider,
+	Switch as MuiSwitch,
+	RadioGroup as MuiRadioGroup,
+	Checkbox as MuiCheckbox,
 } from '@mui/material';
+import { useRef } from 'react';
 
-type ExampleSelectProps = {
-	name: string;
-	label: string;
-	error: string[] | undefined;
-	defaultValue?: string;
+type TextFieldProps = React.ComponentProps<typeof MuiTextField> & {
+	defaultValue?: string | string[];
 };
 
-export function ExampleSelect({
-	label,
-	name,
-	error,
-	defaultValue,
-}: ExampleSelectProps) {
-	const control = useControl({ defaultValue });
+export function TextField({ name, defaultValue, ...props }: TextFieldProps) {
+	const ref = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
 
 	return (
 		<>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
-			/>
-			<TextField
-				label={label}
+			<input name={name} ref={control.register} hidden />
+			<MuiTextField
+				inputRef={ref}
 				value={control.value ?? ''}
 				onChange={(event) => control.change(event.target.value)}
 				onBlur={() => control.blur()}
-				error={!!error}
-				helperText={error}
-				select
-			>
-				<MenuItem value="">Please select</MenuItem>
-				<MenuItem value="english">English</MenuItem>
-				<MenuItem value="german">German</MenuItem>
-				<MenuItem value="japanese">Japanese</MenuItem>
-			</TextField>
+				{...props}
+			/>
 		</>
 	);
 }
 
-type ExampleAutocompleteProps = {
+type AutocompleteProps = {
 	name: string;
 	label: string;
-	error: string[] | undefined;
 	defaultValue?: string;
+	options: string[];
+	error: string[] | undefined;
 };
 
-export function ExampleAutocomplete({
+export function Autocomplete({
 	label,
 	name,
-	error,
 	defaultValue,
-}: ExampleAutocompleteProps) {
-	const control = useControl({ defaultValue });
-	const options = ['The Godfather', 'Pulp Fiction'];
+	options,
+	error,
+}: AutocompleteProps) {
+	const ref = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
 
 	return (
-		<Autocomplete
-			disablePortal
-			options={options}
-			value={control.value ? control.value : null}
-			onChange={(_, option) => control.change(option ?? '')}
-			onBlur={() => control.blur()}
-			renderInput={(params) => (
-				<TextField
-					{...params}
-					inputRef={control.register}
-					label={label}
-					name={name}
-					error={!!error}
-					helperText={error}
-				/>
-			)}
-		/>
+		<>
+			<input name={name} ref={control.register} hidden />
+			<MuiAutocomplete
+				disablePortal
+				options={options}
+				value={control.value ? control.value : null}
+				onChange={(_, option) => control.change(option ?? '')}
+				onBlur={() => control.blur()}
+				renderInput={(params) => (
+					<MuiTextField
+						{...params}
+						inputRef={ref}
+						label={label}
+						error={!!error}
+						helperText={error}
+					/>
+				)}
+			/>
+		</>
 	);
 }
 
-type ExampleRatingProps = {
-	label: string;
+type CheckboxProps = {
 	name: string;
-	error: string[] | undefined;
-	defaultValue?: string;
+	value?: string;
+	defaultChecked?: boolean;
 };
 
-export function ExampleRating({
-	name,
-	label,
-	error,
-	defaultValue,
-}: ExampleRatingProps) {
-	const control = useControl({ defaultValue });
+export function Checkbox({ name, value, defaultChecked }: CheckboxProps) {
+	const ref = useRef<HTMLInputElement>(null);
+	const control = useControl({
+		value,
+		defaultChecked,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
 
 	return (
-		<FormControl variant="standard" error={!!error}>
-			<FormLabel>{label}</FormLabel>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
+		<>
+			<input type="checkbox" name={name} ref={control.register} hidden />
+			<MuiCheckbox
+				inputRef={ref}
+				checked={control.checked}
+				onChange={(event) => control.change(event.target.checked)}
+				onBlur={() => control.blur()}
 			/>
-			<div>
-				<Rating
-					value={control.value ? Number(control.value) : null}
-					onChange={(_, value) => {
-						control.change(value?.toString() ?? '');
-					}}
-					onBlur={() => control.blur()}
-				/>
-			</div>
-			<FormHelperText>{error}</FormHelperText>
-		</FormControl>
+		</>
 	);
 }
 
-type ExampleSliderProps = {
-	label: string;
+type RadioGroupProps = {
+	name?: string;
+	defaultValue?: string;
+	children: React.ReactNode;
+};
+
+export function RadioGroup({ name, defaultValue, children }: RadioGroupProps) {
+	const firstLabelRef = useRef<HTMLLabelElement | null>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			firstLabelRef.current?.focus();
+		},
+	});
+
+	return (
+		<>
+			<input name={name} ref={control.register} hidden />
+			<MuiRadioGroup
+				ref={(element) =>
+					(firstLabelRef.current =
+						element instanceof HTMLElement
+							? element.querySelector('label')
+							: null)
+				}
+				value={control.value ? control.value : null}
+				onChange={(event) => control.change(event.target.value)}
+				onBlur={() => control.blur()}
+			>
+				{children}
+			</MuiRadioGroup>
+		</>
+	);
+}
+
+type SwitchProps = {
 	name: string;
-	error: string[] | undefined;
+	value?: string;
+	defaultChecked?: boolean;
+};
+
+export function Switch({ name, value, defaultChecked }: SwitchProps) {
+	const ref = useRef<HTMLElement>(null);
+	const control = useControl({
+		value,
+		defaultChecked,
+		onFocus() {
+			ref.current?.focus();
+		},
+	});
+
+	return (
+		<>
+			<input type="checkbox" name={name} ref={control.register} hidden />
+			<MuiSwitch
+				inputRef={ref}
+				checked={control.checked}
+				onChange={(event) => control.change(event.target.checked)}
+				onBlur={() => control.blur()}
+			/>
+		</>
+	);
+}
+
+type RatingProps = {
+	name: string;
 	defaultValue?: string;
 };
 
-export function ExampleSlider({
-	name,
-	label,
-	error,
-	defaultValue,
-}: ExampleSliderProps) {
+export function Rating({ name, defaultValue }: RatingProps) {
 	const control = useControl({ defaultValue });
 
 	return (
-		<FormControl variant="standard" error={!!error}>
-			<FormLabel>{label}</FormLabel>
-			<input
-				name={name}
-				ref={control.register}
-				defaultValue={defaultValue}
-				hidden
+		<>
+			<input name={name} ref={control.register} hidden />
+			<MuiRating
+				value={control.value ? Number(control.value) : null}
+				onChange={(_, value) => {
+					control.change(value?.toString() ?? '');
+				}}
+				onBlur={() => control.blur()}
 			/>
-			<Slider
+		</>
+	);
+}
+
+type SliderProps = {
+	name: string;
+	defaultValue?: string;
+};
+
+export function Slider({ name, defaultValue }: SliderProps) {
+	const control = useControl({ defaultValue });
+
+	return (
+		<>
+			<input name={name} ref={control.register} hidden />
+			<MuiSlider
 				min={0}
 				max={10}
 				step={1}
@@ -164,7 +223,6 @@ export function ExampleSlider({
 				}}
 				onBlur={() => control.blur()}
 			/>
-			<FormHelperText>{error}</FormHelperText>
-		</FormControl>
+		</>
 	);
 }

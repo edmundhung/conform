@@ -242,7 +242,11 @@ export function useControl(options?: {
 			const prev = snapshotRef.current;
 			const next = inputRef.current
 				? normalizeFieldValue(getFieldValue(inputRef.current))
-				: null;
+				: normalizeFieldValue(
+						optionsRef.current?.defaultChecked
+							? optionsRef.current.value ?? 'on'
+							: optionsRef.current?.defaultValue,
+					);
 
 			if (deepEqual(prev, next)) {
 				return prev;
@@ -318,6 +322,13 @@ export function useControl(options?: {
 						focusable(element);
 					}
 
+					if (element.type === 'checkbox' || element.type === 'radio') {
+						// React set the value as empty string incorrectly when the value is undefined
+						// This make sure the checkbox value falls back to the default value "on" properly
+						// @see https://github.com/facebook/react/issues/17590
+						element.value = optionsRef.current?.value ?? 'on';
+					}
+
 					initializeField(element, optionsRef.current);
 				} else {
 					const inputs = Array.from(element);
@@ -341,7 +352,10 @@ export function useControl(options?: {
 							focusable(input);
 						}
 
-						initializeField(input, optionsRef.current);
+						initializeField(input, {
+							// We will not be uitlizing defaultChecked / value on checkbox / radio group
+							defaultValue: optionsRef.current?.defaultValue,
+						});
 					}
 				}
 			},

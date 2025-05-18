@@ -53,22 +53,15 @@ export function initializeField(
 		return;
 	}
 
-	if (element.type === 'checkbox' || element.type === 'radio') {
-		// React set the value as empty string incorrectly when the value is undefined
-		// This make sure the checkbox value falls back to the default value "on" properly
-		// @see https://github.com/facebook/react/issues/17590
-		element.value = options?.value ?? 'on';
-	}
-
-	const value =
+	const defaultValue =
 		typeof options?.defaultChecked !== 'undefined'
 			? options.defaultChecked
 				? options.value ?? 'on'
 				: null
-			: options?.defaultValue ?? null;
+			: options?.defaultValue;
 
 	// Update the value of the element, including the default value
-	updateFieldValue(element, value, { defaultValue: true });
+	updateFieldValue(element, undefined, { defaultValue });
 
 	element.dataset.conform = 'initialized';
 }

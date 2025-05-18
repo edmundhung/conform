@@ -1,3 +1,5 @@
+import { useControl } from '@conform-to/react';
+import { CalendarDate, parseDate } from '@internationalized/date';
 import {
 	Button,
 	CalendarCell,
@@ -16,11 +18,9 @@ import {
 	RangeCalendar,
 	Text,
 } from 'react-aria-components';
+import { useRef } from 'react';
 
 import './DateRangePicker.css';
-import { useControl } from '@conform-to/react';
-import { CalendarDate, parseDate } from '@internationalized/date';
-import { useRef } from 'react';
 
 export interface DateRangePickerProps<T extends DateValue>
 	extends Omit<
@@ -46,37 +46,26 @@ export function DateRangePicker({
 	defaultValue,
 	...props
 }: DateRangePickerProps<CalendarDate>) {
+	const labelRef = useRef<HTMLLabelElement>(null);
 	const startControl = useControl({
 		defaultValue: defaultValue?.start ?? defaultValue?.end,
 		onFocus() {
-			controlRef.current?.focus();
+			labelRef.current?.click();
 		},
 	});
 	const endControl = useControl({
 		defaultValue: defaultValue?.end ?? defaultValue?.start,
 		onFocus() {
-			controlRef.current?.focus();
+			labelRef.current?.click();
 		},
 	});
-	const controlRef = useRef<HTMLDivElement>(null);
 
 	return (
 		<>
-			<input
-				ref={startControl.register}
-				name={startName}
-				defaultValue={defaultValue?.start}
-				hidden
-			/>
-			<input
-				ref={endControl.register}
-				name={endName}
-				defaultValue={defaultValue?.end}
-				hidden
-			/>
+			<input ref={startControl.register} name={startName} hidden />
+			<input ref={endControl.register} name={endName} hidden />
 			<AriaDateRangePicker
 				{...props}
-				ref={controlRef}
 				value={
 					startControl.value && endControl.value
 						? {
@@ -90,7 +79,7 @@ export function DateRangePicker({
 					endControl.change(value?.end.toString() ?? '');
 				}}
 			>
-				<Label>{label}</Label>
+				<Label ref={labelRef}>{label}</Label>
 				<Group>
 					<DateInput slot="start">
 						{(segment) => <DateSegment segment={segment} />}

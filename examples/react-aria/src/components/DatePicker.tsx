@@ -20,6 +20,7 @@ import {
 } from 'react-aria-components';
 
 import './DatePicker.css';
+import { useRef } from 'react';
 
 export interface DatePickerProps<T extends DateValue>
 	extends Omit<AriaDatePickerProps<T>, 'defaultValue' | 'value' | 'onChange'> {
@@ -38,7 +39,13 @@ export function DatePicker({
 	firstDayOfWeek,
 	...props
 }: DatePickerProps<CalendarDateTime>) {
-	const control = useControl({ defaultValue });
+	const labelRef = useRef<HTMLLabelElement>(null);
+	const control = useControl({
+		defaultValue,
+		onFocus() {
+			labelRef.current?.click();
+		},
+	});
 
 	return (
 		<AriaDatePicker
@@ -46,7 +53,7 @@ export function DatePicker({
 			value={control.value ? parseDateTime(control.value) : null}
 			onChange={(value) => control.change(value?.toString() ?? '')}
 		>
-			<Label>{label}</Label>
+			<Label ref={labelRef}>{label}</Label>
 			<Group>
 				<DateInput>{(segment) => <DateSegment segment={segment} />}</DateInput>
 				<Button>▼</Button>
@@ -67,12 +74,7 @@ export function DatePicker({
 					</Calendar>
 				</Dialog>
 			</Popover>
-			<input
-				ref={control.register}
-				name={name}
-				defaultValue={defaultValue}
-				hidden
-			/>
+			<input ref={control.register} name={name} hidden />
 		</AriaDatePicker>
 	);
 }
