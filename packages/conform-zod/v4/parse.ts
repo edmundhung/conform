@@ -4,8 +4,8 @@ import {
 	formatPaths,
 	parse,
 } from '@conform-to/dom';
+import type { ZodType } from 'zod/v4';
 import type {
-	$ZodType,
 	$ZodIssue,
 	$ZodError,
 	$ZodErrorMap,
@@ -14,17 +14,6 @@ import type {
 	util,
 } from 'zod/v4/core';
 import { coerceFormValue } from './coercion';
-
-interface ZodType extends $ZodType {
-	safeParse(
-		payload: Record<string, any>,
-		options?: { error?: $ZodErrorMap },
-	): util.SafeParseResult<output<this>>;
-	safeParseAsync(
-		payload: Record<string, any>,
-		options?: { error?: $ZodErrorMap },
-	): Promise<util.SafeParseResult<output<this>>>;
-}
 
 function getError<FormError>(
 	zodError: $ZodError,
