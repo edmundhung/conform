@@ -17,7 +17,7 @@ export function normalizeFieldValue(
 export function focusable(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): void {
-	if (!element.hidden) {
+	if (!element.hidden && element.type !== 'hidden') {
 		return;
 	}
 
@@ -32,11 +32,20 @@ export function focusable(
 	element.style.whiteSpace = 'nowrap';
 	element.style.border = '0';
 
+	// Hide the element from screen readers
+	element.setAttribute('aria-hidden', 'true');
+
 	// Make sure people won't tab to this element
 	element.tabIndex = -1;
 
 	// Set the element to be visible again so it can be focused
-	element.hidden = false;
+	if (element.hidden) {
+		element.hidden = false;
+	}
+
+	if (element.type === 'hidden') {
+		element.setAttribute('type', 'text');
+	}
 }
 
 export function initializeField(
