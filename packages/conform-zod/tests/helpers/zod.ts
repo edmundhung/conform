@@ -14,12 +14,16 @@ export function getResult<Output>(
 	const error: Record<string, string[]> = {};
 
 	for (const issue of result.error.issues) {
-		if (typeof issue.path === 'symbol') {
-			throw new Error(
-				'@conform-to/zod does not support symbol paths. Please use a string or number instead.',
-			);
-		}
-		const name = formatPaths(issue.path as (string | number)[]);
+		const name = formatPaths(
+			issue.path.map((path) => {
+				if (typeof path === 'symbol') {
+					throw new Error(
+						'@conform-to/zod does not support symbol paths. Please use a string or number instead.',
+					);
+				}
+				return path;
+			}),
+		);
 
 		error[name] ??= [];
 		error[name].push(issue.message);
