@@ -23,7 +23,7 @@ describe('coercion', () => {
 					boolean: z.boolean(),
 				}),
 			]);
-			const schemaWithMini = discriminatedUnion([
+			const schemaWithMini = discriminatedUnion('type', [
 				object({
 					type: literal('a'),
 					number: number(),

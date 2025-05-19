@@ -14,7 +14,7 @@
 		"next": "14.0.4",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"zod": "3.25.0-beta.20250517T081109"
+		"zod": "3.25.3"
 	},
 	"devDependencies": {
 		"@types/node": "^20",
