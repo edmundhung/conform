@@ -19,7 +19,7 @@
 ```tsx
 import type { Intent } from '@conform-to/react';
 import { useForm } from '@conform-to/react';
-import { parseWithZod, conformZodMessage } from '@conform-to/zod';
+import { parseWithZod, conformZodMessage } from '@conform-to/zod'; // もしくは、zod/v4かzod/v4-miniを使用する場合は `@conform-to/zod/v4` をインポートします。
 import { z } from 'zod';
 
   // スキーマを共有する代わりに、スキーマを作成する関数 `createSchema` を準備します。

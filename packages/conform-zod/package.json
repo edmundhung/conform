@@ -4,25 +4,36 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "1.5.1",
-	"main": "index.js",
-	"module": "index.mjs",
-	"types": "index.d.ts",
+	"main": "./dist/v3/index.js",
+	"module": "./dist/v3/index.mjs",
+	"types": "./dist/v3/index.d.ts",
+	"files": [
+		"dist"
+	],
 	"exports": {
 		".": {
-			"types": "./index.d.ts",
-			"module": "./index.mjs",
-			"import": "./index.mjs",
-			"require": "./index.js",
-			"default": "./index.mjs"
+			"types": "./dist/v3/index.d.ts",
+			"module": "./dist/v3/index.mjs",
+			"import": "./dist/v3/index.mjs",
+			"require": "./dist/v3/index.js",
+			"default": "./dist/v3/index.mjs"
+		},
+		"./v4": {
+			"types": "./dist/v4/index.d.ts",
+			"module": "./dist/v4/index.mjs",
+			"import": "./dist/v4/index.mjs",
+			"require": "./dist/v4/index.js",
+			"default": "./dist/v4/index.mjs"
 		}
 	},
 	"scripts": {
 		"build:js": "rollup -c",
-		"build:ts": "tsc",
+		"build:ts": "tsc --project ./tsconfig.build.json",
 		"build": "pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
+		"test": "vitest",
 		"prepare": "pnpm run build"
 	},
 	"repository": {
@@ -45,9 +56,9 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.79.1",
-		"zod": "3.21.4"
+		"rollup-plugin-copy": "^3.4.0",
+		"zod": "3.25.3"
 	},
 	"keywords": [
 		"constraint-validation",

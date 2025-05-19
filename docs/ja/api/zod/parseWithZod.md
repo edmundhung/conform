@@ -35,7 +35,7 @@ Zod スキーマ、または Zod スキーマを返す関数のいずれかで�
 ## 例
 
 ```tsx
-import { parseWithZod } from '@conform-to/zod';
+import { parseWithZod } from '@conform-to/zod'; // もしくは、zod/v4かzod/v4-miniを使用する場合は `@conform-to/zod/v4` をインポートします。
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
 

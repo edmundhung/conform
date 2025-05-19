@@ -6,14 +6,14 @@ import copy from 'rollup-plugin-copy';
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage() {
 	let sourceDir = '.';
-	let outputDir = sourceDir;
+	let outputDir = './dist';
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.ts`,
+		input: [`${sourceDir}/v3/index.ts`, `${sourceDir}/v4/index.ts`],
 		output: {
 			dir: outputDir,
 			format: 'esm',
@@ -55,7 +55,7 @@ function configurePackage() {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.ts`,
+		input: [`${sourceDir}/v3/index.ts`, `${sourceDir}/v4/index.ts`],
 		output: {
 			dir: outputDir,
 			format: 'cjs',
