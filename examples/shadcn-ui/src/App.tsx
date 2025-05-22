@@ -10,7 +10,7 @@ import {
 	Input,
 	Textarea,
 	DatePicker,
-	CountryPicker,
+	ComboBox,
 	RadioGroup,
 	Checkbox,
 	Select,
@@ -31,10 +31,7 @@ const schema = z.object({
 	agreeToTerms: z.boolean(),
 	job: z.enum(['developer', 'designer', 'manager']),
 	age: z.number().min(18),
-	isAdult: z
-		.boolean()
-		.optional()
-		.refine((val) => val == true, 'You must be an adult'),
+	isAdult: z.boolean(),
 	description: z.string().min(10),
 	accountType: z.enum(['personal', 'business']),
 	categories: z.array(z.enum(['blog', 'guide', 'tutorial'])).min(1),
@@ -104,96 +101,147 @@ export default function App() {
 				noValidate
 			>
 				<Field>
-					<Label>Name</Label>
+					<Label htmlFor={fields.name.id}>Name</Label>
 					<Input
+						id={fields.name.id}
 						type="text"
 						name={fields.name.name}
 						defaultValue={fields.name.defaultValue}
+						aria-describedby={
+							!fields.name.valid ? fields.name.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.name.errors}</FieldError>
+					<FieldError id={fields.name.errorId}>{fields.name.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label>Birth date</Label>
+					<Label htmlFor={fields.dateOfBirth.id}>Date of Birth</Label>
 					<DatePicker
+						id={fields.dateOfBirth.id}
 						name={fields.dateOfBirth.name}
 						defaultValue={fields.dateOfBirth.defaultValue}
+						aria-describedby={
+							!fields.dateOfBirth.valid ? fields.dateOfBirth.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.dateOfBirth.errors}</FieldError>
+					<FieldError id={fields.dateOfBirth.errorId}>
+						{fields.dateOfBirth.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Country</Label>
-					<CountryPicker
+					<Label htmlFor={fields.country.id}>Country</Label>
+					<ComboBox
+						id={fields.country.id}
 						name={fields.country.name}
 						defaultValue={fields.country.defaultValue}
+						aria-describedby={
+							!fields.country.valid ? fields.country.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.country.errors}</FieldError>
+					<FieldError id={fields.country.errorId}>
+						{fields.country.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Gender</Label>
+					<Label htmlFor={fields.gender.id}>Gender</Label>
 					<RadioGroup
+						id={fields.gender.id}
 						name={fields.gender.name}
 						defaultValue={fields.gender.defaultValue}
 						items={[
 							{ value: 'male', label: 'male' },
 							{ value: 'female', label: 'female' },
 							{ value: 'other', label: 'other' },
+							{ value: 'invalid', label: 'invalid' },
 						]}
+						aria-describedby={
+							!fields.gender.valid ? fields.gender.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.gender.errors}</FieldError>
+					<FieldError id={fields.gender.errorId}>
+						{fields.gender.errors}
+					</FieldError>
 				</Field>
 				<Field>
 					<div className="flex gap-2 items-center">
 						<Checkbox
+							id={fields.agreeToTerms.id}
 							name={fields.agreeToTerms.name}
 							value="on"
 							defaultChecked={fields.agreeToTerms.defaultValue === 'on'}
+							aria-describedby={
+								!fields.agreeToTerms.valid
+									? fields.agreeToTerms.errorId
+									: undefined
+							}
 						/>
-						<Label>Agree to terms</Label>
+						<Label htmlFor={fields.agreeToTerms.id}>Agree to terms</Label>
 					</div>
-					<FieldError>{fields.agreeToTerms.errors}</FieldError>
+					<FieldError id={fields.agreeToTerms.errorId}>
+						{fields.agreeToTerms.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Job</Label>
+					<Label htmlFor={fields.job.id}>Job</Label>
 					<Select
+						id={fields.job.id}
 						placeholder="Select a job"
 						name={fields.job.name}
 						defaultValue={fields.job.defaultOptions}
 						items={[
 							{ value: 'developer', name: 'Developer' },
-							{ value: 'designer', name: 'Design' },
+							{ value: 'designer', name: 'Designer' },
 							{ value: 'manager', name: 'Manager' },
 						]}
+						aria-describedby={
+							!fields.job.valid ? fields.job.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.job.errors}</FieldError>
+					<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label>Age</Label>
+					<Label htmlFor={fields.age.id}>Age</Label>
 					<Slider
+						id={fields.age.id}
 						name={fields.age.name}
 						defaultValue={fields.age.defaultValue}
+						aria-describedby={
+							!fields.age.valid ? fields.age.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.age.errors}</FieldError>
+					<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 				</Field>
 				<Field>
 					<div className="flex items-center gap-2">
-						<Label>Is adult</Label>
+						<Label htmlFor={fields.isAdult.id}>Is adult</Label>
 						<Switch
+							id={fields.isAdult.id}
 							name={fields.isAdult.name}
 							defaultChecked={fields.isAdult.defaultValue === 'on'}
+							aria-describedby={
+								!fields.isAdult.valid ? fields.isAdult.errorId : undefined
+							}
 						/>
 					</div>
-					<FieldError>{fields.isAdult.errors}</FieldError>
+					<FieldError id={fields.isAdult.errorId}>
+						{fields.isAdult.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Description</Label>
+					<Label htmlFor={fields.description.id}>Description</Label>
 					<Textarea
+						id={fields.description.id}
 						name={fields.description.name}
 						defaultValue={fields.description.defaultValue}
+						aria-describedby={
+							!fields.description.valid ? fields.description.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.description.errors}</FieldError>
+					<FieldError id={fields.description.errorId}>
+						{fields.description.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Account type</Label>
+					<Label id={fields.accountType.id}>Account type</Label>
 					<SingleToggleGroup
 						name={fields.accountType.name}
 						defaultValue={fields.accountType.defaultValue}
@@ -201,11 +249,17 @@ export default function App() {
 							{ value: 'personal', label: 'Personal' },
 							{ value: 'business', label: 'Business' },
 						]}
+						aria-labelledby={fields.accountType.id}
+						aria-describedby={
+							!fields.accountType.valid ? fields.accountType.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.accountType.errors}</FieldError>
+					<FieldError id={fields.accountType.errorId}>
+						{fields.accountType.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Categories</Label>
+					<Label id={fields.categories.id}>Categories</Label>
 					<MultiToggleGroup
 						name={fields.categories.name}
 						defaultValue={fields.categories.defaultOptions}
@@ -214,11 +268,17 @@ export default function App() {
 							{ value: 'guide', label: 'Guide' },
 							{ value: 'tutorial', label: 'Tutorial' },
 						]}
+						aria-labelledby={fields.categories.id}
+						aria-describedby={
+							!fields.categories.valid ? fields.categories.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.categories.errors}</FieldError>
+					<FieldError id={fields.categories.errorId}>
+						{fields.categories.errors}
+					</FieldError>
 				</Field>
-				<Field>
-					<fieldset>Interests</fieldset>
+				<Field role="group" aria-labelledby={fields.interests.id}>
+					<Label id={fields.interests.id}>Interests</Label>
 					{[
 						{ value: 'react', name: 'React' },
 						{ value: 'vue', name: 'Vue' },
@@ -232,25 +292,37 @@ export default function App() {
 					].map((option) => (
 						<div key={option.value} className="flex items-center gap-2">
 							<Checkbox
+								id={`${fields.interests.id}-${option.value}`}
 								name={fields.interests.name}
 								value={option.value}
 								defaultChecked={fields.interests.defaultOptions?.includes(
 									option.value,
 								)}
+								aria-describedby={
+									!fields.interests.valid ? fields.interests.errorId : undefined
+								}
 							/>
-							<label>{option.name}</label>
+							<label htmlFor={`${fields.interests.id}-${option.value}`}>
+								{option.name}
+							</label>
 						</div>
 					))}
-					<FieldError>{fields.interests.errors}</FieldError>
+					<FieldError id={fields.interests.errorId}>
+						{fields.interests.errors}
+					</FieldError>
 				</Field>
 				<Field>
-					<Label>Code</Label>
+					<Label htmlFor={fields.code.id}>Code</Label>
 					<InputOTP
+						id={fields.code.id}
 						name={fields.code.name}
 						defaultValue={fields.code.defaultValue}
 						length={6}
+						aria-describedby={
+							!fields.code.valid ? fields.code.errorId : undefined
+						}
 					/>
-					<FieldError>{fields.code.errors}</FieldError>
+					<FieldError id={fields.code.errorId}>{fields.code.errors}</FieldError>
 				</Field>
 
 				{submittedValue ? (

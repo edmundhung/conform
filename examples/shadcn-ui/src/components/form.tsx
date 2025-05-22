@@ -38,26 +38,47 @@ import { Textarea } from './ui/textarea';
 
 type FieldProps = {
 	children: React.ReactNode;
+	role?: string;
+	['aria-labelledby']?: string;
 };
 
-function Field({ children }: FieldProps) {
-	return <div className="flex flex-col gap-2">{children}</div>;
+function Field({
+	role,
+	children,
+	'aria-labelledby': ariaLabelledby,
+}: FieldProps) {
+	return (
+		<div
+			className="flex flex-col gap-2"
+			role={role}
+			aria-labelledby={ariaLabelledby}
+		>
+			{children}
+		</div>
+	);
 }
 
 type FieldErrorProps = {
+	id?: string;
 	children: React.ReactNode;
 };
 
-function FieldError({ children }: FieldErrorProps) {
-	return <div className="text-sm text-red-600">{children}</div>;
+function FieldError({ id, children }: FieldErrorProps) {
+	return (
+		<div id={id} className="text-sm text-red-600">
+			{children}
+		</div>
+	);
 }
 
-type ExampleDatePickerProps = {
+type DatePickerProps = {
+	id?: string;
 	name: string;
 	defaultValue?: string;
+	['aria-describedby']?: string;
 };
 
-function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
+function DatePicker({ name, defaultValue, ...props }: DatePickerProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -78,6 +99,7 @@ function ExampleDatePicker({ name, defaultValue }: ExampleDatePickerProps) {
 			>
 				<PopoverTrigger asChild>
 					<Button
+						{...props}
 						ref={triggerRef}
 						variant={'outline'}
 						className={cn(
@@ -118,15 +140,14 @@ const countries = [
 	{ label: 'Uruguay', value: 'UY' },
 ];
 
-type ExampleCountryPickerProps = {
+type ComboboxProps = {
+	id?: string;
 	name: string;
 	defaultValue?: string;
+	['aria-describedby']?: string;
 };
 
-function ExampleCountryPicker({
-	name,
-	defaultValue,
-}: ExampleCountryPickerProps) {
+function ComboBox({ name, defaultValue, ...props }: ComboboxProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const control = useControl({
 		defaultValue,
@@ -147,6 +168,7 @@ function ExampleCountryPicker({
 			>
 				<PopoverTrigger asChild>
 					<Button
+						{...props}
 						ref={triggerRef}
 						variant="outline"
 						role="combobox"
@@ -198,15 +220,19 @@ function ExampleCountryPicker({
 }
 
 type ExampleRadioGroupProps = {
+	id?: string;
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
+	['aria-describedby']?: string;
 };
 
 function ExampleRadioGroup({
+	id,
 	name,
 	items,
 	defaultValue,
+	['aria-describedby']: ariaDescribedBy,
 }: ExampleRadioGroupProps) {
 	const radioGroupRef = useRef<React.ElementRef<typeof RadioGroup>>(null);
 	const control = useControl({
@@ -225,12 +251,17 @@ function ExampleRadioGroup({
 				value={control.value ?? ''}
 				onValueChange={(value) => control.change(value)}
 				onBlur={() => control.blur()}
+				aria-labelledby={id}
 			>
 				{items.map((item) => {
 					return (
 						<div className="flex items-center gap-2" key={item.value}>
-							<RadioGroupItem value={item.value} id={item.value} />
-							<label htmlFor={item.value}>{item.label}</label>
+							<RadioGroupItem
+								id={`${id}-${item.value}`}
+								value={item.value}
+								aria-describedby={ariaDescribedBy}
+							/>
+							<label htmlFor={`${id}-${item.value}`}>{item.label}</label>
 						</div>
 					);
 				})}
@@ -240,15 +271,18 @@ function ExampleRadioGroup({
 }
 
 type ExampleCheckboxProps = {
+	id?: string;
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
+	['aria-describedby']?: string;
 };
 
 function ExampleCheckbox({
 	name,
 	value,
 	defaultChecked,
+	...props
 }: ExampleCheckboxProps) {
 	const checkboxRef = useRef<React.ElementRef<typeof Checkbox>>(null);
 	const control = useControl({
@@ -263,6 +297,7 @@ function ExampleCheckbox({
 		<>
 			<input type="checkbox" ref={control.register} name={name} hidden />
 			<Checkbox
+				{...props}
 				ref={checkboxRef}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
@@ -274,10 +309,12 @@ function ExampleCheckbox({
 }
 
 type ExampleSelectProps = {
+	id?: string;
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder: string;
 	defaultValue?: string[];
+	['aria-describedby']?: string;
 };
 
 function ExampleSelect({
@@ -285,6 +322,7 @@ function ExampleSelect({
 	items,
 	placeholder,
 	defaultValue,
+	...props
 }: ExampleSelectProps) {
 	const selectRef = useRef<React.ElementRef<typeof SelectTrigger>>(null);
 	const control = useControl({
@@ -311,7 +349,7 @@ function ExampleSelect({
 					}
 				}}
 			>
-				<SelectTrigger ref={selectRef}>
+				<SelectTrigger {...props} ref={selectRef}>
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent>
@@ -329,11 +367,13 @@ function ExampleSelect({
 }
 
 type ExampleSliderProps = {
+	id?: string;
 	name: string;
 	defaultValue?: string;
+	['aria-describedby']?: string;
 };
 
-function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
+function ExampleSlider({ name, defaultValue, ...props }: ExampleSliderProps) {
 	const sliderRef = useRef<React.ElementRef<typeof Slider>>(null);
 	const control = useControl({
 		defaultValue,
@@ -350,6 +390,7 @@ function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 			<input name={name} ref={control.register} hidden />
 			<div className="flex items-center gap-4">
 				<Slider
+					{...props}
 					ref={sliderRef}
 					step={1}
 					value={[control.value ? parseFloat(control.value) : 0]}
@@ -366,12 +407,19 @@ function ExampleSlider({ name, defaultValue }: ExampleSliderProps) {
 }
 
 type ExampleSwitchProps = {
+	id?: string;
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
+	['aria-describedby']?: string;
 };
 
-function ExampleSwitch({ name, value, defaultChecked }: ExampleSwitchProps) {
+function ExampleSwitch({
+	name,
+	value,
+	defaultChecked,
+	...props
+}: ExampleSwitchProps) {
 	const switchRef = useRef<React.ElementRef<typeof Switch>>(null);
 	const control = useControl({
 		defaultChecked,
@@ -385,6 +433,7 @@ function ExampleSwitch({ name, value, defaultChecked }: ExampleSwitchProps) {
 		<>
 			<input type="checkbox" name={name} ref={control.register} hidden />
 			<Switch
+				{...props}
 				ref={switchRef}
 				checked={control.checked}
 				onCheckedChange={(checked) => control.change(checked)}
@@ -399,12 +448,16 @@ type ExampleSingleToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
+	['aria-labelledby']?: string;
+	['aria-describedby']?: string;
 };
 
 function ExampleSingleToggleGroup({
 	name,
 	items,
 	defaultValue,
+	['aria-labelledby']: ariaLabelledby,
+	['aria-describedby']: ariaDescribedBy,
 }: ExampleSingleToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
 	const control = useControl({
@@ -425,9 +478,14 @@ function ExampleSingleToggleGroup({
 					control.change(value);
 				}}
 				onBlur={() => control.blur()}
+				aria-labelledby={ariaLabelledby}
 			>
 				{items.map((item) => (
-					<ToggleGroupItem key={item.value} value={item.value}>
+					<ToggleGroupItem
+						key={item.value}
+						value={item.value}
+						aria-describedby={ariaDescribedBy}
+					>
 						{item.label}
 					</ToggleGroupItem>
 				))}
@@ -440,12 +498,16 @@ type ExampleMultiToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string[];
+	['aria-labelledby']?: string;
+	['aria-describedby']?: string;
 };
 
 function ExampleMultiToggleGroup({
 	name,
 	items,
 	defaultValue,
+	['aria-labelledby']: ariaLabelledby,
+	['aria-describedby']: ariaDescribedBy,
 }: ExampleMultiToggleGroupProps) {
 	const toggleGroupRef = useRef<React.ElementRef<typeof ToggleGroup>>(null);
 	const control = useControl({
@@ -464,9 +526,14 @@ function ExampleMultiToggleGroup({
 				value={control.options ?? []}
 				onValueChange={(value) => control.change(value)}
 				onBlur={() => control.blur()}
+				aria-labelledby={ariaLabelledby}
 			>
 				{items.map((item) => (
-					<ToggleGroupItem key={item.value} value={item.value}>
+					<ToggleGroupItem
+						key={item.value}
+						value={item.value}
+						aria-describedby={ariaDescribedBy}
+					>
 						{item.label}
 					</ToggleGroupItem>
 				))}
@@ -476,17 +543,21 @@ function ExampleMultiToggleGroup({
 }
 
 type ExampleInputOTPProps = {
+	id?: string;
 	name: string;
 	length: number;
 	pattern?: string;
 	defaultValue?: string;
+	['aria-describedby']?: string;
 };
 
 function ExampleInputOTP({
+	id,
 	name,
 	length = 6,
 	pattern = REGEXP_ONLY_DIGITS_AND_CHARS,
 	defaultValue,
+	'aria-describedby': ariaDescribedBy,
 }: ExampleInputOTPProps) {
 	const inputOTPRef = useRef<React.ElementRef<typeof InputOTP>>(null);
 	const control = useControl({
@@ -500,12 +571,14 @@ function ExampleInputOTP({
 		<>
 			<input ref={control.register} name={name} hidden />
 			<InputOTP
+				id={id}
 				ref={inputOTPRef}
 				value={control.value ?? ''}
 				onChange={(value) => control.change(value)}
 				onBlur={() => control.blur()}
 				maxLength={6}
 				pattern={pattern}
+				aria-describedby={ariaDescribedBy}
 			>
 				<InputOTPGroup>
 					{new Array(length).fill(0).map((_, index) => (
@@ -524,8 +597,8 @@ export {
 	Button,
 	Input,
 	Textarea,
-	ExampleDatePicker as DatePicker,
-	ExampleCountryPicker as CountryPicker,
+	DatePicker,
+	ComboBox,
 	ExampleRadioGroup as RadioGroup,
 	ExampleCheckbox as Checkbox,
 	ExampleSelect as Select,

@@ -3,9 +3,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "TZ=UTC vite",
+		"dev": "vite",
 		"build": "tsc -b && vite build",
-		"test": "playwright test",
+		"test": "playwright test --ui",
 		"lint": "eslint .",
 		"preview": "vite preview"
 	},
