@@ -7,9 +7,6 @@
 	"main": "./dist/v3/index.js",
 	"module": "./dist/v3/index.mjs",
 	"types": "./dist/v3/index.d.ts",
-	"files": [
-		"dist"
-	],
 	"exports": {
 		".": {
 			"types": "./dist/v3/index.d.ts",
@@ -26,6 +23,10 @@
 			"default": "./dist/v4/index.mjs"
 		}
 	},
+	"files": [
+		"./dist/**/*.{js,mjs}",
+		"./dist/**/*.d.ts"
+	],
 	"scripts": {
 		"build:js": "rollup -c",
 		"build:ts": "tsc --project ./tsconfig.build.json",
