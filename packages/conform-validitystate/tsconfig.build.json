@@ -3,5 +3,5 @@
 	"compilerOptions": {
 		"outDir": "./dist"
 	},
-	"exclude": ["tests", "dist"]
+	"exclude": ["**/tests", "dist"]
 }
