@@ -1,43 +1,35 @@
 {
-	"name": "@conform-example/chakra-ui",
+	"name": "chakra-ui",
 	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc -b && vite build",
+		"lint": "eslint .",
+		"preview": "vite preview"
+	},
 	"dependencies": {
 		"@chakra-ui/react": "^2.4.2",
-		"@conform-to/react": "1.6.1",
+		"@conform-to/react": "^1.6.1",
+		"@conform-to/zod": "^1.6.1",
 		"@emotion/react": "^11.10.5",
 		"@emotion/styled": "^11.10.5",
 		"framer-motion": "^7.6.19",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-scripts": "5.0.1"
+		"zod": "3.25.3"
 	},
 	"devDependencies": {
-		"@types/node": "^16.18.14",
-		"@types/react": "^18.0.28",
-		"@types/react-dom": "^18.0.11",
-		"typescript": "^4.9.5"
-	},
-	"scripts": {
-		"start": "react-scripts start",
-		"build": "react-scripts build",
-		"test": "react-scripts test",
-		"eject": "react-scripts eject"
-	},
-	"eslintConfig": {
-		"extends": [
-			"react-app"
-		]
-	},
-	"browserslist": {
-		"production": [
-			">0.2%",
-			"not dead",
-			"not op_mini all"
-		],
-		"development": [
-			"last 1 chrome version",
-			"last 1 firefox version",
-			"last 1 safari version"
-		]
+		"@eslint/js": "^9.17.0",
+		"@types/react": "^18.3.18",
+		"@types/react-dom": "^18.3.5",
+		"@vitejs/plugin-react": "^4.3.4",
+		"eslint": "^9.17.0",
+		"eslint-plugin-react-hooks": "^5.0.0",
+		"eslint-plugin-react-refresh": "^0.4.16",
+		"globals": "^15.14.0",
+		"typescript": "^5",
+		"typescript-eslint": "^8.18.2",
+		"vite": "^6.0.5"
 	}
 }
