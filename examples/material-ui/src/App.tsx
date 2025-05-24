@@ -1,303 +1,245 @@
-import type { FieldName } from '@conform-to/react';
+import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 import {
-	FormProvider,
-	useForm,
-	useField,
-	useInputControl,
-	parse,
-} from '@conform-to/react';
-import {
-	TextField,
 	Button,
-	MenuItem,
 	Stack,
 	Container,
 	Typography,
-	Autocomplete,
-	Checkbox,
 	FormControl,
 	FormControlLabel,
 	FormGroup,
 	FormHelperText,
 	FormLabel,
-	RadioGroup,
 	Radio,
+	MenuItem,
+} from '@mui/material';
+import { useState } from 'react';
+import {
+	TextField,
+	Autocomplete,
+	Checkbox,
+	RadioGroup,
+	Switch,
 	Rating,
 	Slider,
-	Switch,
-} from '@mui/material';
+} from './form';
 
-export default function ExampleForm() {
+const schema = z.object({
+	email: z.string(),
+	description: z.string(),
+	language: z.string(),
+	movie: z.string(),
+	subscribe: z.boolean(),
+	active: z.string(),
+	enabled: z.boolean(),
+	score: z.number(),
+	progress: z.number().min(3).max(7),
+});
+
+export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const [form, fields] = useForm({
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		onValidate({ formData, form }) {
-			return parse(formData, {
-				resolve(value) {
-					const error: Record<
-						string,
-						{ validity: ValidityState; validationMessage: string }
-					> = {};
+		defaultValue: {
+			email: searchParams.get('email'),
+			description: searchParams.get('description'),
+			language: searchParams.get('language'),
+			movie: searchParams.get('movie'),
+			subscribe: searchParams.get('subscribe'),
+			active: searchParams.get('active'),
+			enabled: searchParams.get('enabled'),
+			score: searchParams.get('score'),
+			progress: searchParams.get('progress'),
+		},
+		onValidate({ formData }) {
+			return parseWithZod(formData, { schema });
+		},
+		onSubmit(event, { formData, submission }) {
+			event.preventDefault();
 
-					for (const element of Array.from(form.elements)) {
-						if (
-							(element instanceof HTMLInputElement ||
-								element instanceof HTMLSelectElement ||
-								element instanceof HTMLTextAreaElement) &&
-							element.name !== '' &&
-							!element.validity.valid
-						) {
-							error[element.name] = {
-								validity: { ...element.validity },
-								validationMessage: element.validationMessage,
-							};
-						}
-					}
+			// Demo only - This emulates a GET request with the form data populated in the URL.
+			const url = new URL(document.URL);
+			const searchParams = new URLSearchParams(
+				Array.from(formData).filter(
+					// Skip the file as it is not serializable
+					(entry): entry is [string, string] => typeof entry[1] === 'string',
+				),
+			);
+			url.search = searchParams.toString();
+			window.history.pushState(null, '', url);
 
-					if (Object.entries(error).length > 0) {
-						return { error };
-					}
+			setSearchParams(searchParams);
 
-					return { value };
-				},
-			});
+			if (submission?.status === 'success') {
+				setSubmittedValue(submission.value);
+			}
 		},
 	});
 
 	return (
 		<Container maxWidth="sm">
-			<FormProvider context={form.context}>
-				<form id={form.id} onSubmit={form.onSubmit} noValidate>
-					<Stack spacing={4} marginY={4}>
-						<header>
-							<Typography variant="h6" component="h1">
-								Material UI Example
-							</Typography>
-							<Typography variant="subtitle1">
-								This example shows you how to integrate Inputs components with
-								Conform.
-							</Typography>
-						</header>
+			<form id={form.id} onSubmit={form.onSubmit} noValidate>
+				<Stack spacing={4} marginY={4}>
+					<header>
+						<Typography variant="h6" component="h1">
+							Material UI Example
+						</Typography>
+						<Typography variant="subtitle1">
+							This example shows you how to integrate Conform with Material UI.
+							When the form is submitted, the search params will be updated with
+							the form data and is set as the default value of the form.
+						</Typography>
+					</header>
 
-						<TextField
-							label="Email (TextField)"
-							type="email"
-							name="email"
-							error={!fields.email.valid}
-							helperText={fields.email.errors?.validationMessage}
-							required
-						/>
+					<TextField
+						label="Email (TextField)"
+						type="email"
+						name="email"
+						defaultValue={fields.email.defaultValue}
+						error={!fields.email.valid}
+						helperText={fields.email.errors}
+					/>
 
-						<TextField
-							label="Description (TextField - multline)"
-							name={fields.description.name}
-							error={!fields.description.valid}
-							helperText={fields.description.errors?.validationMessage}
-							inputProps={{
-								minLength: 10,
-							}}
-							required
-							multiline
-						/>
+					<TextField
+						label="Description (TextField - multline)"
+						name={fields.description.name}
+						defaultValue={fields.description.defaultValue}
+						error={!fields.description.valid}
+						helperText={fields.description.errors}
+						inputProps={{
+							minLength: 10,
+						}}
+						multiline
+					/>
 
-						<ExampleSelect
-							label="Language (Select)"
-							name={fields.language.name}
-							required
-						/>
+					<TextField
+						label="Language (Select)"
+						name={fields.language.name}
+						defaultValue={fields.language.defaultValue}
+						error={!fields.language.valid}
+						helperText={fields.language.errors}
+						select
+					>
+						<MenuItem value="">Please select</MenuItem>
+						<MenuItem value="english">English</MenuItem>
+						<MenuItem value="german">German</MenuItem>
+						<MenuItem value="japanese">Japanese</MenuItem>
+					</TextField>
 
-						<ExampleAutocomplete
-							label="Movie (Autocomplete)"
-							name={fields.movie.name}
-							required
-						/>
+					<Autocomplete
+						label="Movie (Autocomplete)"
+						name={fields.movie.name}
+						options={['The Godfather', 'Pulp Fiction']}
+						defaultValue={fields.movie.defaultValue}
+						error={fields.movie.errors}
+					/>
 
-						<FormControl
-							component="fieldset"
-							variant="standard"
-							error={!fields.subscribe.valid}
-							required
+					<FormControl
+						component="fieldset"
+						variant="standard"
+						error={!fields.subscribe.valid}
+					>
+						<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
+						<FormGroup>
+							<FormControlLabel
+								control={
+									<Checkbox
+										name={fields.subscribe.name}
+										value="on"
+										defaultChecked={fields.subscribe.defaultValue === 'on'}
+									/>
+								}
+								label="Newsletter"
+							/>
+						</FormGroup>
+						<FormHelperText>{fields.subscribe.errors}</FormHelperText>
+					</FormControl>
+
+					<FormControl variant="standard" error={!fields.active.valid}>
+						<FormLabel>Active (Radio)</FormLabel>
+						<RadioGroup
+							name={fields.active.name}
+							defaultValue={fields.active.defaultValue}
 						>
-							<FormLabel component="legend">Subscribe (Checkbox)</FormLabel>
-							<FormGroup>
-								<FormControlLabel
-									control={<Checkbox name={fields.subscribe.name} required />}
-									label="Newsletter"
-								/>
-							</FormGroup>
-							<FormHelperText>
-								{fields.subscribe.errors?.validationMessage}
-							</FormHelperText>
-						</FormControl>
+							<FormControlLabel value="yes" control={<Radio />} label="Yes" />
+							<FormControlLabel value="no" control={<Radio />} label="No" />
+						</RadioGroup>
+						<FormHelperText>{fields.active.errors}</FormHelperText>
+					</FormControl>
 
-						<FormControl
-							variant="standard"
-							error={!fields.active.valid}
-							required
-						>
-							<FormLabel>Active (Radio)</FormLabel>
-							<RadioGroup name="active">
-								<FormControlLabel
-									value="yes"
-									control={<Radio required />}
-									label="Yes"
-								/>
-								<FormControlLabel
-									value="no"
-									control={<Radio required />}
-									label="No"
-								/>
-							</RadioGroup>
-							<FormHelperText>
-								{fields.active.errors?.validationMessage}
-							</FormHelperText>
-						</FormControl>
+					<FormControl
+						variant="standard"
+						error={Boolean(fields.enabled.errors)}
+					>
+						<FormLabel>Enabled (Switch)</FormLabel>
+						<FormGroup>
+							<FormControlLabel
+								label="Enabled"
+								control={
+									<Switch
+										name={fields.enabled.name}
+										value="on"
+										defaultChecked={fields.enabled.defaultValue === 'on'}
+									/>
+								}
+							/>
+						</FormGroup>
+						<FormHelperText>{fields.enabled.errors}</FormHelperText>
+					</FormControl>
 
-						<FormControl
-							variant="standard"
-							error={Boolean(fields.enabled.errors?.validationMessage)}
-							required
-						>
-							<FormLabel>Enabled (Switch)</FormLabel>
-							<FormGroup>
-								<FormControlLabel
-									control={<Switch name="enabled" required />}
-									label="Enabled"
-								/>
-							</FormGroup>
-							<FormHelperText>
-								{fields.enabled.errors?.validationMessage}
-							</FormHelperText>
-						</FormControl>
-
-						<ExampleRating
-							label="Score (Rating)"
-							name={fields.score.name}
-							required
-						/>
-
-						<ExampleSlider
-							label="Progress (Slider)"
+					<FormControl
+						variant="standard"
+						error={Boolean(fields.progress.errors)}
+					>
+						<FormLabel>Progress (Slider)</FormLabel>
+						<Slider
 							name={fields.progress.name}
-							required
+							defaultValue={fields.progress.defaultValue}
 						/>
+						<FormHelperText>{fields.progress.errors}</FormHelperText>
+					</FormControl>
 
-						<Stack direction="row" justifyContent="flex-end" spacing={2}>
-							<Button type="reset" variant="outlined">
-								Reset
-							</Button>
-							<Button type="submit" variant="contained">
-								Submit
-							</Button>
-						</Stack>
+					<FormControl variant="standard" error={Boolean(fields.score.errors)}>
+						<FormLabel>Score (Rating)</FormLabel>
+						<div>
+							<Rating
+								name={fields.score.name}
+								defaultValue={fields.score.defaultValue}
+							/>
+						</div>
+						<FormHelperText>{fields.score.errors}</FormHelperText>
+					</FormControl>
+
+					{submittedValue ? (
+						<div>
+							<Typography variant="body1" marginBottom={2}>
+								Value submitted
+							</Typography>
+							<pre>{JSON.stringify(submittedValue, null, 2)}</pre>
+						</div>
+					) : null}
+
+					<Stack direction="row" justifyContent="flex-end" spacing={2}>
+						<Button
+							type="button"
+							variant="outlined"
+							onClick={() => form.reset()}
+						>
+							Reset
+						</Button>
+						<Button type="submit" variant="contained">
+							Submit
+						</Button>
 					</Stack>
-				</form>
-			</FormProvider>
+				</Stack>
+			</form>
 		</Container>
-	);
-}
-
-type Field<Schema> = {
-	name: FieldName<
-		Schema,
-		any,
-		{
-			validity: ValidityState;
-			validationMessage: string;
-		}
-	>;
-	label: string;
-	required?: boolean;
-};
-
-function ExampleSelect({ label, required, name }: Field<string>) {
-	const [meta] = useField(name);
-	const control = useInputControl(meta);
-
-	return (
-		<TextField
-			label={label}
-			name={meta.name}
-			value={control.value ?? ''}
-			onChange={(event) => control.change(event.target.value)}
-			onBlur={control.blur}
-			error={!meta.valid}
-			helperText={meta.errors?.validationMessage}
-			select
-			required={required}
-		>
-			<MenuItem value="">Please select</MenuItem>
-			<MenuItem value="english">English</MenuItem>
-			<MenuItem value="deutsch">Deutsch</MenuItem>
-			<MenuItem value="japanese">Japanese</MenuItem>
-		</TextField>
-	);
-}
-
-function ExampleAutocomplete({ label, name, required }: Field<string>) {
-	const [meta] = useField(name);
-	const control = useInputControl(meta);
-	const options = ['The Godfather', 'Pulp Fiction'];
-
-	return (
-		<Autocomplete
-			disablePortal
-			options={options}
-			value={control.value}
-			onChange={(event, option) => control.change(option ?? '')}
-			onBlur={control.blur}
-			renderInput={(params) => (
-				<TextField
-					{...params}
-					label={label}
-					name={meta.name}
-					error={!meta.valid}
-					helperText={meta.errors?.validationMessage}
-					required={required}
-				/>
-			)}
-		/>
-	);
-}
-
-function ExampleRating({ label, name, required }: Field<number>) {
-	const [meta] = useField(name);
-	const control = useInputControl(meta);
-
-	return (
-		<FormControl variant="standard" error={!meta.valid} required={required}>
-			<FormLabel>{label}</FormLabel>
-			<Rating
-				value={control.value ? Number(control.value) : null}
-				onChange={(_, value) => {
-					control.change(value?.toString() ?? '');
-				}}
-				onBlur={control.blur}
-			/>
-			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
-		</FormControl>
-	);
-}
-
-function ExampleSlider({ label, name, required }: Field<number>) {
-	const [meta] = useField(name);
-	const control = useInputControl(meta);
-
-	return (
-		<FormControl variant="standard" error={!meta.valid} required={required}>
-			<FormLabel>{label}</FormLabel>
-			<Slider
-				name={meta.name}
-				value={control.value ? Number(control.value) : 0}
-				onChange={(_, value) => {
-					if (Array.isArray(value)) {
-						return;
-					}
-
-					control.change(value.toString());
-				}}
-			/>
-			<FormHelperText>{meta.errors?.validationMessage}</FormHelperText>
-		</FormControl>
 	);
 }
