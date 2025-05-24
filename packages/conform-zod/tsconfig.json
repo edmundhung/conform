@@ -8,6 +8,7 @@
 		"noUncheckedIndexedAccess": true,
 		"strict": true,
 		"declaration": true,
+		"declarationMap": true,
 		"emitDeclarationOnly": true,
 		"composite": true,
 		"skipLibCheck": true
