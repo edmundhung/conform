@@ -6,7 +6,7 @@ import copy from 'rollup-plugin-copy';
 /** @returns {import("rollup").RollupOptions[]} */
 function configurePackage() {
 	let sourceDir = '.';
-	let outputDir = sourceDir;
+	let outputDir = './dist';
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {
@@ -46,7 +46,10 @@ function configurePackage() {
 				extensions: ['.ts', '.tsx'],
 			}),
 			copy({
-				targets: [{ src: `../../README.md`, dest: sourceDir }],
+				targets: [
+					{ src: `../../LICENSE`, dest: sourceDir },
+					{ src: `../../README.md`, dest: sourceDir }
+				],
 			}),
 		],
 	};

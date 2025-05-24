@@ -4,21 +4,25 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "0.2.0",
-	"main": "index.js",
-	"module": "index.mjs",
-	"types": "index.d.ts",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./index.d.ts",
-			"module": "./index.mjs",
-			"import": "./index.mjs",
-			"require": "./index.js",
-			"default": "./index.mjs"
+			"types": "./dist/index.d.ts",
+			"module": "./dist/index.mjs",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"default": "./dist/index.mjs"
 		}
 	},
+	"files": [
+		"./dist/**/*.{js,mjs}",
+		"./dist/**/*.d.ts"
+	],
 	"scripts": {
 		"build:js": "rollup -c",
-		"build:ts": "tsc",
+		"build:ts": "tsc --project ./tsconfig.build.json",
 		"build": "pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",

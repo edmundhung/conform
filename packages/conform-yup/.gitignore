@@ -1,7 +1,3 @@
-_virtual
-*.cjs
-*.d.ts
-*.js
-*.mjs
+dist
+LICENSE
 README.md
-!rollup.config.js
