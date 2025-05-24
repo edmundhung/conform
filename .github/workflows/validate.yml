@@ -87,6 +87,8 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm i
       - name: Install pre-release
         run: |
           pnpm -F shadcn-ui add https://pkg.pr.new/@conform-to/react@${{ inputs.preview }} https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
@@ -96,3 +98,30 @@ jobs:
         run: pnpm exec playwright test --project=chromium
       - name: Run Playwright tests
         run: pnpm exec playwright test --project=chromium --config=./examples/shadcn-ui/playwright.config.ts
+
+  react-aria:
+    name: React Aria Example
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: |
+          npm i -g corepack@latest --force
+          corepack enable
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm i
+      - name: Install pre-release
+        run: |
+          pnpm -F react-aria add https://pkg.pr.new/@conform-to/react@${{ inputs.preview }} https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playground tests
+        run: pnpm exec playwright test --project=chromium
+      - name: Run Playwright tests
+        run: pnpm exec playwright test --project=chromium --config=./examples/react-aria/playwright.config.ts
