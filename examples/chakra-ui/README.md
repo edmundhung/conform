@@ -1,4 +1,4 @@
-# Chakra UI Integration
+# Chakra UI Example
 
 This example shows you how to integrate [chakra-ui](https://chakra-ui.com/docs/components) forms components with Conform.
 
@@ -24,6 +24,6 @@ This example shows you how to integrate [chakra-ui](https://chakra-ui.com/docs/c
 
 <!-- sandbox src="/examples/chakra-ui" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/chakra-ui).
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/chakra-ui).
 
 <!-- /sandbox -->
