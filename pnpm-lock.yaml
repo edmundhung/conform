@@ -151,11 +151,14 @@ importers:
   examples/headless-ui:
     dependencies:
       '@conform-to/react':
-        specifier: 1.6.1
+        specifier: ^1.6.1
         version: link:../../packages/conform-react
+      '@conform-to/zod':
+        specifier: ^1.6.1
+        version: link:../../packages/conform-zod
       '@headlessui/react':
         specifier: ^1.7.13
-        version: 1.7.19(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
+        version: 1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@heroicons/react':
         specifier: ^2.0.18
         version: 2.1.3(react@18.3.1)
@@ -164,38 +167,53 @@ importers:
         version: 18.3.1
       react-dom:
         specifier: ^18.2.0
-        version: 18.2.0(react@18.3.1)
-      react-scripts:
-        specifier: 5.0.1
-        version: 5.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.23.5))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.23.5))(@types/babel__core@7.20.5)(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(react@18.3.1)(type-fest@4.32.0)(typescript@4.9.5)
+        version: 18.3.1(react@18.3.1)
+      zod:
+        specifier: 3.25.3
+        version: 3.25.3
     devDependencies:
+      '@eslint/js':
+        specifier: ^9.17.0
+        version: 9.27.0
       '@headlessui/tailwindcss':
         specifier: ^0.1.2
         version: 0.1.3(tailwindcss@3.4.3)
       '@tailwindcss/forms':
         specifier: ^0.5.3
         version: 0.5.7(tailwindcss@3.4.3)
-      '@types/node':
-        specifier: ^16.18.14
-        version: 16.18.68
       '@types/react':
-        specifier: ^18.0.28
-        version: 18.3.1
+        specifier: ^18.3.18
+        version: 18.3.23
       '@types/react-dom':
-        specifier: ^18.0.11
-        version: 18.3.0
-      autoprefixer:
-        specifier: ^10.4.13
-        version: 10.4.19(postcss@8.4.38)
-      postcss:
-        specifier: ^8.4.21
-        version: 8.4.38
+        specifier: ^18.3.5
+        version: 18.3.7(@types/react@18.3.23)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.5.0(vite@6.3.5(@types/node@20.11.20)(jiti@1.21.0)(terser@5.26.0))
+      eslint:
+        specifier: ^9.17.0
+        version: 9.27.0(jiti@1.21.0)
+      eslint-plugin-react-hooks:
+        specifier: ^5.0.0
+        version: 5.2.0(eslint@9.27.0(jiti@1.21.0))
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.16
+        version: 0.4.20(eslint@9.27.0(jiti@1.21.0))
+      globals:
+        specifier: ^15.14.0
+        version: 15.15.0
       tailwindcss:
         specifier: ^3.2.7
         version: 3.4.3
       typescript:
-        specifier: ^4.9.5
-        version: 4.9.5
+        specifier: ^5
+        version: 5.8.3
+      typescript-eslint:
+        specifier: ^8.18.2
+        version: 8.33.0(eslint@9.27.0(jiti@1.21.0))(typescript@5.8.3)
+      vite:
+        specifier: ^6.0.5
+        version: 6.3.5(@types/node@20.11.20)(jiti@1.21.0)(terser@5.26.0)
 
   examples/material-ui:
     dependencies:
@@ -219,7 +237,7 @@ importers:
         version: 18.2.0(react@18.3.1)
       react-scripts:
         specifier: 5.0.1
-        version: 5.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(@types/babel__core@7.20.5)(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(react@18.3.1)(type-fest@4.32.0)(typescript@4.9.5)
+        version: 5.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.23.5))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.23.5))(@types/babel__core@7.20.5)(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(react@18.3.1)(type-fest@4.32.0)(typescript@4.9.5)
     devDependencies:
       '@types/node':
         specifier: ^16.18.14
@@ -12640,11 +12658,6 @@ snapshots:
       '@babel/core': 7.23.5
       '@babel/helper-plugin-utils': 7.22.5
 
-  '@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3)':
-    dependencies:
-      '@babel/core': 7.27.3
-      '@babel/helper-plugin-utils': 7.22.5
-
   '@babel/plugin-syntax-import-assertions@7.23.3(@babel/core@7.23.5)':
     dependencies:
       '@babel/core': 7.23.5
@@ -12668,11 +12681,6 @@ snapshots:
   '@babel/plugin-syntax-jsx@7.23.3(@babel/core@7.23.5)':
     dependencies:
       '@babel/core': 7.23.5
-      '@babel/helper-plugin-utils': 7.22.5
-
-  '@babel/plugin-syntax-jsx@7.23.3(@babel/core@7.27.3)':
-    dependencies:
-      '@babel/core': 7.27.3
       '@babel/helper-plugin-utils': 7.22.5
 
   '@babel/plugin-syntax-logical-assignment-operators@7.10.4(@babel/core@7.23.5)':
@@ -13006,15 +13014,6 @@ snapshots:
       '@babel/helper-module-imports': 7.22.15
       '@babel/helper-plugin-utils': 7.22.5
       '@babel/plugin-syntax-jsx': 7.23.3(@babel/core@7.23.5)
-      '@babel/types': 7.23.5
-
-  '@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3)':
-    dependencies:
-      '@babel/core': 7.27.3
-      '@babel/helper-annotate-as-pure': 7.22.5
-      '@babel/helper-module-imports': 7.22.15
-      '@babel/helper-plugin-utils': 7.22.5
-      '@babel/plugin-syntax-jsx': 7.23.3(@babel/core@7.27.3)
       '@babel/types': 7.23.5
 
   '@babel/plugin-transform-react-pure-annotations@7.23.3(@babel/core@7.23.5)':
@@ -14815,13 +14814,6 @@ snapshots:
   '@floating-ui/utils@0.1.6': {}
 
   '@gar/promisify@1.1.3': {}
-
-  '@headlessui/react@1.7.19(react-dom@18.2.0(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@tanstack/react-virtual': 3.5.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)
-      client-only: 0.0.1
-      react: 18.3.1
-      react-dom: 18.2.0(react@18.3.1)
 
   '@headlessui/react@1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -16985,12 +16977,6 @@ snapshots:
       lodash.merge: 4.6.2
       postcss-selector-parser: 6.0.10
       tailwindcss: 3.4.3
-
-  '@tanstack/react-virtual@3.5.0(react-dom@18.2.0(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@tanstack/virtual-core': 3.5.0
-      react: 18.3.1
-      react-dom: 18.2.0(react@18.3.1)
 
   '@tanstack/react-virtual@3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -19826,33 +19812,6 @@ snapshots:
       - jest
       - supports-color
 
-  eslint-config-react-app@7.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(jest@27.5.1)(typescript@4.9.5):
-    dependencies:
-      '@babel/core': 7.23.5
-      '@babel/eslint-parser': 7.23.3(@babel/core@7.23.5)(eslint@9.27.0(jiti@1.21.0))
-      '@rushstack/eslint-patch': 1.6.0
-      '@typescript-eslint/eslint-plugin': 5.62.0(@typescript-eslint/parser@5.62.0(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5))(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5)
-      '@typescript-eslint/parser': 5.62.0(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5)
-      babel-preset-react-app: 10.0.1
-      confusing-browser-globals: 1.0.11
-      eslint: 9.27.0(jiti@1.21.0)
-      eslint-plugin-flowtype: 8.0.3(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(eslint@9.27.0(jiti@1.21.0))
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@5.62.0(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))
-      eslint-plugin-jest: 25.7.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5))(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5))(eslint@9.27.0(jiti@1.21.0))(jest@27.5.1)(typescript@4.9.5)
-      eslint-plugin-jsx-a11y: 6.8.0(eslint@9.27.0(jiti@1.21.0))
-      eslint-plugin-react: 7.34.2(eslint@9.27.0(jiti@1.21.0))
-      eslint-plugin-react-hooks: 4.6.2(eslint@9.27.0(jiti@1.21.0))
-      eslint-plugin-testing-library: 5.11.1(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5)
-    optionalDependencies:
-      typescript: 4.9.5
-    transitivePeerDependencies:
-      - '@babel/plugin-syntax-flow'
-      - '@babel/plugin-transform-react-jsx'
-      - eslint-import-resolver-typescript
-      - eslint-import-resolver-webpack
-      - jest
-      - supports-color
-
   eslint-import-resolver-node@0.3.7:
     dependencies:
       debug: 3.2.7
@@ -19995,14 +19954,6 @@ snapshots:
     dependencies:
       '@babel/plugin-syntax-flow': 7.23.3(@babel/core@7.23.5)
       '@babel/plugin-transform-react-jsx': 7.23.4(@babel/core@7.23.5)
-      eslint: 9.27.0(jiti@1.21.0)
-      lodash: 4.17.21
-      string-natural-compare: 3.0.1
-
-  eslint-plugin-flowtype@8.0.3(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(eslint@9.27.0(jiti@1.21.0)):
-    dependencies:
-      '@babel/plugin-syntax-flow': 7.23.3(@babel/core@7.27.3)
-      '@babel/plugin-transform-react-jsx': 7.23.4(@babel/core@7.27.3)
       eslint: 9.27.0(jiti@1.21.0)
       lodash: 4.17.21
       string-natural-compare: 3.0.1
@@ -24225,92 +24176,6 @@ snapshots:
       dotenv-expand: 5.1.0
       eslint: 9.27.0(jiti@1.21.0)
       eslint-config-react-app: 7.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.23.5))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.23.5))(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(jest@27.5.1)(typescript@4.9.5)
-      eslint-webpack-plugin: 3.2.0(eslint@9.27.0(jiti@1.21.0))(webpack@5.89.0)
-      file-loader: 6.2.0(webpack@5.89.0)
-      fs-extra: 10.1.0
-      html-webpack-plugin: 5.5.4(webpack@5.89.0)
-      identity-obj-proxy: 3.0.0
-      jest: 27.5.1
-      jest-resolve: 27.5.1
-      jest-watch-typeahead: 1.1.0(jest@27.5.1)
-      mini-css-extract-plugin: 2.7.6(webpack@5.89.0)
-      postcss: 8.4.38
-      postcss-flexbugs-fixes: 5.0.2(postcss@8.4.38)
-      postcss-loader: 6.2.1(postcss@8.4.38)(webpack@5.89.0)
-      postcss-normalize: 10.0.1(browserslist@4.23.0)(postcss@8.4.38)
-      postcss-preset-env: 7.8.3(postcss@8.4.38)
-      prompts: 2.4.2
-      react: 18.3.1
-      react-app-polyfill: 3.0.0
-      react-dev-utils: 12.0.1(eslint@9.27.0(jiti@1.21.0))(typescript@4.9.5)(webpack@5.89.0)
-      react-refresh: 0.11.0
-      resolve: 1.22.8
-      resolve-url-loader: 4.0.0
-      sass-loader: 12.6.0(webpack@5.89.0)
-      semver: 7.5.4
-      source-map-loader: 3.0.2(webpack@5.89.0)
-      style-loader: 3.3.3(webpack@5.89.0)
-      tailwindcss: 3.4.3
-      terser-webpack-plugin: 5.3.9(webpack@5.89.0)
-      webpack: 5.89.0
-      webpack-dev-server: 4.15.1(webpack@5.89.0)
-      webpack-manifest-plugin: 4.1.1(webpack@5.89.0)
-      workbox-webpack-plugin: 6.6.0(@types/babel__core@7.20.5)(webpack@5.89.0)
-    optionalDependencies:
-      fsevents: 2.3.3
-      typescript: 4.9.5
-    transitivePeerDependencies:
-      - '@babel/plugin-syntax-flow'
-      - '@babel/plugin-transform-react-jsx'
-      - '@parcel/css'
-      - '@swc/core'
-      - '@types/babel__core'
-      - '@types/webpack'
-      - bufferutil
-      - canvas
-      - clean-css
-      - csso
-      - debug
-      - esbuild
-      - eslint-import-resolver-typescript
-      - eslint-import-resolver-webpack
-      - fibers
-      - node-notifier
-      - node-sass
-      - rework
-      - rework-visit
-      - sass
-      - sass-embedded
-      - sockjs-client
-      - supports-color
-      - ts-node
-      - type-fest
-      - uglify-js
-      - utf-8-validate
-      - vue-template-compiler
-      - webpack-cli
-      - webpack-hot-middleware
-      - webpack-plugin-serve
-
-  react-scripts@5.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(@types/babel__core@7.20.5)(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(react@18.3.1)(type-fest@4.32.0)(typescript@4.9.5):
-    dependencies:
-      '@babel/core': 7.23.5
-      '@pmmmwh/react-refresh-webpack-plugin': 0.5.11(react-refresh@0.11.0)(type-fest@4.32.0)(webpack-dev-server@4.15.1(webpack@5.89.0))(webpack@5.89.0)
-      '@svgr/webpack': 5.5.0
-      babel-jest: 27.5.1(@babel/core@7.23.5)
-      babel-loader: 8.3.0(@babel/core@7.23.5)(webpack@5.89.0)
-      babel-plugin-named-asset-import: 0.3.8(@babel/core@7.23.5)
-      babel-preset-react-app: 10.0.1
-      bfj: 7.1.0
-      browserslist: 4.23.0
-      camelcase: 6.3.0
-      case-sensitive-paths-webpack-plugin: 2.4.0
-      css-loader: 6.8.1(webpack@5.89.0)
-      css-minimizer-webpack-plugin: 3.4.1(webpack@5.89.0)
-      dotenv: 10.0.0
-      dotenv-expand: 5.1.0
-      eslint: 9.27.0(jiti@1.21.0)
-      eslint-config-react-app: 7.0.1(@babel/plugin-syntax-flow@7.23.3(@babel/core@7.27.3))(@babel/plugin-transform-react-jsx@7.23.4(@babel/core@7.27.3))(eslint-import-resolver-typescript@3.6.1)(eslint@9.27.0(jiti@1.21.0))(jest@27.5.1)(typescript@4.9.5)
       eslint-webpack-plugin: 3.2.0(eslint@9.27.0(jiti@1.21.0))(webpack@5.89.0)
       file-loader: 6.2.0(webpack@5.89.0)
       fs-extra: 10.1.0
