@@ -30,7 +30,7 @@
 	"devDependencies": {
 		"@remix-run/dev": "^2.9.1",
 		"@tailwindcss/forms": "^0.5.2",
-		"@types/react": "^18.3.1",
+		"@types/react": "^18.2.0",
 		"@types/react-dom": "^18.3.0",
 		"autoprefixer": "^10.4.19",
 		"cross-env": "^7.0.3",

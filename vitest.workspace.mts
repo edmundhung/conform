@@ -15,12 +15,11 @@ export default defineWorkspace([
 	{
 		test: {
 			name: 'node',
-			include: [
-				'tests/conform-yup.spec.ts',
-			],
+			include: ['tests/conform-yup.spec.ts'],
 			environment: 'node',
 		},
 	},
-	'packages/conform-zod',
+	'packages/conform-dom',
+	'packages/conform-react',
 	'packages/conform-valibot',
 ]);
