@@ -35,6 +35,7 @@
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
 		"test": "vitest",
+		"typecheck": "tsc",
 		"prepare": "pnpm run build"
 	},
 	"repository": {

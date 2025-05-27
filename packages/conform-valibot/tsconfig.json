@@ -9,8 +9,8 @@
 		"strict": true,
 		"declaration": true,
 		"declarationMap": true,
-		"emitDeclarationOnly": true,
 		"composite": true,
+		"noEmit": true,
 		"skipLibCheck": true
 	}
 }

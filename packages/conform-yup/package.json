@@ -27,6 +27,7 @@
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
+		"typecheck": "tsc",
 		"prepare": "pnpm run build"
 	},
 	"repository": {
