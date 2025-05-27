@@ -81,8 +81,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
 
   examples/chakra-ui:
     dependencies:
@@ -228,8 +228,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -289,8 +289,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@types/react':
         specifier: ^18.2.43
@@ -347,8 +347,8 @@ importers:
         specifier: ^6.15.0
         version: 6.23.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@rollup/plugin-replace':
         specifier: ^5.0.2
@@ -402,8 +402,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@remix-run/dev':
         specifier: ^1.19.3
@@ -502,8 +502,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.3)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@types/node':
         specifier: ^20.11.20
@@ -787,8 +787,8 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
 
   playground:
     dependencies:
@@ -841,8 +841,8 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: 3.25.30
+        version: 3.25.30
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.9.1
@@ -11537,8 +11537,8 @@ packages:
     resolution: {integrity: sha512-Mb6GzuRyUEl8X+6V6xzHbd4XV0au/4gOYrYP+CAfHL32uPmGswES+v2YqonZiW1NZWVA3jkssCKSU2knonm/aQ==}
     engines: {node: '>=20'}
 
-  zod@3.25.3:
-    resolution: {integrity: sha512-VGZqnyYNrl8JpEJRZaFPqeVNIuqgXNu4cXZ5cOb6zEUO1OxKbRnWB4UdDIXMmiERWncs0yDQukssHov8JUxykQ==}
+  zod@3.25.30:
+    resolution: {integrity: sha512-VolhdEtu6TJr/fzGuHA/SZ5ixvXqA6ADOG9VRcQ3rdOKmF5hkmcJbyaQjUH5BgmpA9gej++zYRX7zjSmdReIwA==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -20948,7 +20948,7 @@ snapshots:
       workerd: 1.20240419.0
       ws: 8.14.2
       youch: 3.3.3
-      zod: 3.25.3
+      zod: 3.25.30
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -22149,7 +22149,7 @@ snapshots:
       quick-lru: 7.0.0
       url-join: 5.0.0
       validate-npm-package-name: 5.0.1
-      zod: 3.25.3
+      zod: 3.25.30
       zod-package-json: 1.0.3
 
   query-string@9.1.0:
@@ -24580,8 +24580,8 @@ snapshots:
 
   zod-package-json@1.0.3:
     dependencies:
-      zod: 3.25.3
+      zod: 3.25.30
 
-  zod@3.25.3: {}
+  zod@3.25.30: {}
 
   zwitch@2.0.4: {}
