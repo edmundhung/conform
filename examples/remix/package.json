@@ -18,7 +18,7 @@
 		"isbot": "^3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"zod": "3.25.3"
+		"zod": "^3.25.30"
 	},
 	"devDependencies": {
 		"@remix-run/dev": "^1.19.3",
