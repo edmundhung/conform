@@ -81,7 +81,7 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
 
   examples/chakra-ui:
@@ -228,7 +228,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@types/node':
@@ -289,7 +289,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@types/react':
@@ -347,7 +347,7 @@ importers:
         specifier: ^6.15.0
         version: 6.23.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@rollup/plugin-replace':
@@ -402,7 +402,7 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@remix-run/dev':
@@ -502,7 +502,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.3)
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@types/node':
@@ -787,7 +787,7 @@ importers:
         specifier: ^3.4.0
         version: 3.5.0
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
 
   playground:
@@ -841,7 +841,7 @@ importers:
         specifier: ^0.32.11
         version: 0.32.11
       zod:
-        specifier: 3.25.30
+        specifier: ^3.25.30
         version: 3.25.30
     devDependencies:
       '@remix-run/dev':
