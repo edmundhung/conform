@@ -26,7 +26,7 @@ export function getResult<Output>(
 		);
 
 		error[name] ??= [];
-		error[name]?.push(issue.message);
+		error[name].push(issue.message);
 	}
 
 	return { success: false, error };
