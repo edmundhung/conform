@@ -1,4 +1,4 @@
-# Radix UI Integration
+# Radix UI Example
 
 [Radix UI](https://www.radix-ui.com/) Radix UI is a headless UI library, offering flexible, unstyled primitives for creating customizable and accessible components, allowing developers to manage the visual layer independently.
 This example we leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://tailwindcss.com/)
@@ -26,6 +26,6 @@ This example we leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://
 
 <!-- sandbox src="/examples/radix-ui" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/radix-ui).
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/radix-ui).
 
 <!-- /sandbox -->

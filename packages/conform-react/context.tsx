@@ -52,6 +52,8 @@ export type Metadata<
 	errorId: string;
 	descriptionId: string;
 	name: FieldName<Schema, FormSchema, FormError>;
+	defaultValue: string | undefined;
+	defaultOptions: string[] | undefined;
 	initialValue: FormValue<Schema>;
 	value: FormValue<Schema>;
 	errors: FormError | undefined;
@@ -243,6 +245,35 @@ export function getMetadata<
 			name,
 			errorId: `${id}-error`,
 			descriptionId: `${id}-description`,
+			get defaultValue() {
+				const initialValue = this.initialValue;
+
+				if (typeof initialValue === 'string') {
+					return initialValue;
+				}
+
+				if (Array.isArray(initialValue)) {
+					return initialValue[0];
+				}
+
+				return;
+			},
+			get defaultOptions() {
+				const initialValue = this.initialValue;
+
+				if (typeof initialValue === 'string') {
+					return [initialValue];
+				}
+
+				if (
+					Array.isArray(initialValue) &&
+					initialValue.every((item) => typeof item === 'string')
+				) {
+					return initialValue;
+				}
+
+				return;
+			},
 			get initialValue() {
 				return state.initialValue[name] as FormValue<Schema>;
 			},

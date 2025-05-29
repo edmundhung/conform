@@ -45,7 +45,7 @@ function Calendar({
 				day_today:
 					'bg-stone-100 text-stone-900 dark:bg-stone-800 dark:text-stone-50',
 				day_outside:
-					'day-outside text-stone-500 opacity-50 aria-selected:bg-stone-100/50 aria-selected:text-stone-500 aria-selected:opacity-30 dark:text-stone-400 dark:aria-selected:bg-stone-800/50 dark:aria-selected:text-stone-400',
+					'day-outside text-stone-500 aria-selected:bg-stone-100/50 aria-selected:text-stone-500 dark:text-stone-400 dark:aria-selected:bg-stone-800/50 dark:aria-selected:text-stone-400',
 				day_disabled: 'text-stone-500 opacity-50 dark:text-stone-400',
 				day_range_middle:
 					'aria-selected:bg-stone-100 aria-selected:text-stone-900 dark:aria-selected:bg-stone-800 dark:aria-selected:text-stone-50',
@@ -53,8 +53,12 @@ function Calendar({
 				...classNames,
 			}}
 			components={{
-				IconLeft: () => <ChevronLeft className="h-4 w-4" />,
-				IconRight: () => <ChevronRight className="h-4 w-4" />,
+				IconLeft: ({ className, ...props }) => (
+					<ChevronLeft className={cn('h-4 w-4', className)} {...props} />
+				),
+				IconRight: ({ className, ...props }) => (
+					<ChevronRight className={cn('h-4 w-4', className)} {...props} />
+				),
 			}}
 			{...props}
 		/>
