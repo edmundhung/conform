@@ -82,7 +82,7 @@ importers:
         version: 0.32.11
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
 
   examples/chakra-ui:
     dependencies:
@@ -229,7 +229,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -290,7 +290,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@types/react':
         specifier: ^18.2.43
@@ -348,7 +348,7 @@ importers:
         version: 6.23.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@rollup/plugin-replace':
         specifier: ^5.0.2
@@ -403,7 +403,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@remix-run/dev':
         specifier: ^1.19.3
@@ -503,7 +503,7 @@ importers:
         version: 1.0.7(tailwindcss@3.4.3)
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@types/node':
         specifier: ^20.11.20
@@ -788,7 +788,7 @@ importers:
         version: 3.5.0
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
 
   playground:
     dependencies:
@@ -842,7 +842,7 @@ importers:
         version: 0.32.11
       zod:
         specifier: ^3.25.30
-        version: 3.25.30
+        version: 3.25.41
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.9.1
@@ -11542,8 +11542,8 @@ packages:
     resolution: {integrity: sha512-Mb6GzuRyUEl8X+6V6xzHbd4XV0au/4gOYrYP+CAfHL32uPmGswES+v2YqonZiW1NZWVA3jkssCKSU2knonm/aQ==}
     engines: {node: '>=20'}
 
-  zod@3.25.30:
-    resolution: {integrity: sha512-VolhdEtu6TJr/fzGuHA/SZ5ixvXqA6ADOG9VRcQ3rdOKmF5hkmcJbyaQjUH5BgmpA9gej++zYRX7zjSmdReIwA==}
+  zod@3.25.41:
+    resolution: {integrity: sha512-8+sDJTGtCYIDBhdqDygp0ffj8kzziRKqAJPhpYObbElJ+3TRe/mnlnwH+/OMa3kKhueS4Drm5UMW00/u1p07zA==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -21022,7 +21022,7 @@ snapshots:
       workerd: 1.20240419.0
       ws: 8.14.2
       youch: 3.3.3
-      zod: 3.25.30
+      zod: 3.25.41
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -22223,7 +22223,7 @@ snapshots:
       quick-lru: 7.0.0
       url-join: 5.0.0
       validate-npm-package-name: 5.0.1
-      zod: 3.25.30
+      zod: 3.25.41
       zod-package-json: 1.0.3
 
   query-string@9.1.0:
@@ -24660,8 +24660,8 @@ snapshots:
 
   zod-package-json@1.0.3:
     dependencies:
-      zod: 3.25.30
+      zod: 3.25.41
 
-  zod@3.25.30: {}
+  zod@3.25.41: {}
 
   zwitch@2.0.4: {}

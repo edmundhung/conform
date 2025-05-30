@@ -273,7 +273,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 			}),
 			new constr({
 				...def,
-				options: def.options.map((item, index) => {
+				options: def.options.map((item) => {
 					const objectDef = item._zod.def as $ZodObjectDef;
 					const object = new item._zod.constr({
 						...objectDef,
@@ -285,9 +285,11 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 					}) as $ZodType<unknown, {}>;
 
 					// The discriminate key is obtained from the defined Object.
-					// If you regenerate the Object schema, the `disc` property disappears. Therefore, set the one obtained from the original Object.
-					// https://github.com/colinhacks/zod/blob/94871b708300ab67c4964025354c5199d335e55a/packages/zod/src/v4/core/schemas.ts#L2055-L2070
-					object._zod.disc = def.options[index]?._zod.disc;
+					// If you regenerate the Object schema, the `propValues` property disappears. Therefore, set the one obtained from the original Object.
+					// https://github.com/colinhacks/zod/blob/22ab436bc214d86d740e78f33ae6834d28ddc152/packages/zod/src/v4/core/schemas.ts#L1949-L1963
+					object._zod.propValues = item._zod.propValues;
+					// @ts-expect-error: The `disc` property was used up to version 3.25.34, but was changed to the `propValues` property from version 3.25.35 onwards.
+					object._zod.disc = item._zod.disc;
 					return object;
 				}),
 			}) as $ZodType<unknown, {}>,
