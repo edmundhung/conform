@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { parseWithZod, conformZodMessage } from '../parse';
 import { z } from 'zod/v4';
+import { object, string, minLength } from 'zod/v4-mini';
 import { createFormData } from '../../tests/helpers/FromData';
 
 describe('parse', () => {
@@ -14,6 +15,33 @@ describe('parse', () => {
 			expect(
 				parseWithZod(formData, {
 					schema,
+					error(issue) {
+						if (issue.code === 'too_small' && issue.minimum === 5) {
+							return { message: 'The field is too short' };
+						}
+
+						// fall back to default message!
+						return issue.message ?? null;
+					},
+				}),
+			).toEqual({
+				status: 'error',
+				payload: {
+					text: 'abc',
+				},
+				error: {
+					text: ['The field is too short'],
+				},
+				reply: expect.any(Function),
+			});
+
+			const schemaWithMini = object({
+				text: string().check(minLength(5)),
+			});
+
+			expect(
+				parseWithZod(formData, {
+					schema: schemaWithMini,
 					error(issue) {
 						if (issue.code === 'too_small' && issue.minimum === 5) {
 							return { message: 'The field is too short' };
