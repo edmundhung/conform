@@ -13,7 +13,7 @@ export {
 	FormProvider,
 	FormStateInput,
 } from './context';
-export { useForm, useFormMetadata, useField } from './hooks';
+export { useForm, useFormMetadata, useField, useControl } from './hooks';
 export {
 	Control as unstable_Control,
 	useControl as unstable_useControl,

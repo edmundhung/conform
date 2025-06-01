@@ -1,8 +1,11 @@
+import tailwindCssForms from '@tailwindcss/forms';
+import headlessui from '@headlessui/tailwindcss';
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
 	content: ['./src/**/*.{js,jsx,ts,tsx}'],
 	theme: {
 		extend: {},
 	},
-	plugins: [require('@tailwindcss/forms'), require('@headlessui/tailwindcss')],
+	plugins: [tailwindCssForms, headlessui],
 };

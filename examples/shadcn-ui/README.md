@@ -9,7 +9,7 @@ To install a component, you can simply copy and paste the component code into yo
 
 ## Conform Forms integration
 
-This example includes a set of components in a separate folder `src/components/conform` that extend the shadcn components. By using these components, you can quickly and easily build complex forms with full validation and error handling.
+This example includes a set of components in a separate file `src/components/form.tsx` that extend the shadcn components. By using these components, you can quickly and easily build complex forms with full validation and error handling.
 
 ## Additional infos
 
@@ -32,6 +32,6 @@ This example we leverage [Vite](https://vitejs.dev/) and [Tailwind CSS](https://
 
 <!-- sandbox src="/examples/shadcn-ui" -->
 
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/shadcn-ui).
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/shadcn-ui).
 
 <!-- /sandbox -->
