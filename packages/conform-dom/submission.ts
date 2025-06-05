@@ -38,6 +38,7 @@ export type Submission<Schema, FormError = string[], FormValue = Schema> =
 	| {
 			status: 'error' | undefined;
 			payload: Record<string, SubmissionPayload<FormDataEntryValue>>;
+			value?: FormValue;
 			error: Record<string, FormError | null> | null;
 			reply(options?: ReplyOptions<FormError>): SubmissionResult<FormError>;
 	  };
@@ -226,6 +227,7 @@ export function createSubmission<FormValue, FormError>(
 		return {
 			status: !context.intent ? 'error' : undefined,
 			payload: context.payload,
+			value: context.value,
 			error: typeof context.error !== 'undefined' ? context.error : {},
 			reply(options) {
 				return replySubmission(context, options);
