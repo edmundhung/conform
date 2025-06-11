@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/react-router",
+	"name": "react-router-example",
 	"private": true,
 	"scripts": {
 		"dev": "vite",

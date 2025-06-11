@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/nextjs",
+	"name": "nextjs-example",
 	"private": true,
 	"license": "MIT",
 	"scripts": {

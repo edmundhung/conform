@@ -1,5 +1,5 @@
 {
-	"name": "@conform-example/remix",
+	"name": "remix-example",
 	"private": true,
 	"license": "MIT",
 	"sideEffects": false,

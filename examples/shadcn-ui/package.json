@@ -1,5 +1,5 @@
 {
-	"name": "shadcn-ui",
+	"name": "shadcn-ui-example",
 	"private": true,
 	"type": "module",
 	"scripts": {

@@ -89,7 +89,7 @@ jobs:
           cache: 'pnpm'
       - name: Install pre-release
         run: |
-          pnpm add https://pkg.pr.new/@conform-to/react@${{ inputs.preview }} https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
+          pnpm -F shadcn-ui add https://pkg.pr.new/@conform-to/react@${{ inputs.preview }} https://pkg.pr.new/@conform-to/zod@${{ inputs.preview }}
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
       - name: Run Playground tests
