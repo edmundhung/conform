@@ -1,4 +1,4 @@
-import { unstable_updateFieldValue as updateFieldValue } from '@conform-to/dom';
+import { unstable_updateField as updateField } from '@conform-to/dom';
 import {
 	type Key,
 	type RefCallback,
@@ -181,7 +181,7 @@ export function useInputEvent(
 					const element = ref.current;
 
 					if (element) {
-						updateFieldValue(element, { value });
+						updateField(element, { value });
 
 						// Dispatch input event with the updated input value
 						element.dispatchEvent(new InputEvent('input', { bubbles: true }));
@@ -321,7 +321,7 @@ export function useControl<
 		// This is now handled mostly by the side effect
 		// But we still need to set the initial value for backward compatibility
 		if (!element.dataset.conform) {
-			updateFieldValue(element, { value });
+			updateField(element, { value });
 		}
 	};
 
