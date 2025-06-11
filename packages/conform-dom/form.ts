@@ -1141,7 +1141,11 @@ export function createFormContext<
 				case 'reset': {
 					const prefix = formatName(intent.payload.name, intent.payload.index);
 					for (const element of formElement.elements) {
-						if (isFieldElement(element) && isPrefix(element.name, prefix)) {
+						if (
+							isFieldElement(element) &&
+							element.name &&
+							isPrefix(element.name, prefix)
+						) {
 							const value = getValue(meta.defaultValue, element.name);
 							const defaultValue =
 								typeof value === 'string' ||
