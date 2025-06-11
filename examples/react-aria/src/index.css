@@ -1,0 +1,12 @@
+body {
+	color: var(--text-color);
+}
+
+form > * {
+	margin: 1rem;
+}
+
+form > footer {
+	display: flex;
+	gap: 0.5rem;
+}
