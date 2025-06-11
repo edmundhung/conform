@@ -111,8 +111,8 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: ^3.25.30
+        version: 3.25.41
     devDependencies:
       '@eslint/js':
         specifier: ^9.17.0
@@ -169,8 +169,8 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: ^3.25.30
+        version: 3.25.41
     devDependencies:
       '@eslint/js':
         specifier: ^9.17.0
@@ -239,8 +239,8 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
       zod:
-        specifier: 3.25.3
-        version: 3.25.3
+        specifier: ^3.25.30
+        version: 3.25.41
     devDependencies:
       '@eslint/js':
         specifier: ^9.17.0
@@ -10486,9 +10486,6 @@ packages:
   zod-package-json@1.0.3:
     resolution: {integrity: sha512-Mb6GzuRyUEl8X+6V6xzHbd4XV0au/4gOYrYP+CAfHL32uPmGswES+v2YqonZiW1NZWVA3jkssCKSU2knonm/aQ==}
     engines: {node: '>=20'}
-
-  zod@3.25.3:
-    resolution: {integrity: sha512-VGZqnyYNrl8JpEJRZaFPqeVNIuqgXNu4cXZ5cOb6zEUO1OxKbRnWB4UdDIXMmiERWncs0yDQukssHov8JUxykQ==}
 
   zod@3.25.41:
     resolution: {integrity: sha512-8+sDJTGtCYIDBhdqDygp0ffj8kzziRKqAJPhpYObbElJ+3TRe/mnlnwH+/OMa3kKhueS4Drm5UMW00/u1p07zA==}
@@ -22024,8 +22021,6 @@ snapshots:
   zod-package-json@1.0.3:
     dependencies:
       zod: 3.25.41
-
-  zod@3.25.3: {}
 
   zod@3.25.41: {}
 
