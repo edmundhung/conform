@@ -51,6 +51,10 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
+			title: 'Future APIs',
+			links: [{ title: 'useControl', to: '/api/react/future/useControl' }],
+		},
+		{
 			title: 'Utilities',
 			links: [
 				{ title: 'getFormProps', to: '/api/react/getFormProps' },
@@ -135,6 +139,10 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'FormProvider', to: '/api/react/FormProvider' },
 				{ title: 'FormStateInput', to: '/api/react/FormStateInput' },
 			],
+		},
+		{
+			title: 'Future APIs',
+			links: [{ title: 'useControl', to: '/api/react/future/useControl' }],
 		},
 		{
 			title: 'ユーティリティ',
