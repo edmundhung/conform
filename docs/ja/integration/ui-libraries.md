@@ -1,230 +1,91 @@
 # UI ライブラリとのインテグレーション
 
-このガイドでは、カスタム入力コンポーネントを Conform とインテグレーションする方法を紹介します。
+In this guide, we'll walk through how to integrate Conform with custom input components.
 
-## イベント移譲
+## Concept
 
-Conform は、ドキュメントに直接 **input** と **focusout** イベントリスナーをアタッチすることで、すべてのネイティブ入力をサポートしています。 `<input />` 、 `<select />` 、または `<textarea />` 要素にイベントハンドラーを設定する必要はありません。唯一の要件は、 `<form />` 要素にフォーム **id** を設定し、すべての入力に **name** 属性が設定されていて、 [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) 属性を使用するか、 `<form />` 要素内にネストすることでフォームに関連付けられていることです。
+Conform supports native inputs out of the box by listening for form events like `input`, `focusout`, and `reset` on the document. This means simple custom components that wrap native elements (e.g. a styled `<input>`) typically work without extra setup.
+
+However, more complex inputs like `<Select />`, `<DatePicker />`, or custom file uploaders often involve additional layers of abstraction. These layers interfere with how the browser emits native form events, making it harder for Conform to track user interactions.
+
+To solve this, we provide the [`useControl`](../api/react/useControl.md) hook. It lets you manually connect a hidden base input to a custom UI component and dispatch native events in response to user interaction.
+
+## Emulating Native Inputs
+
+There are multiple ways to wire up a base input with `useControl`:
+
+- In some cases, you may be able to **re-use an input rendered by the UI library**. This can help with progressive enhancement — for instance, when a user clicks on a styled label that toggles a real hidden checkbox using standard HTML behavior. The form still submits correctly even if JavaScript hasn't loaded.
+
+- But not all custom inputs enable this. Some UI libraries render hidden inputs and update their value via JavaScript after interacting with entirely separate elements. These setups won't work before JavaScript loads and may trigger their event handler in an unexpected order — for example, calling `onChange` before updating the input's value.
+
+- Because `useControl` itself requires JavaScript, the benefits of re-using library-provided inputs are marginal. We recommend **rendering your own base input** unless you're confident it helps with progressive enhancement and behaves as expected.
+
+The `useControl` hook gives you a control object that manages the input value and provides methods to trigger form events. Here are the main steps to integrate it:
+
+1. **Register a base input**
+
+   - Render a hidden native input element (e.g. `<input hidden />`) and register it with `control.register()`.
+   - This serves as the authoritative source of the value and emits native form events.
+
+2. **Emit form events**
+
+   - Use `control.change()` and `control.blur()` in your custom component's `onChange` and `onBlur` handlers.
+
+3. **Make it controlled**
+
+   - Use `control.value`, `control.options`, `control.checked`, or `control.files` to sync the custom component with the current state.
+
+4. **Delegate focus (optional)**
+
+   - If your base input is hidden, use the `onFocus` callback in `useControl` to forward focus to the custom input for accessibility.
+
+### Example
 
 ```tsx
-function Example() {
-  const [form, fields] = useForm({
-    // オプション。指定されていない場合は Conform がランダムなIDを生成します。
-    id: 'example',
-  });
+import { useControl } from '@conform-to/react/future';
+import { useForm } from '@conform-to/react';
+import { Input } from 'custom-ui-library';
+
+function MyInput({ name, defaultValue }) {
+  const control = useControl({ defaultValue });
 
   return (
-    <form id={form.id}>
-      <div>
-        <label>Title</label>
-        <input type="text" name="title" />
-        <div>{fields.title.errors}</div>
-      </div>
-      <div>
-        <label>Description</label>
-        <textarea name="description" />
-        <div>{fields.description.errors}</div>
-      </div>
-      <div>
-        <label>Color</label>
-        <select name="color">
-          <option>Red</option>
-          <option>Green</option>
-          <option>Blue</option>
-        </select>
-        <div>{fields.color.errors}</div>
-      </div>
-      <button form={form.id}>Submit</button>
-    </form>
+    <>
+      <input name={name} ref={control.register} hidden />
+      <Input
+        value={control.value}
+        onChange={(value) => control.change(value)}
+        onBlur={() => control.blur()}
+      />
+    </>
   );
 }
 ```
 
-## インテグレーションが必要かどうかの判別
+### Input Type Differences
 
-Conform は[イベント移譲](#event-delegation)に依存してフォームをバリデートし、フォームイベントを発行する限り、どのようなカスタム入力とも動作します。これは通常、 `<Input />` や `<Textarea />` のように、ネイティブの入力要素をラップするだけのシンプルなコンポーネントに対して当てはまります。しかし、 `<Select />` や `<DatePicker />` のようなカスタム入力コンポーネントでは、ユーザーが非ネイティブのフォーム要素で操作し、隠された入力を使うため、フォームイベントが発行されない可能性が高いです。
+Input types contribute to form data in different ways when it comes to form submission. Here's a quick reference:
 
-入力がネイティブ入力かどうかを識別するために、カスタム入力を操作している間にフォームイベントが発行され、バブルアップするかどうかを確認するために、イベントリスナーを添付した div で入力をラップすることができます。また、以下にはいくつかの人気のある UI ライブラリに関する [例](#examples) も掲載されています。
+- **Text Inputs**: Straightforward. When empty, the value is an empty string.
+- **Checkboxes / Radios**:
 
-```tsx
-import { CustomInput } from 'your-ui-library';
+  - Default value is `'on'` unless `value` is specified.
+  - If checked, the value is submitted; if unchecked, it's omitted.
 
-function Example() {
-  return (
-    <div onInput={console.log} onBlur={console.log}>
-      <CustomInput />
-    </div>
-  );
-}
-```
+- **Select (single)**: Value is the selected option's `value`. Defaults to the first option.
+- **Select (multiple)**: Represents an array of selected values. If none selected, no entry in `FormData`.
+- **File Inputs**: Yields one or more `File` objects. If empty, `FormData` omits the field.
+- **Other inputs**: Behave like text inputs. Their `type` adds context but doesn't affect how data is submitted.
 
-## `useInputControl` を使用してカスタム入力コンポーネントを強化する
+## Examples
 
-この問題を解決するために、 Conform は [useInputControl](../api/react/useInputControl.md) というフックを提供しています。これにより、必要なときにフォームイベントを発行するようにカスタム入力を強化できます。このフックは以下のプロパティを持つコントロールオブジェクトを返します:
+We've prepared examples for integrating with popular UI libraries:
 
-- `value`: フォームの[リセットおよび更新のインテント](../intent-button.md#reset-and-update-intent)に対応した、入力の現在の値
-- `change`: 現在の値を更新し、`change` および `input` イベントの両方を発行するための関数
-- `focus`: `focus` および `focusin` イベントを発行するための関数
-- `blur`: `blur` および`focusout` イベントを発行するための関数
-
-以下は、Radix UI の[Select コンポーネント](https://www.radix-ui.com/primitives/docs/components/select)をラップする例です:
-
-```tsx
-import {
-  type FieldMetadata,
-  useForm,
-  useInputControl,
-} from '@conform-to/react';
-import * as Select from '@radix-ui/react-select';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@radix-ui/react-icons';
-
-type SelectFieldProps = {
-  // `FieldMetadata` 型を使用して `meta` プロパティを定義し、
-  // そのジェネリクスを通じて受け入れるフィールドの型を制限することができます。
-  meta: FieldMetadata<string>;
-  options: Array<string>;
-};
-
-function SelectField({ meta, options }: SelectFieldProps) {
-  const control = useInputControl(meta);
-
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      <Select.Trigger>
-        <Select.Value />
-        <Select.Icon>
-          <ChevronDownIcon />
-        </Select.Icon>
-      </Select.Trigger>
-      <Select.Portal>
-        <Select.Content>
-          <Select.ScrollUpButton>
-            <ChevronUpIcon />
-          </Select.ScrollUpButton>
-          <Select.Viewport>
-            {options.map((option) => (
-              <Select.Item key={option} value={option}>
-                <Select.ItemText>{option}</Select.ItemText>
-                <Select.ItemIndicator>
-                  <CheckIcon />
-                </Select.ItemIndicator>
-              </Select.Item>
-            ))}
-          </Select.Viewport>
-          <Select.ScrollDownButton>
-            <ChevronDownIcon />
-          </Select.ScrollDownButton>
-        </Select.Content>
-      </Select.Portal>
-    </Select.Root>
-  );
-}
-
-function Example() {
-  const [form, fields] = useForm();
-
-  return (
-    <form id={form.id}>
-      <div>
-        <label>Currency</label>
-        <SelectField meta={fields.color} options={['red', 'green', 'blue']} />
-        <div>{fields.color.errors}</div>
-      </div>
-      <button>Submit</button>
-    </form>
-  );
-}
-```
-
-## フォームコンテキストでシンプルに
-
-[useField](../api/react/useField.md) フックを [FormProvider](../api/react/FormProvider.md) と共に使用することで、ラッパーコンポーネントをさらにシンプルにすることもできます。
-
-```tsx
-import {
-  type FieldName,
-  FormProvider,
-  useForm,
-  useField,
-  useInputControl,
-} from '@conform-to/react';
-import * as Select from '@radix-ui/react-select';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@radix-ui/react-icons';
-
-type SelectFieldProps = {
-  // `FieldMetadata` 型の代わりに `FieldName` 型を使用します。
-  // また、そのジェネリクスを通じて受け入れるフィールドの型を制限することもできます。
-  name: FieldName<string>;
-  options: Array<string>;
-};
-
-function Select({ name, options }: SelectFieldProps) {
-  const [meta] = useField(name);
-  const control = useInputControl(meta);
-
-  return (
-    <Select.Root
-      name={meta.name}
-      value={control.value}
-      onValueChange={(value) => {
-        control.change(value);
-      }}
-      onOpenChange={(open) => {
-        if (!open) {
-          control.blur();
-        }
-      }}
-    >
-      {/* ... */}
-    </Select.Root>
-  );
-}
-
-function Example() {
-  const [form, fields] = useForm();
-
-  return (
-    <FormProvider context={form.context}>
-      <form id={form.id}>
-        <div>
-          <label>Color</label>
-          <Select name={fields.color.name} options={['red', 'green', 'blue']} />
-          <div>{fields.color.errors}</div>
-        </div>
-        <button>Submit</button>
-      </form>
-    </FormProvider>
-  );
-}
-```
-
-## 例
-
-こちらでは、いくつかの人気のある UI ライブラリとの統合例を見ることができます。
-
-> Radix UI や React Aria Component など、さらに多くの UI ライブラリの例を準備するためのコントリビューターを探しています。
-
+- [React Aria Components](../../examples/react-aria/)
+- [Shadcn UI](../../examples/shadcn-ui/)
+- [Radix UI](../../examples/radix-ui/)
 - [Chakra UI](../../examples/chakra-ui/)
 - [Headless UI](../../examples/headless-ui/)
 - [Material UI](../../examples/material-ui/)
-- [Radix UI](../../examples/radix-ui/)
-- [Shadcn UI](../../examples/shadcn-ui/)
+
+If the library you're using isn't listed or you run into issues, [open a discussion](https://github.com/edmundhung/conform/discussions) — we're happy to help. Contributions are also welcome if you'd like to share an example.
