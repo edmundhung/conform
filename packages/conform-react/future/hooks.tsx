@@ -20,26 +20,27 @@ export const formObserver = createGlobalFormsObserver();
 
 export type Control = {
 	/**
-	 * The current value of the base input. It will be undefined for multi-select,
-	 * file inputs, or checkbox group.
+	 * Current value of the base input. Undefined if the registered input
+	 * is a multi-select, file input, or checkbox group.
 	 */
 	value: string | undefined;
 	/**
-	 * The selected options of the base input. Use this with multi-select or checkbox group.
+	 * Selected options of the base input. Defined only when the registered input
+	 * is a multi-select or checkbox group.
 	 */
 	checked: boolean | undefined;
 	/**
-	 * The checked state of the base input. Use this with checkbox or radio inputs.
+	 * Checked state of the base input. Defined only when the registered input
+	 * is a single checkbox or radio input.
 	 */
 	options: string[] | undefined;
 	/**
-	 * The files selected with the base input. Use this with file inputs.
+	 * Selected files of the base input. Defined only when the registered input
+	 * is a file input.
 	 */
 	files: File[] | undefined;
 	/**
-	 * Registers the base input element. This is required to sync the state of the input
-	 * with the control and emits events. You can register a checkbox / radio group by
-	 * passing an array of input elements.
+	 * Registers the base input element(s). Accepts a single input or an array for groups.
 	 */
 	register: (
 		element:
@@ -52,32 +53,30 @@ export type Control = {
 			| undefined,
 	) => void;
 	/**
-	 * Updates the state of the base input with both the
-	 * [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
-	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events emitted.
-	 * Use this when you need to change the input value programmatically.
+	 * Programmatically updates the input value and emits
+	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
+	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
 	change(value: string | string[] | boolean | File | File[] | FileList): void;
 	/**
-	 * Emits the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and
-	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events
-	 * as if the user focused on the input. This does not move the actual keyboard focus to the
-	 * input. Use native DOM methods like `inputElement.focus()` if you want to move the focus
-	 * to the input element.
+	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
+	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
+	 * Does not actually move focus.
 	 */
 	focus(): void;
 	/**
-	 * Emits the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event)
-	 * and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event)
-	 * events as if the user left the input. This does not actually removes keyboard focus from
-	 * the current element. It just triggers the events.
+	 * Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event) and
+	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events.
+	 * This does not move the actual keyboard focus to the input. Use `element.focus()` instead
+	 * if you want to move focus to the input.
 	 */
 	blur(): void;
 };
 
 /**
- * A React hook that let you sync the state of the base input and dispatch native form events
- * from the base input.
+ * A React hook that lets you sync the state of an input and dispatch native form events from it.
+ * This is useful when emulating native input behavior — typically by rendering a hidden base input
+ * and syncing it with a custom input.
  *
  * @example
  * ```ts
@@ -86,23 +85,23 @@ export type Control = {
  */
 export function useControl(options?: {
 	/**
-	 * The initial value of the base input. It will be used to set the value of the input
-	 * when it is first registered.
+	 * The initial value of the base input. It will be used to set the value
+	 * when the input is first registered.
 	 */
 	defaultValue?: string | string[] | File | File[] | null | undefined;
 	/**
-	 * Whether the base input should be checked by default. It will be used to set the checked
-	 * state of the input when it is first registered.
+	 * Whether the base input should be checked by default. It will be applied
+	 * when the input is first registered.
 	 */
 	defaultChecked?: boolean | undefined;
 	/**
-	 * The value of the checkbox or radio input when it is checked. This is used to set the
-	 * value attribute of the base input when it is first registered.
+	 * The value of a checkbox or radio input when checked. This sets the
+	 * value attribute of the base input.
 	 */
 	value?: string;
 	/**
-	 * A callback function that is called when the base input is focused. Use this to delegate
-	 * the focus to a custom input component.
+	 * A callback function that is triggered when the base input is focused.
+	 * Use this to delegate focus to a custom input.
 	 */
 	onFocus?: () => void;
 }): Control {

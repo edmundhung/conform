@@ -272,9 +272,7 @@ export function getMetadata<
 				}
 			},
 			get defaultChecked() {
-				const initialValue = this.initialValue;
-
-				if (typeof initialValue === 'string') {
+				if (this.initialValue === 'on') {
 					return true;
 				}
 			},
