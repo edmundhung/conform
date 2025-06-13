@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "remix build",
-		"ci": "sed -i -e \"s/CF_PAGES_BRANCH:\\s'main'/CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'/g\" ./server.ts",
+		"ci": "replace-in-file \"CF_PAGES_BRANCH: 'main'\" \"CF_PAGES_BRANCH: '$CF_PAGES_BRANCH'\" ./server.ts",
 		"dev": "remix dev --manual -c \"npm run start\"",
 		"predev": "remix build",
 		"start": "wrangler pages dev public --port 3000 --kv CACHE -b ENVIRONMENT=development -b CF_PAGES_BRANCH=$(git branch --show-current)"
@@ -30,6 +30,7 @@
 		"@types/react": "^18.2.46",
 		"@types/react-dom": "^18.2.18",
 		"@types/react-syntax-highlighter": "^15.5.11",
+		"replace-in-file": "^8.3.0",
 		"tailwindcss": "^3.4.0",
 		"typescript": "^5.3.3",
 		"wrangler": "^3.28.2"
