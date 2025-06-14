@@ -145,7 +145,6 @@ export default function ContactUs() {
   return (
     <Form
       method="POST"
-      aria-invalid={result?.formErrors ? true : undefined}
       aria-describedby={result?.formErrors ? 'contact-error' : undefined}
     >
       <div id="contact-error">{result?.formErrors}</div>
@@ -280,7 +279,6 @@ export default function ContactUs() {
 			method="post"
       {/* The only additional attribute you need is the `id` attribute */}
 			id={form.id}
-			aria-invalid={form.errors ? true : undefined}
 			aria-describedby={form.errors ? form.errorId : undefined}
 		>
 			<div id={form.errorId}>{form.errors}</div>
@@ -403,7 +401,6 @@ export default function ContactUs() {
 			id={form.id}
       {/* The `onSubmit` handler is required for client validation */}
       onSubmit={form.onSubmit}
-			aria-invalid={form.errors ? true : undefined}
 			aria-describedby={form.errors ? form.errorId : undefined}
     >
       {/* ... */}

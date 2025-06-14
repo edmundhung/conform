@@ -22,7 +22,7 @@ function Example() {
 
 ### `ariaAttributes`
 
-Decide whether to include `aria-invalid` and `aria-describedby` in the result props. Default to **true**.
+Decide whether to include `aria-describedby` in the result props. Default to **true**.
 
 ### `ariaInvalid`
 
@@ -46,7 +46,6 @@ function Example() {
       id={form.id}
       onSubmit={form.onSubmit}
       noValidate={form.noValidate}
-      aria-invalid={!form.valid || undefined}
       aria-describedby={!form.valid ? form.errorId : undefined}
     />
   );

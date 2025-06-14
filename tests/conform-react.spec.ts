@@ -297,7 +297,6 @@ describe('conform-react', () => {
 			}),
 		).toEqual({
 			...props,
-			'aria-invalid': true,
 			'aria-describedby': 'test-error',
 		});
 		expect(
@@ -316,7 +315,6 @@ describe('conform-react', () => {
 			),
 		).toEqual({
 			...props,
-			'aria-invalid': true,
 			'aria-describedby': 'test-error something',
 		});
 		expect(

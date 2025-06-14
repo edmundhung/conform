@@ -22,7 +22,7 @@ function Example() {
 
 ### `ariaAttributes`
 
-結果のプロパティに `aria-invalid` と `aria-describedby` を含めるかどうかを決定します。デフォルトは **true** です。
+結果のプロパティに `aria-describedby` を含めるかどうかを決定します。デフォルトは **true** です。
 
 ### `ariaInvalid`
 
@@ -46,7 +46,6 @@ function Example() {
       id={fields.address.id}
       name={fields.address.name}
       form={fields.address.formId}
-      aria-invalid={!form.valid || undefined}
       aria-describedby={!form.valid ? form.errorId : undefined}
     />
   );
