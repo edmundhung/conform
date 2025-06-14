@@ -145,7 +145,6 @@ export default function ContactUs() {
   return (
     <Form
       method="POST"
-      aria-invalid={result?.formErrors ? true : undefined}
       aria-describedby={result?.formErrors ? 'contact-error' : undefined}
     >
       <div id="contact-error">{result?.formErrors}</div>
@@ -279,7 +278,6 @@ export default function ContactUs() {
       method="post"
       {/* 追加で必要な属性は `id` 属性のみです。*/}
       id={form.id}
-      aria-invalid={form.errors ? true : undefined}
       aria-describedby={form.errors ? form.errorId : undefined}
     >
       <div id={form.errorId}>{form.errors}</div>
@@ -402,7 +400,6 @@ export default function ContactUs() {
       id={form.id}
       {/* クライアント検証には `onSubmit` ハンドラが必要です。 */}
       onSubmit={form.onSubmit}
-      aria-invalid={form.errors ? true : undefined}
       aria-describedby={form.errors ? form.errorId : undefined}
     >
       {/* ... */}

@@ -220,7 +220,7 @@ test('setup aria-invalid correctly', async ({ page }) => {
 	);
 
 	await playground.submit.click();
-	await expect(playground.form).toHaveAttribute('aria-invalid', 'true');
+	await expect(playground.form).not.toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.title).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.description).toHaveAttribute('aria-invalid', 'true');
 	await expect(fieldset.images).toHaveAttribute('aria-invalid', 'true');

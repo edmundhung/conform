@@ -17,7 +17,7 @@ type FormControlOptions =
 			 */
 			ariaAttributes?: true;
 			/**
-			 * Decide whether the aria-invalid attributes should be based on `meta.errors` or `meta.allErrors`.
+			 * Decide whether the `aria-invalid` and `aria-describedby` attributes should be based on `meta.errors` or `meta.allErrors`.
 			 * @default 'errors'
 			 */
 			ariaInvalid?: 'errors' | 'allErrors';
@@ -139,6 +139,7 @@ function simplify<Props>(props: Props): Props {
 export function getAriaAttributes(
 	metadata: Metadata<any, any, any>,
 	options: FormControlOptions = {},
+	field: boolean = false,
 ): {
 	'aria-invalid'?: boolean;
 	'aria-describedby'?: string;
@@ -157,7 +158,7 @@ export function getAriaAttributes(
 	const ariaDescribedBy = options.ariaDescribedBy;
 
 	return simplify({
-		'aria-invalid': invalid || undefined,
+		'aria-invalid': (field && invalid) || undefined,
 		'aria-describedby': invalid
 			? `${metadata.errorId} ${ariaDescribedBy ?? ''}`.trim()
 			: ariaDescribedBy,
@@ -166,7 +167,7 @@ export function getAriaAttributes(
 
 /**
  * Derives the properties of a form element based on the form metadata,
- * including `id`, `onSubmit`, `noValidate`, `aria-invalid` and `aria-describedby`.
+ * including `id`, `onSubmit`, `noValidate`, and `aria-describedby`.
  *
  * @example
  * ```tsx
@@ -187,7 +188,7 @@ export function getFormProps<Schema extends Record<string, any>, FormError>(
 
 /**
  * Derives the properties of a fieldset element based on the field metadata,
- * including `id`, `name`, `form`, `aria-invalid` and `aria-describedby`.
+ * including `id`, `name`, `form`, and `aria-describedby`.
  *
  * @example
  * ```tsx
@@ -196,12 +197,16 @@ export function getFormProps<Schema extends Record<string, any>, FormError>(
  */
 export function getFieldsetProps<
 	Schema extends Record<string, any> | undefined | unknown,
->(metadata: FieldMetadata<Schema, any, any>, options?: FormControlOptions) {
+>(
+	metadata: FieldMetadata<Schema, any, any>,
+	options?: FormControlOptions,
+	field: boolean = false,
+) {
 	return simplify({
 		id: metadata.id,
 		name: metadata.name,
 		form: metadata.formId,
-		...getAriaAttributes(metadata, options),
+		...getAriaAttributes(metadata, options, field),
 	});
 }
 
@@ -216,7 +221,7 @@ export function getFormControlProps<Schema>(
 	return simplify({
 		key: undefined,
 		required: metadata.required || undefined,
-		...getFieldsetProps(metadata, options),
+		...getFieldsetProps(metadata, options, true),
 	});
 }
 
