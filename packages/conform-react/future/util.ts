@@ -1,4 +1,7 @@
-import { unstable_updateField as updateField } from '@conform-to/dom';
+import {
+	isGlobalInstance,
+	unstable_updateField as updateField,
+} from '@conform-to/dom';
 
 export function focusable(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
@@ -139,23 +142,22 @@ export function getDefaultSnapshot(
 		return { value: defaultValue };
 	}
 
-	if (
-		Array.isArray(defaultValue) &&
-		defaultValue.every((item): item is string => typeof item === 'string')
-	) {
-		return { options: defaultValue };
-	}
-
-	if (defaultValue instanceof FileList) {
-		return { files: Array.from(defaultValue) };
-	}
-
 	if (Array.isArray(defaultValue)) {
-		return { files: defaultValue };
+		if (
+			defaultValue.every((item): item is string => typeof item === 'string')
+		) {
+			return { options: defaultValue };
+		} else {
+			return { files: defaultValue };
+		}
 	}
 
-	if (defaultValue) {
+	if (isGlobalInstance(defaultValue, 'File')) {
 		return { files: [defaultValue] };
+	}
+
+	if (isGlobalInstance(defaultValue, 'FileList')) {
+		return { files: Array.from(defaultValue) };
 	}
 
 	return {};
