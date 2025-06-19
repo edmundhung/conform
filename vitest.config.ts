@@ -24,6 +24,7 @@ export default defineConfig({
 			},
 			...defineTests('conform-dom'),
 			...defineTests('conform-react'),
+			...defineTests('conform-zod'),
 			...defineTests('conform-valibot'),
 		],
 	},
@@ -42,8 +43,8 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					instances: [{ browser: 'chromium' }],
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
-				include: [`packages/${packageName}/tests/**/*.test.{ts,tsx}`],
-				exclude: [`packages/${packageName}/tests/**/*.node.test.{ts,tsx}`],
+				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
+				exclude: [`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`],
 			},
 		},
 		{
@@ -51,8 +52,10 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				name: `${packageName} (node)`,
 				environment: 'node',
 				// This covers both .node.test.ts/tsx and .test.ts/tsx files
-				include: [`packages/${packageName}/tests/**/*.test.{ts,tsx}`],
-				exclude: [`packages/${packageName}/tests/**/*.browser.test.{ts,tsx}`],
+				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
+				exclude: [
+					`packages/${packageName}/**/tests/**/*.browser.test.{ts,tsx}`,
+				],
 			},
 		},
 	];
