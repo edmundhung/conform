@@ -433,7 +433,7 @@ describe('future export: useControl', () => {
 			type: 'text/plain',
 		});
 		const sqlFile = new File(['CREATE TABLE users;'], 'schema.sql', {
-			type: 'text/plain',
+			type: 'application/sql',
 		});
 
 		await expect.poll(() => getFiles(controlInput)).toEqual([]);
