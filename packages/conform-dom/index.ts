@@ -36,5 +36,6 @@ export {
 	getPaths,
 	formatPaths,
 	isPrefix,
+	isGlobalInstance,
 	deepEqual as unstable_deepEqual,
 } from './formdata';

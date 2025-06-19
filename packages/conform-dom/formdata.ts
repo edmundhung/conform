@@ -197,16 +197,20 @@ export function isPlainObject(
 	);
 }
 
-/**
- * Check if the value is a File
- */
-export function isFile(obj: unknown): obj is File {
-	// Skip checking if File is not defined
-	if (typeof File === 'undefined') {
-		return false;
-	}
+type GlobalConstructors = {
+	[K in keyof typeof globalThis]: (typeof globalThis)[K] extends new (
+		...args: any
+	) => any
+		? K
+		: never;
+}[keyof typeof globalThis];
 
-	return obj instanceof File;
+export function isGlobalInstance<ClassName extends GlobalConstructors>(
+	obj: unknown,
+	className: ClassName,
+): obj is InstanceType<(typeof globalThis)[ClassName]> {
+	const Ctor = globalThis[className];
+	return typeof Ctor === 'function' && obj instanceof Ctor;
 }
 
 /**
@@ -261,7 +265,7 @@ export function normalize<
 	if (
 		(typeof value === 'string' && value === '') ||
 		value === null ||
-		(isFile(value) && (!acceptFile || value.size === 0))
+		(isGlobalInstance(value, 'File') && (!acceptFile || value.size === 0))
 	) {
 		return;
 	}
