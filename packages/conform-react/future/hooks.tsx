@@ -5,12 +5,15 @@ import {
 	unstable_change as change,
 	unstable_blur as blur,
 	isFieldElement,
+	getFormData,
 } from '@conform-to/dom';
 import { useEffect, useRef, useSyncExternalStore, useCallback } from 'react';
 import {
+	type FormRef,
 	focusable,
 	getCheckboxGroupValue,
 	getDefaultSnapshot,
+	getFormElement,
 	getInputSnapshot,
 	getRadioGroupValue,
 	initializeField,
@@ -338,4 +341,85 @@ export function useControl(options?: {
 			eventDispatched.current.blur = undefined;
 		}, []),
 	};
+}
+
+type Selector<FormValue, Result> = (
+	formData: FormValue | null,
+	lastResult: Result | undefined,
+) => Result;
+
+/**
+ * A React hook that lets you subscribe to form data and compute derived state.
+ * This is useful when you want ...
+ *
+ * @example
+ * ```ts
+ * const value = useFormData(formRef, formData => formData?.get('fieldName').toString() ?? '');
+ * ```
+ */
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<URLSearchParams, Value>,
+	options?: {
+		acceptFiles?: false;
+		observer?: typeof formObserver;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<FormData, Value>,
+	options: {
+		acceptFiles: true;
+		observer?: typeof formObserver;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
+	options?: {
+		acceptFiles?: boolean;
+		observer?: typeof formObserver;
+	},
+): Value {
+	const valueRef = useRef<Value>();
+	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
+	const observer = options?.observer ?? formObserver;
+	const value = useSyncExternalStore(
+		useCallback(
+			(callback) =>
+				observer.onFormUpdate((event) => {
+					if (event.target === getFormElement(formRef)) {
+						const formData = getFormData(event.target, event.submitter);
+						formDataRef.current = options?.acceptFiles
+							? formData
+							: new URLSearchParams(
+									Array.from(formData).map(([key, value]) => [
+										key,
+										value.toString(),
+									]),
+								);
+						callback();
+					}
+				}),
+			[observer, formRef, options?.acceptFiles],
+		),
+		() => {
+			// @ts-expect-error FIXME
+			const result = select(formDataRef.current, valueRef.current);
+
+			if (
+				typeof valueRef.current !== 'undefined' &&
+				deepEqual(result, valueRef.current)
+			) {
+				return valueRef.current;
+			}
+
+			valueRef.current = result;
+
+			return result;
+		},
+		() => select(null, undefined),
+	);
+
+	return value;
 }

@@ -33,6 +33,7 @@ export {
 	parse,
 } from './submission';
 export {
+	getFormData,
 	getPaths,
 	formatPaths,
 	isPrefix,
