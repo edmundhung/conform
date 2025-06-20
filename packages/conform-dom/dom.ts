@@ -171,6 +171,8 @@ export function createGlobalFormsObserver() {
 		observer.observe(document.body, {
 			subtree: true,
 			childList: true,
+			attributes: true,
+			attributeOldValue: true,
 			attributeFilter: ['form', 'name', 'data-conform'],
 		});
 
@@ -230,6 +232,21 @@ export function createGlobalFormsObserver() {
 		}
 	}
 
+	function getAssociatedFormElement(
+		formId: string | null,
+		node: Node,
+	): HTMLFormElement | null {
+		if (formId !== null) {
+			return document.forms.namedItem(formId);
+		}
+
+		if (node instanceof Element) {
+			return node.closest('form');
+		}
+
+		return null;
+	}
+
 	function handleMutation(mutations: MutationRecord[]) {
 		const seenForms = new Set<HTMLFormElement>();
 		const seenInputs = new Set<
@@ -257,8 +274,16 @@ export function createGlobalFormsObserver() {
 					for (const node of nodes) {
 						for (const input of collectInputs(node)) {
 							seenInputs.add(input);
-							if (input.form) {
-								seenForms.add(input.form);
+
+							const form =
+								input.form ??
+								getAssociatedFormElement(
+									input.getAttribute('form'),
+									mutation.target,
+								);
+
+							if (form) {
+								seenForms.add(form);
 							}
 						}
 					}
@@ -267,8 +292,20 @@ export function createGlobalFormsObserver() {
 				case 'attributes': {
 					if (isFieldElement(mutation.target)) {
 						seenInputs.add(mutation.target);
+
 						if (mutation.target.form) {
 							seenForms.add(mutation.target.form);
+						}
+
+						if (mutation.attributeName === 'form') {
+							const oldForm = getAssociatedFormElement(
+								mutation.oldValue,
+								mutation.target,
+							);
+
+							if (oldForm) {
+								seenForms.add(oldForm);
+							}
 						}
 					}
 					break;

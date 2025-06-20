@@ -312,11 +312,11 @@ export function flatten(
 }
 
 export function deepEqual<Value>(prev: Value, next: Value): boolean {
-	if (prev === next) {
+	if (Object.is(prev, next)) {
 		return true;
 	}
 
-	if (!prev || !next) {
+	if (prev == null || next == null) {
 		return false;
 	}
 

@@ -1,23 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useControl } from '../future';
-import { renderToStaticMarkup } from 'react-dom/server';
-
-function renderHook<Result>(renderCallback: () => Result): Result {
-	const result: { current: Result } = { current: undefined as any };
-
-	function TestComponent() {
-		result.current = renderCallback();
-		return null;
-	}
-
-	renderToStaticMarkup(<TestComponent />);
-
-	if (!result.current) {
-		throw new Error('Hook did not return a value');
-	}
-
-	return result.current;
-}
+import { serverRenderHook } from './helpers';
 
 describe('future export: useControl', () => {
 	const defaultResult = {
@@ -39,7 +22,7 @@ describe('future export: useControl', () => {
 
 	it('infers initial value based on the options', async () => {
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: undefined,
 				}),
@@ -47,7 +30,7 @@ describe('future export: useControl', () => {
 		).toEqual(defaultResult);
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: null,
 				}),
@@ -55,7 +38,7 @@ describe('future export: useControl', () => {
 		).toEqual(defaultResult);
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: 'hello world',
 				}),
@@ -66,7 +49,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: ['foo', 'bar'],
 				}),
@@ -77,7 +60,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultChecked: true,
 				}),
@@ -89,7 +72,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultChecked: false,
 					value: 'yes',
@@ -102,7 +85,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: txtFile,
 				}),
@@ -113,7 +96,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: [sqlFile, txtFile],
 				}),
@@ -129,7 +112,7 @@ describe('future export: useControl', () => {
 		vi.stubGlobal('FileList', undefined);
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: undefined,
 				}),
@@ -137,7 +120,7 @@ describe('future export: useControl', () => {
 		).toEqual(defaultResult);
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: null,
 				}),
@@ -145,7 +128,7 @@ describe('future export: useControl', () => {
 		).toEqual(defaultResult);
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: 'hello world',
 				}),
@@ -156,7 +139,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultValue: ['foo', 'bar'],
 				}),
@@ -167,7 +150,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultChecked: true,
 				}),
@@ -179,7 +162,7 @@ describe('future export: useControl', () => {
 		});
 
 		expect(
-			renderHook(() =>
+			serverRenderHook(() =>
 				useControl({
 					defaultChecked: false,
 					value: 'yes',

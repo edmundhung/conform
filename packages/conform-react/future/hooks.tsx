@@ -1,22 +1,29 @@
 import {
-	unstable_createGlobalFormsObserver as createGlobalFormsObserver,
 	unstable_deepEqual as deepEqual,
 	unstable_focus as focus,
 	unstable_change as change,
 	unstable_blur as blur,
 	isFieldElement,
+	getFormData,
 } from '@conform-to/dom';
-import { useEffect, useRef, useSyncExternalStore, useCallback } from 'react';
 import {
+	useEffect,
+	useRef,
+	useSyncExternalStore,
+	useCallback,
+	useContext,
+} from 'react';
+import {
+	type FormRef,
 	focusable,
 	getCheckboxGroupValue,
 	getDefaultSnapshot,
+	getFormElement,
 	getInputSnapshot,
 	getRadioGroupValue,
 	initializeField,
 } from './util';
-
-export const formObserver = createGlobalFormsObserver();
+import { FormContext } from './context';
 
 export type Control = {
 	/**
@@ -105,6 +112,7 @@ export function useControl(options?: {
 	 */
 	onFocus?: () => void;
 }): Control {
+	const { observer } = useContext(FormContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -136,7 +144,7 @@ export function useControl(options?: {
 	const snapshot = useSyncExternalStore(
 		useCallback(
 			(callback) =>
-				formObserver.onFieldUpdate((event) => {
+				observer.onFieldUpdate((event) => {
 					const input = event.target;
 
 					if (
@@ -147,7 +155,7 @@ export function useControl(options?: {
 						callback();
 					}
 				}),
-			[],
+			[observer],
 		),
 		() => {
 			const input = inputRef.current;
@@ -338,4 +346,106 @@ export function useControl(options?: {
 			eventDispatched.current.blur = undefined;
 		}, []),
 	};
+}
+
+type Selector<FormValue, Result> = (
+	formData: FormValue | null,
+	lastResult: Result | undefined,
+) => Result;
+
+type UseFormDataOptions = {
+	/**
+	 * Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
+	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
+	 */
+	acceptFiles?: boolean;
+};
+
+/**
+ * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
+ * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
+ *
+ * @see https://conform.guide/api/react/future/useFormData
+ * @example
+ * ```ts
+ * const value = useFormData(formRef, formData => formData?.get('fieldName').toString() ?? '');
+ * ```
+ */
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<FormData, Value>,
+	options: UseFormDataOptions & {
+		acceptFiles: true;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<URLSearchParams, Value>,
+	options?: UseFormDataOptions & {
+		acceptFiles?: boolean;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
+	options?: UseFormDataOptions,
+): Value {
+	const { observer } = useContext(FormContext);
+	const valueRef = useRef<Value>();
+	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
+	const value = useSyncExternalStore(
+		useCallback(
+			(callback) => {
+				const formElement = getFormElement(formRef);
+
+				if (formElement) {
+					const formData = getFormData(formElement);
+					formDataRef.current = options?.acceptFiles
+						? formData
+						: new URLSearchParams(
+								Array.from(formData).map(([key, value]) => [
+									key,
+									value.toString(),
+								]),
+							);
+				}
+
+				const unsubscribe = observer.onFormUpdate((event) => {
+					if (event.target === getFormElement(formRef)) {
+						const formData = getFormData(event.target, event.submitter);
+						formDataRef.current = options?.acceptFiles
+							? formData
+							: new URLSearchParams(
+									Array.from(formData).map(([key, value]) => [
+										key,
+										value.toString(),
+									]),
+								);
+						callback();
+					}
+				});
+
+				return unsubscribe;
+			},
+			[observer, formRef, options?.acceptFiles],
+		),
+		() => {
+			// @ts-expect-error FIXME
+			const result = select(formDataRef.current, valueRef.current);
+
+			if (
+				typeof valueRef.current !== 'undefined' &&
+				deepEqual(result, valueRef.current)
+			) {
+				return valueRef.current;
+			}
+
+			valueRef.current = result;
+
+			return result;
+		},
+		() => select(null, undefined),
+	);
+
+	return value;
 }
