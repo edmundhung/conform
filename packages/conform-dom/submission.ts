@@ -303,7 +303,8 @@ export function replySubmission<FormError>(
 export type ValidateIntent<Schema = any> = {
 	type: 'validate';
 	payload: {
-		name?: FieldName<Schema>;
+		name?: FieldName<Schema> | FieldName<Schema>[];
+		allErrors?: boolean;
 	};
 };
 
