@@ -202,7 +202,7 @@ describe('createFileList', () => {
 });
 
 describe('createGlobalFormsObserver', () => {
-	it('listen to input event', async (ctx) => {
+	it('listens to input event', async (ctx) => {
 		const observer = createGlobalFormsObserver();
 		const form = document.createElement('form');
 		const input = document.createElement('input');
@@ -227,7 +227,7 @@ describe('createGlobalFormsObserver', () => {
 		});
 	});
 
-	it('listen to reset event', async (ctx) => {
+	it('listens to reset event', async (ctx) => {
 		const observer = createGlobalFormsObserver();
 		const form = document.createElement('form');
 		const input = document.createElement('input');
@@ -253,7 +253,7 @@ describe('createGlobalFormsObserver', () => {
 		});
 	});
 
-	it('listen to form submit', async (ctx) => {
+	it('listens to submit event', async (ctx) => {
 		const observer = createGlobalFormsObserver();
 		const form = document.createElement('form');
 		const input = document.createElement('input');
@@ -279,7 +279,7 @@ describe('createGlobalFormsObserver', () => {
 		expect(fieldListener).not.toBeCalled();
 	});
 
-	it('observe dom mutation', async (ctx) => {
+	it('observe when the data-conform attribtute of the inputs change', async (ctx) => {
 		const observer = createGlobalFormsObserver();
 		const form = document.createElement('form');
 		const input = document.createElement('input');
@@ -293,18 +293,296 @@ describe('createGlobalFormsObserver', () => {
 		ctx.onTestFinished(observer.onFormUpdate(formListener));
 		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
 
-		input.dataset.conform = 'exmaple';
+		form.dataset.conform = 'test';
+
+		await vi.waitFor(() => {
+			expect(formListener).not.toBeCalled();
+			expect(fieldListener).not.toBeCalled();
+		});
+
+		input.dataset.conform = 'foo';
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(1);
+		expect(fieldListener).toBeCalledTimes(1);
+
+		input.dataset.conform = 'bar';
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: input,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(2);
+		expect(fieldListener).toBeCalledTimes(2);
+	});
+
+	it('observe when the name attribtute of the inputs change', async (ctx) => {
+		const observer = createGlobalFormsObserver();
+		const form = document.createElement('form');
+		const input = document.createElement('input');
+		const textarea = document.createElement('textarea');
+
+		form.append(input, textarea);
+		document.body.append(form);
+
+		const formListener = vi.fn();
+		const fieldListener = vi.fn();
+		ctx.onTestFinished(observer.onFormUpdate(formListener));
+		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
+
+		await vi.waitFor(() => {
+			expect(formListener).not.toBeCalled();
+			expect(fieldListener).not.toBeCalled();
+		});
+
+		textarea.name = 'foo';
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(1);
+		expect(fieldListener).toBeCalledTimes(1);
+
+		textarea.name = 'bar';
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: textarea,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(2);
+		expect(fieldListener).toBeCalledTimes(2);
+	});
+
+	it('observe when the form attribtute of the inputs change', async (ctx) => {
+		const observer = createGlobalFormsObserver();
+		const form = document.createElement('form');
+		const dummyForm = document.createElement('form');
+		const input = document.createElement('input');
+		const select = document.createElement('select');
+		const option = document.createElement('option');
+
+		option.value = 'foobar';
+		select.append(option);
+
+		dummyForm.id = 'dummy';
+		form.append(input, select);
+		document.body.append(form, dummyForm);
+
+		const formListener = vi.fn();
+		const fieldListener = vi.fn();
+		ctx.onTestFinished(observer.onFormUpdate(formListener));
+		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
+
+		await vi.waitFor(() => {
+			expect(formListener).not.toBeCalled();
+			expect(fieldListener).not.toBeCalled();
+		});
+
+		select.setAttribute('form', 'dummy');
 
 		await vi.waitFor(() => {
 			expect(formListener).toBeCalledWith({
 				type: 'mutation',
 				target: form,
 			});
+			expect(formListener).toBeCalledWith({
+				type: 'mutation',
+				target: dummyForm,
+			});
 			expect(fieldListener).toBeCalledWith({
+				type: 'mutation',
+				target: select,
+			});
+			expect(fieldListener).not.toBeCalledWith({
 				type: 'mutation',
 				target: input,
 			});
 		});
+
+		expect(formListener).toBeCalledTimes(2);
+		expect(fieldListener).toBeCalledTimes(1);
+
+		select.removeAttribute('form');
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenNthCalledWith(3, {
+				type: 'mutation',
+				target: form,
+			});
+			expect(formListener).toHaveBeenNthCalledWith(4, {
+				type: 'mutation',
+				target: dummyForm,
+			});
+			expect(fieldListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: select,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(4);
+		expect(fieldListener).toBeCalledTimes(2);
+	});
+
+	it('observe when the inputs are added or removed from the DOM', async (ctx) => {
+		const observer = createGlobalFormsObserver();
+		const form = document.createElement('form');
+		const input = document.createElement('input');
+		const textarea = document.createElement('textarea');
+
+		form.append(input, textarea);
+		document.body.append(form);
+
+		const formListener = vi.fn();
+		const fieldListener = vi.fn();
+		ctx.onTestFinished(observer.onFormUpdate(formListener));
+		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
+
+		expect(formListener).not.toBeCalled();
+		expect(fieldListener).not.toBeCalled();
+
+		form.removeChild(input);
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(1);
+		expect(fieldListener).toBeCalledTimes(1);
+
+		form.appendChild(input);
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenNthCalledWith(2, {
+				type: 'mutation',
+				target: input,
+			});
+			expect(fieldListener).not.toBeCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(2);
+		expect(fieldListener).toBeCalledTimes(2);
+	});
+
+	it('observe when the forms are added or removed from the DOM', async (ctx) => {
+		const observer = createGlobalFormsObserver();
+		const form = document.createElement('form');
+		const emptyForm = document.createElement('form');
+		const input = document.createElement('input');
+		const textarea = document.createElement('textarea');
+
+		form.append(input, textarea);
+		document.body.append(form, emptyForm);
+
+		const formListener = vi.fn();
+		const fieldListener = vi.fn();
+		ctx.onTestFinished(observer.onFormUpdate(formListener));
+		ctx.onTestFinished(observer.onFieldUpdate(fieldListener));
+
+		expect(formListener).not.toBeCalled();
+		expect(fieldListener).not.toBeCalled();
+
+		emptyForm.remove();
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: emptyForm,
+			});
+			expect(fieldListener).not.toBeCalled();
+		});
+
+		expect(formListener).toBeCalledTimes(1);
+		expect(fieldListener).toBeCalledTimes(0);
+
+		form.remove();
+
+		await vi.waitFor(() => {
+			expect(formListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: form,
+			});
+			expect(fieldListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: input,
+			});
+			expect(fieldListener).toHaveBeenCalledWith({
+				type: 'mutation',
+				target: textarea,
+			});
+		});
+
+		expect(formListener).toBeCalledTimes(2);
+		expect(fieldListener).toBeCalledTimes(2);
 	});
 });
 

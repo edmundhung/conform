@@ -267,11 +267,25 @@ export function createGlobalFormsObserver() {
 				: [];
 		};
 
+		const collectForms = (node: Node) => {
+			if (node instanceof HTMLFormElement) {
+				return [node];
+			}
+
+			return node instanceof Element
+				? Array.from(node.querySelectorAll<HTMLFormElement>('form'))
+				: [];
+		};
+
 		for (const mutation of mutations) {
 			switch (mutation.type) {
 				case 'childList': {
 					const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
 					for (const node of nodes) {
+						for (const form of collectForms(node)) {
+							seenForms.add(form);
+						}
+
 						for (const input of collectInputs(node)) {
 							seenInputs.add(input);
 
