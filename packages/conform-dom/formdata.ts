@@ -311,32 +311,19 @@ export function flatten(
 	return result;
 }
 
-export function deepEqual<Value>(prev: Value, next: Value): boolean {
-	if (Object.is(prev, next)) {
+export function deepEqual(left: unknown, right: unknown): boolean {
+	if (Object.is(left, right)) {
 		return true;
 	}
 
-	if (prev == null || next == null) {
+	if (left == null || right == null) {
 		return false;
 	}
 
-	if (Array.isArray(prev) && Array.isArray(next)) {
-		if (prev.length !== next.length) {
-			return false;
-		}
-
-		for (let i = 0; i < prev.length; i++) {
-			if (!deepEqual(prev[i], next[i])) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	if (isPlainObject(prev) && isPlainObject(next)) {
-		const prevKeys = Object.keys(prev);
-		const nextKeys = Object.keys(next);
+	// Compare plain objects
+	if (isPlainObject(left) && isPlainObject(right)) {
+		const prevKeys = Object.keys(left);
+		const nextKeys = Object.keys(right);
 
 		if (prevKeys.length !== nextKeys.length) {
 			return false;
@@ -344,9 +331,8 @@ export function deepEqual<Value>(prev: Value, next: Value): boolean {
 
 		for (const key of prevKeys) {
 			if (
-				!Object.prototype.hasOwnProperty.call(next, key) ||
-				// @ts-expect-error FIXME
-				!deepEqual(prev[key], next[key])
+				!Object.prototype.hasOwnProperty.call(right, key) ||
+				!deepEqual(left[key], right[key])
 			) {
 				return false;
 			}
@@ -355,5 +341,218 @@ export function deepEqual<Value>(prev: Value, next: Value): boolean {
 		return true;
 	}
 
+	// Compare arrays
+	if (Array.isArray(left) && Array.isArray(right)) {
+		if (left.length !== right.length) {
+			return false;
+		}
+
+		for (let i = 0; i < left.length; i++) {
+			if (!deepEqual(left[i], right[i])) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	return false;
+}
+
+export type JsonPrimitive = string | number | boolean | null;
+
+/**
+ * The form value of a submission. This is usually constructed from a FormData or URLSearchParams.
+ * It may contains JSON primitives if the value is updated based on a form intent.
+ */
+export type FormValue<
+	Type extends JsonPrimitive | FormDataEntryValue =
+		| JsonPrimitive
+		| FormDataEntryValue,
+> = Type | FormValue<Type | null>[] | { [key: string]: FormValue<Type> };
+
+/**
+ * The data of a form submission.
+ */
+export type Submission<
+	ValueType extends FormDataEntryValue = FormDataEntryValue,
+> = {
+	/**
+	 * The form value structured following the naming convention.
+	 */
+	value: Record<string, FormValue<ValueType>>;
+	/**
+	 * The field names that are included in the FormData or URLSearchParams.
+	 */
+	fields: string[];
+	/**
+	 * The intent of the submission. This is usally included by specifying a name and value on a submit button.
+	 */
+	intent: string | null;
+};
+
+/**
+ * Parse `FormData` or `URLSearchParams` into a submission object.
+ * This function structures the form values based on the naming convention.
+ * It also includes all the field names and the intent if the `intentName` option is provided.
+ *
+ * @example
+ * ```ts
+ * const formData = new FormData();
+ *
+ * formData.append('email', 'test@example.com');
+ * formData.append('password', 'secret');
+ *
+ * parseSubmission(formData)
+ * // {
+ * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   fields: ['email', 'password'],
+ * //   intent: null,
+ * // }
+ *
+ * // If you have an intent field
+ * formData.append('intent', 'login');
+ * parseSubmission(formData, { intentName: 'intent' })
+ * // {
+ * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   fields: ['email', 'password'],
+ * //   intent: 'login',
+ * // }
+ * ```
+ */
+export function parseSubmission(
+	formData: FormData | URLSearchParams,
+	options?: {
+		intentName?: string;
+		skipEntry?: (name: string) => boolean;
+	},
+): Submission {
+	const intentName = options?.intentName ?? '__intent__';
+	const submission: Submission = {
+		value: {},
+		fields: [],
+		intent: null,
+	};
+
+	for (const name of new Set(formData.keys())) {
+		if (name !== intentName && !options?.skipEntry?.(name)) {
+			const value = formData.getAll(name);
+			setValue(submission.value, name, () =>
+				value.length > 1 ? value : value[0],
+			);
+			submission.fields.push(name);
+		}
+	}
+
+	if (intentName) {
+		// We take the first value of the intent field if it exists.
+		const intent = formData.get(intentName);
+
+		if (typeof intent === 'string') {
+			submission.intent = intent;
+		}
+	}
+
+	return submission;
+}
+
+export function defaultSerializer(
+	value: unknown,
+): FormDataEntryValue | undefined {
+	if (value === null || value === undefined) {
+		return undefined;
+	}
+
+	if (typeof value === 'string' || isGlobalInstance(value, 'File')) {
+		return value;
+	}
+
+	if (typeof value === 'boolean') {
+		return value ? 'on' : undefined;
+	}
+
+	if (value instanceof Date) {
+		return value.toISOString();
+	}
+
+	return value.toString();
+}
+
+export function isDirty(
+	formData: FormData | URLSearchParams | FormValue<FormDataEntryValue> | null,
+	options?: {
+		parse?: Parameters<typeof parseSubmission>[1];
+		defaultValue?: unknown | null;
+		serialize?: (
+			value: unknown,
+			defaultSerialize: (value: unknown) => FormDataEntryValue | undefined,
+		) => FormDataEntryValue | undefined;
+	},
+): boolean | undefined {
+	if (!formData) {
+		return;
+	}
+
+	const formValue =
+		formData instanceof FormData || formData instanceof URLSearchParams
+			? parseSubmission(formData, options?.parse).value
+			: formData;
+	const defaultValue = options?.defaultValue;
+	const serialize = options?.serialize ?? defaultSerializer;
+
+	function normalize(value: unknown): unknown {
+		if (Array.isArray(value)) {
+			if (value.length === 0) {
+				return undefined;
+			}
+
+			const array = value.map(normalize);
+
+			if (
+				array.length === 1 &&
+				(typeof array[0] === 'string' || array[0] === undefined)
+			) {
+				return array[0];
+			}
+
+			return array;
+		}
+
+		if (isPlainObject(value)) {
+			const entries = Object.entries(value).reduce<Array<[string, unknown]>>(
+				(list, [key, value]) => {
+					const normalizedValue = normalize(value);
+
+					if (typeof normalizedValue !== 'undefined') {
+						list.push([key, normalizedValue]);
+					}
+
+					return list;
+				},
+				[],
+			);
+
+			if (entries.length === 0) {
+				return undefined;
+			}
+
+			return Object.fromEntries(entries);
+		}
+
+		if (typeof value === 'string' && value === '') {
+			return undefined;
+		}
+
+		if (
+			isGlobalInstance(value, 'File') &&
+			value.name === '' &&
+			value.size === 0
+		) {
+			return undefined;
+		}
+
+		return serialize(value, defaultSerializer);
+	}
+
+	return !deepEqual(normalize(formValue), normalize(defaultValue));
 }
