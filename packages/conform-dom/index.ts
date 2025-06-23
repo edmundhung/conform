@@ -39,4 +39,5 @@ export {
 	isPrefix,
 	isGlobalInstance,
 	deepEqual as unstable_deepEqual,
+	isDirty as unstable_isDirty,
 } from './formdata';
