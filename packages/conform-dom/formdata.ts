@@ -1,3 +1,5 @@
+import { INTENT as DEFAULT_INTENT_NAME } from './submission';
+
 /**
  * Construct a form data with the submitter value.
  * It utilizes the submitter argument on the FormData constructor from modern browsers
@@ -423,11 +425,19 @@ export type Submission<
 export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
+		/**
+		 * The name of the submit button that triggered the form submission.
+		 * Used to extract the submission's intent.
+		 */
 		intentName?: string;
+		/**
+		 * A filter function that excludes specific entries from being parsed.
+		 * Return `true` to skip the entry.
+		 */
 		skipEntry?: (name: string) => boolean;
 	},
 ): Submission {
-	const intentName = options?.intentName ?? '__intent__';
+	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
 	const submission: Submission = {
 		value: {},
 		fields: [],
@@ -456,7 +466,11 @@ export function parseSubmission(
 	return submission;
 }
 
-export function defaultSerializer(
+export type ParseSubmissionOptions = Required<
+	Parameters<typeof parseSubmission>
+>[1];
+
+export function defaultSerialize(
 	value: unknown,
 ): FormDataEntryValue | undefined {
 	if (value === null || value === undefined) {
@@ -478,15 +492,77 @@ export function defaultSerializer(
 	return value.toString();
 }
 
+/**
+ * A utility function that checks whether the current form data differs from the default values.
+ *
+ * @see https://conform.guide/api/react/future/isDirty
+ * @example Enable a submit button only if the form is dirty
+ *
+ * ```tsx
+ *   const dirty = useFormData(
+ *     formRef,
+ *     (formData) => isDirty(formData, { defaultValue }) ?? false,
+ *   );
+ *
+ *   return (
+ *     <button type="submit" disabled={!dirty}>
+ *       Save changes
+ *     </button>
+ *   );
+ * ```
+ */
 export function isDirty(
+	/**
+	 * The current form data to compare. It can be:
+	 *
+	 * - A `FormData` object
+	 * - A `URLSearchParams` object
+	 * - A plain object that was parsed from form data (i.e. `submission.payload`)
+	 */
 	formData: FormData | URLSearchParams | FormValue<FormDataEntryValue> | null,
 	options?: {
-		parse?: Parameters<typeof parseSubmission>[1];
-		defaultValue?: unknown | null;
+		/**
+		 * An object representing the default values of the form to compare against.
+		 * Defaults to an empty object if not provided.
+		 */
+		defaultValue?: unknown;
+		/**
+		 * The name of the submit button that triggered the submission.
+		 * It will be excluded from the dirty comparison.
+		 */
+		intentName?: string;
+		/**
+		 *
+		 * A function to serialize values in defaultValue before comparing them to the form data.
+		 * If not provided, a default serializer is used that behaves as follows:
+		 *
+		 * - string / File:
+		 *   - Returned as-is
+		 * - boolean:
+		 *   - true → 'on'
+		 *   - false → undefined
+		 * - number / bigint:
+		 *   - Converted to string using `.toString()`
+		 * - Date:
+		 *   - Converted to ISO string using `.toISOString()`
+		 */
 		serialize?: (
 			value: unknown,
 			defaultSerialize: (value: unknown) => FormDataEntryValue | undefined,
 		) => FormDataEntryValue | undefined;
+		/**
+		 * A function to exclude specific fields from the comparison.
+		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
+		 * (e.g. Next.js uses hidden inputs to support server actions).
+		 *
+		 * @example
+		 * ```ts
+		 * isDirty(formData, {
+		 *   skipEntry: (name) => name === 'csrf-token',
+		 * });
+		 * ```
+		 */
+		skipEntry?: (name: string) => boolean;
 	},
 ): boolean | undefined {
 	if (!formData) {
@@ -495,10 +571,13 @@ export function isDirty(
 
 	const formValue =
 		formData instanceof FormData || formData instanceof URLSearchParams
-			? parseSubmission(formData, options?.parse).value
+			? parseSubmission(formData, {
+					intentName: options?.intentName,
+					skipEntry: options?.skipEntry,
+				}).value
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serialize = options?.serialize ?? defaultSerializer;
+	const serialize = options?.serialize ?? defaultSerialize;
 
 	function normalize(value: unknown): unknown {
 		if (Array.isArray(value)) {
@@ -551,7 +630,7 @@ export function isDirty(
 			return undefined;
 		}
 
-		return serialize(value, defaultSerializer);
+		return serialize(value, defaultSerialize);
 	}
 
 	return !deepEqual(normalize(formValue), normalize(defaultValue));

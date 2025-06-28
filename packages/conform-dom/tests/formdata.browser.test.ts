@@ -370,15 +370,13 @@ describe('isDirty', () => {
 		const formData = createFormData([
 			['name', ''],
 			['file', emptyFile],
-			['crsf_token', 'g3wb5tg645g3'],
+			['crsf-token', 'g3wb5tg645g3'],
 		]);
 
 		expect(
 			isDirty(formData, {
-				parse: {
-					skipEntry(name) {
-						return name === 'crsf_token';
-					},
+				skipEntry(name) {
+					return name === 'crsf-token';
 				},
 			}),
 		).toBe(false);

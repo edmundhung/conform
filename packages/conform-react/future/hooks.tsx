@@ -24,6 +24,7 @@ import {
 	initializeField,
 } from './util';
 import { FormContext } from './context';
+import { Pretty } from '../context';
 
 export type Control = {
 	/**
@@ -353,10 +354,19 @@ type Selector<FormValue, Result> = (
 	lastResult: Result | undefined,
 ) => Result;
 
+type UseFormDataOptions = {
+	/**
+	 * Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
+	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
+	 */
+	acceptFiles?: boolean | undefined;
+};
+
 /**
- * A React hook that lets you subscribe to form data and compute derived state.
- * This is useful when you want ...
+ * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
+ * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
  *
+ * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
  * const value = useFormData(formRef, formData => formData?.get('fieldName').toString() ?? '');
@@ -364,24 +374,24 @@ type Selector<FormValue, Result> = (
  */
 export function useFormData<Value = any>(
 	formRef: FormRef,
-	select: Selector<URLSearchParams, Value>,
-	options?: {
-		acceptFiles?: false;
+	select: Selector<FormData, Value>,
+	options: UseFormDataOptions & {
+		acceptFiles: true;
 	},
 ): Value;
 export function useFormData<Value = any>(
 	formRef: FormRef,
-	select: Selector<FormData, Value>,
-	options: {
-		acceptFiles: boolean | undefined;
-	},
+	select: Selector<URLSearchParams, Value>,
+	options?: Pretty<
+		UseFormDataOptions & {
+			acceptFiles?: false | undefined;
+		}
+	>,
 ): Value;
 export function useFormData<Value = any>(
 	formRef: FormRef,
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
-	options?: {
-		acceptFiles?: boolean | undefined;
-	},
+	options?: UseFormDataOptions,
 ): Value {
 	const { observer } = useContext(FormContext);
 	const valueRef = useRef<Value>();
