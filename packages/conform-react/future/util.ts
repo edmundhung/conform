@@ -3,6 +3,34 @@ import {
 	unstable_updateField as updateField,
 } from '@conform-to/dom';
 
+export type FormRef =
+	| React.RefObject<
+			| HTMLFormElement
+			| HTMLFieldSetElement
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLButtonElement
+			| null
+	  >
+	| string;
+
+export function getFormElement(
+	formRef: FormRef | undefined,
+): HTMLFormElement | null {
+	if (typeof formRef === 'string') {
+		return document.forms.namedItem(formRef);
+	}
+
+	const element = formRef?.current;
+
+	if (element instanceof HTMLFormElement) {
+		return element;
+	}
+
+	return element?.form ?? null;
+}
+
 export function focusable(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): void {

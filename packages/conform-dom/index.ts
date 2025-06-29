@@ -33,9 +33,11 @@ export {
 	parse,
 } from './submission';
 export {
+	getFormData,
 	getPaths,
 	formatPaths,
 	isPrefix,
 	isGlobalInstance,
 	deepEqual as unstable_deepEqual,
+	isDirty as unstable_isDirty,
 } from './formdata';

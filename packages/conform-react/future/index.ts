@@ -1,1 +1,1 @@
-export { useControl } from './hooks';
+export { useControl, useFormData } from './hooks';
