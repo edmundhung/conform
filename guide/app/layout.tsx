@@ -52,7 +52,11 @@ const menus: { [code: string]: Menu[] } = {
 		},
 		{
 			title: 'Future APIs',
-			links: [{ title: 'useControl', to: '/api/react/future/useControl' }],
+			links: [
+				{ title: 'useControl', to: '/api/react/future/useControl' },
+				{ title: 'useFormData', to: '/api/react/future/useFormData' },
+				{ title: 'isDirty', to: '/api/react/future/isDirty' },
+			],
 		},
 		{
 			title: 'Utilities',
@@ -142,7 +146,11 @@ const menus: { [code: string]: Menu[] } = {
 		},
 		{
 			title: 'Future APIs',
-			links: [{ title: 'useControl', to: '/api/react/future/useControl' }],
+			links: [
+				{ title: 'useControl', to: '/api/react/future/useControl' },
+				{ title: 'useFormData', to: '/api/react/future/useFormData' },
+				{ title: 'isDirty', to: '/api/react/future/isDirty' },
+			],
 		},
 		{
 			title: 'ユーティリティ',

@@ -1,8 +1,10 @@
 # useControl
 
-> This is a future API is that might subject to change in minor versions. Pin the version of `@conform-to/react` with a tilde ranges (`~`) to avoid potential breaking changes.
+> The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that let you sync the state of the base input and dispatch native form events from the base input. For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
+A React hook that lets you sync the state of an input and dispatch native form events from it. This is useful when emulating native input behavior — typically by rendering a hidden base input and syncing it with a custom input.
+
+For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
 
 ```ts
 const control = useControl(options);
@@ -12,7 +14,7 @@ const control = useControl(options);
 
 ### `defaultValue?: string | string[] | File | File[]`
 
-The initial value of the base input. It will be used to set the value of the input when it is first registered.
+The initial value of the base input. It will be used to set the value when the input is first registered.
 
 ```ts
 // e.g. Text input
@@ -27,7 +29,7 @@ const control = useControl({
 
 ### `defaultChecked?: boolean`
 
-Whether the base input should be checked by default. It will be used to set the checked state of the input when it is first registered.
+Whether the base input should be checked by default. It will be applied when the input is first registered.
 
 ```ts
 const control = useControl({
@@ -37,7 +39,7 @@ const control = useControl({
 
 ### `value?: string`
 
-The value of the checkbox or radio input when it is checked. This is used to set the value attribute of the base input when it is first registered.
+The value of a checkbox or radio input when checked. This sets the value attribute of the base input.
 
 ```ts
 const control = useControl({
@@ -48,7 +50,7 @@ const control = useControl({
 
 ### `onFocus?: () => void`
 
-A callback function that is called when the base input is focused. Use this to delegate the focus to a custom input component.
+A callback function that is triggered when the base input is focused. Use this to delegate focus to a custom input.
 
 ```ts
 const control = useControl({
@@ -64,35 +66,35 @@ A control object. This gives you access to the state of the input with helpers t
 
 ### `value: string | undefined`
 
-The current value of the base input. It will be undefined for multi-select, file inputs, or checkbox group.
+Current value of the base input. Undefined if the registered input is a multi-select, file input, or checkbox group.
 
 ### `options: string[] | undefined`
 
-The selected options of the base input. Use this with multi-select or checkbox groups.
+Selected options of the base input. Defined only when the registered input is a multi-select or checkbox group.
 
 ### `checked: boolean | undefined`
 
-The checked state of the base input. Use this with checkbox or radio inputs.
+Checked state of the base input. Defined only when the registered input is a single checkbox or radio input.
 
 ### `files: File[] | undefined`
 
-The files selected with the base input. Use this with file inputs.
+Selected files of the base input. Defined only when the registered input is a file input.
 
 ### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
 
-Registers the base input element. This is required to sync the state of the input with the control and emits events. You can register a checkbox/ radio groups by passing an array of input elements.
+Registers the base input element(s). Accepts a single input or an array for groups.
 
 ### `change(value: string | string[] | File | File[] | FileList | boolean): void`
 
-Updates the state of the base input with both the [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events emitted. Use this when you need to change the input value programmatically.
+Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 
 ### `blur(): void`
 
-Emits the [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events as if the user left the input. This does not actually removes keyboard focus from the current element. It just triggers the events.
+Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events. Does not actually move focus.
 
 ### `focus(): void`
 
-Emits the [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events as if the user focused on the input. This does not move the actual keyboard focus to the input. Use native DOM methods like `inputElement.focus()` if you want to move the focus to the input element.
+Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the input. Use `element.focus()` instead if you want to move focus to the input.
 
 ## Example Usage
 
@@ -204,6 +206,53 @@ function Example() {
 
 ### Progressive enhancement
 
+If you care about supporting form submissions before JavaScript loads, set `defaultValue`, `defaultChecked`, or `value` directly on the base input. This ensures correct values are included in the form submission. Otherwise, `useControl` will handle it once the app is hydrated.
+
+```jsx
+// Input
+<input
+  type="email"
+  name={fields.email.name}
+  defaultValue={fields.email.defaultValue}
+  ref={control.register}
+  hidden
+/>
+
+// Select
+<select
+  name={fields.categories.name}
+  defaultValue={fields.categories.defaultOptions}
+  ref={control.register}
+  hidden
+>
+  <option value=""></option>
+  {fields.categories.defaultOptions.map(option => (
+    <option key={option} value={option}>
+      {option}
+    </option>
+  ))}
+</select>
+
+// Textarea
+<textarea
+  name={fields.description.name}
+  defaultValue={fields.description.defaultValue}
+  ref={control.register}
+  hidden
+/>
+```
+
 ### Checkbox / Radio groups
 
-When using checkbox or radio groups, you can register the group by passing an array of input elements to the `register` method. This allows you to sync the state of the entire group with the control.
+You can register multiple checkbox or radio inputs as a group by passing an array of elements to `register()`. This is useful when the setup renders a set of native inputs that you want to re-use without re-implementing the group logic:
+
+```jsx
+<CustomCheckboxGroup
+  ref={(el) => control.register(el?.querySelectorAll('input'))}>
+  value={control.options}
+  onChange={(options) => control.change(options)}
+  onBlur={() => control.blur()}
+/>
+```
+
+If you don't need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).

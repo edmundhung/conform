@@ -62,11 +62,11 @@ The `id` attribute set for the form element.
 
 #### `errorId` (string)
 
-The `id` attribute indicating the form’s error message.
+The `id` attribute indicating the form's error message.
 
 #### `descriptionId` (string)
 
-The `id` attribute indicating the form’s description.
+The `id` attribute indicating the form's description.
 
 #### `name` (FieldName<Schema, FormSchema, FormError>)
 
@@ -106,7 +106,7 @@ A function for submitting the form.
 
 #### `noValidate` (boolean)
 
-Indicates whether the browser’s default form validation is disabled. The default is `true`, meaning validation is handled via JavaScript.
+Indicates whether the browser's default form validation is disabled. The default is `true`, meaning validation is handled via JavaScript.
 
 #### `validate` (object)
 
@@ -131,7 +131,6 @@ Provides an intent for removing fields from the form.
 #### `insert` (object)
 
 Provides an intent for inserting fields into the form.
-
 
 ## Tips
 

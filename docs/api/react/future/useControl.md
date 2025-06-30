@@ -1,6 +1,6 @@
 # useControl
 
-> The `useControl` hook is part of Conform’s future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
+> The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
 A React hook that lets you sync the state of an input and dispatch native form events from it. This is useful when emulating native input behavior — typically by rendering a hidden base input and syncing it with a custom input.
 
@@ -255,4 +255,4 @@ You can register multiple checkbox or radio inputs as a group by passing an arra
 />
 ```
 
-If you don’t need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).
+If you don't need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).
