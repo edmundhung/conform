@@ -1,3 +1,4 @@
+import { isGlobalInstance } from './formdata';
 import { invariant } from './util';
 
 /**
@@ -394,44 +395,35 @@ export function blur(
 	element.dispatchEvent(new FocusEvent('blur'));
 }
 
-export function normalizeFieldValue(
-	value: unknown,
-): [string[] | null, FileList | null] {
-	if (typeof value === 'undefined') {
-		return [null, null];
+export function normalizeStringValues(value: unknown): string[] | undefined {
+	if (typeof value === 'undefined') return undefined;
+	if (value === null) return [];
+	if (typeof value === 'string') return [value];
+	if (Array.isArray(value) && value.every((v) => typeof v === 'string')) {
+		return Array.from(value);
 	}
 
-	if (value === null) {
-		return [[], createFileList([])];
+	throw new Error('Expected string or string[] value for string based input');
+}
+
+export function normalizeFileValues(value: unknown): FileList | undefined {
+	if (typeof value === 'undefined') return undefined;
+	if (value === null) return createFileList([]);
+	if (isGlobalInstance(value, 'File')) return createFileList([value]);
+	if (isGlobalInstance(value, 'FileList')) return value;
+	if (
+		Array.isArray(value) &&
+		value.every((item) => isGlobalInstance(item, 'File'))
+	) {
+		return createFileList(value);
 	}
 
-	if (typeof value === 'string') {
-		return [[value], null];
-	}
-
-	if (Array.isArray(value)) {
-		if (value.every((item) => typeof item === 'string')) {
-			return [Array.from(value), null];
-		}
-
-		if (value.every((item) => item instanceof File)) {
-			return [null, createFileList(value)];
-		}
-	}
-
-	if (value instanceof FileList) {
-		return [null, value];
-	}
-
-	if (value instanceof File) {
-		return [null, createFileList([value])];
-	}
-
-	return [null, null];
+	throw new Error('Expected File, FileList or File[] for file input');
 }
 
 /**
  * Updates the DOM element with the provided value and defaultValue.
+ * If the value or defaultValue is undefined, it will keep the current value instead
  */
 export function updateField(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
@@ -440,17 +432,20 @@ export function updateField(
 		defaultValue?: unknown;
 	},
 ) {
-	const [value, file] = normalizeFieldValue(options.value);
-	const [defaultValue] = normalizeFieldValue(options.defaultValue);
-
 	if (isInputElement(element)) {
 		switch (element.type) {
 			case 'file': {
-				element.files = file;
+				const files = normalizeFileValues(options.value);
+				if (files) {
+					element.files = files;
+				}
 				return;
 			}
 			case 'checkbox':
 			case 'radio': {
+				const value = normalizeStringValues(options.value);
+				const defaultValue = normalizeStringValues(options.defaultValue);
+
 				if (value) {
 					const checked = value.includes(element.value);
 
@@ -470,6 +465,8 @@ export function updateField(
 			}
 		}
 	} else if (isSelectElement(element)) {
+		const value = normalizeStringValues(options.value);
+		const defaultValue = normalizeStringValues(options.defaultValue);
 		const shouldUnselect = value && value.length === 0;
 
 		for (const option of element.options) {
@@ -525,6 +522,8 @@ export function updateField(
 		return;
 	}
 
+	const value = normalizeStringValues(options.value);
+	const defaultValue = normalizeStringValues(options.defaultValue);
 	const inputValue = value?.[0] ?? '';
 
 	if (element.value !== inputValue) {
@@ -542,15 +541,12 @@ export function updateField(
 
 		if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
 			prototypeValueSetter.call(element, inputValue);
+		} else if (valueSetter) {
+			valueSetter.call(element, inputValue);
 		} else {
-			if (valueSetter) {
-				valueSetter.call(element, inputValue);
-			} else {
-				throw new Error('The given element does not have a value setter');
-			}
+			throw new Error('The given element does not have a value setter');
 		}
 	}
-
 	if (defaultValue) {
 		element.defaultValue = defaultValue[0] ?? '';
 	}

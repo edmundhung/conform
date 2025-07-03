@@ -64,7 +64,9 @@ export type Control = {
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
-	change(value: string | string[] | boolean | File | File[] | FileList): void;
+	change(
+		value: string | string[] | boolean | File | File[] | FileList | null,
+	): void;
 	/**
 	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
 	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.

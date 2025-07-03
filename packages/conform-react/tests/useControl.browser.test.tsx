@@ -161,7 +161,7 @@ describe('future export: useControl', () => {
 						onChange={(event) =>
 							control.change(
 								props.type === 'file'
-									? event.target.files ?? []
+									? Array.from(event.target.files ?? [])
 									: event.target.value,
 							)
 						}
@@ -546,6 +546,15 @@ describe('future export: useControl', () => {
 		await expect
 			.poll(() => getFiles(controlInput).map((file) => file.name))
 			.toEqual([csvFile.name, sqlFile.name]);
+
+		// Clearing the file input by uploading nothing
+		await userEvent.upload(controlInput, []);
+		await expect
+			.poll(() => getFiles(baseInput).map((file) => file.name))
+			.toEqual([]);
+		await expect
+			.poll(() => getFiles(controlInput).map((file) => file.name))
+			.toEqual([]);
 	});
 
 	it('supports emulating a multiple select', async () => {
