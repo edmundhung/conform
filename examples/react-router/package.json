@@ -7,8 +7,8 @@
 		"serve": "vite preview"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.8.0",
-		"@conform-to/zod": "1.8.0",
+		"@conform-to/react": "1.8.1",
+		"@conform-to/zod": "1.8.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-router-dom": "^6.15.0",
