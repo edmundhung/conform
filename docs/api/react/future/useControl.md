@@ -84,7 +84,7 @@ Selected files of the base input. Defined only when the registered input is a fi
 
 Registers the base input element(s). Accepts a single input or an array for groups.
 
-### `change(value: string | string[] | File | File[] | FileList | boolean): void`
+### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
 
 Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 
