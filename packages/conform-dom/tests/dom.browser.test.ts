@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { test, describe, it, expect, vi } from 'vitest';
 import { userEvent } from '@vitest/browser/context';
 import {
 	updateField,
@@ -7,6 +7,8 @@ import {
 	focus,
 	blur,
 	createFileList,
+	isFieldElement,
+	isGlobalInstance,
 } from '../dom';
 
 describe('updateField', () => {
@@ -656,4 +658,51 @@ describe('blur', () => {
 		expect(handler).toHaveBeenNthCalledWith(1, 'focusout', true);
 		expect(handler).toHaveBeenNthCalledWith(2, 'blur', false);
 	});
+});
+
+test('isGlobalInstance', () => {
+	class CustomFile {
+		name: string;
+		contents: string[];
+		constructor(contents: string[], name: string) {
+			this.name = name;
+			this.contents = contents;
+		}
+	}
+
+	const file = new File(['hello', 'world'], 'example.txt');
+	const fileList = createFileList([file]);
+	const customFile = new CustomFile(['hello', 'world'], 'example.txt');
+
+	expect(isGlobalInstance(null, 'File')).toBe(false);
+	expect(isGlobalInstance(file, 'File')).toBe(true);
+	vi.stubGlobal('File', null);
+	expect(isGlobalInstance(file, 'File')).toBe(false);
+	vi.stubGlobal('File', CustomFile);
+	expect(isGlobalInstance(file, 'File')).toBe(false);
+	expect(isGlobalInstance(customFile, 'File')).toBe(true);
+
+	expect(isGlobalInstance(null, 'FileList')).toBe(false);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(true);
+	vi.stubGlobal('FileList', null);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(false);
+	vi.stubGlobal('FileList', CustomFile);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(false);
+	expect(isGlobalInstance(customFile, 'FileList')).toBe(true);
+});
+
+test('isFieldElement', () => {
+	function createInput(type?: string) {
+		const element = document.createElement('input');
+
+		if (type) {
+			element.type = type;
+		}
+
+		return element;
+	}
+
+	expect(isFieldElement(null)).toBe(false);
+	expect(isFieldElement(createInput())).toBe(true);
+	expect(isFieldElement(createInput('button'))).toBe(false);
 });

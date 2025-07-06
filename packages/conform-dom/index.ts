@@ -16,12 +16,9 @@ export {
 export {
 	type FieldElement,
 	isFieldElement,
+	isGlobalInstance,
 	updateField as unstable_updateField,
 	createFileList,
-	createGlobalFormsObserver as unstable_createGlobalFormsObserver,
-	focus as unstable_focus,
-	change as unstable_change,
-	blur as unstable_blur,
 } from './dom';
 export {
 	type Submission,
@@ -34,10 +31,7 @@ export {
 } from './submission';
 export {
 	getFormData,
-	getPaths,
-	formatPaths,
+	getPathSegments as getPaths,
+	formatPathSegments as formatPaths,
 	isPrefix,
-	isGlobalInstance,
-	deepEqual as unstable_deepEqual,
-	isDirty as unstable_isDirty,
 } from './formdata';
