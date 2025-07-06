@@ -1,11 +1,11 @@
 import {
-	unstable_deepEqual as deepEqual,
-	unstable_focus as focus,
-	unstable_change as change,
-	unstable_blur as blur,
+	deepEqual,
+	focus,
+	change,
+	blur,
 	isFieldElement,
 	getFormData,
-} from '@conform-to/dom';
+} from '@conform-to/dom/future';
 import {
 	useEffect,
 	useRef,

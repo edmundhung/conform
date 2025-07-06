@@ -6,10 +6,8 @@ import { useControl, useFormData } from '@conform-to/react/future';
 import { useForm } from '@conform-to/react';
 import { FormContext } from '../future/context';
 import { useEffect, useRef, useState } from 'react';
-import {
-	unstable_createGlobalFormsObserver as createGlobalFormsObserver,
-	parse,
-} from '@conform-to/dom';
+import { createGlobalFormsObserver } from '@conform-to/dom/future';
+import { parse } from '@conform-to/dom';
 
 describe('future export: useFormData', () => {
 	function useRenderCount(): number {
