@@ -6,6 +6,7 @@ function getFieldset(form: Locator) {
 		name: form.locator('[name="name"]'),
 		message: form.locator('[name="message"]'),
 		number: form.locator('[name="number"]'),
+		hidden: form.locator('[name="hidden"]'),
 		validateForm: form.locator('button:text("Validate Form")'),
 		validateMessage: form.locator('button:text("Validate Message")'),
 		updateMessage: form.locator('button:text("Update message")'),
@@ -22,22 +23,26 @@ async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 	const playground = getPlayground(page);
 	const fieldset = getFieldset(playground.container);
 
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	await fieldset.validateMessage.click();
 	await expect(playground.error).toHaveText(['', 'Message is required', '']);
 
 	await fieldset.updateMessage.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('Hello World');
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	await fieldset.clearMessage.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
 	await expect(playground.error).toHaveText(['', 'Message is required', '']);
 
 	await fieldset.resetMessage.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
 	await expect(playground.error).toHaveText(['', '', '']);
@@ -53,12 +58,14 @@ async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 	]);
 
 	await fieldset.resetForm.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('');
 	await expect(fieldset.number).toHaveValue('');
 	await expect(fieldset.message).toHaveValue('');
 	await expect(playground.error).toHaveText(['', '', '']);
 
 	await fieldset.updateForm.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('Conform');
 	await expect(fieldset.number).toHaveValue('13579');
 	await expect(fieldset.message).toHaveValue(
@@ -70,6 +77,7 @@ async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 	await fieldset.number.fill('2468');
 	await fieldset.message.fill('Hello World');
 	await fieldset.updateForm.click();
+	await expect(fieldset.hidden).toHaveValue('hidden-value');
 	await expect(fieldset.name).toHaveValue('Conform');
 	await expect(fieldset.number).toHaveValue('13579');
 	await expect(fieldset.message).toHaveValue(
@@ -78,6 +86,7 @@ async function runValidationScenario(page: Page, hasClientValidation: boolean) {
 
 	if (hasClientValidation) {
 		await fieldset.multipleUpdates.click();
+		await expect(fieldset.hidden).toHaveValue('hidden-value');
 		await expect(fieldset.name).toHaveValue('Conform');
 		await expect(fieldset.number).toHaveValue('987');
 		await expect(fieldset.message).toHaveValue('Updated message');

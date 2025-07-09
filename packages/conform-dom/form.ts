@@ -19,6 +19,7 @@ import {
 	getFormMethod,
 	requestSubmit,
 	updateField,
+	isDirtyInput,
 } from './dom';
 import { clone, generateId, invariant } from './util';
 import {
@@ -1121,18 +1122,24 @@ export function createFormContext<
 									intent.payload.value,
 									formatPaths(paths),
 								);
+								const inputValue =
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined;
 
-								updateField(element, {
-									value:
-										typeof value === 'string' ||
-										(Array.isArray(value) &&
-											value.every((item) => typeof item === 'string'))
-											? value
-											: null,
-								});
+								if (
+									typeof inputValue !== 'undefined' ||
+									(name === '' && paths.length > 1)
+								) {
+									updateField(element, {
+										value: inputValue ?? null,
+									});
 
-								// Update the element attribute to notify useControl / useInputControl hook
-								element.dataset.conform = generateId();
+									// Update the element attribute to notify useControl / useInputControl hook
+									element.dataset.conform = generateId();
+								}
 							}
 						}
 					}
@@ -1152,11 +1159,20 @@ export function createFormContext<
 								(Array.isArray(value) &&
 									value.every((item) => typeof item === 'string'))
 									? value
-									: null;
+									: undefined;
+
+							if (
+								typeof defaultValue === 'undefined' &&
+								!element.dataset.conform &&
+								'defaultValue' in element &&
+								!isDirtyInput(element)
+							) {
+								continue;
+							}
 
 							updateField(element, {
-								defaultValue,
-								value: defaultValue,
+								defaultValue: defaultValue,
+								value: defaultValue ?? null,
 							});
 
 							// Update the element attribute to notify useControl / useInputControl hook

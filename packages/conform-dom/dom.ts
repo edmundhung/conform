@@ -551,3 +551,27 @@ export function updateField(
 		element.defaultValue = defaultValue[0] ?? '';
 	}
 }
+
+export function isDirtyInput(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): boolean {
+	if (isInputElement(element)) {
+		switch (element.type) {
+			case 'checkbox':
+			case 'radio':
+				return element.checked !== element.defaultChecked;
+			case 'file':
+				return (element.files?.length ?? 0) > 0;
+			default:
+				return element.value !== element.defaultValue;
+		}
+	} else if (isSelectElement(element)) {
+		return Array.from(element.options).some(
+			(option) => option.selected !== option.defaultSelected,
+		);
+	} else if (isTextAreaElement(element)) {
+		return element.value !== element.defaultValue;
+	}
+
+	return false;
+}
