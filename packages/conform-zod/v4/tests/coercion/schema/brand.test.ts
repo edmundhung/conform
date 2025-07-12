@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod/v4';
+import { z } from 'zod-v4';
 import {
 	object,
 	string,
@@ -10,7 +10,7 @@ import {
 	bigint,
 	file,
 	optional,
-} from 'zod/v4-mini';
+} from 'zod-v4/mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -61,7 +61,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected file, received string']
 				},
 			});
 			expect(
@@ -85,7 +85,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected file, received string']
 				},
 			});
 

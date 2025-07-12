@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod/v4';
-import { object, literal, union, string, _default } from 'zod/v4-mini';
+import { z } from 'zod-v4';
+import { object, literal, union, string, _default } from 'zod-v4/mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -33,10 +33,10 @@ describe('coercion', () => {
 			expect(getResult(coerceFormValue(schema).safeParse({}))).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input: expected "a"'],
-					b: ['Invalid input: expected 0'],
-					c: ['Invalid input: expected true'],
-					e: ['Invalid input: expected 9007199254740991n'],
+					a: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected "a"']
+					b: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 0']
+					c: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected true']
+					e: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 9007199254740991n']
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 					h: ['Invalid input'],
@@ -46,10 +46,10 @@ describe('coercion', () => {
 			expect(getResult(coerceFormValue(miniSchema).safeParse({}))).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input: expected "a"'],
-					b: ['Invalid input: expected 0'],
-					c: ['Invalid input: expected true'],
-					e: ['Invalid input: expected 9007199254740991n'],
+					a: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected "a"']
+					b: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 0']
+					c: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected true']
+					e: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 9007199254740991n']
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 					h: ['Invalid input'],
@@ -74,11 +74,11 @@ describe('coercion', () => {
 			).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input: expected "a"'],
-					b: ['Invalid input: expected 0'],
-					c: ['Invalid input: expected true'],
-					d: ['Invalid input: expected false'],
-					e: ['Invalid input: expected 9007199254740991n'],
+					a: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected "a"']
+					b: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 0']
+					c: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected true']
+					d: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected false']
+					e: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 9007199254740991n']
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 				},
@@ -100,11 +100,11 @@ describe('coercion', () => {
 			).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input: expected "a"'],
-					b: ['Invalid input: expected 0'],
-					c: ['Invalid input: expected true'],
-					d: ['Invalid input: expected false'],
-					e: ['Invalid input: expected 9007199254740991n'],
+					a: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected "a"']
+					b: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 0']
+					c: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected true']
+					d: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected false']
+					e: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected 9007199254740991n']
 					f: ['Invalid input'],
 					g: ['Invalid input'],
 				},
