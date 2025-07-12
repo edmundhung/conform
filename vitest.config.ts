@@ -44,7 +44,10 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
 				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
-				exclude: [`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`],
+				exclude: [
+					`**/node_modules/**`,
+					`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`,
+				],
 			},
 		},
 		{
@@ -54,6 +57,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				// This covers both .node.test.ts/tsx and .test.ts/tsx files
 				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
 				exclude: [
+					`**/node_modules/**`,
 					`packages/${packageName}/**/tests/**/*.browser.test.{ts,tsx}`,
 				],
 			},
