@@ -23,7 +23,7 @@ describe('coercion', () => {
 					c: z.boolean('Required').brand(),
 					d: z.date('Required').brand(),
 					e: z.bigint('Required').brand(),
-					f: z.file().brand(),
+					f: z.file('Required').brand(),
 					g: z.string().optional().brand(),
 					h: z.string().brand().optional(),
 				})
@@ -34,7 +34,7 @@ describe('coercion', () => {
 				c: boolean('Required').brand(),
 				d: date('Required').brand(),
 				e: bigint('Required').brand(),
-				f: file().brand(),
+				f: file('Required').brand(),
 				g: optional(string()).brand(),
 				h: optional(string().brand()),
 			}).brand();
@@ -61,7 +61,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected file, received string']
+					f: ['Required'],
 				},
 			});
 			expect(
@@ -85,7 +85,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input'], // MEMO: Detailed error messages are not displayed because zod v4 is being used with an alias. error message: ['Invalid input: expected file, received string']
+					f: ['Required'],
 				},
 			});
 
