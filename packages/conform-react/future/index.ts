@@ -1,3 +1,3 @@
-export { unstable_isDirty as isDirty } from '@conform-to/dom';
+export { isDirty } from '@conform-to/dom/future';
 export { useControl, useFormData } from './hooks';
 export type { Control } from './hooks';

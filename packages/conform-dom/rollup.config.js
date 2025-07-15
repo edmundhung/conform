@@ -13,7 +13,7 @@ function configurePackage() {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.ts`,
+		input: [`${sourceDir}/index.ts`, `${sourceDir}/future/index.ts`],
 		output: {
 			dir: outputDir,
 			format: 'esm',
@@ -58,7 +58,7 @@ function configurePackage() {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: `${sourceDir}/index.ts`,
+		input: [`${sourceDir}/index.ts`, `${sourceDir}/future/index.ts`],
 		output: {
 			dir: outputDir,
 			format: 'cjs',

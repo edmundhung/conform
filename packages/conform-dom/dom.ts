@@ -1,4 +1,3 @@
-import { isGlobalInstance } from './formdata';
 import { invariant } from './util';
 
 /**
@@ -32,6 +31,16 @@ export function isTextAreaElement(
 }
 
 /**
+ * A type guard to checks if the element is a submitter element.
+ * A submitter element is either an input or button element with type submit.
+ */
+export function isSubmitter(
+	element: HTMLElement,
+): element is HTMLInputElement | HTMLButtonElement {
+	return 'type' in element && element.type === 'submit';
+}
+
+/**
  * A type guard to check if the provided element is a field element, which
  * is a form control excluding submit, button and reset type.
  */
@@ -51,6 +60,22 @@ export function isFieldElement(element: unknown): element is FieldElement {
 	}
 
 	return false;
+}
+
+export function isGlobalInstance<
+	ClassName extends {
+		[K in keyof typeof globalThis]: (typeof globalThis)[K] extends new (
+			...args: any
+		) => any
+			? K
+			: never;
+	}[keyof typeof globalThis],
+>(
+	obj: unknown,
+	className: ClassName,
+): obj is InstanceType<(typeof globalThis)[ClassName]> {
+	const Ctor = globalThis[className];
+	return typeof Ctor === 'function' && obj instanceof Ctor;
 }
 
 /**

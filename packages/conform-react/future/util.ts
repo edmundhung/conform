@@ -1,7 +1,4 @@
-import {
-	isGlobalInstance,
-	unstable_updateField as updateField,
-} from '@conform-to/dom';
+import { isGlobalInstance, updateField } from '@conform-to/dom/future';
 
 export type FormRef =
 	| React.RefObject<
