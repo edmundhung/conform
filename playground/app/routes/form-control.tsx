@@ -49,6 +49,7 @@ export default function FormControl() {
 			<Form method="post" {...getFormProps(form)}>
 				<FormStateInput formId={form.id} />
 				<Playground title="Form Control" result={lastResult}>
+					<input name="hidden" defaultValue="hidden-value" />
 					<Field label="Name" meta={fields.name}>
 						<input {...getInputProps(fields.name, { type: 'text' })} />
 					</Field>
