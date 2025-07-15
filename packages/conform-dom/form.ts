@@ -139,6 +139,22 @@ export type FormState<FormError> = Omit<
 	dirty: Record<string, boolean>;
 };
 
+export type SerializationOptions = {
+	/**
+	 * Controls how boolean values are serialized
+	 * - 'html' (default): converts true to "on" and false to undefined (standard HTML form behavior)
+	 * - 'preserve': keeps the original boolean values
+	 */
+	booleanFormat?: 'html' | 'preserve';
+
+	/**
+	 * Controls how dates are serialized
+	 * - 'iso' (default): converts to ISO string
+	 * - 'preserve': keeps the original Date object
+	 */
+	dateFormat?: 'iso' | 'preserve';
+};
+
 export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 	/**
 	 * The id of the form.
@@ -190,6 +206,11 @@ export type FormOptions<Schema, FormError = string[], FormValue = Schema> = {
 		submitter: HTMLInputElement | HTMLButtonElement | null;
 		formData: FormData;
 	}) => Submission<Schema, FormError, FormValue>;
+
+	/**
+	 * Configure how values are serialized when sent to the form
+	 */
+	serialization?: SerializationOptions;
 };
 
 export type SubscriptionSubject = {
@@ -270,7 +291,10 @@ function createFormMeta<Schema, FormError, FormValue>(
 ): FormMeta<FormError> {
 	const lastResult = !isResetting ? options.lastResult : undefined;
 	const defaultValue = options.defaultValue
-		? (serialize(options.defaultValue) as Record<string, unknown>)
+		? (serialize(options.defaultValue, options.serialization) as Record<
+				string,
+				unknown
+			>)
 		: {};
 	const initialValue = lastResult?.initialValue ?? defaultValue;
 	const result: FormMeta<FormError> = {
@@ -1036,7 +1060,7 @@ export function createFormContext<
 	function getControlButtonProps(intent: Intent): ControlButtonProps {
 		return {
 			name: INTENT,
-			value: serializeIntent(intent),
+			value: serializeIntent(intent, latestOptions.serialization),
 			form: latestOptions.formId,
 			formNoValidate: true,
 		};
