@@ -50,7 +50,7 @@
 		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
-		"zod": "^3.21.0"
+		"zod": "^3.21.0 || ^4.0.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -60,7 +60,8 @@
 		"@rollup/plugin-node-resolve": "^13.3.0",
 		"rollup": "^2.79.1",
 		"rollup-plugin-copy": "^3.4.0",
-		"zod": "^3.25.30"
+		"zod": "^3.25.75",
+		"zod-v4": "npm:zod@^4.0.0"
 	},
 	"keywords": [
 		"constraint-validation",

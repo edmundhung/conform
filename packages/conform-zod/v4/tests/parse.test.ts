@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { parseWithZod, conformZodMessage } from '../parse';
-import { z } from 'zod/v4';
-import { object, string, minLength } from 'zod/v4-mini';
+import { z } from 'zod-v4';
+import { object, string, minLength } from 'zod-v4/mini';
 import { createFormData } from '../../tests/helpers/FromData';
 
 describe('parse', () => {

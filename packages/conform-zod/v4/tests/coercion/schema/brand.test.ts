@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod/v4';
+import { z } from 'zod-v4';
 import {
 	object,
 	string,
@@ -10,7 +10,7 @@ import {
 	bigint,
 	file,
 	optional,
-} from 'zod/v4-mini';
+} from 'zod-v4/mini';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -23,7 +23,7 @@ describe('coercion', () => {
 					c: z.boolean('Required').brand(),
 					d: z.date('Required').brand(),
 					e: z.bigint('Required').brand(),
-					f: z.file().brand(),
+					f: z.file('Required').brand(),
 					g: z.string().optional().brand(),
 					h: z.string().brand().optional(),
 				})
@@ -34,7 +34,7 @@ describe('coercion', () => {
 				c: boolean('Required').brand(),
 				d: date('Required').brand(),
 				e: bigint('Required').brand(),
-				f: file().brand(),
+				f: file('Required').brand(),
 				g: optional(string()).brand(),
 				h: optional(string().brand()),
 			}).brand();
@@ -61,7 +61,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Required'],
 				},
 			});
 			expect(
@@ -85,7 +85,7 @@ describe('coercion', () => {
 					c: ['Required'],
 					d: ['Required'],
 					e: ['Required'],
-					f: ['Invalid input: expected file, received string'],
+					f: ['Required'],
 				},
 			});
 
