@@ -15,12 +15,33 @@
 			"require": "./dist/v3/index.js",
 			"default": "./dist/v3/index.mjs"
 		},
+		"./v3": {
+			"types": "./dist/v3/index.d.ts",
+			"module": "./dist/v3/index.mjs",
+			"import": "./dist/v3/index.mjs",
+			"require": "./dist/v3/index.js",
+			"default": "./dist/v3/index.mjs"
+		},
+		"./v3/future": {
+			"types": "./dist/v3/future.d.ts",
+			"module": "./dist/v3/future.mjs",
+			"import": "./dist/v3/future.mjs",
+			"require": "./dist/v3/future.js",
+			"default": "./dist/v3/future.mjs"
+		},
 		"./v4": {
 			"types": "./dist/v4/index.d.ts",
 			"module": "./dist/v4/index.mjs",
 			"import": "./dist/v4/index.mjs",
 			"require": "./dist/v4/index.js",
 			"default": "./dist/v4/index.mjs"
+		},
+		"./v4/future": {
+			"types": "./dist/v4/future.d.ts",
+			"module": "./dist/v4/future.mjs",
+			"import": "./dist/v4/future.mjs",
+			"require": "./dist/v4/future.js",
+			"default": "./dist/v4/future.mjs"
 		}
 	},
 	"files": [
