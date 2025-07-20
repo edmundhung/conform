@@ -148,6 +148,9 @@ export default function Todos() {
 			</button>
 			<hr />
 			<button disabled={!dirty}>Save</button>
+			<button type="button" onClick={() => intent.reset()}>
+				Reset
+			</button>
 		</form>
 	);
 }

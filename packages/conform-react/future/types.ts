@@ -68,30 +68,31 @@ export type UpdateIntent = {
 	};
 };
 
-export type ListIntent =
-	| {
-			type: 'insert';
-			payload: {
-				name: FieldName<any[]>;
-				index?: number;
-				defaultValue?: FormValue<string | number | boolean | null>;
-			};
-	  }
-	| {
-			type: 'remove';
-			payload: {
-				name: FieldName<any[]>;
-				index: number;
-			};
-	  }
-	| {
-			type: 'reorder';
-			payload: {
-				name: FieldName<any[]>;
-				from: number;
-				to: number;
-			};
-	  };
+export type InsertIntent = {
+	type: 'insert';
+	payload: {
+		name: FieldName<any[]>;
+		index?: number;
+		defaultValue?: FormValue<string | number | boolean | null>;
+	};
+};
+
+export type RemoveIntent = {
+	type: 'remove';
+	payload: {
+		name: FieldName<any[]>;
+		index: number;
+	};
+};
+
+export type ReorderIntent = {
+	type: 'reorder';
+	payload: {
+		name: FieldName<any[]>;
+		from: number;
+		to: number;
+	};
+};
 
 export type UnknownIntent = {
 	type: string;
@@ -102,7 +103,9 @@ export type FormIntent =
 	| ResetIntent
 	| ValidateIntent
 	| UpdateIntent
-	| ListIntent;
+	| InsertIntent
+	| RemoveIntent
+	| ReorderIntent;
 
 type BaseCombine<
 	T,

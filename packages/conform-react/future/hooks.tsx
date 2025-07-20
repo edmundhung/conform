@@ -39,12 +39,14 @@ import {
 	resolveValidateResult,
 } from './util';
 import {
-	applyIntent,
-	control,
-	createFormMetadata,
-	isValidated as isValidated,
-	createFieldset,
+	updateValue,
+	initializeState,
+	updateState,
+	parseIntent,
+	serializeIntent,
+	getSideEffect,
 } from './form';
+import { createFormMetadata, isValidated, createFieldset } from './metadata';
 import { Context } from './context';
 import type {
 	DefaultValue,
@@ -287,10 +289,10 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			run: (formElement: HTMLFormElement) => void;
 		}>;
 	}>(() => {
-		let state = control.initializeState<FormShape, ErrorShape>();
+		let state = initializeState<FormShape, ErrorShape>();
 
 		if (lastResult) {
-			const result = control.updateState(state, {
+			const result = updateState(state, {
 				type: 'server',
 				result: lastResult,
 				ctx: {
@@ -333,12 +335,12 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			const { onUpdate } = optionsRef.current ?? {};
 
 			updateForm((form) => {
-				const state = control.updateState(form.state, {
+				const state = updateState(form.state, {
 					type: options.type,
 					result,
 					ctx: {
 						reset() {
-							return control.initializeState<FormShape, ErrorShape>();
+							return initializeState<FormShape, ErrorShape>();
 						},
 					},
 				});
@@ -347,7 +349,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				let sideEffects = form.sideEffects;
 
 				if (options.type === 'client' && intent) {
-					const sideEffect = control.getSideEffect(intent, state);
+					const sideEffect = getSideEffect(intent);
 
 					if (sideEffect) {
 						sideEffects = sideEffects
@@ -460,9 +462,11 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				}
 			}
 
-			const [intent, value] = applyIntent(submission, {
-				pendingIntents: Array.from(pendingIntentsRef.current),
-			});
+			const intent = submission.intent ? parseIntent(submission.intent) : null;
+			const value = updateValue(
+				submission.value,
+				Array.from(pendingIntentsRef.current).concat(intent ?? []),
+			);
 			const submissionResult = report<FormShape, ErrorShape, FormIntent>(
 				submission,
 				{
@@ -595,10 +599,10 @@ export function useIntent(
 							requestIntent(
 								formElement,
 								intentName,
-								control.serializeIntent({
+								serializeIntent({
 									type,
 									payload,
-								} as FormIntent),
+								}),
 							);
 						};
 					}
