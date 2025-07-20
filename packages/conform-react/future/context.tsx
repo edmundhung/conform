@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { unstable_createGlobalFormsObserver as createGlobalFormsObserver } from '@conform-to/dom';
+import { createGlobalFormsObserver } from '@conform-to/dom/future';
 
 export const FormContext = createContext({
 	observer: createGlobalFormsObserver(),
