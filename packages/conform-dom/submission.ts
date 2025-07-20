@@ -1,13 +1,12 @@
 import { isGlobalInstance } from './dom';
 import type { DefaultValue, FieldName, FormValue } from './form';
 import {
-	isPlainObject,
 	isPrefix,
 	getValueAtPath,
 	setValueAtPath,
 	appendPathSegment,
 } from './formdata';
-import { invariant } from './util';
+import { invariant, isPlainObject } from './util';
 
 export type SubmissionState = {
 	validated: Record<string, boolean>;
