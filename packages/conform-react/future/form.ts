@@ -38,7 +38,7 @@ import type {
 	FormAction,
 	UnknownIntent,
 } from './types';
-import { getListKey } from './metadata';
+import { getDefaultListKey } from './metadata';
 
 export function updateKeys(
 	keys: Record<string, string[]> = {},
@@ -69,7 +69,9 @@ export function modify<Data>(
 	return setValueAtPath(data, getPathSegments(name), value, { clone: true });
 }
 
-export function serializeIntent(intent: UnknownIntent): string {
+export function serializeIntent<Intent extends UnknownIntent = UnknownIntent>(
+	intent: Intent,
+): string {
 	if (!intent.payload) {
 		return intent.type;
 	}
@@ -323,7 +325,7 @@ export function updateState<FormShape, ErrorShape>(
 	const submittedValue = state.submittedValue ?? result.submission.value;
 	const value = result.value ?? result.submission.value;
 
-	if (intent === null || intent?.type === 'validate') {
+	if (!intent || intent?.type === 'validate') {
 		const name = intent?.payload ?? '';
 
 		let touchedFields = state.touchedFields;
@@ -365,9 +367,19 @@ export function updateState<FormShape, ErrorShape>(
 			keys = name === '' ? {} : updateKeys(state.keys, name);
 		}
 
+		const basePath = getPathSegments(intent.payload.name);
+		let touchedFields = state.touchedFields;
+
+		for (const field of result.submission.fields) {
+			if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
+				touchedFields = addItem(touchedFields, field);
+			}
+		}
+
 		return {
 			...baseUpdate(state, action),
 			keys,
+			touchedFields,
 		};
 	}
 
@@ -389,7 +401,8 @@ export function updateState<FormShape, ErrorShape>(
 		// Update the keys only for client updates to avoid double updates if there is no client validation
 		if (type === 'client') {
 			const listKeys = Array.from(
-				getListKey(state, submittedValue, intent.payload.name),
+				state.keys[intent.payload.name] ??
+					getDefaultListKey(submittedValue, intent.payload.name),
 			);
 
 			insertItem(listKeys, new Date().toISOString(), index);
@@ -436,7 +449,8 @@ export function updateState<FormShape, ErrorShape>(
 		// Update the keys only for client updates to avoid double updates if there is no client validation
 		if (type === 'client') {
 			const listKeys = Array.from(
-				getListKey(state, submittedValue, intent.payload.name),
+				state.keys[intent.payload.name] ??
+					getDefaultListKey(submittedValue, intent.payload.name),
 			);
 
 			removeItem(listKeys, intent.payload.index);
@@ -495,7 +509,8 @@ export function updateState<FormShape, ErrorShape>(
 		// Update the keys only for client updates to avoid double updates if there is no client validation
 		if (type === 'client') {
 			const listKeys = Array.from(
-				getListKey(state, submittedValue, intent.payload.name),
+				state.keys[intent.payload.name] ??
+					getDefaultListKey(submittedValue, intent.payload.name),
 			);
 
 			reorderItems(listKeys, intent.payload.from, intent.payload.to);

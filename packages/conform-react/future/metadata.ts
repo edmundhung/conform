@@ -18,22 +18,94 @@ import { getListValue } from './util';
 export function getSerializedValue(
 	valueObject: unknown,
 	name: string,
-	serializeFn: (value: unknown) => string | string[] | undefined = serialize,
+	serializeFn: (value: unknown) => string | undefined = serialize,
 ): string | string[] | undefined {
 	const value = getValueAtPath(valueObject, name);
+
+	if (Array.isArray(value)) {
+		const options: string[] = [];
+
+		for (const item of value) {
+			const serialized = serializeFn(item);
+
+			if (typeof serialized !== 'string') {
+				return;
+			}
+
+			options.push(serialized);
+		}
+
+		return options;
+	}
 
 	return serializeFn(value);
 }
 
-export function getListKey(
-	state: FormState<any, any>,
+export function getDefaultValue(
+	context: FormContext<any, any>,
+	name: string,
+): string | undefined {
+	const value = getSerializedValue(
+		context.state.submittedValue ?? context.defaultValue ?? {},
+		name,
+		// context.serialize
+	);
+
+	if (typeof value !== 'string') {
+		return;
+	}
+
+	return value;
+}
+
+export function getDefaultOptions(
+	context: FormContext<any, any>,
+	name: string,
+): string[] | undefined {
+	const value = getSerializedValue(
+		context.state.submittedValue ?? context.defaultValue ?? {},
+		name,
+		// context.serialize
+	);
+
+	if (typeof value === 'string') {
+		return [value];
+	}
+
+	return value;
+}
+
+export function getDefaultChecked(
+	context: FormContext<any, any>,
+	name: string,
+): boolean {
+	const value = getSerializedValue(
+		context.state.submittedValue ?? context.defaultValue ?? {},
+		name,
+		// context.serialize
+	);
+
+	return value === 'on';
+}
+
+export function getDefaultListKey(
 	initialValue: Record<string, unknown> | null,
 	name: string,
 ): string[] {
+	return getListValue(initialValue, name).map((_, index) =>
+		appendPathSegment(name, index),
+	);
+}
+
+export function getListKey(
+	context: FormContext<any, any>,
+	name: string,
+): string[] {
 	return (
-		state.keys?.[name] ??
-		getListValue(initialValue, name).map((_, index) =>
-			appendPathSegment(name, index),
+		context.state.keys?.[name] ??
+		getDefaultListKey(
+			context.state.submittedValue ?? context.defaultValue,
+			name,
 		)
 	);
 }
@@ -56,7 +128,7 @@ export function isValidated(state: FormState<any, any>, name = '') {
 	);
 }
 
-export function getErrors<ErrorShape>(
+export function getError<ErrorShape>(
 	state: FormState<any, ErrorShape>,
 	name?: string,
 ): ErrorShape | undefined {
@@ -83,13 +155,13 @@ export function createFormMetadata<
 	return {
 		id: context.formId,
 		get errors() {
-			return getErrors(context.state);
+			return getError(context.state);
 		},
 		get fieldErrors() {
 			const result: Record<string, ErrorShape> = {};
 
 			for (const name of context.state.touchedFields) {
-				const error = getErrors(context.state, name);
+				const error = getError(context.state, name);
 
 				if (typeof error !== 'undefined') {
 					result[name] = error;
@@ -124,8 +196,6 @@ export function createFieldset<
 		) => Metadata;
 	},
 ): Fieldset<FormShape, Metadata> {
-	const initialValue =
-		context.state.submittedValue ?? context.defaultValue ?? {};
 	const defaultValidationAttributes: ValidationAttributes = {
 		required: undefined,
 		minLength: undefined,
@@ -145,28 +215,22 @@ export function createFieldset<
 			descriptionId: `${context.formId}-${name}-description`,
 			errorId: `${context.formId}-${name}-error`,
 			get defaultValue() {
-				const value = getSerializedValue(initialValue, name, options.serialize);
-
-				return typeof value === 'string' ? value : value?.[0];
+				return getDefaultValue(context, name);
 			},
 			get defaultOptions() {
-				const value = getSerializedValue(initialValue, name, options.serialize);
-
-				return typeof value === 'string' ? [value] : value;
+				return getDefaultOptions(context, name);
 			},
 			get defaultChecked() {
-				const value = getSerializedValue(initialValue, name, options.serialize);
-
-				return value === 'on';
+				return getDefaultChecked(context, name);
 			},
 			get validated() {
 				return isValidated(context.state, name);
 			},
 			get invalid() {
-				return typeof getErrors(context.state, name) !== 'undefined';
+				return typeof getError(context.state, name) !== 'undefined';
 			},
 			get errors() {
-				return getErrors(context.state, name);
+				return getError(context.state, name);
 			},
 		};
 		const metadata =
@@ -183,7 +247,7 @@ export function createFieldset<
 				});
 			},
 			getFieldList() {
-				const keys = getListKey(context.state, initialValue, name);
+				const keys = getListKey(context, name);
 
 				return keys.map((key, index) => {
 					return createField(appendPathSegment(name, index), key);
