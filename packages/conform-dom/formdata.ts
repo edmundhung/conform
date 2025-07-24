@@ -1,7 +1,14 @@
-import type { FormValue, Submission } from './types';
+import type {
+	FormError,
+	FormValue,
+	JsonPrimitive,
+	Submission,
+	SubmissionResult,
+} from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
-import { INTENT as DEFAULT_INTENT_NAME } from './submission';
-import { deepEqual, serialize } from './util';
+import { deepEqual, isPlainObject, serialize, stripFiles } from './util';
+
+export const DEFAULT_INTENT_NAME = '__INTENT__';
 
 /**
  * Construct a form data with the submitter value.
@@ -303,19 +310,6 @@ export function getValueAtPath(
 }
 
 /**
- * Check if the value is a plain object
- */
-export function isPlainObject(
-	obj: unknown,
-): obj is Record<string | number | symbol, unknown> {
-	return (
-		!!obj &&
-		obj.constructor === Object &&
-		Object.getPrototypeOf(obj) === Object.prototype
-	);
-}
-
-/**
  * Parse `FormData` or `URLSearchParams` into a submission object.
  * This function structures the form values based on the naming convention.
  * It also includes all the field names and the intent if the `intentName` option is provided.
@@ -391,6 +385,112 @@ export function parseSubmission(
 	}
 
 	return submission;
+}
+
+/**
+ * Update the submission with the an optional error or to reset the form value.
+ * This function will remove all files in the submission value by default to
+ * avoid serialization issues over the network and the overhead of sending files back.
+ * You can specify `keepFile: true` to keep the file if needed.
+ *
+ * @example
+ * ```ts
+ * // Report the submission with the field errors
+ * report(submission, {
+ *  error: {
+ *    fieldErrors: {
+ *      email: ['Invalid email format'],
+ *      password: ['Password is required'],
+ *    },
+ * })
+ *
+ * // Report the submission with a form error
+ * report(submission, {
+ *   error: {
+ *     formErrors: ['Invalid credentials'],
+ *   },
+ * })
+ *
+ * // Reset the form
+ * report(submission, {
+ *   reset: true,
+ * })
+ * ```
+ */
+export function report<FormShape, ErrorShape = string[], Intent = never>(
+	submission: Submission,
+	options: {
+		keepFiles?: false;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
+		intent?: Intent | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<
+	FormShape,
+	ErrorShape,
+	Intent,
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+>;
+export function report<FormShape, ErrorShape = string[], Intent = never>(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
+		intent?: Intent | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<FormShape, ErrorShape, Intent>;
+export function report<FormShape, ErrorShape = string[], Intent = never>(
+	submission: Submission,
+	options: {
+		keepFiles?: boolean;
+		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		value?: Record<string, FormValue> | null;
+		intent?: Intent | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<FormShape, ErrorShape, Intent> {
+	const value = options.reset
+		? null
+		: typeof options.value === 'undefined' || submission.value === options.value
+			? undefined
+			: options.value && options.keepFiles
+				? stripFiles(options.value)
+				: options.value;
+	const error = !options.error
+		? options.error
+		: {
+				formErrors: options.error.formErrors ?? null,
+				fieldErrors: options.error.fieldErrors ?? {},
+			};
+
+	if (options.hideFields) {
+		for (const name of options.hideFields) {
+			const path = getPathSegments(name);
+
+			setValueAtPath(submission.value, path, undefined);
+			if (value) {
+				setValueAtPath(value, path, undefined);
+			}
+		}
+	}
+
+	return {
+		submission: options.keepFiles
+			? submission
+			: {
+					...submission,
+					value: stripFiles(submission.value),
+				},
+		value,
+		error,
+		intent: options.intent,
+	};
 }
 
 /**

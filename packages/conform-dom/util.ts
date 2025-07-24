@@ -1,4 +1,4 @@
-import { isPlainObject } from './formdata';
+import type { FormValue } from './types';
 
 export function invariant(
 	expectedCondition: boolean,
@@ -15,6 +15,19 @@ export function generateId(): string {
 
 export function clone<Data>(data: Data): Data {
 	return JSON.parse(JSON.stringify(data));
+}
+
+/**
+ * Check if the value is a plain object
+ */
+export function isPlainObject(
+	obj: unknown,
+): obj is Record<string | number | symbol, unknown> {
+	return (
+		!!obj &&
+		obj.constructor === Object &&
+		Object.getPrototypeOf(obj) === Object.prototype
+	);
 }
 
 /**
@@ -90,4 +103,24 @@ export function serialize(value: unknown): string | undefined {
 	}
 
 	return;
+}
+
+/*
+ * Removes File object from the FormValue.
+ * Used to avoid serialzing/sending File object back to the client.
+ */
+export function stripFiles<
+	Type extends string | number | boolean | File | null,
+>(
+	value: Record<string, FormValue<Type>>,
+): Record<string, FormValue<Exclude<Type, File>>> {
+	const json = JSON.stringify(value, (_, value) => {
+		// If the current value is a File, return undefined to omit it
+		if (typeof File !== 'undefined' && value instanceof File) {
+			return undefined;
+		}
+		return value;
+	});
+
+	return JSON.parse(json);
 }

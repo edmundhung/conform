@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-react';
 import { userEvent } from '@vitest/browser/context';
 import { useControl, useFormData } from '@conform-to/react/future';
 import { useForm } from '@conform-to/react';
-import { FormContext } from '../future/context';
+import { Context } from '../future/context';
 import { useEffect, useRef, useState } from 'react';
 import { createGlobalFormsObserver } from '@conform-to/dom/future';
 import { parse } from '@conform-to/dom';
@@ -48,7 +48,7 @@ describe('future export: useFormData', () => {
 		const observer = useFormObserver();
 
 		return (
-			<FormContext.Provider value={{ observer }}>
+			<Context.Provider value={{ observer }}>
 				<form
 					id={props.id}
 					ref={formRef}
@@ -70,7 +70,7 @@ describe('future export: useFormData', () => {
 						Toggle children
 					</button>
 				</form>
-			</FormContext.Provider>
+			</Context.Provider>
 		);
 	}
 
