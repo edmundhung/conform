@@ -154,12 +154,12 @@ export type ConformOptions<FormShape, ErrorShape, Value> = {
 export interface FormOptions<
 	FormShape,
 	ErrorShape,
-	Value,
+	Value = FormShape,
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
-	>,
-	FieldMetadata,
+	> = DefaultFormProps,
+	FieldMetadata = DefaultFieldMetadata<ErrorShape>,
 > extends ConformOptions<FormShape, ErrorShape, Value> {
 	id?: string;
 	defaultValue?: NoInfer<DefaultValue<FormShape>>;
@@ -192,8 +192,8 @@ export interface FormOptions<
 
 export function useForm<
 	FormShape,
-	ErrorShape,
-	Value,
+	ErrorShape = string[],
+	Value = FormShape,
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement

@@ -1,10 +1,5 @@
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
-import {
-	applyIntent,
-	initializeState,
-	serializeIntent,
-	updateState,
-} from '../future/form';
+import { initializeState, serializeIntent, updateState } from '../future/form';
 import {
 	getDefaultOptions,
 	getDefaultValue,
@@ -12,7 +7,6 @@ import {
 	getListKey,
 	isValidated,
 } from '../future/metadata';
-import { parseSubmission, report } from '../future';
 import { DEFAULT_INTENT } from '../future/hooks';
 import {
 	FormContext,
@@ -23,7 +17,7 @@ import {
 	UpdateIntent,
 	ValidateIntent,
 } from '../future/types';
-import { FormValue, FormError, SubmissionResult } from '@conform-to/dom/future';
+import { createResult } from './helpers';
 
 describe('form', () => {
 	function createContext(
@@ -34,31 +28,6 @@ describe('form', () => {
 			state: initializeState(),
 			...customized,
 		};
-	}
-
-	function createResult(
-		entries: Array<[string, FormDataEntryValue]>,
-		options?: {
-			value?: Record<string, FormValue> | null;
-			error?: Partial<FormError<any, any>> | null;
-		},
-	): SubmissionResult<any, any, any, any> {
-		const formData = new FormData();
-
-		for (const [name, value] of entries) {
-			formData.append(name, value);
-		}
-
-		const submission = parseSubmission(formData, {
-			intentName: DEFAULT_INTENT,
-		});
-		const [intent, value] = applyIntent(submission);
-
-		return report(submission, {
-			intent,
-			value: typeof options?.value !== 'undefined' ? options.value : value,
-			error: options?.error,
-		});
 	}
 
 	const ctx = {

@@ -96,6 +96,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 	const { form, fields } = useForm({
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
+		shouldRevalidate: 'onInput',
 		async onValidate(value) {
 			const result = await schema.safeParseAsync(value);
 			return resolveZodResult(result);
