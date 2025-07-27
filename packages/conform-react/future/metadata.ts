@@ -46,7 +46,7 @@ export function getDefaultValue(
 	name: string,
 ): string | undefined {
 	const value = getSerializedValue(
-		context.state.submittedValue ?? context.defaultValue ?? {},
+		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
 		// context.serialize
 	);
@@ -63,7 +63,7 @@ export function getDefaultOptions(
 	name: string,
 ): string[] | undefined {
 	const value = getSerializedValue(
-		context.state.submittedValue ?? context.defaultValue ?? {},
+		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
 		// context.serialize
 	);
@@ -80,7 +80,7 @@ export function getDefaultChecked(
 	name: string,
 ): boolean {
 	const value = getSerializedValue(
-		context.state.submittedValue ?? context.defaultValue ?? {},
+		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
 		// context.serialize
 	);
@@ -89,11 +89,12 @@ export function getDefaultChecked(
 }
 
 export function getDefaultListKey(
+	prefix: string,
 	initialValue: Record<string, unknown> | null,
 	name: string,
 ): string[] {
-	return getListValue(initialValue, name).map((_, index) =>
-		appendPathSegment(name, index),
+	return getListValue(initialValue, name).map(
+		(_, index) => `${prefix}-${appendPathSegment(name, index)}`,
 	);
 }
 
@@ -102,9 +103,10 @@ export function getListKey(
 	name: string,
 ): string[] {
 	return (
-		context.state.keys?.[name] ??
+		context.state.listKeys?.[name] ??
 		getDefaultListKey(
-			context.state.submittedValue ?? context.defaultValue,
+			context.state.key,
+			context.state.intendedValue ?? context.defaultValue,
 			name,
 		)
 	);

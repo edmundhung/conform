@@ -122,7 +122,7 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: {
 		formData: FormData;
-		value: NonNullable<Value>;
+		value: Value;
 		update: (options: {
 			error?: Partial<FormError<FormShape, ErrorShape>> | null;
 			reset?: boolean;
@@ -136,7 +136,6 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
 export const DEFAULT_INTENT = '__intent__';
 
 export type ConformOptions<FormShape, ErrorShape, Value> = {
-	formId?: string;
 	lastResult?: SubmissionResult<
 		NoInfer<FormShape>,
 		NoInfer<ErrorShape>,
@@ -293,7 +292,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 
 		if (lastResult) {
 			const result = updateState(state, {
-				type: 'server',
+				type: 'initialize',
 				result: lastResult,
 				ctx: {
 					reset: () => state,
@@ -301,7 +300,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			});
 
 			options?.onUpdate?.({
-				type: 'server',
+				type: 'initialize',
 				result: lastResult,
 				ctx: {
 					prevState: state,
@@ -322,14 +321,16 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	const pendingIntentsRef = useRef<Set<FormIntent>>(new Set());
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
-		value: Value | undefined;
+		result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+		formData: FormData;
+		resolvedValue: Value | undefined;
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
 		(
 			result: SubmissionResult<FormShape, ErrorShape, FormIntent>,
 			options: {
-				type: 'server' | 'client' | 'client-async';
+				type: 'server' | 'client';
 			},
 		) => {
 			const { onUpdate } = optionsRef.current ?? {};
@@ -448,41 +449,51 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			abortControllerRef.current?.abort('A new submission is made');
 			abortControllerRef.current = abortController;
 
-			const formElement = event.currentTarget;
-			const submitEvent = getSubmitEvent(event);
-			const formData = getFormData(formElement, submitEvent.submitter);
-			const submission = parseSubmission(formData, {
-				intentName,
-			});
-
-			// Find all input fields in the form
-			for (const element of formElement.elements) {
-				if (isFieldElement(element) && element.name) {
-					addItem(submission.fields, element.name);
-				}
-			}
-
-			const intent = submission.intent ? parseIntent(submission.intent) : null;
-			const value = updateValue(
-				submission.value,
-				Array.from(pendingIntentsRef.current).concat(intent ?? []),
-			);
-			const submissionResult = report<FormShape, ErrorShape, FormIntent>(
-				submission,
-				{
-					keepFiles: true,
-					value,
-					intent,
-				},
-			);
-
-			let resultValue: Value | undefined;
+			let formData: FormData;
+			let result:
+				| SubmissionResult<FormShape, ErrorShape, FormIntent>
+				| undefined;
+			let resolvedValue: Value | undefined;
 
 			// The form might be re-submitted manually if there was an async validation
 			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
-				resultValue = lastAsyncResultRef.current.value;
-				submissionResult.error = null;
+				formData = lastAsyncResultRef.current.formData;
+				result = lastAsyncResultRef.current.result;
+				resolvedValue = lastAsyncResultRef.current.resolvedValue;
 			} else {
+				const formElement = event.currentTarget;
+				const submitEvent = getSubmitEvent(event);
+
+				formData = getFormData(formElement, submitEvent.submitter);
+
+				const submission = parseSubmission(formData, {
+					intentName,
+				});
+
+				// Find all input fields in the form
+				for (const element of formElement.elements) {
+					if (isFieldElement(element) && element.name) {
+						addItem(submission.fields, element.name);
+					}
+				}
+
+				const intent = submission.intent
+					? parseIntent(submission.intent)
+					: null;
+				const value = updateValue(
+					submission.value,
+					Array.from(pendingIntentsRef.current).concat(intent ?? []),
+				);
+
+				const submissionResult = report<FormShape, ErrorShape, FormIntent>(
+					submission,
+					{
+						keepFiles: true,
+						value,
+						intent,
+					},
+				);
+
 				const validateResult =
 					value !== null
 						? optionsRef.current?.onValidate?.(value, {
@@ -500,12 +511,11 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 						// Update the form with the validation result
 						// There is no need to flush the update in this case
 						if (!abortController.signal.aborted) {
-							handleSubmission(
-								{ ...submissionResult, error },
-								{
-									type: 'client-async',
-								},
-							);
+							submissionResult.error = error;
+
+							handleSubmission(submissionResult, {
+								type: 'server',
+							});
 
 							// If the form is meant to be submitted and there is no error
 							if (error === null && !submission.intent) {
@@ -514,7 +524,9 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 								// Keep track of the submit event so we can skip validation on the next submit
 								lastAsyncResultRef.current = {
 									event,
-									value,
+									formData,
+									resolvedValue: value,
+									result: submissionResult,
 								};
 								formElement.dispatchEvent(event);
 							}
@@ -524,7 +536,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					const result = resolveValidateResult(validateResult);
 
 					submissionResult.error = result.error;
-					resultValue = result.value;
+					resolvedValue = result.value;
 				}
 
 				handleSubmission(submissionResult, {
@@ -539,29 +551,31 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				) {
 					event.preventDefault();
 				}
+
+				result = submissionResult;
 			}
 
 			// We might not prevent form submission if server validation is required
 			// But the `onSubmit` handler should be triggered only if there is no intent
-			if (!event.isDefaultPrevented() && intent === null) {
+			if (!event.isDefaultPrevented() && result.intent === null) {
 				optionsRef.current?.onSubmit?.(event, {
 					formData,
 					get value() {
-						if (typeof resultValue === 'undefined' || resultValue === null) {
+						if (typeof resolvedValue === 'undefined') {
 							throw new Error(
 								'`value` is not available; Please make sure you have included the value in the `onValidate` result.',
 							);
 						}
 
-						return resultValue;
+						return resolvedValue;
 					},
 					update(options) {
 						if (!abortController.signal.aborted) {
-							const result = report(submission, {
+							const submissionResult = report(result.submission, {
 								...options,
 								keepFiles: true,
 							});
-							handleSubmission(result, { type: 'server' });
+							handleSubmission(submissionResult, { type: 'server' });
 						}
 					},
 				});

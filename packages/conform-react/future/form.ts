@@ -244,8 +244,9 @@ export function initializeState<FormShape, ErrorShape>(): FormState<
 	ErrorShape
 > {
 	return {
-		keys: {},
-		submittedValue: null,
+		key: Date.now().toString(36),
+		listKeys: {},
+		intendedValue: null,
 		serverValidatedValue: null,
 		serverError: null,
 		clientError: null,
@@ -283,255 +284,262 @@ export function updateState<FormShape, ErrorShape>(
 	): FormState<FormShape, ErrorShape> {
 		const value = result.value ?? result.submission.value;
 
-		if (type === 'server') {
-			return {
-				...state,
-				submittedValue: value,
-				// Update server error if the error is defined.
-				// There is no need to check if the error is different as we are updating other states as well
-				serverError:
-					typeof result.error !== 'undefined'
+		if (type === 'client') {
+			return merge(state, {
+				intendedValue: result.value ?? state.intendedValue,
+				// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
+				clientError:
+					typeof result.error !== 'undefined' &&
+					!deepEqual(state.clientError, result.error)
 						? result.error
+						: state.clientError,
+				// Reset server error if form value is changed
+				serverError:
+					typeof result.error !== 'undefined' &&
+					!deepEqual(state.serverValidatedValue, value)
+						? null
 						: state.serverError,
-				// Keep track of the value that the serverError is based on
-				serverValidatedValue:
-					typeof result.error !== 'undefined'
-						? value
-						: state.serverValidatedValue,
-			};
+			});
 		}
 
 		return merge(state, {
-			// Do not update the initialValue unless there is an intent
-			// This is important to prevent unnecessary re-renders with async validation
-			submittedValue: !result.intent ? state.submittedValue : value,
-			// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
-			clientError:
-				typeof result.error !== 'undefined' &&
-				!deepEqual(state.clientError, result.error)
-					? result.error
-					: state.clientError,
-			// Reset server error if form value is changed
+			intendedValue:
+				type === 'initialize' && result.value
+					? result.value
+					: state.intendedValue,
+			// Update server error if the error is defined.
+			// There is no need to check if the error is different as we are updating other states as well
 			serverError:
-				typeof result.error !== 'undefined' &&
-				!deepEqual(state.serverValidatedValue, value)
-					? null
-					: state.serverError,
+				typeof result.error !== 'undefined' ? result.error : state.serverError,
+			// Keep track of the value that the serverError is based on
+			serverValidatedValue:
+				typeof result.error !== 'undefined'
+					? value
+					: state.serverValidatedValue,
 		});
 	}
 
 	// `sumission.value` might not be correct if there are pending intents
-	// This is why we use previous submittedValue if it is available
-	const submittedValue = state.submittedValue ?? result.submission.value;
+	// This is why we use previous intendedValue if it is available
+	const intendedValue = state.intendedValue ?? result.submission.value;
 	const value = result.value ?? result.submission.value;
 
-	if (!intent || intent?.type === 'validate') {
-		const name = intent?.payload ?? '';
+	if (type !== 'server') {
+		if (!intent || intent.type === 'validate') {
+			const name = intent?.payload ?? '';
 
-		let touchedFields = state.touchedFields;
+			let touchedFields = state.touchedFields;
 
-		if (name === '') {
-			let fields = Array.from(result.submission.fields);
+			if (name === '') {
+				let fields = Array.from(result.submission.fields);
 
-			// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
-			// But the schema might have an error on those fields, so we need to include them
-			if (result.error) {
-				for (const name of Object.keys(result.error.fieldErrors)) {
-					fields = addItem(fields, name);
+				// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
+				// But the schema might have an error on those fields, so we need to include them
+				if (result.error) {
+					for (const name of Object.keys(result.error.fieldErrors)) {
+						fields = addItem(fields, name);
+					}
+				}
+
+				if (!deepEqual(state.touchedFields, fields)) {
+					touchedFields = fields;
+				}
+			} else {
+				touchedFields = addItem(state.touchedFields, name);
+			}
+
+			return merge(state, {
+				...baseUpdate(state, action),
+				// We don't want to update the intendedValue when it is a client-side validation
+				// As validate happens much more frequently than other intents, this will prevent unnecessary re-renders
+				intendedValue: type === 'client' ? state.intendedValue : value,
+				touchedFields,
+			});
+		}
+
+		if (intent.type === 'update') {
+			let keys = state.listKeys;
+
+			// Update the keys only for client updates to avoid double updates if there is no client validation
+			if (type === 'client') {
+				// TODO: Do we really need to update the keys here?
+				const name = appendPathSegment(
+					intent.payload.name,
+					intent.payload.index,
+				);
+				// Remove all child keys
+				keys = name === '' ? {} : updateKeys(state.listKeys, name);
+			}
+
+			const basePath = getPathSegments(intent.payload.name);
+			let touchedFields = state.touchedFields;
+
+			for (const field of result.submission.fields) {
+				if (
+					basePath.length === 0 ||
+					getRelativePath(field, basePath) !== null
+				) {
+					touchedFields = addItem(touchedFields, field);
 				}
 			}
 
-			if (!deepEqual(state.touchedFields, fields)) {
-				touchedFields = fields;
-			}
-		} else {
-			touchedFields = addItem(state.touchedFields, name);
-		}
-
-		return merge(state, {
-			...baseUpdate(state, action),
-			// We don't want to update the submittedValue when it is a client-side validation
-			// As validate happens much more frequently than other intents, this will prevent unnecessary re-renders
-			submittedValue: type !== 'server' ? state.submittedValue : value,
-			touchedFields,
-		});
-	}
-
-	if (intent?.type === 'update') {
-		let keys = state.keys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			const name = appendPathSegment(intent.payload.name, intent.payload.index);
-			// Remove all child keys
-			keys = name === '' ? {} : updateKeys(state.keys, name);
-		}
-
-		const basePath = getPathSegments(intent.payload.name);
-		let touchedFields = state.touchedFields;
-
-		for (const field of result.submission.fields) {
-			if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
-				touchedFields = addItem(touchedFields, field);
-			}
-		}
-
-		return {
-			...baseUpdate(state, action),
-			keys,
-			touchedFields,
-		};
-	}
-
-	if (intent?.type === 'insert') {
-		const list = getListValue(submittedValue, intent.payload.name);
-		const index = intent.payload.index ?? list.length;
-		const updateListIndex = configureListIndexUpdate(
-			intent.payload.name,
-			(currentIndex) =>
-				index <= currentIndex ? currentIndex + 1 : currentIndex,
-		);
-		const touchedFields = addItem(
-			mapItems(state.touchedFields, updateListIndex),
-			intent.payload.name,
-		);
-
-		let keys = state.keys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			const listKeys = Array.from(
-				state.keys[intent.payload.name] ??
-					getDefaultListKey(submittedValue, intent.payload.name),
-			);
-
-			insertItem(listKeys, new Date().toISOString(), index);
-
-			keys = {
-				// Remove all child keys
-				...updateKeys(
-					state.keys,
-					appendPathSegment(intent.payload.name, index),
-					updateListIndex,
-				),
-				// Update existing list keys
-				[intent.payload.name]: listKeys,
+			return {
+				...baseUpdate(state, action),
+				listKeys: keys,
+				touchedFields,
 			};
 		}
 
-		return {
-			...baseUpdate(state, action),
-			keys,
-			touchedFields,
-		};
-	}
-
-	if (intent?.type === 'remove') {
-		const updateListIndex = configureListIndexUpdate(
-			intent.payload.name,
-			(currentIndex) => {
-				if (intent.payload.index === currentIndex) {
-					return null;
-				}
-
-				return intent.payload.index < currentIndex
-					? currentIndex - 1
-					: currentIndex;
-			},
-		);
-		const touchedFields = addItem(
-			mapItems(state.touchedFields, updateListIndex),
-			intent.payload.name,
-		);
-
-		let keys = state.keys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			const listKeys = Array.from(
-				state.keys[intent.payload.name] ??
-					getDefaultListKey(submittedValue, intent.payload.name),
+		if (intent.type === 'insert') {
+			const list = getListValue(intendedValue, intent.payload.name);
+			const index = intent.payload.index ?? list.length;
+			const updateListIndex = configureListIndexUpdate(
+				intent.payload.name,
+				(currentIndex) =>
+					index <= currentIndex ? currentIndex + 1 : currentIndex,
+			);
+			const touchedFields = addItem(
+				mapItems(state.touchedFields, updateListIndex),
+				intent.payload.name,
 			);
 
-			removeItem(listKeys, intent.payload.index);
+			let keys = state.listKeys;
 
-			keys = {
-				// Remove all child keys
-				...updateKeys(
-					state.keys,
-					appendPathSegment(intent.payload.name, intent.payload.index),
-					updateListIndex,
-				),
-				// Update existing list keys
-				[intent.payload.name]: listKeys,
+			// Update the keys only for client updates to avoid double updates if there is no client validation
+			if (type === 'client') {
+				const listKeys = Array.from(
+					state.listKeys[intent.payload.name] ??
+						getDefaultListKey(state.key, intendedValue, intent.payload.name),
+				);
+
+				insertItem(listKeys, new Date().toISOString(), index);
+
+				keys = {
+					// Remove all child keys
+					...updateKeys(
+						state.listKeys,
+						appendPathSegment(intent.payload.name, index),
+						updateListIndex,
+					),
+					// Update existing list keys
+					[intent.payload.name]: listKeys,
+				};
+			}
+
+			return {
+				...baseUpdate(state, action),
+				listKeys: keys,
+				touchedFields,
 			};
 		}
 
-		return {
-			...baseUpdate(state, action),
-			keys,
-			touchedFields,
-		};
-	}
+		if (intent.type === 'remove') {
+			const updateListIndex = configureListIndexUpdate(
+				intent.payload.name,
+				(currentIndex) => {
+					if (intent.payload.index === currentIndex) {
+						return null;
+					}
 
-	if (intent?.type === 'reorder') {
-		const updateListIndex = configureListIndexUpdate(
-			intent.payload.name,
-			(currentIndex) => {
-				if (intent.payload.from === intent.payload.to) {
-					return currentIndex;
-				}
-
-				if (currentIndex === intent.payload.from) {
-					return intent.payload.to;
-				}
-
-				if (intent.payload.from < intent.payload.to) {
-					return currentIndex > intent.payload.from &&
-						currentIndex <= intent.payload.to
+					return intent.payload.index < currentIndex
 						? currentIndex - 1
 						: currentIndex;
-				}
-
-				return currentIndex >= intent.payload.to &&
-					currentIndex < intent.payload.from
-					? currentIndex + 1
-					: currentIndex;
-			},
-		);
-		const touchedFields = addItem(
-			mapItems(state.touchedFields, updateListIndex),
-			intent.payload.name,
-		);
-
-		let keys = state.keys;
-
-		// Update the keys only for client updates to avoid double updates if there is no client validation
-		if (type === 'client') {
-			const listKeys = Array.from(
-				state.keys[intent.payload.name] ??
-					getDefaultListKey(submittedValue, intent.payload.name),
+				},
+			);
+			const touchedFields = addItem(
+				mapItems(state.touchedFields, updateListIndex),
+				intent.payload.name,
 			);
 
-			reorderItems(listKeys, intent.payload.from, intent.payload.to);
+			let keys = state.listKeys;
 
-			keys = {
-				// Remove all child keys
-				...updateKeys(
-					state.keys,
-					appendPathSegment(intent.payload.name, intent.payload.from),
-					updateListIndex,
-				),
-				// Update existing list keys
-				[intent.payload.name]: listKeys,
+			// Update the keys only for client updates to avoid double updates if there is no client validation
+			if (type === 'client') {
+				const listKeys = Array.from(
+					state.listKeys[intent.payload.name] ??
+						getDefaultListKey(state.key, intendedValue, intent.payload.name),
+				);
+
+				removeItem(listKeys, intent.payload.index);
+
+				keys = {
+					// Remove all child keys
+					...updateKeys(
+						state.listKeys,
+						appendPathSegment(intent.payload.name, intent.payload.index),
+						updateListIndex,
+					),
+					// Update existing list keys
+					[intent.payload.name]: listKeys,
+				};
+			}
+
+			return {
+				...baseUpdate(state, action),
+				listKeys: keys,
+				touchedFields,
 			};
 		}
 
-		return {
-			...baseUpdate(state, action),
-			keys,
-			touchedFields,
-		};
+		if (intent.type === 'reorder') {
+			const updateListIndex = configureListIndexUpdate(
+				intent.payload.name,
+				(currentIndex) => {
+					if (intent.payload.from === intent.payload.to) {
+						return currentIndex;
+					}
+
+					if (currentIndex === intent.payload.from) {
+						return intent.payload.to;
+					}
+
+					if (intent.payload.from < intent.payload.to) {
+						return currentIndex > intent.payload.from &&
+							currentIndex <= intent.payload.to
+							? currentIndex - 1
+							: currentIndex;
+					}
+
+					return currentIndex >= intent.payload.to &&
+						currentIndex < intent.payload.from
+						? currentIndex + 1
+						: currentIndex;
+				},
+			);
+			const touchedFields = addItem(
+				mapItems(state.touchedFields, updateListIndex),
+				intent.payload.name,
+			);
+
+			let keys = state.listKeys;
+
+			// Update the keys only for client updates to avoid double updates if there is no client validation
+			if (type === 'client') {
+				const listKeys = Array.from(
+					state.listKeys[intent.payload.name] ??
+						getDefaultListKey(state.key, intendedValue, intent.payload.name),
+				);
+
+				reorderItems(listKeys, intent.payload.from, intent.payload.to);
+
+				keys = {
+					// Remove all child keys
+					...updateKeys(
+						state.listKeys,
+						appendPathSegment(intent.payload.name, intent.payload.from),
+						updateListIndex,
+					),
+					// Update existing list keys
+					[intent.payload.name]: listKeys,
+				};
+			}
+
+			return {
+				...baseUpdate(state, action),
+				listKeys: keys,
+				touchedFields,
+			};
+		}
 	}
 
 	return baseUpdate(state, action);

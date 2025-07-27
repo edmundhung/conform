@@ -25,16 +25,17 @@ export type DefaultValue<FormShape> = FormShape extends
 			: unknown;
 
 export type FormState<FormShape, ErrorShape> = {
-	submittedValue: Record<string, unknown> | null;
+	key: string;
+	intendedValue: Record<string, unknown> | null;
 	serverValidatedValue: Record<string, unknown> | null;
 	serverError: FormError<FormShape, ErrorShape> | null;
 	clientError: FormError<FormShape, ErrorShape> | null;
 	touchedFields: string[];
-	keys: Record<string, string[]>;
+	listKeys: Record<string, string[]>;
 };
 
 export type FormAction<FormShape, ErrorShape, Context> = {
-	type: 'server' | 'client' | 'client-async';
+	type: 'initialize' | 'server' | 'client';
 	result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
 	ctx: Context;
 };
@@ -47,7 +48,7 @@ export interface FormContext<FormShape, ErrorShape> {
 }
 
 export type FieldName<FieldShape> = string & {
-	'~field'?: FieldShape;
+	'~shape'?: FieldShape;
 };
 
 export type ResetIntent = {
