@@ -470,7 +470,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					intentName,
 				});
 
-				// Find all input fields in the form
+				// Patch missing fields in the submission object
 				for (const element of formElement.elements) {
 					if (isFieldElement(element) && element.name) {
 						addItem(submission.fields, element.name);

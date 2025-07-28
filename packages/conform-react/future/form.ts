@@ -303,10 +303,7 @@ export function updateState<FormShape, ErrorShape>(
 		}
 
 		return merge(state, {
-			intendedValue:
-				type === 'initialize' && result.value
-					? result.value
-					: state.intendedValue,
+			intendedValue: type === 'initialize' ? value : state.intendedValue,
 			// Update server error if the error is defined.
 			// There is no need to check if the error is different as we are updating other states as well
 			serverError:
@@ -319,40 +316,35 @@ export function updateState<FormShape, ErrorShape>(
 		});
 	}
 
-	// `sumission.value` might not be correct if there are pending intents
-	// This is why we use previous intendedValue if it is available
-	const intendedValue = state.intendedValue ?? result.submission.value;
-	const value = result.value ?? result.submission.value;
-
 	if (type !== 'server') {
+		// `sumission.value` might not be correct if there are pending intents
+		// This is why we use previous intendedValue if it is available
+		const intendedValue = state.intendedValue ?? result.submission.value;
+
 		if (!intent || intent.type === 'validate') {
 			const name = intent?.payload ?? '';
+			const basePath = getPathSegments(name);
 
-			let touchedFields = state.touchedFields;
+			let touchedFields = addItem(state.touchedFields, name);
 
-			if (name === '') {
-				let fields = Array.from(result.submission.fields);
-
-				// Sometimes we couldn't find out all the fields from the FormData, e.g. unchecked checkboxes
-				// But the schema might have an error on those fields, so we need to include them
-				if (result.error) {
-					for (const name of Object.keys(result.error.fieldErrors)) {
-						fields = addItem(fields, name);
-					}
+			for (const field of result.submission.fields) {
+				// Add all child fields to the touched fields too
+				if (getRelativePath(field, basePath) !== null) {
+					touchedFields = addItem(touchedFields, field);
 				}
+			}
 
-				if (!deepEqual(state.touchedFields, fields)) {
-					touchedFields = fields;
+			// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
+			// If this happens during the initialize stage, we can at least include missing
+			// required fields based on the form error
+			if (type === 'initialize' && name === '' && result.error) {
+				for (const name of Object.keys(result.error.fieldErrors)) {
+					touchedFields = addItem(touchedFields, name);
 				}
-			} else {
-				touchedFields = addItem(state.touchedFields, name);
 			}
 
 			return merge(state, {
 				...baseUpdate(state, action),
-				// We don't want to update the intendedValue when it is a client-side validation
-				// As validate happens much more frequently than other intents, this will prevent unnecessary re-renders
-				intendedValue: type === 'client' ? state.intendedValue : value,
 				touchedFields,
 			});
 		}
