@@ -376,3 +376,7 @@ export function getSubmitEvent(
 
 	return event.nativeEvent as SubmitEvent;
 }
+
+export function generateUniqueKey() {
+	return Math.trunc(Date.now() * Math.random()).toString(36);
+}

@@ -1,15 +1,15 @@
 import type { FormValue, Submission } from '@conform-to/dom/future';
 import {
-	isFieldElement,
 	getPathSegments,
 	isPlainObject,
 	setValueAtPath,
-	updateField,
-	serialize,
-	getValueAtPath,
 	appendPathSegment,
 	getRelativePath,
 	deepEqual,
+	isFieldElement,
+	getValueAtPath,
+	updateField,
+	serialize,
 } from '@conform-to/dom/future';
 import {
 	addItem,
@@ -25,6 +25,7 @@ import {
 	reorderItems,
 	removeItem,
 	merge,
+	generateUniqueKey,
 } from './util';
 import type {
 	FormState,
@@ -179,7 +180,7 @@ export function applyIntent(
 
 	const intent = parseIntent(submission.intent);
 	const value = intent
-		? updateValue(submission.value, [intent])
+		? updateValue(submission.value, intent)
 		: submission.value;
 
 	return [intent, value];
@@ -187,56 +188,41 @@ export function applyIntent(
 
 export function updateValue(
 	value: Record<string, FormValue>,
-	intents: FormIntent[],
+	intent: FormIntent | null | undefined,
 ): Record<string, FormValue> | null {
-	let result: Record<string, FormValue> | null = value;
-
-	for (const intent of intents) {
-		switch (intent.type) {
-			case 'reset': {
-				result = null;
-				break;
-			}
-			case 'update': {
-				result = modify(
-					value,
-					appendPathSegment(intent.payload.name, intent.payload.index),
-					intent.payload.value,
-				);
-				break;
-			}
-			case 'insert': {
-				const list = Array.from<any>(getListValue(value, intent.payload.name));
-				insertItem(
-					list,
-					intent.payload.defaultValue,
-					intent.payload.index ?? list.length,
-				);
-				result = modify(value, intent.payload.name, list);
-				break;
-			}
-			case 'remove': {
-				const list = Array.from<any>(getListValue(value, intent.payload.name));
-				removeItem(list, intent.payload.index);
-				result = modify(value, intent.payload.name, list);
-				break;
-			}
-			case 'reorder': {
-				const list = Array.from<any>(getListValue(value, intent.payload.name));
-				reorderItems(list, intent.payload.from, intent.payload.to);
-				result = modify(value, intent.payload.name, list);
-				break;
-			}
-			case 'validate':
-				break;
+	switch (intent?.type) {
+		case 'reset': {
+			return null;
 		}
-
-		if (result === null) {
-			break;
+		case 'update': {
+			return modify(
+				value,
+				appendPathSegment(intent.payload.name, intent.payload.index),
+				intent.payload.value,
+			);
+		}
+		case 'insert': {
+			const list = Array.from<any>(getListValue(value, intent.payload.name));
+			insertItem(
+				list,
+				intent.payload.defaultValue,
+				intent.payload.index ?? list.length,
+			);
+			return modify(value, intent.payload.name, list);
+		}
+		case 'remove': {
+			const list = Array.from<any>(getListValue(value, intent.payload.name));
+			removeItem(list, intent.payload.index);
+			return modify(value, intent.payload.name, list);
+		}
+		case 'reorder': {
+			const list = Array.from<any>(getListValue(value, intent.payload.name));
+			reorderItems(list, intent.payload.from, intent.payload.to);
+			return modify(value, intent.payload.name, list);
 		}
 	}
 
-	return result;
+	return value;
 }
 
 export function initializeState<FormShape, ErrorShape>(): FormState<
@@ -244,7 +230,7 @@ export function initializeState<FormShape, ErrorShape>(): FormState<
 	ErrorShape
 > {
 	return {
-		key: Date.now().toString(36),
+		key: generateUniqueKey(),
 		listKeys: {},
 		intendedValue: null,
 		serverValidatedValue: null,
@@ -404,7 +390,7 @@ export function updateState<FormShape, ErrorShape>(
 						getDefaultListKey(state.key, intendedValue, intent.payload.name),
 				);
 
-				insertItem(listKeys, new Date().toISOString(), index);
+				insertItem(listKeys, generateUniqueKey(), index);
 
 				keys = {
 					// Remove all child keys
@@ -537,35 +523,21 @@ export function updateState<FormShape, ErrorShape>(
 	return baseUpdate(state, action);
 }
 
-export function getSideEffect(
-	intent: FormIntent,
-): ((formElement: HTMLFormElement) => void) | null {
-	if (intent.type === 'reset') {
-		return (formElement) => formElement.reset();
-	}
+export function updateFormValue(
+	form: HTMLFormElement,
+	intendedValue: Record<string, unknown>,
+): void {
+	for (const element of form.elements) {
+		if (isFieldElement(element) && element.name) {
+			const value = getValueAtPath(intendedValue, element.name);
 
-	if (intent.type === 'update') {
-		return (formElement) => {
-			const name = appendPathSegment(intent.payload.name, intent.payload.index);
-			const basePath = getPathSegments(name);
+			if (typeof value !== 'undefined') {
+				updateField(element, {
+					value: serialize(value),
+				});
 
-			for (const element of formElement.elements) {
-				if (isFieldElement(element)) {
-					const paths = getRelativePath(element.name, basePath);
-
-					if (paths) {
-						updateField(element, {
-							value:
-								serialize(getValueAtPath(intent.payload.value, paths)) ?? '',
-						});
-
-						// Update the element attribute to notify that this is changed by Conform
-						element.dataset.conform = new Date().toISOString();
-					}
-				}
+				element.dataset.conform = generateUniqueKey();
 			}
-		};
+		}
 	}
-
-	return null;
 }

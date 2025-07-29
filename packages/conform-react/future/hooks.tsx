@@ -35,16 +35,15 @@ import {
 	getRadioGroupValue,
 	getSubmitEvent,
 	initializeField,
-	merge,
 	resolveValidateResult,
 } from './util';
 import {
-	updateValue,
 	initializeState,
 	updateState,
-	parseIntent,
 	serializeIntent,
-	getSideEffect,
+	updateFormValue,
+	parseIntent,
+	updateValue,
 } from './form';
 import { createFormMetadata, isValidated, createFieldset } from './metadata';
 import { Context } from './context';
@@ -281,13 +280,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	(event: React.FormEvent<HTMLFormElement>) => void,
 ] {
 	const { intentName = DEFAULT_INTENT, lastResult } = options ?? {};
-	const [{ state, sideEffects }, updateForm] = useState<{
-		state: FormState<FormShape, ErrorShape>;
-		sideEffects: Array<{
-			intent: FormIntent;
-			run: (formElement: HTMLFormElement) => void;
-		}>;
-	}>(() => {
+	const [state, setState] = useState<FormState<FormShape, ErrorShape>>(() => {
 		let state = initializeState<FormShape, ErrorShape>();
 
 		if (lastResult) {
@@ -311,14 +304,12 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			state = result;
 		}
 
-		return {
-			state: state,
-			sideEffects: [],
-		};
+		return state;
 	});
+	const keyRef = useRef(state.key);
 	const optionsRef = useRef(options);
 	const lastResultRef = useRef(lastResult);
-	const pendingIntentsRef = useRef<Set<FormIntent>>(new Set());
+	const lastIntentedValueRef = useRef<Record<string, FormValue> | null>(null);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
@@ -335,8 +326,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 		) => {
 			const { onUpdate } = optionsRef.current ?? {};
 
-			updateForm((form) => {
-				const state = updateState(form.state, {
+			setState((prevState) => {
+				const nextState = updateState(prevState, {
 					type: options.type,
 					result,
 					ctx: {
@@ -345,45 +336,17 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 						},
 					},
 				});
-				const intent = result.intent;
-
-				let sideEffects = form.sideEffects;
-
-				if (options.type === 'client' && intent) {
-					const sideEffect = getSideEffect(intent);
-
-					if (sideEffect) {
-						sideEffects = sideEffects
-							// We will clean up the side effect only when there is new side effect
-							// To minimize unnecessary re-renders
-							.filter((sideEffect) =>
-								pendingIntentsRef.current.has(sideEffect.intent),
-							)
-							.concat({
-								intent,
-								run(formElement) {
-									sideEffect(formElement);
-									pendingIntentsRef.current.delete(intent);
-								},
-							});
-
-						pendingIntentsRef.current.add(intent);
-					}
-				}
 
 				onUpdate?.({
 					type: options.type,
 					result,
 					ctx: {
-						prevState: form.state,
-						nextState: state,
+						prevState,
+						nextState,
 					},
 				});
 
-				return merge(form, {
-					state,
-					sideEffects,
-				});
+				return nextState;
 			});
 
 			// We are currently focusing the first invalid input before the state is flushed
@@ -430,16 +393,28 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
 
-		if (!formElement) {
-			// eslint-disable-next-line no-console
-			console.error('Side effect failed; Form element is not found');
+		if (formElement && state.key !== keyRef.current) {
+			keyRef.current = state.key;
+			formElement.reset();
+		}
+	}, [formRef, state.key]);
+
+	useEffect(() => {
+		if (!state.intendedValue) {
 			return;
 		}
 
-		for (const sideEffect of sideEffects) {
-			sideEffect.run(formElement);
+		const formElement = getFormElement(formRef);
+
+		if (!formElement) {
+			// eslint-disable-next-line no-console
+			console.error('Failed to update form value; No form element found');
+			return;
 		}
-	}, [formRef, sideEffects]);
+
+		updateFormValue(formElement, state.intendedValue);
+		lastIntentedValueRef.current = null;
+	}, [formRef, state.intendedValue]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -481,10 +456,10 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					? parseIntent(submission.intent)
 					: null;
 				const value = updateValue(
-					submission.value,
-					Array.from(pendingIntentsRef.current).concat(intent ?? []),
+					// To support batch intent updates
+					lastIntentedValueRef.current ?? submission.value,
+					intent,
 				);
-
 				const submissionResult = report<FormShape, ErrorShape, FormIntent>(
 					submission,
 					{
@@ -493,6 +468,11 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 						intent,
 					},
 				);
+
+				// Update the last intended value only if there is an intented value in the result
+				if (submissionResult.value) {
+					lastIntentedValueRef.current = submissionResult.value;
+				}
 
 				const validateResult =
 					value !== null
