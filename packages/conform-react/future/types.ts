@@ -34,9 +34,15 @@ export type FormState<FormShape, ErrorShape> = {
 	listKeys: Record<string, string[]>;
 };
 
-export type FormAction<FormShape, ErrorShape, Context> = {
+export type FormAction<
+	FormShape,
+	ErrorShape,
+	Intent = FormIntent | null | undefined,
+	Context = { reset: () => FormState<FormShape, ErrorShape> },
+> = {
 	type: 'initialize' | 'server' | 'client';
-	result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+	result: SubmissionResult<FormShape, ErrorShape>;
+	intent: Intent;
 	ctx: Context;
 };
 

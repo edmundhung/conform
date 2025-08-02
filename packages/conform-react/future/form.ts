@@ -240,287 +240,330 @@ export function initializeState<FormShape, ErrorShape>(): FormState<
 	};
 }
 
-export function updateState<FormShape, ErrorShape>(
+type IntentHandler<Intent> = <FormShape, ErrorShape>(
 	state: FormState<FormShape, ErrorShape>,
-	action: FormAction<
-		FormShape,
-		ErrorShape,
-		{ reset: () => FormState<FormShape, ErrorShape> }
-	>,
-): FormState<FormShape, ErrorShape> {
-	const { type, result, ctx } = action;
-	const intent = result.intent;
+	action: FormAction<FormShape, ErrorShape, Intent>,
+) => FormState<FormShape, ErrorShape>;
 
-	if (result.value === null) {
-		return ctx.reset();
+const validate: IntentHandler<ValidateIntent> = (
+	state,
+	{ type, result, intent },
+) => {
+	const name = intent.payload ?? '';
+	const basePath = getPathSegments(name);
+
+	let touchedFields = addItem(state.touchedFields, name);
+
+	for (const field of result.submission.fields) {
+		// Add all child fields to the touched fields too
+		if (getRelativePath(field, basePath) !== null) {
+			touchedFields = addItem(touchedFields, field);
+		}
 	}
 
-	function baseUpdate<FormShape, ErrorShape>(
-		state: FormState<FormShape, ErrorShape>,
-		{
-			type,
-			result,
-		}: FormAction<
-			FormShape,
-			ErrorShape,
-			{
-				reset: () => FormState<FormShape, ErrorShape>;
-			}
-		>,
-	): FormState<FormShape, ErrorShape> {
-		const value = result.value ?? result.submission.value;
-
-		if (type === 'client') {
-			return merge(state, {
-				intendedValue: result.value ?? state.intendedValue,
-				// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
-				clientError:
-					typeof result.error !== 'undefined' &&
-					!deepEqual(state.clientError, result.error)
-						? result.error
-						: state.clientError,
-				// Reset server error if form value is changed
-				serverError:
-					typeof result.error !== 'undefined' &&
-					!deepEqual(state.serverValidatedValue, value)
-						? null
-						: state.serverError,
-			});
+	// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
+	// If this happens during the initialize stage, we can at least include missing
+	// required fields based on the form error
+	if (type === 'initialize' && name === '' && result.error) {
+		for (const name of Object.keys(result.error.fieldErrors)) {
+			touchedFields = addItem(touchedFields, name);
 		}
+	}
 
+	return merge(state, {
+		touchedFields,
+	});
+};
+
+const update: IntentHandler<UpdateIntent> = (
+	state,
+	{ type, result, intent },
+) => {
+	let listKeys = state.listKeys;
+
+	// Update the keys only for client updates to avoid double updates if there is no client validation
+	if (type === 'client') {
+		// TODO: Do we really need to update the keys here?
+		const name = appendPathSegment(intent.payload.name, intent.payload.index);
+		// Remove all child keys
+		listKeys = name === '' ? {} : updateKeys(state.listKeys, name);
+	}
+
+	const basePath = getPathSegments(intent.payload.name);
+	let touchedFields = state.touchedFields;
+
+	for (const field of result.submission.fields) {
+		if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
+			touchedFields = addItem(touchedFields, field);
+		}
+	}
+
+	return {
+		...state,
+		listKeys,
+		touchedFields,
+	};
+};
+
+const insert: IntentHandler<InsertIntent> = (
+	state,
+	{ type, result, intent },
+) => {
+	const currentValue = result.submission.value;
+	const list = getListValue(currentValue, intent.payload.name);
+	const index = intent.payload.index ?? list.length;
+	const updateListIndex = configureListIndexUpdate(
+		intent.payload.name,
+		(currentIndex) => (index <= currentIndex ? currentIndex + 1 : currentIndex),
+	);
+	const touchedFields = addItem(
+		mapItems(state.touchedFields, updateListIndex),
+		intent.payload.name,
+	);
+
+	let keys = state.listKeys;
+
+	// Update the keys only for client updates to avoid double updates if there is no client validation
+	if (type === 'client') {
+		const listKeys = Array.from(
+			state.listKeys[intent.payload.name] ??
+				getDefaultListKey(state.key, currentValue, intent.payload.name),
+		);
+
+		insertItem(listKeys, generateUniqueKey(), index);
+
+		keys = {
+			// Remove all child keys
+			...updateKeys(
+				state.listKeys,
+				appendPathSegment(intent.payload.name, index),
+				updateListIndex,
+			),
+			// Update existing list keys
+			[intent.payload.name]: listKeys,
+		};
+	}
+
+	return {
+		...state,
+		listKeys: keys,
+		touchedFields,
+	};
+};
+
+const remove: IntentHandler<RemoveIntent> = (
+	state,
+	{ type, result, intent },
+) => {
+	const currentValue = result.submission.value;
+	const updateListIndex = configureListIndexUpdate(
+		intent.payload.name,
+		(currentIndex) => {
+			if (intent.payload.index === currentIndex) {
+				return null;
+			}
+
+			return intent.payload.index < currentIndex
+				? currentIndex - 1
+				: currentIndex;
+		},
+	);
+	const touchedFields = addItem(
+		mapItems(state.touchedFields, updateListIndex),
+		intent.payload.name,
+	);
+
+	let keys = state.listKeys;
+
+	// Update the keys only for client updates to avoid double updates if there is no client validation
+	if (type === 'client') {
+		const listKeys = Array.from(
+			state.listKeys[intent.payload.name] ??
+				getDefaultListKey(state.key, currentValue, intent.payload.name),
+		);
+
+		removeItem(listKeys, intent.payload.index);
+
+		keys = {
+			// Remove all child keys
+			...updateKeys(
+				state.listKeys,
+				appendPathSegment(intent.payload.name, intent.payload.index),
+				updateListIndex,
+			),
+			// Update existing list keys
+			[intent.payload.name]: listKeys,
+		};
+	}
+
+	return {
+		...state,
+		listKeys: keys,
+		touchedFields,
+	};
+};
+
+const reorder: IntentHandler<ReorderIntent> = (
+	state,
+	{ type, result, intent },
+) => {
+	const currentValue = result.submission.value;
+	const updateListIndex = configureListIndexUpdate(
+		intent.payload.name,
+		(currentIndex) => {
+			if (intent.payload.from === intent.payload.to) {
+				return currentIndex;
+			}
+
+			if (currentIndex === intent.payload.from) {
+				return intent.payload.to;
+			}
+
+			if (intent.payload.from < intent.payload.to) {
+				return currentIndex > intent.payload.from &&
+					currentIndex <= intent.payload.to
+					? currentIndex - 1
+					: currentIndex;
+			}
+
+			return currentIndex >= intent.payload.to &&
+				currentIndex < intent.payload.from
+				? currentIndex + 1
+				: currentIndex;
+		},
+	);
+	const touchedFields = addItem(
+		mapItems(state.touchedFields, updateListIndex),
+		intent.payload.name,
+	);
+
+	let keys = state.listKeys;
+
+	// Update the keys only for client updates to avoid double updates if there is no client validation
+	if (type === 'client') {
+		const listKeys = Array.from(
+			state.listKeys[intent.payload.name] ??
+				getDefaultListKey(state.key, currentValue, intent.payload.name),
+		);
+
+		reorderItems(listKeys, intent.payload.from, intent.payload.to);
+
+		keys = {
+			// Remove all child keys
+			...updateKeys(
+				state.listKeys,
+				appendPathSegment(intent.payload.name, intent.payload.from),
+				updateListIndex,
+			),
+			// Update existing list keys
+			[intent.payload.name]: listKeys,
+		};
+	}
+
+	return {
+		...state,
+		listKeys: keys,
+		touchedFields,
+	};
+};
+
+const intentHandlers = {
+	validate,
+	update,
+	insert,
+	reorder,
+	remove,
+};
+
+export function defaultUpdateState<FormShape, ErrorShape>(
+	state: FormState<FormShape, ErrorShape>,
+	action: FormAction<FormShape, ErrorShape>,
+): FormState<FormShape, ErrorShape> {
+	const { type, result } = action;
+	const value = result.value ?? result.submission.value;
+
+	if (type === 'client') {
 		return merge(state, {
-			intendedValue: type === 'initialize' ? value : state.intendedValue,
-			// Update server error if the error is defined.
-			// There is no need to check if the error is different as we are updating other states as well
+			intendedValue: result.value ?? state.intendedValue,
+			// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
+			clientError:
+				typeof result.error !== 'undefined' &&
+				!deepEqual(state.clientError, result.error)
+					? result.error
+					: state.clientError,
+			// Reset server error if form value is changed
 			serverError:
-				typeof result.error !== 'undefined' ? result.error : state.serverError,
-			// Keep track of the value that the serverError is based on
-			serverValidatedValue:
-				typeof result.error !== 'undefined'
-					? value
-					: state.serverValidatedValue,
+				typeof result.error !== 'undefined' &&
+				!deepEqual(state.serverValidatedValue, value)
+					? null
+					: state.serverError,
 		});
 	}
 
-	if (type !== 'server') {
-		// `sumission.value` might not be correct if there are pending intents
-		// This is why we use previous intendedValue if it is available
-		const intendedValue = state.intendedValue ?? result.submission.value;
+	return merge(state, {
+		intendedValue: type === 'initialize' ? value : state.intendedValue,
+		// Update server error if the error is defined.
+		// There is no need to check if the error is different as we are updating other states as well
+		serverError:
+			typeof result.error !== 'undefined' ? result.error : state.serverError,
+		// Keep track of the value that the serverError is based on
+		serverValidatedValue:
+			typeof result.error !== 'undefined' ? value : state.serverValidatedValue,
+	});
+}
 
-		if (!intent || intent.type === 'validate') {
-			const name = intent?.payload ?? '';
-			const basePath = getPathSegments(name);
+export function updateState<FormShape, ErrorShape>(
+	state: FormState<FormShape, ErrorShape>,
+	action: FormAction<FormShape, ErrorShape>,
+): FormState<FormShape, ErrorShape> {
+	if (action.result.value === null) {
+		return action.ctx.reset();
+	}
 
-			let touchedFields = addItem(state.touchedFields, name);
+	// Apply the form error and intented value from the result first
+	state = defaultUpdateState(state, action);
 
-			for (const field of result.submission.fields) {
-				// Add all child fields to the touched fields too
-				if (getRelativePath(field, basePath) !== null) {
-					touchedFields = addItem(touchedFields, field);
-				}
-			}
+	if (action.type !== 'server' && typeof action.intent !== 'undefined') {
+		// Validate the whole form if no intent is provided (default submission)
+		const intent = action.intent ?? { type: 'validate' };
 
-			// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
-			// If this happens during the initialize stage, we can at least include missing
-			// required fields based on the form error
-			if (type === 'initialize' && name === '' && result.error) {
-				for (const name of Object.keys(result.error.fieldErrors)) {
-					touchedFields = addItem(touchedFields, name);
-				}
-			}
-
-			return merge(state, {
-				...baseUpdate(state, action),
-				touchedFields,
+		if (intent.type === 'validate') {
+			return intentHandlers.validate(state, {
+				...action,
+				intent,
 			});
 		}
 
 		if (intent.type === 'update') {
-			let keys = state.listKeys;
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				// TODO: Do we really need to update the keys here?
-				const name = appendPathSegment(
-					intent.payload.name,
-					intent.payload.index,
-				);
-				// Remove all child keys
-				keys = name === '' ? {} : updateKeys(state.listKeys, name);
-			}
-
-			const basePath = getPathSegments(intent.payload.name);
-			let touchedFields = state.touchedFields;
-
-			for (const field of result.submission.fields) {
-				if (
-					basePath.length === 0 ||
-					getRelativePath(field, basePath) !== null
-				) {
-					touchedFields = addItem(touchedFields, field);
-				}
-			}
-
-			return {
-				...baseUpdate(state, action),
-				listKeys: keys,
-				touchedFields,
-			};
+			return intentHandlers.update(state, {
+				...action,
+				intent,
+			});
 		}
 
 		if (intent.type === 'insert') {
-			const list = getListValue(intendedValue, intent.payload.name);
-			const index = intent.payload.index ?? list.length;
-			const updateListIndex = configureListIndexUpdate(
-				intent.payload.name,
-				(currentIndex) =>
-					index <= currentIndex ? currentIndex + 1 : currentIndex,
-			);
-			const touchedFields = addItem(
-				mapItems(state.touchedFields, updateListIndex),
-				intent.payload.name,
-			);
-
-			let keys = state.listKeys;
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				const listKeys = Array.from(
-					state.listKeys[intent.payload.name] ??
-						getDefaultListKey(state.key, intendedValue, intent.payload.name),
-				);
-
-				insertItem(listKeys, generateUniqueKey(), index);
-
-				keys = {
-					// Remove all child keys
-					...updateKeys(
-						state.listKeys,
-						appendPathSegment(intent.payload.name, index),
-						updateListIndex,
-					),
-					// Update existing list keys
-					[intent.payload.name]: listKeys,
-				};
-			}
-
-			return {
-				...baseUpdate(state, action),
-				listKeys: keys,
-				touchedFields,
-			};
+			return intentHandlers.insert(state, {
+				...action,
+				intent,
+			});
 		}
 
 		if (intent.type === 'remove') {
-			const updateListIndex = configureListIndexUpdate(
-				intent.payload.name,
-				(currentIndex) => {
-					if (intent.payload.index === currentIndex) {
-						return null;
-					}
-
-					return intent.payload.index < currentIndex
-						? currentIndex - 1
-						: currentIndex;
-				},
-			);
-			const touchedFields = addItem(
-				mapItems(state.touchedFields, updateListIndex),
-				intent.payload.name,
-			);
-
-			let keys = state.listKeys;
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				const listKeys = Array.from(
-					state.listKeys[intent.payload.name] ??
-						getDefaultListKey(state.key, intendedValue, intent.payload.name),
-				);
-
-				removeItem(listKeys, intent.payload.index);
-
-				keys = {
-					// Remove all child keys
-					...updateKeys(
-						state.listKeys,
-						appendPathSegment(intent.payload.name, intent.payload.index),
-						updateListIndex,
-					),
-					// Update existing list keys
-					[intent.payload.name]: listKeys,
-				};
-			}
-
-			return {
-				...baseUpdate(state, action),
-				listKeys: keys,
-				touchedFields,
-			};
+			return intentHandlers.remove(state, {
+				...action,
+				intent,
+			});
 		}
 
 		if (intent.type === 'reorder') {
-			const updateListIndex = configureListIndexUpdate(
-				intent.payload.name,
-				(currentIndex) => {
-					if (intent.payload.from === intent.payload.to) {
-						return currentIndex;
-					}
-
-					if (currentIndex === intent.payload.from) {
-						return intent.payload.to;
-					}
-
-					if (intent.payload.from < intent.payload.to) {
-						return currentIndex > intent.payload.from &&
-							currentIndex <= intent.payload.to
-							? currentIndex - 1
-							: currentIndex;
-					}
-
-					return currentIndex >= intent.payload.to &&
-						currentIndex < intent.payload.from
-						? currentIndex + 1
-						: currentIndex;
-				},
-			);
-			const touchedFields = addItem(
-				mapItems(state.touchedFields, updateListIndex),
-				intent.payload.name,
-			);
-
-			let keys = state.listKeys;
-
-			// Update the keys only for client updates to avoid double updates if there is no client validation
-			if (type === 'client') {
-				const listKeys = Array.from(
-					state.listKeys[intent.payload.name] ??
-						getDefaultListKey(state.key, intendedValue, intent.payload.name),
-				);
-
-				reorderItems(listKeys, intent.payload.from, intent.payload.to);
-
-				keys = {
-					// Remove all child keys
-					...updateKeys(
-						state.listKeys,
-						appendPathSegment(intent.payload.name, intent.payload.from),
-						updateListIndex,
-					),
-					// Update existing list keys
-					[intent.payload.name]: listKeys,
-				};
-			}
-
-			return {
-				...baseUpdate(state, action),
-				listKeys: keys,
-				touchedFields,
-			};
+			return intentHandlers.reorder(state, {
+				...action,
+				intent,
+			});
 		}
 	}
 
-	return baseUpdate(state, action);
+	return state;
 }
 
 export function updateFormValue(

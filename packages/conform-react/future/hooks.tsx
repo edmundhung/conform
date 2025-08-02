@@ -93,6 +93,7 @@ export type UpdateHandler<FormShape, ErrorShape> = (
 	action: FormAction<
 		FormShape,
 		ErrorShape,
+		FormIntent | null | undefined,
 		{
 			prevState: FormState<FormShape, ErrorShape>;
 			nextState: FormState<FormShape, ErrorShape>;
@@ -109,6 +110,7 @@ export type FormStateHandler<
 	ctx: FormAction<
 		FormShape,
 		ErrorShape,
+		FormIntent | null | undefined,
 		{
 			prevState: FormState<FormShape, ErrorShape>;
 			nextState: FormState<FormShape, ErrorShape>;
@@ -135,11 +137,7 @@ export type SubmitHandler<FormShape, ErrorShape, Value> = (
 export const DEFAULT_INTENT = '__intent__';
 
 export type ConformOptions<FormShape, ErrorShape, Value> = {
-	lastResult?: SubmissionResult<
-		NoInfer<FormShape>,
-		NoInfer<ErrorShape>,
-		FormIntent
-	> | null;
+	lastResult?: SubmissionResult<NoInfer<FormShape>, NoInfer<ErrorShape>> | null;
 	intentName?: string;
 	onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
 	onUpdate?: UpdateHandler<NoInfer<FormShape>, NoInfer<ErrorShape>>;
@@ -284,9 +282,13 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 		let state = initializeState<FormShape, ErrorShape>();
 
 		if (lastResult) {
+			const intent = lastResult.submission.intent
+				? parseIntent(lastResult.submission.intent)
+				: null;
 			const result = updateState(state, {
 				type: 'initialize',
 				result: lastResult,
+				intent,
 				ctx: {
 					reset: () => state,
 				},
@@ -295,6 +297,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			options?.onUpdate?.({
 				type: 'initialize',
 				result: lastResult,
+				intent,
 				ctx: {
 					prevState: state,
 					nextState: result,
@@ -312,24 +315,28 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	const lastIntentedValueRef = useRef<Record<string, FormValue> | null>(null);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
-		result: SubmissionResult<FormShape, ErrorShape, FormIntent>;
+		result: SubmissionResult<FormShape, ErrorShape>;
 		formData: FormData;
 		resolvedValue: Value | undefined;
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
 		(
-			result: SubmissionResult<FormShape, ErrorShape, FormIntent>,
+			result: SubmissionResult<FormShape, ErrorShape>,
 			options: {
 				type: 'server' | 'client';
 			},
 		) => {
 			const { onUpdate } = optionsRef.current ?? {};
+			const intent = result.submission.intent
+				? parseIntent(result.submission.intent)
+				: null;
 
 			setState((prevState) => {
 				const nextState = updateState(prevState, {
 					type: options.type,
 					result,
+					intent,
 					ctx: {
 						reset() {
 							return initializeState<FormShape, ErrorShape>();
@@ -340,6 +347,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				onUpdate?.({
 					type: options.type,
 					result,
+					intent,
 					ctx: {
 						prevState,
 						nextState,
@@ -352,7 +360,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			// We are currently focusing the first invalid input before the state is flushed
 			// Which seems to be safe to do so as we are not expecting the input element to be mounted/unmounted
 			// Is it necessary to trigger a re-render and do it in the `useEffect` hook?
-			if (result.error && result.intent === null) {
+			if (result.error && intent === null) {
 				const formElement = getFormElement(formRef);
 
 				if (formElement) {
@@ -425,9 +433,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			abortControllerRef.current = abortController;
 
 			let formData: FormData;
-			let result:
-				| SubmissionResult<FormShape, ErrorShape, FormIntent>
-				| undefined;
+			let result: SubmissionResult<FormShape, ErrorShape> | undefined;
 			let resolvedValue: Value | undefined;
 
 			// The form might be re-submitted manually if there was an async validation
@@ -452,22 +458,19 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					}
 				}
 
+				// Override submission value if the last intended value is not applied yet (i.e. batch updates)
+				if (lastIntentedValueRef.current) {
+					submission.value = lastIntentedValueRef.current;
+				}
+
 				const intent = submission.intent
 					? parseIntent(submission.intent)
 					: null;
-				const value = updateValue(
-					// To support batch intent updates
-					lastIntentedValueRef.current ?? submission.value,
-					intent,
-				);
-				const submissionResult = report<FormShape, ErrorShape, FormIntent>(
-					submission,
-					{
-						keepFiles: true,
-						value,
-						intent,
-					},
-				);
+				const value = updateValue(submission.value, intent);
+				const submissionResult = report<FormShape, ErrorShape>(submission, {
+					keepFiles: true,
+					value,
+				});
 
 				// Update the last intended value only if there is an intented value in the result
 				if (submissionResult.value) {
@@ -527,7 +530,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					// If client validation happens
 					typeof validateResult !== 'undefined' &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(submissionResult.intent || submissionResult.error !== null)
+					(submissionResult.submission.intent ||
+						submissionResult.error !== null)
 				) {
 					event.preventDefault();
 				}
@@ -537,7 +541,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 
 			// We might not prevent form submission if server validation is required
 			// But the `onSubmit` handler should be triggered only if there is no intent
-			if (!event.isDefaultPrevented() && result.intent === null) {
+			if (!event.isDefaultPrevented() && result.submission.intent === null) {
 				optionsRef.current?.onSubmit?.(event, {
 					formData,
 					get value() {
@@ -621,6 +625,7 @@ export function useFormState<State>(
 			action: FormAction<
 				FormShape,
 				ErrorShape,
+				FormIntent | null | undefined,
 				{
 					prevState: FormState<FormShape, ErrorShape>;
 					nextState: FormState<FormShape, ErrorShape>;

@@ -417,44 +417,40 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<FormShape, ErrorShape = string[], Intent = never>(
+export function report<FormShape, ErrorShape = string[]>(
 	submission: Submission,
-	options: {
+	options?: {
 		keepFiles?: false;
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
-		intent?: Intent | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
 ): SubmissionResult<
 	FormShape,
 	ErrorShape,
-	Intent,
 	Exclude<JsonPrimitive | FormDataEntryValue, File>
 >;
-export function report<FormShape, ErrorShape = string[], Intent = never>(
+export function report<FormShape, ErrorShape = string[]>(
 	submission: Submission,
 	options: {
 		keepFiles: true;
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
-		intent?: Intent | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
-): SubmissionResult<FormShape, ErrorShape, Intent>;
-export function report<FormShape, ErrorShape = string[], Intent = never>(
+): SubmissionResult<FormShape, ErrorShape>;
+export function report<FormShape, ErrorShape = string[]>(
 	submission: Submission,
 	options: {
 		keepFiles?: boolean;
 		error?: Partial<FormError<FormShape, ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
-		intent?: Intent | null;
 		hideFields?: string[];
 		reset?: boolean;
-	},
-): SubmissionResult<FormShape, ErrorShape, Intent> {
+	} = {},
+): SubmissionResult<FormShape, ErrorShape> {
 	const value = options.reset
 		? null
 		: typeof options.value === 'undefined' || submission.value === options.value
@@ -489,7 +485,6 @@ export function report<FormShape, ErrorShape = string[], Intent = never>(
 				},
 		value,
 		error,
-		intent: options.intent,
 	};
 }
 

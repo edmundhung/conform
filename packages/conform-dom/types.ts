@@ -35,7 +35,9 @@ export type FormError<FormShape, ErrorShape = string[]> = {
  * The data of a form submission.
  */
 export type Submission<
-	ValueType extends FormDataEntryValue = FormDataEntryValue,
+	ValueType extends JsonPrimitive | FormDataEntryValue =
+		| JsonPrimitive
+		| FormDataEntryValue,
 > = {
 	/**
 	 * The form value structured following the naming convention.
@@ -57,7 +59,6 @@ export type Submission<
 export type SubmissionResult<
 	FormShape,
 	ErrorShape,
-	Intent,
 	ValueType extends JsonPrimitive | FormDataEntryValue =
 		| JsonPrimitive
 		| FormDataEntryValue,
@@ -65,19 +66,15 @@ export type SubmissionResult<
 	/**
 	 * The corresponding submission.
 	 */
-	submission: Submission<ValueType extends File ? FormDataEntryValue : string>;
+	submission: Submission<ValueType>;
 	/**
-	 * The result value of the submission. Defined only when the result value is different from the submitted value.
+	 * The intended value of the submission. Defined only when the intended value is different from the submitted value.
 	 */
 	value?: Record<string, FormValue<ValueType>> | null;
 	/**
 	 * The error of the result value or submission value.
 	 */
 	error?: FormError<FormShape, ErrorShape> | null;
-	/**
-	 * The intent related to this submission.
-	 */
-	intent?: Intent | null | undefined;
 };
 
 /**
