@@ -218,10 +218,10 @@ export function isOptional<T>(
 	return typeof value === 'undefined' || typeGuard(value);
 }
 
-export function getListValue(
-	formValue: Record<string, unknown> | null,
+export function getListValue<Type>(
+	formValue: Record<string, Type> | null,
 	name: string,
-): Array<unknown> {
+): Array<Type> {
 	const value = getValueAtPath(formValue, name) ?? [];
 
 	if (!Array.isArray(value)) {

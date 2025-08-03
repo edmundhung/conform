@@ -38,12 +38,13 @@ import {
 	resolveValidateResult,
 } from './util';
 import {
+	applyIntent,
 	initializeState,
 	updateState,
 	serializeIntent,
 	updateFormValue,
-	parseIntent,
-	updateValue,
+	deserializeIntent,
+	defaultActionHandlers,
 } from './form';
 import { createFormMetadata, isValidated, createFieldset } from './metadata';
 import { Context } from './context';
@@ -51,21 +52,15 @@ import type {
 	DefaultValue,
 	FormContext,
 	FormAction,
-	FormIntent,
 	FormState,
 	UnknownIntent,
 	DefaultFormProps,
 	DefaultFieldMetadata,
+	ActionHandler,
+	IntentDispatcher,
+	FormMetadata,
+	Fieldset,
 } from './types';
-
-export type IntentDispatcher<Intent extends UnknownIntent> = {
-	[Type in Intent['type']]: undefined extends Extract<
-		Intent,
-		{ type: Type }
-	>['payload']
-		? (payload?: Extract<Intent, { type: Type }>['payload']) => void
-		: (payload: Extract<Intent, { type: Type }>['payload']) => void;
-};
 
 export type ValidateHandler<FormShape, ErrorShape, Value> = (
 	value: Record<string, FormValue>,
@@ -93,7 +88,7 @@ export type UpdateHandler<FormShape, ErrorShape> = (
 	action: FormAction<
 		FormShape,
 		ErrorShape,
-		FormIntent | null | undefined,
+		UnknownIntent | null | undefined,
 		{
 			prevState: FormState<FormShape, ErrorShape>;
 			nextState: FormState<FormShape, ErrorShape>;
@@ -110,7 +105,7 @@ export type FormStateHandler<
 	ctx: FormAction<
 		FormShape,
 		ErrorShape,
-		FormIntent | null | undefined,
+		UnknownIntent | null | undefined,
 		{
 			prevState: FormState<FormShape, ErrorShape>;
 			nextState: FormState<FormShape, ErrorShape>;
@@ -201,7 +196,12 @@ export function useForm<
 	> = DefaultFieldMetadata<ErrorShape>,
 >(
 	options: FormOptions<FormShape, ErrorShape, Value, FormProps, FieldMetadata>,
-) {
+): {
+	context: FormContext<FormShape, ErrorShape>;
+	intent: IntentDispatcher;
+	form: FormMetadata<ErrorShape, FormProps>;
+	fields: Fieldset<FormShape, FieldMetadata>;
+} {
 	const {
 		id,
 		defaultValue,
@@ -265,6 +265,7 @@ export function useForm<
 	return {
 		context,
 		intent,
+		//@ts-expect-error
 		form,
 		fields,
 	};
@@ -283,13 +284,14 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 
 		if (lastResult) {
 			const intent = lastResult.submission.intent
-				? parseIntent(lastResult.submission.intent)
+				? deserializeIntent(lastResult.submission.intent)
 				: null;
 			const result = updateState(state, {
 				type: 'initialize',
 				result: lastResult,
 				intent,
 				ctx: {
+					handlers: defaultActionHandlers,
 					reset: () => state,
 				},
 			});
@@ -329,7 +331,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 		) => {
 			const { onUpdate } = optionsRef.current ?? {};
 			const intent = result.submission.intent
-				? parseIntent(result.submission.intent)
+				? deserializeIntent(result.submission.intent)
 				: null;
 
 			setState((prevState) => {
@@ -338,6 +340,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					result,
 					intent,
 					ctx: {
+						handlers: defaultActionHandlers,
 						reset() {
 							return initializeState<FormShape, ErrorShape>();
 						},
@@ -463,10 +466,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					submission.value = lastIntentedValueRef.current;
 				}
 
-				const intent = submission.intent
-					? parseIntent(submission.intent)
-					: null;
-				const value = updateValue(submission.value, intent);
+				const value = applyIntent(submission);
 				const submissionResult = report<FormShape, ErrorShape>(submission, {
 					keepFiles: true,
 					value,
@@ -571,26 +571,28 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	return [state, handleSubmit];
 }
 
-export function useIntent(
+export function useIntent<
+	Handlers extends Record<string, ActionHandler> = typeof defaultActionHandlers,
+>(
 	formRef: FormRef,
 	options?: {
 		intentName?: string;
 	},
-): IntentDispatcher<FormIntent> {
+): IntentDispatcher<Handlers> {
 	const intentName = options?.intentName ?? DEFAULT_INTENT;
 
 	return useMemo(
 		() =>
-			new Proxy<IntentDispatcher<FormIntent>>({} as any, {
+			new Proxy<IntentDispatcher<Handlers>>({} as any, {
 				get(target, type, receiver) {
 					if (typeof type === 'string') {
-						// @ts-expect-error We are creating an intent dispatcher on the fly
-						target[type] ??= (payload: unknown) => {
+						// @ts-expect-error
+						target[type] ??= (payload?: unknown) => {
 							const formElement = getFormElement(formRef);
 
 							if (!formElement) {
 								throw new Error(
-									'Failed to dispatch intent; Form element is not found',
+									`Dispatching "${type}" intent failed; No form element found.`,
 								);
 							}
 
@@ -625,7 +627,7 @@ export function useFormState<State>(
 			action: FormAction<
 				FormShape,
 				ErrorShape,
-				FormIntent | null | undefined,
+				UnknownIntent | null | undefined,
 				{
 					prevState: FormState<FormShape, ErrorShape>;
 					nextState: FormState<FormShape, ErrorShape>;

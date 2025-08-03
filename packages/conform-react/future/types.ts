@@ -1,9 +1,10 @@
-import {
+import type {
 	FormError,
 	FormValue,
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
+import type { defaultActionHandlers } from './form';
 
 export type DefaultValue<FormShape> = FormShape extends
 	| string
@@ -37,8 +38,11 @@ export type FormState<FormShape, ErrorShape> = {
 export type FormAction<
 	FormShape,
 	ErrorShape,
-	Intent = FormIntent | null | undefined,
-	Context = { reset: () => FormState<FormShape, ErrorShape> },
+	Intent = UnknownIntent | null | undefined,
+	Context = {
+		handlers: Record<string, ActionHandler>;
+		reset: () => FormState<FormShape, ErrorShape>;
+	},
 > = {
 	type: 'initialize' | 'server' | 'client';
 	result: SubmissionResult<FormShape, ErrorShape>;
@@ -57,62 +61,129 @@ export type FieldName<FieldShape> = string & {
 	'~shape'?: FieldShape;
 };
 
-export type ResetIntent = {
-	type: 'reset';
-};
-
-export type ValidateIntent = {
-	type: 'validate';
-	payload?: string;
-};
-
-export type UpdateIntent = {
-	type: 'update';
-	payload: {
-		name?: string;
-		index?: number;
-		value: FormValue<string | number | boolean | null>;
-	};
-};
-
-export type InsertIntent = {
-	type: 'insert';
-	payload: {
-		name: FieldName<any[]>;
-		index?: number;
-		defaultValue?: FormValue<string | number | boolean | null>;
-	};
-};
-
-export type RemoveIntent = {
-	type: 'remove';
-	payload: {
-		name: FieldName<any[]>;
-		index: number;
-	};
-};
-
-export type ReorderIntent = {
-	type: 'reorder';
-	payload: {
-		name: FieldName<any[]>;
-		from: number;
-		to: number;
-	};
-};
-
 export type UnknownIntent = {
 	type: string;
 	payload?: unknown;
 };
 
-export type FormIntent =
-	| ResetIntent
-	| ValidateIntent
-	| UpdateIntent
-	| InsertIntent
-	| RemoveIntent
-	| ReorderIntent;
+export type UnknownArgs<Args extends any[]> = {
+	[Key in keyof Args]: unknown;
+};
+
+export type ValidateAction = {
+	/**
+	 * Validate the whole form or a specific field?
+	 */
+	(name?: string): void;
+};
+
+export type ResetAction = {
+	/**
+	 * Reset the form to its initial state.
+	 */
+	(): void;
+};
+
+export type UpdateAction = {
+	/**
+	 * Update a field or a fieldset.
+	 * If you provide a fieldset name, it will update all fields within that fieldset
+	 */
+	<Schema>(options: {
+		/**
+		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
+		 */
+		name?: FieldName<Schema>;
+		/**
+		 * Specify the index of the item to update if the field is an array.
+		 */
+		index?: Schema extends Array<any> ? number : never;
+		/**
+		 * The new value for the field or fieldset.
+		 */
+		value: Partial<Schema>;
+	}): void;
+};
+
+export type InsertAction = {
+	/**
+	 * Insert a new item into an array field.
+	 */
+	<Schema>(options: {
+		/**
+		 * The name of the array field to insert into.
+		 */
+		name: FieldName<Schema[]>;
+		/**
+		 * The index at which to insert the new item.
+		 * If not provided, it will be added to the end of the array.
+		 */
+		index?: number;
+		/**
+		 * The default value for the new item.
+		 */
+		defaultValue?: Partial<Schema>;
+	}): void;
+};
+
+export type RemoveAction = {
+	/**
+	 * Remove an item from an array field.
+	 */
+	(options: {
+		/**
+		 * The name of the array field to remove from.
+		 */
+		name: FieldName<Array<any>>;
+		/**
+		 * The index of the item to remove.
+		 */
+		index: number;
+	}): void;
+};
+
+export type ReorderAction = {
+	/**
+	 * Reorder items in an array field.
+	 */
+	(options: { name: FieldName<Array<any>>; from: number; to: number }): void;
+};
+
+export type ActionHandler<
+	Signature extends (payload: any) => void = (payload: any) => void,
+> = {
+	validatePayload?(...args: UnknownArgs<Parameters<Signature>>): boolean;
+	onApply?(
+		value: Record<string, FormValue>,
+		...args: Parameters<Signature>
+	): Record<string, FormValue> | null;
+	onUpdate?<FormShape, ErrorShape>(
+		state: FormState<FormShape, ErrorShape>,
+		action: FormAction<
+			FormShape,
+			ErrorShape,
+			{
+				type: string;
+				payload: Signature extends (payload: infer Payload) => void
+					? Payload
+					: undefined;
+			}
+		>,
+	): FormState<FormShape, ErrorShape>;
+};
+
+export type IntentDispatcher<
+	Handlers extends Record<
+		string,
+		ActionHandler<(...args: Array<any>) => void>
+	> = typeof defaultActionHandlers,
+> = {
+	[Type in keyof Handlers]: Handlers[Type] extends ActionHandler<
+		infer Signature
+	>
+		? Signature
+		: never;
+};
 
 type BaseCombine<
 	T,

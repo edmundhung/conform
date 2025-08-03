@@ -28,16 +28,16 @@ import {
 	generateUniqueKey,
 } from './util';
 import type {
-	FormState,
-	FormIntent,
-	ResetIntent,
-	ValidateIntent,
-	UpdateIntent,
-	InsertIntent,
-	RemoveIntent,
-	ReorderIntent,
 	FormAction,
+	FormState,
 	UnknownIntent,
+	ActionHandler,
+	ResetAction,
+	ValidateAction,
+	UpdateAction,
+	InsertAction,
+	RemoveAction,
+	ReorderAction,
 } from './types';
 import { getDefaultListKey } from './metadata';
 
@@ -106,123 +106,30 @@ export function deserializeIntent(value: string): UnknownIntent {
 	};
 }
 
-export function isResetIntent(intent: UnknownIntent): intent is ResetIntent {
-	return intent.type === 'reset';
-}
-
-export function isValidateIntent(
-	intent: UnknownIntent,
-): intent is ValidateIntent {
-	return intent.type === 'validate' && isOptional(intent.payload, isString);
-}
-
-export function isUpdateIntent(intent: UnknownIntent): intent is UpdateIntent {
-	return (
-		intent.type === 'update' &&
-		isPlainObject(intent.payload) &&
-		isOptional(intent.payload.name, isString) &&
-		isNonNullable(intent.payload.value) &&
-		isOptional(intent.payload.index, isNumber)
-	);
-}
-
-export function isInsertIntent(intent: UnknownIntent): intent is InsertIntent {
-	return (
-		intent.type === 'insert' &&
-		isPlainObject(intent.payload) &&
-		isString(intent.payload.name) &&
-		isOptional(intent.payload.index, isNumber)
-	);
-}
-
-export function isRemoveIntent(intent: UnknownIntent): intent is RemoveIntent {
-	return (
-		intent.type === 'remove' &&
-		isPlainObject(intent.payload) &&
-		isString(intent.payload.name) &&
-		isNumber(intent.payload.index)
-	);
-}
-
-export function isReorderIntent(
-	intent: UnknownIntent,
-): intent is ReorderIntent {
-	return (
-		intent.type === 'reorder' &&
-		isPlainObject(intent.payload) &&
-		isString(intent.payload.name) &&
-		isNumber(intent.payload.from) &&
-		isNumber(intent.payload.to)
-	);
-}
-
-export function parseIntent(value: string): FormIntent | undefined {
-	const intent = deserializeIntent(value);
-
-	if (
-		isResetIntent(intent) ||
-		isValidateIntent(intent) ||
-		isUpdateIntent(intent) ||
-		isInsertIntent(intent) ||
-		isRemoveIntent(intent) ||
-		isReorderIntent(intent)
-	) {
-		return intent;
-	}
-}
-
 export function applyIntent(
 	submission: Submission,
-): [FormIntent | undefined | null, Record<string, FormValue> | null] {
-	if (!submission.intent) {
-		return [null, submission.value];
-	}
-
-	const intent = parseIntent(submission.intent);
-	const value = intent
-		? updateValue(submission.value, intent)
-		: submission.value;
-
-	return [intent, value];
-}
-
-export function updateValue(
-	value: Record<string, FormValue>,
-	intent: FormIntent | null | undefined,
+	options?: {
+		handlers?: Record<string, ActionHandler>;
+	},
 ): Record<string, FormValue> | null {
-	switch (intent?.type) {
-		case 'reset': {
-			return null;
-		}
-		case 'update': {
-			return modify(
-				value,
-				appendPathSegment(intent.payload.name, intent.payload.index),
-				intent.payload.value,
-			);
-		}
-		case 'insert': {
-			const list = Array.from<any>(getListValue(value, intent.payload.name));
-			insertItem(
-				list,
-				intent.payload.defaultValue,
-				intent.payload.index ?? list.length,
-			);
-			return modify(value, intent.payload.name, list);
-		}
-		case 'remove': {
-			const list = Array.from<any>(getListValue(value, intent.payload.name));
-			removeItem(list, intent.payload.index);
-			return modify(value, intent.payload.name, list);
-		}
-		case 'reorder': {
-			const list = Array.from<any>(getListValue(value, intent.payload.name));
-			reorderItems(list, intent.payload.from, intent.payload.to);
-			return modify(value, intent.payload.name, list);
-		}
+	if (!submission.intent) {
+		return submission.value;
 	}
 
-	return value;
+	const intent = deserializeIntent(submission.intent);
+	const handlers: Record<string, ActionHandler> =
+		options?.handlers ?? defaultActionHandlers;
+	const handler = handlers[intent.type];
+
+	if (
+		handler &&
+		handler.onApply &&
+		(handler.validatePayload?.(intent.payload) ?? true)
+	) {
+		return handler.onApply(submission.value, intent.payload);
+	}
+
+	return submission.value;
 }
 
 export function initializeState<FormShape, ErrorShape>(): FormState<
@@ -240,240 +147,294 @@ export function initializeState<FormShape, ErrorShape>(): FormState<
 	};
 }
 
-type IntentHandler<Intent> = <FormShape, ErrorShape>(
-	state: FormState<FormShape, ErrorShape>,
-	action: FormAction<FormShape, ErrorShape, Intent>,
-) => FormState<FormShape, ErrorShape>;
-
-const validate: IntentHandler<ValidateIntent> = (
-	state,
-	{ type, result, intent },
-) => {
-	const name = intent.payload ?? '';
-	const basePath = getPathSegments(name);
-
-	let touchedFields = addItem(state.touchedFields, name);
-
-	for (const field of result.submission.fields) {
-		// Add all child fields to the touched fields too
-		if (getRelativePath(field, basePath) !== null) {
-			touchedFields = addItem(touchedFields, field);
-		}
-	}
-
-	// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
-	// If this happens during the initialize stage, we can at least include missing
-	// required fields based on the form error
-	if (type === 'initialize' && name === '' && result.error) {
-		for (const name of Object.keys(result.error.fieldErrors)) {
-			touchedFields = addItem(touchedFields, name);
-		}
-	}
-
-	return merge(state, {
-		touchedFields,
-	});
+const reset: ActionHandler<ResetAction> = {
+	onApply() {
+		return null;
+	},
 };
 
-const update: IntentHandler<UpdateIntent> = (
-	state,
-	{ type, result, intent },
-) => {
-	let listKeys = state.listKeys;
+const validate: ActionHandler<ValidateAction> = {
+	validatePayload(name) {
+		return isOptional(name, isString);
+	},
+	onUpdate(state, { type, result, intent }) {
+		const name = intent.payload ?? '';
+		const basePath = getPathSegments(name);
 
-	// Update the keys only for client updates to avoid double updates if there is no client validation
-	if (type === 'client') {
-		// TODO: Do we really need to update the keys here?
-		const name = appendPathSegment(intent.payload.name, intent.payload.index);
-		// Remove all child keys
-		listKeys = name === '' ? {} : updateKeys(state.listKeys, name);
-	}
+		let touchedFields = addItem(state.touchedFields, name);
 
-	const basePath = getPathSegments(intent.payload.name);
-	let touchedFields = state.touchedFields;
-
-	for (const field of result.submission.fields) {
-		if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
-			touchedFields = addItem(touchedFields, field);
+		for (const field of result.submission.fields) {
+			// Add all child fields to the touched fields too
+			if (getRelativePath(field, basePath) !== null) {
+				touchedFields = addItem(touchedFields, field);
+			}
 		}
-	}
 
-	return {
-		...state,
-		listKeys,
-		touchedFields,
-	};
+		// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
+		// If this happens during the initialize stage, we can at least include missing
+		// required fields based on the form error
+		if (type === 'initialize' && name === '' && result.error) {
+			for (const name of Object.keys(result.error.fieldErrors)) {
+				touchedFields = addItem(touchedFields, name);
+			}
+		}
+
+		return merge(state, {
+			touchedFields,
+		});
+	},
 };
 
-const insert: IntentHandler<InsertIntent> = (
-	state,
-	{ type, result, intent },
-) => {
-	const currentValue = result.submission.value;
-	const list = getListValue(currentValue, intent.payload.name);
-	const index = intent.payload.index ?? list.length;
-	const updateListIndex = configureListIndexUpdate(
-		intent.payload.name,
-		(currentIndex) => (index <= currentIndex ? currentIndex + 1 : currentIndex),
-	);
-	const touchedFields = addItem(
-		mapItems(state.touchedFields, updateListIndex),
-		intent.payload.name,
-	);
+const update: ActionHandler<UpdateAction> = {
+	validatePayload(options) {
+		return (
+			isPlainObject(options) &&
+			isOptional(options.name, isString) &&
+			isOptional(options.index, isNumber) &&
+			isNonNullable(options.value)
+		);
+	},
+	onApply(value, options) {
+		return modify(
+			value,
+			appendPathSegment(options.name, options.index),
+			options.value,
+		);
+	},
+	onUpdate(state, { type, result, intent }) {
+		let listKeys = state.listKeys;
 
-	let keys = state.listKeys;
+		// Update the keys only for client updates to avoid double updates if there is no client validation
+		if (type === 'client') {
+			// TODO: Do we really need to update the keys here?
+			const name = appendPathSegment(intent.payload.name, intent.payload.index);
+			// Remove all child keys
+			listKeys = name === '' ? {} : updateKeys(state.listKeys, name);
+		}
 
-	// Update the keys only for client updates to avoid double updates if there is no client validation
-	if (type === 'client') {
-		const listKeys = Array.from(
-			state.listKeys[intent.payload.name] ??
-				getDefaultListKey(state.key, currentValue, intent.payload.name),
+		const basePath = getPathSegments(intent.payload.name);
+		let touchedFields = state.touchedFields;
+
+		for (const field of result.submission.fields) {
+			if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
+				touchedFields = addItem(touchedFields, field);
+			}
+		}
+
+		return {
+			...state,
+			listKeys,
+			touchedFields,
+		};
+	},
+};
+
+const insert: ActionHandler<InsertAction> = {
+	validatePayload(options) {
+		return (
+			isPlainObject(options) &&
+			isString(options.name) &&
+			isOptional(options.index, isNumber) &&
+			isOptional(options.defaultValue, isPlainObject)
+		);
+	},
+	onApply(value, options) {
+		const list = Array.from(getListValue(value, options.name));
+		insertItem(list, options.defaultValue, options.index ?? list.length);
+		return modify(value, options.name, list);
+	},
+	onUpdate(state, { type, result, intent }) {
+		const currentValue = result.submission.value;
+		const list = getListValue(currentValue, intent.payload.name);
+		const index = intent.payload.index ?? list.length;
+		const updateListIndex = configureListIndexUpdate(
+			intent.payload.name,
+			(currentIndex) =>
+				index <= currentIndex ? currentIndex + 1 : currentIndex,
+		);
+		const touchedFields = addItem(
+			mapItems(state.touchedFields, updateListIndex),
+			intent.payload.name,
 		);
 
-		insertItem(listKeys, generateUniqueKey(), index);
+		let keys = state.listKeys;
 
-		keys = {
-			// Remove all child keys
-			...updateKeys(
-				state.listKeys,
-				appendPathSegment(intent.payload.name, index),
-				updateListIndex,
-			),
-			// Update existing list keys
-			[intent.payload.name]: listKeys,
+		// Update the keys only for client updates to avoid double updates if there is no client validation
+		if (type === 'client') {
+			const listKeys = Array.from(
+				state.listKeys[intent.payload.name] ??
+					getDefaultListKey(state.key, currentValue, intent.payload.name),
+			);
+
+			insertItem(listKeys, generateUniqueKey(), index);
+
+			keys = {
+				// Remove all child keys
+				...updateKeys(
+					state.listKeys,
+					appendPathSegment(intent.payload.name, index),
+					updateListIndex,
+				),
+				// Update existing list keys
+				[intent.payload.name]: listKeys,
+			};
+		}
+
+		return {
+			...state,
+			listKeys: keys,
+			touchedFields,
 		};
-	}
-
-	return {
-		...state,
-		listKeys: keys,
-		touchedFields,
-	};
+	},
 };
 
-const remove: IntentHandler<RemoveIntent> = (
-	state,
-	{ type, result, intent },
-) => {
-	const currentValue = result.submission.value;
-	const updateListIndex = configureListIndexUpdate(
-		intent.payload.name,
-		(currentIndex) => {
-			if (intent.payload.index === currentIndex) {
-				return null;
-			}
-
-			return intent.payload.index < currentIndex
-				? currentIndex - 1
-				: currentIndex;
-		},
-	);
-	const touchedFields = addItem(
-		mapItems(state.touchedFields, updateListIndex),
-		intent.payload.name,
-	);
-
-	let keys = state.listKeys;
-
-	// Update the keys only for client updates to avoid double updates if there is no client validation
-	if (type === 'client') {
-		const listKeys = Array.from(
-			state.listKeys[intent.payload.name] ??
-				getDefaultListKey(state.key, currentValue, intent.payload.name),
+const remove: ActionHandler<RemoveAction> = {
+	validatePayload(options) {
+		return (
+			isPlainObject(options) &&
+			isString(options.name) &&
+			isNumber(options.index)
 		);
+	},
+	onApply(value, options) {
+		const list = Array.from(getListValue(value, options.name));
+		removeItem(list, options.index);
+		return modify(value, options.name, list);
+	},
+	onUpdate(state, { type, result, intent }) {
+		const currentValue = result.submission.value;
+		const updateListIndex = configureListIndexUpdate(
+			intent.payload.name,
+			(currentIndex) => {
+				if (intent.payload.index === currentIndex) {
+					return null;
+				}
 
-		removeItem(listKeys, intent.payload.index);
-
-		keys = {
-			// Remove all child keys
-			...updateKeys(
-				state.listKeys,
-				appendPathSegment(intent.payload.name, intent.payload.index),
-				updateListIndex,
-			),
-			// Update existing list keys
-			[intent.payload.name]: listKeys,
-		};
-	}
-
-	return {
-		...state,
-		listKeys: keys,
-		touchedFields,
-	};
-};
-
-const reorder: IntentHandler<ReorderIntent> = (
-	state,
-	{ type, result, intent },
-) => {
-	const currentValue = result.submission.value;
-	const updateListIndex = configureListIndexUpdate(
-		intent.payload.name,
-		(currentIndex) => {
-			if (intent.payload.from === intent.payload.to) {
-				return currentIndex;
-			}
-
-			if (currentIndex === intent.payload.from) {
-				return intent.payload.to;
-			}
-
-			if (intent.payload.from < intent.payload.to) {
-				return currentIndex > intent.payload.from &&
-					currentIndex <= intent.payload.to
+				return intent.payload.index < currentIndex
 					? currentIndex - 1
 					: currentIndex;
-			}
-
-			return currentIndex >= intent.payload.to &&
-				currentIndex < intent.payload.from
-				? currentIndex + 1
-				: currentIndex;
-		},
-	);
-	const touchedFields = addItem(
-		mapItems(state.touchedFields, updateListIndex),
-		intent.payload.name,
-	);
-
-	let keys = state.listKeys;
-
-	// Update the keys only for client updates to avoid double updates if there is no client validation
-	if (type === 'client') {
-		const listKeys = Array.from(
-			state.listKeys[intent.payload.name] ??
-				getDefaultListKey(state.key, currentValue, intent.payload.name),
+			},
+		);
+		const touchedFields = addItem(
+			mapItems(state.touchedFields, updateListIndex),
+			intent.payload.name,
 		);
 
-		reorderItems(listKeys, intent.payload.from, intent.payload.to);
+		let keys = state.listKeys;
 
-		keys = {
-			// Remove all child keys
-			...updateKeys(
-				state.listKeys,
-				appendPathSegment(intent.payload.name, intent.payload.from),
-				updateListIndex,
-			),
-			// Update existing list keys
-			[intent.payload.name]: listKeys,
+		// Update the keys only for client updates to avoid double updates if there is no client validation
+		if (type === 'client') {
+			const listKeys = Array.from(
+				state.listKeys[intent.payload.name] ??
+					getDefaultListKey(state.key, currentValue, intent.payload.name),
+			);
+
+			removeItem(listKeys, intent.payload.index);
+
+			keys = {
+				// Remove all child keys
+				...updateKeys(
+					state.listKeys,
+					appendPathSegment(intent.payload.name, intent.payload.index),
+					updateListIndex,
+				),
+				// Update existing list keys
+				[intent.payload.name]: listKeys,
+			};
+		}
+
+		return {
+			...state,
+			listKeys: keys,
+			touchedFields,
 		};
-	}
-
-	return {
-		...state,
-		listKeys: keys,
-		touchedFields,
-	};
+	},
 };
 
-const intentHandlers = {
+const reorder: ActionHandler<ReorderAction> = {
+	validatePayload(options) {
+		return (
+			isPlainObject(options) &&
+			isString(options.name) &&
+			isNumber(options.from) &&
+			isNumber(options.to)
+		);
+	},
+	onApply(value, options) {
+		const list = Array.from(getListValue(value, options.name));
+		reorderItems(list, options.from, options.to);
+		return modify(value, options.name, list);
+	},
+	onUpdate(state, { type, result, intent }) {
+		const currentValue = result.submission.value;
+		const updateListIndex = configureListIndexUpdate(
+			intent.payload.name,
+			(currentIndex) => {
+				if (intent.payload.from === intent.payload.to) {
+					return currentIndex;
+				}
+
+				if (currentIndex === intent.payload.from) {
+					return intent.payload.to;
+				}
+
+				if (intent.payload.from < intent.payload.to) {
+					return currentIndex > intent.payload.from &&
+						currentIndex <= intent.payload.to
+						? currentIndex - 1
+						: currentIndex;
+				}
+
+				return currentIndex >= intent.payload.to &&
+					currentIndex < intent.payload.from
+					? currentIndex + 1
+					: currentIndex;
+			},
+		);
+		const touchedFields = addItem(
+			mapItems(state.touchedFields, updateListIndex),
+			intent.payload.name,
+		);
+
+		let keys = state.listKeys;
+
+		// Update the keys only for client updates to avoid double updates if there is no client validation
+		if (type === 'client') {
+			const listKeys = Array.from(
+				state.listKeys[intent.payload.name] ??
+					getDefaultListKey(state.key, currentValue, intent.payload.name),
+			);
+
+			reorderItems(listKeys, intent.payload.from, intent.payload.to);
+
+			keys = {
+				// Remove all child keys
+				...updateKeys(
+					state.listKeys,
+					appendPathSegment(intent.payload.name, intent.payload.from),
+					updateListIndex,
+				),
+				// Update existing list keys
+				[intent.payload.name]: listKeys,
+			};
+		}
+
+		return {
+			...state,
+			listKeys: keys,
+			touchedFields,
+		};
+	},
+};
+
+export const defaultActionHandlers = {
+	reset,
 	validate,
 	update,
 	insert,
 	reorder,
 	remove,
-};
+} satisfies Record<string, ActionHandler>;
 
 export function defaultUpdateState<FormShape, ErrorShape>(
 	state: FormState<FormShape, ErrorShape>,
@@ -526,40 +487,18 @@ export function updateState<FormShape, ErrorShape>(
 	if (action.type !== 'server' && typeof action.intent !== 'undefined') {
 		// Validate the whole form if no intent is provided (default submission)
 		const intent = action.intent ?? { type: 'validate' };
+		const handler = action.ctx.handlers[intent.type];
 
-		if (intent.type === 'validate') {
-			return intentHandlers.validate(state, {
-				...action,
-				intent,
-			});
-		}
-
-		if (intent.type === 'update') {
-			return intentHandlers.update(state, {
-				...action,
-				intent,
-			});
-		}
-
-		if (intent.type === 'insert') {
-			return intentHandlers.insert(state, {
-				...action,
-				intent,
-			});
-		}
-
-		if (intent.type === 'remove') {
-			return intentHandlers.remove(state, {
-				...action,
-				intent,
-			});
-		}
-
-		if (intent.type === 'reorder') {
-			return intentHandlers.reorder(state, {
-				...action,
-				intent,
-			});
+		if (typeof handler?.onUpdate === 'function') {
+			if (handler.validatePayload?.(intent.payload) ?? true) {
+				return handler.onUpdate(state, {
+					...action,
+					intent: {
+						type: intent.type,
+						payload: intent.payload,
+					},
+				});
+			}
 		}
 	}
 
