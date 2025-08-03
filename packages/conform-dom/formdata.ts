@@ -515,7 +515,7 @@ export function isDirty(
 	 * - A `URLSearchParams` object
 	 * - A plain object that was parsed from form data (i.e. `submission.payload`)
 	 */
-	formData: FormData | URLSearchParams | FormValue<FormDataEntryValue> | null,
+	formData: FormData | URLSearchParams | FormValue | null,
 	options?: {
 		/**
 		 * An object representing the default values of the form to compare against.

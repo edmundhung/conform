@@ -9,7 +9,13 @@ import {
 import { useEffect, useRef } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DEFAULT_INTENT } from '../future/hooks';
-import { applyIntent } from '../future/form';
+import {
+	applyIntent,
+	defaultActionHandlers,
+	deserializeIntent,
+	initializeState,
+} from '../future/form';
+import { FormAction } from '../future/types';
 
 export function serverRenderHook<Result>(renderCallback: () => Result): Result {
 	let result: Result | undefined;
@@ -48,7 +54,7 @@ export function createResult(
 		value?: Record<string, FormValue> | null;
 		error?: Partial<FormError<any, any>> | null;
 	},
-): SubmissionResult<any, any, any, any> {
+): SubmissionResult<any, any, any> {
 	const formData = new FormData();
 
 	for (const [name, value] of entries) {
@@ -58,11 +64,45 @@ export function createResult(
 	const submission = parseSubmission(formData, {
 		intentName: DEFAULT_INTENT,
 	});
-	const [intent, value] = applyIntent(submission);
+	const value = applyIntent(submission);
 
 	return report(submission, {
-		intent,
 		value: typeof options?.value !== 'undefined' ? options.value : value,
 		error: options?.error,
 	});
+}
+
+export function createAction(options: {
+	type: FormAction<any, any>['type'];
+	entries: Array<[string, FormDataEntryValue]>;
+	value?: Record<string, FormValue> | null;
+	error?: Partial<FormError<any, any>> | null;
+}): FormAction<any, any> {
+	const formData = new FormData();
+
+	for (const [name, value] of options.entries) {
+		formData.append(name, value);
+	}
+
+	const submission = parseSubmission(formData, {
+		intentName: DEFAULT_INTENT,
+	});
+	const value = applyIntent(submission);
+	const result = report(submission, {
+		value: typeof options?.value !== 'undefined' ? options.value : value,
+		error: options?.error,
+	});
+	const ctx = {
+		handlers: defaultActionHandlers,
+		reset() {
+			return initializeState();
+		},
+	};
+
+	return {
+		...result,
+		type: options.type,
+		intent: submission.intent ? deserializeIntent(submission.intent) : null,
+		ctx,
+	};
 }

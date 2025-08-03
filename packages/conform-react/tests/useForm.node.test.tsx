@@ -3,14 +3,6 @@ import { useForm } from '../future';
 import { createResult, serverRenderHook } from './helpers';
 import { DEFAULT_INTENT } from '../future/hooks';
 import { serializeIntent } from '../future/form';
-import {
-	InsertIntent,
-	RemoveIntent,
-	ReorderIntent,
-	ResetIntent,
-	UpdateIntent,
-	ValidateIntent,
-} from '../future/types';
 
 describe('future export: useForm', () => {
 	test('default state', () => {
@@ -80,7 +72,7 @@ describe('future export: useForm', () => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<ValidateIntent>({
+							serializeIntent({
 								type: 'validate',
 								payload: 'title',
 							}),
@@ -116,7 +108,7 @@ describe('future export: useForm', () => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<UpdateIntent>({
+							serializeIntent({
 								type: 'update',
 								payload: {
 									name: 'description',
@@ -155,7 +147,7 @@ describe('future export: useForm', () => {
 						['description', 'Hello World'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<ResetIntent>({
+							serializeIntent({
 								type: 'reset',
 							}),
 						],
@@ -192,7 +184,7 @@ describe('future export: useForm', () => {
 						['title', 'Example'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<InsertIntent>({
+							serializeIntent({
 								type: 'insert',
 								payload: {
 									name: 'notes',
@@ -241,7 +233,7 @@ describe('future export: useForm', () => {
 						['notes[2]', 'Third note'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<ReorderIntent>({
+							serializeIntent({
 								type: 'reorder',
 								payload: {
 									name: 'notes',
@@ -298,7 +290,7 @@ describe('future export: useForm', () => {
 						['notes[2]', 'Third note'],
 						[
 							DEFAULT_INTENT,
-							serializeIntent<RemoveIntent>({
+							serializeIntent({
 								type: 'remove',
 								payload: {
 									name: 'notes',

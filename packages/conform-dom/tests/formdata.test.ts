@@ -8,6 +8,7 @@ import {
 	isDirty,
 	isPrefix,
 	parseSubmission,
+	DEFAULT_INTENT_NAME,
 } from '../formdata';
 
 function createFormData(
@@ -398,7 +399,7 @@ describe('parseSubmission', () => {
 				createFormData([
 					['email', 'hello@world.com'],
 					['password', 'superSecret1234'],
-					['__intent__', 'register'],
+					[DEFAULT_INTENT_NAME, 'register'],
 				]),
 			),
 		).toEqual({
@@ -434,7 +435,7 @@ describe('parseSubmission', () => {
 
 		// File intent will be ignored
 		expect(
-			parseSubmission(createFormData([['__intent__', emptyFile]])),
+			parseSubmission(createFormData([[DEFAULT_INTENT_NAME, emptyFile]])),
 		).toEqual({
 			value: {},
 			fields: [],
@@ -483,7 +484,7 @@ describe('parseSubmission', () => {
 				new URLSearchParams([
 					['email', 'hello@world.com'],
 					['password', 'superSecret1234'],
-					['__intent__', 'register'],
+					[DEFAULT_INTENT_NAME, 'register'],
 				]),
 			),
 		).toEqual({

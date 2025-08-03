@@ -15,7 +15,7 @@ import {
 	addItem,
 	configureListIndexUpdate,
 	getListValue,
-	isNonNullable,
+	isUndefined,
 	isOptional,
 	isNumber,
 	isString,
@@ -157,13 +157,13 @@ const validate: ActionHandler<ValidateAction> = {
 	validatePayload(name) {
 		return isOptional(name, isString);
 	},
-	onUpdate(state, { type, result, intent }) {
+	onUpdate(state, { type, submission, intent, error }) {
 		const name = intent.payload ?? '';
 		const basePath = getPathSegments(name);
 
 		let touchedFields = addItem(state.touchedFields, name);
 
-		for (const field of result.submission.fields) {
+		for (const field of submission.fields) {
 			// Add all child fields to the touched fields too
 			if (getRelativePath(field, basePath) !== null) {
 				touchedFields = addItem(touchedFields, field);
@@ -173,8 +173,8 @@ const validate: ActionHandler<ValidateAction> = {
 		// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
 		// If this happens during the initialize stage, we can at least include missing
 		// required fields based on the form error
-		if (type === 'initialize' && name === '' && result.error) {
-			for (const name of Object.keys(result.error.fieldErrors)) {
+		if (type === 'initialize' && name === '' && error) {
+			for (const name of Object.keys(error.fieldErrors)) {
 				touchedFields = addItem(touchedFields, name);
 			}
 		}
@@ -191,7 +191,7 @@ const update: ActionHandler<UpdateAction> = {
 			isPlainObject(options) &&
 			isOptional(options.name, isString) &&
 			isOptional(options.index, isNumber) &&
-			isNonNullable(options.value)
+			!isUndefined(options.value)
 		);
 	},
 	onApply(value, options) {
@@ -201,7 +201,7 @@ const update: ActionHandler<UpdateAction> = {
 			options.value,
 		);
 	},
-	onUpdate(state, { type, result, intent }) {
+	onUpdate(state, { type, submission, intent }) {
 		let listKeys = state.listKeys;
 
 		// Update the keys only for client updates to avoid double updates if there is no client validation
@@ -215,7 +215,7 @@ const update: ActionHandler<UpdateAction> = {
 		const basePath = getPathSegments(intent.payload.name);
 		let touchedFields = state.touchedFields;
 
-		for (const field of result.submission.fields) {
+		for (const field of submission.fields) {
 			if (basePath.length === 0 || getRelativePath(field, basePath) !== null) {
 				touchedFields = addItem(touchedFields, field);
 			}
@@ -234,8 +234,7 @@ const insert: ActionHandler<InsertAction> = {
 		return (
 			isPlainObject(options) &&
 			isString(options.name) &&
-			isOptional(options.index, isNumber) &&
-			isOptional(options.defaultValue, isPlainObject)
+			isOptional(options.index, isNumber)
 		);
 	},
 	onApply(value, options) {
@@ -243,8 +242,8 @@ const insert: ActionHandler<InsertAction> = {
 		insertItem(list, options.defaultValue, options.index ?? list.length);
 		return modify(value, options.name, list);
 	},
-	onUpdate(state, { type, result, intent }) {
-		const currentValue = result.submission.value;
+	onUpdate(state, { type, submission, intent }) {
+		const currentValue = submission.value;
 		const list = getListValue(currentValue, intent.payload.name);
 		const index = intent.payload.index ?? list.length;
 		const updateListIndex = configureListIndexUpdate(
@@ -301,8 +300,8 @@ const remove: ActionHandler<RemoveAction> = {
 		removeItem(list, options.index);
 		return modify(value, options.name, list);
 	},
-	onUpdate(state, { type, result, intent }) {
-		const currentValue = result.submission.value;
+	onUpdate(state, { type, submission, intent }) {
+		const currentValue = submission.value;
 		const updateListIndex = configureListIndexUpdate(
 			intent.payload.name,
 			(currentIndex) => {
@@ -365,8 +364,8 @@ const reorder: ActionHandler<ReorderAction> = {
 		reorderItems(list, options.from, options.to);
 		return modify(value, options.name, list);
 	},
-	onUpdate(state, { type, result, intent }) {
-		const currentValue = result.submission.value;
+	onUpdate(state, { type, submission, intent }) {
+		const currentValue = submission.value;
 		const updateListIndex = configureListIndexUpdate(
 			intent.payload.name,
 			(currentIndex) => {
@@ -440,21 +439,20 @@ export function defaultUpdateState<FormShape, ErrorShape>(
 	state: FormState<FormShape, ErrorShape>,
 	action: FormAction<FormShape, ErrorShape>,
 ): FormState<FormShape, ErrorShape> {
-	const { type, result } = action;
-	const value = result.value ?? result.submission.value;
+	const value = action.value ?? action.submission.value;
 
-	if (type === 'client') {
+	if (action.type === 'client') {
 		return merge(state, {
-			intendedValue: result.value ?? state.intendedValue,
+			intendedValue: action.value ?? state.intendedValue,
 			// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
 			clientError:
-				typeof result.error !== 'undefined' &&
-				!deepEqual(state.clientError, result.error)
-					? result.error
+				typeof action.error !== 'undefined' &&
+				!deepEqual(state.clientError, action.error)
+					? action.error
 					: state.clientError,
 			// Reset server error if form value is changed
 			serverError:
-				typeof result.error !== 'undefined' &&
+				typeof action.error !== 'undefined' &&
 				!deepEqual(state.serverValidatedValue, value)
 					? null
 					: state.serverError,
@@ -462,14 +460,14 @@ export function defaultUpdateState<FormShape, ErrorShape>(
 	}
 
 	return merge(state, {
-		intendedValue: type === 'initialize' ? value : state.intendedValue,
+		intendedValue: action.type === 'initialize' ? value : state.intendedValue,
 		// Update server error if the error is defined.
 		// There is no need to check if the error is different as we are updating other states as well
 		serverError:
-			typeof result.error !== 'undefined' ? result.error : state.serverError,
+			typeof action.error !== 'undefined' ? action.error : state.serverError,
 		// Keep track of the value that the serverError is based on
 		serverValidatedValue:
-			typeof result.error !== 'undefined' ? value : state.serverValidatedValue,
+			typeof action.error !== 'undefined' ? value : state.serverValidatedValue,
 	});
 }
 
@@ -477,7 +475,7 @@ export function updateState<FormShape, ErrorShape>(
 	state: FormState<FormShape, ErrorShape>,
 	action: FormAction<FormShape, ErrorShape>,
 ): FormState<FormShape, ErrorShape> {
-	if (action.result.value === null) {
+	if (action.value === null) {
 		return action.ctx.reset();
 	}
 
@@ -487,7 +485,7 @@ export function updateState<FormShape, ErrorShape>(
 	if (action.type !== 'server' && typeof action.intent !== 'undefined') {
 		// Validate the whole form if no intent is provided (default submission)
 		const intent = action.intent ?? { type: 'validate' };
-		const handler = action.ctx.handlers[intent.type];
+		const handler = action.ctx.handlers?.[intent.type];
 
 		if (typeof handler?.onUpdate === 'function') {
 			if (handler.validatePayload?.(intent.payload) ?? true) {

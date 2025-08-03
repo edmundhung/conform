@@ -287,8 +287,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				? deserializeIntent(lastResult.submission.intent)
 				: null;
 			const result = updateState(state, {
+				...lastResult,
 				type: 'initialize',
-				result: lastResult,
 				intent,
 				ctx: {
 					handlers: defaultActionHandlers,
@@ -297,8 +297,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			});
 
 			options?.onUpdate?.({
+				...lastResult,
 				type: 'initialize',
-				result: lastResult,
 				intent,
 				ctx: {
 					prevState: state,
@@ -336,8 +336,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 
 			setState((prevState) => {
 				const nextState = updateState(prevState, {
+					...result,
 					type: options.type,
-					result,
 					intent,
 					ctx: {
 						handlers: defaultActionHandlers,
@@ -348,8 +348,8 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				});
 
 				onUpdate?.({
+					...result,
 					type: options.type,
-					result,
 					intent,
 					ctx: {
 						prevState,
@@ -646,7 +646,7 @@ export function useFormState<State>(
 					}
 				};
 
-				if (action.result.value === null) {
+				if (action.value === null) {
 					return reset();
 				}
 

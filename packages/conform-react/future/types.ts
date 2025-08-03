@@ -40,12 +40,11 @@ export type FormAction<
 	ErrorShape,
 	Intent = UnknownIntent | null | undefined,
 	Context = {
-		handlers: Record<string, ActionHandler>;
+		handlers?: Record<string, ActionHandler>;
 		reset: () => FormState<FormShape, ErrorShape>;
 	},
-> = {
+> = SubmissionResult<FormShape, ErrorShape> & {
 	type: 'initialize' | 'server' | 'client';
-	result: SubmissionResult<FormShape, ErrorShape>;
 	intent: Intent;
 	ctx: Context;
 };

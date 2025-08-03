@@ -199,8 +199,8 @@ export type Prettify<T> = {
 	[K in keyof T]: T[K];
 } & {};
 
-export function isNonNullable<T>(value: T): value is NonNullable<T> {
-	return value !== null && value !== undefined;
+export function isUndefined(value: unknown): value is undefined {
+	return value === undefined;
 }
 
 export function isString(value: unknown): value is string {
@@ -215,7 +215,7 @@ export function isOptional<T>(
 	value: unknown,
 	typeGuard: (value: unknown) => value is T,
 ): value is T | undefined {
-	return typeof value === 'undefined' || typeGuard(value);
+	return isUndefined(value) || typeGuard(value);
 }
 
 export function getListValue<Type>(
