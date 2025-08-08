@@ -29,6 +29,9 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			}
 		} else if (def.type === 'pipe') {
 			// FIXME: What to do with .pipe()?
+			if (def.out._zod.def.type === 'transform') {
+				updateConstraint(def.in, data, name);
+			}
 			updateConstraint(def.out, data, name);
 		} else if (def.type === 'intersection') {
 			const leftResult: Record<string, Constraint> = {};
