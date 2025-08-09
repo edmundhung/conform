@@ -49,6 +49,27 @@ describe('constraint', () => {
 					z.string().min(3, 'min'),
 					z.number().max(100, 'max').optional(),
 				]),
+				transform: z
+					.object({
+						key: z.string(),
+					})
+					.transform((val) => val),
+				preprocess: z.preprocess(
+					(value) => value,
+					z.object({
+						key: z.string(),
+					}),
+				),
+				pipe: z
+					.object({
+						key: z.string(),
+					})
+					.pipe(
+						z.object({
+							key: z.string(),
+							key2: z.string().optional(),
+						}),
+					),
 			})
 			.refine(() => false, 'refine');
 		const constraint = {
@@ -112,6 +133,27 @@ describe('constraint', () => {
 			'tuple[1]': {
 				required: false,
 				max: 100,
+			},
+			transform: {
+				required: true,
+			},
+			'transform.key': {
+				required: true,
+			},
+			preprocess: {
+				required: true,
+			},
+			'preprocess.key': {
+				required: true,
+			},
+			pipe: {
+				required: true,
+			},
+			'pipe.key': {
+				required: true,
+			},
+			'pipe.key2': {
+				required: false,
 			},
 		};
 
