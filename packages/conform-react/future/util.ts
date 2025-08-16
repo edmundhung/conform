@@ -6,6 +6,8 @@ import {
 	updateField,
 	isGlobalInstance,
 } from '@conform-to/dom/future';
+import { StandardSchemaV1 } from '@standard-schema/spec';
+import { ValidateResult } from './types';
 
 export type FormRef =
 	| React.RefObject<
@@ -287,24 +289,90 @@ export function configureListIndexUpdate(
 	};
 }
 
-export function resolveValidateResult<FormShape, ErrorShape, Value>(
-	result:
-		| FormError<FormShape, ErrorShape>
-		| null
-		| {
-				error: FormError<FormShape, ErrorShape> | null;
-				value?: Value;
-		  },
+export function normalizeFormError<ErrorShape>(
+	error: FormError<ErrorShape> | null,
+): FormError<ErrorShape> | null {
+	if (
+		error &&
+		error.formErrors === null &&
+		Object.entries(error.fieldErrors).every(([, messages]) =>
+			Array.isArray(messages) ? messages.length === 0 : !messages,
+		)
+	) {
+		return null;
+	}
+
+	return error;
+}
+
+export function resolveValidateResult<ErrorShape, Value>(
+	result: ValidateResult<ErrorShape, Value>,
 ): {
-	error: FormError<FormShape, ErrorShape> | null;
+	error: FormError<ErrorShape> | null;
 	value?: Value;
 } {
 	if (result !== null && 'error' in result) {
-		return result;
+		return {
+			error: normalizeFormError(result.error),
+			value: result.value,
+		};
 	}
 
 	return {
-		error: result,
+		error: normalizeFormError(result),
+	};
+}
+
+export function resolveStandardSchemaPath(
+	issue: StandardSchemaV1.Issue,
+): Array<string | number> {
+	if (!issue.path) {
+		return [];
+	}
+
+	const segments = issue.path.map((segment) =>
+		typeof segment === 'object' && 'key' in segment ? segment.key : segment,
+	);
+
+	if (!segments.every((segment) => typeof segment !== 'symbol')) {
+		throw new Error(
+			'Path segments must not contain symbols. Use strings or numbers instead.',
+		);
+	}
+
+	return segments;
+}
+
+export function resolveStandardSchemaResult<Value>(
+	result: StandardSchemaV1.Result<Value>,
+): {
+	error: FormError<string[]> | null;
+	value?: Value;
+} {
+	if (!result.issues) {
+		return {
+			error: null,
+			value: result.value,
+		};
+	}
+
+	const errorByName: Record<string, string[]> = {};
+
+	for (const issue of result.issues) {
+		const path = resolveStandardSchemaPath(issue);
+		const name = formatPathSegments(path);
+
+		errorByName[name] ??= [];
+		errorByName[name].push(issue.message);
+	}
+
+	const { '': formErrors = null, ...fieldErrors } = errorByName;
+
+	return {
+		error: {
+			formErrors,
+			fieldErrors,
+		},
 	};
 }
 

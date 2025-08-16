@@ -114,7 +114,9 @@ export function getPathSegments(
  * formatPathSegments(['todos', '']); // → "todos[]"
  * ```
  */
-export function formatPathSegments(segments: Array<string | number>): string {
+export function formatPathSegments(
+	segments: Readonly<Array<string | number>>,
+): string {
 	return segments.reduce<string>(
 		(path, segment) => appendPathSegment(path, segment),
 		'',
@@ -417,40 +419,39 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<FormShape, ErrorShape = string[]>(
+export function report<ErrorShape = string[]>(
 	submission: Submission,
 	options?: {
 		keepFiles?: false;
-		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		error?: Partial<FormError<ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
 ): SubmissionResult<
-	FormShape,
 	ErrorShape,
 	Exclude<JsonPrimitive | FormDataEntryValue, File>
 >;
-export function report<FormShape, ErrorShape = string[]>(
+export function report<ErrorShape = string[]>(
 	submission: Submission,
 	options: {
 		keepFiles: true;
-		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		error?: Partial<FormError<ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
-): SubmissionResult<FormShape, ErrorShape>;
-export function report<FormShape, ErrorShape = string[]>(
+): SubmissionResult<ErrorShape>;
+export function report<ErrorShape = string[]>(
 	submission: Submission,
 	options: {
 		keepFiles?: boolean;
-		error?: Partial<FormError<FormShape, ErrorShape>> | null;
+		error?: Partial<FormError<ErrorShape>> | null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	} = {},
-): SubmissionResult<FormShape, ErrorShape> {
+): SubmissionResult<ErrorShape> {
 	const value = options.reset
 		? null
 		: typeof options.value === 'undefined' || submission.value === options.value

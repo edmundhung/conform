@@ -132,10 +132,7 @@ export function applyIntent(
 	return submission.value;
 }
 
-export function initializeState<FormShape, ErrorShape>(): FormState<
-	FormShape,
-	ErrorShape
-> {
+export function initializeState<ErrorShape>(): FormState<ErrorShape> {
 	return {
 		key: generateUniqueKey(),
 		listKeys: {},
@@ -157,7 +154,7 @@ const validate: ActionHandler<ValidateAction> = {
 	validatePayload(name) {
 		return isOptional(name, isString);
 	},
-	onUpdate(state, { type, submission, intent, error }) {
+	onUpdate(state, { submission, intent, error }) {
 		const name = intent.payload ?? '';
 		const basePath = getPathSegments(name);
 
@@ -171,9 +168,9 @@ const validate: ActionHandler<ValidateAction> = {
 		}
 
 		// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
-		// If this happens during the initialize stage, we can at least include missing
+		// or fieldsets without any fields, but we can at least include missing
 		// required fields based on the form error
-		if (type === 'initialize' && name === '' && error) {
+		if (name === '' && error) {
 			for (const name of Object.keys(error.fieldErrors)) {
 				touchedFields = addItem(touchedFields, name);
 			}
@@ -435,10 +432,10 @@ export const defaultActionHandlers = {
 	remove,
 } satisfies Record<string, ActionHandler>;
 
-export function defaultUpdateState<FormShape, ErrorShape>(
-	state: FormState<FormShape, ErrorShape>,
-	action: FormAction<FormShape, ErrorShape>,
-): FormState<FormShape, ErrorShape> {
+export function defaultUpdateState<ErrorShape>(
+	state: FormState<ErrorShape>,
+	action: FormAction<ErrorShape>,
+): FormState<ErrorShape> {
 	const value = action.value ?? action.submission.value;
 
 	if (action.type === 'client') {
@@ -461,6 +458,8 @@ export function defaultUpdateState<FormShape, ErrorShape>(
 
 	return merge(state, {
 		intendedValue: action.type === 'initialize' ? value : state.intendedValue,
+		// Clear client error to avoid showing stale errors
+		clientError: null,
 		// Update server error if the error is defined.
 		// There is no need to check if the error is different as we are updating other states as well
 		serverError:
@@ -471,10 +470,10 @@ export function defaultUpdateState<FormShape, ErrorShape>(
 	});
 }
 
-export function updateState<FormShape, ErrorShape>(
-	state: FormState<FormShape, ErrorShape>,
-	action: FormAction<FormShape, ErrorShape>,
-): FormState<FormShape, ErrorShape> {
+export function updateState<ErrorShape>(
+	state: FormState<ErrorShape>,
+	action: FormAction<ErrorShape>,
+): FormState<ErrorShape> {
 	if (action.value === null) {
 		return action.ctx.reset();
 	}

@@ -25,25 +25,24 @@ export type DefaultValue<FormShape> = FormShape extends
 					| undefined
 			: unknown;
 
-export type FormState<FormShape, ErrorShape> = {
+export type FormState<ErrorShape> = {
 	key: string;
 	intendedValue: Record<string, unknown> | null;
 	serverValidatedValue: Record<string, unknown> | null;
-	serverError: FormError<FormShape, ErrorShape> | null;
-	clientError: FormError<FormShape, ErrorShape> | null;
+	serverError: FormError<ErrorShape> | null;
+	clientError: FormError<ErrorShape> | null;
 	touchedFields: string[];
 	listKeys: Record<string, string[]>;
 };
 
 export type FormAction<
-	FormShape,
 	ErrorShape,
 	Intent = UnknownIntent | null | undefined,
 	Context = {
 		handlers?: Record<string, ActionHandler>;
-		reset: () => FormState<FormShape, ErrorShape>;
+		reset: () => FormState<ErrorShape>;
 	},
-> = SubmissionResult<FormShape, ErrorShape> & {
+> = SubmissionResult<ErrorShape> & {
 	type: 'initialize' | 'server' | 'client';
 	intent: Intent;
 	ctx: Context;
@@ -51,7 +50,7 @@ export type FormAction<
 
 export interface FormContext<FormShape, ErrorShape> {
 	formId: string;
-	state: FormState<FormShape, ErrorShape>;
+	state: FormState<ErrorShape>;
 	defaultValue?: DefaultValue<FormShape>;
 	constraint?: Record<string, ValidationAttributes>;
 }
@@ -156,10 +155,9 @@ export type ActionHandler<
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | null;
-	onUpdate?<FormShape, ErrorShape>(
-		state: FormState<FormShape, ErrorShape>,
+	onUpdate?<ErrorShape>(
+		state: FormState<ErrorShape>,
 		action: FormAction<
-			FormShape,
 			ErrorShape,
 			{
 				type: string;
@@ -168,7 +166,7 @@ export type ActionHandler<
 					: undefined;
 			}
 		>,
-	): FormState<FormShape, ErrorShape>;
+	): FormState<ErrorShape>;
 };
 
 export type IntentDispatcher<
@@ -250,3 +248,63 @@ export type DefaultFieldMetadata<ErrorShape> = Readonly<
 		errors: ErrorShape | undefined;
 	}
 >;
+
+export type ValidateResult<ErrorShape, Value> =
+	| FormError<ErrorShape>
+	| null
+	| {
+			error: FormError<ErrorShape> | null;
+			value?: Value;
+	  };
+
+export type ValidateHandler<ErrorShape, Value> = (
+	value: Record<string, FormValue>,
+	ctx: {
+		formElement: HTMLFormElement;
+		submitter: HTMLElement | null;
+		error: FormError<string[]>;
+	},
+) =>
+	| ValidateResult<ErrorShape, Value>
+	| Promise<ValidateResult<ErrorShape, Value>>
+	| [
+			ValidateResult<ErrorShape, Value>,
+			Promise<ValidateResult<ErrorShape, Value>>,
+	  ]
+	| undefined;
+
+export type UpdateHandler<ErrorShape> = (
+	action: FormAction<
+		ErrorShape,
+		UnknownIntent | null | undefined,
+		{
+			prevState: FormState<ErrorShape>;
+			nextState: FormState<ErrorShape>;
+		}
+	>,
+) => void;
+
+export type FormStateHandler<State, ErrorShape = unknown> = (
+	state: State,
+	ctx: FormAction<
+		ErrorShape,
+		UnknownIntent | null | undefined,
+		{
+			prevState: FormState<ErrorShape>;
+			nextState: FormState<ErrorShape>;
+			reset: () => State;
+		}
+	>,
+) => State;
+
+export type SubmitHandler<ErrorShape, Value> = (
+	event: React.FormEvent<HTMLFormElement>,
+	ctx: {
+		formData: FormData;
+		value: Value;
+		update: (options: {
+			error?: Partial<FormError<ErrorShape>> | null;
+			reset?: boolean;
+		}) => void;
+	},
+) => void | Promise<void>;

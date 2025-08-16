@@ -35,9 +35,7 @@ export default function LoginWithFetcher() {
 		lastResult: fetcher.data?.result,
 		shouldValidate: 'onBlur',
 		// Reuse the validation logic on the client
-		onValidate(value) {
-			return resolveZodResult(schema.safeParse(value));
-		},
+		schema,
 	});
 
 	return (

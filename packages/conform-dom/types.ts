@@ -16,7 +16,7 @@ export type FormValue<
 /**
  * Form error object that contains both form errors and field errors.
  */
-export type FormError<FormShape, ErrorShape = string[]> = {
+export type FormError<ErrorShape = string[]> = {
 	/**
 	 * The error of the form.
 	 */
@@ -25,10 +25,6 @@ export type FormError<FormShape, ErrorShape = string[]> = {
 	 * The field errors based on the field name.
 	 */
 	fieldErrors: Record<string, ErrorShape>;
-	/**
-	 * The form shape is encoded only for type inference. It is always `undefined` at runtime.
-	 */
-	'~type'?: Serializable<FormShape>;
 };
 
 /**
@@ -57,7 +53,6 @@ export type Submission<
  * The result of a submission.
  */
 export type SubmissionResult<
-	FormShape,
 	ErrorShape,
 	ValueType extends JsonPrimitive | FormDataEntryValue =
 		| JsonPrimitive
@@ -74,7 +69,7 @@ export type SubmissionResult<
 	/**
 	 * The error of the result value or submission value.
 	 */
-	error?: FormError<FormShape, ErrorShape> | null;
+	error?: FormError<ErrorShape> | null;
 };
 
 /**

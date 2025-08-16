@@ -1,6 +1,6 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import {
 	type FormValue,
-	type FormError,
 	type SubmissionResult,
 	deepEqual,
 	focus,
@@ -35,6 +35,7 @@ import {
 	getRadioGroupValue,
 	getSubmitEvent,
 	initializeField,
+	resolveStandardSchemaResult,
 	resolveValidateResult,
 } from './util';
 import {
@@ -60,100 +61,38 @@ import type {
 	IntentDispatcher,
 	FormMetadata,
 	Fieldset,
+	ValidateHandler,
+	UpdateHandler,
+	SubmitHandler,
+	ValidateResult,
+	FormStateHandler,
 } from './types';
-
-export type ValidateHandler<FormShape, ErrorShape, Value> = (
-	value: Record<string, FormValue>,
-	ctx: {
-		formElement: HTMLFormElement;
-	},
-) =>
-	| FormError<FormShape, ErrorShape>
-	| null
-	| {
-			value?: Value;
-			error: FormError<FormShape, ErrorShape> | null;
-	  }
-	| Promise<
-			| FormError<FormShape, ErrorShape>
-			| null
-			| {
-					value?: Value;
-					error: FormError<FormShape, ErrorShape> | null;
-			  }
-	  >
-	| undefined;
-
-export type UpdateHandler<FormShape, ErrorShape> = (
-	action: FormAction<
-		FormShape,
-		ErrorShape,
-		UnknownIntent | null | undefined,
-		{
-			prevState: FormState<FormShape, ErrorShape>;
-			nextState: FormState<FormShape, ErrorShape>;
-		}
-	>,
-) => void;
-
-export type FormStateHandler<
-	State,
-	FormShape = unknown,
-	ErrorShape = unknown,
-> = (
-	state: State,
-	ctx: FormAction<
-		FormShape,
-		ErrorShape,
-		UnknownIntent | null | undefined,
-		{
-			prevState: FormState<FormShape, ErrorShape>;
-			nextState: FormState<FormShape, ErrorShape>;
-			reset: () => State;
-		}
-	>,
-) => State;
-
-export type SubmitHandler<FormShape, ErrorShape, Value> = (
-	event: React.FormEvent<HTMLFormElement>,
-	ctx: {
-		formData: FormData;
-		value: Value;
-		update: (options: {
-			error?: Partial<FormError<FormShape, ErrorShape>> | null;
-			reset?: boolean;
-		}) => void;
-	},
-) => void | Promise<void>;
 
 /**
  * The default intent name
  */
 export const DEFAULT_INTENT = '__intent__';
 
-export type ConformOptions<FormShape, ErrorShape, Value> = {
-	lastResult?: SubmissionResult<NoInfer<FormShape>, NoInfer<ErrorShape>> | null;
+export type ConformOptions<ErrorShape, Output> = {
+	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 	intentName?: string;
-	onValidate: ValidateHandler<FormShape, ErrorShape, Value>;
-	onUpdate?: UpdateHandler<NoInfer<FormShape>, NoInfer<ErrorShape>>;
-	onSubmit?: SubmitHandler<
-		NoInfer<FormShape>,
-		NoInfer<ErrorShape>,
-		NoInfer<Value>
-	>;
+	onValidate?: ValidateHandler<ErrorShape, Output>;
+	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
+	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Output>>;
 };
 
 export interface FormOptions<
 	FormShape,
-	ErrorShape,
-	Value = FormShape,
+	ErrorShape = string[],
+	Value = undefined,
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
 	> = DefaultFormProps,
 	FieldMetadata = DefaultFieldMetadata<ErrorShape>,
-> extends ConformOptions<FormShape, ErrorShape, Value> {
+> {
 	id?: string;
+	schema?: StandardSchemaV1<FormShape, Value>;
 	defaultValue?: NoInfer<DefaultValue<FormShape>>;
 	constraint?: Record<string, ValidationAttributes>;
 	/**
@@ -171,6 +110,12 @@ export interface FormOptions<
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 
+	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
+	intentName?: string;
+	onValidate?: ValidateHandler<ErrorShape, Value>;
+	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
+	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+
 	defineFormProps?: (
 		props: DefaultFormProps,
 		context: FormContext<FormShape, ErrorShape>,
@@ -185,7 +130,7 @@ export interface FormOptions<
 export function useForm<
 	FormShape,
 	ErrorShape = string[],
-	Value = FormShape,
+	Value = undefined,
 	FormProps extends React.DetailedHTMLProps<
 		React.FormHTMLAttributes<HTMLFormElement>,
 		HTMLFormElement
@@ -213,7 +158,50 @@ export function useForm<
 	} = options;
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform(formId, options);
+	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
+		...options,
+		onValidate(value, ctx) {
+			if (options.schema) {
+				const standardResult = options.schema['~standard'].validate(value);
+
+				if (standardResult instanceof Promise) {
+					return standardResult.then((actualStandardResult) => {
+						if (typeof options.onValidate === 'function') {
+							throw new Error(
+								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+							);
+						}
+
+						return resolveStandardSchemaResult(
+							actualStandardResult,
+						) as ValidateResult<ErrorShape, Value>;
+					});
+				}
+
+				const resovledResult = resolveStandardSchemaResult(standardResult);
+
+				if (!options.onValidate) {
+					return resovledResult as ValidateResult<ErrorShape, Value>;
+				}
+
+				// Update the schema error in the context
+				if (resovledResult.error) {
+					ctx.error = resovledResult.error;
+				}
+
+				return options.onValidate(value, ctx);
+			}
+
+			return (
+				options.onValidate?.(value, ctx) ?? {
+					// To avoid conform falling back to server validation,
+					// if neither schema nor validation handler is provided,
+					// we just treat it as a valid client submission
+					error: null,
+				}
+			);
+		},
+	});
 	const intent = useIntent(formId, options);
 	const context = useMemo<FormContext<FormShape, ErrorShape>>(
 		() => ({
@@ -271,16 +259,13 @@ export function useForm<
 	};
 }
 
-export function useConform<FormShape, ErrorShape, Value = undefined>(
+export function useConform<ErrorShape, Value = undefined>(
 	formRef: FormRef,
-	options: ConformOptions<FormShape, ErrorShape, Value>,
-): [
-	FormState<FormShape, ErrorShape>,
-	(event: React.FormEvent<HTMLFormElement>) => void,
-] {
+	options: ConformOptions<ErrorShape, Value>,
+): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { intentName = DEFAULT_INTENT, lastResult } = options ?? {};
-	const [state, setState] = useState<FormState<FormShape, ErrorShape>>(() => {
-		let state = initializeState<FormShape, ErrorShape>();
+	const [state, setState] = useState<FormState<ErrorShape>>(() => {
+		let state = initializeState<ErrorShape>();
 
 		if (lastResult) {
 			const intent = lastResult.submission.intent
@@ -317,14 +302,14 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 	const lastIntentedValueRef = useRef<Record<string, FormValue> | null>(null);
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
-		result: SubmissionResult<FormShape, ErrorShape>;
+		result: SubmissionResult<ErrorShape>;
 		formData: FormData;
 		resolvedValue: Value | undefined;
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
 		(
-			result: SubmissionResult<FormShape, ErrorShape>,
+			result: SubmissionResult<ErrorShape>,
 			options: {
 				type: 'server' | 'client';
 			},
@@ -342,7 +327,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 					ctx: {
 						handlers: defaultActionHandlers,
 						reset() {
-							return initializeState<FormShape, ErrorShape>();
+							return initializeState<ErrorShape>();
 						},
 					},
 				});
@@ -436,7 +421,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 			abortControllerRef.current = abortController;
 
 			let formData: FormData;
-			let result: SubmissionResult<FormShape, ErrorShape> | undefined;
+			let result: SubmissionResult<ErrorShape> | undefined;
 			let resolvedValue: Value | undefined;
 
 			// The form might be re-submitted manually if there was an async validation
@@ -467,7 +452,7 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				}
 
 				const value = applyIntent(submission);
-				const submissionResult = report<FormShape, ErrorShape>(submission, {
+				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
 					value,
 				});
@@ -478,48 +463,70 @@ export function useConform<FormShape, ErrorShape, Value = undefined>(
 				}
 
 				const validateResult =
+					// Skip validation on form reset
 					value !== null
-						? optionsRef.current?.onValidate?.(value, {
+						? optionsRef.current.onValidate?.(value, {
 								formElement,
+								submitter: submitEvent.submitter,
+								error: {
+									formErrors: null,
+									fieldErrors: {},
+								},
 							})
-						: // Treat it as a valid submission if the value is null (form reset)
-							{ error: null };
+						: { error: null };
 
-				// If the validation is async
-				if (validateResult instanceof Promise) {
-					// Update the form when the validation result is resolved
-					validateResult.then((data) => {
-						const { error, value } = resolveValidateResult(data);
+				if (typeof validateResult !== 'undefined') {
+					let syncResult: ValidateResult<ErrorShape, Value> | undefined;
+					let asyncResult:
+						| Promise<ValidateResult<ErrorShape, Value>>
+						| undefined;
 
-						// Update the form with the validation result
-						// There is no need to flush the update in this case
-						if (!abortController.signal.aborted) {
-							submissionResult.error = error;
+					if (validateResult instanceof Promise) {
+						asyncResult = validateResult;
+					} else if (Array.isArray(validateResult)) {
+						syncResult = validateResult[0];
+						asyncResult = validateResult[1];
+					} else {
+						syncResult = validateResult;
+					}
 
-							handleSubmission(submissionResult, {
-								type: 'server',
-							});
+					if (syncResult) {
+						const result = resolveValidateResult(syncResult);
 
-							// If the form is meant to be submitted and there is no error
-							if (error === null && !submission.intent) {
-								const event = createSubmitEvent(submitEvent.submitter);
+						submissionResult.error = result.error;
+						resolvedValue = result.value;
+					}
 
-								// Keep track of the submit event so we can skip validation on the next submit
-								lastAsyncResultRef.current = {
-									event,
-									formData,
-									resolvedValue: value,
-									result: submissionResult,
-								};
-								formElement.dispatchEvent(event);
+					if (asyncResult) {
+						// Update the form when the validation result is resolved
+						asyncResult.then((data) => {
+							const { error, value } = resolveValidateResult(data);
+
+							// Update the form with the validation result
+							// There is no need to flush the update in this case
+							if (!abortController.signal.aborted) {
+								submissionResult.error = error;
+
+								handleSubmission(submissionResult, {
+									type: 'server',
+								});
+
+								// If the form is meant to be submitted and there is no error
+								if (error === null && !submission.intent) {
+									const event = createSubmitEvent(submitEvent.submitter);
+
+									// Keep track of the submit event so we can skip validation on the next submit
+									lastAsyncResultRef.current = {
+										event,
+										formData,
+										resolvedValue: value,
+										result: submissionResult,
+									};
+									formElement.dispatchEvent(event);
+								}
 							}
-						}
-					});
-				} else if (typeof validateResult !== 'undefined') {
-					const result = resolveValidateResult(validateResult);
-
-					submissionResult.error = result.error;
-					resolvedValue = result.value;
+						});
+					}
 				}
 
 				handleSubmission(submissionResult, {
@@ -614,8 +621,8 @@ export function useIntent<
 	);
 }
 
-export function useFormState<State>(
-	handler: FormStateHandler<State>,
+export function useFormState<State, ErrorShape>(
+	handler: FormStateHandler<State, ErrorShape>,
 	options: {
 		initialState: State | (() => State);
 	},
@@ -623,14 +630,13 @@ export function useFormState<State>(
 	const argsRef = useRef([handler, options.initialState] as const);
 	const [state, setState] = useState(options.initialState);
 	const handleUpdate = useCallback(
-		<FormShape, ErrorShape>(
+		(
 			action: FormAction<
-				FormShape,
 				ErrorShape,
 				UnknownIntent | null | undefined,
 				{
-					prevState: FormState<FormShape, ErrorShape>;
-					nextState: FormState<FormShape, ErrorShape>;
+					prevState: FormState<ErrorShape>;
+					nextState: FormState<ErrorShape>;
 				}
 			>,
 		) => {

@@ -34,9 +34,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
 		// Reuse the validation logic on the client
-		onValidate(value) {
-			return resolveZodResult(schema.safeParse(value));
-		},
+		schema,
 	});
 
 	return (

@@ -118,7 +118,7 @@ export function getListKey(
  * This checks if the field is in the list of touched fields,
  * or if there is any child field that is validated, i.e. form / fieldset
  */
-export function isValidated(state: FormState<any, any>, name = '') {
+export function isValidated(state: FormState<any>, name = '') {
 	if (state.touchedFields.includes(name)) {
 		return true;
 	}
@@ -131,7 +131,7 @@ export function isValidated(state: FormState<any, any>, name = '') {
 }
 
 export function getError<ErrorShape>(
-	state: FormState<any, ErrorShape>,
+	state: FormState<ErrorShape>,
 	name?: string,
 ): ErrorShape | undefined {
 	const error = state.serverError ?? state.clientError;

@@ -51,7 +51,8 @@ export default function App() {
 					<Link to="login-fetcher">with useFetcher</Link>)
 				</li>
 				<li>
-					<Link to="signup">Async validation</Link>
+					<Link to="signup">Async validation</Link> (
+					<Link to="signup-async-schema">with async schema</Link>)
 				</li>
 				<li>
 					<Link to="todos">Dynamic form with data persistence</Link>

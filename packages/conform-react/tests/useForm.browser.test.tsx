@@ -19,7 +19,7 @@ describe('future export: useForm', () => {
 	};
 
 	function validateForm(value: Record<string, FormValue>) {
-		const error: FormError<Schema, string> = {
+		const error: FormError<string> = {
 			formErrors: null,
 			fieldErrors: {},
 		};
@@ -54,7 +54,7 @@ describe('future export: useForm', () => {
 		};
 	}
 
-	function Form(props: Partial<FormOptions<Schema, string>>) {
+	function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
 		const { form, fields, intent } = useForm({
 			defaultValue: {
 				tasks: [{ content: 'Default Task', completed: false }],

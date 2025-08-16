@@ -11,21 +11,18 @@ import { z } from 'zod';
 import { createInMemoryStore } from '~/store';
 import type { Route } from './+types/todo';
 
-const taskSchema = coerceFormValue(
-	z.object({
-		content: z.string(),
-		completed: z.boolean().default(false),
-	}),
-);
+const taskSchema = z.object({
+	content: z.string(),
+	completed: z.boolean().default(false),
+});
 
-const todosSchema = coerceFormValue(
-	z.object({
-		title: z.string(),
-		tasks: z.array(taskSchema).nonempty(),
-	}),
-);
+const todosSchema = z.object({
+	title: z.string(),
+	tasks: z.array(taskSchema).nonempty(),
+});
 
-const todos = createInMemoryStore<z.infer<typeof todosSchema>>();
+const schema = coerceFormValue(todosSchema);
+const todos = createInMemoryStore<z.infer<typeof schema>>();
 
 export async function loader() {
 	return {
@@ -36,9 +33,9 @@ export async function loader() {
 export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData();
 	const submission = parseSubmission(formData);
-	const result = todosSchema.safeParse(submission.value);
+	const result = schema.safeParse(submission.value);
 
-	if (!result.success) {
+	if (!result.success || submission.intent) {
 		return {
 			result: report(submission, {
 				error: resolveZodResult(result),
@@ -69,9 +66,7 @@ export default function Example({
 		lastResult: navigation.state === 'idle' ? actionData?.result : null,
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
-		onValidate(value) {
-			return resolveZodResult(todosSchema.safeParse(value));
-		},
+		schema,
 	});
 	const dirty = useFormData(
 		form.id,

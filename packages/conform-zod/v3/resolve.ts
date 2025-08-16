@@ -2,36 +2,36 @@ import type { SafeParseReturnType, ZodIssue } from 'zod';
 import type { FormError } from '@conform-to/dom/future';
 import { formatPathSegments } from '@conform-to/dom/future';
 
-export function resolveZodResult<Output, Input>(
-	result: SafeParseReturnType<Input, Output>,
-): FormError<Input, string[]> | null;
-export function resolveZodResult<Output, Input>(
-	result: SafeParseReturnType<Input, Output>,
+export function resolveZodResult(
+	result: SafeParseReturnType<any, any>,
+): FormError<string[]> | null;
+export function resolveZodResult<Output>(
+	result: SafeParseReturnType<any, Output>,
 	options: {
 		includeValue: true;
 		formatIssues?: undefined;
 	},
 ): {
-	error: FormError<Input, string[]> | null;
+	error: FormError<string[]> | null;
 	value: Output | undefined;
 };
-export function resolveZodResult<Output, Input, ErrorShape>(
-	result: SafeParseReturnType<Input, Output>,
+export function resolveZodResult<Output, ErrorShape>(
+	result: SafeParseReturnType<any, Output>,
 	options: {
 		includeValue: true;
 		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
 	},
 ): {
-	error: FormError<Input, ErrorShape> | null;
+	error: FormError<ErrorShape> | null;
 	value: Output | undefined;
 };
-export function resolveZodResult<Output, Input, ErrorShape>(
-	result: SafeParseReturnType<Input, Output>,
+export function resolveZodResult<Output, ErrorShape>(
+	result: SafeParseReturnType<any, Output>,
 	options: {
 		includeValue?: false;
 		formatIssues: (issue: ZodIssue[], name: string) => ErrorShape;
 	},
-): FormError<Input, ErrorShape> | null;
+): FormError<ErrorShape> | null;
 export function resolveZodResult<Output, Input, ErrorShape>(
 	result: SafeParseReturnType<Input, Output>,
 	options?: {
@@ -39,13 +39,13 @@ export function resolveZodResult<Output, Input, ErrorShape>(
 		formatIssues?: (issue: ZodIssue[], name: string) => ErrorShape;
 	},
 ):
-	| FormError<Input, Array<string> | ErrorShape>
+	| FormError<Array<string> | ErrorShape>
 	| null
 	| {
-			error: FormError<Input, Array<string> | ErrorShape> | null;
+			error: FormError<Array<string> | ErrorShape> | null;
 			value: Output | undefined;
 	  } {
-	let error: FormError<Input, Array<string> | ErrorShape> | null = null;
+	let error: FormError<Array<string> | ErrorShape> | null = null;
 	let value: Output | undefined = undefined;
 
 	if (!result.success) {

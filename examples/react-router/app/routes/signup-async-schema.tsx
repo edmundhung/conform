@@ -9,61 +9,59 @@ import { Form, redirect } from 'react-router';
 import { z } from 'zod';
 import type { Route } from './+types/signup';
 
-const schema = coerceFormValue(
-	z
-		.object({
-			username: z
-				.string({ required_error: 'Username is required' })
-				.regex(
-					/^[a-zA-Z0-9]+$/,
-					'Invalid username: only letters or numbers are allowed',
-				),
-			// .refine((username) => isUsernameUnique(username), {
-			// 	message: 'Username is already used. How about "example"?',
-			// }),
-		})
-		.and(
-			z
-				.object({
-					password: z.string({ required_error: 'Password is required' }),
-					confirmPassword: z.string({
-						required_error: 'Confirm password is required',
+// Instead of sharing a schema, prepare a schema creator
+export function createSignupSchema(checks: {
+	isUsernameUnique: (username: string) => Promise<boolean>;
+}) {
+	const isUsernameUnique = memoize(checks.isUsernameUnique);
+
+	return coerceFormValue(
+		z
+			.object({
+				username: z
+					.string({ required_error: 'Username is required' })
+					.regex(
+						/^[a-zA-Z0-9]+$/,
+						'Invalid username: only letters or numbers are allowed',
+					)
+					.refine((username) => isUsernameUnique(username), {
+						message: 'Username is already used. How about "example"?',
 					}),
-				})
-				.refine((data) => data.password === data.confirmPassword, {
-					message: 'Password does not match',
-					path: ['confirmPassword'],
-				}),
-		),
-);
+			})
+			.and(
+				z
+					.object({
+						password: z.string({ required_error: 'Password is required' }),
+						confirmPassword: z.string({
+							required_error: 'Confirm password is required',
+						}),
+					})
+					.refine((data) => data.password === data.confirmPassword, {
+						message: 'Password does not match',
+						path: ['confirmPassword'],
+					}),
+			),
+	);
+}
 
 export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData();
+	const schema = createSignupSchema({
+		isUsernameUnique(username) {
+			return new Promise((resolve) => {
+				setTimeout(() => {
+					resolve(username === 'example');
+				}, Math.random() * 1000);
+			});
+		},
+	});
 	const submission = parseSubmission(formData);
-	const result = schema.safeParse(submission.value);
+	const result = await schema.safeParseAsync(submission.value);
 
 	if (!result.success) {
 		return {
 			result: report(submission, {
 				error: resolveZodResult(result),
-			}),
-		};
-	}
-
-	const isUsernameUnique = await new Promise<boolean>((resolve) => {
-		setTimeout(() => {
-			resolve(result.data.username === 'example');
-		}, Math.random() * 1000);
-	});
-
-	if (!isUsernameUnique) {
-		return {
-			result: report(submission, {
-				error: {
-					fieldErrors: {
-						username: ['Username is already used. How about "example"?'],
-					},
-				},
 			}),
 		};
 	}
@@ -82,18 +80,16 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {
-	const validateUsername = useMemo(
+	const schema = useMemo(
 		() =>
-			memoize(async function isUnique(username: string) {
-				await new Promise((resolve) => {
-					setTimeout(resolve, Math.random() * 500);
-				});
+			createSignupSchema({
+				async isUsernameUnique(username) {
+					await new Promise((resolve) => {
+						setTimeout(resolve, Math.random() * 500);
+					});
 
-				if (username !== 'example') {
-					return ['Username is already used. How about "example"?'];
-				}
-
-				return null;
+					return username === 'example';
+				},
 			}),
 		[],
 	);
@@ -102,17 +98,6 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		schema,
-		async onValidate(value, { error }) {
-			if (typeof value.username === 'string' && !error.fieldErrors.username) {
-				const messages = await validateUsername(value.username);
-
-				if (messages) {
-					error.fieldErrors.username = messages;
-				}
-			}
-
-			return error;
-		},
 	});
 
 	return (
