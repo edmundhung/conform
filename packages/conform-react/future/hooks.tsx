@@ -23,6 +23,7 @@ import {
 	useContext,
 	useMemo,
 	useId,
+	useLayoutEffect,
 } from 'react';
 import {
 	type FormRef,
@@ -47,7 +48,7 @@ import {
 	deserializeIntent,
 	defaultActionHandlers,
 } from './form';
-import { createFormMetadata, isValidated, createFieldset } from './metadata';
+import { getFormMetadata, isValidated, getFieldset } from './metadata';
 import { Context } from './context';
 import type {
 	DefaultValue,
@@ -55,7 +56,6 @@ import type {
 	FormAction,
 	FormState,
 	UnknownIntent,
-	DefaultFormProps,
 	DefaultFieldMetadata,
 	ActionHandler,
 	IntentDispatcher,
@@ -66,6 +66,8 @@ import type {
 	SubmitHandler,
 	ValidateResult,
 	FormStateHandler,
+	InputHandler,
+	BlurHandler,
 } from './types';
 
 /**
@@ -78,6 +80,8 @@ export type ConformOptions<ErrorShape, Output> = {
 	intentName?: string;
 	onValidate?: ValidateHandler<ErrorShape, Output>;
 	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
+	onInput?: InputHandler;
+	onBlur?: BlurHandler;
 	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Output>>;
 };
 
@@ -85,10 +89,6 @@ export interface FormOptions<
 	FormShape,
 	ErrorShape = string[],
 	Value = undefined,
-	FormProps extends React.DetailedHTMLProps<
-		React.FormHTMLAttributes<HTMLFormElement>,
-		HTMLFormElement
-	> = DefaultFormProps,
 	FieldMetadata = DefaultFieldMetadata<ErrorShape>,
 > {
 	id?: string;
@@ -115,12 +115,10 @@ export interface FormOptions<
 	onValidate?: ValidateHandler<ErrorShape, Value>;
 	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
 	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+	onInput?: InputHandler;
+	onBlur?: BlurHandler;
 
-	defineFormProps?: (
-		props: DefaultFormProps,
-		context: FormContext<FormShape, ErrorShape>,
-	) => FormProps;
-	defineFieldMetadata?: (
+	customizeFieldMetadata?: (
 		name: string,
 		metadata: DefaultFieldMetadata<ErrorShape>,
 		context: FormContext<FormShape, ErrorShape>,
@@ -131,31 +129,20 @@ export function useForm<
 	FormShape,
 	ErrorShape = string[],
 	Value = undefined,
-	FormProps extends React.DetailedHTMLProps<
-		React.FormHTMLAttributes<HTMLFormElement>,
-		HTMLFormElement
-	> = DefaultFormProps,
 	FieldMetadata extends Record<
 		string,
 		unknown
 	> = DefaultFieldMetadata<ErrorShape>,
 >(
-	options: FormOptions<FormShape, ErrorShape, Value, FormProps, FieldMetadata>,
+	options: FormOptions<FormShape, ErrorShape, Value, FieldMetadata>,
 ): {
 	context: FormContext<FormShape, ErrorShape>;
 	intent: IntentDispatcher;
-	form: FormMetadata<ErrorShape, FormProps>;
+	form: FormMetadata<ErrorShape, FieldMetadata>;
 	fields: Fieldset<FormShape, FieldMetadata>;
 } {
-	const {
-		id,
-		defaultValue,
-		constraint,
-		shouldValidate = 'onSubmit',
-		shouldRevalidate = shouldValidate,
-		defineFormProps,
-		defineFieldMetadata,
-	} = options;
+	const { id, defaultValue, constraint, customizeFieldMetadata } = options;
+	const optionsRef = useLatest(options);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
 	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
@@ -209,54 +196,93 @@ export function useForm<
 			state,
 			defaultValue,
 			constraint,
-		}),
-		[formId, state, defaultValue, constraint],
-	);
-	const props = useMemo<DefaultFormProps>(
-		() => ({
-			id: formId,
-			onSubmit: handleSubmit,
-			onBlur(event) {
-				if (
-					isFieldElement(event.target) &&
-					(isValidated(state, event.target.name)
-						? shouldRevalidate === 'onBlur'
-						: shouldValidate === 'onBlur')
-				) {
-					intent.validate(event.target.name);
+			handleSubmit: handleSubmit,
+			handleInput(event) {
+				if (!isFieldElement(event.target)) {
+					return;
 				}
-			},
-			onInput(event) {
+
+				optionsRef.current.onInput?.(event, event.target);
+
+				if (event.defaultPrevented) {
+					return;
+				}
+
+				const {
+					shouldValidate = 'onSubmit',
+					shouldRevalidate = shouldValidate,
+				} = optionsRef.current;
+
 				if (
-					isFieldElement(event.target) &&
-					(isValidated(state, event.target.name)
+					isValidated(state, event.target.name)
 						? shouldRevalidate === 'onInput'
-						: shouldValidate === 'onInput')
+						: shouldValidate === 'onInput'
 				) {
 					intent.validate(event.target.name);
 				}
 			},
-			noValidate: true,
+			handleBlur(event) {
+				if (!isFieldElement(event.target)) {
+					return;
+				}
+
+				optionsRef.current.onBlur?.(event, event.target);
+
+				if (event.defaultPrevented) {
+					return;
+				}
+
+				const {
+					shouldValidate = 'onSubmit',
+					shouldRevalidate = shouldValidate,
+				} = optionsRef.current;
+
+				if (
+					isValidated(state, event.target.name)
+						? shouldRevalidate === 'onBlur'
+						: shouldValidate === 'onBlur'
+				) {
+					intent.validate(event.target.name);
+				}
+			},
 		}),
-		[formId, handleSubmit, state, intent, shouldValidate, shouldRevalidate],
+		[formId, state, defaultValue, constraint, handleSubmit, intent, optionsRef],
 	);
 	const form = useMemo(
 		() =>
-			createFormMetadata(context, defineFormProps?.(props, context) ?? props),
-		[context, props, defineFormProps],
+			getFormMetadata(context, {
+				customize: customizeFieldMetadata,
+			}),
+		[context, customizeFieldMetadata],
 	);
 	const fields = useMemo(
-		() => createFieldset(context, { defineFieldMetadata }),
-		[context, defineFieldMetadata],
+		() =>
+			getFieldset<FormShape, ErrorShape, FieldMetadata>(context, {
+				customize: customizeFieldMetadata,
+			}),
+		[context, customizeFieldMetadata],
 	);
 
 	return {
 		context,
 		intent,
-		//@ts-expect-error
 		form,
 		fields,
 	};
+}
+
+/**
+ * Keep a mutable ref in sync with the latest value.
+ * Useful to avoid stale closures in event handlers or async callbacks.
+ */
+export function useLatest<Value>(value: Value) {
+	const ref = useRef(value);
+
+	useLayoutEffect(() => {
+		ref.current = value;
+	}, [value]);
+
+	return ref;
 }
 
 export function useConform<ErrorShape, Value = undefined>(
@@ -297,7 +323,7 @@ export function useConform<ErrorShape, Value = undefined>(
 		return state;
 	});
 	const keyRef = useRef(state.key);
-	const optionsRef = useRef(options);
+	const optionsRef = useLatest(options);
 	const lastResultRef = useRef(lastResult);
 	const lastIntentedValueRef = useRef<Record<string, FormValue> | null>(null);
 	const lastAsyncResultRef = useRef<{
@@ -364,12 +390,8 @@ export function useConform<ErrorShape, Value = undefined>(
 				}
 			}
 		},
-		[formRef],
+		[formRef, optionsRef],
 	);
-
-	useEffect(() => {
-		optionsRef.current = options;
-	});
 
 	useEffect(() => {
 		return () => {

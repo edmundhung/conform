@@ -3,11 +3,13 @@ import {
 	getPathSegments,
 	getRelativePath,
 	getValueAtPath,
+	isFieldElement,
 	serialize,
-	ValidationAttributes,
 } from '@conform-to/dom/future';
 import type {
 	DefaultFieldMetadata,
+	Field,
+	FieldName,
 	Fieldset,
 	FormContext,
 	FormMetadata,
@@ -143,17 +145,23 @@ export function getError<ErrorShape>(
 	return (name ? error.fieldErrors[name] : error.formErrors) ?? undefined;
 }
 
-export function createFormMetadata<
-	FormShape,
+export function getFormMetadata<
 	ErrorShape,
-	FormProps extends React.DetailedHTMLProps<
-		React.FormHTMLAttributes<HTMLFormElement>,
-		HTMLFormElement
-	>,
+	FieldMetadata extends Record<
+		string,
+		unknown
+	> = DefaultFieldMetadata<ErrorShape>,
 >(
-	context: FormContext<FormShape, ErrorShape>,
-	props: FormProps,
-): FormMetadata<ErrorShape, FormProps> {
+	context: FormContext<any, ErrorShape>,
+	options?: {
+		serialize?: (value: unknown) => string | string[] | undefined;
+		customize?: (
+			name: string,
+			metadata: DefaultFieldMetadata<ErrorShape>,
+			context: FormContext<any, ErrorShape>,
+		) => FieldMetadata;
+	},
+): FormMetadata<ErrorShape, FieldMetadata> {
 	return {
 		id: context.formId,
 		get errors() {
@@ -178,93 +186,185 @@ export function createFormMetadata<
 		get invalid() {
 			return typeof this.errors !== 'undefined';
 		},
-		props,
+		props: {
+			id: context.formId,
+			onSubmit: context.handleSubmit,
+			onInput: context.handleInput,
+			onBlur: context.handleBlur,
+			noValidate: true,
+		},
+		owns(
+			element,
+		): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+			return (
+				isFieldElement(element) &&
+				context.formId === element.form?.id &&
+				element.name !== ''
+			);
+		},
+		getField<FieldShape>(
+			name: FieldName<FieldShape>,
+		): Field<FieldShape, FieldMetadata> {
+			return getField(context, {
+				...options,
+				name,
+			});
+		},
+		getFieldset(name) {
+			return getFieldset(context, {
+				...options,
+				name,
+			});
+		},
+		getFieldList(name) {
+			return getFieldList(context, {
+				...options,
+				name,
+			});
+		},
 	};
 }
 
-export function createFieldset<
+export function getField<
 	FormShape,
 	ErrorShape,
-	Metadata extends Record<string, unknown>,
+	FieldShape = FormShape,
+	Metadata extends Record<string, unknown> = DefaultFieldMetadata<ErrorShape>,
 >(
 	context: FormContext<FormShape, ErrorShape>,
 	options: {
-		name?: string;
+		name: FieldName<FieldShape>;
+		key?: string;
 		serialize?: (value: unknown) => string | string[] | undefined;
-		defineFieldMetadata?: (
+		customize?: (
 			name: string,
 			metadata: DefaultFieldMetadata<ErrorShape>,
 			context: FormContext<FormShape, ErrorShape>,
 		) => Metadata;
 	},
-): Fieldset<FormShape, Metadata> {
-	const defaultValidationAttributes: ValidationAttributes = {
-		required: undefined,
-		minLength: undefined,
-		maxLength: undefined,
-		pattern: undefined,
-		min: undefined,
-		max: undefined,
-		step: undefined,
-		multiple: undefined,
+): Field<FieldShape, Metadata> {
+	const id = `${context.formId}-${options.name}`;
+	const constraint = context.constraint?.[options.name];
+	const defaultMetadata: DefaultFieldMetadata<ErrorShape> = {
+		id: id,
+		descriptionId: `${id}-description`,
+		errorId: `${id}-error`,
+		required: constraint?.required,
+		minLength: constraint?.minLength,
+		maxLength: constraint?.maxLength,
+		pattern: constraint?.pattern,
+		min: constraint?.min,
+		max: constraint?.max,
+		step: constraint?.step,
+		multiple: constraint?.multiple,
+		get defaultValue() {
+			return getDefaultValue(context, options.name);
+		},
+		get defaultOptions() {
+			return getDefaultOptions(context, options.name);
+		},
+		get defaultChecked() {
+			return getDefaultChecked(context, options.name);
+		},
+		get validated() {
+			return isValidated(context.state, options.name);
+		},
+		get invalid() {
+			return typeof getError(context.state, options.name) !== 'undefined';
+		},
+		get errors() {
+			return getError(context.state, options.name);
+		},
 	};
+	const metadata =
+		options.customize?.(options.name, defaultMetadata, context) ??
+		defaultMetadata;
 
-	function createField(name: string, key?: string) {
-		const defaultMetadata: DefaultFieldMetadata<ErrorShape> = {
-			...defaultValidationAttributes,
-			...context.constraint?.[name],
-			id: `${context.formId}-${name}`,
-			descriptionId: `${context.formId}-${name}-description`,
-			errorId: `${context.formId}-${name}-error`,
-			get defaultValue() {
-				return getDefaultValue(context, name);
-			},
-			get defaultOptions() {
-				return getDefaultOptions(context, name);
-			},
-			get defaultChecked() {
-				return getDefaultChecked(context, name);
-			},
-			get validated() {
-				return isValidated(context.state, name);
-			},
-			get invalid() {
-				return typeof getError(context.state, name) !== 'undefined';
-			},
-			get errors() {
-				return getError(context.state, name);
-			},
-		};
-		const metadata =
-			options.defineFieldMetadata?.(name, defaultMetadata, context) ??
-			defaultMetadata;
+	// @ts-expect-error Send us a PR if you have a better way to type this
+	return Object.assign(metadata, {
+		key: options.key,
+		name: options.name,
+		getFieldset() {
+			const fieldset = getFieldset(context, options);
 
-		return Object.assign(metadata, {
-			key,
-			name,
-			getFieldset() {
-				return createFieldset(context, {
-					...options,
-					name,
-				});
-			},
-			getFieldList() {
-				const keys = getListKey(context, name);
+			// Overwrite the method to return the same fieldset
+			this.getFieldset = () => fieldset;
 
-				return keys.map((key, index) => {
-					return createField(appendPathSegment(name, index), key);
-				});
-			},
-		});
-	}
+			return fieldset;
+		},
+		getFieldList() {
+			const fieldList = getFieldList(context, options);
+
+			// Overwrites the method to return the same field list
+			this.getFieldList = () => fieldList;
+
+			return fieldList;
+		},
+	});
+}
+
+export function getFieldset<
+	FieldShape,
+	ErrorShape,
+	Metadata extends Record<string, unknown> = DefaultFieldMetadata<ErrorShape>,
+>(
+	context: FormContext<any, ErrorShape>,
+	options: {
+		name?: FieldName<FieldShape>;
+		serialize?: (value: unknown) => string | string[] | undefined;
+		customize?: (
+			name: string,
+			metadata: DefaultFieldMetadata<ErrorShape>,
+			context: FormContext<any, ErrorShape>,
+		) => Metadata;
+	},
+): Fieldset<FieldShape, Metadata> {
+	const cache: Record<string, Field<FieldShape, Metadata>> = {};
 
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
-			if (typeof name !== 'string') {
-				return Reflect.get(target, name, receiver);
+			if (typeof name === 'string') {
+				cache[name] ??= getField(context, {
+					...options,
+					name: appendPathSegment(options?.name, name),
+				});
+
+				return cache[name];
 			}
 
-			return createField(appendPathSegment(options?.name, name));
+			return Reflect.get(target, name, receiver);
 		},
+	});
+}
+
+export function getFieldList<
+	ErrorShape,
+	FieldShape,
+	Metadata extends Record<string, unknown> = DefaultFieldMetadata<ErrorShape>,
+>(
+	context: FormContext<any, ErrorShape>,
+	options: {
+		name: FieldName<FieldShape>;
+		serialize?: (value: unknown) => string | string[] | undefined;
+		customize?: (
+			name: string,
+			metadata: DefaultFieldMetadata<ErrorShape>,
+			context: FormContext<any, ErrorShape>,
+		) => Metadata;
+	},
+): Field<
+	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
+		? ItemShape
+		: unknown,
+	Metadata
+>[] {
+	const keys = getListKey(context, options.name);
+
+	return keys.map((key, index) => {
+		return getField(context, {
+			...options,
+			name: appendPathSegment(options.name, index),
+			key,
+		});
 	});
 }

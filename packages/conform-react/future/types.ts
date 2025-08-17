@@ -48,11 +48,14 @@ export type FormAction<
 	ctx: Context;
 };
 
-export interface FormContext<FormShape, ErrorShape> {
+export interface FormContext<FormShape = any, ErrorShape = string[]> {
 	formId: string;
 	state: FormState<ErrorShape>;
 	defaultValue?: DefaultValue<FormShape>;
 	constraint?: Record<string, ValidationAttributes>;
+	handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+	handleInput: (event: React.FormEvent<HTMLFormElement>) => void;
+	handleBlur: (event: React.FocusEvent<HTMLFormElement>) => void;
 }
 
 export type FieldName<FieldShape> = string & {
@@ -193,46 +196,81 @@ export type Combine<T> = {
 
 export type Field<
 	FieldShape,
-	Metadata extends Record<string, unknown>,
-> = Metadata &
-	Readonly<{ key: string | undefined; name: FieldName<FieldShape> }> &
-	([FieldShape] extends [Date | File]
-		? {}
-		: [FieldShape] extends [Array<infer Item> | null | undefined]
-			? {
-					getFieldList: () => Array<Field<Item, Metadata>>;
-				}
-			: [FieldShape] extends [Record<string, unknown> | null | undefined]
-				? {
-						getFieldset: () => Fieldset<FieldShape, Metadata>;
-					}
-				: {});
+	Metadata extends Record<string, unknown> = DefaultFieldMetadata<unknown>,
+> = Readonly<
+	Metadata & {
+		key: string | undefined;
+		name: FieldName<FieldShape>;
+		getFieldset(): Fieldset<
+			[FieldShape] extends [Record<string, unknown> | null | undefined]
+				? FieldShape
+				: unknown,
+			Metadata
+		>;
+		getFieldList(): Array<
+			Field<
+				[FieldShape] extends [Array<infer ItemShape> | null | undefined]
+					? ItemShape
+					: unknown,
+				Metadata
+			>
+		>;
+	}
+>;
 
-export type Fieldset<FormShape, Metadata extends Record<string, unknown>> = {
-	[Key in keyof Combine<FormShape>]-?: Field<Combine<FormShape>[Key], Metadata>;
+export type Fieldset<
+	FieldShape, // extends Record<string, unknown>,
+	Metadata extends Record<string, unknown>,
+> = {
+	[Key in keyof Combine<FieldShape>]-?: Field<
+		Combine<FieldShape>[Key],
+		Metadata
+	>;
 };
 
 export type FormMetadata<
 	ErrorShape,
-	FormProps extends React.DetailedHTMLProps<
-		React.FormHTMLAttributes<HTMLFormElement>,
-		HTMLFormElement
-	> = DefaultFormProps,
+	FieldMetadata extends Record<
+		string,
+		unknown
+	> = DefaultFieldMetadata<ErrorShape>,
 > = Readonly<{
 	id: string;
 	touched: boolean;
 	invalid: boolean;
 	errors: ErrorShape | undefined;
 	fieldErrors: Record<string, ErrorShape>;
-	props: FormProps;
-}>;
-
-export type DefaultFormProps = Readonly<{
-	id: string;
-	onSubmit: React.FormEventHandler<HTMLFormElement>;
-	onBlur: React.FocusEventHandler<HTMLFormElement>;
-	onInput: React.FormEventHandler<HTMLFormElement>;
-	noValidate: boolean;
+	props: Readonly<{
+		id: string;
+		onSubmit: React.FormEventHandler<HTMLFormElement>;
+		onBlur: React.FocusEventHandler<HTMLFormElement>;
+		onInput: React.FormEventHandler<HTMLFormElement>;
+		noValidate: boolean;
+	}>;
+	owns(
+		element: unknown,
+	): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+	getField<FieldShape>(
+		name: FieldName<FieldShape>,
+	): Field<FieldShape, FieldMetadata>;
+	getFieldset<FieldShape>(
+		name: FieldName<FieldShape>,
+	): Fieldset<
+		[FieldShape] extends [Record<string, unknown> | null | undefined]
+			? FieldShape
+			: unknown,
+		FieldMetadata
+	>;
+	getFieldList<FieldShape>(
+		name: FieldName<FieldShape>,
+	): Array<
+		Field<
+			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
+				? ItemShape
+				: unknown,
+			FieldMetadata
+		>
+	>;
 }>;
 
 export type DefaultFieldMetadata<ErrorShape> = Readonly<
@@ -282,6 +320,28 @@ export type UpdateHandler<ErrorShape> = (
 			nextState: FormState<ErrorShape>;
 		}
 	>,
+) => void;
+
+// export interface InputEvent extends React.FormEvent<HTMLFormElement> {
+// 	target: EventTarget &
+// 		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+// 	currentTarget: EventTarget & HTMLFormElement;
+// }
+
+// export interface FocusEvent
+// 	extends React.SyntheticEvent<HTMLFormElement, FocusEvent> {
+// 	target: EventTarget &
+// 		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+// }
+
+export type InputHandler = (
+	event: React.FormEvent<HTMLFormElement>,
+	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+) => void;
+
+export type BlurHandler = (
+	event: React.FocusEvent<HTMLFormElement>,
+	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ) => void;
 
 export type FormStateHandler<State, ErrorShape = unknown> = (
