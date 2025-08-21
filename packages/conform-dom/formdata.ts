@@ -489,6 +489,70 @@ export function report<ErrorShape = string[]>(
 	};
 }
 
+export function normalize(
+	value: unknown,
+	serialize: (value: unknown) => string | string[] | File | File[] | undefined,
+): unknown {
+	const serialized = serialize(value);
+
+	if (typeof serialized !== 'undefined') {
+		// Removes empty strings, so that bpth empty string and undefined are treated as the same
+		if (serialized === '') {
+			return undefined;
+		}
+
+		if (isGlobalInstance(serialized, 'File')) {
+			// Remove empty File as well, which happens if no File was selected
+			if (serialized.name === '' && serialized.size === 0) {
+				return undefined;
+			}
+
+			// If the value is a File, no need to serialize it
+			return value;
+		}
+
+		return serialized;
+	}
+
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return undefined;
+		}
+
+		const array = value.map((item) => normalize(item, serialize));
+
+		if (
+			array.length === 1 &&
+			(typeof array[0] === 'string' || array[0] === undefined)
+		) {
+			return array[0];
+		}
+
+		return array;
+	}
+
+	if (isPlainObject(value)) {
+		const entries = Object.entries(value).reduce<Array<[string, unknown]>>(
+			(list, [key, value]) => {
+				const normalizedValue = normalize(value, serialize);
+
+				if (typeof normalizedValue !== 'undefined') {
+					list.push([key, normalizedValue]);
+				}
+
+				return list;
+			},
+			[],
+		);
+
+		if (entries.length === 0) {
+			return undefined;
+		}
+
+		return Object.fromEntries(entries);
+	}
+}
+
 /**
  * A utility function that checks whether the current form data differs from the default values.
  *
@@ -544,8 +608,10 @@ export function isDirty(
 		 */
 		serialize?: (
 			value: unknown,
-			defaultSerialize: (value: unknown) => string | string[] | undefined,
-		) => string | string[] | undefined;
+			defaultSerialize: (
+				value: unknown,
+			) => string | string[] | File | File[] | undefined,
+		) => string | string[] | File | File[] | undefined;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -573,69 +639,10 @@ export function isDirty(
 				}).value
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serializeFn = options?.serialize ?? serialize;
+	const customSerialize = options?.serialize ?? serialize;
 
-	function normalize(value: unknown): unknown {
-		if (Array.isArray(value)) {
-			if (value.length === 0) {
-				return undefined;
-			}
-
-			const array = value.map(normalize);
-
-			if (
-				array.length === 1 &&
-				(typeof array[0] === 'string' || array[0] === undefined)
-			) {
-				return array[0];
-			}
-
-			return array;
-		}
-
-		if (isPlainObject(value)) {
-			const entries = Object.entries(value).reduce<Array<[string, unknown]>>(
-				(list, [key, value]) => {
-					const normalizedValue = normalize(value);
-
-					if (typeof normalizedValue !== 'undefined') {
-						list.push([key, normalizedValue]);
-					}
-
-					return list;
-				},
-				[],
-			);
-
-			if (entries.length === 0) {
-				return undefined;
-			}
-
-			return Object.fromEntries(entries);
-		}
-
-		// If the value is null or undefined, treat it as undefined
-		if (value == null) {
-			return undefined;
-		}
-
-		// Removes empty strings, so that bpth empty string and undefined are treated as the same
-		if (typeof value === 'string' && value === '') {
-			return undefined;
-		}
-
-		if (isGlobalInstance(value, 'File')) {
-			// Remove empty File as well, which happens if no File was selected
-			if (value.name === '' && value.size === 0) {
-				return undefined;
-			}
-
-			// If the value is a File, no need to serialize it
-			return value;
-		}
-
-		return serializeFn(value, serialize);
-	}
-
-	return !deepEqual(normalize(formValue), normalize(defaultValue));
+	return !deepEqual(
+		normalize(formValue, (value) => customSerialize(value, serialize)),
+		normalize(defaultValue, (value) => customSerialize(value, serialize)),
+	);
 }

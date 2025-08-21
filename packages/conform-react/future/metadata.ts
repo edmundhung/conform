@@ -4,7 +4,9 @@ import {
 	getRelativePath,
 	getValueAtPath,
 	isFieldElement,
-	serialize,
+	requestIntent,
+	serialize as defaultSerialize,
+	change,
 } from '@conform-to/dom/future';
 import type {
 	DefaultFieldMetadata,
@@ -14,80 +16,71 @@ import type {
 	FormContext,
 	FormMetadata,
 	FormState,
+	IntentDispatcher,
 } from './types';
 import { getListValue } from './util';
-
-export function getSerializedValue(
-	valueObject: unknown,
-	name: string,
-	serializeFn: (value: unknown) => string | undefined = serialize,
-): string | string[] | undefined {
-	const value = getValueAtPath(valueObject, name);
-
-	if (Array.isArray(value)) {
-		const options: string[] = [];
-
-		for (const item of value) {
-			const serialized = serializeFn(item);
-
-			if (typeof serialized !== 'string') {
-				return;
-			}
-
-			options.push(serialized);
-		}
-
-		return options;
-	}
-
-	return serializeFn(value);
-}
+import { serializeIntent } from './form';
+import { DEFAULT_INTENT } from './hooks';
 
 export function getDefaultValue(
 	context: FormContext<any, any>,
 	name: string,
+	serialize: (
+		value: unknown,
+	) => string | string[] | File | File[] | undefined = defaultSerialize,
 ): string | undefined {
-	const value = getSerializedValue(
+	const value = getValueAtPath(
 		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
-		// context.serialize
 	);
+	const serializedValue = serialize(value);
 
-	if (typeof value !== 'string') {
-		return;
+	if (typeof serializedValue === 'string') {
+		return serializedValue;
 	}
-
-	return value;
 }
 
 export function getDefaultOptions(
 	context: FormContext<any, any>,
 	name: string,
+	serialize: (
+		value: unknown,
+	) => string | string[] | File | File[] | undefined = defaultSerialize,
 ): string[] | undefined {
-	const value = getSerializedValue(
+	const value = getValueAtPath(
 		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
-		// context.serialize
 	);
+	const serializedValue =
+		typeof value !== 'undefined' ? serialize(value) : undefined;
 
-	if (typeof value === 'string') {
-		return [value];
+	if (
+		Array.isArray(serializedValue) &&
+		serializedValue.every((item) => typeof item === 'string')
+	) {
+		return serializedValue;
 	}
 
-	return value;
+	if (typeof serializedValue === 'string') {
+		return [serializedValue];
+	}
 }
 
 export function getDefaultChecked(
 	context: FormContext<any, any>,
 	name: string,
+	serialize: (
+		value: unknown,
+	) => string | string[] | File | File[] | undefined = defaultSerialize,
 ): boolean {
-	const value = getSerializedValue(
+	const value = getValueAtPath(
 		context.state.intendedValue ?? context.defaultValue ?? {},
 		name,
-		// context.serialize
 	);
+	const serializedValue =
+		typeof value !== 'undefined' ? serialize(value) : undefined;
 
-	return value === 'on';
+	return serializedValue === 'on';
 }
 
 export function getDefaultListKey(
@@ -235,7 +228,9 @@ export function getField<
 	options: {
 		name: FieldName<FieldShape>;
 		key?: string;
-		serialize?: (value: unknown) => string | string[] | undefined;
+		serialize?: (
+			value: unknown,
+		) => string | string[] | File | File[] | undefined;
 		customize?: (
 			name: string,
 			metadata: DefaultFieldMetadata<ErrorShape>,
@@ -258,13 +253,13 @@ export function getField<
 		step: constraint?.step,
 		multiple: constraint?.multiple,
 		get defaultValue() {
-			return getDefaultValue(context, options.name);
+			return getDefaultValue(context, options.name, options.serialize);
 		},
 		get defaultOptions() {
-			return getDefaultOptions(context, options.name);
+			return getDefaultOptions(context, options.name, options.serialize);
 		},
 		get defaultChecked() {
-			return getDefaultChecked(context, options.name);
+			return getDefaultChecked(context, options.name, options.serialize);
 		},
 		get validated() {
 			return isValidated(context.state, options.name);
@@ -311,7 +306,9 @@ export function getFieldset<
 	context: FormContext<any, ErrorShape>,
 	options: {
 		name?: FieldName<FieldShape>;
-		serialize?: (value: unknown) => string | string[] | undefined;
+		serialize?: (
+			value: unknown,
+		) => string | string[] | File | File[] | undefined;
 		customize?: (
 			name: string,
 			metadata: DefaultFieldMetadata<ErrorShape>,
@@ -345,7 +342,9 @@ export function getFieldList<
 	context: FormContext<any, ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize?: (value: unknown) => string | string[] | undefined;
+		serialize?: (
+			value: unknown,
+		) => string | string[] | File | File[] | undefined;
 		customize?: (
 			name: string,
 			metadata: DefaultFieldMetadata<ErrorShape>,
@@ -367,4 +366,61 @@ export function getFieldList<
 			key,
 		});
 	});
+}
+
+export function createIntentDispatcher(
+	formElement: HTMLFormElement | (() => HTMLFormElement | null),
+	options?: {
+		intentName?: string;
+	},
+) {
+	return new Proxy<IntentDispatcher>({} as any, {
+		get(target, type, receiver) {
+			if (typeof type === 'string') {
+				// @ts-expect-error
+				target[type] ??= (payload?: unknown) => {
+					const form =
+						typeof formElement === 'function' ? formElement() : formElement;
+
+					if (!form) {
+						throw new Error(
+							`Dispatching "${type}" intent failed; No form element found.`,
+						);
+					}
+
+					requestIntent(
+						form,
+						options?.intentName ?? DEFAULT_INTENT,
+						serializeIntent({
+							type,
+							payload,
+						}),
+					);
+				};
+			}
+
+			return Reflect.get(target, type, receiver);
+		},
+	});
+}
+
+export function updateFormValue(
+	form: HTMLFormElement,
+	intendedValue: Record<string, unknown>,
+	serialize: (
+		value: unknown,
+	) => string | string[] | File | File[] | undefined = defaultSerialize,
+): void {
+	for (const element of form.elements) {
+		if (isFieldElement(element) && element.name) {
+			const value = getValueAtPath(intendedValue, element.name);
+			const serializedValue = serialize(value);
+
+			if (typeof serializedValue !== 'undefined') {
+				change(element, serializedValue, {
+					preventDefault: true,
+				});
+			}
+		}
+	}
 }

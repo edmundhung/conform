@@ -11,7 +11,6 @@ import {
 	parseSubmission,
 	createSubmitEvent,
 	report,
-	requestIntent,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
 import {
@@ -43,12 +42,16 @@ import {
 	applyIntent,
 	initializeState,
 	updateState,
-	serializeIntent,
-	updateFormValue,
 	deserializeIntent,
-	defaultActionHandlers,
+	actionHandlers,
 } from './form';
-import { getFormMetadata, isValidated, getFieldset } from './metadata';
+import {
+	getFormMetadata,
+	isValidated,
+	getFieldset,
+	createIntentDispatcher,
+	updateFormValue,
+} from './metadata';
 import { Context } from './context';
 import type {
 	DefaultValue,
@@ -57,7 +60,6 @@ import type {
 	FormState,
 	UnknownIntent,
 	DefaultFieldMetadata,
-	ActionHandler,
 	IntentDispatcher,
 	FormMetadata,
 	Fieldset,
@@ -78,6 +80,7 @@ export const DEFAULT_INTENT = '__intent__';
 export type ConformOptions<ErrorShape, Output> = {
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 	intentName?: string;
+	serialize?: (value: unknown) => string | string[] | File | File[] | undefined;
 	onValidate?: ValidateHandler<ErrorShape, Output>;
 	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
 	onInput?: InputHandler;
@@ -302,7 +305,7 @@ export function useConform<ErrorShape, Value = undefined>(
 				type: 'initialize',
 				intent,
 				ctx: {
-					handlers: defaultActionHandlers,
+					handlers: actionHandlers,
 					reset: () => state,
 				},
 			});
@@ -351,7 +354,7 @@ export function useConform<ErrorShape, Value = undefined>(
 					type: options.type,
 					intent,
 					ctx: {
-						handlers: defaultActionHandlers,
+						handlers: actionHandlers,
 						reset() {
 							return initializeState<ErrorShape>();
 						},
@@ -430,9 +433,9 @@ export function useConform<ErrorShape, Value = undefined>(
 			return;
 		}
 
-		updateFormValue(formElement, state.intendedValue);
+		updateFormValue(formElement, state.intendedValue, options.serialize);
 		lastIntentedValueRef.current = null;
-	}, [formRef, state.intendedValue]);
+	}, [formRef, state.intendedValue, options.serialize]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -594,52 +597,24 @@ export function useConform<ErrorShape, Value = undefined>(
 				});
 			}
 		},
-		[handleSubmission, intentName],
+		[handleSubmission, intentName, optionsRef],
 	);
 
 	return [state, handleSubmit];
 }
 
-export function useIntent<
-	Handlers extends Record<string, ActionHandler> = typeof defaultActionHandlers,
->(
+export function useIntent(
 	formRef: FormRef,
 	options?: {
 		intentName?: string;
 	},
-): IntentDispatcher<Handlers> {
-	const intentName = options?.intentName ?? DEFAULT_INTENT;
-
+): IntentDispatcher {
 	return useMemo(
 		() =>
-			new Proxy<IntentDispatcher<Handlers>>({} as any, {
-				get(target, type, receiver) {
-					if (typeof type === 'string') {
-						// @ts-expect-error
-						target[type] ??= (payload?: unknown) => {
-							const formElement = getFormElement(formRef);
-
-							if (!formElement) {
-								throw new Error(
-									`Dispatching "${type}" intent failed; No form element found.`,
-								);
-							}
-
-							requestIntent(
-								formElement,
-								intentName,
-								serializeIntent({
-									type,
-									payload,
-								}),
-							);
-						};
-					}
-
-					return Reflect.get(target, type, receiver);
-				},
+			createIntentDispatcher(() => getFormElement(formRef), {
+				intentName: options?.intentName,
 			}),
-		[formRef, intentName],
+		[formRef, options?.intentName],
 	);
 }
 

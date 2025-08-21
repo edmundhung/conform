@@ -11,7 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { DEFAULT_INTENT } from '../future/hooks';
 import {
 	applyIntent,
-	defaultActionHandlers,
+	actionHandlers,
 	deserializeIntent,
 	initializeState,
 } from '../future/form';
@@ -93,7 +93,7 @@ export function createAction(options: {
 		error: options?.error,
 	});
 	const ctx = {
-		handlers: defaultActionHandlers,
+		handlers: actionHandlers,
 		reset() {
 			return initializeState();
 		},

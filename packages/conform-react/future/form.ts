@@ -6,10 +6,6 @@ import {
 	appendPathSegment,
 	getRelativePath,
 	deepEqual,
-	isFieldElement,
-	getValueAtPath,
-	updateField,
-	serialize,
 } from '@conform-to/dom/future';
 import {
 	addItem,
@@ -118,7 +114,7 @@ export function applyIntent(
 
 	const intent = deserializeIntent(submission.intent);
 	const handlers: Record<string, ActionHandler> =
-		options?.handlers ?? defaultActionHandlers;
+		options?.handlers ?? actionHandlers;
 	const handler = handlers[intent.type];
 
 	if (
@@ -423,7 +419,7 @@ const reorder: ActionHandler<ReorderAction> = {
 	},
 };
 
-export const defaultActionHandlers = {
+export const actionHandlers = {
 	reset,
 	validate,
 	update,
@@ -500,23 +496,4 @@ export function updateState<ErrorShape>(
 	}
 
 	return state;
-}
-
-export function updateFormValue(
-	form: HTMLFormElement,
-	intendedValue: Record<string, unknown>,
-): void {
-	for (const element of form.elements) {
-		if (isFieldElement(element) && element.name) {
-			const value = getValueAtPath(intendedValue, element.name);
-
-			if (typeof value !== 'undefined') {
-				updateField(element, {
-					value: serialize(value),
-				});
-
-				element.dataset.conform = generateUniqueKey();
-			}
-		}
-	}
 }

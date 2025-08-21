@@ -418,16 +418,35 @@ export function createGlobalFormsObserver() {
 export function change(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	value: string | string[] | File | File[] | FileList | null,
+	options?: {
+		preventDefault?: boolean;
+	},
 ): void {
 	// The value should be set to the element before dispatching the event
-	updateField(element, {
+	const isChanged = updateField(element, {
 		value,
 	});
 
-	// Dispatch input event with the updated input value
-	element.dispatchEvent(new InputEvent('input', { bubbles: true }));
-	// Dispatch change event (necessary for select to update the selected option)
-	element.dispatchEvent(new Event('change', { bubbles: true }));
+	if (isChanged) {
+		const inputEvent = new InputEvent('input', {
+			bubbles: true,
+			cancelable: true,
+		});
+		const changeEvent = new Event('change', {
+			bubbles: true,
+			cancelable: true,
+		});
+
+		if (options?.preventDefault) {
+			inputEvent.preventDefault();
+			changeEvent.preventDefault();
+		}
+
+		// Dispatch input event with the updated input value
+		element.dispatchEvent(inputEvent);
+		// Dispatch change event (necessary for select to update the selected option)
+		element.dispatchEvent(changeEvent);
+	}
 }
 
 export function focus(
@@ -482,15 +501,19 @@ export function updateField(
 		value?: unknown;
 		defaultValue?: unknown;
 	},
-) {
+): boolean {
+	let isChanged = false;
+
 	if (isInputElement(element)) {
 		switch (element.type) {
 			case 'file': {
 				const files = normalizeFileValues(options.value);
-				if (files) {
+				if (files && element.files !== files) {
 					element.files = files;
+					isChanged = true;
 				}
-				return;
+
+				return isChanged;
 			}
 			case 'checkbox':
 			case 'radio': {
@@ -505,14 +528,15 @@ export function updateField(
 					) {
 						// Simulate a click to update the checked state
 						element.click();
+						isChanged = true;
 					}
-
-					element.checked = checked;
 				}
+
 				if (defaultValue) {
 					element.defaultChecked = defaultValue.includes(element.value);
 				}
-				return;
+
+				return isChanged;
 			}
 		}
 	} else if (isSelectElement(element)) {
@@ -528,6 +552,7 @@ export function updateField(
 				// Update the selected state of the option
 				if (option.selected !== selected) {
 					option.selected = selected;
+					isChanged = true;
 				}
 
 				// Remove the option from the value array
@@ -563,14 +588,16 @@ export function updateField(
 					value?.includes(optionValue),
 				),
 			);
+			isChanged = true;
 		}
 
 		// If the select element is not multiple and the value is an empty array, unset the selected index
 		// This is to prevent the select element from showing the first option as selected
 		if (shouldUnselect) {
 			element.selectedIndex = -1;
+			isChanged = true;
 		}
-		return;
+		return isChanged;
 	}
 
 	const value = normalizeStringValues(options.value);
@@ -597,10 +624,14 @@ export function updateField(
 		} else {
 			throw new Error('The given element does not have a value setter');
 		}
+
+		isChanged = true;
 	}
 	if (defaultValue) {
 		element.defaultValue = defaultValue[0] ?? '';
 	}
+
+	return isChanged;
 }
 
 export function isDirtyInput(

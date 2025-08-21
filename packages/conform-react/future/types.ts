@@ -4,7 +4,7 @@ import type {
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
-import type { defaultActionHandlers } from './form';
+import type { actionHandlers } from './form';
 
 export type DefaultValue<FormShape> = FormShape extends
 	| string
@@ -90,19 +90,21 @@ export type UpdateAction = {
 	 * Update a field or a fieldset.
 	 * If you provide a fieldset name, it will update all fields within that fieldset
 	 */
-	<Schema>(options: {
+	<FieldShape>(options: {
 		/**
 		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
 		 */
-		name?: FieldName<Schema>;
+		name?: FieldName<FieldShape>;
 		/**
 		 * Specify the index of the item to update if the field is an array.
 		 */
-		index?: Schema extends Array<any> ? number : never;
+		index?: [FieldShape] extends [Array<any> | null | undefined]
+			? number
+			: never;
 		/**
 		 * The new value for the field or fieldset.
 		 */
-		value: Partial<Schema>;
+		value: Partial<FieldShape>;
 	}): void;
 };
 
@@ -110,11 +112,11 @@ export type InsertAction = {
 	/**
 	 * Insert a new item into an array field.
 	 */
-	<Schema>(options: {
+	<FieldShape extends Array<any>>(options: {
 		/**
 		 * The name of the array field to insert into.
 		 */
-		name: FieldName<Schema[]>;
+		name: FieldName<FieldShape>;
 		/**
 		 * The index at which to insert the new item.
 		 * If not provided, it will be added to the end of the array.
@@ -123,7 +125,11 @@ export type InsertAction = {
 		/**
 		 * The default value for the new item.
 		 */
-		defaultValue?: Partial<Schema>;
+		defaultValue?: [FieldShape] extends [
+			Array<infer ItemShape> | null | undefined,
+		]
+			? Partial<ItemShape>
+			: never;
 	}): void;
 };
 
@@ -176,7 +182,7 @@ export type IntentDispatcher<
 	Handlers extends Record<
 		string,
 		ActionHandler<(...args: Array<any>) => void>
-	> = typeof defaultActionHandlers,
+	> = typeof actionHandlers,
 > = {
 	[Type in keyof Handlers]: Handlers[Type] extends ActionHandler<
 		infer Signature
