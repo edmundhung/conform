@@ -23,6 +23,7 @@ import {
 	useMemo,
 	useId,
 	useLayoutEffect,
+	useReducer,
 } from 'react';
 import {
 	type FormRef,
@@ -618,16 +619,14 @@ export function useIntent(
 	);
 }
 
-export function useFormState<State, ErrorShape>(
-	handler: FormStateHandler<State, ErrorShape>,
-	options: {
-		initialState: State | (() => State);
-	},
+export function useFormState<State, ErrorShape = string[]>(
+	handle: FormStateHandler<State, ErrorShape>,
+	initialState: State,
 ) {
-	const argsRef = useRef([handler, options.initialState] as const);
-	const [state, setState] = useState(options.initialState);
-	const handleUpdate = useCallback(
+	const initialStateRef = useLatest(initialState);
+	const reducer = useCallback(
 		(
+			state: State,
 			action: FormAction<
 				ErrorShape,
 				UnknownIntent | null | undefined,
@@ -637,39 +636,24 @@ export function useFormState<State, ErrorShape>(
 				}
 			>,
 		) => {
-			const [handle, initialState] = argsRef.current;
+			if (action.value === null) {
+				return initialStateRef.current;
+			}
 
-			setState((currentState) => {
-				const reset = (): State => {
-					if (typeof initialState === 'function') {
-						// @ts-expect-error initialState is a function
-						return initialState();
-					} else {
-						return initialState;
-					}
-				};
-
-				if (action.value === null) {
-					return reset();
-				}
-
-				return handle(currentState, {
-					...action,
-					ctx: {
-						...action.ctx,
-						reset,
+			return handle(state, {
+				...action,
+				ctx: {
+					...action.ctx,
+					reset() {
+						return initialStateRef.current;
 					},
-				});
+				},
 			});
 		},
-		[],
+		[handle, initialStateRef],
 	);
 
-	useEffect(() => {
-		argsRef.current = [handler, options.initialState];
-	});
-
-	return [state, handleUpdate] as const;
+	return useReducer(reducer, initialState);
 }
 
 export type Control = {

@@ -352,7 +352,7 @@ export type BlurHandler = (
 
 export type FormStateHandler<State, ErrorShape = unknown> = (
 	state: State,
-	ctx: FormAction<
+	action: FormAction<
 		ErrorShape,
 		UnknownIntent | null | undefined,
 		{

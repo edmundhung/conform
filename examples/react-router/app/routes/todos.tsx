@@ -4,6 +4,7 @@ import {
 	isDirty,
 	useForm,
 	useFormData,
+	useFormState,
 } from '@conform-to/react/future';
 import { coerceFormValue, resolveZodResult } from '@conform-to/zod/v3/future';
 import { Form, useNavigation } from 'react-router';
@@ -46,9 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
 	await todos.setValue(result.data);
 
 	return {
-		result: report<z.input<typeof todosSchema>>(submission, {
-			reset: true,
-		}),
+		result: report(submission),
 	};
 }
 
@@ -57,6 +56,16 @@ export default function Example({
 	actionData,
 }: Route.ComponentProps) {
 	const navigation = useNavigation();
+	const [submitCount, updateSubmitCount] = useFormState((count, action) => {
+		return action.type === 'client' && action.intent === null
+			? count + 1
+			: count;
+	}, 0);
+	const [lastSubmitStatus, updateLastSubmitStatus] = useFormState(
+		(status, action) =>
+			action.intent === null ? (action.error ? 'error' : 'success') : status,
+		'idle',
+	);
 	const { form, fields, intent } = useForm({
 		// If we reset the form after a successful submission, we need to
 		// keep in mind that the default value (loader) will be updated
@@ -67,6 +76,10 @@ export default function Example({
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
 		schema,
+		onUpdate(action) {
+			updateSubmitCount(action);
+			updateLastSubmitStatus(action);
+		},
 	});
 	const dirty = useFormData(
 		form.id,
@@ -77,6 +90,8 @@ export default function Example({
 
 	return (
 		<Form {...form.props} method="post">
+			<div>Submit count: {submitCount}</div>
+			<div>Last submit status: {lastSubmitStatus}</div>
 			<div>
 				<label>Title</label>
 				<input
