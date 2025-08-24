@@ -4,7 +4,6 @@ import type {
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
-import type { actionHandlers } from './form';
 
 export type DefaultValue<FormShape> = FormShape extends
 	| string
@@ -37,14 +36,8 @@ export type FormState<ErrorShape> = {
 
 export type FormAction<
 	ErrorShape,
-	Intent extends UnknownIntent | null | undefined =
-		| UnknownIntent
-		| null
-		| undefined,
-	Context = {
-		handlers?: Record<string, ActionHandler>;
-		reset: () => FormState<ErrorShape>;
-	},
+	Intent extends UnknownIntent | null | undefined = UnknownIntent | null,
+	Context = {},
 > = SubmissionResult<ErrorShape> & {
 	type: 'initialize' | 'server' | 'client';
 	intent: Intent;
@@ -74,26 +67,22 @@ export type UnknownArgs<Args extends any[]> = {
 	[Key in keyof Args]: unknown;
 };
 
-export type ValidateAction = {
+export interface IntentDispatcher {
 	/**
 	 * Validate the whole form or a specific field?
 	 */
-	(name?: string): void;
-};
+	validate(name?: string): void;
 
-export type ResetAction = {
 	/**
 	 * Reset the form to its initial state.
 	 */
-	(): void;
-};
+	reset(): void;
 
-export type UpdateAction = {
 	/**
 	 * Update a field or a fieldset.
 	 * If you provide a fieldset name, it will update all fields within that fieldset
 	 */
-	<FieldShape>(options: {
+	update<FieldShape>(options: {
 		/**
 		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
 		 */
@@ -109,13 +98,11 @@ export type UpdateAction = {
 		 */
 		value: Partial<FieldShape>;
 	}): void;
-};
 
-export type InsertAction = {
 	/**
 	 * Insert a new item into an array field.
 	 */
-	<FieldShape extends Array<any>>(options: {
+	insert<FieldShape extends Array<any>>(options: {
 		/**
 		 * The name of the array field to insert into.
 		 */
@@ -134,13 +121,11 @@ export type InsertAction = {
 			? Partial<ItemShape>
 			: never;
 	}): void;
-};
 
-export type RemoveAction = {
 	/**
 	 * Remove an item from an array field.
 	 */
-	(options: {
+	remove(options: {
 		/**
 		 * The name of the array field to remove from.
 		 */
@@ -150,14 +135,28 @@ export type RemoveAction = {
 		 */
 		index: number;
 	}): void;
-};
 
-export type ReorderAction = {
 	/**
 	 * Reorder items in an array field.
 	 */
-	(options: { name: FieldName<Array<any>>; from: number; to: number }): void;
-};
+	reorder(options: {
+		name: FieldName<Array<any>>;
+		from: number;
+		to: number;
+	}): void;
+}
+
+export type FormIntent<Dispatcher extends IntentDispatcher = IntentDispatcher> =
+	{
+		[Type in keyof Dispatcher]: Dispatcher[Type] extends (
+			...args: infer Args
+		) => void
+			? {
+					type: Type;
+					payload: Args extends [infer Payload] ? Payload : undefined;
+				}
+			: never;
+	}[keyof Dispatcher];
 
 export type ActionHandler<
 	Signature extends (payload: any) => void = (payload: any) => void,
@@ -179,19 +178,6 @@ export type ActionHandler<
 			}
 		>,
 	): FormState<ErrorShape>;
-};
-
-export type IntentDispatcher<
-	Handlers extends Record<
-		string,
-		ActionHandler<(...args: Array<any>) => void>
-	> = typeof actionHandlers,
-> = {
-	[Type in keyof Handlers]: Handlers[Type] extends ActionHandler<
-		infer Signature
-	>
-		? Signature
-		: never;
 };
 
 type BaseCombine<
@@ -256,9 +242,6 @@ export type FormMetadata<
 		onInput: React.FormEventHandler<HTMLFormElement>;
 		noValidate: boolean;
 	}>;
-	owns(
-		element: unknown,
-	): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 	getField<FieldShape>(
 		name: FieldName<FieldShape>,
 	): Field<FieldShape, FieldMetadata>;
@@ -336,17 +319,11 @@ export type UpdateHandler<ErrorShape> = (
 	>,
 ) => void;
 
-// export interface InputEvent extends React.FormEvent<HTMLFormElement> {
-// 	target: EventTarget &
-// 		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
-// 	currentTarget: EventTarget & HTMLFormElement;
-// }
-
-// export interface FocusEvent
-// 	extends React.SyntheticEvent<HTMLFormElement, FocusEvent> {
-// 	target: EventTarget &
-// 		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
-// }
+export interface FormEvent extends React.FormEvent<HTMLFormElement> {
+	target: EventTarget &
+		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+	currentTarget: EventTarget & HTMLFormElement;
+}
 
 export type InputHandler = (
 	event: React.FormEvent<HTMLFormElement>,
@@ -362,7 +339,7 @@ export type FormStateHandler<State, ErrorShape = unknown> = (
 	state: State,
 	action: FormAction<
 		ErrorShape,
-		UnknownIntent | null | undefined,
+		UnknownIntent | null,
 		{
 			prevState: FormState<ErrorShape>;
 			nextState: FormState<ErrorShape>;

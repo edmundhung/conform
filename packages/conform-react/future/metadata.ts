@@ -13,10 +13,10 @@ import type {
 	Field,
 	FieldName,
 	Fieldset,
+	IntentDispatcher,
 	FormContext,
 	FormMetadata,
 	FormState,
-	IntentDispatcher,
 } from './types';
 import { getListValue } from './util';
 import { serializeIntent } from './form';
@@ -177,7 +177,7 @@ export function getFormMetadata<
 			return isValidated(context.state);
 		},
 		get invalid() {
-			return typeof this.errors !== 'undefined';
+			return typeof getError(context.state) !== 'undefined';
 		},
 		props: {
 			id: context.formId,
@@ -186,18 +186,7 @@ export function getFormMetadata<
 			onBlur: context.handleBlur,
 			noValidate: true,
 		},
-		owns(
-			element,
-		): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
-			return (
-				isFieldElement(element) &&
-				context.formId === element.form?.id &&
-				element.name !== ''
-			);
-		},
-		getField<FieldShape>(
-			name: FieldName<FieldShape>,
-		): Field<FieldShape, FieldMetadata> {
+		getField(name) {
 			return getField(context, {
 				...options,
 				name,

@@ -24,16 +24,11 @@ import {
 	generateUniqueKey,
 } from './util';
 import type {
+	ActionHandler,
 	FormAction,
 	FormState,
+	IntentDispatcher,
 	UnknownIntent,
-	ActionHandler,
-	ResetAction,
-	ValidateAction,
-	UpdateAction,
-	InsertAction,
-	RemoveAction,
-	ReorderAction,
 } from './types';
 import { getDefaultListKey } from './metadata';
 
@@ -140,13 +135,13 @@ export function initializeState<ErrorShape>(): FormState<ErrorShape> {
 	};
 }
 
-const reset: ActionHandler<ResetAction> = {
+const reset: ActionHandler<IntentDispatcher['reset']> = {
 	onApply() {
 		return null;
 	},
 };
 
-const validate: ActionHandler<ValidateAction> = {
+const validate: ActionHandler<IntentDispatcher['validate']> = {
 	validatePayload(name) {
 		return isOptional(name, isString);
 	},
@@ -178,7 +173,7 @@ const validate: ActionHandler<ValidateAction> = {
 	},
 };
 
-const update: ActionHandler<UpdateAction> = {
+const update: ActionHandler<IntentDispatcher['update']> = {
 	validatePayload(options) {
 		return (
 			isPlainObject(options) &&
@@ -222,7 +217,7 @@ const update: ActionHandler<UpdateAction> = {
 	},
 };
 
-const insert: ActionHandler<InsertAction> = {
+const insert: ActionHandler<IntentDispatcher['insert']> = {
 	validatePayload(options) {
 		return (
 			isPlainObject(options) &&
@@ -280,7 +275,7 @@ const insert: ActionHandler<InsertAction> = {
 	},
 };
 
-const remove: ActionHandler<RemoveAction> = {
+const remove: ActionHandler<IntentDispatcher['remove']> = {
 	validatePayload(options) {
 		return (
 			isPlainObject(options) &&
@@ -343,7 +338,7 @@ const remove: ActionHandler<RemoveAction> = {
 	},
 };
 
-const reorder: ActionHandler<ReorderAction> = {
+const reorder: ActionHandler<IntentDispatcher['reorder']> = {
 	validatePayload(options) {
 		return (
 			isPlainObject(options) &&
@@ -419,7 +414,13 @@ const reorder: ActionHandler<ReorderAction> = {
 	},
 };
 
-export const actionHandlers = {
+export const actionHandlers: {
+	[Type in keyof IntentDispatcher]: IntentDispatcher[Type] extends (
+		payload: any,
+	) => void
+		? ActionHandler<IntentDispatcher[Type]>
+		: never;
+} = {
 	reset,
 	validate,
 	update,
@@ -468,7 +469,14 @@ export function defaultUpdateState<ErrorShape>(
 
 export function updateState<ErrorShape>(
 	state: FormState<ErrorShape>,
-	action: FormAction<ErrorShape>,
+	action: FormAction<
+		ErrorShape,
+		UnknownIntent | null,
+		{
+			handlers: Record<string, ActionHandler>;
+			reset: () => FormState<ErrorShape>;
+		}
+	>,
 ): FormState<ErrorShape> {
 	if (action.value === null) {
 		return action.ctx.reset();
