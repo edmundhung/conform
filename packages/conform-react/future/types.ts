@@ -37,7 +37,10 @@ export type FormState<ErrorShape> = {
 
 export type FormAction<
 	ErrorShape,
-	Intent = UnknownIntent | null | undefined,
+	Intent extends UnknownIntent | null | undefined =
+		| UnknownIntent
+		| null
+		| undefined,
 	Context = {
 		handlers?: Record<string, ActionHandler>;
 		reset: () => FormState<ErrorShape>;
@@ -301,12 +304,17 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
-export type ValidateHandler<ErrorShape, Value> = (
+export type ValidateHandler<
+	ErrorShape,
+	Value,
+	Intent extends UnknownIntent | undefined,
+> = (
 	value: Record<string, FormValue>,
 	ctx: {
 		formElement: HTMLFormElement;
 		submitter: HTMLElement | null;
 		error: FormError<string[]>;
+		intent: Intent | null;
 	},
 ) =>
 	| ValidateResult<ErrorShape, Value>
@@ -320,7 +328,7 @@ export type ValidateHandler<ErrorShape, Value> = (
 export type UpdateHandler<ErrorShape> = (
 	action: FormAction<
 		ErrorShape,
-		UnknownIntent | null | undefined,
+		UnknownIntent | null,
 		{
 			prevState: FormState<ErrorShape>;
 			nextState: FormState<ErrorShape>;

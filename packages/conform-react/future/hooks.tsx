@@ -76,13 +76,17 @@ import type {
 /**
  * The default intent name
  */
-export const DEFAULT_INTENT = '__intent__';
+export const DEFAULT_INTENT = '__INTENT__';
 
-export type ConformOptions<ErrorShape, Output> = {
+export type ConformOptions<
+	ErrorShape,
+	Output = undefined,
+	Intent extends UnknownIntent | undefined = UnknownIntent,
+> = {
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 	intentName?: string;
 	serialize?: (value: unknown) => string | string[] | File | File[] | undefined;
-	onValidate?: ValidateHandler<ErrorShape, Output>;
+	onValidate?: ValidateHandler<ErrorShape, Output, NoInfer<Intent>>;
 	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
 	onInput?: InputHandler;
 	onBlur?: BlurHandler;
@@ -116,7 +120,7 @@ export interface FormOptions<
 
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 	intentName?: string;
-	onValidate?: ValidateHandler<ErrorShape, Value>;
+	onValidate?: ValidateHandler<ErrorShape, Value, UnknownIntent>;
 	onUpdate?: UpdateHandler<NoInfer<ErrorShape>>;
 	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
 	onInput?: InputHandler;
@@ -291,7 +295,7 @@ export function useLatest<Value>(value: Value) {
 
 export function useConform<ErrorShape, Value = undefined>(
 	formRef: FormRef,
-	options: ConformOptions<ErrorShape, Value>,
+	options: ConformOptions<ErrorShape, Value, UnknownIntent>,
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { intentName = DEFAULT_INTENT, lastResult } = options ?? {};
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
@@ -498,6 +502,9 @@ export function useConform<ErrorShape, Value = undefined>(
 									formErrors: null,
 									fieldErrors: {},
 								},
+								intent: submission.intent
+									? deserializeIntent(submission.intent)
+									: null,
 							})
 						: { error: null };
 
@@ -629,7 +636,7 @@ export function useFormState<State, ErrorShape = string[]>(
 			state: State,
 			action: FormAction<
 				ErrorShape,
-				UnknownIntent | null | undefined,
+				UnknownIntent | null,
 				{
 					prevState: FormState<ErrorShape>;
 					nextState: FormState<ErrorShape>;
