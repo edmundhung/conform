@@ -8,6 +8,8 @@ import {
 	isDirty,
 	isPrefix,
 	parseSubmission,
+	report,
+	DEFAULT_INTENT_NAME,
 } from '../formdata';
 
 function createFormData(
@@ -346,7 +348,7 @@ describe('parseSubmission', () => {
 
 		// Empty form data
 		expect(parseSubmission(createFormData([]))).toEqual({
-			value: {},
+			payload: {},
 			fields: [],
 			intent: null,
 		});
@@ -367,7 +369,7 @@ describe('parseSubmission', () => {
 				]),
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'secret',
 				task: [
@@ -398,11 +400,11 @@ describe('parseSubmission', () => {
 				createFormData([
 					['email', 'hello@world.com'],
 					['password', 'superSecret1234'],
-					['__intent__', 'register'],
+					[DEFAULT_INTENT_NAME, 'register'],
 				]),
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
@@ -424,7 +426,7 @@ describe('parseSubmission', () => {
 				},
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
@@ -434,9 +436,9 @@ describe('parseSubmission', () => {
 
 		// File intent will be ignored
 		expect(
-			parseSubmission(createFormData([['__intent__', emptyFile]])),
+			parseSubmission(createFormData([[DEFAULT_INTENT_NAME, emptyFile]])),
 		).toEqual({
-			value: {},
+			payload: {},
 			fields: [],
 			intent: null,
 		});
@@ -445,7 +447,7 @@ describe('parseSubmission', () => {
 	it('parses URLSearchParams', () => {
 		// Empty URLSearchParams
 		expect(parseSubmission(new URLSearchParams())).toEqual({
-			value: {},
+			payload: {},
 			fields: [],
 			intent: null,
 		});
@@ -462,7 +464,7 @@ describe('parseSubmission', () => {
 				]),
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'secret',
 				task: [
@@ -483,11 +485,11 @@ describe('parseSubmission', () => {
 				new URLSearchParams([
 					['email', 'hello@world.com'],
 					['password', 'superSecret1234'],
-					['__intent__', 'register'],
+					[DEFAULT_INTENT_NAME, 'register'],
 				]),
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
@@ -509,7 +511,7 @@ describe('parseSubmission', () => {
 				},
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
@@ -536,12 +538,269 @@ describe('parseSubmission', () => {
 				},
 			),
 		).toEqual({
-			value: {
+			payload: {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
 			fields: ['email', 'password'],
 			intent: 'login',
+		});
+	});
+});
+
+describe('report', () => {
+	it('creates a basic submission result with default options', () => {
+		const submission = {
+			payload: { name: 'John', email: 'john@example.com' },
+			fields: ['name', 'email'],
+			intent: null,
+		};
+		const result = report(submission);
+
+		expect(result).toEqual({
+			submission: {
+				payload: { name: 'John', email: 'john@example.com' },
+				fields: ['name', 'email'],
+				intent: null,
+			},
+			intendedValue: undefined,
+			error: undefined,
+		});
+	});
+
+	it('supports resetting form state', () => {
+		const submission = {
+			payload: { name: 'John', email: 'john@example.com' },
+			fields: ['name', 'email'],
+			intent: null,
+		};
+		const result = report(submission, {
+			reset: true,
+		});
+
+		expect(result).toEqual({
+			submission,
+			intendedValue: null,
+			error: undefined,
+		});
+	});
+
+	it('handles form errors', () => {
+		const submission = {
+			payload: { name: '', email: 'invalid' },
+			fields: ['name', 'email'],
+			intent: null,
+		};
+		const result = report(submission, {
+			error: {
+				formErrors: ['Form is invalid', 'Please check all fields'],
+			},
+		});
+
+		expect(result).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: {
+				formErrors: ['Form is invalid', 'Please check all fields'],
+				fieldErrors: {},
+			},
+		});
+
+		// Test with null error
+		const resultWithNull = report(submission, { error: null });
+		expect(resultWithNull).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: null,
+		});
+	});
+
+	it('handles field errors', () => {
+		const submission = {
+			payload: { name: '', email: 'invalid' },
+			fields: ['name', 'email'],
+			intent: null,
+		};
+
+		const result = report(submission, {
+			error: {
+				fieldErrors: {
+					name: ['Name is required'],
+					email: ['Invalid email format'],
+				},
+			},
+		});
+
+		expect(result).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: {
+				formErrors: [],
+				fieldErrors: {
+					name: ['Name is required'],
+					email: ['Invalid email format'],
+				},
+			},
+		});
+	});
+
+	it('handles file stripping based on keepFiles option', () => {
+		const file = new File(['content'], 'test.txt', { type: 'text/plain' });
+		const submission = {
+			payload: { name: 'John', avatar: file, docs: [file, file] },
+			fields: ['name', 'avatar', 'docs'],
+			intent: null,
+		};
+
+		// Default behavior - strips files
+		const defaultResult = report(submission);
+		expect(defaultResult).toEqual({
+			submission: {
+				...submission,
+				payload: { name: 'John', docs: [null, null] },
+			},
+			intendedValue: undefined,
+			error: undefined,
+		});
+
+		// keepFiles: false - explicit file stripping
+		const stripResult = report(submission, { keepFiles: false });
+		expect(stripResult).toEqual({
+			submission: {
+				...submission,
+				payload: { name: 'John', docs: [null, null] },
+			},
+			intendedValue: undefined,
+			error: undefined,
+		});
+
+		// keepFiles: true - keeps files
+		const keepResult = report(submission, { keepFiles: true });
+		expect(keepResult).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: undefined,
+		});
+	});
+
+	it('supports hiding specific fields from the result', () => {
+		const submission = {
+			payload: {
+				name: 'John',
+				email: 'john@example.com',
+				password: 'secret123',
+			},
+			fields: ['name', 'email', 'password'],
+			intent: null,
+		};
+
+		// Test hiding fields from payload only
+		const result = report(submission, {
+			hideFields: ['password'],
+		});
+
+		expect(result).toEqual({
+			submission: {
+				...submission,
+				payload: {
+					...submission.payload,
+					password: undefined,
+				},
+			},
+			intendedValue: undefined,
+			error: undefined,
+		});
+
+		// Test hiding fields from both payload and intendedValue
+		const resultWithIntendedValue = report(submission, {
+			hideFields: ['password', 'email'],
+			intendedValue: {
+				name: 'Jane',
+				email: 'jane@example.com',
+				password: 'newsecret',
+			},
+		});
+
+		expect(resultWithIntendedValue).toEqual({
+			submission: {
+				...submission,
+				payload: {
+					...submission.payload,
+					email: undefined,
+					password: undefined,
+				},
+			},
+			intendedValue: {
+				name: 'Jane',
+				email: undefined,
+				password: undefined,
+			},
+			error: undefined,
+		});
+	});
+
+	it('supports specifying an intended value', () => {
+		const submission = {
+			payload: { name: 'John', email: 'john@example.com' },
+			fields: ['name', 'email'],
+			intent: null,
+		};
+
+		// Test with different intended value
+		const result = report(submission, {
+			intendedValue: { name: 'Jane', email: 'jane@example.com' },
+		});
+
+		expect(result).toEqual({
+			submission,
+			intendedValue: {
+				name: 'Jane',
+				email: 'jane@example.com',
+			},
+			error: undefined,
+		});
+
+		// Edge case: when intended value equals payload reference, should be undefined
+		const resultEqual = report(submission, {
+			intendedValue: submission.payload,
+		});
+
+		expect(resultEqual).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: undefined,
+		});
+
+		// Test with undefined value option (should be undefined)
+		const resultUndefined = report(submission);
+		expect(resultUndefined).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: undefined,
+		});
+
+		// Test with keepFiles and intended value (should strip files from intended value)
+		const file = new File(['content'], 'test.txt');
+		const submissionWithFile = {
+			payload: { name: 'John', file },
+			fields: ['name', 'file'],
+			intent: null,
+		};
+
+		const resultWithFiles = report(submissionWithFile, {
+			keepFiles: false,
+			intendedValue: { name: 'Jane', file },
+		});
+
+		expect(resultWithFiles).toEqual({
+			submission: {
+				...submissionWithFile,
+				payload: { name: 'John' },
+			},
+			intendedValue: {
+				name: 'Jane',
+			},
+			error: undefined,
 		});
 	});
 });
@@ -734,7 +993,7 @@ describe('isDirty', () => {
 				},
 				serialize(value, defaultSerialize) {
 					if (value instanceof Date && value.valueOf() === 0) {
-						return;
+						return '';
 					}
 
 					return defaultSerialize(value);
@@ -751,6 +1010,6 @@ describe('isDirty', () => {
 		]);
 		const submission = parseSubmission(formData);
 
-		expect(isDirty(submission.value)).toBe(false);
+		expect(isDirty(submission.payload)).toBe(false);
 	});
 });
