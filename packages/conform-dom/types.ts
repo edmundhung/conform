@@ -14,21 +14,88 @@ export type FormValue<
 > = Type | FormValue<Type | null>[] | { [key: string]: FormValue<Type> };
 
 /**
- * The data of a form submission.
+ * Form error object that contains both form errors and field errors.
+ */
+export type FormError<ErrorShape = string> = {
+	/**
+	 * The error of the form.
+	 */
+	formErrors: ErrorShape[];
+	/**
+	 * The field errors based on the field name.
+	 */
+	fieldErrors: Record<string, ErrorShape[]>;
+};
+
+/**
+ * Structured data parsed from a form submission.
  */
 export type Submission<
-	ValueType extends FormDataEntryValue = FormDataEntryValue,
+	ValueType extends JsonPrimitive | FormDataEntryValue =
+		| JsonPrimitive
+		| FormDataEntryValue,
 > = {
 	/**
-	 * The form value structured following the naming convention.
+	 * The submitted values mapped by field name.
+	 * Supports nested names like `user.email` or indexed names like `items[0].id`.
 	 */
-	value: Record<string, FormValue<ValueType>>;
+	payload: Record<string, FormValue<ValueType>>;
 	/**
-	 * The field names that are included in the FormData or URLSearchParams.
+	 * The list of field names present in the FormData or URLSearchParams.
 	 */
 	fields: string[];
 	/**
-	 * The intent of the submission. This is usally included by specifying a name and value on a submit button.
+	 * The submission intent, usually set by the name/value of the button that triggered the submission.
 	 */
 	intent: string | null;
 };
+
+/**
+ * The result of a submission.
+ */
+export type SubmissionResult<
+	ErrorShape = string,
+	ValueType extends JsonPrimitive | FormDataEntryValue =
+		| JsonPrimitive
+		| FormDataEntryValue,
+> = {
+	/**
+	 * The original submission data.
+	 */
+	submission: Submission<ValueType>;
+	/**
+	 * The intended value of the submission. Defined only when the intended value is different from the submitted value.
+	 */
+	intendedValue?: Record<string, FormValue<ValueType>> | null;
+	/**
+	 * Validation errors for `intendedValue` when present, otherwise for the original payload.
+	 */
+	error?: FormError<ErrorShape> | null;
+};
+
+/**
+ * The input attributes with related to the Constraint Validation API
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
+ */
+export type ValidationAttributes = {
+	required: boolean | undefined;
+	minLength: number | undefined;
+	maxLength: number | undefined;
+	min: string | number | undefined;
+	max: string | number | undefined;
+	step: string | number | undefined;
+	multiple: boolean | undefined;
+	pattern: string | undefined;
+};
+
+/**
+ * A type helper that makes sure the FormError type is serializable.
+ * Used only to strip `File` type from the Form Shape at the moment.
+ */
+export type Serializable<T> = T extends File
+	? undefined
+	: T extends Array<infer U>
+		? Serializable<U>[]
+		: T extends object
+			? { [K in keyof T]: Serializable<T[K]> }
+			: T;
