@@ -519,7 +519,7 @@ function createConstraintProxy(
 					// This overrides the current number segment with an empty string
 					// which will be treated as an empty bracket
 					path[i] = '';
-					break;
+					continue;
 				}
 			}
 
