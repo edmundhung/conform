@@ -1,7 +1,21 @@
-import type { FormValue, Submission } from './types';
+import type {
+	FormError,
+	FormValue,
+	JsonPrimitive,
+	Serialize,
+	SerializedValue,
+	Submission,
+	SubmissionResult,
+} from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
-import { INTENT as DEFAULT_INTENT_NAME } from './submission';
-import { deepEqual, serialize } from './util';
+import {
+	deepEqual,
+	isPlainObject,
+	serialize as defaultSerialize,
+	stripFiles,
+} from './util';
+
+export const DEFAULT_INTENT_NAME = '__INTENT__';
 
 /**
  * Construct a form data with the submitter value.
@@ -107,7 +121,9 @@ export function getPathSegments(
  * formatPathSegments(['todos', '']); // → "todos[]"
  * ```
  */
-export function formatPathSegments(segments: Array<string | number>): string {
+export function formatPathSegments(
+	segments: Readonly<Array<string | number>>,
+): string {
 	return segments.reduce<string>(
 		(path, segment) => appendPathSegment(path, segment),
 		'',
@@ -303,23 +319,11 @@ export function getValueAtPath(
 }
 
 /**
- * Check if the value is a plain object
- */
-export function isPlainObject(
-	obj: unknown,
-): obj is Record<string | number | symbol, unknown> {
-	return (
-		!!obj &&
-		obj.constructor === Object &&
-		Object.getPrototypeOf(obj) === Object.prototype
-	);
-}
-
-/**
  * Parse `FormData` or `URLSearchParams` into a submission object.
  * This function structures the form values based on the naming convention.
- * It also includes all the field names and the intent if the `intentName` option is provided.
+ * It also includes all the field names and extracts the intent from the submission.
  *
+ * @see https://conform.guide/api/react/future/parseSubmission
  * @example
  * ```ts
  * const formData = new FormData();
@@ -329,7 +333,7 @@ export function isPlainObject(
  *
  * parseSubmission(formData)
  * // {
- * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   payload: { email: 'test@example.com', password: 'secret' },
  * //   fields: ['email', 'password'],
  * //   intent: null,
  * // }
@@ -338,7 +342,7 @@ export function isPlainObject(
  * formData.append('intent', 'login');
  * parseSubmission(formData, { intentName: 'intent' })
  * // {
- * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   payload: { email: 'test@example.com', password: 'secret' },
  * //   fields: ['email', 'password'],
  * //   intent: 'login',
  * // }
@@ -348,12 +352,12 @@ export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
 		/**
-		 * The name of the submit button that triggered the form submission.
-		 * Used to extract the submission's intent.
+		 * The name of the submit button field that indicates the submission intent.
+		 * Defaults to `__INTENT__`.
 		 */
 		intentName?: string;
 		/**
-		 * A filter function that excludes specific entries from being parsed.
+		 * A function to exclude specific form fields from being parsed.
 		 * Return `true` to skip the entry.
 		 */
 		skipEntry?: (name: string) => boolean;
@@ -361,7 +365,7 @@ export function parseSubmission(
 ): Submission {
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
 	const submission: Submission = {
-		value: {},
+		payload: {},
 		fields: [],
 		intent: null,
 	};
@@ -370,7 +374,7 @@ export function parseSubmission(
 		if (name !== intentName && !options?.skipEntry?.(name)) {
 			const value = formData.getAll(name);
 			setValueAtPath(
-				submission.value,
+				submission.payload,
 				name,
 				value.length > 1 ? value : value[0],
 				{
@@ -391,6 +395,127 @@ export function parseSubmission(
 	}
 
 	return submission;
+}
+
+/**
+ * Creates a SubmissionResult object from a submission, adding validation results and intended values.
+ * This function will remove all files in the submission payload by default since
+ * file inputs cannot be initialized with files.
+ * You can specify `keepFiles: true` to keep the files if needed.
+ *
+ * @see https://conform.guide/api/react/future/report
+ * @example
+ * ```ts
+ * // Report the submission with the field errors
+ * report(submission, {
+ *  error: {
+ *    fieldErrors: {
+ *      email: ['Invalid email format'],
+ *      password: ['Password is required'],
+ *    },
+ * })
+ *
+ * // Report the submission with a form error
+ * report(submission, {
+ *   error: {
+ *     formErrors: ['Invalid credentials'],
+ *   },
+ * })
+ *
+ * // Reset the form
+ * report(submission, {
+ *   reset: true,
+ * })
+ * ```
+ */
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options?: {
+		keepFiles?: false;
+		error?: Partial<FormError<ErrorShape>> | null;
+		intendedValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<
+	ErrorShape,
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+>;
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error?: Partial<FormError<ErrorShape>> | null;
+		intendedValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<ErrorShape>;
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options: {
+		/**
+		 * Controls whether file objects are preserved in the submission payload.
+		 * Defaults to `false` - files are stripped since they cannot be used to initialize file inputs.
+		 */
+		keepFiles?: boolean;
+		/**
+		 * Error information to include in the result.
+		 * Set to `null` to indicate validation passed with no errors.
+		 */
+		error?: Partial<FormError<ErrorShape>> | null;
+		/**
+		 * The intended form values to track what the form should contain
+		 * vs. what was actually submitted.
+		 */
+		intendedValue?: Record<string, FormValue> | null;
+		/**
+		 * Array of field names to hide from the result by setting them to `undefined`.
+		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
+		 */
+		hideFields?: string[];
+		/**
+		 * When `true`, indicates the form should be reset to its initial state.
+		 */
+		reset?: boolean;
+	} = {},
+): SubmissionResult<ErrorShape> {
+	const intendedValue = options.reset
+		? null
+		: typeof options.intendedValue === 'undefined' ||
+			  submission.payload === options.intendedValue
+			? undefined
+			: options.intendedValue && !options.keepFiles
+				? stripFiles(options.intendedValue)
+				: options.intendedValue;
+	const error = !options.error
+		? options.error
+		: {
+				formErrors: options.error.formErrors ?? [],
+				fieldErrors: options.error.fieldErrors ?? {},
+			};
+
+	if (options.hideFields) {
+		for (const name of options.hideFields) {
+			const path = getPathSegments(name);
+
+			setValueAtPath(submission.payload, path, undefined);
+			if (intendedValue) {
+				setValueAtPath(intendedValue, path, undefined);
+			}
+		}
+	}
+
+	return {
+		submission: options.keepFiles
+			? submission
+			: {
+					...submission,
+					payload: stripFiles(submission.payload),
+				},
+		intendedValue,
+		error,
+	};
 }
 
 /**
@@ -420,7 +545,7 @@ export function isDirty(
 	 * - A `URLSearchParams` object
 	 * - A plain object that was parsed from form data (i.e. `submission.payload`)
 	 */
-	formData: FormData | URLSearchParams | FormValue<FormDataEntryValue> | null,
+	formData: FormData | URLSearchParams | FormValue | null,
 	options?: {
 		/**
 		 * An object representing the default values of the form to compare against.
@@ -448,8 +573,8 @@ export function isDirty(
 		 */
 		serialize?: (
 			value: unknown,
-			defaultSerialize: (value: unknown) => string | string[] | undefined,
-		) => string | string[] | undefined;
+			defaultSerialize: Serialize,
+		) => SerializedValue | undefined;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -474,12 +599,35 @@ export function isDirty(
 			? parseSubmission(formData, {
 					intentName: options?.intentName,
 					skipEntry: options?.skipEntry,
-				}).value
+				}).payload
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serializeFn = options?.serialize ?? serialize;
+	const serialize = (value: unknown) => {
+		if (options?.serialize) {
+			return options.serialize(value, defaultSerialize);
+		}
 
-	function normalize(value: unknown): unknown {
+		return defaultSerialize(value);
+	};
+
+	function normalize(data: unknown): unknown {
+		const value = serialize(data) ?? data;
+
+		// Removes empty strings, so that bpth empty string and undefined are treated as the same
+		if (value === '') {
+			return undefined;
+		}
+
+		if (isGlobalInstance(value, 'File')) {
+			// Remove empty File as well, which happens if no File was selected
+			if (value.name === '' && value.size === 0) {
+				return undefined;
+			}
+
+			// If the value is a File, no need to serialize it
+			return value;
+		}
+
 		if (Array.isArray(value)) {
 			if (value.length === 0) {
 				return undefined;
@@ -518,27 +666,7 @@ export function isDirty(
 			return Object.fromEntries(entries);
 		}
 
-		// If the value is null or undefined, treat it as undefined
-		if (value == null) {
-			return undefined;
-		}
-
-		// Removes empty strings, so that bpth empty string and undefined are treated as the same
-		if (typeof value === 'string' && value === '') {
-			return undefined;
-		}
-
-		if (isGlobalInstance(value, 'File')) {
-			// Remove empty File as well, which happens if no File was selected
-			if (value.name === '' && value.size === 0) {
-				return undefined;
-			}
-
-			// If the value is a File, no need to serialize it
-			return value;
-		}
-
-		return serializeFn(value, serialize);
+		return value;
 	}
 
 	return !deepEqual(normalize(formValue), normalize(defaultValue));

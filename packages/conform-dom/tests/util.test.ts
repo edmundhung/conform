@@ -2,19 +2,26 @@ import { expect, test } from 'vitest';
 import { serialize, deepEqual } from '../util';
 
 test('serialize', () => {
+	const txtFile = new File(['hello', 'world'], 'example.txt');
+	const svgFile = new File(['<svg></svg>'], 'example.svg', {
+		type: 'image/svg+xml',
+	});
+
 	expect(serialize('test')).toBe('test');
 	expect(serialize(true)).toBe('on');
-	expect(serialize(false)).toBeUndefined();
+	expect(serialize(false)).toBe('');
 	expect(serialize(123)).toBe('123');
 	expect(serialize(987654321n)).toBe('987654321');
 	expect(serialize(new Date(12345))).toBe(new Date(12345).toISOString());
 	expect(serialize(new Map())).toBeUndefined();
 	expect(serialize(new Set())).toBeUndefined();
-	expect(serialize(new File([], 'example'))).toBeUndefined();
-	expect(serialize(null)).toBeUndefined();
+	expect(serialize(txtFile)).toBe(txtFile);
+	expect(serialize([txtFile, svgFile])).toEqual([txtFile, svgFile]);
+	expect(serialize(null)).toBe('');
 	expect(serialize(undefined)).toBeUndefined();
 	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
-	expect(serialize(['foo', 'bar'])).toBeUndefined();
+	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
+	expect(serialize([{ foo: 'bar' }])).toBeUndefined();
 });
 
 test('deepEqual', () => {

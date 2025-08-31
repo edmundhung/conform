@@ -136,6 +136,17 @@ export function getFormMethod(
 }
 
 /**
+ * Creates a submit event that behaves like a real form submission.
+ */
+export function createSubmitEvent(submitter?: HTMLElement | null): SubmitEvent {
+	return new SubmitEvent('submit', {
+		bubbles: true,
+		cancelable: true,
+		submitter,
+	});
+}
+
+/**
  * Trigger a form submit event with an optional submitter.
  * If the submitter is not mounted, it will be appended to the form and removed after submission.
  */
@@ -151,14 +162,29 @@ export function requestSubmit(
 	if (typeof form.requestSubmit === 'function') {
 		form.requestSubmit(submitter);
 	} else {
-		const event = new SubmitEvent('submit', {
-			bubbles: true,
-			cancelable: true,
-			submitter,
-		});
-
-		form.dispatchEvent(event);
+		form.dispatchEvent(createSubmitEvent(submitter));
 	}
+}
+
+/**
+ * Triggers form submission with an intent value. This is achieved by
+ * creating a hidden button element with the intent value and then submitting it with the form.
+ */
+export function requestIntent(
+	formElement: HTMLFormElement,
+	intentName: string,
+	intentValue: string,
+): void {
+	const submitter = document.createElement('button');
+
+	submitter.name = intentName;
+	submitter.value = intentValue;
+	submitter.hidden = true;
+	submitter.formNoValidate = true;
+
+	formElement.appendChild(submitter);
+	requestSubmit(formElement, submitter);
+	formElement.removeChild(submitter);
 }
 
 export function createFileList(value: File | File[]): FileList {
@@ -389,21 +415,47 @@ export function createGlobalFormsObserver() {
 	};
 }
 
+/**
+ * Change the value of the given field element.
+ * Dispatches both `input` and `change` events only if the value is changed.
+ */
 export function change(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	value: string | string[] | File | File[] | FileList | null,
+	options?: {
+		preventDefault?: boolean;
+	},
 ): void {
 	// The value should be set to the element before dispatching the event
-	updateField(element, {
+	const isChanged = updateField(element, {
 		value,
 	});
 
-	// Dispatch input event with the updated input value
-	element.dispatchEvent(new InputEvent('input', { bubbles: true }));
-	// Dispatch change event (necessary for select to update the selected option)
-	element.dispatchEvent(new Event('change', { bubbles: true }));
+	if (isChanged) {
+		const inputEvent = new InputEvent('input', {
+			bubbles: true,
+			cancelable: true,
+		});
+		const changeEvent = new Event('change', {
+			bubbles: true,
+			cancelable: true,
+		});
+
+		if (options?.preventDefault) {
+			inputEvent.preventDefault();
+			changeEvent.preventDefault();
+		}
+
+		// Dispatch input event with the updated input value
+		element.dispatchEvent(inputEvent);
+		// Dispatch change event (necessary for select to update the selected option)
+		element.dispatchEvent(changeEvent);
+	}
 }
 
+/**
+ * Dispatches focus and focusin events on the given element.
+ */
 export function focus(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): void {
@@ -412,6 +464,9 @@ export function focus(
 	element.dispatchEvent(new FocusEvent('focus'));
 }
 
+/**
+ * Dispatches blur and focusout events on the given element.
+ */
 export function blur(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 ): void {
@@ -456,15 +511,19 @@ export function updateField(
 		value?: unknown;
 		defaultValue?: unknown;
 	},
-) {
+): boolean {
+	let isChanged = false;
+
 	if (isInputElement(element)) {
 		switch (element.type) {
 			case 'file': {
 				const files = normalizeFileValues(options.value);
-				if (files) {
+				if (files && element.files !== files) {
 					element.files = files;
+					isChanged = true;
 				}
-				return;
+
+				return isChanged;
 			}
 			case 'checkbox':
 			case 'radio': {
@@ -479,14 +538,17 @@ export function updateField(
 					) {
 						// Simulate a click to update the checked state
 						element.click();
+						isChanged = true;
 					}
 
 					element.checked = checked;
 				}
+
 				if (defaultValue) {
 					element.defaultChecked = defaultValue.includes(element.value);
 				}
-				return;
+
+				return isChanged;
 			}
 		}
 	} else if (isSelectElement(element)) {
@@ -502,6 +564,7 @@ export function updateField(
 				// Update the selected state of the option
 				if (option.selected !== selected) {
 					option.selected = selected;
+					isChanged = true;
 				}
 
 				// Remove the option from the value array
@@ -537,14 +600,16 @@ export function updateField(
 					value?.includes(optionValue),
 				),
 			);
+			isChanged = true;
 		}
 
 		// If the select element is not multiple and the value is an empty array, unset the selected index
 		// This is to prevent the select element from showing the first option as selected
 		if (shouldUnselect) {
 			element.selectedIndex = -1;
+			isChanged = true;
 		}
-		return;
+		return isChanged;
 	}
 
 	const value = normalizeStringValues(options.value);
@@ -571,10 +636,14 @@ export function updateField(
 		} else {
 			throw new Error('The given element does not have a value setter');
 		}
+
+		isChanged = true;
 	}
 	if (defaultValue) {
 		element.defaultValue = defaultValue[0] ?? '';
 	}
+
+	return isChanged;
 }
 
 export function isDirtyInput(

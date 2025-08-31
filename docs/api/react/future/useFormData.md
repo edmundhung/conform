@@ -5,6 +5,8 @@
 A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it. The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
 
 ```ts
+import { useFormData } from '@conform-to/react/future';
+
 const result = useFormData(formRef, selector, options);
 ```
 
@@ -47,7 +49,7 @@ If omitted or `false`, the selector receives a `URLSearchParams` object, where a
 
 The Value returned by your select function. Its type is fully generic and reflects what you extract from the form.
 
-## Example Usage
+## Example
 
 ### Derive a single field value
 

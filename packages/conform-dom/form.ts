@@ -5,7 +5,6 @@ import {
 	getValueAtPath,
 	setValueAtPath,
 	getRelativePath,
-	isPlainObject,
 	isPrefix,
 	appendPathSegment,
 } from './formdata';
@@ -19,7 +18,7 @@ import {
 	updateField,
 	isDirtyInput,
 } from './dom';
-import { clone, generateId, invariant } from './util';
+import { clone, generateId, invariant, isPlainObject } from './util';
 import {
 	type Intent,
 	type Submission,
