@@ -55,6 +55,8 @@ const menus: { [code: string]: Menu[] } = {
 			links: [
 				{ title: 'useControl', to: '/api/react/future/useControl' },
 				{ title: 'useFormData', to: '/api/react/future/useFormData' },
+				{ title: 'parseSubmission', to: '/api/react/future/parseSubmission' },
+				{ title: 'report', to: '/api/react/future/report' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 			],
 		},
