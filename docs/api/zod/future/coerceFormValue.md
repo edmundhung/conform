@@ -1,10 +1,12 @@
-# unstable_coerceFormValue
+# coerceFormValue
 
-> The `coerceFormValue` function is also available as part of Conform's future export. [Check it out](./future/coerceFormValue.md) if you want to use it with other future APIs.
+> The `coerceFormValue` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
 A helper that enhances the schema with extra preprocessing steps to strip empty value and coerce form value to the expected type.
 
 ```ts
+import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
+
 const enhancedSchema = coerceFormValue(schema, options);
 ```
 
@@ -33,11 +35,8 @@ Optional. Use it to [define custom coercion](#define-custom-coercion) for a spec
 ## Example
 
 ```ts
-import {
-  parseWithZod,
-  unstable_coerceFormValue as coerceFormValue,
-} from '@conform-to/zod'; // Or, import `@conform-to/zod/v4`.
-import { useForm } from '@conform-to/react';
+import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
+import { useForm } from '@conform-to/react/future';
 import { z } from 'zod';
 
 const schema = coerceFormValue(
@@ -50,13 +49,8 @@ const schema = coerceFormValue(
 );
 
 function Example() {
-  const [form, fields] = useForm({
-    onValidate({ formData }) {
-      return parseWithZod(formData, {
-        schema,
-        disableAutoCoercion: true,
-      });
-    },
+  const { form, fields } = useForm({
+    schema,
   });
 
   // ...
@@ -134,11 +128,7 @@ const schema = z.object({
 You can customize coercion for a specific schema by setting the `customize` option.
 
 ```ts
-import {
-  parseWithZod,
-  unstable_coerceFormValue as coerceFormValue,
-} from '@conform-to/zod';
-import { useForm } from '@conform-to/react';
+import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
 import { z } from 'zod';
 
 const metadata = z.object({
@@ -153,7 +143,7 @@ const schema = coerceFormValue(
   }),
   {
     customize(type) {
-      // Customize how the `metadata` field value is coerced
+      // Customize how the `metadata` schema is coerced
       if (type === metadata) {
         return (value) => {
           if (typeof value !== 'string') {
