@@ -61,6 +61,14 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
+			title: 'Future APIs (Zod Schema)',
+			links: [
+				{ title: 'coerceFormValue', to: '/api/zod/future/coerceFormValue' },
+				{ title: 'formatResult', to: '/api/zod/future/formatResult' },
+				{ title: 'memoize', to: '/api/zod/future/memoize' },
+			],
+		},
+		{
 			title: 'Utilities',
 			links: [
 				{ title: 'getFormProps', to: '/api/react/getFormProps' },
