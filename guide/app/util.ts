@@ -6,7 +6,6 @@ interface Language {
 	label: string;
 	docPath: string;
 	domain: string;
-	isDecodeUtf8: boolean;
 }
 
 export const allLanguages: Language[] = [
@@ -15,14 +14,12 @@ export const allLanguages: Language[] = [
 		label: 'en',
 		docPath: 'docs',
 		domain: 'conform.guide',
-		isDecodeUtf8: false,
 	},
 	{
 		code: 'ja',
 		label: 'ja',
 		docPath: 'docs/ja',
 		domain: 'ja.conform.guide',
-		isDecodeUtf8: true,
 	},
 ];
 
@@ -91,7 +88,7 @@ export async function getFileContent(
 	context: AppLoadContext,
 	path: string,
 ): Promise<string> {
-	const { ref, owner, repo, language } = getMetadata(context);
+	const { ref, owner, repo } = getMetadata(context);
 	const cache = getCache(context);
 	const cacheKey = `${ref}/${path}`;
 
@@ -107,10 +104,7 @@ export async function getFileContent(
 			repo,
 		});
 
-		// Japanese characters including UTF-8 are garbled, so convert to binary string before decoding
-		content = language.isDecodeUtf8
-			? base64DecodeUtf8(file.content)
-			: atob(file.content);
+		content = base64DecodeUtf8(file.content);
 		context.waitUntil(
 			cache.put(cacheKey, content, {
 				expirationTtl: 3600,
