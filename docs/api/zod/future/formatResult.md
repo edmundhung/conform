@@ -102,8 +102,8 @@ const schema = z.object({
 
 function Example() {
   const { form, fields } = useForm({
-    onValidate({ value }) {
-      const result = schema.safeParse(value);
+    onValidate({ payload }) {
+      const result = schema.safeParse(payload);
       return formatResult(result, {
         includeValue: true,
         formatIssues(issues, name) {

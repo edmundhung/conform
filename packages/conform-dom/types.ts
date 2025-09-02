@@ -78,14 +78,14 @@ export type SubmissionResult<
  * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
  */
 export type ValidationAttributes = {
-	required: boolean | undefined;
-	minLength: number | undefined;
-	maxLength: number | undefined;
-	min: string | number | undefined;
-	max: string | number | undefined;
-	step: string | number | undefined;
-	multiple: boolean | undefined;
-	pattern: string | undefined;
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	min?: string | number;
+	max?: string | number;
+	step?: string | number;
+	multiple?: boolean;
+	pattern?: string;
 };
 
 /**
