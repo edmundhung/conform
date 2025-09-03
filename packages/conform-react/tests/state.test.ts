@@ -67,8 +67,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -97,8 +97,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -121,8 +121,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('my-secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -145,8 +145,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('my-secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -167,8 +167,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('my-secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -189,8 +189,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -268,8 +268,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -296,8 +296,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
