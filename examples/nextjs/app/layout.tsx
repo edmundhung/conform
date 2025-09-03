@@ -18,22 +18,17 @@ export default function RootLayout({
 			<body>
 				<main>
 					<h1>NextJS Example</h1>
-
-					<p>
-						This example demonstrates some of the features of Conform including{' '}
-						<strong>client validation</strong>, <strong>nested list</strong>,
-						and <strong>async validation with zod</strong>.
-					</p>
-
+					<p>This example demonstrates the following features:</p>
 					<ul>
 						<li>
 							<Link href="login">Login</Link>
 						</li>
 						<li>
-							<Link href="todos">Todo list</Link>
+							<Link href="signup">Signup</Link> (
+							<Link href="signup-async-schema">with async schema</Link>)
 						</li>
 						<li>
-							<Link href="signup">Signup</Link>
+							<Link href="todos">Todo list</Link>
 						</li>
 					</ul>
 
