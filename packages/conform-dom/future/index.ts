@@ -18,8 +18,9 @@ export {
 	getValueAtPath,
 	setValueAtPath,
 	report,
+	serialize,
 } from '../formdata';
-export { isPlainObject, deepEqual, serialize } from '../util';
+export { isPlainObject, deepEqual } from '../util';
 export {
 	isFieldElement,
 	isGlobalInstance,

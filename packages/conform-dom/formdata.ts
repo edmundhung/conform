@@ -8,12 +8,7 @@ import type {
 	SubmissionResult,
 } from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
-import {
-	deepEqual,
-	isPlainObject,
-	serialize as defaultSerialize,
-	stripFiles,
-} from './util';
+import { deepEqual, isPlainObject, stripFiles } from './util';
 
 export const DEFAULT_INTENT_NAME = '__INTENT__';
 
@@ -602,16 +597,16 @@ export function isDirty(
 				}).payload
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serialize = (value: unknown) => {
+	const serializeData = (value: unknown) => {
 		if (options?.serialize) {
-			return options.serialize(value, defaultSerialize);
+			return options.serialize(value, serialize);
 		}
 
-		return defaultSerialize(value);
+		return serialize(value);
 	};
 
 	function normalize(data: unknown): unknown {
-		const value = serialize(data) ?? data;
+		const value = serializeData(data) ?? data;
 
 		// Removes empty strings, so that bpth empty string and undefined are treated as the same
 		if (value === '') {
@@ -670,4 +665,90 @@ export function isDirty(
 	}
 
 	return !deepEqual(normalize(formValue), normalize(defaultValue));
+}
+
+/**
+ * Convert an unknown value into something acceptable for HTML form submission.
+ * Returns `undefined` when the value cannot be represented in form data.
+ *
+ * Input -> Output:
+ * - string -> string
+ * - null -> '' (empty string)
+ * - boolean -> 'on' | '' (checked semantics)
+ * - number | bigint -> value.toString()
+ * - Date -> value.toISOString()
+ * - File -> File
+ * - FileList -> File[]
+ * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined
+ * - anything else -> undefined
+ */
+export function serialize(value: unknown): SerializedValue | undefined {
+	function serializePrimitive(value: unknown): string | File | undefined {
+		if (typeof value === 'string') {
+			return value;
+		}
+
+		if (value === null) {
+			return '';
+		}
+
+		if (typeof value === 'boolean') {
+			return value ? 'on' : '';
+		}
+
+		if (typeof value === 'number' || typeof value === 'bigint') {
+			return value.toString();
+		}
+
+		if (value instanceof Date) {
+			return value.toISOString();
+		}
+
+		if (isGlobalInstance(value, 'File')) {
+			return value;
+		}
+	}
+
+	if (Array.isArray(value)) {
+		const options: string[] = [];
+		const files: File[] = [];
+
+		for (const item of value) {
+			const serialized = serializePrimitive(item);
+
+			if (typeof serialized === 'undefined') {
+				return;
+			}
+
+			if (typeof serialized === 'string') {
+				if (files.length > 0) {
+					return;
+				}
+
+				options.push(serialized);
+			} else {
+				if (options.length > 0) {
+					return;
+				}
+
+				files.push(serialized);
+			}
+		}
+
+		if (options.length === value.length) {
+			return options;
+		}
+
+		if (files.length === value.length) {
+			return files;
+		}
+
+		// If not all items are strings or files, return nothing
+	}
+
+	if (isGlobalInstance(value, 'FileList')) {
+		return Array.from(value);
+	}
+
+	return serializePrimitive(value);
 }

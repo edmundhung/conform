@@ -50,11 +50,12 @@ export function defaultEqualityCheck(prevArgs: any[], nextArgs: any[]) {
  * );
  *
  * // Usage in form validation
- * async onValidate({ value, error }) {
- *   if (value.username && !error.fieldErrors.username) {
+ * async onValidate({ payload, error }) {
+ *   if (payload.username && !error.fieldErrors.username) {
  *     const messages = await validateUsername(value.username);
  *     if (messages) error.fieldErrors.username = messages;
  *   }
+ *   return error;
  * }
  * ```
  */
