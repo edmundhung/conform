@@ -62,6 +62,7 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'parseSubmission', to: '/api/react/future/parseSubmission' },
 				{ title: 'report', to: '/api/react/future/report' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
+				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
 			],
 		},
 		{
