@@ -7,7 +7,7 @@ The main React hook for form management. Handles form state, validation, and sub
 ```ts
 import { useForm } from '@conform-to/react/future';
 
-const { form, fields, intent, context } = useForm(options);
+const { form, fields, intent } = useForm(options);
 ```
 
 ## Options
@@ -77,10 +77,6 @@ Form-level metadata and state. See [`useFormMetadata`](./useFormMetadata.md) for
 ### `fields: Fieldset<FormShape>`
 
 Fieldset object containing all form fields as properties. Equivalent to calling `form.getFieldset()` without a name. Access field metadata via `fields.fieldName`. See [`useField`](./useField.md) for field metadata documentation.
-
-### `context: FormContext<FormShape, ErrorShape>`
-
-Form context object for use with [`FormProvider`](#formprovider). Required when using [`useField`](./useField.md) or [`useFormMetadata`](./useFormMetadata.md) in child components.
 
 ### `intent: IntentDispatcher`
 

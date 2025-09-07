@@ -40,7 +40,7 @@ Form-level validation errors, if any exist.
 
 Object containing field-specific validation errors for all validated fields.
 
-### `props`
+### `props: FormProps`
 
 Form props object for spreading onto the `<form>` element:
 
@@ -53,6 +53,10 @@ Form props object for spreading onto the `<form>` element:
   noValidate: boolean;
 }
 ```
+
+### `context: FormContext<FormShape, ErrorShape>`
+
+Form context object for use with [`FormProvider`](./FormProvider.md). Required when using [`useField`](./useField.md) or [`useFormMetadata`](./useFormMetadata.md) in child components.
 
 ### `getField<FieldShape>(name): Field<FieldShape>`
 
