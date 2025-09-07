@@ -7,9 +7,9 @@
  ╚══════╝  ╚═════╝  ╚═╝  ╚══╝ ╚═╝        ╚═════╝  ╚═╝   ╚═╝ ╚═╝   ╚═╝
 ```
 
-Version 1.9.0 / License MIT / Copyright (c) 2024 Edmund Hung
+Version 1.9.0 / License MIT / Copyright (c) 2025 Edmund Hung
 
-A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix and Next.js.
+Progressively enhance HTML forms with React. Build resilient, type-safe forms with no hassle using web standards.
 
 # Getting Started
 
@@ -17,11 +17,11 @@ Check out the overview and tutorial at our website https://conform.guide
 
 # Features
 
-- Progressive enhancement first APIs
-- Type-safe field inference
-- Fine-grained subscription
-- Built-in accessibility helpers
-- Automatic type coercion with Zod
+- Full type safety with schema field inference
+- Standard Schema support with enhanced Zod and Valibot integration
+- Progressive enhancement first design with built-in accessibility features
+- Native Server Actions support for Remix and Next.js
+- Built on web standards for flexible composition with other tools
 
 # Documentation
 
