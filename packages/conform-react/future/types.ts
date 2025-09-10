@@ -391,15 +391,23 @@ export type FormMetadata<
 		unknown
 	> = DefaultFieldMetadata<ErrorShape>,
 > = Readonly<{
+	/** Unique identifier that changes on form reset */
+	key: string;
 	/** The form's unique identifier. */
 	id: string;
+	/** Auto-generated ID for associating form descriptions via aria-describedby. */
+	descriptionId: string;
+	/** Auto-generated ID for associating form errors via aria-describedby. */
+	errorId: string;
 	/** Whether any field in the form has been touched (through intent.validate() or the shouldValidate option). */
 	touched: boolean;
-	/** Whether the form currently has any validation errors. */
+	/** Whether the form currently has no validation errors. */
+	valid: boolean;
+	/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
 	invalid: boolean;
 	/** Form-level validation errors, if any exist. */
 	errors: ErrorShape[] | undefined;
-	/** Object containing field-specific validation errors for all validated fields. */
+	/** Object containing errors for all touched fields. */
 	fieldErrors: Record<string, ErrorShape[]>;
 	/** Form props object for spreading onto the <form> element. */
 	props: Readonly<{
@@ -440,12 +448,14 @@ export type FormMetadata<
 /** Default field metadata object containing field state, validation attributes, and accessibility IDs. */
 export type DefaultFieldMetadata<ErrorShape> = Readonly<
 	ValidationAttributes & {
-		/** The field's unique identifier, automatically generated as {formId}-{fieldName}. */
+		/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
 		id: string;
 		/** Auto-generated ID for associating field descriptions via aria-describedby. */
 		descriptionId: string;
 		/** Auto-generated ID for associating field errors via aria-describedby. */
 		errorId: string;
+		/** The form's unique identifier for associating field via the `form` attribute. */
+		formId: string;
 		/** The field's default value as a string. */
 		defaultValue: string | undefined;
 		/** Default selected options for multi-select fields or checkbox group. */
@@ -454,10 +464,14 @@ export type DefaultFieldMetadata<ErrorShape> = Readonly<
 		defaultChecked: boolean | undefined;
 		/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
 		touched: boolean;
-		/** Whether this field currently has validation errors. */
+		/** Whether this field currently has no validation errors. */
+		valid: boolean;
+		/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
 		invalid: boolean;
 		/** Array of validation error messages for this field. */
 		errors: ErrorShape[] | undefined;
+		/** Object containing errors for all touched subfields. */
+		fieldErrors: Record<string, ErrorShape[]>;
 	}
 >;
 

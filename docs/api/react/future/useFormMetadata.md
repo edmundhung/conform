@@ -24,13 +24,31 @@ A `FormMetadata` object containing:
 
 The form's unique identifier.
 
+### `key: string`
+
+Unique identifier that changes on form reset.
+
+### `errorId: string`
+
+Auto-generated ID for associating form-level errors via `aria-describedby`. Follows the pattern `{formId}-form-error`.
+
+### `descriptionId: string`
+
+Auto-generated ID for associating form-level descriptions via `aria-describedby`. Follows the pattern `{formId}-form-description`.
+
 ### `touched: boolean`
 
 Whether any field in the form has been touched (through `intent.validate()` or the `shouldValidate` option).
 
+### `valid: boolean`
+
+Whether the form currently has no validation errors.
+
 ### `invalid: boolean`
 
-Whether the form currently has any validation errors.
+> **⚠️ Deprecated:** Use `valid` instead. This property will be removed in version 1.10.0.
+
+Whether the form currently has any validation errors. This is equivalent to `!valid`.
 
 ### `errors: ErrorShape[] | undefined`
 
@@ -38,7 +56,7 @@ Form-level validation errors, if any exist.
 
 ### `fieldErrors: Record<string, ErrorShape[]>`
 
-Object containing field-specific validation errors for all validated fields.
+Object containing errors for all touched fields.
 
 ### `props: FormProps`
 
@@ -141,7 +159,7 @@ function CustomForm({ children }: { children: React.ReactNode }) {
   return (
     <form
       {...form.props}
-      className={form.invalid ? 'form-invalid' : 'form-valid'}
+      className={form.valid ? 'form-valid' : 'form-invalid'}
     >
       {/* Global form errors */}
       {form.errors && form.errors.length > 0 && (
@@ -160,10 +178,10 @@ function CustomForm({ children }: { children: React.ReactNode }) {
       {/* Smart submit button */}
       <button
         type="submit"
-        disabled={form.invalid}
+        disabled={!form.valid}
         className={form.touched ? 'submit-ready' : 'submit-pending'}
       >
-        {form.invalid && form.touched ? 'Fix errors to submit' : 'Submit'}
+        {!form.valid && form.touched ? 'Fix errors to submit' : 'Submit'}
       </button>
     </form>
   );
