@@ -211,7 +211,7 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 	);
 }
 
-export function getError<ErrorShape>(
+export function getErrors<ErrorShape>(
 	state: FormState<ErrorShape>,
 	name?: string,
 ): ErrorShape[] | undefined {
@@ -226,6 +226,30 @@ export function getError<ErrorShape>(
 	if (errors && errors.length > 0) {
 		return errors;
 	}
+}
+
+export function getFieldErrors<ErrorShape>(
+	state: FormState<ErrorShape>,
+	name?: string,
+) {
+	const result: Record<string, ErrorShape[]> = {};
+	const basePath = getPathSegments(name);
+
+	for (const field of state.touchedFields) {
+		const relativePath = getRelativePath(field, basePath);
+
+		if (!relativePath || relativePath.length === 0) {
+			continue;
+		}
+
+		const error = getErrors(state, field);
+
+		if (typeof error !== 'undefined') {
+			result[formatPathSegments(relativePath)] = error;
+		}
+	}
+
+	return result;
 }
 
 /**
@@ -270,33 +294,24 @@ export function getFormMetadata<ErrorShape>(
 	},
 ): FormMetadata<ErrorShape, DefaultFieldMetadata<ErrorShape>> {
 	return {
+		key: context.state.resetKey,
 		id: context.formId,
+		errorId: `${context.formId}-form-error`,
+		descriptionId: `${context.formId}-form-description`,
 		get errors() {
-			return getError(context.state);
+			return getErrors(context.state);
 		},
 		get fieldErrors() {
-			const result: Record<string, ErrorShape[]> = {};
-
-			for (const name of context.state.touchedFields) {
-				if (!name) {
-					// Skip form-level errors
-					continue;
-				}
-
-				const error = getError(context.state, name);
-
-				if (typeof error !== 'undefined') {
-					result[name] = error;
-				}
-			}
-
-			return result;
+			return getFieldErrors(context.state);
 		},
 		get touched() {
 			return isTouched(context.state);
 		},
+		get valid() {
+			return typeof getErrors(context.state) === 'undefined';
+		},
 		get invalid() {
-			return typeof getError(context.state) !== 'undefined';
+			return !this.valid;
 		},
 		props: {
 			id: context.formId,
@@ -335,12 +350,13 @@ export function getField<FieldShape, ErrorShape = string>(
 		key?: string;
 	},
 ): Field<FieldShape, DefaultFieldMetadata<ErrorShape>> {
-	const id = `${context.formId}-${options.name}`;
+	const id = `${context.formId}-field-${options.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, options.name);
 	const metadata: DefaultFieldMetadata<ErrorShape> = {
 		id: id,
 		descriptionId: `${id}-description`,
 		errorId: `${id}-error`,
+		formId: context.formId,
 		required: constraint?.required,
 		minLength: constraint?.minLength,
 		maxLength: constraint?.maxLength,
@@ -361,11 +377,17 @@ export function getField<FieldShape, ErrorShape = string>(
 		get touched() {
 			return isTouched(context.state, options.name);
 		},
+		get valid() {
+			return typeof getErrors(context.state, options.name) === 'undefined';
+		},
 		get invalid() {
-			return typeof getError(context.state, options.name) !== 'undefined';
+			return !this.valid;
 		},
 		get errors() {
-			return getError(context.state, options.name);
+			return getErrors(context.state, options.name);
+		},
+		get fieldErrors() {
+			return getFieldErrors(context.state, options.name);
 		},
 	};
 

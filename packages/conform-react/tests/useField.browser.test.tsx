@@ -16,7 +16,7 @@ describe('future export: useField', () => {
 		});
 
 		return (
-			<div id={field.invalid ? field.errorId : undefined}>
+			<div id={!field.valid ? field.errorId : undefined}>
 				{field.errors?.join(', ') ?? 'n/a'}
 			</div>
 		);

@@ -19,7 +19,7 @@ describe('future export: useFormMetadata', () => {
 					const field = form.getField(name);
 
 					return (
-						<div key={name} id={field.invalid ? field.errorId : undefined}>
+						<div key={name} id={!field.valid ? field.errorId : undefined}>
 							{errors?.join(', ') ?? 'n/a'}
 						</div>
 					);
