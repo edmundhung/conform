@@ -1,8 +1,7 @@
 'use client';
 
-import { memoize } from '@conform-to/zod/v3/future';
 import { useActionState, useMemo } from 'react';
-import { useForm } from '@conform-to/react/future';
+import { useForm, memoize } from '@conform-to/react/future';
 import { signup } from './_action';
 import { signupSchema } from './_schema';
 

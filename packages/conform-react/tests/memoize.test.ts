@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { memoize, defaultEqualityCheck } from '../memoize';
+import { memoize, defaultEqualityCheck } from '../future/memoize';
 
 describe('defaultEqualityCheck', () => {
 	test('returns true for identical primitive arguments', () => {
