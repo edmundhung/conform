@@ -9,8 +9,11 @@ import { appendPathSegment, type FormError } from '@conform-to/dom/future';
 export function formatResult(
 	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
 ): FormError<string> | null;
-export function formatResult<Output, ErrorShape = string>(
-	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
+export function formatResult<
+	Schema extends GenericSchema | GenericSchemaAsync,
+	ErrorShape = string,
+>(
+	result: SafeParseResult<Schema>,
 	options: {
 		/** Whether to include the parsed value in the returned object */
 		includeValue: true;
@@ -19,9 +22,9 @@ export function formatResult<Output, ErrorShape = string>(
 	},
 ): {
 	error: FormError<ErrorShape> | null;
-	value: Output | undefined;
+	value: SafeParseResult<Schema>['output'] | undefined;
 };
-export function formatResult<Output>(
+export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
 	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
 	options: {
 		includeValue: true;
@@ -29,7 +32,7 @@ export function formatResult<Output>(
 	},
 ): {
 	error: FormError<string> | null;
-	value: Output | undefined;
+	value: SafeParseResult<Schema>['output'] | undefined;
 };
 export function formatResult<ErrorShape = string>(
 	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
@@ -38,8 +41,11 @@ export function formatResult<ErrorShape = string>(
 		formatIssues: (issue: BaseIssue<unknown>[], name: string) => ErrorShape[];
 	},
 ): FormError<ErrorShape> | null;
-export function formatResult<Output, ErrorShape = string>(
-	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
+export function formatResult<
+	Schema extends GenericSchema | GenericSchemaAsync,
+	ErrorShape = string,
+>(
+	result: SafeParseResult<Schema>,
 	options?: {
 		includeValue?: boolean;
 		formatIssues?: (issue: BaseIssue<unknown>[], name: string) => ErrorShape[];
@@ -48,7 +54,7 @@ export function formatResult<Output, ErrorShape = string>(
 	| FormError<string | ErrorShape>
 	| {
 			error: FormError<string | ErrorShape> | null;
-			value: Output | undefined;
+			value: SafeParseResult<Schema>['output'] | undefined;
 	  }
 	| null {
 	let error: FormError<string | ErrorShape> | null = null;
@@ -92,7 +98,7 @@ export function formatResult<Output, ErrorShape = string>(
 	if (options?.includeValue) {
 		return {
 			error,
-			value: result.success ? (result.output as Output) : undefined,
+			value: result.success ? result.output : undefined,
 		};
 	}
 
