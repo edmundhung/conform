@@ -1,5 +1,5 @@
-import {
-	type BaseIssue,
+import type {
+	BaseIssue,
 	GenericSchema,
 	GenericSchemaAsync,
 	SafeParseResult,
