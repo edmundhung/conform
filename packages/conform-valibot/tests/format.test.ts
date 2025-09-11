@@ -239,4 +239,13 @@ describe('formatResult', () => {
 
 		expect(formatted).toBeNull();
 	});
+
+	test('Unsupported schemas will result in an exception', () => {
+		const schema = v.object({ set: v.set(v.string()) });
+		const result = v.safeParse(schema, { set: new Set([1, 2]) });
+
+		expect(() => formatResult(result)).toThrowError(
+			'Only string or numeric path segment schemes are supported. Received segment: null',
+		);
+	});
 });

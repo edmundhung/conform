@@ -69,7 +69,15 @@ export function formatResult<
 			}
 
 			const name = issue.path.reduce<string>((name, segment) => {
-				return appendPathSegment(name, segment.key as string | number);
+				if (
+					typeof segment.key !== 'string' &&
+					typeof segment.key !== 'number'
+				) {
+					throw new Error(
+						`Only string or numeric path segment schemes are supported. Received segment: ${segment.key}`,
+					);
+				}
+				return appendPathSegment(name, segment.key);
 			}, '');
 
 			errorByName[name] ??= [];
