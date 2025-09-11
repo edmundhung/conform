@@ -3,7 +3,7 @@ import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
 import {
 	getDefaultOptions,
 	getDefaultValue,
-	getError,
+	getErrors,
 	getListKey,
 	initializeState,
 	isTouched,
@@ -72,11 +72,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is required',
 		]);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -102,9 +102,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -126,9 +126,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test server validation
 		context.state = updateState(
@@ -150,9 +150,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toEqual(['Something went wrong']);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Something went wrong']);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test client validation with the same form value after server validation
 		context.state = updateState(
@@ -172,9 +172,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toEqual(['Something went wrong']);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Something went wrong']);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test client validation with the form value updated after server validation
 		context.state = updateState(
@@ -194,9 +194,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test server validation with a reset result
 		context.state = updateState(
@@ -216,9 +216,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test async validation - Setup client error state (1/3)
 		context.state = updateState(
@@ -250,11 +250,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is required',
 		]);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test async validation - Client validation result (2/3)
 		context.state = updateState(
@@ -273,11 +273,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is required',
 		]);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -301,9 +301,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toEqual(['Something went wrong']);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Something went wrong']);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 	});
 
 	test('validate fields', () => {
@@ -339,11 +339,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is required',
 		]);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Testing validating another field
 		context.state = updateState(
@@ -375,11 +375,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is invalid',
 		]);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -406,9 +406,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test resetting form with null value
 		context.state = updateState(
@@ -428,9 +428,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test validating the whole form with async validation - Pre-populate error state (1/4)
 		context.state = updateState(
@@ -462,11 +462,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is invalid',
 		]);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Test validating the whole form with async validation - Client Validating (2/3)
 		context.state = updateState(
@@ -491,11 +491,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is invalid',
 		]);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -525,9 +525,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toEqual(['Something went wrong']);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Something went wrong']);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 	});
 
 	test('update fields', () => {
@@ -543,9 +543,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toBe(undefined);
 
 		// Update state with client validation result
 		context.state = updateState(
@@ -580,9 +580,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is incorrect',
 		]);
 
@@ -622,9 +622,9 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toBe(undefined);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toBe(undefined);
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 
@@ -658,11 +658,11 @@ describe('form', () => {
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'username')).toEqual([
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'username')).toEqual([
 			'Username is invalid',
 		]);
-		expect(getError(context.state, 'password')).toEqual([
+		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
 		]);
 	});
@@ -886,12 +886,12 @@ describe('form', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(true);
 		expect(isTouched(context.state, 'tasks[3]')).toBe(false);
-		expect(getError(context.state)).toBe(undefined);
-		expect(getError(context.state, 'tasks')).toEqual(['Too many tasks']);
-		expect(getError(context.state, 'tasks[0]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[1]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[2]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[3]')).toBe(undefined);
+		expect(getErrors(context.state)).toBe(undefined);
+		expect(getErrors(context.state, 'tasks')).toEqual(['Too many tasks']);
+		expect(getErrors(context.state, 'tasks[0]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[1]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[2]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[3]')).toBe(undefined);
 
 		// Test reordering items
 		context.state = updateState(
@@ -1002,12 +1002,12 @@ describe('form', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[3]')).toBe(true);
-		expect(getError(context.state)).toEqual(['Some tasks are too urgent']);
-		expect(getError(context.state, 'tasks')).toBe(undefined);
-		expect(getError(context.state, 'tasks[0]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[1]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[2]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[3]')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Some tasks are too urgent']);
+		expect(getErrors(context.state, 'tasks')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[0]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[1]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[2]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[3]')).toBe(undefined);
 
 		// Test removing an item
 		context.state = updateState(
@@ -1100,12 +1100,12 @@ describe('form', () => {
 		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(true);
-		expect(getError(context.state)).toEqual(['Oops']);
-		expect(getError(context.state, 'tasks')).toBe(undefined);
-		expect(getError(context.state, 'tasks[0]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[1]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[2]')).toBe(undefined);
-		expect(getError(context.state, 'tasks[3]')).toBe(undefined);
+		expect(getErrors(context.state)).toEqual(['Oops']);
+		expect(getErrors(context.state, 'tasks')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[0]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[1]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[2]')).toBe(undefined);
+		expect(getErrors(context.state, 'tasks[3]')).toBe(undefined);
 
 		// Test resetting the form
 		context.state = updateState(
@@ -1261,12 +1261,16 @@ describe('form', () => {
 
 		// Test basic properties
 		expect(metadata.id).toBe('test-id');
+		expect(metadata.key).toBe(context.state.resetKey);
+		expect(metadata.errorId).toBe('test-id-form-error');
+		expect(metadata.descriptionId).toBe('test-id-form-description');
 		expect(metadata.errors).toEqual(['Form error']);
 		expect(metadata.fieldErrors).toEqual({
 			username: ['Username required'],
 			password: ['Password required'],
 		});
 		expect(metadata.touched).toBe(true);
+		expect(metadata.valid).toBe(false);
 		expect(metadata.invalid).toBe(true);
 
 		// Test props
@@ -1313,11 +1317,12 @@ describe('form', () => {
 		});
 
 		// Test basic properties
-		expect(field.id).toBe('test-id-username');
+		expect(field.id).toBe('test-id-field-username');
 		expect(field.name).toBe('username');
 		expect(field.key).toBe('unique-key');
-		expect(field.descriptionId).toBe('test-id-username-description');
-		expect(field.errorId).toBe('test-id-username-error');
+		expect(field.descriptionId).toBe('test-id-field-username-description');
+		expect(field.errorId).toBe('test-id-field-username-error');
+		expect(field.formId).toBe('test-id');
 
 		// Test constraint properties
 		expect(field.required).toBe(true);
@@ -1326,8 +1331,10 @@ describe('form', () => {
 		// Test computed properties
 		expect(field.defaultValue).toBe('test-user');
 		expect(field.touched).toBe(true);
+		expect(field.valid).toBe(false);
 		expect(field.invalid).toBe(true);
 		expect(field.errors).toEqual(['Username taken']);
+		expect(field.fieldErrors).toEqual({}); // No child fields, so empty
 
 		// Test methods exist
 		expect(typeof field.getFieldset).toBe('function');
@@ -1356,7 +1363,7 @@ describe('form', () => {
 		const nameField = fieldset.name!;
 		expect(nameField.name).toBe('profile.name');
 		expect(nameField.defaultValue).toBe('John');
-		expect(nameField.id).toBe('test-id-profile.name');
+		expect(nameField.id).toBe('test-id-field-profile.name');
 
 		const emailField = fieldset.email!;
 		expect(emailField.name).toBe('profile.email');
@@ -1375,6 +1382,48 @@ describe('form', () => {
 		});
 		const profileField = (rootFieldset as any).profile;
 		expect(profileField.name).toBe('profile');
+
+		// Test fieldErrors with nested structure
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['profile.name', 'John'],
+					['profile.email', 'invalid-email'],
+					['profile.nested.value', 'deep'],
+				],
+				error: {
+					fieldErrors: {
+						'profile.name': ['Name is too short'],
+						'profile.email': ['Invalid email format'],
+						'profile.nested.value': ['Invalid value'],
+					},
+				},
+			}),
+		);
+
+		// Test scoped fieldErrors for profile fieldset
+		const profileFieldWithErrors = getField(context, {
+			name: 'profile',
+			serialize: (value) => String(value),
+		});
+
+		expect(profileFieldWithErrors.fieldErrors).toEqual({
+			name: ['Name is too short'],
+			email: ['Invalid email format'],
+			'nested.value': ['Invalid value'],
+		});
+
+		// Test deeply nested fieldErrors
+		const nestedFieldWithErrors = getField(context, {
+			name: 'profile.nested',
+			serialize: (value) => String(value),
+		});
+
+		expect(nestedFieldWithErrors.fieldErrors).toEqual({
+			value: ['Invalid value'],
+		});
 	});
 
 	test('getFieldList', () => {

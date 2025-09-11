@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with Valibot",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.9.0",
+	"version": "1.9.1",
 	"main": "./dist/index.js",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.ts",

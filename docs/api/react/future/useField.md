@@ -26,11 +26,15 @@ A `Field` object containing field metadata and state:
 
 ### `id: string`
 
-The field's unique identifier, automatically generated as `{formId}-{fieldName}`.
+The field's unique identifier, automatically generated as `{formId}-field-{fieldName}`.
 
 ### `name: FieldName<FieldShape>`
 
 The field name path exactly as provided. The FieldName type is just a branded string type to help with TypeScript inference.
+
+### `formId: string`
+
+The form's unique identifier for associating field via the `form` attribute.
 
 ### `descriptionId: string`
 
@@ -56,13 +60,23 @@ Default checked state for checkbox/radio inputs.
 
 Whether this field has been touched (through `intent.validate()` or the `shouldValidate` option).
 
+### `valid: boolean`
+
+Whether this field currently has no validation errors.
+
 ### `invalid: boolean`
 
-Whether this field currently has validation errors.
+> **⚠️ Deprecated:** Use `valid` instead. This property will be removed in version 1.10.0.
+
+Whether this field currently has validation errors. This is equivalent to `!valid`.
 
 ### `errors: ErrorShape[] | undefined`
 
 Array of validation error messages for this field.
+
+### `fieldErrors: Record<string, ErrorShape[]>`
+
+Object containing errors for all touched subfields.
 
 ### Validation Attributes
 
@@ -102,7 +116,7 @@ function FormField({ name, label, type = 'text' }: FieldProps) {
   const field = useField(name);
 
   return (
-    <div className={`form-field ${field.invalid ? 'invalid' : ''}`}>
+    <div className={`form-field ${field.valid ? 'valid' : 'invalid'}`}>
       <label htmlFor={field.id}>
         {label}
         {field.required && <span className="required">*</span>}
