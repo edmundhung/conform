@@ -1,7 +1,8 @@
 import type {
-	BaseIssue,
 	GenericSchema,
 	GenericSchemaAsync,
+	InferIssue,
+	InferOutput,
 	SafeParseResult,
 } from 'valibot';
 import { appendPathSegment, type FormError } from '@conform-to/dom/future';
@@ -18,27 +19,30 @@ export function formatResult<
 		/** Whether to include the parsed value in the returned object */
 		includeValue: true;
 		/** Custom function to format validation issues for each field */
-		formatIssues: (issue: BaseIssue<unknown>[], name: string) => ErrorShape[];
+		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
 	},
 ): {
 	error: FormError<ErrorShape> | null;
-	value: SafeParseResult<Schema>['output'] | undefined;
+	value: InferOutput<Schema> | undefined;
 };
 export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
-	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
+	result: SafeParseResult<Schema>,
 	options: {
 		includeValue: true;
 		formatIssues?: undefined;
 	},
 ): {
 	error: FormError<string> | null;
-	value: SafeParseResult<Schema>['output'] | undefined;
+	value: InferOutput<Schema> | undefined;
 };
-export function formatResult<ErrorShape = string>(
-	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
+export function formatResult<
+	Schema extends GenericSchema | GenericSchemaAsync,
+	ErrorShape = string,
+>(
+	result: SafeParseResult<Schema>,
 	options: {
 		includeValue?: false;
-		formatIssues: (issue: BaseIssue<unknown>[], name: string) => ErrorShape[];
+		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
 	},
 ): FormError<ErrorShape> | null;
 export function formatResult<
@@ -48,7 +52,7 @@ export function formatResult<
 	result: SafeParseResult<Schema>,
 	options?: {
 		includeValue?: boolean;
-		formatIssues?: (issue: BaseIssue<unknown>[], name: string) => ErrorShape[];
+		formatIssues?: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
 	},
 ):
 	| FormError<string | ErrorShape>
@@ -60,7 +64,7 @@ export function formatResult<
 	let error: FormError<string | ErrorShape> | null = null;
 
 	if (!result.success) {
-		const errorByName: Record<string, BaseIssue<unknown>[]> = {};
+		const errorByName: Record<string, InferIssue<Schema>[]> = {};
 		for (const issue of result.issues) {
 			if (!issue.path) {
 				errorByName[''] ??= [];
