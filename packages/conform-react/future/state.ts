@@ -233,19 +233,24 @@ export function getFieldErrors<ErrorShape>(
 	name?: string,
 ) {
 	const result: Record<string, ErrorShape[]> = {};
-	const basePath = getPathSegments(name);
+	const error = state.serverError ?? state.clientError;
 
-	for (const field of state.touchedFields) {
-		const relativePath = getRelativePath(field, basePath);
+	if (error) {
+		const basePath = getPathSegments(name);
 
-		if (!relativePath || relativePath.length === 0) {
-			continue;
-		}
+		for (const field of Object.keys(error.fieldErrors)) {
+			const relativePath = getRelativePath(field, basePath);
 
-		const error = getErrors(state, field);
+			// Only include errors for specified field's children
+			if (!relativePath || relativePath.length === 0) {
+				continue;
+			}
 
-		if (typeof error !== 'undefined') {
-			result[formatPathSegments(relativePath)] = error;
+			const error = getErrors(state, field);
+
+			if (typeof error !== 'undefined') {
+				result[formatPathSegments(relativePath)] = error;
+			}
 		}
 	}
 
