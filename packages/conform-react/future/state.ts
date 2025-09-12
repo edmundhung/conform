@@ -233,23 +233,60 @@ export function getFieldErrors<ErrorShape>(
 	name?: string,
 ) {
 	const result: Record<string, ErrorShape[]> = {};
-	const basePath = getPathSegments(name);
+	const error = state.serverError ?? state.clientError;
 
-	for (const field of state.touchedFields) {
-		const relativePath = getRelativePath(field, basePath);
+	if (error) {
+		const basePath = getPathSegments(name);
 
-		if (!relativePath || relativePath.length === 0) {
-			continue;
-		}
+		for (const field of Object.keys(error.fieldErrors)) {
+			const relativePath = getRelativePath(field, basePath);
 
-		const error = getErrors(state, field);
+			// Only include errors for specified field's children
+			if (!relativePath || relativePath.length === 0) {
+				continue;
+			}
 
-		if (typeof error !== 'undefined') {
-			result[formatPathSegments(relativePath)] = error;
+			const error = getErrors(state, field);
+
+			if (typeof error !== 'undefined') {
+				result[formatPathSegments(relativePath)] = error;
+			}
 		}
 	}
 
 	return result;
+}
+
+export function isValid(state: FormState<any>, name?: string): boolean {
+	const error = state.serverError ?? state.clientError;
+
+	// If there is no error, it must be valid
+	if (!error) {
+		return true;
+	}
+
+	const basePath = getPathSegments(name);
+
+	for (const field of Object.keys(error.fieldErrors)) {
+		// When checking a specific field, only check that field and its children
+		if (name && !getRelativePath(field, basePath)) {
+			continue;
+		}
+
+		// If the field is not touched, we don't consider its error
+		const error = getErrors(state, field);
+
+		if (error) {
+			return false;
+		}
+	}
+
+	// Make sure there is no form error when checking the whole form
+	if (!name) {
+		return !getErrors(state);
+	}
+
+	return true;
 }
 
 /**
@@ -308,7 +345,7 @@ export function getFormMetadata<ErrorShape>(
 			return isTouched(context.state);
 		},
 		get valid() {
-			return typeof getErrors(context.state) === 'undefined';
+			return isValid(context.state);
 		},
 		get invalid() {
 			return !this.valid;
@@ -378,7 +415,7 @@ export function getField<FieldShape, ErrorShape = string>(
 			return isTouched(context.state, options.name);
 		},
 		get valid() {
-			return typeof getErrors(context.state, options.name) === 'undefined';
+			return isValid(context.state, options.name);
 		},
 		get invalid() {
 			return !this.valid;

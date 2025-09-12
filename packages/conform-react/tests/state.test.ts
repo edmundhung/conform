@@ -1244,7 +1244,10 @@ describe('form', () => {
 			context.state,
 			createAction({
 				type: 'client',
-				entries: [['username', '']],
+				entries: [
+					['username', ''],
+					['password', ''],
+				],
 				error: {
 					formErrors: ['Form error'],
 					fieldErrors: {
@@ -1255,7 +1258,7 @@ describe('form', () => {
 			}),
 		);
 
-		const metadata = getFormMetadata(context, {
+		let metadata = getFormMetadata(context, {
 			serialize: (value) => value?.toString(),
 		});
 
@@ -1282,6 +1285,51 @@ describe('form', () => {
 		expect(typeof metadata.getField).toBe('function');
 		expect(typeof metadata.getFieldset).toBe('function');
 		expect(typeof metadata.getFieldList).toBe('function');
+
+		// Test form with only form-level error
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['username', 'test'],
+					['password', 'secret'],
+				],
+				error: {
+					formErrors: ['Something went wrong'],
+				},
+			}),
+		);
+
+		metadata = getFormMetadata(context, {
+			serialize: (value) => value?.toString(),
+		});
+
+		expect(metadata.errors).toEqual(['Something went wrong']);
+		expect(metadata.valid).toBe(false);
+		expect(metadata.invalid).toBe(true);
+		expect(metadata.fieldErrors).toEqual({});
+
+		// Test form with no errors
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['username', 'test'],
+					['password', 'secret'],
+				],
+				error: null,
+			}),
+		);
+		metadata = getFormMetadata(context, {
+			serialize: (value) => value?.toString(),
+		});
+
+		expect(metadata.errors).toBe(undefined);
+		expect(metadata.valid).toBe(true);
+		expect(metadata.invalid).toBe(false);
+		expect(metadata.fieldErrors).toEqual({});
 	});
 
 	test('getField', () => {
@@ -1310,35 +1358,70 @@ describe('form', () => {
 			}),
 		);
 
-		const field = getField(context, {
+		const usernameField = getField(context, {
 			name: 'username',
 			key: 'unique-key',
 			serialize: (value) => String(value),
 		});
 
 		// Test basic properties
-		expect(field.id).toBe('test-id-field-username');
-		expect(field.name).toBe('username');
-		expect(field.key).toBe('unique-key');
-		expect(field.descriptionId).toBe('test-id-field-username-description');
-		expect(field.errorId).toBe('test-id-field-username-error');
-		expect(field.formId).toBe('test-id');
+		expect(usernameField.id).toBe('test-id-field-username');
+		expect(usernameField.name).toBe('username');
+		expect(usernameField.key).toBe('unique-key');
+		expect(usernameField.descriptionId).toBe(
+			'test-id-field-username-description',
+		);
+		expect(usernameField.errorId).toBe('test-id-field-username-error');
+		expect(usernameField.formId).toBe('test-id');
 
 		// Test constraint properties
-		expect(field.required).toBe(true);
-		expect(field.minLength).toBe(3);
+		expect(usernameField.required).toBe(true);
+		expect(usernameField.minLength).toBe(3);
 
 		// Test computed properties
-		expect(field.defaultValue).toBe('test-user');
-		expect(field.touched).toBe(true);
-		expect(field.valid).toBe(false);
-		expect(field.invalid).toBe(true);
-		expect(field.errors).toEqual(['Username taken']);
-		expect(field.fieldErrors).toEqual({}); // No child fields, so empty
+		expect(usernameField.defaultValue).toBe('test-user');
+		expect(usernameField.touched).toBe(true);
+		expect(usernameField.valid).toBe(false);
+		expect(usernameField.invalid).toBe(true);
+		expect(usernameField.errors).toEqual(['Username taken']);
+		expect(usernameField.fieldErrors).toEqual({}); // No child fields, so empty
+
+		// Test mixed parent and child field errors
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['username', 'test-user'],
+					['profile.address.city', '25'],
+				],
+				error: {
+					fieldErrors: {
+						username: ['Username taken'],
+						'profile.address': ['Address is incomplete'],
+						'profile.address.city': ['City is required'],
+					},
+				},
+			}),
+		);
+
+		const profileField = getField(context, {
+			name: 'profile',
+			serialize: (value) => String(value),
+		});
+
+		// Profile field should be invalid due to child field error, even though it has no direct error
+		expect(profileField.valid).toBe(false);
+		expect(profileField.invalid).toBe(true);
+		expect(profileField.errors).toBe(undefined); // No direct error on profile
+		expect(profileField.fieldErrors).toEqual({
+			address: ['Address is incomplete'],
+			'address.city': ['City is required'],
+		});
 
 		// Test methods exist
-		expect(typeof field.getFieldset).toBe('function');
-		expect(typeof field.getFieldList).toBe('function');
+		expect(typeof usernameField.getFieldset).toBe('function');
+		expect(typeof usernameField.getFieldList).toBe('function');
 	});
 
 	test('getFieldset', () => {
@@ -1380,50 +1463,8 @@ describe('form', () => {
 		const rootFieldset = getFieldset(context, {
 			serialize: (value) => String(value),
 		});
-		const profileField = (rootFieldset as any).profile;
+		const profileField = rootFieldset.profile!;
 		expect(profileField.name).toBe('profile');
-
-		// Test fieldErrors with nested structure
-		context.state = updateState(
-			context.state,
-			createAction({
-				type: 'client',
-				entries: [
-					['profile.name', 'John'],
-					['profile.email', 'invalid-email'],
-					['profile.nested.value', 'deep'],
-				],
-				error: {
-					fieldErrors: {
-						'profile.name': ['Name is too short'],
-						'profile.email': ['Invalid email format'],
-						'profile.nested.value': ['Invalid value'],
-					},
-				},
-			}),
-		);
-
-		// Test scoped fieldErrors for profile fieldset
-		const profileFieldWithErrors = getField(context, {
-			name: 'profile',
-			serialize: (value) => String(value),
-		});
-
-		expect(profileFieldWithErrors.fieldErrors).toEqual({
-			name: ['Name is too short'],
-			email: ['Invalid email format'],
-			'nested.value': ['Invalid value'],
-		});
-
-		// Test deeply nested fieldErrors
-		const nestedFieldWithErrors = getField(context, {
-			name: 'profile.nested',
-			serialize: (value) => String(value),
-		});
-
-		expect(nestedFieldWithErrors.fieldErrors).toEqual({
-			value: ['Invalid value'],
-		});
 	});
 
 	test('getFieldList', () => {
