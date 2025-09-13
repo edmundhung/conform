@@ -74,6 +74,13 @@ const menus: { [code: string]: Menu[] } = {
 			],
 		},
 		{
+			title: 'Future APIs (Valibot Schema)',
+			links: [
+				{ title: 'coerceFormValue', to: '/api/valibot/future/coerceFormValue' },
+				{ title: 'formatResult', to: '/api/valibot/future/formatResult' },
+			],
+		},
+		{
 			title: 'Utilities',
 			links: [
 				{ title: 'getFormProps', to: '/api/react/getFormProps' },

@@ -14,6 +14,13 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.js",
 			"default": "./dist/index.mjs"
+		},
+		"./future": {
+			"types": "./dist/future.d.ts",
+			"module": "./dist/future.mjs",
+			"import": "./dist/future.mjs",
+			"require": "./dist/future.js",
+			"default": "./dist/future.mjs"
 		}
 	},
 	"files": [
