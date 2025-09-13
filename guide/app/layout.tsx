@@ -63,6 +63,7 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'report', to: '/api/react/future/report' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
+				{ title: 'memoize', to: '/api/react/future/memoize' },
 			],
 		},
 		{
@@ -70,7 +71,6 @@ const menus: { [code: string]: Menu[] } = {
 			links: [
 				{ title: 'coerceFormValue', to: '/api/zod/future/coerceFormValue' },
 				{ title: 'formatResult', to: '/api/zod/future/formatResult' },
-				{ title: 'memoize', to: '/api/zod/future/memoize' },
 			],
 		},
 		{

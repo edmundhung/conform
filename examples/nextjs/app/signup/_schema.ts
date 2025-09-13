@@ -1,4 +1,5 @@
-import { memoize, coerceFormValue } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
+import { memoize } from '@conform-to/react/future';
 import { z } from 'zod';
 
 // Basic signup schema (without async validation)

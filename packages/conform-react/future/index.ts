@@ -10,3 +10,4 @@ export {
 	useFormMetadata,
 	useIntent,
 } from './hooks';
+export { memoize } from './memoize';
