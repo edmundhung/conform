@@ -7,8 +7,8 @@ import type {
 } from 'valibot';
 import { appendPathSegment, type FormError } from '@conform-to/dom/future';
 
-export function formatResult(
-	result: SafeParseResult<GenericSchema | GenericSchemaAsync>,
+export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
+	result: SafeParseResult<Schema>,
 ): FormError<string> | null;
 export function formatResult<
 	Schema extends GenericSchema | GenericSchemaAsync,
@@ -58,7 +58,7 @@ export function formatResult<
 	| FormError<string | ErrorShape>
 	| {
 			error: FormError<string | ErrorShape> | null;
-			value: SafeParseResult<Schema>['output'] | undefined;
+			value: InferOutput<Schema> | undefined;
 	  }
 	| null {
 	let error: FormError<string | ErrorShape> | null = null;
