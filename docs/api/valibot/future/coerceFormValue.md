@@ -5,7 +5,7 @@
 A helper that enhances the schema with extra preprocessing steps to strip empty value and coerce form value to the expected type.
 
 ```ts
-import { coerceFormValue } from '@conform-to/valibot';
+import { coerceFormValue } from '@conform-to/valibot/future';
 
 const enhancedSchema = coerceFormValue(schema, options);
 ```
@@ -35,7 +35,7 @@ Optional. Use it to [define custom coercion](#define-custom-coercion) for a spec
 ## Example
 
 ```ts
-import { coerceFormValue } from '@conform-to/valibot';
+import { coerceFormValue } from '@conform-to/valibot/future';
 import { useForm } from '@conform-to/react';
 import * as v from 'valibot';
 import { jsonSchema } from './jsonSchema';
