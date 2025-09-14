@@ -6,7 +6,7 @@ import {
 	isPlainObject,
 	setValueAtPath,
 } from '@conform-to/dom/future';
-import { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 import { ValidateHandler, ValidateResult } from './types';
 
 export function isUndefined(value: unknown): value is undefined {

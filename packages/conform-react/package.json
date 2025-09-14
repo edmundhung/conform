@@ -60,7 +60,6 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"@standard-schema/spec": "^1.0.0",
 		"@types/react": "^18.2.43",
 		"@types/react-dom": "^18.3.5",
 		"react": "^18.2.0",
