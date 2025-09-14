@@ -4,7 +4,7 @@ import type {
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
-import { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from './standard-schema';
 
 export type Prettify<T> = {
 	[K in keyof T]: T[K];
