@@ -294,8 +294,8 @@ export function useConform<ErrorShape, Value = undefined>(
 				}
 
 				// Override submission value if the last intended value is not applied yet (i.e. batch updates)
-				if (typeof lastIntentedValueRef.current !== 'undefined') {
-					submission.payload = lastIntentedValueRef.current ?? {};
+				if (lastIntentedValueRef.current != null) {
+					submission.payload = lastIntentedValueRef.current;
 				}
 
 				const intendedValue = applyIntent(submission);
