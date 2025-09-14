@@ -489,7 +489,8 @@ export function normalizeStringValues(value: unknown): string[] | undefined {
 export function normalizeFileValues(value: unknown): FileList | undefined {
 	if (typeof value === 'undefined') return undefined;
 	if (value === null) return createFileList([]);
-	if (isGlobalInstance(value, 'File')) return createFileList([value]);
+	if (isGlobalInstance(value, 'File'))
+		return createFileList(value.name === '' && value.size === 0 ? [] : [value]);
 	if (isGlobalInstance(value, 'FileList')) return value;
 	if (
 		Array.isArray(value) &&

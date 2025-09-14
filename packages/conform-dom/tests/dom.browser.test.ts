@@ -83,6 +83,7 @@ describe('updateField', () => {
 		const input = document.createElement('input');
 		input.type = 'file';
 
+		const emptyFile = new File([], '');
 		const file = new File(['hello world'], 'example.txt', {
 			type: 'text/plain',
 		});
@@ -110,6 +111,9 @@ describe('updateField', () => {
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.[1]).toEqual(file2);
 		expect(input.files?.length).toBe(2);
+
+		updateField(input, { value: emptyFile });
+		expect(input.files?.length).toBe(0);
 	});
 
 	it('supports select', () => {

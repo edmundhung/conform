@@ -18,9 +18,6 @@ const schema = coerceFormValue(
 					/^[a-zA-Z0-9]+$/,
 					'Invalid username: only letters or numbers are allowed',
 				),
-			// .refine((username) => isUsernameUnique(username), {
-			// 	message: 'Username is already used. How about "example"?',
-			// }),
 		})
 		.and(
 			z

@@ -110,7 +110,7 @@ export type Serializable<T> = T extends File
  * @returns A `SerializedValue` if the input can be represented in `FormData`,
  *          or `undefined` if it cannot be serialized.
  */
-export type Serialize = (value: unknown) => SerializedValue | undefined;
+export type Serialize = (value: unknown) => SerializedValue | null | undefined;
 
 /**
  * A value that can be serialized into `FormData`.
