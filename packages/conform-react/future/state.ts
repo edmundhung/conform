@@ -27,8 +27,8 @@ export function initializeState<ErrorShape>(): FormState<ErrorShape> {
 	return {
 		resetKey: generateUniqueKey(),
 		listKeys: {},
-		intendedValue: null,
-		serverValidatedValue: null,
+		clientIntendedValue: null,
+		serverIntendedValue: null,
 		serverError: null,
 		clientError: null,
 		touchedFields: [],
@@ -62,9 +62,11 @@ export function updateState<ErrorShape>(
 	state =
 		action.type === 'client'
 			? merge(state, {
-					intendedValue: !action.intent
-						? value
-						: action.intendedValue ?? state.intendedValue,
+					clientIntendedValue:
+						action.intendedValue ?? state.clientIntendedValue,
+					serverIntendedValue: action.intendedValue
+						? null
+						: state.serverIntendedValue,
 					// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
 					clientError:
 						typeof action.error !== 'undefined' &&
@@ -74,13 +76,11 @@ export function updateState<ErrorShape>(
 					// Reset server error if form value is changed
 					serverError:
 						typeof action.error !== 'undefined' &&
-						!deepEqual(state.serverValidatedValue, value)
+						!deepEqual(state.serverIntendedValue, value)
 							? null
 							: state.serverError,
 				})
 			: merge(state, {
-					intendedValue:
-						action.type === 'initialize' ? value : state.intendedValue,
 					// Clear client error to avoid showing stale errors
 					clientError: null,
 					// Update server error if the error is defined.
@@ -90,10 +90,9 @@ export function updateState<ErrorShape>(
 							? action.error
 							: state.serverError,
 					// Keep track of the value that the serverError is based on
-					serverValidatedValue:
-						typeof action.error !== 'undefined'
-							? value
-							: state.serverValidatedValue,
+					serverIntendedValue: !deepEqual(state.serverIntendedValue, value)
+						? value
+						: state.serverIntendedValue,
 				});
 
 	if (action.type !== 'server' && typeof action.intent !== 'undefined') {
@@ -123,7 +122,9 @@ export function getDefaultValue(
 	serialize: Serialize = defaultSerialize,
 ): string | undefined {
 	const value = getValueAtPath(
-		context.state.intendedValue ?? context.defaultValue ?? {},
+		context.state.serverIntendedValue ??
+			context.state.clientIntendedValue ??
+			context.defaultValue,
 		name,
 	);
 	const serializedValue = serialize(value);
@@ -139,11 +140,12 @@ export function getDefaultOptions(
 	serialize: Serialize = defaultSerialize,
 ): string[] | undefined {
 	const value = getValueAtPath(
-		context.state.intendedValue ?? context.defaultValue ?? {},
+		context.state.serverIntendedValue ??
+			context.state.clientIntendedValue ??
+			context.defaultValue,
 		name,
 	);
-	const serializedValue =
-		typeof value !== 'undefined' ? serialize(value) : undefined;
+	const serializedValue = serialize(value);
 
 	if (
 		Array.isArray(serializedValue) &&
@@ -163,11 +165,12 @@ export function isDefaultChecked(
 	serialize: Serialize = defaultSerialize,
 ): boolean {
 	const value = getValueAtPath(
-		context.state.intendedValue ?? context.defaultValue ?? {},
+		context.state.serverIntendedValue ??
+			context.state.clientIntendedValue ??
+			context.defaultValue,
 		name,
 	);
-	const serializedValue =
-		typeof value !== 'undefined' ? serialize(value) : undefined;
+	const serializedValue = serialize(value);
 
 	return serializedValue === 'on';
 }
@@ -205,7 +208,9 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 		context.state.listKeys?.[name] ??
 		getDefaultListKey(
 			context.state.resetKey,
-			context.state.intendedValue ?? context.defaultValue,
+			context.state.serverIntendedValue ??
+				context.state.clientIntendedValue ??
+				context.defaultValue,
 			name,
 		)
 	);

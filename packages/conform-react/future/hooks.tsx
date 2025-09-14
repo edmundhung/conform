@@ -239,7 +239,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	}, [formRef, state.resetKey]);
 
 	useEffect(() => {
-		if (!state.intendedValue) {
+		if (!state.clientIntendedValue) {
 			return;
 		}
 
@@ -253,11 +253,11 @@ export function useConform<ErrorShape, Value = undefined>(
 
 		updateFormValue(
 			formElement,
-			state.intendedValue,
+			state.clientIntendedValue,
 			optionsRef.current.serialize,
 		);
 		lastIntentedValueRef.current = undefined;
-	}, [formRef, state.intendedValue, optionsRef]);
+	}, [formRef, state.clientIntendedValue, optionsRef]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {

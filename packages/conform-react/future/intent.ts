@@ -153,7 +153,7 @@ export const actionHandlers: {
 		validatePayload(name) {
 			return isOptional(name, isString);
 		},
-		onUpdate(state, { type, submission, intent, error }) {
+		onUpdate(state, { submission, intent, error }) {
 			const name = intent.payload ?? '';
 			const basePath = getPathSegments(name);
 
@@ -169,7 +169,7 @@ export const actionHandlers: {
 			// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
 			// or fieldsets without any fields, but we can at least include missing
 			// required fields based on the form error
-			if (type === 'initialize' && name === '' && error) {
+			if (name === '' && error) {
 				for (const name of Object.keys(error.fieldErrors)) {
 					touchedFields = appendUniqueItem(touchedFields, name);
 				}

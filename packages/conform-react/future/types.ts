@@ -122,10 +122,10 @@ export type DefaultValue<FormShape> = FormShape extends
 export type FormState<ErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
-	/** Form values from user intent actions (validate, update, insert, remove, etc.) */
-	intendedValue: Record<string, unknown> | null;
-	/** Form values that have been validated on the server */
-	serverValidatedValue: Record<string, unknown> | null;
+	/** Form values from client actions that will be synced to the DOM  */
+	clientIntendedValue: Record<string, unknown> | null;
+	/** Form values from server actions, or submitted values when no server intent exists */
+	serverIntendedValue: Record<string, unknown> | null;
 	/** Validation errors from server-side processing */
 	serverError: FormError<ErrorShape> | null;
 	/** Validation errors from client-side validation */

@@ -67,8 +67,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe('');
-		expect(getDefaultValue(context, 'password')).toBe('');
+		expect(getDefaultValue(context, 'username')).toBe(undefined);
+		expect(getDefaultValue(context, 'password')).toBe(undefined);
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -97,8 +97,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe('edmund');
-		expect(getDefaultValue(context, 'password')).toBe('');
+		expect(getDefaultValue(context, 'username')).toBe(undefined);
+		expect(getDefaultValue(context, 'password')).toBe(undefined);
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -121,8 +121,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe('edmund');
-		expect(getDefaultValue(context, 'password')).toBe('my-secret-password');
+		expect(getDefaultValue(context, 'username')).toBe(undefined);
+		expect(getDefaultValue(context, 'password')).toBe(undefined);
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -190,7 +190,7 @@ describe('form', () => {
 		);
 
 		expect(getDefaultValue(context, 'username')).toBe('edmund');
-		expect(getDefaultValue(context, 'password')).toBe('secret-password');
+		expect(getDefaultValue(context, 'password')).toBe('my-secret-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -268,8 +268,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe('edmund');
-		expect(getDefaultValue(context, 'password')).toBe('secret-password');
+		expect(getDefaultValue(context, 'username')).toBe(undefined);
+		expect(getDefaultValue(context, 'password')).toBe(undefined);
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -520,8 +520,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('edmund');
+		expect(getDefaultValue(context, 'password')).toBe('my-password');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -664,6 +664,37 @@ describe('form', () => {
 		]);
 		expect(getErrors(context.state, 'password')).toEqual([
 			'Password is required',
+		]);
+	});
+
+	test('submission with empty array', () => {
+		const context = createContext();
+
+		// Test array errors with no items
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [['title', '']],
+				error: {
+					fieldErrors: {
+						title: ['Title is required'],
+						tasks: ['At least one task is required'],
+					},
+				},
+			}),
+		);
+
+		expect(getListKey(context, 'tasks')).toEqual([]);
+		expect(getDefaultValue(context, 'title')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultOptions(context, 'tasks')).toEqual(undefined);
+		expect(isTouched(context.state)).toBe(true);
+		expect(isTouched(context.state, 'title')).toBe(true);
+		expect(isTouched(context.state, 'tasks')).toBe(true);
+		expect(getErrors(context.state, 'title')).toEqual(['Title is required']);
+		expect(getErrors(context.state, 'tasks')).toEqual([
+			'At least one task is required',
 		]);
 	});
 
@@ -829,69 +860,6 @@ describe('form', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 		expect(isTouched(context.state, 'tasks[2]')).toBe(true);
 		expect(isTouched(context.state, 'tasks[3]')).toBe(false);
-
-		// Test whether client async validation will skip applying the insert intent
-		context.state = updateState(
-			context.state,
-			createAction({
-				type: 'server',
-				entries: [
-					['title', 'My Tasks'],
-					['tasks[0]', 'Urgent task'],
-					['tasks[1]', 'Default task 1'],
-					['tasks[2]', 'Default task 2'],
-					['tasks[3]', 'New task'],
-					[
-						DEFAULT_INTENT_NAME,
-						serializeIntent({
-							type: 'insert',
-							payload: {
-								name: 'tasks',
-								defaultValue: 'Urgent task',
-								index: 0,
-							},
-						}),
-					],
-				],
-				error: {
-					fieldErrors: {
-						tasks: ['Too many tasks'],
-					},
-				},
-			}),
-		);
-
-		expect(getListKey(context, 'tasks')).toEqual([
-			'1',
-			'0-tasks[0]',
-			'0-tasks[1]',
-			'0',
-		]);
-		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
-		expect(getDefaultOptions(context, 'tasks')).toEqual([
-			'Urgent task',
-			'Default task 1',
-			'Default task 2',
-			'New task',
-		]);
-		expect(getDefaultValue(context, 'tasks[0]')).toBe('Urgent task');
-		expect(getDefaultValue(context, 'tasks[1]')).toBe('Default task 1');
-		expect(getDefaultValue(context, 'tasks[2]')).toBe('Default task 2');
-		expect(getDefaultValue(context, 'tasks[3]')).toBe('New task');
-		expect(isTouched(context.state)).toBe(true);
-		expect(isTouched(context.state, 'title')).toBe(false);
-		expect(isTouched(context.state, 'tasks')).toBe(true);
-		expect(isTouched(context.state, 'tasks[0]')).toBe(false);
-		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
-		expect(isTouched(context.state, 'tasks[2]')).toBe(true);
-		expect(isTouched(context.state, 'tasks[3]')).toBe(false);
-		expect(getErrors(context.state)).toBe(undefined);
-		expect(getErrors(context.state, 'tasks')).toEqual(['Too many tasks']);
-		expect(getErrors(context.state, 'tasks[0]')).toBe(undefined);
-		expect(getErrors(context.state, 'tasks[1]')).toBe(undefined);
-		expect(getErrors(context.state, 'tasks[2]')).toBe(undefined);
-		expect(getErrors(context.state, 'tasks[3]')).toBe(undefined);
 
 		// Test reordering items
 		context.state = updateState(

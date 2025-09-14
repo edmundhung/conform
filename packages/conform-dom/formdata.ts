@@ -569,7 +569,7 @@ export function isDirty(
 		serialize?: (
 			value: unknown,
 			defaultSerialize: Serialize,
-		) => SerializedValue | undefined;
+		) => SerializedValue | null | undefined;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -606,10 +606,14 @@ export function isDirty(
 	};
 
 	function normalize(data: unknown): unknown {
-		const value = serializeData(data) ?? data;
+		let value: unknown = serializeData(data);
 
-		// Removes empty strings, so that bpth empty string and undefined are treated as the same
-		if (value === '') {
+		if (typeof value === 'undefined') {
+			value = data;
+		}
+
+		// Removes empty strings, so that both empty string, empty file, null and undefined are treated as the same
+		if (value === '' || value === null) {
 			return undefined;
 		}
 
@@ -682,14 +686,12 @@ export function isDirty(
  * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined
  * - anything else -> undefined
  */
-export function serialize(value: unknown): SerializedValue | undefined {
-	function serializePrimitive(value: unknown): string | File | undefined {
-		if (typeof value === 'string') {
+export function serialize(value: unknown): SerializedValue | null | undefined {
+	function serializePrimitive(
+		value: unknown,
+	): string | File | null | undefined {
+		if (typeof value === 'string' || value === null) {
 			return value;
-		}
-
-		if (value === null) {
-			return '';
 		}
 
 		if (typeof value === 'boolean') {
@@ -720,12 +722,13 @@ export function serialize(value: unknown): SerializedValue | undefined {
 				return;
 			}
 
-			if (typeof serialized === 'string') {
+			// It is unclear what `null` in a file array should mean, so we treat it as a string instead
+			if (typeof serialized === 'string' || serialized === null) {
 				if (files.length > 0) {
 					return;
 				}
 
-				options.push(serialized);
+				options.push(serialized ?? '');
 			} else {
 				if (options.length > 0) {
 					return;

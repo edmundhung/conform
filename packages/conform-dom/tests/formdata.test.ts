@@ -1031,7 +1031,7 @@ test('serialize', () => {
 	expect(serialize(new Set())).toBeUndefined();
 	expect(serialize(txtFile)).toBe(txtFile);
 	expect(serialize([txtFile, svgFile])).toEqual([txtFile, svgFile]);
-	expect(serialize(null)).toBe('');
+	expect(serialize(null)).toBe(null);
 	expect(serialize(undefined)).toBeUndefined();
 	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
 	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
