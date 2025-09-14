@@ -492,6 +492,31 @@ describe('future export: useForm', () => {
 		await expect.element(task1.completed).not.toBeChecked();
 		await expect.element(task2.content).toHaveValue('Second Task');
 		await expect.element(task2.completed).toBeChecked();
+		await expectNoErrorMessages(
+			form.title,
+			form.description,
+			task1.content,
+			task1.completed,
+			task2.content,
+			task2.completed,
+		);
+
+		// Test submit after reset should work
+		await userEvent.click(form.submitButton);
+		await expectNoErrorMessages(
+			form.title,
+			form.description,
+			task1.content,
+			task1.completed,
+			task2.content,
+			task2.completed,
+		);
+		await expect.element(form.title).toHaveValue('example');
+		await expect.element(form.description).toHaveValue('hello world');
+		await expect.element(task1.content).toHaveValue('First Task');
+		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task2.content).toHaveValue('Second Task');
+		await expect.element(task2.completed).toBeChecked();
 	});
 
 	test('update intent', async () => {
