@@ -5,7 +5,7 @@
 A utility function that memoizes function calls, caching only the most recent result to prevent redundant async validations in forms.
 
 ```ts
-import { memoize } from '@conform-to/zod/v3/future'; // Or import '@conform-to/zod/v4/future'
+import { memoize } from '@conform-to/react/future';
 
 const memoizedFn = memoize(fn, isEqual);
 ```
@@ -41,7 +41,7 @@ Method to manually clear the memoization cache.
 ## Example
 
 ```ts
-import { memoize } from '@conform-to/zod/v3/future'; // Or import '@conform-to/zod/v4/future'
+import { memoize } from '@conform-to/react/future';
 import { useMemo } from 'react';
 
 function Example() {
