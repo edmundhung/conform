@@ -1,6 +1,22 @@
-export type { FormValue, FormError } from '@conform-to/dom/future';
+export type {
+	FormError,
+	FormValue,
+	Submission,
+	SubmissionResult,
+} from '@conform-to/dom/future';
 export { parseSubmission, report, isDirty } from '@conform-to/dom/future';
-export type { Control, FormOptions, Fieldset, DefaultValue } from './types';
+export type {
+	Control,
+	DefaultValue,
+	FormContext,
+	FormMetadata,
+	FormOptions,
+	FormRef,
+	FieldMetadata,
+	FieldName,
+	Fieldset,
+	IntentDispatcher,
+} from './types';
 export {
 	FormProvider,
 	useControl,
