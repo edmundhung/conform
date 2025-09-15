@@ -400,7 +400,7 @@ export type FormMetadata<
 	touched: boolean;
 	/** Whether the form currently has no validation errors. */
 	valid: boolean;
-	/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
+	/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
 	invalid: boolean;
 	/** Form-level validation errors, if any exist. */
 	errors: ErrorShape[] | undefined;
@@ -422,7 +422,7 @@ export type FormMetadata<
 	): FieldMetadata<FieldShape, Metadata>;
 	/** Method to get a fieldset object for nested object fields. */
 	getFieldset<FieldShape>(
-		name: FieldName<FieldShape>,
+		name?: FieldName<FieldShape>,
 	): Fieldset<
 		[FieldShape] extends [Record<string, unknown> | null | undefined]
 			? FieldShape
