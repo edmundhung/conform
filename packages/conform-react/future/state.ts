@@ -10,8 +10,8 @@ import {
 	deepEqual,
 } from '@conform-to/dom/future';
 import type {
-	DefaultFieldMetadata,
-	Field,
+	DefaultMetadata,
+	FieldMetadata,
 	FieldName,
 	Fieldset,
 	FormContext,
@@ -334,7 +334,7 @@ export function getFormMetadata<ErrorShape>(
 	options: {
 		serialize: Serialize;
 	},
-): FormMetadata<ErrorShape, DefaultFieldMetadata<ErrorShape>> {
+): FormMetadata<ErrorShape, DefaultMetadata<ErrorShape>> {
 	return {
 		key: context.state.resetKey,
 		id: context.formId,
@@ -391,10 +391,10 @@ export function getField<FieldShape, ErrorShape = string>(
 		serialize: Serialize;
 		key?: string;
 	},
-): Field<FieldShape, DefaultFieldMetadata<ErrorShape>> {
+): FieldMetadata<FieldShape, DefaultMetadata<ErrorShape>> {
 	const id = `${context.formId}-field-${options.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, options.name);
-	const metadata: DefaultFieldMetadata<ErrorShape> = {
+	const metadata: DefaultMetadata<ErrorShape> = {
 		id: id,
 		descriptionId: `${id}-description`,
 		errorId: `${id}-error`,
@@ -457,7 +457,7 @@ export function getFieldset<
 		name?: FieldName<FieldShape>;
 		serialize: Serialize;
 	},
-): Fieldset<FieldShape, DefaultFieldMetadata<ErrorShape>> {
+): Fieldset<FieldShape, DefaultMetadata<ErrorShape>> {
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
@@ -481,11 +481,11 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 		name: FieldName<FieldShape>;
 		serialize: Serialize;
 	},
-): Field<
+): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 		? ItemShape
 		: unknown,
-	DefaultFieldMetadata<ErrorShape>
+	DefaultMetadata<ErrorShape>
 >[] {
 	const keys = getListKey(context, options.name);
 

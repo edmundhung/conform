@@ -42,14 +42,14 @@ import {
 } from './state';
 import type {
 	FormContext,
-	DefaultFieldMetadata,
+	DefaultMetadata,
 	IntentDispatcher,
 	FormMetadata,
 	Fieldset,
 	ValidateResult,
 	FormOptions,
 	FieldName,
-	Field,
+	FieldMetadata,
 	Control,
 	Selector,
 	UseFormDataOptions,
@@ -445,7 +445,7 @@ export function useForm<
 	options: FormOptions<FormShape, ErrorShape, Value>,
 ): {
 	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<FormShape, DefaultFieldMetadata<ErrorShape>>;
+	fields: Fieldset<FormShape, DefaultMetadata<ErrorShape>>;
 	intent: IntentDispatcher;
 } {
 	const { id, defaultValue, constraint } = options;
@@ -674,7 +674,7 @@ export function useField<FieldShape = any>(
 	options: {
 		formId?: string;
 	} = {},
-): Field<FieldShape> {
+): FieldMetadata<FieldShape> {
 	const config = useContext(FormConfig);
 	const context = useFormContext(options.formId);
 	const field = useMemo(
