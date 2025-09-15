@@ -23,9 +23,9 @@ import type {
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
-export function initializeState<ErrorShape>(): FormState<ErrorShape> {
+export function initializeState<ErrorShape>(resetKey?: string): FormState<ErrorShape> {
 	return {
-		resetKey: generateUniqueKey(),
+		resetKey: resetKey ?? generateUniqueKey(),
 		listKeys: {},
 		clientIntendedValue: null,
 		serverIntendedValue: null,

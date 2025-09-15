@@ -133,7 +133,7 @@ export function useConform<ErrorShape, Value = undefined>(
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>();
+		let state = initializeState<ErrorShape>('initial');
 
 		if (lastResult) {
 			state = updateState(state, {
