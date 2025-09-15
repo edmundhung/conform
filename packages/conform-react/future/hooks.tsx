@@ -623,7 +623,7 @@ export function useForm<
  * function ErrorSummary() {
  *   const form = useFormMetadata();
  *
- *   if (!form.invalid) return null;
+ *   if (form.valid) return null;
  *
  *   return (
  *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>

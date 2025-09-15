@@ -66,7 +66,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 				<label>Email</label>
 				<input
 					type="email"
-					className={fields.email.invalid ? 'error' : ''}
+					className={!fields.email.valid ? 'error' : ''}
 					name={fields.email.name}
 					defaultValue={fields.email.defaultValue}
 				/>
@@ -76,7 +76,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 				<label>Password</label>
 				<input
 					type="password"
-					className={fields.password.invalid ? 'error' : ''}
+					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>

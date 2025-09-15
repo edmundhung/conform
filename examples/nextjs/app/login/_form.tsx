@@ -23,7 +23,7 @@ export function LoginForm() {
 				<label>Email</label>
 				<input
 					type="text"
-					className={fields.email.invalid ? 'error' : ''}
+					className={!fields.email.valid ? 'error' : ''}
 					name={fields.email.name}
 					defaultValue={fields.email.defaultValue}
 				/>
@@ -33,7 +33,7 @@ export function LoginForm() {
 				<label>Password</label>
 				<input
 					type="password"
-					className={fields.password.invalid ? 'error' : ''}
+					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
