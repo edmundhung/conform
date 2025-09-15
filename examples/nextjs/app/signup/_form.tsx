@@ -47,7 +47,7 @@ export function SignupForm() {
 				<div>Username</div>
 				<input
 					type="text"
-					className={fields.username.invalid ? 'error' : ''}
+					className={!fields.username.valid ? 'error' : ''}
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
 				/>
@@ -57,7 +57,7 @@ export function SignupForm() {
 				<div>Password</div>
 				<input
 					type="password"
-					className={fields.password.invalid ? 'error' : ''}
+					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
@@ -67,7 +67,7 @@ export function SignupForm() {
 				<div>Confirm Password</div>
 				<input
 					type="password"
-					className={fields.confirmPassword.invalid ? 'error' : ''}
+					className={!fields.confirmPassword.valid ? 'error' : ''}
 					name={fields.confirmPassword.name}
 					defaultValue={fields.confirmPassword.defaultValue}
 				/>

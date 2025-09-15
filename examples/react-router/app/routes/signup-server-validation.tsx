@@ -103,7 +103,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 				<div>Username</div>
 				<input
 					type="text"
-					className={fields.username.invalid ? 'error' : ''}
+					className={!fields.username.valid ? 'error' : ''}
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
 				/>
@@ -113,7 +113,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 				<div>Password</div>
 				<input
 					type="password"
-					className={fields.password.invalid ? 'error' : ''}
+					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
 				/>
@@ -123,7 +123,7 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 				<div>Confirm Password</div>
 				<input
 					type="password"
-					className={fields.confirmPassword.invalid ? 'error' : ''}
+					className={!fields.confirmPassword.valid ? 'error' : ''}
 					name={fields.confirmPassword.name}
 					defaultValue={fields.confirmPassword.defaultValue}
 				/>

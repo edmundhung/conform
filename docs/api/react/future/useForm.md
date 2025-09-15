@@ -151,7 +151,7 @@ function LoginForm() {
       />
       <div>{fields.password.errors}</div>
 
-      <button type="submit" disabled={form.invalid}>
+      <button type="submit" disabled={!form.valid}>
         Login
       </button>
     </form>

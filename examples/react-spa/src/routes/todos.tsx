@@ -66,7 +66,7 @@ export default function Todos() {
 			<div>
 				<label>Title</label>
 				<input
-					className={fields.title.invalid ? 'error' : ''}
+					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue ?? ''}
 				/>
@@ -82,7 +82,7 @@ export default function Todos() {
 						<div>
 							<label>Task #{index + 1}</label>
 							<input
-								className={taskFields.content.invalid ? 'error' : ''}
+								className={!taskFields.content.valid ? 'error' : ''}
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
 							/>
@@ -93,7 +93,7 @@ export default function Todos() {
 								<span>Completed</span>
 								<input
 									type="checkbox"
-									className={taskFields.completed.invalid ? 'error' : ''}
+									className={!taskFields.completed.valid ? 'error' : ''}
 									name={taskFields.completed.name}
 									defaultChecked={taskFields.completed.defaultChecked}
 								/>
