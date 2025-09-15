@@ -74,6 +74,10 @@ import {
 	updateFormValue,
 } from './dom';
 
+// Static reset key for consistent hydration during Next.js prerendering
+// See: https://nextjs.org/docs/messages/next-prerender-current-time-client
+export const INITIAL_KEY = 'INITIAL_KEY';
+
 export const FormConfig = createContext({
 	intentName: DEFAULT_INTENT_NAME,
 	observer: createGlobalFormsObserver(),
@@ -133,7 +137,7 @@ export function useConform<ErrorShape, Value = undefined>(
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>('initial');
+		let state = initializeState<ErrorShape>(INITIAL_KEY);
 
 		if (lastResult) {
 			state = updateState(state, {
