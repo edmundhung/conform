@@ -17,6 +17,15 @@ describe('future export: useForm', () => {
 		expect(fields.title.errors).toBe(undefined);
 		expect(fields.description.defaultValue).toBe(undefined);
 		expect(fields.description.errors).toBe(undefined);
+
+		// Test if the form state is stable
+		const secondUseFormResult = serverRenderHook(() =>
+			useForm<{ title: string; description: string }, string>({
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.context.state).toEqual(secondUseFormResult.form.context.state);
 	});
 
 	test('default value', () => {
