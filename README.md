@@ -7,7 +7,7 @@
  ╚══════╝  ╚═════╝  ╚═╝  ╚══╝ ╚═╝        ╚═════╝  ╚═╝   ╚═╝ ╚═╝   ╚═╝
 ```
 
-Version 1.10.0 / License MIT / Copyright (c) 2025 Edmund Hung
+Version 1.10.1 / License MIT / Copyright (c) 2025 Edmund Hung
 
 Progressively enhance HTML forms with React. Build resilient, type-safe forms with no hassle using web standards.
 
