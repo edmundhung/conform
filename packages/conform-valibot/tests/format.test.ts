@@ -1,22 +1,23 @@
 import { describe, test, expect } from 'vitest';
 import { formatResult } from '../format';
 import * as v from 'valibot';
+import { formatIssues } from '@conform-to/dom/future';
 
 describe('formatResult', () => {
 	test('returns null for successful validation', () => {
 		const schema = v.object({ name: v.string() });
 		const result = v.safeParse(schema, { name: 'John' });
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toBeNull();
+		expect(error).toBeNull();
 	});
 
 	test('returns error and value with includeValue option', () => {
 		const schema = v.object({ name: v.string(), age: v.number() });
 		const result = v.safeParse(schema, { name: 'John', age: 25 });
-		const formatted = formatResult(result, { includeValue: true });
+		const error = formatResult(result, { includeValue: true });
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			error: null,
 			value: { name: 'John', age: 25 },
 		});
@@ -28,9 +29,9 @@ describe('formatResult', () => {
 			age: v.pipe(v.number(), v.minValue(18, 'Must be at least 18')),
 		});
 		const result = v.safeParse(schema, { name: '', age: 16 });
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				name: ['Name is required'],
@@ -49,9 +50,9 @@ describe('formatResult', () => {
 		const result = v.safeParse(schema, {
 			user: { name: '', email: 'invalid' },
 		});
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				'user.name': ['Name is required'],
@@ -68,9 +69,9 @@ describe('formatResult', () => {
 		});
 		const result = v.safeParse(schema, { items: ['', 'valid', ''] });
 
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				'items[0]': ['Item cannot be empty'],
@@ -94,9 +95,9 @@ describe('formatResult', () => {
 			password: 'secret',
 			confirmPassword: 'different',
 		});
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: ['Passwords do not match'],
 			fieldErrors: {},
 		});
@@ -128,7 +129,7 @@ describe('formatResult', () => {
 		});
 		const result = v.safeParse(schema, { name: '', age: 16 });
 
-		const formatted = formatResult(result, {
+		const error = formatResult(result, {
 			formatIssues: (issues, name) =>
 				issues.map((issue) => ({
 					message: issue.message,
@@ -137,7 +138,7 @@ describe('formatResult', () => {
 				})),
 		});
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				name: [
@@ -191,13 +192,13 @@ describe('formatResult', () => {
 		});
 		const result = v.safeParse(schema, { password: 'abc' });
 
-		const formatted = formatResult(result, {
+		const error = formatResult(result, {
 			formatIssues: (issues, fieldName) => [
 				`${fieldName} has ${issues.length} errors: ${issues.map((i) => i.message).join(', ')}`,
 			],
 		});
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				password: [
@@ -214,9 +215,9 @@ describe('formatResult', () => {
 		);
 		const result = v.safeParse(schema, 'test');
 
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: ['Always fails'],
 			fieldErrors: {},
 		});
@@ -247,5 +248,22 @@ describe('formatResult', () => {
 		expect(() => formatResult(result)).toThrowError(
 			'Only string or numeric path segment schemes are supported. Received segment: null',
 		);
+	});
+
+	test('matches standard schema issue format', () => {
+		const schema = v.object({
+			username: v.pipe(v.string(), v.minLength(1, 'Username is required')),
+			address: v.object({
+				street: v.pipe(v.string(), v.minLength(1, 'Street is required')),
+				city: v.pipe(v.string(), v.minLength(1, 'City is required')),
+			}),
+		});
+		const result = v.safeParse(schema, {
+			username: '',
+			address: { street: '', city: 'Test' },
+		});
+		const error = formatResult(result);
+
+		expect(error).toEqual(formatIssues(result.issues ?? []));
 	});
 });

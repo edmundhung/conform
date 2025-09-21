@@ -1,14 +1,15 @@
 import { describe, test, expect } from 'vitest';
 import { formatResult } from '../format';
 import { z } from 'zod-v4';
+import { formatIssues } from '@conform-to/dom/future';
 
 describe('formatResult', () => {
 	test('returns null for successful validation', () => {
 		const schema = z.object({ name: z.string() });
 		const result = schema.safeParse({ name: 'John' });
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toBeNull();
+		expect(error).toBeNull();
 	});
 
 	test('returns error and value with includeValue option', () => {
@@ -28,9 +29,9 @@ describe('formatResult', () => {
 			age: z.number().min(18, 'Must be at least 18'),
 		});
 		const result = schema.safeParse({ name: '', age: 16 });
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				name: ['Name is required'],
@@ -49,9 +50,9 @@ describe('formatResult', () => {
 		const result = schema.safeParse({
 			user: { name: '', email: 'invalid' },
 		});
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				'user.name': ['Name is required'],
@@ -66,9 +67,9 @@ describe('formatResult', () => {
 		});
 		const result = schema.safeParse({ items: ['', 'valid', ''] });
 
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				'items[0]': ['Item cannot be empty'],
@@ -90,9 +91,9 @@ describe('formatResult', () => {
 			password: 'secret',
 			confirmPassword: 'different',
 		});
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: ['Passwords do not match'],
 			fieldErrors: {},
 		});
@@ -124,7 +125,7 @@ describe('formatResult', () => {
 		});
 		const result = schema.safeParse({ name: '', age: 16 });
 
-		const formatted = formatResult(result, {
+		const error = formatResult(result, {
 			formatIssues: (issues, name) =>
 				issues.map((issue) => ({
 					message: issue.message,
@@ -133,7 +134,7 @@ describe('formatResult', () => {
 				})),
 		});
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				name: [
@@ -186,13 +187,13 @@ describe('formatResult', () => {
 		});
 		const result = schema.safeParse({ password: 'abc' });
 
-		const formatted = formatResult(result, {
+		const error = formatResult(result, {
 			formatIssues: (issues, fieldName) => [
 				`${fieldName} has ${issues.length} errors: ${issues.map((i) => i.message).join(', ')}`,
 			],
 		});
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: [],
 			fieldErrors: {
 				password: [
@@ -206,9 +207,9 @@ describe('formatResult', () => {
 		const schema = z.string().refine(() => false, 'Always fails');
 		const result = schema.safeParse('test');
 
-		const formatted = formatResult(result);
+		const error = formatResult(result);
 
-		expect(formatted).toEqual({
+		expect(error).toEqual({
 			formErrors: ['Always fails'],
 			fieldErrors: {},
 		});
@@ -225,10 +226,27 @@ describe('formatResult', () => {
 		const schema = z.object({ name: z.string() });
 		const result = schema.safeParse({ name: 'John' });
 
-		const formatted = formatResult(result, {
+		const error = formatResult(result, {
 			formatIssues: () => ['Should not be called'],
 		});
 
-		expect(formatted).toBeNull();
+		expect(error).toBeNull();
+	});
+
+	test('matches standard schema issue format', () => {
+		const schema = z.object({
+			username: z.string().min(1, 'Username is required'),
+			address: z.object({
+				street: z.string().min(1, 'Street is required'),
+				city: z.string().min(1, 'City is required'),
+			}),
+		});
+		const result = schema.safeParse({
+			username: '',
+			address: { street: '', city: 'Test' },
+		});
+		const error = formatResult(result);
+
+		expect(error).toEqual(formatIssues(result.error?.issues ?? []));
 	});
 });

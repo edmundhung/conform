@@ -1,7 +1,6 @@
 'use server';
 
 import { parseSubmission, report } from '@conform-to/react/future';
-import { formatResult } from '@conform-to/zod/v3/future';
 import { redirect } from 'next/navigation';
 import { signupSchema } from './_schema';
 
@@ -11,7 +10,9 @@ export async function signup(_: unknown, formData: FormData) {
 
 	if (!result.success) {
 		return report(submission, {
-			error: formatResult(result),
+			error: {
+				issues: result.error.issues,
+			},
 		});
 	}
 

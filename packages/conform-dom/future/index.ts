@@ -37,3 +37,4 @@ export {
 	requestSubmit,
 	requestIntent,
 } from '../dom';
+export { formatIssues } from '../standard-schema';

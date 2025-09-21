@@ -5,7 +5,7 @@ import {
 	useForm,
 	useFormData,
 } from '@conform-to/react/future';
-import { coerceFormValue, formatResult } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { Form, useNavigation } from 'react-router';
 import { z } from 'zod';
 import { createInMemoryStore } from '~/store';
@@ -35,10 +35,12 @@ export async function action({ request }: Route.ActionArgs) {
 	const submission = parseSubmission(formData);
 	const result = schema.safeParse(submission.payload);
 
-	if (!result.success || submission.intent) {
+	if (!result.success) {
 		return {
 			result: report(submission, {
-				error: formatResult(result),
+				error: {
+					issues: result.error.issues,
+				},
 			}),
 		};
 	}

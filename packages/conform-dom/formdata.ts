@@ -9,6 +9,8 @@ import type {
 } from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
 import { deepEqual, isPlainObject, stripFiles } from './util';
+import type { StandardSchemaIssue } from './standard-schema';
+import { formatIssues } from './standard-schema';
 
 export const DEFAULT_INTENT_NAME = '__INTENT__';
 
@@ -446,6 +448,26 @@ export function report<ErrorShape = string>(
 		reset?: boolean;
 	},
 ): SubmissionResult<ErrorShape>;
+export function report(
+	submission: Submission,
+	options?: {
+		keepFiles?: false;
+		error?: { issues: ReadonlyArray<StandardSchemaIssue> };
+		intendedValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<string, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
+export function report(
+	submission: Submission,
+	options?: {
+		keepFiles: true;
+		error?: { issues: ReadonlyArray<StandardSchemaIssue> };
+		intendedValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<string>;
 export function report<ErrorShape = string>(
 	submission: Submission,
 	options: {
@@ -458,7 +480,10 @@ export function report<ErrorShape = string>(
 		 * Error information to include in the result.
 		 * Set to `null` to indicate validation passed with no errors.
 		 */
-		error?: Partial<FormError<ErrorShape>> | null;
+		error?:
+			| { issues: ReadonlyArray<StandardSchemaIssue> }
+			| Partial<FormError<ErrorShape>>
+			| null;
 		/**
 		 * The intended form values to track what the form should contain
 		 * vs. what was actually submitted.
@@ -474,7 +499,7 @@ export function report<ErrorShape = string>(
 		 */
 		reset?: boolean;
 	} = {},
-): SubmissionResult<ErrorShape> {
+): SubmissionResult<ErrorShape | string> {
 	const intendedValue = options.reset
 		? null
 		: typeof options.intendedValue === 'undefined' ||
@@ -483,12 +508,15 @@ export function report<ErrorShape = string>(
 			: options.intendedValue && !options.keepFiles
 				? stripFiles(options.intendedValue)
 				: options.intendedValue;
-	const error = !options.error
-		? options.error
-		: {
-				formErrors: options.error.formErrors ?? [],
-				fieldErrors: options.error.fieldErrors ?? {},
-			};
+	const error =
+		options.error == null
+			? options.error
+			: 'issues' in options.error
+				? formatIssues(options.error.issues)
+				: {
+						formErrors: options.error.formErrors ?? [],
+						fieldErrors: options.error.fieldErrors ?? {},
+					};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {

@@ -2,7 +2,7 @@ import { parseSubmission, report, useForm } from '@conform-to/react/future';
 import { z } from 'zod';
 import { Form, redirect } from 'react-router';
 import type { Route } from './+types/file-upload';
-import { coerceFormValue, formatResult } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 
 const schema = coerceFormValue(
 	z.object({
@@ -19,7 +19,9 @@ export async function action({ request }: Route.ActionArgs) {
 	if (!result.success) {
 		return {
 			result: report(submission, {
-				error: formatResult(result),
+				error: {
+					issues: result.error.issues,
+				},
 			}),
 		};
 	}

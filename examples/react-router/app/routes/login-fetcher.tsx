@@ -1,5 +1,5 @@
 import { useForm, parseSubmission, report } from '@conform-to/react/future';
-import { coerceFormValue, formatResult } from '@conform-to/zod/v3/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { redirect, useFetcher } from 'react-router';
 import { z } from 'zod';
 import type { Route } from './+types/login-fetcher';
@@ -20,7 +20,9 @@ export async function action({ request }: Route.ActionArgs) {
 	if (!result.success) {
 		return {
 			result: report(submission, {
-				error: formatResult(result),
+				error: {
+					issues: result.error.issues,
+				},
 			}),
 		};
 	}

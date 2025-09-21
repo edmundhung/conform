@@ -16,12 +16,14 @@ const result = report(submission, options);
 
 The form submission object created by [`parseSubmission(formData)`](./parseSubmission.md). Contains parsed form data with structured payload, field names, and submission intent.
 
-### `options.error?: Partial<FormError> | null`
+### `options.error?: { issues: StandardSchemaV1.Issue[] } | Partial<FormError> | null`
 
-Error information to include in the result. Can contain:
+Error information to include in the result. Can be:
 
-- `formErrors?: string[]` - Form-level error messages
-- `fieldErrors?: Record<string, string[]>` - Field-specific error messages
+- `Partial<FormError>` - Error object with:
+  - `formErrors?: string[]` - Form-level error messages
+  - `fieldErrors?: Record<string, string[]>` - Field-specific error messages
+- `{ issues: StandardSchemaV1.Issue[] }` - Standard Schema issues. Zod and Valibot issues are also compatible.
 
 Set to `null` to indicate validation passed with no errors.
 
