@@ -740,6 +740,62 @@ describe('report', () => {
 		});
 	});
 
+	it('supports standard schema issues', () => {
+		const submission = {
+			payload: {
+				name: '',
+				description: '',
+			},
+			fields: ['name', 'description'],
+			intent: null,
+		};
+		const result = report(submission, {
+			error: {
+				issues: [
+					{ path: [], message: 'Form is invalid' },
+					{ path: ['name'], message: 'Name is required' },
+				],
+			},
+		});
+
+		expect(result).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: {
+				formErrors: ['Form is invalid'],
+				fieldErrors: {
+					name: ['Name is required'],
+				},
+			},
+		});
+
+		const result2 = report(submission, {
+			error: {
+				issues: [
+					{ path: [], message: 'Form is invalid' },
+					{ path: ['name'], message: 'Name is required' },
+				],
+				formErrors: ['Something went wrong'],
+				fieldErrors: {
+					name: ['Name is too short'],
+					description: ['Description is too short'],
+				},
+			},
+		});
+
+		expect(result2).toEqual({
+			submission,
+			intendedValue: undefined,
+			error: {
+				formErrors: ['Form is invalid', 'Something went wrong'],
+				fieldErrors: {
+					name: ['Name is required', 'Name is too short'],
+					description: ['Description is too short'],
+				},
+			},
+		});
+	});
+
 	it('supports specifying an intended value', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },

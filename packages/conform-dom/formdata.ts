@@ -429,7 +429,11 @@ export function report<ErrorShape = string>(
 	submission: Submission,
 	options?: {
 		keepFiles?: false;
-		error?: Partial<FormError<ErrorShape>> | null;
+		error?: {
+			issues?: undefined;
+			formErrors?: ErrorShape[];
+			fieldErrors?: Record<string, ErrorShape[]>;
+		} | null;
 		intendedValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -442,7 +446,11 @@ export function report<ErrorShape = string>(
 	submission: Submission,
 	options: {
 		keepFiles: true;
-		error?: Partial<FormError<ErrorShape>> | null;
+		error?: {
+			issues?: undefined;
+			formErrors?: ErrorShape[];
+			fieldErrors?: Record<string, ErrorShape[]>;
+		} | null;
 		intendedValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -452,7 +460,11 @@ export function report(
 	submission: Submission,
 	options?: {
 		keepFiles?: false;
-		error?: { issues: ReadonlyArray<StandardSchemaIssue> };
+		error?: {
+			issues: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		};
 		intendedValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -462,7 +474,11 @@ export function report(
 	submission: Submission,
 	options?: {
 		keepFiles: true;
-		error?: { issues: ReadonlyArray<StandardSchemaIssue> };
+		error?: {
+			issues: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		};
 		intendedValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -480,10 +496,11 @@ export function report<ErrorShape = string>(
 		 * Error information to include in the result.
 		 * Set to `null` to indicate validation passed with no errors.
 		 */
-		error?:
-			| { issues: ReadonlyArray<StandardSchemaIssue> }
-			| Partial<FormError<ErrorShape>>
-			| null;
+		error?: {
+			issues?: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		} | null;
 		/**
 		 * The intended form values to track what the form should contain
 		 * vs. what was actually submitted.
@@ -499,7 +516,35 @@ export function report<ErrorShape = string>(
 		 */
 		reset?: boolean;
 	} = {},
-): SubmissionResult<ErrorShape | string> {
+): SubmissionResult<string | ErrorShape> {
+	let error: FormError<string | ErrorShape> | null | undefined;
+
+	if (options.error == null) {
+		error = options.error;
+	} else {
+		error = formatIssues(options.error.issues ?? []);
+
+		if (options.error.formErrors) {
+			error.formErrors.push(...options.error.formErrors);
+		}
+
+		if (options.error.fieldErrors) {
+			for (const [name, messages] of Object.entries(
+				options.error.fieldErrors,
+			)) {
+				if (messages.length === 0) {
+					continue;
+				}
+
+				if (!error.fieldErrors[name]) {
+					error.fieldErrors[name] = messages;
+				} else {
+					error.fieldErrors[name].push(...messages);
+				}
+			}
+		}
+	}
+
 	const intendedValue = options.reset
 		? null
 		: typeof options.intendedValue === 'undefined' ||
@@ -508,15 +553,6 @@ export function report<ErrorShape = string>(
 			: options.intendedValue && !options.keepFiles
 				? stripFiles(options.intendedValue)
 				: options.intendedValue;
-	const error =
-		options.error == null
-			? options.error
-			: 'issues' in options.error
-				? formatIssues(options.error.issues)
-				: {
-						formErrors: options.error.formErrors ?? [],
-						fieldErrors: options.error.fieldErrors ?? {},
-					};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
