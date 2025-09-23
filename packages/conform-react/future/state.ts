@@ -336,7 +336,7 @@ export function getFormMetadata<ErrorShape>(
 	options: {
 		serialize: Serialize;
 	},
-): FormMetadata<ErrorShape, DefaultMetadata<ErrorShape>> {
+): FormMetadata<ErrorShape> {
 	return {
 		key: context.state.resetKey,
 		id: context.formId,
@@ -393,7 +393,7 @@ export function getField<FieldShape, ErrorShape = string>(
 		serialize: Serialize;
 		key?: string;
 	},
-): FieldMetadata<FieldShape, DefaultMetadata<ErrorShape>> {
+): FieldMetadata<FieldShape, ErrorShape> {
 	const id = `${context.formId}-field-${options.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, options.name);
 	const metadata: DefaultMetadata<ErrorShape> = {
@@ -459,7 +459,7 @@ export function getFieldset<
 		name?: FieldName<FieldShape>;
 		serialize: Serialize;
 	},
-): Fieldset<FieldShape, DefaultMetadata<ErrorShape>> {
+): Fieldset<FieldShape, ErrorShape> {
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
@@ -487,7 +487,7 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 		? ItemShape
 		: unknown,
-	DefaultMetadata<ErrorShape>
+	ErrorShape
 >[] {
 	const keys = getListKey(context, options.name);
 
