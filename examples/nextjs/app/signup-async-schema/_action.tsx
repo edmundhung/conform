@@ -2,7 +2,6 @@
 
 import { redirect } from 'next/navigation';
 import { parseSubmission, report } from '@conform-to/react/future';
-import { formatResult } from '@conform-to/zod/v3/future';
 import { createSignupSchema } from '../signup/_schema';
 
 export async function signupAsyncSchema(
@@ -23,7 +22,9 @@ export async function signupAsyncSchema(
 
 	if (!result.success) {
 		return report(submission, {
-			error: formatResult(result),
+			error: {
+				issues: result.error.issues,
+			},
 		});
 	}
 

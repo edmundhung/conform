@@ -10,7 +10,6 @@ import {
 	normalizeFormError,
 	normalizeValidateResult,
 	resolveValidateResult,
-	resolveStandardSchemaPath,
 	resolveStandardSchemaResult,
 	merge,
 	transformKeys,
@@ -208,40 +207,6 @@ test('resolveValidateResult', () => {
 	const resolved3 = resolveValidateResult(directError);
 	expect(resolved3.syncResult).toEqual({ error: directError });
 	expect(resolved3.asyncResult).toBeUndefined();
-});
-
-test('resolveStandardSchemaPath', () => {
-	// Test simple path
-	const issue1 = { path: ['email'], message: 'Required' };
-	expect(resolveStandardSchemaPath(issue1)).toEqual(['email']);
-
-	// Test nested path with objects
-	const issue2 = {
-		path: [{ key: 'profile' }, { key: 'name' }],
-		message: 'Required',
-	};
-	expect(resolveStandardSchemaPath(issue2)).toEqual(['profile', 'name']);
-
-	// Test mixed path
-	const issue3 = {
-		path: ['items', 0, { key: 'name' }],
-		message: 'Required',
-	};
-	expect(resolveStandardSchemaPath(issue3)).toEqual(['items', 0, 'name']);
-
-	// Test empty path
-	const issue4 = { path: [], message: 'Form error' };
-	expect(resolveStandardSchemaPath(issue4)).toEqual([]);
-
-	// Test undefined path
-	const issue5 = { message: 'Root error' };
-	expect(resolveStandardSchemaPath(issue5)).toEqual([]);
-
-	// Test symbol in path (should throw)
-	const symbolIssue = { path: [Symbol('test')], message: 'Error' };
-	expect(() => resolveStandardSchemaPath(symbolIssue)).toThrow(
-		'Path segments must not contain symbols',
-	);
 });
 
 test('resolveStandardSchemaResult', () => {

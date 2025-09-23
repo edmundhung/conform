@@ -1,5 +1,6 @@
 import type { FormError } from '@conform-to/dom/future';
 import {
+	formatIssues,
 	formatPathSegments,
 	getPathSegments,
 	getValueAtPath,
@@ -168,26 +169,6 @@ export function resolveValidateResult<ErrorShape, Value>(
 	};
 }
 
-export function resolveStandardSchemaPath(
-	issue: StandardSchemaV1.Issue,
-): Array<string | number> {
-	if (!issue.path) {
-		return [];
-	}
-
-	const segments = issue.path.map((segment) =>
-		typeof segment === 'object' && 'key' in segment ? segment.key : segment,
-	);
-
-	if (!segments.every((segment) => typeof segment !== 'symbol')) {
-		throw new Error(
-			'Path segments must not contain symbols. Use strings or numbers instead.',
-		);
-	}
-
-	return segments;
-}
-
 export function resolveStandardSchemaResult<Value>(
 	result: StandardSchemaV1.Result<Value>,
 ): {
@@ -201,23 +182,8 @@ export function resolveStandardSchemaResult<Value>(
 		};
 	}
 
-	const errorByName: Record<string, string[]> = {};
-
-	for (const issue of result.issues) {
-		const path = resolveStandardSchemaPath(issue);
-		const name = formatPathSegments(path);
-
-		errorByName[name] ??= [];
-		errorByName[name].push(issue.message);
-	}
-
-	const { '': formErrors = [], ...fieldErrors } = errorByName;
-
 	return {
-		error: {
-			formErrors,
-			fieldErrors,
-		},
+		error: formatIssues(result.issues),
 	};
 }
 
