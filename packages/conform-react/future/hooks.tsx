@@ -326,6 +326,7 @@ export function useConform<ErrorShape, Value = undefined>(
 								formElement,
 								submitter: submitEvent.submitter,
 								formData,
+								schemaValue: undefined,
 							})
 						: { error: null };
 
@@ -491,6 +492,8 @@ export function useForm<
 				if (resolvedResult.error) {
 					ctx.error = resolvedResult.error;
 				}
+
+				ctx.schemaValue = resolvedResult.value;
 
 				const validateResult = resolveValidateResult(options.onValidate(ctx));
 
