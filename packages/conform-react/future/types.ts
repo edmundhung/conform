@@ -344,11 +344,8 @@ export type Combine<T> = {
 };
 
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
-export type FieldMetadata<
-	FieldShape,
-	Metadata extends Record<string, unknown> = DefaultMetadata<unknown>,
-> = Readonly<
-	Metadata & {
+export type FieldMetadata<FieldShape, ErrorShape = string> = Readonly<
+	DefaultMetadata<ErrorShape> & {
 		/** Unique key for React list rendering (for array fields). */
 		key: string | undefined;
 		/** The field name path exactly as provided. */
@@ -358,7 +355,7 @@ export type FieldMetadata<
 			[FieldShape] extends [Record<string, unknown> | null | undefined]
 				? FieldShape
 				: unknown,
-			Metadata
+			ErrorShape
 		>;
 		/** Method to get array of fields for list/array fields under this field. */
 		getFieldList(): Array<
@@ -366,28 +363,22 @@ export type FieldMetadata<
 				[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 					? ItemShape
 					: unknown,
-				Metadata
+				ErrorShape
 			>
 		>;
 	}
 >;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
-export type Fieldset<
-	FieldShape, // extends Record<string, unknown>,
-	Metadata extends Record<string, unknown>,
-> = {
+export type Fieldset<FieldShape, ErrorShape = string> = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
-		Metadata
+		ErrorShape
 	>;
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type FormMetadata<
-	ErrorShape,
-	Metadata extends Record<string, unknown> = DefaultMetadata<ErrorShape>,
-> = Readonly<{
+export type FormMetadata<ErrorShape = string> = Readonly<{
 	/** Unique identifier that changes on form reset */
 	key: string;
 	/** The form's unique identifier. */
@@ -419,7 +410,7 @@ export type FormMetadata<
 	/** Method to get metadata for a specific field by name. */
 	getField<FieldShape>(
 		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, Metadata>;
+	): FieldMetadata<FieldShape, ErrorShape>;
 	/** Method to get a fieldset object for nested object fields. */
 	getFieldset<FieldShape>(
 		name?: FieldName<FieldShape>,
@@ -427,7 +418,7 @@ export type FormMetadata<
 		[FieldShape] extends [Record<string, unknown> | null | undefined]
 			? FieldShape
 			: unknown,
-		Metadata
+		ErrorShape
 	>;
 	/** Method to get an array of field objects for array fields. */
 	getFieldList<FieldShape>(
@@ -437,7 +428,7 @@ export type FormMetadata<
 			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 				? ItemShape
 				: unknown,
-			Metadata
+			ErrorShape
 		>
 	>;
 }>;
