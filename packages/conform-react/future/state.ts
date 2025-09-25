@@ -10,7 +10,6 @@ import {
 	deepEqual,
 } from '@conform-to/dom/future';
 import type {
-	DefaultMetadata,
 	FieldMetadata,
 	FieldName,
 	Fieldset,
@@ -20,6 +19,8 @@ import type {
 	FormAction,
 	UnknownIntent,
 	ActionHandler,
+	BaseMetadata,
+	CustomizeMetadata,
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
@@ -335,6 +336,7 @@ export function getFormMetadata<ErrorShape>(
 	context: FormContext<ErrorShape>,
 	options: {
 		serialize: Serialize;
+		customize: CustomizeMetadata;
 	},
 ): FormMetadata<ErrorShape> {
 	return {
@@ -391,12 +393,15 @@ export function getField<FieldShape, ErrorShape = string>(
 	options: {
 		name: FieldName<FieldShape>;
 		serialize: Serialize;
+		customize: CustomizeMetadata;
 		key?: string;
 	},
 ): FieldMetadata<FieldShape, ErrorShape> {
 	const id = `${context.formId}-field-${options.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, options.name);
-	const metadata: DefaultMetadata<ErrorShape> = {
+	const metadata: BaseMetadata<FieldShape, ErrorShape> = {
+		key: options.key,
+		name: options.name,
 		id: id,
 		descriptionId: `${id}-description`,
 		errorId: `${id}-error`,
@@ -433,18 +438,15 @@ export function getField<FieldShape, ErrorShape = string>(
 		get fieldErrors() {
 			return getFieldErrors(context.state, options.name);
 		},
-	};
-
-	return Object.assign(metadata, {
-		key: options.key,
-		name: options.name,
 		getFieldset() {
 			return getFieldset(context, options);
 		},
 		getFieldList() {
 			return getFieldList(context, options);
 		},
-	});
+	};
+
+	return Object.assign(metadata, options.customize(metadata));
 }
 
 /**
@@ -458,6 +460,7 @@ export function getFieldset<
 	options: {
 		name?: FieldName<FieldShape>;
 		serialize: Serialize;
+		customize: CustomizeMetadata;
 	},
 ): Fieldset<FieldShape, ErrorShape> {
 	return new Proxy({} as any, {
@@ -482,6 +485,7 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 	options: {
 		name: FieldName<FieldShape>;
 		serialize: Serialize;
+		customize: CustomizeMetadata;
 	},
 ): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
