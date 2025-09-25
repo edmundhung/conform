@@ -471,17 +471,42 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
-export type ValidateContext = {
+export type ValidateContext<Value> = {
+	/**
+	 * The submitted values mapped by field name.
+	 * Supports nested names like `user.email` and indexed names like `items[0].id`.
+	 */
 	payload: Record<string, FormValue>;
+	/**
+	 * Form error object. Initially empty, but populated with schema validation
+	 * errors when a schema is provided and validation fails.
+	 */
 	error: FormError<string>;
+	/**
+	 * The submission intent derived from the button that triggered the form submission.
+	 */
 	intent: UnknownIntent | null;
+	/**
+	 * The raw FormData object of the submission.
+	 */
 	formData: FormData;
+	/**
+	 * Reference to the HTML form element that triggered the submission.
+	 */
 	formElement: HTMLFormElement;
+	/**
+	 * The specific element (button/input) that triggered the form submission.
+	 */
 	submitter: HTMLElement | null;
+	/**
+	 * The validated value from schema validation. Only defined when a schema is provided
+	 * and the validation succeeds. Undefined if no schema is provided or validation fails.
+	 */
+	schemaValue: Value | undefined;
 };
 
 export type ValidateHandler<ErrorShape, Value> = (
-	ctx: ValidateContext,
+	ctx: ValidateContext<Value>,
 ) =>
 	| ValidateResult<ErrorShape, Value>
 	| Promise<ValidateResult<ErrorShape, Value>>
