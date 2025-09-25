@@ -39,6 +39,7 @@ import {
 	getField,
 	initializeState,
 	updateState,
+	defineDefaultMetadata,
 } from './state';
 import type {
 	FormContext,
@@ -46,6 +47,7 @@ import type {
 	FormMetadata,
 	Fieldset,
 	ValidateResult,
+	GlobalFormOptions,
 	FormOptions,
 	FieldName,
 	FieldMetadata,
@@ -77,13 +79,17 @@ import {
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
 export const INITIAL_KEY = 'INITIAL_KEY';
 
-export const FormConfig = createContext({
+export const GlobalFormOptionsContext = createContext<
+	GlobalFormOptions & { observer: ReturnType<typeof createGlobalFormsObserver> }
+>({
 	intentName: DEFAULT_INTENT_NAME,
 	observer: createGlobalFormsObserver(),
 	serialize,
+	shouldValidate: 'onSubmit',
+	defineCustomMetadata: defineDefaultMetadata,
 });
 
-export const Form = createContext<FormContext[]>([]);
+export const FormContextContext = createContext<FormContext[]>([]);
 
 /**
  * Provides form context to child components.
@@ -93,18 +99,44 @@ export function FormProvider(props: {
 	context: FormContext;
 	children: React.ReactNode;
 }): React.ReactElement {
-	const stack = useContext(Form);
+	const stack = useContext(FormContextContext);
 	const value = useMemo(
 		// Put the latest form context first to ensure that to be the first one found
 		() => [props.context].concat(stack),
 		[stack, props.context],
 	);
 
-	return <Form.Provider value={value}>{props.children}</Form.Provider>;
+	return (
+		<FormContextContext.Provider value={value}>
+			{props.children}
+		</FormContextContext.Provider>
+	);
+}
+
+export function FormOptionsProvider(
+	props: Partial<GlobalFormOptions> & {
+		children: React.ReactNode;
+	},
+): React.ReactElement {
+	const { children, ...providedOptions } = props;
+	const defaultOptions = useContext(GlobalFormOptionsContext);
+	const options = useMemo(
+		() => ({
+			...defaultOptions,
+			...providedOptions,
+		}),
+		[defaultOptions, providedOptions],
+	);
+
+	return (
+		<GlobalFormOptionsContext.Provider value={options}>
+			{children}
+		</GlobalFormOptionsContext.Provider>
+	);
 }
 
 export function useFormContext(formId?: string): FormContext<any> {
-	const contexts = useContext(Form);
+	const contexts = useContext(FormContextContext);
 	const context = formId
 		? contexts.find((context) => formId === context.formId)
 		: contexts[0];
@@ -447,14 +479,15 @@ export function useForm<
 	intent: IntentDispatcher;
 } {
 	const { id, defaultValue, constraint } = options;
-	const config = useContext(FormConfig);
+	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
+	const globalOptionsRef = useLatest(globalOptions);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
 	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
 		...options,
-		serialize: config.serialize,
-		intentName: config.intentName,
+		serialize: globalOptions.serialize,
+		intentName: globalOptions.intentName,
 		onError: optionsRef.current.onError ?? focusFirstInvalidField,
 		onValidate(ctx) {
 			if (options.schema) {
@@ -546,8 +579,9 @@ export function useForm<
 				}
 
 				const {
-					shouldValidate = 'onSubmit',
-					shouldRevalidate = shouldValidate,
+					shouldValidate = globalOptionsRef.current.shouldValidate,
+					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
+						shouldValidate,
 				} = optionsRef.current;
 
 				if (
@@ -579,8 +613,9 @@ export function useForm<
 				}
 
 				const {
-					shouldValidate = 'onSubmit',
-					shouldRevalidate = shouldValidate,
+					shouldValidate = globalOptionsRef.current.shouldValidate,
+					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
+						shouldValidate,
 				} = optionsRef.current;
 
 				if (
@@ -592,18 +627,32 @@ export function useForm<
 				}
 			},
 		}),
-		[formId, state, defaultValue, constraint, handleSubmit, intent, optionsRef],
+		[
+			formId,
+			state,
+			defaultValue,
+			constraint,
+			handleSubmit,
+			intent,
+			optionsRef,
+			globalOptionsRef,
+		],
 	);
 	const form = useMemo(
-		() => getFormMetadata(context, { serialize: config.serialize }),
-		[context, config.serialize],
+		() =>
+			getFormMetadata(context, {
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
+			}),
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
 	const fields = useMemo(
 		() =>
 			getFieldset<FormShape, ErrorShape>(context, {
-				serialize: config.serialize,
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
 			}),
-		[context, config.serialize],
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
 
 	return {
@@ -636,14 +685,15 @@ export function useFormMetadata<ErrorShape = string[]>(
 		formId?: string;
 	} = {},
 ): FormMetadata<ErrorShape> {
-	const config = useContext(FormConfig);
+	const globalOptions = useContext(GlobalFormOptionsContext);
 	const context = useFormContext(options.formId);
 	const formMetadata = useMemo(
 		() =>
 			getFormMetadata(context, {
-				serialize: config.serialize,
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
 			}),
-		[context, config.serialize],
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
 
 	return formMetadata;
@@ -675,15 +725,21 @@ export function useField<FieldShape = any, ErrorShape = string>(
 		formId?: string;
 	} = {},
 ): FieldMetadata<FieldShape, ErrorShape> {
-	const config = useContext(FormConfig);
+	const globalOptions = useContext(GlobalFormOptionsContext);
 	const context = useFormContext(options.formId);
 	const field = useMemo(
 		() =>
 			getField(context, {
 				name,
-				serialize: config.serialize,
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
 			}),
-		[context, name, config.serialize],
+		[
+			context,
+			name,
+			globalOptions.serialize,
+			globalOptions.defineCustomMetadata,
+		],
 	);
 
 	return field;
@@ -710,12 +766,15 @@ export function useField<FieldShape = any, ErrorShape = string>(
  * ```
  */
 export function useIntent(formRef: FormRef): IntentDispatcher {
-	const config = useContext(FormConfig);
+	const globalOptions = useContext(GlobalFormOptionsContext);
 
 	return useMemo(
 		() =>
-			createIntentDispatcher(() => getFormElement(formRef), config.intentName),
-		[formRef, config.intentName],
+			createIntentDispatcher(
+				() => getFormElement(formRef),
+				globalOptions.intentName,
+			),
+		[formRef, globalOptions.intentName],
 	);
 }
 
@@ -751,7 +810,7 @@ export function useControl(options?: {
 	 */
 	onFocus?: () => void;
 }): Control {
-	const { observer } = useContext(FormConfig);
+	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -1016,7 +1075,7 @@ export function useFormData<Value = any>(
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions,
 ): Value {
-	const { observer } = useContext(FormConfig);
+	const { observer } = useContext(GlobalFormOptionsContext);
 	const valueRef = useRef<Value>();
 	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
 	const value = useSyncExternalStore(

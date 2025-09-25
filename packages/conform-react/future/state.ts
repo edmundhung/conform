@@ -10,7 +10,6 @@ import {
 	deepEqual,
 } from '@conform-to/dom/future';
 import type {
-	DefaultMetadata,
 	FieldMetadata,
 	FieldName,
 	Fieldset,
@@ -20,6 +19,9 @@ import type {
 	FormAction,
 	UnknownIntent,
 	ActionHandler,
+	BaseMetadata,
+	DefaultMetadata,
+	CustomMetadataDefinition,
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
@@ -330,8 +332,9 @@ export function getConstraint(
 
 export function getFormMetadata<ErrorShape>(
 	context: FormContext<ErrorShape>,
-	options: {
-		serialize: Serialize;
+	options?: {
+		serialize?: Serialize;
+		customize?: CustomMetadataDefinition;
 	},
 ): FormMetadata<ErrorShape> {
 	return {
@@ -364,20 +367,23 @@ export function getFormMetadata<ErrorShape>(
 		context,
 		getField(name) {
 			return getField(context, {
-				...options,
 				name,
+				serialize: options?.serialize,
+				customize: options?.customize,
 			});
 		},
 		getFieldset(name) {
 			return getFieldset(context, {
-				...options,
 				name,
+				serialize: options?.serialize,
+				customize: options?.customize,
 			});
 		},
 		getFieldList(name) {
 			return getFieldList(context, {
-				...options,
 				name,
+				serialize: options?.serialize,
+				customize: options?.customize,
 			});
 		},
 	};
@@ -387,14 +393,23 @@ export function getField<FieldShape, ErrorShape = string>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize: Serialize;
+		serialize?: Serialize;
+		customize?: CustomMetadataDefinition;
 		key?: string;
 	},
 ): FieldMetadata<FieldShape, ErrorShape> {
-	const id = `${context.formId}-field-${options.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-	const constraint = getConstraint(context, options.name);
-	const metadata: DefaultMetadata<ErrorShape> = {
-		id: id,
+	const {
+		key,
+		name,
+		serialize = defaultSerialize,
+		customize = defineDefaultMetadata,
+	} = options;
+	const id = `${context.formId}-field-${name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+	const constraint = getConstraint(context, name);
+	const metadata: BaseMetadata<FieldShape, ErrorShape> = {
+		key,
+		name,
+		id,
 		descriptionId: `${id}-description`,
 		errorId: `${id}-error`,
 		formId: context.formId,
@@ -407,39 +422,68 @@ export function getField<FieldShape, ErrorShape = string>(
 		step: constraint?.step,
 		multiple: constraint?.multiple,
 		get defaultValue() {
-			return getDefaultValue(context, options.name, options.serialize);
+			return getDefaultValue(context, name, serialize);
 		},
 		get defaultOptions() {
-			return getDefaultOptions(context, options.name, options.serialize);
+			return getDefaultOptions(context, name, serialize);
 		},
 		get defaultChecked() {
-			return isDefaultChecked(context, options.name, options.serialize);
+			return isDefaultChecked(context, name, serialize);
 		},
 		get touched() {
-			return isTouched(context.state, options.name);
+			return isTouched(context.state, name);
 		},
 		get valid() {
-			return isValid(context.state, options.name);
+			return isValid(context.state, name);
 		},
 		get invalid() {
 			return !this.valid;
 		},
 		get errors() {
-			return getErrors(context.state, options.name);
+			return getErrors(context.state, name);
 		},
 		get fieldErrors() {
-			return getFieldErrors(context.state, options.name);
+			return getFieldErrors(context.state, name);
+		},
+		get ariaInvalid() {
+			return !this.valid ? true : undefined;
+		},
+		get ariaDescribedBy() {
+			return !this.valid ? this.errorId : undefined;
+		},
+		getFieldset() {
+			return getFieldset(context, {
+				name: name as string,
+				serialize,
+				customize,
+			});
+		},
+		getFieldList() {
+			return getFieldList(context, {
+				name: name as string,
+				serialize,
+				customize,
+			});
 		},
 	};
 
-	return Object.assign(metadata, {
-		key: options.key,
-		name: options.name,
-		getFieldset() {
-			return getFieldset(context, options);
-		},
-		getFieldList() {
-			return getFieldList(context, options);
+	// @ts-expect-error We use Proxy to dynamically retrieve custom metadata
+	return new Proxy(metadata, {
+		get(target, prop, receiver) {
+			if (Reflect.has(target, prop)) {
+				return Reflect.get(target, prop, receiver);
+			}
+
+			const customMetadata = customize(metadata);
+
+			if (Reflect.has(customMetadata, prop)) {
+				return Reflect.get(customMetadata, prop, receiver);
+			}
+
+			throw new Error(
+				`Property "${String(prop)}" does not exist on field metadata. ` +
+					`If you have defined the CustomMetadata interface to include "${String(prop)}", make sure to also implement it through the "defineCustomMetadata" property on <FormOptionsProvider />.`,
+			);
 		},
 	});
 }
@@ -454,15 +498,17 @@ export function getFieldset<
 	context: FormContext<ErrorShape>,
 	options: {
 		name?: FieldName<FieldShape>;
-		serialize: Serialize;
+		serialize?: Serialize;
+		customize?: CustomMetadataDefinition;
 	},
 ): Fieldset<FieldShape, ErrorShape> {
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
 				return getField(context, {
-					...options,
 					name: appendPathSegment(options?.name, name),
+					serialize: options.serialize,
+					customize: options.customize,
 				});
 			}
 
@@ -478,7 +524,8 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize: Serialize;
+		serialize?: Serialize;
+		customize?: CustomMetadataDefinition;
 	},
 ): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
@@ -495,9 +542,66 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 				: unknown,
 			ErrorShape
 		>(context, {
-			...options,
 			name: appendPathSegment(options.name, index),
+			serialize: options.serialize,
+			customize: options.customize,
 			key,
 		});
 	});
+}
+
+export function defineDefaultMetadata(
+	metadata: BaseMetadata<any, any>,
+): DefaultMetadata {
+	const props = {
+		id: metadata.id,
+		name: metadata.name,
+		form: metadata.formId,
+		required: metadata.required,
+		'aria-describedby': metadata.ariaDescribedBy,
+		'aria-invalid': metadata.ariaInvalid,
+	};
+
+	return {
+		get inputProps() {
+			return Object.assign(props, {
+				defaultValue: metadata.defaultValue,
+				minLength: metadata.minLength,
+				maxLength: metadata.maxLength,
+				min: metadata.min,
+				max: metadata.max,
+				step: metadata.step,
+				pattern: metadata.pattern,
+				multiple: metadata.multiple,
+			});
+		},
+		get selectProps() {
+			const options = metadata.defaultOptions;
+
+			return {
+				id: metadata.id,
+				name: metadata.name,
+				form: metadata.formId,
+				defaultValue:
+					options && options.length > 1 ? options : metadata.defaultValue,
+				required: metadata.required,
+				multiple: metadata.multiple,
+				'aria-describedby': metadata.ariaDescribedBy,
+				'aria-invalid': metadata.ariaInvalid,
+			};
+		},
+		get textareaProps() {
+			return {
+				id: metadata.id,
+				name: metadata.name,
+				form: metadata.formId,
+				defaultValue: metadata.defaultValue,
+				required: metadata.required,
+				minLength: metadata.minLength,
+				maxLength: metadata.maxLength,
+				'aria-describedby': metadata.ariaDescribedBy,
+				'aria-invalid': metadata.ariaInvalid,
+			};
+		},
+	};
 }
