@@ -8,6 +8,10 @@ export { parseSubmission, report, isDirty } from '@conform-to/dom/future';
 export type {
 	Control,
 	DefaultValue,
+	BaseMetadata,
+	DefaultMetadata,
+	CustomMetadata,
+	CustomMetadataDefinition,
 	FormContext,
 	FormMetadata,
 	FormOptions,
@@ -19,6 +23,7 @@ export type {
 } from './types';
 export {
 	FormProvider,
+	FormOptionsProvider,
 	useControl,
 	useField,
 	useForm,
