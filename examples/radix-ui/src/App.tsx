@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
@@ -11,14 +11,16 @@ import {
 	ExampleSelect,
 } from './form';
 
-const schema = z.object({
-	isTermsAgreed: z.boolean(),
-	carType: z.enum(['sedan', 'hatchback', 'suv']),
-	userCountry: z.enum(['usa', 'canada', 'mexico']),
-	estimatedKilometersPerYear: z.number().min(1).max(100000),
-	insurance: z.boolean(),
-	desiredContractType: z.enum(['full', 'part']),
-});
+const schema = coerceFormValue(
+	z.object({
+		isTermsAgreed: z.boolean(),
+		carType: z.enum(['sedan', 'hatchback', 'suv']),
+		userCountry: z.enum(['usa', 'canada', 'mexico']),
+		estimatedKilometersPerYear: z.number().min(1).max(100000),
+		insurance: z.boolean(),
+		desiredContractType: z.enum(['full', 'part']),
+	}),
+);
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -27,9 +29,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			isTermsAgreed: searchParams.get('isTermsAgreed'),
 			carType: searchParams.get('carType'),
@@ -40,10 +41,7 @@ export default function App() {
 			insurance: searchParams.get('insurance'),
 			desiredContractType: searchParams.get('desiredContractType'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -58,21 +56,16 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 
 	return (
 		<main className="flex flex-col gap-4 p-12 font-sans">
 			<form
-				id={form.id}
-				onSubmit={form.onSubmit}
+				{...form.props}
 				onChange={() => setSubmittedValue(null)}
 				className="flex flex-col gap-12 p-12 rounded-lg mx-auto"
-				noValidate
 			>
 				<h1 className="font-bold text-4xl">Radix UI Example</h1>
 				<div className="flex flex-col gap-2">
@@ -179,7 +172,7 @@ export default function App() {
 					<button
 						type="button"
 						className="hover:opacity-90 px-3 py-2 border-neutral-300 border rounded-lg grow"
-						onClick={() => form.reset()}
+						onClick={() => intent.reset()}
 					>
 						Reset
 					</button>

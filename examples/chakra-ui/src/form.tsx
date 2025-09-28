@@ -18,7 +18,7 @@ import {
 } from '@chakra-ui/react';
 import { useRef } from 'react';
 
-type ExampleNumberProps = {
+export type ExampleNumberProps = {
 	name: string;
 	defaultValue?: string;
 };
@@ -48,7 +48,7 @@ export function ExampleNumberInput({ name, defaultValue }: ExampleNumberProps) {
 	);
 }
 
-type ExamplePinProps = {
+export type ExamplePinProps = {
 	name: string;
 	defaultValue?: string;
 };
@@ -77,7 +77,7 @@ export function ExamplePinInput({ name, defaultValue }: ExamplePinProps) {
 	);
 }
 
-type ExampleSliderProps = {
+export type ExampleSliderProps = {
 	name: string;
 	defaultValue?: string;
 };
