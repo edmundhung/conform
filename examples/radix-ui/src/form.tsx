@@ -15,7 +15,7 @@ import {
 import clsx from 'clsx';
 import { type ElementRef, useRef } from 'react';
 
-type ExampleSelectProps = {
+export type ExampleSelectProps = {
 	name: string;
 	items: Array<{ name: string; value: string }>;
 	placeholder?: string;
@@ -96,7 +96,7 @@ export function ExampleSelect({
 	);
 }
 
-type ExampleToggleGroupProps = {
+export type ExampleToggleGroupProps = {
 	name: string;
 	items: Array<{ label: string; value: string }>;
 	defaultValue?: string;
@@ -143,7 +143,7 @@ export function ExampleToggleGroup({
 	);
 }
 
-type ExampleSwitchProps = {
+export type ExampleSwitchProps = {
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
@@ -179,7 +179,7 @@ export function ExampleSwitch({
 	);
 }
 
-type ExampleSliderProps = {
+export type ExampleSliderProps = {
 	name: string;
 	max?: number;
 	defaultValue?: string;
@@ -224,7 +224,7 @@ export function ExampleSlider({
 	);
 }
 
-type ExampleRadioGroupProps = {
+export type ExampleRadioGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
@@ -277,7 +277,7 @@ export function ExampleRadioGroup({
 	);
 }
 
-type ExampleCheckboxProps = {
+export type ExampleCheckboxProps = {
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;

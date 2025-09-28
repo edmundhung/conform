@@ -7,7 +7,7 @@ function classNames(...classes: Array<string | boolean>): string {
 	return classes.filter(Boolean).join(' ');
 }
 
-type ExampleListBoxProps = {
+export type ExampleListBoxProps = {
 	name: string;
 	defaultValue?: string[];
 	options: Array<{ label: string; value: string }>;
@@ -86,7 +86,7 @@ export function ExampleListBox({
 	);
 }
 
-type ExampleComboboxProps = {
+export type ExampleComboboxProps = {
 	name: string;
 	defaultValue?: string;
 	options: Array<{ label: string; value: string }>;
@@ -174,7 +174,7 @@ export function ExampleCombobox({
 	);
 }
 
-type ExampleSwitchProps = {
+export type ExampleSwitchProps = {
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
@@ -218,7 +218,7 @@ export function ExampleSwitch({
 	);
 }
 
-type ExampleRadioGroupProps = {
+export type ExampleRadioGroupProps = {
 	name: string;
 	defaultValue?: string;
 };

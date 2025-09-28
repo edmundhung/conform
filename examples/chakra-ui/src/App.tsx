@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import {
 	Stack,
 	FormControl,
@@ -26,18 +26,20 @@ import {
 import { z } from 'zod';
 import { useState } from 'react';
 
-const schema = z.object({
-	email: z.string(),
-	language: z.string(),
-	description: z.string(),
-	quantity: z.number(),
-	pin: z.string().min(4).max(4),
-	title: z.string(),
-	subscribe: z.boolean(),
-	enabled: z.boolean(),
-	progress: z.number().min(3).max(7),
-	active: z.string(),
-});
+const schema = coerceFormValue(
+	z.object({
+		email: z.string(),
+		language: z.string(),
+		description: z.string(),
+		quantity: z.number(),
+		pin: z.string().min(4).max(4),
+		title: z.string(),
+		subscribe: z.boolean(),
+		enabled: z.boolean(),
+		progress: z.number().min(3).max(7),
+		active: z.string(),
+	}),
+);
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -46,9 +48,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			email: searchParams.get('email'),
 			language: searchParams.get('language'),
@@ -61,10 +62,7 @@ export default function App() {
 			progress: searchParams.get('progress'),
 			active: searchParams.get('active'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -79,16 +77,13 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 
 	return (
 		<Container maxW="container.sm" paddingY={8}>
-			<form id={form.id} onSubmit={form.onSubmit} noValidate>
+			<form {...form.props}>
 				<Stack direction="column" spacing={8}>
 					<header>
 						<Heading mb={4}>Chakra UI Example</Heading>
@@ -105,7 +100,6 @@ export default function App() {
 							type="email"
 							name={fields.email.name}
 							defaultValue={fields.email.defaultValue}
-							required
 						/>
 						<FormErrorMessage>{fields.email.errors}</FormErrorMessage>
 					</FormControl>
@@ -116,7 +110,6 @@ export default function App() {
 							name={fields.language.name}
 							defaultValue={fields.language.defaultValue}
 							placeholder="Select option"
-							required
 						>
 							<option value="english">English</option>
 							<option value="german">German</option>
@@ -130,7 +123,6 @@ export default function App() {
 						<Textarea
 							name={fields.description.name}
 							defaultValue={fields.description.defaultValue}
-							required
 						/>
 						<FormErrorMessage>{fields.description.errors}</FormErrorMessage>
 					</FormControl>
@@ -168,7 +160,6 @@ export default function App() {
 							name={fields.subscribe.name}
 							value="on"
 							defaultChecked={fields.subscribe.defaultChecked}
-							required
 						>
 							Newsletter
 						</Checkbox>
@@ -181,7 +172,6 @@ export default function App() {
 							name={fields.enabled.name}
 							value="on"
 							defaultChecked={fields.enabled.defaultChecked}
-							required
 						/>
 						<FormErrorMessage>{fields.enabled.errors}</FormErrorMessage>
 					</FormControl>
@@ -220,7 +210,7 @@ export default function App() {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => form.reset()}
+							onClick={() => intent.reset()}
 						>
 							Reset
 						</Button>
