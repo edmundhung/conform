@@ -169,12 +169,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
-		(
-			result: SubmissionResult<ErrorShape>,
-			options: {
-				type: 'server' | 'client';
-			},
-		) => {
+		(type: 'server' | 'client', result: SubmissionResult<ErrorShape>) => {
 			const intent = result.submission.intent
 				? deserializeIntent(result.submission.intent)
 				: null;
@@ -182,7 +177,7 @@ export function useConform<ErrorShape, Value = undefined>(
 			setState((state) =>
 				updateState(state, {
 					...result,
-					type: options.type,
+					type,
 					intent,
 					ctx: {
 						handlers: actionHandlers,
@@ -218,7 +213,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	useEffect(() => {
 		// To avoid re-applying the same result twice
 		if (lastResult && lastResult !== lastResultRef.current) {
-			handleSubmission(lastResult, { type: 'server' });
+			handleSubmission('server', lastResult);
 			lastResultRef.current = lastResult;
 		}
 	}, [lastResult, handleSubmission]);
@@ -292,7 +287,10 @@ export function useConform<ErrorShape, Value = undefined>(
 				// Patch missing fields in the submission object
 				for (const element of formElement.elements) {
 					if (isFieldElement(element) && element.name) {
-						appendUniqueItem(submission.fields, element.name);
+						submission.fields = appendUniqueItem(
+							submission.fields,
+							element.name,
+						);
 					}
 				}
 
@@ -346,9 +344,7 @@ export function useConform<ErrorShape, Value = undefined>(
 						if (!abortController.signal.aborted) {
 							submissionResult.error = error;
 
-							handleSubmission(submissionResult, {
-								type: 'server',
-							});
+							handleSubmission('server', submissionResult);
 
 							// If the form is meant to be submitted and there is no error
 							if (error === null && !submission.intent) {
@@ -367,9 +363,7 @@ export function useConform<ErrorShape, Value = undefined>(
 					});
 				}
 
-				handleSubmission(submissionResult, {
-					type: 'client',
-				});
+				handleSubmission('client', submissionResult);
 
 				if (
 					// If client validation happens
@@ -405,7 +399,7 @@ export function useConform<ErrorShape, Value = undefined>(
 								...options,
 								keepFiles: true,
 							});
-							handleSubmission(submissionResult, { type: 'server' });
+							handleSubmission('server', submissionResult);
 						}
 					},
 				});

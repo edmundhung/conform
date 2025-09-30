@@ -96,22 +96,19 @@ export function updateState<ErrorShape>(
 						? value
 						: state.serverIntendedValue,
 				});
+	// Validate the whole form if no intent is provided (default submission)
+	const intent = action.intent ?? { type: 'validate' };
+	const handler = action.ctx.handlers?.[intent.type];
 
-	if (action.type !== 'server' && typeof action.intent !== 'undefined') {
-		// Validate the whole form if no intent is provided (default submission)
-		const intent = action.intent ?? { type: 'validate' };
-		const handler = action.ctx.handlers?.[intent.type];
-
-		if (typeof handler?.onUpdate === 'function') {
-			if (handler.validatePayload?.(intent.payload) ?? true) {
-				return handler.onUpdate(state, {
-					...action,
-					intent: {
-						type: intent.type,
-						payload: intent.payload,
-					},
-				});
-			}
+	if (typeof handler?.onUpdate === 'function') {
+		if (handler.validatePayload?.(intent.payload) ?? true) {
+			return handler.onUpdate(state, {
+				...action,
+				intent: {
+					type: intent.type,
+					payload: intent.payload,
+				},
+			});
 		}
 	}
 
