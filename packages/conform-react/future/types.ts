@@ -141,10 +141,32 @@ export type FormAction<
 };
 
 export type GlobalFormOptions = {
+	/**
+	 * The name of the submit button field that indicates the submission intent.
+	 *
+	 * @default "__intent__"
+	 */
 	intentName: string;
+	/**
+	 * A custom serialization function for converting form data.
+	 */
 	serialize: Serialize;
+	/**
+	 * Determines when validation should run for the first time on a field.
+	 *
+	 * @default "onSubmit"
+	 */
 	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Determines when validation should run again after the field has been validated once.
+	 *
+	 * @default Same as shouldValidate
+	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * A function that defines custom metadata properties for form fields.
+	 * Useful for integrating with UI libraries or custom form components.
+	 */
 	defineCustomMetadata: CustomMetadataDefinition;
 };
 
@@ -164,20 +186,19 @@ export interface FormOptions<
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes>;
 	/**
-	 * Define when conform should start validation.
-	 * Support "onSubmit", "onInput", "onBlur".
+	 * Determines when validation should run for the first time on a field.
+	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
-	 * @default "onSubmit"
+	 * @default Inherits from FormOptionsProvider, or "onSubmit" if not configured
 	 */
 	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
 	/**
-	 * Define when conform should revalidate again.
-	 * Support "onSubmit", "onInput", "onBlur".
+	 * Determines when validation should run again after the field has been validated once.
+	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
-	 * @default Same as shouldValidate, or "onSubmit" if shouldValidate is not provided.
+	 * @default Inherits from FormOptionsProvider, or same as shouldValidate
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-
 	/** Server-side submission result for form state synchronization. */
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
