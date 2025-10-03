@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useRef } from 'react';
 
-type TextFieldProps = React.ComponentProps<typeof MuiTextField> & {
+export type TextFieldProps = React.ComponentProps<typeof MuiTextField> & {
 	defaultValue?: string | string[];
 };
 
@@ -37,7 +37,7 @@ export function TextField({ name, defaultValue, ...props }: TextFieldProps) {
 	);
 }
 
-type AutocompleteProps = {
+export type AutocompleteProps = {
 	name: string;
 	label: string;
 	defaultValue?: string;
@@ -83,7 +83,7 @@ export function Autocomplete({
 	);
 }
 
-type CheckboxProps = {
+export type CheckboxProps = {
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
@@ -112,7 +112,7 @@ export function Checkbox({ name, value, defaultChecked }: CheckboxProps) {
 	);
 }
 
-type RadioGroupProps = {
+export type RadioGroupProps = {
 	name?: string;
 	defaultValue?: string;
 	children: React.ReactNode;
@@ -150,7 +150,7 @@ export function RadioGroup({ name, defaultValue, children }: RadioGroupProps) {
 	);
 }
 
-type SwitchProps = {
+export type SwitchProps = {
 	name: string;
 	value?: string;
 	defaultChecked?: boolean;
@@ -179,7 +179,7 @@ export function Switch({ name, value, defaultChecked }: SwitchProps) {
 	);
 }
 
-type RatingProps = {
+export type RatingProps = {
 	name: string;
 	defaultValue?: string;
 };
@@ -201,7 +201,7 @@ export function Rating({ name, defaultValue }: RatingProps) {
 	);
 }
 
-type SliderProps = {
+export type SliderProps = {
 	name: string;
 	defaultValue?: string;
 };

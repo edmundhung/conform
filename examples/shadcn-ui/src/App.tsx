@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
@@ -21,21 +21,23 @@ import {
 	InputOTP,
 } from './components/form';
 
-const schema = z.object({
-	name: z.string().min(3),
-	dateOfBirth: z.date(),
-	country: z.string(),
-	gender: z.enum(['male', 'female', 'other']),
-	agreeToTerms: z.boolean(),
-	job: z.enum(['developer', 'designer', 'manager']),
-	age: z.number().min(18),
-	isAdult: z.boolean(),
-	description: z.string().min(10),
-	accountType: z.enum(['personal', 'business']),
-	categories: z.array(z.enum(['blog', 'guide', 'tutorial'])).min(1),
-	interests: z.array(z.string()).min(3),
-	code: z.string().length(6),
-});
+const schema = coerceFormValue(
+	z.object({
+		name: z.string().min(3),
+		dateOfBirth: z.date(),
+		country: z.string(),
+		gender: z.enum(['male', 'female', 'other']),
+		agreeToTerms: z.boolean(),
+		job: z.enum(['developer', 'designer', 'manager']),
+		age: z.number().min(18),
+		isAdult: z.boolean(),
+		description: z.string().min(10),
+		accountType: z.enum(['personal', 'business']),
+		categories: z.array(z.enum(['blog', 'guide', 'tutorial'])).min(1),
+		interests: z.array(z.string()).min(3),
+		code: z.string().length(6),
+	}),
+);
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -44,9 +46,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			name: searchParams.get('name'),
 			dateOfBirth: searchParams.get('dateOfBirth'),
@@ -62,10 +63,7 @@ export default function App() {
 			interests: searchParams.getAll('interests'),
 			code: searchParams.get('code'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -80,10 +78,7 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 
@@ -91,12 +86,10 @@ export default function App() {
 		<div className="flex flex-col gap-6 p-10">
 			<h1 className="text-2xl">Shadcn UI Example</h1>
 			<form
+				{...form.props}
 				method="POST"
-				id={form.id}
-				onSubmit={form.onSubmit}
 				onChange={() => setSubmittedValue(null)}
 				className="flex flex-col gap-4 items-start"
-				noValidate
 			>
 				<Field>
 					<Label htmlFor={fields.name.id}>Name</Label>
@@ -105,9 +98,7 @@ export default function App() {
 						type="text"
 						name={fields.name.name}
 						defaultValue={fields.name.defaultValue}
-						aria-describedby={
-							!fields.name.valid ? fields.name.errorId : undefined
-						}
+						aria-describedby={fields.name.ariaDescribedBy}
 					/>
 					<FieldError id={fields.name.errorId}>{fields.name.errors}</FieldError>
 				</Field>
@@ -117,9 +108,7 @@ export default function App() {
 						id={fields.dateOfBirth.id}
 						name={fields.dateOfBirth.name}
 						defaultValue={fields.dateOfBirth.defaultValue}
-						aria-describedby={
-							!fields.dateOfBirth.valid ? fields.dateOfBirth.errorId : undefined
-						}
+						aria-describedby={fields.dateOfBirth.ariaDescribedBy}
 					/>
 					<FieldError id={fields.dateOfBirth.errorId}>
 						{fields.dateOfBirth.errors}
@@ -131,9 +120,7 @@ export default function App() {
 						id={fields.country.id}
 						name={fields.country.name}
 						defaultValue={fields.country.defaultValue}
-						aria-describedby={
-							!fields.country.valid ? fields.country.errorId : undefined
-						}
+						aria-describedby={fields.country.ariaDescribedBy}
 					/>
 					<FieldError id={fields.country.errorId}>
 						{fields.country.errors}
@@ -151,9 +138,7 @@ export default function App() {
 							{ value: 'other', label: 'other' },
 							{ value: 'invalid', label: 'invalid' },
 						]}
-						aria-describedby={
-							!fields.gender.valid ? fields.gender.errorId : undefined
-						}
+						aria-describedby={fields.gender.ariaDescribedBy}
 					/>
 					<FieldError id={fields.gender.errorId}>
 						{fields.gender.errors}
@@ -165,11 +150,7 @@ export default function App() {
 							id={fields.agreeToTerms.id}
 							name={fields.agreeToTerms.name}
 							defaultChecked={fields.agreeToTerms.defaultChecked}
-							aria-describedby={
-								!fields.agreeToTerms.valid
-									? fields.agreeToTerms.errorId
-									: undefined
-							}
+							aria-describedby={fields.agreeToTerms.ariaDescribedBy}
 						/>
 						<Label htmlFor={fields.agreeToTerms.id}>Agree to terms</Label>
 					</div>
@@ -181,17 +162,15 @@ export default function App() {
 					<Label htmlFor={fields.job.id}>Job</Label>
 					<Select
 						id={fields.job.id}
-						placeholder="Select a job"
 						name={fields.job.name}
 						defaultValue={fields.job.defaultValue}
+						placeholder="Select a job"
 						items={[
 							{ value: 'developer', name: 'Developer' },
 							{ value: 'designer', name: 'Designer' },
 							{ value: 'manager', name: 'Manager' },
 						]}
-						aria-describedby={
-							!fields.job.valid ? fields.job.errorId : undefined
-						}
+						aria-describedby={fields.job.ariaDescribedBy}
 					/>
 					<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 				</Field>
@@ -201,9 +180,7 @@ export default function App() {
 						id={fields.age.id}
 						name={fields.age.name}
 						defaultValue={fields.age.defaultValue}
-						aria-describedby={
-							!fields.age.valid ? fields.age.errorId : undefined
-						}
+						aria-describedby={fields.age.ariaDescribedBy}
 					/>
 					<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 				</Field>
@@ -214,9 +191,7 @@ export default function App() {
 							id={fields.isAdult.id}
 							name={fields.isAdult.name}
 							defaultChecked={fields.isAdult.defaultChecked}
-							aria-describedby={
-								!fields.isAdult.valid ? fields.isAdult.errorId : undefined
-							}
+							aria-describedby={fields.isAdult.ariaDescribedBy}
 						/>
 					</div>
 					<FieldError id={fields.isAdult.errorId}>
@@ -229,9 +204,7 @@ export default function App() {
 						id={fields.description.id}
 						name={fields.description.name}
 						defaultValue={fields.description.defaultValue}
-						aria-describedby={
-							!fields.description.valid ? fields.description.errorId : undefined
-						}
+						aria-describedby={fields.description.ariaDescribedBy}
 					/>
 					<FieldError id={fields.description.errorId}>
 						{fields.description.errors}
@@ -247,9 +220,7 @@ export default function App() {
 							{ value: 'business', label: 'Business' },
 						]}
 						aria-labelledby={fields.accountType.id}
-						aria-describedby={
-							!fields.accountType.valid ? fields.accountType.errorId : undefined
-						}
+						aria-describedby={fields.accountType.ariaDescribedBy}
 					/>
 					<FieldError id={fields.accountType.errorId}>
 						{fields.accountType.errors}
@@ -266,9 +237,7 @@ export default function App() {
 							{ value: 'tutorial', label: 'Tutorial' },
 						]}
 						aria-labelledby={fields.categories.id}
-						aria-describedby={
-							!fields.categories.valid ? fields.categories.errorId : undefined
-						}
+						aria-describedby={fields.categories.ariaDescribedBy}
 					/>
 					<FieldError id={fields.categories.errorId}>
 						{fields.categories.errors}
@@ -295,9 +264,7 @@ export default function App() {
 								defaultChecked={fields.interests.defaultOptions?.includes(
 									option.value,
 								)}
-								aria-describedby={
-									!fields.interests.valid ? fields.interests.errorId : undefined
-								}
+								aria-describedby={fields.interests.ariaDescribedBy}
 							/>
 							<label htmlFor={`${fields.interests.id}-${option.value}`}>
 								{option.name}
@@ -314,10 +281,8 @@ export default function App() {
 						id={fields.code.id}
 						name={fields.code.name}
 						defaultValue={fields.code.defaultValue}
+						aria-describedby={fields.code.ariaDescribedBy}
 						length={6}
-						aria-describedby={
-							!fields.code.valid ? fields.code.errorId : undefined
-						}
 					/>
 					<FieldError id={fields.code.errorId}>{fields.code.errors}</FieldError>
 				</Field>
@@ -331,7 +296,11 @@ export default function App() {
 
 				<div className="flex gap-2">
 					<Button type="submit">Submit</Button>
-					<Button type="button" variant="outline" onClick={() => form.reset()}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => intent.reset()}
+					>
 						Reset
 					</Button>
 				</div>

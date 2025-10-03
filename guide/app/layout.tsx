@@ -63,6 +63,10 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'report', to: '/api/react/future/report' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
+				{
+					title: 'FormOptionsProvider',
+					to: '/api/react/future/FormOptionsProvider',
+				},
 				{ title: 'memoize', to: '/api/react/future/memoize' },
 			],
 		},

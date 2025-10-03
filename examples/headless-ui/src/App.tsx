@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import {
@@ -9,12 +9,14 @@ import {
 	ExampleRadioGroup,
 } from './form';
 
-const schema = z.object({
-	owner: z.array(z.string()).min(1),
-	assignee: z.string(),
-	enabled: z.boolean(),
-	color: z.string(),
-});
+const schema = coerceFormValue(
+	z.object({
+		owner: z.array(z.string()).min(1),
+		assignee: z.string(),
+		enabled: z.boolean(),
+		color: z.string(),
+	}),
+);
 
 const options = [
 	{ label: 'Durward Reynolds', value: '1' },
@@ -31,19 +33,15 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			owner: searchParams.getAll('owner'),
 			assignee: searchParams.get('assignee'),
 			enabled: searchParams.get('enabled'),
 			color: searchParams.get('color'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -58,10 +56,7 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 
@@ -69,10 +64,8 @@ export default function App() {
 		<main className="max-w-lg mx-auto py-8 px-4">
 			<form
 				className="space-y-8 divide-y divide-gray-200"
-				id={form.id}
-				onSubmit={form.onSubmit}
+				{...form.props}
 				onChange={() => setSubmittedValue(null)}
-				noValidate
 			>
 				<div className="space-y-8">
 					<div>
@@ -159,7 +152,7 @@ export default function App() {
 						<button
 							type="button"
 							className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-							onClick={() => form.reset()}
+							onClick={() => intent.reset()}
 						>
 							Reset
 						</button>
