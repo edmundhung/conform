@@ -254,7 +254,7 @@ export function Guide({
 
 	return (
 		<div className="xl:container mx-auto xl:grid xl:grid-cols-5 gap-10 px-8 relative">
-			<header className="bg-zinc-900 xl:bg-transparent sticky top-0 max-h-screen z-10 flex flex-col">
+			<header className="bg-zinc-900 sticky top-0 max-h-screen z-10 flex flex-col">
 				<div className="py-6 xl:py-10 flex items-end justify-between">
 					<Link
 						className="font-mono inline-block text-[.20rem] leading-[.25rem] 2xl:text-[.3rem] 2xl:leading-[.3rem] whitespace-pre"
@@ -264,7 +264,7 @@ export function Guide({
 						{logo}
 					</Link>
 					<select
-						className="bg-zinc-900 text-xs rounded-md py-1 pl-1 pr-8"
+						className="bg-zinc-900 text-xs rounded-md py-1 pl-1 pr-8 ml-4 mb-1"
 						defaultValue={language.code}
 						onChange={(e) => {
 							const selectedLanguage = getLanguage(e.currentTarget.value);
@@ -280,7 +280,7 @@ export function Guide({
 				</div>
 				<MainNavigation menus={menus[language.code]} />
 			</header>
-			<main className="xl:col-span-3">{children}</main>
+			<main className="xl:col-span-3 mt-20">{children}</main>
 			<footer className="xl:col-span-1 top-0 sticky py-4 xl:flex xl:flex-col xl:h-screen -mx-8 px-8 mt-8 xl:mt-0 border-t xl:border-t-0 border-dotted">
 				<div className="pt-2 pb-4 hidden xl:block xl:invisible">
 					<button className="flex items-center justify-between w-full gap-4 px-2.5 py-2 rounded-sm border border-zinc-500 text-zinc-500 hover:text-zinc-400 hover:border-zinc-400">

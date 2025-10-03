@@ -218,7 +218,7 @@ export function MainNavigation({ menus }: { menus: Menu[] }) {
 			>
 				<summary className="cursor-pointer">{currentPage}</summary>
 			</details>
-			<div className="hidden peer-open:block xl:block overflow-y-auto bg-zinc-950 xl:bg-inherit -mx-8 px-8 xl:mx-0 xl:px-0">
+			<div className="hidden peer-open:block xl:block overflow-y-auto bg-zinc-950 xl:bg-inherit pb-8 -mx-8 px-8 xl:mx-0 xl:px-0">
 				<Navigation
 					menus={menus}
 					backgroundClassName="bg-zinc-950 xl:bg-zinc-900"
