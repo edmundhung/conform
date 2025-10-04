@@ -13,6 +13,7 @@ import {
 	any,
 	ZodCatch,
 	ZodBranded,
+	ZodDefault,
 } from 'zod';
 import type {
 	ZodDiscriminatedUnionOption,
@@ -288,9 +289,15 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		const defaultValue = def.defaultValue();
 		schema = any()
 			.transform(options.stripEmptyValue)
-			// Reconstruct `.default()` as `.optional().transform(value => value ?? defaultValue)`
-			.pipe(enableTypeCoercion(def.innerType, options).optional())
-			.transform((value) => value ?? defaultValue);
+			.pipe(
+				new ZodDefault({
+					...def,
+					innerType:
+						defaultValue !== ''
+							? enableTypeCoercion(def.innerType, options)
+							: def.innerType,
+				}),
+			);
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,
