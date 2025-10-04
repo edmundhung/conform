@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { z } from 'zod';
 import {
 	Field,
+	FieldLabel,
 	FieldError,
 	Button,
-	Label,
 	Input,
 	Textarea,
 	DatePicker,
@@ -99,7 +99,7 @@ export default function App() {
 				noValidate
 			>
 				<Field>
-					<Label htmlFor={fields.name.id}>Name</Label>
+					<FieldLabel>Name</FieldLabel>
 					<Input
 						id={fields.name.id}
 						type="text"
@@ -112,7 +112,7 @@ export default function App() {
 					<FieldError id={fields.name.errorId}>{fields.name.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.dateOfBirth.id}>Date of Birth</Label>
+					<FieldLabel htmlFor={fields.dateOfBirth.id}>Date of Birth</FieldLabel>
 					<DatePicker
 						id={fields.dateOfBirth.id}
 						name={fields.dateOfBirth.name}
@@ -126,7 +126,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.country.id}>Country</Label>
+					<FieldLabel htmlFor={fields.country.id}>Country</FieldLabel>
 					<ComboBox
 						id={fields.country.id}
 						name={fields.country.name}
@@ -140,7 +140,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.gender.id}>Gender</Label>
+					<FieldLabel htmlFor={fields.gender.id}>Gender</FieldLabel>
 					<RadioGroup
 						id={fields.gender.id}
 						name={fields.gender.name}
@@ -171,14 +171,16 @@ export default function App() {
 									: undefined
 							}
 						/>
-						<Label htmlFor={fields.agreeToTerms.id}>Agree to terms</Label>
+						<FieldLabel htmlFor={fields.agreeToTerms.id}>
+							Agree to terms
+						</FieldLabel>
 					</div>
 					<FieldError id={fields.agreeToTerms.errorId}>
 						{fields.agreeToTerms.errors}
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.job.id}>Job</Label>
+					<FieldLabel htmlFor={fields.job.id}>Job</FieldLabel>
 					<Select
 						id={fields.job.id}
 						placeholder="Select a job"
@@ -196,7 +198,7 @@ export default function App() {
 					<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.age.id}>Age</Label>
+					<FieldLabel htmlFor={fields.age.id}>Age</FieldLabel>
 					<Slider
 						id={fields.age.id}
 						name={fields.age.name}
@@ -209,7 +211,7 @@ export default function App() {
 				</Field>
 				<Field>
 					<div className="flex items-center gap-2">
-						<Label htmlFor={fields.isAdult.id}>Is adult</Label>
+						<FieldLabel htmlFor={fields.isAdult.id}>Is adult</FieldLabel>
 						<Switch
 							id={fields.isAdult.id}
 							name={fields.isAdult.name}
@@ -224,7 +226,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.description.id}>Description</Label>
+					<FieldLabel htmlFor={fields.description.id}>Description</FieldLabel>
 					<Textarea
 						id={fields.description.id}
 						name={fields.description.name}
@@ -238,7 +240,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label id={fields.accountType.id}>Account type</Label>
+					<FieldLabel id={fields.accountType.id}>Account type</FieldLabel>
 					<SingleToggleGroup
 						name={fields.accountType.name}
 						defaultValue={fields.accountType.defaultValue}
@@ -256,7 +258,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label id={fields.categories.id}>Categories</Label>
+					<FieldLabel id={fields.categories.id}>Categories</FieldLabel>
 					<MultiToggleGroup
 						name={fields.categories.name}
 						defaultValue={fields.categories.defaultOptions}
@@ -275,7 +277,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field role="group" aria-labelledby={fields.interests.id}>
-					<Label id={fields.interests.id}>Interests</Label>
+					<FieldLabel id={fields.interests.id}>Interests</FieldLabel>
 					{[
 						{ value: 'react', name: 'React' },
 						{ value: 'vue', name: 'Vue' },
@@ -309,7 +311,7 @@ export default function App() {
 					</FieldError>
 				</Field>
 				<Field>
-					<Label htmlFor={fields.code.id}>Code</Label>
+					<FieldLabel htmlFor={fields.code.id}>Code</FieldLabel>
 					<InputOTP
 						id={fields.code.id}
 						name={fields.code.name}

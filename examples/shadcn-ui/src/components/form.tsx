@@ -43,43 +43,9 @@ import { Checkbox as ShadcnCheckbox } from './ui/checkbox';
 import { cn } from '../lib/utils';
 import { useControl } from '@conform-to/react/future';
 import { Label } from './ui/label';
+import { Field, FieldLabel, FieldDescription, FieldError } from './ui/field';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
-
-type FieldProps = {
-	children: React.ReactNode;
-	role?: string;
-	['aria-labelledby']?: string;
-};
-
-function Field({
-	role,
-	children,
-	'aria-labelledby': ariaLabelledby,
-}: FieldProps) {
-	return (
-		<div
-			className="flex flex-col gap-2"
-			role={role}
-			aria-labelledby={ariaLabelledby}
-		>
-			{children}
-		</div>
-	);
-}
-
-type FieldErrorProps = {
-	id?: string;
-	children: React.ReactNode;
-};
-
-function FieldError({ id, children }: FieldErrorProps) {
-	return (
-		<div id={id} className="text-sm text-red-600">
-			{children}
-		</div>
-	);
-}
 
 type DatePickerProps = {
 	id?: string;
@@ -593,6 +559,8 @@ function InputOTP({
 
 export {
 	Field,
+	FieldLabel,
+	FieldDescription,
 	FieldError,
 	Label,
 	Button,

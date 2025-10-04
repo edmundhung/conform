@@ -1,7 +1,6 @@
 # Shadcn UI Integration
 
-[Shadcn UI](https://ui.shadcn.com/)
-Shadcn UI is a comprehensive component library built with React. It provides a wide range of pre-built components that can be easily integrated into your projects. The library is designed to be simple to use, allowing you to add components to your project either by copy/pasting them directly or using the provided CLI.
+[Shadcn UI](https://ui.shadcn.com/) is a comprehensive component library built with React. It provides a wide range of pre-built components that can be easily integrated into your projects. The library is designed to be simple to use, allowing you to add components to your project either by copy/pasting them directly or using the provided CLI.
 
 ## Installation
 
