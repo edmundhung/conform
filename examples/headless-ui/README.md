@@ -1,6 +1,44 @@
 # Headless UI Example
 
-[Headless UI](https://headlessui.com) is a set of completely unstyled, fully accessible UI components for React, designed to integrate beautifully with Tailwind CSS. In this guide, we will show how to integrate its input components with Conform.
+[Headless UI](https://headlessui.com) is a set of completely unstyled, fully accessible UI components for React, designed to integrate beautifully with Tailwind CSS.
+
+This example demonstrates how to integrate Conform with Headless UI using custom metadata.
+
+## Understanding the Integration
+
+The main application ([`App.tsx`](./src/App.tsx)) uses explicit prop assignment for educational purposes, making it easy to see how field metadata maps to Headless UI component props:
+
+```tsx
+<ExampleListBox
+  name={fields.colors.name}
+  defaultValue={fields.colors.defaultOptions}
+  options={colorOptions}
+/>
+```
+
+While this is clear and straightforward for learning, it becomes repetitive in production applications.
+
+## Custom Metadata
+
+The example also showcases metadata customization for a more DRY approach. Custom metadata properties are defined once in [`main.tsx`](./src/main.tsx) and provide type-safe props that match Headless UI component types:
+
+```tsx
+// Define custom metadata once
+function defineCustomMetadata(metadata) {
+  return {
+    get listBoxProps() {
+      return {
+        name: metadata.name,
+        defaultValue: metadata.defaultOptions,
+      } satisfies Partial<React.ComponentProps<typeof ExampleListBox>>;
+    },
+    // ... other component props
+  };
+}
+
+// Use with full type safety
+<ExampleListBox {...fields.colors.listBoxProps} options={colorOptions} />
+```
 
 ## Compatibility
 
