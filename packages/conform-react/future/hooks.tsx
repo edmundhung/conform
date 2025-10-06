@@ -59,6 +59,8 @@ import type {
 	SubmitHandler,
 	FormState,
 	FormRef,
+	BaseErrorShape,
+	DefaultErrorShape,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -135,7 +137,7 @@ export function FormOptionsProvider(
 	);
 }
 
-export function useFormContext(formId?: string): FormContext<any> {
+export function useFormContext(formId?: string): FormContext {
 	const contexts = useContext(FormContextContext);
 	const context = formId
 		? contexts.find((context) => formId === context.formId)
@@ -469,7 +471,7 @@ export function useConform<ErrorShape, Value = undefined>(
  */
 export function useForm<
 	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape = string,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 >(
 	options: FormOptions<FormShape, ErrorShape, Value>,
@@ -680,11 +682,11 @@ export function useForm<
  * }
  * ```
  */
-export function useFormMetadata<ErrorShape = string[]>(
+export function useFormMetadata(
 	options: {
 		formId?: string;
 	} = {},
-): FormMetadata<ErrorShape> {
+): FormMetadata {
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const context = useFormContext(options.formId);
 	const formMetadata = useMemo(
@@ -719,12 +721,12 @@ export function useFormMetadata<ErrorShape = string[]>(
  * }
  * ```
  */
-export function useField<FieldShape = any, ErrorShape = string>(
+export function useField<FieldShape = any>(
 	name: FieldName<FieldShape>,
 	options: {
 		formId?: string;
 	} = {},
-): FieldMetadata<FieldShape, ErrorShape> {
+): FieldMetadata<FieldShape> {
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const context = useFormContext(options.formId);
 	const field = useMemo(

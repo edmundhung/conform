@@ -12,6 +12,8 @@ export type {
 	DefaultMetadata,
 	CustomMetadata,
 	CustomMetadataDefinition,
+	BaseErrorShape,
+	CustomTypes,
 	FormContext,
 	FormMetadata,
 	FormOptions,

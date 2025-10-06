@@ -113,7 +113,7 @@ export type DefaultValue<FormShape> = FormShape extends
 				| undefined
 		: FormShape | string | null | undefined;
 
-export type FormState<ErrorShape> = {
+export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
 	/** Form values from client actions that will be synced to the DOM  */
@@ -131,7 +131,7 @@ export type FormState<ErrorShape> = {
 };
 
 export type FormAction<
-	ErrorShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Intent extends UnknownIntent | null | undefined = UnknownIntent | null,
 	Context = {},
 > = SubmissionResult<ErrorShape> & {
@@ -170,11 +170,11 @@ export type GlobalFormOptions = {
 	defineCustomMetadata: CustomMetadataDefinition;
 };
 
-export interface FormOptions<
+export type FormOptions<
 	FormShape,
-	ErrorShape = string,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
-> {
+> = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string;
 	/** Optional key for form state reset. When the key changes, the form resets to its initial state. */
@@ -201,8 +201,6 @@ export interface FormOptions<
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 	/** Server-side submission result for form state synchronization. */
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
-	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-	onValidate?: ValidateHandler<ErrorShape, Value>;
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
 	onError?: ErrorHandler<ErrorShape>;
 	/** Form submission handler called when the form is submitted with no validation errors. */
@@ -211,9 +209,19 @@ export interface FormOptions<
 	onInput?: InputHandler;
 	/** Blur event handler for custom focus handling logic. */
 	onBlur?: BlurHandler;
-}
+} & (string extends ErrorShape
+	? {
+			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+			onValidate?: ValidateHandler<ErrorShape, Value>;
+		}
+	: {
+			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+			onValidate: ValidateHandler<ErrorShape, Value>;
+		});
 
-export interface FormContext<ErrorShape = string> {
+export interface FormContext<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> {
 	/** The form's unique identifier */
 	formId: string;
 	/** Internal form state with validation results and field data */
@@ -343,7 +351,7 @@ export type ActionHandler<
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | null;
-	onUpdate?<ErrorShape>(
+	onUpdate?<ErrorShape extends BaseErrorShape = DefaultErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
@@ -366,8 +374,33 @@ export type Combine<T> = {
 	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
 };
 
+/**
+ * Extend this interface to define the base error shape for validation.
+ *
+ * @example
+ * ```ts
+ * declare module '@conform-to/react/future' {
+ *   interface CustomTypes {
+ *     errorShape: { message: string; code: string };
+ *   }
+ * }
+ * ```
+ */
+export interface CustomTypes {}
+
+export type BaseErrorShape = CustomTypes extends { errorShape: infer Shape }
+	? Shape
+	: unknown;
+
+export type DefaultErrorShape = string extends BaseErrorShape
+	? string
+	: BaseErrorShape;
+
 /** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
-export type BaseMetadata<FieldShape, ErrorShape> = ValidationAttributes & {
+export type BaseMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = ValidationAttributes & {
 	/** Unique key for React list rendering (for array fields). */
 	key: string | undefined;
 	/** The field name path exactly as provided. */
@@ -431,19 +464,32 @@ export type DefaultMetadata = {
 	textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface CustomMetadata<FieldShape = any, ErrorShape = any> {
+/**
+ * Interface for extending field metadata with additional properties.
+ */
+export interface CustomMetadata<
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	FieldShape = any,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> {
 	// User-defined properties
 }
 
-export type CustomMetadataDefinition = <FieldShape, ErrorShape>(
+export type CustomMetadataDefinition = <
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+>(
 	metadata: BaseMetadata<FieldShape, ErrorShape>,
 ) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
 	? DefaultMetadata
 	: CustomMetadata<any, any>;
 
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
-export type FieldMetadata<FieldShape, ErrorShape = string> = Readonly<
+export type FieldMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = Readonly<
 	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
 		? DefaultMetadata
 		: CustomMetadata<FieldShape, ErrorShape>) &
@@ -452,7 +498,10 @@ export type FieldMetadata<FieldShape, ErrorShape = string> = Readonly<
 >;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
-export type Fieldset<FieldShape, ErrorShape = string> = {
+export type Fieldset<
+	FieldShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
 		ErrorShape
@@ -460,7 +509,9 @@ export type Fieldset<FieldShape, ErrorShape = string> = {
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type FormMetadata<ErrorShape = string> = Readonly<{
+export type FormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = Readonly<{
 	/** Unique identifier that changes on form reset */
 	key: string;
 	/** The form's unique identifier. */
@@ -593,7 +644,10 @@ export type InputHandler = (event: FormInputEvent) => void;
 
 export type BlurHandler = (event: FormFocusEvent) => void;
 
-export type SubmitContext<ErrorShape = string, Value = undefined> = {
+export type SubmitContext<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+> = {
 	formData: FormData;
 	value: Value;
 	update: (options: {
@@ -602,7 +656,10 @@ export type SubmitContext<ErrorShape = string, Value = undefined> = {
 	}) => void;
 };
 
-export type SubmitHandler<ErrorShape = string, Value = undefined> = (
+export type SubmitHandler<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+> = (
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: SubmitContext<ErrorShape, Value>,
 ) => void | Promise<void>;

@@ -1,4 +1,5 @@
 import {
+	type BaseErrorShape,
 	type BaseMetadata,
 	FormOptionsProvider,
 } from '@conform-to/react/future';
@@ -18,7 +19,7 @@ import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
 // Define custom metadata properties that matches the type of our custom form components
-function defineCustomMetadata<FieldShape, ErrorShape>(
+function defineCustomMetadata<FieldShape, ErrorShape extends BaseErrorShape>(
 	metadata: BaseMetadata<FieldShape, ErrorShape>,
 ) {
 	return {
@@ -27,7 +28,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof TextField>>;
 		},
 		get numberFieldProps() {
@@ -35,7 +36,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof NumberField>>;
 		},
 		get radioGroupProps() {
@@ -43,7 +44,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof RadioGroup>>;
 		},
 		get checkboxGroupProps() {
@@ -51,7 +52,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultOptions,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof CheckboxGroup>>;
 		},
 		get datePickerProps() {
@@ -59,7 +60,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof DatePicker>>;
 		},
 		get selectProps() {
@@ -67,7 +68,7 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof Select>>;
 		},
 		get comboBoxProps() {
@@ -75,14 +76,14 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 				name: metadata.name,
 				defaultValue: metadata.defaultValue,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof ComboBox>>;
 		},
 		get fileTriggerProps() {
 			return {
 				name: metadata.name,
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof FileTrigger>>;
 		},
 		get checkboxProps() {
@@ -106,28 +107,30 @@ function defineCustomMetadata<FieldShape, ErrorShape>(
 					end: rangeFields.end.defaultValue,
 				},
 				isInvalid: !metadata.valid,
-				errors: metadata.errors?.map((error) => `${error}`),
+				errors: metadata.errors,
 			} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
 		},
 	};
 }
-
-type MetadataDefinition<FieldShape, ErrorShape> = ReturnType<
-	typeof defineCustomMetadata<FieldShape, ErrorShape>
->;
 
 // Extend the CustomMetadata interface with our UI component props
 // This makes the custom metadata available on all field metadata objects
 declare module '@conform-to/react/future' {
 	interface CustomMetadata<FieldShape, ErrorShape>
 		extends Omit<
-			MetadataDefinition<FieldShape, ErrorShape>,
+			ReturnType<typeof defineCustomMetadata<FieldShape, ErrorShape>>,
 			'dateRangePickerProps'
 		> {
 		// Make sure `dateRangePickerProps` is only available when FieldShape has start and end fields
 		dateRangePickerProps: FieldShape extends { start: string; end: string }
-			? MetadataDefinition<FieldShape, ErrorShape>['dateRangePickerProps']
+			? ReturnType<
+					typeof defineCustomMetadata<FieldShape, ErrorShape>
+				>['dateRangePickerProps']
 			: unknown;
+	}
+
+	interface CustomTypes {
+		errorShape: string;
 	}
 }
 
