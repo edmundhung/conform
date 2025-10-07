@@ -167,7 +167,7 @@ export type GlobalFormOptions = {
 	 * A function that defines custom metadata properties for form fields.
 	 * Useful for integrating with UI libraries or custom form components.
 	 */
-	defineCustomMetadata: CustomMetadataDefinition;
+	defineCustomMetadata?: CustomMetadataDefinition;
 };
 
 export type FormOptions<
@@ -458,14 +458,6 @@ export type SatisfyComponentProps<
 	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
 > = CustomProps;
 
-/** Default field metadata object */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type DefaultMetadata = {
-	inputProps: React.InputHTMLAttributes<HTMLInputElement>;
-	selectProps: React.SelectHTMLAttributes<HTMLSelectElement>;
-	textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
-};
-
 /**
  * Interface for extending field metadata with additional properties.
  */
@@ -484,7 +476,7 @@ export type CustomMetadataDefinition = <
 >(
 	metadata: BaseMetadata<FieldShape, ErrorShape>,
 ) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
-	? DefaultMetadata
+	? {}
 	: CustomMetadata<any, any>;
 
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
@@ -493,7 +485,7 @@ export type FieldMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 > = Readonly<
 	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
-		? DefaultMetadata
+		? {}
 		: CustomMetadata<FieldShape, ErrorShape>) &
 		// Base metadata properties take precedence over custom metadata
 		BaseMetadata<FieldShape, ErrorShape>

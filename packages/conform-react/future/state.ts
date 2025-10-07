@@ -20,7 +20,6 @@ import type {
 	UnknownIntent,
 	ActionHandler,
 	BaseMetadata,
-	DefaultMetadata,
 	CustomMetadataDefinition,
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
@@ -398,12 +397,7 @@ export function getField<FieldShape, ErrorShape = string>(
 		key?: string;
 	},
 ): FieldMetadata<FieldShape, ErrorShape> {
-	const {
-		key,
-		name,
-		serialize = defaultSerialize,
-		customize = defineDefaultMetadata,
-	} = options;
+	const { key, name, serialize = defaultSerialize, customize } = options;
 	const id = `${context.formId}-field-${name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, name);
 	const metadata: BaseMetadata<FieldShape, ErrorShape> = {
@@ -467,7 +461,10 @@ export function getField<FieldShape, ErrorShape = string>(
 		},
 	};
 
-	// @ts-expect-error We use Proxy to dynamically retrieve custom metadata
+	if (typeof customize !== 'function') {
+		return metadata;
+	}
+
 	return new Proxy(metadata, {
 		get(target, prop, receiver) {
 			if (Reflect.has(target, prop)) {
@@ -548,60 +545,4 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 			key,
 		});
 	});
-}
-
-export function defineDefaultMetadata(
-	metadata: BaseMetadata<any, any>,
-): DefaultMetadata {
-	const props = {
-		id: metadata.id,
-		name: metadata.name,
-		form: metadata.formId,
-		required: metadata.required,
-		'aria-describedby': metadata.ariaDescribedBy,
-		'aria-invalid': metadata.ariaInvalid,
-	};
-
-	return {
-		get inputProps() {
-			return Object.assign(props, {
-				defaultValue: metadata.defaultValue,
-				minLength: metadata.minLength,
-				maxLength: metadata.maxLength,
-				min: metadata.min,
-				max: metadata.max,
-				step: metadata.step,
-				pattern: metadata.pattern,
-				multiple: metadata.multiple,
-			});
-		},
-		get selectProps() {
-			const options = metadata.defaultOptions;
-
-			return {
-				id: metadata.id,
-				name: metadata.name,
-				form: metadata.formId,
-				defaultValue:
-					options && options.length > 1 ? options : metadata.defaultValue,
-				required: metadata.required,
-				multiple: metadata.multiple,
-				'aria-describedby': metadata.ariaDescribedBy,
-				'aria-invalid': metadata.ariaInvalid,
-			};
-		},
-		get textareaProps() {
-			return {
-				id: metadata.id,
-				name: metadata.name,
-				form: metadata.formId,
-				defaultValue: metadata.defaultValue,
-				required: metadata.required,
-				minLength: metadata.minLength,
-				maxLength: metadata.maxLength,
-				'aria-describedby': metadata.ariaDescribedBy,
-				'aria-invalid': metadata.ariaInvalid,
-			};
-		},
-	};
 }

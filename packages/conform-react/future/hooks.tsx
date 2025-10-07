@@ -39,7 +39,6 @@ import {
 	getField,
 	initializeState,
 	updateState,
-	defineDefaultMetadata,
 } from './state';
 import type {
 	FormContext,
@@ -88,7 +87,6 @@ export const GlobalFormOptionsContext = createContext<
 	observer: createGlobalFormsObserver(),
 	serialize,
 	shouldValidate: 'onSubmit',
-	defineCustomMetadata: defineDefaultMetadata,
 });
 
 export const FormContextContext = createContext<FormContext[]>([]);
