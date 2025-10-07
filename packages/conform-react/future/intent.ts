@@ -156,22 +156,17 @@ export const actionHandlers: {
 		onUpdate(state, { submission, intent, error }) {
 			const name = intent.payload ?? '';
 			const basePath = getPathSegments(name);
+			const allFields = error
+				? // Consider fields / fieldset with errors as touched too
+					submission.fields.concat(Object.keys(error.fieldErrors))
+				: submission.fields;
 
 			let touchedFields = appendUniqueItem(state.touchedFields, name);
 
-			for (const field of submission.fields) {
+			for (const field of allFields) {
 				// Add all child fields to the touched fields too
 				if (getRelativePath(field, basePath) !== null) {
 					touchedFields = appendUniqueItem(touchedFields, field);
-				}
-			}
-
-			// We couldn't find out all the fields from the FormData, e.g. unchecked checkboxes.
-			// or fieldsets without any fields, but we can at least include missing
-			// required fields based on the form error
-			if (name === '' && error) {
-				for (const name of Object.keys(error.fieldErrors)) {
-					touchedFields = appendUniqueItem(touchedFields, name);
 				}
 			}
 
@@ -197,6 +192,10 @@ export const actionHandlers: {
 			);
 		},
 		onUpdate(state, { type, submission, intent }) {
+			if (type === 'server') {
+				return state;
+			}
+
 			let listKeys = state.listKeys;
 
 			// Update the keys only for client updates to avoid double updates if there is no client validation
@@ -243,6 +242,10 @@ export const actionHandlers: {
 			return updateValueAtPath(value, options.name, list);
 		},
 		onUpdate(state, { type, submission, intent }) {
+			if (type === 'server') {
+				return state;
+			}
+
 			const currentValue = submission.payload;
 			const list = getArrayAtPath(currentValue, intent.payload.name);
 			const index = intent.payload.index ?? list.length;
@@ -304,6 +307,10 @@ export const actionHandlers: {
 			return updateValueAtPath(value, options.name, list);
 		},
 		onUpdate(state, { type, submission, intent }) {
+			if (type === 'server') {
+				return state;
+			}
+
 			const currentValue = submission.payload;
 			const updateListIndex = createPathIndexUpdater(
 				intent.payload.name,
@@ -371,6 +378,10 @@ export const actionHandlers: {
 			return updateValueAtPath(value, options.name, list);
 		},
 		onUpdate(state, { type, submission, intent }) {
+			if (type === 'server') {
+				return state;
+			}
+
 			const currentValue = submission.payload;
 			const updateListIndex = createPathIndexUpdater(
 				intent.payload.name,

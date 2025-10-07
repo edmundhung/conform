@@ -15,6 +15,7 @@ describe('future export: useForm', () => {
 		title: string;
 		description: string;
 		tasks: Array<{ content: string; completed: boolean }>;
+		confirmed: boolean;
 	};
 
 	function validateForm(value: Record<string, FormValue>) {
@@ -29,6 +30,10 @@ describe('future export: useForm', () => {
 
 		if (!value.description) {
 			error.fieldErrors.description = ['Description is required'];
+		}
+
+		if (!value.confirmed) {
+			error.fieldErrors.confirmed = ['Confirmation is required'];
 		}
 
 		if (!Array.isArray(value.tasks)) {
@@ -76,7 +81,7 @@ describe('future export: useForm', () => {
 					defaultValue={fields.title.defaultValue}
 					aria-label="Title"
 					aria-describedby={
-						fields.title.invalid ? fields.title.errorId : undefined
+						!fields.title.valid ? fields.title.errorId : undefined
 					}
 				/>
 				<div id={fields.title.errorId}>
@@ -87,7 +92,7 @@ describe('future export: useForm', () => {
 					defaultValue={fields.description.defaultValue}
 					aria-label="Description"
 					aria-describedby={
-						fields.description.invalid ? fields.description.errorId : undefined
+						!fields.description.valid ? fields.description.errorId : undefined
 					}
 				/>
 				<div id={fields.description.errorId}>
@@ -103,7 +108,7 @@ describe('future export: useForm', () => {
 								defaultValue={taskField.content.defaultValue}
 								aria-label={`Task #${index + 1} Content`}
 								aria-describedby={
-									taskField.content.invalid
+									!taskField.content.valid
 										? taskField.content.errorId
 										: undefined
 								}
@@ -117,7 +122,7 @@ describe('future export: useForm', () => {
 								defaultChecked={taskField.completed.defaultChecked}
 								aria-label={`Task #${index + 1} Completed`}
 								aria-describedby={
-									taskField.completed.invalid
+									!taskField.completed.valid
 										? taskField.completed.errorId
 										: undefined
 								}
@@ -148,6 +153,21 @@ describe('future export: useForm', () => {
 						</div>
 					);
 				})}
+				<label>
+					<input
+						type="checkbox"
+						name={fields.confirmed.name}
+						value="important"
+						defaultChecked={fields.confirmed.defaultChecked}
+						aria-describedby={
+							!fields.confirmed.valid ? fields.confirmed.errorId : undefined
+						}
+					/>
+					Confirmed
+				</label>
+				<div id={fields.confirmed.errorId}>
+					{fields.confirmed.errors?.join(', ') ?? 'n/a'}
+				</div>
 				<button>Submit</button>
 				<button type="button" onClick={() => intent.reset()}>
 					Reset
@@ -216,6 +236,7 @@ describe('future export: useForm', () => {
 		return {
 			title: screen.getByLabelText('Title'),
 			description: screen.getByLabelText('Description'),
+			confirmed: screen.getByLabelText('Confirmed'),
 			submitButton: screen.getByRole('button', { name: 'Submit' }),
 			resetButton: screen.getByRole('button', { name: 'Reset' }),
 			validateFormButton: screen.getByRole('button', {
@@ -256,130 +277,179 @@ describe('future export: useForm', () => {
 		const screen = render(<Form />);
 		const form = getForm(screen);
 
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events
 		await userEvent.type(form.title, 'example');
 		await userEvent.clear(form.title);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events again
 		await userEvent.type(form.description, 'hello world');
 		await userEvent.clear(form.description);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
+
+		await userEvent.click(form.confirmed);
+		await userEvent.click(form.confirmed);
+
+		// Test blur event
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		await userEvent.click(form.submitButton);
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with input events
 		await userEvent.type(form.title, 'example');
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with blur event
 		await userEvent.click(document.body);
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with input events again
 		await userEvent.type(form.description, 'hello world');
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with blur event again
 		await userEvent.click(document.body);
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
+
+		await userEvent.click(form.confirmed);
+		await expectErrorMessage(form.title, 'Title is required');
+		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		await userEvent.click(form.submitButton);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
 	test('shouldValidate: onBlur', async () => {
 		const screen = render(<Form shouldValidate="onBlur" />);
 		const form = getForm(screen);
 
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events
 		await userEvent.type(form.title, 'example');
 		await userEvent.clear(form.title);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
 		await expectErrorMessage(form.title, 'Title is required');
-		await expectNoErrorMessages(form.description);
+		await expectNoErrorMessages(form.description, form.confirmed);
 
 		// Test input events again
 		await userEvent.type(form.description, 'hello world');
 		await userEvent.clear(form.description);
-		await expectNoErrorMessages(form.description);
+		await expectNoErrorMessages(form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectNoErrorMessages(form.confirmed);
+
+		// Test input events
+		await userEvent.click(form.confirmed);
+		await userEvent.click(form.confirmed);
+		await expectErrorMessage(form.title, 'Title is required');
+		await expectErrorMessage(form.description, 'Description is required');
+		await expectNoErrorMessages(form.confirmed);
+
+		// Test blur event
+		await userEvent.click(document.body);
+		await expectErrorMessage(form.title, 'Title is required');
+		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test input events
 		await userEvent.type(form.title, 'example');
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
-
-		// Test revalidate with input events
-		await userEvent.type(form.title, 'example');
-		await expectErrorMessage(form.title, 'Title is required');
-		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with blur event
 		await userEvent.click(document.body);
 		await expectNoErrorMessages(form.title);
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with input events again
 		await userEvent.type(form.description, 'hello world');
 		await expectNoErrorMessages(form.title);
 		await expectErrorMessage(form.description, 'Description is required');
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
 
 		// Test revalidate with blur event again
 		await userEvent.click(document.body);
 		await expectNoErrorMessages(form.title, form.description);
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
+
+		// Test revalidate with input events again
+		await userEvent.click(form.confirmed);
+		await expectNoErrorMessages(form.title, form.description);
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
+
+		// Test revalidate with blur event again
+		await userEvent.click(document.body);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
 	test('shouldValidate: onInput', async () => {
 		const screen = render(<Form shouldValidate="onInput" />);
 		const form = getForm(screen);
 
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events
 		await userEvent.type(form.title, 'example');
 		await userEvent.clear(form.title);
 		await expectErrorMessage(form.title, 'Title is required');
-		await expectNoErrorMessages(form.description);
+		await expectNoErrorMessages(form.description, form.confirmed);
 
 		// Test revlidate with input events
 		await userEvent.type(form.title, 'example');
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events again
 		await userEvent.type(form.description, 'hello world');
 		await userEvent.clear(form.description);
-		await expectNoErrorMessages(form.title);
+		await expectNoErrorMessages(form.title, form.confirmed);
 		await expectErrorMessage(form.description, 'Description is required');
 
 		// Test revlidate with input events again
 		await userEvent.type(form.description, 'hello world');
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
+
+		// Test input events
+		await userEvent.click(form.confirmed);
+		await userEvent.click(form.confirmed);
 		await expectNoErrorMessages(form.title, form.description);
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
+
+		// Test revalidate with input events
+		await userEvent.click(form.confirmed);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
 	test('shouldValidate: onBlur / shouldRevalidate: onInput', async () => {
@@ -388,26 +458,26 @@ describe('future export: useForm', () => {
 		);
 		const form = getForm(screen);
 
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events
 		await userEvent.type(form.title, 'example');
 		await userEvent.clear(form.title);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
 		await expectErrorMessage(form.title, 'Title is required');
-		await expectNoErrorMessages(form.description);
+		await expectNoErrorMessages(form.description, form.confirmed);
 
 		// Test revalidate with input events
 		await userEvent.type(form.title, 'example');
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test input events again
 		await userEvent.type(form.description, 'hello world');
 		await userEvent.clear(form.description);
-		await expectNoErrorMessages(form.title, form.description);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 
 		// Test blur event
 		await userEvent.click(document.body);
@@ -416,7 +486,21 @@ describe('future export: useForm', () => {
 
 		// Test revalidate with input events again
 		await userEvent.type(form.description, 'hello world');
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
+
+		// Test input events
+		await userEvent.click(form.confirmed);
+		await userEvent.click(form.confirmed);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
+
+		// Test blur event
+		await userEvent.click(document.body);
 		await expectNoErrorMessages(form.title, form.description);
+		await expectErrorMessage(form.confirmed, 'Confirmation is required');
+
+		// Test revalidate with input events
+		await userEvent.click(form.confirmed);
+		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
 	test('validate intent', async () => {
