@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { z } from 'zod';
 import {
 	Button,
@@ -25,17 +25,19 @@ import {
 	Slider,
 } from './form';
 
-const schema = z.object({
-	email: z.string(),
-	description: z.string(),
-	language: z.string(),
-	movie: z.string(),
-	subscribe: z.boolean(),
-	active: z.string(),
-	enabled: z.boolean(),
-	score: z.number(),
-	progress: z.number().min(3).max(7),
-});
+const schema = coerceFormValue(
+	z.object({
+		email: z.string(),
+		description: z.string(),
+		language: z.string(),
+		movie: z.string(),
+		subscribe: z.boolean(),
+		active: z.string(),
+		enabled: z.boolean(),
+		score: z.number(),
+		progress: z.number().min(3).max(7),
+	}),
+);
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -44,9 +46,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			email: searchParams.get('email'),
 			description: searchParams.get('description'),
@@ -58,10 +59,7 @@ export default function App() {
 			score: searchParams.get('score'),
 			progress: searchParams.get('progress'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -76,16 +74,13 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 
 	return (
 		<Container maxWidth="sm">
-			<form id={form.id} onSubmit={form.onSubmit} noValidate>
+			<form {...form.props}>
 				<Stack spacing={4} marginY={4}>
 					<header>
 						<Typography variant="h6" component="h1">
@@ -101,7 +96,7 @@ export default function App() {
 					<TextField
 						label="Email (TextField)"
 						type="email"
-						name="email"
+						name={fields.email.name}
 						defaultValue={fields.email.defaultValue}
 						error={!fields.email.valid}
 						helperText={fields.email.errors}
@@ -136,9 +131,9 @@ export default function App() {
 					<Autocomplete
 						label="Movie (Autocomplete)"
 						name={fields.movie.name}
-						options={['The Godfather', 'Pulp Fiction']}
 						defaultValue={fields.movie.defaultValue}
 						error={fields.movie.errors}
+						options={['The Godfather', 'Pulp Fiction']}
 					/>
 
 					<FormControl
@@ -228,7 +223,7 @@ export default function App() {
 						<Button
 							type="button"
 							variant="outlined"
-							onClick={() => form.reset()}
+							onClick={() => intent.reset()}
 						>
 							Reset
 						</Button>

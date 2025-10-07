@@ -1,6 +1,7 @@
 import type {
 	FormError,
 	FormValue,
+	Serialize,
 	SubmissionResult,
 	ValidationAttributes,
 } from '@conform-to/dom/future';
@@ -101,25 +102,18 @@ export type UseFormDataOptions = {
 };
 
 export type DefaultValue<FormShape> = FormShape extends
-	| string
-	| number
-	| boolean
-	| Date
-	| File
-	| bigint
+	| Array<infer Item>
 	| null
 	| undefined
-	? FormShape | null | undefined
-	: FormShape extends Array<infer Item> | null | undefined
-		? Array<DefaultValue<Item>> | null | undefined
-		: FormShape extends Record<string, any> | null | undefined
-			?
-					| { [Key in keyof FormShape]?: DefaultValue<FormShape[Key]> }
-					| null
-					| undefined
-			: unknown;
+	? Array<DefaultValue<Item>> | null | undefined
+	: FormShape extends Record<string, any> | null | undefined
+		?
+				| { [Key in keyof FormShape]?: DefaultValue<FormShape[Key]> }
+				| null
+				| undefined
+		: FormShape | string | null | undefined;
 
-export type FormState<ErrorShape> = {
+export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
 	/** Form values from client actions that will be synced to the DOM  */
@@ -137,7 +131,7 @@ export type FormState<ErrorShape> = {
 };
 
 export type FormAction<
-	ErrorShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Intent extends UnknownIntent | null | undefined = UnknownIntent | null,
 	Context = {},
 > = SubmissionResult<ErrorShape> & {
@@ -146,11 +140,43 @@ export type FormAction<
 	ctx: Context;
 };
 
-export interface FormOptions<
+export type GlobalFormOptions = {
+	/**
+	 * The name of the submit button field that indicates the submission intent.
+	 *
+	 * @default "__intent__"
+	 */
+	intentName: string;
+	/**
+	 * A custom serialization function for converting form data.
+	 */
+	serialize: Serialize;
+	/**
+	 * Determines when validation should run for the first time on a field.
+	 *
+	 * @default "onSubmit"
+	 */
+	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Determines when validation should run again after the field has been validated once.
+	 *
+	 * @default Same as shouldValidate
+	 */
+	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * A function that defines custom metadata properties for form fields.
+	 * Useful for integrating with UI libraries or custom form components.
+	 */
+	defineCustomMetadata?: CustomMetadataDefinition;
+};
+
+export type FormOptions<
 	FormShape,
-	ErrorShape = string,
+	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
+		? string
+		: BaseErrorShape,
 	Value = undefined,
-> {
+> = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string;
 	/** Optional key for form state reset. When the key changes, the form resets to its initial state. */
@@ -162,24 +188,21 @@ export interface FormOptions<
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes>;
 	/**
-	 * Define when conform should start validation.
-	 * Support "onSubmit", "onInput", "onBlur".
+	 * Determines when validation should run for the first time on a field.
+	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
-	 * @default "onSubmit"
+	 * @default Inherits from FormOptionsProvider, or "onSubmit" if not configured
 	 */
 	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
 	/**
-	 * Define when conform should revalidate again.
-	 * Support "onSubmit", "onInput", "onBlur".
+	 * Determines when validation should run again after the field has been validated once.
+	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
-	 * @default Same as shouldValidate, or "onSubmit" if shouldValidate is not provided.
+	 * @default Inherits from FormOptionsProvider, or same as shouldValidate
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-
 	/** Server-side submission result for form state synchronization. */
 	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
-	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-	onValidate?: ValidateHandler<ErrorShape, Value>;
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
 	onError?: ErrorHandler<ErrorShape>;
 	/** Form submission handler called when the form is submitted with no validation errors. */
@@ -188,15 +211,25 @@ export interface FormOptions<
 	onInput?: InputHandler;
 	/** Blur event handler for custom focus handling logic. */
 	onBlur?: BlurHandler;
-}
+} & (string extends ErrorShape
+	? {
+			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+			onValidate?: ValidateHandler<ErrorShape, Value>;
+		}
+	: {
+			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+			onValidate: ValidateHandler<ErrorShape, Value>;
+		});
 
-export interface FormContext<ErrorShape = string> {
+export interface FormContext<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> {
 	/** The form's unique identifier */
 	formId: string;
 	/** Internal form state with validation results and field data */
 	state: FormState<ErrorShape>;
 	/** Initial form values */
-	defaultValue: NonNullable<DefaultValue<Record<string, any>>> | null;
+	defaultValue: Record<string, any> | null;
 	/** HTML validation attributes for fields */
 	constraint: Record<string, ValidationAttributes> | null;
 	/** Form submission event handler */
@@ -320,7 +353,7 @@ export type ActionHandler<
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | null;
-	onUpdate?<ErrorShape>(
+	onUpdate?<ErrorShape extends BaseErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
@@ -343,34 +376,126 @@ export type Combine<T> = {
 	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
 };
 
+/**
+ * Extend this interface to define the base error shape for validation.
+ *
+ * @example
+ * ```ts
+ * declare module '@conform-to/react/future' {
+ *   interface CustomTypes {
+ *     errorShape: { message: string; code: string };
+ *   }
+ * }
+ * ```
+ */
+export interface CustomTypes {}
+
+export type BaseErrorShape = CustomTypes extends { errorShape: infer Shape }
+	? Shape
+	: unknown;
+
+export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
+	? Shape
+	: string;
+
+/** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
+export type BaseMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = ValidationAttributes & {
+	/** Unique key for React list rendering (for array fields). */
+	key: string | undefined;
+	/** The field name path exactly as provided. */
+	name: FieldName<FieldShape>;
+	/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
+	id: string;
+	/** Auto-generated ID for associating field descriptions via aria-describedby. */
+	descriptionId: string;
+	/** Auto-generated ID for associating field errors via aria-describedby. */
+	errorId: string;
+	/** The form's unique identifier for associating field via the `form` attribute. */
+	formId: string;
+	/** The field's default value as a string. */
+	defaultValue: string | undefined;
+	/** Default selected options for multi-select fields or checkbox group. */
+	defaultOptions: string[] | undefined;
+	/** Default checked state for checkbox/radio inputs. */
+	defaultChecked: boolean | undefined;
+	/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
+	touched: boolean;
+	/** Whether this field currently has no validation errors. */
+	valid: boolean;
+	/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
+	invalid: boolean;
+	/** Array of validation error messages for this field. */
+	errors: ErrorShape[] | undefined;
+	/** Object containing errors for all touched subfields. */
+	fieldErrors: Record<string, ErrorShape[]>;
+	/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
+	ariaInvalid: boolean | undefined;
+	/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
+	ariaDescribedBy: string | undefined;
+	/** Method to get nested fieldset for object fields under this field. */
+	getFieldset<
+		FieldsetShape = [FieldShape] extends [
+			Record<string, unknown> | null | undefined,
+		]
+			? FieldShape
+			: unknown,
+	>(): Fieldset<FieldsetShape, ErrorShape>;
+	/** Method to get array of fields for list/array fields under this field. */
+	getFieldList<
+		FieldItemShape = [FieldShape] extends [
+			Array<infer ItemShape> | null | undefined,
+		]
+			? ItemShape
+			: unknown,
+	>(): Array<FieldMetadata<FieldItemShape, ErrorShape>>;
+};
+
+export type SatisfyComponentProps<
+	ElementType extends React.ElementType,
+	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
+> = CustomProps;
+
+/**
+ * Interface for extending field metadata with additional properties.
+ */
+export interface CustomMetadata<
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	FieldShape = any,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> {
+	// User-defined properties
+}
+
+export type CustomMetadataDefinition = <
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+>(
+	metadata: BaseMetadata<FieldShape, ErrorShape>,
+) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
+	? {}
+	: CustomMetadata<any, any>;
+
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
-export type FieldMetadata<FieldShape, ErrorShape = string> = Readonly<
-	DefaultMetadata<ErrorShape> & {
-		/** Unique key for React list rendering (for array fields). */
-		key: string | undefined;
-		/** The field name path exactly as provided. */
-		name: FieldName<FieldShape>;
-		/** Method to get nested fieldset for object fields under this field. */
-		getFieldset(): Fieldset<
-			[FieldShape] extends [Record<string, unknown> | null | undefined]
-				? FieldShape
-				: unknown,
-			ErrorShape
-		>;
-		/** Method to get array of fields for list/array fields under this field. */
-		getFieldList(): Array<
-			FieldMetadata<
-				[FieldShape] extends [Array<infer ItemShape> | null | undefined]
-					? ItemShape
-					: unknown,
-				ErrorShape
-			>
-		>;
-	}
+export type FieldMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = Readonly<
+	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
+		? {}
+		: CustomMetadata<FieldShape, ErrorShape>) &
+		// Base metadata properties take precedence over custom metadata
+		BaseMetadata<FieldShape, ErrorShape>
 >;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
-export type Fieldset<FieldShape, ErrorShape = string> = {
+export type Fieldset<
+	FieldShape,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
 		ErrorShape
@@ -378,7 +503,9 @@ export type Fieldset<FieldShape, ErrorShape = string> = {
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type FormMetadata<ErrorShape = string> = Readonly<{
+export type FormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+> = Readonly<{
 	/** Unique identifier that changes on form reset */
 	key: string;
 	/** The form's unique identifier. */
@@ -432,36 +559,6 @@ export type FormMetadata<ErrorShape = string> = Readonly<{
 		>
 	>;
 }>;
-
-/** Default field metadata object containing field state, validation attributes, and accessibility IDs. */
-export type DefaultMetadata<ErrorShape> = Readonly<
-	ValidationAttributes & {
-		/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
-		id: string;
-		/** Auto-generated ID for associating field descriptions via aria-describedby. */
-		descriptionId: string;
-		/** Auto-generated ID for associating field errors via aria-describedby. */
-		errorId: string;
-		/** The form's unique identifier for associating field via the `form` attribute. */
-		formId: string;
-		/** The field's default value as a string. */
-		defaultValue: string | undefined;
-		/** Default selected options for multi-select fields or checkbox group. */
-		defaultOptions: string[] | undefined;
-		/** Default checked state for checkbox/radio inputs. */
-		defaultChecked: boolean | undefined;
-		/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
-		touched: boolean;
-		/** Whether this field currently has no validation errors. */
-		valid: boolean;
-		/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
-		invalid: boolean;
-		/** Array of validation error messages for this field. */
-		errors: ErrorShape[] | undefined;
-		/** Object containing errors for all touched subfields. */
-		fieldErrors: Record<string, ErrorShape[]>;
-	}
->;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>
@@ -541,7 +638,10 @@ export type InputHandler = (event: FormInputEvent) => void;
 
 export type BlurHandler = (event: FormFocusEvent) => void;
 
-export type SubmitContext<ErrorShape = string, Value = undefined> = {
+export type SubmitContext<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+> = {
 	formData: FormData;
 	value: Value;
 	update: (options: {
@@ -550,7 +650,10 @@ export type SubmitContext<ErrorShape = string, Value = undefined> = {
 	}) => void;
 };
 
-export type SubmitHandler<ErrorShape = string, Value = undefined> = (
+export type SubmitHandler<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+> = (
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: SubmitContext<ErrorShape, Value>,
 ) => void | Promise<void>;

@@ -1242,7 +1242,6 @@ describe('form', () => {
 		});
 		expect(metadata.touched).toBe(true);
 		expect(metadata.valid).toBe(false);
-		expect(metadata.invalid).toBe(true);
 
 		// Test props
 		expect(metadata.props.id).toBe('test-id');
@@ -1275,7 +1274,6 @@ describe('form', () => {
 
 		expect(metadata.errors).toEqual(['Something went wrong']);
 		expect(metadata.valid).toBe(false);
-		expect(metadata.invalid).toBe(true);
 		expect(metadata.fieldErrors).toEqual({});
 
 		// Test form with no errors
@@ -1296,7 +1294,6 @@ describe('form', () => {
 
 		expect(metadata.errors).toBe(undefined);
 		expect(metadata.valid).toBe(true);
-		expect(metadata.invalid).toBe(false);
 		expect(metadata.fieldErrors).toEqual({});
 	});
 
@@ -1317,7 +1314,11 @@ describe('form', () => {
 			context.state,
 			createAction({
 				type: 'client',
-				entries: [['username', 'test-user']],
+				entries: [
+					['username', 'test-user'],
+					['tags', 'react'],
+					['tags', 'typescript'],
+				],
 				error: {
 					fieldErrors: {
 						username: ['Username taken'],
@@ -1329,7 +1330,6 @@ describe('form', () => {
 		const usernameField = getField(context, {
 			name: 'username',
 			key: 'unique-key',
-			serialize: (value) => String(value),
 		});
 
 		// Test basic properties
@@ -1350,9 +1350,22 @@ describe('form', () => {
 		expect(usernameField.defaultValue).toBe('test-user');
 		expect(usernameField.touched).toBe(true);
 		expect(usernameField.valid).toBe(false);
-		expect(usernameField.invalid).toBe(true);
 		expect(usernameField.errors).toEqual(['Username taken']);
 		expect(usernameField.fieldErrors).toEqual({}); // No child fields, so empty
+		expect(usernameField.ariaInvalid).toBe(true);
+		expect(usernameField.ariaDescribedBy).toBe('test-id-field-username-error');
+
+		const tagsField = getField(context, {
+			name: 'tags',
+		});
+
+		expect(tagsField.defaultOptions).toEqual(['react', 'typescript']);
+		expect(tagsField.touched).toBe(true);
+		expect(tagsField.valid).toBe(true);
+		expect(tagsField.errors).toBe(undefined);
+		expect(tagsField.fieldErrors).toEqual({});
+		expect(tagsField.ariaInvalid).toBe(undefined);
+		expect(tagsField.ariaDescribedBy).toBe(undefined);
 
 		// Test mixed parent and child field errors
 		context.state = updateState(
@@ -1375,12 +1388,19 @@ describe('form', () => {
 
 		const profileField = getField(context, {
 			name: 'profile',
-			serialize: (value) => String(value),
+			customize: (metadata) => {
+				return {
+					get allErrors() {
+						return (metadata.errors ?? []).concat(
+							Object.values(metadata.fieldErrors).flat(),
+						);
+					},
+				};
+			},
 		});
 
 		// Profile field should be invalid due to child field error, even though it has no direct error
 		expect(profileField.valid).toBe(false);
-		expect(profileField.invalid).toBe(true);
 		expect(profileField.errors).toBe(undefined); // No direct error on profile
 		expect(profileField.fieldErrors).toEqual({
 			address: ['Address is incomplete'],
@@ -1390,6 +1410,15 @@ describe('form', () => {
 		// Test methods exist
 		expect(typeof usernameField.getFieldset).toBe('function');
 		expect(typeof usernameField.getFieldList).toBe('function');
+
+		// Test custom metadata
+		// @ts-expect-error allErrors is not set in CustomMetadata
+		expect(profileField.allErrors).toEqual([
+			'Address is incomplete',
+			'City is required',
+		]);
+		// @ts-expect-error Testing non existing property
+		expect(() => profileField.somethingNonExistent).toThrowError();
 	});
 
 	test('getFieldset', () => {

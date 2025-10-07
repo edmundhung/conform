@@ -1,5 +1,5 @@
-import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod';
+import { useForm } from '@conform-to/react/future';
+import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
 import { DateRangePicker } from './components/DateRangePicker';
@@ -14,21 +14,23 @@ import { Select, SelectItem } from './components/Select';
 import { ComboBox, ComboBoxItem } from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
 
-const schema = z.object({
-	email: z.string(),
-	price: z.number(),
-	language: z.enum(['en', 'de', 'ja']),
-	colors: z.enum(['red', 'green', 'blue']).array().min(1),
-	date: z.date(),
-	range: z.object({
-		start: z.string(),
-		end: z.string(),
+const schema = coerceFormValue(
+	z.object({
+		email: z.string(),
+		price: z.number(),
+		language: z.enum(['en', 'de', 'ja']),
+		colors: z.enum(['red', 'green', 'blue']).array().min(1),
+		date: z.date(),
+		range: z.object({
+			start: z.string(),
+			end: z.string(),
+		}),
+		category: z.string(),
+		author: z.string(),
+		profile: z.instanceof(File, { message: 'Required' }),
+		acceptTerms: z.boolean(),
 	}),
-	category: z.string(),
-	author: z.string(),
-	profile: z.instanceof(File, { message: 'Required' }),
-	acceptTerms: z.boolean(),
-});
+);
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -37,9 +39,8 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const [form, fields] = useForm({
-		shouldValidate: 'onBlur',
-		shouldRevalidate: 'onInput',
+	const { form, fields, intent } = useForm({
+		schema,
 		defaultValue: {
 			email: searchParams.get('email'),
 			price: searchParams.get('price'),
@@ -54,10 +55,7 @@ export default function App() {
 			author: searchParams.get('author'),
 			acceptTerms: searchParams.get('acceptTerms'),
 		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-		onSubmit(event, { formData, submission }) {
+		onSubmit(event, { formData, value }) {
 			event.preventDefault();
 
 			// Demo only - This emulates a GET request with the form data populated in the URL.
@@ -72,22 +70,14 @@ export default function App() {
 			window.history.pushState(null, '', url);
 
 			setSearchParams(searchParams);
-
-			if (submission?.status === 'success') {
-				setSubmittedValue(submission.value);
-			}
+			setSubmittedValue(value);
 		},
 	});
 	const rangeFields = fields.range.getFieldset();
 
 	return (
 		<main>
-			<form
-				id={form.id}
-				onSubmit={form.onSubmit}
-				onChange={() => setSubmittedValue(null)}
-				noValidate
-			>
+			<form {...form.props} onChange={() => setSubmittedValue(null)}>
 				<div>
 					<h3>React Aria Example</h3>
 					<p>
@@ -213,7 +203,7 @@ export default function App() {
 				<div>
 					<Checkbox
 						name={fields.acceptTerms.name}
-						defaultSelected={fields.acceptTerms.defaultValue === 'on'}
+						defaultSelected={fields.acceptTerms.defaultChecked}
 						isInvalid={!fields.acceptTerms.valid}
 					>
 						Accept Terms and Conditions
@@ -228,7 +218,7 @@ export default function App() {
 				) : null}
 
 				<footer>
-					<Button type="button" onClick={() => form.reset()}>
+					<Button type="button" onClick={() => intent.reset()}>
 						Reset
 					</Button>
 					<Button type="submit">Submit</Button>
