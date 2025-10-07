@@ -1388,6 +1388,15 @@ describe('form', () => {
 
 		const profileField = getField(context, {
 			name: 'profile',
+			customize: (metadata) => {
+				return {
+					get allErrors() {
+						return (metadata.errors ?? []).concat(
+							Object.values(metadata.fieldErrors).flat(),
+						);
+					},
+				};
+			},
 		});
 
 		// Profile field should be invalid due to child field error, even though it has no direct error
@@ -1401,6 +1410,15 @@ describe('form', () => {
 		// Test methods exist
 		expect(typeof usernameField.getFieldset).toBe('function');
 		expect(typeof usernameField.getFieldList).toBe('function');
+
+		// Test custom metadata
+		// @ts-expect-error allErrors is not set in CustomMetadata
+		expect(profileField.allErrors).toEqual([
+			'Address is incomplete',
+			'City is required',
+		]);
+		// @ts-expect-error Testing non existing property
+		expect(() => profileField.somethingNonExistent).toThrowError();
 	});
 
 	test('getFieldset', () => {
