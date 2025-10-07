@@ -7,6 +7,7 @@ import {
 	type FormError,
 	type FormOptions,
 	useForm,
+	FormOptionsProvider,
 } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 
@@ -80,9 +81,7 @@ describe('future export: useForm', () => {
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue}
 					aria-label="Title"
-					aria-describedby={
-						!fields.title.valid ? fields.title.errorId : undefined
-					}
+					aria-describedby={fields.title.ariaDescribedBy}
 				/>
 				<div id={fields.title.errorId}>
 					{fields.title.errors?.join(', ') ?? 'n/a'}
@@ -91,9 +90,7 @@ describe('future export: useForm', () => {
 					name={fields.description.name}
 					defaultValue={fields.description.defaultValue}
 					aria-label="Description"
-					aria-describedby={
-						!fields.description.valid ? fields.description.errorId : undefined
-					}
+					aria-describedby={fields.description.ariaDescribedBy}
 				/>
 				<div id={fields.description.errorId}>
 					{fields.description.errors?.join(', ') ?? 'n/a'}
@@ -107,11 +104,7 @@ describe('future export: useForm', () => {
 								name={taskField.content.name}
 								defaultValue={taskField.content.defaultValue}
 								aria-label={`Task #${index + 1} Content`}
-								aria-describedby={
-									!taskField.content.valid
-										? taskField.content.errorId
-										: undefined
-								}
+								aria-describedby={taskField.content.ariaDescribedBy}
 							/>
 							<div id={taskField.content.errorId}>
 								{taskField.content.errors?.join(', ') ?? 'n/a'}
@@ -121,11 +114,7 @@ describe('future export: useForm', () => {
 								name={taskField.completed.name}
 								defaultChecked={taskField.completed.defaultChecked}
 								aria-label={`Task #${index + 1} Completed`}
-								aria-describedby={
-									!taskField.completed.valid
-										? taskField.completed.errorId
-										: undefined
-								}
+								aria-describedby={taskField.completed.ariaDescribedBy}
 							/>
 							<div id={taskField.completed.errorId}>
 								{taskField.completed.errors?.join(', ') ?? 'n/a'}
@@ -273,8 +262,29 @@ describe('future export: useForm', () => {
 		};
 	}
 
-	test('shouldValidate: onSubmit (default)', async () => {
-		const screen = render(<Form />);
+	test.each([
+		{
+			setup: 'Default behavior',
+			element: <Form />,
+		},
+		{
+			setup: 'Global Options',
+			element: (
+				<FormOptionsProvider shouldValidate="onSubmit">
+					<Form />
+				</FormOptionsProvider>
+			),
+		},
+		{
+			setup: 'Local Override',
+			element: (
+				<FormOptionsProvider shouldValidate="onInput">
+					<Form shouldValidate="onSubmit" />
+				</FormOptionsProvider>
+			),
+		},
+	])('$setup - shouldValidate: onSubmit (default)', async ({ element }) => {
+		const screen = render(element);
 		const form = getForm(screen);
 
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
@@ -342,8 +352,29 @@ describe('future export: useForm', () => {
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
-	test('shouldValidate: onBlur', async () => {
-		const screen = render(<Form shouldValidate="onBlur" />);
+	test.each([
+		{
+			setup: 'Direct Options',
+			element: <Form shouldValidate="onBlur" />,
+		},
+		{
+			setup: 'Global Options',
+			element: (
+				<FormOptionsProvider shouldValidate="onBlur">
+					<Form />
+				</FormOptionsProvider>
+			),
+		},
+		{
+			setup: 'Local Override',
+			element: (
+				<FormOptionsProvider shouldValidate="onInput">
+					<Form shouldValidate="onBlur" />
+				</FormOptionsProvider>
+			),
+		},
+	])('$setup - shouldValidate: onBlur', async ({ element }) => {
+		const screen = render(element);
 		const form = getForm(screen);
 
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
@@ -415,8 +446,29 @@ describe('future export: useForm', () => {
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);
 	});
 
-	test('shouldValidate: onInput', async () => {
-		const screen = render(<Form shouldValidate="onInput" />);
+	test.each([
+		{
+			setup: 'Direct Options',
+			element: <Form shouldValidate="onInput" />,
+		},
+		{
+			setup: 'Global Options',
+			element: (
+				<FormOptionsProvider shouldValidate="onInput">
+					<Form />
+				</FormOptionsProvider>
+			),
+		},
+		{
+			setup: 'Local Override',
+			element: (
+				<FormOptionsProvider shouldValidate="onBlur">
+					<Form shouldValidate="onInput" />
+				</FormOptionsProvider>
+			),
+		},
+	])('$setup - shouldValidate: onInput', async ({ element }) => {
+		const screen = render(element);
 		const form = getForm(screen);
 
 		await expectNoErrorMessages(form.title, form.description, form.confirmed);

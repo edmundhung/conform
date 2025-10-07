@@ -78,6 +78,14 @@ Array of validation error messages for this field.
 
 Object containing errors for all touched subfields.
 
+### `ariaInvalid: boolean | undefined`
+
+Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. This is `true` when the field has errors, `undefined` otherwise.
+
+### `ariaDescribedBy: string | undefined`
+
+String value for the `aria-describedby` attribute. Contains the `errorId` when the field is invalid, `undefined` otherwise. If you need to reference both help text and errors, merge with `descriptionId` manually (e.g., `${field.descriptionId} ${field.ariaDescribedBy}`).
+
 ### Validation Attributes
 
 HTML validation attributes automatically derived from schema constraints:
@@ -134,7 +142,8 @@ function FormField({ name, label, type = 'text' }: FieldProps) {
         min={field.min}
         max={field.max}
         step={field.step}
-        aria-describedby={field.errors ? field.errorId : undefined}
+        aria-invalid={field.ariaInvalid}
+        aria-describedby={field.ariaDescribedBy}
       />
 
       {field.errors && (

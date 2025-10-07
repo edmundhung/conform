@@ -56,3 +56,15 @@ function Example() {
   );
 }
 ```
+
+Additionally, you can now customize the base error shape globally using the `CustomTypes` interface:
+
+```tsx
+declare module '@conform-to/react/future' {
+  interface CustomTypes {
+    errorShape: { message: string; code: string };
+  }
+}
+```
+
+This restricts the error shape expected from forms and improves type inference when using `useField` and `useFormMetadata`.

@@ -172,7 +172,9 @@ export type GlobalFormOptions = {
 
 export type FormOptions<
 	FormShape,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
+		? string
+		: BaseErrorShape,
 	Value = undefined,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
@@ -351,7 +353,7 @@ export type ActionHandler<
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | null;
-	onUpdate?<ErrorShape extends BaseErrorShape = DefaultErrorShape>(
+	onUpdate?<ErrorShape extends BaseErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
@@ -392,14 +394,14 @@ export type BaseErrorShape = CustomTypes extends { errorShape: infer Shape }
 	? Shape
 	: unknown;
 
-export type DefaultErrorShape = string extends BaseErrorShape
-	? string
-	: BaseErrorShape;
+export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
+	? Shape
+	: string;
 
 /** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
 export type BaseMetadata<
 	FieldShape,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape extends BaseErrorShape,
 > = ValidationAttributes & {
 	/** Unique key for React list rendering (for array fields). */
 	key: string | undefined;
