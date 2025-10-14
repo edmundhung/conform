@@ -4,11 +4,12 @@ import { render } from 'vitest-browser-react';
 import { Locator, userEvent } from '@vitest/browser/context';
 import { useControl } from '../future';
 import { createFileList } from '@conform-to/dom';
+import { useEffect } from 'react';
 
 describe('future export: useControl', () => {
-	function Form(props: { children: React.ReactNode }) {
+	function Form(props: { id?: string; children: React.ReactNode }) {
 		return (
-			<form onSubmit={(event) => event.preventDefault()}>
+			<form id={props.id} onSubmit={(event) => event.preventDefault()}>
 				{props.children}
 				<button type="submit">Submit</button>
 				<button type="reset">Reset</button>
@@ -23,6 +24,7 @@ describe('future export: useControl', () => {
 		defaultChecked?: boolean;
 		value?: string;
 		label?: string;
+		onRender?: (formElement: HTMLFormElement | null) => void;
 		onChange?: (value: string | string[], checked?: boolean) => void;
 		onBlur?: () => void;
 		onFocus?: () => void;
@@ -38,6 +40,13 @@ describe('future export: useControl', () => {
 			defaultChecked: props.defaultChecked,
 			value: props.value,
 		});
+		const onRender = props.onRender;
+
+		useEffect(() => {
+			if (onRender) {
+				onRender(control.formRef.current);
+			}
+		}, [onRender, control.formRef]);
 
 		return (
 			<div>
@@ -653,5 +662,23 @@ describe('future export: useControl', () => {
 		input.dataset.conform = 'test';
 		await expect.element(baseInput).toHaveValue('hello world');
 		await expect.element(controlInput).toHaveValue('hello world');
+	});
+
+	it('provides access to the associated form via formRef', async () => {
+		const handleRender = vi.fn();
+		render(
+			<Form id="example">
+				<Input onRender={handleRender} defaultValue="" />
+			</Form>,
+		);
+
+		await vi.waitFor(() => {
+			expect(handleRender).toHaveBeenCalled();
+		});
+
+		// Verify the formRef is the actual form element
+		expect(handleRender).toHaveBeenCalledWith(
+			document.forms.namedItem('example'),
+		);
 	});
 });
