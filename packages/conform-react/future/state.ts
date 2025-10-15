@@ -465,13 +465,15 @@ export function getField<FieldShape, ErrorShape = string>(
 		return metadata;
 	}
 
+	let customMetadata: Record<string, unknown> | null = null;
+
 	return new Proxy(metadata, {
 		get(target, prop, receiver) {
 			if (Reflect.has(target, prop)) {
 				return Reflect.get(target, prop, receiver);
 			}
 
-			const customMetadata = customize(metadata);
+			customMetadata ??= customize(metadata);
 
 			if (Reflect.has(customMetadata, prop)) {
 				return Reflect.get(customMetadata, prop, receiver);
@@ -479,7 +481,7 @@ export function getField<FieldShape, ErrorShape = string>(
 
 			// Allow React DevTools to inspect the object
 			// without throwing errors for internal properties
-			if (typeof prop === 'symbol') {
+			if (typeof prop === 'symbol' || prop === '$$typeof') {
 				return undefined;
 			}
 
