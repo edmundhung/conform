@@ -477,6 +477,12 @@ export function getField<FieldShape, ErrorShape = string>(
 				return Reflect.get(customMetadata, prop, receiver);
 			}
 
+			// Allow React DevTools to inspect the object
+			// without throwing errors for internal properties
+			if (typeof prop === 'symbol') {
+				return undefined;
+			}
+
 			throw new Error(
 				`Property "${String(prop)}" does not exist on field metadata. ` +
 					`If you have defined the CustomMetadata interface to include "${String(prop)}", make sure to also implement it through the "defineCustomMetadata" property on <FormOptionsProvider />.`,
