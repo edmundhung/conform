@@ -262,13 +262,7 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 	options: EnableTypeCoercionOptions,
 ): {
 	transformAction: TransformAction<unknown, unknown> | undefined;
-	// If we use just `T` for type of `schema`, `enableTypeCoercion<GenericSchema<string, string>>` will return
-	// `GenericSchema<string, string>`. However, we want it to return `GenericSchema<unknown, string>`.
-	schema: T extends GenericSchema<unknown, infer Output, infer Issue>
-		? GenericSchema<unknown, Output, Issue>
-		: T extends GenericSchemaAsync<unknown, infer OutputAsync, infer IssueAsync>
-			? GenericSchemaAsync<unknown, OutputAsync, IssueAsync>
-			: never;
+	schema: T;
 };
 function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 	type:
@@ -555,8 +549,10 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
  * );
  * ```
  */
-export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
-	type: T,
+export function coerceFormValue<
+	Schema extends GenericSchema | GenericSchemaAsync,
+>(
+	type: Schema,
 	options?: {
 		defaultCoercion?: {
 			[key in DefaultCoercionType]?: CoercionFunction | boolean;
@@ -565,7 +561,7 @@ export function coerceFormValue<T extends GenericSchema | GenericSchemaAsync>(
 			type: GenericSchema | GenericSchemaAsync,
 		) => CoercionFunction | null;
 	},
-): T extends GenericSchema ? GenericSchema : GenericSchemaAsync {
+): Schema {
 	return enableTypeCoercion(type, {
 		defaultCoercion: {
 			string: compose(
