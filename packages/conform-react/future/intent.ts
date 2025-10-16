@@ -188,7 +188,7 @@ export const actionHandlers: {
 			return updateValueAtPath(
 				value,
 				appendPathSegment(options.name, options.index),
-				options.value,
+				options.value as any,
 			);
 		},
 		onUpdate(state, { type, submission, intent }) {
