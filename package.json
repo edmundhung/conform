@@ -9,7 +9,7 @@
 		"dev:playground": "pnpm --filter ./playground run dev",
 		"guide": "pnpm --filter ./guide run dev ",
 		"test": "pnpm run \"/^test:.*/\"",
-		"test:api": "vitest",
+		"test:api": "vitest --typecheck",
 		"test:e2e": "playwright test --ui",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
 		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",

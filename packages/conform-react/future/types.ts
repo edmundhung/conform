@@ -101,17 +101,15 @@ export type UseFormDataOptions = {
 	acceptFiles?: boolean;
 };
 
-export type DefaultValue<FormShape> = FormShape extends
-	| Array<infer Item>
-	| null
-	| undefined
-	? Array<DefaultValue<Item>> | null | undefined
-	: FormShape extends Record<string, any> | null | undefined
+export type DefaultValue<FormShape> =
+	FormShape extends Record<string, any>
 		?
 				| { [Key in keyof FormShape]?: DefaultValue<FormShape[Key]> }
 				| null
 				| undefined
-		: FormShape | string | null | undefined;
+		: FormShape extends Array<infer Item>
+			? Array<DefaultValue<Item>> | null | undefined
+			: FormShape | string | null | undefined;
 
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
@@ -171,7 +169,7 @@ export type GlobalFormOptions = {
 };
 
 export type FormOptions<
-	FormShape,
+	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
 		? string
 		: BaseErrorShape,
@@ -277,13 +275,11 @@ export interface IntentDispatcher {
 		/**
 		 * Specify the index of the item to update if the field is an array.
 		 */
-		index?: [FieldShape] extends [Array<any> | null | undefined]
-			? number
-			: never;
+		index?: FieldShape extends Array<any> ? number : never;
 		/**
 		 * The new value for the field or fieldset.
 		 */
-		value: Partial<FieldShape>;
+		value: DefaultValue<FieldShape>;
 	}): void;
 
 	/**
@@ -302,10 +298,8 @@ export interface IntentDispatcher {
 		/**
 		 * The default value for the new item.
 		 */
-		defaultValue?: [FieldShape] extends [
-			Array<infer ItemShape> | null | undefined,
-		]
-			? Partial<ItemShape>
+		defaultValue?: FieldShape extends Array<infer ItemShape>
+			? DefaultValue<ItemShape>
 			: never;
 	}): void;
 
