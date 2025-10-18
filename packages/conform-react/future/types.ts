@@ -66,6 +66,11 @@ export type Control = {
 			| undefined,
 	) => void;
 	/**
+	 * A ref object containing the form element associated with the registered input.
+	 * Use this with hooks like useFormData() and useIntent().
+	 */
+	formRef: React.RefObject<HTMLFormElement | null>;
+	/**
 	 * Programmatically updates the input value and emits
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.

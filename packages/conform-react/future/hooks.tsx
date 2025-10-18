@@ -818,6 +818,18 @@ export function useControl(options?: {
 		| Array<HTMLInputElement>
 		| null
 	>(null);
+	const formRef = useMemo(
+		() => ({
+			get current() {
+				const input = inputRef.current;
+				if (!input) {
+					return null;
+				}
+				return Array.isArray(input) ? input[0]?.form ?? null : input.form;
+			},
+		}),
+		[],
+	);
 	const eventDispatched = useRef<{
 		change?: number;
 		focus?: number;
@@ -921,6 +933,7 @@ export function useControl(options?: {
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
+		formRef,
 		register: useCallback(
 			(element) => {
 				if (!element) {
@@ -1053,7 +1066,7 @@ export function useControl(options?: {
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * const value = useFormData(formRef, formData => formData?.get('fieldName').toString() ?? '');
+ * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
  * ```
  */
 export function useFormData<Value = any>(

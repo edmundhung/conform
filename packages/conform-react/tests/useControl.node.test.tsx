@@ -8,6 +8,7 @@ describe('future export: useControl', () => {
 		options: undefined,
 		files: undefined,
 		checked: undefined,
+		formRef: { current: null },
 		register: expect.any(Function),
 		change: expect.any(Function),
 		blur: expect.any(Function),
