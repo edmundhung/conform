@@ -120,7 +120,7 @@ export function getDefaultValue(
 	context: FormContext<any>,
 	name: string,
 	serialize: Serialize = defaultSerialize,
-): string | undefined {
+): string {
 	const value = getValueAtPath(
 		context.state.serverIntendedValue ??
 			context.state.clientIntendedValue ??
@@ -132,13 +132,15 @@ export function getDefaultValue(
 	if (typeof serializedValue === 'string') {
 		return serializedValue;
 	}
+
+	return '';
 }
 
 export function getDefaultOptions(
 	context: FormContext<any>,
 	name: string,
 	serialize: Serialize = defaultSerialize,
-): string[] | undefined {
+): string[] {
 	const value = getValueAtPath(
 		context.state.serverIntendedValue ??
 			context.state.clientIntendedValue ??
@@ -157,6 +159,8 @@ export function getDefaultOptions(
 	if (typeof serializedValue === 'string') {
 		return [serializedValue];
 	}
+
+	return [];
 }
 
 export function isDefaultChecked(
@@ -172,7 +176,11 @@ export function isDefaultChecked(
 	);
 	const serializedValue = serialize(value);
 
-	return serializedValue === 'on';
+	if (typeof serializedValue === 'string') {
+		return serializedValue === 'on';
+	}
+
+	return false;
 }
 
 /**

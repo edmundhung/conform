@@ -13,9 +13,9 @@ describe('future export: useForm', () => {
 		);
 
 		expect(form.errors).toBe(undefined);
-		expect(fields.title.defaultValue).toBe(undefined);
+		expect(fields.title.defaultValue).toBe('');
 		expect(fields.title.errors).toBe(undefined);
-		expect(fields.description.defaultValue).toBe(undefined);
+		expect(fields.description.defaultValue).toBe('');
 		expect(fields.description.errors).toBe(undefined);
 
 		// Test if the form state is stable
@@ -181,7 +181,7 @@ describe('future export: useForm', () => {
 		expect(form.errors).toBe(undefined);
 		expect(fields.title.defaultValue).toBe('Default Title');
 		expect(fields.title.errors).toBe(undefined);
-		expect(fields.description.defaultValue).toBe(undefined);
+		expect(fields.description.defaultValue).toBe('');
 		expect(fields.description.errors).toBe(undefined);
 	});
 
@@ -224,7 +224,7 @@ describe('future export: useForm', () => {
 		expect(form.errors).toEqual(['Form error']);
 		expect(fields.title.defaultValue).toBe('Example');
 		expect(fields.title.errors).toBe(undefined);
-		expect(fields.notes.defaultValue).toBe(undefined);
+		expect(fields.notes.defaultValue).toBe('');
 		expect(fields.notes.defaultOptions).toEqual(['Foo']);
 		expect(fields.notes.errors).toEqual(['Notes error']);
 		expect(notes[0]?.defaultValue).toBe('Foo');
@@ -273,7 +273,7 @@ describe('future export: useForm', () => {
 		expect(form.errors).toEqual(['Form error']);
 		expect(fields.title.defaultValue).toBe('Example');
 		expect(fields.title.errors).toBe(undefined);
-		expect(fields.notes.defaultValue).toBe(undefined);
+		expect(fields.notes.defaultValue).toBe('');
 		expect(fields.notes.defaultOptions).toEqual([
 			'Second note',
 			'First note',
@@ -328,7 +328,7 @@ describe('future export: useForm', () => {
 		expect(form.errors).toEqual(['Form error']);
 		expect(fields.title.defaultValue).toBe('Example');
 		expect(fields.title.errors).toBe(undefined);
-		expect(fields.notes.defaultValue).toBe(undefined);
+		expect(fields.notes.defaultValue).toBe('');
 		expect(fields.notes.defaultOptions).toEqual(['First note', 'Third note']);
 		expect(fields.notes.errors).toEqual(['Notes error']);
 		expect(notes[0]?.defaultValue).toBe('First note');

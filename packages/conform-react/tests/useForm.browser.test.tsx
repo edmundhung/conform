@@ -157,9 +157,27 @@ describe('future export: useForm', () => {
 				<div id={fields.confirmed.errorId}>
 					{fields.confirmed.errors?.join(', ') ?? 'n/a'}
 				</div>
+				<input
+					type="hidden"
+					name="controlled-hidden-input"
+					value="controlled-value"
+					aria-label="Controlled Hidden Input"
+				/>
+				<input
+					type="hidden"
+					name="uncontrolled-hidden-input"
+					defaultValue="uncontrolled-value"
+					aria-label="Uncontrolled Hidden Input"
+				/>
 				<button>Submit</button>
 				<button type="button" onClick={() => intent.reset()}>
 					Reset
+				</button>
+				<button
+					type="button"
+					onClick={() => intent.reset({ defaultValue: null })}
+				>
+					Clear
 				</button>
 				<button type="button" onClick={() => intent.validate()}>
 					Validate Form
@@ -226,8 +244,16 @@ describe('future export: useForm', () => {
 			title: screen.getByLabelText('Title'),
 			description: screen.getByLabelText('Description'),
 			confirmed: screen.getByLabelText('Confirmed'),
+			controlledHiddenInput: screen.getByLabelText('Controlled Hidden Input', {
+				exact: true,
+			}),
+			uncontrolledHiddenInput: screen.getByLabelText(
+				'Uncontrolled Hidden Input',
+				{ exact: true },
+			),
 			submitButton: screen.getByRole('button', { name: 'Submit' }),
 			resetButton: screen.getByRole('button', { name: 'Reset' }),
+			clearButton: screen.getByRole('button', { name: 'Clear' }),
 			validateFormButton: screen.getByRole('button', {
 				name: 'Validate Form',
 			}),
@@ -576,12 +602,28 @@ describe('future export: useForm', () => {
 
 		await expectNoErrorMessages(form.title, form.description);
 
+		// Verify unmanaged inputs have their initial values
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
+
 		// Test reset form error
 		await userEvent.click(form.submitButton);
 		await expectErrorMessage(form.title, 'Title is required');
 		await expectErrorMessage(form.description, 'Description is required');
 		await userEvent.click(form.resetButton);
 		await expectNoErrorMessages(form.title, form.description);
+
+		// Verify unmanaged inputs are not affected by reset
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
 
 		// Test reset form value
 		await userEvent.type(form.title, 'example');
@@ -653,6 +695,22 @@ describe('future export: useForm', () => {
 		await expect.element(task1.completed).not.toBeChecked();
 		await expect.element(task2.content).toHaveValue('Second Task');
 		await expect.element(task2.completed).toBeChecked();
+
+		await userEvent.click(form.clearButton);
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+		await expect.element(task1.content).not.toBeInTheDocument();
+		await expect.element(task1.completed).not.toBeInTheDocument();
+		await expect.element(task2.content).not.toBeInTheDocument();
+		await expect.element(task2.completed).not.toBeInTheDocument();
+
+		// Verify unmanaged inputs are not affected by clear
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
 	});
 
 	test('update intent', async () => {
@@ -681,6 +739,14 @@ describe('future export: useForm', () => {
 		await expect.element(task1.content).toHaveValue('Default Task');
 		await expect.element(task1.completed).not.toBeChecked();
 
+		// Verify unmanaged inputs are not affected by update
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
+
 		await userEvent.click(form.updateFormButton);
 		await expect.element(form.title).toHaveValue('Foo');
 		await expect.element(form.description).toHaveValue('Bar');
@@ -688,6 +754,14 @@ describe('future export: useForm', () => {
 		await expect.element(task1.completed).toBeChecked();
 		await expect.element(task2.content).toHaveValue('Qux');
 		await expect.element(task2.completed).not.toBeChecked();
+
+		// Verify unmanaged inputs are not affected by update with full form value
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
 	});
 
 	test('insert / reorder / remove intents', async () => {
@@ -729,12 +803,11 @@ describe('future export: useForm', () => {
 		await expectNoErrorMessages(task2.content);
 
 		await userEvent.type(task2.content, 'Old Task');
-		await userEvent.click(task1.completed);
 		await userEvent.click(form.insertUrgentTaskButton);
 		await expect.element(task1.content).toHaveValue('Urgent Task');
 		await expect.element(task1.completed).toBeChecked();
 		await expect.element(task2.content).toHaveValue('');
-		await expect.element(task2.completed).not.toBeChecked();
+		await expect.element(task2.completed).toBeChecked();
 		await expect.element(task3.content).toHaveValue('Old Task');
 		await expect.element(task3.completed).not.toBeChecked();
 		await expectErrorMessage(task2.content, 'Task content is required');
@@ -742,7 +815,7 @@ describe('future export: useForm', () => {
 
 		await userEvent.click(task2.moveToTopButton);
 		await expect.element(task1.content).toHaveValue('');
-		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task1.completed).toBeChecked();
 		await expect.element(task2.content).toHaveValue('Urgent Task');
 		await expect.element(task2.completed).toBeChecked();
 		await expect.element(task3.content).toHaveValue('Old Task');
@@ -752,7 +825,7 @@ describe('future export: useForm', () => {
 
 		await userEvent.click(task2.removeButton);
 		await expect.element(task1.content).toHaveValue('');
-		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task1.completed).toBeChecked();
 		await expect.element(task2.content).toHaveValue('Old Task');
 		await expect.element(task2.completed).not.toBeChecked();
 		await expect.element(task3.content).not.toBeInTheDocument();

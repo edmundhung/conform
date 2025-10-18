@@ -67,7 +67,7 @@
 		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.79.1",
 		"typescript": "^5.8.3",
-		"vitest-browser-react": "^0.3.0"
+		"vitest-browser-react": "^1.0.1"
 	},
 	"peerDependencies": {
 		"react": ">=18"

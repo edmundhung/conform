@@ -506,13 +506,13 @@ importers:
         version: link:../../packages/conform-zod
       react:
         specifier: ^19.1.1
-        version: 19.1.1
+        version: 19.2.0
       react-dom:
         specifier: ^19.1.1
-        version: 19.1.1(react@19.1.1)
+        version: 19.2.0(react@19.2.0)
       react-router:
         specifier: ^7.8.2
-        version: 7.8.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 7.8.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       zod:
         specifier: ^3.25.75
         version: 3.25.76
@@ -870,8 +870,8 @@ importers:
         specifier: ^5.8.3
         version: 5.9.2
       vitest-browser-react:
-        specifier: ^0.3.0
-        version: 0.3.0(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4)
+        specifier: ^1.0.1
+        version: 1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4)
 
   packages/conform-valibot:
     dependencies:
@@ -9924,6 +9924,11 @@ packages:
     peerDependencies:
       react: ^19.1.1
 
+  react-dom@19.2.0:
+    resolution: {integrity: sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ==}
+    peerDependencies:
+      react: ^19.2.0
+
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
@@ -10081,6 +10086,10 @@ packages:
 
   react@19.1.1:
     resolution: {integrity: sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ==}
+    engines: {node: '>=0.10.0'}
+
+  react@19.2.0:
+    resolution: {integrity: sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==}
     engines: {node: '>=0.10.0'}
 
   read-cache@1.0.0:
@@ -10331,6 +10340,9 @@ packages:
 
   scheduler@0.26.0:
     resolution: {integrity: sha512-NlHwttCI/l5gCPR3D1nNXtWABUmBwvZpEQiD4IXSbIDq8BzLIK/7Ir5gTFSGZDUu37K5cMNp0hFtzO38sC7gWA==}
+
+  scheduler@0.27.0:
+    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
   selfsigned@2.4.1:
     resolution: {integrity: sha512-th5B4L2U+eGLq1TVh7zNRGBapioSORUeymIydxgFpwww9d2qyKvtuPU2jJuHvYAwwqi2Y596QBL3eEqcPEYL8Q==}
@@ -11328,16 +11340,16 @@ packages:
       vite:
         optional: true
 
-  vitest-browser-react@0.3.0:
-    resolution: {integrity: sha512-dk8T3GHhwrmCJLqDer1A2NB8MlIGsUb9Wr4/iMpbrwz4sBCh1PjV0SkZ9BYmoBrJ4j/Tx8qxzCXFXnbE2IbWzg==}
+  vitest-browser-react@1.0.1:
+    resolution: {integrity: sha512-LqiGFCdknrbMoSDWXTCTrPsED3SvdIXIgYOOZyYUNj2dkJusW2eF6NENOlBlxwq+FBQqzNK1X59b+b03pXFpAQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
       '@types/react-dom': ^18.0.0 || ^19.0.0
-      '@vitest/browser': ^2.1.0 || ^3.0.0
+      '@vitest/browser': ^2.1.0 || ^3.0.0 || ^4.0.0-0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
-      vitest: ^2.1.0 || ^3.0.0
+      vitest: ^2.1.0 || ^3.0.0 || ^4.0.0-0
     peerDependenciesMeta:
       '@types/react':
         optional: true
@@ -22983,6 +22995,11 @@ snapshots:
       react: 19.1.1
       scheduler: 0.26.0
 
+  react-dom@19.2.0(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      scheduler: 0.27.0
+
   react-fast-compare@3.2.2: {}
 
   react-focus-lock@2.9.6(@types/react@18.3.23)(react@18.3.1):
@@ -23088,6 +23105,14 @@ snapshots:
     optionalDependencies:
       react-dom: 19.1.1(react@19.1.1)
 
+  react-router@7.8.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      cookie: 1.0.2
+      react: 19.2.0
+      set-cookie-parser: 2.6.0
+    optionalDependencies:
+      react-dom: 19.2.0(react@19.2.0)
+
   react-stately@3.38.0(react@18.3.1):
     dependencies:
       '@react-stately/calendar': 3.8.1(react@18.3.1)
@@ -23158,6 +23183,8 @@ snapshots:
       loose-envify: 1.4.0
 
   react@19.1.1: {}
+
+  react@19.2.0: {}
 
   read-cache@1.0.0:
     dependencies:
@@ -23490,6 +23517,8 @@ snapshots:
       loose-envify: 1.4.0
 
   scheduler@0.26.0: {}
+
+  scheduler@0.27.0: {}
 
   selfsigned@2.4.1:
     dependencies:
@@ -24587,7 +24616,7 @@ snapshots:
     optionalDependencies:
       vite: 6.3.5(@types/node@20.11.20)(jiti@1.21.0)(terser@5.26.0)
 
-  vitest-browser-react@0.3.0(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4):
+  vitest-browser-react@1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@3.2.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@3.2.4):
     dependencies:
       '@vitest/browser': 3.2.4(msw@2.7.0(@types/node@20.11.20)(typescript@5.9.2))(playwright@1.49.1)(vite@6.3.5(@types/node@20.11.20)(jiti@1.21.0)(terser@5.26.0))(vitest@3.2.4)
       react: 18.3.1
