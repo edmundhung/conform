@@ -476,7 +476,7 @@ export function useForm<
 ): {
 	form: FormMetadata<ErrorShape>;
 	fields: Fieldset<FormShape, ErrorShape>;
-	intent: IntentDispatcher;
+	intent: IntentDispatcher<FormShape>;
 } {
 	const { id, defaultValue, constraint } = options;
 	const globalOptions = useContext(GlobalFormOptionsContext);
@@ -550,7 +550,7 @@ export function useForm<
 			);
 		},
 	});
-	const intent = useIntent(formId);
+	const intent = useIntent<FormShape>(formId);
 	const context = useMemo<FormContext<ErrorShape>>(
 		() => ({
 			formId,
@@ -765,7 +765,9 @@ export function useField<FieldShape = any>(
  * }
  * ```
  */
-export function useIntent(formRef: FormRef): IntentDispatcher {
+export function useIntent<FormShape extends Record<string, any>>(
+	formRef: FormRef,
+): IntentDispatcher<FormShape> {
 	const globalOptions = useContext(GlobalFormOptionsContext);
 
 	return useMemo(

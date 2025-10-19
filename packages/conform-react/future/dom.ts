@@ -1,5 +1,6 @@
 import {
 	change,
+	getFieldDefaultValue,
 	getValueAtPath,
 	isFieldElement,
 	isGlobalInstance,
@@ -233,14 +234,22 @@ export function updateFormValue(
 ): void {
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.name) {
-			const value = getValueAtPath(intendedValue, element.name);
-			const serializedValue = serialize(value);
+			const fieldValue = getValueAtPath(intendedValue, element.name);
 
-			if (typeof serializedValue !== 'undefined') {
-				change(element, serializedValue, {
-					preventDefault: true,
-				});
+			if (element.type === 'file' && typeof fieldValue === 'undefined') {
+				// Do not update file inputs unless there's an intended value
+				continue;
 			}
+
+			const serializedValue = serialize(fieldValue);
+			const value =
+				typeof serializedValue !== 'undefined'
+					? serializedValue
+					: getFieldDefaultValue(element);
+
+			change(element, value, {
+				preventDefault: true,
+			});
 		}
 	}
 }
@@ -249,11 +258,11 @@ export function updateFormValue(
  * Creates a proxy that dynamically generates intent dispatch functions.
  * Each property access returns a function that submits the intent to the form.
  */
-export function createIntentDispatcher(
+export function createIntentDispatcher<FormShape extends Record<string, any>>(
 	formElement: HTMLFormElement | (() => HTMLFormElement | null),
 	intentName: string,
 ) {
-	return new Proxy<IntentDispatcher>({} as any, {
+	return new Proxy<IntentDispatcher<FormShape>>({} as any, {
 		get(target, type, receiver) {
 			if (typeof type === 'string') {
 				// @ts-expect-error

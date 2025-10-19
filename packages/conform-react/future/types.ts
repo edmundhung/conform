@@ -106,15 +106,14 @@ export type UseFormDataOptions = {
 	acceptFiles?: boolean;
 };
 
-export type DefaultValue<FormShape> =
-	FormShape extends Record<string, any>
-		?
-				| { [Key in keyof FormShape]?: DefaultValue<FormShape[Key]> }
-				| null
-				| undefined
-		: FormShape extends Array<infer Item>
-			? Array<DefaultValue<Item>> | null | undefined
-			: FormShape | string | null | undefined;
+export type DefaultValue<Shape> =
+	Shape extends Record<string, any>
+		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> } | null
+		: Shape extends Array<infer Item>
+			? Array<DefaultValue<Item>> | null
+			: Shape extends File | File[]
+				? null // We don't support setting default value for file inputs yet
+				: Shape | string | null;
 
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
@@ -257,22 +256,43 @@ export type UnknownArgs<Args extends any[]> = {
 	[Key in keyof Args]: unknown;
 };
 
-export interface IntentDispatcher {
+export interface IntentDispatcher<
+	FormShape extends Record<string, any> = Record<string, any>,
+> {
 	/**
 	 * Validate the whole form or a specific field?
 	 */
 	validate(name?: string): void;
 
 	/**
-	 * Reset the form to its initial state.
+	 * Reset the form to a specific default value.
+	 *
+	 * @param options.defaultValue - The value to reset the form to. Pass `null` to clear all fields, or omit to reset to the initial default value from `useForm`.
+	 *
+	 * @example
+	 * ```tsx
+	 * // Reset to initial default value
+	 * intent.reset()
+	 *
+	 * // Clear all fields
+	 * intent.reset({ defaultValue: null })
+	 *
+	 * // Restore to a specific snapshot
+	 * intent.reset({ defaultValue: snapshotValue })
+	 * ```
 	 */
-	reset(): void;
+	reset(options?: {
+		/**
+		 * The value to reset the form to. If not provided, resets to the default value from `useForm`. Pass `null` to clear all fields instead.
+		 */
+		defaultValue?: DefaultValue<FormShape>;
+	}): void;
 
 	/**
 	 * Update a field or a fieldset.
 	 * If you provide a fieldset name, it will update all fields within that fieldset
 	 */
-	update<FieldShape>(options: {
+	update<FieldShape = FormShape>(options: {
 		/**
 		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
 		 */
@@ -280,7 +300,11 @@ export interface IntentDispatcher {
 		/**
 		 * Specify the index of the item to update if the field is an array.
 		 */
-		index?: FieldShape extends Array<any> ? number : never;
+		index?: FieldShape extends Array<any>
+			? number
+			: unknown extends FieldShape
+				? number
+				: never;
 		/**
 		 * The new value for the field or fieldset.
 		 */
@@ -414,12 +438,28 @@ export type BaseMetadata<
 	errorId: string;
 	/** The form's unique identifier for associating field via the `form` attribute. */
 	formId: string;
-	/** The field's default value as a string. */
-	defaultValue: string | undefined;
-	/** Default selected options for multi-select fields or checkbox group. */
-	defaultOptions: string[] | undefined;
-	/** Default checked state for checkbox/radio inputs. */
-	defaultChecked: boolean | undefined;
+	/**
+	 * The field's default value as a string.
+	 *
+	 * Returns an empty string `''` when:
+	 * - No default value is set (field value is `null` or `undefined`)
+	 * - The field value cannot be serialized to a string (e.g., objects or arrays)
+	 */
+	defaultValue: string;
+	/**
+	 * Default selected options for multi-select fields or checkbox group.
+	 *
+	 * Returns an empty array `[]` when:
+	 * - No default options are set (field value is `null` or `undefined`)
+	 * - The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
+	 */
+	defaultOptions: string[];
+	/**
+	 * Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`.
+	 *
+	 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
+	 */
+	defaultChecked: boolean;
 	/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
 	touched: boolean;
 	/** Whether this field currently has no validation errors. */

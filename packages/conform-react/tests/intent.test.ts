@@ -222,8 +222,32 @@ test('updateListKeys', () => {
 });
 
 test('actionHandlers.reset', () => {
-	// Reset should return null
-	expect(actionHandlers.reset.onApply?.({})).toBeNull();
+	// Test validate payload
+	expect(actionHandlers.reset.validatePayload?.(undefined)).toBe(true);
+	expect(actionHandlers.reset.validatePayload?.({})).toBe(true);
+	expect(actionHandlers.reset.validatePayload?.({ defaultValue: null })).toBe(
+		true,
+	);
+	expect(
+		actionHandlers.reset.validatePayload?.({ defaultValue: { email: 'test' } }),
+	).toBe(true);
+	expect(actionHandlers.reset.validatePayload?.('string')).toBe(false);
+
+	// Test onApply with no options
+	expect(actionHandlers.reset.onApply?.({}, undefined)).toBeNull();
+
+	// Test onApply with null defaultValue
+	expect(actionHandlers.reset.onApply?.({}, { defaultValue: null })).toEqual(
+		{},
+	);
+
+	// Test onApply with custom defaultValue
+	expect(
+		actionHandlers.reset.onApply?.(
+			{},
+			{ defaultValue: { email: 'test@example.com' } },
+		),
+	).toEqual({ email: 'test@example.com' });
 });
 
 test('actionHandlers.validate', () => {
@@ -248,17 +272,41 @@ test('actionHandlers.update', () => {
 	expect(actionHandlers.update.validatePayload?.({ name: 123 })).toBe(false);
 	expect(actionHandlers.update.validatePayload?.('string')).toBe(false);
 
-	// Test onApply
-	const payload = { email: 'old@example.com' };
-	const options = { name: 'email', value: 'new@example.com' };
-	expect(actionHandlers.update.onApply?.(payload, options)).toEqual({
+	// Test onApply with explicit value
+	expect(
+		actionHandlers.update.onApply?.(
+			{ email: 'old@example.com' },
+			{ name: 'email', value: 'new@example.com' },
+		),
+	).toEqual({
 		email: 'new@example.com',
 	});
 
-	// Test with array index - skip due to type complexity
-	// const arrayPayload = { items: ['a', 'b', 'c'] };
-	// const arrayOptions = { name: 'items', index: 1, value: 'updated' };
-	// expect(actionHandlers.update.onApply?.(arrayPayload, arrayOptions)).toEqual({ items: ['a', 'updated', 'c'] });
+	// Test update field value to null
+	expect(
+		actionHandlers.update.onApply?.(
+			{ username: 'John', email: 'test@example.com' },
+			{ name: 'email', value: null },
+		),
+	).toEqual({
+		username: 'John',
+		email: null,
+	});
+
+	// Test update form value to null (clear all fields)
+	expect(
+		actionHandlers.update.onApply?.(
+			{ email: 'test@example.com', name: 'John' },
+			{ value: null },
+		),
+	).toEqual({});
+
+	// Test with array index
+	const arrayPayload = { items: ['a', 'b', 'c'] };
+	const arrayOptions = { name: 'items', index: 1, value: 'updated' };
+	expect(actionHandlers.update.onApply?.(arrayPayload, arrayOptions)).toEqual({
+		items: ['a', 'updated', 'c'],
+	});
 });
 
 test('actionHandlers.insert', () => {
@@ -270,10 +318,12 @@ test('actionHandlers.insert', () => {
 	expect(actionHandlers.insert.validatePayload?.({ name: 123 })).toBe(false);
 	expect(actionHandlers.insert.validatePayload?.('string')).toBe(false);
 
-	// Test onApply - skip due to type complexity with defaultValue
-	// const payload = { items: ['a', 'b'] };
-	// const options = { name: 'items', defaultValue: 'new' };
-	// expect(actionHandlers.insert.onApply?.(payload, options)).toEqual({ items: ['a', 'b', 'new'] });
+	// Test onApply
+	const payload = { items: ['a', 'b'] };
+	const options = { name: 'items', defaultValue: 'new' };
+	expect(actionHandlers.insert.onApply?.(payload, options)).toEqual({
+		items: ['a', 'b', 'new'],
+	});
 });
 
 test('actionHandlers.remove', () => {

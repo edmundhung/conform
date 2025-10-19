@@ -22,6 +22,13 @@ export function isNumber(value: unknown): value is number {
 	return typeof value === 'number';
 }
 
+export function isNullable<T>(
+	value: unknown,
+	typeGuard: (value: unknown) => value is T,
+): value is T | null {
+	return value === null || typeGuard(value);
+}
+
 export function isOptional<T>(
 	value: unknown,
 	typeGuard: (value: unknown) => value is T,

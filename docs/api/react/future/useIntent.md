@@ -29,9 +29,11 @@ Triggers validation for the entire form or a specific field. If you provide a na
 
 - **name** (optional): Field name to validate. If omitted, validates the entire form.
 
-### `reset(): void`
+### `reset(options?): void`
 
-Resets the form to its initial state, clearing all values and validation states.
+Resets the form to a specific default value.
+
+- **options.defaultValue** (optional): The value to reset the form to. If not provided, resets to the default value from `useForm`. Pass `null` to clear all fields, or pass a custom object to reset to a specific state.
 
 ### `update(options): void`
 

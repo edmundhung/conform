@@ -44,17 +44,23 @@ Auto-generated ID for associating field descriptions via `aria-describedby`.
 
 Auto-generated ID for associating field errors via `aria-describedby`.
 
-### `defaultValue: string | undefined`
+### `defaultValue: string`
 
-The field's default value as a string.
+The field's default value as a string. Returns an empty string `''` when:
 
-### `defaultOptions: string[] | undefined`
+- No default value is set (field value is `null` or `undefined`)
+- The field value cannot be serialized to a string (e.g., objects or arrays)
 
-Default selected options for multi-select fields or checkbox group.
+### `defaultOptions: string[]`
 
-### `defaultChecked: boolean | undefined`
+Default selected options for multi-select fields or checkbox group. Returns an empty array `[]` when:
 
-Default checked state for checkbox/radio inputs.
+- No default options are set (field value is `null` or `undefined`)
+- The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
+
+### `defaultChecked: boolean`
+
+Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`. For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
 
 ### `touched: boolean`
 

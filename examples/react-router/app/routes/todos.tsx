@@ -82,7 +82,7 @@ export default function Example({
 				<input
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
-					defaultValue={fields.title.defaultValue ?? ''}
+					defaultValue={fields.title.defaultValue}
 				/>
 				<div>{fields.title.errors}</div>
 			</div>
@@ -159,6 +159,18 @@ export default function Example({
 			</button>
 			<hr />
 			<button disabled={!dirty}>Save</button>
+			<button type="button" onClick={() => intent.update({ value: null })}>
+				Update
+			</button>
+			<button type="button" onClick={() => intent.reset()}>
+				Reset
+			</button>
+			<button
+				type="button"
+				onClick={() => intent.reset({ defaultValue: null })}
+			>
+				Clear
+			</button>
 		</Form>
 	);
 }

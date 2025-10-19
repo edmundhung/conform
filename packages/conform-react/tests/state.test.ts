@@ -67,8 +67,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -97,8 +97,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -121,8 +121,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -211,8 +211,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -245,8 +245,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -268,8 +268,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -334,8 +334,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -370,8 +370,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -401,8 +401,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -423,8 +423,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(false);
 		expect(isTouched(context.state, 'username')).toBe(false);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -457,8 +457,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(false);
@@ -486,8 +486,8 @@ describe('form', () => {
 			}),
 		);
 
-		expect(getDefaultValue(context, 'username')).toBe(undefined);
-		expect(getDefaultValue(context, 'password')).toBe(undefined);
+		expect(getDefaultValue(context, 'username')).toBe('');
+		expect(getDefaultValue(context, 'password')).toBe('');
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'username')).toBe(true);
 		expect(isTouched(context.state, 'password')).toBe(true);
@@ -686,9 +686,9 @@ describe('form', () => {
 		);
 
 		expect(getListKey(context, 'tasks')).toEqual([]);
-		expect(getDefaultValue(context, 'title')).toBe(undefined);
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
-		expect(getDefaultOptions(context, 'tasks')).toEqual(undefined);
+		expect(getDefaultValue(context, 'title')).toBe('');
+		expect(getDefaultValue(context, 'tasks')).toBe('');
+		expect(getDefaultOptions(context, 'tasks')).toEqual([]);
 		expect(isTouched(context.state)).toBe(true);
 		expect(isTouched(context.state, 'title')).toBe(true);
 		expect(isTouched(context.state, 'tasks')).toBe(true);
@@ -708,7 +708,7 @@ describe('form', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]', '0-tasks[1]']);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Default task 1',
 			'Default task 2',
@@ -750,7 +750,7 @@ describe('form', () => {
 			'0',
 		]);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Default task 1',
 			'Default task 2',
@@ -793,7 +793,7 @@ describe('form', () => {
 			'0',
 		]);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Default task 1',
 			'Default task 2',
@@ -842,7 +842,7 @@ describe('form', () => {
 			'0',
 		]);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Urgent task',
 			'Default task 1',
@@ -894,7 +894,7 @@ describe('form', () => {
 			'0-tasks[1]',
 		]);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Urgent task',
 			'New task',
@@ -952,7 +952,7 @@ describe('form', () => {
 			'0-tasks[1]',
 		]);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Urgent task',
 			'New task',
@@ -1004,7 +1004,7 @@ describe('form', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['1', '0', '0-tasks[1]']);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Urgent task',
 			'New task',
@@ -1053,7 +1053,7 @@ describe('form', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['1', '0', '0-tasks[1]']);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Urgent task',
 			'New task',
@@ -1097,7 +1097,7 @@ describe('form', () => {
 
 		expect(getListKey(context, 'tasks')).toEqual(['1-tasks[0]', '1-tasks[1]']);
 		expect(getDefaultValue(context, 'title')).toBe('My Tasks');
-		expect(getDefaultValue(context, 'tasks')).toBe(undefined);
+		expect(getDefaultValue(context, 'tasks')).toBe('');
 		expect(getDefaultOptions(context, 'tasks')).toEqual([
 			'Default task 1',
 			'Default task 2',

@@ -18,9 +18,10 @@ import {
 	merge,
 	updateValueAtPath,
 	transformKeys,
+	isNullable,
 } from './util';
 import type { ActionHandler, IntentDispatcher, UnknownIntent } from './types';
-import { getDefaultListKey } from './state';
+import { getDefaultListKey, initializeState } from './state';
 
 /**
  * Serializes intent to string format: "type" or "type(payload)".
@@ -145,8 +146,25 @@ export const actionHandlers: {
 		: never;
 } = {
 	reset: {
-		onApply() {
-			return null;
+		validatePayload(options) {
+			return (
+				isOptional(options, isPlainObject) &&
+				(isUndefined(options?.defaultValue) ||
+					isNullable(options?.defaultValue, isPlainObject))
+			);
+		},
+		onApply(_, options) {
+			const { defaultValue } = options ?? {};
+
+			return defaultValue ?? (defaultValue === null ? {} : null);
+		},
+		onUpdate(_, { intent }) {
+			const defaultValue = intent.payload?.defaultValue;
+
+			return merge(initializeState(), {
+				serverIntendedValue:
+					defaultValue ?? (defaultValue === null ? {} : null),
+			});
 		},
 	},
 	validate: {
@@ -185,11 +203,9 @@ export const actionHandlers: {
 			);
 		},
 		onApply(value, options) {
-			return updateValueAtPath(
-				value,
-				appendPathSegment(options.name, options.index),
-				options.value as any,
-			);
+			const name = appendPathSegment(options.name, options.index);
+			const newValue = options.value ?? (name === '' ? {} : null);
+			return updateValueAtPath(value, name, newValue as any);
 		},
 		onUpdate(state, { type, submission, intent }) {
 			if (type === 'server') {
