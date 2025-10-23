@@ -28,7 +28,7 @@ import {
 	variant,
 } from 'valibot';
 import { describe, expect, test } from 'vitest';
-import { getValibotConstraint } from '../constraint';
+import { getConstraint as getValibotConstraint } from '../constraint';
 
 enum TestEnum {
 	a = 'a',
@@ -203,6 +203,14 @@ describe('constraint', () => {
 		// Non-object schemas will throw an error
 		expect(() => getValibotConstraint(string())).toThrow();
 		expect(() => getValibotConstraint(array(string()))).toThrow();
+
+		// Non-Valibot schemas return null
+		expect(getValibotConstraint(null)).toBe(null);
+		expect(getValibotConstraint(undefined)).toBe(null);
+		expect(getValibotConstraint({})).toBe(null);
+		expect(getValibotConstraint({ foo: 'bar' })).toBe(null);
+		expect(getValibotConstraint('string')).toBe(null);
+		expect(getValibotConstraint(123)).toBe(null);
 
 		// Intersection is supported
 		expect(

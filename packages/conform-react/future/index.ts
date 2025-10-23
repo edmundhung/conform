@@ -9,6 +9,7 @@ export type {
 	Control,
 	DefaultValue,
 	BaseMetadata,
+	CustomSchema,
 	CustomMetadata,
 	CustomMetadataDefinition,
 	BaseErrorShape,

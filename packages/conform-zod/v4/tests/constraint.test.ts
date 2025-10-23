@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { getZodConstraint } from '../constraint';
+import { getConstraint as getZodConstraint } from '../constraint';
 import { z } from 'zod-v4';
 
 describe('constraint', () => {
@@ -164,6 +164,14 @@ describe('constraint', () => {
 		// Non-object schemas will throw an error
 		expect(() => getZodConstraint(z.string())).toThrow();
 		expect(() => getZodConstraint(z.array(z.string()))).toThrow();
+
+		// Non-Zod schemas return null
+		expect(getZodConstraint(null)).toBe(null);
+		expect(getZodConstraint(undefined)).toBe(null);
+		expect(getZodConstraint({})).toBe(null);
+		expect(getZodConstraint({ foo: 'bar' })).toBe(null);
+		expect(getZodConstraint('string')).toBe(null);
+		expect(getZodConstraint(123)).toBe(null);
 
 		// Intersection is supported
 		expect(

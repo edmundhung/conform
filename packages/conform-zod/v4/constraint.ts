@@ -13,6 +13,18 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
+export function isZodSchema(schema: unknown): schema is $ZodType {
+	return (
+		typeof schema === 'object' &&
+		schema !== null &&
+		'~standard' in schema &&
+		typeof schema['~standard'] === 'object' &&
+		schema['~standard'] !== null &&
+		'vendor' in schema['~standard'] &&
+		schema['~standard'].vendor === 'zod'
+	);
+}
+
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 	function updateConstraint(
 		schema: $ZodType,
@@ -139,4 +151,18 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 	updateConstraint(schema, result);
 
 	return result;
+}
+
+export function getConstraint(schema: $ZodType): Record<string, Constraint>;
+export function getConstraint(
+	schema: unknown,
+): Record<string, Constraint> | null;
+export function getConstraint(
+	schema: unknown,
+): Record<string, Constraint> | null {
+	if (!isZodSchema(schema)) {
+		return null;
+	}
+
+	return getZodConstraint(schema);
 }

@@ -58,10 +58,9 @@ export default function Signup() {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 		async onValidate({ payload, error }) {
 			if (typeof payload.username === 'string' && !error.fieldErrors.username) {
 				const messages = await validateUsername(payload.username);

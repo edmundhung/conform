@@ -12,12 +12,25 @@ const keys: Array<keyof Constraint> = [
 	'pattern',
 ];
 
+export function isValibotSchema(
+	schema: unknown,
+): schema is GenericSchema | GenericSchemaAsync {
+	return (
+		typeof schema === 'object' &&
+		schema !== null &&
+		'~standard' in schema &&
+		typeof schema['~standard'] === 'object' &&
+		schema['~standard'] !== null &&
+		'vendor' in schema['~standard'] &&
+		schema['~standard'].vendor === 'valibot'
+	);
+}
+
 export function getValibotConstraint<
 	T extends GenericSchema | GenericSchemaAsync,
 >(schema: T): Record<string, Constraint> {
 	function updateConstraint(
 		schema: T,
-
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
@@ -174,4 +187,20 @@ export function getValibotConstraint<
 	updateConstraint(schema, result);
 
 	return result;
+}
+
+export function getConstraint<T extends GenericSchema | GenericSchemaAsync>(
+	schema: T,
+): Record<string, Constraint>;
+export function getConstraint(
+	schema: unknown,
+): Record<string, Constraint> | null;
+export function getConstraint(
+	schema: unknown,
+): Record<string, Constraint> | null {
+	if (!isValibotSchema(schema)) {
+		return null;
+	}
+
+	return getValibotConstraint(schema);
 }

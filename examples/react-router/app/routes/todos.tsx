@@ -57,7 +57,7 @@ export default function Example({
 	actionData,
 }: Route.ComponentProps) {
 	const navigation = useNavigation();
-	const { form, fields, intent } = useForm({
+	const { form, fields, intent } = useForm(schema, {
 		// If we reset the form after a successful submission, we need to
 		// keep in mind that the default value (loader) will be updated
 		// only after the submsionn result (action) is received. We need to
@@ -66,7 +66,6 @@ export default function Example({
 		lastResult: navigation.state === 'idle' ? actionData?.result : null,
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
-		schema,
 	});
 	const dirty = useFormData(
 		form.id,

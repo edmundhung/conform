@@ -18,20 +18,19 @@ export default function Login() {
 	const { form, fields } = useForm({
 		shouldValidate: 'onBlur',
 		onValidate({ payload, error }) {
-			if (!payload.email) {
+			const { email, password } = payload;
+
+			if (!email) {
 				error.fieldErrors.email = ['Email is required'];
-			} else if (
-				typeof payload.email !== 'string' ||
-				!payload.email.includes('@')
-			) {
+			} else if (typeof email !== 'string' || !email.includes('@')) {
 				error.fieldErrors.email = ['Email is invalid'];
 			}
 
-			if (!payload.password) {
+			if (!password) {
 				error.fieldErrors.password = ['Password is required'];
 			}
 
-			return { error, value: payload };
+			return { error, value: { email, password } };
 		},
 		async onSubmit(event, { value, update }) {
 			event.preventDefault();
