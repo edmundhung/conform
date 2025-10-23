@@ -108,12 +108,12 @@ export type UseFormDataOptions = {
 
 export type DefaultValue<Shape> =
 	Shape extends Record<string, any>
-		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> } | null
+		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> } | null | undefined
 		: Shape extends Array<infer Item>
-			? Array<DefaultValue<Item>> | null
+			? Array<DefaultValue<Item>> | null | undefined
 			: Shape extends File | File[]
-				? null // We don't support setting default value for file inputs yet
-				: Shape | string | null;
+				? null | undefined // We don't support setting default value for file inputs yet
+				: Shape | string | null | undefined;
 
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
