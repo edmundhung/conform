@@ -62,7 +62,8 @@ export function createResult(
 export function createAction(options: {
 	type: FormAction<any, any>['type'];
 	entries: Array<[string, FormDataEntryValue]>;
-	value?: Record<string, FormValue> | null;
+	reset?: boolean;
+	intendedValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
@@ -77,13 +78,18 @@ export function createAction(options: {
 	const value = applyIntent(submission);
 	const result = report(submission, {
 		intendedValue:
-			typeof options?.value !== 'undefined' ? options.value : value,
-		error: options?.error,
+			options.intendedValue !== undefined
+				? options.intendedValue
+				: options.reset
+					? undefined
+					: value,
+		reset: options.reset,
+		error: options.error,
 	});
 	const ctx = {
 		handlers: actionHandlers,
-		reset() {
-			return initializeState();
+		reset(defaultValue?: Record<string, unknown> | null) {
+			return initializeState({ defaultValue });
 		},
 	};
 

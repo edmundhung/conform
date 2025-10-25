@@ -545,14 +545,13 @@ export function report<ErrorShape = string>(
 		}
 	}
 
-	const intendedValue = options.reset
-		? null
-		: typeof options.intendedValue === 'undefined' ||
-			  submission.payload === options.intendedValue
+	const intendedValue =
+		typeof options.intendedValue === 'undefined' ||
+		(submission.payload === options.intendedValue && !options.reset)
 			? undefined
 			: options.intendedValue && !options.keepFiles
 				? stripFiles(options.intendedValue)
-				: options.intendedValue;
+				: options.intendedValue ?? {};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
@@ -572,6 +571,7 @@ export function report<ErrorShape = string>(
 					...submission,
 					payload: stripFiles(submission.payload),
 				},
+		reset: options.reset,
 		intendedValue,
 		error,
 	};

@@ -1,4 +1,12 @@
-import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
+import {
+	describe,
+	test,
+	expect,
+	vi,
+	beforeAll,
+	afterAll,
+	beforeEach,
+} from 'vitest';
 import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
 import {
 	getDefaultOptions,
@@ -20,29 +28,32 @@ import { serializeIntent } from '../future/intent';
 import type { FormContext } from '../future/types';
 import { createAction } from './helpers';
 
-describe('form', () => {
-	function createContext(
-		customized?: Partial<FormContext<any>>,
-	): FormContext<any> {
-		return {
-			formId: 'test-id',
-			defaultValue: null,
-			constraint: null,
-			state: initializeState(),
-			handleSubmit: vi.fn(),
-			handleInput: vi.fn(),
-			handleBlur: vi.fn(),
-			...customized,
-		};
-	}
+function createContext(
+	customized?: Partial<FormContext<any>>,
+): FormContext<any> {
+	return {
+		formId: 'test-id',
+		defaultValue: null,
+		constraint: null,
+		state: initializeState(),
+		handleSubmit: vi.fn(),
+		handleInput: vi.fn(),
+		handleBlur: vi.fn(),
+		...customized,
+	};
+}
 
+describe('form state', () => {
 	beforeAll(() => {
 		vi.spyOn(Math, 'random').mockReturnValue(1);
 		vi.useFakeTimers({ now: 0 });
 	});
 
+	beforeEach(() => {
+		vi.setSystemTime(0);
+	});
+
 	afterAll(() => {
-		vi.restoreAllMocks();
 		vi.useRealTimers();
 	});
 
@@ -207,7 +218,7 @@ describe('form', () => {
 					['username', 'edmund'],
 					['password', 'secret-password'],
 				],
-				value: null,
+				reset: true,
 			}),
 		);
 
@@ -418,8 +429,13 @@ describe('form', () => {
 				entries: [
 					['username', 'edmund'],
 					['password', 'my-password'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'reset',
+						}),
+					],
 				],
-				value: null,
 			}),
 		);
 
@@ -1111,407 +1127,606 @@ describe('form', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 	});
 
-	test('isDefaultChecked', () => {
-		// Test with boolean checkbox values
+	test('server response with intendedValue', () => {
 		const context = createContext({
 			defaultValue: {
-				subscribe: true,
-				notifications: false,
+				title: 'My Tasks',
+				tasks: ['Task 1', 'Task 2', 'Task 3'],
 			},
 		});
 
-		expect(isDefaultChecked(context, 'subscribe')).toBe(true);
-		expect(isDefaultChecked(context, 'notifications')).toBe(false);
+		// Modify list on client to establish custom list keys
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Task 1'],
+					['tasks[1]', 'Task 2'],
+					['tasks[2]', 'Task 3'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'insert',
+							payload: {
+								name: 'tasks',
+								defaultValue: 'Task 4',
+							},
+						}),
+					],
+				],
+			}),
+		);
 
-		// Test with 'on' value (checkbox default)
-		const contextWithOn = createContext({
-			defaultValue: {
-				subscribe: 'on',
-				notifications: '',
-			},
-		});
-
-		expect(isDefaultChecked(contextWithOn, 'subscribe')).toBe(true);
-		expect(isDefaultChecked(contextWithOn, 'notifications')).toBe(false);
-
-		// Test with undefined/missing values
-		expect(isDefaultChecked(createContext(), 'missing')).toBe(false);
-	});
-
-	test('getDefaultListKey', () => {
-		const prefix = 'test-prefix';
-		const initialValue = {
-			items: ['item1', 'item2', 'item3'],
-			nested: {
-				list: ['a', 'b'],
-			},
-		};
-
-		// Test simple array
-		expect(getDefaultListKey(prefix, initialValue, 'items')).toEqual([
-			'test-prefix-items[0]',
-			'test-prefix-items[1]',
-			'test-prefix-items[2]',
+		expect(getListKey(context, 'tasks')).toEqual([
+			'0-tasks[0]',
+			'0-tasks[1]',
+			'0-tasks[2]',
+			'0',
+		]);
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Task 1',
+			'Task 2',
+			'Task 3',
+			'Task 4',
 		]);
 
-		// Test nested array
-		expect(getDefaultListKey(prefix, initialValue, 'nested.list')).toEqual([
-			'test-prefix-nested.list[0]',
-			'test-prefix-nested.list[1]',
+		// Test server response with intendedValue with same array length
+		// List keys should be PRESERVED
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'server',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Task 1'],
+					['tasks[1]', 'Task 2'],
+					['tasks[2]', 'Task 3'],
+					['tasks[3]', 'Task 4'],
+				],
+				intendedValue: {
+					title: 'My Tasks',
+					tasks: ['Updated 1', 'Updated 2', 'Updated 3', 'Updated 4'],
+				},
+			}),
+		);
+
+		// Keys should be PRESERVED (same as before)
+		expect(getListKey(context, 'tasks')).toEqual([
+			'0-tasks[0]',
+			'0-tasks[1]',
+			'0-tasks[2]',
+			'0',
+		]);
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Updated 1',
+			'Updated 2',
+			'Updated 3',
+			'Updated 4',
+		]);
+		expect(isTouched(context.state)).toBe(true);
+
+		// Test server response with intendedValue with different array length
+		// List keys should be PRUNED
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'server',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Updated 1'],
+					['tasks[1]', 'Updated 2'],
+					['tasks[2]', 'Updated 3'],
+					['tasks[3]', 'Updated 4'],
+				],
+				intendedValue: {
+					title: 'My Tasks',
+					tasks: ['Final 1', 'Final 2'],
+				},
+			}),
+		);
+
+		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]', '0-tasks[1]']);
+		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1', 'Final 2']);
+		expect(isTouched(context.state)).toBe(true);
+	});
+
+	test('server reset with list', () => {
+		const context = createContext({
+			defaultValue: {
+				title: 'My Tasks',
+				tasks: ['Task 1', 'Task 2', 'Task 3'],
+			},
+		});
+
+		// Modify list on client to establish custom list keys
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'client',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Task 1'],
+					['tasks[1]', 'Task 2'],
+					['tasks[2]', 'Task 3'],
+					[
+						DEFAULT_INTENT_NAME,
+						serializeIntent({
+							type: 'insert',
+							payload: {
+								name: 'tasks',
+								defaultValue: 'Task 4',
+							},
+						}),
+					],
+				],
+			}),
+		);
+
+		expect(getListKey(context, 'tasks')).toEqual([
+			'0-tasks[0]',
+			'0-tasks[1]',
+			'0-tasks[2]',
+			'0',
 		]);
 
-		// Test empty array
-		expect(getDefaultListKey(prefix, { empty: [] }, 'empty')).toEqual([]);
-
-		// Test non-existent field
-		expect(getDefaultListKey(prefix, initialValue, 'missing')).toEqual([]);
-	});
-
-	test('getConstraint', () => {
-		const context = createContext({
-			constraint: {
-				username: { required: true, minLength: 3 },
-				'items[]': { required: true },
-				'items[].subitems[].name': { maxLength: 50 },
-			},
-		});
-
-		// Test direct constraint match
-		expect(getConstraint(context, 'username')).toEqual({
-			required: true,
-			minLength: 3,
-		});
-
-		// Test array fallback: items[0] should fall back to items[]
-		expect(getConstraint(context, 'items[0]')).toEqual({ required: true });
-
-		// Test nested array fallback: items[0].subitems[].name should fall back toitems[].subitems[].name
-		expect(getConstraint(context, 'items[0].subitems[].name')).toEqual({
-			maxLength: 50,
-		});
-
-		// Test nested array fallback: items[0].subitems[1].name should fall back toitems[].subitems[].name as well
-		expect(getConstraint(context, 'items[0].subitems[1].name')).toEqual({
-			maxLength: 50,
-		});
-
-		// Test no fallback available
-		expect(getConstraint(context, 'missing')).toBe(undefined);
-
-		// Test no constraints defined
-		expect(getConstraint(createContext(), 'any')).toBe(undefined);
-	});
-
-	test('getFormMetadata', () => {
-		const context = createContext({
-			defaultValue: { username: 'test' },
-		});
-
-		// Add some touched fields and errors
+		// Test server reset with intendedValue - should create NEW list keys with new resetKey
+		vi.advanceTimersByTime(1);
 		context.state = updateState(
 			context.state,
 			createAction({
-				type: 'client',
+				type: 'server',
 				entries: [
-					['username', ''],
-					['password', ''],
+					['title', 'My Tasks'],
+					['tasks[0]', 'Task 1'],
+					['tasks[1]', 'Task 2'],
+					['tasks[2]', 'Task 3'],
+					['tasks[3]', 'Task 4'],
 				],
-				error: {
-					formErrors: ['Form error'],
-					fieldErrors: {
-						username: ['Username required'],
-						password: ['Password required'],
-					},
+				reset: true,
+				intendedValue: {
+					title: 'My Tasks',
+					tasks: ['Reset 1', 'Reset 2'],
 				},
 			}),
 		);
 
-		let metadata = getFormMetadata(context, {
-			serialize: (value) => value?.toString(),
-		});
+		// New resetKey '1', completely new list keys
+		expect(getListKey(context, 'tasks')).toEqual(['1-tasks[0]', '1-tasks[1]']);
+		expect(getDefaultOptions(context, 'tasks')).toEqual(['Reset 1', 'Reset 2']);
+		expect(isTouched(context.state)).toBe(false); // Reset clears touched
 
-		// Test basic properties
-		expect(metadata.id).toBe('test-id');
-		expect(metadata.key).toBe(context.state.resetKey);
-		expect(metadata.errorId).toBe('test-id-form-error');
-		expect(metadata.descriptionId).toBe('test-id-form-description');
-		expect(metadata.errors).toEqual(['Form error']);
-		expect(metadata.fieldErrors).toEqual({
-			username: ['Username required'],
-			password: ['Password required'],
-		});
-		expect(metadata.touched).toBe(true);
-		expect(metadata.valid).toBe(false);
-
-		// Test props
-		expect(metadata.props.id).toBe('test-id');
-		expect(metadata.props.onSubmit).toBe(context.handleSubmit);
-		expect(metadata.props.noValidate).toBe(true);
-
-		// Test methods exist
-		expect(typeof metadata.getField).toBe('function');
-		expect(typeof metadata.getFieldset).toBe('function');
-		expect(typeof metadata.getFieldList).toBe('function');
-
-		// Test form with only form-level error
+		// Test server reset without intendedValue - should reset to defaultValue
+		vi.advanceTimersByTime(1);
 		context.state = updateState(
 			context.state,
 			createAction({
-				type: 'client',
+				type: 'server',
 				entries: [
-					['username', 'test'],
-					['password', 'secret'],
+					['title', 'My Tasks'],
+					['tasks[0]', 'Reset 1'],
+					['tasks[1]', 'Reset 2'],
 				],
-				error: {
-					formErrors: ['Something went wrong'],
-				},
+				reset: true,
 			}),
 		);
 
-		metadata = getFormMetadata(context, {
-			serialize: (value) => value?.toString(),
-		});
-
-		expect(metadata.errors).toEqual(['Something went wrong']);
-		expect(metadata.valid).toBe(false);
-		expect(metadata.fieldErrors).toEqual({});
-
-		// Test form with no errors
-		context.state = updateState(
-			context.state,
-			createAction({
-				type: 'client',
-				entries: [
-					['username', 'test'],
-					['password', 'secret'],
-				],
-				error: null,
-			}),
-		);
-		metadata = getFormMetadata(context, {
-			serialize: (value) => value?.toString(),
-		});
-
-		expect(metadata.errors).toBe(undefined);
-		expect(metadata.valid).toBe(true);
-		expect(metadata.fieldErrors).toEqual({});
-	});
-
-	test('getField', () => {
-		const context = createContext({
-			defaultValue: {
-				username: 'test-user',
-				profile: { age: 25 },
-				tags: ['react', 'typescript'],
-			},
-			constraint: {
-				username: { required: true, minLength: 3 },
-			},
-		});
-
-		// Add touched field
-		context.state = updateState(
-			context.state,
-			createAction({
-				type: 'client',
-				entries: [
-					['username', 'test-user'],
-					['tags', 'react'],
-					['tags', 'typescript'],
-				],
-				error: {
-					fieldErrors: {
-						username: ['Username taken'],
-					},
-				},
-			}),
-		);
-
-		const usernameField = getField(context, {
-			name: 'username',
-			key: 'unique-key',
-		});
-
-		// Test basic properties
-		expect(usernameField.id).toBe('test-id-field-username');
-		expect(usernameField.name).toBe('username');
-		expect(usernameField.key).toBe('unique-key');
-		expect(usernameField.descriptionId).toBe(
-			'test-id-field-username-description',
-		);
-		expect(usernameField.errorId).toBe('test-id-field-username-error');
-		expect(usernameField.formId).toBe('test-id');
-
-		// Test constraint properties
-		expect(usernameField.required).toBe(true);
-		expect(usernameField.minLength).toBe(3);
-
-		// Test computed properties
-		expect(usernameField.defaultValue).toBe('test-user');
-		expect(usernameField.touched).toBe(true);
-		expect(usernameField.valid).toBe(false);
-		expect(usernameField.errors).toEqual(['Username taken']);
-		expect(usernameField.fieldErrors).toEqual({}); // No child fields, so empty
-		expect(usernameField.ariaInvalid).toBe(true);
-		expect(usernameField.ariaDescribedBy).toBe('test-id-field-username-error');
-
-		const tagsField = getField(context, {
-			name: 'tags',
-		});
-
-		expect(tagsField.defaultOptions).toEqual(['react', 'typescript']);
-		expect(tagsField.touched).toBe(true);
-		expect(tagsField.valid).toBe(true);
-		expect(tagsField.errors).toBe(undefined);
-		expect(tagsField.fieldErrors).toEqual({});
-		expect(tagsField.ariaInvalid).toBe(undefined);
-		expect(tagsField.ariaDescribedBy).toBe(undefined);
-
-		// Test mixed parent and child field errors
-		context.state = updateState(
-			context.state,
-			createAction({
-				type: 'client',
-				entries: [
-					['username', 'test-user'],
-					['profile.address.city', '25'],
-				],
-				error: {
-					fieldErrors: {
-						username: ['Username taken'],
-						'profile.address': ['Address is incomplete'],
-						'profile.address.city': ['City is required'],
-					},
-				},
-			}),
-		);
-
-		const profileField = getField(context, {
-			name: 'profile',
-			customize: (metadata) => {
-				return {
-					get allErrors() {
-						return (metadata.errors ?? []).concat(
-							Object.values(metadata.fieldErrors).flat(),
-						);
-					},
-				};
-			},
-		});
-
-		// Profile field should be invalid due to child field error, even though it has no direct error
-		expect(profileField.valid).toBe(false);
-		expect(profileField.errors).toBe(undefined); // No direct error on profile
-		expect(profileField.fieldErrors).toEqual({
-			address: ['Address is incomplete'],
-			'address.city': ['City is required'],
-		});
-
-		// Test methods exist
-		expect(typeof usernameField.getFieldset).toBe('function');
-		expect(typeof usernameField.getFieldList).toBe('function');
-
-		// Test custom metadata
-		// @ts-expect-error allErrors is not set in CustomMetadata
-		expect(profileField.allErrors).toEqual([
-			'Address is incomplete',
-			'City is required',
+		// New resetKey '2', list keys based on defaultValue
+		expect(getListKey(context, 'tasks')).toEqual([
+			'2-tasks[0]',
+			'2-tasks[1]',
+			'2-tasks[2]',
 		]);
-		// @ts-expect-error Testing non existing property
-		expect(() => profileField.somethingNonExistent).toThrowError();
+		expect(getDefaultOptions(context, 'tasks')).toEqual([
+			'Task 1',
+			'Task 2',
+			'Task 3',
+		]);
+		expect(isTouched(context.state)).toBe(false);
+	});
+});
+
+test('isDefaultChecked', () => {
+	// Test with boolean checkbox values
+	const context = createContext({
+		defaultValue: {
+			subscribe: true,
+			notifications: false,
+		},
 	});
 
-	test('getFieldset', () => {
-		const context = createContext({
-			defaultValue: {
-				profile: {
-					name: 'John',
-					email: 'john@example.com',
-					nested: {
-						value: 'deep',
-					},
+	expect(isDefaultChecked(context, 'subscribe')).toBe(true);
+	expect(isDefaultChecked(context, 'notifications')).toBe(false);
+
+	// Test with 'on' value (checkbox default)
+	const contextWithOn = createContext({
+		defaultValue: {
+			subscribe: 'on',
+			notifications: '',
+		},
+	});
+
+	expect(isDefaultChecked(contextWithOn, 'subscribe')).toBe(true);
+	expect(isDefaultChecked(contextWithOn, 'notifications')).toBe(false);
+
+	// Test with undefined/missing values
+	expect(isDefaultChecked(createContext(), 'missing')).toBe(false);
+});
+
+test('getDefaultListKey', () => {
+	const prefix = 'test-prefix';
+	const initialValue = {
+		items: ['item1', 'item2', 'item3'],
+		nested: {
+			list: ['a', 'b'],
+		},
+	};
+
+	// Test simple array
+	expect(getDefaultListKey(prefix, initialValue, 'items')).toEqual([
+		'test-prefix-items[0]',
+		'test-prefix-items[1]',
+		'test-prefix-items[2]',
+	]);
+
+	// Test nested array
+	expect(getDefaultListKey(prefix, initialValue, 'nested.list')).toEqual([
+		'test-prefix-nested.list[0]',
+		'test-prefix-nested.list[1]',
+	]);
+
+	// Test empty array
+	expect(getDefaultListKey(prefix, { empty: [] }, 'empty')).toEqual([]);
+
+	// Test non-existent field
+	expect(getDefaultListKey(prefix, initialValue, 'missing')).toEqual([]);
+});
+
+test('getConstraint', () => {
+	const context = createContext({
+		constraint: {
+			username: { required: true, minLength: 3 },
+			'items[]': { required: true },
+			'items[].subitems[].name': { maxLength: 50 },
+		},
+	});
+
+	// Test direct constraint match
+	expect(getConstraint(context, 'username')).toEqual({
+		required: true,
+		minLength: 3,
+	});
+
+	// Test array fallback: items[0] should fall back to items[]
+	expect(getConstraint(context, 'items[0]')).toEqual({ required: true });
+
+	// Test nested array fallback: items[0].subitems[].name should fall back toitems[].subitems[].name
+	expect(getConstraint(context, 'items[0].subitems[].name')).toEqual({
+		maxLength: 50,
+	});
+
+	// Test nested array fallback: items[0].subitems[1].name should fall back toitems[].subitems[].name as well
+	expect(getConstraint(context, 'items[0].subitems[1].name')).toEqual({
+		maxLength: 50,
+	});
+
+	// Test no fallback available
+	expect(getConstraint(context, 'missing')).toBe(undefined);
+
+	// Test no constraints defined
+	expect(getConstraint(createContext(), 'any')).toBe(undefined);
+});
+
+test('getFormMetadata', () => {
+	const context = createContext({
+		defaultValue: { username: 'test' },
+	});
+
+	// Add some touched fields and errors
+	context.state = updateState(
+		context.state,
+		createAction({
+			type: 'client',
+			entries: [
+				['username', ''],
+				['password', ''],
+			],
+			error: {
+				formErrors: ['Form error'],
+				fieldErrors: {
+					username: ['Username required'],
+					password: ['Password required'],
 				},
 			},
-		});
+		}),
+	);
 
-		const fieldset = getFieldset(context, {
-			name: 'profile',
-			serialize: (value) => String(value),
-		});
-
-		// Test dynamic property access via Proxy
-		const nameField = fieldset.name!;
-		expect(nameField.name).toBe('profile.name');
-		expect(nameField.defaultValue).toBe('John');
-		expect(nameField.id).toBe('test-id-field-profile.name');
-
-		const emailField = fieldset.email!;
-		expect(emailField.name).toBe('profile.email');
-		expect(emailField.defaultValue).toBe('john@example.com');
-
-		// Test nested access
-		const nestedFieldset = fieldset.nested!;
-		expect(nestedFieldset.name).toBe('profile.nested');
-		const deepField = (nestedFieldset.getFieldset() as any).value;
-		expect(deepField.name).toBe('profile.nested.value');
-		expect(deepField.defaultValue).toBe('deep');
-
-		// Test root fieldset (no name)
-		const rootFieldset = getFieldset(context, {
-			serialize: (value) => String(value),
-		});
-		const profileField = rootFieldset.profile!;
-		expect(profileField.name).toBe('profile');
+	let metadata = getFormMetadata(context, {
+		serialize: (value) => value?.toString(),
 	});
 
-	test('getFieldList', () => {
-		const context = createContext({
-			defaultValue: {
-				tags: ['react', 'typescript', 'testing'],
-				users: [
-					{ name: 'John', age: 25 },
-					{ name: 'Jane', age: 30 },
-				],
+	// Test basic properties
+	expect(metadata.id).toBe('test-id');
+	expect(metadata.key).toBe(context.state.resetKey);
+	expect(metadata.errorId).toBe('test-id-form-error');
+	expect(metadata.descriptionId).toBe('test-id-form-description');
+	expect(metadata.errors).toEqual(['Form error']);
+	expect(metadata.fieldErrors).toEqual({
+		username: ['Username required'],
+		password: ['Password required'],
+	});
+	expect(metadata.touched).toBe(true);
+	expect(metadata.valid).toBe(false);
+
+	// Test props
+	expect(metadata.props.id).toBe('test-id');
+	expect(metadata.props.onSubmit).toBe(context.handleSubmit);
+	expect(metadata.props.noValidate).toBe(true);
+
+	// Test methods exist
+	expect(typeof metadata.getField).toBe('function');
+	expect(typeof metadata.getFieldset).toBe('function');
+	expect(typeof metadata.getFieldList).toBe('function');
+
+	// Test form with only form-level error
+	context.state = updateState(
+		context.state,
+		createAction({
+			type: 'client',
+			entries: [
+				['username', 'test'],
+				['password', 'secret'],
+			],
+			error: {
+				formErrors: ['Something went wrong'],
 			},
-		});
+		}),
+	);
 
-		// Mock list keys
-		context.state.listKeys = {
-			tags: ['key1', 'key2', 'key3'],
-			users: ['user1', 'user2'],
-		};
-
-		// Test simple array
-		const tagFields = getFieldList(context, {
-			name: 'tags',
-			serialize: (value) => String(value),
-		});
-
-		expect(tagFields).toHaveLength(3);
-		expect(tagFields[0]?.name).toBe('tags[0]');
-		expect(tagFields[0]?.key).toBe('key1');
-		expect(tagFields[0]?.defaultValue).toBe('react');
-		expect(tagFields[1]?.name).toBe('tags[1]');
-		expect(tagFields[1]?.key).toBe('key2');
-		expect(tagFields[1]?.defaultValue).toBe('typescript');
-
-		// Test object array
-		const userFields = getFieldList(context, {
-			name: 'users',
-			serialize: (value) => String(value),
-		});
-
-		expect(userFields).toHaveLength(2);
-		expect(userFields[0]?.name).toBe('users[0]');
-		expect(userFields[0]?.key).toBe('user1');
-		expect(userFields[1]?.name).toBe('users[1]');
-		expect(userFields[1]?.key).toBe('user2');
-
-		// Test accessing nested fields in object array
-		const firstUserFieldset = userFields[0]?.getFieldset();
-		expect(firstUserFieldset?.name?.name).toBe('users[0].name');
-		expect(firstUserFieldset?.name?.defaultValue).toBe('John');
-		expect(firstUserFieldset?.age?.name).toBe('users[0].age');
-		expect(firstUserFieldset?.age?.defaultValue).toBe('25');
+	metadata = getFormMetadata(context, {
+		serialize: (value) => value?.toString(),
 	});
+
+	expect(metadata.errors).toEqual(['Something went wrong']);
+	expect(metadata.valid).toBe(false);
+	expect(metadata.fieldErrors).toEqual({});
+
+	// Test form with no errors
+	context.state = updateState(
+		context.state,
+		createAction({
+			type: 'client',
+			entries: [
+				['username', 'test'],
+				['password', 'secret'],
+			],
+			error: null,
+		}),
+	);
+	metadata = getFormMetadata(context, {
+		serialize: (value) => value?.toString(),
+	});
+
+	expect(metadata.errors).toBe(undefined);
+	expect(metadata.valid).toBe(true);
+	expect(metadata.fieldErrors).toEqual({});
+});
+
+test('getField', () => {
+	const context = createContext({
+		defaultValue: {
+			username: 'test-user',
+			profile: { age: 25 },
+			tags: ['react', 'typescript'],
+		},
+		constraint: {
+			username: { required: true, minLength: 3 },
+		},
+	});
+
+	// Add touched field
+	context.state = updateState(
+		context.state,
+		createAction({
+			type: 'client',
+			entries: [
+				['username', 'test-user'],
+				['tags', 'react'],
+				['tags', 'typescript'],
+			],
+			error: {
+				fieldErrors: {
+					username: ['Username taken'],
+				},
+			},
+		}),
+	);
+
+	const usernameField = getField(context, {
+		name: 'username',
+		key: 'unique-key',
+	});
+
+	// Test basic properties
+	expect(usernameField.id).toBe('test-id-field-username');
+	expect(usernameField.name).toBe('username');
+	expect(usernameField.key).toBe('unique-key');
+	expect(usernameField.descriptionId).toBe(
+		'test-id-field-username-description',
+	);
+	expect(usernameField.errorId).toBe('test-id-field-username-error');
+	expect(usernameField.formId).toBe('test-id');
+
+	// Test constraint properties
+	expect(usernameField.required).toBe(true);
+	expect(usernameField.minLength).toBe(3);
+
+	// Test computed properties
+	expect(usernameField.defaultValue).toBe('test-user');
+	expect(usernameField.touched).toBe(true);
+	expect(usernameField.valid).toBe(false);
+	expect(usernameField.errors).toEqual(['Username taken']);
+	expect(usernameField.fieldErrors).toEqual({}); // No child fields, so empty
+	expect(usernameField.ariaInvalid).toBe(true);
+	expect(usernameField.ariaDescribedBy).toBe('test-id-field-username-error');
+
+	const tagsField = getField(context, {
+		name: 'tags',
+	});
+
+	expect(tagsField.defaultOptions).toEqual(['react', 'typescript']);
+	expect(tagsField.touched).toBe(true);
+	expect(tagsField.valid).toBe(true);
+	expect(tagsField.errors).toBe(undefined);
+	expect(tagsField.fieldErrors).toEqual({});
+	expect(tagsField.ariaInvalid).toBe(undefined);
+	expect(tagsField.ariaDescribedBy).toBe(undefined);
+
+	// Test mixed parent and child field errors
+	context.state = updateState(
+		context.state,
+		createAction({
+			type: 'client',
+			entries: [
+				['username', 'test-user'],
+				['profile.address.city', '25'],
+			],
+			error: {
+				fieldErrors: {
+					username: ['Username taken'],
+					'profile.address': ['Address is incomplete'],
+					'profile.address.city': ['City is required'],
+				},
+			},
+		}),
+	);
+
+	const profileField = getField(context, {
+		name: 'profile',
+		customize: (metadata) => {
+			return {
+				get allErrors() {
+					return (metadata.errors ?? []).concat(
+						Object.values(metadata.fieldErrors).flat(),
+					);
+				},
+			};
+		},
+	});
+
+	// Profile field should be invalid due to child field error, even though it has no direct error
+	expect(profileField.valid).toBe(false);
+	expect(profileField.errors).toBe(undefined); // No direct error on profile
+	expect(profileField.fieldErrors).toEqual({
+		address: ['Address is incomplete'],
+		'address.city': ['City is required'],
+	});
+
+	// Test methods exist
+	expect(typeof usernameField.getFieldset).toBe('function');
+	expect(typeof usernameField.getFieldList).toBe('function');
+
+	// Test custom metadata
+	// @ts-expect-error allErrors is not set in CustomMetadata
+	expect(profileField.allErrors).toEqual([
+		'Address is incomplete',
+		'City is required',
+	]);
+	// @ts-expect-error Testing non existing property
+	expect(() => profileField.somethingNonExistent).toThrowError();
+});
+
+test('getFieldset', () => {
+	const context = createContext({
+		defaultValue: {
+			profile: {
+				name: 'John',
+				email: 'john@example.com',
+				nested: {
+					value: 'deep',
+				},
+			},
+		},
+	});
+
+	const fieldset = getFieldset(context, {
+		name: 'profile',
+		serialize: (value) => String(value),
+	});
+
+	// Test dynamic property access via Proxy
+	const nameField = fieldset.name!;
+	expect(nameField.name).toBe('profile.name');
+	expect(nameField.defaultValue).toBe('John');
+	expect(nameField.id).toBe('test-id-field-profile.name');
+
+	const emailField = fieldset.email!;
+	expect(emailField.name).toBe('profile.email');
+	expect(emailField.defaultValue).toBe('john@example.com');
+
+	// Test nested access
+	const nestedFieldset = fieldset.nested!;
+	expect(nestedFieldset.name).toBe('profile.nested');
+	const deepField = (nestedFieldset.getFieldset() as any).value;
+	expect(deepField.name).toBe('profile.nested.value');
+	expect(deepField.defaultValue).toBe('deep');
+
+	// Test root fieldset (no name)
+	const rootFieldset = getFieldset(context, {
+		serialize: (value) => String(value),
+	});
+	const profileField = rootFieldset.profile!;
+	expect(profileField.name).toBe('profile');
+});
+
+test('getFieldList', () => {
+	const context = createContext({
+		defaultValue: {
+			tags: ['react', 'typescript', 'testing'],
+			users: [
+				{ name: 'John', age: 25 },
+				{ name: 'Jane', age: 30 },
+			],
+		},
+	});
+
+	// Mock list keys
+	context.state.listKeys = {
+		tags: ['key1', 'key2', 'key3'],
+		users: ['user1', 'user2'],
+	};
+
+	// Test simple array
+	const tagFields = getFieldList(context, {
+		name: 'tags',
+		serialize: (value) => String(value),
+	});
+
+	expect(tagFields).toHaveLength(3);
+	expect(tagFields[0]?.name).toBe('tags[0]');
+	expect(tagFields[0]?.key).toBe('key1');
+	expect(tagFields[0]?.defaultValue).toBe('react');
+	expect(tagFields[1]?.name).toBe('tags[1]');
+	expect(tagFields[1]?.key).toBe('key2');
+	expect(tagFields[1]?.defaultValue).toBe('typescript');
+
+	// Test object array
+	const userFields = getFieldList(context, {
+		name: 'users',
+		serialize: (value) => String(value),
+	});
+
+	expect(userFields).toHaveLength(2);
+	expect(userFields[0]?.name).toBe('users[0]');
+	expect(userFields[0]?.key).toBe('user1');
+	expect(userFields[1]?.name).toBe('users[1]');
+	expect(userFields[1]?.key).toBe('user2');
+
+	// Test accessing nested fields in object array
+	const firstUserFieldset = userFields[0]?.getFieldset();
+	expect(firstUserFieldset?.name?.name).toBe('users[0].name');
+	expect(firstUserFieldset?.name?.defaultValue).toBe('John');
+	expect(firstUserFieldset?.age?.name).toBe('users[0].age');
+	expect(firstUserFieldset?.age?.defaultValue).toBe('25');
 });

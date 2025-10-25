@@ -581,7 +581,8 @@ describe('report', () => {
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: null,
+			reset: true,
+			intendedValue: undefined,
 			error: undefined,
 		});
 	});

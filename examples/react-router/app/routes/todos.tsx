@@ -6,7 +6,7 @@ import {
 	useFormData,
 } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
-import { Form, useNavigation } from 'react-router';
+import { Form } from 'react-router';
 import { z } from 'zod';
 import { createInMemoryStore } from '~/store';
 import type { Route } from './+types/todos';
@@ -48,7 +48,10 @@ export async function action({ request }: Route.ActionArgs) {
 	await todos.setValue(result.data);
 
 	return {
-		result: report(submission),
+		result: report(submission, {
+			reset: true,
+			intendedValue: result.data,
+		}),
 	};
 }
 
@@ -56,14 +59,8 @@ export default function Example({
 	loaderData,
 	actionData,
 }: Route.ComponentProps) {
-	const navigation = useNavigation();
 	const { form, fields, intent } = useForm({
-		// If we reset the form after a successful submission, we need to
-		// keep in mind that the default value (loader) will be updated
-		// only after the submsionn result (action) is received. We need to
-		// delay when useForm receives last submission result to avoid
-		// resetting the form too early.
-		lastResult: navigation.state === 'idle' ? actionData?.result : null,
+		lastResult: actionData?.result,
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
 		schema,

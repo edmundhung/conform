@@ -118,10 +118,10 @@ export type DefaultValue<Shape> =
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
-	/** Form values from client actions that will be synced to the DOM  */
-	clientIntendedValue: Record<string, unknown> | null;
+	/** Form values that will be synced to the DOM  */
+	intendedValue: Record<string, unknown> | null;
 	/** Form values from server actions, or submitted values when no server intent exists */
-	serverIntendedValue: Record<string, unknown> | null;
+	serverValue: Record<string, unknown> | null;
 	/** Validation errors from server-side processing */
 	serverError: FormError<ErrorShape> | null;
 	/** Validation errors from client-side validation */
@@ -292,24 +292,42 @@ export interface IntentDispatcher<
 	 * Update a field or a fieldset.
 	 * If you provide a fieldset name, it will update all fields within that fieldset
 	 */
-	update<FieldShape = FormShape>(options: {
-		/**
-		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
-		 */
-		name?: FieldName<FieldShape>;
-		/**
-		 * Specify the index of the item to update if the field is an array.
-		 */
-		index?: FieldShape extends Array<any>
-			? number
-			: unknown extends FieldShape
-				? number
-				: never;
-		/**
-		 * The new value for the field or fieldset.
-		 */
-		value: DefaultValue<FieldShape>;
-	}): void;
+	update<FieldShape = FormShape>(
+		options:
+			| {
+					/**
+					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
+					 */
+					name?: FieldName<FieldShape>;
+					/**
+					 * Specify the index of the item to update if the field is an array.
+					 */
+					index?: undefined;
+					/**
+					 * The new value for the field or fieldset.
+					 */
+					value: DefaultValue<FieldShape>;
+			  }
+			| {
+					/**
+					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
+					 */
+					name: FieldName<FieldShape>;
+					/**
+					 * Specify the index of the item to update if the field is an array.
+					 */
+					index: number;
+					/**
+					 * The new value for the field or fieldset.
+					 * When index is specified, this should be the item type, not the array type.
+					 */
+					value: unknown extends FieldShape
+						? any
+						: FieldShape extends Array<infer ItemShape>
+							? ItemShape
+							: any;
+			  },
+	): void;
 
 	/**
 	 * Insert a new item into an array field.
@@ -375,7 +393,7 @@ export type ActionHandler<
 	onApply?(
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
-	): Record<string, FormValue> | null;
+	): Record<string, FormValue> | undefined;
 	onUpdate?<ErrorShape extends BaseErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
@@ -385,6 +403,11 @@ export type ActionHandler<
 				payload: Signature extends (payload: infer Payload) => void
 					? Payload
 					: undefined;
+			},
+			{
+				reset: (
+					defaultValue?: Record<string, unknown> | null,
+				) => FormState<ErrorShape>;
 			}
 		>,
 	): FormState<ErrorShape>;
@@ -685,6 +708,7 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null;
+		// intendedValue?: Record<string, unknown> | null;
 		reset?: boolean;
 	}) => void;
 };

@@ -82,7 +82,7 @@ test('applyIntent', () => {
 	};
 
 	// Test reset intent
-	expect(applyIntent(submission)).toBeNull();
+	expect(applyIntent(submission)).toBeUndefined();
 
 	// Test submission without intent
 	const noIntentSubmission: Submission = {
@@ -234,7 +234,7 @@ test('actionHandlers.reset', () => {
 	expect(actionHandlers.reset.validatePayload?.('string')).toBe(false);
 
 	// Test onApply with no options
-	expect(actionHandlers.reset.onApply?.({}, undefined)).toBeNull();
+	expect(actionHandlers.reset.onApply?.({}, undefined)).toBeUndefined();
 
 	// Test onApply with null defaultValue
 	expect(actionHandlers.reset.onApply?.({}, { defaultValue: null })).toEqual(

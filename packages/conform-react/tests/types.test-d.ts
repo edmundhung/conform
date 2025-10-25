@@ -107,20 +107,12 @@ test('types: intent dispatcher', () => {
 
 	// Basic usage
 	assertType<void>(intent.validate());
-	assertType<void>(intent.update({ name: 'field', value: null }));
-	assertType<void>(intent.insert({ name: 'field', defaultValue: {} }));
 	assertType<void>(intent.remove({ name: 'field', index: 0 }));
 	assertType<void>(intent.reorder({ name: 'field', from: 0, to: 1 }));
 
-	// Insert with primitive array
-	assertType<void>(
-		intent.insert({
-			name: 'tags' as FieldName<string[]>,
-			defaultValue: 'new-tag',
-		}),
-	);
-
-	// Insert with object array
+	// Insert intent
+	assertType<void>(intent.insert({ name: 'field' }));
+	assertType<void>(intent.insert({ name: 'tags', defaultValue: 'new-tag' }));
 	assertType<void>(
 		intent.insert({
 			name: 'items' as FieldName<Array<{ id: string; name: string }>>,
@@ -128,19 +120,36 @@ test('types: intent dispatcher', () => {
 		}),
 	);
 
-	// Update with primitives
+	// Update intent
+	assertType<void>(intent.update({ name: 'field', value: null }));
+	assertType<void>(intent.update({ name: 'name', value: 'text' }));
+	assertType<void>(intent.update({ name: 'count', value: 42 }));
 	assertType<void>(
-		intent.update({ name: 'name' as FieldName<string>, value: 'text' }),
+		intent.update({ name: 'tasks', index: 0, value: { content: 'foo' } }),
 	);
-	assertType<void>(
-		intent.update({ name: 'count' as FieldName<number>, value: 42 }),
-	);
-
-	// Update with partial object
 	assertType<void>(
 		intent.update({
 			name: 'user' as FieldName<{ name: string; email: string }>,
 			value: { name: 'John' },
+		}),
+	);
+	assertType<void>(
+		intent.update({
+			value: {
+				title: 'New Title' as FieldName<
+					Array<{ content: string; completed: boolean }>
+				>,
+				tasks: [{ content: 'Task 1', completed: false }],
+			},
+		}),
+	);
+	assertType<void>(
+		intent.update({
+			name: 'tasks' as FieldName<
+				Array<{ content: string; completed: boolean }>
+			>,
+			index: 0,
+			value: { content: 'Updated Task', completed: true },
 		}),
 	);
 });

@@ -21,7 +21,7 @@ import {
 	isNullable,
 } from './util';
 import type { ActionHandler, IntentDispatcher, UnknownIntent } from './types';
-import { getDefaultListKey, initializeState } from './state';
+import { getDefaultListKey } from './state';
 
 /**
  * Serializes intent to string format: "type" or "type(payload)".
@@ -74,7 +74,7 @@ export function applyIntent(
 	options?: {
 		handlers?: Record<string, ActionHandler>;
 	},
-): Record<string, FormValue> | null {
+): Record<string, FormValue> | undefined {
 	if (!submission.intent) {
 		return submission.payload;
 	}
@@ -154,17 +154,14 @@ export const actionHandlers: {
 			);
 		},
 		onApply(_, options) {
-			const { defaultValue } = options ?? {};
+			if (options?.defaultValue === null) {
+				return {};
+			}
 
-			return defaultValue ?? (defaultValue === null ? {} : null);
+			return options?.defaultValue;
 		},
-		onUpdate(_, { intent }) {
-			const defaultValue = intent.payload?.defaultValue;
-
-			return merge(initializeState(), {
-				serverIntendedValue:
-					defaultValue ?? (defaultValue === null ? {} : null),
-			});
+		onUpdate(_, { intendedValue, ctx }) {
+			return ctx.reset(intendedValue);
 		},
 	},
 	validate: {
@@ -204,8 +201,11 @@ export const actionHandlers: {
 		},
 		onApply(value, options) {
 			const name = appendPathSegment(options.name, options.index);
-			const newValue = options.value ?? (name === '' ? {} : null);
-			return updateValueAtPath(value, name, newValue as any);
+			return updateValueAtPath(
+				value,
+				name,
+				options.value ?? (name === '' ? {} : null),
+			) as Record<string, FormValue>;
 		},
 		onUpdate(state, { type, submission, intent }) {
 			if (type === 'server') {

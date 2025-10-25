@@ -24,14 +24,15 @@ import type {
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
-export function initializeState<ErrorShape>(
-	resetKey?: string,
-): FormState<ErrorShape> {
+export function initializeState<ErrorShape>(options?: {
+	defaultValue?: Record<string, unknown> | null;
+	resetKey?: string;
+}): FormState<ErrorShape> {
 	return {
-		resetKey: resetKey ?? generateUniqueKey(),
+		resetKey: options?.resetKey ?? generateUniqueKey(),
 		listKeys: {},
-		clientIntendedValue: null,
-		serverIntendedValue: null,
+		intendedValue: null,
+		serverValue: options?.defaultValue ?? null,
 		serverError: null,
 		clientError: null,
 		touchedFields: [],
@@ -51,12 +52,14 @@ export function updateState<ErrorShape>(
 		UnknownIntent | null,
 		{
 			handlers: Record<string, ActionHandler>;
-			reset: () => FormState<ErrorShape>;
+			reset: (
+				defaultValue?: Record<string, unknown> | null,
+			) => FormState<ErrorShape>;
 		}
 	>,
 ): FormState<ErrorShape> {
-	if (action.intendedValue === null) {
-		return action.ctx.reset();
+	if (action.reset) {
+		return action.ctx.reset(action.intendedValue);
 	}
 
 	const value = action.intendedValue ?? action.submission.payload;
@@ -65,11 +68,8 @@ export function updateState<ErrorShape>(
 	state =
 		action.type === 'client'
 			? merge(state, {
-					clientIntendedValue:
-						action.intendedValue ?? state.clientIntendedValue,
-					serverIntendedValue: action.intendedValue
-						? null
-						: state.serverIntendedValue,
+					intendedValue: action.intendedValue ?? state.intendedValue,
+					serverValue: action.intendedValue ? null : state.serverValue,
 					// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
 					clientError:
 						typeof action.error !== 'undefined' &&
@@ -79,7 +79,7 @@ export function updateState<ErrorShape>(
 					// Reset server error if form value is changed
 					serverError:
 						typeof action.error !== 'undefined' &&
-						!deepEqual(state.serverIntendedValue, value)
+						!deepEqual(state.serverValue, value)
 							? null
 							: state.serverError,
 				})
@@ -92,10 +92,18 @@ export function updateState<ErrorShape>(
 						typeof action.error !== 'undefined'
 							? action.error
 							: state.serverError,
+					listKeys:
+						action.type === 'server' && action.intendedValue
+							? pruneListKeys(state.listKeys, action.intendedValue)
+							: state.listKeys,
+					intendedValue:
+						action.type === 'server' && action.intendedValue
+							? action.intendedValue
+							: state.intendedValue,
 					// Keep track of the value that the serverError is based on
-					serverIntendedValue: !deepEqual(state.serverIntendedValue, value)
+					serverValue: !deepEqual(state.serverValue, value)
 						? value
-						: state.serverIntendedValue,
+						: state.serverValue,
 				});
 	// Validate the whole form if no intent is provided (default submission)
 	const intent = action.intent ?? { type: 'validate' };
@@ -105,6 +113,9 @@ export function updateState<ErrorShape>(
 		if (handler.validatePayload?.(intent.payload) ?? true) {
 			return handler.onUpdate(state, {
 				...action,
+				ctx: {
+					reset: action.ctx.reset,
+				},
 				intent: {
 					type: intent.type,
 					payload: intent.payload,
@@ -116,14 +127,43 @@ export function updateState<ErrorShape>(
 	return state;
 }
 
+/**
+ * Removes list keys where array length has changed to force regeneration.
+ * Minimizes UI state loss by only invalidating keys when necessary.
+ */
+export function pruneListKeys(
+	listKeys: Record<string, string[]>,
+	intendedValue: Record<string, unknown>,
+): Record<string, string[]> {
+	let result = listKeys;
+
+	for (const [name, keys] of Object.entries(listKeys)) {
+		const list = getArrayAtPath(intendedValue, name);
+
+		// Reset list keys only if the length has changed
+		// to minimize potential UI state loss due to key changes
+		if (keys.length !== list.length) {
+			// Create a shallow copy to avoid mutating the original object
+			if (result === listKeys) {
+				result = { ...result };
+			}
+
+			// Remove the list key to force regeneration
+			delete result[name];
+		}
+	}
+
+	return result;
+}
+
 export function getDefaultValue(
 	context: FormContext<any>,
 	name: string,
 	serialize: Serialize = defaultSerialize,
 ): string {
 	const value = getValueAtPath(
-		context.state.serverIntendedValue ??
-			context.state.clientIntendedValue ??
+		context.state.serverValue ??
+			context.state.intendedValue ??
 			context.defaultValue,
 		name,
 	);
@@ -142,8 +182,8 @@ export function getDefaultOptions(
 	serialize: Serialize = defaultSerialize,
 ): string[] {
 	const value = getValueAtPath(
-		context.state.serverIntendedValue ??
-			context.state.clientIntendedValue ??
+		context.state.serverValue ??
+			context.state.intendedValue ??
 			context.defaultValue,
 		name,
 	);
@@ -169,8 +209,8 @@ export function isDefaultChecked(
 	serialize: Serialize = defaultSerialize,
 ): boolean {
 	const value = getValueAtPath(
-		context.state.serverIntendedValue ??
-			context.state.clientIntendedValue ??
+		context.state.serverValue ??
+			context.state.intendedValue ??
 			context.defaultValue,
 		name,
 	);
@@ -216,8 +256,8 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 		context.state.listKeys?.[name] ??
 		getDefaultListKey(
 			context.state.resetKey,
-			context.state.serverIntendedValue ??
-				context.state.clientIntendedValue ??
+			context.state.serverValue ??
+				context.state.intendedValue ??
 				context.defaultValue,
 			name,
 		)
