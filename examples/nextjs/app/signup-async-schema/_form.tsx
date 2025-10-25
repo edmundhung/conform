@@ -20,11 +20,10 @@ export function SignupAsyncSchemaForm() {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 	});
 
 	return (

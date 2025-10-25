@@ -33,9 +33,8 @@ export default function Todos() {
 	const [defaultValue, setDefaultValue] = useState<z.infer<
 		typeof todosSchema
 	> | null>(null);
-	const { form, fields, intent } = useForm({
+	const { form, fields, intent } = useForm(todosSchema, {
 		defaultValue,
-		schema: todosSchema,
 		async onSubmit(event, { value, update }) {
 			event.preventDefault();
 

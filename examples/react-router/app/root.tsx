@@ -9,6 +9,18 @@ import {
 } from 'react-router';
 import type { Route } from './+types/root';
 import './app.css';
+import { FormOptionsProvider } from '@conform-to/react/future';
+import type { z } from 'zod';
+import { formatResult, getZodConstraint } from '@conform-to/zod/v3/future';
+
+declare module '@conform-to/react/future' {
+	interface CustomSchema<Schema> {
+		baseType: z.ZodTypeAny;
+		input: Schema extends z.ZodTypeAny ? z.input<Schema> : unknown;
+		output: Schema extends z.ZodTypeAny ? z.output<Schema> : unknown;
+		options: Partial<z.ParseParams>;
+	}
+}
 
 export function meta() {
 	return [
@@ -62,7 +74,21 @@ export default function App() {
 
 			<hr />
 
-			<Outlet />
+			<FormOptionsProvider
+				validateSchema={(schema, { schemaOptions, payload }) => {
+					try {
+						const result = schema.safeParse(payload, schemaOptions);
+						return formatResult(result);
+					} catch {
+						return schema
+							.safeParseAsync(payload, schemaOptions)
+							.then((result) => formatResult(result));
+					}
+				}}
+				getConstraint={getZodConstraint}
+			>
+				<Outlet />
+			</FormOptionsProvider>
 		</main>
 	);
 }
