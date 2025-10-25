@@ -486,17 +486,17 @@ export function normalizeStringValues(value: unknown): string[] | undefined {
 	throw new Error('Expected string or string[] value for string based input');
 }
 
-export function normalizeFileValues(value: unknown): FileList | undefined {
+export function normalizeFileValues(value: unknown): File[] | undefined {
 	if (typeof value === 'undefined') return undefined;
-	if (value === null) return createFileList([]);
+	if (value === null) return [];
 	if (isGlobalInstance(value, 'File'))
-		return createFileList(value.name === '' && value.size === 0 ? [] : [value]);
-	if (isGlobalInstance(value, 'FileList')) return value;
+		return value.name === '' && value.size === 0 ? [] : [value];
+	if (isGlobalInstance(value, 'FileList')) return Array.from(value);
 	if (
 		Array.isArray(value) &&
 		value.every((item) => isGlobalInstance(item, 'File'))
 	) {
-		return createFileList(value);
+		return value;
 	}
 
 	throw new Error('Expected File, FileList or File[] for file input');
@@ -559,8 +559,14 @@ export function updateField(
 		switch (element.type) {
 			case 'file': {
 				const files = normalizeFileValues(options.value);
-				if (files && element.files !== files) {
-					element.files = files;
+				const currentFiles = Array.from(element.files ?? []);
+
+				if (
+					files &&
+					(files.length !== currentFiles.length ||
+						files.some((file, i) => file !== currentFiles[i]))
+				) {
+					element.files = createFileList(files);
 					isChanged = true;
 				}
 
@@ -646,7 +652,7 @@ export function updateField(
 
 		// If the select element is not multiple and the value is an empty array, unset the selected index
 		// This is to prevent the select element from showing the first option as selected
-		if (shouldUnselect) {
+		if (shouldUnselect && element.selectedIndex !== -1) {
 			element.selectedIndex = -1;
 			isChanged = true;
 		}
