@@ -1127,7 +1127,7 @@ describe('form state', () => {
 		expect(isTouched(context.state, 'tasks[1]')).toBe(false);
 	});
 
-	test('server response with intendedValue', () => {
+	test('server response with target value', () => {
 		const context = createContext({
 			defaultValue: {
 				title: 'My Tasks',
@@ -1172,7 +1172,7 @@ describe('form state', () => {
 			'Task 4',
 		]);
 
-		// Test server response with intendedValue with same array length
+		// Test server response with target value with same array length
 		// List keys should be PRESERVED
 		context.state = updateState(
 			context.state,
@@ -1185,7 +1185,7 @@ describe('form state', () => {
 					['tasks[2]', 'Task 3'],
 					['tasks[3]', 'Task 4'],
 				],
-				intendedValue: {
+				value: {
 					title: 'My Tasks',
 					tasks: ['Updated 1', 'Updated 2', 'Updated 3', 'Updated 4'],
 				},
@@ -1207,7 +1207,7 @@ describe('form state', () => {
 		]);
 		expect(isTouched(context.state)).toBe(true);
 
-		// Test server response with intendedValue with different array length
+		// Test server response with target value with different array length
 		// List keys should be PRUNED
 		context.state = updateState(
 			context.state,
@@ -1220,7 +1220,7 @@ describe('form state', () => {
 					['tasks[2]', 'Updated 3'],
 					['tasks[3]', 'Updated 4'],
 				],
-				intendedValue: {
+				value: {
 					title: 'My Tasks',
 					tasks: ['Final 1', 'Final 2'],
 				},
@@ -1271,7 +1271,7 @@ describe('form state', () => {
 			'0',
 		]);
 
-		// Test server reset with intendedValue - should create NEW list keys with new resetKey
+		// Test server reset with target value - should create NEW list keys with new resetKey
 		vi.advanceTimersByTime(1);
 		context.state = updateState(
 			context.state,
@@ -1285,7 +1285,7 @@ describe('form state', () => {
 					['tasks[3]', 'Task 4'],
 				],
 				reset: true,
-				intendedValue: {
+				value: {
 					title: 'My Tasks',
 					tasks: ['Reset 1', 'Reset 2'],
 				},
@@ -1297,7 +1297,7 @@ describe('form state', () => {
 		expect(getDefaultOptions(context, 'tasks')).toEqual(['Reset 1', 'Reset 2']);
 		expect(isTouched(context.state)).toBe(false); // Reset clears touched
 
-		// Test server reset without intendedValue - should reset to defaultValue
+		// Test server reset without target value - should reset to defaultValue
 		vi.advanceTimersByTime(1);
 		context.state = updateState(
 			context.state,

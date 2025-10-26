@@ -119,7 +119,7 @@ export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
 	/** Form values that will be synced to the DOM  */
-	intendedValue: Record<string, unknown> | null;
+	targetValue: Record<string, unknown> | null;
 	/** Form values from server actions, or submitted values when no server intent exists */
 	serverValue: Record<string, unknown> | null;
 	/** Validation errors from server-side processing */
@@ -708,7 +708,7 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null;
-		// intendedValue?: Record<string, unknown> | null;
+		targetValue?: Record<string, unknown> | null;
 		reset?: boolean;
 	}) => void;
 };

@@ -1003,7 +1003,7 @@ describe('future export: useForm', () => {
 		// Server errors should be ignored (proves reset happened, not just form update)
 		await expectNoErrorMessages(form.title, form.description);
 
-		// Test 2: Reset with intendedValue (should change invalid values to valid values AND clear errors)
+		// Test 2: Reset with target value (should change invalid values to valid values AND clear errors)
 		await userEvent.type(form.title, 'invalid old title');
 		await userEvent.type(form.description, 'invalid old description');
 		await userEvent.click(form.insertTaskButton);
@@ -1023,7 +1023,7 @@ describe('future export: useForm', () => {
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					intendedValue: {
+					value: {
 						title: 'Updated Title',
 						description: 'Updated Description',
 						confirmed: 'on',
@@ -1050,10 +1050,10 @@ describe('future export: useForm', () => {
 		await expect.element(task1.completed).not.toBeChecked();
 		await expect.element(task2.content).toHaveValue('Task 2');
 		await expect.element(task2.completed).toBeChecked();
-		// Server errors should be ignored (proves reset happened with intendedValue)
+		// Server errors should be ignored (proves reset happened with target value)
 		await expectNoErrorMessages(form.title, form.description);
 
-		// Test 3: intendedValue without reset (should update values and clear errors via value change)
+		// Test 3: target value without reset (should update values and clear errors via value change)
 		await userEvent.clear(form.title);
 		await userEvent.type(form.title, 'invalid user title');
 
@@ -1068,7 +1068,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					intendedValue: {
+					value: {
 						title: 'Server Processed Title',
 						description: 'Server Updated Description',
 						tasks: [{ content: 'Server Task', completed: false }],
@@ -1087,11 +1087,11 @@ describe('future export: useForm', () => {
 		// Errors should be cleared because the form value changed (triggers revalidation, not reset)
 		await expectNoErrorMessages(form.title);
 
-		// Test 4: null intendedValue without reset (breaking change - should clear without reset)
+		// Test 4: null target value without reset (breaking change - should clear without reset)
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					intendedValue: null,
+					value: null,
 				})}
 			/>,
 		);
@@ -1100,7 +1100,7 @@ describe('future export: useForm', () => {
 		await expect.element(form.title).toHaveValue('');
 		await expect.element(form.description).toHaveValue('');
 		await expect.element(form.confirmed).not.toBeChecked();
-		// Tasks should be removed since intendedValue is now {}
+		// Tasks should be removed since target value is now {}
 		await expect.element(task1.content).not.toBeInTheDocument();
 		await expect.element(task1.completed).not.toBeInTheDocument();
 	});
@@ -1147,7 +1147,7 @@ describe('future export: useForm', () => {
 			.element(form.description)
 			.toHaveValue('invalid modified description');
 
-		// Test 1: Reset without intendedValue should reset to defaultValue (and ignore server errors)
+		// Test 1: Reset without target value should reset to defaultValue (and ignore server errors)
 		screen.rerender(
 			<Form
 				defaultValue={defaultValue}
@@ -1191,13 +1191,13 @@ describe('future export: useForm', () => {
 			.element(form.description)
 			.toHaveValue('invalid another description');
 
-		// Test 2: Reset with intendedValue should reset to intendedValue (not defaultValue, ignore server errors)
+		// Test 2: Reset with target value should reset to target value (not defaultValue, ignore server errors)
 		screen.rerender(
 			<Form
 				defaultValue={defaultValue}
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					intendedValue: {
+					value: {
 						title: 'Server Updated Title',
 						description: 'Server Updated Description',
 						confirmed: false,
@@ -1213,7 +1213,7 @@ describe('future export: useForm', () => {
 			/>,
 		);
 
-		// Should reset to intendedValue, NOT to defaultValue (proves values changed to server values, not default)
+		// Should reset to target value, NOT to defaultValue (proves values changed to server values, not default)
 		await expect.element(form.title).toHaveValue('Server Updated Title');
 		await expect
 			.element(form.description)
@@ -1223,7 +1223,7 @@ describe('future export: useForm', () => {
 		await expect.element(task1.completed).toBeChecked();
 		await expect.element(task2.content).not.toBeInTheDocument();
 		await expect.element(task2.completed).not.toBeInTheDocument();
-		// Server errors should be ignored (proves reset happened with intendedValue, not just form update)
+		// Server errors should be ignored (proves reset happened with target value, not just form update)
 		await expectNoErrorMessages(form.title, form.description);
 	});
 

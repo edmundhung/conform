@@ -50,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
 	return {
 		result: report(submission, {
 			reset: true,
-			intendedValue: result.data,
+			value: result.data,
 		}),
 	};
 }

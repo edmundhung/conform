@@ -31,7 +31,7 @@ export function initializeState<ErrorShape>(options?: {
 	return {
 		resetKey: options?.resetKey ?? generateUniqueKey(),
 		listKeys: {},
-		intendedValue: null,
+		targetValue: null,
 		serverValue: options?.defaultValue ?? null,
 		serverError: null,
 		clientError: null,
@@ -41,9 +41,9 @@ export function initializeState<ErrorShape>(options?: {
 
 /**
  * Updates form state based on action type:
- * - Client actions: update intended value and client errors
- * - Server actions: update server errors and clear client errors
- * - Initialize: set initial intended value
+ * - Client actions: update target value and client errors
+ * - Server actions: update server errors and clear client errors, with optional target value
+ * - Initialize: set initial server value
  */
 export function updateState<ErrorShape>(
 	state: FormState<ErrorShape>,
@@ -59,17 +59,17 @@ export function updateState<ErrorShape>(
 	>,
 ): FormState<ErrorShape> {
 	if (action.reset) {
-		return action.ctx.reset(action.intendedValue);
+		return action.ctx.reset(action.targetValue);
 	}
 
-	const value = action.intendedValue ?? action.submission.payload;
+	const value = action.targetValue ?? action.submission.payload;
 
-	// Apply the form error and intended value from the result first
+	// Apply the form error and target value from the result first
 	state =
 		action.type === 'client'
 			? merge(state, {
-					intendedValue: action.intendedValue ?? state.intendedValue,
-					serverValue: action.intendedValue ? null : state.serverValue,
+					targetValue: action.targetValue ?? state.targetValue,
+					serverValue: action.targetValue ? null : state.serverValue,
 					// Update client error only if the error is different from the previous one to minimize unnecessary re-renders
 					clientError:
 						typeof action.error !== 'undefined' &&
@@ -93,13 +93,13 @@ export function updateState<ErrorShape>(
 							? action.error
 							: state.serverError,
 					listKeys:
-						action.type === 'server' && action.intendedValue
-							? pruneListKeys(state.listKeys, action.intendedValue)
+						action.type === 'server' && action.targetValue
+							? pruneListKeys(state.listKeys, action.targetValue)
 							: state.listKeys,
-					intendedValue:
-						action.type === 'server' && action.intendedValue
-							? action.intendedValue
-							: state.intendedValue,
+					targetValue:
+						action.type === 'server' && action.targetValue
+							? action.targetValue
+							: state.targetValue,
 					// Keep track of the value that the serverError is based on
 					serverValue: !deepEqual(state.serverValue, value)
 						? value
@@ -133,12 +133,12 @@ export function updateState<ErrorShape>(
  */
 export function pruneListKeys(
 	listKeys: Record<string, string[]>,
-	intendedValue: Record<string, unknown>,
+	targetValue: Record<string, unknown>,
 ): Record<string, string[]> {
 	let result = listKeys;
 
 	for (const [name, keys] of Object.entries(listKeys)) {
-		const list = getArrayAtPath(intendedValue, name);
+		const list = getArrayAtPath(targetValue, name);
 
 		// Reset list keys only if the length has changed
 		// to minimize potential UI state loss due to key changes
@@ -163,7 +163,7 @@ export function getDefaultValue(
 ): string {
 	const value = getValueAtPath(
 		context.state.serverValue ??
-			context.state.intendedValue ??
+			context.state.targetValue ??
 			context.defaultValue,
 		name,
 	);
@@ -183,7 +183,7 @@ export function getDefaultOptions(
 ): string[] {
 	const value = getValueAtPath(
 		context.state.serverValue ??
-			context.state.intendedValue ??
+			context.state.targetValue ??
 			context.defaultValue,
 		name,
 	);
@@ -210,7 +210,7 @@ export function isDefaultChecked(
 ): boolean {
 	const value = getValueAtPath(
 		context.state.serverValue ??
-			context.state.intendedValue ??
+			context.state.targetValue ??
 			context.defaultValue,
 		name,
 	);
@@ -257,7 +257,7 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 		getDefaultListKey(
 			context.state.resetKey,
 			context.state.serverValue ??
-				context.state.intendedValue ??
+				context.state.targetValue ??
 				context.defaultValue,
 			name,
 		)

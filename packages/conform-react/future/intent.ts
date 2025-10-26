@@ -160,8 +160,8 @@ export const actionHandlers: {
 
 			return options?.defaultValue;
 		},
-		onUpdate(_, { intendedValue, ctx }) {
-			return ctx.reset(intendedValue);
+		onUpdate(_, { targetValue, ctx }) {
+			return ctx.reset(targetValue);
 		},
 	},
 	validate: {

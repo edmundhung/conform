@@ -195,7 +195,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	const resetKeyRef = useRef(state.resetKey);
 	const optionsRef = useLatest(options);
 	const lastResultRef = useRef(lastResult);
-	const lastIntentedValueRef = useRef<Record<string, FormValue> | undefined>();
+	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		result: SubmissionResult<ErrorShape>;
@@ -269,12 +269,12 @@ export function useConform<ErrorShape, Value = undefined>(
 		if (formElement && state.resetKey !== resetKeyRef.current) {
 			resetKeyRef.current = state.resetKey;
 			formElement.reset();
-			lastIntentedValueRef.current = undefined;
+			pendingValueRef.current = undefined;
 		}
 	}, [formRef, state.resetKey]);
 
 	useEffect(() => {
-		if (state.intendedValue) {
+		if (state.targetValue) {
 			const formElement = getFormElement(formRef);
 
 			if (!formElement) {
@@ -285,13 +285,13 @@ export function useConform<ErrorShape, Value = undefined>(
 
 			updateFormValue(
 				formElement,
-				state.intendedValue,
+				state.targetValue,
 				optionsRef.current.serialize,
 			);
 		}
 
-		lastIntentedValueRef.current = undefined;
-	}, [formRef, state.intendedValue, optionsRef]);
+		pendingValueRef.current = undefined;
+	}, [formRef, state.targetValue, optionsRef]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -330,28 +330,28 @@ export function useConform<ErrorShape, Value = undefined>(
 					}
 				}
 
-				// Override submission value if the last intended value is not applied yet (i.e. batch updates)
-				if (lastIntentedValueRef.current !== undefined) {
-					submission.payload = lastIntentedValueRef.current;
+				// Override submission value if the pending value is not applied yet (i.e. batch updates)
+				if (pendingValueRef.current !== undefined) {
+					submission.payload = pendingValueRef.current;
 				}
 
-				const intendedValue = applyIntent(submission);
+				const value = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					intendedValue,
+					value,
 				});
 
-				// If there is intended value, keep track of it
-				if (submission.payload !== intendedValue) {
-					lastIntentedValueRef.current =
-						intendedValue ?? optionsRef.current.defaultValue ?? {};
+				// If there is target value, keep track of it as pending value
+				if (submission.payload !== value) {
+					pendingValueRef.current =
+						value ?? optionsRef.current.defaultValue ?? {};
 				}
 
 				const validateResult =
 					// Skip validation on form reset
-					intendedValue !== undefined
+					value !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: intendedValue,
+								payload: value,
 								error: {
 									formErrors: [],
 									fieldErrors: {},

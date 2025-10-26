@@ -53,8 +53,7 @@ export function createResult(
 	const value = applyIntent(submission);
 
 	return report(submission, {
-		intendedValue:
-			typeof options?.value !== 'undefined' ? options.value : value,
+		value: typeof options?.value !== 'undefined' ? options.value : value,
 		error: options?.error,
 	});
 }
@@ -63,7 +62,7 @@ export function createAction(options: {
 	type: FormAction<any, any>['type'];
 	entries: Array<[string, FormDataEntryValue]>;
 	reset?: boolean;
-	intendedValue?: Record<string, FormValue> | null;
+	value?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
@@ -77,9 +76,9 @@ export function createAction(options: {
 	});
 	const value = applyIntent(submission);
 	const result = report(submission, {
-		intendedValue:
-			options.intendedValue !== undefined
-				? options.intendedValue
+		value:
+			options.value !== undefined
+				? options.value
 				: options.reset
 					? undefined
 					: value,

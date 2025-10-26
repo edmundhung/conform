@@ -64,11 +64,11 @@ export type SubmissionResult<
 	 */
 	submission: Submission<ValueType>;
 	/**
-	 * The intended value of the submission. Defined only when the intended value is different from the submitted value.
+	 * The target value of the submission. Defined only when the target value is different from the submitted value.
 	 */
-	intendedValue?: Record<string, FormValue<ValueType>>;
+	targetValue?: Record<string, FormValue<ValueType>>;
 	/**
-	 * Validation errors for `intendedValue` when present, otherwise for the original payload.
+	 * Validation errors for `targetValue` when present, otherwise for the original payload.
 	 */
 	error?: FormError<ErrorShape> | null;
 	/**
