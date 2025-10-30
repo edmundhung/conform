@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with yup",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.13.1",
+	"version": "1.13.2",
 	"main": "./dist/index.js",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.ts",
