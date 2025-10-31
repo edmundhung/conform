@@ -283,7 +283,7 @@ test('updateFormValue', () => {
 	checkbox.type = 'checkbox';
 	form.appendChild(checkbox);
 
-	const intendedValue = {
+	const targetValue = {
 		text: 'Hello World',
 		number: 42,
 		checkbox: true,
@@ -296,7 +296,7 @@ test('updateFormValue', () => {
 		return undefined;
 	});
 
-	updateFormValue(form, intendedValue, mockSerialize);
+	updateFormValue(form, targetValue, mockSerialize);
 
 	expect(mockSerialize).toHaveBeenCalledWith('Hello World');
 	expect(mockSerialize).toHaveBeenCalledWith(42);

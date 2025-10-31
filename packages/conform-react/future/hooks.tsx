@@ -158,6 +158,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	formRef: FormRef,
 	options: {
 		key?: string;
+		defaultValue?: Record<string, FormValue> | null;
 		serialize: Serialize;
 		intentName: string;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
@@ -168,7 +169,7 @@ export function useConform<ErrorShape, Value = undefined>(
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>(INITIAL_KEY);
+		let state = initializeState<ErrorShape>({ resetKey: INITIAL_KEY });
 
 		if (lastResult) {
 			state = updateState(state, {
@@ -179,7 +180,11 @@ export function useConform<ErrorShape, Value = undefined>(
 					: null,
 				ctx: {
 					handlers: actionHandlers,
-					reset: () => state,
+					reset: (defaultValue) =>
+						initializeState<ErrorShape>({
+							resetKey: INITIAL_KEY,
+							defaultValue,
+						}),
 				},
 			});
 		}
@@ -190,9 +195,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	const resetKeyRef = useRef(state.resetKey);
 	const optionsRef = useLatest(options);
 	const lastResultRef = useRef(lastResult);
-	const lastIntentedValueRef = useRef<
-		Record<string, FormValue> | null | undefined
-	>();
+	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		result: SubmissionResult<ErrorShape>;
@@ -213,13 +216,14 @@ export function useConform<ErrorShape, Value = undefined>(
 					intent,
 					ctx: {
 						handlers: actionHandlers,
-						reset() {
-							return initializeState<ErrorShape>();
+						reset(defaultValue) {
+							return initializeState<ErrorShape>({ defaultValue });
 						},
 					},
 				}),
 			);
 
+			// TODO: move on error handler to a new effect
 			const formElement = getFormElement(formRef);
 
 			if (!formElement || !result.error) {
@@ -265,29 +269,29 @@ export function useConform<ErrorShape, Value = undefined>(
 		if (formElement && state.resetKey !== resetKeyRef.current) {
 			resetKeyRef.current = state.resetKey;
 			formElement.reset();
+			pendingValueRef.current = undefined;
 		}
 	}, [formRef, state.resetKey]);
 
 	useEffect(() => {
-		if (!state.clientIntendedValue) {
-			return;
+		if (state.targetValue) {
+			const formElement = getFormElement(formRef);
+
+			if (!formElement) {
+				// eslint-disable-next-line no-console
+				console.error('Failed to update form value; No form element found');
+				return;
+			}
+
+			updateFormValue(
+				formElement,
+				state.targetValue,
+				optionsRef.current.serialize,
+			);
 		}
 
-		const formElement = getFormElement(formRef);
-
-		if (!formElement) {
-			// eslint-disable-next-line no-console
-			console.error('Failed to update form value; No form element found');
-			return;
-		}
-
-		updateFormValue(
-			formElement,
-			state.clientIntendedValue,
-			optionsRef.current.serialize,
-		);
-		lastIntentedValueRef.current = undefined;
-	}, [formRef, state.clientIntendedValue, optionsRef]);
+		pendingValueRef.current = undefined;
+	}, [formRef, state.targetValue, optionsRef]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -326,26 +330,28 @@ export function useConform<ErrorShape, Value = undefined>(
 					}
 				}
 
-				// Override submission value if the last intended value is not applied yet (i.e. batch updates)
-				if (lastIntentedValueRef.current != null) {
-					submission.payload = lastIntentedValueRef.current;
+				// Override submission value if the pending value is not applied yet (i.e. batch updates)
+				if (pendingValueRef.current !== undefined) {
+					submission.payload = pendingValueRef.current;
 				}
 
-				const intendedValue = applyIntent(submission);
-
-				// Update the last intended value in case there will be another intent dispatched
-				lastIntentedValueRef.current =
-					intendedValue === submission.payload ? undefined : intendedValue;
-
+				const value = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					intendedValue,
+					value,
 				});
+
+				// If there is target value, keep track of it as pending value
+				if (submission.payload !== value) {
+					pendingValueRef.current =
+						value ?? optionsRef.current.defaultValue ?? {};
+				}
+
 				const validateResult =
 					// Skip validation on form reset
-					intendedValue !== null
+					value !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: intendedValue,
+								payload: value,
 								error: {
 									formErrors: [],
 									fieldErrors: {},
