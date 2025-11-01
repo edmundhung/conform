@@ -1,5 +1,6 @@
 import {
 	type FormValue,
+	type FormError,
 	type Serialize,
 	type SubmissionResult,
 	DEFAULT_INTENT_NAME,
@@ -45,7 +46,6 @@ import type {
 	IntentDispatcher,
 	FormMetadata,
 	Fieldset,
-	ValidateResult,
 	GlobalFormOptions,
 	FormOptions,
 	FieldName,
@@ -60,6 +60,10 @@ import type {
 	FormRef,
 	BaseErrorShape,
 	DefaultErrorShape,
+	InferInput,
+	InferOutput,
+	BaseSchemaType,
+	ValidateResult,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -87,6 +91,16 @@ export const GlobalFormOptionsContext = createContext<
 	observer: createGlobalFormsObserver(),
 	serialize,
 	shouldValidate: 'onSubmit',
+	validateSchema: (schema, context) => {
+		const result = schema['~standard'].validate(context.payload);
+
+		// Convert StandardSchemaV1.Result to SchemaValidationResult
+		if (result instanceof Promise) {
+			return result.then(resolveStandardSchemaResult);
+		}
+
+		return resolveStandardSchemaResult(result);
+	},
 });
 
 export const FormContextContext = createContext<FormContext[]>([]);
@@ -447,13 +461,34 @@ export function useConform<ErrorShape, Value = undefined>(
  * The main React hook for form management. Handles form state, validation, and submission
  * while providing access to form metadata, field objects, and form actions.
  *
+ * Can be used in two ways:
+ * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
+ * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
+ *
  * @see https://conform.guide/api/react/future/useForm
- * @example
+ *
+ * @example Schema first setup with zod:
+ * ```tsx
+ * const { form, fields } = useForm(zodSchema, {
+ *   lastResult,
+ *   shouldValidate: 'onBlur',
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ *
+ * @example Manual configuration setup with custom validation:
  * ```tsx
  * const { form, fields } = useForm({
+ *   defaultValue: { email: '' },
  *   onValidate({ payload, error }) {
  *     if (!payload.email) {
- * 		 error.fieldErrors.email = ['Required'];
+ *       error.fieldErrors.email = ['Required'];
  *     }
  *     return error;
  *   }
@@ -468,56 +503,117 @@ export function useConform<ErrorShape, Value = undefined>(
  * ```
  */
 export function useForm<
+	Schema extends BaseSchemaType,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = InferOutput<Schema>,
+>(
+	schema: Schema,
+	options: FormOptions<
+		InferInput<Schema>,
+		ErrorShape,
+		Value,
+		Schema,
+		string extends ErrorShape ? false : true
+	>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<InferInput<Schema>, ErrorShape>;
+	intent: IntentDispatcher<InferOutput<Schema>>;
+};
+export function useForm<
 	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 >(
-	options: FormOptions<FormShape, ErrorShape, Value>,
+	options: FormOptions<FormShape, ErrorShape, Value, undefined, true>,
 ): {
 	form: FormMetadata<ErrorShape>;
 	fields: Fieldset<FormShape, ErrorShape>;
 	intent: IntentDispatcher<FormShape>;
+};
+export function useForm<
+	Schema extends BaseSchemaType = any,
+	FormShape extends Record<string, any> = Record<string, any>,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+>(
+	schemaOrOptions:
+		| Schema
+		| FormOptions<FormShape, ErrorShape, Value, undefined, true>,
+	maybeOptions?: FormOptions<
+		InferInput<Schema>,
+		ErrorShape,
+		Value,
+		Schema,
+		string extends ErrorShape ? false : true
+	>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<Record<string, any>, ErrorShape>;
+	intent: IntentDispatcher;
 } {
-	const { id, defaultValue, constraint } = options;
+	let schema: Schema | undefined;
+	let options: FormOptions<any, ErrorShape, any>;
+
+	if (maybeOptions) {
+		// @ts-expect-error - My skill issue
+		schema = schemaOrOptions;
+		// @ts-expect-error - My skill issue
+		options = maybeOptions;
+	} else {
+		// @ts-expect-error - My skill issue
+		options = schemaOrOptions;
+	}
+
+	const { id, defaultValue } = options;
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
 	const globalOptionsRef = useLatest(globalOptions);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
+	const constraint =
+		options.constraint ??
+		(schema ? globalOptions.getConstraint?.(schema) : null);
+
+	const [state, handleSubmit] = useConform<ErrorShape, any>(formId, {
 		...options,
 		serialize: globalOptions.serialize,
 		intentName: globalOptions.intentName,
 		onError: optionsRef.current.onError ?? focusFirstInvalidField,
 		onValidate(ctx) {
-			if (options.schema) {
-				const standardResult = options.schema['~standard'].validate(
-					ctx.payload,
+			if (schema) {
+				const validationResult = globalOptionsRef.current.validateSchema(
+					schema,
+					{
+						...ctx,
+						schemaOptions: optionsRef.current.schemaOptions,
+					},
 				);
 
-				if (standardResult instanceof Promise) {
-					return standardResult.then((actualStandardResult) => {
+				if (validationResult instanceof Promise) {
+					return validationResult.then((resolvedResult) => {
 						if (typeof options.onValidate === 'function') {
 							throw new Error(
 								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
 							);
 						}
 
-						return resolveStandardSchemaResult(
-							actualStandardResult,
-						) as ValidateResult<ErrorShape, Value>;
+						return resolvedResult as ValidateResult<ErrorShape, any>;
 					});
 				}
 
-				const resolvedResult = resolveStandardSchemaResult(standardResult);
+				const resolvedResult = validationResult as {
+					error: FormError<ErrorShape> | null;
+					value?: any;
+				};
 
 				if (!options.onValidate) {
-					return resolvedResult as ValidateResult<ErrorShape, Value>;
+					return resolvedResult;
 				}
 
 				// Update the schema error in the context
 				if (resolvedResult.error) {
-					ctx.error = resolvedResult.error;
+					ctx.error = resolvedResult.error as FormError<string>;
 				}
 
 				ctx.schemaValue = resolvedResult.value;
@@ -550,7 +646,7 @@ export function useForm<
 			);
 		},
 	});
-	const intent = useIntent<FormShape>(formId);
+	const intent = useIntent(formId);
 	const context = useMemo<FormContext<ErrorShape>>(
 		() => ({
 			formId,
@@ -648,7 +744,7 @@ export function useForm<
 	);
 	const fields = useMemo(
 		() =>
-			getFieldset<FormShape, ErrorShape>(context, {
+			getFieldset<any, ErrorShape>(context, {
 				serialize: globalOptions.serialize,
 				customize: globalOptions.defineCustomMetadata,
 			}),

@@ -34,7 +34,7 @@ export async function action({ request }: Route.ActionArgs) {
 	const submission = parseSubmission(formData);
 	const result = schema.safeParse(submission.payload);
 
-	let error = formatResult(result);
+	let { error } = formatResult(result);
 
 	if (!error?.fieldErrors.username) {
 		const isUsernameUnique = await new Promise<boolean>((resolve) => {
@@ -73,11 +73,10 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 		onValidate({ error, intent }) {
 			// If there is client error, use it
 			if (error.fieldErrors.username) {

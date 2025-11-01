@@ -96,11 +96,10 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 	});
 
 	return (
