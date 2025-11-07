@@ -235,7 +235,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 				),
 			}) as $ZodType<unknown, {}>,
 		);
-	} else if (def.type === 'optional') {
+	} else if (def.type === 'optional' || def.type === 'nonoptional') {
 		schema = pipe(
 			transform(options.stripEmptyValue),
 			new constr({
