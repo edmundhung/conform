@@ -44,6 +44,42 @@ This is useful when you want an immediate update after the user has interacted w
 </FormOptionsProvider>
 ```
 
+### `intentName?: string`
+
+The name of the submit button field that indicates the submission intent. Default is `'__intent__'`. You typically don't need to change this unless you have conflicts with existing field names.
+
+### `serialize(value: unknown) => string | string[] | File | File[] | null | undefined`
+
+A custom serialization function for converting form data.
+
+### `getConstraint?: (schema) => Record<string, Constraint> | null`
+
+A function that derives HTML validation attributes from your schema. This is useful when you want to automatically derive HTML attributes like `required`, `minLength`, `maxLength`, `min`, `max`, `pattern`, etc. from your schema.
+
+```tsx
+import { FormOptionsProvider } from '@conform-to/react/future';
+import { getZodConstraint } from '@conform-to/zod/v3/future';
+// For Zod 4: import { getZodConstraint } from '@conform-to/zod/v4/future';
+// For valibot: import { getValibotConstraint } from '@conform-to/valibot/future';
+
+<FormOptionsProvider getConstraint={getZodConstraint}>
+  <App />
+</FormOptionsProvider>;
+```
+
+Individual forms can override the derived constraints by providing their own `constraint` option:
+
+```tsx
+const { form, fields } = useForm(schema, {
+  constraint: {
+    username: { required: true, pattern: '[a-z]+' }, // Override default constraints derived from schema
+  },
+  onSubmit(event, { value }) {
+    // handle submission
+  },
+});
+```
+
 ### `defineCustomMetadata?: <FieldShape, ErrorShape>(metadata: BaseMetadata<FieldShape, ErrorShape>) => CustomMetadata`
 
 A function that defines custom metadata properties for your form fields. This is particularly useful when integrating with UI libraries or custom form components.
@@ -103,19 +139,81 @@ function LoginForm() {
 }
 ```
 
-### `intentName?: string`
+### `validateSchema?: (schema, context) => { error, value? } | Promise<{ error, value? }>`
 
-The name of the submit button field that indicates the submission intent. Default is `'__intent__'`.
+A function that customizes how schemas are validated globally across your application. The default implementation uses Standard Schema V1's `validate` method.
 
-This is an advanced option. You typically don't need to change this unless you have conflicts with existing field names.
+This is useful if you want to use Zod with custom error maps or other schema libraries that don't implement Standard Schema:
 
-### `serialize(value: unknown) => string | string[] | File | File[] | null | undefined`
+```tsx
+import { FormOptionsProvider } from '@conform-to/react/future';
+import { formatResult } from '@conform-to/zod/v3/future';
+import type { z } from 'zod';
 
-A custom serialization function for converting form data.
+declare module '@conform-to/react/future' {
+  interface CustomSchema<Schema> {
+    baseType: z.ZodTypeAny;
+    input: Schema extends z.ZodTypeAny ? z.input<Schema> : unknown;
+    output: Schema extends z.ZodTypeAny ? z.output<Schema> : unknown;
+    options: Partial<z.ParseParams>;
+  }
+}
 
-This is an advanced option. You typically don't need to change this unless you have special serialization requirements.
+<FormOptionsProvider
+  validateSchema={(schema, { payload, schemaOptions }) => {
+    // Implementation based on https://github.com/colinhacks/zod/blob/5e6c0fd7471636feffe5763c9b7637879da459fe/packages/zod/src/v4/core/schemas.ts#L304-L316
+    try {
+      const result = schema.safeParse(payload, schemaOptions);
+      return formatResult(result);
+    } catch {
+      return schema.safeParseAsync(payload, schemaOptions).then(formatResult);
+    }
+  }}
+>
+  <App />
+</FormOptionsProvider>;
+```
+
+Individual forms can now provide `schemaOptions` to customize validation:
+
+```tsx
+const { form, fields } = useForm(schema, {
+  schemaOptions: { errorMap: customErrorMap },
+  onSubmit(event, { value }) {
+    // handle submission
+  },
+});
+```
 
 ## Tips
+
+### Schema Type Inference with Valibot
+
+If you're using Valibot instead of Zod, you can declare the `CustomSchema` interface for type inference like so:
+
+```tsx
+import type {
+  GenericSchema,
+  GenericSchemaAsync,
+  InferInput,
+  InferOutput,
+  InferIssue,
+  Config,
+} from 'valibot';
+
+declare module '@conform-to/react/future' {
+  interface CustomSchema<Schema> {
+    baseType: GenericSchema | GenericSchemaAsync;
+    input: Schema extends GenericSchema | GenericSchemaAsync
+      ? InferInput<Schema>
+      : unknown;
+    output: Schema extends GenericSchema | GenericSchemaAsync
+      ? InferOutput<Schema>
+      : unknown;
+    options: Config<InferIssue<Schema>>;
+  }
+}
+```
 
 ### Conditional metadata based on field shape
 

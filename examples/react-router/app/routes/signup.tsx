@@ -97,11 +97,10 @@ export default function Signup({ actionData }: Route.ComponentProps) {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 		async onValidate({ payload, error }) {
 			if (typeof payload.username === 'string' && !error.fieldErrors.username) {
 				const messages = await validateUsername(payload.username);

@@ -30,10 +30,9 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
-		schema,
 	});
 
 	return (

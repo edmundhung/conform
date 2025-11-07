@@ -46,8 +46,7 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const { form, fields, intent } = useForm({
-		schema,
+	const { form, fields, intent } = useForm(schema, {
 		defaultValue: {
 			email: searchParams.get('email'),
 			description: searchParams.get('description'),
