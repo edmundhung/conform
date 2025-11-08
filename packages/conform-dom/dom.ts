@@ -503,46 +503,6 @@ export function normalizeFileValues(value: unknown): FileList | undefined {
 }
 
 /**
- * Retrieves the default value of a form field element by reading the DOM's
- * defaultValue, defaultChecked, or defaultSelected properties.
- */
-export function getFieldDefaultValue(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): string | string[] | File | File[] | FileList | null {
-	if (isInputElement(element)) {
-		switch (element.type) {
-			case 'file': {
-				return null;
-			}
-			case 'checkbox':
-			case 'radio': {
-				if (element.defaultChecked) {
-					return element.value;
-				}
-				return null;
-			}
-		}
-	} else if (isSelectElement(element)) {
-		if (element.multiple) {
-			const values: string[] = [];
-			for (const option of element.options) {
-				if (option.defaultSelected) {
-					values.push(option.value);
-				}
-			}
-			return values;
-		} else {
-			const selectedOption = Array.from(element.options).find(
-				(option) => option.defaultSelected,
-			);
-			return selectedOption ? selectedOption.value : null;
-		}
-	}
-
-	return element.defaultValue;
-}
-
-/**
  * Updates the DOM element with the provided value and defaultValue.
  * If the value or defaultValue is undefined, it will keep the current value instead
  */

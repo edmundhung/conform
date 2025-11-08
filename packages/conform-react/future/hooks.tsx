@@ -74,6 +74,7 @@ import {
 	getSubmitEvent,
 	initializeField,
 	updateFormValue,
+	resetFormValue,
 } from './dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
@@ -268,10 +269,14 @@ export function useConform<ErrorShape, Value = undefined>(
 		// Reset the form values if the reset key changes
 		if (formElement && state.resetKey !== resetKeyRef.current) {
 			resetKeyRef.current = state.resetKey;
-			formElement.reset();
+			resetFormValue(
+				formElement,
+				state.serverValue ?? optionsRef.current.defaultValue ?? {},
+				optionsRef.current.serialize,
+			);
 			pendingValueRef.current = undefined;
 		}
-	}, [formRef, state.resetKey]);
+	}, [formRef, state.resetKey, state.serverValue, optionsRef]);
 
 	useEffect(() => {
 		if (state.targetValue) {
@@ -948,6 +953,13 @@ export function useControl(options?: {
 					inputRef.current = null;
 				} else if (isFieldElement(element)) {
 					inputRef.current = element;
+
+					// Conform excludes hidden type inputs by default when updating form values
+					// Fix that by using the hidden attribute instead
+					if (element.type === 'hidden') {
+						element.hidden = true;
+						element.removeAttribute('type');
+					}
 
 					if (shouldHandleFocus) {
 						makeInputFocusable(element);

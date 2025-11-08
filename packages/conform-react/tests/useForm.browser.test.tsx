@@ -16,6 +16,7 @@ import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 describe('future export: useForm', () => {
 	type Schema = {
 		title: string;
+		category?: string;
 		description: string;
 		tasks: Array<{ content: string; completed: boolean }>;
 		confirmed: boolean;
@@ -103,6 +104,19 @@ describe('future export: useForm', () => {
 				/>
 				<div id={fields.description.errorId}>
 					{fields.description.errors?.join(', ') ?? 'n/a'}
+				</div>
+				<select
+					name={fields.category.name}
+					defaultValue={fields.category.defaultValue}
+					aria-label="Category"
+					aria-describedby={fields.category.ariaDescribedBy}
+				>
+					<option value="">Select a category</option>
+					<option value="personal">Personal</option>
+					<option value="work">Work</option>
+				</select>
+				<div id={fields.category.errorId}>
+					{fields.category.errors?.join(', ') ?? 'n/a'}
 				</div>
 				{fields.tasks.getFieldList().map((task, index) => {
 					const taskField = task.getFieldset();
@@ -314,6 +328,7 @@ describe('future export: useForm', () => {
 		return {
 			title: screen.getByLabelText('Title'),
 			description: screen.getByLabelText('Description'),
+			category: screen.getByLabelText('Category'),
 			confirmed: screen.getByLabelText('Confirmed'),
 			controlledHiddenInput: screen.getByLabelText('Controlled Hidden Input', {
 				exact: true,
@@ -1025,6 +1040,7 @@ describe('future export: useForm', () => {
 					reset: true,
 					value: {
 						title: 'Updated Title',
+						category: 'work',
 						description: 'Updated Description',
 						confirmed: 'on',
 						tasks: [
@@ -1044,6 +1060,7 @@ describe('future export: useForm', () => {
 
 		// Values should change from "invalid old" to "Updated" (proves values changed)
 		await expect.element(form.title).toHaveValue('Updated Title');
+		await expect.element(form.category).toHaveValue('work');
 		await expect.element(form.description).toHaveValue('Updated Description');
 		await expect.element(form.confirmed).toBeChecked();
 		await expect.element(task1.content).toHaveValue('Task 1');
@@ -1070,6 +1087,7 @@ describe('future export: useForm', () => {
 				lastResult={report(parseSubmission(form.getFormData()), {
 					value: {
 						title: 'Server Processed Title',
+						category: 'personal',
 						description: 'Server Updated Description',
 						tasks: [{ content: 'Server Task', completed: false }],
 					},
@@ -1079,6 +1097,7 @@ describe('future export: useForm', () => {
 
 		// Values should change from "invalid user" to "Server Processed" (proves values changed)
 		await expect.element(form.title).toHaveValue('Server Processed Title');
+		await expect.element(form.category).toHaveValue('personal');
 		await expect
 			.element(form.description)
 			.toHaveValue('Server Updated Description');

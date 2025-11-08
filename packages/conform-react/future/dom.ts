@@ -1,6 +1,5 @@
 import {
 	change,
-	getFieldDefaultValue,
 	getValueAtPath,
 	isFieldElement,
 	isGlobalInstance,
@@ -233,25 +232,46 @@ export function updateFormValue(
 	serialize: Serialize,
 ): void {
 	for (const element of form.elements) {
-		if (isFieldElement(element) && element.name) {
+		if (isFieldElement(element) && element.name && element.type !== 'hidden') {
 			const fieldValue = getValueAtPath(targetValue, element.name);
 
-			if (element.type === 'file' && typeof fieldValue === 'undefined') {
+			if (element.type === 'file' && fieldValue === undefined) {
 				// Do not update file inputs unless there's a target value
 				continue;
 			}
 
-			const serializedValue = serialize(fieldValue);
-			const value =
-				typeof serializedValue !== 'undefined'
-					? serializedValue
-					: getFieldDefaultValue(element);
+			const value = serialize(fieldValue);
 
-			change(element, value, {
+			// Treat undefined as null to clear the field value
+			change(element, value !== undefined ? value : null, {
 				preventDefault: true,
 			});
 		}
 	}
+}
+
+export function resetFormValue(
+	form: HTMLFormElement,
+	defaultValue: Record<string, unknown>,
+	serialize: Serialize,
+): void {
+	for (const element of form.elements) {
+		if (
+			isFieldElement(element) &&
+			element.name &&
+			element.type !== 'hidden' &&
+			element.type !== 'file'
+		) {
+			const fieldValue = getValueAtPath(defaultValue, element.name);
+			const value = serialize(fieldValue);
+
+			updateField(element, {
+				defaultValue: value !== undefined ? value : null,
+			});
+		}
+	}
+
+	form.reset();
 }
 
 /**

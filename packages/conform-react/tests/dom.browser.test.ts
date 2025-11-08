@@ -268,44 +268,81 @@ test('createDefaultSnapshot', () => {
 test('updateFormValue', () => {
 	const form = document.createElement('form');
 
-	const input1 = document.createElement('input');
-	input1.name = 'text';
-	input1.type = 'text';
-	form.appendChild(input1);
+	const textInput = document.createElement('input');
+	textInput.name = 'text';
+	textInput.type = 'text';
+	form.appendChild(textInput);
 
-	const input2 = document.createElement('input');
-	input2.name = 'number';
-	input2.type = 'number';
-	form.appendChild(input2);
+	const numberInput = document.createElement('input');
+	numberInput.name = 'number';
+	numberInput.type = 'number';
+	form.appendChild(numberInput);
 
 	const checkbox = document.createElement('input');
 	checkbox.name = 'checkbox';
 	checkbox.type = 'checkbox';
 	form.appendChild(checkbox);
 
-	const targetValue = {
-		text: 'Hello World',
-		number: 42,
-		checkbox: true,
-	};
+	const textarea = document.createElement('textarea');
+	textarea.name = 'textarea';
+	form.appendChild(textarea);
+
+	const select = document.createElement('select');
+	select.name = 'select';
+	const option1 = document.createElement('option');
+	option1.value = '';
+	option1.text = '--Please choose an option--';
+	const option2 = document.createElement('option');
+	option2.value = 'foo';
+	option2.text = 'foo';
+	const option3 = document.createElement('option');
+	option3.value = 'bar';
+	option3.text = 'bar';
+	option3.defaultSelected = true;
+	select.appendChild(option1);
+	select.appendChild(option2);
+	select.appendChild(option3);
+	form.appendChild(select);
 
 	const mockSerialize = vi.fn((value) => {
 		if (typeof value === 'string') return value;
-		if (typeof value === 'number') return String(value);
+		if (typeof value === 'number') return value.toFixed(2);
 		if (typeof value === 'boolean') return value ? 'on' : undefined;
 		return undefined;
 	});
 
-	updateFormValue(form, targetValue, mockSerialize);
+	expect(textInput.value).toBe('');
+	expect(numberInput.value).toBe('');
+	expect(checkbox.checked).toBe(false);
+	expect(textarea.value).toBe('');
+	expect(select.value).toBe('bar');
 
-	expect(mockSerialize).toHaveBeenCalledWith('Hello World');
-	expect(mockSerialize).toHaveBeenCalledWith(42);
-	expect(mockSerialize).toHaveBeenCalledWith(true);
+	updateFormValue(
+		form,
+		{
+			text: 'Hello World',
+			number: 42,
+			checkbox: true,
+			textarea: 'Sample text',
+			select: 'foo',
+		},
+		mockSerialize,
+	);
 
-	// Verify form elements were updated (this would require mocking the change function)
-	expect(input1.name).toBe('text');
-	expect(input2.name).toBe('number');
-	expect(checkbox.name).toBe('checkbox');
+	expect(mockSerialize).toHaveBeenCalledTimes(5);
+	expect(textInput.value).toBe('Hello World');
+	expect(numberInput.value).toBe('42.00');
+	expect(checkbox.checked).toBe(true);
+	expect(textarea.value).toBe('Sample text');
+	expect(select.value).toBe('foo');
+
+	updateFormValue(form, {}, mockSerialize);
+
+	expect(textInput.value).toBe('');
+	expect(numberInput.value).toBe('');
+	expect(checkbox.checked).toBe(false);
+	expect(textarea.value).toBe('');
+	expect(select.value).toBe('');
 });
 
 test('createIntentDispatcher', () => {
