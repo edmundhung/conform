@@ -1038,7 +1038,7 @@ describe('future export: useForm', () => {
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					value: {
+					targetValue: {
 						title: 'Updated Title',
 						category: 'work',
 						description: 'Updated Description',
@@ -1085,7 +1085,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					value: {
+					targetValue: {
 						title: 'Server Processed Title',
 						category: 'personal',
 						description: 'Server Updated Description',
@@ -1110,7 +1110,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					value: null,
+					targetValue: null,
 				})}
 			/>,
 		);
@@ -1216,7 +1216,7 @@ describe('future export: useForm', () => {
 				defaultValue={defaultValue}
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					value: {
+					targetValue: {
 						title: 'Server Updated Title',
 						description: 'Server Updated Description',
 						confirmed: false,

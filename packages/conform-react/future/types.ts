@@ -208,7 +208,11 @@ export type FormOptions<
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
 	onError?: ErrorHandler<ErrorShape>;
 	/** Form submission handler called when the form is submitted with no validation errors. */
-	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+	onSubmit?: SubmitHandler<
+		NoInfer<FormShape>,
+		NoInfer<ErrorShape>,
+		NoInfer<Value>
+	>;
 	/** Input event handler for custom input event logic. */
 	onInput?: InputHandler;
 	/** Blur event handler for custom focus handling logic. */
@@ -701,6 +705,7 @@ export type InputHandler = (event: FormInputEvent) => void;
 export type BlurHandler = (event: FormFocusEvent) => void;
 
 export type SubmitContext<
+	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 > = {
@@ -708,15 +713,16 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null;
-		targetValue?: Record<string, unknown> | null;
+		targetValue?: FormShape | null;
 		reset?: boolean;
 	}) => void;
 };
 
 export type SubmitHandler<
+	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 > = (
 	event: React.FormEvent<HTMLFormElement>,
-	ctx: SubmitContext<ErrorShape, Value>,
+	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;

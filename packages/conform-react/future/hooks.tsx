@@ -155,7 +155,11 @@ export function useFormContext(formId?: string): FormContext {
  * Core form hook that manages form state, validation, and submission.
  * Handles both sync and async validation, intent dispatching, and DOM updates.
  */
-export function useConform<ErrorShape, Value = undefined>(
+export function useConform<
+	FormShape extends Record<string, any>,
+	ErrorShape,
+	Value = undefined,
+>(
 	formRef: FormRef,
 	options: {
 		key?: string;
@@ -165,7 +169,7 @@ export function useConform<ErrorShape, Value = undefined>(
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 		onValidate?: ValidateHandler<ErrorShape, Value>;
 		onError?: ErrorHandler<ErrorShape>;
-		onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+		onSubmit?: SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>;
 	},
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
@@ -340,23 +344,23 @@ export function useConform<ErrorShape, Value = undefined>(
 					submission.payload = pendingValueRef.current;
 				}
 
-				const value = applyIntent(submission);
+				const targetValue = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					value,
+					targetValue,
 				});
 
 				// If there is target value, keep track of it as pending value
-				if (submission.payload !== value) {
+				if (submission.payload !== targetValue) {
 					pendingValueRef.current =
-						value ?? optionsRef.current.defaultValue ?? {};
+						targetValue ?? optionsRef.current.defaultValue ?? {};
 				}
 
 				const validateResult =
 					// Skip validation on form reset
-					value !== undefined
+					targetValue !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: value,
+								payload: targetValue,
 								error: {
 									formErrors: [],
 									fieldErrors: {},
@@ -495,72 +499,75 @@ export function useForm<
 	const globalOptionsRef = useLatest(globalOptions);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
-		...options,
-		serialize: globalOptions.serialize,
-		intentName: globalOptions.intentName,
-		onError: optionsRef.current.onError ?? focusFirstInvalidField,
-		onValidate(ctx) {
-			if (options.schema) {
-				const standardResult = options.schema['~standard'].validate(
-					ctx.payload,
-				);
-
-				if (standardResult instanceof Promise) {
-					return standardResult.then((actualStandardResult) => {
-						if (typeof options.onValidate === 'function') {
-							throw new Error(
-								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-							);
-						}
-
-						return resolveStandardSchemaResult(
-							actualStandardResult,
-						) as ValidateResult<ErrorShape, Value>;
-					});
-				}
-
-				const resolvedResult = resolveStandardSchemaResult(standardResult);
-
-				if (!options.onValidate) {
-					return resolvedResult as ValidateResult<ErrorShape, Value>;
-				}
-
-				// Update the schema error in the context
-				if (resolvedResult.error) {
-					ctx.error = resolvedResult.error;
-				}
-
-				ctx.schemaValue = resolvedResult.value;
-
-				const validateResult = resolveValidateResult(options.onValidate(ctx));
-
-				if (validateResult.syncResult) {
-					validateResult.syncResult.value ??= resolvedResult.value;
-				}
-
-				if (validateResult.asyncResult) {
-					validateResult.asyncResult = validateResult.asyncResult.then(
-						(result) => {
-							result.value ??= resolvedResult.value;
-							return result;
-						},
+	const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value>(
+		formId,
+		{
+			...options,
+			serialize: globalOptions.serialize,
+			intentName: globalOptions.intentName,
+			onError: optionsRef.current.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (options.schema) {
+					const standardResult = options.schema['~standard'].validate(
+						ctx.payload,
 					);
+
+					if (standardResult instanceof Promise) {
+						return standardResult.then((actualStandardResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
+
+							return resolveStandardSchemaResult(
+								actualStandardResult,
+							) as ValidateResult<ErrorShape, Value>;
+						});
+					}
+
+					const resolvedResult = resolveStandardSchemaResult(standardResult);
+
+					if (!options.onValidate) {
+						return resolvedResult as ValidateResult<ErrorShape, Value>;
+					}
+
+					// Update the schema error in the context
+					if (resolvedResult.error) {
+						ctx.error = resolvedResult.error;
+					}
+
+					ctx.schemaValue = resolvedResult.value;
+
+					const validateResult = resolveValidateResult(options.onValidate(ctx));
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= resolvedResult.value;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= resolvedResult.value;
+								return result;
+							},
+						);
+					}
+
+					return [validateResult.syncResult, validateResult.asyncResult];
 				}
 
-				return [validateResult.syncResult, validateResult.asyncResult];
-			}
-
-			return (
-				options.onValidate?.(ctx) ?? {
-					// To avoid conform falling back to server validation,
-					// if neither schema nor validation handler is provided,
-					// we just treat it as a valid client submission
-					error: null,
-				}
-			);
+				return (
+					options.onValidate?.(ctx) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
+			},
 		},
-	});
+	);
 	const intent = useIntent<FormShape>(formId);
 	const context = useMemo<FormContext<ErrorShape>>(
 		() => ({

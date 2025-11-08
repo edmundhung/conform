@@ -1185,7 +1185,7 @@ describe('form state', () => {
 					['tasks[2]', 'Task 3'],
 					['tasks[3]', 'Task 4'],
 				],
-				value: {
+				targetValue: {
 					title: 'My Tasks',
 					tasks: ['Updated 1', 'Updated 2', 'Updated 3', 'Updated 4'],
 				},
@@ -1220,7 +1220,7 @@ describe('form state', () => {
 					['tasks[2]', 'Updated 3'],
 					['tasks[3]', 'Updated 4'],
 				],
-				value: {
+				targetValue: {
 					title: 'My Tasks',
 					tasks: ['Final 1', 'Final 2'],
 				},
@@ -1285,7 +1285,7 @@ describe('form state', () => {
 					['tasks[3]', 'Task 4'],
 				],
 				reset: true,
-				value: {
+				targetValue: {
 					title: 'My Tasks',
 					tasks: ['Reset 1', 'Reset 2'],
 				},

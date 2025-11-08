@@ -37,7 +37,7 @@ export function serverRenderHook<Result>(renderCallback: () => Result): Result {
 export function createResult(
 	entries: Array<[string, FormDataEntryValue]>,
 	options?: {
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		error?: Partial<FormError<any>> | null;
 	},
 ): SubmissionResult<any, any> {
@@ -53,7 +53,8 @@ export function createResult(
 	const value = applyIntent(submission);
 
 	return report(submission, {
-		value: typeof options?.value !== 'undefined' ? options.value : value,
+		targetValue:
+			typeof options?.targetValue !== 'undefined' ? options.targetValue : value,
 		error: options?.error,
 	});
 }
@@ -62,7 +63,7 @@ export function createAction(options: {
 	type: FormAction<any, any>['type'];
 	entries: Array<[string, FormDataEntryValue]>;
 	reset?: boolean;
-	value?: Record<string, FormValue> | null;
+	targetValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
@@ -76,9 +77,9 @@ export function createAction(options: {
 	});
 	const value = applyIntent(submission);
 	const result = report(submission, {
-		value:
-			options.value !== undefined
-				? options.value
+		targetValue:
+			options.targetValue !== undefined
+				? options.targetValue
 				: options.reset
 					? undefined
 					: value,

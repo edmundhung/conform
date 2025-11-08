@@ -434,7 +434,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -451,7 +451,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -465,7 +465,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -479,7 +479,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -502,10 +502,10 @@ export function report<ErrorShape = string>(
 			fieldErrors?: Record<string, string[]>;
 		} | null;
 		/**
-		 * The form value to set. Use this to update the form or reset it
+		 * The target form value to set. Use this to update the form or reset it
 		 * to a specific value when combined with `reset: true`.
 		 */
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
@@ -546,12 +546,12 @@ export function report<ErrorShape = string>(
 	}
 
 	const targetValue =
-		typeof options.value === 'undefined' ||
-		(submission.payload === options.value && !options.reset)
+		typeof options.targetValue === 'undefined' ||
+		(submission.payload === options.targetValue && !options.reset)
 			? undefined
-			: options.value && !options.keepFiles
-				? stripFiles(options.value)
-				: options.value ?? {};
+			: options.targetValue && !options.keepFiles
+				? stripFiles(options.targetValue)
+				: options.targetValue ?? {};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
