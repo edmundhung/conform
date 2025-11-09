@@ -758,6 +758,12 @@ describe('future export: useForm', () => {
 		const task1 = getTaskFieldset(screen, 1);
 		const task2 = getTaskFieldset(screen, 2);
 
+		// Check that form is not reset yet when defaultValue changes
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+
+		// Reset to new default values
+		await userEvent.click(form.resetButton);
 		await expect.element(form.title).toHaveValue('example');
 		await expect.element(form.description).toHaveValue('hello world');
 		await expect.element(task1.content).toHaveValue('First Task');
@@ -1289,6 +1295,7 @@ describe('future export: useForm', () => {
 
 			screen.rerender(
 				<Form
+					key="rerender-with-default-value"
 					defaultValue={{
 						title: 'Foo',
 						description: '',
@@ -1306,7 +1313,6 @@ describe('future export: useForm', () => {
 
 			await expectNoErrorMessages(form.title);
 			await expectErrorMessage(form.description, 'Description is required');
-			await expectErrorMessage(task1.content, 'Task content is required');
 		});
 
 		test('insert and remove then reorder', async () => {

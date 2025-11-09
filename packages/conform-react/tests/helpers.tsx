@@ -63,6 +63,7 @@ export function createAction(options: {
 	type: FormAction<any, any>['type'];
 	entries: Array<[string, FormDataEntryValue]>;
 	reset?: boolean;
+	defaultValue?: Record<string, unknown> | null;
 	targetValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 }): FormAction<any, any, any> {
@@ -89,7 +90,9 @@ export function createAction(options: {
 	const ctx = {
 		handlers: actionHandlers,
 		reset(defaultValue?: Record<string, unknown> | null) {
-			return initializeState({ defaultValue });
+			return initializeState({
+				defaultValue: defaultValue ?? options.defaultValue,
+			});
 		},
 	};
 

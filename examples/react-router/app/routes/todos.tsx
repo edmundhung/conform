@@ -68,7 +68,7 @@ export default function Example({
 	const dirty = useFormData(
 		form.id,
 		(formData) =>
-			isDirty(formData, { defaultValue: loaderData.todos }) ?? false,
+			isDirty(formData, { defaultValue: form.defaultValue }) ?? false,
 	);
 	const tasks = fields.tasks.getFieldList();
 

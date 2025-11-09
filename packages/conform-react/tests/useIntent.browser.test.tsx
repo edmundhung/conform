@@ -162,6 +162,7 @@ describe('future export: useIntent', () => {
 		// Test reset form with default values
 		screen.rerender(
 			<Form
+				key="rerender-with-default-value"
 				defaultValue={{
 					title: 'example',
 					description: 'hello world',

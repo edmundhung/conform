@@ -31,8 +31,9 @@ export function initializeState<ErrorShape>(options?: {
 	return {
 		resetKey: options?.resetKey ?? generateUniqueKey(),
 		listKeys: {},
+		defaultValue: options?.defaultValue ?? {},
 		targetValue: null,
-		serverValue: options?.defaultValue ?? null,
+		serverValue: null,
 		serverError: null,
 		clientError: null,
 		touchedFields: [],
@@ -164,7 +165,7 @@ export function getDefaultValue(
 	const value = getValueAtPath(
 		context.state.serverValue ??
 			context.state.targetValue ??
-			context.defaultValue,
+			context.state.defaultValue,
 		name,
 	);
 	const serializedValue = serialize(value);
@@ -184,7 +185,7 @@ export function getDefaultOptions(
 	const value = getValueAtPath(
 		context.state.serverValue ??
 			context.state.targetValue ??
-			context.defaultValue,
+			context.state.defaultValue,
 		name,
 	);
 	const serializedValue = serialize(value);
@@ -211,7 +212,7 @@ export function isDefaultChecked(
 	const value = getValueAtPath(
 		context.state.serverValue ??
 			context.state.targetValue ??
-			context.defaultValue,
+			context.state.defaultValue,
 		name,
 	);
 	const serializedValue = serialize(value);
@@ -258,7 +259,7 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 			context.state.resetKey,
 			context.state.serverValue ??
 				context.state.targetValue ??
-				context.defaultValue,
+				context.state.defaultValue,
 			name,
 		)
 	);
@@ -389,6 +390,7 @@ export function getFormMetadata<ErrorShape>(
 		id: context.formId,
 		errorId: `${context.formId}-form-error`,
 		descriptionId: `${context.formId}-form-description`,
+		defaultValue: context.state.defaultValue,
 		get errors() {
 			return getErrors(context.state);
 		},

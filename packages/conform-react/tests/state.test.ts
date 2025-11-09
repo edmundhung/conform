@@ -33,7 +33,6 @@ function createContext(
 ): FormContext<any> {
 	return {
 		formId: 'test-id',
-		defaultValue: null,
 		constraint: null,
 		state: initializeState(),
 		handleSubmit: vi.fn(),
@@ -548,10 +547,12 @@ describe('form state', () => {
 
 	test('update fields', () => {
 		const context = createContext({
-			defaultValue: {
-				username: 'example',
-				password: '*******',
-			},
+			state: initializeState({
+				defaultValue: {
+					username: 'example',
+					password: '*******',
+				},
+			}),
 		});
 
 		expect(getDefaultValue(context, 'username')).toBe('example');
@@ -716,10 +717,12 @@ describe('form state', () => {
 
 	test('modify list on the client', () => {
 		const context = createContext({
-			defaultValue: {
-				title: 'My Tasks',
-				tasks: ['Default task 1', 'Default task 2'],
-			},
+			state: initializeState({
+				defaultValue: {
+					title: 'My Tasks',
+					tasks: ['Default task 1', 'Default task 2'],
+				},
+			}),
 		});
 
 		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]', '0-tasks[1]']);
@@ -1108,6 +1111,7 @@ describe('form state', () => {
 						}),
 					],
 				],
+				defaultValue: context.state.defaultValue,
 			}),
 		);
 
@@ -1129,10 +1133,12 @@ describe('form state', () => {
 
 	test('server response with target value', () => {
 		const context = createContext({
-			defaultValue: {
-				title: 'My Tasks',
-				tasks: ['Task 1', 'Task 2', 'Task 3'],
-			},
+			state: initializeState({
+				defaultValue: {
+					title: 'My Tasks',
+					tasks: ['Task 1', 'Task 2', 'Task 3'],
+				},
+			}),
 		});
 
 		// Modify list on client to establish custom list keys
@@ -1234,10 +1240,12 @@ describe('form state', () => {
 
 	test('server reset with list', () => {
 		const context = createContext({
-			defaultValue: {
-				title: 'My Tasks',
-				tasks: ['Task 1', 'Task 2', 'Task 3'],
-			},
+			state: initializeState({
+				defaultValue: {
+					title: 'My Tasks',
+					tasks: ['Task 1', 'Task 2', 'Task 3'],
+				},
+			}),
 		});
 
 		// Modify list on client to establish custom list keys
@@ -1309,6 +1317,10 @@ describe('form state', () => {
 					['tasks[1]', 'Reset 2'],
 				],
 				reset: true,
+				defaultValue: {
+					title: 'My Tasks',
+					tasks: ['Task 1', 'Task 2', 'Task 3'],
+				},
 			}),
 		);
 
@@ -1330,10 +1342,12 @@ describe('form state', () => {
 test('isDefaultChecked', () => {
 	// Test with boolean checkbox values
 	const context = createContext({
-		defaultValue: {
-			subscribe: true,
-			notifications: false,
-		},
+		state: initializeState({
+			defaultValue: {
+				subscribe: true,
+				notifications: false,
+			},
+		}),
 	});
 
 	expect(isDefaultChecked(context, 'subscribe')).toBe(true);
@@ -1341,10 +1355,12 @@ test('isDefaultChecked', () => {
 
 	// Test with 'on' value (checkbox default)
 	const contextWithOn = createContext({
-		defaultValue: {
-			subscribe: 'on',
-			notifications: '',
-		},
+		state: initializeState({
+			defaultValue: {
+				subscribe: 'on',
+				notifications: '',
+			},
+		}),
 	});
 
 	expect(isDefaultChecked(contextWithOn, 'subscribe')).toBe(true);
@@ -1420,7 +1436,9 @@ test('getConstraint', () => {
 
 test('getFormMetadata', () => {
 	const context = createContext({
-		defaultValue: { username: 'test' },
+		state: initializeState({
+			defaultValue: { username: 'test' },
+		}),
 	});
 
 	// Add some touched fields and errors
@@ -1515,11 +1533,13 @@ test('getFormMetadata', () => {
 
 test('getField', () => {
 	const context = createContext({
-		defaultValue: {
-			username: 'test-user',
-			profile: { age: 25 },
-			tags: ['react', 'typescript'],
-		},
+		state: initializeState({
+			defaultValue: {
+				username: 'test-user',
+				profile: { age: 25 },
+				tags: ['react', 'typescript'],
+			},
+		}),
 		constraint: {
 			username: { required: true, minLength: 3 },
 		},
@@ -1639,15 +1659,17 @@ test('getField', () => {
 
 test('getFieldset', () => {
 	const context = createContext({
-		defaultValue: {
-			profile: {
-				name: 'John',
-				email: 'john@example.com',
-				nested: {
-					value: 'deep',
+		state: initializeState({
+			defaultValue: {
+				profile: {
+					name: 'John',
+					email: 'john@example.com',
+					nested: {
+						value: 'deep',
+					},
 				},
 			},
-		},
+		}),
 	});
 
 	const fieldset = getFieldset(context, {
@@ -1682,13 +1704,15 @@ test('getFieldset', () => {
 
 test('getFieldList', () => {
 	const context = createContext({
-		defaultValue: {
-			tags: ['react', 'typescript', 'testing'],
-			users: [
-				{ name: 'John', age: 25 },
-				{ name: 'Jane', age: 30 },
-			],
-		},
+		state: initializeState({
+			defaultValue: {
+				tags: ['react', 'typescript', 'testing'],
+				users: [
+					{ name: 'John', age: 25 },
+					{ name: 'Jane', age: 30 },
+				],
+			},
+		}),
 	});
 
 	// Mock list keys

@@ -174,7 +174,10 @@ export function useConform<
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>({ resetKey: INITIAL_KEY });
+		let state = initializeState<ErrorShape>({
+			defaultValue: options.defaultValue,
+			resetKey: INITIAL_KEY,
+		});
 
 		if (lastResult) {
 			state = updateState(state, {
@@ -187,8 +190,8 @@ export function useConform<
 					handlers: actionHandlers,
 					reset: (defaultValue) =>
 						initializeState<ErrorShape>({
+							defaultValue: defaultValue ?? options.defaultValue,
 							resetKey: INITIAL_KEY,
-							defaultValue,
 						}),
 				},
 			});
@@ -222,7 +225,9 @@ export function useConform<
 					ctx: {
 						handlers: actionHandlers,
 						reset(defaultValue) {
-							return initializeState<ErrorShape>({ defaultValue });
+							return initializeState<ErrorShape>({
+								defaultValue: defaultValue ?? optionsRef.current.defaultValue,
+							});
 						},
 					},
 				}),
@@ -263,9 +268,13 @@ export function useConform<
 		// Reset the form state if the form key changes
 		if (options.key !== keyRef.current) {
 			keyRef.current = options.key;
-			setState(initializeState<ErrorShape>());
+			setState(
+				initializeState<ErrorShape>({
+					defaultValue: optionsRef.current.defaultValue,
+				}),
+			);
 		}
-	}, [options.key]);
+	}, [options.key, optionsRef]);
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -275,12 +284,12 @@ export function useConform<
 			resetKeyRef.current = state.resetKey;
 			resetFormValue(
 				formElement,
-				state.serverValue ?? optionsRef.current.defaultValue ?? {},
+				state.defaultValue,
 				optionsRef.current.serialize,
 			);
 			pendingValueRef.current = undefined;
 		}
-	}, [formRef, state.resetKey, state.serverValue, optionsRef]);
+	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
 
 	useEffect(() => {
 		if (state.targetValue) {
@@ -493,7 +502,7 @@ export function useForm<
 	fields: Fieldset<FormShape, ErrorShape>;
 	intent: IntentDispatcher<FormShape>;
 } {
-	const { id, defaultValue, constraint } = options;
+	const { id, constraint } = options;
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
 	const globalOptionsRef = useLatest(globalOptions);
@@ -573,7 +582,6 @@ export function useForm<
 		() => ({
 			formId,
 			state,
-			defaultValue: defaultValue ?? null,
 			constraint: constraint ?? null,
 			handleSubmit: handleSubmit,
 			handleInput(event) {
@@ -648,7 +656,6 @@ export function useForm<
 		[
 			formId,
 			state,
-			defaultValue,
 			constraint,
 			handleSubmit,
 			intent,

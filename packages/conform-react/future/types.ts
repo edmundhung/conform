@@ -118,6 +118,8 @@ export type DefaultValue<Shape> =
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
+	/** Initial form values */
+	defaultValue: Record<string, unknown>;
 	/** Form values that will be synced to the DOM  */
 	targetValue: Record<string, unknown> | null;
 	/** Form values from server actions, or submitted values when no server intent exists */
@@ -234,8 +236,6 @@ export interface FormContext<
 	formId: string;
 	/** Internal form state with validation results and field data */
 	state: FormState<ErrorShape>;
-	/** Initial form values */
-	defaultValue: Record<string, any> | null;
 	/** HTML validation attributes for fields */
 	constraint: Record<string, ValidationAttributes> | null;
 	/** Form submission event handler */
@@ -590,6 +590,8 @@ export type FormMetadata<
 	errors: ErrorShape[] | undefined;
 	/** Object containing errors for all touched fields. */
 	fieldErrors: Record<string, ErrorShape[]>;
+	/** The form's initial default values. */
+	defaultValue: Record<string, unknown>;
 	/** Form props object for spreading onto the <form> element. */
 	props: Readonly<{
 		id: string;
