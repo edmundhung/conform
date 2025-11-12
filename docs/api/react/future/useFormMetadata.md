@@ -58,6 +58,10 @@ Form-level validation errors, if any exist.
 
 Object containing errors for all touched fields.
 
+### `defaultValue: Record<string, unknown>`
+
+Initial form values.
+
 ### `props: FormProps`
 
 Form props object for spreading onto the `<form>` element:

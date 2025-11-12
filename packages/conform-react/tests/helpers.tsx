@@ -37,7 +37,7 @@ export function serverRenderHook<Result>(renderCallback: () => Result): Result {
 export function createResult(
 	entries: Array<[string, FormDataEntryValue]>,
 	options?: {
-		value?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		error?: Partial<FormError<any>> | null;
 	},
 ): SubmissionResult<any, any> {
@@ -53,8 +53,8 @@ export function createResult(
 	const value = applyIntent(submission);
 
 	return report(submission, {
-		intendedValue:
-			typeof options?.value !== 'undefined' ? options.value : value,
+		targetValue:
+			typeof options?.targetValue !== 'undefined' ? options.targetValue : value,
 		error: options?.error,
 	});
 }
@@ -62,7 +62,9 @@ export function createResult(
 export function createAction(options: {
 	type: FormAction<any, any>['type'];
 	entries: Array<[string, FormDataEntryValue]>;
-	value?: Record<string, FormValue> | null;
+	reset?: boolean;
+	defaultValue?: Record<string, unknown> | null;
+	targetValue?: Record<string, FormValue> | null;
 	error?: Partial<FormError<any>> | null;
 }): FormAction<any, any, any> {
 	const formData = new FormData();
@@ -76,14 +78,21 @@ export function createAction(options: {
 	});
 	const value = applyIntent(submission);
 	const result = report(submission, {
-		intendedValue:
-			typeof options?.value !== 'undefined' ? options.value : value,
-		error: options?.error,
+		targetValue:
+			options.targetValue !== undefined
+				? options.targetValue
+				: options.reset
+					? undefined
+					: value,
+		reset: options.reset,
+		error: options.error,
 	});
 	const ctx = {
 		handlers: actionHandlers,
-		reset() {
-			return initializeState();
+		reset(defaultValue?: Record<string, unknown> | null) {
+			return initializeState({
+				defaultValue: defaultValue ?? options.defaultValue,
+			});
 		},
 	};
 

@@ -1,19 +1,22 @@
 /// <reference types="@vitest/browser/matchers" />
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { userEvent } from '@vitest/browser/context';
+import { Locator, userEvent } from '@vitest/browser/context';
 import {
 	type FormValue,
 	type FormError,
 	type FormOptions,
 	useForm,
 	FormOptionsProvider,
+	report,
+	parseSubmission,
 } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 
 describe('future export: useForm', () => {
 	type Schema = {
 		title: string;
+		category?: string;
 		description: string;
 		tasks: Array<{ content: string; completed: boolean }>;
 		confirmed: boolean;
@@ -27,10 +30,20 @@ describe('future export: useForm', () => {
 
 		if (!value.title) {
 			error.fieldErrors.title = ['Title is required'];
+		} else if (
+			typeof value.title === 'string' &&
+			value.title.startsWith('invalid')
+		) {
+			error.fieldErrors.title = ['Title is invalid'];
 		}
 
 		if (!value.description) {
 			error.fieldErrors.description = ['Description is required'];
+		} else if (
+			typeof value.description === 'string' &&
+			value.description.startsWith('invalid')
+		) {
+			error.fieldErrors.description = ['Description is invalid'];
 		}
 
 		if (!value.confirmed) {
@@ -63,9 +76,6 @@ describe('future export: useForm', () => {
 
 	function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
 		const { form, fields, intent } = useForm({
-			defaultValue: {
-				tasks: [{ content: 'Default Task', completed: false }],
-			},
 			onValidate({ payload }) {
 				return validateForm(payload);
 			},
@@ -94,6 +104,19 @@ describe('future export: useForm', () => {
 				/>
 				<div id={fields.description.errorId}>
 					{fields.description.errors?.join(', ') ?? 'n/a'}
+				</div>
+				<select
+					name={fields.category.name}
+					defaultValue={fields.category.defaultValue}
+					aria-label="Category"
+					aria-describedby={fields.category.ariaDescribedBy}
+				>
+					<option value="">Select a category</option>
+					<option value="personal">Personal</option>
+					<option value="work">Work</option>
+				</select>
+				<div id={fields.category.errorId}>
+					{fields.category.errors?.join(', ') ?? 'n/a'}
 				</div>
 				{fields.tasks.getFieldList().map((task, index) => {
 					const taskField = task.getFieldset();
@@ -146,7 +169,6 @@ describe('future export: useForm', () => {
 					<input
 						type="checkbox"
 						name={fields.confirmed.name}
-						value="important"
 						defaultChecked={fields.confirmed.defaultChecked}
 						aria-describedby={
 							!fields.confirmed.valid ? fields.confirmed.errorId : undefined
@@ -178,6 +200,24 @@ describe('future export: useForm', () => {
 					onClick={() => intent.reset({ defaultValue: null })}
 				>
 					Clear
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						intent.reset({
+							defaultValue: {
+								title: 'Reset Title',
+								description: 'Reset Description',
+								tasks: [
+									{ content: 'Reset Task 1', completed: false },
+									{ content: 'Reset Task 2', completed: true },
+								],
+								confirmed: true,
+							},
+						})
+					}
+				>
+					Reset to Custom Value
 				</button>
 				<button type="button" onClick={() => intent.validate()}>
 					Validate Form
@@ -235,6 +275,51 @@ describe('future export: useForm', () => {
 				>
 					Insert Urgent Task
 				</button>
+				<button
+					type="button"
+					onClick={() => {
+						intent.update({
+							value: {
+								title: 'Form Update Title',
+								description: 'Form Update Description',
+								tasks: [
+									{ content: 'Form Task 1', completed: true },
+									{ content: 'Form Task 2', completed: false },
+								],
+							},
+						});
+						intent.update({
+							name: fields.description.name,
+							value: 'Separate Description Update',
+						});
+						intent.update({
+							name: fields.tasks.name,
+							index: 0,
+							value: { content: 'Separate Task Update', completed: true },
+						});
+					}}
+				>
+					Multiple Updates
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						intent.reset();
+						intent.validate();
+					}}
+				>
+					Reset then Validate
+				</button>
+				<button
+					type="button"
+					onClick={() => {
+						intent.insert({ name: fields.tasks.name, index: 0 });
+						intent.remove({ name: fields.tasks.name, index: 1 });
+						intent.reorder({ name: fields.tasks.name, from: 0, to: 1 });
+					}}
+				>
+					Insert Remove Reorder
+				</button>
 			</form>
 		);
 	}
@@ -243,6 +328,7 @@ describe('future export: useForm', () => {
 		return {
 			title: screen.getByLabelText('Title'),
 			description: screen.getByLabelText('Description'),
+			category: screen.getByLabelText('Category'),
 			confirmed: screen.getByLabelText('Confirmed'),
 			controlledHiddenInput: screen.getByLabelText('Controlled Hidden Input', {
 				exact: true,
@@ -252,8 +338,11 @@ describe('future export: useForm', () => {
 				{ exact: true },
 			),
 			submitButton: screen.getByRole('button', { name: 'Submit' }),
-			resetButton: screen.getByRole('button', { name: 'Reset' }),
+			resetButton: screen.getByRole('button', { name: 'Reset', exact: true }),
 			clearButton: screen.getByRole('button', { name: 'Clear' }),
+			resetToCustomValueButton: screen.getByRole('button', {
+				name: 'Reset to Custom Value',
+			}),
 			validateFormButton: screen.getByRole('button', {
 				name: 'Validate Form',
 			}),
@@ -272,6 +361,25 @@ describe('future export: useForm', () => {
 			insertTaskButton: screen.getByRole('button', {
 				name: 'Insert Task',
 			}),
+			multipleUpdatesButton: screen.getByRole('button', {
+				name: 'Multiple Updates',
+			}),
+			resetThenValidateButton: screen.getByRole('button', {
+				name: 'Reset then Validate',
+			}),
+			insertRemoveReorderButton: screen.getByRole('button', {
+				name: 'Insert Remove Reorder',
+			}),
+			getFormData(submitterLocator?: Locator) {
+				const formElement = screen.container.querySelector('form');
+				const submitter = submitterLocator?.element();
+
+				if (formElement && (!submitter || submitter instanceof HTMLElement)) {
+					return new FormData(formElement, submitter);
+				}
+
+				throw new Error('Form element / Submitter element not found');
+			},
 		};
 	}
 
@@ -601,8 +709,6 @@ describe('future export: useForm', () => {
 		const form = getForm(screen);
 
 		await expectNoErrorMessages(form.title, form.description);
-
-		// Verify unmanaged inputs have their initial values
 		await expect
 			.element(form.controlledHiddenInput)
 			.toHaveValue('controlled-value');
@@ -617,20 +723,22 @@ describe('future export: useForm', () => {
 		await userEvent.click(form.resetButton);
 		await expectNoErrorMessages(form.title, form.description);
 
-		// Verify unmanaged inputs are not affected by reset
+		// Test submit after reset should work
+		await userEvent.type(form.title, 'example');
+		await userEvent.type(form.description, 'hello world');
+		await userEvent.click(form.submitButton);
+		await expectNoErrorMessages(form.title, form.description);
+
+		await userEvent.click(form.resetButton);
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+		await expectNoErrorMessages(form.title, form.description);
 		await expect
 			.element(form.controlledHiddenInput)
 			.toHaveValue('controlled-value');
 		await expect
 			.element(form.uncontrolledHiddenInput)
 			.toHaveValue('uncontrolled-value');
-
-		// Test reset form value
-		await userEvent.type(form.title, 'example');
-		await userEvent.type(form.description, 'hello world');
-		await userEvent.click(form.resetButton);
-		await expect.element(form.title).toHaveValue('');
-		await expect.element(form.description).toHaveValue('');
 
 		// Test reset form with default values
 		screen.rerender(
@@ -650,6 +758,12 @@ describe('future export: useForm', () => {
 		const task1 = getTaskFieldset(screen, 1);
 		const task2 = getTaskFieldset(screen, 2);
 
+		// Check that form is not reset yet when defaultValue changes
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+
+		// Reset to new default values
+		await userEvent.click(form.resetButton);
 		await expect.element(form.title).toHaveValue('example');
 		await expect.element(form.description).toHaveValue('hello world');
 		await expect.element(task1.content).toHaveValue('First Task');
@@ -705,6 +819,33 @@ describe('future export: useForm', () => {
 		await expect.element(task2.completed).not.toBeInTheDocument();
 
 		// Verify unmanaged inputs are not affected by clear
+		await expect
+			.element(form.controlledHiddenInput)
+			.toHaveValue('controlled-value');
+		await expect
+			.element(form.uncontrolledHiddenInput)
+			.toHaveValue('uncontrolled-value');
+
+		// Test reset to custom value
+		await userEvent.click(form.resetToCustomValueButton);
+
+		await expect.element(form.title).toHaveValue('Reset Title');
+		await expect.element(form.description).toHaveValue('Reset Description');
+		await expect.element(task1.content).toHaveValue('Reset Task 1');
+		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task2.content).toHaveValue('Reset Task 2');
+		await expect.element(task2.completed).toBeChecked();
+		await expect.element(form.confirmed).toBeChecked();
+		await expectNoErrorMessages(
+			form.title,
+			form.description,
+			task1.content,
+			task1.completed,
+			task2.content,
+			task2.completed,
+		);
+
+		// Verify unmanaged inputs are not affected by custom reset
 		await expect
 			.element(form.controlledHiddenInput)
 			.toHaveValue('controlled-value');
@@ -832,6 +973,379 @@ describe('future export: useForm', () => {
 		await expect.element(task3.completed).not.toBeInTheDocument();
 		await expectErrorMessage(task1.content, 'Task content is required');
 		await expectNoErrorMessages(task2.content);
+	});
+
+	test('server report', async () => {
+		const screen = render(<Form />);
+		const form = getForm(screen);
+		const task1 = getTaskFieldset(screen, 1);
+		const task2 = getTaskFieldset(screen, 2);
+
+		await userEvent.type(form.title, 'invalid title');
+		await userEvent.type(form.description, 'invalid description');
+		await userEvent.click(form.confirmed);
+		await userEvent.click(form.insertTaskButton);
+
+		await expect.element(task1.content).toBeInTheDocument();
+		await expect.element(task1.completed).toBeInTheDocument();
+
+		// Trigger validation errors (values are present but invalid)
+		await userEvent.click(form.submitButton);
+		await expectErrorMessage(form.title, 'Title is invalid');
+		await expectErrorMessage(form.description, 'Description is invalid');
+		await expectErrorMessage(task1.content, 'Task content is required');
+
+		// Verify form has invalid values with errors
+		await expect.element(form.title).toHaveValue('invalid title');
+		await expect.element(form.description).toHaveValue('invalid description');
+
+		// Test 1: Basic reset (should clear to empty values AND ignore server errors)
+		screen.rerender(
+			<Form
+				lastResult={report(parseSubmission(form.getFormData()), {
+					reset: true,
+					error: {
+						fieldErrors: {
+							title: ['Server error for title'],
+							description: ['Server error for description'],
+						},
+					},
+				})}
+			/>,
+		);
+
+		// Values should be cleared to empty
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+		await expect.element(form.confirmed).not.toBeChecked();
+		// Tasks should be completely removed
+		await expect.element(task1.content).not.toBeInTheDocument();
+		await expect.element(task1.completed).not.toBeInTheDocument();
+		// Server errors should be ignored (proves reset happened, not just form update)
+		await expectNoErrorMessages(form.title, form.description);
+
+		// Test 2: Reset with target value (should change invalid values to valid values AND clear errors)
+		await userEvent.type(form.title, 'invalid old title');
+		await userEvent.type(form.description, 'invalid old description');
+		await userEvent.click(form.insertTaskButton);
+
+		// Trigger validation errors (values present but invalid)
+		await userEvent.click(form.submitButton);
+		await expectErrorMessage(form.title, 'Title is invalid');
+		await expectErrorMessage(form.description, 'Description is invalid');
+
+		// Verify form has invalid values with errors
+		await expect.element(form.title).toHaveValue('invalid old title');
+		await expect
+			.element(form.description)
+			.toHaveValue('invalid old description');
+
+		screen.rerender(
+			<Form
+				lastResult={report(parseSubmission(form.getFormData()), {
+					reset: true,
+					targetValue: {
+						title: 'Updated Title',
+						category: 'work',
+						description: 'Updated Description',
+						confirmed: 'on',
+						tasks: [
+							{ content: 'Task 1', completed: false },
+							{ content: 'Task 2', completed: 'on' },
+						],
+					},
+					error: {
+						fieldErrors: {
+							title: ['Server error that should be ignored'],
+							description: ['Another server error'],
+						},
+					},
+				})}
+			/>,
+		);
+
+		// Values should change from "invalid old" to "Updated" (proves values changed)
+		await expect.element(form.title).toHaveValue('Updated Title');
+		await expect.element(form.category).toHaveValue('work');
+		await expect.element(form.description).toHaveValue('Updated Description');
+		await expect.element(form.confirmed).toBeChecked();
+		await expect.element(task1.content).toHaveValue('Task 1');
+		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task2.content).toHaveValue('Task 2');
+		await expect.element(task2.completed).toBeChecked();
+		// Server errors should be ignored (proves reset happened with target value)
+		await expectNoErrorMessages(form.title, form.description);
+
+		// Test 3: target value without reset (should update values and clear errors via value change)
+		await userEvent.clear(form.title);
+		await userEvent.type(form.title, 'invalid user title');
+
+		// Trigger validation error (value present but invalid)
+		await userEvent.click(form.submitButton);
+		await expectErrorMessage(form.title, 'Title is invalid');
+
+		// Verify form has invalid title with error
+		await expect.element(form.title).toHaveValue('invalid user title');
+		await expect.element(form.description).toHaveValue('Updated Description');
+
+		screen.rerender(
+			<Form
+				lastResult={report(parseSubmission(form.getFormData()), {
+					targetValue: {
+						title: 'Server Processed Title',
+						category: 'personal',
+						description: 'Server Updated Description',
+						tasks: [{ content: 'Server Task', completed: false }],
+					},
+				})}
+			/>,
+		);
+
+		// Values should change from "invalid user" to "Server Processed" (proves values changed)
+		await expect.element(form.title).toHaveValue('Server Processed Title');
+		await expect.element(form.category).toHaveValue('personal');
+		await expect
+			.element(form.description)
+			.toHaveValue('Server Updated Description');
+		await expect.element(task1.content).toHaveValue('Server Task');
+		await expect.element(task1.completed).not.toBeChecked();
+		// Errors should be cleared because the form value changed (triggers revalidation, not reset)
+		await expectNoErrorMessages(form.title);
+
+		// Test 4: null target value without reset (breaking change - should clear without reset)
+		screen.rerender(
+			<Form
+				lastResult={report(parseSubmission(form.getFormData()), {
+					targetValue: null,
+				})}
+			/>,
+		);
+
+		// Should clear form (null becomes {}) but NOT trigger a form reset
+		await expect.element(form.title).toHaveValue('');
+		await expect.element(form.description).toHaveValue('');
+		await expect.element(form.confirmed).not.toBeChecked();
+		// Tasks should be removed since target value is now {}
+		await expect.element(task1.content).not.toBeInTheDocument();
+		await expect.element(task1.completed).not.toBeInTheDocument();
+	});
+
+	test('server report with defaultValue', async () => {
+		const defaultValue = {
+			title: 'Initial Title',
+			description: 'Initial Description',
+			confirmed: 'on',
+			tasks: [
+				{ content: 'Initial Task 1', completed: false },
+				{ content: 'Initial Task 2', completed: 'on' },
+			],
+		};
+		const screen = render(<Form defaultValue={defaultValue} />);
+		const form = getForm(screen);
+		const task1 = getTaskFieldset(screen, 1);
+		const task2 = getTaskFieldset(screen, 2);
+
+		// Verify initial defaultValue is rendered
+		await expect.element(form.title).toHaveValue('Initial Title');
+		await expect.element(form.description).toHaveValue('Initial Description');
+		await expect.element(form.confirmed).toBeChecked();
+		await expect.element(task1.content).toHaveValue('Initial Task 1');
+		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task2.content).toHaveValue('Initial Task 2');
+		await expect.element(task2.completed).toBeChecked();
+
+		// User modifies the form with invalid values
+		await userEvent.clear(form.title);
+		await userEvent.type(form.title, 'invalid modified title');
+		await userEvent.clear(form.description);
+		await userEvent.type(form.description, 'invalid modified description');
+		await userEvent.click(form.confirmed);
+
+		// Trigger validation errors (values present but invalid)
+		await userEvent.click(form.submitButton);
+		await expectErrorMessage(form.title, 'Title is invalid');
+		await expectErrorMessage(form.description, 'Description is invalid');
+
+		// Verify form has invalid values with errors
+		await expect.element(form.title).toHaveValue('invalid modified title');
+		await expect
+			.element(form.description)
+			.toHaveValue('invalid modified description');
+
+		// Test 1: Reset without target value should reset to defaultValue (and ignore server errors)
+		screen.rerender(
+			<Form
+				defaultValue={defaultValue}
+				lastResult={report(parseSubmission(form.getFormData()), {
+					reset: true,
+					error: {
+						fieldErrors: {
+							title: ['Server error for title'],
+							description: ['Server error for description'],
+						},
+					},
+				})}
+			/>,
+		);
+
+		// Should reset back to defaultValue (proves values changed from "invalid modified" to "Initial")
+		await expect.element(form.title).toHaveValue('Initial Title');
+		await expect.element(form.description).toHaveValue('Initial Description');
+		await expect.element(form.confirmed).toBeChecked();
+		await expect.element(task1.content).toHaveValue('Initial Task 1');
+		await expect.element(task1.completed).not.toBeChecked();
+		await expect.element(task2.content).toHaveValue('Initial Task 2');
+		await expect.element(task2.completed).toBeChecked();
+		// Server errors should be ignored (proves reset happened)
+		await expectNoErrorMessages(form.title, form.description);
+
+		// User modifies the form again with invalid values
+		await userEvent.clear(form.title);
+		await userEvent.type(form.title, 'invalid another title');
+		await userEvent.clear(form.description);
+		await userEvent.type(form.description, 'invalid another description');
+
+		// Trigger validation errors again
+		await userEvent.click(form.submitButton);
+		await expectErrorMessage(form.title, 'Title is invalid');
+		await expectErrorMessage(form.description, 'Description is invalid');
+
+		// Verify form has invalid values with errors
+		await expect.element(form.title).toHaveValue('invalid another title');
+		await expect
+			.element(form.description)
+			.toHaveValue('invalid another description');
+
+		// Test 2: Reset with target value should reset to target value (not defaultValue, ignore server errors)
+		screen.rerender(
+			<Form
+				defaultValue={defaultValue}
+				lastResult={report(parseSubmission(form.getFormData()), {
+					reset: true,
+					targetValue: {
+						title: 'Server Updated Title',
+						description: 'Server Updated Description',
+						confirmed: false,
+						tasks: [{ content: 'Server Task', completed: 'on' }],
+					},
+					error: {
+						fieldErrors: {
+							title: ['Server error should be ignored'],
+							description: ['Another server error'],
+						},
+					},
+				})}
+			/>,
+		);
+
+		// Should reset to target value, NOT to defaultValue (proves values changed to server values, not default)
+		await expect.element(form.title).toHaveValue('Server Updated Title');
+		await expect
+			.element(form.description)
+			.toHaveValue('Server Updated Description');
+		await expect.element(form.confirmed).not.toBeChecked();
+		await expect.element(task1.content).toHaveValue('Server Task');
+		await expect.element(task1.completed).toBeChecked();
+		await expect.element(task2.content).not.toBeInTheDocument();
+		await expect.element(task2.completed).not.toBeInTheDocument();
+		// Server errors should be ignored (proves reset happened with target value, not just form update)
+		await expectNoErrorMessages(form.title, form.description);
+	});
+
+	describe('batched intents', () => {
+		test('multiple updates', async () => {
+			const screen = render(<Form />);
+			const form = getForm(screen);
+			const task1 = getTaskFieldset(screen, 1);
+			const task2 = getTaskFieldset(screen, 2);
+
+			await userEvent.click(form.multipleUpdatesButton);
+
+			await expect.element(form.title).toHaveValue('Form Update Title');
+			await expect
+				.element(form.description)
+				.toHaveValue('Separate Description Update');
+			await expect.element(task1.content).toHaveValue('Separate Task Update');
+			await expect.element(task1.completed).toBeChecked();
+			await expect.element(task2.content).toHaveValue('Form Task 2');
+			await expect.element(task2.completed).not.toBeChecked();
+		});
+
+		test('reset then validate', async () => {
+			const screen = render(<Form />);
+			const form = getForm(screen);
+			const task1 = getTaskFieldset(screen, 1);
+
+			// Update the form to have different values
+			await userEvent.type(form.title, 'Foo');
+			await userEvent.type(form.description, 'Bar');
+			await userEvent.click(form.insertTaskButton);
+			await expect.element(task1.content).toBeInTheDocument();
+			await expect.element(task1.completed).toBeInTheDocument();
+
+			// Reset then validate
+			await userEvent.click(form.resetThenValidateButton);
+
+			await expect.element(form.title).toHaveValue('');
+			await expect.element(form.description).toHaveValue('');
+			await expect.element(task1.content).not.toBeInTheDocument();
+			await expect.element(task1.completed).not.toBeInTheDocument();
+			await expectErrorMessage(form.title, 'Title is required');
+			await expectErrorMessage(form.description, 'Description is required');
+
+			screen.rerender(
+				<Form
+					key="rerender-with-default-value"
+					defaultValue={{
+						title: 'Foo',
+						description: '',
+						tasks: [{ content: '', completed: true }],
+					}}
+				/>,
+			);
+
+			await userEvent.clear(form.title);
+			await userEvent.type(form.description, 'Bar');
+			await userEvent.type(task1.content, 'Task 1');
+
+			// Reset then validate again
+			await userEvent.click(form.resetThenValidateButton);
+
+			await expectNoErrorMessages(form.title);
+			await expectErrorMessage(form.description, 'Description is required');
+		});
+
+		test('insert and remove then reorder', async () => {
+			const screen = render(
+				<Form
+					defaultValue={{
+						tasks: [
+							{ content: 'Task 1', completed: false },
+							{ content: 'Task 2', completed: true },
+						],
+					}}
+				/>,
+			);
+			const form = getForm(screen);
+			const task1 = getTaskFieldset(screen, 1);
+			const task2 = getTaskFieldset(screen, 2);
+			const task3 = getTaskFieldset(screen, 3);
+
+			await expect.element(task1.content).toHaveValue('Task 1');
+			await expect.element(task2.content).toHaveValue('Task 2');
+
+			// Insert, remove, and reorder in a single batch
+			await userEvent.click(form.insertRemoveReorderButton);
+
+			// After insert at 0, remove at 1, reorder 0 to 1:
+			// Initial: ["Task 1", "Task 2"]
+			// After insert at 0: ["", "Task 1", "Task 2"]
+			// After remove at 1: ["", "Task 2"]
+			// After reorder 0 to 1: ["Task 2", ""]
+			await expect.element(task1.content).toHaveValue('Task 2');
+			await expect.element(task2.content).toHaveValue('');
+			await expect.element(task3.content).not.toBeInTheDocument();
+		});
 	});
 
 	describe('async validation', () => {

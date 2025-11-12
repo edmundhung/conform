@@ -395,7 +395,7 @@ export function parseSubmission(
 }
 
 /**
- * Creates a SubmissionResult object from a submission, adding validation results and intended values.
+ * Creates a SubmissionResult object from a submission, adding validation results and target values.
  * This function will remove all files in the submission payload by default since
  * file inputs cannot be initialized with files.
  * You can specify `keepFiles: true` to keep the files if needed.
@@ -434,7 +434,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		intendedValue?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -451,7 +451,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		intendedValue?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -465,7 +465,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		intendedValue?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -479,7 +479,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		intendedValue?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -502,17 +502,17 @@ export function report<ErrorShape = string>(
 			fieldErrors?: Record<string, string[]>;
 		} | null;
 		/**
-		 * The intended form values to track what the form should contain
-		 * vs. what was actually submitted.
+		 * The target form value to set. Use this to update the form or reset it
+		 * to a specific value when combined with `reset: true`.
 		 */
-		intendedValue?: Record<string, FormValue> | null;
+		targetValue?: Record<string, FormValue> | null;
 		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
 		 */
 		hideFields?: string[];
 		/**
-		 * When `true`, indicates the form should be reset to its initial state.
+		 * Indicates whether the form should be reset to its initial state.
 		 */
 		reset?: boolean;
 	} = {},
@@ -545,22 +545,21 @@ export function report<ErrorShape = string>(
 		}
 	}
 
-	const intendedValue = options.reset
-		? null
-		: typeof options.intendedValue === 'undefined' ||
-			  submission.payload === options.intendedValue
+	const targetValue =
+		typeof options.targetValue === 'undefined' ||
+		(submission.payload === options.targetValue && !options.reset)
 			? undefined
-			: options.intendedValue && !options.keepFiles
-				? stripFiles(options.intendedValue)
-				: options.intendedValue;
+			: options.targetValue && !options.keepFiles
+				? stripFiles(options.targetValue)
+				: options.targetValue ?? {};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
 			const path = getPathSegments(name);
 
 			setValueAtPath(submission.payload, path, undefined);
-			if (intendedValue) {
-				setValueAtPath(intendedValue, path, undefined);
+			if (targetValue) {
+				setValueAtPath(targetValue, path, undefined);
 			}
 		}
 	}
@@ -572,7 +571,8 @@ export function report<ErrorShape = string>(
 					...submission,
 					payload: stripFiles(submission.payload),
 				},
-		intendedValue,
+		reset: options.reset,
+		targetValue,
 		error,
 	};
 }

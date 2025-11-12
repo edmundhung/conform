@@ -2,7 +2,7 @@
 
 > The `report` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A utility function that creates a `SubmissionResult` object from a submission to add validation results and intended values with options to strip files and hide sensitive fields.
+A utility function that creates a `SubmissionResult` object from a submission to add validation results and target value with options to strip files and hide sensitive fields.
 
 ```ts
 import { report } from '@conform-to/react/future';
@@ -26,9 +26,9 @@ Error information to include in the result. Can contain:
 
 Set to `null` to indicate validation passed with no errors. When both `issues` and `formErrors` / `fieldErrors` are provided, they will be merged together, with `issues` being formatted first.
 
-### `options.intendedValue?: Record<string, unknown> | null`
+### `options.targetValue?: Record<string, unknown> | null`
 
-The intended form values to track what the form should contain vs. what was actually submitted.
+The target form value to set. Use this to update the form or reset it to a specific value when combined with reset: true.
 
 ### `options.keepFiles?: boolean`
 
@@ -39,7 +39,7 @@ Controls whether file objects are preserved in the submission payload:
 
 ### `options.hideFields?: string[]`
 
-Array of field names to hide from the result by setting them to `undefined` in both the submission payload and intended value. Primarily used for sensitive data like passwords that should not be sent back to the client.
+Array of field names to hide from the result by setting them to `undefined` in both the submission payload and value. Primarily used for sensitive data like passwords that should not be sent back to the client.
 
 ```ts
 report(submission, {
@@ -49,7 +49,7 @@ report(submission, {
 
 ### `options.reset?: boolean`
 
-When `true`, indicates the form should be reset to its initial state.
+Indicates whether the form should be reset to its initial state.
 
 ## Returns
 
@@ -59,13 +59,17 @@ A `SubmissionResult` object containing:
 
 The processed submission object. May have modified payload if some fields were hidden or files are stripped.
 
-### `intendedValue?: Record<string, unknown> | null`
+### `targetValue?: Record<string, unknown> | null`
 
-The intended form values, if different from the submission payload.
+The form value to apply, if different from the submission payload.
 
 ### `error?: FormError | null`
 
 Validation result, if any was provided in the options.
+
+### `reset?: boolean`
+
+Indicates whether the form should be reset to its initial state.
 
 ## Example
 

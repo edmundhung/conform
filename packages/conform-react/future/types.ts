@@ -118,10 +118,12 @@ export type DefaultValue<Shape> =
 export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
-	/** Form values from client actions that will be synced to the DOM  */
-	clientIntendedValue: Record<string, unknown> | null;
+	/** Initial form values */
+	defaultValue: Record<string, unknown>;
+	/** Form values that will be synced to the DOM  */
+	targetValue: Record<string, unknown> | null;
 	/** Form values from server actions, or submitted values when no server intent exists */
-	serverIntendedValue: Record<string, unknown> | null;
+	serverValue: Record<string, unknown> | null;
 	/** Validation errors from server-side processing */
 	serverError: FormError<ErrorShape> | null;
 	/** Validation errors from client-side validation */
@@ -208,7 +210,11 @@ export type FormOptions<
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
 	onError?: ErrorHandler<ErrorShape>;
 	/** Form submission handler called when the form is submitted with no validation errors. */
-	onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+	onSubmit?: SubmitHandler<
+		NoInfer<FormShape>,
+		NoInfer<ErrorShape>,
+		NoInfer<Value>
+	>;
 	/** Input event handler for custom input event logic. */
 	onInput?: InputHandler;
 	/** Blur event handler for custom focus handling logic. */
@@ -230,8 +236,6 @@ export interface FormContext<
 	formId: string;
 	/** Internal form state with validation results and field data */
 	state: FormState<ErrorShape>;
-	/** Initial form values */
-	defaultValue: Record<string, any> | null;
 	/** HTML validation attributes for fields */
 	constraint: Record<string, ValidationAttributes> | null;
 	/** Form submission event handler */
@@ -292,24 +296,42 @@ export interface IntentDispatcher<
 	 * Update a field or a fieldset.
 	 * If you provide a fieldset name, it will update all fields within that fieldset
 	 */
-	update<FieldShape = FormShape>(options: {
-		/**
-		 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
-		 */
-		name?: FieldName<FieldShape>;
-		/**
-		 * Specify the index of the item to update if the field is an array.
-		 */
-		index?: FieldShape extends Array<any>
-			? number
-			: unknown extends FieldShape
-				? number
-				: never;
-		/**
-		 * The new value for the field or fieldset.
-		 */
-		value: DefaultValue<FieldShape>;
-	}): void;
+	update<FieldShape = FormShape>(
+		options:
+			| {
+					/**
+					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
+					 */
+					name?: FieldName<FieldShape>;
+					/**
+					 * Specify the index of the item to update if the field is an array.
+					 */
+					index?: undefined;
+					/**
+					 * The new value for the field or fieldset.
+					 */
+					value: DefaultValue<FieldShape>;
+			  }
+			| {
+					/**
+					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
+					 */
+					name: FieldName<FieldShape>;
+					/**
+					 * Specify the index of the item to update if the field is an array.
+					 */
+					index: number;
+					/**
+					 * The new value for the field or fieldset.
+					 * When index is specified, this should be the item type, not the array type.
+					 */
+					value: unknown extends FieldShape
+						? any
+						: FieldShape extends Array<infer ItemShape>
+							? ItemShape
+							: any;
+			  },
+	): void;
 
 	/**
 	 * Insert a new item into an array field.
@@ -375,7 +397,7 @@ export type ActionHandler<
 	onApply?(
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
-	): Record<string, FormValue> | null;
+	): Record<string, FormValue> | undefined;
 	onUpdate?<ErrorShape extends BaseErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
@@ -385,6 +407,11 @@ export type ActionHandler<
 				payload: Signature extends (payload: infer Payload) => void
 					? Payload
 					: undefined;
+			},
+			{
+				reset: (
+					defaultValue?: Record<string, unknown> | null,
+				) => FormState<ErrorShape>;
 			}
 		>,
 	): FormState<ErrorShape>;
@@ -563,6 +590,8 @@ export type FormMetadata<
 	errors: ErrorShape[] | undefined;
 	/** Object containing errors for all touched fields. */
 	fieldErrors: Record<string, ErrorShape[]>;
+	/** The form's initial default values. */
+	defaultValue: Record<string, unknown>;
 	/** Form props object for spreading onto the <form> element. */
 	props: Readonly<{
 		id: string;
@@ -678,6 +707,7 @@ export type InputHandler = (event: FormInputEvent) => void;
 export type BlurHandler = (event: FormFocusEvent) => void;
 
 export type SubmitContext<
+	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 > = {
@@ -685,14 +715,16 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null;
+		targetValue?: FormShape | null;
 		reset?: boolean;
 	}) => void;
 };
 
 export type SubmitHandler<
+	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 > = (
 	event: React.FormEvent<HTMLFormElement>,
-	ctx: SubmitContext<ErrorShape, Value>,
+	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;

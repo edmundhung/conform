@@ -31,7 +31,6 @@ export {
 	focus,
 	change,
 	blur,
-	getFieldDefaultValue,
 	getFormAction,
 	getFormEncType,
 	getFormMethod,

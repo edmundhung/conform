@@ -74,6 +74,7 @@ import {
 	getSubmitEvent,
 	initializeField,
 	updateFormValue,
+	resetFormValue,
 } from './dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
@@ -154,21 +155,29 @@ export function useFormContext(formId?: string): FormContext {
  * Core form hook that manages form state, validation, and submission.
  * Handles both sync and async validation, intent dispatching, and DOM updates.
  */
-export function useConform<ErrorShape, Value = undefined>(
+export function useConform<
+	FormShape extends Record<string, any>,
+	ErrorShape,
+	Value = undefined,
+>(
 	formRef: FormRef,
 	options: {
 		key?: string;
+		defaultValue?: Record<string, FormValue> | null;
 		serialize: Serialize;
 		intentName: string;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
 		onValidate?: ValidateHandler<ErrorShape, Value>;
 		onError?: ErrorHandler<ErrorShape>;
-		onSubmit?: SubmitHandler<NoInfer<ErrorShape>, NoInfer<Value>>;
+		onSubmit?: SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>;
 	},
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
 	const [state, setState] = useState<FormState<ErrorShape>>(() => {
-		let state = initializeState<ErrorShape>(INITIAL_KEY);
+		let state = initializeState<ErrorShape>({
+			defaultValue: options.defaultValue,
+			resetKey: INITIAL_KEY,
+		});
 
 		if (lastResult) {
 			state = updateState(state, {
@@ -179,7 +188,11 @@ export function useConform<ErrorShape, Value = undefined>(
 					: null,
 				ctx: {
 					handlers: actionHandlers,
-					reset: () => state,
+					reset: (defaultValue) =>
+						initializeState<ErrorShape>({
+							defaultValue: defaultValue ?? options.defaultValue,
+							resetKey: INITIAL_KEY,
+						}),
 				},
 			});
 		}
@@ -190,9 +203,7 @@ export function useConform<ErrorShape, Value = undefined>(
 	const resetKeyRef = useRef(state.resetKey);
 	const optionsRef = useLatest(options);
 	const lastResultRef = useRef(lastResult);
-	const lastIntentedValueRef = useRef<
-		Record<string, FormValue> | null | undefined
-	>();
+	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
 	const lastAsyncResultRef = useRef<{
 		event: SubmitEvent;
 		result: SubmissionResult<ErrorShape>;
@@ -213,13 +224,16 @@ export function useConform<ErrorShape, Value = undefined>(
 					intent,
 					ctx: {
 						handlers: actionHandlers,
-						reset() {
-							return initializeState<ErrorShape>();
+						reset(defaultValue) {
+							return initializeState<ErrorShape>({
+								defaultValue: defaultValue ?? optionsRef.current.defaultValue,
+							});
 						},
 					},
 				}),
 			);
 
+			// TODO: move on error handler to a new effect
 			const formElement = getFormElement(formRef);
 
 			if (!formElement || !result.error) {
@@ -254,9 +268,13 @@ export function useConform<ErrorShape, Value = undefined>(
 		// Reset the form state if the form key changes
 		if (options.key !== keyRef.current) {
 			keyRef.current = options.key;
-			setState(initializeState<ErrorShape>());
+			setState(
+				initializeState<ErrorShape>({
+					defaultValue: optionsRef.current.defaultValue,
+				}),
+			);
 		}
-	}, [options.key]);
+	}, [options.key, optionsRef]);
 
 	useEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -264,30 +282,34 @@ export function useConform<ErrorShape, Value = undefined>(
 		// Reset the form values if the reset key changes
 		if (formElement && state.resetKey !== resetKeyRef.current) {
 			resetKeyRef.current = state.resetKey;
-			formElement.reset();
+			resetFormValue(
+				formElement,
+				state.defaultValue,
+				optionsRef.current.serialize,
+			);
+			pendingValueRef.current = undefined;
 		}
-	}, [formRef, state.resetKey]);
+	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
 
 	useEffect(() => {
-		if (!state.clientIntendedValue) {
-			return;
+		if (state.targetValue) {
+			const formElement = getFormElement(formRef);
+
+			if (!formElement) {
+				// eslint-disable-next-line no-console
+				console.error('Failed to update form value; No form element found');
+				return;
+			}
+
+			updateFormValue(
+				formElement,
+				state.targetValue,
+				optionsRef.current.serialize,
+			);
 		}
 
-		const formElement = getFormElement(formRef);
-
-		if (!formElement) {
-			// eslint-disable-next-line no-console
-			console.error('Failed to update form value; No form element found');
-			return;
-		}
-
-		updateFormValue(
-			formElement,
-			state.clientIntendedValue,
-			optionsRef.current.serialize,
-		);
-		lastIntentedValueRef.current = undefined;
-	}, [formRef, state.clientIntendedValue, optionsRef]);
+		pendingValueRef.current = undefined;
+	}, [formRef, state.targetValue, optionsRef]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -326,26 +348,28 @@ export function useConform<ErrorShape, Value = undefined>(
 					}
 				}
 
-				// Override submission value if the last intended value is not applied yet (i.e. batch updates)
-				if (lastIntentedValueRef.current != null) {
-					submission.payload = lastIntentedValueRef.current;
+				// Override submission value if the pending value is not applied yet (i.e. batch updates)
+				if (pendingValueRef.current !== undefined) {
+					submission.payload = pendingValueRef.current;
 				}
 
-				const intendedValue = applyIntent(submission);
-
-				// Update the last intended value in case there will be another intent dispatched
-				lastIntentedValueRef.current =
-					intendedValue === submission.payload ? undefined : intendedValue;
-
+				const targetValue = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					intendedValue,
+					targetValue,
 				});
+
+				// If there is target value, keep track of it as pending value
+				if (submission.payload !== targetValue) {
+					pendingValueRef.current =
+						targetValue ?? optionsRef.current.defaultValue ?? {};
+				}
+
 				const validateResult =
 					// Skip validation on form reset
-					intendedValue !== null
+					targetValue !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: intendedValue,
+								payload: targetValue,
 								error: {
 									formErrors: [],
 									fieldErrors: {},
@@ -478,84 +502,86 @@ export function useForm<
 	fields: Fieldset<FormShape, ErrorShape>;
 	intent: IntentDispatcher<FormShape>;
 } {
-	const { id, defaultValue, constraint } = options;
+	const { id, constraint } = options;
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
 	const globalOptionsRef = useLatest(globalOptions);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<ErrorShape, Value>(formId, {
-		...options,
-		serialize: globalOptions.serialize,
-		intentName: globalOptions.intentName,
-		onError: optionsRef.current.onError ?? focusFirstInvalidField,
-		onValidate(ctx) {
-			if (options.schema) {
-				const standardResult = options.schema['~standard'].validate(
-					ctx.payload,
-				);
-
-				if (standardResult instanceof Promise) {
-					return standardResult.then((actualStandardResult) => {
-						if (typeof options.onValidate === 'function') {
-							throw new Error(
-								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-							);
-						}
-
-						return resolveStandardSchemaResult(
-							actualStandardResult,
-						) as ValidateResult<ErrorShape, Value>;
-					});
-				}
-
-				const resolvedResult = resolveStandardSchemaResult(standardResult);
-
-				if (!options.onValidate) {
-					return resolvedResult as ValidateResult<ErrorShape, Value>;
-				}
-
-				// Update the schema error in the context
-				if (resolvedResult.error) {
-					ctx.error = resolvedResult.error;
-				}
-
-				ctx.schemaValue = resolvedResult.value;
-
-				const validateResult = resolveValidateResult(options.onValidate(ctx));
-
-				if (validateResult.syncResult) {
-					validateResult.syncResult.value ??= resolvedResult.value;
-				}
-
-				if (validateResult.asyncResult) {
-					validateResult.asyncResult = validateResult.asyncResult.then(
-						(result) => {
-							result.value ??= resolvedResult.value;
-							return result;
-						},
+	const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value>(
+		formId,
+		{
+			...options,
+			serialize: globalOptions.serialize,
+			intentName: globalOptions.intentName,
+			onError: optionsRef.current.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (options.schema) {
+					const standardResult = options.schema['~standard'].validate(
+						ctx.payload,
 					);
+
+					if (standardResult instanceof Promise) {
+						return standardResult.then((actualStandardResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
+
+							return resolveStandardSchemaResult(
+								actualStandardResult,
+							) as ValidateResult<ErrorShape, Value>;
+						});
+					}
+
+					const resolvedResult = resolveStandardSchemaResult(standardResult);
+
+					if (!options.onValidate) {
+						return resolvedResult as ValidateResult<ErrorShape, Value>;
+					}
+
+					// Update the schema error in the context
+					if (resolvedResult.error) {
+						ctx.error = resolvedResult.error;
+					}
+
+					ctx.schemaValue = resolvedResult.value;
+
+					const validateResult = resolveValidateResult(options.onValidate(ctx));
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= resolvedResult.value;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= resolvedResult.value;
+								return result;
+							},
+						);
+					}
+
+					return [validateResult.syncResult, validateResult.asyncResult];
 				}
 
-				return [validateResult.syncResult, validateResult.asyncResult];
-			}
-
-			return (
-				options.onValidate?.(ctx) ?? {
-					// To avoid conform falling back to server validation,
-					// if neither schema nor validation handler is provided,
-					// we just treat it as a valid client submission
-					error: null,
-				}
-			);
+				return (
+					options.onValidate?.(ctx) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
+			},
 		},
-	});
+	);
 	const intent = useIntent<FormShape>(formId);
 	const context = useMemo<FormContext<ErrorShape>>(
 		() => ({
 			formId,
 			state,
-			defaultValue: defaultValue ?? null,
 			constraint: constraint ?? null,
 			handleSubmit: handleSubmit,
 			handleInput(event) {
@@ -630,7 +656,6 @@ export function useForm<
 		[
 			formId,
 			state,
-			defaultValue,
 			constraint,
 			handleSubmit,
 			intent,
@@ -942,6 +967,13 @@ export function useControl(options?: {
 					inputRef.current = null;
 				} else if (isFieldElement(element)) {
 					inputRef.current = element;
+
+					// Conform excludes hidden type inputs by default when updating form values
+					// Fix that by using the hidden attribute instead
+					if (element.type === 'hidden') {
+						element.hidden = true;
+						element.removeAttribute('type');
+					}
 
 					if (shouldHandleFocus) {
 						makeInputFocusable(element);

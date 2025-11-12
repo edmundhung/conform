@@ -564,7 +564,7 @@ describe('report', () => {
 				fields: ['name', 'email'],
 				intent: null,
 			},
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 	});
@@ -581,7 +581,8 @@ describe('report', () => {
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: null,
+			reset: true,
+			targetValue: undefined,
 			error: undefined,
 		});
 	});
@@ -600,7 +601,7 @@ describe('report', () => {
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: {
 				formErrors: ['Form is invalid', 'Please check all fields'],
 				fieldErrors: {},
@@ -611,7 +612,7 @@ describe('report', () => {
 		const resultWithNull = report(submission, { error: null });
 		expect(resultWithNull).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: null,
 		});
 	});
@@ -634,7 +635,7 @@ describe('report', () => {
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: {
 				formErrors: [],
 				fieldErrors: {
@@ -660,7 +661,7 @@ describe('report', () => {
 				...submission,
 				payload: { name: 'John', docs: [null, null] },
 			},
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 
@@ -671,7 +672,7 @@ describe('report', () => {
 				...submission,
 				payload: { name: 'John', docs: [null, null] },
 			},
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 
@@ -679,7 +680,7 @@ describe('report', () => {
 		const keepResult = report(submission, { keepFiles: true });
 		expect(keepResult).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 	});
@@ -708,21 +709,21 @@ describe('report', () => {
 					password: undefined,
 				},
 			},
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 
-		// Test hiding fields from both payload and intendedValue
-		const resultWithIntendedValue = report(submission, {
+		// Test hiding fields from both payload and target value
+		const resultWithTargetValue = report(submission, {
 			hideFields: ['password', 'email'],
-			intendedValue: {
+			targetValue: {
 				name: 'Jane',
 				email: 'jane@example.com',
 				password: 'newsecret',
 			},
 		});
 
-		expect(resultWithIntendedValue).toEqual({
+		expect(resultWithTargetValue).toEqual({
 			submission: {
 				...submission,
 				payload: {
@@ -731,7 +732,7 @@ describe('report', () => {
 					password: undefined,
 				},
 			},
-			intendedValue: {
+			targetValue: {
 				name: 'Jane',
 				email: undefined,
 				password: undefined,
@@ -760,7 +761,7 @@ describe('report', () => {
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: {
 				formErrors: ['Form is invalid'],
 				fieldErrors: {
@@ -785,7 +786,7 @@ describe('report', () => {
 
 		expect(result2).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: {
 				formErrors: ['Form is invalid', 'Something went wrong'],
 				fieldErrors: {
@@ -796,35 +797,35 @@ describe('report', () => {
 		});
 	});
 
-	it('supports specifying an intended value', () => {
+	it('supports specifying a target value', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
 			fields: ['name', 'email'],
 			intent: null,
 		};
 
-		// Test with different intended value
+		// Test with different target value
 		const result = report(submission, {
-			intendedValue: { name: 'Jane', email: 'jane@example.com' },
+			targetValue: { name: 'Jane', email: 'jane@example.com' },
 		});
 
 		expect(result).toEqual({
 			submission,
-			intendedValue: {
+			targetValue: {
 				name: 'Jane',
 				email: 'jane@example.com',
 			},
 			error: undefined,
 		});
 
-		// Edge case: when intended value equals payload reference, should be undefined
+		// Edge case: when target value equals payload reference, should be undefined
 		const resultEqual = report(submission, {
-			intendedValue: submission.payload,
+			targetValue: submission.payload,
 		});
 
 		expect(resultEqual).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 
@@ -832,11 +833,11 @@ describe('report', () => {
 		const resultUndefined = report(submission);
 		expect(resultUndefined).toEqual({
 			submission,
-			intendedValue: undefined,
+			targetValue: undefined,
 			error: undefined,
 		});
 
-		// Test with keepFiles and intended value (should strip files from intended value)
+		// Test with keepFiles and target value (should strip files from target value)
 		const file = new File(['content'], 'test.txt');
 		const submissionWithFile = {
 			payload: { name: 'John', file },
@@ -846,7 +847,7 @@ describe('report', () => {
 
 		const resultWithFiles = report(submissionWithFile, {
 			keepFiles: false,
-			intendedValue: { name: 'Jane', file },
+			targetValue: { name: 'Jane', file },
 		});
 
 		expect(resultWithFiles).toEqual({
@@ -854,7 +855,7 @@ describe('report', () => {
 				...submissionWithFile,
 				payload: { name: 'John' },
 			},
-			intendedValue: {
+			targetValue: {
 				name: 'Jane',
 			},
 			error: undefined,
