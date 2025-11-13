@@ -12,7 +12,7 @@ import {
 	type input,
 	type output,
 	type ZodIssue,
-} from 'zod/v3';
+} from 'zod';
 import { coerceFormValue } from './coercion';
 
 function getError<FormError>(
