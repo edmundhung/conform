@@ -1,18 +1,16 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
-	describe('z.date', () => {
-		test('should pass date', () => {
+	describe('z.number', () => {
+		test('should pass numbers', () => {
 			const schema = z
-				.date({
-					required_error: 'required',
-					invalid_type_error: 'invalid',
-				})
-				.min(new Date(1), 'min')
-				.max(new Date(10), 'max');
+				.number({ required_error: 'required', invalid_type_error: 'invalid' })
+				.min(1, 'min')
+				.max(10, 'max')
+				.step(2, 'step');
 			const file = new File([], '');
 
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
@@ -33,25 +31,21 @@ describe('coercion', () => {
 					'': ['invalid'],
 				},
 			});
+			expect(getResult(coerceFormValue(schema).safeParse('5'))).toEqual({
+				success: false,
+				error: {
+					'': ['step'],
+				},
+			});
 			expect(getResult(coerceFormValue(schema).safeParse(' '))).toEqual({
 				success: false,
 				error: {
 					'': ['invalid'],
 				},
 			});
-			expect(
-				getResult(coerceFormValue(schema).safeParse(new Date(0).toISOString())),
-			).toEqual({
-				success: false,
-				error: {
-					'': ['min'],
-				},
-			});
-			expect(
-				getResult(coerceFormValue(schema).safeParse(new Date(5).toISOString())),
-			).toEqual({
+			expect(getResult(coerceFormValue(schema).safeParse('6'))).toEqual({
 				success: true,
-				data: new Date(5),
+				data: 6,
 			});
 		});
 	});

@@ -4,16 +4,16 @@
 	"homepage": "https://conform.guide",
 	"license": "MIT",
 	"version": "1.13.3",
-	"main": "./dist/v3/index.js",
-	"module": "./dist/v3/index.mjs",
-	"types": "./dist/v3/index.d.ts",
+	"main": "./dist/default/index.js",
+	"module": "./dist/default/index.mjs",
+	"types": "./dist/default/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/v3/index.d.ts",
-			"module": "./dist/v3/index.mjs",
-			"import": "./dist/v3/index.mjs",
-			"require": "./dist/v3/index.js",
-			"default": "./dist/v3/index.mjs"
+			"types": "./dist/default/index.d.ts",
+			"module": "./dist/default/index.mjs",
+			"import": "./dist/default/index.mjs",
+			"require": "./dist/default/index.js",
+			"default": "./dist/default/index.mjs"
 		},
 		"./v3": {
 			"types": "./dist/v3/index.d.ts",

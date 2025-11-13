@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { formatIssues } from '@conform-to/dom/future';
 import { formatResult } from '../format';
-import { z } from 'zod/v3';
+import { z } from 'zod';
 
 describe('formatResult', () => {
 	test('returns null for successful validation', () => {

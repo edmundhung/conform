@@ -1,17 +1,15 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod/v3';
+import { z } from 'zod';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
-	describe('z.string', () => {
-		test('should pass strings', () => {
-			const schema = z
-				.string({ required_error: 'required', invalid_type_error: 'invalid' })
-				.min(10, 'min')
-				.max(100, 'max')
-				.regex(/^[A-Z]{1,100}$/, 'regex')
-				.refine((value) => value !== 'error', 'refine');
+	describe('z.boolean', () => {
+		test('should pass boolean', () => {
+			const schema = z.boolean({
+				required_error: 'required',
+				invalid_type_error: 'invalid',
+			});
 			const file = new File([], '');
 
 			expect(getResult(coerceFormValue(schema).safeParse(''))).toEqual({
@@ -26,17 +24,15 @@ describe('coercion', () => {
 					'': ['invalid'],
 				},
 			});
-			expect(getResult(coerceFormValue(schema).safeParse('error'))).toEqual({
+			expect(getResult(coerceFormValue(schema).safeParse('true'))).toEqual({
 				success: false,
 				error: {
-					'': ['min', 'regex', 'refine'],
+					'': ['invalid'],
 				},
 			});
-			expect(
-				getResult(coerceFormValue(schema).safeParse('ABCDEFGHIJ')),
-			).toEqual({
+			expect(getResult(coerceFormValue(schema).safeParse('on'))).toEqual({
 				success: true,
-				data: 'ABCDEFGHIJ',
+				data: true,
 			});
 		});
 	});
