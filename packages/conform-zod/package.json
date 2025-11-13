@@ -16,18 +16,18 @@
 			"default": "./dist/v3/index.mjs"
 		},
 		"./v3": {
-			"types": "./dist/v3/index.d.ts",
-			"module": "./dist/v3/index.mjs",
-			"import": "./dist/v3/index.mjs",
-			"require": "./dist/v3/index.js",
-			"default": "./dist/v3/index.mjs"
+			"types": "./dist/v3-v3/index.d.ts",
+			"module": "./dist/v3-v3/index.mjs",
+			"import": "./dist/v3-v3/index.mjs",
+			"require": "./dist/v3-v3/index.js",
+			"default": "./dist/v3-v3/index.mjs"
 		},
 		"./v3/future": {
-			"types": "./dist/v3/future.d.ts",
-			"module": "./dist/v3/future.mjs",
-			"import": "./dist/v3/future.mjs",
-			"require": "./dist/v3/future.js",
-			"default": "./dist/v3/future.mjs"
+			"types": "./dist/v3-v3/future.d.ts",
+			"module": "./dist/v3-v3/future.mjs",
+			"import": "./dist/v3-v3/future.mjs",
+			"require": "./dist/v3-v3/future.js",
+			"default": "./dist/v3-v3/future.mjs"
 		},
 		"./v4": {
 			"types": "./dist/v4/index.d.ts",
@@ -49,9 +49,10 @@
 		"./dist/**/*.d.ts"
 	],
 	"scripts": {
+		"prebuild": "node scripts/prebuild.js",
 		"build:js": "rollup -c",
 		"build:ts": "tsc --project ./tsconfig.build.json",
-		"build": "pnpm run \"/^build:.*/\"",
+		"build": "pnpm run prebuild && pnpm run \"/^build:.*/\"",
 		"dev:js": "pnpm run build:js --watch",
 		"dev:ts": "pnpm run build:ts --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
