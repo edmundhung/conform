@@ -14,13 +14,13 @@ import {
 	ZodCatch,
 	ZodBranded,
 	ZodDefault,
-} from 'zod';
+} from 'zod/v3';
 import type {
 	ZodDiscriminatedUnionOption,
 	ZodFirstPartySchemaTypes,
 	ZodLiteral,
 	ZodTypeAny,
-} from 'zod';
+} from 'zod/v3';
 
 /**
  * Helpers for coercing string value
@@ -386,7 +386,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
  *
  * ```tsx
  * import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
- * import { z } from 'zod';
+ * import { z } from 'zod/v3';
  *
  * // Coerce the form value with default behaviour
  * const schema = coerceFormValue(
