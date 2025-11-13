@@ -1,4 +1,4 @@
-import type { SafeParseReturnType, ZodIssue } from 'zod';
+import type { SafeParseReturnType, ZodIssue } from 'zod/v3';
 import type { FormError } from '@conform-to/dom/future';
 import { formatPathSegments } from '@conform-to/dom/future';
 
