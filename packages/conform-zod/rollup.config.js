@@ -16,8 +16,6 @@ function configurePackage() {
 		input: [
 			`${sourceDir}/v3/index.ts`,
 			`${sourceDir}/v3/future.ts`,
-			`${sourceDir}/v3-v3/index.ts`,
-			`${sourceDir}/v3-v3/future.ts`,
 			`${sourceDir}/v4/index.ts`,
 			`${sourceDir}/v4/future.ts`,
 		],
@@ -68,8 +66,6 @@ function configurePackage() {
 		input: [
 			`${sourceDir}/v3/index.ts`,
 			`${sourceDir}/v3/future.ts`,
-			`${sourceDir}/v3-v3/index.ts`,
-			`${sourceDir}/v3-v3/future.ts`,
 			`${sourceDir}/v4/index.ts`,
 			`${sourceDir}/v4/future.ts`,
 		],
