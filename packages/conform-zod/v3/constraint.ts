@@ -5,7 +5,7 @@ import type {
 	ZodFirstPartySchemaTypes,
 	ZodNumber,
 	ZodString,
-} from 'zod/v3';
+} from 'zod';
 
 const keys: Array<keyof Constraint> = [
 	'required',
