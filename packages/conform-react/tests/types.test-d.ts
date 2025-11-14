@@ -1,6 +1,6 @@
 import { assertType, expectTypeOf, test } from 'vitest';
 import { createIntentDispatcher } from '../future/dom';
-import type { DefaultValue, FieldName } from '../future/types';
+import type { DefaultValue, FieldName, FieldMetadata } from '../future/types';
 
 test('types: DefaultValue with exactOptionalPropertyTypes', () => {
 	// Primitive types
@@ -152,4 +152,49 @@ test('types: intent dispatcher', () => {
 			value: { content: 'Updated Task', completed: true },
 		}),
 	);
+});
+
+test('types: field metadata', () => {
+	// Test with interface declaration
+	interface TestInterface {
+		field: string;
+		nested: {
+			value: number;
+		};
+	}
+
+	// Test with type declaration
+	type TestType = {
+		field: string;
+		nested: {
+			value: number;
+		};
+	};
+
+	// Mock field metadata
+	const interfaceField = {} as FieldMetadata<TestInterface | null | undefined>;
+	const typeField = {} as FieldMetadata<TestType | null | undefined>;
+
+	// Both should correctly infer the fieldset type
+	const interfaceFieldset = interfaceField.getFieldset();
+
+	// Verify that both have the correct properties
+	assertType<FieldMetadata<string>>(interfaceFieldset.field);
+	assertType<FieldMetadata<{ value: number }>>(interfaceFieldset.nested);
+
+	const typeFieldset = typeField.getFieldset();
+
+	assertType<FieldMetadata<string>>(typeFieldset.field);
+	assertType<FieldMetadata<{ value: number }>>(typeFieldset.nested);
+
+	const customFieldset = typeField.getFieldset<
+		TestInterface | null | undefined
+	>();
+
+	assertType<FieldMetadata<string>>(customFieldset.field);
+	assertType<FieldMetadata<{ value: number }>>(customFieldset.nested);
+
+	const customNestedFieldset = customFieldset.nested.getFieldset();
+
+	assertType<FieldMetadata<number>>(customNestedFieldset.value);
 });

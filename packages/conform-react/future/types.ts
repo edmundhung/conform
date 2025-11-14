@@ -503,11 +503,9 @@ export type BaseMetadata<
 	ariaDescribedBy: string | undefined;
 	/** Method to get nested fieldset for object fields under this field. */
 	getFieldset<
-		FieldsetShape = [FieldShape] extends [
-			Record<string, unknown> | null | undefined,
-		]
-			? FieldShape
-			: unknown,
+		FieldsetShape = keyof NonNullable<FieldShape> extends never
+			? unknown
+			: FieldShape,
 	>(): Fieldset<FieldsetShape, ErrorShape>;
 	/** Method to get array of fields for list/array fields under this field. */
 	getFieldList<
@@ -610,9 +608,7 @@ export type FormMetadata<
 	getFieldset<FieldShape>(
 		name?: FieldName<FieldShape>,
 	): Fieldset<
-		[FieldShape] extends [Record<string, unknown> | null | undefined]
-			? FieldShape
-			: unknown,
+		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
 		ErrorShape
 	>;
 	/** Method to get an array of field objects for array fields. */
