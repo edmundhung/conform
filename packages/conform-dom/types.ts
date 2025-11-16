@@ -38,12 +38,31 @@ export type Submission<
 	/**
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` or indexed names like `items[0].id`.
+	 *
+	 * @example
+	 * ```json
+	 * {
+	 *   "username": "johndoe",
+	 *   "address": {
+	 *     "street": "123 Main St",
+	 *     "city": "Anytown"
+	 *   },
+	 *   "items": [
+	 *     { "name": "item1", "quantity": "2" },
+	 *     { "name": "item2", "quantity": "5" }
+	 *   ]
+	 * }
+	 * ```
 	 */
 	payload: Record<string, FormValue<ValueType>>;
 	/**
-	 * The list of field names present in the FormData or URLSearchParams.
+	 * Field names included when building the `payload`.
 	 */
-	fields: string[];
+	includedFields: string[];
+	/**
+	 * Field names present in the submission but excluded from the `payload`.
+	 */
+	excludedFields: string[];
 	/**
 	 * The submission intent, usually set by the name/value of the button that triggered the submission.
 	 */

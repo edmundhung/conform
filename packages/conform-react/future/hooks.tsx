@@ -14,6 +14,7 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	isDirty,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -259,10 +260,35 @@ export function useConform<
 	useEffect(() => {
 		// To avoid re-applying the same result twice
 		if (lastResult && lastResult !== lastResultRef.current) {
+			const formElement = getFormElement(formRef);
+
+			if (
+				!formElement ||
+				isDirty(new FormData(formElement), {
+					defaultValue: lastResult.submission.payload,
+					intentName: optionsRef.current.intentName,
+					skipEntry(name) {
+						// Ignore fields the server intentionally excluded
+						return lastResult.submission.excludedFields.includes(name);
+					},
+					serialize(value) {
+						// Ignore files as server responses never include File objects
+						if (value instanceof File) {
+							return;
+						}
+
+						return optionsRef.current.serialize(value);
+					},
+				})
+			) {
+				// The form changed after submission. treat this result as stale.
+				return;
+			}
+
 			handleSubmission('server', lastResult);
 			lastResultRef.current = lastResult;
 		}
-	}, [lastResult, handleSubmission]);
+	}, [lastResult, formRef, handleSubmission, optionsRef]);
 
 	useEffect(() => {
 		// Reset the form state if the form key changes
@@ -276,7 +302,7 @@ export function useConform<
 		}
 	}, [options.key, optionsRef]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		const formElement = getFormElement(formRef);
 
 		// Reset the form values if the reset key changes
@@ -291,7 +317,7 @@ export function useConform<
 		}
 	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		if (state.targetValue) {
 			const formElement = getFormElement(formRef);
 
@@ -341,8 +367,8 @@ export function useConform<
 				// Patch missing fields in the submission object
 				for (const element of formElement.elements) {
 					if (isFieldElement(element) && element.name) {
-						submission.fields = appendUniqueItem(
-							submission.fields,
+						submission.includedFields = appendUniqueItem(
+							submission.includedFields,
 							element.name,
 						);
 					}

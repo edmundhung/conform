@@ -363,12 +363,18 @@ export function parseSubmission(
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
 	const submission: Submission = {
 		payload: {},
-		fields: [],
+		includedFields: [],
+		excludedFields: [],
 		intent: null,
 	};
 
 	for (const name of new Set(formData.keys())) {
-		if (name !== intentName && !options?.skipEntry?.(name)) {
+		if (name !== intentName) {
+			if (options?.skipEntry?.(name)) {
+				submission.excludedFields.push(name);
+				continue;
+			}
+
 			const value = formData.getAll(name);
 			setValueAtPath(
 				submission.payload,
@@ -378,7 +384,7 @@ export function parseSubmission(
 					silent: true, // Avoid errors if the path is invalid
 				},
 			);
-			submission.fields.push(name);
+			submission.includedFields.push(name);
 		}
 	}
 
@@ -561,6 +567,8 @@ export function report<ErrorShape = string>(
 			if (targetValue) {
 				setValueAtPath(targetValue, path, undefined);
 			}
+
+			submission.excludedFields.push(name);
 		}
 	}
 

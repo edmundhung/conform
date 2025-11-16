@@ -350,7 +350,8 @@ describe('parseSubmission', () => {
 		// Empty form data
 		expect(parseSubmission(createFormData([]))).toEqual({
 			payload: {},
-			fields: [],
+			includedFields: [],
+			excludedFields: [],
 			intent: null,
 		});
 
@@ -383,7 +384,7 @@ describe('parseSubmission', () => {
 				file: [emptyFile, emptyFile2],
 				file2: emptyFile2,
 			},
-			fields: [
+			includedFields: [
 				'email',
 				'password',
 				'task[0]',
@@ -392,6 +393,7 @@ describe('parseSubmission', () => {
 				'file',
 				'file2',
 			],
+			excludedFields: [],
 			intent: null,
 		});
 
@@ -409,7 +411,8 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
-			fields: ['email', 'password'],
+			includedFields: ['email', 'password'],
+			excludedFields: [],
 			intent: 'register',
 		});
 
@@ -431,7 +434,8 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			fields: ['email', 'password'],
+			includedFields: ['email', 'password'],
+			excludedFields: [],
 			intent: 'login',
 		});
 
@@ -440,7 +444,8 @@ describe('parseSubmission', () => {
 			parseSubmission(createFormData([[DEFAULT_INTENT_NAME, emptyFile]])),
 		).toEqual({
 			payload: {},
-			fields: [],
+			includedFields: [],
+			excludedFields: [],
 			intent: null,
 		});
 	});
@@ -449,7 +454,8 @@ describe('parseSubmission', () => {
 		// Empty URLSearchParams
 		expect(parseSubmission(new URLSearchParams())).toEqual({
 			payload: {},
-			fields: [],
+			includedFields: [],
+			excludedFields: [],
 			intent: null,
 		});
 
@@ -476,7 +482,14 @@ describe('parseSubmission', () => {
 				],
 				intent: 'login',
 			},
-			fields: ['email', 'password', 'task[0]', 'task[1].stage[0]', 'intent'],
+			includedFields: [
+				'email',
+				'password',
+				'task[0]',
+				'task[1].stage[0]',
+				'intent',
+			],
+			excludedFields: [],
 			intent: null,
 		});
 
@@ -494,7 +507,8 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
-			fields: ['email', 'password'],
+			includedFields: ['email', 'password'],
+			excludedFields: [],
 			intent: 'register',
 		});
 
@@ -516,7 +530,8 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			fields: ['email', 'password'],
+			includedFields: ['email', 'password'],
+			excludedFields: [],
 			intent: 'login',
 		});
 	});
@@ -543,7 +558,8 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			fields: ['email', 'password'],
+			includedFields: ['email', 'password'],
+			excludedFields: ['task[0]', 'task[1].stage[0]'],
 			intent: 'login',
 		});
 	});
@@ -553,7 +569,8 @@ describe('report', () => {
 	it('creates a basic submission result with default options', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			fields: ['name', 'email'],
+			includedFields: ['name', 'email'],
+			excludedFields: [],
 			intent: null,
 		};
 		const result = report(submission);
@@ -561,10 +578,12 @@ describe('report', () => {
 		expect(result).toEqual({
 			submission: {
 				payload: { name: 'John', email: 'john@example.com' },
-				fields: ['name', 'email'],
+				includedFields: ['name', 'email'],
+				excludedFields: [],
 				intent: null,
 			},
 			targetValue: undefined,
+			reset: undefined,
 			error: undefined,
 		});
 	});
@@ -572,7 +591,8 @@ describe('report', () => {
 	it('supports resetting form state', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			fields: ['name', 'email'],
+			includedFields: ['name', 'email'],
+			excludedFields: [],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -590,7 +610,8 @@ describe('report', () => {
 	it('handles form errors', () => {
 		const submission = {
 			payload: { name: '', email: 'invalid' },
-			fields: ['name', 'email'],
+			includedFields: ['name', 'email'],
+			excludedFields: [],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -620,7 +641,8 @@ describe('report', () => {
 	it('handles field errors', () => {
 		const submission = {
 			payload: { name: '', email: 'invalid' },
-			fields: ['name', 'email'],
+			includedFields: ['name', 'email'],
+			excludedFields: [],
 			intent: null,
 		};
 
@@ -650,7 +672,8 @@ describe('report', () => {
 		const file = new File(['content'], 'test.txt', { type: 'text/plain' });
 		const submission = {
 			payload: { name: 'John', avatar: file, docs: [file, file] },
-			fields: ['name', 'avatar', 'docs'],
+			includedFields: ['name', 'avatar', 'docs'],
+			excludedFields: [],
 			intent: null,
 		};
 
@@ -686,35 +709,51 @@ describe('report', () => {
 	});
 
 	it('supports hiding specific fields from the result', () => {
-		const submission = {
+		// Test hiding fields from payload only
+		const submission1 = {
 			payload: {
 				name: 'John',
 				email: 'john@example.com',
 				password: 'secret123',
 			},
-			fields: ['name', 'email', 'password'],
+			includedFields: ['name', 'email', 'password'],
+			excludedFields: [],
 			intent: null,
 		};
 
-		// Test hiding fields from payload only
-		const result = report(submission, {
+		const result = report(submission1, {
 			hideFields: ['password'],
 		});
 
 		expect(result).toEqual({
 			submission: {
-				...submission,
 				payload: {
-					...submission.payload,
+					name: 'John',
+					email: 'john@example.com',
 					password: undefined,
 				},
+				includedFields: ['name', 'email', 'password'],
+				excludedFields: ['password'],
+				intent: null,
 			},
 			targetValue: undefined,
+			reset: undefined,
 			error: undefined,
 		});
 
 		// Test hiding fields from both payload and target value
-		const resultWithTargetValue = report(submission, {
+		const submission2 = {
+			payload: {
+				name: 'John',
+				email: 'john@example.com',
+				password: 'secret123',
+			},
+			includedFields: ['name', 'email', 'password'],
+			excludedFields: [],
+			intent: null,
+		};
+
+		const resultWithTargetValue = report(submission2, {
 			hideFields: ['password', 'email'],
 			targetValue: {
 				name: 'Jane',
@@ -725,18 +764,21 @@ describe('report', () => {
 
 		expect(resultWithTargetValue).toEqual({
 			submission: {
-				...submission,
 				payload: {
-					...submission.payload,
+					name: 'John',
 					email: undefined,
 					password: undefined,
 				},
+				includedFields: ['name', 'email', 'password'],
+				excludedFields: ['password', 'email'],
+				intent: null,
 			},
 			targetValue: {
 				name: 'Jane',
 				email: undefined,
 				password: undefined,
 			},
+			reset: undefined,
 			error: undefined,
 		});
 	});
@@ -747,7 +789,8 @@ describe('report', () => {
 				name: '',
 				description: '',
 			},
-			fields: ['name', 'description'],
+			includedFields: ['name', 'description'],
+			excludedFields: [],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -800,7 +843,8 @@ describe('report', () => {
 	it('supports specifying a target value', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			fields: ['name', 'email'],
+			includedFields: ['name', 'email'],
+			excludedFields: [],
 			intent: null,
 		};
 
@@ -841,7 +885,8 @@ describe('report', () => {
 		const file = new File(['content'], 'test.txt');
 		const submissionWithFile = {
 			payload: { name: 'John', file },
-			fields: ['name', 'file'],
+			includedFields: ['name', 'file'],
+			excludedFields: [],
 			intent: null,
 		};
 
