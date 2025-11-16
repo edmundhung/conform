@@ -508,7 +508,7 @@ export function report<ErrorShape = string>(
 			fieldErrors?: Record<string, string[]>;
 		} | null;
 		/**
-		 * The next form value to set. Use this to update the form or reset it
+		 * The form value to set. Use this to update the form or reset it
 		 * to a specific value when combined with `reset: true`.
 		 */
 		value?: Record<string, FormValue> | null;
