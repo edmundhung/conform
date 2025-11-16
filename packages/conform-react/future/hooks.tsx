@@ -379,23 +379,23 @@ export function useConform<
 					submission.payload = pendingValueRef.current;
 				}
 
-				const targetValue = applyIntent(submission);
+				const value = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					targetValue,
+					value,
 				});
 
 				// If there is target value, keep track of it as pending value
-				if (submission.payload !== targetValue) {
+				if (submission.payload !== value) {
 					pendingValueRef.current =
-						targetValue ?? optionsRef.current.defaultValue ?? {};
+						value ?? optionsRef.current.defaultValue ?? {};
 				}
 
 				const validateResult =
 					// Skip validation on form reset
-					targetValue !== undefined
+					value !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: targetValue,
+								payload: value,
 								error: {
 									formErrors: [],
 									fieldErrors: {},

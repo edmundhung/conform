@@ -755,7 +755,7 @@ describe('report', () => {
 
 		const resultWithTargetValue = report(submission2, {
 			hideFields: ['password', 'email'],
-			targetValue: {
+			value: {
 				name: 'Jane',
 				email: 'jane@example.com',
 				password: 'newsecret',
@@ -850,7 +850,7 @@ describe('report', () => {
 
 		// Test with different target value
 		const result = report(submission, {
-			targetValue: { name: 'Jane', email: 'jane@example.com' },
+			value: { name: 'Jane', email: 'jane@example.com' },
 		});
 
 		expect(result).toEqual({
@@ -864,7 +864,7 @@ describe('report', () => {
 
 		// Edge case: when target value equals payload reference, should be undefined
 		const resultEqual = report(submission, {
-			targetValue: submission.payload,
+			value: submission.payload,
 		});
 
 		expect(resultEqual).toEqual({
@@ -892,7 +892,7 @@ describe('report', () => {
 
 		const resultWithFiles = report(submissionWithFile, {
 			keepFiles: false,
-			targetValue: { name: 'Jane', file },
+			value: { name: 'Jane', file },
 		});
 
 		expect(resultWithFiles).toEqual({
