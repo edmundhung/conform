@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.13.3",
+	"version": "1.14.0",
 	"main": "./dist/default/index.js",
 	"module": "./dist/default/index.mjs",
 	"types": "./dist/default/index.d.ts",
