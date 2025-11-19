@@ -281,6 +281,13 @@ export function useConform<
 					},
 				})
 			) {
+				// FIXME: Remove debug log
+				// eslint-disable-next-line no-console
+				console.log('Skipping stale result', {
+					lastResult,
+					currentFormData: formElement ? getFormData(formElement) : null,
+					intentName: optionsRef.current.intentName,
+				});
 				// The form changed after submission. treat this result as stale.
 				return;
 			}
