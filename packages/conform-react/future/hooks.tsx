@@ -1,86 +1,809 @@
 import {
-	unstable_deepEqual as deepEqual,
-	unstable_focus as focus,
-	unstable_change as change,
-	unstable_blur as blur,
-	isFieldElement,
+	type FormValue,
+	type Serialize,
+	type SubmissionResult,
+	DEFAULT_INTENT_NAME,
+	deepEqual,
+	change,
+	focus,
+	blur,
+	createGlobalFormsObserver,
+	createSubmitEvent,
 	getFormData,
-} from '@conform-to/dom';
+	isFieldElement,
+	parseSubmission,
+	report,
+	serialize,
+} from '@conform-to/dom/future';
 import {
 	useEffect,
 	useRef,
 	useSyncExternalStore,
 	useCallback,
 	useContext,
+	useMemo,
+	useId,
+	createContext,
+	useState,
+	useLayoutEffect,
 } from 'react';
 import {
-	type FormRef,
-	focusable,
+	appendUniqueItem,
+	resolveStandardSchemaResult,
+	resolveValidateResult,
+} from './util';
+import {
+	getFormMetadata,
+	isTouched,
+	getFieldset,
+	getField,
+	initializeState,
+	updateState,
+} from './state';
+import type {
+	FormContext,
+	IntentDispatcher,
+	FormMetadata,
+	Fieldset,
+	ValidateResult,
+	GlobalFormOptions,
+	FormOptions,
+	FieldName,
+	FieldMetadata,
+	Control,
+	Selector,
+	UseFormDataOptions,
+	ValidateHandler,
+	ErrorHandler,
+	SubmitHandler,
+	FormState,
+	FormRef,
+	BaseErrorShape,
+	DefaultErrorShape,
+} from './types';
+import { actionHandlers, applyIntent, deserializeIntent } from './intent';
+import {
+	makeInputFocusable,
+	focusFirstInvalidField,
 	getCheckboxGroupValue,
-	getDefaultSnapshot,
+	createDefaultSnapshot,
+	createIntentDispatcher,
 	getFormElement,
 	getInputSnapshot,
 	getRadioGroupValue,
+	getSubmitEvent,
 	initializeField,
-} from './util';
-import { FormContext } from './context';
+	updateFormValue,
+	resetFormValue,
+} from './dom';
 
-export type Control = {
-	/**
-	 * Current value of the base input. Undefined if the registered input
-	 * is a multi-select, file input, or checkbox group.
-	 */
-	value: string | undefined;
-	/**
-	 * Selected options of the base input. Defined only when the registered input
-	 * is a multi-select or checkbox group.
-	 */
-	checked: boolean | undefined;
-	/**
-	 * Checked state of the base input. Defined only when the registered input
-	 * is a single checkbox or radio input.
-	 */
-	options: string[] | undefined;
-	/**
-	 * Selected files of the base input. Defined only when the registered input
-	 * is a file input.
-	 */
-	files: File[] | undefined;
-	/**
-	 * Registers the base input element(s). Accepts a single input or an array for groups.
-	 */
-	register: (
-		element:
-			| HTMLInputElement
-			| HTMLSelectElement
-			| HTMLTextAreaElement
-			| HTMLCollectionOf<HTMLInputElement>
-			| NodeListOf<HTMLInputElement>
-			| null
-			| undefined,
-	) => void;
-	/**
-	 * Programmatically updates the input value and emits
-	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
-	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
-	 */
-	change(
-		value: string | string[] | boolean | File | File[] | FileList | null,
-	): void;
-	/**
-	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
-	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
-	 * Does not actually move focus.
-	 */
-	focus(): void;
-	/**
-	 * Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event) and
-	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events.
-	 * This does not move the actual keyboard focus to the input. Use `element.focus()` instead
-	 * if you want to move focus to the input.
-	 */
-	blur(): void;
-};
+// Static reset key for consistent hydration during Next.js prerendering
+// See: https://nextjs.org/docs/messages/next-prerender-current-time-client
+export const INITIAL_KEY = 'INITIAL_KEY';
+
+export const GlobalFormOptionsContext = createContext<
+	GlobalFormOptions & { observer: ReturnType<typeof createGlobalFormsObserver> }
+>({
+	intentName: DEFAULT_INTENT_NAME,
+	observer: createGlobalFormsObserver(),
+	serialize,
+	shouldValidate: 'onSubmit',
+});
+
+export const FormContextContext = createContext<FormContext[]>([]);
+
+/**
+ * Provides form context to child components.
+ * Stacks contexts to support nested forms, with latest context taking priority.
+ */
+export function FormProvider(props: {
+	context: FormContext;
+	children: React.ReactNode;
+}): React.ReactElement {
+	const stack = useContext(FormContextContext);
+	const value = useMemo(
+		// Put the latest form context first to ensure that to be the first one found
+		() => [props.context].concat(stack),
+		[stack, props.context],
+	);
+
+	return (
+		<FormContextContext.Provider value={value}>
+			{props.children}
+		</FormContextContext.Provider>
+	);
+}
+
+export function FormOptionsProvider(
+	props: Partial<GlobalFormOptions> & {
+		children: React.ReactNode;
+	},
+): React.ReactElement {
+	const { children, ...providedOptions } = props;
+	const defaultOptions = useContext(GlobalFormOptionsContext);
+	const options = useMemo(
+		() => ({
+			...defaultOptions,
+			...providedOptions,
+		}),
+		[defaultOptions, providedOptions],
+	);
+
+	return (
+		<GlobalFormOptionsContext.Provider value={options}>
+			{children}
+		</GlobalFormOptionsContext.Provider>
+	);
+}
+
+export function useFormContext(formId?: string): FormContext {
+	const contexts = useContext(FormContextContext);
+	const context = formId
+		? contexts.find((context) => formId === context.formId)
+		: contexts[0];
+
+	if (!context) {
+		throw new Error(
+			'No form context found; Have you render a <FormProvider /> with the corresponding form context?',
+		);
+	}
+
+	return context;
+}
+
+/**
+ * Core form hook that manages form state, validation, and submission.
+ * Handles both sync and async validation, intent dispatching, and DOM updates.
+ */
+export function useConform<
+	FormShape extends Record<string, any>,
+	ErrorShape,
+	Value = undefined,
+>(
+	formRef: FormRef,
+	options: {
+		key?: string;
+		defaultValue?: Record<string, FormValue> | null;
+		serialize: Serialize;
+		intentName: string;
+		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
+		onValidate?: ValidateHandler<ErrorShape, Value>;
+		onError?: ErrorHandler<ErrorShape>;
+		onSubmit?: SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>;
+	},
+): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
+	const { lastResult } = options;
+	const [state, setState] = useState<FormState<ErrorShape>>(() => {
+		let state = initializeState<ErrorShape>({
+			defaultValue: options.defaultValue,
+			resetKey: INITIAL_KEY,
+		});
+
+		if (lastResult) {
+			state = updateState(state, {
+				...lastResult,
+				type: 'initialize',
+				intent: lastResult.submission.intent
+					? deserializeIntent(lastResult.submission.intent)
+					: null,
+				ctx: {
+					handlers: actionHandlers,
+					reset: (defaultValue) =>
+						initializeState<ErrorShape>({
+							defaultValue: defaultValue ?? options.defaultValue,
+							resetKey: INITIAL_KEY,
+						}),
+				},
+			});
+		}
+
+		return state;
+	});
+	const keyRef = useRef(options.key);
+	const resetKeyRef = useRef(state.resetKey);
+	const optionsRef = useLatest(options);
+	const lastResultRef = useRef(lastResult);
+	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
+	const lastAsyncResultRef = useRef<{
+		event: SubmitEvent;
+		result: SubmissionResult<ErrorShape>;
+		formData: FormData;
+		resolvedValue: Value | undefined;
+	} | null>(null);
+	const abortControllerRef = useRef<AbortController | null>(null);
+	const handleSubmission = useCallback(
+		(type: 'server' | 'client', result: SubmissionResult<ErrorShape>) => {
+			const intent = result.submission.intent
+				? deserializeIntent(result.submission.intent)
+				: null;
+
+			setState((state) =>
+				updateState(state, {
+					...result,
+					type,
+					intent,
+					ctx: {
+						handlers: actionHandlers,
+						reset(defaultValue) {
+							return initializeState<ErrorShape>({
+								defaultValue: defaultValue ?? optionsRef.current.defaultValue,
+							});
+						},
+					},
+				}),
+			);
+
+			// TODO: move on error handler to a new effect
+			const formElement = getFormElement(formRef);
+
+			if (!formElement || !result.error) {
+				return;
+			}
+
+			optionsRef.current.onError?.({
+				formElement,
+				error: result.error,
+				intent,
+			});
+		},
+		[formRef, optionsRef],
+	);
+
+	useEffect(() => {
+		return () => {
+			// Cancel pending validation request
+			abortControllerRef.current?.abort('The component is unmounted');
+		};
+	}, []);
+
+	useEffect(() => {
+		// To avoid re-applying the same result twice
+		if (lastResult && lastResult !== lastResultRef.current) {
+			handleSubmission('server', lastResult);
+			lastResultRef.current = lastResult;
+		}
+	}, [lastResult, handleSubmission]);
+
+	useEffect(() => {
+		// Reset the form state if the form key changes
+		if (options.key !== keyRef.current) {
+			keyRef.current = options.key;
+			setState(
+				initializeState<ErrorShape>({
+					defaultValue: optionsRef.current.defaultValue,
+				}),
+			);
+		}
+	}, [options.key, optionsRef]);
+
+	useEffect(() => {
+		const formElement = getFormElement(formRef);
+
+		// Reset the form values if the reset key changes
+		if (formElement && state.resetKey !== resetKeyRef.current) {
+			resetKeyRef.current = state.resetKey;
+			resetFormValue(
+				formElement,
+				state.defaultValue,
+				optionsRef.current.serialize,
+			);
+			pendingValueRef.current = undefined;
+		}
+	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
+
+	useEffect(() => {
+		if (state.targetValue) {
+			const formElement = getFormElement(formRef);
+
+			if (!formElement) {
+				// eslint-disable-next-line no-console
+				console.error('Failed to update form value; No form element found');
+				return;
+			}
+
+			updateFormValue(
+				formElement,
+				state.targetValue,
+				optionsRef.current.serialize,
+			);
+		}
+
+		pendingValueRef.current = undefined;
+	}, [formRef, state.targetValue, optionsRef]);
+
+	const handleSubmit = useCallback(
+		(event: React.FormEvent<HTMLFormElement>) => {
+			const abortController = new AbortController();
+
+			// Keep track of the abort controller so we can cancel the previous request if a new one is made
+			abortControllerRef.current?.abort('A new submission is made');
+			abortControllerRef.current = abortController;
+
+			let formData: FormData;
+			let result: SubmissionResult<ErrorShape> | undefined;
+			let resolvedValue: Value | undefined;
+
+			// The form might be re-submitted manually if there was an async validation
+			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
+				formData = lastAsyncResultRef.current.formData;
+				result = lastAsyncResultRef.current.result;
+				resolvedValue = lastAsyncResultRef.current.resolvedValue;
+			} else {
+				const formElement = event.currentTarget;
+				const submitEvent = getSubmitEvent(event);
+
+				formData = getFormData(formElement, submitEvent.submitter);
+
+				const submission = parseSubmission(formData, {
+					intentName: optionsRef.current.intentName,
+				});
+
+				// Patch missing fields in the submission object
+				for (const element of formElement.elements) {
+					if (isFieldElement(element) && element.name) {
+						submission.fields = appendUniqueItem(
+							submission.fields,
+							element.name,
+						);
+					}
+				}
+
+				// Override submission value if the pending value is not applied yet (i.e. batch updates)
+				if (pendingValueRef.current !== undefined) {
+					submission.payload = pendingValueRef.current;
+				}
+
+				const targetValue = applyIntent(submission);
+				const submissionResult = report<ErrorShape>(submission, {
+					keepFiles: true,
+					targetValue,
+				});
+
+				// If there is target value, keep track of it as pending value
+				if (submission.payload !== targetValue) {
+					pendingValueRef.current =
+						targetValue ?? optionsRef.current.defaultValue ?? {};
+				}
+
+				const validateResult =
+					// Skip validation on form reset
+					targetValue !== undefined
+						? optionsRef.current.onValidate?.({
+								payload: targetValue,
+								error: {
+									formErrors: [],
+									fieldErrors: {},
+								},
+								intent: submission.intent
+									? deserializeIntent(submission.intent)
+									: null,
+								formElement,
+								submitter: submitEvent.submitter,
+								formData,
+								schemaValue: undefined,
+							})
+						: { error: null };
+
+				const { syncResult, asyncResult } =
+					resolveValidateResult(validateResult);
+
+				if (typeof syncResult !== 'undefined') {
+					submissionResult.error = syncResult.error;
+					resolvedValue = syncResult.value;
+				}
+
+				if (typeof asyncResult !== 'undefined') {
+					// Update the form when the validation result is resolved
+					asyncResult.then(({ error, value }) => {
+						// Update the form with the validation result
+						// There is no need to flush the update in this case
+						if (!abortController.signal.aborted) {
+							submissionResult.error = error;
+
+							handleSubmission('server', submissionResult);
+
+							// If the form is meant to be submitted and there is no error
+							if (error === null && !submission.intent) {
+								const event = createSubmitEvent(submitEvent.submitter);
+
+								// Keep track of the submit event so we can skip validation on the next submit
+								lastAsyncResultRef.current = {
+									event,
+									formData,
+									resolvedValue: value,
+									result: submissionResult,
+								};
+								formElement.dispatchEvent(event);
+							}
+						}
+					});
+				}
+
+				handleSubmission('client', submissionResult);
+
+				if (
+					// If client validation happens
+					(typeof syncResult !== 'undefined' ||
+						typeof asyncResult !== 'undefined') &&
+					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
+					(submissionResult.submission.intent ||
+						submissionResult.error !== null)
+				) {
+					event.preventDefault();
+				}
+
+				result = submissionResult;
+			}
+
+			// We might not prevent form submission if server validation is required
+			// But the `onSubmit` handler should be triggered only if there is no intent
+			if (!event.isDefaultPrevented() && result.submission.intent === null) {
+				optionsRef.current.onSubmit?.(event, {
+					formData,
+					get value() {
+						if (typeof resolvedValue === 'undefined') {
+							throw new Error(
+								'`value` is not available; Please make sure you have included the value in the `onValidate` result.',
+							);
+						}
+
+						return resolvedValue;
+					},
+					update(options) {
+						if (!abortController.signal.aborted) {
+							const submissionResult = report(result.submission, {
+								...options,
+								keepFiles: true,
+							});
+							handleSubmission('server', submissionResult);
+						}
+					},
+				});
+			}
+		},
+		[handleSubmission, optionsRef],
+	);
+
+	return [state, handleSubmit];
+}
+
+/**
+ * The main React hook for form management. Handles form state, validation, and submission
+ * while providing access to form metadata, field objects, and form actions.
+ *
+ * @see https://conform.guide/api/react/future/useForm
+ * @example
+ * ```tsx
+ * const { form, fields } = useForm({
+ *   onValidate({ payload, error }) {
+ *     if (!payload.email) {
+ * 		 error.fieldErrors.email = ['Required'];
+ *     }
+ *     return error;
+ *   }
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ */
+export function useForm<
+	FormShape extends Record<string, any> = Record<string, any>,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+>(
+	options: FormOptions<FormShape, ErrorShape, Value>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<FormShape, ErrorShape>;
+	intent: IntentDispatcher<FormShape>;
+} {
+	const { id, constraint } = options;
+	const globalOptions = useContext(GlobalFormOptionsContext);
+	const optionsRef = useLatest(options);
+	const globalOptionsRef = useLatest(globalOptions);
+	const fallbackId = useId();
+	const formId = id ?? `form-${fallbackId}`;
+	const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value>(
+		formId,
+		{
+			...options,
+			serialize: globalOptions.serialize,
+			intentName: globalOptions.intentName,
+			onError: optionsRef.current.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (options.schema) {
+					const standardResult = options.schema['~standard'].validate(
+						ctx.payload,
+					);
+
+					if (standardResult instanceof Promise) {
+						return standardResult.then((actualStandardResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
+
+							return resolveStandardSchemaResult(
+								actualStandardResult,
+							) as ValidateResult<ErrorShape, Value>;
+						});
+					}
+
+					const resolvedResult = resolveStandardSchemaResult(standardResult);
+
+					if (!options.onValidate) {
+						return resolvedResult as ValidateResult<ErrorShape, Value>;
+					}
+
+					// Update the schema error in the context
+					if (resolvedResult.error) {
+						ctx.error = resolvedResult.error;
+					}
+
+					ctx.schemaValue = resolvedResult.value;
+
+					const validateResult = resolveValidateResult(options.onValidate(ctx));
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= resolvedResult.value;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= resolvedResult.value;
+								return result;
+							},
+						);
+					}
+
+					return [validateResult.syncResult, validateResult.asyncResult];
+				}
+
+				return (
+					options.onValidate?.(ctx) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
+			},
+		},
+	);
+	const intent = useIntent<FormShape>(formId);
+	const context = useMemo<FormContext<ErrorShape>>(
+		() => ({
+			formId,
+			state,
+			constraint: constraint ?? null,
+			handleSubmit: handleSubmit,
+			handleInput(event) {
+				if (
+					!isFieldElement(event.target) ||
+					event.target.name === '' ||
+					event.target.form === null ||
+					event.target.form !== getFormElement(formId)
+				) {
+					return;
+				}
+
+				optionsRef.current.onInput?.({
+					...event,
+					target: event.target,
+					currentTarget: event.target.form,
+				});
+
+				if (event.defaultPrevented) {
+					return;
+				}
+
+				const {
+					shouldValidate = globalOptionsRef.current.shouldValidate,
+					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
+						shouldValidate,
+				} = optionsRef.current;
+
+				if (
+					isTouched(state, event.target.name)
+						? shouldRevalidate === 'onInput'
+						: shouldValidate === 'onInput'
+				) {
+					intent.validate(event.target.name);
+				}
+			},
+			handleBlur(event) {
+				if (
+					!isFieldElement(event.target) ||
+					event.target.name === '' ||
+					event.target.form === null ||
+					event.target.form !== getFormElement(formId)
+				) {
+					return;
+				}
+
+				optionsRef.current.onBlur?.({
+					...event,
+					target: event.target,
+					currentTarget: event.target.form,
+				});
+
+				if (event.defaultPrevented) {
+					return;
+				}
+
+				const {
+					shouldValidate = globalOptionsRef.current.shouldValidate,
+					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
+						shouldValidate,
+				} = optionsRef.current;
+
+				if (
+					isTouched(state, event.target.name)
+						? shouldRevalidate === 'onBlur'
+						: shouldValidate === 'onBlur'
+				) {
+					intent.validate(event.target.name);
+				}
+			},
+		}),
+		[
+			formId,
+			state,
+			constraint,
+			handleSubmit,
+			intent,
+			optionsRef,
+			globalOptionsRef,
+		],
+	);
+	const form = useMemo(
+		() =>
+			getFormMetadata(context, {
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
+			}),
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+	);
+	const fields = useMemo(
+		() =>
+			getFieldset<FormShape, ErrorShape>(context, {
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
+			}),
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+	);
+
+	return {
+		form,
+		fields,
+		intent,
+	};
+}
+
+/**
+ * A React hook that provides access to form-level metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useFormMetadata
+ * @example
+ * ```tsx
+ * function ErrorSummary() {
+ *   const form = useFormMetadata();
+ *
+ *   if (form.valid) return null;
+ *
+ *   return (
+ *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
+ *   );
+ * }
+ * ```
+ */
+export function useFormMetadata(
+	options: {
+		formId?: string;
+	} = {},
+): FormMetadata {
+	const globalOptions = useContext(GlobalFormOptionsContext);
+	const context = useFormContext(options.formId);
+	const formMetadata = useMemo(
+		() =>
+			getFormMetadata(context, {
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
+			}),
+		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+	);
+
+	return formMetadata;
+}
+
+/**
+ * A React hook that provides access to a specific field's metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useField
+ * @example
+ * ```tsx
+ * function FormField({ name, label }) {
+ *   const field = useField(name);
+ *
+ *   return (
+ *     <div>
+ *       <label htmlFor={field.id}>{label}</label>
+ *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
+ *       {field.errors && <div>{field.errors.join(', ')}</div>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useField<FieldShape = any>(
+	name: FieldName<FieldShape>,
+	options: {
+		formId?: string;
+	} = {},
+): FieldMetadata<FieldShape> {
+	const globalOptions = useContext(GlobalFormOptionsContext);
+	const context = useFormContext(options.formId);
+	const field = useMemo(
+		() =>
+			getField(context, {
+				name,
+				serialize: globalOptions.serialize,
+				customize: globalOptions.defineCustomMetadata,
+			}),
+		[
+			context,
+			name,
+			globalOptions.serialize,
+			globalOptions.defineCustomMetadata,
+		],
+	);
+
+	return field;
+}
+
+/**
+ * A React hook that provides an intent dispatcher for programmatic form actions.
+ * Intent dispatchers allow you to trigger form operations like validation, field updates,
+ * and array manipulations without manual form submission.
+ *
+ * @see https://conform.guide/api/react/future/useIntent
+ * @example
+ * ```tsx
+ * function ResetButton() {
+ *   const buttonRef = useRef<HTMLButtonElement>(null);
+ *   const intent = useIntent(buttonRef);
+ *
+ *   return (
+ *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
+ *       Reset Form
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export function useIntent<FormShape extends Record<string, any>>(
+	formRef: FormRef,
+): IntentDispatcher<FormShape> {
+	const globalOptions = useContext(GlobalFormOptionsContext);
+
+	return useMemo(
+		() =>
+			createIntentDispatcher(
+				() => getFormElement(formRef),
+				globalOptions.intentName,
+			),
+		[formRef, globalOptions.intentName],
+	);
+}
 
 /**
  * A React hook that lets you sync the state of an input and dispatch native form events from it.
@@ -114,7 +837,7 @@ export function useControl(options?: {
 	 */
 	onFocus?: () => void;
 }): Control {
-	const { observer } = useContext(FormContext);
+	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -122,13 +845,25 @@ export function useControl(options?: {
 		| Array<HTMLInputElement>
 		| null
 	>(null);
+	const formRef = useMemo(
+		() => ({
+			get current() {
+				const input = inputRef.current;
+				if (!input) {
+					return null;
+				}
+				return Array.isArray(input) ? input[0]?.form ?? null : input.form;
+			},
+		}),
+		[],
+	);
 	const eventDispatched = useRef<{
 		change?: number;
 		focus?: number;
 		blur?: number;
 	}>({});
 
-	const defaultSnapshot = getDefaultSnapshot(
+	const defaultSnapshot = createDefaultSnapshot(
 		options?.defaultValue,
 		options?.defaultChecked,
 		options?.value,
@@ -225,6 +960,7 @@ export function useControl(options?: {
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
+		formRef,
 		register: useCallback(
 			(element) => {
 				if (!element) {
@@ -232,8 +968,15 @@ export function useControl(options?: {
 				} else if (isFieldElement(element)) {
 					inputRef.current = element;
 
+					// Conform excludes hidden type inputs by default when updating form values
+					// Fix that by using the hidden attribute instead
+					if (element.type === 'hidden') {
+						element.hidden = true;
+						element.removeAttribute('type');
+					}
+
 					if (shouldHandleFocus) {
-						focusable(element);
+						makeInputFocusable(element);
 					}
 
 					if (element.type === 'checkbox' || element.type === 'radio') {
@@ -263,7 +1006,7 @@ export function useControl(options?: {
 
 					for (const input of inputs) {
 						if (shouldHandleFocus) {
-							focusable(input);
+							makeInputFocusable(input);
 						}
 
 						initializeField(input, {
@@ -350,19 +1093,6 @@ export function useControl(options?: {
 	};
 }
 
-type Selector<FormValue, Result> = (
-	formData: FormValue | null,
-	lastResult: Result | undefined,
-) => Result;
-
-type UseFormDataOptions = {
-	/**
-	 * Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
-	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
-	 */
-	acceptFiles?: boolean;
-};
-
 /**
  * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
  * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
@@ -370,7 +1100,7 @@ type UseFormDataOptions = {
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * const value = useFormData(formRef, formData => formData?.get('fieldName').toString() ?? '');
+ * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
  * ```
  */
 export function useFormData<Value = any>(
@@ -392,7 +1122,7 @@ export function useFormData<Value = any>(
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions,
 ): Value {
-	const { observer } = useContext(FormContext);
+	const { observer } = useContext(GlobalFormOptionsContext);
 	const valueRef = useRef<Value>();
 	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
 	const value = useSyncExternalStore(
@@ -450,4 +1180,25 @@ export function useFormData<Value = any>(
 	);
 
 	return value;
+}
+
+/**
+ * useLayoutEffect is client-only.
+ * This basically makes it a no-op on server
+ */
+export const useSafeLayoutEffect =
+	typeof document === 'undefined' ? useEffect : useLayoutEffect;
+
+/**
+ * Keep a mutable ref in sync with the latest value.
+ * Useful to avoid stale closures in event handlers or async callbacks.
+ */
+export function useLatest<Value>(value: Value) {
+	const ref = useRef(value);
+
+	useSafeLayoutEffect(() => {
+		ref.current = value;
+	}, [value]);
+
+	return ref;
 }

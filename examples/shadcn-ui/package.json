@@ -10,8 +10,8 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@conform-to/react": "^1.8.1",
-		"@conform-to/zod": "^1.8.1",
+		"@conform-to/react": "^1.13.3",
+		"@conform-to/zod": "^1.13.3",
 		"@radix-ui/react-checkbox": "^1.0.4",
 		"@radix-ui/react-dialog": "^1.0.5",
 		"@radix-ui/react-label": "^2.0.2",
@@ -34,7 +34,7 @@
 		"react-dom": "^18.2.0",
 		"tailwind-merge": "^2.2.1",
 		"tailwindcss-animate": "^1.0.7",
-		"zod": "^3.25.30"
+		"zod": "^3.25.75"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.17.0",
@@ -42,6 +42,7 @@
 		"@types/react": "^18.3.18",
 		"@types/react-dom": "^18.3.5",
 		"@vitejs/plugin-react": "^4.3.4",
+		"autoprefixer": "^10.4.21",
 		"eslint": "^9.17.0",
 		"eslint-plugin-react-hooks": "^5.0.0",
 		"eslint-plugin-react-refresh": "^0.4.16",

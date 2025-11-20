@@ -5,6 +5,8 @@
 A utility function that checks whether the current form data differs from the default values.
 
 ```ts
+import { isDirty } from '@conform-to/react/future';
+
 const dirty = isDirty(formData, options);
 ```
 
@@ -57,7 +59,7 @@ This is useful when using an intent input to distinguish between multiple action
 - `false` if it matches
 - `undefined` if formData is `null`
 
-## Example Usage
+## Example
 
 ### Enable a submit button only if the form is dirty
 

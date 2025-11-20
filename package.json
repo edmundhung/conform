@@ -9,7 +9,7 @@
 		"dev:playground": "pnpm --filter ./playground run dev",
 		"guide": "pnpm --filter ./guide run dev ",
 		"test": "pnpm run \"/^test:.*/\"",
-		"test:api": "vitest --watch",
+		"test:api": "vitest --typecheck",
 		"test:e2e": "playwright test --ui",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
 		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",
@@ -26,7 +26,8 @@
 		"@types/node": "^20.10.4",
 		"@typescript-eslint/eslint-plugin": "^7.11.0",
 		"@typescript-eslint/parser": "^7.11.0",
-		"@vitest/browser": "^3.2.4",
+		"@vitest/browser": "^4.0.3",
+		"@vitest/browser-playwright": "^4.0.3",
 		"eslint": "^8.57.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
 		"eslint-plugin-import": "^2.29.1",
@@ -38,9 +39,9 @@
 		"pkg-pr-new": "^0.0.20",
 		"prettier": "^3.2.5",
 		"typescript": "^5.8.3",
-		"vitest": "^3.2.4",
+		"vitest": "^4.0.3",
 		"yup": "^0.32.11",
-		"zod": "^3.25.30"
+		"zod": "^3.25.75"
 	},
 	"packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
 	"lint-staged": {

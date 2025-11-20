@@ -7,6 +7,8 @@ A React hook that lets you sync the state of an input and dispatch native form e
 For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
 
 ```ts
+import { useControl } from '@conform-to/react/future';
+
 const control = useControl(options);
 ```
 
@@ -96,7 +98,7 @@ Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
 
 Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the input. Use `element.focus()` instead if you want to move focus to the input.
 
-## Example Usage
+## Example
 
 ### Checkbox / Switch
 

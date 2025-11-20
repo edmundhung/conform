@@ -235,7 +235,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 				),
 			}) as $ZodType<unknown, {}>,
 		);
-	} else if (def.type === 'optional') {
+	} else if (def.type === 'optional' || def.type === 'nonoptional') {
 		schema = pipe(
 			transform(options.stripEmptyValue),
 			new constr({
@@ -243,12 +243,16 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 				innerType: enableTypeCoercion(def.innerType, options),
 			}),
 		);
-	} else if (def.type === 'default') {
+	} else if (def.type === 'default' || def.type === 'prefault') {
+		const defaultValue = def.defaultValue;
 		schema = pipe(
 			transform(options.stripEmptyValue),
 			new constr({
 				...def,
-				innerType: enableTypeCoercion(def.innerType, options),
+				innerType:
+					defaultValue !== ''
+						? enableTypeCoercion(def.innerType, options)
+						: def.innerType,
 			}),
 		);
 	} else if (def.type === 'catch') {

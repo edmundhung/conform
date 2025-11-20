@@ -9,8 +9,8 @@
 		"start": "remix-serve build"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.8.1",
-		"@conform-to/zod": "1.8.1",
+		"@conform-to/react": "1.13.3",
+		"@conform-to/zod": "1.13.3",
 		"@remix-run/node": "^1.19.3",
 		"@remix-run/react": "^1.19.3",
 		"@remix-run/serve": "^1.19.3",
@@ -18,7 +18,7 @@
 		"isbot": "^3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"zod": "^3.25.30"
+		"zod": "^3.25.75"
 	},
 	"devDependencies": {
 		"@remix-run/dev": "^1.19.3",

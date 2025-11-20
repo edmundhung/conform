@@ -1,14 +1,12 @@
+import { isGlobalInstance } from './dom';
 import type { DefaultValue, FieldName, FormValue } from './form';
 import {
-	normalize,
-	flatten,
-	isPlainObject,
-	setValue,
 	isPrefix,
-	getValue,
-	formatName,
+	getValueAtPath,
+	setValueAtPath,
+	appendPathSegment,
 } from './formdata';
-import { invariant } from './util';
+import { invariant, isPlainObject } from './util';
 
 export type SubmissionState = {
 	validated: Record<string, boolean>;
@@ -99,15 +97,22 @@ export function getSubmissionContext(
 		}
 
 		context.fields.add(name);
-		setValue(context.payload, name, (prev) => {
-			if (!prev) {
-				return next;
-			} else if (Array.isArray(prev)) {
-				return prev.concat(next);
-			} else {
-				return [prev, next];
-			}
-		});
+		setValueAtPath(
+			context.payload,
+			name,
+			(prev: unknown) => {
+				if (!prev) {
+					return next;
+				} else if (Array.isArray(prev)) {
+					return prev.concat(next);
+				} else {
+					return [prev, next];
+				}
+			},
+			{
+				silent: true,
+			},
+		);
 	}
 
 	return context;
@@ -170,12 +175,15 @@ export function parse<FormValue, FormError>(
 	if (intent) {
 		switch (intent.type) {
 			case 'update': {
-				const name = formatName(intent.payload.name, intent.payload.index);
+				const name = appendPathSegment(
+					intent.payload.name,
+					intent.payload.index,
+				);
 				const value = intent.payload.value;
 
 				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
-						setValue(context.payload, name, () => value);
+						setValueAtPath(context.payload, name, () => value);
 					} else {
 						context.payload = value;
 					}
@@ -183,10 +191,13 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'reset': {
-				const name = formatName(intent.payload.name, intent.payload.index);
+				const name = appendPathSegment(
+					intent.payload.name,
+					intent.payload.index,
+				);
 
 				if (name) {
-					setValue(context.payload, name, () => undefined);
+					setValueAtPath(context.payload, name, () => undefined);
 				} else {
 					context.payload = {};
 				}
@@ -257,10 +268,10 @@ export function replySubmission<FormError>(
 
 	if ('hideFields' in options && options.hideFields) {
 		for (const name of options.hideFields) {
-			const value = getValue(context.payload, name);
+			const value = getValueAtPath(context.payload, name);
 
 			if (typeof value !== 'undefined') {
-				setValue(context.payload, name, () => undefined);
+				setValueAtPath(context.payload, name, () => undefined);
 			}
 		}
 	}
@@ -449,7 +460,7 @@ export function setListValue(
 	data: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
-	setValue(data, intent.payload.name, (value) => {
+	setValueAtPath(data, intent.payload.name, (value: unknown) => {
 		const list = value ?? [];
 
 		updateList(list, intent);
@@ -478,7 +489,7 @@ export function setState(
 		const value = state[key];
 
 		if (isPrefix(key, name) && key !== name) {
-			setValue(target, key, (currentValue) => {
+			setValueAtPath(target, key, (currentValue: unknown) => {
 				if (typeof currentValue === 'undefined') {
 					return value;
 				}
@@ -497,7 +508,7 @@ export function setState(
 		}
 	}
 
-	const result = valueFn(getValue(target, name));
+	const result = valueFn(getValueAtPath(target, name));
 
 	Object.assign(
 		state,
@@ -571,4 +582,102 @@ export function serialize<Schema>(defaultValue: Schema): FormValue<Schema> {
 		// @ts-expect-error FIXME
 		return defaultValue ?? undefined;
 	}
+}
+
+/**
+ * Normalize value by removing empty object or array, empty string and null values
+ */
+export function normalize<Type extends Record<string, unknown>>(
+	value: Type,
+	acceptFile?: boolean,
+): Type | undefined;
+export function normalize<Type extends Array<unknown>>(
+	value: Type,
+	acceptFile?: boolean,
+): Type | undefined;
+export function normalize(
+	value: unknown,
+	acceptFile?: boolean,
+): unknown | undefined;
+export function normalize<
+	Type extends Record<string, unknown> | Array<unknown>,
+>(
+	value: Type,
+	acceptFile = true,
+): Record<string, unknown> | Array<unknown> | undefined {
+	if (isPlainObject(value)) {
+		const obj = Object.keys(value)
+			.sort()
+			.reduce<Record<string, unknown>>((result, key) => {
+				const data = normalize(value[key], acceptFile);
+
+				if (typeof data !== 'undefined') {
+					result[key] = data;
+				}
+
+				return result;
+			}, {});
+
+		if (Object.keys(obj).length === 0) {
+			return;
+		}
+
+		return obj;
+	}
+
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return undefined;
+		}
+
+		return value.map((item) => normalize(item, acceptFile));
+	}
+
+	if (
+		(typeof value === 'string' && value === '') ||
+		value === null ||
+		(isGlobalInstance(value, 'File') && (!acceptFile || value.size === 0))
+	) {
+		return;
+	}
+
+	return value;
+}
+
+/**
+ * Flatten a tree into a dictionary
+ */
+export function flatten(
+	data: unknown,
+	options: {
+		resolve?: (data: unknown) => unknown;
+		prefix?: string;
+	} = {},
+): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	const resolve = options.resolve ?? ((data) => data);
+
+	function process(data: unknown, prefix: string) {
+		const value = normalize(resolve(data));
+
+		if (typeof value !== 'undefined') {
+			result[prefix] = value;
+		}
+
+		if (Array.isArray(data)) {
+			for (let i = 0; i < data.length; i++) {
+				process(data[i], `${prefix}[${i}]`);
+			}
+		} else if (isPlainObject(data)) {
+			for (const [key, value] of Object.entries(data)) {
+				process(value, prefix ? `${prefix}.${key}` : key);
+			}
+		}
+	}
+
+	if (data) {
+		process(data, options.prefix ?? '');
+	}
+
+	return result;
 }

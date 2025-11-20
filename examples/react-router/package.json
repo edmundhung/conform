@@ -1,26 +1,31 @@
 {
 	"name": "react-router-example",
 	"private": true,
+	"type": "module",
 	"scripts": {
-		"dev": "vite",
-		"build": "tsc && vite build",
-		"serve": "vite preview"
+		"build": "react-router build",
+		"dev": "react-router dev",
+		"start": "react-router-serve ./build/server/index.js",
+		"typecheck": "react-router typegen && tsc"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.8.1",
-		"@conform-to/zod": "1.8.1",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
-		"react-router-dom": "^6.15.0",
-		"zod": "^3.25.30"
+		"@conform-to/react": "1.13.3",
+		"@conform-to/zod": "1.13.3",
+		"@react-router/node": "^7.8.2",
+		"@react-router/serve": "^7.8.2",
+		"isbot": "^5.1.30",
+		"react": "^19.1.1",
+		"react-dom": "^19.1.1",
+		"react-router": "^7.8.2",
+		"zod": "^3.25.75"
 	},
 	"devDependencies": {
-		"@rollup/plugin-replace": "^5.0.2",
-		"@types/node": "18.x",
-		"@types/react": "^18.0.27",
-		"@types/react-dom": "^18.0.10",
-		"@vitejs/plugin-react": "^3.0.1",
-		"typescript": "^4.9.5",
-		"vite": "^4.0.4"
+		"@react-router/dev": "^7.8.2",
+		"@types/node": "^20",
+		"@types/react": "^19.1.12",
+		"@types/react-dom": "^19.1.9",
+		"typescript": "^5.9.2",
+		"vite": "^6.3.3",
+		"vite-tsconfig-paths": "^5.1.4"
 	}
 }

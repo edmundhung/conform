@@ -13,13 +13,14 @@ import {
 	any,
 	ZodCatch,
 	ZodBranded,
-} from 'zod';
+	ZodDefault,
+} from 'zod/v3';
 import type {
 	ZodDiscriminatedUnionOption,
 	ZodFirstPartySchemaTypes,
 	ZodLiteral,
 	ZodTypeAny,
-} from 'zod';
+} from 'zod/v3';
 
 /**
  * Helpers for coercing string value
@@ -288,9 +289,15 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 		const defaultValue = def.defaultValue();
 		schema = any()
 			.transform(options.stripEmptyValue)
-			// Reconstruct `.default()` as `.optional().transform(value => value ?? defaultValue)`
-			.pipe(enableTypeCoercion(def.innerType, options).optional())
-			.transform((value) => value ?? defaultValue);
+			.pipe(
+				new ZodDefault({
+					...def,
+					innerType:
+						defaultValue !== ''
+							? enableTypeCoercion(def.innerType, options)
+							: def.innerType,
+				}),
+			);
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,
@@ -378,8 +385,8 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
  * @example
  *
  * ```tsx
- * import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod';
- * import { z } from 'zod';
+ * import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
+ * import { z } from 'zod/v3';
  *
  * // Coerce the form value with default behaviour
  * const schema = coerceFormValue(

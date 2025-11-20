@@ -1,5 +1,7 @@
 # unstable_coerceFormValue
 
+> The `coerceFormValue` function is also available as part of Conform's future export. [Check it out](./future/coerceFormValue.md) if you want to use it with other future APIs.
+
 A helper that enhances the schema with extra preprocessing steps to strip empty value and coerce form value to the expected type.
 
 ```ts
@@ -24,21 +26,23 @@ The zod schema to be enhanced.
 
 Optional. Set it if you want to [override the default behavior](#override-default-behavior).
 
-### `options.defineCoercion`
+### `options.customize`
 
 Optional. Use it to [define custom coercion](#define-custom-coercion) for a specific schema.
 
 ## Example
 
 ```ts
-import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
+import {
+  parseWithZod,
+  unstable_coerceFormValue as coerceFormValue,
+} from '@conform-to/zod'; // Or, import `@conform-to/zod/v4`.
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
-import { jsonSchema } from './jsonSchema';
 
 const schema = coerceFormValue(
   z.object({
-    ref: z.string()
+    ref: z.string(),
     date: z.date(),
     amount: z.number(),
     confirm: z.boolean(),
@@ -136,7 +140,6 @@ import {
 } from '@conform-to/zod';
 import { useForm } from '@conform-to/react';
 import { z } from 'zod';
-import { json } from './schema';
 
 const metadata = z.object({
   number: z.number(),

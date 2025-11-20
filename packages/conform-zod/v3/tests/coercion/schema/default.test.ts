@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { coerceFormValue } from '../../../coercion';
-import { z } from 'zod';
+import { z } from 'zod/v3';
 import { getResult } from '../../../../tests/helpers/zod';
 
 describe('coercion', () => {
@@ -47,17 +47,11 @@ describe('coercion', () => {
 
 			const today = new Date();
 			const schema2 = z.object({
-				a: z.string().email('invalid').default(''),
-				b: z.number().gt(10, 'invalid').default(0),
-				c: z
-					.boolean()
-					.refine((value) => !!value, 'invalid')
-					.default(false),
-				d: z.date().min(today, 'invalid').default(defaultDate),
-				e: z
-					.instanceof(File)
-					.refine((file) => file.size > 100, 'invalid')
-					.default(defaultFile),
+				a: z.string().default(''),
+				b: z.number().default(0),
+				c: z.boolean().default(false),
+				d: z.date().default(defaultDate),
+				e: z.instanceof(File).default(defaultFile),
 			});
 
 			expect(getResult(coerceFormValue(schema2).safeParse({}))).toEqual({
@@ -68,6 +62,33 @@ describe('coercion', () => {
 					c: false,
 					d: defaultDate,
 					e: defaultFile,
+				},
+			});
+
+			const schema3 = z
+				.object({
+					a: z.string().email('invalid').default(''),
+					b: z.number().gt(10, 'invalid').default(0),
+					c: z
+						.boolean()
+						.refine((value) => !!value, 'invalid')
+						.default(false),
+					d: z.date().min(today, 'invalid').default(defaultDate),
+					e: z
+						.instanceof(File)
+						.refine((file) => file.size > 100, 'invalid')
+						.default(defaultFile),
+				})
+				.default({});
+
+			expect(getResult(coerceFormValue(schema3).safeParse({}))).toEqual({
+				success: false,
+				error: {
+					a: ['invalid'],
+					b: ['invalid'],
+					c: ['invalid'],
+					d: ['invalid'],
+					e: ['invalid'],
 				},
 			});
 		});

@@ -3,17 +3,31 @@
 	"description": "Conform helpers for integrating with Zod",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.8.1",
-	"main": "./dist/v3/index.js",
-	"module": "./dist/v3/index.mjs",
-	"types": "./dist/v3/index.d.ts",
+	"version": "1.13.3",
+	"main": "./dist/default/index.js",
+	"module": "./dist/default/index.mjs",
+	"types": "./dist/default/index.d.ts",
 	"exports": {
 		".": {
+			"types": "./dist/default/index.d.ts",
+			"module": "./dist/default/index.mjs",
+			"import": "./dist/default/index.mjs",
+			"require": "./dist/default/index.js",
+			"default": "./dist/default/index.mjs"
+		},
+		"./v3": {
 			"types": "./dist/v3/index.d.ts",
 			"module": "./dist/v3/index.mjs",
 			"import": "./dist/v3/index.mjs",
 			"require": "./dist/v3/index.js",
 			"default": "./dist/v3/index.mjs"
+		},
+		"./v3/future": {
+			"types": "./dist/v3/future.d.ts",
+			"module": "./dist/v3/future.mjs",
+			"import": "./dist/v3/future.mjs",
+			"require": "./dist/v3/future.js",
+			"default": "./dist/v3/future.mjs"
 		},
 		"./v4": {
 			"types": "./dist/v4/index.d.ts",
@@ -21,6 +35,13 @@
 			"import": "./dist/v4/index.mjs",
 			"require": "./dist/v4/index.js",
 			"default": "./dist/v4/index.mjs"
+		},
+		"./v4/future": {
+			"types": "./dist/v4/future.d.ts",
+			"module": "./dist/v4/future.mjs",
+			"import": "./dist/v4/future.mjs",
+			"require": "./dist/v4/future.js",
+			"default": "./dist/v4/future.mjs"
 		}
 	},
 	"files": [
@@ -50,7 +71,7 @@
 		"@conform-to/dom": "workspace:*"
 	},
 	"peerDependencies": {
-		"zod": "^3.21.0"
+		"zod": "^3.21.0 || ^4.0.0"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.17.8",
@@ -60,7 +81,8 @@
 		"@rollup/plugin-node-resolve": "^13.3.0",
 		"rollup": "^2.79.1",
 		"rollup-plugin-copy": "^3.4.0",
-		"zod": "^3.25.30"
+		"zod": "^3.25.75",
+		"zod-v4": "npm:zod@^4.0.0"
 	},
 	"keywords": [
 		"constraint-validation",

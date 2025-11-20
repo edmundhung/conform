@@ -3,7 +3,7 @@
 	"description": "Conform helpers for integrating with Valibot",
 	"homepage": "https://conform.guide",
 	"license": "MIT",
-	"version": "1.8.1",
+	"version": "1.13.3",
 	"main": "./dist/index.js",
 	"module": "./dist/index.mjs",
 	"types": "./dist/index.d.ts",
@@ -14,6 +14,13 @@
 			"import": "./dist/index.mjs",
 			"require": "./dist/index.js",
 			"default": "./dist/index.mjs"
+		},
+		"./future": {
+			"types": "./dist/future.d.ts",
+			"module": "./dist/future.mjs",
+			"import": "./dist/future.mjs",
+			"require": "./dist/future.js",
+			"default": "./dist/future.mjs"
 		}
 	},
 	"files": [
@@ -53,6 +60,7 @@
 		"@rollup/plugin-node-resolve": "^13.3.0",
 		"rollup-plugin-copy": "^3.4.0",
 		"rollup": "^2.79.1",
+		"typescript": "^5.8.3",
 		"valibot": "^1.0.0"
 	},
 	"keywords": [

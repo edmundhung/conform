@@ -1,11 +1,9 @@
 # NextJS Example
 
-> Please fork the sandbox if it is stuck in the _Initializing Sandbox Container_ stage
+This example demonstrates the following features:
 
-This example demonstrates some of the features of Conform including **client validation**, **nested list**, and **async validation with zod** using NextJS.
+- [Basic form with manual validation](./app/login/)
+- [Async validation](./app/signup/) ([with async schema](./app/signup-async-schema/))
+- [Dynamic form with data persistence](./app/todos/)
 
-<!-- sandbox src="/examples/nextjs" -->
-
-Try it out on [Codesandbox](https://codesandbox.io/s/github/edmundhung/conform/tree/main/examples/nextjs).
-
-<!-- /sandbox -->
+Try it out on [Stackblitz](https://stackblitz.com/github/edmundhung/conform/tree/main/examples/nextjs).

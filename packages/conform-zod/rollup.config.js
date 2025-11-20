@@ -13,7 +13,14 @@ function configurePackage() {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: [`${sourceDir}/v3/index.ts`, `${sourceDir}/v4/index.ts`],
+		input: [
+			`${sourceDir}/default/index.ts`,
+			`${sourceDir}/default/future.ts`,
+			`${sourceDir}/v3/index.ts`,
+			`${sourceDir}/v3/future.ts`,
+			`${sourceDir}/v4/index.ts`,
+			`${sourceDir}/v4/future.ts`,
+		],
 		output: {
 			dir: outputDir,
 			format: 'esm',
@@ -58,7 +65,14 @@ function configurePackage() {
 		external(id) {
 			return !id.startsWith('.') && !path.isAbsolute(id);
 		},
-		input: [`${sourceDir}/v3/index.ts`, `${sourceDir}/v4/index.ts`],
+		input: [
+			`${sourceDir}/default/index.ts`,
+			`${sourceDir}/default/future.ts`,
+			`${sourceDir}/v3/index.ts`,
+			`${sourceDir}/v3/future.ts`,
+			`${sourceDir}/v4/index.ts`,
+			`${sourceDir}/v4/future.ts`,
+		],
 		output: {
 			dir: outputDir,
 			format: 'cjs',

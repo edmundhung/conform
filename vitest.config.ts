@@ -1,4 +1,5 @@
 import { defineConfig, TestProjectInlineConfiguration } from 'vitest/config';
+import { playwright } from '@vitest/browser-playwright';
 
 export default defineConfig({
 	test: {
@@ -9,8 +10,8 @@ export default defineConfig({
 					name: 'browser',
 					browser: {
 						enabled: true,
-						provider: 'playwright',
-						name: 'chromium',
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
 					},
 					include: ['tests/*.spec.ts'],
 				},
@@ -39,7 +40,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				browser: {
 					enabled: true,
 					headless: true,
-					provider: 'playwright',
+					provider: playwright(),
 					instances: [{ browser: 'chromium' }],
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
@@ -54,6 +55,11 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 			test: {
 				name: `${packageName} (node)`,
 				environment: 'node',
+				typecheck: {
+					enabled: true,
+					tsconfig: `./packages/${packageName}/tsconfig.json`,
+					include: [`packages/${packageName}/**/tests/**/*.test-d.ts`],
+				},
 				// This covers both .node.test.ts/tsx and .test.ts/tsx files
 				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
 				exclude: [

@@ -68,7 +68,7 @@ function Field({
 	);
 }
 
-type FieldErrorProps = {
+export type FieldErrorProps = {
 	id?: string;
 	children: React.ReactNode;
 };
@@ -81,7 +81,7 @@ function FieldError({ id, children }: FieldErrorProps) {
 	);
 }
 
-type DatePickerProps = {
+export type DatePickerProps = {
 	id?: string;
 	name: string;
 	defaultValue?: string;
@@ -150,7 +150,7 @@ const countries = [
 	{ label: 'Uruguay', value: 'UY' },
 ];
 
-type ComboboxProps = {
+export type ComboboxProps = {
 	id?: string;
 	name: string;
 	defaultValue?: string;
@@ -229,7 +229,7 @@ function ComboBox({ name, defaultValue, ...props }: ComboboxProps) {
 	);
 }
 
-type RadioGroupProps = {
+export type RadioGroupProps = {
 	id?: string;
 	name: string;
 	items: Array<{ value: string; label: string }>;
@@ -280,7 +280,7 @@ function RadioGroup({
 	);
 }
 
-type CheckboxProps = {
+export type CheckboxProps = {
 	id?: string;
 	name: string;
 	value?: string;
@@ -313,7 +313,7 @@ function Checkbox({ name, value, defaultChecked, ...props }: CheckboxProps) {
 	);
 }
 
-type SelectProps = {
+export type SelectProps = {
 	id?: string;
 	name: string;
 	items: Array<{ name: string; value: string }>;
@@ -366,7 +366,7 @@ function Select({
 	);
 }
 
-type SliderProps = {
+export type SliderProps = {
 	id?: string;
 	name: string;
 	defaultValue?: string;
@@ -406,7 +406,7 @@ function Slider({ name, defaultValue, ...props }: SliderProps) {
 	);
 }
 
-type SwitchProps = {
+export type SwitchProps = {
 	id?: string;
 	name: string;
 	value?: string;
@@ -439,7 +439,7 @@ function Switch({ name, value, defaultChecked, ...props }: SwitchProps) {
 	);
 }
 
-type SingleToggleGroupProps = {
+export type SingleToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string;
@@ -490,7 +490,7 @@ function SingleToggleGroup({
 	);
 }
 
-type MultiToggleGroupProps = {
+export type MultiToggleGroupProps = {
 	name: string;
 	items: Array<{ value: string; label: string }>;
 	defaultValue?: string[];
@@ -539,7 +539,7 @@ function MultiToggleGroup({
 	);
 }
 
-type InputOTPProps = {
+export type InputOTPProps = {
 	id?: string;
 	name: string;
 	length: number;

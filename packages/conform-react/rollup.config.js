@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import babel from '@rollup/plugin-babel';
 import nodeResolve from '@rollup/plugin-node-resolve';
@@ -7,6 +8,25 @@ import copy from 'rollup-plugin-copy';
 function configurePackage() {
 	let sourceDir = '.';
 	let outputDir = './dist';
+	let addDirectivePlugin = {
+		name: 'use-client',
+		writeBundle() {
+			const filesToModify = ['future/hooks.mjs', 'future/hooks.js'].map(file => `${outputDir}/${file}`);
+			
+			filesToModify.forEach(filePath => {
+				if (fs.existsSync(filePath)) {
+					const content = fs.readFileSync(filePath, 'utf8');
+					
+					// Only add if not already present
+					if (!content.startsWith("'use client';")) {
+						fs.writeFileSync(filePath, `'use client';\n${content}`);
+						// eslint-disable-next-line no-console
+						console.log(`✓ Added 'use client' to ${filePath}`);
+					}
+				}
+			});
+		}
+	};
 
 	/** @type {import("rollup").RollupOptions} */
 	let ESM = {
@@ -51,6 +71,7 @@ function configurePackage() {
 					{ src: `../../README.md`, dest: sourceDir }
 				],
 			}),
+			addDirectivePlugin,
 		],
 	};
 
@@ -91,6 +112,7 @@ function configurePackage() {
 			nodeResolve({
 				extensions: ['.ts', '.tsx'],
 			}),
+			addDirectivePlugin,
 		],
 	};
 

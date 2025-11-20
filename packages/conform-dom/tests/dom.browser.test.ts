@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { test, describe, it, expect, vi } from 'vitest';
 import { userEvent } from '@vitest/browser/context';
 import {
 	updateField,
@@ -7,6 +7,8 @@ import {
 	focus,
 	blur,
 	createFileList,
+	isFieldElement,
+	isGlobalInstance,
 } from '../dom';
 
 describe('updateField', () => {
@@ -14,19 +16,34 @@ describe('updateField', () => {
 		const input = document.createElement('input');
 		input.type = 'text';
 
-		updateField(input, {
+		const changed1 = updateField(input, {
 			value: 'foo',
 			defaultValue: 'foo',
 		});
 		expect(input.value).toBe('foo');
 		expect(input.defaultValue).toBe('foo');
+		expect(changed1).toBe(true);
 
-		updateField(input, {
+		const changed2 = updateField(input, {
 			value: null,
 		});
 
 		expect(input.value).toBe('');
 		expect(input.defaultValue).toBe('foo');
+		expect(changed2).toBe(true);
+
+		const changed3 = updateField(input, {
+			value: '',
+		});
+		expect(input.value).toBe('');
+		expect(changed3).toBe(false);
+
+		const changed4 = updateField(input, {
+			defaultValue: 'bar',
+		});
+		expect(input.value).toBe('');
+		expect(input.defaultValue).toBe('bar');
+		expect(changed4).toBe(false);
 	});
 
 	it('supports checkbox', () => {
@@ -34,24 +51,36 @@ describe('updateField', () => {
 		input.type = 'checkbox';
 		input.checked = false;
 
-		updateField(input, {
+		const changed1 = updateField(input, {
 			value: 'on',
 		});
 
 		expect(input.checked).toBe(true);
+		expect(changed1).toBe(true);
 
 		input.value = 'test';
 		input.checked = false;
-		updateField(input, {
+		const changed2 = updateField(input, {
 			value: 'test',
 			defaultValue: 'test',
 		});
 		expect(input.checked).toBe(true);
 		expect(input.defaultChecked).toBe(true);
+		expect(changed2).toBe(true);
 
-		updateField(input, { value: null });
+		const changed3 = updateField(input, { value: null });
 		expect(input.checked).toBe(false);
 		expect(input.defaultChecked).toBe(true);
+		expect(changed3).toBe(true);
+
+		const changed4 = updateField(input, { value: '' });
+		expect(input.checked).toBe(false);
+		expect(changed4).toBe(false);
+
+		const changed5 = updateField(input, { defaultValue: '' });
+		expect(input.checked).toBe(false);
+		expect(input.defaultChecked).toBe(false);
+		expect(changed5).toBe(false);
 	});
 
 	it('supports radio button', () => {
@@ -59,55 +88,83 @@ describe('updateField', () => {
 		input.type = 'radio';
 		input.checked = false;
 
-		updateField(input, { value: 'on' });
+		const changed1 = updateField(input, { value: 'on' });
 
 		expect(input.checked).toBe(true);
+		expect(changed1).toBe(true);
 
 		input.value = 'test';
 		input.checked = false;
-		updateField(input, {
+		const changed2 = updateField(input, {
 			value: 'test',
 			defaultValue: 'test',
 		});
 		expect(input.checked).toBe(true);
 		expect(input.defaultChecked).toBe(true);
+		expect(changed2).toBe(true);
 
-		updateField(input, { value: null });
+		// Unchecking a radio button doesn't report as changed
+		const changed3 = updateField(input, { value: null });
 		expect(input.checked).toBe(false);
 		expect(input.defaultChecked).toBe(true);
+		expect(changed3).toBe(false);
+
+		const changed4 = updateField(input, { value: '' });
+		expect(input.checked).toBe(false);
+		expect(changed4).toBe(false);
+
+		const changed5 = updateField(input, { defaultValue: '' });
+		expect(input.checked).toBe(false);
+		expect(input.defaultChecked).toBe(false);
+		expect(changed5).toBe(false);
 	});
 
 	it('supports file input', () => {
 		const input = document.createElement('input');
 		input.type = 'file';
 
+		const emptyFile = new File([], '');
 		const file = new File(['hello world'], 'example.txt', {
 			type: 'text/plain',
 		});
 
-		updateField(input, { value: file });
+		const changed1 = updateField(input, { value: file });
 
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.length).toBe(1);
+		expect(changed1).toBe(true);
 
 		input.multiple = true;
 
 		const file2 = new File(['SELECT * FROM users;'], 'example2.sql', {
 			type: 'text/plain',
 		});
-		updateField(input, { value: [file, file2] });
+		const changed2 = updateField(input, { value: [file, file2] });
 
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.[1]).toEqual(file2);
 		expect(input.files?.length).toBe(2);
+		expect(changed2).toBe(true);
 
-		updateField(input, { value: null });
+		const changed3 = updateField(input, { value: null });
 		expect(input.files?.length).toBe(0);
+		expect(changed3).toBe(true);
 
-		updateField(input, { value: createFileList([file, file2]) });
+		const changed4 = updateField(input, {
+			value: createFileList([file, file2]),
+		});
 		expect(input.files?.[0]).toEqual(file);
 		expect(input.files?.[1]).toEqual(file2);
 		expect(input.files?.length).toBe(2);
+		expect(changed4).toBe(true);
+
+		const changed5 = updateField(input, { value: null });
+		expect(input.files?.length).toBe(0);
+		expect(changed5).toBe(true);
+
+		const changed6 = updateField(input, { value: emptyFile });
+		expect(input.files?.length).toBe(0);
+		expect(changed6).toBe(false);
 	});
 
 	it('supports select', () => {
@@ -121,20 +178,23 @@ describe('updateField', () => {
 
 		select.append(emptyOption, option1, option2);
 
-		updateField(select, { value: 'option2' });
+		const changed1 = updateField(select, { value: 'option2' });
 		expect(select.selectedIndex).toBe(2);
+		expect(changed1).toBe(true);
 
-		updateField(select, { value: null });
+		const changed2 = updateField(select, { value: null });
 		expect(select.selectedIndex).toBe(-1);
+		expect(changed2).toBe(true);
 
 		select.multiple = true;
-		updateField(select, { value: ['option1', 'option2'] });
+		const changed3 = updateField(select, { value: ['option1', 'option2'] });
 		expect(select.options.item(0)?.selected).toBe(false);
 		expect(select.options.item(1)?.selected).toBe(true);
 		expect(select.options.item(2)?.selected).toBe(true);
 		expect(select.options.length).toBe(3);
+		expect(changed3).toBe(true);
 
-		updateField(select, {
+		const changed4 = updateField(select, {
 			value: ['option3', 'option1'],
 			defaultValue: ['option3', 'option1'],
 		});
@@ -147,8 +207,9 @@ describe('updateField', () => {
 		expect(select.options.item(2)?.defaultSelected).toBe(false);
 		expect(select.options.item(3)?.defaultSelected).toBe(true);
 		expect(select.options.length).toBe(4);
+		expect(changed4).toBe(true);
 
-		updateField(select, { value: null });
+		const changed5 = updateField(select, { value: null });
 		expect(select.options.item(0)?.selected).toBe(false);
 		expect(select.options.item(1)?.selected).toBe(false);
 		expect(select.options.item(2)?.selected).toBe(false);
@@ -157,21 +218,40 @@ describe('updateField', () => {
 		expect(select.options.item(1)?.defaultSelected).toBe(true);
 		expect(select.options.item(2)?.defaultSelected).toBe(false);
 		expect(select.options.item(3)?.defaultSelected).toBe(true);
+		expect(changed5).toBe(true);
+
+		const changed6 = updateField(select, { value: [] });
+		expect(select.options.item(0)?.selected).toBe(false);
+		expect(select.options.item(1)?.selected).toBe(false);
+		expect(select.options.item(2)?.selected).toBe(false);
+		expect(select.options.item(3)?.selected).toBe(false);
+		expect(changed6).toBe(false);
 	});
 
 	it('supports textarea', () => {
 		const textarea = document.createElement('textarea');
 
-		updateField(textarea, {
+		const changed1 = updateField(textarea, {
 			value: 'hello world',
 			defaultValue: 'hello world',
 		});
 		expect(textarea.value).toBe('hello world');
 		expect(textarea.defaultValue).toBe('hello world');
+		expect(changed1).toBe(true);
 
-		updateField(textarea, { value: null });
+		const changed2 = updateField(textarea, { value: null });
 		expect(textarea.value).toBe('');
 		expect(textarea.defaultValue).toBe('hello world');
+		expect(changed2).toBe(true);
+
+		const changed3 = updateField(textarea, { value: '' });
+		expect(textarea.value).toBe('');
+		expect(changed3).toBe(false);
+
+		const changed4 = updateField(textarea, { defaultValue: 'foo' });
+		expect(textarea.value).toBe('');
+		expect(textarea.defaultValue).toBe('foo');
+		expect(changed4).toBe(false);
 	});
 });
 
@@ -656,4 +736,51 @@ describe('blur', () => {
 		expect(handler).toHaveBeenNthCalledWith(1, 'focusout', true);
 		expect(handler).toHaveBeenNthCalledWith(2, 'blur', false);
 	});
+});
+
+test('isGlobalInstance', () => {
+	class CustomFile {
+		name: string;
+		contents: string[];
+		constructor(contents: string[], name: string) {
+			this.name = name;
+			this.contents = contents;
+		}
+	}
+
+	const file = new File(['hello', 'world'], 'example.txt');
+	const fileList = createFileList([file]);
+	const customFile = new CustomFile(['hello', 'world'], 'example.txt');
+
+	expect(isGlobalInstance(null, 'File')).toBe(false);
+	expect(isGlobalInstance(file, 'File')).toBe(true);
+	vi.stubGlobal('File', null);
+	expect(isGlobalInstance(file, 'File')).toBe(false);
+	vi.stubGlobal('File', CustomFile);
+	expect(isGlobalInstance(file, 'File')).toBe(false);
+	expect(isGlobalInstance(customFile, 'File')).toBe(true);
+
+	expect(isGlobalInstance(null, 'FileList')).toBe(false);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(true);
+	vi.stubGlobal('FileList', null);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(false);
+	vi.stubGlobal('FileList', CustomFile);
+	expect(isGlobalInstance(fileList, 'FileList')).toBe(false);
+	expect(isGlobalInstance(customFile, 'FileList')).toBe(true);
+});
+
+test('isFieldElement', () => {
+	function createInput(type?: string) {
+		const element = document.createElement('input');
+
+		if (type) {
+			element.type = type;
+		}
+
+		return element;
+	}
+
+	expect(isFieldElement(null)).toBe(false);
+	expect(isFieldElement(createInput())).toBe(true);
+	expect(isFieldElement(createInput('button'))).toBe(false);
 });

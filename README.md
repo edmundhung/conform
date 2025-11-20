@@ -7,23 +7,23 @@
  ╚══════╝  ╚═════╝  ╚═╝  ╚══╝ ╚═╝        ╚═════╝  ╚═╝   ╚═╝ ╚═╝   ╚═╝
 ```
 
-Version 1.8.1 / License MIT / Copyright (c) 2024 Edmund Hung
+Version 1.13.3 / License MIT / Copyright (c) 2025 Edmund Hung
 
-A type-safe form validation library utilizing web fundamentals to progressively enhance HTML Forms with full support for server frameworks like Remix and Next.js.
+Progressively enhance HTML forms with React. Build resilient, type-safe forms with no hassle using web standards.
 
-# Getting Started
+## Getting Started
 
 Check out the overview and tutorial at our website https://conform.guide
 
-# Features
+## Features
 
-- Progressive enhancement first APIs
-- Type-safe field inference
-- Fine-grained subscription
-- Built-in accessibility helpers
-- Automatic type coercion with Zod
+- Full type safety with schema field inference
+- Standard Schema support with enhanced Zod and Valibot integration
+- Progressive enhancement first design with built-in accessibility features
+- Native Server Actions support for Remix and Next.js
+- Built on web standards for flexible composition with other tools
 
-# Documentation
+## Documentation
 
 - Validation: https://conform.guide/validation
 - Nested object and Array: https://conform.guide/complex-structures
@@ -31,6 +31,6 @@ Check out the overview and tutorial at our website https://conform.guide
 - Intent button: https://conform.guide/intent-button
 - Accessibility Guide: https://conform.guide/accessibility
 
-# Support
+## Support
 
 To report a bug, please open an issue on the repository at https://github.com/edmundhung/conform. For feature requests and questions, you can post them in the Discussions section.

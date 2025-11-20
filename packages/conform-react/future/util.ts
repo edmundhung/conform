@@ -1,192 +1,269 @@
+import type { FormError } from '@conform-to/dom/future';
 import {
-	isGlobalInstance,
-	unstable_updateField as updateField,
-} from '@conform-to/dom';
+	formatIssues,
+	formatPathSegments,
+	getPathSegments,
+	getValueAtPath,
+	isPlainObject,
+	setValueAtPath,
+} from '@conform-to/dom/future';
+import type { StandardSchemaV1 } from './standard-schema';
+import { ValidateHandler, ValidateResult } from './types';
 
-export type FormRef =
-	| React.RefObject<
-			| HTMLFormElement
-			| HTMLFieldSetElement
-			| HTMLInputElement
-			| HTMLSelectElement
-			| HTMLTextAreaElement
-			| HTMLButtonElement
-			| null
-	  >
-	| string;
-
-export function getFormElement(
-	formRef: FormRef | undefined,
-): HTMLFormElement | null {
-	if (typeof formRef === 'string') {
-		return document.forms.namedItem(formRef);
-	}
-
-	const element = formRef?.current;
-
-	if (element instanceof HTMLFormElement) {
-		return element;
-	}
-
-	return element?.form ?? null;
+export function isUndefined(value: unknown): value is undefined {
+	return value === undefined;
 }
 
-export function focusable(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (!element.hidden && element.type !== 'hidden') {
-		return;
-	}
-
-	// Style the element to be visually hidden
-	element.style.position = 'absolute';
-	element.style.width = '1px';
-	element.style.height = '1px';
-	element.style.padding = '0';
-	element.style.margin = '-1px';
-	element.style.overflow = 'hidden';
-	element.style.clip = 'rect(0,0,0,0)';
-	element.style.whiteSpace = 'nowrap';
-	element.style.border = '0';
-
-	// Hide the element from screen readers
-	element.setAttribute('aria-hidden', 'true');
-
-	// Make sure people won't tab to this element
-	element.tabIndex = -1;
-
-	// Set the element to be visible again so it can be focused
-	if (element.hidden) {
-		element.hidden = false;
-	}
-
-	if (element.type === 'hidden') {
-		element.setAttribute('type', 'text');
-	}
+export function isString(value: unknown): value is string {
+	return typeof value === 'string';
 }
 
-export function initializeField(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	options:
-		| {
-				defaultValue?: string | string[] | File | File[] | null;
-				defaultChecked?: boolean;
-				value?: string;
-		  }
-		| undefined,
-): void {
-	if (element.dataset.conform) {
-		return;
-	}
-
-	const defaultValue =
-		typeof options?.value === 'string' ||
-		typeof options?.defaultChecked === 'boolean'
-			? options.defaultChecked
-				? options.value ?? 'on'
-				: null
-			: options?.defaultValue;
-
-	// Update the value of the element, including the default value
-	updateField(element, { value: defaultValue, defaultValue });
-
-	element.dataset.conform = 'initialized';
+export function isNumber(value: unknown): value is number {
+	return typeof value === 'number';
 }
 
-export function getRadioGroupValue(
-	inputs: Array<HTMLInputElement>,
-): string | undefined {
-	for (const input of inputs) {
-		if (input.type === 'radio' && input.checked) {
-			return input.value;
+export function isNullable<T>(
+	value: unknown,
+	typeGuard: (value: unknown) => value is T,
+): value is T | null {
+	return value === null || typeGuard(value);
+}
+
+export function isOptional<T>(
+	value: unknown,
+	typeGuard: (value: unknown) => value is T,
+): value is T | undefined {
+	return isUndefined(value) || typeGuard(value);
+}
+
+export function getArrayAtPath<Type>(
+	formValue: Record<string, Type> | null,
+	name: string,
+): Array<Type> {
+	const value = getValueAtPath(formValue, name) ?? [];
+
+	if (!Array.isArray(value)) {
+		throw new Error(`The value of "${name}" is not an array`);
+	}
+
+	return value;
+}
+
+/**
+ * Immutably updates a value at the specified path.
+ * Empty path replaces the entire object.
+ */
+export function updateValueAtPath<Data>(
+	data: Record<string, Data>,
+	name: string,
+	value: Data | Record<string, Data>,
+): Record<string, Data> {
+	if (name === '') {
+		if (!isPlainObject(value)) {
+			throw new Error('The value must be an object');
 		}
+
+		return value;
 	}
+
+	return setValueAtPath(data, getPathSegments(name), value, { clone: true });
 }
 
-export function getCheckboxGroupValue(
-	inputs: Array<HTMLInputElement>,
-): string[] | undefined {
-	let values: string[] | undefined;
+/**
+ * Creates a function that updates array indices in field paths.
+ * Returns null to remove fields, or updated path with new index.
+ */
+export function createPathIndexUpdater(
+	listName: string,
+	update: (index: number) => number | null,
+): (name: string) => string | null {
+	const listPaths = getPathSegments(listName);
 
-	for (const input of inputs) {
-		if (input.type === 'checkbox') {
-			values ??= [];
-			if (input.checked) {
-				values.push(input.value);
+	return (name: string) => {
+		const paths = getPathSegments(name);
+
+		if (
+			paths.length > listPaths.length &&
+			listPaths.every((path, index) => paths[index] === path)
+		) {
+			const currentIndex = paths[listPaths.length];
+
+			if (typeof currentIndex === 'number') {
+				const newIndex = update(currentIndex);
+
+				if (newIndex === null) {
+					// To remove the item instead of updating it
+					return null;
+				}
+
+				if (newIndex !== currentIndex) {
+					// Replace the index
+					paths.splice(listPaths.length, 1, newIndex);
+
+					return formatPathSegments(paths);
+				}
 			}
 		}
-	}
 
-	return values;
+		return name;
+	};
 }
 
-export type InputSnapshot = {
-	value?: string;
-	options?: string[];
-	checked?: boolean;
-	files?: File[];
-};
+/**
+ * Returns null if error object has no actual error messages,
+ * otherwise returns the error as-is.
+ */
+export function normalizeFormError<ErrorShape>(
+	error: FormError<ErrorShape> | null,
+): FormError<ErrorShape> | null {
+	if (
+		error &&
+		error.formErrors.length === 0 &&
+		Object.entries(error.fieldErrors).every(([, messages]) =>
+			Array.isArray(messages) ? messages.length === 0 : !messages,
+		)
+	) {
+		return null;
+	}
 
-export function getInputSnapshot(
-	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-) {
-	if (input instanceof HTMLInputElement) {
-		switch (input.type) {
-			case 'file':
-				return {
-					files: input.files ? Array.from(input.files) : undefined,
-				};
-			case 'radio':
-			case 'checkbox':
-				return {
-					value: input.value,
-					checked: input.checked,
-				};
-		}
-	} else if (input instanceof HTMLSelectElement && input.multiple) {
+	return error;
+}
+
+export function normalizeValidateResult<ErrorShape, Value>(
+	result: ValidateResult<ErrorShape, Value>,
+): {
+	error: FormError<ErrorShape> | null;
+	value?: Value;
+} {
+	if (result !== null && 'error' in result) {
 		return {
-			options: Array.from(input.selectedOptions).map((option) => option.value),
+			error: normalizeFormError(result.error),
+			value: result.value,
 		};
 	}
 
 	return {
-		value: input.value,
+		error: normalizeFormError(result),
 	};
 }
 
-export function getDefaultSnapshot(
-	defaultValue: string | string[] | File | File[] | FileList | null | undefined,
-	defaultChecked: boolean | undefined,
-	value: string | undefined,
-): InputSnapshot {
-	if (typeof value === 'string' || typeof defaultChecked === 'boolean') {
+/**
+ * Handles different validation result formats:
+ * - Promise: async validation only
+ * - Array: [syncResult, asyncPromise]
+ * - Object: sync validation only
+ */
+export function resolveValidateResult<ErrorShape, Value>(
+	result: ReturnType<ValidateHandler<ErrorShape, Value>>,
+) {
+	let syncResult: ValidateResult<ErrorShape, Value> | undefined;
+	let asyncResult: Promise<ValidateResult<ErrorShape, Value>> | undefined;
+
+	if (result instanceof Promise) {
+		asyncResult = result;
+	} else if (Array.isArray(result)) {
+		syncResult = result[0];
+		asyncResult = result[1];
+	} else {
+		syncResult = result;
+	}
+
+	return {
+		syncResult: syncResult ? normalizeValidateResult(syncResult) : undefined,
+		asyncResult: asyncResult
+			? asyncResult.then(normalizeValidateResult)
+			: undefined,
+	};
+}
+
+export function resolveStandardSchemaResult<Value>(
+	result: StandardSchemaV1.Result<Value>,
+): {
+	error: FormError<string> | null;
+	value?: Value;
+} {
+	if (!result.issues) {
 		return {
-			value: value ?? 'on',
-			checked: defaultChecked,
+			error: null,
+			value: result.value,
 		};
 	}
 
-	if (typeof defaultValue === 'string') {
-		return { value: defaultValue };
+	return {
+		error: formatIssues(result.issues),
+	};
+}
+
+/**
+ * Create a copy of the object with the updated properties if there is any change
+ */
+export function merge<Obj extends Record<string, any>>(
+	obj: Obj,
+	update: Partial<Obj>,
+): Obj {
+	if (
+		obj === update ||
+		Object.entries(update).every(([key, value]) => obj[key] === value)
+	) {
+		return obj;
 	}
 
-	if (Array.isArray(defaultValue)) {
-		if (
-			defaultValue.every((item): item is string => typeof item === 'string')
-		) {
-			return { options: defaultValue };
-		} else {
-			return { files: defaultValue };
+	return Object.assign({}, obj, update);
+}
+
+/**
+ * Transforms object keys using a mapping function.
+ * Keys mapped to null are filtered out.
+ */
+export function transformKeys<Value>(
+	obj: Record<string, Value>,
+	fn: (key: string) => string | null,
+) {
+	const result: Record<string, Value> = {};
+
+	for (const [key, value] of Object.entries(obj)) {
+		const name = fn(key);
+
+		if (name !== null) {
+			result[name] = value;
 		}
 	}
 
-	if (isGlobalInstance(defaultValue, 'File')) {
-		return { files: [defaultValue] };
+	return result;
+}
+
+/**
+ * Appends item to array only if not already present.
+ * Returns original array if item exists, new array if added.
+ */
+export function appendUniqueItem<Item>(list: Array<Item>, item: Item) {
+	if (list.includes(item)) {
+		return list;
 	}
 
-	if (isGlobalInstance(defaultValue, 'FileList')) {
-		return { files: Array.from(defaultValue) };
+	return list.concat(item);
+}
+
+/**
+ * Maps over array and filters out null results.
+ */
+export function compactMap<Item>(
+	list: Array<NonNullable<Item>>,
+	fn: (value: Item) => Item | null,
+): Array<Item> {
+	const result: Array<Item> = [];
+
+	for (const item of list) {
+		const value = fn(item);
+
+		if (value !== null) {
+			result.push(value);
+		}
 	}
 
-	return {};
+	return result;
+}
+
+export function generateUniqueKey() {
+	return Math.trunc(Date.now() * Math.random()).toString(36);
 }

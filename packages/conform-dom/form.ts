@@ -1,15 +1,12 @@
 import {
-	flatten,
-	formatPaths,
 	getFormData,
-	getPaths,
-	getValue,
-	isPlainObject,
+	getPathSegments,
+	formatPathSegments,
+	getValueAtPath,
+	setValueAtPath,
+	getRelativePath,
 	isPrefix,
-	setValue,
-	normalize,
-	formatName,
-	getChildPaths,
+	appendPathSegment,
 } from './formdata';
 import {
 	type FieldElement,
@@ -19,8 +16,9 @@ import {
 	getFormMethod,
 	requestSubmit,
 	updateField,
+	isDirtyInput,
 } from './dom';
-import { clone, generateId, invariant } from './util';
+import { clone, generateId, invariant, isPlainObject } from './util';
 import {
 	type Intent,
 	type Submission,
@@ -32,6 +30,8 @@ import {
 	setState,
 	serialize,
 	serializeIntent,
+	normalize,
+	flatten,
 	root,
 } from './submission';
 
@@ -307,7 +307,7 @@ function getDefaultKey(
 	>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
-				result[formatName(key, i)] = generateId();
+				result[appendPathSegment(key, i)] = generateId();
 			}
 		}
 
@@ -346,7 +346,7 @@ function handleIntent<Error>(
 		}
 		case 'update': {
 			const { validated, value } = intent.payload;
-			const name = formatName(intent.payload.name, intent.payload.index);
+			const name = appendPathSegment(intent.payload.name, intent.payload.index);
 
 			if (typeof value !== 'undefined') {
 				updateValue(meta, name ?? '', value);
@@ -381,8 +381,8 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'reset': {
-			const name = formatName(intent.payload.name, intent.payload.index);
-			const value = getValue(meta.defaultValue, name);
+			const name = appendPathSegment(intent.payload.name, intent.payload.index);
+			const value = getValueAtPath(meta.defaultValue, name);
 
 			updateValue(meta, name, value);
 
@@ -455,8 +455,8 @@ function updateValue<Error>(
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
-	setValue(meta.initialValue, name, () => value);
-	setValue(meta.value, name, () => value);
+	setValueAtPath(meta.initialValue, name, () => value);
+	setValueAtPath(meta.value, name, () => value);
 
 	if (isPlainObject(value) || Array.isArray(value)) {
 		setState(meta.key, name, () => undefined);
@@ -491,12 +491,12 @@ function createValueProxy(
 			return val;
 		}
 
-		const paths = getPaths(name);
-		const basename = formatPaths(paths.slice(0, -1));
-		const key = formatPaths(paths.slice(-1));
+		const path = getPathSegments(name);
+		const basename = formatPathSegments(path.slice(0, -1));
+		const key = formatPathSegments(path.slice(-1));
 		const parentValue = proxy[basename];
 
-		return getValue(parentValue, key);
+		return getValueAtPath(parentValue, key);
 	});
 }
 
@@ -507,18 +507,22 @@ function createConstraintProxy(
 		let result = constraint[name];
 
 		if (!result) {
-			const paths = getPaths(name);
+			const path = getPathSegments(name);
 
-			for (let i = paths.length - 1; i >= 0; i--) {
-				const path = paths[i];
+			for (let i = path.length - 1; i >= 0; i--) {
+				const segment = path[i];
 
-				if (typeof path === 'number' && !Number.isNaN(path)) {
-					paths[i] = Number.NaN;
+				// Try searching a less specific path for the constraint
+				// e.g. `array[0].anotherArray[1].key` -> `array[0].anotherArray[].key` -> `array[].anotherArray[].key`
+				if (typeof segment === 'number') {
+					// This overrides the current number segment with an empty string
+					// which will be treated as an empty bracket
+					path[i] = '';
 					break;
 				}
 			}
 
-			const alternative = formatPaths(paths);
+			const alternative = formatPathSegments(path);
 
 			if (name !== alternative) {
 				result = proxy[alternative];
@@ -534,19 +538,19 @@ function createKeyProxy(
 ): Record<string, string | undefined> {
 	return createStateProxy((name, proxy) => {
 		const currentKey = key[name];
-		const paths = getPaths(name);
+		const segments = getPathSegments(name);
 
-		if (paths.length === 0) {
+		if (segments.length === 0) {
 			return currentKey;
 		}
 
-		const parentKey = proxy[formatPaths(paths.slice(0, -1))];
+		const parentKey = proxy[formatPathSegments(segments.slice(0, -1))];
 
 		if (typeof parentKey === 'undefined') {
 			return currentKey;
 		}
 
-		return `${parentKey}/${currentKey ?? paths.at(-1)}`;
+		return `${parentKey}/${currentKey ?? segments.at(-1)}`;
 	});
 }
 
@@ -1109,54 +1113,72 @@ export function createFormContext<
 		for (const intent of intents) {
 			switch (intent.type) {
 				case 'update': {
-					const name = formatName(intent.payload.name, intent.payload.index);
-					const parentPaths = getPaths(name);
+					const name = appendPathSegment(
+						intent.payload.name,
+						intent.payload.index,
+					);
+					const baseSegments = getPathSegments(name);
 
 					for (const element of formElement.elements) {
 						if (isFieldElement(element)) {
-							const paths = getChildPaths(parentPaths, element.name);
+							const paths = getRelativePath(element.name, baseSegments);
 
 							if (paths) {
-								const value = getValue(
-									intent.payload.value,
-									formatPaths(paths),
-								);
+								const value = getValueAtPath(intent.payload.value, paths);
+								const inputValue =
+									typeof value === 'string' ||
+									(Array.isArray(value) &&
+										value.every((item) => typeof item === 'string'))
+										? value
+										: undefined;
 
-								updateField(element, {
-									value:
-										typeof value === 'string' ||
-										(Array.isArray(value) &&
-											value.every((item) => typeof item === 'string'))
-											? value
-											: null,
-								});
+								if (
+									typeof inputValue !== 'undefined' ||
+									(name === '' && paths.length > 1)
+								) {
+									updateField(element, {
+										value: inputValue ?? null,
+									});
 
-								// Update the element attribute to notify useControl / useInputControl hook
-								element.dataset.conform = generateId();
+									// Update the element attribute to notify useControl / useInputControl hook
+									element.dataset.conform = generateId();
+								}
 							}
 						}
 					}
 					break;
 				}
 				case 'reset': {
-					const prefix = formatName(intent.payload.name, intent.payload.index);
+					const prefix = appendPathSegment(
+						intent.payload.name,
+						intent.payload.index,
+					);
 					for (const element of formElement.elements) {
 						if (
 							isFieldElement(element) &&
 							element.name &&
 							isPrefix(element.name, prefix)
 						) {
-							const value = getValue(meta.defaultValue, element.name);
+							const value = getValueAtPath(meta.defaultValue, element.name);
 							const defaultValue =
 								typeof value === 'string' ||
 								(Array.isArray(value) &&
 									value.every((item) => typeof item === 'string'))
 									? value
-									: null;
+									: undefined;
+
+							if (
+								typeof defaultValue === 'undefined' &&
+								!element.dataset.conform &&
+								'defaultValue' in element &&
+								!isDirtyInput(element)
+							) {
+								continue;
+							}
 
 							updateField(element, {
-								defaultValue,
-								value: defaultValue,
+								defaultValue: defaultValue,
+								value: defaultValue ?? null,
 							});
 
 							// Update the element attribute to notify useControl / useInputControl hook

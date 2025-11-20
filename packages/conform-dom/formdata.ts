@@ -1,4 +1,18 @@
-import { INTENT as DEFAULT_INTENT_NAME } from './submission';
+import type {
+	FormError,
+	FormValue,
+	JsonPrimitive,
+	Serialize,
+	SerializedValue,
+	Submission,
+	SubmissionResult,
+} from './types';
+import { isGlobalInstance, isSubmitter } from './dom';
+import { deepEqual, isPlainObject, stripFiles } from './util';
+import type { StandardSchemaIssue } from './standard-schema';
+import { formatIssues } from './standard-schema';
+
+export const DEFAULT_INTENT_NAME = '__INTENT__';
 
 /**
  * Construct a form data with the submitter value.
@@ -9,16 +23,24 @@ import { INTENT as DEFAULT_INTENT_NAME } from './submission';
  */
 export function getFormData(
 	form: HTMLFormElement,
-	submitter?: HTMLInputElement | HTMLButtonElement | null,
+	submitter?: HTMLElement | null,
 ): FormData {
 	const payload = new FormData(form, submitter);
 
-	if (submitter && submitter.type === 'submit' && submitter.name !== '') {
-		const entries = payload.getAll(submitter.name);
+	if (submitter) {
+		if (!isSubmitter(submitter)) {
+			throw new TypeError(
+				'The submitter must be an input or button element with type submit.',
+			);
+		}
 
-		// This assumes the submitter value to be always unique, which should be fine in most cases
-		if (!entries.includes(submitter.value)) {
-			payload.append(submitter.name, submitter.value);
+		if (submitter.name) {
+			const entries = payload.getAll(submitter.name);
+
+			// This assumes the submitter value to be always unique, which should be fine in most cases
+			if (!entries.includes(submitter.value)) {
+				payload.append(submitter.name, submitter.value);
+			}
 		}
 	}
 
@@ -26,378 +48,279 @@ export function getFormData(
 }
 
 /**
- * Returns the paths from a name based on the JS syntax convention
+ * Convert a string path into an array of segments.
+ *
  * @example
  * ```js
- * const paths = getPaths('todos[0].content'); // ['todos', 0, 'content']
+ * getPathSegments("object.key");       // → ['object', 'key']
+ * getPathSegments("array[0].content"); // → ['array', 0, 'content']
+ * getPathSegments("todos[]");          // → ['todos', '']
  * ```
  */
-export function getPaths(name: string | undefined): Array<string | number> {
-	if (!name) {
-		return [];
+export function getPathSegments(
+	path: string | undefined,
+): Array<string | number> {
+	if (!path) return [];
+
+	const tokenRegex = /([^.[\]]+)|\[(\d*)\]/g;
+	const segments: Array<string | number> = [];
+
+	let lastIndex = 0,
+		match: RegExpExecArray | null;
+
+	while ((match = tokenRegex.exec(path))) {
+		// allow a single “.” between tokens
+		if (match.index !== lastIndex) {
+			if (!(match.index === lastIndex + 1 && path[lastIndex] === '.')) {
+				throw new Error(
+					`Invalid path syntax at position ${lastIndex} in "${path}"`,
+				);
+			}
+		}
+
+		const [, key, index] = match;
+		if (key !== undefined) {
+			if (key === '__proto__' || key === 'constructor') {
+				throw new Error(`Invalid path segment "${key}"`);
+			}
+			segments.push(key);
+		} else if (index === '') {
+			segments.push('');
+		} else {
+			const number = Number(index);
+			if (!Number.isInteger(number) || number < 0) {
+				throw new Error(
+					`Invalid path segment: array index must be a non-negative integer, got ${number}`,
+				);
+			}
+			segments.push(number);
+		}
+
+		lastIndex = tokenRegex.lastIndex;
 	}
 
-	return name
-		.split(/\.|(\[\d*\])/)
-		.reduce<Array<string | number>>((result, segment) => {
-			if (
-				typeof segment !== 'undefined' &&
-				segment !== '' &&
-				segment !== '__proto__' &&
-				segment !== 'constructor' &&
-				segment !== 'prototype'
-			) {
-				if (segment.startsWith('[') && segment.endsWith(']')) {
-					const index = segment.slice(1, -1);
+	if (lastIndex !== path.length) {
+		throw new Error(
+			`Invalid path syntax at position ${lastIndex} in "${path}"`,
+		);
+	}
 
-					result.push(Number(index));
-				} else {
-					result.push(segment);
-				}
-			}
-			return result;
-		}, []);
+	return segments;
 }
 
 /**
- * Returns a formatted name from the paths based on the JS syntax convention
+ * Returns a formatted name from the path segments based on the dot and bracket notation.
+ *
  * @example
  * ```js
- * const name = formatPaths(['todos', 0, 'content']); // "todos[0].content"
+ * formatPathSegments(['object', 'key']); // → "object.key"
+ * formatPathSegments(['array', 0, 'content']); // → "array[0].content"
+ * formatPathSegments(['todos', '']); // → "todos[]"
  * ```
  */
-export function formatPaths(paths: Array<string | number>): string {
-	return paths.reduce<string>((name, path) => {
-		if (typeof path === 'number') {
-			return `${name}[${Number.isNaN(path) ? '' : path}]`;
-		}
-
-		if (name === '' || path === '') {
-			return [name, path].join('');
-		}
-
-		return [name, path].join('.');
-	}, '');
-}
-
-/**
- * Format based on a prefix and a path
- */
-export function formatName(prefix: string | undefined, path?: string | number) {
-	return typeof path !== 'undefined'
-		? formatPaths([...getPaths(prefix), path])
-		: prefix ?? '';
-}
-
-/**
- * Check if a name match the prefix paths
- */
-export function isPrefix(name: string, prefix: string) {
-	const paths = getPaths(name);
-	const prefixPaths = getPaths(prefix);
-
-	return (
-		paths.length >= prefixPaths.length &&
-		prefixPaths.every((path, index) => paths[index] === path)
+export function formatPathSegments(
+	segments: Readonly<Array<string | number>>,
+): string {
+	return segments.reduce<string>(
+		(path, segment) => appendPathSegment(path, segment),
+		'',
 	);
 }
 
 /**
- * Compare the parent and child paths to get the relative paths
- * Returns null if the child paths do not start with the parent paths
+ * Append one more segment onto an existing path string.
+ *
+ * - segment = `undefined`  ⇒ no-op
+ * - segment = `""`         ⇒ empty brackets "[]"
+ * - segment = `number`     ⇒ bracket notation "[n]"
+ * - segment = `string`     ⇒ dot-notation ".prop"
  */
-export function getChildPaths(
-	parentNameOrPaths: string | Array<string | number>,
-	childName: string,
-) {
-	const parentPaths =
-		typeof parentNameOrPaths === 'string'
-			? getPaths(parentNameOrPaths)
-			: parentNameOrPaths;
-	const childPaths = getPaths(childName);
+export function appendPathSegment(
+	path: string | undefined,
+	segment: string | number | undefined,
+): string {
+	// 1) nothing to append
+	if (typeof segment === 'undefined') {
+		return path ?? '';
+	}
 
+	// 2) explicit empty-segment => empty bracket
+	if (segment === '') {
+		// even as first segment, "[]" is valid
+		return `${path}[]`;
+	}
+
+	// 3) numeric index => [n]
+	if (typeof segment === 'number') {
+		return `${path}[${segment}]`;
+	}
+
+	// 4) non-empty string => .prop (no leading dot if no base)
+	return path ? `${path}.${segment}` : segment;
+}
+
+/**
+ * Returns true if `prefix` is a valid leading path of `name`.
+ *
+ * @example
+ * ```js
+ * isPrefix("foo.bar.baz", "foo.bar")        // → true
+ * isPrefix("foo.bar[3].baz", "foo.bar[3]")  // → true
+ * isPrefix("foo.bar[3].baz", "foo.bar")     // → true
+ * isPrefix("foo.bar[3].baz", "foo.baz")     // → false
+ * isPrefix("foo", "foo.bar")                // → false
+ * ```
+ */
+export function isPrefix(name: string, prefix: string) {
+	return getRelativePath(name, getPathSegments(prefix)) !== null;
+}
+
+/**
+ * Return the segments of `fullPathStr` that come after the `baseSegments` prefix.
+ *
+ * @param fullPathStr     Full path as a dot/bracket string
+ * @param basePath    Base path, already parsed into segments
+ * @returns               The “tail” segments, or `null` if `fullPathStr` isn’t nested under `baseSegments`
+ *
+ * @example
+ * ```js
+ * getRelativePath("foo.bar[0].qux", ["foo","bar"])  // → [0, "qux"]
+ * getRelativePath("a.b.c.d", ["a","b"])             // → ["c","d"]
+ * getRelativePath("foo", ["foo","bar"])             // → null
+ * ```
+ */
+export function getRelativePath(
+	name: string,
+	basePath: Array<string | number>,
+): Array<string | number> | null {
+	const fullPath = getPathSegments(name);
+
+	// if full is at least as long *and* starts with the base…
 	if (
-		childPaths.length >= parentPaths.length &&
-		parentPaths.every((path, index) => childPaths[index] === path)
+		fullPath.length >= basePath.length &&
+		basePath.every((segment, i) => segment === fullPath[i])
 	) {
-		return childPaths.slice(parentPaths.length);
+		return fullPath.slice(basePath.length);
 	}
 
 	return null;
 }
 
 /**
- * Assign a value to a target object by following the paths
+ * Assign a value to a target object by following the path segments.
  */
-export function setValue(
-	target: Record<string, any>,
-	name: string,
-	valueFn: (currentValue?: unknown) => unknown,
-) {
-	const paths = getPaths(name);
-	const length = paths.length;
-	const lastIndex = length - 1;
+export function setValueAtPath<T extends Record<string, any>>(
+	target: T,
+	pathOrSegments: string | Array<string | number>,
+	valueOrFn: unknown | ((current: unknown) => unknown),
+	options: { clone?: boolean; silent?: boolean } = {},
+): T {
+	try {
+		// 1) normalize + validate path
+		const segments: Array<string | number> =
+			typeof pathOrSegments === 'string'
+				? getPathSegments(pathOrSegments)
+				: pathOrSegments;
 
-	let index = -1;
-	let pointer = target;
+		if (segments.length === 0) {
+			throw new Error('Cannot set value at the object root');
+		}
 
-	while (pointer != null && ++index < length) {
-		const key = paths[index] as string | number;
-		const nextKey = paths[index + 1];
+		if (
+			segments.some((segment, i) => segment === '' && i < segments.length - 1)
+		) {
+			throw new Error(
+				`Empty brackets '[]' only allowed at end of path ("${pathOrSegments}")`,
+			);
+		}
+
+		// 2) clone root if needed
+		const result = options.clone ? { ...target } : target;
+		let pointer: any = result;
+
+		// 3) drill down, cloning ancestors
+		for (let i = 0; i < segments.length - 1; i++) {
+			const currentSegment = segments[i] as string | number;
+			const nextSegment = segments[i + 1] as string | number;
+			let child = pointer[currentSegment];
+
+			if (Array.isArray(child)) {
+				child = options.clone ? child.slice() : child;
+			} else if (isPlainObject(child)) {
+				child = options.clone ? { ...child } : child;
+			} else {
+				child = typeof nextSegment === 'number' || nextSegment === '' ? [] : {};
+			}
+
+			pointer[currentSegment] = child;
+			pointer = child;
+		}
+
+		// 4) final set or push
+		const last = segments[segments.length - 1] as string | number;
+		const oldValue = pointer[last];
 		const newValue =
-			index != lastIndex
-				? Object.prototype.hasOwnProperty.call(pointer, key) &&
-					pointer[key] !== null
-					? pointer[key]
-					: typeof nextKey === 'number'
-						? []
-						: {}
-				: valueFn(pointer[key]);
+			typeof valueOrFn === 'function' ? valueOrFn(oldValue) : valueOrFn;
 
-		pointer[key] = newValue;
-		pointer = pointer[key];
+		if (last === '') {
+			if (!Array.isArray(pointer)) {
+				throw new Error(`Cannot push to non-array at "${pathOrSegments}"`);
+			}
+			pointer.push(newValue);
+		} else {
+			pointer[last] = newValue;
+		}
+
+		return result;
+	} catch (err) {
+		if (options?.silent) {
+			return target;
+		}
+
+		throw err;
 	}
 }
 
 /**
- * Retrive the value from a target object by following the paths
+ * Retrive the value from a target object by following the path segments.
  */
-export function getValue(target: unknown, name: string): unknown {
-	let pointer = target;
+export function getValueAtPath(
+	target: unknown,
+	pathOrSegments: string | Array<string | number>,
+): unknown {
+	let pointer: any = target;
 
-	for (const path of getPaths(name)) {
-		if (typeof pointer === 'undefined' || pointer == null) {
-			break;
+	const segments =
+		typeof pathOrSegments === 'string'
+			? getPathSegments(pathOrSegments)
+			: pathOrSegments;
+
+	for (const segment of segments) {
+		if (segment === '') {
+			throw new Error(
+				`Cannot access empty segment "[]" in "${pathOrSegments}"`,
+			);
 		}
 
-		if (!Object.prototype.hasOwnProperty.call(pointer, path)) {
-			return;
+		if (
+			pointer == null ||
+			!Object.prototype.hasOwnProperty.call(pointer, segment)
+		) {
+			return undefined;
 		}
 
-		if (isPlainObject(pointer) && typeof path === 'string') {
-			pointer = pointer[path];
-		} else if (Array.isArray(pointer) && typeof path === 'number') {
-			pointer = pointer[path];
-		} else {
-			return;
-		}
+		pointer = pointer[segment];
 	}
 
 	return pointer;
 }
 
 /**
- * Check if the value is a plain object
- */
-export function isPlainObject(
-	obj: unknown,
-): obj is Record<string | number | symbol, unknown> {
-	return (
-		!!obj &&
-		obj.constructor === Object &&
-		Object.getPrototypeOf(obj) === Object.prototype
-	);
-}
-
-type GlobalConstructors = {
-	[K in keyof typeof globalThis]: (typeof globalThis)[K] extends new (
-		...args: any
-	) => any
-		? K
-		: never;
-}[keyof typeof globalThis];
-
-export function isGlobalInstance<ClassName extends GlobalConstructors>(
-	obj: unknown,
-	className: ClassName,
-): obj is InstanceType<(typeof globalThis)[ClassName]> {
-	const Ctor = globalThis[className];
-	return typeof Ctor === 'function' && obj instanceof Ctor;
-}
-
-/**
- * Normalize value by removing empty object or array, empty string and null values
- */
-export function normalize<Type extends Record<string, unknown>>(
-	value: Type,
-	acceptFile?: boolean,
-): Type | undefined;
-export function normalize<Type extends Array<unknown>>(
-	value: Type,
-	acceptFile?: boolean,
-): Type | undefined;
-export function normalize(
-	value: unknown,
-	acceptFile?: boolean,
-): unknown | undefined;
-export function normalize<
-	Type extends Record<string, unknown> | Array<unknown>,
->(
-	value: Type,
-	acceptFile = true,
-): Record<string, unknown> | Array<unknown> | undefined {
-	if (isPlainObject(value)) {
-		const obj = Object.keys(value)
-			.sort()
-			.reduce<Record<string, unknown>>((result, key) => {
-				const data = normalize(value[key], acceptFile);
-
-				if (typeof data !== 'undefined') {
-					result[key] = data;
-				}
-
-				return result;
-			}, {});
-
-		if (Object.keys(obj).length === 0) {
-			return;
-		}
-
-		return obj;
-	}
-
-	if (Array.isArray(value)) {
-		if (value.length === 0) {
-			return undefined;
-		}
-
-		return value.map((item) => normalize(item, acceptFile));
-	}
-
-	if (
-		(typeof value === 'string' && value === '') ||
-		value === null ||
-		(isGlobalInstance(value, 'File') && (!acceptFile || value.size === 0))
-	) {
-		return;
-	}
-
-	return value;
-}
-
-/**
- * Flatten a tree into a dictionary
- */
-export function flatten(
-	data: unknown,
-	options: {
-		resolve?: (data: unknown) => unknown;
-		prefix?: string;
-	} = {},
-): Record<string, unknown> {
-	const result: Record<string, unknown> = {};
-	const resolve = options.resolve ?? ((data) => data);
-
-	function process(data: unknown, prefix: string) {
-		const value = normalize(resolve(data));
-
-		if (typeof value !== 'undefined') {
-			result[prefix] = value;
-		}
-
-		if (Array.isArray(data)) {
-			for (let i = 0; i < data.length; i++) {
-				process(data[i], `${prefix}[${i}]`);
-			}
-		} else if (isPlainObject(data)) {
-			for (const [key, value] of Object.entries(data)) {
-				process(value, prefix ? `${prefix}.${key}` : key);
-			}
-		}
-	}
-
-	if (data) {
-		process(data, options.prefix ?? '');
-	}
-
-	return result;
-}
-
-export function deepEqual(left: unknown, right: unknown): boolean {
-	if (Object.is(left, right)) {
-		return true;
-	}
-
-	if (left == null || right == null) {
-		return false;
-	}
-
-	// Compare plain objects
-	if (isPlainObject(left) && isPlainObject(right)) {
-		const prevKeys = Object.keys(left);
-		const nextKeys = Object.keys(right);
-
-		if (prevKeys.length !== nextKeys.length) {
-			return false;
-		}
-
-		for (const key of prevKeys) {
-			if (
-				!Object.prototype.hasOwnProperty.call(right, key) ||
-				!deepEqual(left[key], right[key])
-			) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	// Compare arrays
-	if (Array.isArray(left) && Array.isArray(right)) {
-		if (left.length !== right.length) {
-			return false;
-		}
-
-		for (let i = 0; i < left.length; i++) {
-			if (!deepEqual(left[i], right[i])) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-export type JsonPrimitive = string | number | boolean | null;
-
-/**
- * The form value of a submission. This is usually constructed from a FormData or URLSearchParams.
- * It may contains JSON primitives if the value is updated based on a form intent.
- */
-export type FormValue<
-	Type extends JsonPrimitive | FormDataEntryValue =
-		| JsonPrimitive
-		| FormDataEntryValue,
-> = Type | FormValue<Type | null>[] | { [key: string]: FormValue<Type> };
-
-/**
- * The data of a form submission.
- */
-export type Submission<
-	ValueType extends FormDataEntryValue = FormDataEntryValue,
-> = {
-	/**
-	 * The form value structured following the naming convention.
-	 */
-	value: Record<string, FormValue<ValueType>>;
-	/**
-	 * The field names that are included in the FormData or URLSearchParams.
-	 */
-	fields: string[];
-	/**
-	 * The intent of the submission. This is usally included by specifying a name and value on a submit button.
-	 */
-	intent: string | null;
-};
-
-/**
  * Parse `FormData` or `URLSearchParams` into a submission object.
  * This function structures the form values based on the naming convention.
- * It also includes all the field names and the intent if the `intentName` option is provided.
+ * It also includes all the field names and extracts the intent from the submission.
  *
+ * @see https://conform.guide/api/react/future/parseSubmission
  * @example
  * ```ts
  * const formData = new FormData();
@@ -407,7 +330,7 @@ export type Submission<
  *
  * parseSubmission(formData)
  * // {
- * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   payload: { email: 'test@example.com', password: 'secret' },
  * //   fields: ['email', 'password'],
  * //   intent: null,
  * // }
@@ -416,7 +339,7 @@ export type Submission<
  * formData.append('intent', 'login');
  * parseSubmission(formData, { intentName: 'intent' })
  * // {
- * //   value: { email: 'test@example.com', password: 'secret' },
+ * //   payload: { email: 'test@example.com', password: 'secret' },
  * //   fields: ['email', 'password'],
  * //   intent: 'login',
  * // }
@@ -426,12 +349,12 @@ export function parseSubmission(
 	formData: FormData | URLSearchParams,
 	options?: {
 		/**
-		 * The name of the submit button that triggered the form submission.
-		 * Used to extract the submission's intent.
+		 * The name of the submit button field that indicates the submission intent.
+		 * Defaults to `__INTENT__`.
 		 */
 		intentName?: string;
 		/**
-		 * A filter function that excludes specific entries from being parsed.
+		 * A function to exclude specific form fields from being parsed.
 		 * Return `true` to skip the entry.
 		 */
 		skipEntry?: (name: string) => boolean;
@@ -439,7 +362,7 @@ export function parseSubmission(
 ): Submission {
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
 	const submission: Submission = {
-		value: {},
+		payload: {},
 		fields: [],
 		intent: null,
 	};
@@ -447,8 +370,13 @@ export function parseSubmission(
 	for (const name of new Set(formData.keys())) {
 		if (name !== intentName && !options?.skipEntry?.(name)) {
 			const value = formData.getAll(name);
-			setValue(submission.value, name, () =>
+			setValueAtPath(
+				submission.payload,
+				name,
 				value.length > 1 ? value : value[0],
+				{
+					silent: true, // Avoid errors if the path is invalid
+				},
 			);
 			submission.fields.push(name);
 		}
@@ -466,26 +394,187 @@ export function parseSubmission(
 	return submission;
 }
 
-export type ParseSubmissionOptions = Required<
-	Parameters<typeof parseSubmission>
->[1];
+/**
+ * Creates a SubmissionResult object from a submission, adding validation results and target values.
+ * This function will remove all files in the submission payload by default since
+ * file inputs cannot be initialized with files.
+ * You can specify `keepFiles: true` to keep the files if needed.
+ *
+ * @see https://conform.guide/api/react/future/report
+ * @example
+ * ```ts
+ * // Report the submission with the field errors
+ * report(submission, {
+ *  error: {
+ *    fieldErrors: {
+ *      email: ['Invalid email format'],
+ *      password: ['Password is required'],
+ *    },
+ * })
+ *
+ * // Report the submission with a form error
+ * report(submission, {
+ *   error: {
+ *     formErrors: ['Invalid credentials'],
+ *   },
+ * })
+ *
+ * // Reset the form
+ * report(submission, {
+ *   reset: true,
+ * })
+ * ```
+ */
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options?: {
+		keepFiles?: false;
+		error?: {
+			issues?: undefined;
+			formErrors?: ErrorShape[];
+			fieldErrors?: Record<string, ErrorShape[]>;
+		} | null;
+		targetValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<
+	ErrorShape,
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+>;
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error?: {
+			issues?: undefined;
+			formErrors?: ErrorShape[];
+			fieldErrors?: Record<string, ErrorShape[]>;
+		} | null;
+		targetValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<ErrorShape>;
+export function report(
+	submission: Submission,
+	options?: {
+		keepFiles?: false;
+		error?: {
+			issues: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		};
+		targetValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<string, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
+export function report(
+	submission: Submission,
+	options?: {
+		keepFiles: true;
+		error?: {
+			issues: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		};
+		targetValue?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<string>;
+export function report<ErrorShape = string>(
+	submission: Submission,
+	options: {
+		/**
+		 * Controls whether file objects are preserved in the submission payload.
+		 * Defaults to `false` - files are stripped since they cannot be used to initialize file inputs.
+		 */
+		keepFiles?: boolean;
+		/**
+		 * Error information to include in the result.
+		 * Set to `null` to indicate validation passed with no errors.
+		 */
+		error?: {
+			issues?: ReadonlyArray<StandardSchemaIssue>;
+			formErrors?: string[];
+			fieldErrors?: Record<string, string[]>;
+		} | null;
+		/**
+		 * The target form value to set. Use this to update the form or reset it
+		 * to a specific value when combined with `reset: true`.
+		 */
+		targetValue?: Record<string, FormValue> | null;
+		/**
+		 * Array of field names to hide from the result by setting them to `undefined`.
+		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
+		 */
+		hideFields?: string[];
+		/**
+		 * Indicates whether the form should be reset to its initial state.
+		 */
+		reset?: boolean;
+	} = {},
+): SubmissionResult<string | ErrorShape> {
+	let error: FormError<string | ErrorShape> | null | undefined;
 
-export function defaultSerialize(
-	value: unknown,
-): FormDataEntryValue | undefined {
-	if (typeof value === 'string' || isGlobalInstance(value, 'File')) {
-		return value;
+	if (options.error == null) {
+		error = options.error;
+	} else {
+		error = formatIssues(options.error.issues ?? []);
+
+		if (options.error.formErrors) {
+			error.formErrors.push(...options.error.formErrors);
+		}
+
+		if (options.error.fieldErrors) {
+			for (const [name, messages] of Object.entries(
+				options.error.fieldErrors,
+			)) {
+				if (messages.length === 0) {
+					continue;
+				}
+
+				if (!error.fieldErrors[name]) {
+					error.fieldErrors[name] = messages;
+				} else {
+					error.fieldErrors[name].push(...messages);
+				}
+			}
+		}
 	}
 
-	if (typeof value === 'boolean') {
-		return value ? 'on' : undefined;
+	const targetValue =
+		typeof options.targetValue === 'undefined' ||
+		(submission.payload === options.targetValue && !options.reset)
+			? undefined
+			: options.targetValue && !options.keepFiles
+				? stripFiles(options.targetValue)
+				: options.targetValue ?? {};
+
+	if (options.hideFields) {
+		for (const name of options.hideFields) {
+			const path = getPathSegments(name);
+
+			setValueAtPath(submission.payload, path, undefined);
+			if (targetValue) {
+				setValueAtPath(targetValue, path, undefined);
+			}
+		}
 	}
 
-	if (value instanceof Date) {
-		return value.toISOString();
-	}
-
-	return value?.toString();
+	return {
+		submission: options.keepFiles
+			? submission
+			: {
+					...submission,
+					payload: stripFiles(submission.payload),
+				},
+		reset: options.reset,
+		targetValue,
+		error,
+	};
 }
 
 /**
@@ -515,7 +604,7 @@ export function isDirty(
 	 * - A `URLSearchParams` object
 	 * - A plain object that was parsed from form data (i.e. `submission.payload`)
 	 */
-	formData: FormData | URLSearchParams | FormValue<FormDataEntryValue> | null,
+	formData: FormData | URLSearchParams | FormValue | null,
 	options?: {
 		/**
 		 * An object representing the default values of the form to compare against.
@@ -543,8 +632,8 @@ export function isDirty(
 		 */
 		serialize?: (
 			value: unknown,
-			defaultSerialize: (value: unknown) => FormDataEntryValue | undefined,
-		) => FormDataEntryValue | undefined;
+			defaultSerialize: Serialize,
+		) => SerializedValue | null | undefined;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -569,12 +658,39 @@ export function isDirty(
 			? parseSubmission(formData, {
 					intentName: options?.intentName,
 					skipEntry: options?.skipEntry,
-				}).value
+				}).payload
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serialize = options?.serialize ?? defaultSerialize;
+	const serializeData = (value: unknown) => {
+		if (options?.serialize) {
+			return options.serialize(value, serialize);
+		}
 
-	function normalize(value: unknown): unknown {
+		return serialize(value);
+	};
+
+	function normalize(data: unknown): unknown {
+		let value: unknown = serializeData(data);
+
+		if (typeof value === 'undefined') {
+			value = data;
+		}
+
+		// Removes empty strings, so that both empty string, empty file, null and undefined are treated as the same
+		if (value === '' || value === null) {
+			return undefined;
+		}
+
+		if (isGlobalInstance(value, 'File')) {
+			// Remove empty File as well, which happens if no File was selected
+			if (value.name === '' && value.size === 0) {
+				return undefined;
+			}
+
+			// If the value is a File, no need to serialize it
+			return value;
+		}
+
 		if (Array.isArray(value)) {
 			if (value.length === 0) {
 				return undefined;
@@ -613,27 +729,93 @@ export function isDirty(
 			return Object.fromEntries(entries);
 		}
 
-		// If the value is null or undefined, treat it as undefined
-		if (value == null) {
-			return undefined;
-		}
-
-		// Removes empty strings, so that bpth empty string and undefined are treated as the same
-		if (typeof value === 'string' && value === '') {
-			return undefined;
-		}
-
-		// Remove empty File as well, which happens if no File was selected
-		if (
-			isGlobalInstance(value, 'File') &&
-			value.name === '' &&
-			value.size === 0
-		) {
-			return undefined;
-		}
-
-		return serialize(value, defaultSerialize);
+		return value;
 	}
 
 	return !deepEqual(normalize(formValue), normalize(defaultValue));
+}
+
+/**
+ * Convert an unknown value into something acceptable for HTML form submission.
+ * Returns `undefined` when the value cannot be represented in form data.
+ *
+ * Input -> Output:
+ * - string -> string
+ * - null -> '' (empty string)
+ * - boolean -> 'on' | '' (checked semantics)
+ * - number | bigint -> value.toString()
+ * - Date -> value.toISOString()
+ * - File -> File
+ * - FileList -> File[]
+ * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined
+ * - anything else -> undefined
+ */
+export function serialize(value: unknown): SerializedValue | null | undefined {
+	function serializePrimitive(
+		value: unknown,
+	): string | File | null | undefined {
+		if (typeof value === 'string' || value === null) {
+			return value;
+		}
+
+		if (typeof value === 'boolean') {
+			return value ? 'on' : '';
+		}
+
+		if (typeof value === 'number' || typeof value === 'bigint') {
+			return value.toString();
+		}
+
+		if (value instanceof Date) {
+			return value.toISOString();
+		}
+
+		if (isGlobalInstance(value, 'File')) {
+			return value;
+		}
+	}
+
+	if (Array.isArray(value)) {
+		const options: string[] = [];
+		const files: File[] = [];
+
+		for (const item of value) {
+			const serialized = serializePrimitive(item);
+
+			if (typeof serialized === 'undefined') {
+				return;
+			}
+
+			// It is unclear what `null` in a file array should mean, so we treat it as a string instead
+			if (typeof serialized === 'string' || serialized === null) {
+				if (files.length > 0) {
+					return;
+				}
+
+				options.push(serialized ?? '');
+			} else {
+				if (options.length > 0) {
+					return;
+				}
+
+				files.push(serialized);
+			}
+		}
+
+		if (options.length === value.length) {
+			return options;
+		}
+
+		if (files.length === value.length) {
+			return files;
+		}
+
+		// If not all items are strings or files, return nothing
+	}
+
+	if (isGlobalInstance(value, 'FileList')) {
+		return Array.from(value);
+	}
+
+	return serializePrimitive(value);
 }
