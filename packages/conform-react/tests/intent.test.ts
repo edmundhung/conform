@@ -78,7 +78,8 @@ test('applyIntent', () => {
 	const submission: Submission = {
 		intent: 'reset',
 		payload: { email: 'test@example.com', name: 'John' },
-		fields: ['email', 'name'],
+		includedFields: ['email', 'name'],
+		excludedFields: [],
 	};
 
 	// Test reset intent
@@ -88,7 +89,8 @@ test('applyIntent', () => {
 	const noIntentSubmission: Submission = {
 		intent: null,
 		payload: { email: 'test' },
-		fields: ['email'],
+		includedFields: ['email'],
+		excludedFields: [],
 	};
 	expect(applyIntent(noIntentSubmission)).toEqual({ email: 'test' });
 
@@ -103,7 +105,8 @@ test('applyIntent', () => {
 	const customSubmission: Submission = {
 		intent: 'custom',
 		payload: { email: 'test' },
-		fields: ['email'],
+		includedFields: ['email'],
+		excludedFields: [],
 	};
 
 	const result = applyIntent(customSubmission, { handlers: customHandlers });
@@ -124,7 +127,8 @@ test('applyIntent', () => {
 	const failingSubmission: Submission = {
 		intent: 'failing',
 		payload: { test: true },
-		fields: ['test'],
+		includedFields: ['test'],
+		excludedFields: [],
 	};
 
 	const failResult = applyIntent(failingSubmission, {

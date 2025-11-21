@@ -1044,7 +1044,7 @@ describe('future export: useForm', () => {
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					targetValue: {
+					value: {
 						title: 'Updated Title',
 						category: 'work',
 						description: 'Updated Description',
@@ -1091,7 +1091,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					targetValue: {
+					value: {
 						title: 'Server Processed Title',
 						category: 'personal',
 						description: 'Server Updated Description',
@@ -1116,7 +1116,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					targetValue: null,
+					value: null,
 				})}
 			/>,
 		);
@@ -1222,7 +1222,7 @@ describe('future export: useForm', () => {
 				defaultValue={defaultValue}
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					targetValue: {
+					value: {
 						title: 'Server Updated Title',
 						description: 'Server Updated Description',
 						confirmed: false,
@@ -1250,6 +1250,84 @@ describe('future export: useForm', () => {
 		await expect.element(task2.completed).not.toBeInTheDocument();
 		// Server errors should be ignored (proves reset happened with target value, not just form update)
 		await expectNoErrorMessages(form.title, form.description);
+	});
+
+	test('should ignore stale server results when form is edited', async () => {
+		const screen = render(<Form />);
+		const form = getForm(screen);
+
+		// User fills form and captures state for "submission"
+		await userEvent.type(form.title, 'john');
+		await userEvent.type(form.description, 'original description');
+		await userEvent.click(form.confirmed);
+		const submission = parseSubmission(form.getFormData());
+
+		// User edits form BEFORE server response arrives
+		await userEvent.clear(form.title);
+		await userEvent.type(form.title, 'jonathan');
+
+		const staleResult = report(submission, {
+			value: {
+				title: 'JOHN',
+				description: '',
+			},
+			error: {
+				fieldErrors: {
+					title: ['Title must be longer'],
+					description: ['Description is too short'],
+				},
+			},
+		});
+
+		// Stale server response arrives with both targetValue and errors
+		screen.rerender(<Form lastResult={staleResult} />);
+
+		// Should ignore BOTH targetValue and errors (entire result is stale)
+		await expect.element(form.title).toHaveValue('jonathan');
+		await expect.element(form.description).toHaveValue('original description');
+		await expectNoErrorMessages(form.title, form.description);
+	});
+
+	test('should accept server results when only excluded fields changed', async () => {
+		// Simulates frameworks that add hidden fields (CSRF tokens, honeypots, etc.)
+		// that shouldn't affect freshness checks
+		const screen = render(<Form />);
+		const form = getForm(screen);
+
+		// User fills form
+		await userEvent.type(form.title, 'john');
+		await userEvent.type(form.description, 'test description');
+
+		// Capture form state and create submission (excluding uncontrolled-hidden-input)
+		const submission = parseSubmission(form.getFormData(), {
+			skipEntry: (name) => name === 'uncontrolled-hidden-input',
+		});
+
+		// Framework changes excluded field BEFORE server response (e.g., CSRF rotation)
+		const hiddenInput = form.uncontrolledHiddenInput.element();
+		if ('value' in hiddenInput) {
+			hiddenInput.value = 'rotated-value';
+		}
+
+		const staleResult = report(submission, {
+			value: {
+				title: 'JOHN',
+				description: 'TEST DESCRIPTION',
+			},
+			error: {
+				fieldErrors: {
+					description: ['Description needs more detail'],
+				},
+			},
+		});
+
+		// Server response with targetValue and errors
+		screen.rerender(<Form lastResult={staleResult} />);
+
+		// Should apply BOTH targetValue and errors (excluded field change ignored in freshness check)
+		await expect.element(form.title).toHaveValue('JOHN');
+		await expect.element(form.description).toHaveValue('TEST DESCRIPTION');
+		await expectErrorMessage(form.description, 'Description needs more detail');
 	});
 
 	describe('batched intents', () => {

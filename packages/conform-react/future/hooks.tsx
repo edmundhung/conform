@@ -14,6 +14,7 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	isDirty,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -249,20 +250,49 @@ export function useConform<
 		[formRef, optionsRef],
 	);
 
+	// To avoid re-applying the same result twice
+	if (lastResult && lastResult !== lastResultRef.current) {
+		lastResultRef.current = lastResult;
+
+		const formElement = getFormElement(formRef);
+
+		if (
+			formElement &&
+			!isDirty(new FormData(formElement), {
+				defaultValue: lastResult.submission.payload,
+				intentName: optionsRef.current.intentName,
+				skipEntry(name) {
+					// Ignore fields the server intentionally excluded
+					return lastResult.submission.excludedFields.includes(name);
+				},
+				serialize(value) {
+					// Ignore files as server responses never include File objects
+					if (value instanceof File) {
+						return;
+					}
+
+					return optionsRef.current.serialize(value);
+				},
+			})
+		) {
+			handleSubmission('server', lastResult);
+		} else {
+			// FIXME: Remove debug log
+			// eslint-disable-next-line no-console
+			console.log('Skipping stale result', {
+				lastResult,
+				currentFormData: formElement ? getFormData(formElement) : null,
+				intentName: optionsRef.current.intentName,
+			});
+		}
+	}
+
 	useEffect(() => {
 		return () => {
 			// Cancel pending validation request
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
 	}, []);
-
-	useEffect(() => {
-		// To avoid re-applying the same result twice
-		if (lastResult && lastResult !== lastResultRef.current) {
-			handleSubmission('server', lastResult);
-			lastResultRef.current = lastResult;
-		}
-	}, [lastResult, handleSubmission]);
 
 	useEffect(() => {
 		// Reset the form state if the form key changes
@@ -276,7 +306,7 @@ export function useConform<
 		}
 	}, [options.key, optionsRef]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		const formElement = getFormElement(formRef);
 
 		// Reset the form values if the reset key changes
@@ -291,7 +321,7 @@ export function useConform<
 		}
 	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		if (state.targetValue) {
 			const formElement = getFormElement(formRef);
 
@@ -341,8 +371,8 @@ export function useConform<
 				// Patch missing fields in the submission object
 				for (const element of formElement.elements) {
 					if (isFieldElement(element) && element.name) {
-						submission.fields = appendUniqueItem(
-							submission.fields,
+						submission.includedFields = appendUniqueItem(
+							submission.includedFields,
 							element.name,
 						);
 					}
@@ -353,23 +383,23 @@ export function useConform<
 					submission.payload = pendingValueRef.current;
 				}
 
-				const targetValue = applyIntent(submission);
+				const value = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					targetValue,
+					value,
 				});
 
 				// If there is target value, keep track of it as pending value
-				if (submission.payload !== targetValue) {
+				if (submission.payload !== value) {
 					pendingValueRef.current =
-						targetValue ?? optionsRef.current.defaultValue ?? {};
+						value ?? optionsRef.current.defaultValue ?? {};
 				}
 
 				const validateResult =
 					// Skip validation on form reset
-					targetValue !== undefined
+					value !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: targetValue,
+								payload: value,
 								error: {
 									formErrors: [],
 									fieldErrors: {},

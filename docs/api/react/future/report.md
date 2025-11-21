@@ -26,9 +26,9 @@ Error information to include in the result. Can contain:
 
 Set to `null` to indicate validation passed with no errors. When both `issues` and `formErrors` / `fieldErrors` are provided, they will be merged together, with `issues` being formatted first.
 
-### `options.targetValue?: Record<string, unknown> | null`
+### `options.value?: Record<string, unknown> | null`
 
-The target form value to set. Use this to update the form or reset it to a specific value when combined with reset: true.
+The form value to set. Use this to update the form or reset it to a specific value when combined with reset: true.
 
 ### `options.keepFiles?: boolean`
 

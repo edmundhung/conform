@@ -711,7 +711,7 @@ export type SubmitContext<
 	value: Value;
 	update: (options: {
 		error?: Partial<FormError<ErrorShape>> | null;
-		targetValue?: FormShape | null;
+		value?: FormShape | null;
 		reset?: boolean;
 	}) => void;
 };

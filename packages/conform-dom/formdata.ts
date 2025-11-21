@@ -363,12 +363,18 @@ export function parseSubmission(
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
 	const submission: Submission = {
 		payload: {},
-		fields: [],
+		includedFields: [],
+		excludedFields: [],
 		intent: null,
 	};
 
 	for (const name of new Set(formData.keys())) {
-		if (name !== intentName && !options?.skipEntry?.(name)) {
+		if (name !== intentName) {
+			if (options?.skipEntry?.(name)) {
+				submission.excludedFields.push(name);
+				continue;
+			}
+
 			const value = formData.getAll(name);
 			setValueAtPath(
 				submission.payload,
@@ -378,7 +384,7 @@ export function parseSubmission(
 					silent: true, // Avoid errors if the path is invalid
 				},
 			);
-			submission.fields.push(name);
+			submission.includedFields.push(name);
 		}
 	}
 
@@ -434,7 +440,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		targetValue?: Record<string, FormValue> | null;
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -451,7 +457,7 @@ export function report<ErrorShape = string>(
 			formErrors?: ErrorShape[];
 			fieldErrors?: Record<string, ErrorShape[]>;
 		} | null;
-		targetValue?: Record<string, FormValue> | null;
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -465,7 +471,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		targetValue?: Record<string, FormValue> | null;
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -479,7 +485,7 @@ export function report(
 			formErrors?: string[];
 			fieldErrors?: Record<string, string[]>;
 		};
-		targetValue?: Record<string, FormValue> | null;
+		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
@@ -502,10 +508,10 @@ export function report<ErrorShape = string>(
 			fieldErrors?: Record<string, string[]>;
 		} | null;
 		/**
-		 * The target form value to set. Use this to update the form or reset it
+		 * The form value to set. Use this to update the form or reset it
 		 * to a specific value when combined with `reset: true`.
 		 */
-		targetValue?: Record<string, FormValue> | null;
+		value?: Record<string, FormValue> | null;
 		/**
 		 * Array of field names to hide from the result by setting them to `undefined`.
 		 * Primarily used for sensitive data like passwords that should not be sent back to the client.
@@ -546,12 +552,12 @@ export function report<ErrorShape = string>(
 	}
 
 	const targetValue =
-		typeof options.targetValue === 'undefined' ||
-		(submission.payload === options.targetValue && !options.reset)
+		typeof options.value === 'undefined' ||
+		(submission.payload === options.value && !options.reset)
 			? undefined
-			: options.targetValue && !options.keepFiles
-				? stripFiles(options.targetValue)
-				: options.targetValue ?? {};
+			: options.value && !options.keepFiles
+				? stripFiles(options.value)
+				: options.value ?? {};
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
@@ -561,6 +567,8 @@ export function report<ErrorShape = string>(
 			if (targetValue) {
 				setValueAtPath(targetValue, path, undefined);
 			}
+
+			submission.excludedFields.push(name);
 		}
 	}
 
