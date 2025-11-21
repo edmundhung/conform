@@ -250,52 +250,49 @@ export function useConform<
 		[formRef, optionsRef],
 	);
 
+	// To avoid re-applying the same result twice
+	if (lastResult && lastResult !== lastResultRef.current) {
+		lastResultRef.current = lastResult;
+
+		const formElement = getFormElement(formRef);
+
+		if (
+			formElement &&
+			!isDirty(new FormData(formElement), {
+				defaultValue: lastResult.submission.payload,
+				intentName: optionsRef.current.intentName,
+				skipEntry(name) {
+					// Ignore fields the server intentionally excluded
+					return lastResult.submission.excludedFields.includes(name);
+				},
+				serialize(value) {
+					// Ignore files as server responses never include File objects
+					if (value instanceof File) {
+						return;
+					}
+
+					return optionsRef.current.serialize(value);
+				},
+			})
+		) {
+			handleSubmission('server', lastResult);
+		} else {
+			// FIXME: Remove debug log
+			// eslint-disable-next-line no-console
+			console.log('Skipping stale result', {
+				lastResult,
+				currentFormData: formElement ? getFormData(formElement) : null,
+				intentName: optionsRef.current.intentName,
+			});
+		}
+	}
+
 	useEffect(() => {
 		return () => {
 			// Cancel pending validation request
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
 	}, []);
-
-	useEffect(() => {
-		// To avoid re-applying the same result twice
-		if (lastResult && lastResult !== lastResultRef.current) {
-			const formElement = getFormElement(formRef);
-
-			if (
-				!formElement ||
-				isDirty(new FormData(formElement), {
-					defaultValue: lastResult.submission.payload,
-					intentName: optionsRef.current.intentName,
-					skipEntry(name) {
-						// Ignore fields the server intentionally excluded
-						return lastResult.submission.excludedFields.includes(name);
-					},
-					serialize(value) {
-						// Ignore files as server responses never include File objects
-						if (value instanceof File) {
-							return;
-						}
-
-						return optionsRef.current.serialize(value);
-					},
-				})
-			) {
-				// FIXME: Remove debug log
-				// eslint-disable-next-line no-console
-				console.log('Skipping stale result', {
-					lastResult,
-					currentFormData: formElement ? getFormData(formElement) : null,
-					intentName: optionsRef.current.intentName,
-				});
-				// The form changed after submission. treat this result as stale.
-				return;
-			}
-
-			handleSubmission('server', lastResult);
-			lastResultRef.current = lastResult;
-		}
-	}, [lastResult, formRef, handleSubmission, optionsRef]);
 
 	useEffect(() => {
 		// Reset the form state if the form key changes
