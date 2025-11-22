@@ -25,8 +25,8 @@ import type {
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
 export function initializeState<ErrorShape>(options?: {
-	defaultValue?: Record<string, unknown> | null;
-	resetKey?: string;
+	defaultValue?: Record<string, unknown> | null | undefined;
+	resetKey?: string | undefined;
 }): FormState<ErrorShape> {
 	return {
 		resetKey: options?.resetKey ?? generateUniqueKey(),
@@ -54,7 +54,7 @@ export function updateState<ErrorShape>(
 		{
 			handlers: Record<string, ActionHandler>;
 			reset: (
-				defaultValue?: Record<string, unknown> | null,
+				defaultValue?: Record<string, unknown> | null | undefined,
 			) => FormState<ErrorShape>;
 		}
 	>,
@@ -381,8 +381,8 @@ export function getConstraint(
 export function getFormMetadata<ErrorShape>(
 	context: FormContext<ErrorShape>,
 	options?: {
-		serialize?: Serialize;
-		customize?: CustomMetadataDefinition;
+		serialize?: Serialize | undefined;
+		customize?: CustomMetadataDefinition | undefined;
 	},
 ): FormMetadata<ErrorShape> {
 	return {
@@ -442,9 +442,9 @@ export function getField<FieldShape, ErrorShape = string>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize?: Serialize;
-		customize?: CustomMetadataDefinition;
-		key?: string;
+		serialize?: Serialize | undefined;
+		customize?: CustomMetadataDefinition | undefined;
+		key?: string | undefined;
 	},
 ): FieldMetadata<FieldShape, ErrorShape> {
 	const { key, name, serialize = defaultSerialize, customize } = options;
@@ -552,9 +552,9 @@ export function getFieldset<
 >(
 	context: FormContext<ErrorShape>,
 	options: {
-		name?: FieldName<FieldShape>;
-		serialize?: Serialize;
-		customize?: CustomMetadataDefinition;
+		name?: FieldName<FieldShape> | undefined;
+		serialize?: Serialize | undefined;
+		customize?: CustomMetadataDefinition | undefined;
 	},
 ): Fieldset<FieldShape, ErrorShape> {
 	return new Proxy({} as any, {
@@ -579,8 +579,8 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize?: Serialize;
-		customize?: CustomMetadataDefinition;
+		serialize?: Serialize | undefined;
+		customize?: CustomMetadataDefinition | undefined;
 	},
 ): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
