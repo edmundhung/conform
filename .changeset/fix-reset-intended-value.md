@@ -14,5 +14,3 @@ return {
   }),
 };
 ```
-
-Conform now checks for stale server results to prevent overriding user changes. When a server result is received, it compares the current DOM state with the original submission payload. If the form was edited after submission (excluding fields skipped on the server or file inputs), the result is ignored.

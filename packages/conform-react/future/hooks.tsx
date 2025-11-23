@@ -14,7 +14,6 @@ import {
 	parseSubmission,
 	report,
 	serialize,
-	isDirty,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -213,7 +212,11 @@ export function useConform<
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
-		(type: 'server' | 'client', result: SubmissionResult<ErrorShape>) => {
+		(
+			type: 'server' | 'client',
+			result: SubmissionResult<ErrorShape>,
+			options = optionsRef.current,
+		) => {
 			const intent = result.submission.intent
 				? deserializeIntent(result.submission.intent)
 				: null;
@@ -227,7 +230,7 @@ export function useConform<
 						handlers: actionHandlers,
 						reset(defaultValue) {
 							return initializeState<ErrorShape>({
-								defaultValue: defaultValue ?? optionsRef.current.defaultValue,
+								defaultValue: defaultValue ?? options.defaultValue,
 							});
 						},
 					},
@@ -250,41 +253,16 @@ export function useConform<
 		[formRef, optionsRef],
 	);
 
-	// To avoid re-applying the same result twice
-	if (lastResult && lastResult !== lastResultRef.current) {
+	if (options.key !== keyRef.current) {
+		keyRef.current = options.key;
+		setState(
+			initializeState<ErrorShape>({
+				defaultValue: options.defaultValue,
+			}),
+		);
+	} else if (lastResult && lastResult !== lastResultRef.current) {
 		lastResultRef.current = lastResult;
-
-		const formElement = getFormElement(formRef);
-
-		if (
-			formElement &&
-			!isDirty(new FormData(formElement), {
-				defaultValue: lastResult.submission.payload,
-				intentName: optionsRef.current.intentName,
-				skipEntry(name) {
-					// Ignore fields the server intentionally excluded
-					return lastResult.submission.excludedFields.includes(name);
-				},
-				serialize(value) {
-					// Ignore files as server responses never include File objects
-					if (value instanceof File) {
-						return;
-					}
-
-					return optionsRef.current.serialize(value);
-				},
-			})
-		) {
-			handleSubmission('server', lastResult);
-		} else {
-			// FIXME: Remove debug log
-			// eslint-disable-next-line no-console
-			console.log('Skipping stale result', {
-				lastResult,
-				currentFormData: formElement ? getFormData(formElement) : null,
-				intentName: optionsRef.current.intentName,
-			});
-		}
+		handleSubmission('server', lastResult, options);
 	}
 
 	useEffect(() => {
@@ -293,18 +271,6 @@ export function useConform<
 			abortControllerRef.current?.abort('The component is unmounted');
 		};
 	}, []);
-
-	useEffect(() => {
-		// Reset the form state if the form key changes
-		if (options.key !== keyRef.current) {
-			keyRef.current = options.key;
-			setState(
-				initializeState<ErrorShape>({
-					defaultValue: optionsRef.current.defaultValue,
-				}),
-			);
-		}
-	}, [options.key, optionsRef]);
 
 	useSafeLayoutEffect(() => {
 		const formElement = getFormElement(formRef);
@@ -544,7 +510,7 @@ export function useForm<
 			...options,
 			serialize: globalOptions.serialize,
 			intentName: globalOptions.intentName,
-			onError: optionsRef.current.onError ?? focusFirstInvalidField,
+			onError: options.onError ?? focusFirstInvalidField,
 			onValidate(ctx) {
 				if (options.schema) {
 					const standardResult = options.schema['~standard'].validate(
@@ -613,7 +579,7 @@ export function useForm<
 			formId,
 			state,
 			constraint: constraint ?? null,
-			handleSubmit: handleSubmit,
+			handleSubmit,
 			handleInput(event) {
 				if (
 					!isFieldElement(event.target) ||
