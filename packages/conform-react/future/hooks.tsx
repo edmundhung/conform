@@ -212,7 +212,11 @@ export function useConform<
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
 	const handleSubmission = useCallback(
-		(type: 'server' | 'client', result: SubmissionResult<ErrorShape>) => {
+		(
+			type: 'server' | 'client',
+			result: SubmissionResult<ErrorShape>,
+			options = optionsRef.current,
+		) => {
 			const intent = result.submission.intent
 				? deserializeIntent(result.submission.intent)
 				: null;
@@ -226,7 +230,7 @@ export function useConform<
 						handlers: actionHandlers,
 						reset(defaultValue) {
 							return initializeState<ErrorShape>({
-								defaultValue: defaultValue ?? optionsRef.current.defaultValue,
+								defaultValue: defaultValue ?? options.defaultValue,
 							});
 						},
 					},
@@ -249,6 +253,18 @@ export function useConform<
 		[formRef, optionsRef],
 	);
 
+	if (options.key !== keyRef.current) {
+		keyRef.current = options.key;
+		setState(
+			initializeState<ErrorShape>({
+				defaultValue: options.defaultValue,
+			}),
+		);
+	} else if (lastResult && lastResult !== lastResultRef.current) {
+		lastResultRef.current = lastResult;
+		handleSubmission('server', lastResult, options);
+	}
+
 	useEffect(() => {
 		return () => {
 			// Cancel pending validation request
@@ -256,27 +272,7 @@ export function useConform<
 		};
 	}, []);
 
-	useEffect(() => {
-		// To avoid re-applying the same result twice
-		if (lastResult && lastResult !== lastResultRef.current) {
-			handleSubmission('server', lastResult);
-			lastResultRef.current = lastResult;
-		}
-	}, [lastResult, handleSubmission]);
-
-	useEffect(() => {
-		// Reset the form state if the form key changes
-		if (options.key !== keyRef.current) {
-			keyRef.current = options.key;
-			setState(
-				initializeState<ErrorShape>({
-					defaultValue: optionsRef.current.defaultValue,
-				}),
-			);
-		}
-	}, [options.key, optionsRef]);
-
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		const formElement = getFormElement(formRef);
 
 		// Reset the form values if the reset key changes
@@ -291,7 +287,7 @@ export function useConform<
 		}
 	}, [formRef, state.resetKey, state.defaultValue, optionsRef]);
 
-	useEffect(() => {
+	useSafeLayoutEffect(() => {
 		if (state.targetValue) {
 			const formElement = getFormElement(formRef);
 
@@ -353,23 +349,23 @@ export function useConform<
 					submission.payload = pendingValueRef.current;
 				}
 
-				const targetValue = applyIntent(submission);
+				const value = applyIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
-					targetValue,
+					value,
 				});
 
 				// If there is target value, keep track of it as pending value
-				if (submission.payload !== targetValue) {
+				if (submission.payload !== value) {
 					pendingValueRef.current =
-						targetValue ?? optionsRef.current.defaultValue ?? {};
+						value ?? optionsRef.current.defaultValue ?? {};
 				}
 
 				const validateResult =
 					// Skip validation on form reset
-					targetValue !== undefined
+					value !== undefined
 						? optionsRef.current.onValidate?.({
-								payload: targetValue,
+								payload: value,
 								error: {
 									formErrors: [],
 									fieldErrors: {},
@@ -514,7 +510,7 @@ export function useForm<
 			...options,
 			serialize: globalOptions.serialize,
 			intentName: globalOptions.intentName,
-			onError: optionsRef.current.onError ?? focusFirstInvalidField,
+			onError: options.onError ?? focusFirstInvalidField,
 			onValidate(ctx) {
 				if (options.schema) {
 					const standardResult = options.schema['~standard'].validate(
@@ -583,7 +579,7 @@ export function useForm<
 			formId,
 			state,
 			constraint: constraint ?? null,
-			handleSubmit: handleSubmit,
+			handleSubmit,
 			handleInput(event) {
 				if (
 					!isFieldElement(event.target) ||

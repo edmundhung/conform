@@ -53,7 +53,7 @@ export function createResult(
 	const value = applyIntent(submission);
 
 	return report(submission, {
-		targetValue:
+		value:
 			typeof options?.targetValue !== 'undefined' ? options.targetValue : value,
 		error: options?.error,
 	});
@@ -78,7 +78,7 @@ export function createAction(options: {
 	});
 	const value = applyIntent(submission);
 	const result = report(submission, {
-		targetValue:
+		value:
 			options.targetValue !== undefined
 				? options.targetValue
 				: options.reset
