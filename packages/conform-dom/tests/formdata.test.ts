@@ -350,8 +350,7 @@ describe('parseSubmission', () => {
 		// Empty form data
 		expect(parseSubmission(createFormData([]))).toEqual({
 			payload: {},
-			includedFields: [],
-			excludedFields: [],
+			fields: [],
 			intent: null,
 		});
 
@@ -384,7 +383,7 @@ describe('parseSubmission', () => {
 				file: [emptyFile, emptyFile2],
 				file2: emptyFile2,
 			},
-			includedFields: [
+			fields: [
 				'email',
 				'password',
 				'task[0]',
@@ -393,7 +392,6 @@ describe('parseSubmission', () => {
 				'file',
 				'file2',
 			],
-			excludedFields: [],
 			intent: null,
 		});
 
@@ -411,8 +409,7 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
-			includedFields: ['email', 'password'],
-			excludedFields: [],
+			fields: ['email', 'password'],
 			intent: 'register',
 		});
 
@@ -434,8 +431,7 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			includedFields: ['email', 'password'],
-			excludedFields: [],
+			fields: ['email', 'password'],
 			intent: 'login',
 		});
 
@@ -444,8 +440,7 @@ describe('parseSubmission', () => {
 			parseSubmission(createFormData([[DEFAULT_INTENT_NAME, emptyFile]])),
 		).toEqual({
 			payload: {},
-			includedFields: [],
-			excludedFields: [],
+			fields: [],
 			intent: null,
 		});
 	});
@@ -454,8 +449,7 @@ describe('parseSubmission', () => {
 		// Empty URLSearchParams
 		expect(parseSubmission(new URLSearchParams())).toEqual({
 			payload: {},
-			includedFields: [],
-			excludedFields: [],
+			fields: [],
 			intent: null,
 		});
 
@@ -482,14 +476,7 @@ describe('parseSubmission', () => {
 				],
 				intent: 'login',
 			},
-			includedFields: [
-				'email',
-				'password',
-				'task[0]',
-				'task[1].stage[0]',
-				'intent',
-			],
-			excludedFields: [],
+			fields: ['email', 'password', 'task[0]', 'task[1].stage[0]', 'intent'],
 			intent: null,
 		});
 
@@ -507,8 +494,7 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'superSecret1234',
 			},
-			includedFields: ['email', 'password'],
-			excludedFields: [],
+			fields: ['email', 'password'],
 			intent: 'register',
 		});
 
@@ -530,8 +516,7 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			includedFields: ['email', 'password'],
-			excludedFields: [],
+			fields: ['email', 'password'],
 			intent: 'login',
 		});
 	});
@@ -558,8 +543,7 @@ describe('parseSubmission', () => {
 				email: 'hello@world.com',
 				password: 'secret',
 			},
-			includedFields: ['email', 'password'],
-			excludedFields: ['task[0]', 'task[1].stage[0]'],
+			fields: ['email', 'password'],
 			intent: 'login',
 		});
 	});
@@ -569,8 +553,7 @@ describe('report', () => {
 	it('creates a basic submission result with default options', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			includedFields: ['name', 'email'],
-			excludedFields: [],
+			fields: ['name', 'email'],
 			intent: null,
 		};
 		const result = report(submission);
@@ -578,8 +561,7 @@ describe('report', () => {
 		expect(result).toEqual({
 			submission: {
 				payload: { name: 'John', email: 'john@example.com' },
-				includedFields: ['name', 'email'],
-				excludedFields: [],
+				fields: ['name', 'email'],
 				intent: null,
 			},
 			targetValue: undefined,
@@ -591,8 +573,7 @@ describe('report', () => {
 	it('supports resetting form state', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			includedFields: ['name', 'email'],
-			excludedFields: [],
+			fields: ['name', 'email'],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -610,8 +591,7 @@ describe('report', () => {
 	it('handles form errors', () => {
 		const submission = {
 			payload: { name: '', email: 'invalid' },
-			includedFields: ['name', 'email'],
-			excludedFields: [],
+			fields: ['name', 'email'],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -641,8 +621,7 @@ describe('report', () => {
 	it('handles field errors', () => {
 		const submission = {
 			payload: { name: '', email: 'invalid' },
-			includedFields: ['name', 'email'],
-			excludedFields: [],
+			fields: ['name', 'email'],
 			intent: null,
 		};
 
@@ -672,8 +651,7 @@ describe('report', () => {
 		const file = new File(['content'], 'test.txt', { type: 'text/plain' });
 		const submission = {
 			payload: { name: 'John', avatar: file, docs: [file, file] },
-			includedFields: ['name', 'avatar', 'docs'],
-			excludedFields: [],
+			fields: ['name', 'avatar', 'docs'],
 			intent: null,
 		};
 
@@ -716,8 +694,7 @@ describe('report', () => {
 				email: 'john@example.com',
 				password: 'secret123',
 			},
-			includedFields: ['name', 'email', 'password'],
-			excludedFields: [],
+			fields: ['name', 'email', 'password'],
 			intent: null,
 		};
 
@@ -732,8 +709,7 @@ describe('report', () => {
 					email: 'john@example.com',
 					password: undefined,
 				},
-				includedFields: ['name', 'email', 'password'],
-				excludedFields: ['password'],
+				fields: ['name', 'email', 'password'],
 				intent: null,
 			},
 			targetValue: undefined,
@@ -748,8 +724,7 @@ describe('report', () => {
 				email: 'john@example.com',
 				password: 'secret123',
 			},
-			includedFields: ['name', 'email', 'password'],
-			excludedFields: [],
+			fields: ['name', 'email', 'password'],
 			intent: null,
 		};
 
@@ -769,8 +744,7 @@ describe('report', () => {
 					email: undefined,
 					password: undefined,
 				},
-				includedFields: ['name', 'email', 'password'],
-				excludedFields: ['password', 'email'],
+				fields: ['name', 'email', 'password'],
 				intent: null,
 			},
 			targetValue: {
@@ -789,8 +763,7 @@ describe('report', () => {
 				name: '',
 				description: '',
 			},
-			includedFields: ['name', 'description'],
-			excludedFields: [],
+			fields: ['name', 'description'],
 			intent: null,
 		};
 		const result = report(submission, {
@@ -843,8 +816,7 @@ describe('report', () => {
 	it('supports specifying a target value', () => {
 		const submission = {
 			payload: { name: 'John', email: 'john@example.com' },
-			includedFields: ['name', 'email'],
-			excludedFields: [],
+			fields: ['name', 'email'],
 			intent: null,
 		};
 
@@ -885,8 +857,7 @@ describe('report', () => {
 		const file = new File(['content'], 'test.txt');
 		const submissionWithFile = {
 			payload: { name: 'John', file },
-			includedFields: ['name', 'file'],
-			excludedFields: [],
+			fields: ['name', 'file'],
 			intent: null,
 		};
 

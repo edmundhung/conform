@@ -173,8 +173,8 @@ export const actionHandlers: {
 			const basePath = getPathSegments(name);
 			const allFields = error
 				? // Consider fields / fieldset with errors as touched too
-					submission.includedFields.concat(Object.keys(error.fieldErrors))
-				: submission.includedFields;
+					submission.fields.concat(Object.keys(error.fieldErrors))
+				: submission.fields;
 
 			let touchedFields = appendUniqueItem(state.touchedFields, name);
 
@@ -228,7 +228,7 @@ export const actionHandlers: {
 			const basePath = getPathSegments(intent.payload.name);
 			let touchedFields = state.touchedFields;
 
-			for (const field of submission.includedFields) {
+			for (const field of submission.fields) {
 				if (
 					basePath.length === 0 ||
 					getRelativePath(field, basePath) !== null

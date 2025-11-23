@@ -56,13 +56,9 @@ export type Submission<
 	 */
 	payload: Record<string, FormValue<ValueType>>;
 	/**
-	 * Field names included when building the `payload`.
+	 * The list of field names present in the FormData or URLSearchParams.
 	 */
-	includedFields: string[];
-	/**
-	 * Field names present in the submission but excluded from the `payload`.
-	 */
-	excludedFields: string[];
+	fields: string[];
 	/**
 	 * The submission intent, usually set by the name/value of the button that triggered the submission.
 	 */

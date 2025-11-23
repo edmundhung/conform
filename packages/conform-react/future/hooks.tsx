@@ -337,8 +337,8 @@ export function useConform<
 				// Patch missing fields in the submission object
 				for (const element of formElement.elements) {
 					if (isFieldElement(element) && element.name) {
-						submission.includedFields = appendUniqueItem(
-							submission.includedFields,
+						submission.fields = appendUniqueItem(
+							submission.fields,
 							element.name,
 						);
 					}
