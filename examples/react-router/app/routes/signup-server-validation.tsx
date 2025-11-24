@@ -73,11 +73,10 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(schema, {
 		lastResult: actionData?.result,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema,
 		onValidate({ error, intent }) {
 			// If there is client error, use it
 			if (error.fieldErrors.username) {

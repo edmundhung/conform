@@ -174,60 +174,96 @@ export type GlobalFormOptions = {
 	defineCustomMetadata?: CustomMetadataDefinition;
 };
 
-export type FormOptions<
+export type NonPartial<T> = {
+	[K in keyof Required<T>]: T[K];
+};
+
+export type RequireKey<T, K extends keyof T> = Prettify<
+	T & Pick<NonPartial<T>, K>
+>;
+
+export type RequireOneOf<T, K extends keyof T> = Prettify<
+	{
+		[K in keyof T]-?: RequireKey<T, K>;
+	}[K]
+>;
+
+export type BaseSchemaType = StandardSchemaV1<any, any>;
+
+export type InferInput<Schema> =
+	Schema extends StandardSchemaV1<infer input, any> ? input : unknown;
+
+export type InferOutput<Schema> =
+	Schema extends StandardSchemaV1<any, infer output> ? output : undefined;
+
+export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
 		? string
 		: BaseErrorShape,
 	Value = undefined,
+	Schema = undefined,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
-	id?: string;
+	id?: string | undefined;
 	/** Optional key for form state reset. When the key changes, the form resets to its initial state. */
-	key?: string;
-	/** Optional standard schema for validation (e.g., Zod, Valibot, Yup). Removes the need for manual onValidate setup. */
-	schema?: StandardSchemaV1<FormShape, Value>;
+	key?: string | undefined;
+	/** Server-side submission result for form state synchronization. */
+	lastResult?: SubmissionResult<ErrorShape> | null | undefined;
+	/** Form submission handler called when the form is submitted with no validation errors. */
+	onSubmit?:
+		| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>
+		| undefined;
 	/** Initial form values. Can be a partial object matching your form structure. */
-	defaultValue?: NoInfer<DefaultValue<FormShape>>;
+	defaultValue?: DefaultValue<FormShape> | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
-	constraint?: Record<string, ValidationAttributes>;
+	constraint?: Record<string, ValidationAttributes> | undefined;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
 	 * @default Inherits from FormOptionsProvider, or "onSubmit" if not configured
 	 */
-	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput' | undefined;
 	/**
 	 * Determines when validation should run again after the field has been validated once.
 	 * Overrides the global default set by FormOptionsProvider if provided.
 	 *
 	 * @default Inherits from FormOptionsProvider, or same as shouldValidate
 	 */
-	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-	/** Server-side submission result for form state synchronization. */
-	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
+	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput' | undefined;
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
-	onError?: ErrorHandler<ErrorShape>;
-	/** Form submission handler called when the form is submitted with no validation errors. */
-	onSubmit?: SubmitHandler<
-		NoInfer<FormShape>,
-		NoInfer<ErrorShape>,
-		NoInfer<Value>
-	>;
+	onError?: ErrorHandler<NoInfer<ErrorShape>> | undefined;
 	/** Input event handler for custom input event logic. */
-	onInput?: InputHandler;
+	onInput?: InputHandler | undefined;
 	/** Blur event handler for custom focus handling logic. */
-	onBlur?: BlurHandler;
-} & (string extends ErrorShape
-	? {
-			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-			onValidate?: ValidateHandler<ErrorShape, Value>;
-		}
-	: {
-			/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-			onValidate: ValidateHandler<ErrorShape, Value>;
-		});
+	onBlur?: BlurHandler | undefined;
+	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+	onValidate?:
+		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>>
+		| undefined;
+};
+
+export type FormOptions<
+	FormShape extends Record<string, any> = Record<string, any>,
+	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
+		? string
+		: BaseErrorShape,
+	Value = undefined,
+	Schema = undefined,
+	RequiredKeys extends keyof BaseFormOptions<
+		FormShape,
+		ErrorShape,
+		Value,
+		Schema
+	> = never,
+> = RequireOneOf<
+	RequireKey<
+		BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
+		RequiredKeys
+	>,
+	'onSubmit' | 'lastResult'
+>;
 
 export interface FormContext<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
@@ -632,7 +668,7 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
-export type ValidateContext<Value> = {
+export type ValidateContext<SchemaValue> = {
 	/**
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` and indexed names like `items[0].id`.
@@ -663,11 +699,11 @@ export type ValidateContext<Value> = {
 	 * The validated value from schema validation. Only defined when a schema is provided
 	 * and the validation succeeds. Undefined if no schema is provided or validation fails.
 	 */
-	schemaValue: Value | undefined;
+	schemaValue: SchemaValue;
 };
 
-export type ValidateHandler<ErrorShape, Value> = (
-	ctx: ValidateContext<Value>,
+export type ValidateHandler<ErrorShape, Value, SchemaValue = undefined> = (
+	ctx: ValidateContext<SchemaValue>,
 ) =>
 	| ValidateResult<ErrorShape, Value>
 	| Promise<ValidateResult<ErrorShape, Value>>

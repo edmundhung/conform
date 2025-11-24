@@ -32,12 +32,11 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function LoginWithFetcher() {
 	const fetcher = useFetcher<Route.ComponentProps['actionData']>();
-	const { form, fields } = useForm({
+	// Reuse the validation logic on the client
+	const { form, fields } = useForm(schema, {
 		// Sync the result of last submission
 		lastResult: fetcher.data?.result,
 		shouldValidate: 'onBlur',
-		// Reuse the validation logic on the client
-		schema,
 	});
 
 	return (

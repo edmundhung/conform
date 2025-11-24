@@ -22,11 +22,10 @@ export function SignupForm() {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
+	const { form, fields } = useForm(signupSchema, {
 		lastResult,
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
-		schema: signupSchema,
 		async onValidate({ payload, error }) {
 			if (typeof payload.username === 'string' && !error.fieldErrors.username) {
 				const messages = await validateUsername(payload.username);
