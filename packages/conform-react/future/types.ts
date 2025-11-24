@@ -25,10 +25,10 @@ export type FormRef =
 	| string;
 
 export type InputSnapshot = {
-	value?: string;
-	options?: string[];
-	checked?: boolean;
-	files?: File[];
+	value?: string | undefined;
+	options?: string[] | undefined;
+	checked?: boolean | undefined;
+	files?: File[] | undefined;
 };
 
 export type Control = {
@@ -206,7 +206,7 @@ export type FormOptions<
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 	/** Server-side submission result for form state synchronization. */
-	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
+	lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
 	onError?: ErrorHandler<ErrorShape>;
 	/** Form submission handler called when the form is submitted with no validation errors. */
@@ -710,9 +710,9 @@ export type SubmitContext<
 	formData: FormData;
 	value: Value;
 	update: (options: {
-		error?: Partial<FormError<ErrorShape>> | null;
-		value?: FormShape | null;
-		reset?: boolean;
+		error?: Partial<FormError<ErrorShape>> | null | undefined;
+		value?: FormShape | null | undefined;
+		reset?: boolean | undefined;
 	}) => void;
 };
 

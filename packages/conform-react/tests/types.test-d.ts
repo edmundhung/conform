@@ -1,8 +1,14 @@
 import { assertType, expectTypeOf, test } from 'vitest';
-import { createIntentDispatcher } from '../future/dom';
-import type { DefaultValue, FieldName, FieldMetadata } from '../future/types';
+import type {
+	Control,
+	DefaultValue,
+	FieldMetadata,
+	FieldName,
+	FormOptions,
+	IntentDispatcher,
+} from '@conform-to/react/future';
 
-test('types: DefaultValue with exactOptionalPropertyTypes', () => {
+test('DefaultValue', () => {
 	// Primitive types
 	assertType<DefaultValue<string>>(undefined);
 	assertType<DefaultValue<string>>(null);
@@ -96,66 +102,81 @@ test('types: DefaultValue with exactOptionalPropertyTypes', () => {
 	assertType<DefaultValue<string[]>>(arrayWithUndefined);
 });
 
-test('types: intent dispatcher', () => {
-	const intent = createIntentDispatcher(() => null, 'test');
+test('FormOptions', () => {
+	type TestSchema = { name: string; email: string };
 
+	// Users should be able to pass undefined for optional properties
+	assertType<FormOptions<TestSchema>>({
+		lastResult: undefined,
+	});
+
+	// Users should be able to omit optional properties
+	assertType<FormOptions<TestSchema>>({});
+
+	// Users should be able to pass null
+	assertType<FormOptions<TestSchema>>({
+		lastResult: null,
+	});
+});
+
+test('IntentDispatcher', () => {
+	// IntentDispatcher is the return type of useIntent
+	type TestSchema = {
+		name: string;
+		tags: string[];
+		tasks: Array<{ content: string; completed: boolean }>;
+	};
+
+	const intent = {} as IntentDispatcher<TestSchema>;
+
+	// Verify all intent methods exist
 	expectTypeOf(intent.validate).toBeFunction();
 	expectTypeOf(intent.update).toBeFunction();
 	expectTypeOf(intent.insert).toBeFunction();
 	expectTypeOf(intent.remove).toBeFunction();
 	expectTypeOf(intent.reorder).toBeFunction();
 
-	// Basic usage
+	// Test validate
 	assertType<void>(intent.validate());
-	assertType<void>(intent.remove({ name: 'field', index: 0 }));
-	assertType<void>(intent.reorder({ name: 'field', from: 0, to: 1 }));
+	assertType<void>(intent.validate('name'));
 
-	// Insert intent
-	assertType<void>(intent.insert({ name: 'field' }));
+	// Test remove
+	assertType<void>(intent.remove({ name: 'tasks', index: 0 }));
+
+	// Test reorder
+	assertType<void>(intent.reorder({ name: 'tasks', from: 0, to: 1 }));
+
+	// Test insert
+	assertType<void>(intent.insert({ name: 'tags' }));
 	assertType<void>(intent.insert({ name: 'tags', defaultValue: 'new-tag' }));
+	assertType<void>(intent.insert({ name: 'tags', defaultValue: undefined }));
 	assertType<void>(
 		intent.insert({
-			name: 'items' as FieldName<Array<{ id: string; name: string }>>,
-			defaultValue: { id: '1' },
+			name: 'tasks' as FieldName<
+				Array<{ content: string; completed: boolean }>
+			>,
+			defaultValue: { content: 'New Task' },
 		}),
 	);
 
-	// Update intent
-	assertType<void>(intent.update({ name: 'field', value: null }));
+	// Test update
 	assertType<void>(intent.update({ name: 'name', value: 'text' }));
-	assertType<void>(intent.update({ name: 'count', value: 42 }));
+	assertType<void>(intent.update({ name: 'name', value: null }));
+	assertType<void>(intent.update({ name: 'name', value: undefined }));
 	assertType<void>(
 		intent.update({ name: 'tasks', index: 0, value: { content: 'foo' } }),
 	);
 	assertType<void>(
 		intent.update({
-			name: 'user' as FieldName<{ name: string; email: string }>,
-			value: { name: 'John' },
-		}),
-	);
-	assertType<void>(
-		intent.update({
 			value: {
-				title: 'New Title' as FieldName<
-					Array<{ content: string; completed: boolean }>
-				>,
-				tasks: [{ content: 'Task 1', completed: false }],
+				name: 'Updated Name',
+				tags: ['tag1', 'tag2'],
 			},
-		}),
-	);
-	assertType<void>(
-		intent.update({
-			name: 'tasks' as FieldName<
-				Array<{ content: string; completed: boolean }>
-			>,
-			index: 0,
-			value: { content: 'Updated Task', completed: true },
 		}),
 	);
 });
 
-test('types: field metadata', () => {
-	// Test with interface declaration
+test('FieldMetadata', () => {
 	interface TestInterface {
 		field: string;
 		nested: {
@@ -197,4 +218,29 @@ test('types: field metadata', () => {
 	const customNestedFieldset = customFieldset.nested.getFieldset();
 
 	assertType<FieldMetadata<number>>(customNestedFieldset.value);
+});
+
+test('Control', () => {
+	const control = {} as Control;
+
+	// Verify all control properties exist and have correct types
+	assertType<string | undefined>(control.value);
+	assertType<boolean | undefined>(control.checked);
+	assertType<string[] | undefined>(control.options);
+	assertType<File[] | undefined>(control.files);
+
+	// Verify methods exist
+	expectTypeOf(control.register).toBeFunction();
+	expectTypeOf(control.change).toBeFunction();
+	expectTypeOf(control.focus).toBeFunction();
+	expectTypeOf(control.blur).toBeFunction();
+
+	// Test method signatures
+	assertType<void>(control.register(null));
+	assertType<void>(control.change('text'));
+	assertType<void>(control.change(['option1', 'option2']));
+	assertType<void>(control.change(true));
+	assertType<void>(control.change(null));
+	assertType<void>(control.focus());
+	assertType<void>(control.blur());
 });

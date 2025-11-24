@@ -45,9 +45,9 @@ export function initializeField(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	options:
 		| {
-				defaultValue?: string | string[] | File | File[] | null;
-				defaultChecked?: boolean;
-				value?: string;
+				defaultValue?: string | string[] | File | File[] | null | undefined;
+				defaultChecked?: boolean | undefined;
+				value?: string | undefined;
 		  }
 		| undefined,
 ): void {

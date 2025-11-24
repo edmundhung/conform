@@ -162,14 +162,16 @@ export function useConform<
 >(
 	formRef: FormRef,
 	options: {
-		key?: string;
-		defaultValue?: Record<string, FormValue> | null;
+		key?: string | undefined;
+		defaultValue?: Record<string, FormValue> | null | undefined;
 		serialize: Serialize;
 		intentName: string;
-		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null;
-		onValidate?: ValidateHandler<ErrorShape, Value>;
-		onError?: ErrorHandler<ErrorShape>;
-		onSubmit?: SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>;
+		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
+		onValidate?: ValidateHandler<ErrorShape, Value> | undefined;
+		onError?: ErrorHandler<ErrorShape> | undefined;
+		onSubmit?:
+			| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>
+			| undefined;
 	},
 ): [FormState<ErrorShape>, (event: React.FormEvent<HTMLFormElement>) => void] {
 	const { lastResult } = options;
