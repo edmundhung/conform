@@ -547,6 +547,145 @@ describe('parseSubmission', () => {
 			intent: 'login',
 		});
 	});
+
+	it('handles array push notation with [] correctly', () => {
+		// Single entry with [] notation
+		expect(parseSubmission(createFormData([['todos[]', 'Buy milk']]))).toEqual({
+			payload: {
+				todos: ['Buy milk'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// Multiple entries with [] notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['todos[]', 'Buy milk'],
+					['todos[]', 'Walk the dog'],
+					['todos[]', 'Write tests'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				todos: ['Buy milk', 'Walk the dog', 'Write tests'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// Multiple array fields with [] notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags[]', 'javascript'],
+					['tags[]', 'typescript'],
+					['categories[]', 'frontend'],
+					['categories[]', 'backend'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: ['javascript', 'typescript'],
+				categories: ['frontend', 'backend'],
+			},
+			fields: ['tags[]', 'categories[]'],
+			intent: null,
+		});
+
+		// Array with primitive values using different approach
+		expect(
+			parseSubmission(
+				createFormData([
+					['numbers[]', '1'],
+					['numbers[]', '2'],
+					['numbers[]', '3'],
+					['numbers[]', '4'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				numbers: ['1', '2', '3', '4'],
+			},
+			fields: ['numbers[]'],
+			intent: null,
+		});
+
+		// Complex nested structure with mixed notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['title', 'My Form'],
+					['users[0].name', 'Alice'],
+					['users[0].roles[]', 'admin'],
+					['users[0].roles[]', 'editor'],
+					['users[1].name', 'Bob'],
+					['users[1].roles[]', 'viewer'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				title: 'My Form',
+				users: [
+					{
+						name: 'Alice',
+						roles: ['admin', 'editor'],
+					},
+					{
+						name: 'Bob',
+						roles: ['viewer'],
+					},
+				],
+			},
+			fields: [
+				'title',
+				'users[0].name',
+				'users[0].roles[]',
+				'users[1].name',
+				'users[1].roles[]',
+			],
+			intent: null,
+		});
+
+		// File inputs with [] notation
+		const file1 = new File(['content1'], 'file1.txt');
+		const file2 = new File(['content2'], 'file2.txt');
+		const file3 = new File(['content3'], 'file3.txt');
+
+		expect(
+			parseSubmission(
+				createFormData([
+					['attachments[]', file1],
+					['attachments[]', file2],
+					['attachments[]', file3],
+				]),
+			),
+		).toEqual({
+			payload: {
+				attachments: [file1, file2, file3],
+			},
+			fields: ['attachments[]'],
+			intent: null,
+		});
+
+		// Empty array field (no entries)
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'Test'],
+					['description', 'Description'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: 'Test',
+				description: 'Description',
+			},
+			fields: ['name', 'description'],
+			intent: null,
+		});
+	});
 });
 
 describe('report', () => {
