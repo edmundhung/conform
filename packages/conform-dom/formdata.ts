@@ -369,15 +369,21 @@ export function parseSubmission(
 
 	for (const name of new Set(formData.keys())) {
 		if (name !== intentName && !options?.skipEntry?.(name)) {
-			const value = formData.getAll(name);
-			setValueAtPath(
-				submission.payload,
-				name,
-				value.length > 1 ? value : value[0],
-				{
-					silent: true, // Avoid errors if the path is invalid
-				},
-			);
+			let value: FormDataEntryValue | FormDataEntryValue[] | undefined =
+				formData.getAll(name);
+			const segments = getPathSegments(name);
+
+			// If the name ends with [], remove the empty segment and keep the full array
+			// Otherwise, unwrap single values
+			if (segments.length > 0 && segments[segments.length - 1] === '') {
+				segments.pop();
+			} else {
+				value = value.length > 1 ? value : value[0];
+			}
+
+			setValueAtPath(submission.payload, segments, value, {
+				silent: true, // Avoid errors if the path is invalid
+			});
 			submission.fields.push(name);
 		}
 	}
