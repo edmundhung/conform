@@ -316,6 +316,33 @@ export function getValueAtPath(
 }
 
 /**
+ * Check if a form value is considered empty and should be stripped from the submission.
+ * A value is empty if:
+ * - It's an empty string ""
+ * - It's an empty File (size 0 and name "")
+ * - It's an array where all items are empty
+ */
+function isEmptyValue(
+	value: FormDataEntryValue | FormDataEntryValue[] | undefined,
+): boolean {
+	if (value === '' || value === undefined) {
+		return true;
+	}
+
+	if (isGlobalInstance(value, 'File')) {
+		// Empty File has size 0 and empty name
+		return value.size === 0 && value.name === '';
+	}
+
+	if (Array.isArray(value)) {
+		// If array is empty or all items are empty, consider it empty
+		return value.length === 0 || value.every((item) => isEmptyValue(item));
+	}
+
+	return false;
+}
+
+/**
  * Parse `FormData` or `URLSearchParams` into a submission object.
  * This function structures the form values based on the naming convention.
  * It also includes all the field names and extracts the intent from the submission.
@@ -358,6 +385,12 @@ export function parseSubmission(
 		 * Return `true` to skip the entry.
 		 */
 		skipEntry?: (name: string) => boolean;
+		/**
+		 * Whether to strip empty values (empty strings, empty files, arrays with all empty values)
+		 * from the submission payload. Defaults to `true`.
+		 * Set to `false` to preserve empty values in the payload.
+		 */
+		stripEmptyValues?: boolean;
 	},
 ): Submission {
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
@@ -379,6 +412,20 @@ export function parseSubmission(
 				segments.pop();
 			} else {
 				value = value.length > 1 ? value : value[0];
+			}
+
+			// Check if the value is empty and should be skipped (defaults to true)
+			const stripEmptyValues = options?.stripEmptyValues ?? true;
+
+			if (stripEmptyValues) {
+				// For arrays, filter out individual empty items
+				if (Array.isArray(value)) {
+					value = value.filter((item) => !isEmptyValue(item));
+				}
+
+				if (isEmptyValue(value)) {
+					value = undefined;
+				}
 			}
 
 			setValueAtPath(submission.payload, segments, value, {

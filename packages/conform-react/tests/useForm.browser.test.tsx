@@ -12,6 +12,7 @@ import {
 	parseSubmission,
 } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
+import { isGlobalInstance } from '@conform-to/dom';
 
 describe('future export: useForm', () => {
 	type Schema = {
@@ -56,7 +57,12 @@ describe('future export: useForm', () => {
 			for (let i = 0; i < value.tasks.length; i++) {
 				const task = value.tasks[i];
 
-				if (task === null || typeof task !== 'object' || !('content' in task)) {
+				if (
+					task === null ||
+					typeof task !== 'object' ||
+					Array.isArray(task) ||
+					isGlobalInstance(task, 'File')
+				) {
 					error.fieldErrors[`tasks[${i}]`] = ['Task is invalid'];
 					continue;
 				}

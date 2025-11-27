@@ -548,6 +548,291 @@ describe('parseSubmission', () => {
 		});
 	});
 
+	it('strips empty values from the submission payload by default', () => {
+		const emptyFile = new File([], '');
+		const nonEmptyFile = new File(['content'], 'example.txt');
+
+		// Empty string values should be set to undefined to preserve structure
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', 'test@example.com'],
+					['description', ''],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: undefined,
+				email: 'test@example.com',
+				description: undefined,
+			},
+			fields: ['name', 'email', 'description'],
+			intent: null,
+		});
+
+		// Empty file values should be set to undefined to preserve structure
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'John'],
+					['avatar', emptyFile],
+					['document', nonEmptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: 'John',
+				avatar: undefined,
+				document: nonEmptyFile,
+			},
+			fields: ['name', 'avatar', 'document'],
+			intent: null,
+		});
+
+		// Arrays with all empty strings should be set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags', ''],
+					['tags', ''],
+					['categories', 'frontend'],
+					['categories', 'backend'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: undefined,
+				categories: ['frontend', 'backend'],
+			},
+			fields: ['tags', 'categories'],
+			intent: null,
+		});
+
+		// Arrays with mix of empty and non-empty should filter out empty items
+		expect(
+			parseSubmission(
+				createFormData([
+					['items', ''],
+					['items', 'valid'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				items: ['valid'],
+			},
+			fields: ['items'],
+			intent: null,
+		});
+
+		// Complex nested structure with empty values - structure is preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['user.name', 'Alice'],
+					['user.bio', ''],
+					['user.email', 'alice@example.com'],
+					['metadata.created', ''],
+					['metadata.updated', '2024-01-01'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				user: {
+					name: 'Alice',
+					bio: undefined,
+					email: 'alice@example.com',
+				},
+				metadata: {
+					created: undefined,
+					updated: '2024-01-01',
+				},
+			},
+			fields: [
+				'user.name',
+				'user.bio',
+				'user.email',
+				'metadata.created',
+				'metadata.updated',
+			],
+			intent: null,
+		});
+
+		// Array notation with empty values - should filter out empty items
+		expect(
+			parseSubmission(
+				createFormData([
+					['todos[]', 'Buy milk'],
+					['todos[]', ''],
+					['todos[]', 'Walk dog'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				todos: ['Buy milk', 'Walk dog'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// All empty values - structure is preserved with undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', ''],
+					['avatar', emptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: undefined,
+				email: undefined,
+				avatar: undefined,
+			},
+			fields: ['name', 'email', 'avatar'],
+			intent: null,
+		});
+
+		// Empty array with [] notation (all empty strings) - set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags[]', ''],
+					['tags[]', ''],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: undefined,
+			},
+			fields: ['tags[]'],
+			intent: null,
+		});
+
+		// Arrays with mixed empty and non-empty files - should filter out empty files
+		const file1 = new File(['content1'], 'file1.txt');
+		const file2 = new File(['content2'], 'file2.txt');
+		expect(
+			parseSubmission(
+				createFormData([
+					['files[]', emptyFile],
+					['files[]', file1],
+					['files[]', emptyFile],
+					['files[]', file2],
+				]),
+			),
+		).toEqual({
+			payload: {
+				files: [file1, file2],
+			},
+			fields: ['files[]'],
+			intent: null,
+		});
+
+		// Arrays with all empty files should be set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['emptyFiles[]', emptyFile],
+					['emptyFiles[]', emptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				emptyFiles: undefined,
+			},
+			fields: ['emptyFiles[]'],
+			intent: null,
+		});
+	});
+
+	it('preserves empty values when stripEmptyValues is false', () => {
+		const emptyFile = new File([], '');
+		const nonEmptyFile = new File(['content'], 'example.txt');
+
+		// Empty string values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', 'test@example.com'],
+					['description', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				name: '',
+				email: 'test@example.com',
+				description: '',
+			},
+			fields: ['name', 'email', 'description'],
+			intent: null,
+		});
+
+		// Empty file values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'John'],
+					['avatar', emptyFile],
+					['document', nonEmptyFile],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				name: 'John',
+				avatar: emptyFile,
+				document: nonEmptyFile,
+			},
+			fields: ['name', 'avatar', 'document'],
+			intent: null,
+		});
+
+		// Arrays with all empty strings should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags', ''],
+					['tags', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				tags: ['', ''],
+			},
+			fields: ['tags'],
+			intent: null,
+		});
+
+		// Complex nested structure with empty values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['user.name', 'Alice'],
+					['user.bio', ''],
+					['metadata.created', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				user: {
+					name: 'Alice',
+					bio: '',
+				},
+				metadata: {
+					created: '',
+				},
+			},
+			fields: ['user.name', 'user.bio', 'metadata.created'],
+			intent: null,
+		});
+	});
+
 	it('handles array push notation with [] correctly', () => {
 		// Single entry with [] notation
 		expect(parseSubmission(createFormData([['todos[]', 'Buy milk']]))).toEqual({
