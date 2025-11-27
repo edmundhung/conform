@@ -75,7 +75,7 @@ describe('future export: useForm', () => {
 	}
 
 	function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
-		const { form, fields, intent } = useForm({
+		const { form, fields, intent } = useForm<Schema, string, Schema>({
 			onValidate({ payload }) {
 				return validateForm(payload);
 			},
@@ -1044,7 +1044,7 @@ describe('future export: useForm', () => {
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					targetValue: {
+					value: {
 						title: 'Updated Title',
 						category: 'work',
 						description: 'Updated Description',
@@ -1091,7 +1091,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					targetValue: {
+					value: {
 						title: 'Server Processed Title',
 						category: 'personal',
 						description: 'Server Updated Description',
@@ -1116,7 +1116,7 @@ describe('future export: useForm', () => {
 		screen.rerender(
 			<Form
 				lastResult={report(parseSubmission(form.getFormData()), {
-					targetValue: null,
+					value: null,
 				})}
 			/>,
 		);
@@ -1222,7 +1222,7 @@ describe('future export: useForm', () => {
 				defaultValue={defaultValue}
 				lastResult={report(parseSubmission(form.getFormData()), {
 					reset: true,
-					targetValue: {
+					value: {
 						title: 'Server Updated Title',
 						description: 'Server Updated Description',
 						confirmed: false,

@@ -8,6 +8,7 @@ describe('future export: useForm', () => {
 	test('default state', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; description: string }, string>({
+				lastResult: null,
 				onValidate: () => undefined,
 			}),
 		);
@@ -21,6 +22,7 @@ describe('future export: useForm', () => {
 		// Test if the form state is stable
 		const secondUseFormResult = serverRenderHook(() =>
 			useForm<{ title: string; description: string }, string>({
+				lastResult: null,
 				onValidate: () => undefined,
 			}),
 		);
@@ -30,7 +32,8 @@ describe('future export: useForm', () => {
 
 	test('default value', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm({
+				lastResult: null,
 				defaultValue: { title: 'Example', description: 'Hello World' },
 				onValidate: () => undefined,
 			}),

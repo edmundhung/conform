@@ -50,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
 	return {
 		result: report(submission, {
 			reset: true,
-			targetValue: result.data,
+			value: result.data,
 		}),
 	};
 }
@@ -59,11 +59,10 @@ export default function Example({
 	loaderData,
 	actionData,
 }: Route.ComponentProps) {
-	const { form, fields, intent } = useForm({
+	const { form, fields, intent } = useForm(schema, {
 		lastResult: actionData?.result,
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
-		schema,
 	});
 	const dirty = useFormData(
 		form.id,

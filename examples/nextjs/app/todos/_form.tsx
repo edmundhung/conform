@@ -12,11 +12,10 @@ export function TodoForm({
 	defaultValue?: z.infer<typeof schema> | null;
 }) {
 	const [lastResult, action] = useActionState(createTodos, null);
-	const { form, fields, intent } = useForm({
+	const { form, fields, intent } = useForm(schema, {
 		lastResult,
 		shouldValidate: 'onBlur',
 		defaultValue,
-		schema,
 	});
 	const dirty = useFormData(form.id, (formData) =>
 		isDirty(formData, {

@@ -38,6 +38,21 @@ export type Submission<
 	/**
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` or indexed names like `items[0].id`.
+	 *
+	 * @example
+	 * ```json
+	 * {
+	 *   "username": "johndoe",
+	 *   "address": {
+	 *     "street": "123 Main St",
+	 *     "city": "Anytown"
+	 *   },
+	 *   "items": [
+	 *     { "name": "item1", "quantity": "2" },
+	 *     { "name": "item2", "quantity": "5" }
+	 *   ]
+	 * }
+	 * ```
 	 */
 	payload: Record<string, FormValue<ValueType>>;
 	/**
@@ -82,14 +97,14 @@ export type SubmissionResult<
  * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
  */
 export type ValidationAttributes = {
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	min?: string | number;
-	max?: string | number;
-	step?: string | number;
-	multiple?: boolean;
-	pattern?: string;
+	required?: boolean | undefined;
+	minLength?: number | undefined;
+	maxLength?: number | undefined;
+	min?: string | number | undefined;
+	max?: string | number | undefined;
+	step?: string | number | undefined;
+	multiple?: boolean | undefined;
+	pattern?: string | undefined;
 };
 
 /**

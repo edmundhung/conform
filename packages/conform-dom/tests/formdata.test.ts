@@ -547,6 +547,145 @@ describe('parseSubmission', () => {
 			intent: 'login',
 		});
 	});
+
+	it('handles array push notation with [] correctly', () => {
+		// Single entry with [] notation
+		expect(parseSubmission(createFormData([['todos[]', 'Buy milk']]))).toEqual({
+			payload: {
+				todos: ['Buy milk'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// Multiple entries with [] notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['todos[]', 'Buy milk'],
+					['todos[]', 'Walk the dog'],
+					['todos[]', 'Write tests'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				todos: ['Buy milk', 'Walk the dog', 'Write tests'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// Multiple array fields with [] notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags[]', 'javascript'],
+					['tags[]', 'typescript'],
+					['categories[]', 'frontend'],
+					['categories[]', 'backend'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: ['javascript', 'typescript'],
+				categories: ['frontend', 'backend'],
+			},
+			fields: ['tags[]', 'categories[]'],
+			intent: null,
+		});
+
+		// Array with primitive values using different approach
+		expect(
+			parseSubmission(
+				createFormData([
+					['numbers[]', '1'],
+					['numbers[]', '2'],
+					['numbers[]', '3'],
+					['numbers[]', '4'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				numbers: ['1', '2', '3', '4'],
+			},
+			fields: ['numbers[]'],
+			intent: null,
+		});
+
+		// Complex nested structure with mixed notation
+		expect(
+			parseSubmission(
+				createFormData([
+					['title', 'My Form'],
+					['users[0].name', 'Alice'],
+					['users[0].roles[]', 'admin'],
+					['users[0].roles[]', 'editor'],
+					['users[1].name', 'Bob'],
+					['users[1].roles[]', 'viewer'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				title: 'My Form',
+				users: [
+					{
+						name: 'Alice',
+						roles: ['admin', 'editor'],
+					},
+					{
+						name: 'Bob',
+						roles: ['viewer'],
+					},
+				],
+			},
+			fields: [
+				'title',
+				'users[0].name',
+				'users[0].roles[]',
+				'users[1].name',
+				'users[1].roles[]',
+			],
+			intent: null,
+		});
+
+		// File inputs with [] notation
+		const file1 = new File(['content1'], 'file1.txt');
+		const file2 = new File(['content2'], 'file2.txt');
+		const file3 = new File(['content3'], 'file3.txt');
+
+		expect(
+			parseSubmission(
+				createFormData([
+					['attachments[]', file1],
+					['attachments[]', file2],
+					['attachments[]', file3],
+				]),
+			),
+		).toEqual({
+			payload: {
+				attachments: [file1, file2, file3],
+			},
+			fields: ['attachments[]'],
+			intent: null,
+		});
+
+		// Empty array field (no entries)
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'Test'],
+					['description', 'Description'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: 'Test',
+				description: 'Description',
+			},
+			fields: ['name', 'description'],
+			intent: null,
+		});
+	});
 });
 
 describe('report', () => {
@@ -565,6 +704,7 @@ describe('report', () => {
 				intent: null,
 			},
 			targetValue: undefined,
+			reset: undefined,
 			error: undefined,
 		});
 	});
@@ -686,7 +826,8 @@ describe('report', () => {
 	});
 
 	it('supports hiding specific fields from the result', () => {
-		const submission = {
+		// Test hiding fields from payload only
+		const submission1 = {
 			payload: {
 				name: 'John',
 				email: 'john@example.com',
@@ -696,27 +837,39 @@ describe('report', () => {
 			intent: null,
 		};
 
-		// Test hiding fields from payload only
-		const result = report(submission, {
+		const result = report(submission1, {
 			hideFields: ['password'],
 		});
 
 		expect(result).toEqual({
 			submission: {
-				...submission,
 				payload: {
-					...submission.payload,
+					name: 'John',
+					email: 'john@example.com',
 					password: undefined,
 				},
+				fields: ['name', 'email', 'password'],
+				intent: null,
 			},
 			targetValue: undefined,
+			reset: undefined,
 			error: undefined,
 		});
 
 		// Test hiding fields from both payload and target value
-		const resultWithTargetValue = report(submission, {
+		const submission2 = {
+			payload: {
+				name: 'John',
+				email: 'john@example.com',
+				password: 'secret123',
+			},
+			fields: ['name', 'email', 'password'],
+			intent: null,
+		};
+
+		const resultWithTargetValue = report(submission2, {
 			hideFields: ['password', 'email'],
-			targetValue: {
+			value: {
 				name: 'Jane',
 				email: 'jane@example.com',
 				password: 'newsecret',
@@ -725,18 +878,20 @@ describe('report', () => {
 
 		expect(resultWithTargetValue).toEqual({
 			submission: {
-				...submission,
 				payload: {
-					...submission.payload,
+					name: 'John',
 					email: undefined,
 					password: undefined,
 				},
+				fields: ['name', 'email', 'password'],
+				intent: null,
 			},
 			targetValue: {
 				name: 'Jane',
 				email: undefined,
 				password: undefined,
 			},
+			reset: undefined,
 			error: undefined,
 		});
 	});
@@ -806,7 +961,7 @@ describe('report', () => {
 
 		// Test with different target value
 		const result = report(submission, {
-			targetValue: { name: 'Jane', email: 'jane@example.com' },
+			value: { name: 'Jane', email: 'jane@example.com' },
 		});
 
 		expect(result).toEqual({
@@ -820,7 +975,7 @@ describe('report', () => {
 
 		// Edge case: when target value equals payload reference, should be undefined
 		const resultEqual = report(submission, {
-			targetValue: submission.payload,
+			value: submission.payload,
 		});
 
 		expect(resultEqual).toEqual({
@@ -847,7 +1002,7 @@ describe('report', () => {
 
 		const resultWithFiles = report(submissionWithFile, {
 			keepFiles: false,
-			targetValue: { name: 'Jane', file },
+			value: { name: 'Jane', file },
 		});
 
 		expect(resultWithFiles).toEqual({

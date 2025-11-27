@@ -57,7 +57,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				environment: 'node',
 				typecheck: {
 					enabled: true,
-					tsconfig: `./packages/${packageName}/tsconfig.json`,
+					tsconfig: `./packages/${packageName}/tests/tsconfig.json`,
 					include: [`packages/${packageName}/**/tests/**/*.test-d.ts`],
 				},
 				// This covers both .node.test.ts/tsx and .test.ts/tsx files
