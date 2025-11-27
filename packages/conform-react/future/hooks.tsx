@@ -60,6 +60,9 @@ import type {
 	FormRef,
 	BaseErrorShape,
 	DefaultErrorShape,
+	BaseSchemaType,
+	InferInput,
+	InferOutput,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -76,6 +79,7 @@ import {
 	updateFormValue,
 	resetFormValue,
 } from './dom';
+import { StandardSchemaV1 } from './standard-schema';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -159,6 +163,7 @@ export function useConform<
 	FormShape extends Record<string, any>,
 	ErrorShape,
 	Value = undefined,
+	SchemaValue = undefined,
 >(
 	formRef: FormRef,
 	options: {
@@ -167,7 +172,7 @@ export function useConform<
 		serialize: Serialize;
 		intentName: string;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
-		onValidate?: ValidateHandler<ErrorShape, Value> | undefined;
+		onValidate?: ValidateHandler<ErrorShape, Value, SchemaValue> | undefined;
 		onError?: ErrorHandler<ErrorShape> | undefined;
 		onSubmit?:
 			| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>
@@ -378,7 +383,7 @@ export function useConform<
 								formElement,
 								submitter: submitEvent.submitter,
 								formData,
-								schemaValue: undefined,
+								schemaValue: undefined as SchemaValue,
 							})
 						: { error: null };
 
@@ -469,11 +474,32 @@ export function useConform<
  * The main React hook for form management. Handles form state, validation, and submission
  * while providing access to form metadata, field objects, and form actions.
  *
+ * It can be called in two ways:
+ * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
+ * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
+ *
  * @see https://conform.guide/api/react/future/useForm
- * @example
+ * @example Schema first setup with zod:
+ *
+ * ```tsx
+ * const { form, fields } = useForm(zodSchema, {
+ *   lastResult,
+ *   shouldValidate: 'onBlur',
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ *
+ * @example Manual configuration setup with custom validation:
+ *
  * ```tsx
  * const { form, fields } = useForm({
- *   onValidate({ payload, error }) {
+ *    onValidate({ payload, error }) {
  *     if (!payload.email) {
  * 		 error.fieldErrors.email = ['Required'];
  *     }
@@ -490,91 +516,178 @@ export function useConform<
  * ```
  */
 export function useForm<
+	Schema extends BaseSchemaType,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = InferOutput<Schema>,
+>(
+	schema: Schema,
+	options: FormOptions<
+		InferInput<Schema>,
+		ErrorShape,
+		Value,
+		Schema,
+		string extends ErrorShape ? never : 'onValidate'
+	>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<InferInput<Schema>, ErrorShape>;
+	intent: IntentDispatcher<InferInput<Schema>>;
+};
+/**
+ * @deprecated Use `useForm(schema, options)` instead for better type inference.
+ */
+export function useForm<
 	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	Value = undefined,
 >(
-	options: FormOptions<FormShape, ErrorShape, Value>,
+	options: FormOptions<
+		FormShape,
+		ErrorShape,
+		Value,
+		undefined,
+		undefined extends Value ? 'onValidate' : never
+	> & {
+		/**
+		 * @deprecated Use `useForm(schema, options)` instead for better type inference.
+		 *
+		 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
+		 * Removes the need for manual onValidate setup.
+		 *
+		 */
+		schema: StandardSchemaV1<FormShape, Value>;
+	},
 ): {
 	form: FormMetadata<ErrorShape>;
 	fields: Fieldset<FormShape, ErrorShape>;
 	intent: IntentDispatcher<FormShape>;
+};
+export function useForm<
+	FormShape extends Record<string, any> = Record<string, any>,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+>(
+	options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<FormShape, ErrorShape>;
+	intent: IntentDispatcher<FormShape>;
+};
+export function useForm<
+	Schema extends BaseSchemaType = any,
+	FormShape extends Record<string, any> = Record<string, any>,
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	Value = undefined,
+>(
+	schemaOrOptions:
+		| Schema
+		| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+	maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
+): {
+	form: FormMetadata<ErrorShape>;
+	fields: Fieldset<Record<string, any>, ErrorShape>;
+	intent: IntentDispatcher;
 } {
+	let schema: Schema | undefined;
+	let options: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>;
+
+	if (maybeOptions) {
+		schema = schemaOrOptions as Schema;
+		options = maybeOptions as FormOptions<
+			InferInput<Schema>,
+			ErrorShape,
+			Value,
+			Schema
+		>;
+	} else {
+		const fullOptions = schemaOrOptions as FormOptions<
+			InferInput<Schema>,
+			ErrorShape,
+			Value,
+			Schema
+		> & {
+			schema?: Schema;
+		};
+
+		options = fullOptions;
+		schema = fullOptions.schema;
+	}
+
 	const { id, constraint } = options;
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
 	const globalOptionsRef = useLatest(globalOptions);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value>(
-		formId,
-		{
-			...options,
-			serialize: globalOptions.serialize,
-			intentName: globalOptions.intentName,
-			onError: options.onError ?? focusFirstInvalidField,
-			onValidate(ctx) {
-				if (options.schema) {
-					const standardResult = options.schema['~standard'].validate(
-						ctx.payload,
-					);
+	const [state, handleSubmit] = useConform<
+		FormShape,
+		ErrorShape,
+		Value,
+		InferOutput<Schema>
+	>(formId, {
+		...options,
+		serialize: globalOptions.serialize,
+		intentName: globalOptions.intentName,
+		onError: options.onError ?? focusFirstInvalidField,
+		onValidate(ctx) {
+			if (schema) {
+				const standardResult = schema['~standard'].validate(ctx.payload);
 
-					if (standardResult instanceof Promise) {
-						return standardResult.then((actualStandardResult) => {
-							if (typeof options.onValidate === 'function') {
-								throw new Error(
-									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-								);
-							}
+				if (standardResult instanceof Promise) {
+					return standardResult.then((actualStandardResult) => {
+						if (typeof options.onValidate === 'function') {
+							throw new Error(
+								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+							);
+						}
 
-							return resolveStandardSchemaResult(
-								actualStandardResult,
-							) as ValidateResult<ErrorShape, Value>;
-						});
-					}
-
-					const resolvedResult = resolveStandardSchemaResult(standardResult);
-
-					if (!options.onValidate) {
-						return resolvedResult as ValidateResult<ErrorShape, Value>;
-					}
-
-					// Update the schema error in the context
-					if (resolvedResult.error) {
-						ctx.error = resolvedResult.error;
-					}
-
-					ctx.schemaValue = resolvedResult.value;
-
-					const validateResult = resolveValidateResult(options.onValidate(ctx));
-
-					if (validateResult.syncResult) {
-						validateResult.syncResult.value ??= resolvedResult.value;
-					}
-
-					if (validateResult.asyncResult) {
-						validateResult.asyncResult = validateResult.asyncResult.then(
-							(result) => {
-								result.value ??= resolvedResult.value;
-								return result;
-							},
-						);
-					}
-
-					return [validateResult.syncResult, validateResult.asyncResult];
+						return resolveStandardSchemaResult(
+							actualStandardResult,
+						) as ValidateResult<ErrorShape, any>;
+					});
 				}
 
-				return (
-					options.onValidate?.(ctx) ?? {
-						// To avoid conform falling back to server validation,
-						// if neither schema nor validation handler is provided,
-						// we just treat it as a valid client submission
-						error: null,
-					}
-				);
-			},
+				const resolvedResult = resolveStandardSchemaResult(standardResult);
+
+				if (!options.onValidate) {
+					return resolvedResult as ValidateResult<ErrorShape, Value>;
+				}
+
+				// Update the schema error in the context
+				if (resolvedResult.error) {
+					ctx.error = resolvedResult.error;
+				}
+
+				ctx.schemaValue = resolvedResult.value;
+
+				const validateResult = resolveValidateResult(options.onValidate(ctx));
+
+				if (validateResult.syncResult) {
+					validateResult.syncResult.value ??= resolvedResult.value;
+				}
+
+				if (validateResult.asyncResult) {
+					validateResult.asyncResult = validateResult.asyncResult.then(
+						(result) => {
+							result.value ??= resolvedResult.value;
+							return result;
+						},
+					);
+				}
+
+				return [validateResult.syncResult, validateResult.asyncResult];
+			}
+
+			return (
+				options.onValidate?.(ctx) ?? {
+					// To avoid conform falling back to server validation,
+					// if neither schema nor validation handler is provided,
+					// we just treat it as a valid client submission
+					error: null,
+				}
+			);
 		},
-	);
+	});
 	const intent = useIntent<FormShape>(formId);
 	const context = useMemo<FormContext<ErrorShape>>(
 		() => ({

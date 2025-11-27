@@ -105,15 +105,17 @@ test('DefaultValue', () => {
 test('FormOptions', () => {
 	type TestSchema = { name: string; email: string };
 
-	// Users should be able to pass undefined for optional properties
+	// Users must provide at least one of onSubmit or lastResult
 	assertType<FormOptions<TestSchema>>({
 		lastResult: undefined,
 	});
 
-	// Users should be able to omit optional properties
-	assertType<FormOptions<TestSchema>>({});
+	// Users can provide onSubmit instead of lastResult
+	assertType<FormOptions<TestSchema>>({
+		onSubmit: () => {},
+	});
 
-	// Users should be able to pass null
+	// Users should be able to pass null for lastResult
 	assertType<FormOptions<TestSchema>>({
 		lastResult: null,
 	});

@@ -68,8 +68,7 @@ export default function SignupAsyncSchema() {
 			}),
 		[],
 	);
-	const { form, fields } = useForm({
-		schema,
+	const { form, fields } = useForm(schema, {
 		shouldValidate: 'onBlur',
 		shouldRevalidate: 'onInput',
 		async onSubmit(event, { value, update }) {

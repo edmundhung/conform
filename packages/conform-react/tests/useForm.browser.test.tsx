@@ -75,7 +75,7 @@ describe('future export: useForm', () => {
 	}
 
 	function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
-		const { form, fields, intent } = useForm({
+		const { form, fields, intent } = useForm<Schema, string, Schema>({
 			onValidate({ payload }) {
 				return validateForm(payload);
 			},

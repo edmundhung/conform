@@ -59,11 +59,10 @@ export default function Example({
 	loaderData,
 	actionData,
 }: Route.ComponentProps) {
-	const { form, fields, intent } = useForm({
+	const { form, fields, intent } = useForm(schema, {
 		lastResult: actionData?.result,
 		defaultValue: loaderData.todos,
 		shouldValidate: 'onBlur',
-		schema,
 	});
 	const dirty = useFormData(
 		form.id,
