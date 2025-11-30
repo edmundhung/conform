@@ -1,4 +1,5 @@
 import {
+	type FieldName,
 	type FormValue,
 	type Serialize,
 	type SubmissionResult,
@@ -48,7 +49,6 @@ import type {
 	ValidateResult,
 	GlobalFormOptions,
 	FormOptions,
-	FieldName,
 	FieldMetadata,
 	Control,
 	Selector,

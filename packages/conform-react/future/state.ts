@@ -1,4 +1,5 @@
 import {
+	type FieldName,
 	type ValidationAttributes,
 	type Serialize,
 	appendPathSegment,
@@ -11,7 +12,6 @@ import {
 } from '@conform-to/dom/future';
 import type {
 	FieldMetadata,
-	FieldName,
 	Fieldset,
 	FormContext,
 	FormMetadata,

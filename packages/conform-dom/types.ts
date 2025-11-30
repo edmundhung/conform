@@ -92,6 +92,11 @@ export type SubmissionResult<
 	reset?: boolean;
 };
 
+/** The name of an input field with type information for TypeScript inference. */
+export type FieldName<FieldShape> = string & {
+	'~shape'?: FieldShape;
+};
+
 /**
  * The input attributes with related to the Constraint Validation API
  * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation

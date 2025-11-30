@@ -1,6 +1,7 @@
 import type {
 	FormError,
 	FormValue,
+	FieldName,
 	JsonPrimitive,
 	Serialize,
 	SerializedValue,
@@ -871,4 +872,154 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
 	}
 
 	return serializePrimitive(value);
+}
+
+/**
+ * Flatten a discriminated union into a single type with all properties
+ * Similar to Combine in conform-react, but for conform-dom
+ */
+type BaseCombine<
+	T,
+	K extends PropertyKey = T extends unknown ? keyof T : never,
+> = T extends unknown ? T & Partial<Record<Exclude<K, keyof T>, never>> : never;
+
+type Combine<T> = {
+	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
+};
+
+type UnknownObject<T> = [T] extends [Record<string, any>]
+	? { [K in keyof Combine<T>]-?: unknown }
+	: never;
+
+/**
+ * Helper to get readable type name for error messages
+ */
+function getTypeName(value: unknown): string {
+	if (value === null) return 'null';
+	if (value === undefined) return 'undefined';
+	if (Array.isArray(value)) return 'Array';
+	if (typeof value === 'object') {
+		return value.constructor?.name ?? 'Object';
+	}
+	return typeof value;
+}
+
+/**
+ * Retrieve a field value from FormData with optional type guards.
+ *
+ * @example
+ * // Direct field access
+ * const email = getFieldValue(formData, { name: 'email' }); // returns unknown
+ *
+ * // String type guard
+ * const name = getFieldValue(formData, { name: 'name', type: 'string' }); // returns string
+ *
+ * // File type guard
+ * const avatar = getFieldValue(formData, { name: 'avatar', type: 'file' }); // returns File
+ *
+ * // Object type guard with nested path
+ * const address = getFieldValue<Address>(formData, { name: 'address', type: 'object' }); // returns { city: unknown, ... }
+ *
+ * // Array option (can be combined with type)
+ * const tags = getFieldValue(formData, { name: 'tags', array: true }); // returns Array<unknown>
+ * const items = getFieldValue<Item[]>(formData, { name: 'items', type: 'object', array: true }); // returns Array<{ name: unknown, ... }>
+ */
+export function getFieldValue<
+	FieldShape extends Array<Record<string, unknown>>,
+>(
+	formData: FormData | URLSearchParams,
+	options: {
+		name: FieldName<FieldShape>;
+		type: 'object';
+		array: true;
+	},
+): FieldShape extends Array<infer Item extends Record<string, unknown>>
+	? Array<UnknownObject<Item>>
+	: never;
+export function getFieldValue<
+	FieldShape extends Record<string, unknown> = Record<string, unknown>,
+>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; type: 'object' },
+): UnknownObject<FieldShape>;
+export function getFieldValue<FieldShape extends unknown[] = unknown[]>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; type: 'string'; array: true },
+): string[];
+export function getFieldValue<FieldShape>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; type: 'string' },
+): string;
+export function getFieldValue<FieldShape extends File[] = File[]>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; type: 'file'; array: true },
+): File[];
+export function getFieldValue<FieldShape extends File = File>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; type: 'file' },
+): File;
+export function getFieldValue<FieldShape extends unknown[] = unknown[]>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape>; array: true },
+): Array<unknown>;
+export function getFieldValue<FieldShape = unknown>(
+	formData: FormData | URLSearchParams,
+	options: { name: FieldName<FieldShape> },
+): unknown;
+export function getFieldValue<FieldShape>(
+	formData: FormData | URLSearchParams,
+	options: {
+		name: FieldName<FieldShape>;
+		type?: 'object' | 'string' | 'file';
+		array?: boolean;
+	},
+): unknown {
+	const { name, type, array } = options;
+	let value: unknown;
+
+	// Step 1: Check if formData has a direct entry
+	if (formData.has(name)) {
+		// Get value based on array option
+		value = array
+			? formData.getAll(name) // Return array when array is true
+			: formData.get(name); // Return first value otherwise
+	} else {
+		// Step 2: Parse formData and use getValueAtPath
+		const submission = parseSubmission(formData, {
+			stripEmptyValues: false,
+		});
+		value = getValueAtPath(submission.payload, name);
+	}
+
+	// Type guards - validate the value matches the expected type
+	if (array && !Array.isArray(value)) {
+		throw new Error(
+			`Expected field "${name}" to be an array, but got ${getTypeName(value)}`,
+		);
+	}
+
+	if (type) {
+		const items = array ? (value as unknown[]) : [value];
+		const predicate = {
+			string: (v: unknown) => typeof v === 'string',
+			file: (v: unknown) => v instanceof File,
+			object: isPlainObject,
+		}[type];
+		const typeName = {
+			string: 'a string',
+			file: 'a File',
+			object: 'an object',
+		}[type];
+
+		for (let i = 0; i < items.length; i++) {
+			if (!predicate(items[i])) {
+				const field = array ? `${name}[${i}]` : name;
+				throw new Error(
+					`Expected field "${field}" to be ${typeName}, but got ${getTypeName(items[i])}`,
+				);
+			}
+		}
+	}
+
+	return value;
 }

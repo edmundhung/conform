@@ -11,6 +11,7 @@ import {
 	report,
 	DEFAULT_INTENT_NAME,
 	serialize,
+	getFieldValue,
 } from '../formdata';
 
 function createFormData(
@@ -1533,4 +1534,325 @@ test('serialize', () => {
 	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
 	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
 	expect(serialize([{ foo: 'bar' }])).toBeUndefined();
+});
+
+describe('getFieldValue', () => {
+	describe('Direct field access from FormData', () => {
+		it('should return first value when no type specified', () => {
+			const formData = createFormData([['email', 'test@example.com']]);
+			expect(getFieldValue(formData, { name: 'email' })).toBe(
+				'test@example.com',
+			);
+		});
+
+		it('should return first value when multiple values exist without type', () => {
+			const formData = createFormData([
+				['tags', 'a'],
+				['tags', 'b'],
+			]);
+			expect(getFieldValue(formData, { name: 'tags' })).toBe('a');
+		});
+
+		it('should return array when type is "array"', () => {
+			const formData = createFormData([
+				['tags', 'a'],
+				['tags', 'b'],
+			]);
+			expect(getFieldValue(formData, { name: 'tags', array: true })).toEqual([
+				'a',
+				'b',
+			]);
+		});
+
+		it('should return array with single item when type is "array" and only one value', () => {
+			const formData = createFormData([['email', 'test@example.com']]);
+			expect(getFieldValue(formData, { name: 'email', array: true })).toEqual([
+				'test@example.com',
+			]);
+		});
+
+		it('should throw error when type is "object" on direct field', () => {
+			const formData = createFormData([['email', 'test@example.com']]);
+			expect(() =>
+				getFieldValue(formData, { name: 'email', type: 'object' }),
+			).toThrow('Expected field "email" to be an object, but got string');
+		});
+
+		it('should handle File objects', () => {
+			const file = new File(['content'], 'test.txt');
+			const formData = new FormData();
+			formData.append('upload', file);
+
+			expect(getFieldValue(formData, { name: 'upload' })).toBe(file);
+		});
+
+		it('should handle multiple File objects as array', () => {
+			const file1 = new File(['content1'], 'test1.txt');
+			const file2 = new File(['content2'], 'test2.txt');
+			const formData = new FormData();
+			formData.append('uploads', file1);
+			formData.append('uploads', file2);
+
+			const result = getFieldValue(formData, {
+				name: 'uploads',
+				array: true,
+			});
+			expect(result).toEqual([file1, file2]);
+		});
+
+		it('should handle single File with type: array', () => {
+			const file = new File(['content'], 'test.txt');
+			const formData = new FormData();
+			formData.append('upload', file);
+
+			const result = getFieldValue(formData, { name: 'upload', array: true });
+			expect(result).toEqual([file]);
+		});
+
+		it('should throw when File is accessed with type: object', () => {
+			const file = new File(['content'], 'test.txt');
+			const formData = new FormData();
+			formData.append('upload', file);
+
+			expect(() =>
+				getFieldValue(formData, { name: 'upload', type: 'object' }),
+			).toThrow('Expected field "upload" to be an object, but got File');
+		});
+	});
+
+	describe('Structured payload access via parsing', () => {
+		it('should retrieve nested object from parsed payload', () => {
+			const formData = createFormData([
+				['address.city', 'NYC'],
+				['address.zipcode', '10001'],
+			]);
+			const value = getFieldValue(formData, {
+				name: 'address',
+				type: 'object',
+			});
+
+			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
+		});
+
+		it('should retrieve nested value by path', () => {
+			const formData = createFormData([
+				['address.city', 'NYC'],
+				['address.zipcode', '10001'],
+			]);
+			const value = getFieldValue(formData, { name: 'address.city' });
+
+			expect(value).toBe('NYC');
+		});
+
+		it('should retrieve array from parsed payload', () => {
+			const formData = createFormData([
+				['items[0]', 'a'],
+				['items[1]', 'b'],
+			]);
+			const value = getFieldValue(formData, { name: 'items', array: true });
+
+			expect(value).toEqual(['a', 'b']);
+		});
+
+		it('should handle deeply nested structures', () => {
+			const formData = createFormData([
+				['user.profile.name', 'John'],
+				['user.profile.email', 'john@example.com'],
+			]);
+			const value = getFieldValue(formData, {
+				name: 'user.profile',
+				type: 'object',
+			});
+
+			expect(value).toEqual({ name: 'John', email: 'john@example.com' });
+		});
+	});
+
+	describe('Type guards', () => {
+		it('should pass type guard for valid object', () => {
+			const formData = createFormData([
+				['address.city', 'NYC'],
+				['address.zipcode', '10001'],
+			]);
+			const value = getFieldValue(formData, {
+				name: 'address',
+				type: 'object',
+			});
+
+			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
+		});
+
+		it('should throw on type guard failure for object (got string)', () => {
+			// Use parsed payload where address.city resolves to a string
+			const formData = createFormData([
+				['address.city', 'NYC'],
+				['address.zipcode', '10001'],
+			]);
+
+			// Access a nested string value with type: "object"
+			expect(() =>
+				getFieldValue(formData, { name: 'address.city', type: 'object' }),
+			).toThrow(
+				'Expected field "address.city" to be an object, but got string',
+			);
+
+			// Test with parsed payload - create structured data and access a string value
+			const formData2 = createFormData([['user.name', 'John']]);
+			expect(() =>
+				getFieldValue(formData2, { name: 'user.name', type: 'object' }),
+			).toThrow('Expected field "user.name" to be an object, but got string');
+		});
+
+		it('should pass type guard for valid array', () => {
+			const formData = createFormData([
+				['items[0]', 'a'],
+				['items[1]', 'b'],
+			]);
+			const value = getFieldValue(formData, { name: 'items', array: true });
+
+			expect(value).toEqual(['a', 'b']);
+		});
+
+		it('should pass type guard for valid array of objects', () => {
+			const formData = createFormData([
+				['items[0].name', 'Item 1'],
+				['items[0].count', '5'],
+				['items[1].name', 'Item 2'],
+				['items[1].count', '10'],
+			]);
+			const value = getFieldValue(formData, {
+				name: 'items',
+				type: 'object',
+				array: true,
+			});
+
+			expect(value).toEqual([
+				{ name: 'Item 1', count: '5' },
+				{ name: 'Item 2', count: '10' },
+			]);
+		});
+
+		it('should throw on type guard failure for object[] (got array of strings)', () => {
+			const formData = createFormData([
+				['tags[0]', 'a'],
+				['tags[1]', 'b'],
+			]);
+
+			expect(() =>
+				getFieldValue(formData, { name: 'tags', type: 'object', array: true }),
+			).toThrow('Expected field "tags[0]" to be an object, but got string');
+		});
+
+		it('should throw on type guard failure for object[] (got mixed array)', () => {
+			const formData = createFormData([
+				['mixed[0].name', 'Object'],
+				['mixed[1]', 'String'],
+			]);
+
+			expect(() =>
+				getFieldValue(formData, { name: 'mixed', type: 'object', array: true }),
+			).toThrow('Expected field "mixed[1]" to be an object, but got string');
+		});
+
+		it('should throw on type guard failure for array (got object)', () => {
+			const formData = createFormData([
+				['address.city', 'NYC'],
+				['address.zipcode', '10001'],
+			]);
+
+			expect(() =>
+				getFieldValue(formData, { name: 'address', array: true }),
+			).toThrow('Expected field "address" to be an array, but got Object');
+		});
+
+		it('should throw on type guard failure for array (got string)', () => {
+			// Direct field access - get() returns a string, but we request array
+			const formData = createFormData([['email', 'test@example.com']]);
+
+			// When type is "array", we use getAll() which returns an array
+			// So this won't throw - it will return ['test@example.com']
+			const result = getFieldValue(formData, { name: 'email', array: true });
+			expect(result).toEqual(['test@example.com']);
+
+			// To test type guard failure for array, we need parsed payload with a non-array value
+			const formData2 = createFormData([
+				['user.name', 'John'],
+				['user.age', '30'],
+			]);
+			// Access the object 'user' with type 'array'
+			expect(() =>
+				getFieldValue(formData2, { name: 'user', array: true }),
+			).toThrow('Expected field "user" to be an array, but got Object');
+		});
+	});
+
+	describe('Error handling', () => {
+		it('should return undefined when field does not exist', () => {
+			const formData = createFormData([['email', 'test@example.com']]);
+
+			// With simplified version, undefined is returned (not thrown)
+			const result = getFieldValue(formData, { name: 'nonexistent' });
+			expect(result).toBeUndefined();
+		});
+
+		it('should return undefined when nested field does not exist', () => {
+			const formData = createFormData([['address.city', 'NYC']]);
+
+			const result = getFieldValue(formData, { name: 'address.zipcode' });
+			expect(result).toBeUndefined();
+		});
+	});
+
+	describe('URLSearchParams support', () => {
+		it('should work with URLSearchParams', () => {
+			const params = new URLSearchParams();
+			params.append('email', 'test@example.com');
+
+			expect(getFieldValue(params, { name: 'email' })).toBe('test@example.com');
+		});
+
+		it('should handle multiple values with URLSearchParams', () => {
+			const params = new URLSearchParams();
+			params.append('tags', 'a');
+			params.append('tags', 'b');
+
+			expect(getFieldValue(params, { name: 'tags', array: true })).toEqual([
+				'a',
+				'b',
+			]);
+		});
+
+		it('should parse structured data from URLSearchParams', () => {
+			const params = new URLSearchParams();
+			params.append('address.city', 'NYC');
+			params.append('address.zipcode', '10001');
+
+			const value = getFieldValue(params, { name: 'address', type: 'object' });
+			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
+		});
+	});
+
+	describe('Edge cases', () => {
+		it('should handle fields with literal dot in name', () => {
+			const formData = new FormData();
+			formData.append('address.city', 'NYC'); // Literal dot in field name
+
+			expect(getFieldValue(formData, { name: 'address.city' })).toBe('NYC');
+		});
+
+		it('should handle empty string values', () => {
+			const formData = createFormData([['email', '']]);
+
+			// Empty strings are stripped by default in parseSubmission
+			// But direct access should return empty string
+			expect(getFieldValue(formData, { name: 'email' })).toBe('');
+		});
+
+		it('should handle null return from formData.get()', () => {
+			const formData = new FormData();
+			// Field doesn't exist, returns undefined
+			const result = getFieldValue(formData, { name: 'missing' });
+			expect(result).toBeUndefined();
+		});
+	});
 });
