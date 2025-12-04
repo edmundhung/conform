@@ -182,12 +182,6 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 	T & Pick<NonPartial<T>, K>
 >;
 
-export type RequireOneOf<T, K extends keyof T> = Prettify<
-	{
-		[K in keyof T]-?: RequireKey<T, K>;
-	}[K]
->;
-
 export type BaseSchemaType = StandardSchemaV1<any, any>;
 
 export type InferInput<Schema> =
@@ -257,12 +251,9 @@ export type FormOptions<
 		Value,
 		Schema
 	> = never,
-> = RequireOneOf<
-	RequireKey<
-		BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
-		RequiredKeys
-	>,
-	'onSubmit' | 'lastResult'
+> = RequireKey<
+	BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
+	RequiredKeys
 >;
 
 export interface FormContext<
