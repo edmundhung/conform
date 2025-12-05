@@ -143,3 +143,18 @@ export type Serialize = (value: unknown) => SerializedValue | null | undefined;
  * - Arrays allow representing multi-value fields.
  */
 export type SerializedValue = string | string[] | File | File[];
+
+/**
+ * Flatten a discriminated union into a single type with all properties.
+ */
+export type Combine<
+	T,
+	K extends PropertyKey = T extends unknown ? keyof T : never,
+> = T extends unknown ? T & Partial<Record<Exclude<K, keyof T>, never>> : never;
+
+/**
+ * Maps all keys of T (including all keys from discriminated unions) to unknown.
+ */
+export type UnknownObject<T> = [T] extends [Record<string, any>]
+	? { [K in keyof Combine<T>]-?: unknown }
+	: never;

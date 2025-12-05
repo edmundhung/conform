@@ -7,9 +7,10 @@ import type {
 	SerializedValue,
 	Submission,
 	SubmissionResult,
+	UnknownObject,
 } from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
-import { deepEqual, isPlainObject, stripFiles } from './util';
+import { deepEqual, getTypeName, isPlainObject, stripFiles } from './util';
 import type { StandardSchemaIssue } from './standard-schema';
 import { formatIssues } from './standard-schema';
 
@@ -872,35 +873,6 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
 	}
 
 	return serializePrimitive(value);
-}
-
-/**
- * Flatten a discriminated union into a single type with all properties
- * Similar to Combine in conform-react, but for conform-dom
- */
-type BaseCombine<
-	T,
-	K extends PropertyKey = T extends unknown ? keyof T : never,
-> = T extends unknown ? T & Partial<Record<Exclude<K, keyof T>, never>> : never;
-
-type Combine<T> = {
-	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
-};
-
-type UnknownObject<T> = [T] extends [Record<string, any>]
-	? { [K in keyof Combine<T>]-?: unknown }
-	: never;
-
-/**
- * Helper to get readable type name for error messages
- */
-function getTypeName(value: unknown): string {
-	if (value === null) return 'null';
-	if (Array.isArray(value)) return 'Array';
-	if (typeof value === 'object') {
-		return value.constructor?.name ?? 'Object';
-	}
-	return typeof value;
 }
 
 /**
