@@ -102,4 +102,37 @@ test('getFieldValue', () => {
 			| { type: 'file'; file: File }
 		>(formData, 'field', { type: 'object' }),
 	).toEqualTypeOf<{ type: unknown; value: unknown; file: unknown }>();
+
+	// Optional - adds undefined to return type
+	expectTypeOf(
+		getFieldValue(formData, 'field', { optional: true }),
+	).toEqualTypeOf<unknown>();
+
+	expectTypeOf(
+		getFieldValue(formData, 'name', { type: 'string', optional: true }),
+	).toEqualTypeOf<string | undefined>();
+
+	expectTypeOf(
+		getFieldValue(formData, 'avatar', { type: 'file', optional: true }),
+	).toEqualTypeOf<File | undefined>();
+
+	expectTypeOf(
+		getFieldValue(formData, 'tags', { array: true, optional: true }),
+	).toEqualTypeOf<Array<unknown> | undefined>();
+
+	expectTypeOf(
+		getFieldValue(
+			formData,
+			'address' as FieldName<{ city: string; zipcode: number }>,
+			{ type: 'object', optional: true },
+		),
+	).toEqualTypeOf<{ city: unknown; zipcode: unknown } | undefined>();
+
+	expectTypeOf(
+		getFieldValue(formData, 'names', {
+			type: 'string',
+			array: true,
+			optional: true,
+		}),
+	).toEqualTypeOf<string[] | undefined>();
 });
