@@ -101,3 +101,15 @@ export function stripFiles<
 
 	return JSON.parse(json);
 }
+
+/**
+ * Helper to get readable type name for error messages
+ */
+export function getTypeName(value: unknown): string {
+	if (value === null) return 'null';
+	if (Array.isArray(value)) return 'Array';
+	if (typeof value === 'object') {
+		return value.constructor?.name ?? 'Object';
+	}
+	return typeof value;
+}
