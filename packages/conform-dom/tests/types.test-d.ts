@@ -39,61 +39,58 @@ test('getFieldValue', () => {
 	const formData = new FormData();
 
 	// Without type option returns unknown
-	expectTypeOf(
-		getFieldValue(formData, { name: 'field' }),
-	).toEqualTypeOf<unknown>();
+	expectTypeOf(getFieldValue(formData, 'field')).toEqualTypeOf<unknown>();
 
 	// Array without type returns Array<unknown>
-	expectTypeOf(
-		getFieldValue(formData, { name: 'tags', array: true }),
-	).toEqualTypeOf<Array<unknown>>();
+	expectTypeOf(getFieldValue(formData, 'tags', { array: true })).toEqualTypeOf<
+		Array<unknown>
+	>();
 
 	// String type
 	expectTypeOf(
-		getFieldValue(formData, { name: 'name', type: 'string' }),
+		getFieldValue(formData, 'name', { type: 'string' }),
 	).toEqualTypeOf<string>();
 	expectTypeOf(
-		getFieldValue(formData, { name: 'names', type: 'string', array: true }),
+		getFieldValue(formData, 'names', { type: 'string', array: true }),
 	).toEqualTypeOf<string[]>();
 
 	// File type
 	expectTypeOf(
-		getFieldValue(formData, { name: 'avatar', type: 'file' }),
+		getFieldValue(formData, 'avatar', { type: 'file' }),
 	).toEqualTypeOf<File>();
 	expectTypeOf(
-		getFieldValue(formData, { name: 'files', type: 'file', array: true }),
+		getFieldValue(formData, 'files', { type: 'file', array: true }),
 	).toEqualTypeOf<File[]>();
 
 	// Object type - FieldName inference (no explicit generic needed)
 	expectTypeOf(
-		getFieldValue(formData, {
-			name: 'address' as FieldName<{ city: string; zipcode: number }>,
-			type: 'object',
-		}),
+		getFieldValue(
+			formData,
+			'address' as FieldName<{ city: string; zipcode: number }>,
+			{ type: 'object' },
+		),
 	).toEqualTypeOf<{ city: unknown; zipcode: unknown }>();
 
 	// Object array - FieldName infers array element shape
 	expectTypeOf(
-		getFieldValue(formData, {
-			name: 'items' as FieldName<Array<{ name: string; count: number }>>,
-			type: 'object',
-			array: true,
-		}),
+		getFieldValue(
+			formData,
+			'items' as FieldName<Array<{ name: string; count: number }>>,
+			{ type: 'object', array: true },
+		),
 	).toEqualTypeOf<Array<{ name: unknown; count: unknown }>>();
 
 	// Generic Record<string, any>
 	expectTypeOf(
-		getFieldValue<Record<string, any>>(formData, {
-			name: 'data',
-			type: 'object',
-		}),
+		getFieldValue<Record<string, any>>(formData, 'data', { type: 'object' }),
 	).toEqualTypeOf<Record<string, unknown>>();
 
 	// Nested objects flatten to first level keys
 	expectTypeOf(
 		getFieldValue<{ profile: { name: string }; settings: { theme: string } }>(
 			formData,
-			{ name: 'user', type: 'object' },
+			'user',
+			{ type: 'object' },
 		),
 	).toEqualTypeOf<{ profile: unknown; settings: unknown }>();
 
@@ -103,6 +100,6 @@ test('getFieldValue', () => {
 			| { type: 'text'; value: string }
 			| { type: 'number'; value: number }
 			| { type: 'file'; file: File }
-		>(formData, { name: 'field', type: 'object' }),
+		>(formData, 'field', { type: 'object' }),
 	).toEqualTypeOf<{ type: unknown; value: unknown; file: unknown }>();
 });

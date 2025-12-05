@@ -1540,9 +1540,7 @@ describe('getFieldValue', () => {
 	describe('Direct field access from FormData', () => {
 		it('should return first value when no type specified', () => {
 			const formData = createFormData([['email', 'test@example.com']]);
-			expect(getFieldValue(formData, { name: 'email' })).toBe(
-				'test@example.com',
-			);
+			expect(getFieldValue(formData, 'email')).toBe('test@example.com');
 		});
 
 		it('should return first value when multiple values exist without type', () => {
@@ -1550,7 +1548,7 @@ describe('getFieldValue', () => {
 				['tags', 'a'],
 				['tags', 'b'],
 			]);
-			expect(getFieldValue(formData, { name: 'tags' })).toBe('a');
+			expect(getFieldValue(formData, 'tags')).toBe('a');
 		});
 
 		it('should return array when type is "array"', () => {
@@ -1558,7 +1556,7 @@ describe('getFieldValue', () => {
 				['tags', 'a'],
 				['tags', 'b'],
 			]);
-			expect(getFieldValue(formData, { name: 'tags', array: true })).toEqual([
+			expect(getFieldValue(formData, 'tags', { array: true })).toEqual([
 				'a',
 				'b',
 			]);
@@ -1566,7 +1564,7 @@ describe('getFieldValue', () => {
 
 		it('should return array with single item when type is "array" and only one value', () => {
 			const formData = createFormData([['email', 'test@example.com']]);
-			expect(getFieldValue(formData, { name: 'email', array: true })).toEqual([
+			expect(getFieldValue(formData, 'email', { array: true })).toEqual([
 				'test@example.com',
 			]);
 		});
@@ -1574,7 +1572,7 @@ describe('getFieldValue', () => {
 		it('should throw error when type is "object" on direct field', () => {
 			const formData = createFormData([['email', 'test@example.com']]);
 			expect(() =>
-				getFieldValue(formData, { name: 'email', type: 'object' }),
+				getFieldValue(formData, 'email', { type: 'object' }),
 			).toThrow('Expected field "email" to be an object, but got string');
 		});
 
@@ -1583,7 +1581,7 @@ describe('getFieldValue', () => {
 			const formData = new FormData();
 			formData.append('upload', file);
 
-			expect(getFieldValue(formData, { name: 'upload' })).toBe(file);
+			expect(getFieldValue(formData, 'upload')).toBe(file);
 		});
 
 		it('should handle multiple File objects as array', () => {
@@ -1593,10 +1591,7 @@ describe('getFieldValue', () => {
 			formData.append('uploads', file1);
 			formData.append('uploads', file2);
 
-			const result = getFieldValue(formData, {
-				name: 'uploads',
-				array: true,
-			});
+			const result = getFieldValue(formData, 'uploads', { array: true });
 			expect(result).toEqual([file1, file2]);
 		});
 
@@ -1605,7 +1600,7 @@ describe('getFieldValue', () => {
 			const formData = new FormData();
 			formData.append('upload', file);
 
-			const result = getFieldValue(formData, { name: 'upload', array: true });
+			const result = getFieldValue(formData, 'upload', { array: true });
 			expect(result).toEqual([file]);
 		});
 
@@ -1615,7 +1610,7 @@ describe('getFieldValue', () => {
 			formData.append('upload', file);
 
 			expect(() =>
-				getFieldValue(formData, { name: 'upload', type: 'object' }),
+				getFieldValue(formData, 'upload', { type: 'object' }),
 			).toThrow('Expected field "upload" to be an object, but got File');
 		});
 	});
@@ -1626,10 +1621,7 @@ describe('getFieldValue', () => {
 				['address.city', 'NYC'],
 				['address.zipcode', '10001'],
 			]);
-			const value = getFieldValue(formData, {
-				name: 'address',
-				type: 'object',
-			});
+			const value = getFieldValue(formData, 'address', { type: 'object' });
 
 			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
 		});
@@ -1639,7 +1631,7 @@ describe('getFieldValue', () => {
 				['address.city', 'NYC'],
 				['address.zipcode', '10001'],
 			]);
-			const value = getFieldValue(formData, { name: 'address.city' });
+			const value = getFieldValue(formData, 'address.city');
 
 			expect(value).toBe('NYC');
 		});
@@ -1649,7 +1641,7 @@ describe('getFieldValue', () => {
 				['items[0]', 'a'],
 				['items[1]', 'b'],
 			]);
-			const value = getFieldValue(formData, { name: 'items', array: true });
+			const value = getFieldValue(formData, 'items', { array: true });
 
 			expect(value).toEqual(['a', 'b']);
 		});
@@ -1659,10 +1651,7 @@ describe('getFieldValue', () => {
 				['user.profile.name', 'John'],
 				['user.profile.email', 'john@example.com'],
 			]);
-			const value = getFieldValue(formData, {
-				name: 'user.profile',
-				type: 'object',
-			});
+			const value = getFieldValue(formData, 'user.profile', { type: 'object' });
 
 			expect(value).toEqual({ name: 'John', email: 'john@example.com' });
 		});
@@ -1674,10 +1663,7 @@ describe('getFieldValue', () => {
 				['address.city', 'NYC'],
 				['address.zipcode', '10001'],
 			]);
-			const value = getFieldValue(formData, {
-				name: 'address',
-				type: 'object',
-			});
+			const value = getFieldValue(formData, 'address', { type: 'object' });
 
 			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
 		});
@@ -1691,7 +1677,7 @@ describe('getFieldValue', () => {
 
 			// Access a nested string value with type: "object"
 			expect(() =>
-				getFieldValue(formData, { name: 'address.city', type: 'object' }),
+				getFieldValue(formData, 'address.city', { type: 'object' }),
 			).toThrow(
 				'Expected field "address.city" to be an object, but got string',
 			);
@@ -1699,7 +1685,7 @@ describe('getFieldValue', () => {
 			// Test with parsed payload - create structured data and access a string value
 			const formData2 = createFormData([['user.name', 'John']]);
 			expect(() =>
-				getFieldValue(formData2, { name: 'user.name', type: 'object' }),
+				getFieldValue(formData2, 'user.name', { type: 'object' }),
 			).toThrow('Expected field "user.name" to be an object, but got string');
 		});
 
@@ -1708,7 +1694,7 @@ describe('getFieldValue', () => {
 				['items[0]', 'a'],
 				['items[1]', 'b'],
 			]);
-			const value = getFieldValue(formData, { name: 'items', array: true });
+			const value = getFieldValue(formData, 'items', { array: true });
 
 			expect(value).toEqual(['a', 'b']);
 		});
@@ -1720,8 +1706,7 @@ describe('getFieldValue', () => {
 				['items[1].name', 'Item 2'],
 				['items[1].count', '10'],
 			]);
-			const value = getFieldValue(formData, {
-				name: 'items',
+			const value = getFieldValue(formData, 'items', {
 				type: 'object',
 				array: true,
 			});
@@ -1739,7 +1724,7 @@ describe('getFieldValue', () => {
 			]);
 
 			expect(() =>
-				getFieldValue(formData, { name: 'tags', type: 'object', array: true }),
+				getFieldValue(formData, 'tags', { type: 'object', array: true }),
 			).toThrow('Expected field "tags[0]" to be an object, but got string');
 		});
 
@@ -1750,7 +1735,7 @@ describe('getFieldValue', () => {
 			]);
 
 			expect(() =>
-				getFieldValue(formData, { name: 'mixed', type: 'object', array: true }),
+				getFieldValue(formData, 'mixed', { type: 'object', array: true }),
 			).toThrow('Expected field "mixed[1]" to be an object, but got string');
 		});
 
@@ -1760,9 +1745,9 @@ describe('getFieldValue', () => {
 				['address.zipcode', '10001'],
 			]);
 
-			expect(() =>
-				getFieldValue(formData, { name: 'address', array: true }),
-			).toThrow('Expected field "address" to be an array, but got Object');
+			expect(() => getFieldValue(formData, 'address', { array: true })).toThrow(
+				'Expected field "address" to be an array, but got Object',
+			);
 		});
 
 		it('should throw on type guard failure for array (got string)', () => {
@@ -1771,7 +1756,7 @@ describe('getFieldValue', () => {
 
 			// When type is "array", we use getAll() which returns an array
 			// So this won't throw - it will return ['test@example.com']
-			const result = getFieldValue(formData, { name: 'email', array: true });
+			const result = getFieldValue(formData, 'email', { array: true });
 			expect(result).toEqual(['test@example.com']);
 
 			// To test type guard failure for array, we need parsed payload with a non-array value
@@ -1780,9 +1765,9 @@ describe('getFieldValue', () => {
 				['user.age', '30'],
 			]);
 			// Access the object 'user' with type 'array'
-			expect(() =>
-				getFieldValue(formData2, { name: 'user', array: true }),
-			).toThrow('Expected field "user" to be an array, but got Object');
+			expect(() => getFieldValue(formData2, 'user', { array: true })).toThrow(
+				'Expected field "user" to be an array, but got Object',
+			);
 		});
 	});
 
@@ -1791,14 +1776,14 @@ describe('getFieldValue', () => {
 			const formData = createFormData([['email', 'test@example.com']]);
 
 			// With simplified version, undefined is returned (not thrown)
-			const result = getFieldValue(formData, { name: 'nonexistent' });
+			const result = getFieldValue(formData, 'nonexistent');
 			expect(result).toBeUndefined();
 		});
 
 		it('should return undefined when nested field does not exist', () => {
 			const formData = createFormData([['address.city', 'NYC']]);
 
-			const result = getFieldValue(formData, { name: 'address.zipcode' });
+			const result = getFieldValue(formData, 'address.zipcode');
 			expect(result).toBeUndefined();
 		});
 	});
@@ -1808,7 +1793,7 @@ describe('getFieldValue', () => {
 			const params = new URLSearchParams();
 			params.append('email', 'test@example.com');
 
-			expect(getFieldValue(params, { name: 'email' })).toBe('test@example.com');
+			expect(getFieldValue(params, 'email')).toBe('test@example.com');
 		});
 
 		it('should handle multiple values with URLSearchParams', () => {
@@ -1816,7 +1801,7 @@ describe('getFieldValue', () => {
 			params.append('tags', 'a');
 			params.append('tags', 'b');
 
-			expect(getFieldValue(params, { name: 'tags', array: true })).toEqual([
+			expect(getFieldValue(params, 'tags', { array: true })).toEqual([
 				'a',
 				'b',
 			]);
@@ -1827,7 +1812,7 @@ describe('getFieldValue', () => {
 			params.append('address.city', 'NYC');
 			params.append('address.zipcode', '10001');
 
-			const value = getFieldValue(params, { name: 'address', type: 'object' });
+			const value = getFieldValue(params, 'address', { type: 'object' });
 			expect(value).toEqual({ city: 'NYC', zipcode: '10001' });
 		});
 	});
@@ -1837,7 +1822,7 @@ describe('getFieldValue', () => {
 			const formData = new FormData();
 			formData.append('address.city', 'NYC'); // Literal dot in field name
 
-			expect(getFieldValue(formData, { name: 'address.city' })).toBe('NYC');
+			expect(getFieldValue(formData, 'address.city')).toBe('NYC');
 		});
 
 		it('should handle empty string values', () => {
@@ -1845,13 +1830,13 @@ describe('getFieldValue', () => {
 
 			// Empty strings are stripped by default in parseSubmission
 			// But direct access should return empty string
-			expect(getFieldValue(formData, { name: 'email' })).toBe('');
+			expect(getFieldValue(formData, 'email')).toBe('');
 		});
 
 		it('should handle null return from formData.get()', () => {
 			const formData = new FormData();
 			// Field doesn't exist, returns undefined
-			const result = getFieldValue(formData, { name: 'missing' });
+			const result = getFieldValue(formData, 'missing');
 			expect(result).toBeUndefined();
 		});
 	});
