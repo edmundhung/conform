@@ -1,38 +1,50 @@
 ---
 '@conform-to/dom': minor
+'@conform-to/react': minor
 ---
 
-Add `getFieldValue` helper to `@conform-to/dom/future` for type-safe field value retrieval from FormData with runtime type guards.
+Add `getFieldValue` helper to extract and validate field values from FormData or URLSearchParams.
 
 ```ts
 import { getFieldValue } from '@conform-to/react/future';
 
-// Direct field access - no type guard
-const email = getFieldValue(formData, { name: 'email' }); // returns unknown
+// Basic: returns `unknown`
+const email = getFieldValue(formData, 'email');
 
-// String type guard
-const name = getFieldValue(formData, { name: 'name', type: 'string' }); // returns string
+// With type guard: returns `string`, throws if not a string
+const name = getFieldValue(formData, 'name', { type: 'string' });
 
-// File type guard
-const avatar = getFieldValue(formData, { name: 'avatar', type: 'file' }); // returns File
+// File type: returns `File`, throws if not a File
+const avatar = getFieldValue(formData, 'avatar', { type: 'file' });
 
-// Object type guard - returns structured data
-const address = getFieldValue<Address>(formData, {
-  name: 'address',
-  type: 'object',
-}); // returns { city: unknown; zipcode: unknown }
+// Object type: parses nested fields into `{ city: unknown, ... }`
+const address = getFieldValue<Address>(formData, 'address', { type: 'object' });
 
-// Array options (can be combined with type guards)
-const tags = getFieldValue(formData, { name: 'tags', array: true }); // returns Array<unknown>
-const items = getFieldValue<Item[]>(formData, {
-  name: 'items',
+// Array: returns `unknown[]`
+const tags = getFieldValue(formData, 'tags', { array: true });
+
+// Array of objects: returns `Array<{ name: unknown, ... }>`
+const items = getFieldValue<Item[]>(formData, 'items', {
   type: 'object',
   array: true,
-}); // returns Array<{ name: unknown; count: unknown }>
+});
 
-// FieldName type inference
-const user = getFieldValue(formData, {
-  name: 'user' as FieldName<{ name: string; email: string }>,
-  type: 'object',
-}); // returns { name: unknown; email: unknown }
+// Optional: returns `string | undefined`, no error if missing
+const bio = getFieldValue(formData, 'bio', { type: 'string', optional: true });
+```
+
+It also infers types from the field name:
+
+```ts
+import { useForm, useFormData, getFieldValue } from '@conform-to/react/future';
+
+function Example() {
+  const { form, fields } = useForm();
+  // Retrieves the value of the `address` fieldset as an object, e.g. `{ city: unknown; ... }`
+  const address = useFormData(form.id, (formData) =>
+    getFieldValue(formData, fields.address.name, { type: 'object' }),
+  );
+
+  // ...
+}
 ```
