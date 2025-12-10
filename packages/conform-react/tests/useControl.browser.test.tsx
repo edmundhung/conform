@@ -681,4 +681,36 @@ describe('future export: useControl', () => {
 			document.forms.namedItem('example'),
 		);
 	});
+
+	it('preserves DOM defaultValue when no value is provided to useControl', async () => {
+		function InputWithDOMDefaultValue() {
+			const control = useControl();
+			return (
+				<div>
+					<input
+						aria-label="base input"
+						ref={control.register}
+						defaultValue="Hello World"
+					/>
+					<input
+						aria-label="control input"
+						value={control.value ?? ''}
+						onChange={(e) => control.change(e.target.value)}
+					/>
+				</div>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<InputWithDOMDefaultValue />
+			</Form>,
+		);
+
+		const baseInput = screen.getByLabelText('base input');
+		const controlInput = screen.getByLabelText('control input');
+
+		await expect.element(baseInput).toHaveValue('Hello World');
+		await expect.element(controlInput).toHaveValue('Hello World');
+	});
 });
