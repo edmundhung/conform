@@ -10,8 +10,8 @@
 	},
 	"dependencies": {
 		"@chakra-ui/react": "^2.4.2",
-		"@conform-to/react": "^1.14.1",
-		"@conform-to/zod": "^1.14.1",
+		"@conform-to/react": "^1.15.0",
+		"@conform-to/zod": "^1.15.0",
 		"@emotion/react": "^11.10.5",
 		"@emotion/styled": "^11.10.5",
 		"framer-motion": "^7.6.19",
