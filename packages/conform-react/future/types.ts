@@ -1,4 +1,5 @@
 import type {
+	FieldName,
 	FormError,
 	FormValue,
 	Serialize,
@@ -272,11 +273,6 @@ export interface FormContext<
 	/** Blur event handler for form-wide blur events */
 	handleBlur: (event: React.FocusEvent) => void;
 }
-
-/** The name of an input field with type information for TypeScript inference. */
-export type FieldName<FieldShape> = string & {
-	'~shape'?: FieldShape;
-};
 
 export type UnknownIntent = {
 	type: string;

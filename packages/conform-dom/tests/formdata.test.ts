@@ -11,6 +11,7 @@ import {
 	report,
 	DEFAULT_INTENT_NAME,
 	serialize,
+	getFieldValue,
 } from '../formdata';
 
 function createFormData(
@@ -1533,4 +1534,208 @@ test('serialize', () => {
 	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
 	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
 	expect(serialize([{ foo: 'bar' }])).toBeUndefined();
+});
+
+describe('getFieldValue', () => {
+	test('basic value retrieval', () => {
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['tags', 'a'],
+			['tags', 'b'],
+			['empty', ''],
+		]);
+
+		// Returns first value when no options specified
+		expect(getFieldValue(formData, 'email')).toBe('test@example.com');
+		expect(getFieldValue(formData, 'tags')).toBe('a');
+		expect(getFieldValue(formData, 'empty')).toBe('');
+
+		// Returns array with array option
+		expect(getFieldValue(formData, 'tags', { array: true })).toEqual([
+			'a',
+			'b',
+		]);
+		expect(getFieldValue(formData, 'email', { array: true })).toEqual([
+			'test@example.com',
+		]);
+
+		// Returns undefined for missing fields
+		expect(getFieldValue(formData, 'nonexistent')).toBeUndefined();
+
+		// Direct field access takes precedence over parsing
+		const formData2 = new FormData();
+		formData2.append('address.city', 'NYC');
+		expect(getFieldValue(formData2, 'address.city')).toBe('NYC');
+	});
+
+	test('File objects', () => {
+		const file1 = new File(['content1'], 'test1.txt');
+		const file2 = new File(['content2'], 'test2.txt');
+		const formData = new FormData();
+		formData.append('upload', file1);
+		formData.append('uploads', file1);
+		formData.append('uploads', file2);
+
+		// Single file
+		expect(getFieldValue(formData, 'upload')).toBe(file1);
+		expect(getFieldValue(formData, 'upload', { array: true })).toEqual([file1]);
+
+		// Multiple files
+		expect(getFieldValue(formData, 'uploads', { array: true })).toEqual([
+			file1,
+			file2,
+		]);
+
+		// File with wrong type throws
+		expect(() => getFieldValue(formData, 'upload', { type: 'object' })).toThrow(
+			'Expected field "upload" to be an object, but got File',
+		);
+	});
+
+	test('structured data parsing', () => {
+		const formData = createFormData([
+			['address.city', 'NYC'],
+			['address.zipcode', '10001'],
+			['items[0]', 'a'],
+			['items[1]', 'b'],
+			['user.profile.name', 'John'],
+			['user.profile.email', 'john@example.com'],
+		]);
+
+		// Nested object
+		expect(getFieldValue(formData, 'address', { type: 'object' })).toEqual({
+			city: 'NYC',
+			zipcode: '10001',
+		});
+
+		// Nested value by path
+		expect(getFieldValue(formData, 'address.city')).toBe('NYC');
+		expect(getFieldValue(formData, 'address.zipcode')).toBe('10001');
+
+		// Array from indexed keys
+		expect(getFieldValue(formData, 'items', { array: true })).toEqual([
+			'a',
+			'b',
+		]);
+
+		// Deeply nested
+		expect(getFieldValue(formData, 'user.profile', { type: 'object' })).toEqual(
+			{ name: 'John', email: 'john@example.com' },
+		);
+
+		// Missing nested field
+		expect(getFieldValue(formData, 'address.country')).toBeUndefined();
+	});
+
+	test('array of objects', () => {
+		const formData = createFormData([
+			['items[0].name', 'Item 1'],
+			['items[0].count', '5'],
+			['items[1].name', 'Item 2'],
+			['items[1].count', '10'],
+		]);
+
+		expect(
+			getFieldValue(formData, 'items', { type: 'object', array: true }),
+		).toEqual([
+			{ name: 'Item 1', count: '5' },
+			{ name: 'Item 2', count: '10' },
+		]);
+	});
+
+	test('type validation errors', () => {
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['address.city', 'NYC'],
+			['tags[0]', 'a'],
+			['tags[1]', 'b'],
+			['mixed[0].name', 'Object'],
+			['mixed[1]', 'String'],
+		]);
+
+		// String accessed as object
+		expect(() => getFieldValue(formData, 'email', { type: 'object' })).toThrow(
+			'Expected field "email" to be an object, but got string',
+		);
+
+		expect(() =>
+			getFieldValue(formData, 'address.city', { type: 'object' }),
+		).toThrow('Expected field "address.city" to be an object, but got string');
+
+		// Object accessed as array
+		expect(() => getFieldValue(formData, 'address', { array: true })).toThrow(
+			'Expected field "address" to be an array, but got Object',
+		);
+
+		// String array accessed as object array
+		expect(() =>
+			getFieldValue(formData, 'tags', { type: 'object', array: true }),
+		).toThrow('Expected field "tags[0]" to be an object, but got string');
+
+		// Mixed array with object type
+		expect(() =>
+			getFieldValue(formData, 'mixed', { type: 'object', array: true }),
+		).toThrow('Expected field "mixed[1]" to be an object, but got string');
+	});
+
+	test('URLSearchParams support', () => {
+		const params = new URLSearchParams();
+		params.append('email', 'test@example.com');
+		params.append('tags', 'a');
+		params.append('tags', 'b');
+		params.append('address.city', 'NYC');
+		params.append('address.zipcode', '10001');
+
+		expect(getFieldValue(params, 'email')).toBe('test@example.com');
+		expect(getFieldValue(params, 'tags', { array: true })).toEqual(['a', 'b']);
+		expect(getFieldValue(params, 'address', { type: 'object' })).toEqual({
+			city: 'NYC',
+			zipcode: '10001',
+		});
+	});
+
+	test('optional option', () => {
+		const emptyFormData = new FormData();
+
+		// Returns undefined for missing fields without throwing
+		expect(
+			getFieldValue(emptyFormData, 'missing', { optional: true }),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'name', { type: 'string', optional: true }),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'address', {
+				type: 'object',
+				optional: true,
+			}),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'tags', { array: true, optional: true }),
+		).toBeUndefined();
+
+		// Returns values when they exist
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['address.city', 'NYC'],
+			['address.zipcode', '10001'],
+			['tags', 'a'],
+			['tags', 'b'],
+		]);
+
+		expect(
+			getFieldValue(formData, 'email', { type: 'string', optional: true }),
+		).toBe('test@example.com');
+		expect(
+			getFieldValue(formData, 'address', { type: 'object', optional: true }),
+		).toEqual({ city: 'NYC', zipcode: '10001' });
+		expect(
+			getFieldValue(formData, 'tags', { array: true, optional: true }),
+		).toEqual(['a', 'b']);
+
+		// Still validates type when field exists
+		expect(() =>
+			getFieldValue(formData, 'email', { type: 'object', optional: true }),
+		).toThrow('Expected field "email" to be an object, but got string');
+	});
 });
