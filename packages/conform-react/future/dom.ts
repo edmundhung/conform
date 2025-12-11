@@ -63,10 +63,8 @@ export function initializeField(
 				: null
 			: options?.defaultValue;
 
-	// Preserve the element's existing default value from the DOM unless a value is provided
-	if (defaultValue !== undefined) {
-		updateField(element, { value: defaultValue, defaultValue });
-	}
+	// Update the value of the element, including the default value
+	updateField(element, { value: defaultValue, defaultValue });
 
 	element.dataset.conform = 'initialized';
 }

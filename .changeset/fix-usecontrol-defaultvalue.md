@@ -1,5 +1,5 @@
 ---
-'@conform-to/react': patch
+'@conform-to/dom': patch
 ---
 
-fix(conform-react/future): useControl should preserve DOM defaultValue when no options are provided
+fix(conform-dom): updateField should preserve DOM value when no value is provided
