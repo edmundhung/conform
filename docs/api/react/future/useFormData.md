@@ -2,7 +2,7 @@
 
 > The `useFormData` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it. The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
+A React hook that subscribes to live form values and derives state from them. Unlike `useForm`, it updates on every input change (but re-renders only when the result changes). Use it for dirty checking, computed values, or conditional UI.
 
 ```ts
 import { useFormData } from '@conform-to/react/future';

@@ -2,7 +2,7 @@
 
 > The `memoize` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A utility function that memoizes function calls, caching only the most recent result to prevent redundant async validations in forms.
+A utility function that caches the most recent result of a function call. Use it to prevent redundant API calls during async validation, like username availability checks.
 
 ```ts
 import { memoize } from '@conform-to/react/future';

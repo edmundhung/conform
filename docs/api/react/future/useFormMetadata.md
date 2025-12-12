@@ -2,7 +2,7 @@
 
 > The `useFormMetadata` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that provides access to form-level metadata and state from any component within a `FormProvider` context.
+A React hook that returns form-level state (errors, valid, touched) from any component within a `FormProvider`. Use it for error summaries or conditional submit buttons.
 
 ```ts
 import { useFormMetadata } from '@conform-to/react/future';

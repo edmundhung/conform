@@ -2,7 +2,7 @@
 
 > The `isDirty` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A utility function that checks whether the current form data differs from the default values.
+A utility function that checks whether current form data differs from default values. Use it with `useFormData` for unsaved changes warnings or disabling save buttons.
 
 ```ts
 import { isDirty } from '@conform-to/react/future';

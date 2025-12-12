@@ -2,7 +2,7 @@
 
 > The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that lets you sync the state of an input and dispatch native form events from it. This is useful when emulating native input behavior — typically by rendering a hidden base input and syncing it with a custom input.
+A React hook that syncs custom UI components with Conform by bridging them to a hidden native input. Use it when integrating components like date pickers, rich selects, or toggles from UI libraries.
 
 For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
 
