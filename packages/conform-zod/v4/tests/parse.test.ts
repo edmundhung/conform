@@ -224,5 +224,45 @@ describe('parse', () => {
 				reply: expect.any(Function),
 			});
 		});
+
+		test('parseWithZod with falsy output value', () => {
+			const textIsFooSchema = z
+				.object({
+					text: z.string(),
+				})
+				.transform(({ text }) => text === 'foo');
+
+			const formDataFoo = createFormData([['text', 'foo']]);
+			expect(parseWithZod(formDataFoo, { schema: textIsFooSchema })).toEqual({
+				status: 'success',
+				payload: {
+					text: 'foo',
+				},
+				value: true,
+				reply: expect.any(Function),
+			});
+			const formDataBar = createFormData([['text', 'bar']]);
+			expect(parseWithZod(formDataBar, { schema: textIsFooSchema })).toEqual({
+				status: 'success',
+				payload: {
+					text: 'bar',
+				},
+				value: false,
+				reply: expect.any(Function),
+			});
+
+			const formData = createFormData([['text', 'baz']]);
+			for (const value of [false, null, undefined, '']) {
+				const schema = z.any().transform(() => value);
+				expect(parseWithZod(formData, { schema })).toEqual({
+					status: 'success',
+					payload: {
+						text: 'baz',
+					},
+					value,
+					reply: expect.any(Function),
+				});
+			}
+		});
 	});
 });

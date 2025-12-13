@@ -233,7 +233,7 @@ export function parse<FormValue, FormError>(
 export function createSubmission<FormValue, FormError>(
 	context: SubmissionContext<FormValue, FormError>,
 ): Submission<FormValue, FormError> {
-	if (context.intent || !context.value || context.error) {
+	if (context.intent || context.error !== undefined) {
 		return {
 			status: !context.intent ? 'error' : undefined,
 			payload: context.payload,
@@ -243,11 +243,10 @@ export function createSubmission<FormValue, FormError>(
 			},
 		};
 	}
-
 	return {
 		status: 'success',
 		payload: context.payload,
-		value: context.value,
+		value: context.value as FormValue,
 		reply(options) {
 			return replySubmission(context, options);
 		},
