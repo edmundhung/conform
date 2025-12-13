@@ -1,10 +1,12 @@
 # useControl
 
-> The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
+> `useControl` フックはConformのfuture exportの一部です。これらのAPIは試験的なもので、マイナーバージョンで変更される可能性があります。[詳しく見る（英語）](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that lets you sync the state of an input and dispatch native form events from it. This is useful when emulating native input behavior — typically by rendering a hidden base input and syncing it with a custom input.
+このフックでは入力のための要素と同期し、そこで発生するネイティブなフォームイベントを発火させることができるようにします。
+ネイティブな入力の振る舞いをエミュレートする時、よくあるhiddenに設定された入力要素とカスタム入力要素を同期させる時に便利です。
 
-For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
+このフックが必要な時により詳細な情報を求める場合は、[UI ライブラリとの統合ガイド](../../../integration/ui-libraries.md) を見てください。
+
 
 ```ts
 import { useControl } from '@conform-to/react/future';
@@ -16,14 +18,14 @@ const control = useControl(options);
 
 ### `defaultValue?: string | string[] | File | File[]`
 
-The initial value of the base input. It will be used to set the value when the input is first registered.
+標準入力の初期値です。入力要素が最初に登録された時にセットされるために使われます。
 
 ```ts
-// e.g. Text input
+// 例：テキスト入力
 const control = useControl({
   defaultValue: 'my default value',
 });
-// e.g. Multi-select
+// 例：マルチセレクト
 const control = useControl({
   defaultValue: ['option-1', 'option-3'],
 });
@@ -31,7 +33,8 @@ const control = useControl({
 
 ### `defaultChecked?: boolean`
 
-Whether the base input should be checked by default. It will be applied when the input is first registered.
+標準入力が始めにチェックされているべきかどうかを設定します。
+入力要素が最初に登録された時に適用されます。
 
 ```ts
 const control = useControl({
@@ -41,7 +44,8 @@ const control = useControl({
 
 ### `value?: string`
 
-The value of a checkbox or radio input when checked. This sets the value attribute of the base input.
+チェックボックスかラジオの値がチェックされた時の値です。
+標準入力のvalue属性を設定します。
 
 ```ts
 const control = useControl({
@@ -52,7 +56,8 @@ const control = useControl({
 
 ### `onFocus?: () => void`
 
-A callback function that is triggered when the base input is focused. Use this to delegate focus to a custom input.
+標準入力にフォーカスが当たった時に発火されるコールバック関数です。この関数を通してカスタム入力要素へフォーカスを移せます。
+
 
 ```ts
 const control = useControl({
@@ -64,23 +69,25 @@ const control = useControl({
 
 ## Returns
 
-A control object. This gives you access to the state of the input with helpers to emulate native form events.
+コントロールオブジェクトを返します。
+入力要素の状態とネイティブなフォームイベントを操作するためのヘルパーにアクセスできます。
 
 ### `value: string | undefined`
 
-Current value of the base input. Undefined if the registered input is a multi-select, file input, or checkbox group.
+標準入力の現在の値です。登録された値がマルチセレクト、ファイル、チェックボックスグループであれば値は未定義になります。
 
 ### `options: string[] | undefined`
 
-Selected options of the base input. Defined only when the registered input is a multi-select or checkbox group.
+標準入力で選択されたオプションです。登録された標準入力がマルチセレクトかチェックボックスグループの時に定義されます。
 
 ### `checked: boolean | undefined`
 
-Checked state of the base input. Defined only when the registered input is a single checkbox or radio input.
+標準入力のチェック状態です。登録された標準入力が単一のチェックボックスかラジオの時に定義されます。
 
 ### `files: File[] | undefined`
 
-Selected files of the base input. Defined only when the registered input is a file input.
+標準入力の選択されたファイルです。
+登録された標準入力が単一のチェックボックスかラジオの時に定義されます。
 
 ### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
 
