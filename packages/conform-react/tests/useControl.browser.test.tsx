@@ -664,6 +664,49 @@ describe('future export: useControl', () => {
 		await expect.element(controlInput).toHaveValue('hello world');
 	});
 
+	it('supports resetting the input after initialized with a different default value', async () => {
+		const changeHandler = vi.fn();
+
+		function TestComponent() {
+			const control = useControl({
+				defaultValue: 'Hello',
+			});
+			return (
+				<div onChange={changeHandler}>
+					<button
+						type="button"
+						aria-label="reset button"
+						onClick={() => control.change('')}
+					>
+						Reset
+					</button>
+					<input aria-label="base input" ref={control.register} type="text" />
+				</div>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<TestComponent />
+			</Form>,
+		);
+
+		const baseInput = screen.getByLabelText('base input');
+		const resetButton = screen.getByLabelText('reset button');
+
+		// Verify initial value
+		await expect.element(baseInput).toHaveValue('Hello');
+
+		// Click reset button which calls control.change('')
+		await userEvent.click(resetButton);
+
+		// Value should be empty
+		await expect.element(baseInput).toHaveValue('');
+
+		// onChange should have fired
+		expect(changeHandler).toHaveBeenCalled();
+	});
+
 	it('provides access to the associated form via formRef', async () => {
 		const handleRender = vi.fn();
 		render(
