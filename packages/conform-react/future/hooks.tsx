@@ -47,7 +47,6 @@ import type {
 	FormMetadata,
 	Fieldset,
 	ValidateResult,
-	GlobalFormOptions,
 	FormOptions,
 	FieldMetadata,
 	Control,
@@ -58,11 +57,12 @@ import type {
 	SubmitHandler,
 	FormState,
 	FormRef,
-	BaseErrorShape,
-	DefaultErrorShape,
 	BaseSchemaType,
 	InferInput,
 	InferOutput,
+	ConformConfig,
+	FormMetadataDefinition,
+	FieldMetadataDefinition,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -84,76 +84,6 @@ import { StandardSchemaV1 } from './standard-schema';
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
 export const INITIAL_KEY = 'INITIAL_KEY';
-
-export const GlobalFormOptionsContext = createContext<
-	GlobalFormOptions & { observer: ReturnType<typeof createGlobalFormsObserver> }
->({
-	intentName: DEFAULT_INTENT_NAME,
-	observer: createGlobalFormsObserver(),
-	serialize,
-	shouldValidate: 'onSubmit',
-});
-
-export const FormContextContext = createContext<FormContext[]>([]);
-
-/**
- * Provides form context to child components.
- * Stacks contexts to support nested forms, with latest context taking priority.
- */
-export function FormProvider(props: {
-	context: FormContext;
-	children: React.ReactNode;
-}): React.ReactElement {
-	const stack = useContext(FormContextContext);
-	const value = useMemo(
-		// Put the latest form context first to ensure that to be the first one found
-		() => [props.context].concat(stack),
-		[stack, props.context],
-	);
-
-	return (
-		<FormContextContext.Provider value={value}>
-			{props.children}
-		</FormContextContext.Provider>
-	);
-}
-
-export function FormOptionsProvider(
-	props: Partial<GlobalFormOptions> & {
-		children: React.ReactNode;
-	},
-): React.ReactElement {
-	const { children, ...providedOptions } = props;
-	const defaultOptions = useContext(GlobalFormOptionsContext);
-	const options = useMemo(
-		() => ({
-			...defaultOptions,
-			...providedOptions,
-		}),
-		[defaultOptions, providedOptions],
-	);
-
-	return (
-		<GlobalFormOptionsContext.Provider value={options}>
-			{children}
-		</GlobalFormOptionsContext.Provider>
-	);
-}
-
-export function useFormContext(formId?: string): FormContext {
-	const contexts = useContext(FormContextContext);
-	const context = formId
-		? contexts.find((context) => formId === context.formId)
-		: contexts[0];
-
-	if (!context) {
-		throw new Error(
-			'No form context found; Have you render a <FormProvider /> with the corresponding form context?',
-		);
-	}
-
-	return context;
-}
 
 /**
  * Core form hook that manages form state, validation, and submission.
@@ -470,792 +400,854 @@ export function useConform<
 	return [state, handleSubmit];
 }
 
-/**
- * The main React hook for form management. Handles form state, validation, and submission
- * while providing access to form metadata, field objects, and form actions.
- *
- * It can be called in two ways:
- * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
- * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
- *
- * @see https://conform.guide/api/react/future/useForm
- * @example Schema first setup with zod:
- *
- * ```tsx
- * const { form, fields } = useForm(zodSchema, {
- *   lastResult,
- *   shouldValidate: 'onBlur',
- * });
- *
- * return (
- *   <form {...form.props}>
- *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
- *     <div>{fields.email.errors}</div>
- *   </form>
- * );
- * ```
- *
- * @example Manual configuration setup with custom validation:
- *
- * ```tsx
- * const { form, fields } = useForm({
- *    onValidate({ payload, error }) {
- *     if (!payload.email) {
- * 		 error.fieldErrors.email = ['Required'];
- *     }
- *     return error;
- *   }
- * });
- *
- * return (
- *   <form {...form.props}>
- *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
- *     <div>{fields.email.errors}</div>
- *   </form>
- * );
- * ```
- */
-export function useForm<
-	Schema extends BaseSchemaType,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = InferOutput<Schema>,
+export function configureConform<
+	BaseErrorShape,
+	CustomFormMetadataDefinition extends FormMetadataDefinition<BaseErrorShape>,
+	CustomFieldMetadataDefinition extends FieldMetadataDefinition<BaseErrorShape>,
 >(
-	schema: Schema,
-	options: FormOptions<
-		InferInput<Schema>,
-		ErrorShape,
-		Value,
-		Schema,
-		string extends ErrorShape ? never : 'onValidate'
-	>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<InferInput<Schema>, ErrorShape>;
-	intent: IntentDispatcher<InferInput<Schema>>;
-};
-/**
- * @deprecated Use `useForm(schema, options)` instead for better type inference.
- */
-export function useForm<
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	options: FormOptions<
-		FormShape,
-		ErrorShape,
-		Value,
-		undefined,
-		undefined extends Value ? 'onValidate' : never
-	> & {
-		/**
-		 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-		 *
-		 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
-		 * Removes the need for manual onValidate setup.
-		 *
-		 */
-		schema: StandardSchemaV1<FormShape, Value>;
-	},
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<FormShape, ErrorShape>;
-	intent: IntentDispatcher<FormShape>;
-};
-export function useForm<
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<FormShape, ErrorShape>;
-	intent: IntentDispatcher<FormShape>;
-};
-export function useForm<
-	Schema extends BaseSchemaType = any,
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	schemaOrOptions:
-		| Schema
-		| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-	maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<Record<string, any>, ErrorShape>;
-	intent: IntentDispatcher;
-} {
-	let schema: Schema | undefined;
-	let options: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>;
+	config: ConformConfig<
+		BaseErrorShape,
+		CustomFormMetadataDefinition,
+		CustomFieldMetadataDefinition
+	> = {},
+) {
+	/**
+	 * Global config
+	 */
+	const globalConfig = {
+		...config,
+		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
+		serialize: config.serialize ?? serialize,
+		shouldValidate: config.shouldValidate ?? 'onSubmit',
+		shouldRevalidate:
+			config.shouldRevalidate ?? config.shouldValidate ?? 'onSubmit',
+	};
 
-	if (maybeOptions) {
-		schema = schemaOrOptions as Schema;
-		options = maybeOptions as FormOptions<
-			InferInput<Schema>,
-			ErrorShape,
-			Value,
-			Schema
-		>;
-	} else {
-		const fullOptions = schemaOrOptions as FormOptions<
-			InferInput<Schema>,
-			ErrorShape,
-			Value,
-			Schema
-		> & {
-			schema?: Schema;
-		};
+	/**
+	 * Global forms observer shared across all forms
+	 */
+	const observer = createGlobalFormsObserver();
 
-		options = fullOptions;
-		schema = fullOptions.schema;
+	/**
+	 * React context
+	 */
+	const ReactFormContext = createContext<FormContext<BaseErrorShape>[]>([]);
+
+	/**
+	 * Provides form context to child components.
+	 * Stacks contexts to support nested forms, with latest context taking priority.
+	 */
+	function FormProvider(props: {
+		context: FormContext<BaseErrorShape>;
+		children: React.ReactNode;
+	}): React.ReactElement {
+		const stack = useContext(ReactFormContext);
+		const value = useMemo(
+			// Put the latest form context first to ensure that to be the first one found
+			() => [props.context].concat(stack),
+			[stack, props.context],
+		);
+
+		return (
+			<ReactFormContext.Provider value={value}>
+				{props.children}
+			</ReactFormContext.Provider>
+		);
 	}
 
-	const { id, constraint } = options;
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const optionsRef = useLatest(options);
-	const globalOptionsRef = useLatest(globalOptions);
-	const fallbackId = useId();
-	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<
-		FormShape,
-		ErrorShape,
-		Value,
-		InferOutput<Schema>
-	>(formId, {
-		...options,
-		serialize: globalOptions.serialize,
-		intentName: globalOptions.intentName,
-		onError: options.onError ?? focusFirstInvalidField,
-		onValidate(ctx) {
-			if (schema) {
-				const standardResult = schema['~standard'].validate(ctx.payload);
+	function useFormContext(formId?: string): FormContext<BaseErrorShape> {
+		const contexts = useContext(ReactFormContext);
+		const context = formId
+			? contexts.find((context) => formId === context.formId)
+			: contexts[0];
 
-				if (standardResult instanceof Promise) {
-					return standardResult.then((actualStandardResult) => {
-						if (typeof options.onValidate === 'function') {
-							throw new Error(
-								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-							);
-						}
-
-						return resolveStandardSchemaResult(
-							actualStandardResult,
-						) as ValidateResult<ErrorShape, any>;
-					});
-				}
-
-				const resolvedResult = resolveStandardSchemaResult(standardResult);
-
-				if (!options.onValidate) {
-					return resolvedResult as ValidateResult<ErrorShape, Value>;
-				}
-
-				// Update the schema error in the context
-				if (resolvedResult.error) {
-					ctx.error = resolvedResult.error;
-				}
-
-				ctx.schemaValue = resolvedResult.value;
-
-				const validateResult = resolveValidateResult(options.onValidate(ctx));
-
-				if (validateResult.syncResult) {
-					validateResult.syncResult.value ??= resolvedResult.value;
-				}
-
-				if (validateResult.asyncResult) {
-					validateResult.asyncResult = validateResult.asyncResult.then(
-						(result) => {
-							result.value ??= resolvedResult.value;
-							return result;
-						},
-					);
-				}
-
-				return [validateResult.syncResult, validateResult.asyncResult];
-			}
-
-			return (
-				options.onValidate?.(ctx) ?? {
-					// To avoid conform falling back to server validation,
-					// if neither schema nor validation handler is provided,
-					// we just treat it as a valid client submission
-					error: null,
-				}
+		if (!context) {
+			throw new Error(
+				'No form context found; Have you render a <FormProvider /> with the corresponding form context?',
 			);
-		},
-	});
-	const intent = useIntent<FormShape>(formId);
-	const context = useMemo<FormContext<ErrorShape>>(
-		() => ({
-			formId,
-			state,
-			constraint: constraint ?? null,
-			handleSubmit,
-			handleInput(event) {
-				if (
-					!isFieldElement(event.target) ||
-					event.target.name === '' ||
-					event.target.form === null ||
-					event.target.form !== getFormElement(formId)
-				) {
-					return;
-				}
+		}
 
-				optionsRef.current.onInput?.({
-					...event,
-					target: event.target,
-					currentTarget: event.target.form,
-				});
+		return context;
+	}
 
-				if (event.defaultPrevented) {
-					return;
-				}
-
-				const {
-					shouldValidate = globalOptionsRef.current.shouldValidate,
-					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
-						shouldValidate,
-				} = optionsRef.current;
-
-				if (
-					isTouched(state, event.target.name)
-						? shouldRevalidate === 'onInput'
-						: shouldValidate === 'onInput'
-				) {
-					intent.validate(event.target.name);
-				}
-			},
-			handleBlur(event) {
-				if (
-					!isFieldElement(event.target) ||
-					event.target.name === '' ||
-					event.target.form === null ||
-					event.target.form !== getFormElement(formId)
-				) {
-					return;
-				}
-
-				optionsRef.current.onBlur?.({
-					...event,
-					target: event.target,
-					currentTarget: event.target.form,
-				});
-
-				if (event.defaultPrevented) {
-					return;
-				}
-
-				const {
-					shouldValidate = globalOptionsRef.current.shouldValidate,
-					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
-						shouldValidate,
-				} = optionsRef.current;
-
-				if (
-					isTouched(state, event.target.name)
-						? shouldRevalidate === 'onBlur'
-						: shouldValidate === 'onBlur'
-				) {
-					intent.validate(event.target.name);
-				}
-			},
-		}),
-		[
-			formId,
-			state,
-			constraint,
-			handleSubmit,
-			intent,
-			optionsRef,
-			globalOptionsRef,
-		],
-	);
-	const form = useMemo(
-		() =>
-			getFormMetadata(context, {
-				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
-	);
-	const fields = useMemo(
-		() =>
-			getFieldset<FormShape, ErrorShape>(context, {
-				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
-	);
-
-	return {
-		form,
-		fields,
-		intent,
+	/**
+	 * The main React hook for form management. Handles form state, validation, and submission
+	 * while providing access to form metadata, field objects, and form actions.
+	 *
+	 * It can be called in two ways:
+	 * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
+	 * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
+	 *
+	 * @see https://conform.guide/api/react/future/useForm
+	 * @example Schema first setup with zod:
+	 *
+	 * ```tsx
+	 * const { form, fields } = useForm(zodSchema, {
+	 *   lastResult,
+	 *   shouldValidate: 'onBlur',
+	 * });
+	 *
+	 * return (
+	 *   <form {...form.props}>
+	 *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+	 *     <div>{fields.email.errors}</div>
+	 *   </form>
+	 * );
+	 * ```
+	 *
+	 * @example Manual configuration setup with custom validation:
+	 *
+	 * ```tsx
+	 * const { form, fields } = useForm({
+	 *    onValidate({ payload, error }) {
+	 *     if (!payload.email) {
+	 * 		 error.fieldErrors.email = ['Required'];
+	 *     }
+	 *     return error;
+	 *   }
+	 * });
+	 *
+	 * return (
+	 *   <form {...form.props}>
+	 *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+	 *     <div>{fields.email.errors}</div>
+	 *   </form>
+	 * );
+	 * ```
+	 */
+	function useForm<
+		Schema extends BaseSchemaType,
+		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		Value = InferOutput<Schema>,
+	>(
+		schema: Schema,
+		options: FormOptions<
+			InferInput<Schema>,
+			ErrorShape,
+			Value,
+			Schema,
+			string extends ErrorShape ? never : 'onValidate'
+		>,
+	): {
+		form: FormMetadata<
+			ErrorShape,
+			CustomFormMetadataDefinition,
+			CustomFieldMetadataDefinition
+		>;
+		fields: Fieldset<
+			InferInput<Schema>,
+			ErrorShape,
+			CustomFieldMetadataDefinition
+		>;
+		intent: IntentDispatcher<InferInput<Schema>>;
 	};
-}
-
-/**
- * A React hook that provides access to form-level metadata and state.
- * Requires `FormProvider` context when used in child components.
- *
- * @see https://conform.guide/api/react/future/useFormMetadata
- * @example
- * ```tsx
- * function ErrorSummary() {
- *   const form = useFormMetadata();
- *
- *   if (form.valid) return null;
- *
- *   return (
- *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
- *   );
- * }
- * ```
- */
-export function useFormMetadata(
-	options: {
-		formId?: string;
-	} = {},
-): FormMetadata {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const context = useFormContext(options.formId);
-	const formMetadata = useMemo(
-		() =>
-			getFormMetadata(context, {
-				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
-	);
-
-	return formMetadata;
-}
-
-/**
- * A React hook that provides access to a specific field's metadata and state.
- * Requires `FormProvider` context when used in child components.
- *
- * @see https://conform.guide/api/react/future/useField
- * @example
- * ```tsx
- * function FormField({ name, label }) {
- *   const field = useField(name);
- *
- *   return (
- *     <div>
- *       <label htmlFor={field.id}>{label}</label>
- *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
- *       {field.errors && <div>{field.errors.join(', ')}</div>}
- *     </div>
- *   );
- * }
- * ```
- */
-export function useField<FieldShape = any>(
-	name: FieldName<FieldShape>,
-	options: {
-		formId?: string;
-	} = {},
-): FieldMetadata<FieldShape> {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const context = useFormContext(options.formId);
-	const field = useMemo(
-		() =>
-			getField(context, {
-				name,
-				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
-			}),
-		[
-			context,
-			name,
-			globalOptions.serialize,
-			globalOptions.defineCustomMetadata,
-		],
-	);
-
-	return field;
-}
-
-/**
- * A React hook that provides an intent dispatcher for programmatic form actions.
- * Intent dispatchers allow you to trigger form operations like validation, field updates,
- * and array manipulations without manual form submission.
- *
- * @see https://conform.guide/api/react/future/useIntent
- * @example
- * ```tsx
- * function ResetButton() {
- *   const buttonRef = useRef<HTMLButtonElement>(null);
- *   const intent = useIntent(buttonRef);
- *
- *   return (
- *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
- *       Reset Form
- *     </button>
- *   );
- * }
- * ```
- */
-export function useIntent<FormShape extends Record<string, any>>(
-	formRef: FormRef,
-): IntentDispatcher<FormShape> {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-
-	return useMemo(
-		() =>
-			createIntentDispatcher(
-				() => getFormElement(formRef),
-				globalOptions.intentName,
-			),
-		[formRef, globalOptions.intentName],
-	);
-}
-
-/**
- * A React hook that lets you sync the state of an input and dispatch native form events from it.
- * This is useful when emulating native input behavior — typically by rendering a hidden base input
- * and syncing it with a custom input.
- *
- * @example
- * ```ts
- * const control = useControl(options);
- * ```
- */
-export function useControl(options?: {
 	/**
-	 * The initial value of the base input. It will be used to set the value
-	 * when the input is first registered.
+	 * @deprecated Use `useForm(schema, options)` instead for better type inference.
 	 */
-	defaultValue?: string | string[] | File | File[] | null | undefined;
-	/**
-	 * Whether the base input should be checked by default. It will be applied
-	 * when the input is first registered.
-	 */
-	defaultChecked?: boolean | undefined;
-	/**
-	 * The value of a checkbox or radio input when checked. This sets the
-	 * value attribute of the base input.
-	 */
-	value?: string;
-	/**
-	 * A callback function that is triggered when the base input is focused.
-	 * Use this to delegate focus to a custom input.
-	 */
-	onFocus?: () => void;
-}): Control {
-	const { observer } = useContext(GlobalFormOptionsContext);
-	const inputRef = useRef<
-		| HTMLInputElement
-		| HTMLSelectElement
-		| HTMLTextAreaElement
-		| Array<HTMLInputElement>
-		| null
-	>(null);
-	const formRef = useMemo(
-		() => ({
-			get current() {
-				const input = inputRef.current;
-				if (!input) {
-					return null;
-				}
-				return Array.isArray(input) ? input[0]?.form ?? null : input.form;
-			},
-		}),
-		[],
-	);
-	const eventDispatched = useRef<{
-		change?: number;
-		focus?: number;
-		blur?: number;
-	}>({});
-
-	const defaultSnapshot = createDefaultSnapshot(
-		options?.defaultValue,
-		options?.defaultChecked,
-		options?.value,
-	);
-	const snapshotRef = useRef(defaultSnapshot);
-	const optionsRef = useRef(options);
-
-	useEffect(() => {
-		optionsRef.current = options;
-	});
-
-	// This is necessary to ensure that input is re-registered
-	// if the onFocus handler changes
-	const shouldHandleFocus = typeof options?.onFocus === 'function';
-	const snapshot = useSyncExternalStore(
-		useCallback(
-			(callback) =>
-				observer.onFieldUpdate((event) => {
-					const input = event.target;
-
-					if (
-						Array.isArray(inputRef.current)
-							? inputRef.current.some((item) => item === input)
-							: inputRef.current === input
-					) {
-						callback();
-					}
-				}),
-			[observer],
-		),
-		() => {
-			const input = inputRef.current;
-			const prev = snapshotRef.current;
-			const next = !input
-				? defaultSnapshot
-				: Array.isArray(input)
-					? {
-							value: getRadioGroupValue(input),
-							options: getCheckboxGroupValue(input),
-						}
-					: getInputSnapshot(input);
-
-			if (deepEqual(prev, next)) {
-				return prev;
-			}
-
-			snapshotRef.current = next;
-			return next;
+	function useForm<
+		FormShape extends Record<string, any> = Record<string, any>,
+		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		Value = undefined,
+	>(
+		options: FormOptions<
+			FormShape,
+			ErrorShape,
+			Value,
+			undefined,
+			undefined extends Value ? 'onValidate' : never
+		> & {
+			/**
+			 * @deprecated Use `useForm(schema, options)` instead for better type inference.
+			 *
+			 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
+			 * Removes the need for manual onValidate setup.
+			 *
+			 */
+			schema: StandardSchemaV1<FormShape, Value>;
 		},
-		() => snapshotRef.current,
-	);
+	): {
+		form: FormMetadata<ErrorShape>;
+		fields: Fieldset<FormShape, ErrorShape>;
+		intent: IntentDispatcher<FormShape>;
+	};
+	function useForm<
+		FormShape extends Record<string, any> = Record<string, any>,
+		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		Value = undefined,
+	>(
+		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+	): {
+		form: FormMetadata<ErrorShape>;
+		fields: Fieldset<FormShape, ErrorShape>;
+		intent: IntentDispatcher<FormShape>;
+	};
+	function useForm<
+		Schema extends BaseSchemaType = any,
+		FormShape extends Record<string, any> = Record<string, any>,
+		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		Value = undefined,
+	>(
+		schemaOrOptions:
+			| Schema
+			| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+		maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
+	): {
+		form: FormMetadata<
+			ErrorShape,
+			CustomFormMetadataDefinition,
+			CustomFieldMetadataDefinition
+		>;
+		fields: Fieldset<Record<string, any>, ErrorShape>;
+		intent: IntentDispatcher;
+	} {
+		let schema: Schema | undefined;
+		let options: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>;
 
-	useEffect(() => {
-		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
-			return (event: Event) => {
-				if (
-					Array.isArray(inputRef.current)
-						? inputRef.current.some((item) => item === event.target)
-						: inputRef.current === event.target
-				) {
-					const timer = eventDispatched.current[listener];
-
-					if (timer) {
-						clearTimeout(timer);
-					}
-
-					eventDispatched.current[listener] = window.setTimeout(() => {
-						eventDispatched.current[listener] = undefined;
-					});
-
-					if (listener === 'focus') {
-						optionsRef.current?.onFocus?.();
-					}
-				}
+		if (maybeOptions) {
+			schema = schemaOrOptions as Schema;
+			options = maybeOptions as FormOptions<
+				InferInput<Schema>,
+				ErrorShape,
+				Value,
+				Schema
+			>;
+		} else {
+			const fullOptions = schemaOrOptions as FormOptions<
+				InferInput<Schema>,
+				ErrorShape,
+				Value,
+				Schema
+			> & {
+				schema?: Schema;
 			};
-		};
-		const inputHandler = createEventListener('change');
-		const focusHandler = createEventListener('focus');
-		const blurHandler = createEventListener('blur');
 
-		document.addEventListener('input', inputHandler, true);
-		document.addEventListener('focusin', focusHandler, true);
-		document.addEventListener('focusout', blurHandler, true);
+			options = fullOptions;
+			schema = fullOptions.schema;
+		}
 
-		return () => {
-			document.removeEventListener('input', inputHandler, true);
-			document.removeEventListener('focusin', focusHandler, true);
-			document.removeEventListener('focusout', blurHandler, true);
-		};
-	}, []);
+		const { id, constraint } = options;
+		const optionsRef = useLatest(options);
+		const fallbackId = useId();
+		const formId = id ?? `form-${fallbackId}`;
+		const [state, handleSubmit] = useConform<
+			FormShape,
+			ErrorShape,
+			Value,
+			InferOutput<Schema>
+		>(formId, {
+			...options,
+			serialize: globalConfig.serialize,
+			intentName: globalConfig.intentName,
+			onError: options.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (schema) {
+					const standardResult = schema['~standard'].validate(ctx.payload);
 
-	return {
-		value: snapshot.value,
-		checked: snapshot.checked,
-		options: snapshot.options,
-		files: snapshot.files,
-		formRef,
-		register: useCallback(
-			(element) => {
-				if (!element) {
-					inputRef.current = null;
-				} else if (isFieldElement(element)) {
-					inputRef.current = element;
+					if (standardResult instanceof Promise) {
+						return standardResult.then((actualStandardResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
 
-					// Conform excludes hidden type inputs by default when updating form values
-					// Fix that by using the hidden attribute instead
-					if (element.type === 'hidden') {
-						element.hidden = true;
-						element.removeAttribute('type');
+							return resolveStandardSchemaResult(
+								actualStandardResult,
+							) as ValidateResult<ErrorShape, any>;
+						});
 					}
 
-					if (shouldHandleFocus) {
-						makeInputFocusable(element);
+					const resolvedResult = resolveStandardSchemaResult(standardResult);
+
+					if (!options.onValidate) {
+						return resolvedResult as ValidateResult<ErrorShape, Value>;
 					}
 
-					if (element.type === 'checkbox' || element.type === 'radio') {
-						// React set the value as empty string incorrectly when the value is undefined
-						// This make sure the checkbox value falls back to the default value "on" properly
-						// @see https://github.com/facebook/react/issues/17590
-						element.value = optionsRef.current?.value ?? 'on';
+					// Update the schema error in the context
+					if (resolvedResult.error) {
+						ctx.error = resolvedResult.error;
 					}
 
-					initializeField(element, optionsRef.current);
-				} else {
-					const inputs = Array.from(element);
-					const name = inputs[0]?.name ?? '';
-					const type = inputs[0]?.type ?? '';
+					ctx.schemaValue = resolvedResult.value;
 
-					if (
-						!name ||
-						!(type === 'checkbox' || type === 'radio') ||
-						!inputs.every((input) => input.name === name && input.type === type)
-					) {
-						throw new Error(
-							'You can only register a checkbox or radio group with the same name',
+					const validateResult = resolveValidateResult(options.onValidate(ctx));
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= resolvedResult.value;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= resolvedResult.value;
+								return result;
+							},
 						);
 					}
 
-					inputRef.current = inputs;
+					return [validateResult.syncResult, validateResult.asyncResult];
+				}
 
-					for (const input of inputs) {
-						if (shouldHandleFocus) {
-							makeInputFocusable(input);
+				return (
+					options.onValidate?.(ctx) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
+			},
+		});
+		const intent = useIntent<FormShape>(formId);
+		const context = useMemo<FormContext<ErrorShape>>(
+			() => ({
+				formId,
+				state,
+				constraint: constraint ?? null,
+				handleSubmit,
+				handleInput(event) {
+					if (
+						!isFieldElement(event.target) ||
+						event.target.name === '' ||
+						event.target.form === null ||
+						event.target.form !== getFormElement(formId)
+					) {
+						return;
+					}
+
+					optionsRef.current.onInput?.({
+						...event,
+						target: event.target,
+						currentTarget: event.target.form,
+					});
+
+					if (event.defaultPrevented) {
+						return;
+					}
+
+					const {
+						shouldValidate = globalConfig.shouldValidate,
+						shouldRevalidate = globalConfig.shouldRevalidate,
+					} = optionsRef.current;
+
+					if (
+						isTouched(state, event.target.name)
+							? shouldRevalidate === 'onInput'
+							: shouldValidate === 'onInput'
+					) {
+						intent.validate(event.target.name);
+					}
+				},
+				handleBlur(event) {
+					if (
+						!isFieldElement(event.target) ||
+						event.target.name === '' ||
+						event.target.form === null ||
+						event.target.form !== getFormElement(formId)
+					) {
+						return;
+					}
+
+					optionsRef.current.onBlur?.({
+						...event,
+						target: event.target,
+						currentTarget: event.target.form,
+					});
+
+					if (event.defaultPrevented) {
+						return;
+					}
+
+					const {
+						shouldValidate = globalConfig.shouldValidate,
+						shouldRevalidate = globalConfig.shouldRevalidate,
+					} = optionsRef.current;
+
+					if (
+						isTouched(state, event.target.name)
+							? shouldRevalidate === 'onBlur'
+							: shouldValidate === 'onBlur'
+					) {
+						intent.validate(event.target.name);
+					}
+				},
+			}),
+			[formId, state, constraint, handleSubmit, intent, optionsRef],
+		);
+		const form = useMemo(
+			() =>
+				getFormMetadata(context, {
+					serialize: globalConfig.serialize,
+					customizeForm: globalConfig.customizeFormMetadata,
+					customizeField: globalConfig.customizeFieldMetadata,
+				}),
+			[context],
+		);
+		const fields = useMemo(
+			() =>
+				getFieldset(context, {
+					serialize: globalConfig.serialize,
+					customize: globalConfig.customizeFieldMetadata,
+				}),
+			[context],
+		);
+
+		return {
+			form,
+			fields,
+			intent,
+		};
+	}
+
+	/**
+	 * A React hook that provides access to form-level metadata and state.
+	 * Requires `FormProvider` context when used in child components.
+	 *
+	 * @see https://conform.guide/api/react/future/useFormMetadata
+	 * @example
+	 * ```tsx
+	 * function ErrorSummary() {
+	 *   const form = useFormMetadata();
+	 *
+	 *   if (form.valid) return null;
+	 *
+	 *   return (
+	 *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
+	 *   );
+	 * }
+	 * ```
+	 */
+	function useFormMetadata(
+		options: {
+			formId?: string;
+		} = {},
+	): FormMetadata<
+		BaseErrorShape,
+		CustomFormMetadataDefinition,
+		CustomFieldMetadataDefinition
+	> {
+		const context = useFormContext(options.formId);
+		const formMetadata = useMemo(
+			() =>
+				getFormMetadata(context, {
+					serialize: globalConfig.serialize,
+					customizeForm: globalConfig.customizeFormMetadata,
+					customizeField: globalConfig.customizeFieldMetadata,
+				}),
+			[context],
+		);
+
+		return formMetadata as FormMetadata<
+			BaseErrorShape,
+			CustomFormMetadataDefinition,
+			CustomFieldMetadataDefinition
+		>;
+	}
+
+	/**
+	 * A React hook that provides access to a specific field's metadata and state.
+	 * Requires `FormProvider` context when used in child components.
+	 *
+	 * @see https://conform.guide/api/react/future/useField
+	 * @example
+	 * ```tsx
+	 * function FormField({ name, label }) {
+	 *   const field = useField(name);
+	 *
+	 *   return (
+	 *     <div>
+	 *       <label htmlFor={field.id}>{label}</label>
+	 *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
+	 *       {field.errors && <div>{field.errors.join(', ')}</div>}
+	 *     </div>
+	 *   );
+	 * }
+	 * ```
+	 */
+	function useField<FieldShape = any>(
+		name: FieldName<FieldShape>,
+		options: {
+			formId?: string;
+		} = {},
+	): FieldMetadata<FieldShape, BaseErrorShape, CustomFieldMetadataDefinition> {
+		const context = useFormContext(options.formId);
+		const field = useMemo(
+			() =>
+				getField(context, {
+					name,
+					serialize: globalConfig.serialize,
+					customize: globalConfig.customizeFieldMetadata,
+				}),
+			[context, name],
+		);
+
+		return field;
+	}
+
+	/**
+	 * A React hook that provides an intent dispatcher for programmatic form actions.
+	 * Intent dispatchers allow you to trigger form operations like validation, field updates,
+	 * and array manipulations without manual form submission.
+	 *
+	 * @see https://conform.guide/api/react/future/useIntent
+	 * @example
+	 * ```tsx
+	 * function ResetButton() {
+	 *   const buttonRef = useRef<HTMLButtonElement>(null);
+	 *   const intent = useIntent(buttonRef);
+	 *
+	 *   return (
+	 *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
+	 *       Reset Form
+	 *     </button>
+	 *   );
+	 * }
+	 * ```
+	 */
+	function useIntent<FormShape extends Record<string, any>>(
+		formRef: FormRef,
+	): IntentDispatcher<FormShape> {
+		return useMemo(
+			() =>
+				createIntentDispatcher(
+					() => getFormElement(formRef),
+					globalConfig.intentName,
+				),
+			[formRef],
+		);
+	}
+
+	/**
+	 * A React hook that lets you sync the state of an input and dispatch native form events from it.
+	 * This is useful when emulating native input behavior — typically by rendering a hidden base input
+	 * and syncing it with a custom input.
+	 *
+	 * @example
+	 * ```ts
+	 * const control = useControl(options);
+	 * ```
+	 */
+	function useControl(options?: {
+		/**
+		 * The initial value of the base input. It will be used to set the value
+		 * when the input is first registered.
+		 */
+		defaultValue?: string | string[] | File | File[] | null | undefined;
+		/**
+		 * Whether the base input should be checked by default. It will be applied
+		 * when the input is first registered.
+		 */
+		defaultChecked?: boolean | undefined;
+		/**
+		 * The value of a checkbox or radio input when checked. This sets the
+		 * value attribute of the base input.
+		 */
+		value?: string;
+		/**
+		 * A callback function that is triggered when the base input is focused.
+		 * Use this to delegate focus to a custom input.
+		 */
+		onFocus?: () => void;
+	}): Control {
+		const inputRef = useRef<
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| Array<HTMLInputElement>
+			| null
+		>(null);
+		const formRef = useMemo(
+			() => ({
+				get current() {
+					const input = inputRef.current;
+					if (!input) {
+						return null;
+					}
+					return Array.isArray(input) ? input[0]?.form ?? null : input.form;
+				},
+			}),
+			[],
+		);
+		const eventDispatched = useRef<{
+			change?: number;
+			focus?: number;
+			blur?: number;
+		}>({});
+
+		const defaultSnapshot = createDefaultSnapshot(
+			options?.defaultValue,
+			options?.defaultChecked,
+			options?.value,
+		);
+		const snapshotRef = useRef(defaultSnapshot);
+		const optionsRef = useRef(options);
+
+		useEffect(() => {
+			optionsRef.current = options;
+		});
+
+		// This is necessary to ensure that input is re-registered
+		// if the onFocus handler changes
+		const shouldHandleFocus = typeof options?.onFocus === 'function';
+		const snapshot = useSyncExternalStore(
+			useCallback(
+				(callback) =>
+					observer.onFieldUpdate((event) => {
+						const input = event.target;
+
+						if (
+							Array.isArray(inputRef.current)
+								? inputRef.current.some((item) => item === input)
+								: inputRef.current === input
+						) {
+							callback();
+						}
+					}),
+				[observer],
+			),
+			() => {
+				const input = inputRef.current;
+				const prev = snapshotRef.current;
+				const next = !input
+					? defaultSnapshot
+					: Array.isArray(input)
+						? {
+								value: getRadioGroupValue(input),
+								options: getCheckboxGroupValue(input),
+							}
+						: getInputSnapshot(input);
+
+				if (deepEqual(prev, next)) {
+					return prev;
+				}
+
+				snapshotRef.current = next;
+				return next;
+			},
+			() => snapshotRef.current,
+		);
+
+		useEffect(() => {
+			const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
+				return (event: Event) => {
+					if (
+						Array.isArray(inputRef.current)
+							? inputRef.current.some((item) => item === event.target)
+							: inputRef.current === event.target
+					) {
+						const timer = eventDispatched.current[listener];
+
+						if (timer) {
+							clearTimeout(timer);
 						}
 
-						initializeField(input, {
-							// We will not be uitlizing defaultChecked / value on checkbox / radio group
-							defaultValue: optionsRef.current?.defaultValue,
+						eventDispatched.current[listener] = window.setTimeout(() => {
+							eventDispatched.current[listener] = undefined;
 						});
+
+						if (listener === 'focus') {
+							optionsRef.current?.onFocus?.();
+						}
+					}
+				};
+			};
+			const inputHandler = createEventListener('change');
+			const focusHandler = createEventListener('focus');
+			const blurHandler = createEventListener('blur');
+
+			document.addEventListener('input', inputHandler, true);
+			document.addEventListener('focusin', focusHandler, true);
+			document.addEventListener('focusout', blurHandler, true);
+
+			return () => {
+				document.removeEventListener('input', inputHandler, true);
+				document.removeEventListener('focusin', focusHandler, true);
+				document.removeEventListener('focusout', blurHandler, true);
+			};
+		}, []);
+
+		return {
+			value: snapshot.value,
+			checked: snapshot.checked,
+			options: snapshot.options,
+			files: snapshot.files,
+			formRef,
+			register: useCallback(
+				(element) => {
+					if (!element) {
+						inputRef.current = null;
+					} else if (isFieldElement(element)) {
+						inputRef.current = element;
+
+						// Conform excludes hidden type inputs by default when updating form values
+						// Fix that by using the hidden attribute instead
+						if (element.type === 'hidden') {
+							element.hidden = true;
+							element.removeAttribute('type');
+						}
+
+						if (shouldHandleFocus) {
+							makeInputFocusable(element);
+						}
+
+						if (element.type === 'checkbox' || element.type === 'radio') {
+							// React set the value as empty string incorrectly when the value is undefined
+							// This make sure the checkbox value falls back to the default value "on" properly
+							// @see https://github.com/facebook/react/issues/17590
+							element.value = optionsRef.current?.value ?? 'on';
+						}
+
+						initializeField(element, optionsRef.current);
+					} else {
+						const inputs = Array.from(element);
+						const name = inputs[0]?.name ?? '';
+						const type = inputs[0]?.type ?? '';
+
+						if (
+							!name ||
+							!(type === 'checkbox' || type === 'radio') ||
+							!inputs.every(
+								(input) => input.name === name && input.type === type,
+							)
+						) {
+							throw new Error(
+								'You can only register a checkbox or radio group with the same name',
+							);
+						}
+
+						inputRef.current = inputs;
+
+						for (const input of inputs) {
+							if (shouldHandleFocus) {
+								makeInputFocusable(input);
+							}
+
+							initializeField(input, {
+								// We will not be uitlizing defaultChecked / value on checkbox / radio group
+								defaultValue: optionsRef.current?.defaultValue,
+							});
+						}
+					}
+				},
+				[shouldHandleFocus],
+			),
+			change: useCallback((value) => {
+				if (!eventDispatched.current.change) {
+					const element = Array.isArray(inputRef.current)
+						? inputRef.current?.find((input) => {
+								const wasChecked = input.checked;
+								const isChecked = Array.isArray(value)
+									? value.some((item) => item === input.value)
+									: input.value === value;
+
+								switch (input.type) {
+									case 'checkbox':
+										// We assume that only one checkbox can be checked at a time
+										// So we will pick the first element with checked state changed
+										return wasChecked !== isChecked;
+									case 'radio':
+										// We cannot uncheck a radio button
+										// So we will pick the first element that should be checked
+										return isChecked;
+									default:
+										return false;
+								}
+							})
+						: inputRef.current;
+
+					if (element) {
+						change(
+							element,
+							typeof value === 'boolean'
+								? value
+									? element.value
+									: null
+								: value,
+						);
 					}
 				}
-			},
-			[shouldHandleFocus],
-		),
-		change: useCallback((value) => {
-			if (!eventDispatched.current.change) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current?.find((input) => {
-							const wasChecked = input.checked;
-							const isChecked = Array.isArray(value)
-								? value.some((item) => item === input.value)
-								: input.value === value;
 
-							switch (input.type) {
-								case 'checkbox':
-									// We assume that only one checkbox can be checked at a time
-									// So we will pick the first element with checked state changed
-									return wasChecked !== isChecked;
-								case 'radio':
-									// We cannot uncheck a radio button
-									// So we will pick the first element that should be checked
-									return isChecked;
-								default:
-									return false;
-							}
-						})
-					: inputRef.current;
-
-				if (element) {
-					change(
-						element,
-						typeof value === 'boolean' ? (value ? element.value : null) : value,
-					);
-				}
-			}
-
-			if (eventDispatched.current.change) {
-				clearTimeout(eventDispatched.current.change);
-			}
-
-			eventDispatched.current.change = undefined;
-		}, []),
-		focus: useCallback(() => {
-			if (!eventDispatched.current.focus) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current[0]
-					: inputRef.current;
-
-				if (element) {
-					focus(element);
-				}
-			}
-
-			if (eventDispatched.current.focus) {
-				clearTimeout(eventDispatched.current.focus);
-			}
-
-			eventDispatched.current.focus = undefined;
-		}, []),
-		blur: useCallback(() => {
-			if (!eventDispatched.current.blur) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current[0]
-					: inputRef.current;
-
-				if (element) {
-					blur(element);
-				}
-			}
-
-			if (eventDispatched.current.blur) {
-				clearTimeout(eventDispatched.current.blur);
-			}
-
-			eventDispatched.current.blur = undefined;
-		}, []),
-	};
-}
-
-/**
- * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
- * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
- *
- * @see https://conform.guide/api/react/future/useFormData
- * @example
- * ```ts
- * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
- * ```
- */
-export function useFormData<Value = any>(
-	formRef: FormRef,
-	select: Selector<FormData, Value>,
-	options: UseFormDataOptions & {
-		acceptFiles: true;
-	},
-): Value;
-export function useFormData<Value = any>(
-	formRef: FormRef,
-	select: Selector<URLSearchParams, Value>,
-	options?: UseFormDataOptions & {
-		acceptFiles?: boolean;
-	},
-): Value;
-export function useFormData<Value = any>(
-	formRef: FormRef,
-	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
-	options?: UseFormDataOptions,
-): Value {
-	const { observer } = useContext(GlobalFormOptionsContext);
-	const valueRef = useRef<Value>();
-	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
-	const value = useSyncExternalStore(
-		useCallback(
-			(callback) => {
-				const formElement = getFormElement(formRef);
-
-				if (formElement) {
-					const formData = getFormData(formElement);
-					formDataRef.current = options?.acceptFiles
-						? formData
-						: new URLSearchParams(
-								Array.from(formData).map(([key, value]) => [
-									key,
-									value.toString(),
-								]),
-							);
+				if (eventDispatched.current.change) {
+					clearTimeout(eventDispatched.current.change);
 				}
 
-				const unsubscribe = observer.onFormUpdate((event) => {
-					if (event.target === getFormElement(formRef)) {
-						const formData = getFormData(event.target, event.submitter);
+				eventDispatched.current.change = undefined;
+			}, []),
+			focus: useCallback(() => {
+				if (!eventDispatched.current.focus) {
+					const element = Array.isArray(inputRef.current)
+						? inputRef.current[0]
+						: inputRef.current;
+
+					if (element) {
+						focus(element);
+					}
+				}
+
+				if (eventDispatched.current.focus) {
+					clearTimeout(eventDispatched.current.focus);
+				}
+
+				eventDispatched.current.focus = undefined;
+			}, []),
+			blur: useCallback(() => {
+				if (!eventDispatched.current.blur) {
+					const element = Array.isArray(inputRef.current)
+						? inputRef.current[0]
+						: inputRef.current;
+
+					if (element) {
+						blur(element);
+					}
+				}
+
+				if (eventDispatched.current.blur) {
+					clearTimeout(eventDispatched.current.blur);
+				}
+
+				eventDispatched.current.blur = undefined;
+			}, []),
+		};
+	}
+
+	/**
+	 * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
+	 * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
+	 *
+	 * @see https://conform.guide/api/react/future/useFormData
+	 * @example
+	 * ```ts
+	 * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
+	 * ```
+	 */
+	function useFormData<Value = any>(
+		formRef: FormRef,
+		select: Selector<FormData, Value>,
+		options: UseFormDataOptions & {
+			acceptFiles: true;
+		},
+	): Value;
+	function useFormData<Value = any>(
+		formRef: FormRef,
+		select: Selector<URLSearchParams, Value>,
+		options?: UseFormDataOptions & {
+			acceptFiles?: boolean;
+		},
+	): Value;
+	function useFormData<Value = any>(
+		formRef: FormRef,
+		select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
+		options?: UseFormDataOptions,
+	): Value {
+		const valueRef = useRef<Value>();
+		const formDataRef = useRef<FormData | URLSearchParams | null>(null);
+		const value = useSyncExternalStore(
+			useCallback(
+				(callback) => {
+					const formElement = getFormElement(formRef);
+
+					if (formElement) {
+						const formData = getFormData(formElement);
 						formDataRef.current = options?.acceptFiles
 							? formData
 							: new URLSearchParams(
@@ -1264,33 +1256,57 @@ export function useFormData<Value = any>(
 										value.toString(),
 									]),
 								);
-						callback();
 					}
-				});
 
-				return unsubscribe;
+					const unsubscribe = observer.onFormUpdate((event) => {
+						if (event.target === getFormElement(formRef)) {
+							const formData = getFormData(event.target, event.submitter);
+							formDataRef.current = options?.acceptFiles
+								? formData
+								: new URLSearchParams(
+										Array.from(formData).map(([key, value]) => [
+											key,
+											value.toString(),
+										]),
+									);
+							callback();
+						}
+					});
+
+					return unsubscribe;
+				},
+				[formRef, options?.acceptFiles],
+			),
+			() => {
+				// @ts-expect-error FIXME
+				const result = select(formDataRef.current, valueRef.current);
+
+				if (
+					typeof valueRef.current !== 'undefined' &&
+					deepEqual(result, valueRef.current)
+				) {
+					return valueRef.current;
+				}
+
+				valueRef.current = result;
+
+				return result;
 			},
-			[observer, formRef, options?.acceptFiles],
-		),
-		() => {
-			// @ts-expect-error FIXME
-			const result = select(formDataRef.current, valueRef.current);
+			() => select(null, undefined),
+		);
 
-			if (
-				typeof valueRef.current !== 'undefined' &&
-				deepEqual(result, valueRef.current)
-			) {
-				return valueRef.current;
-			}
+		return value;
+	}
 
-			valueRef.current = result;
-
-			return result;
-		},
-		() => select(null, undefined),
-	);
-
-	return value;
+	return {
+		FormProvider,
+		useForm,
+		useFormData,
+		useFormMetadata,
+		useField,
+		useIntent,
+		useControl,
+	};
 }
 
 /**
@@ -1313,3 +1329,23 @@ export function useLatest<Value>(value: Value) {
 
 	return ref;
 }
+
+const {
+	FormProvider,
+	useForm,
+	useFormData,
+	useFormMetadata,
+	useField,
+	useControl,
+	useIntent,
+} = configureConform();
+
+export {
+	FormProvider,
+	useForm,
+	useFormMetadata,
+	useField,
+	useFormData,
+	useControl,
+	useIntent,
+};

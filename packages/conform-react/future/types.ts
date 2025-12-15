@@ -145,6 +145,71 @@ export type FormAction<
 	ctx: Context;
 };
 
+export type FormMetadataDefinition<BaseErrorShape> = <
+	ErrorShape extends BaseErrorShape,
+>(
+	metadata: BaseFormMetadata<ErrorShape>,
+) => Record<string, unknown>;
+
+/**
+ * A function type for defining custom field metadata properties.
+ */
+export type FieldMetadataDefinition<BaseErrorShape> = <
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+>(
+	metadata: BaseMetadata<FieldShape, ErrorShape>,
+	form: BaseFormMetadata<ErrorShape>,
+) => Record<string, unknown>;
+
+/**
+ * Configuration options for configureConform factory.
+ */
+export type ConformConfig<
+	BaseErrorShape,
+	CustomFormMetadataDefinition extends FormMetadataDefinition<BaseErrorShape>,
+	CustomFieldMetadataDefinition extends FieldMetadataDefinition<BaseErrorShape>,
+> = {
+	/**
+	 * The name of the submit button field that indicates the submission intent.
+	 *
+	 * @default "__intent__"
+	 */
+	intentName?: string;
+	/**
+	 * A custom serialization function for converting form data.
+	 */
+	serialize?: Serialize;
+	/**
+	 * Determines when validation should run for the first time on a field.
+	 *
+	 * @default "onSubmit"
+	 */
+	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Determines when validation should run again after the field has been validated once.
+	 *
+	 * @default Same as shouldValidate
+	 */
+	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * A type guard function to assert the shape of error objects.
+	 */
+	assertErrorShape?: (error: unknown) => error is BaseErrorShape;
+	/**
+	 * A function that defines custom form metadata properties.
+	 */
+	customizeFormMetadata?: CustomFormMetadataDefinition;
+	/**
+	 * A function that defines custom field metadata properties.
+	 * Useful for integrating with UI libraries or custom form components.
+	 */
+	customizeFieldMetadata?: CustomFieldMetadataDefinition;
+};
+
+/**
+ * @deprecated Use `ConformConfig` and `configureConform` instead.
+ */
 export type GlobalFormOptions = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -557,6 +622,9 @@ export interface CustomMetadata<
 	// User-defined properties
 }
 
+/**
+ * @deprecated Use `FieldMetadataDefinition` and `configureConform` instead.
+ */
 export type CustomMetadataDefinition = <
 	FieldShape,
 	ErrorShape extends BaseErrorShape,
@@ -570,29 +638,34 @@ export type CustomMetadataDefinition = <
 export type FieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> = Readonly<
-	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
-		? {}
-		: CustomMetadata<FieldShape, ErrorShape>) &
-		// Base metadata properties take precedence over custom metadata
-		BaseMetadata<FieldShape, ErrorShape>
->;
+	CustomMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+> = CustomMetadataDefinition extends (
+	metadata: BaseMetadata<FieldShape, ErrorShape>,
+) => infer Result
+	? Readonly<Prettify<BaseMetadata<FieldShape, ErrorShape> & Result>>
+	: Readonly<BaseMetadata<FieldShape, ErrorShape>>;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
-		ErrorShape
+		ErrorShape,
+		CustomMetadataDefinition
 	>;
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type FormMetadata<
+export type BaseFormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> = Readonly<{
+	CustomFieldMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+> = {
 	/** Unique identifier that changes on form reset */
 	key: string;
 	/** The form's unique identifier. */
@@ -626,13 +699,14 @@ export type FormMetadata<
 	/** Method to get metadata for a specific field by name. */
 	getField<FieldShape>(
 		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, ErrorShape>;
+	): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadataDefinition>;
 	/** Method to get a fieldset object for nested object fields. */
 	getFieldset<FieldShape>(
 		name?: FieldName<FieldShape>,
 	): Fieldset<
 		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
-		ErrorShape
+		ErrorShape,
+		CustomFieldMetadataDefinition
 	>;
 	/** Method to get an array of field objects for array fields. */
 	getFieldList<FieldShape>(
@@ -642,10 +716,25 @@ export type FormMetadata<
 			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 				? ItemShape
 				: unknown,
-			ErrorShape
+			ErrorShape,
+			CustomFieldMetadataDefinition
 		>
 	>;
-}>;
+};
+
+export type FormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFormMetadataDefinition extends
+		FormMetadataDefinition<ErrorShape> = FormMetadataDefinition<ErrorShape>,
+	CustomFieldMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+> = Readonly<
+	CustomFormMetadataDefinition extends (...args: any[]) => infer Result
+		? Prettify<
+				BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition> & Result
+			>
+		: BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+>;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>

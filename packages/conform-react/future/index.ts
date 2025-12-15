@@ -16,7 +16,8 @@ export type {
 	DefaultValue,
 	BaseMetadata,
 	CustomMetadata,
-	CustomMetadataDefinition,
+	FieldMetadataDefinition,
+	ConformConfig,
 	BaseErrorShape,
 	CustomTypes,
 	FormContext,
@@ -28,8 +29,8 @@ export type {
 	IntentDispatcher,
 } from './types';
 export {
+	configureConform,
 	FormProvider,
-	FormOptionsProvider,
 	useControl,
 	useField,
 	useForm,

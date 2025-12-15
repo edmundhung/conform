@@ -1648,7 +1648,6 @@ test('getField', () => {
 	expect(typeof usernameField.getFieldList).toBe('function');
 
 	// Test custom metadata
-	// @ts-expect-error allErrors is not set in CustomMetadata
 	expect(profileField.allErrors).toEqual([
 		'Address is incomplete',
 		'City is required',

@@ -20,7 +20,9 @@ import type {
 	UnknownIntent,
 	ActionHandler,
 	BaseMetadata,
-	CustomMetadataDefinition,
+	FieldMetadataDefinition,
+	FormMetadataDefinition,
+	BaseFormMetadata,
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
 
@@ -378,14 +380,23 @@ export function getConstraint(
 	return constraint;
 }
 
-export function getFormMetadata<ErrorShape>(
+export function getFormMetadata<
+	ErrorShape,
+	CustomFormMetadataDefinition extends FormMetadataDefinition<ErrorShape>,
+	CustomFieldMetadataDefinition extends FieldMetadataDefinition<ErrorShape>,
+>(
 	context: FormContext<ErrorShape>,
 	options?: {
 		serialize?: Serialize | undefined;
-		customize?: CustomMetadataDefinition | undefined;
+		customizeForm?: CustomFormMetadataDefinition | undefined;
+		customizeField?: CustomFieldMetadataDefinition | undefined;
 	},
-): FormMetadata<ErrorShape> {
-	return {
+): FormMetadata<
+	ErrorShape,
+	CustomFormMetadataDefinition,
+	CustomFieldMetadataDefinition
+> {
+	const metadata: BaseFormMetadata<ErrorShape> = {
 		key: context.state.resetKey,
 		id: context.formId,
 		errorId: `${context.formId}-form-error`,
@@ -418,36 +429,59 @@ export function getFormMetadata<ErrorShape>(
 			return getField(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customize,
+				customize: options?.customizeField,
 			});
 		},
 		getFieldset(name) {
 			return getFieldset(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customize,
+				customize: options?.customizeField,
 			});
 		},
 		getFieldList(name) {
 			return getFieldList(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customize,
+				customize: options?.customizeField,
 			});
 		},
 	};
+
+	return Object.assign(
+		metadata,
+		options?.customizeForm?.(metadata) ?? {},
+	) as FormMetadata<
+		ErrorShape,
+		CustomFormMetadataDefinition,
+		CustomFieldMetadataDefinition
+	>;
 }
 
-export function getField<FieldShape, ErrorShape = string>(
+export function getField<
+	FieldShape,
+	ErrorShape = string,
+	CustomFieldMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?: CustomMetadataDefinition | undefined;
+		customize?: CustomFieldMetadataDefinition | undefined;
+		form?:
+			| BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+			| undefined;
 		key?: string | undefined;
 	},
-): FieldMetadata<FieldShape, ErrorShape> {
-	const { key, name, serialize = defaultSerialize, customize } = options;
+): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadataDefinition> {
+	const {
+		key,
+		name,
+		serialize = defaultSerialize,
+		customize,
+		form = getFormMetadata(context, { serialize, customizeField: customize }),
+	} = options;
 	const id = `${context.formId}-field-${name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, name);
 	const metadata: BaseMetadata<FieldShape, ErrorShape> = {
@@ -502,45 +536,21 @@ export function getField<FieldShape, ErrorShape = string>(
 				customize,
 			});
 		},
+		// @ts-expect-error TODO
 		getFieldList() {
 			return getFieldList(context, {
-				name: name as string,
+				name,
 				serialize,
 				customize,
 			});
 		},
 	};
 
-	if (typeof customize !== 'function') {
-		return metadata;
-	}
-
-	let customMetadata: Record<string, unknown> | null = null;
-
-	return new Proxy(metadata, {
-		get(target, prop, receiver) {
-			if (Reflect.has(target, prop)) {
-				return Reflect.get(target, prop, receiver);
-			}
-
-			customMetadata ??= customize(metadata);
-
-			if (Reflect.has(customMetadata, prop)) {
-				return Reflect.get(customMetadata, prop, receiver);
-			}
-
-			// Allow React DevTools to inspect the object
-			// without throwing errors for internal properties
-			if (typeof prop === 'symbol' || prop === '$$typeof') {
-				return undefined;
-			}
-
-			throw new Error(
-				`Property "${String(prop)}" does not exist on field metadata. ` +
-					`If you have defined the CustomMetadata interface to include "${String(prop)}", make sure to also implement it through the "defineCustomMetadata" property on <FormOptionsProvider />.`,
-			);
-		},
-	});
+	return Object.assign(metadata, customize?.(metadata, form)) as FieldMetadata<
+		FieldShape,
+		ErrorShape,
+		CustomFieldMetadataDefinition
+	>;
 }
 
 /**
@@ -549,21 +559,32 @@ export function getField<FieldShape, ErrorShape = string>(
 export function getFieldset<
 	FieldShape = Record<string, any>,
 	ErrorShape = string,
+	CustomFieldMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
 >(
 	context: FormContext<ErrorShape>,
 	options: {
 		name?: FieldName<FieldShape> | undefined;
 		serialize?: Serialize | undefined;
-		customize?: CustomMetadataDefinition | undefined;
+		customize?: CustomFieldMetadataDefinition | undefined;
+		form?:
+			| BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+			| undefined;
 	},
-): Fieldset<FieldShape, ErrorShape> {
+): Fieldset<FieldShape, ErrorShape, CustomFieldMetadataDefinition> {
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
+				options.form ??= getFormMetadata(context, {
+					serialize: options?.serialize,
+					customizeField: options?.customize,
+				});
+
 				return getField(context, {
 					name: appendPathSegment(options?.name, name),
 					serialize: options.serialize,
 					customize: options.customize,
+					form: options.form,
 				});
 			}
 
@@ -575,18 +596,24 @@ export function getFieldset<
 /**
  * Creates an array of field objects for list/array inputs
  */
-export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
+export function getFieldList<
+	FieldShape = Array<any>,
+	ErrorShape = string,
+	CustomFieldMetadataDefinition extends
+		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+>(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?: CustomMetadataDefinition | undefined;
+		customize?: CustomFieldMetadataDefinition | undefined;
 	},
 ): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 		? ItemShape
 		: unknown,
-	ErrorShape
+	ErrorShape,
+	CustomFieldMetadataDefinition
 >[] {
 	const keys = getListKey(context, options.name);
 
@@ -595,7 +622,8 @@ export function getFieldList<FieldShape = Array<any>, ErrorShape = string>(
 			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 				? ItemShape
 				: unknown,
-			ErrorShape
+			ErrorShape,
+			CustomFieldMetadataDefinition
 		>(context, {
 			name: appendPathSegment(options.name, index),
 			serialize: options.serialize,

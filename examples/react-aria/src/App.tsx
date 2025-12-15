@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -13,6 +12,7 @@ import { CheckboxGroup } from './components/CheckboxGroup';
 import { Select, SelectItem } from './components/Select';
 import { ComboBox, ComboBoxItem } from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -89,6 +89,7 @@ export default function App() {
 					<TextField
 						label="Email"
 						type="email"
+						{...fields.email.textFieldProps}
 						name={fields.email.name}
 						defaultValue={fields.email.defaultValue}
 						isInvalid={!fields.email.valid}
