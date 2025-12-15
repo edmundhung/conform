@@ -150,6 +150,7 @@ export default function App() {
 				<div>
 					<DateRangePicker
 						label="Event Dates"
+						{...fields.range.dateRangePickerProps}
 						startName={rangeFields.start.name}
 						endName={rangeFields.end.name}
 						defaultValue={{

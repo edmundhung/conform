@@ -20,8 +20,6 @@ import type {
 	UnknownIntent,
 	ActionHandler,
 	BaseMetadata,
-	FieldMetadataDefinition,
-	FormMetadataDefinition,
 	BaseFormMetadata,
 } from './types';
 import { generateUniqueKey, getArrayAtPath, merge } from './util';
@@ -382,20 +380,23 @@ export function getConstraint(
 
 export function getFormMetadata<
 	ErrorShape,
-	CustomFormMetadataDefinition extends FormMetadataDefinition<ErrorShape>,
-	CustomFieldMetadataDefinition extends FieldMetadataDefinition<ErrorShape>,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	context: FormContext<ErrorShape>,
 	options?: {
 		serialize?: Serialize | undefined;
-		customizeForm?: CustomFormMetadataDefinition | undefined;
-		customizeField?: CustomFieldMetadataDefinition | undefined;
+		customizeForm?:
+			| ((metadata: BaseFormMetadata<ErrorShape>) => CustomFormMetadata)
+			| undefined;
+		customizeField?:
+			| (<FieldShape>(
+					metadata: BaseMetadata<FieldShape, ErrorShape>,
+					form: BaseFormMetadata<ErrorShape>,
+			  ) => CustomFieldMetadata)
+			| undefined;
 	},
-): FormMetadata<
-	ErrorShape,
-	CustomFormMetadataDefinition,
-	CustomFieldMetadataDefinition
-> {
+): FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata> {
 	const metadata: BaseFormMetadata<ErrorShape> = {
 		key: context.state.resetKey,
 		id: context.formId,
@@ -451,30 +452,28 @@ export function getFormMetadata<
 	return Object.assign(
 		metadata,
 		options?.customizeForm?.(metadata) ?? {},
-	) as FormMetadata<
-		ErrorShape,
-		CustomFormMetadataDefinition,
-		CustomFieldMetadataDefinition
-	>;
+	) as FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 }
 
 export function getField<
 	FieldShape,
 	ErrorShape = string,
-	CustomFieldMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?: CustomFieldMetadataDefinition | undefined;
-		form?:
-			| BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+		customize?:
+			| (<F>(
+					metadata: BaseMetadata<F, ErrorShape>,
+					form: BaseFormMetadata<ErrorShape>,
+			  ) => CustomFieldMetadata)
 			| undefined;
+		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
 		key?: string | undefined;
 	},
-): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadataDefinition> {
+): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata> {
 	const {
 		key,
 		name,
@@ -549,7 +548,7 @@ export function getField<
 	return Object.assign(metadata, customize?.(metadata, form)) as FieldMetadata<
 		FieldShape,
 		ErrorShape,
-		CustomFieldMetadataDefinition
+		CustomFieldMetadata
 	>;
 }
 
@@ -559,19 +558,21 @@ export function getField<
 export function getFieldset<
 	FieldShape = Record<string, any>,
 	ErrorShape = string,
-	CustomFieldMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	context: FormContext<ErrorShape>,
 	options: {
 		name?: FieldName<FieldShape> | undefined;
 		serialize?: Serialize | undefined;
-		customize?: CustomFieldMetadataDefinition | undefined;
-		form?:
-			| BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+		customize?:
+			| (<F>(
+					metadata: BaseMetadata<F, ErrorShape>,
+					form: BaseFormMetadata<ErrorShape>,
+			  ) => CustomFieldMetadata)
 			| undefined;
+		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
 	},
-): Fieldset<FieldShape, ErrorShape, CustomFieldMetadataDefinition> {
+): Fieldset<FieldShape, ErrorShape, CustomFieldMetadata> {
 	return new Proxy({} as any, {
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
@@ -599,21 +600,25 @@ export function getFieldset<
 export function getFieldList<
 	FieldShape = Array<any>,
 	ErrorShape = string,
-	CustomFieldMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?: CustomFieldMetadataDefinition | undefined;
+		customize?:
+			| (<F>(
+					metadata: BaseMetadata<F, ErrorShape>,
+					form: BaseFormMetadata<ErrorShape>,
+			  ) => CustomFieldMetadata)
+			| undefined;
 	},
 ): FieldMetadata<
 	[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 		? ItemShape
 		: unknown,
 	ErrorShape,
-	CustomFieldMetadataDefinition
+	CustomFieldMetadata
 >[] {
 	const keys = getListKey(context, options.name);
 
@@ -623,7 +628,7 @@ export function getFieldList<
 				? ItemShape
 				: unknown,
 			ErrorShape,
-			CustomFieldMetadataDefinition
+			CustomFieldMetadata
 		>(context, {
 			name: appendPathSegment(options.name, index),
 			serialize: options.serialize,

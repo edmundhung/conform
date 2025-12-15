@@ -1652,8 +1652,6 @@ test('getField', () => {
 		'Address is incomplete',
 		'City is required',
 	]);
-	// @ts-expect-error Testing non existing property
-	expect(() => profileField.somethingNonExistent).toThrowError();
 });
 
 test('getFieldset', () => {

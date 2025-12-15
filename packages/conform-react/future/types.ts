@@ -145,30 +145,81 @@ export type FormAction<
 	ctx: Context;
 };
 
-export type FormMetadataDefinition<BaseErrorShape> = <
-	ErrorShape extends BaseErrorShape,
->(
-	metadata: BaseFormMetadata<ErrorShape>,
-) => Record<string, unknown>;
+/**
+ * Marker type for conditional field metadata properties.
+ * Used to indicate that a property should only be present when FieldShape matches a condition.
+ */
+export type ConditionalFieldMetadata<T, Condition> = T & {
+	__conditionalFieldMetadata__: Condition;
+};
 
 /**
- * A function type for defining custom field metadata properties.
+ * Check if T is a FieldName type by checking if '~shape' is a known key.
+ * Plain strings don't have '~shape' in their keyof, but FieldName<T> does.
  */
-export type FieldMetadataDefinition<BaseErrorShape> = <
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
->(
-	metadata: BaseMetadata<FieldShape, ErrorShape>,
-	form: BaseFormMetadata<ErrorShape>,
-) => Record<string, unknown>;
+type IsFieldName<T> = '~shape' extends keyof T ? true : false;
+
+/**
+ * Transforms a single value, restoring FieldName<unknown> to FieldName<FieldShape>.
+ */
+type RestoreFieldShapeValue<T, FieldShape> =
+	T extends ConditionalFieldMetadata<infer Inner, infer Condition>
+		? FieldShape extends Condition
+			? Inner
+			: never
+		: IsFieldName<T> extends true
+			? FieldName<FieldShape>
+			: T;
+
+/**
+ * Restores FieldShape-dependent types that were inferred as `unknown`.
+ * This is needed because TypeScript infers generic return types with unresolved type parameters.
+ * Also handles conditional field metadata by checking if FieldShape extends the condition.
+ *
+ * Transforms up to 2 levels deep to handle cases like `textFieldProps.name`.
+ */
+export type RestoreFieldShape<T, FieldShape> = {
+	[K in keyof T]: RestoreFieldShapeValue<T[K], FieldShape> extends infer V
+		? V extends Record<string, unknown>
+			? { [P in keyof V]: RestoreFieldShapeValue<V[P], FieldShape> }
+			: V
+		: never;
+};
+
+/**
+ * Type guard function for conditional field metadata.
+ * Used to specify when a custom field metadata property should be available.
+ */
+export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
+
+/**
+ * Extract the condition type from a FieldShapeGuard.
+ */
+export type ExtractFieldCondition<T> =
+	T extends FieldShapeGuard<infer C> ? C : never;
+
+/**
+ * Extract conditions from a record of field shape guards.
+ */
+export type ExtractFieldConditions<
+	T extends Record<string, FieldShapeGuard<any>>,
+> = {
+	[K in keyof T]: ExtractFieldCondition<T[K]>;
+};
+
+export type FieldConditions<MetadataShape extends Record<string, unknown>> = {
+	[Key in keyof MetadataShape]?: FieldShapeGuard<any>;
+};
 
 /**
  * Configuration options for configureConform factory.
  */
 export type ConformConfig<
-	BaseErrorShape,
-	CustomFormMetadataDefinition extends FormMetadataDefinition<BaseErrorShape>,
-	CustomFieldMetadataDefinition extends FieldMetadataDefinition<BaseErrorShape>,
+	BaseErrorShape = unknown,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadataConditions extends
+		FieldConditions<CustomFieldMetadata> = {},
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -199,12 +250,23 @@ export type ConformConfig<
 	/**
 	 * A function that defines custom form metadata properties.
 	 */
-	customizeFormMetadata?: CustomFormMetadataDefinition;
+	customizeFormMetadata?: <ErrorShape extends BaseErrorShape>(
+		metadata: BaseFormMetadata<ErrorShape>,
+	) => CustomFormMetadata;
 	/**
 	 * A function that defines custom field metadata properties.
 	 * Useful for integrating with UI libraries or custom form components.
 	 */
-	customizeFieldMetadata?: CustomFieldMetadataDefinition;
+	customizeFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
+		metadata: BaseMetadata<FieldShape, ErrorShape>,
+		form: BaseFormMetadata<ErrorShape>,
+	) => CustomFieldMetadata;
+	/**
+	 * Type guards for conditional field metadata properties.
+	 * Keys are property names from customizeFieldMetadata return type.
+	 * The property will only be present when FieldShape extends the guard's condition.
+	 */
+	customizeFieldMetadataConditions?: CustomFieldMetadataConditions;
 };
 
 /**
@@ -638,33 +700,31 @@ export type CustomMetadataDefinition = <
 export type FieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
-> = CustomMetadataDefinition extends (
-	metadata: BaseMetadata<FieldShape, ErrorShape>,
-) => infer Result
-	? Readonly<Prettify<BaseMetadata<FieldShape, ErrorShape> & Result>>
-	: Readonly<BaseMetadata<FieldShape, ErrorShape>>;
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = Readonly<
+	Prettify<
+		BaseMetadata<FieldShape, ErrorShape> &
+			RestoreFieldShape<CustomFieldMetadata, FieldShape>
+	>
+>;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
 		ErrorShape,
-		CustomMetadataDefinition
+		CustomFieldMetadata
 	>;
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
 export type BaseFormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomFieldMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
 	/** Unique identifier that changes on form reset */
 	key: string;
@@ -699,14 +759,14 @@ export type BaseFormMetadata<
 	/** Method to get metadata for a specific field by name. */
 	getField<FieldShape>(
 		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadataDefinition>;
+	): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 	/** Method to get a fieldset object for nested object fields. */
 	getFieldset<FieldShape>(
 		name?: FieldName<FieldShape>,
 	): Fieldset<
 		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
 		ErrorShape,
-		CustomFieldMetadataDefinition
+		CustomFieldMetadata
 	>;
 	/** Method to get an array of field objects for array fields. */
 	getFieldList<FieldShape>(
@@ -717,23 +777,19 @@ export type BaseFormMetadata<
 				? ItemShape
 				: unknown,
 			ErrorShape,
-			CustomFieldMetadataDefinition
+			CustomFieldMetadata
 		>
 	>;
 };
 
 export type FormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomFormMetadataDefinition extends
-		FormMetadataDefinition<ErrorShape> = FormMetadataDefinition<ErrorShape>,
-	CustomFieldMetadataDefinition extends
-		FieldMetadataDefinition<ErrorShape> = FieldMetadataDefinition<ErrorShape>,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
-	CustomFormMetadataDefinition extends (...args: any[]) => infer Result
-		? Prettify<
-				BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition> & Result
-			>
-		: BaseFormMetadata<ErrorShape, CustomFieldMetadataDefinition>
+	Prettify<
+		BaseFormMetadata<ErrorShape, CustomFieldMetadata> & CustomFormMetadata
+	>
 >;
 
 export type ValidateResult<ErrorShape, Value> =
@@ -836,3 +892,72 @@ export type SubmitHandler<
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;
+
+/**
+ * Infer the error shape from a ConformConfig.
+ */
+export type InferErrorShape<Config> =
+	Config extends ConformConfig<infer E, any, any> ? E : unknown;
+
+/**
+ * Infer the custom form metadata result type from a ConformConfig.
+ */
+export type InferFormMetadataResult<Config> =
+	Config extends ConformConfig<any, infer F, any> ? F : {};
+
+/**
+ * Infer the custom field metadata result type from a ConformConfig,
+ * with optional additional conditional keys.
+ */
+export type InferFieldMetadataResult<
+	Config,
+	AdditionalConditionalKeys extends Record<string, unknown> = {},
+> =
+	Config extends ConformConfig<any, any, infer M, infer C>
+		? ApplyConditions<
+				M,
+				C extends Record<string, FieldShapeGuard<any>>
+					? ExtractFieldConditions<C>
+					: {},
+				AdditionalConditionalKeys
+			>
+		: {};
+
+/**
+ * Apply conditional wrappers to field metadata.
+ * Merges conditions from config and additional keys.
+ */
+type ApplyConditions<
+	Metadata extends Record<string, unknown>,
+	ConfigConditions extends Record<string, unknown>,
+	AdditionalConditions extends Record<string, unknown>,
+> = keyof ConfigConditions | keyof AdditionalConditions extends never
+	? Metadata
+	: MakeConditional<
+			Metadata,
+			Prettify<ConfigConditions & AdditionalConditions>
+		>;
+
+/**
+ * Transform a type to make specific keys conditional based on FieldShape.
+ * Keys in ConditionalKeys will only be present when FieldShape extends the specified type.
+ * Uses ConditionalFieldMetadata wrapper that RestoreFieldShape will detect and evaluate.
+ *
+ * @example
+ * ```ts
+ * type Result = MakeConditional<
+ *   { textFieldProps: {...}, dateRangePickerProps: {...} },
+ *   { dateRangePickerProps: { start: string; end: string } }
+ * >;
+ * // dateRangePickerProps is wrapped with ConditionalFieldMetadata
+ * // and will only be present when FieldShape extends { start: string; end: string }
+ * ```
+ */
+export type MakeConditional<
+	T,
+	ConditionalKeys extends Record<string, unknown>,
+> = Omit<T, keyof ConditionalKeys> & {
+	[K in keyof ConditionalKeys]: K extends keyof T
+		? ConditionalFieldMetadata<T[K], ConditionalKeys[K]>
+		: never;
+};

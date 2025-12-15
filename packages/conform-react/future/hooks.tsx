@@ -61,8 +61,9 @@ import type {
 	InferInput,
 	InferOutput,
 	ConformConfig,
-	FormMetadataDefinition,
-	FieldMetadataDefinition,
+	MakeConditional,
+	ExtractFieldConditions,
+	FieldConditions,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -401,16 +402,31 @@ export function useConform<
 }
 
 export function configureConform<
-	BaseErrorShape,
-	CustomFormMetadataDefinition extends FormMetadataDefinition<BaseErrorShape>,
-	CustomFieldMetadataDefinition extends FieldMetadataDefinition<BaseErrorShape>,
+	BaseErrorShape = unknown,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
+	ConditionalFieldKeys extends FieldConditions<CustomFieldMetadata> = {},
 >(
 	config: ConformConfig<
 		BaseErrorShape,
-		CustomFormMetadataDefinition,
-		CustomFieldMetadataDefinition
+		CustomFormMetadata,
+		CustomFieldMetadata,
+		ConditionalFieldKeys
 	> = {},
 ) {
+	// Compute the effective field metadata type with conditionals applied
+	type EffectiveFieldMetadata =
+		ConditionalFieldKeys extends Record<
+			string,
+			(shape: unknown) => shape is any
+		>
+			? keyof ConditionalFieldKeys extends never
+				? CustomFieldMetadata
+				: MakeConditional<
+						CustomFieldMetadata,
+						ExtractFieldConditions<ConditionalFieldKeys>
+					>
+			: CustomFieldMetadata;
 	/**
 	 * Global config
 	 */
@@ -529,16 +545,8 @@ export function configureConform<
 			string extends ErrorShape ? never : 'onValidate'
 		>,
 	): {
-		form: FormMetadata<
-			ErrorShape,
-			CustomFormMetadataDefinition,
-			CustomFieldMetadataDefinition
-		>;
-		fields: Fieldset<
-			InferInput<Schema>,
-			ErrorShape,
-			CustomFieldMetadataDefinition
-		>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
+		fields: Fieldset<InferInput<Schema>, ErrorShape, EffectiveFieldMetadata>;
 		intent: IntentDispatcher<InferInput<Schema>>;
 	};
 	/**
@@ -566,8 +574,8 @@ export function configureConform<
 			schema: StandardSchemaV1<FormShape, Value>;
 		},
 	): {
-		form: FormMetadata<ErrorShape>;
-		fields: Fieldset<FormShape, ErrorShape>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
+		fields: Fieldset<FormShape, ErrorShape, EffectiveFieldMetadata>;
 		intent: IntentDispatcher<FormShape>;
 	};
 	function useForm<
@@ -577,8 +585,8 @@ export function configureConform<
 	>(
 		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
 	): {
-		form: FormMetadata<ErrorShape>;
-		fields: Fieldset<FormShape, ErrorShape>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
+		fields: Fieldset<FormShape, ErrorShape, EffectiveFieldMetadata>;
 		intent: IntentDispatcher<FormShape>;
 	};
 	function useForm<
@@ -592,12 +600,8 @@ export function configureConform<
 			| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
 		maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
 	): {
-		form: FormMetadata<
-			ErrorShape,
-			CustomFormMetadataDefinition,
-			CustomFieldMetadataDefinition
-		>;
-		fields: Fieldset<Record<string, any>, ErrorShape>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
+		fields: Fieldset<Record<string, any>, ErrorShape, EffectiveFieldMetadata>;
 		intent: IntentDispatcher;
 	} {
 		let schema: Schema | undefined;
@@ -793,8 +797,8 @@ export function configureConform<
 		);
 
 		return {
-			form,
-			fields,
+			form: form as any,
+			fields: fields as any,
 			intent,
 		};
 	}
@@ -821,11 +825,7 @@ export function configureConform<
 		options: {
 			formId?: string;
 		} = {},
-	): FormMetadata<
-		BaseErrorShape,
-		CustomFormMetadataDefinition,
-		CustomFieldMetadataDefinition
-	> {
+	): FormMetadata<BaseErrorShape, CustomFormMetadata, EffectiveFieldMetadata> {
 		const context = useFormContext(options.formId);
 		const formMetadata = useMemo(
 			() =>
@@ -839,8 +839,8 @@ export function configureConform<
 
 		return formMetadata as FormMetadata<
 			BaseErrorShape,
-			CustomFormMetadataDefinition,
-			CustomFieldMetadataDefinition
+			CustomFormMetadata,
+			EffectiveFieldMetadata
 		>;
 	}
 
@@ -869,7 +869,7 @@ export function configureConform<
 		options: {
 			formId?: string;
 		} = {},
-	): FieldMetadata<FieldShape, BaseErrorShape, CustomFieldMetadataDefinition> {
+	): FieldMetadata<FieldShape, BaseErrorShape, EffectiveFieldMetadata> {
 		const context = useFormContext(options.formId);
 		const field = useMemo(
 			() =>
@@ -881,7 +881,11 @@ export function configureConform<
 			[context, name],
 		);
 
-		return field;
+		return field as FieldMetadata<
+			FieldShape,
+			BaseErrorShape,
+			EffectiveFieldMetadata
+		>;
 	}
 
 	/**
@@ -1003,7 +1007,7 @@ export function configureConform<
 							callback();
 						}
 					}),
-				[observer],
+				[],
 			),
 			() => {
 				const input = inputRef.current;

@@ -16,7 +16,6 @@ export type {
 	DefaultValue,
 	BaseMetadata,
 	CustomMetadata,
-	FieldMetadataDefinition,
 	ConformConfig,
 	BaseErrorShape,
 	CustomTypes,
@@ -26,7 +25,14 @@ export type {
 	FormRef,
 	FieldMetadata,
 	Fieldset,
+	FieldShapeGuard,
 	IntentDispatcher,
+	RestoreFieldShape,
+	ConditionalFieldMetadata,
+	InferErrorShape,
+	InferFormMetadataResult,
+	InferFieldMetadataResult,
+	MakeConditional,
 } from './types';
 export {
 	configureConform,

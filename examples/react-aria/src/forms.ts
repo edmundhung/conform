@@ -131,6 +131,10 @@ const {
 			},
 		};
 	},
+	// dateRangePickerProps is only available when FieldShape has start and end
+	customizeFieldMetadataConditions: {
+		dateRangePickerProps: defineTypes<{ start: string; end: string }>(),
+	},
 });
 
 export {
