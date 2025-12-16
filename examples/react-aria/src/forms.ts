@@ -1,4 +1,8 @@
-import { configureConform } from '@conform-to/react/future';
+import {
+	configureConform,
+	requireFieldMetadata,
+	isType,
+} from '@conform-to/react/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
@@ -10,12 +14,6 @@ import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
-function defineTypes<T>(
-	guard?: (value: unknown) => boolean,
-): (value: unknown) => value is T {
-	return (value): value is T => guard?.(value) ?? true;
-}
-
 const {
 	useForm,
 	useFormMetadata,
@@ -26,7 +24,7 @@ const {
 } = configureConform({
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
-	assertErrorShape: defineTypes<string>((error) => typeof error === 'string'),
+	assertErrorShape: isType<string>((error) => typeof error === 'string'),
 	customizeFormMetadata(metadata) {
 		return {
 			get props() {
@@ -113,27 +111,26 @@ const {
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get dateRangePickerProps() {
-				const rangeFields = metadata.getFieldset<{
-					start: string;
-					end: string;
-				}>();
+				return requireFieldMetadata(
+					metadata,
+					isType<{ start: string; end: string }>(),
+					(m) => {
+						const rangeFields = m.getFieldset();
 
-				return {
-					startName: rangeFields.start.name,
-					endName: rangeFields.end.name,
-					defaultValue: {
-						start: rangeFields.start.defaultValue,
-						end: rangeFields.end.defaultValue,
+						return {
+							startName: rangeFields.start.name,
+							endName: rangeFields.end.name,
+							defaultValue: {
+								start: rangeFields.start.defaultValue,
+								end: rangeFields.end.defaultValue,
+							},
+							isInvalid: !m.valid,
+							errors: m.errors,
+						} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
 					},
-					isInvalid: !metadata.valid,
-					errors: metadata.errors,
-				} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
+				);
 			},
 		};
-	},
-	// dateRangePickerProps is only available when FieldShape has start and end
-	customizeFieldMetadataConditions: {
-		dateRangePickerProps: defineTypes<{ start: string; end: string }>(),
 	},
 });
 

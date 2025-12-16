@@ -140,6 +140,7 @@ export default function App() {
 					<DatePicker
 						label="Publish Date"
 						granularity="second"
+						{...fields.date.datePickerProps}
 						name={fields.date.name}
 						defaultValue={fields.date.defaultValue}
 						isInvalid={!fields.date.valid}

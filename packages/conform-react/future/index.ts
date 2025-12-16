@@ -35,6 +35,8 @@ export type {
 	MakeConditional,
 } from './types';
 export {
+	isType,
+	requireFieldMetadata,
 	configureConform,
 	FormProvider,
 	useControl,

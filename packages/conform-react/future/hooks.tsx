@@ -61,9 +61,8 @@ import type {
 	InferInput,
 	InferOutput,
 	ConformConfig,
-	MakeConditional,
-	ExtractFieldConditions,
-	FieldConditions,
+	ConditionalFieldMetadata,
+	BaseMetadata,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -85,6 +84,72 @@ import { StandardSchemaV1 } from './standard-schema';
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
 export const INITIAL_KEY = 'INITIAL_KEY';
+
+/**
+ * Creates a type guard function for the specified type.
+ * Useful for assertErrorShape and defineFieldCondition.
+ *
+ * @param guard - Optional runtime validation function
+ * @returns A type guard function that asserts the value is of type T
+ *
+ * @example
+ * ```tsx
+ * // For error shape assertion
+ * assertErrorShape: isType<string>((e) => typeof e === 'string'),
+ *
+ * // For field condition (no runtime check needed)
+ * defineFieldCondition(isType<{ start: string; end: string }>(), metadata, ...)
+ * ```
+ */
+export function isType<T>(
+	guard?: (value: unknown) => boolean,
+): (value: unknown) => value is T {
+	return (value): value is T => guard?.(value) ?? true;
+}
+
+/**
+ * Creates a conditional field metadata property that is only available
+ * when the field shape matches the specified type.
+ *
+ * @param metadata - The base field metadata
+ * @param shape - A type guard that defines the required field shape
+ * @param fn - A function that receives typed metadata and returns the property value
+ *
+ * @example
+ * ```tsx
+ * customizeFieldMetadata(metadata) {
+ *   return {
+ *     // Always available - use satisfies directly
+ *     get textFieldProps() {
+ *       return { name: metadata.name } satisfies Partial<TextFieldProps>;
+ *     },
+ *     // Only available when FieldShape is { start: string; end: string }
+ *     get dateRangePickerProps() {
+ *       return requireFieldMetadata(
+ *         metadata,
+ *         isType<{ start: string; end: string }>(),
+ *         (m) => {
+ *           const fields = m.getFieldset();
+ *           return {
+ *             startName: fields.start.name,
+ *             endName: fields.end.name,
+ *           } satisfies Partial<DateRangePickerProps>;
+ *         },
+ *       );
+ *     },
+ *   };
+ * }
+ * ```
+ */
+export function requireFieldMetadata<Shape, ErrorShape, Result>(
+	metadata: BaseMetadata<unknown, ErrorShape>,
+	_shape: (value: unknown) => value is Shape,
+	fn: (m: BaseMetadata<Shape, ErrorShape>) => Result,
+): ConditionalFieldMetadata<Result, Shape> {
+	return fn(
+		metadata as BaseMetadata<Shape, ErrorShape>,
+	) as ConditionalFieldMetadata<Result, Shape>;
+}
 
 /**
  * Core form hook that manages form state, validation, and submission.
@@ -405,28 +470,13 @@ export function configureConform<
 	BaseErrorShape = unknown,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
-	ConditionalFieldKeys extends FieldConditions<CustomFieldMetadata> = {},
 >(
 	config: ConformConfig<
 		BaseErrorShape,
 		CustomFormMetadata,
-		CustomFieldMetadata,
-		ConditionalFieldKeys
+		CustomFieldMetadata
 	> = {},
 ) {
-	// Compute the effective field metadata type with conditionals applied
-	type EffectiveFieldMetadata =
-		ConditionalFieldKeys extends Record<
-			string,
-			(shape: unknown) => shape is any
-		>
-			? keyof ConditionalFieldKeys extends never
-				? CustomFieldMetadata
-				: MakeConditional<
-						CustomFieldMetadata,
-						ExtractFieldConditions<ConditionalFieldKeys>
-					>
-			: CustomFieldMetadata;
 	/**
 	 * Global config
 	 */
@@ -545,8 +595,8 @@ export function configureConform<
 			string extends ErrorShape ? never : 'onValidate'
 		>,
 	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
-		fields: Fieldset<InferInput<Schema>, ErrorShape, EffectiveFieldMetadata>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+		fields: Fieldset<InferInput<Schema>, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher<InferInput<Schema>>;
 	};
 	/**
@@ -574,8 +624,8 @@ export function configureConform<
 			schema: StandardSchemaV1<FormShape, Value>;
 		},
 	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, EffectiveFieldMetadata>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher<FormShape>;
 	};
 	function useForm<
@@ -585,8 +635,8 @@ export function configureConform<
 	>(
 		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
 	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, EffectiveFieldMetadata>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher<FormShape>;
 	};
 	function useForm<
@@ -600,8 +650,8 @@ export function configureConform<
 			| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
 		maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
 	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, EffectiveFieldMetadata>;
-		fields: Fieldset<Record<string, any>, ErrorShape, EffectiveFieldMetadata>;
+		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+		fields: Fieldset<Record<string, any>, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher;
 	} {
 		let schema: Schema | undefined;
@@ -825,7 +875,7 @@ export function configureConform<
 		options: {
 			formId?: string;
 		} = {},
-	): FormMetadata<BaseErrorShape, CustomFormMetadata, EffectiveFieldMetadata> {
+	): FormMetadata<BaseErrorShape, CustomFormMetadata, CustomFieldMetadata> {
 		const context = useFormContext(options.formId);
 		const formMetadata = useMemo(
 			() =>
@@ -840,7 +890,7 @@ export function configureConform<
 		return formMetadata as FormMetadata<
 			BaseErrorShape,
 			CustomFormMetadata,
-			EffectiveFieldMetadata
+			CustomFieldMetadata
 		>;
 	}
 
@@ -869,7 +919,7 @@ export function configureConform<
 		options: {
 			formId?: string;
 		} = {},
-	): FieldMetadata<FieldShape, BaseErrorShape, EffectiveFieldMetadata> {
+	): FieldMetadata<FieldShape, BaseErrorShape, CustomFieldMetadata> {
 		const context = useFormContext(options.formId);
 		const field = useMemo(
 			() =>
@@ -884,7 +934,7 @@ export function configureConform<
 		return field as FieldMetadata<
 			FieldShape,
 			BaseErrorShape,
-			EffectiveFieldMetadata
+			CustomFieldMetadata
 		>;
 	}
 

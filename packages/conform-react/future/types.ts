@@ -207,10 +207,6 @@ export type ExtractFieldConditions<
 	[K in keyof T]: ExtractFieldCondition<T[K]>;
 };
 
-export type FieldConditions<MetadataShape extends Record<string, unknown>> = {
-	[Key in keyof MetadataShape]?: FieldShapeGuard<any>;
-};
-
 /**
  * Configuration options for configureConform factory.
  */
@@ -218,8 +214,6 @@ export type ConformConfig<
 	BaseErrorShape = unknown,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
-	CustomFieldMetadataConditions extends
-		FieldConditions<CustomFieldMetadata> = {},
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -256,17 +250,14 @@ export type ConformConfig<
 	/**
 	 * A function that defines custom field metadata properties.
 	 * Useful for integrating with UI libraries or custom form components.
+	 *
+	 * Use the `conditional()` helper to define properties that should only
+	 * be available for specific field shapes.
 	 */
 	customizeFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseMetadata<FieldShape, ErrorShape>,
 		form: BaseFormMetadata<ErrorShape>,
 	) => CustomFieldMetadata;
-	/**
-	 * Type guards for conditional field metadata properties.
-	 * Keys are property names from customizeFieldMetadata return type.
-	 * The property will only be present when FieldShape extends the guard's condition.
-	 */
-	customizeFieldMetadataConditions?: CustomFieldMetadataConditions;
 };
 
 /**
@@ -906,37 +897,11 @@ export type InferFormMetadataResult<Config> =
 	Config extends ConformConfig<any, infer F, any> ? F : {};
 
 /**
- * Infer the custom field metadata result type from a ConformConfig,
- * with optional additional conditional keys.
+ * Infer the custom field metadata result type from a ConformConfig.
+ * Conditions are encoded directly in the return type via the `conditional()` helper.
  */
-export type InferFieldMetadataResult<
-	Config,
-	AdditionalConditionalKeys extends Record<string, unknown> = {},
-> =
-	Config extends ConformConfig<any, any, infer M, infer C>
-		? ApplyConditions<
-				M,
-				C extends Record<string, FieldShapeGuard<any>>
-					? ExtractFieldConditions<C>
-					: {},
-				AdditionalConditionalKeys
-			>
-		: {};
-
-/**
- * Apply conditional wrappers to field metadata.
- * Merges conditions from config and additional keys.
- */
-type ApplyConditions<
-	Metadata extends Record<string, unknown>,
-	ConfigConditions extends Record<string, unknown>,
-	AdditionalConditions extends Record<string, unknown>,
-> = keyof ConfigConditions | keyof AdditionalConditions extends never
-	? Metadata
-	: MakeConditional<
-			Metadata,
-			Prettify<ConfigConditions & AdditionalConditions>
-		>;
+export type InferFieldMetadataResult<Config> =
+	Config extends ConformConfig<any, any, infer M> ? M : {};
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.
