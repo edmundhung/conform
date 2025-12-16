@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 
-import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from 'zod/v4/core';
+import { $ZodNumber, $ZodString, $ZodType, $ZodTypes } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -104,6 +104,9 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 				constraint.maxLength = _schema._zod.bag.maximum;
 			}
 		} else if (def.type === 'optional') {
+			constraint.required = false;
+			updateConstraint(def.innerType, data, name);
+		} else if (def.type === 'nullable') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'default') {
