@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vitest';
-import { z } from 'zod-v4';
+import { describe, test, expect } from 'vitest';
 import { getZodConstraint } from '../constraint';
+import { z } from 'zod-v4';
 
 describe('constraint', () => {
 	test('getZodConstraint', () => {
@@ -16,7 +16,7 @@ describe('constraint', () => {
 					.min(1, 'min')
 					.max(10, 'max')
 					.multipleOf(2, 'step'),
-				nullishNumber: z.number().min(1).max(10).nullish(),
+				nullableNumber: z.number().min(1).max(10).nullable(),
 				timestamp: z
 					.date()
 					.min(new Date(1), 'min')
@@ -84,7 +84,7 @@ describe('constraint', () => {
 				max: 10,
 			},
 			nullishNumber: {
-				required: false,
+				required: true,
 				min: 1,
 				max: 10,
 			},

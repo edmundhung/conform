@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 
-import { $ZodNumber, $ZodString, $ZodType, $ZodTypes } from 'zod/v4/core';
+import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -107,7 +107,6 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'nullable') {
-			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'default') {
 			constraint.required = false;
