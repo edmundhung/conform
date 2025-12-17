@@ -60,7 +60,7 @@ import type {
 	BaseSchemaType,
 	InferInput,
 	InferOutput,
-	ConformConfig,
+	FormHooksConfig,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -398,12 +398,12 @@ export function useConform<
 	return [state, handleSubmit];
 }
 
-export function configureConform<
+export function defineFormHooks<
 	BaseErrorShape = unknown,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	config: ConformConfig<
+	config: FormHooksConfig<
 		BaseErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata
@@ -764,8 +764,8 @@ export function configureConform<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.customizeFormMetadata,
-					customizeField: globalConfig.customizeFieldMetadata,
+					customizeForm: globalConfig.formMetadata,
+					customizeField: globalConfig.fieldMetadata,
 				}),
 			[context],
 		);
@@ -773,7 +773,7 @@ export function configureConform<
 			() =>
 				getFieldset(context, {
 					serialize: globalConfig.serialize,
-					customize: globalConfig.customizeFieldMetadata,
+					customize: globalConfig.fieldMetadata,
 				}),
 			[context],
 		);
@@ -813,8 +813,8 @@ export function configureConform<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.customizeFormMetadata,
-					customizeField: globalConfig.customizeFieldMetadata,
+					customizeForm: globalConfig.formMetadata,
+					customizeField: globalConfig.fieldMetadata,
 				}),
 			[context],
 		);
@@ -858,7 +858,7 @@ export function configureConform<
 				getField(context, {
 					name,
 					serialize: globalConfig.serialize,
-					customize: globalConfig.customizeFieldMetadata,
+					customize: globalConfig.fieldMetadata,
 				}),
 			[context, name],
 		);
@@ -1324,7 +1324,7 @@ const {
 	useField,
 	useControl,
 	useIntent,
-} = configureConform();
+} = defineFormHooks();
 
 export {
 	FormProvider,

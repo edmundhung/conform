@@ -193,9 +193,9 @@ export type RestoreFieldShape<T, FieldShape> = {
 export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
 
 /**
- * Function type for requiring field metadata with a specific shape constraint.
+ * Function type for creating conditional field metadata based on shape constraints.
  */
-export type RequireField = <Shape, E, Result>(
+export type WhenField = <Shape, E, Result>(
 	metadata: BaseMetadata<unknown, E>,
 	shape: FieldShapeGuard<Shape>,
 	fn: (metadata: BaseMetadata<Shape, E>) => Result,
@@ -217,9 +217,9 @@ export type ExtractFieldConditions<
 };
 
 /**
- * Configuration options for configureConform factory.
+ * Configuration options for defineFormHooks factory.
  */
-export type ConformConfig<
+export type FormHooksConfig<
 	BaseErrorShape = unknown,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
@@ -247,33 +247,33 @@ export type ConformConfig<
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
 	/**
-	 * A type guard function to assert the shape of error objects.
+	 * A type guard function to specify the shape of error objects.
 	 */
-	assertErrorShape?: (error: unknown) => error is BaseErrorShape;
+	errorShape?: (error: unknown) => error is BaseErrorShape;
 	/**
 	 * A function that defines custom form metadata properties.
 	 */
-	customizeFormMetadata?: <ErrorShape extends BaseErrorShape>(
+	formMetadata?: <ErrorShape extends BaseErrorShape>(
 		metadata: BaseFormMetadata<ErrorShape>,
 	) => CustomFormMetadata;
 	/**
 	 * A function that defines custom field metadata properties.
 	 * Useful for integrating with UI libraries or custom form components.
 	 *
-	 * Use `requireField` to define properties that should only
+	 * Use `whenField` to define properties that should only
 	 * be available for specific field shapes.
 	 */
-	customizeFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
+	fieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseMetadata<FieldShape, ErrorShape>,
 		ctx: {
 			form: BaseFormMetadata<ErrorShape>;
-			requireField: RequireField;
+			whenField: WhenField;
 		},
 	) => CustomFieldMetadata;
 };
 
 /**
- * @deprecated Use `ConformConfig` and `configureConform` instead.
+ * @deprecated Use `FormHooksConfig` and `defineFormHooks` instead.
  */
 export type GlobalFormOptions = {
 	/**
@@ -897,23 +897,23 @@ export type SubmitHandler<
 ) => void | Promise<void>;
 
 /**
- * Infer the error shape from a ConformConfig.
+ * Infer the error shape from a FormHooksConfig.
  */
 export type InferErrorShape<Config> =
-	Config extends ConformConfig<infer E, any, any> ? E : unknown;
+	Config extends FormHooksConfig<infer E, any, any> ? E : unknown;
 
 /**
- * Infer the custom form metadata result type from a ConformConfig.
+ * Infer the custom form metadata result type from a FormHooksConfig.
  */
 export type InferFormMetadataResult<Config> =
-	Config extends ConformConfig<any, infer F, any> ? F : {};
+	Config extends FormHooksConfig<any, infer F, any> ? F : {};
 
 /**
- * Infer the custom field metadata result type from a ConformConfig.
+ * Infer the custom field metadata result type from a FormHooksConfig.
  * Conditions are encoded directly in the return type via the `conditional()` helper.
  */
 export type InferFieldMetadataResult<Config> =
-	Config extends ConformConfig<any, any, infer M> ? M : {};
+	Config extends FormHooksConfig<any, any, infer M> ? M : {};
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.

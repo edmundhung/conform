@@ -274,9 +274,9 @@ export function generateUniqueKey() {
 }
 
 /**
- * Creates a type guard function for the specified type.
+ * Creates a type guard function for specifying field shape constraints.
  */
-export function isType<T>(
+export function shape<T>(
 	guard?: (value: unknown) => boolean,
 ): (value: unknown) => value is T {
 	return (value): value is T => guard?.(value) ?? true;
@@ -286,7 +286,7 @@ export function isType<T>(
  * Creates a conditional field metadata property that is only available
  * when the field shape matches the specified type.
  */
-export function requireField<Shape, ErrorShape, Result>(
+export function whenField<Shape, ErrorShape, Result>(
 	metadata: BaseMetadata<unknown, ErrorShape>,
 	_shape: (value: unknown) => value is Shape,
 	fn: (m: BaseMetadata<Shape, ErrorShape>) => Result,

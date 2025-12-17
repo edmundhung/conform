@@ -1,4 +1,4 @@
-import { configureConform, isType } from '@conform-to/react/future';
+import { defineFormHooks, shape } from '@conform-to/react/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
@@ -10,11 +10,11 @@ import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
-const { useForm } = configureConform({
+const { useForm } = defineFormHooks({
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
-	assertErrorShape: isType<string>((error) => typeof error === 'string'),
-	customizeFormMetadata(metadata) {
+	errorShape: shape<string>(),
+	formMetadata(metadata) {
 		return {
 			get props() {
 				return {
@@ -27,7 +27,7 @@ const { useForm } = configureConform({
 			},
 		};
 	},
-	customizeFieldMetadata(metadata, { requireField }) {
+	fieldMetadata(metadata, { whenField }) {
 		return {
 			get textFieldProps() {
 				return {
@@ -100,9 +100,9 @@ const { useForm } = configureConform({
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get dateRangePickerProps() {
-				return requireField(
+				return whenField(
 					metadata,
-					isType<{ start: string; end: string }>(),
+					shape<{ start: string; end: string }>(),
 					({ valid, errors, getFieldset }) => {
 						const rangeFields = getFieldset();
 

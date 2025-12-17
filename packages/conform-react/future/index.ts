@@ -16,7 +16,7 @@ export type {
 	DefaultValue,
 	BaseMetadata,
 	CustomMetadata,
-	ConformConfig,
+	FormHooksConfig,
 	BaseErrorShape,
 	CustomTypes,
 	FormContext,
@@ -35,7 +35,7 @@ export type {
 	MakeConditional,
 } from './types';
 export {
-	configureConform,
+	defineFormHooks,
 	FormProvider,
 	useControl,
 	useField,
@@ -44,5 +44,5 @@ export {
 	useFormMetadata,
 	useIntent,
 } from './hooks';
-export { isType } from './util';
+export { shape } from './util';
 export { memoize } from './memoize';
