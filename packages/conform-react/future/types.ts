@@ -150,7 +150,7 @@ export type FormAction<
  * Used to indicate that a property should only be present when FieldShape matches a condition.
  */
 export type ConditionalFieldMetadata<T, Condition> = T & {
-	__conditionalFieldMetadata__: Condition;
+	'~condition': Condition;
 };
 
 /**
@@ -191,6 +191,15 @@ export type RestoreFieldShape<T, FieldShape> = {
  * Used to specify when a custom field metadata property should be available.
  */
 export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
+
+/**
+ * Function type for requiring field metadata with a specific shape constraint.
+ */
+export type RequireField = <Shape, E, Result>(
+	metadata: BaseMetadata<unknown, E>,
+	shape: FieldShapeGuard<Shape>,
+	fn: (metadata: BaseMetadata<Shape, E>) => Result,
+) => ConditionalFieldMetadata<Result, Shape>;
 
 /**
  * Extract the condition type from a FieldShapeGuard.
@@ -251,12 +260,15 @@ export type ConformConfig<
 	 * A function that defines custom field metadata properties.
 	 * Useful for integrating with UI libraries or custom form components.
 	 *
-	 * Use the `conditional()` helper to define properties that should only
+	 * Use `requireField` to define properties that should only
 	 * be available for specific field shapes.
 	 */
 	customizeFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseMetadata<FieldShape, ErrorShape>,
-		form: BaseFormMetadata<ErrorShape>,
+		ctx: {
+			form: BaseFormMetadata<ErrorShape>;
+			requireField: RequireField;
+		},
 	) => CustomFieldMetadata;
 };
 

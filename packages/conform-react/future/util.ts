@@ -8,7 +8,12 @@ import {
 	setValueAtPath,
 } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
-import { ValidateHandler, ValidateResult } from './types';
+import {
+	ValidateHandler,
+	ValidateResult,
+	BaseMetadata,
+	ConditionalFieldMetadata,
+} from './types';
 
 export function isUndefined(value: unknown): value is undefined {
 	return value === undefined;
@@ -266,4 +271,27 @@ export function compactMap<Item>(
 
 export function generateUniqueKey() {
 	return Math.trunc(Date.now() * Math.random()).toString(36);
+}
+
+/**
+ * Creates a type guard function for the specified type.
+ */
+export function isType<T>(
+	guard?: (value: unknown) => boolean,
+): (value: unknown) => value is T {
+	return (value): value is T => guard?.(value) ?? true;
+}
+
+/**
+ * Creates a conditional field metadata property that is only available
+ * when the field shape matches the specified type.
+ */
+export function requireField<Shape, ErrorShape, Result>(
+	metadata: BaseMetadata<unknown, ErrorShape>,
+	_shape: (value: unknown) => value is Shape,
+	fn: (m: BaseMetadata<Shape, ErrorShape>) => Result,
+): ConditionalFieldMetadata<Result, Shape> {
+	return fn(
+		metadata as BaseMetadata<Shape, ErrorShape>,
+	) as ConditionalFieldMetadata<Result, Shape>;
 }

@@ -21,8 +21,9 @@ import type {
 	ActionHandler,
 	BaseMetadata,
 	BaseFormMetadata,
+	RequireField,
 } from './types';
-import { generateUniqueKey, getArrayAtPath, merge } from './util';
+import { generateUniqueKey, getArrayAtPath, merge, requireField } from './util';
 
 export function initializeState<ErrorShape>(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
@@ -392,7 +393,10 @@ export function getFormMetadata<
 		customizeField?:
 			| (<FieldShape>(
 					metadata: BaseMetadata<FieldShape, ErrorShape>,
-					form: BaseFormMetadata<ErrorShape>,
+					ctx: {
+						form: BaseFormMetadata<ErrorShape>;
+						requireField: RequireField;
+					},
 			  ) => CustomFieldMetadata)
 			| undefined;
 	},
@@ -467,7 +471,10 @@ export function getField<
 		customize?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
-					form: BaseFormMetadata<ErrorShape>,
+					ctx: {
+						form: BaseFormMetadata<ErrorShape>;
+						requireField: RequireField;
+					},
 			  ) => CustomFieldMetadata)
 			| undefined;
 		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
@@ -545,11 +552,10 @@ export function getField<
 		},
 	};
 
-	return Object.assign(metadata, customize?.(metadata, form)) as FieldMetadata<
-		FieldShape,
-		ErrorShape,
-		CustomFieldMetadata
-	>;
+	return Object.assign(
+		metadata,
+		customize?.(metadata, { form, requireField }),
+	) as FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 }
 
 /**
@@ -567,7 +573,10 @@ export function getFieldset<
 		customize?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
-					form: BaseFormMetadata<ErrorShape>,
+					ctx: {
+						form: BaseFormMetadata<ErrorShape>;
+						requireField: RequireField;
+					},
 			  ) => CustomFieldMetadata)
 			| undefined;
 		form?: BaseFormMetadata<ErrorShape, CustomFieldMetadata> | undefined;
@@ -609,7 +618,10 @@ export function getFieldList<
 		customize?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
-					form: BaseFormMetadata<ErrorShape>,
+					ctx: {
+						form: BaseFormMetadata<ErrorShape>;
+						requireField: RequireField;
+					},
 			  ) => CustomFieldMetadata)
 			| undefined;
 	},

@@ -61,8 +61,6 @@ import type {
 	InferInput,
 	InferOutput,
 	ConformConfig,
-	ConditionalFieldMetadata,
-	BaseMetadata,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -84,72 +82,6 @@ import { StandardSchemaV1 } from './standard-schema';
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
 export const INITIAL_KEY = 'INITIAL_KEY';
-
-/**
- * Creates a type guard function for the specified type.
- * Useful for assertErrorShape and defineFieldCondition.
- *
- * @param guard - Optional runtime validation function
- * @returns A type guard function that asserts the value is of type T
- *
- * @example
- * ```tsx
- * // For error shape assertion
- * assertErrorShape: isType<string>((e) => typeof e === 'string'),
- *
- * // For field condition (no runtime check needed)
- * defineFieldCondition(isType<{ start: string; end: string }>(), metadata, ...)
- * ```
- */
-export function isType<T>(
-	guard?: (value: unknown) => boolean,
-): (value: unknown) => value is T {
-	return (value): value is T => guard?.(value) ?? true;
-}
-
-/**
- * Creates a conditional field metadata property that is only available
- * when the field shape matches the specified type.
- *
- * @param metadata - The base field metadata
- * @param shape - A type guard that defines the required field shape
- * @param fn - A function that receives typed metadata and returns the property value
- *
- * @example
- * ```tsx
- * customizeFieldMetadata(metadata) {
- *   return {
- *     // Always available - use satisfies directly
- *     get textFieldProps() {
- *       return { name: metadata.name } satisfies Partial<TextFieldProps>;
- *     },
- *     // Only available when FieldShape is { start: string; end: string }
- *     get dateRangePickerProps() {
- *       return requireFieldMetadata(
- *         metadata,
- *         isType<{ start: string; end: string }>(),
- *         (m) => {
- *           const fields = m.getFieldset();
- *           return {
- *             startName: fields.start.name,
- *             endName: fields.end.name,
- *           } satisfies Partial<DateRangePickerProps>;
- *         },
- *       );
- *     },
- *   };
- * }
- * ```
- */
-export function requireFieldMetadata<Shape, ErrorShape, Result>(
-	metadata: BaseMetadata<unknown, ErrorShape>,
-	_shape: (value: unknown) => value is Shape,
-	fn: (m: BaseMetadata<Shape, ErrorShape>) => Result,
-): ConditionalFieldMetadata<Result, Shape> {
-	return fn(
-		metadata as BaseMetadata<Shape, ErrorShape>,
-	) as ConditionalFieldMetadata<Result, Shape>;
-}
 
 /**
  * Core form hook that manages form state, validation, and submission.

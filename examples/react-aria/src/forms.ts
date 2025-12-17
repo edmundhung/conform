@@ -1,8 +1,4 @@
-import {
-	configureConform,
-	requireFieldMetadata,
-	isType,
-} from '@conform-to/react/future';
+import { configureConform, isType } from '@conform-to/react/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
@@ -14,14 +10,7 @@ import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
-const {
-	useForm,
-	useFormMetadata,
-	useField,
-	useFormData,
-	useControl,
-	useIntent,
-} = configureConform({
+const { useForm } = configureConform({
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
 	assertErrorShape: isType<string>((error) => typeof error === 'string'),
@@ -38,7 +27,7 @@ const {
 			},
 		};
 	},
-	customizeFieldMetadata(metadata) {
+	customizeFieldMetadata(metadata, { requireField }) {
 		return {
 			get textFieldProps() {
 				return {
@@ -111,11 +100,11 @@ const {
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get dateRangePickerProps() {
-				return requireFieldMetadata(
+				return requireField(
 					metadata,
 					isType<{ start: string; end: string }>(),
-					(m) => {
-						const rangeFields = m.getFieldset();
+					({ valid, errors, getFieldset }) => {
+						const rangeFields = getFieldset();
 
 						return {
 							startName: rangeFields.start.name,
@@ -124,8 +113,8 @@ const {
 								start: rangeFields.start.defaultValue,
 								end: rangeFields.end.defaultValue,
 							},
-							isInvalid: !m.valid,
-							errors: m.errors,
+							isInvalid: !valid,
+							errors,
 						} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
 					},
 				);
@@ -134,11 +123,4 @@ const {
 	},
 });
 
-export {
-	useForm,
-	useFormMetadata,
-	useField,
-	useFormData,
-	useControl,
-	useIntent,
-};
+export { useForm };

@@ -35,8 +35,6 @@ export type {
 	MakeConditional,
 } from './types';
 export {
-	isType,
-	requireFieldMetadata,
 	configureConform,
 	FormProvider,
 	useControl,
@@ -46,4 +44,5 @@ export {
 	useFormMetadata,
 	useIntent,
 } from './hooks';
+export { isType } from './util';
 export { memoize } from './memoize';
