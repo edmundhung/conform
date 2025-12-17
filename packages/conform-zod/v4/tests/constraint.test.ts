@@ -83,7 +83,7 @@ describe('constraint', () => {
 				min: 1,
 				max: 10,
 			},
-			nullishNumber: {
+			nullableNumber: {
 				required: true,
 				min: 1,
 				max: 10,
