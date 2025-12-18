@@ -67,7 +67,10 @@ export function initializeField(
 	// This syncs React's internal value tracker so subsequent
 	// programmatic changes will properly trigger onChange
 	if (defaultValue !== undefined) {
-		change(element, defaultValue);
+		change(element, defaultValue, {
+			// To avoid triggering validation on initialization
+			preventDefault: true,
+		});
 	}
 
 	// Set the default value after change to preserve it for form reset
