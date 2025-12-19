@@ -126,9 +126,9 @@ export function getInputValue(
 export function useInputEvent(
 	onUpdate: React.Dispatch<React.SetStateAction<string | string[] | undefined>>,
 ): {
-	change(value: string | string[]): void;
-	focus(): void;
-	blur(): void;
+	change(this: void, value: string | string[]): void;
+	focus(this: void): void;
+	blur(this: void): void;
 	register: RefCallback<
 		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | undefined
 	>;

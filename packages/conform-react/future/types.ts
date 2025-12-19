@@ -77,6 +77,7 @@ export type Control = {
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
 	change(
+		this: void,
 		value: string | string[] | boolean | File | File[] | FileList | null,
 	): void;
 	/**
@@ -84,14 +85,14 @@ export type Control = {
 	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
 	 * Does not actually move focus.
 	 */
-	focus(): void;
+	focus(this: void): void;
 	/**
 	 * Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event) and
 	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events.
 	 * This does not move the actual keyboard focus to the input. Use `element.focus()` instead
 	 * if you want to move focus to the input.
 	 */
-	blur(): void;
+	blur(this: void): void;
 };
 
 export type Selector<FormValue, Result> = (
