@@ -30,15 +30,15 @@ declare module '@conform-to/dom/future' {
 }
 
 /**
- * Valibot schema configuration for use with defineFormHooks.
+ * Valibot schema configuration for use with configureForms.
  * Provides Valibot-specific type inference and validation.
  *
  * @example
  * ```ts
- * import { defineFormHooks } from '@conform-to/react/future';
+ * import { configureForms } from '@conform-to/react/future';
  * import { valibotSchema } from '@conform-to/valibot/future';
  *
- * const { useForm } = defineFormHooks({
+ * const { useForm } = configureForms({
  *   schema: valibotSchema,
  * });
  * ```

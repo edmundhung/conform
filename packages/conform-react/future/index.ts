@@ -16,7 +16,7 @@ export type {
 	DefaultValue,
 	BaseMetadata,
 	CustomMetadata,
-	FormHooksConfig,
+	FormsConfig,
 	BaseErrorShape,
 	CustomTypes,
 	FormContext,
@@ -42,7 +42,7 @@ export type {
 } from './types';
 export { standardSchema } from './schema';
 export {
-	defineFormHooks,
+	configureForms,
 	FormProvider,
 	useControl,
 	useField,

@@ -53,7 +53,7 @@ import type {
 	SubmitHandler,
 	FormState,
 	FormRef,
-	FormHooksConfig,
+	FormsConfig,
 	SchemaTypeKey,
 	ExtractSchemaType,
 	InferSchemaInput,
@@ -396,13 +396,13 @@ export function useConform<
 	return [state, handleSubmit];
 }
 
-export function defineFormHooks<
+export function configureForms<
 	BaseErrorShape = string,
 	TypeKey extends SchemaTypeKey = typeof standardSchema.type,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	config: FormHooksConfig<
+	config: FormsConfig<
 		BaseErrorShape,
 		TypeKey,
 		CustomFormMetadata,
@@ -1353,7 +1353,7 @@ const {
 	useField,
 	useControl,
 	useIntent,
-} = defineFormHooks();
+} = configureForms();
 
 export {
 	FormProvider,

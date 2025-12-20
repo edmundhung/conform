@@ -40,9 +40,9 @@ function resolveStandardSchemaResult<Value>(
  *
  * @example
  * ```ts
- * import { defineFormHooks, standardSchema } from '@conform-to/react/future';
+ * import { configureForms, standardSchema } from '@conform-to/react/future';
  *
- * const { useForm } = defineFormHooks({
+ * const { useForm } = configureForms({
  *   schema: standardSchema,
  * });
  * ```

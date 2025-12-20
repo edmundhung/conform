@@ -220,9 +220,9 @@ export type ExtractFieldConditions<
 };
 
 /**
- * Configuration options for defineFormHooks factory.
+ * Configuration options for configureForms factory.
  */
-export type FormHooksConfig<
+export type FormsConfig<
 	BaseErrorShape = string,
 	TypeKey extends SchemaTypeKey = typeof standardSchema.type,
 	CustomFormMetadata extends Record<string, unknown> = {},
@@ -263,10 +263,10 @@ export type FormHooksConfig<
 	 *
 	 * @example
 	 * ```ts
-	 * import { defineFormHooks } from '@conform-to/react/future';
+	 * import { configureForms } from '@conform-to/react/future';
 	 * import { zodSchema } from '@conform-to/zod/future';
 	 *
-	 * const { useForm } = defineFormHooks({
+	 * const { useForm } = configureForms({
 	 *   schema: zodSchema,
 	 * });
 	 * ```
@@ -295,7 +295,7 @@ export type FormHooksConfig<
 };
 
 /**
- * @deprecated Use `FormHooksConfig` and `defineFormHooks` instead.
+ * @deprecated Use `FormsConfig` and `configureForms` instead.
  */
 export type GlobalFormOptions = {
 	/**
@@ -917,23 +917,23 @@ export type SubmitHandler<
 ) => void | Promise<void>;
 
 /**
- * Infer the error shape from a FormHooksConfig.
+ * Infer the error shape from a FormsConfig.
  */
 export type InferErrorShape<Config> =
-	Config extends FormHooksConfig<infer E, any, any> ? E : unknown;
+	Config extends FormsConfig<infer E, any, any> ? E : unknown;
 
 /**
- * Infer the custom form metadata result type from a FormHooksConfig.
+ * Infer the custom form metadata result type from a FormsConfig.
  */
 export type InferFormMetadataResult<Config> =
-	Config extends FormHooksConfig<any, infer F, any> ? F : {};
+	Config extends FormsConfig<any, infer F, any> ? F : {};
 
 /**
- * Infer the custom field metadata result type from a FormHooksConfig.
+ * Infer the custom field metadata result type from a FormsConfig.
  * Conditions are encoded directly in the return type via the `conditional()` helper.
  */
 export type InferFieldMetadataResult<Config> =
-	Config extends FormHooksConfig<any, any, infer M> ? M : {};
+	Config extends FormsConfig<any, any, infer M> ? M : {};
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.

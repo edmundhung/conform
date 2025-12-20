@@ -1,4 +1,4 @@
-import { defineFormHooks, shape } from '@conform-to/react/future';
+import { configureForms, shape } from '@conform-to/react/future';
 import { zodSchema } from '@conform-to/zod/v3/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
@@ -11,7 +11,7 @@ import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
-const { useForm } = defineFormHooks({
+const { useForm } = configureForms({
 	schema: zodSchema,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',

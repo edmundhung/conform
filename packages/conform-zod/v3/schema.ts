@@ -9,15 +9,15 @@ import { formatResult } from './format';
 const schemaType = 'zod/v3' as const;
 
 /**
- * Zod schema configuration for use with defineFormHooks.
+ * Zod schema configuration for use with configureForms.
  * Provides Zod-specific type inference and validation.
  *
  * @example
  * ```ts
- * import { defineFormHooks } from '@conform-to/react/future';
+ * import { configureForms } from '@conform-to/react/future';
  * import { zodSchema } from '@conform-to/zod/v3/future';
  *
- * const { useForm } = defineFormHooks({
+ * const { useForm } = configureForms({
  *   schema: zodSchema,
  * });
  * ```
