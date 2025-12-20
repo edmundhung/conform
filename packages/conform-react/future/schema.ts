@@ -2,11 +2,6 @@ import type { FormError, SchemaConfig } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
 
 /**
- * Schema type key for StandardSchemaV1.
- */
-const schemaType = 'standard/v1' as const;
-
-/**
  * Resolves a StandardSchema validation result to conform's format.
  */
 function resolveStandardSchemaResult<Value>(
@@ -43,12 +38,16 @@ function resolveStandardSchemaResult<Value>(
  * import { configureForms, standardSchema } from '@conform-to/react/future';
  *
  * const { useForm } = configureForms({
- *   schema: standardSchema,
+ *   schemas: [standardSchema],
  * });
  * ```
  */
-export const standardSchema: SchemaConfig<typeof schemaType> = {
-	type: schemaType,
+export const standardSchema: SchemaConfig<StandardSchemaV1> = {
+	isSchema: (schema): schema is StandardSchemaV1 =>
+		schema != null &&
+		typeof schema === 'object' &&
+		'~standard' in schema &&
+		typeof (schema as StandardSchemaV1)['~standard']?.validate === 'function',
 	validate(schema, payload) {
 		const result = schema['~standard'].validate(payload);
 
@@ -67,7 +66,7 @@ export const standardSchema: SchemaConfig<typeof schemaType> = {
  */
 declare module '@conform-to/dom/future' {
 	interface SchemaTypeRegistry<Schema> {
-		[schemaType]: {
+		'standard/v1': {
 			type: StandardSchemaV1;
 			input: Schema extends StandardSchemaV1
 				? StandardSchemaV1.InferInput<Schema>

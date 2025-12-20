@@ -5,10 +5,8 @@ import type {
 	Serialize,
 	SubmissionResult,
 	ValidationAttributes,
-	SchemaTypeKey,
 	SchemaConfig,
 } from '@conform-to/dom/future';
-import { standardSchema } from './schema';
 import { StandardSchemaV1 } from './standard-schema';
 
 export type Prettify<T> = {
@@ -224,7 +222,6 @@ export type ExtractFieldConditions<
  */
 export type FormsConfig<
 	BaseErrorShape = string,
-	TypeKey extends SchemaTypeKey = typeof standardSchema.type,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
@@ -255,11 +252,12 @@ export type FormsConfig<
 	 */
 	errorShape?: (error: unknown) => error is BaseErrorShape;
 	/**
-	 * Schema configuration for type inference and validation.
+	 * Schema configurations for type inference and validation.
+	 * Supports multiple schema libraries - the first matching schema will be used.
 	 * Import from `@conform-to/zod/future` or `@conform-to/valibot/future`
 	 * for schema-specific type inference and validation.
 	 *
-	 * @default standardSchema (uses StandardSchema validation)
+	 * @default [standardSchema] (uses StandardSchema validation)
 	 *
 	 * @example
 	 * ```ts
@@ -267,11 +265,11 @@ export type FormsConfig<
 	 * import { zodSchema } from '@conform-to/zod/future';
 	 *
 	 * const { useForm } = configureForms({
-	 *   schema: zodSchema,
+	 *   schemas: [zodSchema],
 	 * });
 	 * ```
 	 */
-	schema?: SchemaConfig<TypeKey>;
+	schemas?: SchemaConfig[];
 	/**
 	 * A function that defines custom form metadata properties.
 	 */
@@ -336,12 +334,6 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 >;
 
 export type BaseSchemaType = StandardSchemaV1<any, any>;
-
-export type InferInput<Schema> =
-	Schema extends StandardSchemaV1<infer input, any> ? input : unknown;
-
-export type InferOutput<Schema> =
-	Schema extends StandardSchemaV1<any, infer output> ? output : undefined;
 
 export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
@@ -976,4 +968,7 @@ export type {
 	InferSchemaOptions,
 	SchemaValidationResult,
 	SchemaConfig,
+	InferInput,
+	InferOutput,
+	InferOptions,
 } from '@conform-to/dom/future';

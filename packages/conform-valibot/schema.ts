@@ -13,11 +13,6 @@ import { formatResult } from './format';
 type ValibotSchema = GenericSchema | GenericSchemaAsync;
 
 /**
- * Schema type key for Valibot.
- */
-const schemaType = 'valibot/v1' as const;
-
-/**
  * Schema-specific options for Valibot validation.
  */
 export type ValibotSchemaOptions = Config<any>;
@@ -27,7 +22,7 @@ export type ValibotSchemaOptions = Config<any>;
  */
 declare module '@conform-to/dom/future' {
 	interface SchemaTypeRegistry<Schema> {
-		[schemaType]: {
+		'valibot/v1': {
 			type: ValibotSchema;
 			input: Schema extends ValibotSchema ? InferInput<Schema> : never;
 			output: Schema extends ValibotSchema ? InferOutput<Schema> : never;
@@ -46,12 +41,16 @@ declare module '@conform-to/dom/future' {
  * import { valibotSchema } from '@conform-to/valibot/future';
  *
  * const { useForm } = configureForms({
- *   schema: valibotSchema,
+ *   schemas: [valibotSchema],
  * });
  * ```
  */
-export const valibotSchema: SchemaConfig<typeof schemaType> = {
-	type: schemaType,
+export const valibotSchema: SchemaConfig<ValibotSchema> = {
+	isSchema: (schema): schema is ValibotSchema =>
+		schema != null &&
+		typeof schema === 'object' &&
+		'~standard' in schema &&
+		'async' in schema,
 	validate(schema, payload, options) {
 		if (schema.async === true) {
 			return safeParseAsync(schema, payload, options).then((result) =>

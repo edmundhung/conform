@@ -14,6 +14,9 @@ export type {
 	InferSchemaOptions,
 	SchemaValidationResult,
 	SchemaConfig,
+	InferInput,
+	InferOutput,
+	InferOptions,
 } from '../types';
 export {
 	DEFAULT_INTENT_NAME,

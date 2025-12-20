@@ -229,32 +229,62 @@ export type SchemaValidationResult<Value> =
 	| Promise<{ error: FormError<string> | null; value?: Value }>;
 
 /**
- * Configuration for schema validation.
- * Combines the type key for TypeScript inference with the runtime validation function.
+ * Infer schema input type by iterating over all registered schema types.
+ * This allows type inference without knowing the specific schema key.
  */
-export type SchemaConfig<TypeKey extends SchemaTypeKey = SchemaTypeKey> = {
+export type InferInput<Schema> = {
+	[K in SchemaTypeKey]: Schema extends ExtractSchemaType<K>
+		? SchemaTypeRegistry<Schema>[K]['input']
+		: never;
+}[SchemaTypeKey];
+
+/**
+ * Infer schema output type by iterating over all registered schema types.
+ * This allows type inference without knowing the specific schema key.
+ */
+export type InferOutput<Schema> = {
+	[K in SchemaTypeKey]: Schema extends ExtractSchemaType<K>
+		? SchemaTypeRegistry<Schema>[K]['output']
+		: never;
+}[SchemaTypeKey];
+
+/**
+ * Infer schema options type by iterating over all registered schema types.
+ * This allows type inference without knowing the specific schema key.
+ */
+export type InferOptions<Schema> = {
+	[K in SchemaTypeKey]: Schema extends ExtractSchemaType<K>
+		? SchemaTypeRegistry[K] extends { options: infer O }
+			? O
+			: never
+		: never;
+}[SchemaTypeKey];
+
+/**
+ * Configuration for schema validation.
+ * Parameterized by the base schema type (e.g., ZodType, ValibotSchema).
+ */
+export type SchemaConfig<BaseSchema = unknown> = {
 	/**
-	 * The type key for TypeScript inference.
+	 * Runtime type guard to check if a schema matches this config.
 	 */
-	type: TypeKey;
+	isSchema: (schema: unknown) => schema is BaseSchema;
 	/**
 	 * Validates a schema against form payload.
 	 * @param schema - The schema to validate against
 	 * @param payload - The form data payload
 	 * @param options - Schema-specific validation options (e.g., Zod's errorMap)
 	 */
-	validate: <Schema extends ExtractSchemaType<TypeKey>>(
+	validate: <Schema extends BaseSchema>(
 		schema: Schema,
 		payload: Record<string, FormValue>,
-		options?: [InferSchemaOptions<TypeKey>] extends [never]
-			? undefined
-			: InferSchemaOptions<TypeKey>,
-	) => SchemaValidationResult<InferSchemaOutput<TypeKey, Schema>>;
+		options?: InferOptions<Schema>,
+	) => SchemaValidationResult<InferOutput<Schema>>;
 	/**
 	 * Optional function to extract HTML validation constraints from a schema.
 	 * If provided, useForm will automatically infer constraints when none are specified.
 	 */
-	getConstraint?: <Schema extends ExtractSchemaType<TypeKey>>(
+	getConstraint?: <Schema extends BaseSchema>(
 		schema: Schema,
 	) => Record<string, ValidationAttributes>;
 };

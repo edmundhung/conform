@@ -4,11 +4,6 @@ import { getZodConstraint } from './constraint';
 import { formatResult } from './format';
 
 /**
- * Schema type key for Zod v4.
- */
-const schemaType = 'zod/v4' as const;
-
-/**
  * Zod v4 schema configuration for use with configureForms.
  * Provides Zod v4-specific type inference and validation.
  *
@@ -18,12 +13,16 @@ const schemaType = 'zod/v4' as const;
  * import { zodSchema } from '@conform-to/zod/v4/future';
  *
  * const { useForm } = configureForms({
- *   schema: zodSchema,
+ *   schemas: [zodSchema],
  * });
  * ```
  */
-export const zodSchema: SchemaConfig<typeof schemaType> = {
-	type: schemaType,
+export const zodSchema: SchemaConfig<ZodAny> = {
+	isSchema: (schema): schema is ZodAny =>
+		schema != null &&
+		typeof schema === 'object' &&
+		'~standard' in schema &&
+		typeof (schema as ZodAny).safeParse === 'function',
 	validate(schema, payload) {
 		try {
 			const promise = schema.safeParseAsync(payload);
@@ -45,7 +44,7 @@ export const zodSchema: SchemaConfig<typeof schemaType> = {
  */
 declare module '@conform-to/dom/future' {
 	interface SchemaTypeRegistry<Schema> {
-		[schemaType]: {
+		'zod/v4': {
 			type: ZodAny;
 			input: Schema extends ZodAny ? input<Schema> : never;
 			output: Schema extends ZodAny ? output<Schema> : never;
