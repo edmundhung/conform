@@ -33,7 +33,14 @@ export type {
 	InferFormMetadataResult,
 	InferFieldMetadataResult,
 	MakeConditional,
+	SchemaTypeKey,
+	ExtractSchemaType,
+	InferSchemaInput,
+	InferSchemaOutput,
+	SchemaValidationResult,
+	SchemaConfig,
 } from './types';
+export { standardSchema } from './schema';
 export {
 	defineFormHooks,
 	FormProvider,

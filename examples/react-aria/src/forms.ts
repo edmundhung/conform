@@ -1,4 +1,5 @@
 import { defineFormHooks, shape } from '@conform-to/react/future';
+import { zodSchema } from '@conform-to/zod/v3/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
@@ -11,6 +12,7 @@ import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
 
 const { useForm } = defineFormHooks({
+	schema: zodSchema,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
 	errorShape: shape<string>(),

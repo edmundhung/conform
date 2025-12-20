@@ -28,11 +28,7 @@ import {
 	useState,
 	useLayoutEffect,
 } from 'react';
-import {
-	appendUniqueItem,
-	resolveStandardSchemaResult,
-	resolveValidateResult,
-} from './util';
+import { appendUniqueItem, resolveValidateResult } from './util';
 import {
 	getFormMetadata,
 	isTouched,
@@ -57,10 +53,11 @@ import type {
 	SubmitHandler,
 	FormState,
 	FormRef,
-	BaseSchemaType,
-	InferInput,
-	InferOutput,
 	FormHooksConfig,
+	SchemaTypeKey,
+	ExtractSchemaType,
+	InferSchemaInput,
+	InferSchemaOutput,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -77,7 +74,8 @@ import {
 	updateFormValue,
 	resetFormValue,
 } from './dom';
-import { StandardSchemaV1 } from './standard-schema';
+import { standardSchema } from './schema';
+import type { StandardSchemaV1 } from './standard-schema';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -399,12 +397,14 @@ export function useConform<
 }
 
 export function defineFormHooks<
-	BaseErrorShape = unknown,
+	BaseErrorShape = string,
+	TypeKey extends SchemaTypeKey = typeof standardSchema.type,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	config: FormHooksConfig<
 		BaseErrorShape,
+		TypeKey,
 		CustomFormMetadata,
 		CustomFieldMetadata
 	> = {},
@@ -419,6 +419,7 @@ export function defineFormHooks<
 		shouldValidate: config.shouldValidate ?? 'onSubmit',
 		shouldRevalidate:
 			config.shouldRevalidate ?? config.shouldValidate ?? 'onSubmit',
+		schema: config.schema ?? standardSchema,
 	};
 
 	/**
@@ -514,22 +515,32 @@ export function defineFormHooks<
 	 * ```
 	 */
 	function useForm<
-		Schema extends BaseSchemaType,
+		Schema extends ExtractSchemaType<TypeKey>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
-		Value = InferOutput<Schema>,
+		Value = InferSchemaOutput<TypeKey, Schema>,
 	>(
 		schema: Schema,
 		options: FormOptions<
-			InferInput<Schema>,
+			InferSchemaInput<TypeKey, Schema> extends Record<string, any>
+				? InferSchemaInput<TypeKey, Schema>
+				: never,
 			ErrorShape,
 			Value,
-			Schema,
+			InferSchemaOutput<TypeKey, Schema>,
 			string extends ErrorShape ? never : 'onValidate'
 		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<InferInput<Schema>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<InferInput<Schema>>;
+		fields: Fieldset<
+			InferSchemaInput<TypeKey, Schema>,
+			ErrorShape,
+			CustomFieldMetadata
+		>;
+		intent: IntentDispatcher<
+			InferSchemaInput<TypeKey, Schema> extends Record<string, any>
+				? InferSchemaInput<TypeKey, Schema>
+				: never
+		>;
 	};
 	/**
 	 * @deprecated Use `useForm(schema, options)` instead for better type inference.
@@ -572,7 +583,9 @@ export function defineFormHooks<
 		intent: IntentDispatcher<FormShape>;
 	};
 	function useForm<
-		Schema extends BaseSchemaType = any,
+		Schema extends ExtractSchemaType<TypeKey> &
+			StandardSchemaV1<any, any> = ExtractSchemaType<TypeKey> &
+			StandardSchemaV1<any, any>,
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
@@ -580,29 +593,39 @@ export function defineFormHooks<
 		schemaOrOptions:
 			| Schema
 			| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-		maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
+		maybeOptions?: FormOptions<
+			InferSchemaInput<TypeKey, Schema>,
+			ErrorShape,
+			Value,
+			InferSchemaOutput<TypeKey, Schema>
+		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<Record<string, any>, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher;
 	} {
 		let schema: Schema | undefined;
-		let options: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>;
+		let options: FormOptions<
+			InferSchemaInput<TypeKey, Schema>,
+			ErrorShape,
+			Value,
+			InferSchemaOutput<TypeKey, Schema>
+		>;
 
 		if (maybeOptions) {
 			schema = schemaOrOptions as Schema;
 			options = maybeOptions as FormOptions<
-				InferInput<Schema>,
+				InferSchemaInput<TypeKey, Schema>,
 				ErrorShape,
 				Value,
-				Schema
+				InferSchemaOutput<TypeKey, Schema>
 			>;
 		} else {
 			const fullOptions = schemaOrOptions as FormOptions<
-				InferInput<Schema>,
+				InferSchemaInput<TypeKey, Schema>,
 				ErrorShape,
 				Value,
-				Schema
+				InferSchemaOutput<TypeKey, Schema>
 			> & {
 				schema?: Schema;
 			};
@@ -619,7 +642,7 @@ export function defineFormHooks<
 			FormShape,
 			ErrorShape,
 			Value,
-			InferOutput<Schema>
+			InferSchemaOutput<TypeKey, Schema>
 		>(formId, {
 			...options,
 			serialize: globalConfig.serialize,
@@ -627,45 +650,49 @@ export function defineFormHooks<
 			onError: options.onError ?? focusFirstInvalidField,
 			onValidate(ctx) {
 				if (schema) {
-					const standardResult = schema['~standard'].validate(ctx.payload);
+					const schemaResult = globalConfig.schema.validate(
+						schema,
+						ctx.payload,
+					);
 
-					if (standardResult instanceof Promise) {
-						return standardResult.then((actualStandardResult) => {
+					if (schemaResult instanceof Promise) {
+						return schemaResult.then((resolvedResult) => {
 							if (typeof options.onValidate === 'function') {
 								throw new Error(
 									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
 								);
 							}
 
-							return resolveStandardSchemaResult(
-								actualStandardResult,
-							) as ValidateResult<ErrorShape, any>;
+							return resolvedResult as ValidateResult<ErrorShape, any>;
 						});
 					}
 
-					const resolvedResult = resolveStandardSchemaResult(standardResult);
-
 					if (!options.onValidate) {
-						return resolvedResult as ValidateResult<ErrorShape, Value>;
+						return schemaResult as ValidateResult<ErrorShape, Value>;
 					}
 
 					// Update the schema error in the context
-					if (resolvedResult.error) {
-						ctx.error = resolvedResult.error;
+					if (schemaResult.error) {
+						ctx.error = schemaResult.error;
 					}
 
-					ctx.schemaValue = resolvedResult.value;
+					const schemaValue = schemaResult.value as InferSchemaOutput<
+						TypeKey,
+						Schema
+					>;
+
+					ctx.schemaValue = schemaValue;
 
 					const validateResult = resolveValidateResult(options.onValidate(ctx));
 
 					if (validateResult.syncResult) {
-						validateResult.syncResult.value ??= resolvedResult.value;
+						validateResult.syncResult.value ??= schemaValue;
 					}
 
 					if (validateResult.asyncResult) {
 						validateResult.asyncResult = validateResult.asyncResult.then(
 							(result) => {
-								result.value ??= resolvedResult.value;
+								result.value ??= schemaValue;
 								return result;
 							},
 						);

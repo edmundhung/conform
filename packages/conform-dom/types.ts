@@ -158,3 +158,81 @@ export type Combine<
 export type UnknownObject<T> = [T] extends [Record<string, any>]
 	? { [K in keyof Combine<T>]-?: unknown }
 	: never;
+
+/**
+ * Registry interface for custom schema type inference.
+ * Augment this interface to add support for schema libraries with custom inference.
+ *
+ * Each key in the registry maps to an object with:
+ * - `type`: The schema type constraint (e.g., `ZodType`)
+ * - `input`: The inferred input type for schema `S`
+ * - `output`: The inferred output type for schema `S`
+ *
+ * @example
+ * ```ts
+ * declare module '@conform-to/dom/future' {
+ *   interface SchemaTypeRegistry<Schema> {
+ *     zod: {
+ *       type: z.ZodType;
+ *       input: Schema extends z.ZodType ? z.input<Schema> : never;
+ *       output: Schema extends z.ZodType ? z.output<Schema> : never;
+ *     };
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface SchemaTypeRegistry<Schema = unknown> {}
+
+/**
+ * Available keys in the SchemaTypeRegistry.
+ * Add custom keys by augmenting SchemaTypeRegistry.
+ */
+export type SchemaTypeKey = keyof SchemaTypeRegistry;
+
+/**
+ * Extract the schema type constraint for a given key.
+ */
+export type ExtractSchemaType<Key extends SchemaTypeKey> =
+	SchemaTypeRegistry[Key]['type'];
+
+/**
+ * Extract the input type from a schema using the specified key.
+ */
+export type InferSchemaInput<
+	Key extends SchemaTypeKey,
+	Schema,
+> = SchemaTypeRegistry<Schema>[Key]['input'];
+
+/**
+ * Extract the output type from a schema using the specified key.
+ */
+export type InferSchemaOutput<
+	Key extends SchemaTypeKey,
+	Schema,
+> = SchemaTypeRegistry<Schema>[Key]['output'];
+
+/**
+ * Result of schema validation.
+ */
+export type SchemaValidationResult<Value> =
+	| { error: FormError<string> | null; value?: Value }
+	| Promise<{ error: FormError<string> | null; value?: Value }>;
+
+/**
+ * Configuration for schema validation.
+ * Combines the type key for TypeScript inference with the runtime validation function.
+ */
+export type SchemaConfig<TypeKey extends SchemaTypeKey = SchemaTypeKey> = {
+	/**
+	 * The type key for TypeScript inference.
+	 */
+	type: TypeKey;
+	/**
+	 * Validates a schema against form payload.
+	 */
+	validate: <Schema extends ExtractSchemaType<TypeKey>>(
+		schema: Schema,
+		payload: Record<string, FormValue>,
+	) => SchemaValidationResult<InferSchemaOutput<TypeKey, Schema>>;
+};

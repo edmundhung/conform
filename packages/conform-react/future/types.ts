@@ -5,8 +5,11 @@ import type {
 	Serialize,
 	SubmissionResult,
 	ValidationAttributes,
+	SchemaTypeKey,
+	SchemaConfig,
 } from '@conform-to/dom/future';
-import type { StandardSchemaV1 } from './standard-schema';
+import { standardSchema } from './schema';
+import { StandardSchemaV1 } from './standard-schema';
 
 export type Prettify<T> = {
 	[K in keyof T]: T[K];
@@ -220,7 +223,8 @@ export type ExtractFieldConditions<
  * Configuration options for defineFormHooks factory.
  */
 export type FormHooksConfig<
-	BaseErrorShape = unknown,
+	BaseErrorShape = string,
+	TypeKey extends SchemaTypeKey = typeof standardSchema.type,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
@@ -250,6 +254,24 @@ export type FormHooksConfig<
 	 * A type guard function to specify the shape of error objects.
 	 */
 	errorShape?: (error: unknown) => error is BaseErrorShape;
+	/**
+	 * Schema configuration for type inference and validation.
+	 * Import from `@conform-to/zod/future` or `@conform-to/valibot/future`
+	 * for schema-specific type inference and validation.
+	 *
+	 * @default standardSchema (uses StandardSchema validation)
+	 *
+	 * @example
+	 * ```ts
+	 * import { defineFormHooks } from '@conform-to/react/future';
+	 * import { zodSchema } from '@conform-to/zod/future';
+	 *
+	 * const { useForm } = defineFormHooks({
+	 *   schema: zodSchema,
+	 * });
+	 * ```
+	 */
+	schema?: SchemaConfig<TypeKey>;
 	/**
 	 * A function that defines custom form metadata properties.
 	 */
@@ -327,7 +349,7 @@ export type BaseFormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	SchemaValue = undefined,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -364,9 +386,7 @@ export type BaseFormOptions<
 	/** Blur event handler for custom focus handling logic. */
 	onBlur?: BlurHandler | undefined;
 	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-	onValidate?:
-		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>>
-		| undefined;
+	onValidate?: ValidateHandler<ErrorShape, Value, SchemaValue> | undefined;
 };
 
 export type FormOptions<
@@ -375,15 +395,15 @@ export type FormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	SchemaValue = undefined,
 	RequiredKeys extends keyof BaseFormOptions<
 		FormShape,
 		ErrorShape,
 		Value,
-		Schema
+		SchemaValue
 	> = never,
 > = RequireKey<
-	BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
+	BaseFormOptions<FormShape, ErrorShape, Value, SchemaValue>,
 	RequiredKeys
 >;
 
@@ -938,3 +958,13 @@ export type MakeConditional<
 		? ConditionalFieldMetadata<T[K], ConditionalKeys[K]>
 		: never;
 };
+
+// Re-export schema type utilities from @conform-to/dom/future
+export type {
+	SchemaTypeKey,
+	ExtractSchemaType,
+	InferSchemaInput,
+	InferSchemaOutput,
+	SchemaValidationResult,
+	SchemaConfig,
+} from '@conform-to/dom/future';
