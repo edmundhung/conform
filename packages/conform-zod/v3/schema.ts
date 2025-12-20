@@ -1,4 +1,4 @@
-import type { ZodType, input, output } from 'zod';
+import type { ZodType, ZodErrorMap, input, output } from 'zod';
 import type { SchemaConfig } from '@conform-to/dom/future';
 import { getZodConstraint } from './constraint';
 import { formatResult } from './format';
@@ -7,6 +7,17 @@ import { formatResult } from './format';
  * Schema type key for Zod.
  */
 const schemaType = 'zod/v3' as const;
+
+/**
+ * Schema-specific options for Zod validation.
+ */
+export type ZodSchemaOptions = {
+	/**
+	 * Custom error map for Zod validation.
+	 * @see https://zod.dev/ERROR_HANDLING?id=customizing-errors-with-zodissuecode
+	 */
+	errorMap?: ZodErrorMap;
+};
 
 /**
  * Zod schema configuration for use with configureForms.
@@ -24,14 +35,14 @@ const schemaType = 'zod/v3' as const;
  */
 export const zodSchema: SchemaConfig<typeof schemaType> = {
 	type: schemaType,
-	validate(schema, payload) {
+	validate(schema, payload, options) {
 		try {
-			const promise = schema.safeParseAsync(payload);
+			const promise = schema.safeParseAsync(payload, options);
 			return promise.then((result) =>
 				formatResult(result, { includeValue: true }),
 			);
 		} catch {
-			const result = schema.safeParse(payload);
+			const result = schema.safeParse(payload, options);
 			return formatResult(result, { includeValue: true });
 		}
 	},
@@ -49,6 +60,7 @@ declare module '@conform-to/dom/future' {
 			type: ZodType;
 			input: Schema extends ZodType ? input<Schema> : never;
 			output: Schema extends ZodType ? output<Schema> : never;
+			options: ZodSchemaOptions;
 		};
 	}
 }

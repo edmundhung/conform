@@ -49,6 +49,7 @@ declare module '@conform-to/dom/future' {
 			type: ZodAny;
 			input: Schema extends ZodAny ? input<Schema> : never;
 			output: Schema extends ZodAny ? output<Schema> : never;
+			options: never;
 		};
 	}
 }

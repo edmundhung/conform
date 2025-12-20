@@ -167,6 +167,7 @@ export type UnknownObject<T> = [T] extends [Record<string, any>]
  * - `type`: The schema type constraint (e.g., `ZodType`)
  * - `input`: The inferred input type for schema `S`
  * - `output`: The inferred output type for schema `S`
+ * - `options`: (optional) Schema-specific validation options
  *
  * @example
  * ```ts
@@ -176,6 +177,7 @@ export type UnknownObject<T> = [T] extends [Record<string, any>]
  *       type: z.ZodType;
  *       input: Schema extends z.ZodType ? z.input<Schema> : never;
  *       output: Schema extends z.ZodType ? z.output<Schema> : never;
+ *       options: { errorMap?: z.ZodErrorMap };
  *     };
  *   }
  * }
@@ -213,6 +215,13 @@ export type InferSchemaOutput<
 > = SchemaTypeRegistry<Schema>[Key]['output'];
 
 /**
+ * Extract schema-specific validation options from the registry.
+ * Returns `never` if the schema type doesn't define options.
+ */
+export type InferSchemaOptions<Key extends SchemaTypeKey> =
+	SchemaTypeRegistry[Key] extends { options: infer O } ? O : never;
+
+/**
  * Result of schema validation.
  */
 export type SchemaValidationResult<Value> =
@@ -230,10 +239,16 @@ export type SchemaConfig<TypeKey extends SchemaTypeKey = SchemaTypeKey> = {
 	type: TypeKey;
 	/**
 	 * Validates a schema against form payload.
+	 * @param schema - The schema to validate against
+	 * @param payload - The form data payload
+	 * @param options - Schema-specific validation options (e.g., Zod's errorMap)
 	 */
 	validate: <Schema extends ExtractSchemaType<TypeKey>>(
 		schema: Schema,
 		payload: Record<string, FormValue>,
+		options?: [InferSchemaOptions<TypeKey>] extends [never]
+			? undefined
+			: InferSchemaOptions<TypeKey>,
 	) => SchemaValidationResult<InferSchemaOutput<TypeKey, Schema>>;
 	/**
 	 * Optional function to extract HTML validation constraints from a schema.

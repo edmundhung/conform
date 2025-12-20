@@ -75,6 +75,7 @@ declare module '@conform-to/dom/future' {
 			output: Schema extends StandardSchemaV1
 				? StandardSchemaV1.InferOutput<Schema>
 				: never;
+			options: never;
 		};
 	}
 }

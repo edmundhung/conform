@@ -58,6 +58,7 @@ import type {
 	ExtractSchemaType,
 	InferSchemaInput,
 	InferSchemaOutput,
+	InferSchemaOptions,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -909,6 +910,7 @@ export function configureForms<
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<
 			InferSchemaInput<TypeKey, Schema>,
+			InferSchemaOptions<TypeKey>,
 			ErrorShape,
 			CustomFieldMetadata
 		>;
@@ -937,6 +939,7 @@ export function configureForms<
 			 * @deprecated Use `useForm(schema, options)` instead for better type inference.
 			 *
 			 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
+			InferSchemaOptions<TypeKey>,
 			 * Removes the need for manual onValidate setup.
 			 *
 			 */
@@ -952,7 +955,14 @@ export function configureForms<
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
 	>(
-		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+		options: FormOptions<
+			FormShape,
+			ErrorShape,
+			Value,
+			undefined,
+			never,
+			'onValidate'
+		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
@@ -968,12 +978,20 @@ export function configureForms<
 	>(
 		schemaOrOptions:
 			| Schema
-			| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+			| FormOptions<
+					FormShape,
+					ErrorShape,
+					Value,
+					undefined,
+					never,
+					'onValidate'
+			  >,
 		maybeOptions?: FormOptions<
 			InferSchemaInput<TypeKey, Schema>,
 			ErrorShape,
 			Value,
-			InferSchemaOutput<TypeKey, Schema>
+			InferSchemaOutput<TypeKey, Schema>,
+			InferSchemaOptions<TypeKey>
 		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
@@ -985,7 +1003,8 @@ export function configureForms<
 			InferSchemaInput<TypeKey, Schema>,
 			ErrorShape,
 			Value,
-			InferSchemaOutput<TypeKey, Schema>
+			InferSchemaOutput<TypeKey, Schema>,
+			InferSchemaOptions<TypeKey>
 		>;
 
 		if (maybeOptions) {
@@ -994,14 +1013,16 @@ export function configureForms<
 				InferSchemaInput<TypeKey, Schema>,
 				ErrorShape,
 				Value,
-				InferSchemaOutput<TypeKey, Schema>
+				InferSchemaOutput<TypeKey, Schema>,
+				InferSchemaOptions<TypeKey>
 			>;
 		} else {
 			const fullOptions = schemaOrOptions as FormOptions<
 				InferSchemaInput<TypeKey, Schema>,
 				ErrorShape,
 				Value,
-				InferSchemaOutput<TypeKey, Schema>
+				InferSchemaOutput<TypeKey, Schema>,
+				InferSchemaOptions<TypeKey>
 			> & {
 				schema?: Schema;
 			};
@@ -1037,6 +1058,9 @@ export function configureForms<
 						return schemaResult.then((resolvedResult) => {
 							if (typeof options.onValidate === 'function') {
 								throw new Error(
+									// Type assertion needed because TypeScript can't resolve conditional types
+									// with generic type parameters. Type safety is enforced at the options level.
+									options.schemaOptions as any,
 									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
 								);
 							}

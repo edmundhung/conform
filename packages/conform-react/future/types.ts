@@ -350,6 +350,7 @@ export type BaseFormOptions<
 		: BaseErrorShape,
 	Value = undefined,
 	SchemaValue = undefined,
+	SchemaOptions = never,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -365,6 +366,11 @@ export type BaseFormOptions<
 	defaultValue?: DefaultValue<FormShape> | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
+	/**
+	 * Schema-specific validation options (e.g., Zod's errorMap).
+	 * The available options depend on the schema library configured in `configureForms`.
+	 */
+	schemaOptions?: [SchemaOptions] extends [never] ? never : SchemaOptions;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * Overrides the global default set by FormOptionsProvider if provided.
@@ -396,14 +402,16 @@ export type FormOptions<
 		: BaseErrorShape,
 	Value = undefined,
 	SchemaValue = undefined,
+	SchemaOptions = never,
 	RequiredKeys extends keyof BaseFormOptions<
 		FormShape,
 		ErrorShape,
 		Value,
-		SchemaValue
+		SchemaValue,
+		SchemaOptions
 	> = never,
 > = RequireKey<
-	BaseFormOptions<FormShape, ErrorShape, Value, SchemaValue>,
+	BaseFormOptions<FormShape, ErrorShape, Value, SchemaValue, SchemaOptions>,
 	RequiredKeys
 >;
 
@@ -965,6 +973,7 @@ export type {
 	ExtractSchemaType,
 	InferSchemaInput,
 	InferSchemaOutput,
+	InferSchemaOptions,
 	SchemaValidationResult,
 	SchemaConfig,
 } from '@conform-to/dom/future';

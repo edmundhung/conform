@@ -3,6 +3,7 @@ import type {
 	GenericSchemaAsync,
 	InferInput,
 	InferOutput,
+	Config,
 } from 'valibot';
 import { safeParse, safeParseAsync } from 'valibot';
 import type { SchemaConfig } from '@conform-to/dom/future';
@@ -17,6 +18,11 @@ type ValibotSchema = GenericSchema | GenericSchemaAsync;
 const schemaType = 'valibot/v1' as const;
 
 /**
+ * Schema-specific options for Valibot validation.
+ */
+export type ValibotSchemaOptions = Config<any>;
+
+/**
  * Augment SchemaTypeRegistry to add Valibot-specific type inference.
  */
 declare module '@conform-to/dom/future' {
@@ -25,6 +31,7 @@ declare module '@conform-to/dom/future' {
 			type: ValibotSchema;
 			input: Schema extends ValibotSchema ? InferInput<Schema> : never;
 			output: Schema extends ValibotSchema ? InferOutput<Schema> : never;
+			options: ValibotSchemaOptions;
 		};
 	}
 }
@@ -45,14 +52,14 @@ declare module '@conform-to/dom/future' {
  */
 export const valibotSchema: SchemaConfig<typeof schemaType> = {
 	type: schemaType,
-	validate(schema, payload) {
+	validate(schema, payload, options) {
 		if (schema.async === true) {
-			return safeParseAsync(schema, payload).then((result) =>
+			return safeParseAsync(schema, payload, options).then((result) =>
 				formatResult(result, { includeValue: true }),
 			) as any;
 		}
 
-		const result = safeParse(schema, payload);
+		const result = safeParse(schema, payload, options);
 		return formatResult(result, { includeValue: true }) as any;
 	},
 	getConstraint(schema) {

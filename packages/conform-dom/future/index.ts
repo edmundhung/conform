@@ -11,6 +11,7 @@ export type {
 	ExtractSchemaType,
 	InferSchemaInput,
 	InferSchemaOutput,
+	InferSchemaOptions,
 	SchemaValidationResult,
 	SchemaConfig,
 } from '../types';
