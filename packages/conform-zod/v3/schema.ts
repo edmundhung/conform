@@ -1,5 +1,6 @@
 import type { ZodType, input, output } from 'zod';
 import type { SchemaConfig } from '@conform-to/dom/future';
+import { getZodConstraint } from './constraint';
 import { formatResult } from './format';
 
 /**
@@ -33,6 +34,9 @@ export const zodSchema: SchemaConfig<typeof schemaType> = {
 			const result = schema.safeParse(payload);
 			return formatResult(result, { includeValue: true });
 		}
+	},
+	getConstraint(schema) {
+		return getZodConstraint(schema);
 	},
 };
 

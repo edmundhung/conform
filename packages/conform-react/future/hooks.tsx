@@ -634,10 +634,12 @@ export function defineFormHooks<
 			schema = fullOptions.schema;
 		}
 
-		const { id, constraint } = options;
+		const constraint =
+			options.constraint ??
+			(schema ? globalConfig.schema.getConstraint?.(schema) : undefined);
 		const optionsRef = useLatest(options);
 		const fallbackId = useId();
-		const formId = id ?? `form-${fallbackId}`;
+		const formId = options.id ?? `form-${fallbackId}`;
 		const [state, handleSubmit] = useConform<
 			FormShape,
 			ErrorShape,

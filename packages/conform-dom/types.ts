@@ -235,4 +235,11 @@ export type SchemaConfig<TypeKey extends SchemaTypeKey = SchemaTypeKey> = {
 		schema: Schema,
 		payload: Record<string, FormValue>,
 	) => SchemaValidationResult<InferSchemaOutput<TypeKey, Schema>>;
+	/**
+	 * Optional function to extract HTML validation constraints from a schema.
+	 * If provided, useForm will automatically infer constraints when none are specified.
+	 */
+	getConstraint?: <Schema extends ExtractSchemaType<TypeKey>>(
+		schema: Schema,
+	) => Record<string, ValidationAttributes>;
 };

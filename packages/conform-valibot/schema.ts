@@ -6,6 +6,7 @@ import type {
 } from 'valibot';
 import { safeParse, safeParseAsync } from 'valibot';
 import type { SchemaConfig } from '@conform-to/dom/future';
+import { getValibotConstraint } from './constraint';
 import { formatResult } from './format';
 
 type ValibotSchema = GenericSchema | GenericSchemaAsync;
@@ -53,5 +54,8 @@ export const valibotSchema: SchemaConfig<typeof schemaType> = {
 
 		const result = safeParse(schema, payload);
 		return formatResult(result, { includeValue: true }) as any;
+	},
+	getConstraint(schema) {
+		return getValibotConstraint(schema);
 	},
 };
