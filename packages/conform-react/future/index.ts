@@ -19,6 +19,7 @@ export type {
 	FormsConfig,
 	BaseErrorShape,
 	CustomTypes,
+	CustomSchemaTypes,
 	FormContext,
 	FormMetadata,
 	FormOptions,
@@ -33,12 +34,9 @@ export type {
 	InferFormMetadataResult,
 	InferFieldMetadataResult,
 	MakeConditional,
-	SchemaTypeKey,
-	ExtractSchemaType,
-	InferSchemaInput,
-	InferSchemaOutput,
-	SchemaValidationResult,
-	SchemaConfig,
+	InferInput,
+	InferOutput,
+	InferOptions,
 } from './types';
 export { standardSchema } from './schema';
 export {

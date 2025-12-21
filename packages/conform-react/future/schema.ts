@@ -1,4 +1,4 @@
-import type { FormError, SchemaConfig } from '@conform-to/dom/future';
+import type { FormError } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
 
 /**
@@ -42,13 +42,13 @@ function resolveStandardSchemaResult<Value>(
  * });
  * ```
  */
-export const standardSchema: SchemaConfig<StandardSchemaV1> = {
-	isSchema: (schema): schema is StandardSchemaV1 =>
-		schema != null &&
-		typeof schema === 'object' &&
-		'~standard' in schema &&
-		typeof (schema as StandardSchemaV1)['~standard']?.validate === 'function',
-	validate(schema, payload) {
+export const standardSchema = {
+	isSchema: (schema: unknown): schema is StandardSchemaV1 =>
+		schema != null && typeof schema === 'object' && '~standard' in schema,
+	validateSchema: <Schema extends StandardSchemaV1>(
+		schema: Schema,
+		payload: Record<string, unknown>,
+	) => {
 		const result = schema['~standard'].validate(payload);
 
 		if (result instanceof Promise) {
@@ -60,21 +60,3 @@ export const standardSchema: SchemaConfig<StandardSchemaV1> = {
 		return resolveStandardSchemaResult(result) as any;
 	},
 };
-
-/**
- * Augment SchemaTypeRegistry to add StandardSchemaV1 type inference.
- */
-declare module '@conform-to/dom/future' {
-	interface SchemaTypeRegistry<Schema> {
-		'standard/v1': {
-			type: StandardSchemaV1;
-			input: Schema extends StandardSchemaV1
-				? StandardSchemaV1.InferInput<Schema>
-				: never;
-			output: Schema extends StandardSchemaV1
-				? StandardSchemaV1.InferOutput<Schema>
-				: never;
-			options: never;
-		};
-	}
-}

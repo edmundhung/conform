@@ -5,9 +5,63 @@ import type {
 	Serialize,
 	SubmissionResult,
 	ValidationAttributes,
-	SchemaConfig,
 } from '@conform-to/dom/future';
 import { StandardSchemaV1 } from './standard-schema';
+
+/**
+ * Augment this interface to customize schema type inference for your schema library.
+ *
+ * @example
+ * ```ts
+ * import type { ZodTypeAny, input, output } from 'zod';
+ * import type { ZodSchemaOptions } from '@conform-to/zod/v3/future';
+ *
+ * declare module '@conform-to/react/future' {
+ *   interface CustomSchemaTypes<Schema> {
+ *     input: Schema extends ZodTypeAny ? input<Schema> : never;
+ *     output: Schema extends ZodTypeAny ? output<Schema> : never;
+ *     options: ZodSchemaOptions;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface CustomSchemaTypes<Schema = unknown> {
+	// Empty by default - users augment this interface
+}
+
+/**
+ * Infer schema input type.
+ * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ */
+export type InferInput<Schema> =
+	CustomSchemaTypes<Schema> extends {
+		input: infer I;
+	}
+		? I
+		: Schema extends StandardSchemaV1
+			? StandardSchemaV1.InferInput<Schema>
+			: unknown;
+
+/**
+ * Infer schema output type.
+ * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ */
+export type InferOutput<Schema> =
+	CustomSchemaTypes<Schema> extends { output: infer Output }
+		? Output
+		: Schema extends StandardSchemaV1
+			? StandardSchemaV1.InferOutput<Schema>
+			: unknown;
+
+/**
+ * Infer schema options type.
+ * Uses CustomSchemaTypes if augmented, otherwise returns never.
+ */
+export type InferOptions<Schema> =
+	CustomSchemaTypes<Schema> extends { options: infer Options }
+		? Options
+		: never;
 
 export type Prettify<T> = {
 	[K in keyof T]: T[K];
@@ -221,9 +275,10 @@ export type ExtractFieldConditions<
  * Configuration options for configureForms factory.
  */
 export type FormsConfig<
-	BaseErrorShape = string,
-	CustomFormMetadata extends Record<string, unknown> = {},
-	CustomFieldMetadata extends Record<string, unknown> = {},
+	BaseErrorShape,
+	BaseSchema,
+	CustomFormMetadata extends Record<string, unknown>,
+	CustomFieldMetadata extends Record<string, unknown>,
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -252,24 +307,43 @@ export type FormsConfig<
 	 */
 	errorShape?: (error: unknown) => error is BaseErrorShape;
 	/**
-	 * Schema configurations for type inference and validation.
-	 * Supports multiple schema libraries - the first matching schema will be used.
-	 * Import from `@conform-to/zod/future` or `@conform-to/valibot/future`
-	 * for schema-specific type inference and validation.
-	 *
-	 * @default [standardSchema] (uses StandardSchema validation)
+	 * Runtime type guard to check if a value is a schema.
+	 * Used to determine if the first argument to useForm is a schema or options object.
 	 *
 	 * @example
 	 * ```ts
 	 * import { configureForms } from '@conform-to/react/future';
-	 * import { zodSchema } from '@conform-to/zod/future';
+	 * import {
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraint,
+	 * } from '@conform-to/zod/v3/future';
 	 *
 	 * const { useForm } = configureForms({
-	 *   schemas: [zodSchema],
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraint,
 	 * });
 	 * ```
 	 */
-	schemas?: SchemaConfig[];
+	isSchema?: (schema: unknown) => schema is BaseSchema;
+	/**
+	 * Validates a schema against form payload.
+	 */
+	validateSchema?: <Schema extends BaseSchema>(
+		schema: Schema,
+		payload: Record<string, FormValue>,
+		options?: InferOptions<Schema>,
+	) => MaybePromise<{
+		error: FormError<string> | null;
+		value?: InferOutput<Schema>;
+	}>;
+	/**
+	 * Extracts HTML validation constraints from a schema.
+	 */
+	getConstraint?: <Schema extends BaseSchema>(
+		schema: Schema,
+	) => Record<string, ValidationAttributes> | undefined;
 	/**
 	 * A function that defines custom form metadata properties.
 	 */
@@ -292,39 +366,6 @@ export type FormsConfig<
 	) => CustomFieldMetadata;
 };
 
-/**
- * @deprecated Use `FormsConfig` and `configureForms` instead.
- */
-export type GlobalFormOptions = {
-	/**
-	 * The name of the submit button field that indicates the submission intent.
-	 *
-	 * @default "__intent__"
-	 */
-	intentName: string;
-	/**
-	 * A custom serialization function for converting form data.
-	 */
-	serialize: Serialize;
-	/**
-	 * Determines when validation should run for the first time on a field.
-	 *
-	 * @default "onSubmit"
-	 */
-	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
-	/**
-	 * Determines when validation should run again after the field has been validated once.
-	 *
-	 * @default Same as shouldValidate
-	 */
-	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-	/**
-	 * A function that defines custom metadata properties for form fields.
-	 * Useful for integrating with UI libraries or custom form components.
-	 */
-	defineCustomMetadata?: CustomMetadataDefinition;
-};
-
 export type NonPartial<T> = {
 	[K in keyof Required<T>]: T[K];
 };
@@ -333,16 +374,13 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 	T & Pick<NonPartial<T>, K>
 >;
 
-export type BaseSchemaType = StandardSchemaV1<any, any>;
-
 export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
 	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	SchemaValue = undefined,
-	SchemaOptions = never,
+	Schema = unknown,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -362,7 +400,7 @@ export type BaseFormOptions<
 	 * Schema-specific validation options (e.g., Zod's errorMap).
 	 * The available options depend on the schema library configured in `configureForms`.
 	 */
-	schemaOptions?: [SchemaOptions] extends [never] ? never : SchemaOptions;
+	schemaOptions?: InferOptions<Schema>;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * Overrides the global default set by FormOptionsProvider if provided.
@@ -384,7 +422,9 @@ export type BaseFormOptions<
 	/** Blur event handler for custom focus handling logic. */
 	onBlur?: BlurHandler | undefined;
 	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
-	onValidate?: ValidateHandler<ErrorShape, Value, SchemaValue> | undefined;
+	onValidate?:
+		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>>
+		| undefined;
 };
 
 export type FormOptions<
@@ -393,17 +433,15 @@ export type FormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	SchemaValue = undefined,
-	SchemaOptions = never,
+	Schema = unknown,
 	RequiredKeys extends keyof BaseFormOptions<
 		FormShape,
 		ErrorShape,
 		Value,
-		SchemaValue,
-		SchemaOptions
+		Schema
 	> = never,
 > = RequireKey<
-	BaseFormOptions<FormShape, ErrorShape, Value, SchemaValue, SchemaOptions>,
+	BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
 	RequiredKeys
 >;
 
@@ -920,20 +958,20 @@ export type SubmitHandler<
  * Infer the error shape from a FormsConfig.
  */
 export type InferErrorShape<Config> =
-	Config extends FormsConfig<infer E, any, any> ? E : unknown;
+	Config extends FormsConfig<infer E, any, any, any> ? E : unknown;
 
 /**
  * Infer the custom form metadata result type from a FormsConfig.
  */
 export type InferFormMetadataResult<Config> =
-	Config extends FormsConfig<any, infer F, any> ? F : {};
+	Config extends FormsConfig<any, any, infer F, any> ? F : {};
 
 /**
  * Infer the custom field metadata result type from a FormsConfig.
  * Conditions are encoded directly in the return type via the `conditional()` helper.
  */
 export type InferFieldMetadataResult<Config> =
-	Config extends FormsConfig<any, any, infer M> ? M : {};
+	Config extends FormsConfig<any, any, any, infer M> ? M : {};
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.
@@ -959,16 +997,4 @@ export type MakeConditional<
 		: never;
 };
 
-// Re-export schema type utilities from @conform-to/dom/future
-export type {
-	SchemaTypeKey,
-	ExtractSchemaType,
-	InferSchemaInput,
-	InferSchemaOutput,
-	InferSchemaOptions,
-	SchemaValidationResult,
-	SchemaConfig,
-	InferInput,
-	InferOutput,
-	InferOptions,
-} from '@conform-to/dom/future';
+export type MaybePromise<T> = T | Promise<T>;

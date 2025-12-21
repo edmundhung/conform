@@ -56,7 +56,6 @@ import type {
 	FormsConfig,
 	InferInput,
 	InferOutput,
-	SchemaConfig,
 } from './types';
 import { actionHandlers, applyIntent, deserializeIntent } from './intent';
 import {
@@ -778,27 +777,27 @@ export function useFormData<Value = any>(
 
 export function configureForms<
 	BaseErrorShape = string,
+	BaseSchema = StandardSchemaV1,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
 	config: FormsConfig<
 		BaseErrorShape,
+		BaseSchema,
 		CustomFormMetadata,
 		CustomFieldMetadata
 	> = {},
 ) {
 	/**
-	 * Global config
+	 * Global config with fallbacks to StandardSchema defaults
 	 */
-	const schemas = config.schemas ?? [standardSchema];
-
-	/**
-	 * Find the matching schema config for a given schema at runtime.
-	 */
-	function findSchemaConfig(schema: unknown): SchemaConfig | undefined {
-		return schemas.find((schemaConfig) => schemaConfig.isSchema(schema));
-	}
-
+	const isSchema = (config.isSchema ?? standardSchema.isSchema) as (
+		schema: unknown,
+	) => schema is BaseSchema;
+	const validateSchema = (config.validateSchema ??
+		standardSchema.validateSchema) as NonNullable<
+		FormsConfig<BaseErrorShape, BaseSchema, {}, {}>['validateSchema']
+	>;
 	const globalConfig = {
 		...config,
 		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
@@ -806,8 +805,8 @@ export function configureForms<
 		shouldValidate: config.shouldValidate ?? 'onSubmit',
 		shouldRevalidate:
 			config.shouldRevalidate ?? config.shouldValidate ?? 'onSubmit',
-		schemas,
-		findSchemaConfig,
+		isSchema,
+		validateSchema,
 	};
 
 	/**
@@ -898,7 +897,7 @@ export function configureForms<
 	 * ```
 	 */
 	function useForm<
-		Schema,
+		Schema extends BaseSchema,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = InferOutput<Schema>,
 	>(
@@ -909,7 +908,7 @@ export function configureForms<
 				: never,
 			ErrorShape,
 			Value,
-			InferOutput<Schema>,
+			Schema,
 			string extends ErrorShape ? never : 'onValidate'
 		>,
 	): {
@@ -954,14 +953,7 @@ export function configureForms<
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
 	>(
-		options: FormOptions<
-			FormShape,
-			ErrorShape,
-			Value,
-			undefined,
-			never,
-			'onValidate'
-		>,
+		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
@@ -972,42 +964,35 @@ export function configureForms<
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
 	>(
-		schemaOrOptions: unknown,
-		maybeOptions?: FormOptions<any, ErrorShape, Value, any, any>,
+		schemaOrOptions:
+			| BaseSchema
+			| StandardSchemaV1
+			| FormOptions<FormShape, ErrorShape, Value, undefined, any>,
+		maybeOptions?: FormOptions<any, ErrorShape, Value, undefined, any>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<Record<string, any>, ErrorShape, CustomFieldMetadata>;
 		intent: IntentDispatcher;
 	} {
-		let schema: unknown;
-		let options: FormOptions<any, ErrorShape, Value, any, any>;
+		let schema: BaseSchema | undefined;
+		let options: FormOptions<any, ErrorShape, Value, undefined, any>;
 
-		if (maybeOptions) {
+		if (globalConfig.isSchema(schemaOrOptions)) {
 			schema = schemaOrOptions;
-			options = maybeOptions;
+			options = maybeOptions ?? {};
 		} else {
-			const fullOptions = schemaOrOptions as FormOptions<
+			options = schemaOrOptions as FormOptions<
 				any,
 				ErrorShape,
 				Value,
-				any,
+				undefined,
 				any
-			> & {
-				schema?: unknown;
-			};
-
-			options = fullOptions;
-			schema = fullOptions.schema;
+			>;
 		}
 
-		const schemaConfig = schema
-			? globalConfig.findSchemaConfig(schema)
-			: undefined;
 		const constraint =
 			options.constraint ??
-			(schema && schemaConfig
-				? schemaConfig.getConstraint?.(schema as any)
-				: undefined);
+			(schema ? globalConfig.getConstraint?.(schema) : undefined);
 		const optionsRef = useLatest(options);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
@@ -1019,9 +1004,9 @@ export function configureForms<
 				intentName: globalConfig.intentName,
 				onError: options.onError ?? focusFirstInvalidField,
 				onValidate(ctx) {
-					if (schema && schemaConfig) {
-						const schemaResult = schemaConfig.validate(
-							schema as any,
+					if (schema) {
+						const schemaResult = globalConfig.validateSchema(
+							schema,
 							ctx.payload,
 						);
 
@@ -1046,12 +1031,12 @@ export function configureForms<
 							ctx.error = schemaResult.error;
 						}
 
-						const schemaValue = schemaResult.value;
+						const schemaValue = schemaResult.value as Value | undefined;
 
 						ctx.schemaValue = schemaValue;
 
 						const validateResult = resolveValidateResult(
-							options.onValidate(ctx),
+							options.onValidate(ctx as any),
 						);
 
 						if (validateResult.syncResult) {
@@ -1071,7 +1056,7 @@ export function configureForms<
 					}
 
 					return (
-						options.onValidate?.(ctx) ?? {
+						options.onValidate?.(ctx as any) ?? {
 							// To avoid conform falling back to server validation,
 							// if neither schema nor validation handler is provided,
 							// we just treat it as a valid client submission
@@ -1330,7 +1315,57 @@ export function useLatest<Value>(value: Value) {
 	return ref;
 }
 
-const { FormProvider, useForm, useFormMetadata, useField, useIntent } =
-	configureForms();
+const defaultForms = configureForms();
+
+/**
+ * Default form provider using StandardSchemaV1.
+ */
+const FormProvider = defaultForms.FormProvider;
+
+/**
+ * Default useForm hook using StandardSchemaV1.
+ * For custom configuration, use `configureForms()` instead.
+ */
+const useForm: {
+	<
+		Schema extends StandardSchemaV1,
+		ErrorShape extends string = string,
+		Value = InferOutput<Schema>,
+	>(
+		schema: Schema,
+		options: FormOptions<
+			InferInput<Schema> extends Record<string, any>
+				? InferInput<Schema>
+				: never,
+			ErrorShape,
+			Value,
+			Schema,
+			string extends ErrorShape ? never : 'onValidate'
+		>,
+	): {
+		form: FormMetadata<ErrorShape, {}, {}>;
+		fields: Fieldset<InferInput<Schema>, ErrorShape, {}>;
+		intent: IntentDispatcher<
+			InferInput<Schema> extends Record<string, any>
+				? InferInput<Schema>
+				: never
+		>;
+	};
+	<
+		FormShape extends Record<string, any> = Record<string, any>,
+		ErrorShape extends string = string,
+		Value = undefined,
+	>(
+		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+	): {
+		form: FormMetadata<ErrorShape, {}, {}>;
+		fields: Fieldset<FormShape, ErrorShape, {}>;
+		intent: IntentDispatcher<FormShape>;
+	};
+} = defaultForms.useForm;
+
+const useFormMetadata = defaultForms.useFormMetadata;
+const useField = defaultForms.useField;
+const useIntent = defaultForms.useIntent;
 
 export { FormProvider, useForm, useFormMetadata, useField, useIntent };

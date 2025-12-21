@@ -1,12 +1,15 @@
 import type {
 	GenericSchema,
 	GenericSchemaAsync,
-	InferInput,
 	InferOutput,
 	Config,
 } from 'valibot';
 import { safeParse, safeParseAsync } from 'valibot';
-import type { SchemaConfig } from '@conform-to/dom/future';
+import type {
+	FormValue,
+	FormError,
+	ValidationAttributes,
+} from '@conform-to/dom/future';
 import { getValibotConstraint } from './constraint';
 import { formatResult } from './format';
 
@@ -18,50 +21,58 @@ type ValibotSchema = GenericSchema | GenericSchemaAsync;
 export type ValibotSchemaOptions = Config<any>;
 
 /**
- * Augment SchemaTypeRegistry to add Valibot-specific type inference.
+ * Type guard to check if a value is a Valibot schema.
  */
-declare module '@conform-to/dom/future' {
-	interface SchemaTypeRegistry<Schema> {
-		'valibot/v1': {
-			type: ValibotSchema;
-			input: Schema extends ValibotSchema ? InferInput<Schema> : never;
-			output: Schema extends ValibotSchema ? InferOutput<Schema> : never;
-			options: ValibotSchemaOptions;
-		};
-	}
+export function isSchema(schema: unknown): schema is ValibotSchema {
+	return (
+		typeof schema === 'object' &&
+		schema !== null &&
+		'~standard' in schema &&
+		typeof schema['~standard'] === 'object' &&
+		schema['~standard'] !== null &&
+		'vendor' in schema['~standard'] &&
+		schema['~standard'].vendor === 'valibot'
+	);
 }
 
 /**
- * Valibot schema configuration for use with configureForms.
- * Provides Valibot-specific type inference and validation.
+ * Validates form data against a Valibot schema.
  *
- * @example
- * ```ts
- * import { configureForms } from '@conform-to/react/future';
- * import { valibotSchema } from '@conform-to/valibot/future';
- *
- * const { useForm } = configureForms({
- *   schemas: [valibotSchema],
- * });
- * ```
+ * @param schema - The Valibot schema to validate against
+ * @param payload - The form data payload
+ * @param options - Optional Valibot-specific config options
  */
-export const valibotSchema: SchemaConfig<ValibotSchema> = {
-	isSchema: (schema): schema is ValibotSchema =>
-		schema != null &&
-		typeof schema === 'object' &&
-		'~standard' in schema &&
-		'async' in schema,
-	validate(schema, payload, options) {
-		if (schema.async === true) {
-			return safeParseAsync(schema, payload, options).then((result) =>
-				formatResult(result, { includeValue: true }),
-			) as any;
-		}
+type ValidationResult<Value> =
+	| { error: FormError<string> | null; value?: Value }
+	| Promise<{ error: FormError<string> | null; value?: Value }>;
 
-		const result = safeParse(schema, payload, options);
-		return formatResult(result, { includeValue: true }) as any;
-	},
-	getConstraint(schema) {
-		return getValibotConstraint(schema);
-	},
-};
+export function validateSchema<Schema extends ValibotSchema>(
+	schema: Schema,
+	payload: Record<string, FormValue>,
+	options?: ValibotSchemaOptions,
+): ValidationResult<InferOutput<Schema>> {
+	if (schema.async === true) {
+		return safeParseAsync(schema, payload, options).then((result) =>
+			formatResult(result, { includeValue: true }),
+		) as any;
+	}
+
+	const result = safeParse(schema, payload, options);
+	return formatResult(result, { includeValue: true }) as any;
+}
+
+/**
+ * Extracts HTML validation attributes from a Valibot schema.
+ *
+ * @param schema - The Valibot schema to extract constraints from
+ */
+export function getConstraint<Schema extends ValibotSchema>(
+	schema: Schema,
+): Record<string, ValidationAttributes> {
+	return getValibotConstraint(schema);
+}
+
+/**
+ * @deprecated Use `getConstraint` instead.
+ */
+export { getValibotConstraint };

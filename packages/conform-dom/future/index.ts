@@ -6,17 +6,6 @@ export type {
 	Submission,
 	SubmissionResult,
 	ValidationAttributes,
-	SchemaTypeRegistry,
-	SchemaTypeKey,
-	ExtractSchemaType,
-	InferSchemaInput,
-	InferSchemaOutput,
-	InferSchemaOptions,
-	SchemaValidationResult,
-	SchemaConfig,
-	InferInput,
-	InferOutput,
-	InferOptions,
 } from '../types';
 export {
 	DEFAULT_INTENT_NAME,

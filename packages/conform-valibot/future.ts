@@ -1,4 +1,9 @@
-export { getValibotConstraint } from './constraint';
 export { coerceFormValue } from './coercion';
 export { formatResult } from './format';
-export { valibotSchema } from './schema';
+export {
+	isSchema,
+	validateSchema,
+	getConstraint,
+	getValibotConstraint,
+} from './schema';
+export type { ValibotSchemaOptions } from './schema';

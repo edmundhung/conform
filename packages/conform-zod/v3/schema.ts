@@ -1,5 +1,9 @@
-import type { ZodType, ZodErrorMap, input, output } from 'zod';
-import type { SchemaConfig } from '@conform-to/dom/future';
+import type { ZodTypeAny, ZodErrorMap, output } from 'zod';
+import type {
+	FormValue,
+	FormError,
+	ValidationAttributes,
+} from '@conform-to/dom/future';
 import { getZodConstraint } from './constraint';
 import { formatResult } from './format';
 
@@ -15,51 +19,59 @@ export type ZodSchemaOptions = {
 };
 
 /**
- * Zod schema configuration for use with configureForms.
- * Provides Zod-specific type inference and validation.
- *
- * @example
- * ```ts
- * import { configureForms } from '@conform-to/react/future';
- * import { zodSchema } from '@conform-to/zod/v3/future';
- *
- * const { useForm } = configureForms({
- *   schemas: [zodSchema],
- * });
- * ```
+ * Type guard to check if a value is a Zod schema.
  */
-export const zodSchema: SchemaConfig<ZodType> = {
-	isSchema: (schema): schema is ZodType =>
-		schema != null &&
+export function isSchema(schema: unknown): schema is ZodTypeAny {
+	return (
 		typeof schema === 'object' &&
-		'_def' in schema &&
-		typeof (schema as ZodType).safeParse === 'function',
-	validate(schema, payload, options) {
-		try {
-			const promise = schema.safeParseAsync(payload, options);
-			return promise.then((result) =>
-				formatResult(result, { includeValue: true }),
-			);
-		} catch {
-			const result = schema.safeParse(payload, options);
-			return formatResult(result, { includeValue: true });
-		}
-	},
-	getConstraint(schema) {
-		return getZodConstraint(schema);
-	},
-};
+		schema !== null &&
+		'~standard' in schema &&
+		typeof schema['~standard'] === 'object' &&
+		schema['~standard'] !== null &&
+		'vendor' in schema['~standard'] &&
+		schema['~standard'].vendor === 'zod'
+	);
+}
 
 /**
- * Augment SchemaTypeRegistry to add Zod-specific type inference.
+ * Validates form data against a Zod schema.
+ *
+ * @param schema - The Zod schema to validate against
+ * @param payload - The form data payload
+ * @param options - Optional Zod-specific options (e.g., errorMap)
  */
-declare module '@conform-to/dom/future' {
-	interface SchemaTypeRegistry<Schema> {
-		'zod/v3': {
-			type: ZodType;
-			input: Schema extends ZodType ? input<Schema> : never;
-			output: Schema extends ZodType ? output<Schema> : never;
-			options: ZodSchemaOptions;
-		};
+type ValidationResult<Value> =
+	| { error: FormError<string> | null; value?: Value }
+	| Promise<{ error: FormError<string> | null; value?: Value }>;
+
+export function validateSchema<Schema extends ZodTypeAny>(
+	schema: Schema,
+	payload: Record<string, FormValue>,
+	options?: ZodSchemaOptions,
+): ValidationResult<output<Schema>> {
+	try {
+		const promise = schema.safeParseAsync(payload, options);
+		return promise.then((result) =>
+			formatResult(result, { includeValue: true }),
+		);
+	} catch {
+		const result = schema.safeParse(payload, options);
+		return formatResult(result, { includeValue: true });
 	}
 }
+
+/**
+ * Extracts HTML validation attributes from a Zod schema.
+ *
+ * @param schema - The Zod schema to extract constraints from
+ */
+export function getConstraint<Schema extends ZodTypeAny>(
+	schema: Schema,
+): Record<string, ValidationAttributes> {
+	return getZodConstraint(schema);
+}
+
+/**
+ * @deprecated Use `getConstraint` instead.
+ */
+export { getZodConstraint };
