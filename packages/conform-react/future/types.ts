@@ -20,7 +20,7 @@ import { StandardSchemaV1 } from './standard-schema';
  *   interface CustomSchemaTypes<Schema> {
  *     input: Schema extends ZodTypeAny ? input<Schema> : never;
  *     output: Schema extends ZodTypeAny ? output<Schema> : never;
- *     options: ZodSchemaOptions;
+ *     options: Schema extends ZodTypeAny ? ZodSchemaOptions : never;
  *   }
  * }
  * ```

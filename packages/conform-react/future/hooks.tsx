@@ -1008,6 +1008,7 @@ export function configureForms<
 						const schemaResult = globalConfig.validateSchema(
 							schema,
 							ctx.payload,
+							options.schemaOptions,
 						);
 
 						if (schemaResult instanceof Promise) {
