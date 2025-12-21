@@ -2,7 +2,7 @@ import { configureForms, shape } from '@conform-to/react/future';
 import {
 	isSchema,
 	validateSchema,
-	getConstraint,
+	getConstraints,
 	type ZodSchemaOptions,
 } from '@conform-to/zod/v3/future';
 import type { TextField } from './components/TextField';
@@ -28,11 +28,11 @@ declare module '@conform-to/react/future' {
 const { useForm } = configureForms({
 	isSchema,
 	validateSchema,
-	getConstraint,
+	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
-	errorShape: shape<string>(),
-	formMetadata(metadata) {
+	isError: shape<string>(),
+	extendFormMetadata(metadata) {
 		return {
 			get props() {
 				return {
@@ -45,7 +45,7 @@ const { useForm } = configureForms({
 			},
 		};
 	},
-	fieldMetadata(metadata, { when }) {
+	extendFieldMetadata(metadata, { when }) {
 		return {
 			get textFieldProps() {
 				return {

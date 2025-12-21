@@ -49,16 +49,14 @@ export function validateSchema<Schema extends ZodAny>(
 
 /**
  * Extracts HTML validation attributes from a Zod v4 schema.
- *
- * @param schema - The Zod v4 schema to extract constraints from
  */
-export function getConstraint<Schema extends ZodAny>(
+export function getConstraints<Schema extends ZodAny>(
 	schema: Schema,
 ): Record<string, ValidationAttributes> {
 	return getZodConstraint(schema);
 }
 
 /**
- * @deprecated Use `getConstraint` instead.
+ * @deprecated Use `getConstraints` instead.
  */
 export { getZodConstraint };

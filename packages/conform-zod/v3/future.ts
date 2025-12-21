@@ -3,7 +3,7 @@ export { formatResult } from './format';
 export {
 	isSchema,
 	validateSchema,
-	getConstraint,
+	getConstraints,
 	getZodConstraint,
 } from './schema';
 export type { ZodSchemaOptions } from './schema';

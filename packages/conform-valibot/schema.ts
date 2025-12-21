@@ -63,16 +63,14 @@ export function validateSchema<Schema extends ValibotSchema>(
 
 /**
  * Extracts HTML validation attributes from a Valibot schema.
- *
- * @param schema - The Valibot schema to extract constraints from
  */
-export function getConstraint<Schema extends ValibotSchema>(
+export function getConstraints<Schema extends ValibotSchema>(
 	schema: Schema,
 ): Record<string, ValidationAttributes> {
 	return getValibotConstraint(schema);
 }
 
 /**
- * @deprecated Use `getConstraint` instead.
+ * @deprecated Use `getConstraints` instead.
  */
 export { getValibotConstraint };

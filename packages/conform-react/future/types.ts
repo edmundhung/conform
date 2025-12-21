@@ -305,7 +305,7 @@ export type FormsConfig<
 	/**
 	 * A type guard function to specify the shape of error objects.
 	 */
-	errorShape?: (error: unknown) => error is BaseErrorShape;
+	isError?: (error: unknown) => error is BaseErrorShape;
 	/**
 	 * Runtime type guard to check if a value is a schema.
 	 * Used to determine if the first argument to useForm is a schema or options object.
@@ -316,13 +316,13 @@ export type FormsConfig<
 	 * import {
 	 *   isSchema,
 	 *   validateSchema,
-	 *   getConstraint,
+	 *   getConstraints,
 	 * } from '@conform-to/zod/v3/future';
 	 *
 	 * const { useForm } = configureForms({
 	 *   isSchema,
 	 *   validateSchema,
-	 *   getConstraint,
+	 *   getConstraints,
 	 * });
 	 * ```
 	 */
@@ -341,23 +341,20 @@ export type FormsConfig<
 	/**
 	 * Extracts HTML validation constraints from a schema.
 	 */
-	getConstraint?: <Schema extends BaseSchema>(
+	getConstraints?: <Schema extends BaseSchema>(
 		schema: Schema,
 	) => Record<string, ValidationAttributes> | undefined;
 	/**
-	 * A function that defines custom form metadata properties.
+	 * Extends form metadata with custom properties.
 	 */
-	formMetadata?: <ErrorShape extends BaseErrorShape>(
+	extendFormMetadata?: <ErrorShape extends BaseErrorShape>(
 		metadata: BaseFormMetadata<ErrorShape>,
 	) => CustomFormMetadata;
 	/**
-	 * A function that defines custom field metadata properties.
-	 * Useful for integrating with UI libraries or custom form components.
-	 *
-	 * Use `when` to define properties that should only
-	 * be available for specific field shapes.
+	 * Extends field metadata with custom properties.
+	 * Use `when` for properties that depend on the field shape.
 	 */
-	fieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
+	extendFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseMetadata<FieldShape, ErrorShape>,
 		ctx: {
 			form: BaseFormMetadata<ErrorShape>;
@@ -644,18 +641,18 @@ export type Combine<T> = {
  * ```ts
  * declare module '@conform-to/react/future' {
  *   interface CustomTypes {
- *     errorShape: { message: string; code: string };
+ *     isError: { message: string; code: string };
  *   }
  * }
  * ```
  */
 export interface CustomTypes {}
 
-export type BaseErrorShape = CustomTypes extends { errorShape: infer Shape }
+export type BaseErrorShape = CustomTypes extends { isError: infer Shape }
 	? Shape
 	: unknown;
 
-export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
+export type DefaultErrorShape = CustomTypes extends { isError: infer Shape }
 	? Shape
 	: string;
 

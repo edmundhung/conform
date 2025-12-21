@@ -992,7 +992,7 @@ export function configureForms<
 
 		const constraint =
 			options.constraint ??
-			(schema ? globalConfig.getConstraint?.(schema) : undefined);
+			(schema ? globalConfig.getConstraints?.(schema) : undefined);
 		const optionsRef = useLatest(options);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
@@ -1147,8 +1147,8 @@ export function configureForms<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.formMetadata,
-					customizeField: globalConfig.fieldMetadata,
+					customizeForm: globalConfig.extendFormMetadata,
+					customizeField: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1156,7 +1156,7 @@ export function configureForms<
 			() =>
 				getFieldset(context, {
 					serialize: globalConfig.serialize,
-					customize: globalConfig.fieldMetadata,
+					customize: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1196,8 +1196,8 @@ export function configureForms<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.formMetadata,
-					customizeField: globalConfig.fieldMetadata,
+					customizeForm: globalConfig.extendFormMetadata,
+					customizeField: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1241,7 +1241,7 @@ export function configureForms<
 				getField(context, {
 					name,
 					serialize: globalConfig.serialize,
-					customize: globalConfig.fieldMetadata,
+					customize: globalConfig.extendFieldMetadata,
 				}),
 			[context, name],
 		);

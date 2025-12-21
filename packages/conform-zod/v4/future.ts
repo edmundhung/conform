@@ -3,6 +3,6 @@ export { formatResult } from './format';
 export {
 	isSchema,
 	validateSchema,
-	getConstraint,
+	getConstraints,
 	getZodConstraint,
 } from './schema';
