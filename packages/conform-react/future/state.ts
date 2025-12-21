@@ -21,9 +21,9 @@ import type {
 	ActionHandler,
 	BaseMetadata,
 	BaseFormMetadata,
-	WhenField,
+	DefineConditionalField,
 } from './types';
-import { generateUniqueKey, getArrayAtPath, merge, whenField } from './util';
+import { generateUniqueKey, getArrayAtPath, merge, when } from './util';
 
 export function initializeState<ErrorShape>(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
@@ -395,7 +395,7 @@ export function getFormMetadata<
 					metadata: BaseMetadata<FieldShape, ErrorShape>,
 					ctx: {
 						form: BaseFormMetadata<ErrorShape>;
-						whenField: WhenField;
+						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
@@ -473,7 +473,7 @@ export function getField<
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
 						form: BaseFormMetadata<ErrorShape>;
-						whenField: WhenField;
+						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
@@ -554,7 +554,7 @@ export function getField<
 
 	return Object.assign(
 		metadata,
-		customize?.(metadata, { form, whenField }),
+		customize?.(metadata, { form, when }),
 	) as FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 }
 
@@ -575,7 +575,7 @@ export function getFieldset<
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
 						form: BaseFormMetadata<ErrorShape>;
-						whenField: WhenField;
+						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;
@@ -620,7 +620,7 @@ export function getFieldList<
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
 						form: BaseFormMetadata<ErrorShape>;
-						whenField: WhenField;
+						when: DefineConditionalField;
 					},
 			  ) => CustomFieldMetadata)
 			| undefined;

@@ -45,7 +45,7 @@ const { useForm } = configureForms({
 			},
 		};
 	},
-	fieldMetadata(metadata, { whenField }) {
+	fieldMetadata(metadata, { when }) {
 		return {
 			get textFieldProps() {
 				return {
@@ -118,7 +118,7 @@ const { useForm } = configureForms({
 				} satisfies Partial<React.ComponentProps<typeof Checkbox>>;
 			},
 			get dateRangePickerProps() {
-				return whenField(
+				return when(
 					metadata,
 					shape<{ start: string; end: string }>(),
 					({ valid, errors, getFieldset }) => {

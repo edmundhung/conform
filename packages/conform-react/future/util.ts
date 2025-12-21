@@ -286,7 +286,7 @@ export function shape<T>(
  * Creates a conditional field metadata property that is only available
  * when the field shape matches the specified type.
  */
-export function whenField<Shape, ErrorShape, Result>(
+export function when<Shape, ErrorShape, Result>(
 	metadata: BaseMetadata<unknown, ErrorShape>,
 	_shape: (value: unknown) => value is Shape,
 	fn: (m: BaseMetadata<Shape, ErrorShape>) => Result,

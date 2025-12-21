@@ -250,7 +250,7 @@ export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
 /**
  * Function type for creating conditional field metadata based on shape constraints.
  */
-export type WhenField = <Shape, E, Result>(
+export type DefineConditionalField = <Shape, E, Result>(
 	metadata: BaseMetadata<unknown, E>,
 	shape: FieldShapeGuard<Shape>,
 	fn: (metadata: BaseMetadata<Shape, E>) => Result,
@@ -354,14 +354,14 @@ export type FormsConfig<
 	 * A function that defines custom field metadata properties.
 	 * Useful for integrating with UI libraries or custom form components.
 	 *
-	 * Use `whenField` to define properties that should only
+	 * Use `when` to define properties that should only
 	 * be available for specific field shapes.
 	 */
 	fieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
 		metadata: BaseMetadata<FieldShape, ErrorShape>,
 		ctx: {
 			form: BaseFormMetadata<ErrorShape>;
-			whenField: WhenField;
+			when: DefineConditionalField;
 		},
 	) => CustomFieldMetadata;
 };
