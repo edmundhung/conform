@@ -1094,10 +1094,12 @@ export function configureForms<
 						return;
 					}
 
-					const {
-						shouldValidate = globalConfig.shouldValidate,
-						shouldRevalidate = globalConfig.shouldRevalidate,
-					} = optionsRef.current;
+					const shouldValidate =
+						optionsRef.current.shouldValidate ?? globalConfig.shouldValidate;
+					const shouldRevalidate =
+						optionsRef.current.shouldRevalidate ??
+						optionsRef.current.shouldValidate ??
+						globalConfig.shouldRevalidate;
 
 					if (
 						isTouched(state, event.target.name)
@@ -1127,10 +1129,12 @@ export function configureForms<
 						return;
 					}
 
-					const {
-						shouldValidate = globalConfig.shouldValidate,
-						shouldRevalidate = globalConfig.shouldRevalidate,
-					} = optionsRef.current;
+					const shouldValidate =
+						optionsRef.current.shouldValidate ?? globalConfig.shouldValidate;
+					const shouldRevalidate =
+						optionsRef.current.shouldRevalidate ??
+						optionsRef.current.shouldValidate ??
+						globalConfig.shouldRevalidate;
 
 					if (
 						isTouched(state, event.target.name)
