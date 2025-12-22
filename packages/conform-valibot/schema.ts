@@ -64,9 +64,13 @@ export function validateSchema<Schema extends ValibotSchema>(
 /**
  * Extracts HTML validation attributes from a Valibot schema.
  */
-export function getConstraints<Schema extends ValibotSchema>(
-	schema: Schema,
-): Record<string, ValidationAttributes> {
+export function getConstraints(
+	schema: unknown,
+): Record<string, ValidationAttributes> | undefined {
+	if (!isSchema(schema)) {
+		return undefined;
+	}
+
 	return getValibotConstraint(schema);
 }
 

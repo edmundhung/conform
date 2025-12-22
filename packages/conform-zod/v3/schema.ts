@@ -63,9 +63,13 @@ export function validateSchema<Schema extends ZodTypeAny>(
 /**
  * Extracts HTML validation attributes from a Zod schema.
  */
-export function getConstraints<Schema extends ZodTypeAny>(
-	schema: Schema,
-): Record<string, ValidationAttributes> {
+export function getConstraints(
+	schema: unknown,
+): Record<string, ValidationAttributes> | undefined {
+	if (!isSchema(schema)) {
+		return undefined;
+	}
+
 	return getZodConstraint(schema);
 }
 

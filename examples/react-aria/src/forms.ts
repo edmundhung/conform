@@ -1,10 +1,5 @@
 import { configureForms, shape } from '@conform-to/react/future';
-import {
-	isSchema,
-	validateSchema,
-	getConstraints,
-	type ZodSchemaOptions,
-} from '@conform-to/zod/v3/future';
+import { getConstraints } from '@conform-to/zod/v3/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
 import type { RadioGroup } from './components/RadioGroup';
@@ -15,19 +10,17 @@ import type { ComboBox } from './components/ComboBox';
 import type { FileTrigger } from './components/FileTrigger';
 import type { Checkbox } from './components/Checkbox';
 import type { DateRangePicker } from './components/DateRangePicker';
-import type { ZodTypeAny, input, output } from 'zod';
+import type { ZodTypeAny, ZodErrorMap, input, output } from 'zod';
 
 declare module '@conform-to/react/future' {
 	interface CustomSchemaTypes<Schema> {
 		input: Schema extends ZodTypeAny ? input<Schema> : never;
 		output: Schema extends ZodTypeAny ? output<Schema> : never;
-		options: Schema extends ZodTypeAny ? ZodSchemaOptions : never;
+		options: Schema extends ZodTypeAny ? { errorMap?: ZodErrorMap } : never;
 	}
 }
 
 const { useForm } = configureForms({
-	isSchema,
-	validateSchema,
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
