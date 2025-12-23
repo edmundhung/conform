@@ -951,23 +951,40 @@ export type SubmitHandler<
 ) => void | Promise<void>;
 
 /**
- * Infer the error shape from a FormsConfig.
+ * Infer the base error shape from a FormsConfig.
  */
-export type InferErrorShape<Config> =
-	Config extends FormsConfig<infer E, any, any, any> ? E : unknown;
+export type InferBaseErrorShape<Config> =
+	Config extends FormsConfig<infer BaseErrorShape, any, any, any>
+		? BaseErrorShape
+		: unknown;
 
 /**
- * Infer the custom form metadata result type from a FormsConfig.
+ * Infer the FormMetadata type from a FormsConfig with custom metadata.
  */
-export type InferFormMetadataResult<Config> =
-	Config extends FormsConfig<any, any, infer F, any> ? F : {};
+export type InferFormMetadata<
+	Config,
+	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
+> =
+	Config extends FormsConfig<
+		any,
+		any,
+		infer CustomFormMetadata,
+		infer CustomFieldMetadata
+	>
+		? FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>
+		: never;
 
 /**
  * Infer the custom field metadata result type from a FormsConfig.
- * Conditions are encoded directly in the return type via the `conditional()` helper.
  */
-export type InferFieldMetadataResult<Config> =
-	Config extends FormsConfig<any, any, any, infer M> ? M : {};
+export type InferFieldMetadata<
+	Config,
+	FieldShape,
+	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
+> =
+	Config extends FormsConfig<any, any, any, infer CustomFieldMetadata>
+		? FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>
+		: never;
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.
