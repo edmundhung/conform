@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -13,6 +12,7 @@ import { CheckboxGroup } from './components/CheckboxGroup';
 import { Select, SelectItem } from './components/Select';
 import { ComboBox, ComboBoxItem } from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -72,7 +72,6 @@ export default function App() {
 			setSubmittedValue(value);
 		},
 	});
-	const rangeFields = fields.range.getFieldset();
 
 	return (
 		<main>
@@ -89,31 +88,16 @@ export default function App() {
 					<TextField
 						label="Email"
 						type="email"
-						name={fields.email.name}
-						defaultValue={fields.email.defaultValue}
-						isInvalid={!fields.email.valid}
-						errors={fields.email.errors}
+						{...fields.email.textFieldProps}
 					/>
 				</div>
 
 				<div>
-					<NumberField
-						label="Price"
-						name={fields.price.name}
-						defaultValue={fields.price.defaultValue}
-						isInvalid={!fields.price.valid}
-						errors={fields.price.errors}
-					/>
+					<NumberField label="Price" {...fields.price.numberFieldProps} />
 				</div>
 
 				<div>
-					<RadioGroup
-						label="Language"
-						name={fields.language.name}
-						defaultValue={fields.language.defaultValue}
-						isInvalid={!fields.language.valid}
-						errors={fields.language.errors}
-					>
+					<RadioGroup label="Language" {...fields.language.radioGroupProps}>
 						<Radio value="en">English</Radio>
 						<Radio value="de">German</Radio>
 						<Radio value="ja">Japanese</Radio>
@@ -122,13 +106,7 @@ export default function App() {
 				</div>
 
 				<div>
-					<CheckboxGroup
-						label="Colors"
-						name={fields.colors.name}
-						defaultValue={fields.colors.defaultOptions}
-						isInvalid={!fields.colors.valid}
-						errors={fields.colors.errors}
-					>
+					<CheckboxGroup label="Colors" {...fields.colors.checkboxGroupProps}>
 						<Checkbox value="red">Red</Checkbox>
 						<Checkbox value="green">Green</Checkbox>
 						<Checkbox value="blue">Blue</Checkbox>
@@ -139,35 +117,19 @@ export default function App() {
 					<DatePicker
 						label="Publish Date"
 						granularity="second"
-						name={fields.date.name}
-						defaultValue={fields.date.defaultValue}
-						isInvalid={!fields.date.valid}
-						errors={fields.date.errors}
+						{...fields.date.datePickerProps}
 					/>
 				</div>
 
 				<div>
 					<DateRangePicker
 						label="Event Dates"
-						startName={rangeFields.start.name}
-						endName={rangeFields.end.name}
-						defaultValue={{
-							start: rangeFields.start.defaultValue,
-							end: rangeFields.end.defaultValue,
-						}}
-						isInvalid={!fields.range.valid}
-						errors={rangeFields.start.errors ?? rangeFields.end.errors}
+						{...fields.range.dateRangePickerProps}
 					/>
 				</div>
 
 				<div>
-					<Select
-						label="Category"
-						name={fields.category.name}
-						defaultValue={fields.category.defaultValue}
-						isInvalid={!fields.category.valid}
-						errors={fields.category.errors}
-					>
+					<Select label="Category" {...fields.category.selectProps}>
 						<SelectItem id="announcement">Announcement</SelectItem>
 						<SelectItem id="blog">Blog</SelectItem>
 						<SelectItem id="guide">Guide</SelectItem>
@@ -177,11 +139,8 @@ export default function App() {
 				<div>
 					<ComboBox
 						label="Author"
-						name={fields.author.name}
-						defaultValue={fields.author.defaultValue}
-						isInvalid={!fields.author.valid}
-						errors={fields.author.errors}
 						allowsCustomValue
+						{...fields.author.comboBoxProps}
 					>
 						<ComboBoxItem id="edmundhung">edmundhung</ComboBoxItem>
 						<ComboBoxItem id="chimame">chimame</ComboBoxItem>
@@ -189,22 +148,13 @@ export default function App() {
 				</div>
 
 				<div>
-					<FileTrigger
-						label="Profile"
-						name={fields.profile.name}
-						isInvalid={!fields.profile.valid}
-						errors={fields.profile.errors}
-					>
+					<FileTrigger label="Profile" {...fields.profile.fileTriggerProps}>
 						Upload a profile picture
 					</FileTrigger>
 				</div>
 
 				<div>
-					<Checkbox
-						name={fields.acceptTerms.name}
-						defaultSelected={fields.acceptTerms.defaultChecked}
-						isInvalid={!fields.acceptTerms.valid}
-					>
+					<Checkbox {...fields.acceptTerms.checkboxProps}>
 						Accept Terms and Conditions
 					</Checkbox>
 				</div>
