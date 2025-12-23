@@ -387,10 +387,10 @@ export function getFormMetadata<
 	context: FormContext<ErrorShape>,
 	options?: {
 		serialize?: Serialize | undefined;
-		customizeForm?:
+		extendFormMetadata?:
 			| ((metadata: BaseFormMetadata<ErrorShape>) => CustomFormMetadata)
 			| undefined;
-		customizeField?:
+		extendFieldMetadata?:
 			| (<FieldShape>(
 					metadata: BaseMetadata<FieldShape, ErrorShape>,
 					ctx: {
@@ -434,28 +434,28 @@ export function getFormMetadata<
 			return getField(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customizeField,
+				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
 		getFieldset(name) {
 			return getFieldset(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customizeField,
+				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
 		getFieldList(name) {
 			return getFieldList(context, {
 				name,
 				serialize: options?.serialize,
-				customize: options?.customizeField,
+				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
 	};
 
 	return Object.assign(
 		metadata,
-		options?.customizeForm?.(metadata) ?? {},
+		options?.extendFormMetadata?.(metadata) ?? {},
 	) as FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 }
 
@@ -468,7 +468,7 @@ export function getField<
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?:
+		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
@@ -485,8 +485,11 @@ export function getField<
 		key,
 		name,
 		serialize = defaultSerialize,
-		customize,
-		form = getFormMetadata(context, { serialize, customizeField: customize }),
+		extendFieldMetadata,
+		form = getFormMetadata(context, {
+			serialize,
+			extendFieldMetadata,
+		}),
 	} = options;
 	const id = `${context.formId}-field-${name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 	const constraint = getConstraint(context, name);
@@ -539,7 +542,7 @@ export function getField<
 			return getFieldset(context, {
 				name: name as string,
 				serialize,
-				customize,
+				extendFieldMetadata,
 			});
 		},
 		// @ts-expect-error TODO
@@ -547,14 +550,14 @@ export function getField<
 			return getFieldList(context, {
 				name,
 				serialize,
-				customize,
+				extendFieldMetadata,
 			});
 		},
 	};
 
 	return Object.assign(
 		metadata,
-		customize?.(metadata, { form, when }),
+		extendFieldMetadata?.(metadata, { form, when }),
 	) as FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 }
 
@@ -570,7 +573,7 @@ export function getFieldset<
 	options: {
 		name?: FieldName<FieldShape> | undefined;
 		serialize?: Serialize | undefined;
-		customize?:
+		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
@@ -587,13 +590,13 @@ export function getFieldset<
 			if (typeof name === 'string') {
 				options.form ??= getFormMetadata(context, {
 					serialize: options?.serialize,
-					customizeField: options?.customize,
+					extendFieldMetadata: options?.extendFieldMetadata,
 				});
 
 				return getField(context, {
 					name: appendPathSegment(options?.name, name),
 					serialize: options.serialize,
-					customize: options.customize,
+					extendFieldMetadata: options.extendFieldMetadata,
 					form: options.form,
 				});
 			}
@@ -615,7 +618,7 @@ export function getFieldList<
 	options: {
 		name: FieldName<FieldShape>;
 		serialize?: Serialize | undefined;
-		customize?:
+		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseMetadata<F, ErrorShape>,
 					ctx: {
@@ -644,7 +647,7 @@ export function getFieldList<
 		>(context, {
 			name: appendPathSegment(options.name, index),
 			serialize: options.serialize,
-			customize: options.customize,
+			extendFieldMetadata: options.extendFieldMetadata,
 			key,
 		});
 	});

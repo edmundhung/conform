@@ -1624,7 +1624,7 @@ test('getField', () => {
 
 	const profileField = getField(context, {
 		name: 'profile',
-		customize: (metadata) => {
+		extendFieldMetadata: (metadata) => {
 			return {
 				get allErrors() {
 					return (metadata.errors ?? []).concat(

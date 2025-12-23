@@ -1151,8 +1151,8 @@ export function configureForms<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.extendFormMetadata,
-					customizeField: globalConfig.extendFieldMetadata,
+					extendFormMetadata: globalConfig.extendFormMetadata,
+					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1160,7 +1160,7 @@ export function configureForms<
 			() =>
 				getFieldset(context, {
 					serialize: globalConfig.serialize,
-					customize: globalConfig.extendFieldMetadata,
+					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1200,8 +1200,8 @@ export function configureForms<
 			() =>
 				getFormMetadata(context, {
 					serialize: globalConfig.serialize,
-					customizeForm: globalConfig.extendFormMetadata,
-					customizeField: globalConfig.extendFieldMetadata,
+					extendFormMetadata: globalConfig.extendFormMetadata,
+					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context],
 		);
@@ -1245,7 +1245,7 @@ export function configureForms<
 				getField(context, {
 					name,
 					serialize: globalConfig.serialize,
-					customize: globalConfig.extendFieldMetadata,
+					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context, name],
 		);
