@@ -183,22 +183,17 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 		return result;
 	}
 
+	// Pre-cache the schema to handle recursive references
+	// This prevents infinite recursion when processing getter-based recursive schemas
+	// The cache will be updated with the final coerced schema after processing
+	options.cache.set(type, type);
+
 	let schema: $ZodType = type;
 	const zod = (type as unknown as $ZodTypes)._zod;
 	const def = zod.def;
 	const constr = zod.constr;
 
 	const coercion = options.coerce(type);
-
-	// Pre-cache the schema to handle recursive references
-	// This prevents infinite recursion when processing getter-based recursive schemas
-	// The cache will be updated with the final coerced schema after processing
-	if (
-		def.type === 'object' ||
-		(def.type === 'union' && [...zod.traits][0]?.includes('DiscriminatedUnion'))
-	) {
-		options.cache.set(type, type);
-	}
 
 	if (coercion) {
 		schema = pipe(transform(coercion), type);
