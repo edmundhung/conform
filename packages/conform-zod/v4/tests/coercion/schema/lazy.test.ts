@@ -97,5 +97,135 @@ describe('coercion', () => {
 				data: 'ABCDEFGHIJ',
 			});
 		});
+
+		test('should handle getter-based recursive schemas', () => {
+			// Test case from issue: https://github.com/edmundhung/conform/issues/1127
+			// Zod v4 recommended getter pattern: https://zod.dev/api#recursive-objects
+			const ConditionNodeSchema = z.object({
+				type: z.literal('condition'),
+				value: z.string(),
+			});
+
+			const LogicalGroupNodeSchema = z.object({
+				type: z.literal('group'),
+				operator: z.enum(['AND', 'OR']),
+				// Getter pattern recommended by Zod v4
+				get children(): z.ZodArray<
+					z.ZodDiscriminatedUnion<
+						[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
+					>
+				> {
+					return z.array(
+						z.discriminatedUnion('type', [
+							LogicalGroupNodeSchema,
+							ConditionNodeSchema,
+						]),
+					);
+				},
+			});
+
+			// This should not throw "Maximum call stack size exceeded"
+			const schema = coerceFormValue(
+				z.object({
+					filter: LogicalGroupNodeSchema,
+				}),
+			);
+
+			// Test parsing with valid data
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'AND',
+							children: [
+								{
+									type: 'condition',
+									value: 'test',
+								},
+							],
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					filter: {
+						type: 'group',
+						operator: 'AND',
+						children: [
+							{
+								type: 'condition',
+								value: 'test',
+							},
+						],
+					},
+				},
+			});
+
+			// Test parsing with nested recursive structure
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'OR',
+							children: [
+								{
+									type: 'group',
+									operator: 'AND',
+									children: [
+										{
+											type: 'condition',
+											value: 'nested',
+										},
+									],
+								},
+							],
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					filter: {
+						type: 'group',
+						operator: 'OR',
+						children: [
+							{
+								type: 'group',
+								operator: 'AND',
+								children: [
+									{
+										type: 'condition',
+										value: 'nested',
+									},
+								],
+							},
+						],
+					},
+				},
+			});
+
+			// Test validation errors
+			const errorResult = getResult(
+				schema.safeParse({
+					filter: {
+						type: 'group',
+						operator: 'AND',
+						children: [
+							{
+								type: 'condition',
+								// missing 'value'
+							},
+						],
+					},
+				}),
+			);
+			expect(errorResult.success).toEqual(false);
+			if (!errorResult.success) {
+				expect(errorResult.error['filter.children[0].value']).toBeDefined();
+			}
+		});
 	});
 });
