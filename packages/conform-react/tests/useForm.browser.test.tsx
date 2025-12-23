@@ -7,7 +7,6 @@ import {
 	type FormError,
 	type FormOptions,
 	useForm,
-	FormOptionsProvider,
 	report,
 	parseSubmission,
 } from '../future';
@@ -407,22 +406,6 @@ describe('future export: useForm', () => {
 			setup: 'Default behavior',
 			element: <Form />,
 		},
-		{
-			setup: 'Global Options',
-			element: (
-				<FormOptionsProvider shouldValidate="onSubmit">
-					<Form />
-				</FormOptionsProvider>
-			),
-		},
-		{
-			setup: 'Local Override',
-			element: (
-				<FormOptionsProvider shouldValidate="onInput">
-					<Form shouldValidate="onSubmit" />
-				</FormOptionsProvider>
-			),
-		},
 	])('$setup - shouldValidate: onSubmit (default)', async ({ element }) => {
 		const screen = render(element);
 		const form = getForm(screen);
@@ -496,22 +479,6 @@ describe('future export: useForm', () => {
 		{
 			setup: 'Direct Options',
 			element: <Form shouldValidate="onBlur" />,
-		},
-		{
-			setup: 'Global Options',
-			element: (
-				<FormOptionsProvider shouldValidate="onBlur">
-					<Form />
-				</FormOptionsProvider>
-			),
-		},
-		{
-			setup: 'Local Override',
-			element: (
-				<FormOptionsProvider shouldValidate="onInput">
-					<Form shouldValidate="onBlur" />
-				</FormOptionsProvider>
-			),
 		},
 	])('$setup - shouldValidate: onBlur', async ({ element }) => {
 		const screen = render(element);
@@ -590,22 +557,6 @@ describe('future export: useForm', () => {
 		{
 			setup: 'Direct Options',
 			element: <Form shouldValidate="onInput" />,
-		},
-		{
-			setup: 'Global Options',
-			element: (
-				<FormOptionsProvider shouldValidate="onInput">
-					<Form />
-				</FormOptionsProvider>
-			),
-		},
-		{
-			setup: 'Local Override',
-			element: (
-				<FormOptionsProvider shouldValidate="onBlur">
-					<Form shouldValidate="onInput" />
-				</FormOptionsProvider>
-			),
 		},
 	])('$setup - shouldValidate: onInput', async ({ element }) => {
 		const screen = render(element);

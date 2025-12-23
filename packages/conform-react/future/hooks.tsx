@@ -118,6 +118,9 @@ export function FormProvider(props: {
 	);
 }
 
+/**
+ * @deprecated Replaced by the `configureForms` factory API. This will be removed in the next minor version. If you are not ready to migrate, please pin to `v1.16.0`.
+ */
 export function FormOptionsProvider(
 	props: Partial<GlobalFormOptions> & {
 		children: React.ReactNode;
@@ -778,7 +781,7 @@ export function useForm<
 		() =>
 			getFormMetadata(context, {
 				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
+				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
 		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
@@ -786,7 +789,7 @@ export function useForm<
 		() =>
 			getFieldset<FormShape, ErrorShape>(context, {
 				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
+				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
 		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
@@ -827,7 +830,7 @@ export function useFormMetadata(
 		() =>
 			getFormMetadata(context, {
 				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
+				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
 		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
 	);
@@ -868,7 +871,7 @@ export function useField<FieldShape = any>(
 			getField(context, {
 				name,
 				serialize: globalOptions.serialize,
-				customize: globalOptions.defineCustomMetadata,
+				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
 		[
 			context,

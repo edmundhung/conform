@@ -13,5 +13,6 @@
 		"composite": true,
 		"noEmit": true,
 		"skipLibCheck": true
-	}
+	},
+	"exclude": ["dist"]
 }
