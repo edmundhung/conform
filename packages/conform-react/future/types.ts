@@ -150,6 +150,201 @@ export type FormAction<
 	ctx: Context;
 };
 
+/**
+ * Augment this interface to customize schema type inference for your schema library.
+ *
+ * @example
+ * ```ts
+ * import type { ZodTypeAny, input, output } from 'zod';
+ * import type { ZodSchemaOptions } from '@conform-to/zod/v3/future';
+ *
+ * declare module '@conform-to/react/future' {
+ *   interface CustomSchemaTypes<Schema> {
+ *     input: Schema extends ZodTypeAny ? input<Schema> : never;
+ *     output: Schema extends ZodTypeAny ? output<Schema> : never;
+ *     options: Schema extends ZodTypeAny ? ZodSchemaOptions : never;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface CustomSchemaTypes<Schema = unknown> {
+	// Empty by default - users augment this interface
+}
+
+/**
+ * Infer schema options type.
+ * Uses CustomSchemaTypes if augmented, otherwise returns never.
+ */
+export type InferOptions<Schema> = [Schema] extends [undefined]
+	? never
+	: CustomSchemaTypes<Schema> extends { options: infer Options }
+		? Options
+		: never;
+
+/**
+ * Marker type for conditional field metadata properties.
+ * Used to indicate that a property should only be present when FieldShape matches a condition.
+ */
+export type ConditionalFieldMetadata<T, Condition> = T & {
+	'~condition': Condition;
+};
+
+/**
+ * Check if T is a FieldName type by checking if '~shape' is a known key.
+ * Plain strings don't have '~shape' in their keyof, but FieldName<T> does.
+ */
+type IsFieldName<T> = '~shape' extends keyof T ? true : false;
+
+/**
+ * Transforms a single value, restoring FieldName<unknown> to FieldName<FieldShape>.
+ */
+type RestoreFieldShapeValue<T, FieldShape> =
+	T extends ConditionalFieldMetadata<infer Inner, infer Condition>
+		? FieldShape extends Condition
+			? Inner
+			: never
+		: IsFieldName<T> extends true
+			? FieldName<FieldShape>
+			: T;
+
+/**
+ * Restores FieldShape-dependent types that were inferred as `unknown`.
+ * This is needed because TypeScript infers generic return types with unresolved type parameters.
+ * Also handles conditional field metadata by checking if FieldShape extends the condition.
+ *
+ * Transforms up to 2 levels deep to handle cases like `textFieldProps.name`.
+ */
+export type RestoreFieldShape<T, FieldShape> = {
+	[K in keyof T]: RestoreFieldShapeValue<T[K], FieldShape> extends infer V
+		? V extends Record<string, unknown>
+			? { [P in keyof V]: RestoreFieldShapeValue<V[P], FieldShape> }
+			: V
+		: never;
+};
+
+/**
+ * Type guard function for conditional field metadata.
+ * Used to specify when a custom field metadata property should be available.
+ */
+export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
+
+/**
+ * Function type for creating conditional field metadata based on shape constraints.
+ */
+export type DefineConditionalField = <FieldShape, ErrorShape, Metadata>(
+	metadata: BaseFieldMetadata<unknown, ErrorShape>,
+	shape: FieldShapeGuard<FieldShape>,
+	fn: (metadata: BaseFieldMetadata<FieldShape, ErrorShape>) => Metadata,
+) => ConditionalFieldMetadata<Metadata, FieldShape>;
+
+/**
+ * Extract the condition type from a FieldShapeGuard.
+ */
+export type ExtractFieldCondition<T> =
+	T extends FieldShapeGuard<infer C> ? C : never;
+
+/**
+ * Extract conditions from a record of field shape guards.
+ */
+export type ExtractFieldConditions<
+	T extends Record<string, FieldShapeGuard<any>>,
+> = {
+	[K in keyof T]: ExtractFieldCondition<T[K]>;
+};
+
+/**
+ * Configuration options for configureForms factory.
+ */
+export type FormsConfig<
+	BaseErrorShape,
+	BaseSchema,
+	CustomFormMetadata extends Record<string, unknown>,
+	CustomFieldMetadata extends Record<string, unknown>,
+> = {
+	/**
+	 * The name of the submit button field that indicates the submission intent.
+	 *
+	 * @default "__intent__"
+	 */
+	intentName?: string;
+	/**
+	 * A custom serialization function for converting form data.
+	 */
+	serialize?: Serialize;
+	/**
+	 * Determines when validation should run for the first time on a field.
+	 *
+	 * @default "onSubmit"
+	 */
+	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Determines when validation should run again after the field has been validated once.
+	 *
+	 * @default Same as shouldValidate
+	 */
+	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * A type guard function to specify the shape of error objects.
+	 */
+	isError?: (error: unknown) => error is BaseErrorShape;
+	/**
+	 * Runtime type guard to check if a value is a schema.
+	 * Used to determine if the first argument to useForm is a schema or options object.
+	 *
+	 * @example
+	 * ```ts
+	 * import { configureForms } from '@conform-to/react/future';
+	 * import {
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraints,
+	 * } from '@conform-to/zod/v3/future';
+	 *
+	 * const { useForm } = configureForms({
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraints,
+	 * });
+	 * ```
+	 */
+	isSchema?: (schema: unknown) => schema is BaseSchema;
+	/**
+	 * Validates a schema against form payload.
+	 */
+	validateSchema?: <Schema extends BaseSchema>(
+		schema: Schema,
+		payload: Record<string, FormValue>,
+		options?: InferOptions<Schema>,
+	) => MaybePromise<{
+		error: FormError<string> | null;
+		value?: InferOutput<Schema>;
+	}>;
+	/**
+	 * Extracts HTML validation constraints from a schema.
+	 */
+	getConstraints?: <Schema extends BaseSchema>(
+		schema: Schema,
+	) => Record<string, ValidationAttributes> | undefined;
+	/**
+	 * Extends form metadata with custom properties.
+	 */
+	extendFormMetadata?: <ErrorShape extends BaseErrorShape>(
+		metadata: BaseFormMetadata<ErrorShape>,
+	) => CustomFormMetadata;
+	/**
+	 * Extends field metadata with custom properties.
+	 * Use `when` for properties that depend on the field shape.
+	 */
+	extendFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
+		metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
+		ctx: {
+			form: BaseFormMetadata<ErrorShape>;
+			when: DefineConditionalField;
+		},
+	) => CustomFieldMetadata;
+};
+
 export type GlobalFormOptions = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -190,11 +385,29 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 
 export type BaseSchemaType = StandardSchemaV1<any, any>;
 
+/**
+ * Infer schema input type.
+ * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ */
 export type InferInput<Schema> =
-	Schema extends StandardSchemaV1<infer input, any> ? input : unknown;
+	CustomSchemaTypes<Schema> extends {
+		input: infer I;
+	}
+		? I
+		: Schema extends StandardSchemaV1
+			? StandardSchemaV1.InferInput<Schema>
+			: unknown;
 
+/**
+ * Infer schema output type.
+ * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ */
 export type InferOutput<Schema> =
-	Schema extends StandardSchemaV1<any, infer output> ? output : undefined;
+	CustomSchemaTypes<Schema> extends { output: infer Output }
+		? Output
+		: Schema extends StandardSchemaV1
+			? StandardSchemaV1.InferOutput<Schema>
+			: undefined;
 
 export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
@@ -202,7 +415,7 @@ export type BaseFormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	Schema = unknown,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -218,6 +431,11 @@ export type BaseFormOptions<
 	defaultValue?: DefaultValue<FormShape> | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
+	/**
+	 * Schema-specific validation options (e.g., Zod's errorMap).
+	 * The available options depend on the schema library configured in `configureForms`.
+	 */
+	schemaOptions?: InferOptions<Schema>;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * Overrides the global default set by FormOptionsProvider if provided.
@@ -250,7 +468,7 @@ export type FormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	Schema = unknown,
 	RequiredKeys extends keyof BaseFormOptions<
 		FormShape,
 		ErrorShape,
@@ -476,8 +694,16 @@ export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
 	? Shape
 	: string;
 
-/** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
+/**
+ * @deprecated Renamed to `BaseFieldMetadata`. This will be removed in the next minor version.
+ */
 export type BaseMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = BaseFieldMetadata<FieldShape, ErrorShape>;
+
+/** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
+export type BaseFieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape,
 > = ValidationAttributes & {
@@ -552,6 +778,7 @@ export type SatisfyComponentProps<
 
 /**
  * Interface for extending field metadata with additional properties.
+ * @deprecated Use `configureForms()` with the `extendFieldMetadata` option for full type inference support.
  */
 export interface CustomMetadata<
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -566,38 +793,52 @@ export type CustomMetadataDefinition = <
 	FieldShape,
 	ErrorShape extends BaseErrorShape,
 >(
-	metadata: BaseMetadata<FieldShape, ErrorShape>,
+	metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
 ) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
 	? {}
 	: CustomMetadata<any, any>;
+
+export type DefaultCustomMetadata<FieldShape, ErrorShape> =
+	keyof CustomMetadata<FieldShape, ErrorShape> extends never
+		? {}
+		: CustomMetadata<FieldShape, ErrorShape>;
 
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
 export type FieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
+		FieldShape,
+		ErrorShape
+	>,
 > = Readonly<
-	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
-		? {}
-		: CustomMetadata<FieldShape, ErrorShape>) &
-		// Base metadata properties take precedence over custom metadata
-		BaseMetadata<FieldShape, ErrorShape>
+	Prettify<
+		BaseFieldMetadata<FieldShape, ErrorShape> &
+			RestoreFieldShape<CustomFieldMetadata, FieldShape>
+	>
 >;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
+		FieldShape,
+		ErrorShape
+	>,
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
-		ErrorShape
+		ErrorShape,
+		CustomFieldMetadata
 	>;
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type FormMetadata<
+export type BaseFormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> = Readonly<{
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = {
 	/** Unique identifier that changes on form reset */
 	key: string;
 	/** The form's unique identifier. */
@@ -631,13 +872,14 @@ export type FormMetadata<
 	/** Method to get metadata for a specific field by name. */
 	getField<FieldShape>(
 		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, ErrorShape>;
+	): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 	/** Method to get a fieldset object for nested object fields. */
 	getFieldset<FieldShape>(
 		name?: FieldName<FieldShape>,
 	): Fieldset<
 		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
-		ErrorShape
+		ErrorShape,
+		CustomFieldMetadata
 	>;
 	/** Method to get an array of field objects for array fields. */
 	getFieldList<FieldShape>(
@@ -647,10 +889,19 @@ export type FormMetadata<
 			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
 				? ItemShape
 				: unknown,
-			ErrorShape
+			ErrorShape,
+			CustomFieldMetadata
 		>
 	>;
-}>;
+};
+
+export type FormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = Readonly<
+	BaseFormMetadata<ErrorShape, CustomFieldMetadata> & CustomFormMetadata
+>;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>
@@ -752,3 +1003,65 @@ export type SubmitHandler<
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;
+
+/**
+ * Infer the base error shape from a FormsConfig.
+ */
+export type InferBaseErrorShape<Config> =
+	Config extends FormsConfig<infer BaseErrorShape, any, any, any>
+		? BaseErrorShape
+		: unknown;
+
+/**
+ * Infer the FormMetadata type from a FormsConfig with custom metadata.
+ */
+export type InferFormMetadata<
+	Config,
+	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
+> =
+	Config extends FormsConfig<
+		any,
+		any,
+		infer CustomFormMetadata,
+		infer CustomFieldMetadata
+	>
+		? FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>
+		: never;
+
+/**
+ * Infer the custom field metadata result type from a FormsConfig.
+ */
+export type InferFieldMetadata<
+	Config,
+	FieldShape,
+	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
+> =
+	Config extends FormsConfig<any, any, any, infer CustomFieldMetadata>
+		? FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>
+		: never;
+
+/**
+ * Transform a type to make specific keys conditional based on FieldShape.
+ * Keys in ConditionalKeys will only be present when FieldShape extends the specified type.
+ * Uses ConditionalFieldMetadata wrapper that RestoreFieldShape will detect and evaluate.
+ *
+ * @example
+ * ```ts
+ * type Result = MakeConditional<
+ *   { textFieldProps: {...}, dateRangePickerProps: {...} },
+ *   { dateRangePickerProps: { start: string; end: string } }
+ * >;
+ * // dateRangePickerProps is wrapped with ConditionalFieldMetadata
+ * // and will only be present when FieldShape extends { start: string; end: string }
+ * ```
+ */
+export type MakeConditional<
+	T,
+	ConditionalKeys extends Record<string, unknown>,
+> = Omit<T, keyof ConditionalKeys> & {
+	[K in keyof ConditionalKeys]: K extends keyof T
+		? ConditionalFieldMetadata<T[K], ConditionalKeys[K]>
+		: never;
+};
+
+export type MaybePromise<T> = T | Promise<T>;
