@@ -1320,57 +1320,7 @@ export function useLatest<Value>(value: Value) {
 	return ref;
 }
 
-const defaultForms = configureForms();
-
-/**
- * Default form provider using StandardSchemaV1.
- */
-const FormProvider = defaultForms.FormProvider;
-
-/**
- * Default useForm hook using StandardSchemaV1.
- * For custom configuration, use `configureForms()` instead.
- */
-const useForm: {
-	<
-		Schema extends StandardSchemaV1,
-		ErrorShape extends string = string,
-		Value = InferOutput<Schema>,
-	>(
-		schema: Schema,
-		options: FormOptions<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never,
-			ErrorShape,
-			Value,
-			Schema,
-			string extends ErrorShape ? never : 'onValidate'
-		>,
-	): {
-		form: FormMetadata<ErrorShape, {}, {}>;
-		fields: Fieldset<InferInput<Schema>, ErrorShape, {}>;
-		intent: IntentDispatcher<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never
-		>;
-	};
-	<
-		FormShape extends Record<string, any> = Record<string, any>,
-		ErrorShape extends string = string,
-		Value = undefined,
-	>(
-		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-	): {
-		form: FormMetadata<ErrorShape, {}, {}>;
-		fields: Fieldset<FormShape, ErrorShape, {}>;
-		intent: IntentDispatcher<FormShape>;
-	};
-} = defaultForms.useForm;
-
-const useFormMetadata = defaultForms.useFormMetadata;
-const useField = defaultForms.useField;
-const useIntent = defaultForms.useIntent;
+const { FormProvider, useForm, useFormMetadata, useField, useIntent } =
+	configureForms();
 
 export { FormProvider, useForm, useFormMetadata, useField, useIntent };

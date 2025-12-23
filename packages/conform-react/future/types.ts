@@ -58,8 +58,9 @@ export type InferOutput<Schema> =
  * Infer schema options type.
  * Uses CustomSchemaTypes if augmented, otherwise returns never.
  */
-export type InferOptions<Schema> =
-	CustomSchemaTypes<Schema> extends { options: infer Options }
+export type InferOptions<Schema> = [Schema] extends [undefined]
+	? never
+	: CustomSchemaTypes<Schema> extends { options: infer Options }
 		? Options
 		: never;
 
@@ -845,9 +846,7 @@ export type FormMetadata<
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
-	Prettify<
-		BaseFormMetadata<ErrorShape, CustomFieldMetadata> & CustomFormMetadata
-	>
+	BaseFormMetadata<ErrorShape, CustomFieldMetadata> & CustomFormMetadata
 >;
 
 export type ValidateResult<ErrorShape, Value> =
