@@ -58,7 +58,12 @@ export function configureForms<
 			valdiateStandardSchemaV1) as NonNullable<
 			FormsConfig<BaseErrorShape, BaseSchema, {}, {}>['validateSchema']
 		>,
-	};
+	} satisfies FormsConfig<
+		BaseErrorShape,
+		BaseSchema,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	>;
 
 	/**
 	 * React context
@@ -547,5 +552,6 @@ export function configureForms<
 		useFormMetadata,
 		useField,
 		useIntent,
+		config: globalConfig,
 	};
 }
