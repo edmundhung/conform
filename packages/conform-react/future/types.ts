@@ -178,8 +178,8 @@ export interface CustomSchemaTypes<Schema = unknown> {
  */
 export type InferOptions<Schema> = [Schema] extends [undefined]
 	? never
-	: CustomSchemaTypes<Schema> extends { options: infer Options }
-		? Options
+	: CustomSchemaTypes<Schema> extends { options: infer T }
+		? T
 		: never;
 
 /**
@@ -387,27 +387,25 @@ export type BaseSchemaType = StandardSchemaV1<any, any>;
 
 /**
  * Infer schema input type.
- * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferInput.
+ * For other schemas, uses CustomSchemaTypes if augmented.
  */
-export type InferInput<Schema> =
-	CustomSchemaTypes<Schema> extends {
-		input: infer I;
-	}
-		? I
-		: Schema extends StandardSchemaV1
-			? StandardSchemaV1.InferInput<Schema>
-			: unknown;
+export type InferInput<Schema> = Schema extends StandardSchemaV1
+	? StandardSchemaV1.InferInput<Schema>
+	: CustomSchemaTypes<Schema> extends { input: infer T }
+		? T
+		: Record<string, any>;
 
 /**
  * Infer schema output type.
- * Uses CustomSchemaTypes if augmented, otherwise falls back to StandardSchemaV1.
+ * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferOutput.
+ * For other schemas, uses CustomSchemaTypes if augmented.
  */
-export type InferOutput<Schema> =
-	CustomSchemaTypes<Schema> extends { output: infer Output }
-		? Output
-		: Schema extends StandardSchemaV1
-			? StandardSchemaV1.InferOutput<Schema>
-			: undefined;
+export type InferOutput<Schema> = Schema extends StandardSchemaV1
+	? StandardSchemaV1.InferOutput<Schema>
+	: CustomSchemaTypes<Schema> extends { output: infer T }
+		? T
+		: undefined;
 
 export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
