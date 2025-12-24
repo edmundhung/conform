@@ -20,23 +20,31 @@ While this is clear and straightforward for learning, it becomes repetitive in p
 
 ## Custom Metadata
 
-The example also showcases metadata customization for a more DRY approach. Custom metadata properties are defined once in [`main.tsx`](./src/main.tsx) and provide type-safe props that match Headless UI component types:
+The example also showcases metadata customization for a more DRY approach. Check [`forms.ts`](./src/forms.ts) to see how custom metadata is configured using `configureForms`:
 
 ```tsx
-// Define custom metadata once
-function defineCustomMetadata(metadata) {
-  return {
-    get listBoxProps() {
-      return {
-        name: metadata.name,
-        defaultValue: metadata.defaultOptions,
-      } satisfies Partial<React.ComponentProps<typeof ExampleListBox>>;
-    },
-    // ... other component props
-  };
-}
+import { configureForms } from '@conform-to/react/future';
 
-// Use with full type safety
+const result = configureForms({
+  extendFieldMetadata(metadata) {
+    return {
+      get listBoxProps() {
+        return {
+          name: metadata.name,
+          defaultValue: metadata.defaultOptions,
+        } satisfies Partial<React.ComponentProps<typeof ExampleListBox>>;
+      },
+      // ... other component props
+    };
+  },
+});
+
+export const useForm = result.useForm;
+```
+
+Then use the custom metadata with full type safety:
+
+```tsx
 <ExampleListBox {...fields.colors.listBoxProps} options={colorOptions} />
 ```
 
