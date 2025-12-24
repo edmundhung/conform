@@ -1,110 +1,144 @@
 import { describe, test } from 'vitest';
-import { FormOptions, FormProvider, useField, useForm } from '../future';
+import {
+	FormOptions,
+	FormProvider as FormProviderDefault,
+	useField as useFieldDefault,
+	useForm as useFormDefault,
+	configureForms,
+} from '../future';
 import { render } from 'vitest-browser-react';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
 import { userEvent } from '@vitest/browser/context';
 
-describe('future export: useField', () => {
-	type Schema = {
-		title: string;
-		description: string;
-	};
+const configured = configureForms();
 
-	function FieldError(props: { name: string; form?: string }) {
-		const field = useField(props.name, {
-			formId: props.form,
-		});
+const testCases: Array<{
+	name: string;
+	useForm: typeof useFormDefault;
+	useField: typeof useFieldDefault;
+	FormProvider: typeof FormProviderDefault;
+}> = [
+	{
+		name: 'default',
+		useForm: useFormDefault,
+		useField: useFieldDefault,
+		FormProvider: FormProviderDefault,
+	},
+	{
+		name: 'configureForms',
+		useForm: configured.useForm,
+		useField: configured.useField,
+		FormProvider: configured.FormProvider,
+	},
+];
 
-		return (
-			<div id={!field.valid ? field.errorId : undefined}>
-				{field.errors?.join(', ') ?? 'n/a'}
-			</div>
-		);
-	}
-
-	function ExampleForm({
-		children,
-		...options
-	}: Partial<FormOptions<Schema, string, Schema>> & {
-		children?: React.ReactNode;
-	}) {
-		const { form, fields, intent } = useForm({
-			onValidate({ payload, error }) {
-				if (!payload.title) {
-					error.fieldErrors.title = ['Title is required'];
-				}
-
-				if (!payload.description) {
-					error.fieldErrors.description = ['Description is required'];
-				}
-
-				return error;
-			},
-			onSubmit(event) {
-				event.preventDefault();
-			},
-			...options,
-		});
-
-		return (
-			<FormProvider context={form.context}>
-				{children}
-				<form {...form.props}>
-					<input
-						name={fields.title.name}
-						defaultValue={fields.title.defaultValue}
-						aria-label="Title"
-						aria-describedby={
-							fields.title.invalid ? fields.title.errorId : undefined
-						}
-					/>
-					<textarea
-						name={fields.description.name}
-						defaultValue={fields.description.defaultValue}
-						aria-label="Description"
-						aria-describedby={
-							fields.description.invalid
-								? fields.description.errorId
-								: undefined
-						}
-					/>
-					<button>Submit</button>
-					<button type="button" onClick={() => intent.validate('description')}>
-						Validate Description
-					</button>
-				</form>
-			</FormProvider>
-		);
-	}
-
-	function getForm(screen: ReturnType<typeof render>) {
-		return {
-			title: screen.getByLabelText('Title'),
-			description: screen.getByLabelText('Description'),
-			submitButton: screen.getByRole('button', { name: 'Submit' }),
-			validateDescriptionButton: screen.getByRole('button', {
-				name: 'Validate Description',
-			}),
+describe.each(testCases)(
+	'future export: useField - $name',
+	({ useForm, useField, FormProvider }) => {
+		type Schema = {
+			title: string;
+			description: string;
 		};
-	}
 
-	test('extract field metadata from context', async () => {
-		const screen = render(
-			<ExampleForm id="test">
-				<FieldError name="title" />
-				<FieldError name="description" form="test" />
-			</ExampleForm>,
-		);
-		const form = getForm(screen);
+		function FieldError(props: { name: string; form?: string }) {
+			const field = useField(props.name, {
+				formId: props.form,
+			});
 
-		await expectNoErrorMessages(form.title, form.description);
+			return (
+				<div id={!field.valid ? field.errorId : undefined}>
+					{field.errors?.join(', ') ?? 'n/a'}
+				</div>
+			);
+		}
 
-		await userEvent.click(form.validateDescriptionButton);
-		await expectNoErrorMessages(form.title);
-		await expectErrorMessage(form.description, 'Description is required');
+		function ExampleForm({
+			children,
+			...options
+		}: Partial<FormOptions<Schema, string, Schema>> & {
+			children?: React.ReactNode;
+		}) {
+			const { form, fields, intent } = useForm({
+				onValidate({ payload, error }) {
+					if (!payload.title) {
+						error.fieldErrors.title = ['Title is required'];
+					}
 
-		await userEvent.click(form.submitButton);
-		await expectErrorMessage(form.title, 'Title is required');
-		await expectErrorMessage(form.description, 'Description is required');
-	});
-});
+					if (!payload.description) {
+						error.fieldErrors.description = ['Description is required'];
+					}
+
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+				...options,
+			});
+
+			return (
+				<FormProvider context={form.context}>
+					{children}
+					<form {...form.props}>
+						<input
+							name={fields.title.name}
+							defaultValue={fields.title.defaultValue}
+							aria-label="Title"
+							aria-describedby={
+								fields.title.invalid ? fields.title.errorId : undefined
+							}
+						/>
+						<textarea
+							name={fields.description.name}
+							defaultValue={fields.description.defaultValue}
+							aria-label="Description"
+							aria-describedby={
+								fields.description.invalid
+									? fields.description.errorId
+									: undefined
+							}
+						/>
+						<button>Submit</button>
+						<button
+							type="button"
+							onClick={() => intent.validate('description')}
+						>
+							Validate Description
+						</button>
+					</form>
+				</FormProvider>
+			);
+		}
+
+		function getForm(screen: ReturnType<typeof render>) {
+			return {
+				title: screen.getByLabelText('Title'),
+				description: screen.getByLabelText('Description'),
+				submitButton: screen.getByRole('button', { name: 'Submit' }),
+				validateDescriptionButton: screen.getByRole('button', {
+					name: 'Validate Description',
+				}),
+			};
+		}
+
+		test('extract field metadata from context', async () => {
+			const screen = render(
+				<ExampleForm id="test">
+					<FieldError name="title" />
+					<FieldError name="description" form="test" />
+				</ExampleForm>,
+			);
+			const form = getForm(screen);
+
+			await expectNoErrorMessages(form.title, form.description);
+
+			await userEvent.click(form.validateDescriptionButton);
+			await expectNoErrorMessages(form.title);
+			await expectErrorMessage(form.description, 'Description is required');
+
+			await userEvent.click(form.submitButton);
+			await expectErrorMessage(form.title, 'Title is required');
+			await expectErrorMessage(form.description, 'Description is required');
+		});
+	},
+);

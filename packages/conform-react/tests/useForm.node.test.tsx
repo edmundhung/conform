@@ -1,10 +1,17 @@
 import { describe, expect, test } from 'vitest';
 import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
-import { useForm } from '../future';
+import { useForm as useFormDefault, configureForms } from '../future';
 import { createResult, serverRenderHook } from './helpers';
 import { serializeIntent } from '../future/intent';
 
-describe('future export: useForm', () => {
+const configured = configureForms();
+
+const testCases: Array<{ name: string; useForm: typeof useFormDefault }> = [
+	{ name: 'default', useForm: useFormDefault },
+	{ name: 'configureForms', useForm: configured.useForm },
+];
+
+describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 	test('default state', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; description: string }, string>({
@@ -338,5 +345,81 @@ describe('future export: useForm', () => {
 		expect(notes[0]?.errors).toBe(undefined);
 		expect(notes[1]?.defaultValue).toBe('Third note');
 		expect(notes[1]?.errors).toBe(undefined);
+	});
+});
+
+describe('configureForms customization', () => {
+	test('extendFieldMetadata adds custom properties', () => {
+		const customized = configureForms({
+			extendFieldMetadata(metadata) {
+				return {
+					get inputProps() {
+						return {
+							name: metadata.name,
+							defaultValue: metadata.defaultValue,
+							'aria-invalid': !metadata.valid,
+							'aria-describedby': metadata.ariaDescribedBy,
+						};
+					},
+				};
+			},
+		});
+
+		const { fields } = serverRenderHook(() =>
+			customized.useForm<{ title: string }, string>({
+				id: 'test',
+				lastResult: createResult([['title', 'Example']], {
+					error: {
+						formErrors: [],
+						fieldErrors: {
+							title: ['Title error'],
+						},
+					},
+				}),
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(fields.title.inputProps).toEqual({
+			name: 'title',
+			defaultValue: 'Example',
+			'aria-invalid': true,
+			'aria-describedby': 'test-field-title-error',
+		});
+	});
+
+	test('extendFormMetadata adds custom properties', () => {
+		const customized = configureForms({
+			extendFormMetadata(metadata) {
+				return {
+					get formProps() {
+						return {
+							...metadata.props,
+							'data-form-id': metadata.id,
+							'data-valid': metadata.valid,
+						};
+					},
+				};
+			},
+		});
+
+		const { form } = serverRenderHook(() =>
+			customized.useForm<{ title: string }, string>({
+				id: 'test',
+				lastResult: createResult([['title', 'Example']], {
+					error: {
+						formErrors: ['Form error'],
+						fieldErrors: {},
+					},
+				}),
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.formProps).toMatchObject({
+			id: 'test',
+			'data-form-id': 'test',
+			'data-valid': false,
+		});
 	});
 });
