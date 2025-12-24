@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -8,6 +7,7 @@ import {
 	ExampleSwitch,
 	ExampleRadioGroup,
 } from './form';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -85,9 +85,11 @@ export default function App() {
 							</label>
 							<div className="mt-1">
 								<ExampleListBox
-									name={fields.owner.name}
-									defaultValue={fields.owner.defaultOptions}
 									options={options}
+									{...fields.owner.listBoxProps}
+									// Equivalent to:
+									// name={fields.owner.name}
+									// defaultValue={fields.owner.defaultOptions}
 								/>
 							</div>
 							<p className="mt-2 text-sm text-red-500">{fields.owner.errors}</p>
@@ -99,9 +101,11 @@ export default function App() {
 							</label>
 							<div className="mt-1">
 								<ExampleCombobox
-									name={fields.assignee.name}
-									defaultValue={fields.assignee.defaultValue}
 									options={options}
+									{...fields.assignee.comboboxProps}
+									// Equivalent to:
+									// name={fields.assignee.name}
+									// defaultValue={fields.assignee.defaultValue}
 								/>
 							</div>
 							<p className="mt-2 text-sm text-red-500">
@@ -115,8 +119,10 @@ export default function App() {
 							</label>
 							<div className="mt-1">
 								<ExampleSwitch
-									name={fields.enabled.name}
-									defaultChecked={fields.enabled.defaultChecked}
+									{...fields.enabled.switchProps}
+									// Equivalent to:
+									// name={fields.enabled.name}
+									// defaultChecked={fields.enabled.defaultChecked}
 								/>
 							</div>
 							<p className="mt-2 text-sm text-red-500">
@@ -130,8 +136,10 @@ export default function App() {
 							</label>
 							<div className="mt-1">
 								<ExampleRadioGroup
-									name={fields.color.name}
-									defaultValue={fields.color.defaultValue}
+									{...fields.color.radioGroupProps}
+									// Equivalent to:
+									// name={fields.color.name}
+									// defaultValue={fields.color.defaultValue}
 								/>
 							</div>
 							<p className="mt-2 text-sm text-red-500">{fields.color.errors}</p>

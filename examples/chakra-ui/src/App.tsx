@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import {
 	Stack,
@@ -25,6 +24,7 @@ import {
 } from './form';
 import { z } from 'zod';
 import { useState } from 'react';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -97,8 +97,11 @@ export default function App() {
 						<FormLabel>Email (Input)</FormLabel>
 						<Input
 							type="email"
-							name={fields.email.name}
-							defaultValue={fields.email.defaultValue}
+							{...fields.email.inputProps}
+							// Equivalent to:
+							// name={fields.email.name}
+							// defaultValue={fields.email.defaultValue}
+							// required={fields.email.required}
 						/>
 						<FormErrorMessage>{fields.email.errors}</FormErrorMessage>
 					</FormControl>
@@ -106,9 +109,12 @@ export default function App() {
 					<FormControl isInvalid={!fields.language.valid}>
 						<FormLabel>Language (Select)</FormLabel>
 						<Select
-							name={fields.language.name}
-							defaultValue={fields.language.defaultValue}
 							placeholder="Select option"
+							{...fields.language.selectProps}
+							// Equivalent to:
+							// name={fields.language.name}
+							// defaultValue={fields.language.defaultValue}
+							// required={fields.language.required}
 						>
 							<option value="english">English</option>
 							<option value="german">German</option>
@@ -120,8 +126,11 @@ export default function App() {
 					<FormControl isInvalid={!fields.description.valid}>
 						<FormLabel>Description (Textarea)</FormLabel>
 						<Textarea
-							name={fields.description.name}
-							defaultValue={fields.description.defaultValue}
+							{...fields.description.textareaProps}
+							// Equivalent to:
+							// name={fields.description.name}
+							// defaultValue={fields.description.defaultValue}
+							// required={fields.description.required}
 						/>
 						<FormErrorMessage>{fields.description.errors}</FormErrorMessage>
 					</FormControl>
@@ -129,8 +138,10 @@ export default function App() {
 					<FormControl isInvalid={!fields.quantity.valid}>
 						<FormLabel>Quantity (NumberInput)</FormLabel>
 						<ExampleNumberInput
-							name={fields.quantity.name}
-							defaultValue={fields.quantity.defaultValue}
+							{...fields.quantity.numberInputProps}
+							// Equivalent to:
+							// name={fields.quantity.name}
+							// defaultValue={fields.quantity.defaultValue}
 						/>
 						<FormErrorMessage>{fields.quantity.errors}</FormErrorMessage>
 					</FormControl>
@@ -138,8 +149,10 @@ export default function App() {
 					<FormControl isInvalid={!fields.pin.valid}>
 						<FormLabel>PIN (PinInput)</FormLabel>
 						<ExamplePinInput
-							name={fields.pin.name}
-							defaultValue={fields.pin.defaultValue}
+							{...fields.pin.pinInputProps}
+							// Equivalent to:
+							// name={fields.pin.name}
+							// defaultValue={fields.pin.defaultValue}
 						/>
 						<FormErrorMessage>{fields.pin.errors}</FormErrorMessage>
 					</FormControl>
@@ -147,8 +160,10 @@ export default function App() {
 					<FormControl isInvalid={!fields.title.valid}>
 						<FormLabel>Title (Editable)</FormLabel>
 						<ExampleEditable
-							name={fields.title.name}
-							defaultValue={fields.title.defaultValue}
+							{...fields.title.editableProps}
+							// Equivalent to:
+							// name={fields.title.name}
+							// defaultValue={fields.title.defaultValue}
 						/>
 						<FormErrorMessage>{fields.title.errors}</FormErrorMessage>
 					</FormControl>
@@ -156,9 +171,12 @@ export default function App() {
 					<FormControl isInvalid={!fields.subscribe.valid}>
 						<FormLabel>Subscribe (Checkbox)</FormLabel>
 						<Checkbox
-							name={fields.subscribe.name}
-							value="on"
-							defaultChecked={fields.subscribe.defaultChecked}
+							{...fields.subscribe.checkboxProps}
+							// Equivalent to:
+							// name={fields.subscribe.name}
+							// value="on"
+							// defaultChecked={fields.subscribe.defaultChecked}
+							// required={fields.subscribe.required}
 						>
 							Newsletter
 						</Checkbox>
@@ -168,9 +186,12 @@ export default function App() {
 					<FormControl isInvalid={!fields.enabled.valid}>
 						<FormLabel>Enabled (Switch)</FormLabel>
 						<Switch
-							name={fields.enabled.name}
-							value="on"
-							defaultChecked={fields.enabled.defaultChecked}
+							{...fields.enabled.switchProps}
+							// Equivalent to:
+							// name={fields.enabled.name}
+							// value="on"
+							// defaultChecked={fields.enabled.defaultChecked}
+							// required={fields.enabled.required}
 						/>
 						<FormErrorMessage>{fields.enabled.errors}</FormErrorMessage>
 					</FormControl>
@@ -178,8 +199,10 @@ export default function App() {
 					<FormControl isInvalid={!fields.progress.valid}>
 						<FormLabel>Progress (Slider)</FormLabel>
 						<ExampleSlider
-							name={fields.progress.name}
-							defaultValue={fields.progress.defaultValue}
+							{...fields.progress.sliderProps}
+							// Equivalent to:
+							// name={fields.progress.name}
+							// defaultValue={fields.progress.defaultValue}
 						/>
 						<FormErrorMessage>{fields.progress.errors}</FormErrorMessage>
 					</FormControl>
@@ -187,8 +210,10 @@ export default function App() {
 					<FormControl isInvalid={!fields.active.valid}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<ExampleRadioGroup
-							name={fields.active.name}
-							defaultValue={fields.active.defaultValue}
+							{...fields.active.radioGroupProps}
+							// Equivalent to:
+							// name={fields.active.name}
+							// defaultValue={fields.active.defaultValue}
 						>
 							<Stack spacing={5} direction="row">
 								<Radio value="yes">Yes</Radio>
