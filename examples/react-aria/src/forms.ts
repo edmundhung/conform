@@ -1,4 +1,9 @@
-import { configureForms, shape } from '@conform-to/react/future';
+import {
+	configureForms,
+	InferFieldMetadata,
+	InferFormMetadata,
+	shape,
+} from '@conform-to/react/future';
 import { getConstraints } from '@conform-to/zod/v3/future';
 import type { TextField } from './components/TextField';
 import type { NumberField } from './components/NumberField';
@@ -20,7 +25,7 @@ declare module '@conform-to/react/future' {
 	}
 }
 
-const { useForm } = configureForms({
+const result = configureForms({
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
@@ -134,4 +139,10 @@ const { useForm } = configureForms({
 	},
 });
 
-export { useForm };
+export type FormMetadata = InferFormMetadata<typeof result.config>;
+export type FieldMetadata<FieldShape> = InferFieldMetadata<
+	typeof result.config,
+	FieldShape
+>;
+
+export const useForm = result.useForm;
