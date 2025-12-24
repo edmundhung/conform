@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -13,6 +12,7 @@ import { CheckboxGroup } from './components/CheckboxGroup';
 import { Select, SelectItem } from './components/Select';
 import { ComboBox, ComboBoxItem } from './components/ComboBox';
 import { FileTrigger } from './components/FileTrigger';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -72,7 +72,6 @@ export default function App() {
 			setSubmittedValue(value);
 		},
 	});
-	const rangeFields = fields.range.getFieldset();
 
 	return (
 		<main>
@@ -89,30 +88,36 @@ export default function App() {
 					<TextField
 						label="Email"
 						type="email"
-						name={fields.email.name}
-						defaultValue={fields.email.defaultValue}
-						isInvalid={!fields.email.valid}
-						errors={fields.email.errors}
+						{...fields.email.textFieldProps}
+						// Equivalent to:
+						// name={fields.email.name}
+						// defaultValue={fields.email.defaultValue}
+						// isInvalid={!fields.email.valid}
+						// errors={fields.email.errors}
 					/>
 				</div>
 
 				<div>
 					<NumberField
 						label="Price"
-						name={fields.price.name}
-						defaultValue={fields.price.defaultValue}
-						isInvalid={!fields.price.valid}
-						errors={fields.price.errors}
+						{...fields.price.numberFieldProps}
+						// Equivalent to:
+						// name={fields.price.name}
+						// defaultValue={fields.price.defaultValue}
+						// isInvalid={!fields.price.valid}
+						// errors={fields.price.errors}
 					/>
 				</div>
 
 				<div>
 					<RadioGroup
 						label="Language"
-						name={fields.language.name}
-						defaultValue={fields.language.defaultValue}
-						isInvalid={!fields.language.valid}
-						errors={fields.language.errors}
+						{...fields.language.radioGroupProps}
+						// Equivalent to:
+						// name={fields.language.name}
+						// defaultValue={fields.language.defaultValue}
+						// isInvalid={!fields.language.valid}
+						// errors={fields.language.errors}
 					>
 						<Radio value="en">English</Radio>
 						<Radio value="de">German</Radio>
@@ -124,10 +129,12 @@ export default function App() {
 				<div>
 					<CheckboxGroup
 						label="Colors"
-						name={fields.colors.name}
-						defaultValue={fields.colors.defaultOptions}
-						isInvalid={!fields.colors.valid}
-						errors={fields.colors.errors}
+						{...fields.colors.checkboxGroupProps}
+						// Equivalent to:
+						// name={fields.colors.name}
+						// defaultValue={fields.colors.defaultOptions}
+						// isInvalid={!fields.colors.valid}
+						// errors={fields.colors.errors}
 					>
 						<Checkbox value="red">Red</Checkbox>
 						<Checkbox value="green">Green</Checkbox>
@@ -139,34 +146,40 @@ export default function App() {
 					<DatePicker
 						label="Publish Date"
 						granularity="second"
-						name={fields.date.name}
-						defaultValue={fields.date.defaultValue}
-						isInvalid={!fields.date.valid}
-						errors={fields.date.errors}
+						{...fields.date.datePickerProps}
+						// Equivalent to:
+						// name={fields.date.name}
+						// defaultValue={fields.date.defaultValue}
+						// isInvalid={!fields.date.valid}
+						// errors={fields.date.errors}
 					/>
 				</div>
 
 				<div>
 					<DateRangePicker
 						label="Event Dates"
-						startName={rangeFields.start.name}
-						endName={rangeFields.end.name}
-						defaultValue={{
-							start: rangeFields.start.defaultValue,
-							end: rangeFields.end.defaultValue,
-						}}
-						isInvalid={!fields.range.valid}
-						errors={rangeFields.start.errors ?? rangeFields.end.errors}
+						{...fields.range.dateRangePickerProps}
+						// Equivalent to:
+						// startName={fields.range.getFieldset().start.name}
+						// endName={fields.range.getFieldset().end.name}
+						// defaultValue={{
+						//   start: fields.range.getFieldset().start.defaultValue,
+						//   end: fields.range.getFieldset().end.defaultValue,
+						// }}
+						// isInvalid={!fields.range.valid}
+						// errors={fields.range.getFieldset().start.errors ?? fields.range.getFieldset().end.errors}
 					/>
 				</div>
 
 				<div>
 					<Select
 						label="Category"
-						name={fields.category.name}
-						defaultValue={fields.category.defaultValue}
-						isInvalid={!fields.category.valid}
-						errors={fields.category.errors}
+						{...fields.category.selectProps}
+						// Equivalent to:
+						// name={fields.category.name}
+						// defaultValue={fields.category.defaultValue}
+						// isInvalid={!fields.category.valid}
+						// errors={fields.category.errors}
 					>
 						<SelectItem id="announcement">Announcement</SelectItem>
 						<SelectItem id="blog">Blog</SelectItem>
@@ -177,11 +190,13 @@ export default function App() {
 				<div>
 					<ComboBox
 						label="Author"
-						name={fields.author.name}
-						defaultValue={fields.author.defaultValue}
-						isInvalid={!fields.author.valid}
-						errors={fields.author.errors}
 						allowsCustomValue
+						{...fields.author.comboBoxProps}
+						// Equivalent to:
+						// name={fields.author.name}
+						// defaultValue={fields.author.defaultValue}
+						// isInvalid={!fields.author.valid}
+						// errors={fields.author.errors}
 					>
 						<ComboBoxItem id="edmundhung">edmundhung</ComboBoxItem>
 						<ComboBoxItem id="chimame">chimame</ComboBoxItem>
@@ -191,9 +206,11 @@ export default function App() {
 				<div>
 					<FileTrigger
 						label="Profile"
-						name={fields.profile.name}
-						isInvalid={!fields.profile.valid}
-						errors={fields.profile.errors}
+						{...fields.profile.fileTriggerProps}
+						// Equivalent to:
+						// name={fields.profile.name}
+						// isInvalid={!fields.profile.valid}
+						// errors={fields.profile.errors}
 					>
 						Upload a profile picture
 					</FileTrigger>
@@ -201,9 +218,11 @@ export default function App() {
 
 				<div>
 					<Checkbox
-						name={fields.acceptTerms.name}
-						defaultSelected={fields.acceptTerms.defaultChecked}
-						isInvalid={!fields.acceptTerms.valid}
+						{...fields.acceptTerms.checkboxProps}
+						// Equivalent to:
+						// name={fields.acceptTerms.name}
+						// defaultSelected={fields.acceptTerms.defaultValue === 'on'}
+						// isInvalid={!fields.acceptTerms.valid}
 					>
 						Accept Terms and Conditions
 					</Checkbox>

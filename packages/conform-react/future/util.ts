@@ -8,7 +8,12 @@ import {
 	setValueAtPath,
 } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
-import { ValidateHandler, ValidateResult } from './types';
+import {
+	ValidateHandler,
+	ValidateResult,
+	BaseFieldMetadata,
+	ConditionalFieldMetadata,
+} from './types';
 
 export function isUndefined(value: unknown): value is undefined {
 	return value === undefined;
@@ -176,6 +181,9 @@ export function resolveValidateResult<ErrorShape, Value>(
 	};
 }
 
+/**
+ * Resolves a StandardSchema validation result to conform's format.
+ */
 export function resolveStandardSchemaResult<Value>(
 	result: StandardSchemaV1.Result<Value>,
 ): {
@@ -266,4 +274,54 @@ export function compactMap<Item>(
 
 export function generateUniqueKey() {
 	return Math.trunc(Date.now() * Math.random()).toString(36);
+}
+
+/**
+ * Creates a type guard function for specifying field shape constraints.
+ */
+export function shape<T>(): (value: unknown) => value is T {
+	return (value): value is T => true;
+}
+
+/**
+ * Creates a conditional field metadata property that is only available
+ * when the field shape matches the specified type.
+ */
+export function when<FieldShape, ErrorShape, Metadata>(
+	metadata: BaseFieldMetadata<unknown, ErrorShape>,
+	_shape: (value: unknown) => value is FieldShape,
+	fn: (m: BaseFieldMetadata<FieldShape, ErrorShape>) => Metadata,
+): ConditionalFieldMetadata<Metadata, FieldShape> {
+	return fn(
+		metadata as BaseFieldMetadata<FieldShape, ErrorShape>,
+	) as ConditionalFieldMetadata<Metadata, FieldShape>;
+}
+
+export function isStandardSchemaV1(
+	schema: unknown,
+): schema is StandardSchemaV1 {
+	return (
+		typeof schema === 'object' &&
+		schema !== null &&
+		'~standard' in schema &&
+		typeof schema['~standard'] === 'object' &&
+		schema['~standard'] !== null &&
+		'version' in schema['~standard'] &&
+		schema['~standard'].version === 1
+	);
+}
+
+export function valdiateStandardSchemaV1<Schema extends StandardSchemaV1>(
+	schema: Schema,
+	payload: Record<string, unknown>,
+) {
+	const result = schema['~standard'].validate(payload);
+
+	if (result instanceof Promise) {
+		return result.then((actualResult) =>
+			resolveStandardSchemaResult(actualResult),
+		) as any;
+	}
+
+	return resolveStandardSchemaResult(result) as any;
 }

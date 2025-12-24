@@ -15,10 +15,13 @@ export type {
 	Control,
 	DefaultValue,
 	BaseMetadata,
+	BaseFieldMetadata,
 	CustomMetadata,
 	CustomMetadataDefinition,
 	BaseErrorShape,
 	CustomTypes,
+	CustomSchemaTypes,
+	FormsConfig,
 	FormContext,
 	FormMetadata,
 	FormOptions,
@@ -26,7 +29,11 @@ export type {
 	FieldMetadata,
 	Fieldset,
 	IntentDispatcher,
+	InferBaseErrorShape,
+	InferFormMetadata,
+	InferFieldMetadata,
 } from './types';
+export { configureForms } from './forms';
 export {
 	FormProvider,
 	FormOptionsProvider,
@@ -37,4 +44,5 @@ export {
 	useFormMetadata,
 	useIntent,
 } from './hooks';
+export { shape } from './util';
 export { memoize } from './memoize';
