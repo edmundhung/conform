@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -20,6 +19,7 @@ import {
 	MultiToggleGroup,
 	InputOTP,
 } from './components/form';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -93,21 +93,25 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.name.id}>Name</Label>
 					<Input
-						id={fields.name.id}
 						type="text"
-						name={fields.name.name}
-						defaultValue={fields.name.defaultValue}
-						aria-describedby={fields.name.ariaDescribedBy}
+						{...fields.name.inputProps}
+						// Equivalent to:
+						// id={fields.name.id}
+						// name={fields.name.name}
+						// defaultValue={fields.name.defaultValue}
+						// aria-describedby={fields.name.ariaDescribedBy}
 					/>
 					<FieldError id={fields.name.errorId}>{fields.name.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label htmlFor={fields.dateOfBirth.id}>Date of Birth</Label>
 					<DatePicker
-						id={fields.dateOfBirth.id}
-						name={fields.dateOfBirth.name}
-						defaultValue={fields.dateOfBirth.defaultValue}
-						aria-describedby={fields.dateOfBirth.ariaDescribedBy}
+						{...fields.dateOfBirth.datePickerProps}
+						// Equivalent to:
+						// id={fields.dateOfBirth.id}
+						// name={fields.dateOfBirth.name}
+						// defaultValue={fields.dateOfBirth.defaultValue}
+						// aria-describedby={fields.dateOfBirth.ariaDescribedBy}
 					/>
 					<FieldError id={fields.dateOfBirth.errorId}>
 						{fields.dateOfBirth.errors}
@@ -116,10 +120,12 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.country.id}>Country</Label>
 					<ComboBox
-						id={fields.country.id}
-						name={fields.country.name}
-						defaultValue={fields.country.defaultValue}
-						aria-describedby={fields.country.ariaDescribedBy}
+						{...fields.country.comboBoxProps}
+						// Equivalent to:
+						// id={fields.country.id}
+						// name={fields.country.name}
+						// defaultValue={fields.country.defaultValue}
+						// aria-describedby={fields.country.ariaDescribedBy}
 					/>
 					<FieldError id={fields.country.errorId}>
 						{fields.country.errors}
@@ -128,16 +134,18 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.gender.id}>Gender</Label>
 					<RadioGroup
-						id={fields.gender.id}
-						name={fields.gender.name}
-						defaultValue={fields.gender.defaultValue}
 						items={[
 							{ value: 'male', label: 'male' },
 							{ value: 'female', label: 'female' },
 							{ value: 'other', label: 'other' },
 							{ value: 'invalid', label: 'invalid' },
 						]}
-						aria-describedby={fields.gender.ariaDescribedBy}
+						{...fields.gender.radioGroupProps}
+						// Equivalent to:
+						// id={fields.gender.id}
+						// name={fields.gender.name}
+						// defaultValue={fields.gender.defaultValue}
+						// aria-describedby={fields.gender.ariaDescribedBy}
 					/>
 					<FieldError id={fields.gender.errorId}>
 						{fields.gender.errors}
@@ -146,10 +154,13 @@ export default function App() {
 				<Field>
 					<div className="flex gap-2 items-center">
 						<Checkbox
-							id={fields.agreeToTerms.id}
-							name={fields.agreeToTerms.name}
-							defaultChecked={fields.agreeToTerms.defaultChecked}
-							aria-describedby={fields.agreeToTerms.ariaDescribedBy}
+							{...fields.agreeToTerms.checkboxProps}
+							// Equivalent to:
+							// id={fields.agreeToTerms.id}
+							// name={fields.agreeToTerms.name}
+							// value="on"
+							// defaultChecked={fields.agreeToTerms.defaultChecked}
+							// aria-describedby={fields.agreeToTerms.ariaDescribedBy}
 						/>
 						<Label htmlFor={fields.agreeToTerms.id}>Agree to terms</Label>
 					</div>
@@ -160,26 +171,30 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.job.id}>Job</Label>
 					<Select
-						id={fields.job.id}
-						name={fields.job.name}
-						defaultValue={fields.job.defaultValue}
 						placeholder="Select a job"
 						items={[
 							{ value: 'developer', name: 'Developer' },
 							{ value: 'designer', name: 'Designer' },
 							{ value: 'manager', name: 'Manager' },
 						]}
-						aria-describedby={fields.job.ariaDescribedBy}
+						{...fields.job.selectProps}
+						// Equivalent to:
+						// id={fields.job.id}
+						// name={fields.job.name}
+						// defaultValue={fields.job.defaultValue}
+						// aria-describedby={fields.job.ariaDescribedBy}
 					/>
 					<FieldError id={fields.job.errorId}>{fields.job.errors}</FieldError>
 				</Field>
 				<Field>
 					<Label htmlFor={fields.age.id}>Age</Label>
 					<Slider
-						id={fields.age.id}
-						name={fields.age.name}
-						defaultValue={fields.age.defaultValue}
-						aria-describedby={fields.age.ariaDescribedBy}
+						{...fields.age.sliderProps}
+						// Equivalent to:
+						// id={fields.age.id}
+						// name={fields.age.name}
+						// defaultValue={fields.age.defaultValue}
+						// aria-describedby={fields.age.ariaDescribedBy}
 					/>
 					<FieldError id={fields.age.errorId}>{fields.age.errors}</FieldError>
 				</Field>
@@ -187,10 +202,13 @@ export default function App() {
 					<div className="flex items-center gap-2">
 						<Label htmlFor={fields.isAdult.id}>Is adult</Label>
 						<Switch
-							id={fields.isAdult.id}
-							name={fields.isAdult.name}
-							defaultChecked={fields.isAdult.defaultChecked}
-							aria-describedby={fields.isAdult.ariaDescribedBy}
+							{...fields.isAdult.switchProps}
+							// Equivalent to:
+							// id={fields.isAdult.id}
+							// name={fields.isAdult.name}
+							// value="on"
+							// defaultChecked={fields.isAdult.defaultChecked}
+							// aria-describedby={fields.isAdult.ariaDescribedBy}
 						/>
 					</div>
 					<FieldError id={fields.isAdult.errorId}>
@@ -200,10 +218,12 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.description.id}>Description</Label>
 					<Textarea
-						id={fields.description.id}
-						name={fields.description.name}
-						defaultValue={fields.description.defaultValue}
-						aria-describedby={fields.description.ariaDescribedBy}
+						{...fields.description.textareaProps}
+						// Equivalent to:
+						// id={fields.description.id}
+						// name={fields.description.name}
+						// defaultValue={fields.description.defaultValue}
+						// aria-describedby={fields.description.ariaDescribedBy}
 					/>
 					<FieldError id={fields.description.errorId}>
 						{fields.description.errors}
@@ -212,14 +232,16 @@ export default function App() {
 				<Field>
 					<Label id={fields.accountType.id}>Account type</Label>
 					<SingleToggleGroup
-						name={fields.accountType.name}
-						defaultValue={fields.accountType.defaultValue}
 						items={[
 							{ value: 'personal', label: 'Personal' },
 							{ value: 'business', label: 'Business' },
 						]}
-						aria-labelledby={fields.accountType.id}
-						aria-describedby={fields.accountType.ariaDescribedBy}
+						{...fields.accountType.singleToggleGroupProps}
+						// Equivalent to:
+						// name={fields.accountType.name}
+						// defaultValue={fields.accountType.defaultValue}
+						// aria-labelledby={fields.accountType.id}
+						// aria-describedby={fields.accountType.ariaDescribedBy}
 					/>
 					<FieldError id={fields.accountType.errorId}>
 						{fields.accountType.errors}
@@ -228,15 +250,17 @@ export default function App() {
 				<Field>
 					<Label id={fields.categories.id}>Categories</Label>
 					<MultiToggleGroup
-						name={fields.categories.name}
-						defaultValue={fields.categories.defaultOptions}
 						items={[
 							{ value: 'blog', label: 'Blog' },
 							{ value: 'guide', label: 'Guide' },
 							{ value: 'tutorial', label: 'Tutorial' },
 						]}
-						aria-labelledby={fields.categories.id}
-						aria-describedby={fields.categories.ariaDescribedBy}
+						{...fields.categories.multiToggleGroupProps}
+						// Equivalent to:
+						// name={fields.categories.name}
+						// defaultValue={fields.categories.defaultOptions}
+						// aria-labelledby={fields.categories.id}
+						// aria-describedby={fields.categories.ariaDescribedBy}
 					/>
 					<FieldError id={fields.categories.errorId}>
 						{fields.categories.errors}
@@ -277,11 +301,13 @@ export default function App() {
 				<Field>
 					<Label htmlFor={fields.code.id}>Code</Label>
 					<InputOTP
-						id={fields.code.id}
-						name={fields.code.name}
-						defaultValue={fields.code.defaultValue}
-						aria-describedby={fields.code.ariaDescribedBy}
 						length={6}
+						{...fields.code.inputOTPProps}
+						// Equivalent to:
+						// id={fields.code.id}
+						// name={fields.code.name}
+						// defaultValue={fields.code.defaultValue}
+						// aria-describedby={fields.code.ariaDescribedBy}
 					/>
 					<FieldError id={fields.code.errorId}>{fields.code.errors}</FieldError>
 				</Field>
