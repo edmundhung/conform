@@ -8,8 +8,8 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.13.3",
-		"@conform-to/zod": "1.13.3",
+		"@conform-to/react": "1.15.1",
+		"@conform-to/zod": "1.15.1",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
 		"next": "15.5.2",

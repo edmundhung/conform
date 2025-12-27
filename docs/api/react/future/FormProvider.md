@@ -2,7 +2,7 @@
 
 > The `FormProvider` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React component that renders a [Context Provider](https://react.dev/reference/react/createContext#provider) for the form context. It is required if you want to use [useField](./useField.md) or [useFormMetadata](./useFormMetadata.md) hook.
+A React component that provides form context to child components. Required for [useField](./useField.md) and [useFormMetadata](./useFormMetadata.md) hooks.
 
 ```tsx
 import { FormProvider, useForm } from '@conform-to/react/future';

@@ -61,6 +61,7 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'useIntent', to: '/api/react/future/useIntent' },
 				{ title: 'parseSubmission', to: '/api/react/future/parseSubmission' },
 				{ title: 'report', to: '/api/react/future/report' },
+				{ title: 'getFieldValue', to: '/api/react/future/getFieldValue' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
 				{

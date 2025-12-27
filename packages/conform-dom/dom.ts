@@ -621,31 +621,35 @@ export function updateField(
 
 	const value = normalizeStringValues(options.value);
 	const defaultValue = normalizeStringValues(options.defaultValue);
-	const inputValue = value?.[0] ?? '';
 
-	if (element.value !== inputValue) {
-		/**
-		 * Triggering react custom change event
-		 * Solution based on dom-testing-library
-		 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-		 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
-		 */
-		const { set: valueSetter } =
-			Object.getOwnPropertyDescriptor(element, 'value') || {};
-		const prototype = Object.getPrototypeOf(element);
-		const { set: prototypeValueSetter } =
-			Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+	if (value) {
+		const inputValue = value[0] ?? '';
 
-		if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-			prototypeValueSetter.call(element, inputValue);
-		} else if (valueSetter) {
-			valueSetter.call(element, inputValue);
-		} else {
-			throw new Error('The given element does not have a value setter');
+		if (element.value !== inputValue) {
+			/**
+			 * Triggering react custom change event
+			 * Solution based on dom-testing-library
+			 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
+			 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+			 */
+			const { set: valueSetter } =
+				Object.getOwnPropertyDescriptor(element, 'value') || {};
+			const prototype = Object.getPrototypeOf(element);
+			const { set: prototypeValueSetter } =
+				Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+			if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+				prototypeValueSetter.call(element, inputValue);
+			} else if (valueSetter) {
+				valueSetter.call(element, inputValue);
+			} else {
+				throw new Error('The given element does not have a value setter');
+			}
+
+			isChanged = true;
 		}
-
-		isChanged = true;
 	}
+
 	if (defaultValue) {
 		element.defaultValue = defaultValue[0] ?? '';
 	}

@@ -2,7 +2,7 @@
 
 > The `report` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A utility function that creates a `SubmissionResult` object from a submission to add validation results and target value with options to strip files and hide sensitive fields.
+A utility function that creates a `SubmissionResult` from a submission with validation errors and options to strip files or hide sensitive fields.
 
 ```ts
 import { report } from '@conform-to/react/future';
