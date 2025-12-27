@@ -2,7 +2,7 @@
 
 > The `parseSubmission` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A utility function that parses `FormData` or `URLSearchParams` into a structured submission object that includes a nested payload with intent and field names extracted. Field names are parsed using these conventions:
+A utility function that parses `FormData` or `URLSearchParams` into a structured submission with nested payload and intent. Field names follow these conventions:
 
 - `name` → `{ name: "value" }`
 - `object.property` → `{ object: { property: "value" } }`

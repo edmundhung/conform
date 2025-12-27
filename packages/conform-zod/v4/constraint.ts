@@ -106,6 +106,8 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 		} else if (def.type === 'optional') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
+		} else if (def.type === 'nullable') {
+			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'default') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);

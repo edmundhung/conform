@@ -1,10 +1,16 @@
 export type {
+	FieldName,
 	FormError,
 	FormValue,
 	Submission,
 	SubmissionResult,
 } from '@conform-to/dom/future';
-export { parseSubmission, report, isDirty } from '@conform-to/dom/future';
+export {
+	getFieldValue,
+	parseSubmission,
+	report,
+	isDirty,
+} from '@conform-to/dom/future';
 export type {
 	Control,
 	DefaultValue,
@@ -18,7 +24,6 @@ export type {
 	FormOptions,
 	FormRef,
 	FieldMetadata,
-	FieldName,
 	Fieldset,
 	IntentDispatcher,
 } from './types';

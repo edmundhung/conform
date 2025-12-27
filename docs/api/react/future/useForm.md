@@ -2,7 +2,7 @@
 
 > The `useForm` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-The main React hook for form management. Handles form state, validation, and submission while providing access to form metadata, field objects, and form actions.
+The main React hook for Conform. It manages validation state (errors, touched, valid) that updates on events like submit or blur, not on every keystroke. This keeps re-renders minimal.
 
 ```ts
 import { useForm } from '@conform-to/react/future';

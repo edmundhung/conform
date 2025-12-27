@@ -46,6 +46,29 @@ describe('updateField', () => {
 		expect(changed4).toBe(false);
 	});
 
+	it('preserves existing value when value option is undefined', () => {
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.value = 'existing value';
+		input.defaultValue = 'existing default';
+
+		// Only pass defaultValue, not value - should preserve input.value
+		const changed = updateField(input, {
+			defaultValue: 'new default',
+		});
+
+		expect(input.value).toBe('existing value');
+		expect(input.defaultValue).toBe('new default');
+		expect(changed).toBe(false);
+
+		// Passing no options should preserve both
+		const changed2 = updateField(input, {});
+
+		expect(input.value).toBe('existing value');
+		expect(input.defaultValue).toBe('new default');
+		expect(changed2).toBe(false);
+	});
+
 	it('supports checkbox', () => {
 		const input = document.createElement('input');
 		input.type = 'checkbox';

@@ -2,7 +2,7 @@
 
 > The `useIntent` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that provides an intent dispatcher for programmatic form actions. Intent dispatchers allow you to trigger form operations like validation, field updates, and array manipulations without manual form submission.
+A React hook that returns an intent dispatcher for triggering form actions (validate, reset, update, insert, remove, reorder) without submitting the form. Use it for buttons or controls that need to modify form state.
 
 ```ts
 import { useIntent } from '@conform-to/react/future';

@@ -1,4 +1,5 @@
 import type {
+	FieldName,
 	FormError,
 	FormValue,
 	Serialize,
@@ -75,22 +76,22 @@ export type Control = {
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
-	change(
+	change: (
 		value: string | string[] | boolean | File | File[] | FileList | null,
-	): void;
+	) => void;
 	/**
 	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
 	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
 	 * Does not actually move focus.
 	 */
-	focus(): void;
+	focus: () => void;
 	/**
 	 * Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event) and
 	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events.
 	 * This does not move the actual keyboard focus to the input. Use `element.focus()` instead
 	 * if you want to move focus to the input.
 	 */
-	blur(): void;
+	blur: () => void;
 };
 
 export type Selector<FormValue, Result> = (
@@ -182,12 +183,6 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 	T & Pick<NonPartial<T>, K>
 >;
 
-export type RequireOneOf<T, K extends keyof T> = Prettify<
-	{
-		[K in keyof T]-?: RequireKey<T, K>;
-	}[K]
->;
-
 export type BaseSchemaType = StandardSchemaV1<any, any>;
 
 export type InferInput<Schema> =
@@ -257,12 +252,9 @@ export type FormOptions<
 		Value,
 		Schema
 	> = never,
-> = RequireOneOf<
-	RequireKey<
-		BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
-		RequiredKeys
-	>,
-	'onSubmit' | 'lastResult'
+> = RequireKey<
+	BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
+	RequiredKeys
 >;
 
 export interface FormContext<
@@ -281,11 +273,6 @@ export interface FormContext<
 	/** Blur event handler for form-wide blur events */
 	handleBlur: (event: React.FocusEvent) => void;
 }
-
-/** The name of an input field with type information for TypeScript inference. */
-export type FieldName<FieldShape> = string & {
-	'~shape'?: FieldShape;
-};
 
 export type UnknownIntent = {
 	type: string;

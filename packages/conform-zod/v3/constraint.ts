@@ -112,6 +112,8 @@ export function getZodConstraint(
 		} else if (def.typeName === 'ZodOptional') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);
+		} else if (def.typeName === 'ZodNullable') {
+			updateConstraint(def.innerType, data, name);
 		} else if (def.typeName === 'ZodDefault') {
 			constraint.required = false;
 			updateConstraint(def.innerType, data, name);

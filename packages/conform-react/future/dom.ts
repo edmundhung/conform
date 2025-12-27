@@ -63,8 +63,18 @@ export function initializeField(
 				: null
 			: options?.defaultValue;
 
-	// Update the value of the element, including the default value
-	updateField(element, { value: defaultValue, defaultValue });
+	// Use change helper to set value and dispatch events
+	// This syncs React's internal value tracker so subsequent
+	// programmatic changes will properly trigger onChange
+	if (defaultValue !== undefined) {
+		change(element, defaultValue, {
+			// To avoid triggering validation on initialization
+			preventDefault: true,
+		});
+	}
+
+	// Set the default value after change to preserve it for form reset
+	updateField(element, { defaultValue });
 
 	element.dataset.conform = 'initialized';
 }

@@ -2,7 +2,7 @@
 
 > The `FormOptionsProvider` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React component that provides global form options to all forms in your application.
+A React component that sets default form options for all forms in your application. Use it to configure validation timing or define custom field metadata.
 
 ```tsx
 import { FormOptionsProvider } from '@conform-to/react/future';

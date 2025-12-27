@@ -11,6 +11,7 @@ import {
 	report,
 	DEFAULT_INTENT_NAME,
 	serialize,
+	getFieldValue,
 } from '../formdata';
 
 function createFormData(
@@ -545,6 +546,291 @@ describe('parseSubmission', () => {
 			},
 			fields: ['email', 'password'],
 			intent: 'login',
+		});
+	});
+
+	it('strips empty values from the submission payload by default', () => {
+		const emptyFile = new File([], '');
+		const nonEmptyFile = new File(['content'], 'example.txt');
+
+		// Empty string values should be set to undefined to preserve structure
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', 'test@example.com'],
+					['description', ''],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: undefined,
+				email: 'test@example.com',
+				description: undefined,
+			},
+			fields: ['name', 'email', 'description'],
+			intent: null,
+		});
+
+		// Empty file values should be set to undefined to preserve structure
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'John'],
+					['avatar', emptyFile],
+					['document', nonEmptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: 'John',
+				avatar: undefined,
+				document: nonEmptyFile,
+			},
+			fields: ['name', 'avatar', 'document'],
+			intent: null,
+		});
+
+		// Arrays with all empty strings should be set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags', ''],
+					['tags', ''],
+					['categories', 'frontend'],
+					['categories', 'backend'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: undefined,
+				categories: ['frontend', 'backend'],
+			},
+			fields: ['tags', 'categories'],
+			intent: null,
+		});
+
+		// Arrays with mix of empty and non-empty should filter out empty items
+		expect(
+			parseSubmission(
+				createFormData([
+					['items', ''],
+					['items', 'valid'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				items: ['valid'],
+			},
+			fields: ['items'],
+			intent: null,
+		});
+
+		// Complex nested structure with empty values - structure is preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['user.name', 'Alice'],
+					['user.bio', ''],
+					['user.email', 'alice@example.com'],
+					['metadata.created', ''],
+					['metadata.updated', '2024-01-01'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				user: {
+					name: 'Alice',
+					bio: undefined,
+					email: 'alice@example.com',
+				},
+				metadata: {
+					created: undefined,
+					updated: '2024-01-01',
+				},
+			},
+			fields: [
+				'user.name',
+				'user.bio',
+				'user.email',
+				'metadata.created',
+				'metadata.updated',
+			],
+			intent: null,
+		});
+
+		// Array notation with empty values - should filter out empty items
+		expect(
+			parseSubmission(
+				createFormData([
+					['todos[]', 'Buy milk'],
+					['todos[]', ''],
+					['todos[]', 'Walk dog'],
+				]),
+			),
+		).toEqual({
+			payload: {
+				todos: ['Buy milk', 'Walk dog'],
+			},
+			fields: ['todos[]'],
+			intent: null,
+		});
+
+		// All empty values - structure is preserved with undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', ''],
+					['avatar', emptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				name: undefined,
+				email: undefined,
+				avatar: undefined,
+			},
+			fields: ['name', 'email', 'avatar'],
+			intent: null,
+		});
+
+		// Empty array with [] notation (all empty strings) - set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags[]', ''],
+					['tags[]', ''],
+				]),
+			),
+		).toEqual({
+			payload: {
+				tags: undefined,
+			},
+			fields: ['tags[]'],
+			intent: null,
+		});
+
+		// Arrays with mixed empty and non-empty files - should filter out empty files
+		const file1 = new File(['content1'], 'file1.txt');
+		const file2 = new File(['content2'], 'file2.txt');
+		expect(
+			parseSubmission(
+				createFormData([
+					['files[]', emptyFile],
+					['files[]', file1],
+					['files[]', emptyFile],
+					['files[]', file2],
+				]),
+			),
+		).toEqual({
+			payload: {
+				files: [file1, file2],
+			},
+			fields: ['files[]'],
+			intent: null,
+		});
+
+		// Arrays with all empty files should be set to undefined
+		expect(
+			parseSubmission(
+				createFormData([
+					['emptyFiles[]', emptyFile],
+					['emptyFiles[]', emptyFile],
+				]),
+			),
+		).toEqual({
+			payload: {
+				emptyFiles: undefined,
+			},
+			fields: ['emptyFiles[]'],
+			intent: null,
+		});
+	});
+
+	it('preserves empty values when stripEmptyValues is false', () => {
+		const emptyFile = new File([], '');
+		const nonEmptyFile = new File(['content'], 'example.txt');
+
+		// Empty string values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', ''],
+					['email', 'test@example.com'],
+					['description', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				name: '',
+				email: 'test@example.com',
+				description: '',
+			},
+			fields: ['name', 'email', 'description'],
+			intent: null,
+		});
+
+		// Empty file values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['name', 'John'],
+					['avatar', emptyFile],
+					['document', nonEmptyFile],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				name: 'John',
+				avatar: emptyFile,
+				document: nonEmptyFile,
+			},
+			fields: ['name', 'avatar', 'document'],
+			intent: null,
+		});
+
+		// Arrays with all empty strings should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['tags', ''],
+					['tags', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				tags: ['', ''],
+			},
+			fields: ['tags'],
+			intent: null,
+		});
+
+		// Complex nested structure with empty values should be preserved
+		expect(
+			parseSubmission(
+				createFormData([
+					['user.name', 'Alice'],
+					['user.bio', ''],
+					['metadata.created', ''],
+				]),
+				{ stripEmptyValues: false },
+			),
+		).toEqual({
+			payload: {
+				user: {
+					name: 'Alice',
+					bio: '',
+				},
+				metadata: {
+					created: '',
+				},
+			},
+			fields: ['user.name', 'user.bio', 'metadata.created'],
+			intent: null,
 		});
 	});
 
@@ -1248,4 +1534,208 @@ test('serialize', () => {
 	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
 	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
 	expect(serialize([{ foo: 'bar' }])).toBeUndefined();
+});
+
+describe('getFieldValue', () => {
+	test('basic value retrieval', () => {
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['tags', 'a'],
+			['tags', 'b'],
+			['empty', ''],
+		]);
+
+		// Returns first value when no options specified
+		expect(getFieldValue(formData, 'email')).toBe('test@example.com');
+		expect(getFieldValue(formData, 'tags')).toBe('a');
+		expect(getFieldValue(formData, 'empty')).toBe('');
+
+		// Returns array with array option
+		expect(getFieldValue(formData, 'tags', { array: true })).toEqual([
+			'a',
+			'b',
+		]);
+		expect(getFieldValue(formData, 'email', { array: true })).toEqual([
+			'test@example.com',
+		]);
+
+		// Returns undefined for missing fields
+		expect(getFieldValue(formData, 'nonexistent')).toBeUndefined();
+
+		// Direct field access takes precedence over parsing
+		const formData2 = new FormData();
+		formData2.append('address.city', 'NYC');
+		expect(getFieldValue(formData2, 'address.city')).toBe('NYC');
+	});
+
+	test('File objects', () => {
+		const file1 = new File(['content1'], 'test1.txt');
+		const file2 = new File(['content2'], 'test2.txt');
+		const formData = new FormData();
+		formData.append('upload', file1);
+		formData.append('uploads', file1);
+		formData.append('uploads', file2);
+
+		// Single file
+		expect(getFieldValue(formData, 'upload')).toBe(file1);
+		expect(getFieldValue(formData, 'upload', { array: true })).toEqual([file1]);
+
+		// Multiple files
+		expect(getFieldValue(formData, 'uploads', { array: true })).toEqual([
+			file1,
+			file2,
+		]);
+
+		// File with wrong type throws
+		expect(() => getFieldValue(formData, 'upload', { type: 'object' })).toThrow(
+			'Expected field "upload" to be an object, but got File',
+		);
+	});
+
+	test('structured data parsing', () => {
+		const formData = createFormData([
+			['address.city', 'NYC'],
+			['address.zipcode', '10001'],
+			['items[0]', 'a'],
+			['items[1]', 'b'],
+			['user.profile.name', 'John'],
+			['user.profile.email', 'john@example.com'],
+		]);
+
+		// Nested object
+		expect(getFieldValue(formData, 'address', { type: 'object' })).toEqual({
+			city: 'NYC',
+			zipcode: '10001',
+		});
+
+		// Nested value by path
+		expect(getFieldValue(formData, 'address.city')).toBe('NYC');
+		expect(getFieldValue(formData, 'address.zipcode')).toBe('10001');
+
+		// Array from indexed keys
+		expect(getFieldValue(formData, 'items', { array: true })).toEqual([
+			'a',
+			'b',
+		]);
+
+		// Deeply nested
+		expect(getFieldValue(formData, 'user.profile', { type: 'object' })).toEqual(
+			{ name: 'John', email: 'john@example.com' },
+		);
+
+		// Missing nested field
+		expect(getFieldValue(formData, 'address.country')).toBeUndefined();
+	});
+
+	test('array of objects', () => {
+		const formData = createFormData([
+			['items[0].name', 'Item 1'],
+			['items[0].count', '5'],
+			['items[1].name', 'Item 2'],
+			['items[1].count', '10'],
+		]);
+
+		expect(
+			getFieldValue(formData, 'items', { type: 'object', array: true }),
+		).toEqual([
+			{ name: 'Item 1', count: '5' },
+			{ name: 'Item 2', count: '10' },
+		]);
+	});
+
+	test('type validation errors', () => {
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['address.city', 'NYC'],
+			['tags[0]', 'a'],
+			['tags[1]', 'b'],
+			['mixed[0].name', 'Object'],
+			['mixed[1]', 'String'],
+		]);
+
+		// String accessed as object
+		expect(() => getFieldValue(formData, 'email', { type: 'object' })).toThrow(
+			'Expected field "email" to be an object, but got string',
+		);
+
+		expect(() =>
+			getFieldValue(formData, 'address.city', { type: 'object' }),
+		).toThrow('Expected field "address.city" to be an object, but got string');
+
+		// Object accessed as array
+		expect(() => getFieldValue(formData, 'address', { array: true })).toThrow(
+			'Expected field "address" to be an array, but got Object',
+		);
+
+		// String array accessed as object array
+		expect(() =>
+			getFieldValue(formData, 'tags', { type: 'object', array: true }),
+		).toThrow('Expected field "tags[0]" to be an object, but got string');
+
+		// Mixed array with object type
+		expect(() =>
+			getFieldValue(formData, 'mixed', { type: 'object', array: true }),
+		).toThrow('Expected field "mixed[1]" to be an object, but got string');
+	});
+
+	test('URLSearchParams support', () => {
+		const params = new URLSearchParams();
+		params.append('email', 'test@example.com');
+		params.append('tags', 'a');
+		params.append('tags', 'b');
+		params.append('address.city', 'NYC');
+		params.append('address.zipcode', '10001');
+
+		expect(getFieldValue(params, 'email')).toBe('test@example.com');
+		expect(getFieldValue(params, 'tags', { array: true })).toEqual(['a', 'b']);
+		expect(getFieldValue(params, 'address', { type: 'object' })).toEqual({
+			city: 'NYC',
+			zipcode: '10001',
+		});
+	});
+
+	test('optional option', () => {
+		const emptyFormData = new FormData();
+
+		// Returns undefined for missing fields without throwing
+		expect(
+			getFieldValue(emptyFormData, 'missing', { optional: true }),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'name', { type: 'string', optional: true }),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'address', {
+				type: 'object',
+				optional: true,
+			}),
+		).toBeUndefined();
+		expect(
+			getFieldValue(emptyFormData, 'tags', { array: true, optional: true }),
+		).toBeUndefined();
+
+		// Returns values when they exist
+		const formData = createFormData([
+			['email', 'test@example.com'],
+			['address.city', 'NYC'],
+			['address.zipcode', '10001'],
+			['tags', 'a'],
+			['tags', 'b'],
+		]);
+
+		expect(
+			getFieldValue(formData, 'email', { type: 'string', optional: true }),
+		).toBe('test@example.com');
+		expect(
+			getFieldValue(formData, 'address', { type: 'object', optional: true }),
+		).toEqual({ city: 'NYC', zipcode: '10001' });
+		expect(
+			getFieldValue(formData, 'tags', { array: true, optional: true }),
+		).toEqual(['a', 'b']);
+
+		// Still validates type when field exists
+		expect(() =>
+			getFieldValue(formData, 'email', { type: 'object', optional: true }),
+		).toThrow('Expected field "email" to be an object, but got string');
+	});
 });

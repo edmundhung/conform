@@ -16,6 +16,11 @@ describe('constraint', () => {
 					.min(1, 'min')
 					.max(10, 'max')
 					.step(2, 'step'),
+				nullableNumber: z
+					.number({ required_error: 'required' })
+					.min(1, 'min')
+					.max(10, 'max')
+					.nullable(),
 				timestamp: z
 					.date()
 					.min(new Date(1), 'min')
@@ -79,6 +84,11 @@ describe('constraint', () => {
 				maxLength: 100,
 			},
 			number: {
+				required: true,
+				min: 1,
+				max: 10,
+			},
+			nullableNumber: {
 				required: true,
 				min: 1,
 				max: 10,

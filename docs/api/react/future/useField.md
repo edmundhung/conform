@@ -2,7 +2,7 @@
 
 > The `useField` function is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that provides access to a specific field's metadata and state from any component within a `FormProvider` context.
+A React hook that returns field metadata from any component within a `FormProvider`. Use it to build reusable field components without prop drilling.
 
 ```ts
 import { useField } from '@conform-to/react/future';
