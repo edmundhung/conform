@@ -91,21 +91,21 @@ const control = useControl({
 
 ### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
 
-Registers the base input element(s). Accepts a single input or an array for groups.
+標準入力を登録します. 1つの入力もしくは入力グループに対する配列を受け取ります.
 
 ### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
 
-Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+値を変更した上で、[change](https://developer.mozilla.org/ja/docs/Web/API/HTMLElement/change_event) と [input](https://developer.mozilla.org/ja/docs/Web/API/Element/input_event) イベントの両方をディスパッチします。
 
 ### `blur(): void`
 
-Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events. Does not actually move focus.
+[blur](https://developer.mozilla.org/ja/docs/Web/API/Element/blur_event) と [focusout](https://developer.mozilla.org/ja/docs/Web/API/Element/focusout_event) イベントの両方をディスパッチします。focusは移動しません。
 
 ### `focus(): void`
 
-Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the input. Use `element.focus()` instead if you want to move focus to the input.
+[focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) と [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) のイベントをディスパッチします。これによって実際のキーボードフォーカスが入力に移動することはありません。代わりに、入力にフォーカスを移動させたいのであれば `element.focus()`を利用してください。
 
-## Example
+## 例
 
 ### Checkbox / Switch
 
@@ -144,7 +144,7 @@ function Example() {
 }
 ```
 
-### Multi-select
+### マルチセレクト
 
 ```tsx
 import { useControl } from '@conform-to/react/future';
@@ -183,7 +183,7 @@ function Example() {
 }
 ```
 
-### File input
+### ファイル入力
 
 ```tsx
 import { useControl } from '@conform-to/react/future';
@@ -213,9 +213,11 @@ function Example() {
 
 ## Tips
 
-### Progressive enhancement
+### プログレッシブエンハンスメント（Progressive enhancement）
 
-If you care about supporting form submissions before JavaScript loads, set `defaultValue`, `defaultChecked`, or `value` directly on the base input. This ensures correct values are included in the form submission. Otherwise, `useControl` will handle it once the app is hydrated.
+JavaScriptの読み込みが完了する前のフォーム送信に配慮したい場合、`defaultValue`、`defaultChecked`、または標準入力の`value`を直接設定してください。
+これにより正しい値をフォームの送信時に含めることができます。
+もしくは, `useControl`がハイドレーション完了時にそれらを対応します。
 
 ```jsx
 // Input
@@ -251,9 +253,10 @@ If you care about supporting form submissions before JavaScript loads, set `defa
 />
 ```
 
-### Checkbox / Radio groups
+### チェックボックス / ラジオグループ
 
-You can register multiple checkbox or radio inputs as a group by passing an array of elements to `register()`. This is useful when the setup renders a set of native inputs that you want to re-use without re-implementing the group logic:
+複数のチェックボックスやラジオ入力を`register()`の引数に要素の配列をグループとして渡すことで登録できます。
+セットアップでネイティブの入力の集まりを描画するタイミングで、グループのロジックを再実装することなく再利用したい時に役立ちます。
 
 ```jsx
 <CustomCheckboxGroup
@@ -264,4 +267,4 @@ You can register multiple checkbox or radio inputs as a group by passing an arra
 />
 ```
 
-If you don't need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).
+もし既存のネイティブ入力を再利用する必要がない場合、1つのhiddenに設定されたマルチセレクトかテキスト入力でグループを置き換えることができます。チェックボックスやラジオのグループの完全な実装例は[React Aria example](../../../../examples/react-aria/)を参考にしてください。
