@@ -68,7 +68,7 @@ Blur event handler for custom focus handling logic.
 
 ## Returns
 
-The hook returns an object with four properties:
+The hook returns an object with three properties:
 
 ### `form: FormMetadata<ErrorShape>`
 
