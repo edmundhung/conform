@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -10,6 +9,7 @@ import {
 	ExampleToggleGroup,
 	ExampleSelect,
 } from './form';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -71,8 +71,11 @@ export default function App() {
 					<h2 className="font-medium">Checkbox</h2>
 					<div className="flex items-center gap-2">
 						<ExampleCheckbox
-							name={fields.isTermsAgreed.name}
-							defaultChecked={fields.isTermsAgreed.defaultChecked}
+							{...fields.isTermsAgreed.checkboxProps}
+							// Equivalent to:
+							// name={fields.isTermsAgreed.name}
+							// value="on"
+							// defaultChecked={fields.isTermsAgreed.defaultChecked}
 						/>
 						<label>Accept terms and conditions.</label>
 					</div>
@@ -83,14 +86,16 @@ export default function App() {
 					<div className="flex flex-col gap-2">
 						Car type:
 						<ExampleRadioGroup
-							name={fields.carType.name}
-							defaultValue={fields.carType.defaultValue}
 							items={[
 								{ value: 'sedan', label: 'Sedan' },
 								{ value: 'hatchback', label: 'Hatchback' },
 								{ value: 'suv', label: 'SUV' },
 								{ value: 'other', label: 'Other (not valid choice)' },
 							]}
+							{...fields.carType.radioGroupProps}
+							// Equivalent to:
+							// name={fields.carType.name}
+							// defaultValue={fields.carType.defaultValue}
 						/>
 						<span className="text-red-500">{fields.carType.errors}</span>
 					</div>
@@ -99,14 +104,16 @@ export default function App() {
 					<h2 className="text-medium">Select</h2>
 					<label>Country</label>
 					<ExampleSelect
-						name={fields.userCountry.name}
-						defaultValue={fields.userCountry.defaultValue}
 						placeholder="Select a country 🗺"
 						items={[
 							{ name: 'USA', value: 'usa' },
 							{ name: 'Canada', value: 'canada' },
 							{ name: 'Mexico', value: 'mexico' },
 						]}
+						{...fields.userCountry.selectProps}
+						// Equivalent to:
+						// name={fields.userCountry.name}
+						// defaultValue={fields.userCountry.defaultValue}
 					/>
 					<span className="text-red-500">{fields.userCountry.errors}</span>
 				</div>
@@ -115,9 +122,11 @@ export default function App() {
 					<div className="flex flex-col gap-2">
 						Estimated kilometers per year:
 						<ExampleSlider
-							name={fields.estimatedKilometersPerYear.name}
-							defaultValue={fields.estimatedKilometersPerYear.defaultValue}
 							max={10_000}
+							{...fields.estimatedKilometersPerYear.sliderProps}
+							// Equivalent to:
+							// name={fields.estimatedKilometersPerYear.name}
+							// defaultValue={fields.estimatedKilometersPerYear.defaultValue}
 						/>
 						<span className="text-red-500">
 							{fields.estimatedKilometersPerYear.errors}
@@ -128,8 +137,11 @@ export default function App() {
 					<h2 className="font-medium">Switch</h2>
 					<div className="flex items-center gap-2">
 						<ExampleSwitch
-							name={fields.insurance.name}
-							defaultChecked={fields.insurance.defaultChecked}
+							{...fields.insurance.switchProps}
+							// Equivalent to:
+							// name={fields.insurance.name}
+							// value="on"
+							// defaultChecked={fields.insurance.defaultChecked}
 						/>
 						<label>Insurance</label>
 					</div>
@@ -140,13 +152,15 @@ export default function App() {
 					<div className="flex flex-col gap-2">
 						Desired contract type:
 						<ExampleToggleGroup
-							name={fields.desiredContractType.name}
-							defaultValue={fields.desiredContractType.defaultValue}
 							items={[
 								{ value: 'full', label: 'Full' },
 								{ value: 'part', label: 'Part time' },
 								{ value: 'not valid', label: 'not Valid' },
 							]}
+							{...fields.desiredContractType.toggleGroupProps}
+							// Equivalent to:
+							// name={fields.desiredContractType.name}
+							// defaultValue={fields.desiredContractType.defaultValue}
 						/>
 						<span className="text-red-500">
 							{fields.desiredContractType.errors}
