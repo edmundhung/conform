@@ -799,7 +799,7 @@ export function isDirty(
  * - null -> '' (empty string)
  * - boolean -> 'on' | '' (checked semantics)
  * - number | bigint -> value.toString()
- * - Date -> value.toISOString()
+ * - Date -> value.toISOString() (Note: updateField automatically formats this for datetime-local, date, and time inputs)
  * - File -> File
  * - FileList -> File[]
  * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined

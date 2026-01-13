@@ -555,6 +555,23 @@ export function formatTime(value: string): string {
 }
 
 /**
+ * Formats a value for datetime-local, date, or time input based on the input type.
+ */
+function formatInputValue(
+	value: string,
+	type: 'datetime-local' | 'date' | 'time',
+): string {
+	if (type === 'datetime-local') {
+		return formatDatetimeLocal(value);
+	} else if (type === 'date') {
+		return formatDate(value);
+	} else if (type === 'time') {
+		return formatTime(value);
+	}
+	return value;
+}
+
+/**
  * Updates the DOM element with the provided value and defaultValue.
  * If the value or defaultValue is undefined, it will keep the current value instead
  */
@@ -616,16 +633,10 @@ export function updateField(
 				const defaultValue = normalizeStringValues(options.defaultValue);
 
 				if (value) {
-					let formattedValue = value[0] ?? '';
-					
-					// Format the value based on the input type
-					if (element.type === 'datetime-local') {
-						formattedValue = formatDatetimeLocal(formattedValue);
-					} else if (element.type === 'date') {
-						formattedValue = formatDate(formattedValue);
-					} else if (element.type === 'time') {
-						formattedValue = formatTime(formattedValue);
-					}
+					const formattedValue = formatInputValue(
+						value[0] ?? '',
+						element.type,
+					);
 
 					if (element.value !== formattedValue) {
 						const { set: valueSetter } =
@@ -647,18 +658,10 @@ export function updateField(
 				}
 
 				if (defaultValue) {
-					let formattedDefaultValue = defaultValue[0] ?? '';
-					
-					// Format the default value based on the input type
-					if (element.type === 'datetime-local') {
-						formattedDefaultValue = formatDatetimeLocal(formattedDefaultValue);
-					} else if (element.type === 'date') {
-						formattedDefaultValue = formatDate(formattedDefaultValue);
-					} else if (element.type === 'time') {
-						formattedDefaultValue = formatTime(formattedDefaultValue);
-					}
-					
-					element.defaultValue = formattedDefaultValue;
+					element.defaultValue = formatInputValue(
+						defaultValue[0] ?? '',
+						element.type,
+					);
 				}
 
 				return isChanged;
