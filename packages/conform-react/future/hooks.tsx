@@ -1241,7 +1241,8 @@ export function useFormData<Value = any>(
 ): Value | undefined {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const valueRef = useRef<Value | undefined>();
-	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
+	const formDataRef = useRef<FormData | URLSearchParams | undefined>();
+
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) => {
@@ -1280,11 +1281,14 @@ export function useFormData<Value = any>(
 		),
 		() => {
 			// Return undefined if form is not available
-			if (formDataRef.current === null) {
+			if (formDataRef.current === undefined) {
 				return undefined;
 			}
 
-			const result = select(formDataRef.current, valueRef.current);
+			const result = select(
+				formDataRef.current as FormData & URLSearchParams,
+				valueRef.current,
+			);
 
 			if (
 				typeof valueRef.current !== 'undefined' &&
