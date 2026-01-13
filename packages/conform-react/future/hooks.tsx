@@ -1208,10 +1208,16 @@ export function useControl(options?: {
  * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
  * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
  *
+ * Returns `undefined` when the form element is not available (e.g., on SSR or initial client render).
+ *
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
+ * const value = useFormData(formRef, formData => formData.get('fieldName') ?? '');
+ * // Handle undefined case
+ * if (value === undefined) {
+ *   return <div>Loading...</div>;
+ * }
  * ```
  */
 export function useFormData<Value = any>(
@@ -1220,21 +1226,21 @@ export function useFormData<Value = any>(
 	options: UseFormDataOptions & {
 		acceptFiles: true;
 	},
-): Value;
+): Value | undefined;
 export function useFormData<Value = any>(
 	formRef: FormRef,
 	select: Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions & {
 		acceptFiles?: boolean;
 	},
-): Value;
+): Value | undefined;
 export function useFormData<Value = any>(
 	formRef: FormRef,
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions,
-): Value {
+): Value | undefined {
 	const { observer } = useContext(GlobalFormOptionsContext);
-	const valueRef = useRef<Value>();
+	const valueRef = useRef<Value | undefined>();
 	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
 	const value = useSyncExternalStore(
 		useCallback(
@@ -1273,7 +1279,11 @@ export function useFormData<Value = any>(
 			[observer, formRef, options?.acceptFiles],
 		),
 		() => {
-			// @ts-expect-error FIXME
+			// Return undefined if form is not available
+			if (formDataRef.current === null) {
+				return undefined;
+			}
+
 			const result = select(formDataRef.current, valueRef.current);
 
 			if (
@@ -1287,7 +1297,7 @@ export function useFormData<Value = any>(
 
 			return result;
 		},
-		() => select(null, undefined),
+		() => undefined,
 	);
 
 	return value;

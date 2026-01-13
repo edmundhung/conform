@@ -17,10 +17,7 @@ describe('future export: useFormData', () => {
 		id?: string;
 		onSubmit?: React.FormEventHandler<HTMLFormElement>;
 		acceptFiles?: boolean;
-		select: (
-			formData: FormData | URLSearchParams | null,
-			lastResult: any,
-		) => any;
+		select: (formData: FormData | URLSearchParams, lastResult: any) => any;
 		children: React.ReactNode;
 	}) {
 		const formRef = useRef<HTMLFormElement>(null);
@@ -39,13 +36,15 @@ describe('future export: useFormData', () => {
 			>
 				<pre data-testid="count">{count}</pre>
 				<pre data-testid="result">
-					{typeof result === 'string'
-						? result
-						: result instanceof File
-							? result.name === '' && result.size === 0
-								? '<empty file>'
-								: result.name
-							: JSON.stringify(result)}
+					{result === undefined
+						? '<undefined>'
+						: typeof result === 'string'
+							? result
+							: result instanceof File
+								? result.name === '' && result.size === 0
+									? '<empty file>'
+									: result.name
+								: JSON.stringify(result)}
 				</pre>
 				{showChildren ? <div>{props.children}</div> : null}
 				<button type="button" onClick={() => setShowChildren(!showChildren)}>
@@ -58,10 +57,7 @@ describe('future export: useFormData', () => {
 	function ConformForm(props: {
 		defaultValue?: Record<string, any>;
 		updateValue?: Record<string, any>;
-		select: (
-			formData: FormData | URLSearchParams | null,
-			lastResult: any,
-		) => any;
+		select: (formData: FormData | URLSearchParams, lastResult: any) => any;
 		children: React.ReactNode;
 	}) {
 		const [form] = useForm({
@@ -98,8 +94,7 @@ describe('future export: useFormData', () => {
 
 	it('syncs the form value on mount', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -110,15 +105,14 @@ describe('future export: useFormData', () => {
 		const result = screen.getByTestId('result');
 		const renderCount = screen.getByTestId('count');
 
-		// Rendered twice: (1) default to "", (2) sync to "foobar"
+		// Rendered twice: (1) default to undefined, (2) sync to "foobar"
 		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('foobar');
 	});
 
 	it('updates the formData when user types', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -131,7 +125,7 @@ describe('future export: useFormData', () => {
 		const input = screen.getByLabelText('Example');
 
 		await expect.element(renderCount).toHaveTextContent(1);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 		// Input value: "f"
 		await userEvent.type(input, 'f');
 		await expect.element(renderCount).toHaveTextContent(2);
@@ -155,18 +149,17 @@ describe('future export: useFormData', () => {
 		);
 
 		await expect.element(renderCount).toHaveTextContent(6);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 
 		// Ignore the input value change as it is associated to a different form
 		await userEvent.type(input, 'bar');
 		await expect.element(renderCount).toHaveTextContent(6);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 	});
 
 	it('updates the formData when DOM updates', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -180,16 +173,16 @@ describe('future export: useFormData', () => {
 		const toggleButton = screen.getByText('Toggle children');
 
 		await expect.element(renderCount).toHaveTextContent(1);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 		// Hide the input
 		await userEvent.click(toggleButton);
-		// Rendered once only as selector value did not change ("")
+		// Rendered once only as selector value did not change (undefined)
 		await expect.element(renderCount).toHaveTextContent(2);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 		// Show the input again
 		await userEvent.click(toggleButton);
 		await expect.element(renderCount).toHaveTextContent(3);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 		// Update the input value in one go
 		await userEvent.fill(input, 'bar');
 		await expect.element(renderCount).toHaveTextContent(4);
@@ -198,12 +191,12 @@ describe('future export: useFormData', () => {
 		await userEvent.click(toggleButton);
 		// Rendered twice here: (1) unmount the input, (2) useFormData re-runs
 		await expect.element(renderCount).toHaveTextContent(6);
-		await expect.element(result).toHaveTextContent('');
+		await expect.element(result).toHaveTextContent('<undefined>');
 	});
 
 	it('updates the formData when form submit', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -264,7 +257,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when form reset', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -318,7 +311,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the "name" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -359,7 +352,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the "form" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -398,7 +391,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the input is updated by `control.change()`', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 
@@ -457,7 +450,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when an update intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -486,7 +479,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when a reset intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('example') ?? '',
 		);
 		const screen = render(
@@ -515,7 +508,7 @@ describe('future export: useFormData', () => {
 
 	it('allows selecting files only if options.acceptFiles is true', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
+			(formData: FormData | URLSearchParams) =>
 				formData?.get('file') ?? 'no file input',
 		);
 		const screen = render(
@@ -552,8 +545,8 @@ describe('future export: useFormData', () => {
 	});
 
 	it('re-renders only if the derived value changes', async () => {
-		const selector = vi.fn((formData: FormData | URLSearchParams | null) =>
-			formData?.get('email')?.toString().includes('@') ? 'valid' : 'invalid',
+		const selector = vi.fn((formData: FormData | URLSearchParams) =>
+			formData.get('email')?.toString().includes('@') ? 'valid' : 'invalid',
 		);
 		const screen = render(
 			<Form select={selector}>

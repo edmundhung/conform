@@ -95,7 +95,7 @@ export type Control = {
 };
 
 export type Selector<FormValue, Result> = (
-	formData: FormValue | null,
+	formData: FormValue,
 	lastResult: Result | undefined,
 ) => Result;
 
