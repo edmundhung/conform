@@ -893,7 +893,16 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
  * const items = getFieldValue<Item[]>(formData, 'items', { type: 'object', array: true });
  * // Optional string type: returns `string | undefined`
  * const bio = getFieldValue(formData, 'bio', { type: 'string', optional: true });
+ * // Null formData: returns `undefined`
+ * const value = getFieldValue(null, 'field');
  */
+// Overloads for null formData - always return undefined
+export function getFieldValue<FieldShape>(
+	formData: null,
+	name: FieldName<FieldShape>,
+	options?: any,
+): undefined;
+// Overloads for non-null formData
 export function getFieldValue<
 	FieldShape extends Array<Record<string, unknown>>,
 >(
@@ -981,8 +990,9 @@ export function getFieldValue<FieldShape>(
 	name: FieldName<FieldShape>,
 	options?: { optional?: boolean },
 ): unknown;
+// Implementation signature accepts null
 export function getFieldValue<FieldShape>(
-	formData: FormData | URLSearchParams,
+	formData: FormData | URLSearchParams | null,
 	name: FieldName<FieldShape>,
 	options?: {
 		type?: 'object' | 'string' | 'file';
@@ -990,6 +1000,10 @@ export function getFieldValue<FieldShape>(
 		optional?: boolean;
 	},
 ): unknown {
+	// Return undefined early if formData is null
+	if (formData === null) {
+		return undefined;
+	}
 	const { type, array, optional } = options ?? {};
 
 	let value: unknown;

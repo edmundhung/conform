@@ -1738,4 +1738,20 @@ describe('getFieldValue', () => {
 			getFieldValue(formData, 'email', { type: 'object', optional: true }),
 		).toThrow('Expected field "email" to be an object, but got string');
 	});
+
+	test('null formData', () => {
+		// Always returns undefined when formData is null, regardless of options
+		expect(getFieldValue(null, 'email')).toBeUndefined();
+		expect(getFieldValue(null, 'name', { type: 'string' })).toBeUndefined();
+		expect(getFieldValue(null, 'address', { type: 'object' })).toBeUndefined();
+		expect(getFieldValue(null, 'tags', { array: true })).toBeUndefined();
+		expect(
+			getFieldValue(null, 'items', { type: 'object', array: true }),
+		).toBeUndefined();
+		expect(getFieldValue(null, 'file', { type: 'file' })).toBeUndefined();
+		expect(
+			getFieldValue(null, 'files', { type: 'file', array: true }),
+		).toBeUndefined();
+		expect(getFieldValue(null, 'optional', { optional: true })).toBeUndefined();
+	});
 });
