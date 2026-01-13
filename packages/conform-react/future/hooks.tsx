@@ -1209,13 +1209,17 @@ export function useControl(options?: {
  * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
  * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
  *
+ * **Note:** Due to React's rendering lifecycle, the form ref may not be available on the very first render,
+ * so the selector should provide a sensible default value for this case.
+ *
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * // By default, assumes form element is available
- * const value = useFormData(formRef, formData => formData.get('fieldName') ?? '');
+ * // By default, assumes form element is available (non-null type)
+ * // But provide a fallback for the initial render when ref isn't attached yet
+ * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
  *
- * // Opt-in to accept optional form element
+ * // Opt-in to explicitly optional form element (null type)
  * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '', { optional: true });
  * ```
  */
