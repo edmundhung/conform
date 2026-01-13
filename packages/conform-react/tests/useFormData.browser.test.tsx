@@ -26,6 +26,7 @@ describe('future export: useFormData', () => {
 		const formRef = useRef<HTMLFormElement>(null);
 		const result = useFormData(formRef, props.select, {
 			acceptFiles: props.acceptFiles,
+			optional: true,
 		});
 		const count = useRenderCount();
 		const [showChildren, setShowChildren] = useState(true);

@@ -1263,6 +1263,7 @@ export function useFormData<Value = any>(
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const valueRef = useRef<Value>();
 	const formDataRef = useRef<FormData | URLSearchParams | null>(null);
+
 	const value = useSyncExternalStore(
 		useCallback(
 			(callback) => {
@@ -1278,10 +1279,6 @@ export function useFormData<Value = any>(
 									value.toString(),
 								]),
 							);
-				} else if (!options?.optional) {
-					throw new Error(
-						'Form element not found. Pass `optional: true` if the form element might not be available.',
-					);
 				}
 
 				const unsubscribe = observer.onFormUpdate((event) => {
@@ -1304,13 +1301,6 @@ export function useFormData<Value = any>(
 			[observer, formRef, options?.acceptFiles, options?.optional],
 		),
 		() => {
-			// Throw error if form element is not found and optional is not set
-			if (formDataRef.current === null && !options?.optional) {
-				throw new Error(
-					'Form element not found. Pass `optional: true` if the form element might not be available.',
-				);
-			}
-
 			// @ts-expect-error The selector type will be checked by the overloads
 			const result = select(formDataRef.current, valueRef.current);
 
