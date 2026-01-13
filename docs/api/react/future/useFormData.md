@@ -73,12 +73,9 @@ const total = useFormData(formRef, (formData) => {
   }, 0);
 });
 
-// Handle undefined case when form is not available
-if (total === undefined) {
-  return <p>Loading...</p>;
-}
-
-return <p>Total: ${total.toFixed(2)}</p>;
+// Use nullish coalescing to provide a default value
+// Note: undefined could mean either the form is not available or the selector returned undefined
+return <p>Total: ${(total ?? 0).toFixed(2)}</p>;
 ```
 
 ### Conditionally show a section based on the form data
