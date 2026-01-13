@@ -190,6 +190,93 @@ describe('updateField', () => {
 		expect(changed6).toBe(false);
 	});
 
+	it('supports datetime-local input', () => {
+		const input = document.createElement('input');
+		input.type = 'datetime-local';
+
+		// Test with ISO string (what Date.toISOString() returns)
+		const changed1 = updateField(input, {
+			value: '2026-01-01T12:00:00.000Z',
+			defaultValue: '2026-01-01T12:00:00.000Z',
+		});
+		// Should strip timezone and milliseconds - browser may normalize to HH:mm or HH:mm:ss format
+		expect(input.value).toMatch(/^2026-01-01T12:00(:00)?$/);
+		expect(input.defaultValue).toMatch(/^2026-01-01T12:00(:00)?$/);
+		expect(changed1).toBe(true);
+
+		// Test with already formatted string with non-zero seconds
+		const changed2 = updateField(input, {
+			value: '2026-02-15T09:30:45',
+		});
+		expect(input.value).toMatch(/^2026-02-15T09:30:45$/);
+		expect(changed2).toBe(true);
+
+		// Test with null
+		const changed3 = updateField(input, {
+			value: null,
+		});
+		expect(input.value).toBe('');
+		expect(changed3).toBe(true);
+	});
+
+	it('supports date input', () => {
+		const input = document.createElement('input');
+		input.type = 'date';
+
+		// Test with ISO string
+		const changed1 = updateField(input, {
+			value: '2026-01-01T12:00:00.000Z',
+			defaultValue: '2026-01-01T12:00:00.000Z',
+		});
+		// Should extract only the date part
+		expect(input.value).toBe('2026-01-01');
+		expect(input.defaultValue).toBe('2026-01-01');
+		expect(changed1).toBe(true);
+
+		// Test with already formatted string
+		const changed2 = updateField(input, {
+			value: '2026-12-25',
+		});
+		expect(input.value).toBe('2026-12-25');
+		expect(changed2).toBe(true); // Should be true because defaultValue changed
+
+		// Test with null
+		const changed3 = updateField(input, {
+			value: null,
+		});
+		expect(input.value).toBe('');
+		expect(changed3).toBe(true);
+	});
+
+	it('supports time input', () => {
+		const input = document.createElement('input');
+		input.type = 'time';
+
+		// Test with ISO string
+		const changed1 = updateField(input, {
+			value: '2026-01-01T13:45:30.000Z',
+			defaultValue: '2026-01-01T13:45:30.000Z',
+		});
+		// Should extract only the time part
+		expect(input.value).toBe('13:45:30');
+		expect(input.defaultValue).toBe('13:45:30');
+		expect(changed1).toBe(true);
+
+		// Test with already formatted string
+		const changed2 = updateField(input, {
+			value: '09:30:00',
+		});
+		expect(input.value).toBe('09:30:00');
+		expect(changed2).toBe(true);
+
+		// Test with null
+		const changed3 = updateField(input, {
+			value: null,
+		});
+		expect(input.value).toBe('');
+		expect(changed3).toBe(true);
+	});
+
 	it('supports select', () => {
 		const select = document.createElement('select');
 		const emptyOption = document.createElement('option');

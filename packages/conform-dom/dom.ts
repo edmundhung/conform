@@ -503,6 +503,58 @@ export function normalizeFileValues(value: unknown): File[] | undefined {
 }
 
 /**
+ * Formats a datetime string for datetime-local inputs.
+ * Datetime-local inputs expect format: YYYY-MM-DDTHH:mm or YYYY-MM-DDTHH:mm:ss
+ * This function strips the timezone indicator and milliseconds from ISO strings.
+ */
+export function formatDatetimeLocal(value: string): string {
+	// Match ISO 8601 format with timezone
+	// e.g., "2026-01-01T12:00:00.000Z" or "2026-01-01T12:00:00Z"
+	const isoMatch = value.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
+	if (isoMatch && isoMatch[1]) {
+		// Return format with seconds: YYYY-MM-DDTHH:mm:ss
+		return isoMatch[1];
+	}
+	// If already in correct format or unknown format, return as-is
+	return value;
+}
+
+/**
+ * Formats a date string for date inputs.
+ * Date inputs expect format: YYYY-MM-DD
+ * This function extracts the date portion from ISO strings.
+ */
+export function formatDate(value: string): string {
+	// Match ISO 8601 date format
+	// e.g., "2026-01-01T12:00:00.000Z" or "2026-01-01"
+	const dateMatch = value.match(/^(\d{4}-\d{2}-\d{2})/);
+	if (dateMatch && dateMatch[1]) {
+		return dateMatch[1];
+	}
+	return value;
+}
+
+/**
+ * Formats a time string for time inputs.
+ * Time inputs expect format: HH:mm or HH:mm:ss
+ * This function extracts the time portion from ISO strings.
+ */
+export function formatTime(value: string): string {
+	// Match time in ISO 8601 format
+	// e.g., "2026-01-01T12:00:00.000Z" or just "12:00:00"
+	const timeMatch = value.match(/T?(\d{2}:\d{2}:\d{2})/);
+	if (timeMatch && timeMatch[1]) {
+		return timeMatch[1];
+	}
+	// Also match HH:mm format
+	const shortTimeMatch = value.match(/T?(\d{2}:\d{2})/);
+	if (shortTimeMatch && shortTimeMatch[1]) {
+		return shortTimeMatch[1];
+	}
+	return value;
+}
+
+/**
  * Updates the DOM element with the provided value and defaultValue.
  * If the value or defaultValue is undefined, it will keep the current value instead
  */
@@ -553,6 +605,60 @@ export function updateField(
 
 				if (defaultValue) {
 					element.defaultChecked = defaultValue.includes(element.value);
+				}
+
+				return isChanged;
+			}
+			case 'datetime-local':
+			case 'date':
+			case 'time': {
+				const value = normalizeStringValues(options.value);
+				const defaultValue = normalizeStringValues(options.defaultValue);
+
+				if (value) {
+					let formattedValue = value[0] ?? '';
+					
+					// Format the value based on the input type
+					if (element.type === 'datetime-local') {
+						formattedValue = formatDatetimeLocal(formattedValue);
+					} else if (element.type === 'date') {
+						formattedValue = formatDate(formattedValue);
+					} else if (element.type === 'time') {
+						formattedValue = formatTime(formattedValue);
+					}
+
+					if (element.value !== formattedValue) {
+						const { set: valueSetter } =
+							Object.getOwnPropertyDescriptor(element, 'value') || {};
+						const prototype = Object.getPrototypeOf(element);
+						const { set: prototypeValueSetter } =
+							Object.getOwnPropertyDescriptor(prototype, 'value') || {};
+
+						if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
+							prototypeValueSetter.call(element, formattedValue);
+						} else if (valueSetter) {
+							valueSetter.call(element, formattedValue);
+						} else {
+							throw new Error('The given element does not have a value setter');
+						}
+
+						isChanged = true;
+					}
+				}
+
+				if (defaultValue) {
+					let formattedDefaultValue = defaultValue[0] ?? '';
+					
+					// Format the default value based on the input type
+					if (element.type === 'datetime-local') {
+						formattedDefaultValue = formatDatetimeLocal(formattedDefaultValue);
+					} else if (element.type === 'date') {
+						formattedDefaultValue = formatDate(formattedDefaultValue);
+					} else if (element.type === 'time') {
+						formattedDefaultValue = formatTime(formattedDefaultValue);
+					}
+					
+					element.defaultValue = formattedDefaultValue;
 				}
 
 				return isChanged;
