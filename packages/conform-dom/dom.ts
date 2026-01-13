@@ -561,14 +561,16 @@ function formatInputValue(
 	value: string,
 	type: 'datetime-local' | 'date' | 'time',
 ): string {
-	if (type === 'datetime-local') {
-		return formatDatetimeLocal(value);
-	} else if (type === 'date') {
-		return formatDate(value);
-	} else if (type === 'time') {
-		return formatTime(value);
+	switch (type) {
+		case 'datetime-local':
+			return formatDatetimeLocal(value);
+		case 'date':
+			return formatDate(value);
+		case 'time':
+			return formatTime(value);
+		default:
+			return value;
 	}
-	return value;
 }
 
 /**
