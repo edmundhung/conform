@@ -135,4 +135,13 @@ test('getFieldValue', () => {
 			optional: true,
 		}),
 	).toEqualTypeOf<string[] | undefined>();
+
+	// Null formData - always returns undefined
+	expectTypeOf(getFieldValue(null, 'field')).toEqualTypeOf<undefined>();
+	expectTypeOf(
+		getFieldValue(null, 'name', { type: 'string' }),
+	).toEqualTypeOf<undefined>();
+	expectTypeOf(
+		getFieldValue(null, 'tags', { type: 'string', array: true }),
+	).toEqualTypeOf<undefined>();
 });
