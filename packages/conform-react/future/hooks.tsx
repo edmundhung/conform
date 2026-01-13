@@ -52,6 +52,7 @@ import type {
 	FieldMetadata,
 	Control,
 	Selector,
+	OptionalSelector,
 	UseFormDataOptions,
 	ValidateHandler,
 	ErrorHandler,
@@ -1211,7 +1212,11 @@ export function useControl(options?: {
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '');
+ * // By default, assumes form element is available
+ * const value = useFormData(formRef, formData => formData.get('fieldName') ?? '');
+ *
+ * // Opt-in to accept optional form element
+ * const value = useFormData(formRef, formData => formData?.get('fieldName') ?? '', { optional: true });
  * ```
  */
 export function useFormData<Value = any>(
@@ -1219,18 +1224,40 @@ export function useFormData<Value = any>(
 	select: Selector<FormData, Value>,
 	options: UseFormDataOptions & {
 		acceptFiles: true;
+		optional?: false;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select: OptionalSelector<FormData, Value>,
+	options: UseFormDataOptions & {
+		acceptFiles: true;
+		optional: true;
 	},
 ): Value;
 export function useFormData<Value = any>(
 	formRef: FormRef,
 	select: Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions & {
-		acceptFiles?: boolean;
+		acceptFiles?: false;
+		optional?: false;
 	},
 ): Value;
 export function useFormData<Value = any>(
 	formRef: FormRef,
-	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
+	select: OptionalSelector<URLSearchParams, Value>,
+	options: UseFormDataOptions & {
+		acceptFiles?: false;
+		optional: true;
+	},
+): Value;
+export function useFormData<Value = any>(
+	formRef: FormRef,
+	select:
+		| Selector<FormData, Value>
+		| Selector<URLSearchParams, Value>
+		| OptionalSelector<FormData, Value>
+		| OptionalSelector<URLSearchParams, Value>,
 	options?: UseFormDataOptions,
 ): Value {
 	const { observer } = useContext(GlobalFormOptionsContext);
@@ -1251,6 +1278,10 @@ export function useFormData<Value = any>(
 									value.toString(),
 								]),
 							);
+				} else if (!options?.optional) {
+					throw new Error(
+						'Form element not found. Pass `optional: true` if the form element might not be available.',
+					);
 				}
 
 				const unsubscribe = observer.onFormUpdate((event) => {
@@ -1270,10 +1301,17 @@ export function useFormData<Value = any>(
 
 				return unsubscribe;
 			},
-			[observer, formRef, options?.acceptFiles],
+			[observer, formRef, options?.acceptFiles, options?.optional],
 		),
 		() => {
-			// @ts-expect-error FIXME
+			// Throw error if form element is not found and optional is not set
+			if (formDataRef.current === null && !options?.optional) {
+				throw new Error(
+					'Form element not found. Pass `optional: true` if the form element might not be available.',
+				);
+			}
+
+			// @ts-expect-error The selector type will be checked by the overloads
 			const result = select(formDataRef.current, valueRef.current);
 
 			if (
@@ -1287,7 +1325,16 @@ export function useFormData<Value = any>(
 
 			return result;
 		},
-		() => select(null, undefined),
+		() => {
+			// Server-side rendering: pass null if optional, throw otherwise
+			if (!options?.optional) {
+				throw new Error(
+					'Form element not found during SSR. Pass `optional: true` if the form element might not be available.',
+				);
+			}
+			// @ts-expect-error The selector type will be checked by the overloads
+			return select(null, undefined);
+		},
 	);
 
 	return value;

@@ -95,6 +95,11 @@ export type Control = {
 };
 
 export type Selector<FormValue, Result> = (
+	formData: FormValue,
+	lastResult: Result | undefined,
+) => Result;
+
+export type OptionalSelector<FormValue, Result> = (
 	formData: FormValue | null,
 	lastResult: Result | undefined,
 ) => Result;
@@ -105,6 +110,12 @@ export type UseFormDataOptions = {
 	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
 	 */
 	acceptFiles?: boolean;
+	/**
+	 * Set to `true` to allow the form element to be optional.
+	 * When `true`, the selector receives `null` when the form element is not available.
+	 * When `false` (default), an error is thrown if the form element is not available.
+	 */
+	optional?: boolean;
 };
 
 export type DefaultValue<Shape> =
