@@ -900,7 +900,11 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
 export function getFieldValue<FieldShape>(
 	formData: null,
 	name: FieldName<FieldShape>,
-	options?: any,
+	options?: {
+		type?: 'object' | 'string' | 'file';
+		array?: boolean;
+		optional?: boolean;
+	},
 ): undefined;
 // Overloads for non-null formData
 export function getFieldValue<
