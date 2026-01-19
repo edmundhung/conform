@@ -229,20 +229,21 @@ describe('future export: useFormData', () => {
 		});
 		const input = screen.getByLabelText('Field');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await userEvent.fill(input, 'foo');
 		// No re-render here as the formData did not change
-		await expect.element(renderCount).toHaveTextContent(1);
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Submit the form
 		await userEvent.click(submitButton);
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('test');
 		// Update the input value again
 		await userEvent.fill(input, 'bar');
 		// Re-rendered as the formData changed (No submitter value)
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('');
 
 		screen.rerender(
@@ -257,12 +258,12 @@ describe('future export: useFormData', () => {
 			</>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 
 		// Submit the form again (with a different form)
 		await userEvent.click(submitButton);
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 	});
 
@@ -333,11 +334,12 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 
 		await userEvent.fill(input, 'foo');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('foo');
 
 		screen.rerender(
@@ -346,7 +348,7 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 
 		screen.rerender(
@@ -355,7 +357,7 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('foo');
 	});
 
@@ -376,11 +378,12 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 
 		await userEvent.fill(input, 'foo');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('foo');
 
 		screen.rerender(
@@ -393,7 +396,7 @@ describe('future export: useFormData', () => {
 		);
 
 		// Rendered twice here: (1) update the form attribute, (2) useFormData re-runs
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 	});
 
@@ -436,21 +439,22 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Input value: "f"
 		await userEvent.type(input, 'f');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('f');
 		await expect.element(input).toHaveValue('f');
 		// Input value: "fo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('fo');
 		await expect.element(input).toHaveValue('fo');
 		// Input value: "foo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('foo');
 		await expect.element(input).toHaveValue('foo');
 	});
@@ -472,13 +476,14 @@ describe('future export: useFormData', () => {
 			name: 'Update',
 		});
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await expect.element(input).toHaveValue('');
 
 		// Update the form
 		await userEvent.click(updateButton);
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(input).toHaveValue('foobar');
 		await expect.element(result).toHaveTextContent('foobar');
 	});
@@ -500,13 +505,14 @@ describe('future export: useFormData', () => {
 			name: 'Reset',
 		});
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await expect.element(input).toHaveValue('');
 
 		// Reset the form
 		await userEvent.click(resetButton);
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(input).toHaveValue('foobar');
 		await expect.element(result).toHaveTextContent('foobar');
 	});
@@ -563,19 +569,20 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Email');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to "invalid"
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('invalid');
 
 		await userEvent.type(input, 'test');
-		await expect.element(renderCount).toHaveTextContent(1);
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('invalid');
 
 		await userEvent.type(input, '@');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('valid');
 
 		await userEvent.type(input, 'example.com');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('valid');
 	});
 });
