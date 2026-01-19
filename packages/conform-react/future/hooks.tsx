@@ -1253,6 +1253,14 @@ export function useFormData<Value>(
 export function useFormData<Value>(
 	formRef: FormRef,
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
+	options?: UseFormDataOptions & {
+		acceptFiles?: boolean;
+		fallback?: Value;
+	},
+): Value | undefined;
+export function useFormData<Value>(
+	formRef: FormRef,
+	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions<Value>,
 ): Value | undefined {
 	const { observer } = useContext(GlobalFormOptionsContext);
