@@ -133,21 +133,22 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
-		await expect.element(result).toHaveTextContent('<undefined>');
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(result).toHaveTextContent('');
 		// Input value: "f"
 		await userEvent.type(input, 'f');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('f');
 		await expect.element(input).toHaveValue('f');
 		// Input value: "fo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('fo');
 		await expect.element(input).toHaveValue('fo');
 		// Input value: "foo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('foo');
 		await expect.element(input).toHaveValue('foo');
 
@@ -157,12 +158,12 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('<undefined>');
 
 		// Ignore the input value change as it is associated to a different form
 		await userEvent.type(input, 'bar');
-		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('<undefined>');
 	});
 
@@ -181,26 +182,28 @@ describe('future export: useFormData', () => {
 		const input = screen.getByLabelText('Example');
 		const toggleButton = screen.getByText('Toggle children');
 
-		await expect.element(renderCount).toHaveTextContent(1);
-		await expect.element(result).toHaveTextContent('<undefined>');
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(result).toHaveTextContent('');
 		// Hide the input
 		await userEvent.click(toggleButton);
-		// Rendered once only as selector value did not change (undefined)
-		await expect.element(renderCount).toHaveTextContent(2);
-		await expect.element(result).toHaveTextContent('<undefined>');
+		// Rendered once: formData still exists but field gone, selector returns ""
+		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(result).toHaveTextContent('');
 		// Show the input again
 		await userEvent.click(toggleButton);
-		await expect.element(renderCount).toHaveTextContent(3);
-		await expect.element(result).toHaveTextContent('<undefined>');
+		// Rendered once: selector still returns ""
+		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(result).toHaveTextContent('');
 		// Update the input value in one go
 		await userEvent.fill(input, 'bar');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('bar');
 		// Hide the input again
 		await userEvent.click(toggleButton);
-		// Rendered twice here: (1) unmount the input, (2) useFormData re-runs
-		await expect.element(renderCount).toHaveTextContent(6);
-		await expect.element(result).toHaveTextContent('<undefined>');
+		// Rendered twice here: (1) unmount the input, (2) useFormData re-runs with "" (field gone)
+		await expect.element(renderCount).toHaveTextContent(7);
+		await expect.element(result).toHaveTextContent('');
 	});
 
 	it('updates the formData when form submit', async () => {
