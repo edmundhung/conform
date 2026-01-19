@@ -1209,7 +1209,7 @@ export function useControl(options?: {
  * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
  *
  * Returns `undefined` when the form element is not available (e.g., on SSR or initial client render),
- * unless a `defaultValue` is provided.
+ * unless a `fallback` is provided.
  *
  * @see https://conform.guide/api/react/future/useFormData
  * @example
