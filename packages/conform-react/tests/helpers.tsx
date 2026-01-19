@@ -18,20 +18,22 @@ import { expect } from 'vitest';
 import { Locator } from '@vitest/browser/context';
 
 export function serverRenderHook<Result>(renderCallback: () => Result): Result {
-	let result: Result | undefined;
+	let called = false;
+	let result: Result;
 
 	function TestComponent() {
 		result = renderCallback();
+		called = true;
 		return null;
 	}
 
 	renderToStaticMarkup(<TestComponent />);
 
-	if (!result) {
-		throw new Error('The hook did not return any value');
+	if (!called) {
+		throw new Error('The hook was not called');
 	}
 
-	return result;
+	return result!;
 }
 
 export function createResult(

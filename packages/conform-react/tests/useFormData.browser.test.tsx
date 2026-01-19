@@ -21,9 +21,18 @@ describe('future export: useFormData', () => {
 		children: React.ReactNode;
 	}) {
 		const formRef = useRef<HTMLFormElement>(null);
-		const result = useFormData(formRef, props.select, {
-			acceptFiles: props.acceptFiles,
-		});
+		const result = props.acceptFiles
+			? // eslint-disable-next-line react-hooks/rules-of-hooks
+				useFormData(
+					formRef,
+					props.select as (formData: FormData, lastResult: any) => any,
+					{ acceptFiles: true },
+				)
+			: // eslint-disable-next-line react-hooks/rules-of-hooks
+				useFormData(
+					formRef,
+					props.select as (formData: URLSearchParams, lastResult: any) => any,
+				);
 		const count = useRenderCount();
 		const [showChildren, setShowChildren] = useState(true);
 
@@ -196,8 +205,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when form submit', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -257,8 +265,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when form reset', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -311,8 +318,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the "name" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -352,8 +358,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the "form" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -391,8 +396,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the input is updated by `control.change()`', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 
 		function CustomInput({
@@ -450,8 +454,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when an update intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<ConformForm select={selector} updateValue={{ example: 'foobar' }}>
@@ -479,8 +482,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when a reset intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData?.get('example') ?? '',
 		);
 		const screen = render(
 			<ConformForm select={selector} defaultValue={{ example: 'foobar' }}>

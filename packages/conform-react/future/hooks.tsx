@@ -1208,36 +1208,52 @@ export function useControl(options?: {
  * A React hook that lets you subscribe to the current `FormData` of a form and derive a custom value from it.
  * The selector runs whenever the form's structure or data changes, and the hook re-renders only when the result is deeply different.
  *
- * Returns `undefined` when the form element is not available (e.g., on SSR or initial client render).
+ * Returns `undefined` when the form element is not available (e.g., on SSR or initial client render),
+ * unless a `defaultValue` is provided.
  *
  * @see https://conform.guide/api/react/future/useFormData
  * @example
  * ```ts
- * const value = useFormData(formRef, formData => formData.get('fieldName') ?? '');
- * // Handle undefined case
- * if (value === undefined) {
- *   return <div>Loading...</div>;
- * }
+ * const value = useFormData(
+ *   formRef,
+ *   formData => formData.get('fieldName') ?? '',
+ * );
  * ```
  */
-export function useFormData<Value = any>(
+export function useFormData<Value>(
+	formRef: FormRef,
+	select: Selector<FormData, Value>,
+	options: UseFormDataOptions<Value> & {
+		acceptFiles: true;
+		defaultValue: Value;
+	},
+): Value;
+export function useFormData<Value>(
 	formRef: FormRef,
 	select: Selector<FormData, Value>,
 	options: UseFormDataOptions & {
 		acceptFiles: true;
 	},
 ): Value | undefined;
-export function useFormData<Value = any>(
+export function useFormData<Value>(
+	formRef: FormRef,
+	select: Selector<URLSearchParams, Value>,
+	options: UseFormDataOptions<Value> & {
+		acceptFiles?: false;
+		defaultValue: Value;
+	},
+): Value;
+export function useFormData<Value>(
 	formRef: FormRef,
 	select: Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions & {
-		acceptFiles?: boolean;
+		acceptFiles?: false;
 	},
 ): Value | undefined;
-export function useFormData<Value = any>(
+export function useFormData<Value>(
 	formRef: FormRef,
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
-	options?: UseFormDataOptions,
+	options?: UseFormDataOptions<Value>,
 ): Value | undefined {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const valueRef = useRef<Value | undefined>();
@@ -1280,9 +1296,9 @@ export function useFormData<Value = any>(
 			[observer, formRef, options?.acceptFiles],
 		),
 		() => {
-			// Return undefined if form is not available
+			// Return defaultValue if form is not available
 			if (formDataRef.current === undefined) {
-				return undefined;
+				return options?.defaultValue;
 			}
 
 			const result = select(
@@ -1301,7 +1317,7 @@ export function useFormData<Value = any>(
 
 			return result;
 		},
-		() => undefined,
+		() => options?.defaultValue,
 	);
 
 	return value;

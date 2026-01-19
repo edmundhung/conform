@@ -99,12 +99,17 @@ export type Selector<FormValue, Result> = (
 	lastResult: Result | undefined,
 ) => Result;
 
-export type UseFormDataOptions = {
+export type UseFormDataOptions<Value = undefined> = {
 	/**
 	 * Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
 	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
 	 */
 	acceptFiles?: boolean;
+	/**
+	 * The default value to return when the form element is not available (e.g., on SSR or initial client render).
+	 * If not provided, the hook returns `undefined` when the form is unavailable.
+	 */
+	defaultValue?: Value;
 };
 
 export type DefaultValue<Shape> =

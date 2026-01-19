@@ -7,6 +7,8 @@ import type {
 	FormOptions,
 	IntentDispatcher,
 } from '@conform-to/react/future';
+import { useFormData } from '@conform-to/react/future';
+import { useRef } from 'react';
 
 test('DefaultValue', () => {
 	// Primitive types
@@ -245,4 +247,40 @@ test('Control', () => {
 	assertType<void>(control.change(null));
 	assertType<void>(control.focus());
 	assertType<void>(control.blur());
+});
+
+test('useFormData', () => {
+	const formRef = useRef<HTMLFormElement>(null);
+
+	// Without defaultValue - returns Value | undefined
+	const resultWithoutDefault = useFormData(formRef, (formData) =>
+		formData.get('name'),
+	);
+	assertType<string | null | undefined>(resultWithoutDefault);
+
+	// With defaultValue - returns Value (no undefined)
+	const resultWithDefault = useFormData(
+		formRef,
+		(formData) => formData.get('name') ?? '',
+		{ defaultValue: '' },
+	);
+	assertType<string>(resultWithDefault);
+	// Verify it's not undefined
+	expectTypeOf(resultWithDefault).not.toBeUndefined();
+
+	// With acceptFiles: true and defaultValue
+	const resultWithFilesAndDefault = useFormData(
+		formRef,
+		(formData) => formData.getAll('files'),
+		{ acceptFiles: true, defaultValue: [] as FormDataEntryValue[] },
+	);
+	assertType<FormDataEntryValue[]>(resultWithFilesAndDefault);
+
+	// With acceptFiles: true without defaultValue
+	const resultWithFilesNoDefault = useFormData(
+		formRef,
+		(formData) => formData.getAll('files'),
+		{ acceptFiles: true },
+	);
+	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoDefault);
 });
