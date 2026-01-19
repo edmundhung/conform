@@ -1225,7 +1225,7 @@ export function useFormData<Value>(
 	select: Selector<FormData, Value>,
 	options: UseFormDataOptions<Value> & {
 		acceptFiles: true;
-		defaultValue: Value;
+		fallback: Value;
 	},
 ): Value;
 export function useFormData<Value>(
@@ -1240,7 +1240,7 @@ export function useFormData<Value>(
 	select: Selector<URLSearchParams, Value>,
 	options: UseFormDataOptions<Value> & {
 		acceptFiles?: false;
-		defaultValue: Value;
+		fallback: Value;
 	},
 ): Value;
 export function useFormData<Value>(
@@ -1296,9 +1296,9 @@ export function useFormData<Value>(
 			[observer, formRef, options?.acceptFiles],
 		),
 		() => {
-			// Return defaultValue if form is not available
+			// Return fallback if form is not available
 			if (formDataRef.current === undefined) {
-				return options?.defaultValue;
+				return options?.fallback;
 			}
 
 			const result = select(
@@ -1317,7 +1317,7 @@ export function useFormData<Value>(
 
 			return result;
 		},
-		() => options?.defaultValue,
+		() => options?.fallback,
 	);
 
 	return value;

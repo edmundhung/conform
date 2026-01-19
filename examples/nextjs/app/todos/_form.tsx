@@ -25,7 +25,7 @@ export function TodoForm({
 				return name.startsWith('$ACTION_');
 			},
 		}),
-	) ?? false;
+	);
 	const tasks = fields.tasks.getFieldList();
 
 	return (

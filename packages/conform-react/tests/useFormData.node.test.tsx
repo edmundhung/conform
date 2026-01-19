@@ -14,17 +14,17 @@ describe('future export: useFormData', () => {
 		expect(selector).not.toHaveBeenCalled();
 	});
 
-	it('returns defaultValue on the server when form is not available and defaultValue is provided', () => {
+	it('returns fallback on the server when form is not available and fallback is provided', () => {
 		const selector = vi.fn((formData: URLSearchParams) => {
-			return formData.get('example') ?? 'fallback value';
+			return formData.get('example') ?? 'selector fallback';
 		});
-		const defaultValue = 'default value';
+		const fallback = 'fallback value';
 
 		const result = serverRenderHook(() =>
-			useFormData('test', selector, { defaultValue }),
+			useFormData('test', selector, { fallback }),
 		);
 
-		expect(result).toBe(defaultValue);
+		expect(result).toBe(fallback);
 		expect(selector).not.toHaveBeenCalled();
 	});
 });

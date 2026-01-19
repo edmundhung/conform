@@ -252,35 +252,35 @@ test('Control', () => {
 test('useFormData', () => {
 	const formRef = useRef<HTMLFormElement>(null);
 
-	// Without defaultValue - returns Value | undefined
-	const resultWithoutDefault = useFormData(formRef, (formData) =>
+	// Without fallback - returns Value | undefined
+	const resultWithoutFallback = useFormData(formRef, (formData) =>
 		formData.get('name'),
 	);
-	assertType<string | null | undefined>(resultWithoutDefault);
+	assertType<string | null | undefined>(resultWithoutFallback);
 
-	// With defaultValue - returns Value (no undefined)
-	const resultWithDefault = useFormData(
+	// With fallback - returns Value (no undefined)
+	const resultWithFallback = useFormData(
 		formRef,
 		(formData) => formData.get('name') ?? '',
-		{ defaultValue: '' },
+		{ fallback: '' },
 	);
-	assertType<string>(resultWithDefault);
+	assertType<string>(resultWithFallback);
 	// Verify it's not undefined
-	expectTypeOf(resultWithDefault).not.toBeUndefined();
+	expectTypeOf(resultWithFallback).not.toBeUndefined();
 
-	// With acceptFiles: true and defaultValue
-	const resultWithFilesAndDefault = useFormData(
+	// With acceptFiles: true and fallback
+	const resultWithFilesAndFallback = useFormData(
 		formRef,
 		(formData) => formData.getAll('files'),
-		{ acceptFiles: true, defaultValue: [] as FormDataEntryValue[] },
+		{ acceptFiles: true, fallback: [] as FormDataEntryValue[] },
 	);
-	assertType<FormDataEntryValue[]>(resultWithFilesAndDefault);
+	assertType<FormDataEntryValue[]>(resultWithFilesAndFallback);
 
-	// With acceptFiles: true without defaultValue
-	const resultWithFilesNoDefault = useFormData(
+	// With acceptFiles: true without fallback
+	const resultWithFilesNoFallback = useFormData(
 		formRef,
 		(formData) => formData.getAll('files'),
 		{ acceptFiles: true },
 	);
-	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoDefault);
+	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoFallback);
 });

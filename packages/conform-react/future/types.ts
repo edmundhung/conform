@@ -106,10 +106,10 @@ export type UseFormDataOptions<Value = undefined> = {
 	 */
 	acceptFiles?: boolean;
 	/**
-	 * The default value to return when the form element is not available (e.g., on SSR or initial client render).
+	 * The fallback value to return when the form element is not available (e.g., on SSR or initial client render).
 	 * If not provided, the hook returns `undefined` when the form is unavailable.
 	 */
-	defaultValue?: Value;
+	fallback?: Value;
 };
 
 export type DefaultValue<Shape> =

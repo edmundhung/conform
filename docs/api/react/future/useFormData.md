@@ -46,16 +46,16 @@ The hook will re-run the selector whenever the form changes, and trigger a re-re
 Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
 If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
 
-### `options.defaultValue?: Value`
+### `options.fallback?: Value`
 
-The default value to return when the form element is not available (e.g., on SSR or initial client render).
+The fallback value to return when the form element is not available (e.g., on SSR or initial client render).
 If provided, the hook returns `Value` instead of `Value | undefined`.
 
 ## Returns
 
 The value returned by your selector function. If the form element is not available:
 
-- Returns `defaultValue` if provided
+- Returns `fallback` if provided
 - Returns `undefined` otherwise
 
 ## Example
@@ -63,9 +63,8 @@ The value returned by your selector function. If the form element is not availab
 ### Derive a single field value
 
 ```tsx
-// With defaultValue - returns string (no undefined check needed)
 const name = useFormData(formRef, (formData) => formData.get('name') ?? '', {
-  defaultValue: '',
+  fallback: '',
 });
 
 return <p>Hello, {name || 'guest'}!</p>;
@@ -74,19 +73,15 @@ return <p>Hello, {name || 'guest'}!</p>;
 ### Compute a summary from multiple fields
 
 ```tsx
-const total = useFormData(
-  formRef,
-  (formData) => {
-    const prices = ['itemA', 'itemB', 'itemC'];
-    return prices.reduce((sum, name) => {
-      const value = parseFloat(formData.get(name));
-      return sum + (isNaN(value) ? 0 : value);
-    }, 0);
-  },
-  { defaultValue: 0 },
-);
+const total = useFormData(formRef, (formData) => {
+  const prices = ['itemA', 'itemB', 'itemC'];
+  return prices.reduce((sum, name) => {
+    const value = parseFloat(formData.get(name));
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
+});
 
-return <p>Total: ${total.toFixed(2)}</p>;
+return <p>Total: ${total?.toFixed(2) ?? 'n/a'}</p>;
 ```
 
 ### Conditionally show a section based on the form data
@@ -95,7 +90,7 @@ return <p>Total: ${total.toFixed(2)}</p>;
 const isSubscribed = useFormData(
   formRef,
   (formData) => formData.get('subscribe') === 'on',
-  { defaultValue: false },
+  { fallback: false },
 );
 
 return (
@@ -127,7 +122,7 @@ function AddToCartButton({ itemId }: { itemId: string }) {
   const isAdded = useFormData(
     buttonRef,
     (formData) => formData.getAll('items').includes(itemId),
-    { defaultValue: false },
+    { fallback: false },
   );
 
   return (
