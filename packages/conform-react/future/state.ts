@@ -551,7 +551,8 @@ export function getField<
 				extendFieldMetadata,
 			});
 		},
-		// @ts-expect-error TODO
+		// @ts-expect-error The return type includes CustomFieldMetadata which BaseFieldMetadata
+		// doesn't account for. This is a type-level limitation; runtime behavior is correct.
 		getFieldList() {
 			return getFieldList(context, {
 				name,

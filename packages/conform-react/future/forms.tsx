@@ -25,7 +25,7 @@ import {
 import {
 	isStandardSchemaV1,
 	resolveValidateResult,
-	valdiateStandardSchemaV1,
+	validateStandardSchemaV1,
 } from './util';
 
 export function configureForms<
@@ -55,7 +55,7 @@ export function configureForms<
 			schema: unknown,
 		) => schema is BaseSchema,
 		validateSchema: (config.validateSchema ??
-			valdiateStandardSchemaV1) as NonNullable<
+			validateStandardSchemaV1) as NonNullable<
 			FormsConfig<BaseErrorShape, BaseSchema, {}, {}>['validateSchema']
 		>,
 	} satisfies FormsConfig<
@@ -100,7 +100,9 @@ export function configureForms<
 
 		if (!context) {
 			throw new Error(
-				'No form context found; Have you render a <FormProvider /> with the corresponding form context?',
+				'No form context found. ' +
+					'Wrap your component with <FormProvider context={form.context}> ' +
+					'where `form` is returned from useForm().',
 			);
 		}
 

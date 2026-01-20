@@ -277,10 +277,39 @@ export function generateUniqueKey() {
 }
 
 /**
- * Creates a type guard function for specifying field shape constraints.
+ * Creates a type-only marker for TypeScript inference.
+ *
+ * This function always returns `true` at runtime. It exists
+ * purely to capture the generic type parameter for compile-time type checking.
+ * No runtime validation is performed.
+ *
+ * Common uses:
+ * - `isError`: Specify the error shape for type inference
+ * - `when`: Narrow field metadata to specific shapes for conditional props
+ *
+ * @example Specify error shape
+ * ```ts
+ * configureForms({
+ *   isError: shape<string>(),  // errors are strings
+ * });
+ * ```
+ *
+ * @example Conditional field metadata
+ * ```ts
+ * extendFieldMetadata(metadata, { when }) {
+ *   return {
+ *     get dateRangePickerProps() {
+ *       return when(metadata, shape<{ start: string; end: string }>(), (m) => ({
+ *         startName: m.getFieldset().start.name,
+ *         endName: m.getFieldset().end.name,
+ *       }));
+ *     },
+ *   };
+ * }
+ * ```
  */
 export function shape<T>(): (value: unknown) => value is T {
-	return (value): value is T => true;
+	return (_value): _value is T => true;
 }
 
 /**
@@ -311,7 +340,7 @@ export function isStandardSchemaV1(
 	);
 }
 
-export function valdiateStandardSchemaV1<Schema extends StandardSchemaV1>(
+export function validateStandardSchemaV1<Schema extends StandardSchemaV1>(
 	schema: Schema,
 	payload: Record<string, unknown>,
 ) {

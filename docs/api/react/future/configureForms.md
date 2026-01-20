@@ -41,7 +41,17 @@ This is useful when you want an immediate update after the user has interacted w
 
 ### `isError?: (error: unknown) => error is BaseErrorShape`
 
-Type guard that defines your custom error shape for TypeScript inference. Use with the `shape` helper.
+Type guard that defines your custom error shape for TypeScript inference. Use the `shape<T>()` helper to create a type-only marker:
+
+```ts
+import { configureForms, shape } from '@conform-to/react/future';
+
+const { useForm } = configureForms({
+  isError: shape<string>(),
+});
+```
+
+The `shape<T>()` helper always returns `true` at runtime. It exists purely to capture the type parameter for compile-time checking.
 
 ### `isSchema?: (schema: unknown) => schema is BaseSchema`
 
@@ -88,6 +98,27 @@ Hook to access field metadata from context. See [useField](./useField.md).
 ### `useIntent`
 
 Hook to get an intent dispatcher. See [useIntent](./useIntent.md).
+
+### `config`
+
+The resolved configuration object. Spread this into another `configureForms` call to reuse and extend the configuration:
+
+```ts
+const base = configureForms({
+  getConstraints,
+  shouldValidate: 'onBlur',
+});
+
+// Extend base config with custom field metadata
+const { useForm } = configureForms({
+  ...base.config,
+  extendFieldMetadata(metadata) {
+    return {
+      /* ... */
+    };
+  },
+});
+```
 
 ## Tips
 
@@ -205,4 +236,30 @@ configureForms({
     };
   },
 });
+```
+
+### Exporting types for custom metadata
+
+Use `InferFormMetadata` and `InferFieldMetadata` to export types that include your custom metadata:
+
+```ts
+import {
+  configureForms,
+  type InferFormMetadata,
+  type InferFieldMetadata,
+} from '@conform-to/react/future';
+
+const result = configureForms({
+  extendFieldMetadata(metadata) {
+    return {
+      get inputProps() {
+        return { name: metadata.name, defaultValue: metadata.defaultValue };
+      },
+    };
+  },
+});
+
+export const { useForm, FormProvider } = result;
+export type FormMetadata = InferFormMetadata<typeof result.config>;
+export type FieldMetadata<T> = InferFieldMetadata<typeof result.config, T>;
 ```
