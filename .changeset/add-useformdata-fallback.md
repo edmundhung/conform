@@ -2,4 +2,19 @@
 '@conform-to/react': minor
 ---
 
-Add `fallback` option to `useFormData` hook. When provided, the hook returns the fallback value instead of `undefined` when the form element is not available (e.g., on SSR or initial client render). This also narrows the return type from `Value | undefined` to `Value`.
+**Breaking change in future APIs: `useFormData()`**
+
+The selector is now only called when the form is available. When unavailable, the hook returns `undefined` or the new `fallback` option if provided.
+
+```tsx
+// Before
+const value = useFormData(formRef, (formData) => {
+  if (formData === null) return '';
+  return formData.get('name') ?? '';
+});
+
+// After
+const value = useFormData(formRef, (formData) => formData.get('name') ?? '', {
+  fallback: '',
+});
+```
