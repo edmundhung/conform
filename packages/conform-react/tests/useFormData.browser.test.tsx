@@ -17,15 +17,14 @@ describe('future export: useFormData', () => {
 		id?: string;
 		onSubmit?: React.FormEventHandler<HTMLFormElement>;
 		acceptFiles?: boolean;
-		select: (
-			formData: FormData | URLSearchParams | null,
-			lastResult: any,
-		) => any;
+		fallback?: any;
+		select: (formData: FormData | URLSearchParams, lastResult: any) => any;
 		children: React.ReactNode;
 	}) {
 		const formRef = useRef<HTMLFormElement>(null);
 		const result = useFormData(formRef, props.select, {
 			acceptFiles: props.acceptFiles,
+			fallback: props.fallback,
 		});
 		const count = useRenderCount();
 		const [showChildren, setShowChildren] = useState(true);
@@ -39,13 +38,15 @@ describe('future export: useFormData', () => {
 			>
 				<pre data-testid="count">{count}</pre>
 				<pre data-testid="result">
-					{typeof result === 'string'
-						? result
-						: result instanceof File
-							? result.name === '' && result.size === 0
-								? '<empty file>'
-								: result.name
-							: JSON.stringify(result)}
+					{result === undefined
+						? '<undefined>'
+						: typeof result === 'string'
+							? result
+							: result instanceof File
+								? result.name === '' && result.size === 0
+									? '<empty file>'
+									: result.name
+								: JSON.stringify(result)}
 				</pre>
 				{showChildren ? <div>{props.children}</div> : null}
 				<button type="button" onClick={() => setShowChildren(!showChildren)}>
@@ -58,10 +59,7 @@ describe('future export: useFormData', () => {
 	function ConformForm(props: {
 		defaultValue?: Record<string, any>;
 		updateValue?: Record<string, any>;
-		select: (
-			formData: FormData | URLSearchParams | null,
-			lastResult: any,
-		) => any;
+		select: (formData: FormData | URLSearchParams, lastResult: any) => any;
 		children: React.ReactNode;
 	}) {
 		const [form] = useForm({
@@ -98,8 +96,7 @@ describe('future export: useFormData', () => {
 
 	it('syncs the form value on mount', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -110,15 +107,14 @@ describe('future export: useFormData', () => {
 		const result = screen.getByTestId('result');
 		const renderCount = screen.getByTestId('count');
 
-		// Rendered twice: (1) default to "", (2) sync to "foobar"
+		// Rendered twice: (1) default to undefined, (2) sync to "foobar"
 		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('foobar');
 	});
 
 	it('updates the formData when user types', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -130,21 +126,22 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Input value: "f"
 		await userEvent.type(input, 'f');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('f');
 		await expect.element(input).toHaveValue('f');
 		// Input value: "fo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('fo');
 		await expect.element(input).toHaveValue('fo');
 		// Input value: "foo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('foo');
 		await expect.element(input).toHaveValue('foo');
 
@@ -154,19 +151,20 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(6);
+		// Form still exists, but input is associated with a different form
+		// so formData.get('example') returns null, and ?? '' gives ''
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('');
 
 		// Ignore the input value change as it is associated to a different form
 		await userEvent.type(input, 'bar');
-		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('');
 	});
 
 	it('updates the formData when DOM updates', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -179,32 +177,33 @@ describe('future export: useFormData', () => {
 		const input = screen.getByLabelText('Example');
 		const toggleButton = screen.getByText('Toggle children');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Hide the input
 		await userEvent.click(toggleButton);
-		// Rendered once only as selector value did not change ("")
-		await expect.element(renderCount).toHaveTextContent(2);
+		// Rendered once: formData still exists but field gone, selector returns ""
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('');
 		// Show the input again
 		await userEvent.click(toggleButton);
-		await expect.element(renderCount).toHaveTextContent(3);
+		// Rendered once: selector still returns ""
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('');
 		// Update the input value in one go
 		await userEvent.fill(input, 'bar');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('bar');
 		// Hide the input again
 		await userEvent.click(toggleButton);
-		// Rendered twice here: (1) unmount the input, (2) useFormData re-runs
-		await expect.element(renderCount).toHaveTextContent(6);
+		// Rendered twice here: (1) unmount the input, (2) useFormData re-runs with "" (field gone)
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('');
 	});
 
 	it('updates the formData when form submit', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -225,20 +224,21 @@ describe('future export: useFormData', () => {
 		});
 		const input = screen.getByLabelText('Field');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await userEvent.fill(input, 'foo');
 		// No re-render here as the formData did not change
-		await expect.element(renderCount).toHaveTextContent(1);
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Submit the form
 		await userEvent.click(submitButton);
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('test');
 		// Update the input value again
 		await userEvent.fill(input, 'bar');
 		// Re-rendered as the formData changed (No submitter value)
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('');
 
 		screen.rerender(
@@ -253,19 +253,18 @@ describe('future export: useFormData', () => {
 			</>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 
 		// Submit the form again (with a different form)
 		await userEvent.click(submitButton);
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 	});
 
 	it('updates the formData when form reset', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -318,8 +317,7 @@ describe('future export: useFormData', () => {
 
 	it('updates the formData when the "name" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -331,11 +329,12 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 
 		await userEvent.fill(input, 'foo');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('foo');
 
 		screen.rerender(
@@ -344,7 +343,7 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 
 		screen.rerender(
@@ -353,14 +352,13 @@ describe('future export: useFormData', () => {
 			</Form>,
 		);
 
-		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(renderCount).toHaveTextContent(7);
 		await expect.element(result).toHaveTextContent('foo');
 	});
 
 	it('updates the formData when the "form" attribute changes', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<>
@@ -375,11 +373,12 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 
 		await userEvent.fill(input, 'foo');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('foo');
 
 		screen.rerender(
@@ -392,14 +391,13 @@ describe('future export: useFormData', () => {
 		);
 
 		// Rendered twice here: (1) update the form attribute, (2) useFormData re-runs
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('');
 	});
 
 	it('updates the formData when the input is updated by `control.change()`', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 
 		function CustomInput({
@@ -436,29 +434,29 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Example');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		// Input value: "f"
 		await userEvent.type(input, 'f');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('f');
 		await expect.element(input).toHaveValue('f');
 		// Input value: "fo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(result).toHaveTextContent('fo');
 		await expect.element(input).toHaveValue('fo');
 		// Input value: "foo"
 		await userEvent.type(input, 'o');
-		await expect.element(renderCount).toHaveTextContent(4);
+		await expect.element(renderCount).toHaveTextContent(5);
 		await expect.element(result).toHaveTextContent('foo');
 		await expect.element(input).toHaveValue('foo');
 	});
 
 	it('updates the formData when an update intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<ConformForm select={selector} updateValue={{ example: 'foobar' }}>
@@ -473,21 +471,21 @@ describe('future export: useFormData', () => {
 			name: 'Update',
 		});
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await expect.element(input).toHaveValue('');
 
 		// Update the form
 		await userEvent.click(updateButton);
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(input).toHaveValue('foobar');
 		await expect.element(result).toHaveTextContent('foobar');
 	});
 
 	it('updates the formData when a reset intent is dispatched', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('example') ?? '',
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
 		);
 		const screen = render(
 			<ConformForm select={selector} defaultValue={{ example: 'foobar' }}>
@@ -502,21 +500,22 @@ describe('future export: useFormData', () => {
 			name: 'Reset',
 		});
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to ""
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('');
 		await expect.element(input).toHaveValue('');
 
 		// Reset the form
 		await userEvent.click(resetButton);
-		await expect.element(renderCount).toHaveTextContent(3);
+		await expect.element(renderCount).toHaveTextContent(4);
 		await expect.element(input).toHaveValue('foobar');
 		await expect.element(result).toHaveTextContent('foobar');
 	});
 
 	it('allows selecting files only if options.acceptFiles is true', async () => {
 		const selector = vi.fn(
-			(formData: FormData | URLSearchParams | null) =>
-				formData?.get('file') ?? 'no file input',
+			(formData: FormData | URLSearchParams) =>
+				formData.get('file') ?? 'no file input',
 		);
 		const screen = render(
 			<Form select={selector} acceptFiles>
@@ -552,8 +551,8 @@ describe('future export: useFormData', () => {
 	});
 
 	it('re-renders only if the derived value changes', async () => {
-		const selector = vi.fn((formData: FormData | URLSearchParams | null) =>
-			formData?.get('email')?.toString().includes('@') ? 'valid' : 'invalid',
+		const selector = vi.fn((formData: FormData | URLSearchParams) =>
+			formData.get('email')?.toString().includes('@') ? 'valid' : 'invalid',
 		);
 		const screen = render(
 			<Form select={selector}>
@@ -565,19 +564,46 @@ describe('future export: useFormData', () => {
 		const renderCount = screen.getByTestId('count');
 		const input = screen.getByLabelText('Email');
 
-		await expect.element(renderCount).toHaveTextContent(1);
+		// Rendered twice: (1) default to undefined, (2) sync to "invalid"
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('invalid');
 
 		await userEvent.type(input, 'test');
-		await expect.element(renderCount).toHaveTextContent(1);
+		await expect.element(renderCount).toHaveTextContent(2);
 		await expect.element(result).toHaveTextContent('invalid');
 
 		await userEvent.type(input, '@');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('valid');
 
 		await userEvent.type(input, 'example.com');
-		await expect.element(renderCount).toHaveTextContent(2);
+		await expect.element(renderCount).toHaveTextContent(3);
 		await expect.element(result).toHaveTextContent('valid');
+	});
+
+	it('avoids extra render when fallback matches initial form state', async () => {
+		const selector = vi.fn(
+			(formData: FormData | URLSearchParams) => formData.get('example') ?? '',
+		);
+		const screen = render(
+			<Form select={selector} fallback="">
+				<input name="example" aria-label="Example" />
+			</Form>,
+		);
+
+		const result = screen.getByTestId('result');
+		const renderCount = screen.getByTestId('count');
+		const input = screen.getByLabelText('Example');
+
+		// With fallback: only 1 render! ("" -> "" is the same value)
+		// The fallback matches what the selector returns for an empty form,
+		// so there's no state change and no extra render.
+		await expect.element(renderCount).toHaveTextContent(1);
+		await expect.element(result).toHaveTextContent('');
+
+		// Typing still works as expected - each character is a new render
+		await userEvent.type(input, 'hello');
+		await expect.element(renderCount).toHaveTextContent(6);
+		await expect.element(result).toHaveTextContent('hello');
 	});
 });

@@ -7,6 +7,8 @@ import type {
 	FormOptions,
 	IntentDispatcher,
 } from '@conform-to/react/future';
+import { useFormData } from '@conform-to/react/future';
+import { useRef } from 'react';
 
 test('DefaultValue', () => {
 	// Primitive types
@@ -245,4 +247,40 @@ test('Control', () => {
 	assertType<void>(control.change(null));
 	assertType<void>(control.focus());
 	assertType<void>(control.blur());
+});
+
+test('useFormData', () => {
+	const formRef = useRef<HTMLFormElement>(null);
+
+	// Without fallback - returns Value | undefined
+	const resultWithoutFallback = useFormData(formRef, (formData) =>
+		formData.get('name'),
+	);
+	assertType<string | null | undefined>(resultWithoutFallback);
+
+	// With fallback - returns Value (no undefined)
+	const resultWithFallback = useFormData(
+		formRef,
+		(formData) => formData.get('name') ?? '',
+		{ fallback: '' },
+	);
+	assertType<string>(resultWithFallback);
+	// Verify it's not undefined
+	expectTypeOf(resultWithFallback).not.toBeUndefined();
+
+	// With acceptFiles: true and fallback
+	const resultWithFilesAndFallback = useFormData(
+		formRef,
+		(formData) => formData.getAll('files'),
+		{ acceptFiles: true, fallback: [] as FormDataEntryValue[] },
+	);
+	assertType<FormDataEntryValue[]>(resultWithFilesAndFallback);
+
+	// With acceptFiles: true without fallback
+	const resultWithFilesNoFallback = useFormData(
+		formRef,
+		(formData) => formData.getAll('files'),
+		{ acceptFiles: true },
+	);
+	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoFallback);
 });

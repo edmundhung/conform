@@ -35,8 +35,9 @@ A function that derives a value from the current form data. It receives:
 - The current form data, which may be:
   - a `URLSearchParams` object if the `acceptFiles` option is not set or `false`
   - a `FormData` object if `acceptFiles: true`
-  - `null` — on the server, or on the client if the form is not available
 - The previously returned value (or undefined on first render)
+
+The selector is only called when the form element is available. If the form is not available (e.g., on SSR or initial client render), the hook returns `undefined` without calling the selector.
 
 The hook will re-run the selector whenever the form changes, and trigger a re-render only if the returned value is not deeply equal to the previous one.
 
@@ -45,16 +46,26 @@ The hook will re-run the selector whenever the form changes, and trigger a re-re
 Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
 If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
 
+### `options.fallback?: Value`
+
+The fallback value to return when the form element is not available (e.g., on SSR or initial client render).
+If provided, the hook returns `Value` instead of `Value | undefined`.
+
 ## Returns
 
-The Value returned by your select function. Its type is fully generic and reflects what you extract from the form.
+The value returned by your selector function. If the form element is not available:
+
+- Returns `fallback` if provided
+- Returns `undefined` otherwise
 
 ## Example
 
 ### Derive a single field value
 
 ```tsx
-const name = useFormData(formRef, (formData) => formData?.get('name') ?? '');
+const name = useFormData(formRef, (formData) => formData.get('name') ?? '', {
+  fallback: '',
+});
 
 return <p>Hello, {name || 'guest'}!</p>;
 ```
@@ -63,8 +74,6 @@ return <p>Hello, {name || 'guest'}!</p>;
 
 ```tsx
 const total = useFormData(formRef, (formData) => {
-  if (!formData) return 0;
-
   const prices = ['itemA', 'itemB', 'itemC'];
   return prices.reduce((sum, name) => {
     const value = parseFloat(formData.get(name));
@@ -72,7 +81,7 @@ const total = useFormData(formRef, (formData) => {
   }, 0);
 });
 
-return <p>Total: ${total.toFixed(2)}</p>;
+return <p>Total: ${total?.toFixed(2) ?? 'n/a'}</p>;
 ```
 
 ### Conditionally show a section based on the form data
@@ -80,7 +89,8 @@ return <p>Total: ${total.toFixed(2)}</p>;
 ```tsx
 const isSubscribed = useFormData(
   formRef,
-  (formData) => formData?.get('subscribe') === 'on' ?? false,
+  (formData) => formData.get('subscribe') === 'on',
+  { fallback: false },
 );
 
 return (
@@ -111,7 +121,8 @@ function AddToCartButton({ itemId }: { itemId: string }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const isAdded = useFormData(
     buttonRef,
-    (formData) => formData?.getAll('items')?.includes(itemId) ?? false,
+    (formData) => formData.getAll('items').includes(itemId),
+    { fallback: false },
   );
 
   return (

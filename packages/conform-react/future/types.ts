@@ -95,16 +95,21 @@ export type Control = {
 };
 
 export type Selector<FormValue, Result> = (
-	formData: FormValue | null,
+	formData: FormValue,
 	lastResult: Result | undefined,
 ) => Result;
 
-export type UseFormDataOptions = {
+export type UseFormDataOptions<Value = undefined> = {
 	/**
 	 * Set to `true` to preserve file inputs and receive a `FormData` object in the selector.
 	 * If omitted or `false`, the selector receives a `URLSearchParams` object, where all values are coerced to strings.
 	 */
 	acceptFiles?: boolean;
+	/**
+	 * The fallback value to return when the form element is not available (e.g., on SSR or initial client render).
+	 * If not provided, the hook returns `undefined` when the form is unavailable.
+	 */
+	fallback?: Value;
 };
 
 export type DefaultValue<Shape> =
