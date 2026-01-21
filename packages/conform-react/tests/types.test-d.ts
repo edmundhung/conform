@@ -4,9 +4,12 @@ import type {
 	DefaultValue,
 	FieldMetadata,
 	FieldName,
+	Fieldset,
+	FormMetadata,
 	FormOptions,
-	InferFieldMetadata,
-	InferFormMetadata,
+	InferBaseErrorShape,
+	InferCustomFieldMetadata,
+	InferCustomFormMetadata,
 	IntentDispatcher,
 } from '@conform-to/react/future';
 import { useFormData, configureForms, shape } from '@conform-to/react/future';
@@ -287,35 +290,32 @@ test('useFormData', () => {
 	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoFallback);
 });
 
-test('InferFormMetadata and InferFieldMetadata', () => {
+test('InferBaseErrorShape, InferCustomFormMetadata, and InferCustomFieldMetadata', () => {
 	// Test with minimal config (no custom metadata)
 	const simpleResult = configureForms({});
 
-	type SimpleFormMetadata = InferFormMetadata<typeof simpleResult.config>;
-	type SimpleFieldMetadata = InferFieldMetadata<
-		typeof simpleResult.config,
-		string
-	>;
+	// InferBaseErrorShape returns the error shape (defaults to string)
+	type SimpleErrorShape = InferBaseErrorShape<typeof simpleResult.config>;
+	expectTypeOf<SimpleErrorShape>().toEqualTypeOf<string>();
 
-	// These should NOT be never - this is the bug reported in #1131
-	expectTypeOf<SimpleFormMetadata>().not.toBeNever();
-	expectTypeOf<SimpleFieldMetadata>().not.toBeNever();
+	// InferCustomFormMetadata returns the custom form metadata extension (empty by default)
+	type SimpleFormExt = InferCustomFormMetadata<typeof simpleResult.config>;
+	expectTypeOf<SimpleFormExt>().toEqualTypeOf<{}>();
+
+	// InferCustomFieldMetadata returns the custom field metadata extension (empty by default)
+	type SimpleFieldExt = InferCustomFieldMetadata<typeof simpleResult.config>;
+	expectTypeOf<SimpleFieldExt>().toEqualTypeOf<{}>();
 
 	// Test with custom error shape
 	const errorShapeResult = configureForms({
 		isError: shape<{ message: string; code: string }>(),
 	});
 
-	type ErrorShapeFormMetadata = InferFormMetadata<
-		typeof errorShapeResult.config
-	>;
-	type ErrorShapeFieldMetadata = InferFieldMetadata<
-		typeof errorShapeResult.config,
-		string
-	>;
-
-	expectTypeOf<ErrorShapeFormMetadata>().not.toBeNever();
-	expectTypeOf<ErrorShapeFieldMetadata>().not.toBeNever();
+	type CustomErrorShape = InferBaseErrorShape<typeof errorShapeResult.config>;
+	expectTypeOf<CustomErrorShape>().toEqualTypeOf<{
+		message: string;
+		code: string;
+	}>();
 
 	// Test with custom form metadata extension
 	const formMetadataResult = configureForms({
@@ -328,17 +328,17 @@ test('InferFormMetadata and InferFieldMetadata', () => {
 		},
 	});
 
-	type CustomFormMetadata = InferFormMetadata<typeof formMetadataResult.config>;
-
-	expectTypeOf<CustomFormMetadata>().not.toBeNever();
-	// Verify the custom property is available
-	expectTypeOf<CustomFormMetadata['customFormProp']>().toEqualTypeOf<string>();
+	type CustomFormExt = InferCustomFormMetadata<
+		typeof formMetadataResult.config
+	>;
+	expectTypeOf<CustomFormExt>().not.toBeNever();
+	expectTypeOf<CustomFormExt['customFormProp']>().toEqualTypeOf<string>();
 
 	// Test with custom field metadata extension
 	const fieldMetadataResult = configureForms({
 		extendFieldMetadata(metadata) {
 			return {
-				get textFieldProps() {
+				get inputProps() {
 					return {
 						name: metadata.name,
 						required: metadata.required,
@@ -348,66 +348,42 @@ test('InferFormMetadata and InferFieldMetadata', () => {
 		},
 	});
 
-	type CustomFieldMetadata = InferFieldMetadata<
-		typeof fieldMetadataResult.config,
-		string
+	type CustomFieldExt = InferCustomFieldMetadata<
+		typeof fieldMetadataResult.config
+	>;
+	expectTypeOf<CustomFieldExt>().not.toBeNever();
+	expectTypeOf<CustomFieldExt['inputProps']>().not.toBeNever();
+
+	// Test composing with FormMetadata, FieldMetadata, and Fieldset
+	// This is the main use case: users can define reusable types for components
+	type TestSchema = { name: string; email: string };
+
+	type MyFormMetadata = FormMetadata<
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFormMetadata<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
 	>;
 
-	expectTypeOf<CustomFieldMetadata>().not.toBeNever();
-	// Verify the custom property is available
-	expectTypeOf<CustomFieldMetadata['textFieldProps']>().toMatchTypeOf<{
-		name: FieldName<string>;
-		required: boolean | undefined;
-	}>();
-
-	// Test with conditional field metadata using `when`
-	const conditionalResult = configureForms({
-		extendFieldMetadata(metadata, { when }) {
-			return {
-				get simpleProps() {
-					return { name: metadata.name };
-				},
-				get dateRangeProps() {
-					return when(
-						metadata,
-						shape<{ start: string; end: string }>(),
-						(m) => {
-							const fields = m.getFieldset();
-							return {
-								startName: fields.start.name,
-								endName: fields.end.name,
-							};
-						},
-					);
-				},
-			};
-		},
-	});
-
-	type ConditionalFieldMetadata = InferFieldMetadata<
-		typeof conditionalResult.config,
-		{ start: string; end: string }
+	type MyFieldMetadata<T> = FieldMetadata<
+		T,
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
 	>;
 
-	expectTypeOf<ConditionalFieldMetadata>().not.toBeNever();
-	// simpleProps should always be available
-	expectTypeOf<ConditionalFieldMetadata['simpleProps']>().not.toBeNever();
-	expectTypeOf<ConditionalFieldMetadata['simpleProps']['name']>().toBeString();
-	// dateRangeProps should be available for matching shape
-	expectTypeOf<ConditionalFieldMetadata['dateRangeProps']>().not.toBeNever();
-	expectTypeOf<
-		ConditionalFieldMetadata['dateRangeProps']['startName']
-	>().toBeString();
-	expectTypeOf<
-		ConditionalFieldMetadata['dateRangeProps']['endName']
-	>().toBeString();
-
-	// Test that dateRangeProps is NOT available for non-matching shape
-	type StringFieldMetadata = InferFieldMetadata<
-		typeof conditionalResult.config,
-		string
+	type MyFieldset<T> = Fieldset<
+		T,
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
 	>;
 
-	expectTypeOf<StringFieldMetadata>().not.toBeNever();
-	expectTypeOf<StringFieldMetadata['dateRangeProps']>().toBeNever();
+	// Verify composed types have the custom properties
+	expectTypeOf<MyFormMetadata['id']>().toBeString();
+
+	// MyFieldMetadata should have the custom inputProps
+	expectTypeOf<MyFieldMetadata<string>['inputProps']>().not.toBeNever();
+	expectTypeOf<MyFieldMetadata<string>['name']>().toBeString();
+
+	// MyFieldset fields should also have inputProps
+	expectTypeOf<MyFieldset<TestSchema>['name']['inputProps']>().not.toBeNever();
+	expectTypeOf<MyFieldset<TestSchema>['email']['inputProps']>().not.toBeNever();
 });

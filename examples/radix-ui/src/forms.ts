@@ -1,7 +1,11 @@
 import {
 	configureForms,
-	InferFieldMetadata,
-	InferFormMetadata,
+	type FieldMetadata as BaseFieldMetadata,
+	type FormMetadata as BaseFormMetadata,
+	type Fieldset as BaseFieldset,
+	type InferBaseErrorShape,
+	type InferCustomFieldMetadata,
+	type InferCustomFormMetadata,
 } from '@conform-to/react/future';
 import { getConstraints } from '@conform-to/zod/v3/future';
 import type {
@@ -61,10 +65,36 @@ const result = configureForms({
 	},
 });
 
-export type FormMetadata = InferFormMetadata<typeof result.config>;
-export type FieldMetadata<FieldShape> = InferFieldMetadata<
-	typeof result.config,
-	FieldShape
+export type FormMetadata<
+	ErrorShape extends InferBaseErrorShape<
+		typeof result.config
+	> = InferBaseErrorShape<typeof result.config>,
+> = BaseFormMetadata<
+	ErrorShape,
+	InferCustomFormMetadata<typeof result.config>,
+	InferCustomFieldMetadata<typeof result.config>
+>;
+
+export type FieldMetadata<
+	FieldShape,
+	ErrorShape extends InferBaseErrorShape<
+		typeof result.config
+	> = InferBaseErrorShape<typeof result.config>,
+> = BaseFieldMetadata<
+	FieldShape,
+	ErrorShape,
+	InferCustomFieldMetadata<typeof result.config>
+>;
+
+export type Fieldset<
+	FieldShape,
+	ErrorShape extends InferBaseErrorShape<
+		typeof result.config
+	> = InferBaseErrorShape<typeof result.config>,
+> = BaseFieldset<
+	FieldShape,
+	ErrorShape,
+	InferCustomFieldMetadata<typeof result.config>
 >;
 
 export const useForm = result.useForm;

@@ -1002,39 +1002,56 @@ export type SubmitHandler<
 
 /**
  * Infer the base error shape from a FormsConfig.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({ isError: shape<{ message: string }>() });
+ * type ErrorShape = InferBaseErrorShape<typeof config>; // { message: string }
+ * ```
  */
 export type InferBaseErrorShape<Config> =
-	Config extends FormsConfig<infer BaseErrorShape, any, any, any>
-		? BaseErrorShape
-		: unknown;
+	Config extends FormsConfig<infer ErrorShape, any, any, any>
+		? ErrorShape
+		: string;
 
 /**
- * Infer the FormMetadata type from a FormsConfig with custom metadata.
+ * Infer the custom form metadata extension from a FormsConfig.
+ * Use this to compose with FormMetadata, FieldMetadata, or Fieldset types.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({
+ *   extendFormMetadata: (meta) => ({ customProp: meta.id })
+ * });
+ * type MyFormMetadata = FormMetadata<
+ *   InferBaseErrorShape<typeof config>,
+ *   InferCustomFormMetadata<typeof config>,
+ *   InferCustomFieldMetadata<typeof config>
+ * >;
+ * ```
  */
-export type InferFormMetadata<
-	Config,
-	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
-> =
-	Config extends FormsConfig<
-		any,
-		any,
-		infer CustomFormMetadata,
-		infer CustomFieldMetadata
-	>
-		? FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>
-		: never;
+export type InferCustomFormMetadata<Config> =
+	Config extends FormsConfig<any, any, infer CustomFormMetadata, any>
+		? CustomFormMetadata
+		: {};
 
 /**
- * Infer the custom field metadata result type from a FormsConfig.
+ * Infer the custom field metadata extension from a FormsConfig.
+ * Use this to compose with FieldMetadata or Fieldset types.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({
+ *   extendFieldMetadata: (meta) => ({ inputProps: { name: meta.name } })
+ * });
+ * type MyFieldMetadata<T> = FieldMetadata<T, InferBaseErrorShape<typeof config>, InferCustomFieldMetadata<typeof config>>;
+ * type MyFieldset<T> = Fieldset<T, InferBaseErrorShape<typeof config>, InferCustomFieldMetadata<typeof config>>;
+ * ```
  */
-export type InferFieldMetadata<
-	Config,
-	FieldShape,
-	ErrorShape extends InferBaseErrorShape<Config> = InferBaseErrorShape<Config>,
-> =
+export type InferCustomFieldMetadata<Config> =
 	Config extends FormsConfig<any, any, any, infer CustomFieldMetadata>
-		? FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>
-		: never;
+		? CustomFieldMetadata
+		: {};
 
 /**
  * Transform a type to make specific keys conditional based on FieldShape.

@@ -30,8 +30,8 @@ export type {
 	Fieldset,
 	IntentDispatcher,
 	InferBaseErrorShape,
-	InferFormMetadata,
-	InferFieldMetadata,
+	InferCustomFormMetadata,
+	InferCustomFieldMetadata,
 } from './types';
 export { configureForms } from './forms';
 export {
