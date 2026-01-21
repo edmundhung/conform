@@ -386,4 +386,19 @@ test('InferBaseErrorShape, InferCustomFormMetadata, and InferCustomFieldMetadata
 	// MyFieldset fields should also have inputProps
 	expectTypeOf<MyFieldset<TestSchema>['name']['inputProps']>().not.toBeNever();
 	expectTypeOf<MyFieldset<TestSchema>['email']['inputProps']>().not.toBeNever();
+
+	// getFieldset() should return Fieldset with custom metadata preserved
+	// Test by creating a mock field and calling getFieldset with explicit type
+	const mockField = {} as MyFieldMetadata<TestSchema>;
+	const fieldset = mockField.getFieldset();
+	// The returned fieldset's fields should have the custom inputProps
+	expectTypeOf(fieldset.name.inputProps).not.toBeNever();
+	expectTypeOf(fieldset.email.inputProps).not.toBeNever();
+
+	// getFieldList() should return FieldMetadata[] with custom metadata preserved
+	type ListSchema = Array<{ title: string }>;
+	type ItemMetadata = ReturnType<
+		MyFieldMetadata<ListSchema>['getFieldList']
+	>[number];
+	expectTypeOf<ItemMetadata['inputProps']>().not.toBeNever();
 });

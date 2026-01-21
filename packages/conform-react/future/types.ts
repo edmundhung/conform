@@ -690,83 +690,6 @@ export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
 	? Shape
 	: string;
 
-/**
- * @deprecated Renamed to `BaseFieldMetadata`. This will be removed in the next minor version.
- */
-export type BaseMetadata<
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
-> = BaseFieldMetadata<FieldShape, ErrorShape>;
-
-/** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
-export type BaseFieldMetadata<
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
-> = ValidationAttributes & {
-	/** Unique key for React list rendering (for array fields). */
-	key: string | undefined;
-	/** The field name path exactly as provided. */
-	name: FieldName<FieldShape>;
-	/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
-	id: string;
-	/** Auto-generated ID for associating field descriptions via aria-describedby. */
-	descriptionId: string;
-	/** Auto-generated ID for associating field errors via aria-describedby. */
-	errorId: string;
-	/** The form's unique identifier for associating field via the `form` attribute. */
-	formId: string;
-	/**
-	 * The field's default value as a string.
-	 *
-	 * Returns an empty string `''` when:
-	 * - No default value is set (field value is `null` or `undefined`)
-	 * - The field value cannot be serialized to a string (e.g., objects or arrays)
-	 */
-	defaultValue: string;
-	/**
-	 * Default selected options for multi-select fields or checkbox group.
-	 *
-	 * Returns an empty array `[]` when:
-	 * - No default options are set (field value is `null` or `undefined`)
-	 * - The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
-	 */
-	defaultOptions: string[];
-	/**
-	 * Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`.
-	 *
-	 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
-	 */
-	defaultChecked: boolean;
-	/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
-	touched: boolean;
-	/** Whether this field currently has no validation errors. */
-	valid: boolean;
-	/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
-	invalid: boolean;
-	/** Array of validation error messages for this field. */
-	errors: ErrorShape[] | undefined;
-	/** Object containing errors for all touched subfields. */
-	fieldErrors: Record<string, ErrorShape[]>;
-	/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
-	ariaInvalid: boolean | undefined;
-	/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
-	ariaDescribedBy: string | undefined;
-	/** Method to get nested fieldset for object fields under this field. */
-	getFieldset<
-		FieldsetShape = keyof NonNullable<FieldShape> extends never
-			? unknown
-			: FieldShape,
-	>(): Fieldset<FieldsetShape, ErrorShape>;
-	/** Method to get array of fields for list/array fields under this field. */
-	getFieldList<
-		FieldItemShape = [FieldShape] extends [
-			Array<infer ItemShape> | null | undefined,
-		]
-			? ItemShape
-			: unknown,
-	>(): Array<FieldMetadata<FieldItemShape, ErrorShape>>;
-};
-
 export type SatisfyComponentProps<
 	ElementType extends React.ElementType,
 	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
@@ -785,15 +708,6 @@ export interface CustomMetadata<
 	// User-defined properties
 }
 
-export type CustomMetadataDefinition = <
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
->(
-	metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
-) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
-	? {}
-	: CustomMetadata<any, any>;
-
 export type DefaultCustomMetadata<FieldShape, ErrorShape> =
 	keyof CustomMetadata<FieldShape, ErrorShape> extends never
 		? {}
@@ -809,10 +723,100 @@ export type FieldMetadata<
 	>,
 > = Readonly<
 	Prettify<
-		BaseFieldMetadata<FieldShape, ErrorShape> &
-			RestoreFieldShape<CustomFieldMetadata, FieldShape>
+		ValidationAttributes & {
+			/** Unique key for React list rendering (for array fields). */
+			key: string | undefined;
+			/** The field name path exactly as provided. */
+			name: FieldName<FieldShape>;
+			/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
+			id: string;
+			/** Auto-generated ID for associating field descriptions via aria-describedby. */
+			descriptionId: string;
+			/** Auto-generated ID for associating field errors via aria-describedby. */
+			errorId: string;
+			/** The form's unique identifier for associating field via the `form` attribute. */
+			formId: string;
+			/**
+			 * The field's default value as a string.
+			 *
+			 * Returns an empty string `''` when:
+			 * - No default value is set (field value is `null` or `undefined`)
+			 * - The field value cannot be serialized to a string (e.g., objects or arrays)
+			 */
+			defaultValue: string;
+			/**
+			 * Default selected options for multi-select fields or checkbox group.
+			 *
+			 * Returns an empty array `[]` when:
+			 * - No default options are set (field value is `null` or `undefined`)
+			 * - The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
+			 */
+			defaultOptions: string[];
+			/**
+			 * Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`.
+			 *
+			 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
+			 */
+			defaultChecked: boolean;
+			/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
+			touched: boolean;
+			/** Whether this field currently has no validation errors. */
+			valid: boolean;
+			/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
+			invalid: boolean;
+			/** Array of validation error messages for this field. */
+			errors: ErrorShape[] | undefined;
+			/** Object containing errors for all touched subfields. */
+			fieldErrors: Record<string, ErrorShape[]>;
+			/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
+			ariaInvalid: boolean | undefined;
+			/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
+			ariaDescribedBy: string | undefined;
+			/** Method to get nested fieldset for object fields under this field. */
+			getFieldset<
+				FieldsetShape = keyof NonNullable<FieldShape> extends never
+					? unknown
+					: FieldShape,
+			>(): Fieldset<FieldsetShape, ErrorShape, CustomFieldMetadata>;
+			/** Method to get array of fields for list/array fields under this field. */
+			getFieldList<
+				FieldItemShape = [FieldShape] extends [
+					Array<infer ItemShape> | null | undefined,
+				]
+					? ItemShape
+					: unknown,
+			>(): Array<
+				FieldMetadata<FieldItemShape, ErrorShape, CustomFieldMetadata>
+			>;
+		} & RestoreFieldShape<CustomFieldMetadata, FieldShape>
 	>
 >;
+
+/**
+ * Field metadata without custom extensions. This is the type received in `extendFieldMetadata`.
+ * Equivalent to `FieldMetadata<FieldShape, ErrorShape, {}>`.
+ */
+export type BaseFieldMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = FieldMetadata<FieldShape, ErrorShape, {}>;
+
+/**
+ * @deprecated Renamed to `BaseFieldMetadata`. This will be removed in the next minor version.
+ */
+export type BaseMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = BaseFieldMetadata<FieldShape, ErrorShape>;
+
+export type CustomMetadataDefinition = <
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+>(
+	metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
+) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
+	? {}
+	: CustomMetadata<any, any>;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
@@ -831,73 +835,77 @@ export type Fieldset<
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
-export type BaseFormMetadata<
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomFieldMetadata extends Record<string, unknown> = {},
-> = {
-	/** Unique identifier that changes on form reset */
-	key: string;
-	/** The form's unique identifier. */
-	id: string;
-	/** Auto-generated ID for associating form descriptions via aria-describedby. */
-	descriptionId: string;
-	/** Auto-generated ID for associating form errors via aria-describedby. */
-	errorId: string;
-	/** Whether any field in the form has been touched (through intent.validate() or the shouldValidate option). */
-	touched: boolean;
-	/** Whether the form currently has no validation errors. */
-	valid: boolean;
-	/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
-	invalid: boolean;
-	/** Form-level validation errors, if any exist. */
-	errors: ErrorShape[] | undefined;
-	/** Object containing errors for all touched fields. */
-	fieldErrors: Record<string, ErrorShape[]>;
-	/** The form's initial default values. */
-	defaultValue: Record<string, unknown>;
-	/** Form props object for spreading onto the <form> element. */
-	props: Readonly<{
-		id: string;
-		onSubmit: React.FormEventHandler<HTMLFormElement>;
-		onBlur: React.FocusEventHandler<HTMLFormElement>;
-		onInput: React.FormEventHandler<HTMLFormElement>;
-		noValidate: boolean;
-	}>;
-	/** The current state of the form */
-	context: FormContext<ErrorShape>;
-	/** Method to get metadata for a specific field by name. */
-	getField<FieldShape>(
-		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
-	/** Method to get a fieldset object for nested object fields. */
-	getFieldset<FieldShape>(
-		name?: FieldName<FieldShape>,
-	): Fieldset<
-		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
-		ErrorShape,
-		CustomFieldMetadata
-	>;
-	/** Method to get an array of field objects for array fields. */
-	getFieldList<FieldShape>(
-		name: FieldName<FieldShape>,
-	): Array<
-		FieldMetadata<
-			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
-				? ItemShape
-				: unknown,
-			ErrorShape,
-			CustomFieldMetadata
-		>
-	>;
-};
-
 export type FormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
-	BaseFormMetadata<ErrorShape, CustomFieldMetadata> & CustomFormMetadata
+	{
+		/** Unique identifier that changes on form reset */
+		key: string;
+		/** The form's unique identifier. */
+		id: string;
+		/** Auto-generated ID for associating form descriptions via aria-describedby. */
+		descriptionId: string;
+		/** Auto-generated ID for associating form errors via aria-describedby. */
+		errorId: string;
+		/** Whether any field in the form has been touched (through intent.validate() or the shouldValidate option). */
+		touched: boolean;
+		/** Whether the form currently has no validation errors. */
+		valid: boolean;
+		/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
+		invalid: boolean;
+		/** Form-level validation errors, if any exist. */
+		errors: ErrorShape[] | undefined;
+		/** Object containing errors for all touched fields. */
+		fieldErrors: Record<string, ErrorShape[]>;
+		/** The form's initial default values. */
+		defaultValue: Record<string, unknown>;
+		/** Form props object for spreading onto the <form> element. */
+		props: Readonly<{
+			id: string;
+			onSubmit: React.FormEventHandler<HTMLFormElement>;
+			onBlur: React.FocusEventHandler<HTMLFormElement>;
+			onInput: React.FormEventHandler<HTMLFormElement>;
+			noValidate: boolean;
+		}>;
+		/** The current state of the form */
+		context: FormContext<ErrorShape>;
+		/** Method to get metadata for a specific field by name. */
+		getField<FieldShape>(
+			name: FieldName<FieldShape>,
+		): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
+		/** Method to get a fieldset object for nested object fields. */
+		getFieldset<FieldShape>(
+			name?: FieldName<FieldShape>,
+		): Fieldset<
+			keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
+			ErrorShape,
+			CustomFieldMetadata
+		>;
+		/** Method to get an array of field objects for array fields. */
+		getFieldList<FieldShape>(
+			name: FieldName<FieldShape>,
+		): Array<
+			FieldMetadata<
+				[FieldShape] extends [Array<infer ItemShape> | null | undefined]
+					? ItemShape
+					: unknown,
+				ErrorShape,
+				CustomFieldMetadata
+			>
+		>;
+	} & CustomFormMetadata
 >;
+
+/**
+ * Form metadata without custom extensions. This is the type received in `extendFormMetadata`.
+ * Equivalent to `FormMetadata<ErrorShape, {}, CustomFieldMetadata>`.
+ */
+export type BaseFormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = FormMetadata<ErrorShape, {}, CustomFieldMetadata>;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>
