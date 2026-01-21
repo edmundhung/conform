@@ -29,7 +29,7 @@ declare module '@conform-to/react/future' {
 	}
 }
 
-const result = configureForms({
+const forms = configureForms({
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
@@ -143,36 +143,21 @@ const result = configureForms({
 	},
 });
 
-export type FormMetadata<
-	ErrorShape extends InferBaseErrorShape<
-		typeof result.config
-	> = InferBaseErrorShape<typeof result.config>,
-> = BaseFormMetadata<
-	ErrorShape,
-	InferCustomFormMetadata<typeof result.config>,
-	InferCustomFieldMetadata<typeof result.config>
->;
+type BaseErrorShape = InferBaseErrorShape<typeof forms.config>;
+type CustomFormMetadata = InferCustomFormMetadata<typeof forms.config>;
+type CustomFieldMetadata = InferCustomFieldMetadata<typeof forms.config>;
+
+export type FormMetadata<ErrorShape extends BaseErrorShape = BaseErrorShape> =
+	BaseFormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 
 export type FieldMetadata<
 	FieldShape,
-	ErrorShape extends InferBaseErrorShape<
-		typeof result.config
-	> = InferBaseErrorShape<typeof result.config>,
-> = BaseFieldMetadata<
-	FieldShape,
-	ErrorShape,
-	InferCustomFieldMetadata<typeof result.config>
->;
+	ErrorShape extends BaseErrorShape = BaseErrorShape,
+> = BaseFieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 
 export type Fieldset<
 	FieldShape,
-	ErrorShape extends InferBaseErrorShape<
-		typeof result.config
-	> = InferBaseErrorShape<typeof result.config>,
-> = BaseFieldset<
-	FieldShape,
-	ErrorShape,
-	InferCustomFieldMetadata<typeof result.config>
->;
+	ErrorShape extends BaseErrorShape = BaseErrorShape,
+> = BaseFieldset<FieldShape, ErrorShape, CustomFieldMetadata>;
 
-export const useForm = result.useForm;
+export const useForm = forms.useForm;

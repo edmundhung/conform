@@ -253,7 +253,7 @@ import {
   type InferCustomFieldMetadata,
 } from '@conform-to/react/future';
 
-const result = configureForms({
+const forms = configureForms({
   extendFieldMetadata(metadata) {
     return {
       get inputProps() {
@@ -263,39 +263,25 @@ const result = configureForms({
   },
 });
 
-export const { useForm, FormProvider, config } = result;
+// Extract inferred types from config
+type BaseErrorShape = InferBaseErrorShape<typeof forms.config>;
+type CustomFormMetadata = InferCustomFormMetadata<typeof forms.config>;
+type CustomFieldMetadata = InferCustomFieldMetadata<typeof forms.config>;
 
 // Re-export composed types with your custom metadata
-// ErrorShape is a constraint - actual errors may be more specific
-export type FormMetadata<
-  ErrorShape extends InferBaseErrorShape<typeof config> = InferBaseErrorShape<
-    typeof config
-  >,
-> = BaseFormMetadata<
-  ErrorShape,
-  InferCustomFormMetadata<typeof config>,
-  InferCustomFieldMetadata<typeof config>
->;
+export type FormMetadata<ErrorShape extends BaseErrorShape = BaseErrorShape> =
+  BaseFormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 
 export type FieldMetadata<
   FieldShape,
-  ErrorShape extends InferBaseErrorShape<typeof config> = InferBaseErrorShape<
-    typeof config
-  >,
-> = BaseFieldMetadata<
-  FieldShape,
-  ErrorShape,
-  InferCustomFieldMetadata<typeof config>
->;
+  ErrorShape extends BaseErrorShape = BaseErrorShape,
+> = BaseFieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
 
 export type Fieldset<
   FieldShape,
-  ErrorShape extends InferBaseErrorShape<typeof config> = InferBaseErrorShape<
-    typeof config
-  >,
-> = BaseFieldset<
-  FieldShape,
-  ErrorShape,
-  InferCustomFieldMetadata<typeof config>
->;
+  ErrorShape extends BaseErrorShape = BaseErrorShape,
+> = BaseFieldset<FieldShape, ErrorShape, CustomFieldMetadata>;
+
+export const useForm = forms.useForm;
+export const FormProvider = forms.FormProvider;
 ```
