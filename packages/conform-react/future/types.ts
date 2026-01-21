@@ -254,7 +254,8 @@ export type ExtractFieldConditions<
 };
 
 /**
- * Configuration options for configureForms factory.
+ * Resolved configuration from configureForms factory.
+ * Properties with defaults are required, others remain optional.
  */
 export type FormsConfig<
 	BaseErrorShape,
@@ -264,30 +265,23 @@ export type FormsConfig<
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
-	 *
 	 * @default "__intent__"
 	 */
-	intentName?: string;
+	intentName: string;
 	/**
 	 * A custom serialization function for converting form data.
 	 */
-	serialize?: Serialize;
+	serialize: Serialize;
 	/**
 	 * Determines when validation should run for the first time on a field.
-	 *
 	 * @default "onSubmit"
 	 */
-	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput';
+	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
 	/**
 	 * Determines when validation should run again after the field has been validated once.
-	 *
 	 * @default Same as shouldValidate
 	 */
-	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-	/**
-	 * A type guard function to specify the shape of error objects.
-	 */
-	isError?: (error: unknown) => error is BaseErrorShape;
+	shouldRevalidate: 'onSubmit' | 'onBlur' | 'onInput';
 	/**
 	 * Runtime type guard to check if a value is a schema.
 	 * Used to determine if the first argument to useForm is a schema or options object.
@@ -308,11 +302,11 @@ export type FormsConfig<
 	 * });
 	 * ```
 	 */
-	isSchema?: (schema: unknown) => schema is BaseSchema;
+	isSchema: (schema: unknown) => schema is BaseSchema;
 	/**
 	 * Validates a schema against form payload.
 	 */
-	validateSchema?: <Schema extends BaseSchema>(
+	validateSchema: <Schema extends BaseSchema>(
 		schema: Schema,
 		payload: Record<string, FormValue>,
 		options?: InferOptions<Schema>,
@@ -320,6 +314,10 @@ export type FormsConfig<
 		error: FormError<string> | null;
 		value?: InferOutput<Schema>;
 	}>;
+	/**
+	 * A type guard function to specify the shape of error objects.
+	 */
+	isError?: (error: unknown) => error is BaseErrorShape;
 	/**
 	 * Extracts HTML validation constraints from a schema.
 	 */

@@ -34,17 +34,24 @@ export function configureForms<
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
-	config: FormsConfig<
+	config: Partial<
+		FormsConfig<
+			BaseErrorShape,
+			BaseSchema,
+			CustomFormMetadata,
+			CustomFieldMetadata
+		>
+	> = {},
+) {
+	/**
+	 * Global configuration with defaults applied
+	 */
+	const globalConfig: FormsConfig<
 		BaseErrorShape,
 		BaseSchema,
 		CustomFormMetadata,
 		CustomFieldMetadata
-	> = {},
-) {
-	/**
-	 * Global configuration
-	 */
-	const globalConfig = {
+	> = {
 		...config,
 		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
 		serialize: config.serialize ?? serialize,
@@ -55,15 +62,13 @@ export function configureForms<
 			schema: unknown,
 		) => schema is BaseSchema,
 		validateSchema: (config.validateSchema ??
-			validateStandardSchemaV1) as NonNullable<
-			FormsConfig<BaseErrorShape, BaseSchema, {}, {}>['validateSchema']
-		>,
-	} satisfies FormsConfig<
-		BaseErrorShape,
-		BaseSchema,
-		CustomFormMetadata,
-		CustomFieldMetadata
-	>;
+			validateStandardSchemaV1) as FormsConfig<
+			BaseErrorShape,
+			BaseSchema,
+			CustomFormMetadata,
+			CustomFieldMetadata
+		>['validateSchema'],
+	};
 
 	/**
 	 * React context

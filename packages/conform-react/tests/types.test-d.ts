@@ -5,9 +5,11 @@ import type {
 	FieldMetadata,
 	FieldName,
 	FormOptions,
+	InferFieldMetadata,
+	InferFormMetadata,
 	IntentDispatcher,
 } from '@conform-to/react/future';
-import { useFormData } from '@conform-to/react/future';
+import { useFormData, configureForms, shape } from '@conform-to/react/future';
 import { useRef } from 'react';
 
 test('DefaultValue', () => {
@@ -283,4 +285,129 @@ test('useFormData', () => {
 		{ acceptFiles: true },
 	);
 	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoFallback);
+});
+
+test('InferFormMetadata and InferFieldMetadata', () => {
+	// Test with minimal config (no custom metadata)
+	const simpleResult = configureForms({});
+
+	type SimpleFormMetadata = InferFormMetadata<typeof simpleResult.config>;
+	type SimpleFieldMetadata = InferFieldMetadata<
+		typeof simpleResult.config,
+		string
+	>;
+
+	// These should NOT be never - this is the bug reported in #1131
+	expectTypeOf<SimpleFormMetadata>().not.toBeNever();
+	expectTypeOf<SimpleFieldMetadata>().not.toBeNever();
+
+	// Test with custom error shape
+	const errorShapeResult = configureForms({
+		isError: shape<{ message: string; code: string }>(),
+	});
+
+	type ErrorShapeFormMetadata = InferFormMetadata<
+		typeof errorShapeResult.config
+	>;
+	type ErrorShapeFieldMetadata = InferFieldMetadata<
+		typeof errorShapeResult.config,
+		string
+	>;
+
+	expectTypeOf<ErrorShapeFormMetadata>().not.toBeNever();
+	expectTypeOf<ErrorShapeFieldMetadata>().not.toBeNever();
+
+	// Test with custom form metadata extension
+	const formMetadataResult = configureForms({
+		extendFormMetadata(metadata) {
+			return {
+				get customFormProp() {
+					return `custom-${metadata.id}`;
+				},
+			};
+		},
+	});
+
+	type CustomFormMetadata = InferFormMetadata<typeof formMetadataResult.config>;
+
+	expectTypeOf<CustomFormMetadata>().not.toBeNever();
+	// Verify the custom property is available
+	expectTypeOf<CustomFormMetadata['customFormProp']>().toEqualTypeOf<string>();
+
+	// Test with custom field metadata extension
+	const fieldMetadataResult = configureForms({
+		extendFieldMetadata(metadata) {
+			return {
+				get textFieldProps() {
+					return {
+						name: metadata.name,
+						required: metadata.required,
+					};
+				},
+			};
+		},
+	});
+
+	type CustomFieldMetadata = InferFieldMetadata<
+		typeof fieldMetadataResult.config,
+		string
+	>;
+
+	expectTypeOf<CustomFieldMetadata>().not.toBeNever();
+	// Verify the custom property is available
+	expectTypeOf<CustomFieldMetadata['textFieldProps']>().toMatchTypeOf<{
+		name: FieldName<string>;
+		required: boolean | undefined;
+	}>();
+
+	// Test with conditional field metadata using `when`
+	const conditionalResult = configureForms({
+		extendFieldMetadata(metadata, { when }) {
+			return {
+				get simpleProps() {
+					return { name: metadata.name };
+				},
+				get dateRangeProps() {
+					return when(
+						metadata,
+						shape<{ start: string; end: string }>(),
+						(m) => {
+							const fields = m.getFieldset();
+							return {
+								startName: fields.start.name,
+								endName: fields.end.name,
+							};
+						},
+					);
+				},
+			};
+		},
+	});
+
+	type ConditionalFieldMetadata = InferFieldMetadata<
+		typeof conditionalResult.config,
+		{ start: string; end: string }
+	>;
+
+	expectTypeOf<ConditionalFieldMetadata>().not.toBeNever();
+	// simpleProps should always be available
+	expectTypeOf<ConditionalFieldMetadata['simpleProps']>().not.toBeNever();
+	expectTypeOf<ConditionalFieldMetadata['simpleProps']['name']>().toBeString();
+	// dateRangeProps should be available for matching shape
+	expectTypeOf<ConditionalFieldMetadata['dateRangeProps']>().not.toBeNever();
+	expectTypeOf<
+		ConditionalFieldMetadata['dateRangeProps']['startName']
+	>().toBeString();
+	expectTypeOf<
+		ConditionalFieldMetadata['dateRangeProps']['endName']
+	>().toBeString();
+
+	// Test that dateRangeProps is NOT available for non-matching shape
+	type StringFieldMetadata = InferFieldMetadata<
+		typeof conditionalResult.config,
+		string
+	>;
+
+	expectTypeOf<StringFieldMetadata>().not.toBeNever();
+	expectTypeOf<StringFieldMetadata['dateRangeProps']>().toBeNever();
 });
