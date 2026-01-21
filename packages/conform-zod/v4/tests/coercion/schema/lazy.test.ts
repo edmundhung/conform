@@ -99,17 +99,16 @@ describe('coercion', () => {
 		});
 
 		test('should handle getter-based recursive schemas', () => {
-			// Test case from issue: https://github.com/edmundhung/conform/issues/1127
-			// Zod v4 recommended getter pattern: https://zod.dev/api#recursive-objects
+			// https://github.com/edmundhung/conform/issues/1127
 			const ConditionNodeSchema = z.object({
 				type: z.literal('condition'),
 				value: z.string(),
+				priority: z.number(),
 			});
 
 			const LogicalGroupNodeSchema = z.object({
 				type: z.literal('group'),
 				operator: z.enum(['AND', 'OR']),
-				// Getter pattern recommended by Zod v4
 				get children(): z.ZodArray<
 					z.ZodDiscriminatedUnion<
 						[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
@@ -124,14 +123,12 @@ describe('coercion', () => {
 				},
 			});
 
-			// This should not throw "Maximum call stack size exceeded"
 			const schema = coerceFormValue(
 				z.object({
 					filter: LogicalGroupNodeSchema,
 				}),
 			);
 
-			// Test parsing with valid data
 			expect(
 				getResult(
 					schema.safeParse({
@@ -142,6 +139,7 @@ describe('coercion', () => {
 								{
 									type: 'condition',
 									value: 'test',
+									priority: '1',
 								},
 							],
 						},
@@ -157,13 +155,13 @@ describe('coercion', () => {
 							{
 								type: 'condition',
 								value: 'test',
+								priority: 1,
 							},
 						],
 					},
 				},
 			});
 
-			// Test parsing with nested recursive structure
 			expect(
 				getResult(
 					schema.safeParse({
@@ -178,6 +176,7 @@ describe('coercion', () => {
 										{
 											type: 'condition',
 											value: 'nested',
+											priority: '99',
 										},
 									],
 								},
@@ -199,6 +198,7 @@ describe('coercion', () => {
 									{
 										type: 'condition',
 										value: 'nested',
+										priority: 99,
 									},
 								],
 							},
@@ -207,7 +207,6 @@ describe('coercion', () => {
 				},
 			});
 
-			// Test validation errors
 			const errorResult = getResult(
 				schema.safeParse({
 					filter: {
@@ -216,7 +215,6 @@ describe('coercion', () => {
 						children: [
 							{
 								type: 'condition',
-								// missing 'value'
 							},
 						],
 					},
@@ -225,6 +223,7 @@ describe('coercion', () => {
 			expect(errorResult.success).toEqual(false);
 			if (!errorResult.success) {
 				expect(errorResult.error['filter.children[0].value']).toBeDefined();
+				expect(errorResult.error['filter.children[0].priority']).toBeDefined();
 			}
 		});
 	});
