@@ -1,6 +1,6 @@
 # FormOptionsProvider
 
-> The `FormOptionsProvider` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
+> **Deprecated**: `FormOptionsProvider` is deprecated and will be removed in the next minor version. Use [`configureForms`](./configureForms.md) instead.
 
 A React component that sets default form options for all forms in your application. Use it to configure validation timing or define custom field metadata.
 

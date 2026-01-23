@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.describe('react-aria', () => {
 	async function getForm(page: Page, searchParams?: URLSearchParams) {

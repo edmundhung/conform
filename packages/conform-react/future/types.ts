@@ -150,6 +150,199 @@ export type FormAction<
 	ctx: Context;
 };
 
+/**
+ * Augment this interface to customize schema type inference for your schema library.
+ *
+ * @example
+ * ```ts
+ * import type { ZodTypeAny, input, output } from 'zod';
+ * import type { ZodSchemaOptions } from '@conform-to/zod/v3/future';
+ *
+ * declare module '@conform-to/react/future' {
+ *   interface CustomSchemaTypes<Schema> {
+ *     input: Schema extends ZodTypeAny ? input<Schema> : never;
+ *     output: Schema extends ZodTypeAny ? output<Schema> : never;
+ *     options: Schema extends ZodTypeAny ? ZodSchemaOptions : never;
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface CustomSchemaTypes<Schema = unknown> {
+	// Empty by default - users augment this interface
+}
+
+/**
+ * Infer schema options type.
+ * Uses CustomSchemaTypes if augmented, otherwise returns never.
+ */
+export type InferOptions<Schema> = [Schema] extends [undefined]
+	? never
+	: CustomSchemaTypes<Schema> extends { options: infer T }
+		? T
+		: never;
+
+/**
+ * Marker type for conditional field metadata properties.
+ * Used to indicate that a property should only be present when FieldShape matches a condition.
+ */
+export type ConditionalFieldMetadata<T, Condition> = T & {
+	'~condition': Condition;
+};
+
+/**
+ * Check if T is a FieldName type by checking if '~shape' is a known key.
+ * Plain strings don't have '~shape' in their keyof, but FieldName<T> does.
+ */
+type IsFieldName<T> = '~shape' extends keyof T ? true : false;
+
+/**
+ * Transforms a single value, restoring FieldName<unknown> to FieldName<FieldShape>.
+ */
+type RestoreFieldShapeValue<T, FieldShape> =
+	T extends ConditionalFieldMetadata<infer Inner, infer Condition>
+		? FieldShape extends Condition
+			? Inner
+			: never
+		: IsFieldName<T> extends true
+			? FieldName<FieldShape>
+			: T;
+
+/**
+ * Restores FieldShape-dependent types that were inferred as `unknown`.
+ * This is needed because TypeScript infers generic return types with unresolved type parameters.
+ * Also handles conditional field metadata by checking if FieldShape extends the condition.
+ *
+ * Transforms up to 2 levels deep to handle cases like `textFieldProps.name`.
+ */
+export type RestoreFieldShape<T, FieldShape> = {
+	[K in keyof T]: RestoreFieldShapeValue<T[K], FieldShape> extends infer V
+		? V extends Record<string, unknown>
+			? { [P in keyof V]: RestoreFieldShapeValue<V[P], FieldShape> }
+			: V
+		: never;
+};
+
+/**
+ * Type guard function for conditional field metadata.
+ * Used to specify when a custom field metadata property should be available.
+ */
+export type FieldShapeGuard<Condition> = (shape: unknown) => shape is Condition;
+
+/**
+ * Function type for creating conditional field metadata based on shape constraints.
+ */
+export type DefineConditionalField = <FieldShape, ErrorShape, Metadata>(
+	metadata: BaseFieldMetadata<unknown, ErrorShape>,
+	shape: FieldShapeGuard<FieldShape>,
+	fn: (metadata: BaseFieldMetadata<FieldShape, ErrorShape>) => Metadata,
+) => ConditionalFieldMetadata<Metadata, FieldShape>;
+
+/**
+ * Extract the condition type from a FieldShapeGuard.
+ */
+export type ExtractFieldCondition<T> =
+	T extends FieldShapeGuard<infer C> ? C : never;
+
+/**
+ * Extract conditions from a record of field shape guards.
+ */
+export type ExtractFieldConditions<
+	T extends Record<string, FieldShapeGuard<any>>,
+> = {
+	[K in keyof T]: ExtractFieldCondition<T[K]>;
+};
+
+/**
+ * Resolved configuration from configureForms factory.
+ * Properties with defaults are required, others remain optional.
+ */
+export type FormsConfig<
+	BaseErrorShape,
+	BaseSchema,
+	CustomFormMetadata extends Record<string, unknown>,
+	CustomFieldMetadata extends Record<string, unknown>,
+> = {
+	/**
+	 * The name of the submit button field that indicates the submission intent.
+	 * @default "__intent__"
+	 */
+	intentName: string;
+	/**
+	 * A custom serialization function for converting form data.
+	 */
+	serialize: Serialize;
+	/**
+	 * Determines when validation should run for the first time on a field.
+	 * @default "onSubmit"
+	 */
+	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Determines when validation should run again after the field has been validated once.
+	 * @default Same as shouldValidate
+	 */
+	shouldRevalidate: 'onSubmit' | 'onBlur' | 'onInput';
+	/**
+	 * Runtime type guard to check if a value is a schema.
+	 * Used to determine if the first argument to useForm is a schema or options object.
+	 *
+	 * @example
+	 * ```ts
+	 * import { configureForms } from '@conform-to/react/future';
+	 * import {
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraints,
+	 * } from '@conform-to/zod/v3/future';
+	 *
+	 * const { useForm } = configureForms({
+	 *   isSchema,
+	 *   validateSchema,
+	 *   getConstraints,
+	 * });
+	 * ```
+	 */
+	isSchema: (schema: unknown) => schema is BaseSchema;
+	/**
+	 * Validates a schema against form payload.
+	 */
+	validateSchema: <Schema extends BaseSchema>(
+		schema: Schema,
+		payload: Record<string, FormValue>,
+		options?: InferOptions<Schema>,
+	) => MaybePromise<{
+		error: FormError<string> | null;
+		value?: InferOutput<Schema>;
+	}>;
+	/**
+	 * A type guard function to specify the shape of error objects.
+	 */
+	isError?: (error: unknown) => error is BaseErrorShape;
+	/**
+	 * Extracts HTML validation constraints from a schema.
+	 */
+	getConstraints?: <Schema extends BaseSchema>(
+		schema: Schema,
+	) => Record<string, ValidationAttributes> | undefined;
+	/**
+	 * Extends form metadata with custom properties.
+	 */
+	extendFormMetadata?: <ErrorShape extends BaseErrorShape>(
+		metadata: BaseFormMetadata<ErrorShape>,
+	) => CustomFormMetadata;
+	/**
+	 * Extends field metadata with custom properties.
+	 * Use `when` for properties that depend on the field shape.
+	 */
+	extendFieldMetadata?: <FieldShape, ErrorShape extends BaseErrorShape>(
+		metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
+		ctx: {
+			form: BaseFormMetadata<ErrorShape>;
+			when: DefineConditionalField;
+		},
+	) => CustomFieldMetadata;
+};
+
 export type GlobalFormOptions = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -190,11 +383,27 @@ export type RequireKey<T, K extends keyof T> = Prettify<
 
 export type BaseSchemaType = StandardSchemaV1<any, any>;
 
-export type InferInput<Schema> =
-	Schema extends StandardSchemaV1<infer input, any> ? input : unknown;
+/**
+ * Infer schema input type.
+ * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferInput.
+ * For other schemas, uses CustomSchemaTypes if augmented.
+ */
+export type InferInput<Schema> = Schema extends StandardSchemaV1
+	? StandardSchemaV1.InferInput<Schema>
+	: CustomSchemaTypes<Schema> extends { input: infer T }
+		? T
+		: Record<string, any>;
 
-export type InferOutput<Schema> =
-	Schema extends StandardSchemaV1<any, infer output> ? output : undefined;
+/**
+ * Infer schema output type.
+ * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferOutput.
+ * For other schemas, uses CustomSchemaTypes if augmented.
+ */
+export type InferOutput<Schema> = Schema extends StandardSchemaV1
+	? StandardSchemaV1.InferOutput<Schema>
+	: CustomSchemaTypes<Schema> extends { output: infer T }
+		? T
+		: undefined;
 
 export type BaseFormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
@@ -202,7 +411,7 @@ export type BaseFormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	Schema = unknown,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -218,6 +427,11 @@ export type BaseFormOptions<
 	defaultValue?: DefaultValue<FormShape> | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
+	/**
+	 * Schema-specific validation options (e.g., Zod's errorMap).
+	 * The available options depend on the schema library configured in `configureForms`.
+	 */
+	schemaOptions?: InferOptions<Schema>;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * Overrides the global default set by FormOptionsProvider if provided.
@@ -250,7 +464,7 @@ export type FormOptions<
 		? string
 		: BaseErrorShape,
 	Value = undefined,
-	Schema = undefined,
+	Schema = unknown,
 	RequiredKeys extends keyof BaseFormOptions<
 		FormShape,
 		ErrorShape,
@@ -476,75 +690,6 @@ export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
 	? Shape
 	: string;
 
-/** Base field metadata object containing field state, validation attributes, and accessibility IDs. */
-export type BaseMetadata<
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
-> = ValidationAttributes & {
-	/** Unique key for React list rendering (for array fields). */
-	key: string | undefined;
-	/** The field name path exactly as provided. */
-	name: FieldName<FieldShape>;
-	/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
-	id: string;
-	/** Auto-generated ID for associating field descriptions via aria-describedby. */
-	descriptionId: string;
-	/** Auto-generated ID for associating field errors via aria-describedby. */
-	errorId: string;
-	/** The form's unique identifier for associating field via the `form` attribute. */
-	formId: string;
-	/**
-	 * The field's default value as a string.
-	 *
-	 * Returns an empty string `''` when:
-	 * - No default value is set (field value is `null` or `undefined`)
-	 * - The field value cannot be serialized to a string (e.g., objects or arrays)
-	 */
-	defaultValue: string;
-	/**
-	 * Default selected options for multi-select fields or checkbox group.
-	 *
-	 * Returns an empty array `[]` when:
-	 * - No default options are set (field value is `null` or `undefined`)
-	 * - The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
-	 */
-	defaultOptions: string[];
-	/**
-	 * Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`.
-	 *
-	 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
-	 */
-	defaultChecked: boolean;
-	/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
-	touched: boolean;
-	/** Whether this field currently has no validation errors. */
-	valid: boolean;
-	/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
-	invalid: boolean;
-	/** Array of validation error messages for this field. */
-	errors: ErrorShape[] | undefined;
-	/** Object containing errors for all touched subfields. */
-	fieldErrors: Record<string, ErrorShape[]>;
-	/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
-	ariaInvalid: boolean | undefined;
-	/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
-	ariaDescribedBy: string | undefined;
-	/** Method to get nested fieldset for object fields under this field. */
-	getFieldset<
-		FieldsetShape = keyof NonNullable<FieldShape> extends never
-			? unknown
-			: FieldShape,
-	>(): Fieldset<FieldsetShape, ErrorShape>;
-	/** Method to get array of fields for list/array fields under this field. */
-	getFieldList<
-		FieldItemShape = [FieldShape] extends [
-			Array<infer ItemShape> | null | undefined,
-		]
-			? ItemShape
-			: unknown,
-	>(): Array<FieldMetadata<FieldItemShape, ErrorShape>>;
-};
-
 export type SatisfyComponentProps<
 	ElementType extends React.ElementType,
 	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
@@ -552,6 +697,7 @@ export type SatisfyComponentProps<
 
 /**
  * Interface for extending field metadata with additional properties.
+ * @deprecated Use `configureForms()` with the `extendFieldMetadata` option for full type inference support.
  */
 export interface CustomMetadata<
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -562,95 +708,207 @@ export interface CustomMetadata<
 	// User-defined properties
 }
 
-export type CustomMetadataDefinition = <
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
->(
-	metadata: BaseMetadata<FieldShape, ErrorShape>,
-) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
-	? {}
-	: CustomMetadata<any, any>;
+export type DefaultCustomMetadata<FieldShape, ErrorShape> =
+	keyof CustomMetadata<FieldShape, ErrorShape> extends never
+		? {}
+		: CustomMetadata<FieldShape, ErrorShape>;
 
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
 export type FieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
+		FieldShape,
+		ErrorShape
+	>,
 > = Readonly<
-	(keyof CustomMetadata<FieldShape, ErrorShape> extends never
-		? {}
-		: CustomMetadata<FieldShape, ErrorShape>) &
-		// Base metadata properties take precedence over custom metadata
-		BaseMetadata<FieldShape, ErrorShape>
+	Prettify<
+		ValidationAttributes & {
+			/** Unique key for React list rendering (for array fields). */
+			key: string | undefined;
+			/** The field name path exactly as provided. */
+			name: FieldName<FieldShape>;
+			/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
+			id: string;
+			/** Auto-generated ID for associating field descriptions via aria-describedby. */
+			descriptionId: string;
+			/** Auto-generated ID for associating field errors via aria-describedby. */
+			errorId: string;
+			/** The form's unique identifier for associating field via the `form` attribute. */
+			formId: string;
+			/**
+			 * The field's default value as a string.
+			 *
+			 * Returns an empty string `''` when:
+			 * - No default value is set (field value is `null` or `undefined`)
+			 * - The field value cannot be serialized to a string (e.g., objects or arrays)
+			 */
+			defaultValue: string;
+			/**
+			 * Default selected options for multi-select fields or checkbox group.
+			 *
+			 * Returns an empty array `[]` when:
+			 * - No default options are set (field value is `null` or `undefined`)
+			 * - The field value cannot be serialized to a string array (e.g., nested objects or arrays of objects)
+			 */
+			defaultOptions: string[];
+			/**
+			 * Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`.
+			 *
+			 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
+			 */
+			defaultChecked: boolean;
+			/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
+			touched: boolean;
+			/** Whether this field currently has no validation errors. */
+			valid: boolean;
+			/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
+			invalid: boolean;
+			/** Array of validation error messages for this field. */
+			errors: ErrorShape[] | undefined;
+			/** Object containing errors for all touched subfields. */
+			fieldErrors: Record<string, ErrorShape[]>;
+			/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
+			ariaInvalid: boolean | undefined;
+			/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
+			ariaDescribedBy: string | undefined;
+			/** Method to get nested fieldset for object fields under this field. */
+			getFieldset<
+				FieldsetShape = keyof NonNullable<FieldShape> extends never
+					? unknown
+					: FieldShape,
+			>(): Fieldset<FieldsetShape, ErrorShape, CustomFieldMetadata>;
+			/** Method to get array of fields for list/array fields under this field. */
+			getFieldList<
+				FieldItemShape = [FieldShape] extends [
+					Array<infer ItemShape> | null | undefined,
+				]
+					? ItemShape
+					: unknown,
+			>(): Array<
+				FieldMetadata<FieldItemShape, ErrorShape, CustomFieldMetadata>
+			>;
+		} & RestoreFieldShape<CustomFieldMetadata, FieldShape>
+	>
 >;
+
+/**
+ * Field metadata without custom extensions. This is the type received in `extendFieldMetadata`.
+ * Equivalent to `FieldMetadata<FieldShape, ErrorShape, {}>`.
+ */
+export type BaseFieldMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = FieldMetadata<FieldShape, ErrorShape, {}>;
+
+/**
+ * @deprecated Renamed to `BaseFieldMetadata`. This will be removed in the next minor version.
+ */
+export type BaseMetadata<
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+> = BaseFieldMetadata<FieldShape, ErrorShape>;
+
+/**
+ * @deprecated Use `configureForms()` with the `extendFieldMetadata` option instead.
+ */
+export type CustomMetadataDefinition = <
+	FieldShape,
+	ErrorShape extends BaseErrorShape,
+>(
+	metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
+) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
+	? {}
+	: CustomMetadata<any, any>;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
+		FieldShape,
+		ErrorShape
+	>,
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],
-		ErrorShape
+		ErrorShape,
+		CustomFieldMetadata
 	>;
 };
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
 export type FormMetadata<
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> = Readonly<{
-	/** Unique identifier that changes on form reset */
-	key: string;
-	/** The form's unique identifier. */
-	id: string;
-	/** Auto-generated ID for associating form descriptions via aria-describedby. */
-	descriptionId: string;
-	/** Auto-generated ID for associating form errors via aria-describedby. */
-	errorId: string;
-	/** Whether any field in the form has been touched (through intent.validate() or the shouldValidate option). */
-	touched: boolean;
-	/** Whether the form currently has no validation errors. */
-	valid: boolean;
-	/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
-	invalid: boolean;
-	/** Form-level validation errors, if any exist. */
-	errors: ErrorShape[] | undefined;
-	/** Object containing errors for all touched fields. */
-	fieldErrors: Record<string, ErrorShape[]>;
-	/** The form's initial default values. */
-	defaultValue: Record<string, unknown>;
-	/** Form props object for spreading onto the <form> element. */
-	props: Readonly<{
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = Readonly<
+	{
+		/** Unique identifier that changes on form reset */
+		key: string;
+		/** The form's unique identifier. */
 		id: string;
-		onSubmit: React.FormEventHandler<HTMLFormElement>;
-		onBlur: React.FocusEventHandler<HTMLFormElement>;
-		onInput: React.FormEventHandler<HTMLFormElement>;
-		noValidate: boolean;
-	}>;
-	/** The current state of the form */
-	context: FormContext<ErrorShape>;
-	/** Method to get metadata for a specific field by name. */
-	getField<FieldShape>(
-		name: FieldName<FieldShape>,
-	): FieldMetadata<FieldShape, ErrorShape>;
-	/** Method to get a fieldset object for nested object fields. */
-	getFieldset<FieldShape>(
-		name?: FieldName<FieldShape>,
-	): Fieldset<
-		keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
-		ErrorShape
-	>;
-	/** Method to get an array of field objects for array fields. */
-	getFieldList<FieldShape>(
-		name: FieldName<FieldShape>,
-	): Array<
-		FieldMetadata<
-			[FieldShape] extends [Array<infer ItemShape> | null | undefined]
-				? ItemShape
-				: unknown,
-			ErrorShape
-		>
-	>;
-}>;
+		/** Auto-generated ID for associating form descriptions via aria-describedby. */
+		descriptionId: string;
+		/** Auto-generated ID for associating form errors via aria-describedby. */
+		errorId: string;
+		/** Whether any field in the form has been touched (through intent.validate() or the shouldValidate option). */
+		touched: boolean;
+		/** Whether the form currently has no validation errors. */
+		valid: boolean;
+		/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
+		invalid: boolean;
+		/** Form-level validation errors, if any exist. */
+		errors: ErrorShape[] | undefined;
+		/** Object containing errors for all touched fields. */
+		fieldErrors: Record<string, ErrorShape[]>;
+		/** The form's initial default values. */
+		defaultValue: Record<string, unknown>;
+		/** Form props object for spreading onto the <form> element. */
+		props: Readonly<{
+			id: string;
+			onSubmit: React.FormEventHandler<HTMLFormElement>;
+			onBlur: React.FocusEventHandler<HTMLFormElement>;
+			onInput: React.FormEventHandler<HTMLFormElement>;
+			noValidate: boolean;
+		}>;
+		/** The current state of the form */
+		context: FormContext<ErrorShape>;
+		/** Method to get metadata for a specific field by name. */
+		getField<FieldShape>(
+			name: FieldName<FieldShape>,
+		): FieldMetadata<FieldShape, ErrorShape, CustomFieldMetadata>;
+		/** Method to get a fieldset object for nested object fields. */
+		getFieldset<FieldShape>(
+			name?: FieldName<FieldShape>,
+		): Fieldset<
+			keyof NonNullable<FieldShape> extends never ? unknown : FieldShape,
+			ErrorShape,
+			CustomFieldMetadata
+		>;
+		/** Method to get an array of field objects for array fields. */
+		getFieldList<FieldShape>(
+			name: FieldName<FieldShape>,
+		): Array<
+			FieldMetadata<
+				[FieldShape] extends [Array<infer ItemShape> | null | undefined]
+					? ItemShape
+					: unknown,
+				ErrorShape,
+				CustomFieldMetadata
+			>
+		>;
+	} & CustomFormMetadata
+>;
+
+/**
+ * Form metadata without custom extensions. This is the type received in `extendFormMetadata`.
+ * Equivalent to `FormMetadata<ErrorShape, {}, CustomFieldMetadata>`.
+ */
+export type BaseFormMetadata<
+	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = FormMetadata<ErrorShape, {}, CustomFieldMetadata>;
 
 export type ValidateResult<ErrorShape, Value> =
 	| FormError<ErrorShape>
@@ -752,3 +1010,82 @@ export type SubmitHandler<
 	event: React.FormEvent<HTMLFormElement>,
 	ctx: SubmitContext<FormShape, ErrorShape, Value>,
 ) => void | Promise<void>;
+
+/**
+ * Infer the base error shape from a FormsConfig.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({ isError: shape<{ message: string }>() });
+ * type ErrorShape = InferBaseErrorShape<typeof config>; // { message: string }
+ * ```
+ */
+export type InferBaseErrorShape<Config> =
+	Config extends FormsConfig<infer ErrorShape, any, any, any>
+		? ErrorShape
+		: string;
+
+/**
+ * Infer the custom form metadata extension from a FormsConfig.
+ * Use this to compose with FormMetadata, FieldMetadata, or Fieldset types.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({
+ *   extendFormMetadata: (meta) => ({ customProp: meta.id })
+ * });
+ * type MyFormMetadata = FormMetadata<
+ *   InferBaseErrorShape<typeof config>,
+ *   InferCustomFormMetadata<typeof config>,
+ *   InferCustomFieldMetadata<typeof config>
+ * >;
+ * ```
+ */
+export type InferCustomFormMetadata<Config> =
+	Config extends FormsConfig<any, any, infer CustomFormMetadata, any>
+		? CustomFormMetadata
+		: {};
+
+/**
+ * Infer the custom field metadata extension from a FormsConfig.
+ * Use this to compose with FieldMetadata or Fieldset types.
+ *
+ * @example
+ * ```ts
+ * const { config } = configureForms({
+ *   extendFieldMetadata: (meta) => ({ inputProps: { name: meta.name } })
+ * });
+ * type MyFieldMetadata<T> = FieldMetadata<T, InferBaseErrorShape<typeof config>, InferCustomFieldMetadata<typeof config>>;
+ * type MyFieldset<T> = Fieldset<T, InferBaseErrorShape<typeof config>, InferCustomFieldMetadata<typeof config>>;
+ * ```
+ */
+export type InferCustomFieldMetadata<Config> =
+	Config extends FormsConfig<any, any, any, infer CustomFieldMetadata>
+		? CustomFieldMetadata
+		: {};
+
+/**
+ * Transform a type to make specific keys conditional based on FieldShape.
+ * Keys in ConditionalKeys will only be present when FieldShape extends the specified type.
+ * Uses ConditionalFieldMetadata wrapper that RestoreFieldShape will detect and evaluate.
+ *
+ * @example
+ * ```ts
+ * type Result = MakeConditional<
+ *   { textFieldProps: {...}, dateRangePickerProps: {...} },
+ *   { dateRangePickerProps: { start: string; end: string } }
+ * >;
+ * // dateRangePickerProps is wrapped with ConditionalFieldMetadata
+ * // and will only be present when FieldShape extends { start: string; end: string }
+ * ```
+ */
+export type MakeConditional<
+	T,
+	ConditionalKeys extends Record<string, unknown>,
+> = Omit<T, keyof ConditionalKeys> & {
+	[K in keyof ConditionalKeys]: K extends keyof T
+		? ConditionalFieldMetadata<T[K], ConditionalKeys[K]>
+		: never;
+};
+
+export type MaybePromise<T> = T | Promise<T>;

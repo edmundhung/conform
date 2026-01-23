@@ -4,10 +4,15 @@ import type {
 	DefaultValue,
 	FieldMetadata,
 	FieldName,
+	Fieldset,
+	FormMetadata,
 	FormOptions,
+	InferBaseErrorShape,
+	InferCustomFieldMetadata,
+	InferCustomFormMetadata,
 	IntentDispatcher,
 } from '@conform-to/react/future';
-import { useFormData } from '@conform-to/react/future';
+import { useFormData, configureForms, shape } from '@conform-to/react/future';
 import { useRef } from 'react';
 
 test('DefaultValue', () => {
@@ -283,4 +288,117 @@ test('useFormData', () => {
 		{ acceptFiles: true },
 	);
 	assertType<FormDataEntryValue[] | undefined>(resultWithFilesNoFallback);
+});
+
+test('InferBaseErrorShape, InferCustomFormMetadata, and InferCustomFieldMetadata', () => {
+	// Test with minimal config (no custom metadata)
+	const simpleResult = configureForms({});
+
+	// InferBaseErrorShape returns the error shape (defaults to string)
+	type SimpleErrorShape = InferBaseErrorShape<typeof simpleResult.config>;
+	expectTypeOf<SimpleErrorShape>().toEqualTypeOf<string>();
+
+	// InferCustomFormMetadata returns the custom form metadata extension (empty by default)
+	type SimpleFormExt = InferCustomFormMetadata<typeof simpleResult.config>;
+	expectTypeOf<SimpleFormExt>().toEqualTypeOf<{}>();
+
+	// InferCustomFieldMetadata returns the custom field metadata extension (empty by default)
+	type SimpleFieldExt = InferCustomFieldMetadata<typeof simpleResult.config>;
+	expectTypeOf<SimpleFieldExt>().toEqualTypeOf<{}>();
+
+	// Test with custom error shape
+	const errorShapeResult = configureForms({
+		isError: shape<{ message: string; code: string }>(),
+	});
+
+	type CustomErrorShape = InferBaseErrorShape<typeof errorShapeResult.config>;
+	expectTypeOf<CustomErrorShape>().toEqualTypeOf<{
+		message: string;
+		code: string;
+	}>();
+
+	// Test with custom form metadata extension
+	const formMetadataResult = configureForms({
+		extendFormMetadata(metadata) {
+			return {
+				get customFormProp() {
+					return `custom-${metadata.id}`;
+				},
+			};
+		},
+	});
+
+	type CustomFormExt = InferCustomFormMetadata<
+		typeof formMetadataResult.config
+	>;
+	expectTypeOf<CustomFormExt>().not.toBeNever();
+	expectTypeOf<CustomFormExt['customFormProp']>().toEqualTypeOf<string>();
+
+	// Test with custom field metadata extension
+	const fieldMetadataResult = configureForms({
+		extendFieldMetadata(metadata) {
+			return {
+				get inputProps() {
+					return {
+						name: metadata.name,
+						required: metadata.required,
+					};
+				},
+			};
+		},
+	});
+
+	type CustomFieldExt = InferCustomFieldMetadata<
+		typeof fieldMetadataResult.config
+	>;
+	expectTypeOf<CustomFieldExt>().not.toBeNever();
+	expectTypeOf<CustomFieldExt['inputProps']>().not.toBeNever();
+
+	// Test composing with FormMetadata, FieldMetadata, and Fieldset
+	// This is the main use case: users can define reusable types for components
+	type TestSchema = { name: string; email: string };
+
+	type MyFormMetadata = FormMetadata<
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFormMetadata<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
+	>;
+
+	type MyFieldMetadata<T> = FieldMetadata<
+		T,
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
+	>;
+
+	type MyFieldset<T> = Fieldset<
+		T,
+		InferBaseErrorShape<typeof fieldMetadataResult.config>,
+		InferCustomFieldMetadata<typeof fieldMetadataResult.config>
+	>;
+
+	// Verify composed types have the custom properties
+	expectTypeOf<MyFormMetadata['id']>().toBeString();
+
+	// MyFieldMetadata should have the custom inputProps
+	expectTypeOf<MyFieldMetadata<string>['inputProps']>().not.toBeNever();
+	expectTypeOf<MyFieldMetadata<string>['name']>().toBeString();
+
+	// MyFieldset fields should also have inputProps
+	expectTypeOf<MyFieldset<TestSchema>['name']['inputProps']>().not.toBeNever();
+	expectTypeOf<MyFieldset<TestSchema>['email']['inputProps']>().not.toBeNever();
+
+	// getFieldset() should return Fieldset with custom metadata preserved
+	// Test by creating a mock field and calling getFieldset with explicit type
+	const mockField = {} as MyFieldMetadata<TestSchema>;
+	const fieldset = mockField.getFieldset();
+	// The returned fieldset's fields should have the custom inputProps
+	expectTypeOf(fieldset.name.inputProps).not.toBeNever();
+	expectTypeOf(fieldset.email.inputProps).not.toBeNever();
+
+	// getFieldList() should return FieldMetadata[] with custom metadata preserved
+	type ListSchema = Array<{ title: string }>;
+	type ItemMetadata = ReturnType<
+		MyFieldMetadata<ListSchema>['getFieldList']
+	>[number];
+	expectTypeOf<ItemMetadata['inputProps']>().not.toBeNever();
 });

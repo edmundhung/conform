@@ -1,4 +1,3 @@
-import { useForm } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
 import { z } from 'zod';
 import {
@@ -24,6 +23,7 @@ import {
 	Rating,
 	Slider,
 } from './form';
+import { useForm } from './forms';
 
 const schema = coerceFormValue(
 	z.object({
@@ -95,31 +95,37 @@ export default function App() {
 					<TextField
 						label="Email (TextField)"
 						type="email"
-						name={fields.email.name}
-						defaultValue={fields.email.defaultValue}
-						error={!fields.email.valid}
-						helperText={fields.email.errors}
+						{...fields.email.textFieldProps}
+						// Equivalent to:
+						// name={fields.email.name}
+						// defaultValue={fields.email.defaultValue}
+						// error={!fields.email.valid}
+						// helperText={fields.email.errors}
 					/>
 
 					<TextField
 						label="Description (TextField - multline)"
-						name={fields.description.name}
-						defaultValue={fields.description.defaultValue}
-						error={!fields.description.valid}
-						helperText={fields.description.errors}
 						inputProps={{
 							minLength: 10,
 						}}
 						multiline
+						{...fields.description.textFieldProps}
+						// Equivalent to:
+						// name={fields.description.name}
+						// defaultValue={fields.description.defaultValue}
+						// error={!fields.description.valid}
+						// helperText={fields.description.errors}
 					/>
 
 					<TextField
 						label="Language (Select)"
-						name={fields.language.name}
-						defaultValue={fields.language.defaultValue}
-						error={!fields.language.valid}
-						helperText={fields.language.errors}
 						select
+						{...fields.language.textFieldProps}
+						// Equivalent to:
+						// name={fields.language.name}
+						// defaultValue={fields.language.defaultValue}
+						// error={!fields.language.valid}
+						// helperText={fields.language.errors}
 					>
 						<MenuItem value="">Please select</MenuItem>
 						<MenuItem value="english">English</MenuItem>
@@ -129,10 +135,12 @@ export default function App() {
 
 					<Autocomplete
 						label="Movie (Autocomplete)"
-						name={fields.movie.name}
-						defaultValue={fields.movie.defaultValue}
-						error={fields.movie.errors}
 						options={['The Godfather', 'Pulp Fiction']}
+						{...fields.movie.autocompleteProps}
+						// Equivalent to:
+						// name={fields.movie.name}
+						// defaultValue={fields.movie.defaultValue}
+						// error={fields.movie.errors}
 					/>
 
 					<FormControl
@@ -145,8 +153,11 @@ export default function App() {
 							<FormControlLabel
 								control={
 									<Checkbox
-										name={fields.subscribe.name}
-										defaultChecked={fields.subscribe.defaultChecked}
+										{...fields.subscribe.checkboxProps}
+										// Equivalent to:
+										// name={fields.subscribe.name}
+										// value="on"
+										// defaultChecked={fields.subscribe.defaultChecked}
 									/>
 								}
 								label="Newsletter"
@@ -158,8 +169,10 @@ export default function App() {
 					<FormControl variant="standard" error={!fields.active.valid}>
 						<FormLabel>Active (Radio)</FormLabel>
 						<RadioGroup
-							name={fields.active.name}
-							defaultValue={fields.active.defaultValue}
+							{...fields.active.radioGroupProps}
+							// Equivalent to:
+							// name={fields.active.name}
+							// defaultValue={fields.active.defaultValue}
 						>
 							<FormControlLabel value="yes" control={<Radio />} label="Yes" />
 							<FormControlLabel value="no" control={<Radio />} label="No" />
@@ -177,8 +190,11 @@ export default function App() {
 								label="Enabled"
 								control={
 									<Switch
-										name={fields.enabled.name}
-										defaultChecked={fields.enabled.defaultChecked}
+										{...fields.enabled.switchProps}
+										// Equivalent to:
+										// name={fields.enabled.name}
+										// value="on"
+										// defaultChecked={fields.enabled.defaultChecked}
 									/>
 								}
 							/>
@@ -192,8 +208,10 @@ export default function App() {
 					>
 						<FormLabel>Progress (Slider)</FormLabel>
 						<Slider
-							name={fields.progress.name}
-							defaultValue={fields.progress.defaultValue}
+							{...fields.progress.sliderProps}
+							// Equivalent to:
+							// name={fields.progress.name}
+							// defaultValue={fields.progress.defaultValue}
 						/>
 						<FormHelperText>{fields.progress.errors}</FormHelperText>
 					</FormControl>
@@ -202,8 +220,10 @@ export default function App() {
 						<FormLabel>Score (Rating)</FormLabel>
 						<div>
 							<Rating
-								name={fields.score.name}
-								defaultValue={fields.score.defaultValue}
+								{...fields.score.ratingProps}
+								// Equivalent to:
+								// name={fields.score.name}
+								// defaultValue={fields.score.defaultValue}
 							/>
 						</div>
 						<FormHelperText>{fields.score.errors}</FormHelperText>
