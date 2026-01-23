@@ -19,7 +19,9 @@ Here is a signup form example which validates if the email is unique.
 ```tsx
 import type { Intent } from '@conform-to/react';
 import { useForm } from '@conform-to/react';
-import { parseWithZod, conformZodMessage } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
+import { parseWithZod, conformZodMessage } from '@conform-to/zod';
+// If you are using Zod v4, update the imports:
+// import { parseWithZod, conformZodMessage } from '@conform-to/zod/v4';
 import { z } from 'zod';
 
 // Instead of sharing a schema, prepare a schema creator
