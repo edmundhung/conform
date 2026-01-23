@@ -809,6 +809,9 @@ export type BaseMetadata<
 	ErrorShape extends BaseErrorShape,
 > = BaseFieldMetadata<FieldShape, ErrorShape>;
 
+/**
+ * @deprecated Use `configureForms()` with the `extendFieldMetadata` option instead.
+ */
 export type CustomMetadataDefinition = <
 	FieldShape,
 	ErrorShape extends BaseErrorShape,
