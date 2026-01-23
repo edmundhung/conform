@@ -212,9 +212,15 @@ type FormCallback = (event: {
 	submitter?: HTMLInputElement | HTMLButtonElement | null;
 }) => void;
 
+type BeforeResetCallback = (event: {
+	form: HTMLFormElement;
+	target: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+}) => void;
+
 export function createGlobalFormsObserver() {
 	const inputListeners = new Set<InputCallback>();
 	const formListeners = new Set<FormCallback>();
+	const beforeResetListeners = new Set<BeforeResetCallback>();
 
 	let cleanup: (() => void) | null = null;
 
@@ -258,6 +264,15 @@ export function createGlobalFormsObserver() {
 		const form = event.target;
 
 		if (form instanceof HTMLFormElement) {
+			// Fire beforeReset callbacks immediately (before browser reset)
+			for (const target of form.elements) {
+				if (isFieldElement(target)) {
+					beforeResetListeners.forEach((callback) => {
+						callback({ form, target });
+					});
+				}
+			}
+
 			// Reset event is fired before the form is reset, so we need to wait for the next tick
 			setTimeout(() => {
 				formListeners.forEach((callback) => {
@@ -406,11 +421,19 @@ export function createGlobalFormsObserver() {
 				formListeners.delete(callback);
 			};
 		},
+		onBeforeReset(callback: BeforeResetCallback) {
+			cleanup = cleanup ?? initialize();
+			beforeResetListeners.add(callback);
+			return () => {
+				beforeResetListeners.delete(callback);
+			};
+		},
 		dispose() {
 			cleanup?.();
 			cleanup = null;
 			inputListeners.clear();
 			formListeners.clear();
+			beforeResetListeners.clear();
 		},
 	};
 }
@@ -424,11 +447,17 @@ export function change(
 	value: string | string[] | File | File[] | FileList | null,
 	options?: {
 		preventDefault?: boolean;
+		/**
+		 * When true, reorders <option> elements in a multi-select to match
+		 * the order passed in the value array.
+		 */
+		preserveOptionsOrder?: boolean;
 	},
 ): void {
 	// The value should be set to the element before dispatching the event
 	const isChanged = updateField(element, {
 		value,
+		preserveOptionsOrder: options?.preserveOptionsOrder,
 	});
 
 	if (isChanged) {
@@ -511,6 +540,12 @@ export function updateField(
 	options: {
 		value?: unknown;
 		defaultValue?: unknown;
+		/**
+		 * When true, reorders <option> elements in a multi-select to match
+		 * the order passed in the value array. This ensures that selectedOptions
+		 * and FormData return values in the specified order.
+		 */
+		preserveOptionsOrder?: boolean;
 	},
 ): boolean {
 	let isChanged = false;
@@ -562,6 +597,12 @@ export function updateField(
 		const value = normalizeStringValues(options.value);
 		const defaultValue = normalizeStringValues(options.defaultValue);
 		const shouldUnselect = value && value.length === 0;
+
+		// Preserve original order before the loop mutates the arrays
+		const orderedValue =
+			options.preserveOptionsOrder && element.multiple && value
+				? [...value]
+				: null;
 
 		for (const option of element.options) {
 			if (value) {
@@ -616,6 +657,20 @@ export function updateField(
 			element.selectedIndex = -1;
 			isChanged = true;
 		}
+
+		// Reorder selected options to match the specified order
+		// appendChild moves existing elements to the end, so iterating in order produces correct ordering
+		if (orderedValue) {
+			for (const optionValue of orderedValue) {
+				const option = Array.from(element.options).find(
+					(o) => o.value === optionValue,
+				);
+				if (option) {
+					element.appendChild(option);
+				}
+			}
+		}
+
 		return isChanged;
 	}
 

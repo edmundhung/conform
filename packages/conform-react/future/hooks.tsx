@@ -15,6 +15,7 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	updateField,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -53,6 +54,7 @@ import type {
 	Control,
 	Selector,
 	UseFormDataOptions,
+	UseControlOptions,
 	ValidateHandler,
 	ErrorHandler,
 	SubmitHandler,
@@ -1012,28 +1014,7 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl(options?: {
-	/**
-	 * The initial value of the base input. It will be used to set the value
-	 * when the input is first registered.
-	 */
-	defaultValue?: string | string[] | File | File[] | null | undefined;
-	/**
-	 * Whether the base input should be checked by default. It will be applied
-	 * when the input is first registered.
-	 */
-	defaultChecked?: boolean | undefined;
-	/**
-	 * The value of a checkbox or radio input when checked. This sets the
-	 * value attribute of the base input.
-	 */
-	value?: string;
-	/**
-	 * A callback function that is triggered when the base input is focused.
-	 * Use this to delegate focus to a custom input.
-	 */
-	onFocus?: () => void;
-}): Control {
+export function useControl(options?: UseControlOptions): Control {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
@@ -1152,6 +1133,26 @@ export function useControl(options?: {
 		};
 	}, []);
 
+	useEffect(() => {
+		return observer.onBeforeReset(({ target }) => {
+			const element = inputRef.current;
+
+			if (
+				target === element &&
+				element instanceof HTMLSelectElement &&
+				element.multiple &&
+				optionsRef.current?.preserveOptionsOrder
+			) {
+				const defaultValue = optionsRef.current?.defaultValue;
+				updateField(element, {
+					value: defaultValue,
+					defaultValue,
+					preserveOptionsOrder: true,
+				});
+			}
+		});
+	}, [observer]);
+
 	return {
 		value: snapshot.value,
 		checked: snapshot.checked,
@@ -1243,6 +1244,7 @@ export function useControl(options?: {
 					change(
 						element,
 						typeof value === 'boolean' ? (value ? element.value : null) : value,
+						{ preserveOptionsOrder: optionsRef.current?.preserveOptionsOrder },
 					);
 				}
 			}
