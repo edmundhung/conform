@@ -321,3 +321,164 @@ export function createIntentDispatcher<FormShape extends Record<string, any>>(
 		},
 	});
 }
+
+const PERSIST_ATTR = 'data-conform-persist';
+const containerCache = new WeakMap<HTMLFormElement, HTMLDivElement>();
+
+/**
+ * Gets or creates a hidden container for persisted inputs.
+ * Using a container div instead of appending directly to <form> provides ~10x
+ * better performance (form.elements bookkeeping is expensive at scale).
+ */
+function getPersistContainer(form: HTMLFormElement): HTMLDivElement {
+	let container = containerCache.get(form);
+
+	// Verify container is still attached to the form
+	if (container && container.parentNode !== form) {
+		container = undefined;
+	}
+
+	if (!container) {
+		container = form.ownerDocument.createElement('div');
+		container.setAttribute(PERSIST_ATTR, '');
+		container.hidden = true;
+		form.appendChild(container);
+		containerCache.set(form, container);
+	}
+
+	return container;
+}
+
+/**
+ * Restores values from persisted inputs and removes them.
+ * Called when PersistBoundary mounts.
+ */
+export function cleanupPersistedInputs(
+	boundary: HTMLElement,
+	form: HTMLFormElement,
+	name?: string,
+): void {
+	const inputs = boundary.querySelectorAll<
+		HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+	>('input,select,textarea');
+	const container = getPersistContainer(form);
+
+	for (const input of inputs) {
+		if (!isFieldElement(input) || !input.name) {
+			continue;
+		}
+
+		// For checkbox/radio, match by field name + value (+ boundary name if provided)
+		// For other inputs, match by field name only (+ boundary name if provided)
+		const isCheckboxOrRadio =
+			input.type === 'checkbox' || input.type === 'radio';
+
+		// Query the persist container, not the whole form
+		const boundarySelector = name ? `[${PERSIST_ATTR}="${name}"]` : '';
+		const selector = isCheckboxOrRadio
+			? `${boundarySelector}[name="${input.name}"][value="${input.value}"]`
+			: `${boundarySelector}[name="${input.name}"]`;
+
+		const persisted = container.querySelector<
+			HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+		>(selector);
+
+		if (persisted) {
+			if (
+				input instanceof HTMLInputElement &&
+				persisted instanceof HTMLInputElement
+			) {
+				if (isCheckboxOrRadio) {
+					input.checked = persisted.checked;
+				} else if (input.type === 'file') {
+					// Restore files from the persisted input (may be empty)
+					input.files = persisted.files;
+				} else {
+					input.value = persisted.value;
+				}
+			} else if (
+				input instanceof HTMLSelectElement &&
+				persisted instanceof HTMLSelectElement
+			) {
+				for (const option of input.options) {
+					const persistedOption = Array.from(persisted.options).find(
+						(o) => o.value === option.value,
+					);
+					option.selected = persistedOption?.selected ?? false;
+				}
+			} else if (
+				input instanceof HTMLTextAreaElement &&
+				persisted instanceof HTMLTextAreaElement
+			) {
+				input.value = persisted.value;
+			}
+
+			persisted.remove();
+		}
+	}
+
+	// If name is provided, remove any remaining persisted inputs with this name
+	// (handles the case where inputs were removed from the boundary)
+	if (name) {
+		const remainingPersisted = container.querySelectorAll(
+			`[${PERSIST_ATTR}="${name}"]`,
+		);
+		remainingPersisted.forEach((el) => el.remove());
+	}
+}
+
+/**
+ * Clones inputs as hidden elements to preserve their values.
+ * Called when PersistBoundary unmounts.
+ */
+export function persistInputs(
+	inputs: Iterable<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+	form: HTMLFormElement,
+	name?: string,
+): void {
+	// Get the persist container once, outside the loop
+	const container = getPersistContainer(form);
+
+	for (const input of inputs) {
+		if (!isFieldElement(input) || !input.name) {
+			continue;
+		}
+
+		// Skip unchecked checkbox/radio (they don't contribute to FormData)
+		if (
+			input instanceof HTMLInputElement &&
+			(input.type === 'checkbox' || input.type === 'radio') &&
+			!input.checked
+		) {
+			continue;
+		}
+
+		// Clone the input element
+		const clone = input.cloneNode(true) as typeof input;
+
+		// Mark with name if provided, and hide it
+		if (name) {
+			clone.setAttribute(PERSIST_ATTR, name);
+		}
+
+		clone.hidden = true;
+
+		// Copy dynamic state that cloneNode doesn't preserve
+		if (input instanceof HTMLSelectElement) {
+			// cloneNode doesn't copy selected state for options
+			for (let i = 0; i < input.options.length; i++) {
+				const inputOption = input.options[i];
+				const cloneOption = (clone as HTMLSelectElement).options[i];
+				if (inputOption && cloneOption) {
+					cloneOption.selected = inputOption.selected;
+				}
+			}
+		} else if (input instanceof HTMLInputElement && input.type === 'file') {
+			// cloneNode doesn't copy files
+			(clone as HTMLInputElement).files = input.files;
+		}
+
+		// Append to persist container (faster than appending directly to form)
+		container.appendChild(clone);
+	}
+}
