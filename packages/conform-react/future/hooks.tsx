@@ -132,6 +132,11 @@ export function PersistBoundary(props: {
 	 * unmount/remount behavior and to isolate persisted inputs between boundaries.
 	 */
 	name: string;
+	/**
+	 * The id of the form to associate with. Only needed when the boundary
+	 * is rendered outside the form element.
+	 */
+	form?: string;
 	children: React.ReactNode;
 }): React.ReactElement {
 	// Use name as key to ensure proper unmount/remount when name changes
@@ -140,33 +145,28 @@ export function PersistBoundary(props: {
 
 function PersistBoundaryImpl(props: {
 	name: string;
+	form?: string;
 	children: React.ReactNode;
 }): React.ReactElement {
-	const containerRef = useRef<HTMLDivElement>(null);
+	const fieldsetRef = useRef<HTMLFieldSetElement>(null);
 
 	// useLayoutEffect to restore values before paint, avoiding flash of default values
 	useSafeLayoutEffect(() => {
-		const container = containerRef.current;
-		if (!container) {
+		const fieldset = fieldsetRef.current;
+
+		if (!fieldset || !fieldset.form) {
 			return;
 		}
 
-		const firstInput = container.querySelector<
-			HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-		>('input,select,textarea');
-		const form = firstInput?.form ?? null;
-
-		if (!form) {
-			return;
-		}
+		const form = fieldset.form;
 
 		// On mount: restore values from persisted inputs
-		cleanupPersistedInputs(container, form, props.name);
+		cleanupPersistedInputs(fieldset, form, props.name);
 
 		return () => {
 			// On unmount: persist input values
 			persistInputs(
-				container.querySelectorAll<
+				fieldset.querySelectorAll<
 					HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 				>('input,select,textarea'),
 				form,
@@ -175,7 +175,15 @@ function PersistBoundaryImpl(props: {
 		};
 	}, [props.name]);
 
-	return <div ref={containerRef}>{props.children}</div>;
+	return (
+		<fieldset
+			ref={fieldsetRef}
+			form={props.form}
+			style={{ display: 'contents' }}
+		>
+			{props.children}
+		</fieldset>
+	);
 }
 
 /**

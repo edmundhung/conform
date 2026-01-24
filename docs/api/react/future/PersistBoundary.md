@@ -33,6 +33,25 @@ A unique name for the boundary within the form. This is used to:
 
 When the boundary remounts, any persisted inputs with that name are automatically cleaned up, even if there's no matching field to restore to. This handles scenarios where the fields inside a boundary can change based on external state:
 
+### `form?: string`
+
+The id of the form to associate with. Only needed when the boundary is rendered outside the form element:
+
+```tsx
+<form id="my-form">
+  <button type="submit">Submit</button>
+</form>;
+
+{
+  /* Boundary outside the form */
+}
+<PersistBoundary name="external" form="my-form">
+  <input name="field" />
+</PersistBoundary>;
+```
+
+## Conditional fields
+
 ```tsx
 {
   step === 1 ? (

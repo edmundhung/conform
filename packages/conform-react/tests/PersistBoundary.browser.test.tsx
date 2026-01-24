@@ -374,15 +374,10 @@ describe('PersistBoundary', () => {
 					>
 						<button type="submit">Submit</button>
 					</form>
-					{/* PersistBoundary outside the form, inputs linked via form attribute */}
+					{/* PersistBoundary outside the form, linked via form prop */}
 					{show && (
-						<PersistBoundary name="external-field">
-							<input
-								name="field"
-								form="my-form"
-								aria-label="Field"
-								defaultValue=""
-							/>
+						<PersistBoundary name="external-field" form="my-form">
+							<input name="field" aria-label="Field" defaultValue="" />
 						</PersistBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
@@ -625,5 +620,86 @@ describe('PersistBoundary', () => {
 				expect(seen[0]).toBe('test');
 			}
 		}
+	});
+
+	it('cleans up persisted inputs when boundary remounts with no inputs', async () => {
+		function TestComponent() {
+			const [step, setStep] = useState(1);
+			const [accountType, setAccountType] = useState<'personal' | 'business'>(
+				'business',
+			);
+			const [submittedData, setSubmittedData] = useState<
+				Record<string, string>
+			>({});
+
+			return (
+				<Form
+					onSubmit={(formData) => {
+						const data: Record<string, string> = {};
+						formData.forEach((value, key) => {
+							if (typeof value === 'string') {
+								data[key] = value;
+							}
+						});
+						setSubmittedData(data);
+					}}
+				>
+					{step === 1 ? (
+						<PersistBoundary name="step-1">
+							<select
+								name="accountType"
+								aria-label="Account Type"
+								value={accountType}
+								onChange={(e) =>
+									setAccountType(e.target.value as 'personal' | 'business')
+								}
+							>
+								<option value="personal">Personal</option>
+								<option value="business">Business</option>
+							</select>
+						</PersistBoundary>
+					) : (
+						<PersistBoundary name="step-2">
+							{accountType === 'business' ? (
+								<input name="companyName" aria-label="Company Name" />
+							) : null}
+						</PersistBoundary>
+					)}
+					<button type="button" onClick={() => setStep(step === 1 ? 2 : 1)}>
+						Toggle Step
+					</button>
+					<pre data-testid="submitted">{JSON.stringify(submittedData)}</pre>
+				</Form>
+			);
+		}
+
+		const screen = render(<TestComponent />);
+
+		const toggleStepButton = screen.getByText('Toggle Step');
+		const submitButton = screen.getByText('Submit');
+		const submitted = screen.getByTestId('submitted');
+
+		// Start on step 1 with business selected, go to step 2
+		await userEvent.click(toggleStepButton);
+
+		// Fill company name on step 2
+		await userEvent.fill(screen.getByLabelText('Company Name'), 'Acme Inc');
+
+		// Go back to step 1, change to personal
+		await userEvent.click(toggleStepButton);
+		await userEvent.selectOptions(
+			getElement(screen.getByLabelText('Account Type'), HTMLSelectElement),
+			'personal',
+		);
+
+		// Go to step 2 - boundary remounts with no inputs (personal has no fields)
+		// The persisted companyName should be cleaned up
+		await userEvent.click(toggleStepButton);
+
+		// Submit - should NOT include companyName since it was cleaned up
+		await userEvent.click(submitButton);
+		expect(
+			JSON.parse(submitted.element().textContent ?? '{}'),
+		).not.toHaveProperty('companyName');
 	});
 });
