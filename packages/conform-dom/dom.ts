@@ -661,12 +661,21 @@ export function updateField(
 		// Reorder selected options to match the specified order
 		// appendChild moves existing elements to the end, so iterating in order produces correct ordering
 		if (orderedValue) {
-			for (const optionValue of orderedValue) {
-				const option = Array.from(element.options).find(
-					(o) => o.value === optionValue,
-				);
-				if (option) {
-					element.appendChild(option);
+			const selectedOptions = Array.from(element.selectedOptions);
+			const optionsByValue = new Map(
+				Array.from(element.options).map((o) => [o.value, o]),
+			);
+
+			let i = 0;
+			for (const value of orderedValue) {
+				const option = optionsByValue.get(value);
+				if (option?.selected) {
+					if (selectedOptions[i++] !== option) {
+						isChanged = true;
+					}
+					if (isChanged) {
+						element.appendChild(option);
+					}
 				}
 			}
 		}

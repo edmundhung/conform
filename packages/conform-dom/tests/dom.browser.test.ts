@@ -336,6 +336,51 @@ describe('updateField', () => {
 		expect(selectedValues).toEqual(['a', 'c']);
 	});
 
+	it('returns isChanged=true when only the order changes with preserveOptionsOrder', () => {
+		const select = document.createElement('select');
+		select.multiple = true;
+
+		// Add options
+		for (const value of ['a', 'b', 'c']) {
+			const option = document.createElement('option');
+			option.value = value;
+			select.appendChild(option);
+		}
+
+		// Set initial values in one order
+		const changed1 = updateField(select, {
+			value: ['a', 'b'],
+			preserveOptionsOrder: true,
+		});
+		expect(changed1).toBe(true);
+
+		const selectedValues1 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues1).toEqual(['a', 'b']);
+
+		// Change to the same values but in different order
+		const changed2 = updateField(select, {
+			value: ['b', 'a'],
+			preserveOptionsOrder: true,
+		});
+
+		// Should return true because order changed, even though same values are selected
+		expect(changed2).toBe(true);
+
+		const selectedValues2 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues2).toEqual(['b', 'a']);
+
+		// Calling again with same order should return false
+		const changed3 = updateField(select, {
+			value: ['b', 'a'],
+			preserveOptionsOrder: true,
+		});
+		expect(changed3).toBe(false);
+	});
+
 	it('supports textarea', () => {
 		const textarea = document.createElement('textarea');
 
