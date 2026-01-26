@@ -14,8 +14,8 @@ To validate FormData, use `parseWithZod`.
 
 ```ts
 import { useForm } from '@conform-to/react';
-import { parseWithZod } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
-import { z } from 'zod'; // Or, zod/v4 or zod/v4-mini
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 
 const schema = z.object({
   email: z.string(),
@@ -33,6 +33,20 @@ function ExampleForm() {
 
   // ...
 }
+```
+
+### Zod v3 vs v4
+
+The default import `@conform-to/zod` is designed for Zod v3. If you're using Zod v4, use the dedicated subpath export instead:
+
+```ts
+// Zod v3
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
+
+// Zod v4
+import { parseWithZod } from '@conform-to/zod/v4';
+import { z } from 'zod/v4'; // or 'zod/v4-mini'
 ```
 
 ## Valibot

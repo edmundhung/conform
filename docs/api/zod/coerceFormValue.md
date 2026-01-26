@@ -33,11 +33,13 @@ Optional. Use it to [define custom coercion](#define-custom-coercion) for a spec
 ## Example
 
 ```ts
+import { useForm } from '@conform-to/react';
 import {
   parseWithZod,
   unstable_coerceFormValue as coerceFormValue,
-} from '@conform-to/zod'; // Or, import `@conform-to/zod/v4`.
-import { useForm } from '@conform-to/react';
+} from '@conform-to/zod';
+// If you are using Zod v4, update the imports:
+// import { parseWithZod, unstable_coerceFormValue as coerceFormValue } from '@conform-to/zod/v4';
 import { z } from 'zod';
 
 const schema = coerceFormValue(

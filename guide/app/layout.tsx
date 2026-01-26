@@ -62,6 +62,7 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'parseSubmission', to: '/api/react/future/parseSubmission' },
 				{ title: 'report', to: '/api/react/future/report' },
 				{ title: 'getFieldValue', to: '/api/react/future/getFieldValue' },
+				{ title: 'configureForms', to: '/api/react/future/configureForms' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
 				{
@@ -76,6 +77,8 @@ const menus: { [code: string]: Menu[] } = {
 			links: [
 				{ title: 'coerceFormValue', to: '/api/zod/future/coerceFormValue' },
 				{ title: 'formatResult', to: '/api/zod/future/formatResult' },
+				{ title: 'getConstraints', to: '/api/zod/future/getConstraints' },
+				{ title: 'isSchema', to: '/api/zod/future/isSchema' },
 			],
 		},
 		{
@@ -83,6 +86,8 @@ const menus: { [code: string]: Menu[] } = {
 			links: [
 				{ title: 'coerceFormValue', to: '/api/valibot/future/coerceFormValue' },
 				{ title: 'formatResult', to: '/api/valibot/future/formatResult' },
+				{ title: 'getConstraints', to: '/api/valibot/future/getConstraints' },
+				{ title: 'isSchema', to: '/api/valibot/future/isSchema' },
 			],
 		},
 		{

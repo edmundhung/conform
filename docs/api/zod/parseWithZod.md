@@ -35,8 +35,10 @@ Set it to **true** if you want to disable [automatic type coercion](#automatic-t
 ## Example
 
 ```tsx
-import { parseWithZod } from '@conform-to/zod'; // Or, if you use zod/v4 or zod/v4-mini, import `@conform-to/zod/v4`.
 import { useForm } from '@conform-to/react';
+import { parseWithZod } from '@conform-to/zod';
+// If you are using Zod v4, update the imports:
+// import { parseWithZod } from '@conform-to/zod/v4';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -96,3 +98,14 @@ function Example() {
   // ...
 }
 ```
+
+### Using Zod v4
+
+If you are using Zod v4, make sure to import from `@conform-to/zod/v4` instead of `@conform-to/zod`:
+
+```tsx
+import { parseWithZod } from '@conform-to/zod/v4';
+import { z } from 'zod'; // or 'zod/mini'
+```
+
+Using the wrong import will result in an error like `Export named 'ZodEffects' not found in module`.
