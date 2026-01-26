@@ -78,6 +78,8 @@ import {
 	initializeField,
 	updateFormValue,
 	resetFormValue,
+	cleanupPersistedInputs,
+	persistInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
 
@@ -115,6 +117,72 @@ export function FormProvider(props: {
 		<FormContextContext.Provider value={value}>
 			{props.children}
 		</FormContextContext.Provider>
+	);
+}
+
+/**
+ * Preserves form field values when its contents are unmounted.
+ * Useful for multi-step forms and virtualized lists.
+ *
+ * @see https://conform.guide/api/react/future/PersistBoundary
+ */
+export function PersistBoundary(props: {
+	/**
+	 * A unique name for the boundary within the form. Used to ensure proper
+	 * unmount/remount behavior and to isolate persisted inputs between boundaries.
+	 */
+	name: string;
+	/**
+	 * The id of the form to associate with. Only needed when the boundary
+	 * is rendered outside the form element.
+	 */
+	form?: string;
+	children: React.ReactNode;
+}): React.ReactElement {
+	// Use name as key to ensure proper unmount/remount when name changes
+	return <PersistBoundaryImpl key={props.name} {...props} />;
+}
+
+function PersistBoundaryImpl(props: {
+	name: string;
+	form?: string;
+	children: React.ReactNode;
+}): React.ReactElement {
+	const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+
+	// useLayoutEffect to restore values before paint, avoiding flash of default values
+	useSafeLayoutEffect(() => {
+		const fieldset = fieldsetRef.current;
+
+		if (!fieldset || !fieldset.form) {
+			return;
+		}
+
+		const form = fieldset.form;
+
+		// On mount: restore values from persisted inputs
+		cleanupPersistedInputs(fieldset, form, props.name);
+
+		return () => {
+			// On unmount: persist input values
+			persistInputs(
+				fieldset.querySelectorAll<
+					HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+				>('input,select,textarea'),
+				form,
+				props.name,
+			);
+		};
+	}, [props.name]);
+
+	return (
+		<fieldset
+			ref={fieldsetRef}
+			form={props.form}
+			style={{ display: 'contents' }}
+		>
+			{props.children}
+		</fieldset>
 	);
 }
 
