@@ -2,7 +2,7 @@
 
 > The `PersistBoundary` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React component that preserves form field values when its contents are unmounted. This is useful when fields are hidden for rendering or navigation reasons (e.g., multi-step wizards, virtualized lists), but should still be included in form submission.
+A React component that preserves form field values during client-side navigation when React unmounts its contents. Useful for multi-step wizards, form dialogs, and virtualized lists where fields are temporarily hidden but should still be included in form submission.
 
 ```tsx
 import { PersistBoundary } from '@conform-to/react/future';
