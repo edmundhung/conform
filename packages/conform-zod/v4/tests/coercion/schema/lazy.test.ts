@@ -97,5 +97,134 @@ describe('coercion', () => {
 				data: 'ABCDEFGHIJ',
 			});
 		});
+
+		test('should handle getter-based recursive schemas', () => {
+			// https://github.com/edmundhung/conform/issues/1127
+			const ConditionNodeSchema = z.object({
+				type: z.literal('condition'),
+				value: z.string(),
+				priority: z.number(),
+			});
+
+			const LogicalGroupNodeSchema = z.object({
+				type: z.literal('group'),
+				operator: z.enum(['AND', 'OR']),
+				get children(): z.ZodArray<
+					z.ZodDiscriminatedUnion<
+						[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
+					>
+				> {
+					return z.array(
+						z.discriminatedUnion('type', [
+							LogicalGroupNodeSchema,
+							ConditionNodeSchema,
+						]),
+					);
+				},
+			});
+
+			const schema = coerceFormValue(
+				z.object({
+					filter: LogicalGroupNodeSchema,
+				}),
+			);
+
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'AND',
+							children: [
+								{
+									type: 'condition',
+									value: 'test',
+									priority: '1',
+								},
+							],
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					filter: {
+						type: 'group',
+						operator: 'AND',
+						children: [
+							{
+								type: 'condition',
+								value: 'test',
+								priority: 1,
+							},
+						],
+					},
+				},
+			});
+
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'OR',
+							children: [
+								{
+									type: 'group',
+									operator: 'AND',
+									children: [
+										{
+											type: 'condition',
+											value: 'nested',
+											priority: '99',
+										},
+									],
+								},
+							],
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					filter: {
+						type: 'group',
+						operator: 'OR',
+						children: [
+							{
+								type: 'group',
+								operator: 'AND',
+								children: [
+									{
+										type: 'condition',
+										value: 'nested',
+										priority: 99,
+									},
+								],
+							},
+						],
+					},
+				},
+			});
+
+			const errorResult = getResult(
+				schema.safeParse({
+					filter: {
+						type: 'group',
+						operator: 'AND',
+						children: [
+							{
+								type: 'condition',
+							},
+						],
+					},
+				}),
+			);
+			expect(errorResult.success).toEqual(false);
+			if (!errorResult.success) {
+				expect(errorResult.error['filter.children[0].value']).toBeDefined();
+				expect(errorResult.error['filter.children[0].priority']).toBeDefined();
+			}
+		});
 	});
 });

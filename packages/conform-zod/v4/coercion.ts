@@ -177,11 +177,13 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 ): $ZodType {
 	const result = options.cache.get(type);
 
-	// Return the cached schema if it's already processed
-	// This is to prevent infinite recursion caused by z.lazy()
 	if (result) {
 		return result;
 	}
+
+	// Pre-cache a lazy wrapper so recursive references resolve to the coerced schema
+	const lazyCoerced = lazy(() => options.cache.get(type) ?? type);
+	options.cache.set(type, lazyCoerced);
 
 	let schema: $ZodType = type;
 	const zod = (type as unknown as $ZodTypes)._zod;
@@ -297,6 +299,18 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 						object._zod.disc = item._zod.disc;
 						return object;
 					};
+
+					// Handle recursive references by wrapping the cached lazy to preserve propValues
+					const cachedItem = options.cache.get(item);
+					if (cachedItem && cachedItem !== item) {
+						return setOriginalPropValues(
+							pipe(
+								transform((value) => value),
+								cachedItem,
+							),
+						);
+					}
+
 					if (objectDef.type !== 'object') {
 						return setOriginalPropValues(enableTypeCoercion(item, options));
 					}
@@ -343,9 +357,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 		schema = lazy(() => enableTypeCoercion(inner, options));
 	}
 
-	if (type !== schema) {
-		options.cache.set(type, schema);
-	}
+	options.cache.set(type, schema);
 
 	return schema;
 }
