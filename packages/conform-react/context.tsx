@@ -400,6 +400,7 @@ export function getFieldMetadata<
 				case 'pattern':
 				case 'step':
 				case 'multiple':
+				case 'accept':
 					return state.constraint[name]?.[key];
 				case 'getFieldList': {
 					return () => {

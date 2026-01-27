@@ -10,6 +10,7 @@ const keys: Array<keyof Constraint> = [
 	'step',
 	'multiple',
 	'pattern',
+	'accept',
 ];
 
 export function getValibotConstraint<
@@ -163,6 +164,16 @@ export function getValibotConstraint<
 			for (let i = 0; i < schema.items.length; i++) {
 				// @ts-expect-error
 				updateConstraint(schema.items[i], data, `${name}[${i}]`);
+			}
+		} else if (schema.type === 'file' || schema.type === 'blob') {
+			// @ts-expect-error
+			const mimeTypeValidation = schema.pipe?.find(
+				// @ts-expect-error
+				(v) => 'type' in v && v.type === 'mime_type',
+			);
+			if (mimeTypeValidation && 'requirement' in mimeTypeValidation) {
+				const requirement = mimeTypeValidation.requirement as string[];
+				constraint.accept = requirement.join();
 			}
 		} else {
 			// FIXME: If you are interested in this, feel free to create a PR
