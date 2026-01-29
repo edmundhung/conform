@@ -1405,6 +1405,7 @@ test('getConstraint', () => {
 			username: { required: true, minLength: 3 },
 			'items[]': { required: true },
 			'items[].subitems[].name': { maxLength: 50 },
+			avatar: { accept: 'image/*' },
 		},
 	});
 
@@ -1429,6 +1430,9 @@ test('getConstraint', () => {
 
 	// Test no fallback available
 	expect(getConstraint(context, 'missing')).toBe(undefined);
+
+	// Test accept constraint
+	expect(getConstraint(context, 'avatar')).toEqual({ accept: 'image/*' });
 
 	// Test no constraints defined
 	expect(getConstraint(createContext(), 'any')).toBe(undefined);

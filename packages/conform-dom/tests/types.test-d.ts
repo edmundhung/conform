@@ -13,6 +13,7 @@ test('ValidationAttributes', () => {
 		step: 1,
 		multiple: false,
 		pattern: '[0-9]+',
+		accept: 'image/*,video/*',
 	});
 	assertType<ValidationAttributes>({
 		required: true,
@@ -32,6 +33,7 @@ test('ValidationAttributes', () => {
 		step: undefined,
 		multiple: undefined,
 		pattern: undefined,
+		accept: undefined,
 	});
 });
 
