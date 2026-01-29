@@ -110,6 +110,7 @@ export type ValidationAttributes = {
 	step?: string | number | undefined;
 	multiple?: boolean | undefined;
 	pattern?: string | undefined;
+	accept?: string | undefined;
 };
 
 /**

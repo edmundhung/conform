@@ -16,6 +16,7 @@ const keys: Array<keyof Constraint> = [
 	'step',
 	'multiple',
 	'pattern',
+	'accept',
 ];
 
 export function getZodConstraint(

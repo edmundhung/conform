@@ -1,6 +1,12 @@
 import type { Constraint } from '@conform-to/dom';
 
-import { $ZodType, $ZodTypes, $ZodNumber, $ZodString } from 'zod/v4/core';
+import {
+	$ZodType,
+	$ZodTypes,
+	$ZodNumber,
+	$ZodString,
+	$ZodFile,
+} from 'zod/v4/core';
 
 const keys: Array<keyof Constraint> = [
 	'required',
@@ -11,6 +17,7 @@ const keys: Array<keyof Constraint> = [
 	'step',
 	'multiple',
 	'pattern',
+	'accept',
 ];
 
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
@@ -130,6 +137,11 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			for (let i = 0; i < def.items.length; i++) {
 				// @ts-expect-error
 				updateConstraint(def.items[i], data, `${name}[${i}]`);
+			}
+		} else if (def.type === 'file') {
+			const _schema = schema as $ZodFile;
+			if (_schema._zod.bag.mime) {
+				constraint.accept = _schema._zod.bag.mime.join();
 			}
 		} else if (def.type === 'lazy') {
 			// FIXME: If you are interested in this, feel free to create a PR

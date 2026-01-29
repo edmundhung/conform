@@ -514,6 +514,7 @@ export function getField<
 		max: constraint?.max,
 		step: constraint?.step,
 		multiple: constraint?.multiple,
+		accept: constraint?.accept,
 		get defaultValue() {
 			return getDefaultValue(context, name, serialize);
 		},

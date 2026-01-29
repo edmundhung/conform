@@ -6,12 +6,14 @@ import {
 	date,
 	enum_,
 	exactOptional,
+	file,
 	instance,
 	intersect,
 	literal,
 	looseObject,
 	maxLength,
 	maxValue,
+	mimeType,
 	minLength,
 	minValue,
 	nullish,
@@ -87,6 +89,10 @@ describe('constraint', () => {
 				array(instance(Date, 'Invalid file')),
 				minLength(1, 'required'),
 			),
+			filesValid: pipe(
+				array(pipe(file('Invalid file'), mimeType(['image/*', 'video/*']))),
+				minLength(1, 'required'),
+			),
 			tuple: tuple([
 				pipe(string(), minLength(3, 'min')),
 				optional(pipe(number(), maxValue(100, 'max'))),
@@ -143,6 +149,14 @@ describe('constraint', () => {
 			},
 			'files[]': {
 				required: true,
+			},
+			filesValid: {
+				required: true,
+				multiple: true,
+			},
+			'filesValid[]': {
+				required: true,
+				accept: 'image/*,video/*',
 			},
 			nested: {
 				required: true,

@@ -114,6 +114,7 @@ export type Constraint = {
 	step?: string | number;
 	multiple?: boolean;
 	pattern?: string;
+	accept?: string;
 };
 
 export type FormMeta<FormError> = {
