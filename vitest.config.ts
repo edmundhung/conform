@@ -15,6 +15,7 @@ export default defineConfig({
 					name: 'browser',
 					browser: {
 						enabled: true,
+						headless: true,
 						provider: playwright(),
 						instances: [{ browser: 'chromium' }],
 					},
@@ -54,6 +55,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					`**/node_modules/**`,
 					`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`,
 				],
+				testTimeout: process.env.CI ? 10_000 : 5_000,
 			},
 		},
 		{
@@ -71,6 +73,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					`**/node_modules/**`,
 					`packages/${packageName}/**/tests/**/*.browser.test.{ts,tsx}`,
 				],
+				testTimeout: 1_000,
 			},
 		},
 	];

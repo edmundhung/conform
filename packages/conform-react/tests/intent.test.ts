@@ -2,14 +2,15 @@ import { test, expect, vi } from 'vitest';
 import {
 	serializeIntent,
 	deserializeIntent,
-	applyIntent,
+	resolveIntent,
 	insertItem,
 	removeItem,
 	reorderItems,
 	updateListKeys,
-	actionHandlers,
+	intentHandlers,
 } from '../future/intent';
-import type { Submission } from '@conform-to/dom/future';
+import type { Submission, SubmissionResult } from '@conform-to/dom/future';
+import { IntentHandler } from '../future/types';
 
 test('serializeIntent', () => {
 	// Test intent without payload
@@ -82,7 +83,7 @@ test('applyIntent', () => {
 	};
 
 	// Test reset intent
-	expect(applyIntent(submission)).toBeUndefined();
+	expect(resolveIntent(submission)).toBeUndefined();
 
 	// Test submission without intent
 	const noIntentSubmission: Submission = {
@@ -90,15 +91,15 @@ test('applyIntent', () => {
 		payload: { email: 'test' },
 		fields: ['email'],
 	};
-	expect(applyIntent(noIntentSubmission)).toEqual({ email: 'test' });
+	expect(resolveIntent(noIntentSubmission)).toEqual({ email: 'test' });
 
 	// Test with custom handlers
 	const customHandlers = {
 		custom: {
-			onApply: vi.fn((payload) => ({ ...payload, custom: true })),
-			validatePayload: vi.fn(() => true),
+			validate: vi.fn(() => true),
+			resolve: vi.fn((payload) => ({ ...payload, custom: true })),
 		},
-	};
+	} satisfies Record<string, IntentHandler>;
 
 	const customSubmission: Submission = {
 		intent: 'custom',
@@ -106,8 +107,8 @@ test('applyIntent', () => {
 		fields: ['email'],
 	};
 
-	const result = applyIntent(customSubmission, { handlers: customHandlers });
-	expect(customHandlers.custom.onApply).toHaveBeenCalledWith(
+	const result = resolveIntent(customSubmission, { handlers: customHandlers });
+	expect(customHandlers.custom.resolve).toHaveBeenCalledWith(
 		{ email: 'test' },
 		undefined,
 	);
@@ -116,10 +117,10 @@ test('applyIntent', () => {
 	// Test with validation failure
 	const failingHandler = {
 		failing: {
-			onApply: vi.fn(),
-			validatePayload: vi.fn(() => false),
+			validate: vi.fn(() => false),
+			resolve: vi.fn(),
 		},
-	};
+	} satisfies Record<string, IntentHandler>;
 
 	const failingSubmission: Submission = {
 		intent: 'failing',
@@ -127,10 +128,10 @@ test('applyIntent', () => {
 		fields: ['test'],
 	};
 
-	const failResult = applyIntent(failingSubmission, {
+	const failResult = resolveIntent(failingSubmission, {
 		handlers: failingHandler,
 	});
-	expect(failingHandler.failing.onApply).not.toHaveBeenCalled();
+	expect(failingHandler.failing.resolve).not.toHaveBeenCalled();
 	expect(failResult).toEqual({ test: true });
 });
 
@@ -223,27 +224,25 @@ test('updateListKeys', () => {
 
 test('actionHandlers.reset', () => {
 	// Test validate payload
-	expect(actionHandlers.reset.validatePayload?.(undefined)).toBe(true);
-	expect(actionHandlers.reset.validatePayload?.({})).toBe(true);
-	expect(actionHandlers.reset.validatePayload?.({ defaultValue: null })).toBe(
-		true,
-	);
+	expect(intentHandlers.reset.validate?.(undefined)).toBe(true);
+	expect(intentHandlers.reset.validate?.({})).toBe(true);
+	expect(intentHandlers.reset.validate?.({ defaultValue: null })).toBe(true);
 	expect(
-		actionHandlers.reset.validatePayload?.({ defaultValue: { email: 'test' } }),
+		intentHandlers.reset.validate?.({ defaultValue: { email: 'test' } }),
 	).toBe(true);
-	expect(actionHandlers.reset.validatePayload?.('string')).toBe(false);
+	expect(intentHandlers.reset.validate?.('string')).toBe(false);
 
 	// Test onApply with no options
-	expect(actionHandlers.reset.onApply?.({}, undefined)).toBeUndefined();
+	expect(intentHandlers.reset.resolve?.({}, undefined)).toBeUndefined();
 
 	// Test onApply with null defaultValue
-	expect(actionHandlers.reset.onApply?.({}, { defaultValue: null })).toEqual(
+	expect(intentHandlers.reset.resolve?.({}, { defaultValue: null })).toEqual(
 		{},
 	);
 
 	// Test onApply with custom defaultValue
 	expect(
-		actionHandlers.reset.onApply?.(
+		intentHandlers.reset.resolve?.(
 			{},
 			{ defaultValue: { email: 'test@example.com' } },
 		),
@@ -252,29 +251,29 @@ test('actionHandlers.reset', () => {
 
 test('actionHandlers.validate', () => {
 	// Test validate payload
-	expect(actionHandlers.validate.validatePayload?.('email')).toBe(true);
-	expect(actionHandlers.validate.validatePayload?.(undefined)).toBe(true);
-	expect(actionHandlers.validate.validatePayload?.(123)).toBe(false);
+	expect(intentHandlers.validate.validate?.('email')).toBe(true);
+	expect(intentHandlers.validate.validate?.(undefined)).toBe(true);
+	expect(intentHandlers.validate.validate?.(123)).toBe(false);
 });
 
 test('actionHandlers.update', () => {
 	// Test validate payload
 	expect(
-		actionHandlers.update.validatePayload?.({ name: 'email', value: 'test' }),
+		intentHandlers.update.validate?.({ name: 'email', value: 'test' }),
 	).toBe(true);
 	expect(
-		actionHandlers.update.validatePayload?.({
+		intentHandlers.update.validate?.({
 			name: 'email',
 			index: 0,
 			value: 'test',
 		}),
 	).toBe(true);
-	expect(actionHandlers.update.validatePayload?.({ name: 123 })).toBe(false);
-	expect(actionHandlers.update.validatePayload?.('string')).toBe(false);
+	expect(intentHandlers.update.validate?.({ name: 123 })).toBe(false);
+	expect(intentHandlers.update.validate?.('string')).toBe(false);
 
 	// Test onApply with explicit value
 	expect(
-		actionHandlers.update.onApply?.(
+		intentHandlers.update.resolve?.(
 			{ email: 'old@example.com' },
 			{ name: 'email', value: 'new@example.com' },
 		),
@@ -284,7 +283,7 @@ test('actionHandlers.update', () => {
 
 	// Test update field value to null
 	expect(
-		actionHandlers.update.onApply?.(
+		intentHandlers.update.resolve?.(
 			{ username: 'John', email: 'test@example.com' },
 			{ name: 'email', value: null },
 		),
@@ -295,7 +294,7 @@ test('actionHandlers.update', () => {
 
 	// Test update form value to null (clear all fields)
 	expect(
-		actionHandlers.update.onApply?.(
+		intentHandlers.update.resolve?.(
 			{ email: 'test@example.com', name: 'John' },
 			{ value: null },
 		),
@@ -304,64 +303,187 @@ test('actionHandlers.update', () => {
 	// Test with array index
 	const arrayPayload = { items: ['a', 'b', 'c'] };
 	const arrayOptions = { name: 'items', index: 1, value: 'updated' };
-	expect(actionHandlers.update.onApply?.(arrayPayload, arrayOptions)).toEqual({
+	expect(intentHandlers.update.resolve?.(arrayPayload, arrayOptions)).toEqual({
 		items: ['a', 'updated', 'c'],
 	});
 });
 
 test('actionHandlers.insert', () => {
 	// Test validate payload
-	expect(actionHandlers.insert.validatePayload?.({ name: 'items' })).toBe(true);
-	expect(
-		actionHandlers.insert.validatePayload?.({ name: 'items', index: 0 }),
-	).toBe(true);
-	expect(actionHandlers.insert.validatePayload?.({ name: 123 })).toBe(false);
-	expect(actionHandlers.insert.validatePayload?.('string')).toBe(false);
+	expect(intentHandlers.insert.validate?.({ name: 'items' })).toBe(true);
+	expect(intentHandlers.insert.validate?.({ name: 'items', index: 0 })).toBe(
+		true,
+	);
+	expect(intentHandlers.insert.validate?.({ name: 123 })).toBe(false);
+	expect(intentHandlers.insert.validate?.('string')).toBe(false);
 
 	// Test onApply
 	const payload = { items: ['a', 'b'] };
 	const options = { name: 'items', defaultValue: 'new' };
-	expect(actionHandlers.insert.onApply?.(payload, options)).toEqual({
+	expect(intentHandlers.insert.resolve?.(payload, options)).toEqual({
 		items: ['a', 'b', 'new'],
 	});
+
+	const validResult: SubmissionResult<string> = {
+		submission: {
+			intent: null,
+			payload: { items: [], newItem: 'value' },
+			fields: [],
+		},
+		targetValue: { items: ['value'], newItem: '' },
+		error: null,
+	};
+	expect(
+		intentHandlers.insert.apply?.(validResult, {
+			name: 'items',
+			from: 'newItem',
+		}),
+	).toBe(validResult);
+
+	const invalidResult: SubmissionResult<string> = {
+		submission: {
+			intent: null,
+			payload: { items: [], newItem: 'bad' },
+			fields: [],
+		},
+		targetValue: { items: ['bad'], newItem: '' },
+		error: { formErrors: [], fieldErrors: { 'items[0]': ['Invalid'] } },
+	};
+	expect(
+		intentHandlers.insert.apply?.(invalidResult, {
+			name: 'items',
+			from: 'newItem',
+		}),
+	).toEqual({
+		...invalidResult,
+		targetValue: undefined,
+		error: {
+			formErrors: [],
+			fieldErrors: {
+				'items[0]': [],
+				newItem: ['Invalid'],
+			},
+		},
+	});
+
+	const maxResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a', 'b'] }, fields: [] },
+		targetValue: { items: ['a', 'b', 'c'] },
+		error: { formErrors: [], fieldErrors: { items: ['Max 2 items'] } },
+	};
+	expect(
+		intentHandlers.insert.apply?.(maxResult, {
+			name: 'items',
+			onInvalid: 'revert',
+		}),
+	).toEqual({
+		...maxResult,
+		targetValue: undefined,
+		error: { formErrors: [], fieldErrors: { items: ['Max 2 items'] } },
+	});
+
+	const normalResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
+		targetValue: { items: ['a', 'b'] },
+		error: null,
+	};
+	expect(
+		intentHandlers.insert.apply?.(normalResult, {
+			name: 'items',
+		}),
+	).toBe(normalResult);
 });
 
 test('actionHandlers.remove', () => {
 	// Test validate payload
-	expect(
-		actionHandlers.remove.validatePayload?.({ name: 'items', index: 0 }),
-	).toBe(true);
-	expect(actionHandlers.remove.validatePayload?.({ name: 'items' })).toBe(
-		false,
+	expect(intentHandlers.remove.validate?.({ name: 'items', index: 0 })).toBe(
+		true,
 	);
-	expect(actionHandlers.remove.validatePayload?.({ name: 123, index: 0 })).toBe(
-		false,
-	);
+	expect(intentHandlers.remove.validate?.({ name: 'items' })).toBe(false);
+	expect(intentHandlers.remove.validate?.({ name: 123, index: 0 })).toBe(false);
 
 	// Test onApply
 	const payload = { items: ['a', 'b', 'c'] };
 	const options = { name: 'items', index: 1 };
-	expect(actionHandlers.remove.onApply?.(payload, options)).toEqual({
+	expect(intentHandlers.remove.resolve?.(payload, options)).toEqual({
 		items: ['a', 'c'],
 	});
+
+	const minResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
+		targetValue: { items: [] },
+		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
+	};
+	expect(
+		intentHandlers.remove.apply?.(minResult, {
+			name: 'items',
+			index: 0,
+			onInvalid: 'revert',
+		}),
+	).toEqual({
+		...minResult,
+		targetValue: undefined,
+		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
+	});
+
+	const insertResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
+		targetValue: { items: [] },
+		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
+	};
+	expect(
+		intentHandlers.remove.apply?.(insertResult, {
+			name: 'items',
+			index: 0,
+			onInvalid: 'insert',
+			defaultValue: '',
+		}),
+	).toEqual({
+		...insertResult,
+		targetValue: { items: [''] },
+	});
+
+	const noRevertResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
+		targetValue: { items: [] },
+		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
+	};
+	expect(
+		intentHandlers.remove.apply?.(noRevertResult, {
+			name: 'items',
+			index: 0,
+		}),
+	).toBe(noRevertResult);
+
+	const normalResult: SubmissionResult<string> = {
+		submission: { intent: null, payload: { items: ['a', 'b'] }, fields: [] },
+		targetValue: { items: ['a'] },
+		error: null,
+	};
+	expect(
+		intentHandlers.remove.apply?.(normalResult, {
+			name: 'items',
+			index: 1,
+		}),
+	).toBe(normalResult);
 });
 
 test('actionHandlers.reorder', () => {
 	// Test validate payload
 	expect(
-		actionHandlers.reorder.validatePayload?.({ name: 'items', from: 0, to: 2 }),
+		intentHandlers.reorder.validate?.({ name: 'items', from: 0, to: 2 }),
 	).toBe(true);
-	expect(
-		actionHandlers.reorder.validatePayload?.({ name: 'items', from: 0 }),
-	).toBe(false);
-	expect(
-		actionHandlers.reorder.validatePayload?.({ name: 123, from: 0, to: 2 }),
-	).toBe(false);
+	expect(intentHandlers.reorder.validate?.({ name: 'items', from: 0 })).toBe(
+		false,
+	);
+	expect(intentHandlers.reorder.validate?.({ name: 123, from: 0, to: 2 })).toBe(
+		false,
+	);
 
 	// Test onApply
 	const payload = { items: ['a', 'b', 'c', 'd'] };
 	const options = { name: 'items', from: 1, to: 3 };
-	expect(actionHandlers.reorder.onApply?.(payload, options)).toEqual({
+	expect(intentHandlers.reorder.resolve?.(payload, options)).toEqual({
 		items: ['a', 'c', 'd', 'b'],
 	});
 });

@@ -64,7 +64,12 @@ import type {
 	InferInput,
 	InferOutput,
 } from './types';
-import { actionHandlers, applyIntent, deserializeIntent } from './intent';
+import {
+	intentHandlers,
+	resolveIntent,
+	deserializeIntent,
+	applyIntent,
+} from './intent';
 import {
 	makeInputFocusable,
 	focusFirstInvalidField,
@@ -261,14 +266,20 @@ export function useConform<
 		});
 
 		if (lastResult) {
+			const intent = lastResult.submission.intent
+				? deserializeIntent(lastResult.submission.intent)
+				: null;
+			const result = applyIntent(lastResult, intent, {
+				handlers: intentHandlers,
+			});
+
 			state = updateState(state, {
-				...lastResult,
+				...result,
 				type: 'initialize',
-				intent: lastResult.submission.intent
-					? deserializeIntent(lastResult.submission.intent)
-					: null,
+				intent,
 				ctx: {
-					handlers: actionHandlers,
+					handlers: intentHandlers,
+					cancelled: result !== lastResult,
 					reset: (defaultValue) =>
 						initializeState<ErrorShape>({
 							defaultValue: defaultValue ?? options.defaultValue,
@@ -301,14 +312,18 @@ export function useConform<
 			const intent = result.submission.intent
 				? deserializeIntent(result.submission.intent)
 				: null;
+			const finalResult = applyIntent(result, intent, {
+				handlers: intentHandlers,
+			});
 
 			setState((state) =>
 				updateState(state, {
-					...result,
+					...finalResult,
 					type,
 					intent,
 					ctx: {
-						handlers: actionHandlers,
+						handlers: intentHandlers,
+						cancelled: finalResult !== result,
 						reset(defaultValue) {
 							return initializeState<ErrorShape>({
 								defaultValue: defaultValue ?? options.defaultValue,
@@ -321,15 +336,15 @@ export function useConform<
 			// TODO: move on error handler to a new effect
 			const formElement = getFormElement(formRef);
 
-			if (!formElement || !result.error) {
-				return;
+			if (formElement && result.error) {
+				optionsRef.current.onError?.({
+					formElement,
+					error: result.error,
+					intent,
+				});
 			}
 
-			optionsRef.current.onError?.({
-				formElement,
-				error: result.error,
-				intent,
-			});
+			return finalResult;
 		},
 		[formRef, optionsRef],
 	);
@@ -430,18 +445,11 @@ export function useConform<
 					submission.payload = pendingValueRef.current;
 				}
 
-				const value = applyIntent(submission);
+				const value = resolveIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
 					value,
 				});
-
-				// If there is target value, keep track of it as pending value
-				if (submission.payload !== value) {
-					pendingValueRef.current =
-						value ?? optionsRef.current.defaultValue ?? {};
-				}
-
 				const validateResult =
 					// Skip validation on form reset
 					value !== undefined
@@ -480,7 +488,7 @@ export function useConform<
 							handleSubmission('server', submissionResult);
 
 							// If the form is meant to be submitted and there is no error
-							if (error === null && !submission.intent) {
+							if (submissionResult.error === null && !submission.intent) {
 								const event = createSubmitEvent(submitEvent.submitter);
 
 								// Keep track of the submit event so we can skip validation on the next submit
@@ -496,20 +504,24 @@ export function useConform<
 					});
 				}
 
-				handleSubmission('client', submissionResult);
+				const clientResult = handleSubmission('client', submissionResult);
+
+				if (clientResult.reset || clientResult.targetValue !== undefined) {
+					pendingValueRef.current =
+						clientResult.targetValue ?? optionsRef.current.defaultValue ?? {};
+				}
 
 				if (
 					// If client validation happens
 					(typeof syncResult !== 'undefined' ||
 						typeof asyncResult !== 'undefined') &&
 					// Either the form is not meant to be submitted (i.e. intent is present) or there is an error / pending validation
-					(submissionResult.submission.intent ||
-						submissionResult.error !== null)
+					(clientResult.submission.intent || clientResult.error !== null)
 				) {
 					event.preventDefault();
 				}
 
-				result = submissionResult;
+				result = clientResult;
 			}
 
 			// We might not prevent form submission if server validation is required

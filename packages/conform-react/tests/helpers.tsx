@@ -8,9 +8,10 @@ import {
 } from '@conform-to/dom/future';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
-	applyIntent,
-	actionHandlers,
+	resolveIntent,
+	intentHandlers,
 	deserializeIntent,
+	applyIntent,
 } from '../future/intent';
 import { FormAction } from '../future/types';
 import { initializeState } from '../future/state';
@@ -52,7 +53,7 @@ export function createResult(
 	const submission = parseSubmission(formData, {
 		intentName: DEFAULT_INTENT_NAME,
 	});
-	const value = applyIntent(submission);
+	const value = resolveIntent(submission);
 
 	return report(submission, {
 		value:
@@ -78,7 +79,7 @@ export function createAction(options: {
 	const submission = parseSubmission(formData, {
 		intentName: DEFAULT_INTENT_NAME,
 	});
-	const value = applyIntent(submission);
+	const value = resolveIntent(submission);
 	const result = report(submission, {
 		value:
 			options.targetValue !== undefined
@@ -89,20 +90,24 @@ export function createAction(options: {
 		reset: options.reset,
 		error: options.error,
 	});
-	const ctx = {
-		handlers: actionHandlers,
-		reset(defaultValue?: Record<string, unknown> | null) {
-			return initializeState({
-				defaultValue: defaultValue ?? options.defaultValue,
-			});
-		},
-	};
+	const intent = submission.intent
+		? deserializeIntent(submission.intent)
+		: null;
+	const finalResult = applyIntent(result, intent, { handlers: intentHandlers });
 
 	return {
-		...result,
+		...finalResult,
 		type: options.type,
-		intent: submission.intent ? deserializeIntent(submission.intent) : null,
-		ctx,
+		intent,
+		ctx: {
+			handlers: intentHandlers,
+			cancelled: finalResult !== result,
+			reset(defaultValue?: Record<string, unknown> | null) {
+				return initializeState({
+					defaultValue: defaultValue ?? options.defaultValue,
+				});
+			},
+		},
 	};
 }
 
