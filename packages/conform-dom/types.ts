@@ -98,7 +98,7 @@ export type FieldName<FieldShape> = string & {
 };
 
 /**
- * The input attributes with related to the Constraint Validation API
+ * The input attributes related to form field constraints
  * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
  */
 export type ValidationAttributes = {

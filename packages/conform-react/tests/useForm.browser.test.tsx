@@ -16,10 +16,13 @@ import { isGlobalInstance } from '@conform-to/dom';
 
 type MockSchema<Shape = any> = {
 	__brand: 'mockSchema';
-	fields: Record<keyof Shape, { required?: boolean; minLength?: number }>;
+	fields: Record<
+		keyof Shape,
+		{ required?: boolean; minLength?: number; accept?: string }
+	>;
 };
 
-type MockFormShape = { title: string; description: string };
+type MockFormShape = { title: string; description: string; avatar: File };
 
 declare module '../future' {
 	interface CustomSchemaTypes<Schema> {
@@ -1689,6 +1692,7 @@ describe('configureForms customization', () => {
 			fields: {
 				title: { required: true, minLength: 3 },
 				description: { required: false },
+				avatar: { accept: 'image/*' },
 			},
 		};
 
@@ -1728,13 +1732,14 @@ describe('configureForms customization', () => {
 			getConstraints(schema) {
 				const constraints: Record<
 					string,
-					{ required?: boolean; minLength?: number }
+					{ required?: boolean; minLength?: number; accept?: string }
 				> = {};
 
 				for (const [field, rules] of Object.entries(schema.fields)) {
 					constraints[field] = {
 						required: rules.required,
 						minLength: rules.minLength,
+						accept: rules.accept,
 					};
 				}
 
@@ -1772,6 +1777,12 @@ describe('configureForms customization', () => {
 					<div id={fields.description.errorId}>
 						{fields.description.errors?.join(', ') ?? 'n/a'}
 					</div>
+					<input
+						type="file"
+						name={fields.avatar.name}
+						aria-label="Avatar"
+						accept={fields.avatar.accept}
+					/>
 					<button>Submit</button>
 				</form>
 			);
@@ -1785,6 +1796,9 @@ describe('configureForms customization', () => {
 		// Verify getConstraints worked - HTML attributes should be set
 		await expect.element(title).toHaveAttribute('required');
 		await expect.element(title).toHaveAttribute('minlength', '3');
+
+		const avatar = screen.getByLabelText('Avatar');
+		await expect.element(avatar).toHaveAttribute('accept', 'image/*');
 
 		// Submit empty form - validateSchema should be called (without strict mode)
 		await userEvent.click(submitButton);

@@ -58,6 +58,7 @@ type InputProps = Pretty<
 		step?: string | number;
 		pattern?: string;
 		multiple?: boolean;
+		accept?: string;
 		value?: string;
 		defaultChecked?: boolean;
 		defaultValue?: string;
@@ -259,6 +260,7 @@ export function getInputProps<Schema, Options extends InputOptions>(
 		step: metadata.step,
 		pattern: metadata.pattern,
 		multiple: metadata.multiple,
+		accept: metadata.accept,
 	};
 
 	if (typeof options.value === 'undefined' || options.value) {

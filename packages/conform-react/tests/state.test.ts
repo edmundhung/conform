@@ -1546,6 +1546,7 @@ test('getField', () => {
 		}),
 		constraint: {
 			username: { required: true, minLength: 3 },
+			avatar: { accept: 'image/*' },
 		},
 	});
 
@@ -1585,6 +1586,11 @@ test('getField', () => {
 	// Test constraint properties
 	expect(usernameField.required).toBe(true);
 	expect(usernameField.minLength).toBe(3);
+
+	const avatarField = getField(context, {
+		name: 'avatar',
+	});
+	expect(avatarField.accept).toBe('image/*');
 
 	// Test computed properties
 	expect(usernameField.defaultValue).toBe('test-user');
