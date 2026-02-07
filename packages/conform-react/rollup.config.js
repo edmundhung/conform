@@ -11,9 +11,16 @@ function configurePackage() {
 	let addDirectivePlugin = {
 		name: 'use-client',
 		writeBundle() {
-			const filesToModify = ['future/hooks.mjs', 'future/hooks.js'].map(file => `${outputDir}/${file}`);
+			const filesToModify = [
+				'future/hooks.mjs',
+				'future/hooks.js',
+				'future/forms.mjs',
+				'future/forms.js'
+			];
 			
-			filesToModify.forEach(filePath => {
+			filesToModify.forEach(file => {
+				const filePath = `${outputDir}/${file}`;
+
 				if (fs.existsSync(filePath)) {
 					const content = fs.readFileSync(filePath, 'utf8');
 					
