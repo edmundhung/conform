@@ -6,6 +6,7 @@
 		"build": "react-router build",
 		"dev": "react-router dev",
 		"start": "react-router-serve ./build/server/index.js",
+		"test": "playwright test",
 		"typecheck": "react-router typegen && tsc"
 	},
 	"dependencies": {
@@ -20,6 +21,7 @@
 		"zod": "^3.25.75"
 	},
 	"devDependencies": {
+		"@playwright/test": "1.49.1",
 		"@react-router/dev": "^7.8.2",
 		"@types/node": "^20",
 		"@types/react": "^19.1.12",

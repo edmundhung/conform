@@ -38,23 +38,29 @@ export default function Login({ actionData }: Route.ComponentProps) {
 	return (
 		<Form method="post" encType="multipart/form-data" {...form.props}>
 			<div>
-				<label>Title</label>
+				<label htmlFor={fields.title.id}>Title</label>
 				<input
+					id={fields.title.id}
 					type="text"
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue}
+					aria-invalid={!fields.title.valid || undefined}
+					aria-describedby={fields.title.ariaDescribedBy}
 				/>
-				<div>{fields.title.errors}</div>
+				<div id={fields.title.errorId}>{fields.title.errors}</div>
 			</div>
 			<div>
-				<label>File</label>
+				<label htmlFor={fields.file.id}>File</label>
 				<input
+					id={fields.file.id}
 					type="file"
 					className={!fields.file.valid ? 'error' : ''}
 					name={fields.file.name}
+					aria-invalid={!fields.file.valid || undefined}
+					aria-describedby={fields.file.ariaDescribedBy}
 				/>
-				<div>{fields.file.errors}</div>
+				<div id={fields.file.errorId}>{fields.file.errors}</div>
 			</div>
 			<hr />
 			<button>Submit</button>
