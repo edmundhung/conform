@@ -7,8 +7,10 @@ import { createTodos } from './_action';
 import { schema } from './_schema';
 
 export function TodoForm({
+	id,
 	defaultValue,
 }: {
+	id?: string;
 	defaultValue?: z.infer<typeof schema> | null;
 }) {
 	const [lastResult, action] = useActionState(createTodos, null);
@@ -21,8 +23,8 @@ export function TodoForm({
 		isDirty(formData, {
 			defaultValue,
 			skipEntry(name) {
-				// We need to skip NextJS internal fields when checking for dirty state
-				return name.startsWith('$ACTION_');
+				// We need to skip NextJS internal fields and the store id when checking for dirty state
+				return name.startsWith('$ACTION_') || name === 'id';
 			},
 		}),
 	);
@@ -30,14 +32,18 @@ export function TodoForm({
 
 	return (
 		<form {...form.props} action={action}>
+			{id ? <input type="hidden" name="id" value={id} /> : null}
 			<div>
-				<label>Title</label>
+				<label htmlFor={fields.title.id}>Title</label>
 				<input
+					id={fields.title.id}
 					className={!fields.title.valid ? 'error' : ''}
 					name={fields.title.name}
 					defaultValue={fields.title.defaultValue}
+					aria-invalid={!fields.title.valid || undefined}
+					aria-describedby={fields.title.ariaDescribedBy}
 				/>
-				<div>{fields.title.errors}</div>
+				<div id={fields.title.errorId}>{fields.title.errors}</div>
 			</div>
 			<hr />
 			<div className="form-error">{fields.tasks.errors}</div>
@@ -47,24 +53,30 @@ export function TodoForm({
 				return (
 					<fieldset key={task.key}>
 						<div>
-							<label>Task #{index + 1}</label>
+							<label htmlFor={taskFields.content.id}>Task #{index + 1}</label>
 							<input
+								id={taskFields.content.id}
 								className={!taskFields.content.valid ? 'error' : ''}
 								name={taskFields.content.name}
 								defaultValue={taskFields.content.defaultValue}
+								aria-invalid={!taskFields.content.valid || undefined}
+								aria-describedby={taskFields.content.ariaDescribedBy}
 							/>
-							<div>{taskFields.content.errors}</div>
+							<div id={taskFields.content.errorId}>
+								{taskFields.content.errors}
+							</div>
 						</div>
 						<div>
-							<label>
-								<span>Completed</span>
-								<input
-									type="checkbox"
-									className={!taskFields.completed.valid ? 'error' : ''}
-									name={taskFields.completed.name}
-									defaultChecked={taskFields.completed.defaultValue === 'on'}
-								/>
-							</label>
+							<label htmlFor={taskFields.completed.id}>Completed</label>
+							<input
+								id={taskFields.completed.id}
+								type="checkbox"
+								className={!taskFields.completed.valid ? 'error' : ''}
+								name={taskFields.completed.name}
+								defaultChecked={taskFields.completed.defaultValue === 'on'}
+								aria-invalid={!taskFields.completed.valid || undefined}
+								aria-describedby={taskFields.completed.ariaDescribedBy}
+							/>
 						</div>
 						<button
 							type="button"

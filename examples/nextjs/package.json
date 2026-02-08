@@ -5,7 +5,8 @@
 		"dev": "next dev",
 		"build": "next build",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"test": "playwright test"
 	},
 	"dependencies": {
 		"@conform-to/react": "1.16.0",
@@ -16,6 +17,7 @@
 		"zod": "^3.25.75"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.49.1",
 		"typescript": "^5",
 		"@types/node": "^20",
 		"@types/react": "^19.1.12",

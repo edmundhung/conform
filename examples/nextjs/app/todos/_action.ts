@@ -6,6 +6,8 @@ import { updateTodos } from '@/app/todos/_store';
 import { schema } from './_schema';
 
 export async function createTodos(_: unknown, formData: FormData) {
+	const id = formData.get('id');
+	const storeId = typeof id === 'string' ? id : undefined;
 	const submission = parseSubmission(formData);
 	const result = schema.safeParse(submission.payload);
 
@@ -17,7 +19,7 @@ export async function createTodos(_: unknown, formData: FormData) {
 		});
 	}
 
-	await updateTodos(result.data);
+	await updateTodos(result.data, storeId);
 	await revalidatePath('/todos');
 
 	return report(submission, {

@@ -29,10 +29,10 @@ export async function signupAsyncSchema(
 	}
 
 	// Simulate server processing
-	if (Math.random() < 0.7) {
+	if (result.data.password !== 'secret') {
 		return report(submission, {
 			error: {
-				formErrors: ['Server error: Please try again later'],
+				formErrors: ['Signup Failed. The password must be "secret"'],
 			},
 		});
 	}
