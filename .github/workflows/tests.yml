@@ -80,6 +80,42 @@ jobs:
         run: pnpm exec vitest --project=browser --project=node
   future:
     name: Future API Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        browser: [webkit, firefox, chromium]
+        node: [22]
+        exclude:
+          - os: macos-latest
+            browser: firefox
+          - os: windows-latest
+            browser: firefox
+          - os: windows-latest
+            browser: webkit
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: |
+          npm i -g corepack@latest
+          corepack enable
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm i
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - name: Run Vitest tests
+        run: pnpm exec vitest --project='conform-*'
+        env:
+          BROWSER: ${{ matrix.browser }}
+  typecheck:
+    name: Typecheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -91,13 +127,9 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm i
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
-      - name: Run Vitest tests
-        run: pnpm exec vitest --project='conform-*'
       - name: Run Typecheck
         run: pnpm -r run typecheck
