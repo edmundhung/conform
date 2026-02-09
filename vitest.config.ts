@@ -41,7 +41,11 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					enabled: true,
 					headless: true,
 					provider: playwright(),
-					instances: [{ browser: 'chromium' }],
+					instances: [
+						{ browser: 'chromium' },
+						{ browser: 'firefox' },
+						{ browser: 'webkit' },
+					],
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
 				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],

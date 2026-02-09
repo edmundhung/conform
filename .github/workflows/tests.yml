@@ -58,7 +58,7 @@ jobs:
           path: test-results/
           retention-days: 14
   unit:
-    name: API Tests
+    name: API Tests (v1)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -77,6 +77,27 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
       - name: Run Vitest tests
-        run: pnpm exec vitest
+        run: pnpm exec vitest --project=browser --project=node
+  future:
+    name: Future API Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: |
+          npm i -g corepack@latest
+          corepack enable
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm i
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run Vitest tests
+        run: pnpm exec vitest --project='conform-*'
       - name: Run Typecheck
         run: pnpm -r run typecheck
