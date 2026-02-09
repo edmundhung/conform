@@ -1,17 +1,17 @@
 import { setTimeout } from 'node:timers/promises';
 
 export function createInMemoryStore<Type>() {
-	let store: Type | null = null;
+	const stores: Record<string, Type | null> = {};
 
 	return {
-		async getValue() {
+		async getValue(id?: string) {
 			await setTimeout(Math.random() * 150);
-			return store;
+			return stores[id ?? ''] ?? null;
 		},
-		async setValue(value: Type) {
+		async setValue(value: Type, id?: string) {
 			await setTimeout(Math.random() * 1000);
 
-			store = value;
+			stores[id ?? ''] = value;
 		},
 	};
 }

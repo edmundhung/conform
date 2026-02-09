@@ -6,8 +6,10 @@ import type { Route } from './+types/login-fetcher';
 
 const schema = coerceFormValue(
 	z.object({
-		email: z.string().email(),
-		password: z.string(),
+		email: z
+			.string({ required_error: 'Email is required' })
+			.email('Email is invalid'),
+		password: z.string({ required_error: 'Password is required' }),
 		remember: z.boolean().default(false),
 	}),
 );
@@ -27,7 +29,7 @@ export async function action({ request }: Route.ActionArgs) {
 		};
 	}
 
-	throw redirect(`/?value=${JSON.stringify(result.data)}`);
+	throw redirect(`/?value=${JSON.stringify(submission.payload)}`);
 }
 
 export default function LoginWithFetcher() {
@@ -42,35 +44,42 @@ export default function LoginWithFetcher() {
 	return (
 		<fetcher.Form {...form.props} method="post">
 			<div>
-				<label>Email</label>
+				<label htmlFor={fields.email.id}>Email</label>
 				<input
+					id={fields.email.id}
 					type="email"
 					className={!fields.email.valid ? 'error' : ''}
 					name={fields.email.name}
 					defaultValue={fields.email.defaultValue}
+					aria-invalid={!fields.email.valid || undefined}
+					aria-describedby={fields.email.ariaDescribedBy}
 				/>
-				<div>{fields.email.errors}</div>
+				<div id={fields.email.errorId}>{fields.email.errors}</div>
 			</div>
 			<div>
-				<label>Password</label>
+				<label htmlFor={fields.password.id}>Password</label>
 				<input
+					id={fields.password.id}
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
+					aria-invalid={!fields.password.valid || undefined}
+					aria-describedby={fields.password.ariaDescribedBy}
 				/>
-				<div>{fields.password.errors}</div>
+				<div id={fields.password.errorId}>{fields.password.errors}</div>
 			</div>
-			<label>
-				<div>
-					<span>Remember me</span>
-					<input
-						type="checkbox"
-						name={fields.remember.name}
-						defaultChecked={fields.remember.defaultChecked}
-					/>
-				</div>
-			</label>
+			<div>
+				<label htmlFor={fields.remember.id}>Remember me</label>
+				<input
+					id={fields.remember.id}
+					type="checkbox"
+					name={fields.remember.name}
+					defaultChecked={fields.remember.defaultChecked}
+					aria-invalid={!fields.remember.valid || undefined}
+					aria-describedby={fields.remember.ariaDescribedBy}
+				/>
+			</div>
 			<hr />
 			<button>Login</button>
 		</fetcher.Form>

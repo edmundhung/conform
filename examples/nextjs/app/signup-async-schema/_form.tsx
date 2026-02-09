@@ -29,36 +29,47 @@ export function SignupAsyncSchemaForm() {
 	return (
 		<form {...form.props} action={action}>
 			<div className="form-error">{form.errors}</div>
-			<label>
-				<div>Username</div>
+			<div>
+				<label htmlFor={fields.username.id}>Username</label>
 				<input
+					id={fields.username.id}
 					type="text"
 					className={!fields.username.valid ? 'error' : ''}
 					name={fields.username.name}
 					defaultValue={fields.username.defaultValue}
+					aria-invalid={!fields.username.valid || undefined}
+					aria-describedby={fields.username.ariaDescribedBy}
 				/>
-				<div>{fields.username.errors}</div>
-			</label>
-			<label>
-				<div>Password</div>
+				<div id={fields.username.errorId}>{fields.username.errors}</div>
+			</div>
+			<div>
+				<label htmlFor={fields.password.id}>Password</label>
 				<input
+					id={fields.password.id}
 					type="password"
 					className={!fields.password.valid ? 'error' : ''}
 					name={fields.password.name}
 					defaultValue={fields.password.defaultValue}
+					aria-invalid={!fields.password.valid || undefined}
+					aria-describedby={fields.password.ariaDescribedBy}
 				/>
-				<div>{fields.password.errors}</div>
-			</label>
-			<label>
-				<div>Confirm Password</div>
+				<div id={fields.password.errorId}>{fields.password.errors}</div>
+			</div>
+			<div>
+				<label htmlFor={fields.confirmPassword.id}>Confirm Password</label>
 				<input
+					id={fields.confirmPassword.id}
 					type="password"
 					className={!fields.confirmPassword.valid ? 'error' : ''}
 					name={fields.confirmPassword.name}
 					defaultValue={fields.confirmPassword.defaultValue}
+					aria-invalid={!fields.confirmPassword.valid || undefined}
+					aria-describedby={fields.confirmPassword.ariaDescribedBy}
 				/>
-				<div>{fields.confirmPassword.errors}</div>
-			</label>
+				<div id={fields.confirmPassword.errorId}>
+					{fields.confirmPassword.errors}
+				</div>
+			</div>
 			<hr />
 			<button>Signup</button>
 		</form>
