@@ -1405,6 +1405,7 @@ test('getConstraint', () => {
 			username: { required: true, minLength: 3 },
 			'items[]': { required: true },
 			'items[].subitems[].name': { maxLength: 50 },
+			avatar: { accept: 'image/*' },
 		},
 	});
 
@@ -1429,6 +1430,9 @@ test('getConstraint', () => {
 
 	// Test no fallback available
 	expect(getConstraint(context, 'missing')).toBe(undefined);
+
+	// Test accept constraint
+	expect(getConstraint(context, 'avatar')).toEqual({ accept: 'image/*' });
 
 	// Test no constraints defined
 	expect(getConstraint(createContext(), 'any')).toBe(undefined);
@@ -1542,6 +1546,7 @@ test('getField', () => {
 		}),
 		constraint: {
 			username: { required: true, minLength: 3 },
+			avatar: { accept: 'image/*' },
 		},
 	});
 
@@ -1581,6 +1586,11 @@ test('getField', () => {
 	// Test constraint properties
 	expect(usernameField.required).toBe(true);
 	expect(usernameField.minLength).toBe(3);
+
+	const avatarField = getField(context, {
+		name: 'avatar',
+	});
+	expect(avatarField.accept).toBe('image/*');
 
 	// Test computed properties
 	expect(usernameField.defaultValue).toBe('test-user');

@@ -43,7 +43,11 @@ describe('constraint', () => {
 							.refine(() => false, 'refine'),
 					)
 					.max(0, 'max'),
-				files: z.array(z.file({ message: 'Invalid file' })).min(1, 'required'),
+				files: z
+					.array(
+						z.file({ message: 'Invalid file' }).mime(['image/*', 'video/*']),
+					)
+					.min(1, 'required'),
 				tuple: z.tuple([
 					z.string().min(3, 'min'),
 					z.number().max(100, 'max').optional(),
@@ -111,6 +115,7 @@ describe('constraint', () => {
 			},
 			'files[]': {
 				required: true,
+				accept: 'image/*,video/*',
 			},
 			nested: {
 				required: true,
