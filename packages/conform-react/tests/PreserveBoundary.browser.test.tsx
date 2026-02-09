@@ -2,10 +2,10 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Locator, userEvent } from '@vitest/browser/context';
-import { PersistBoundary, useFormData } from '../future';
+import { PreserveBoundary, useFormData } from '../future';
 import { useState, useRef } from 'react';
 
-describe('PersistBoundary', () => {
+describe('PreserveBoundary', () => {
 	function getElement<C>(locator: Locator, ctor: new () => C): C {
 		const element = locator.query();
 
@@ -40,9 +40,9 @@ describe('PersistBoundary', () => {
 	it('renders children within a div', async () => {
 		const screen = render(
 			<Form>
-				<PersistBoundary name="test">
+				<PreserveBoundary name="test">
 					<input name="field" aria-label="Field" />
-				</PersistBoundary>
+				</PreserveBoundary>
 			</Form>,
 		);
 
@@ -62,9 +62,9 @@ describe('PersistBoundary', () => {
 					}
 				>
 					{show && (
-						<PersistBoundary name="field-boundary">
+						<PreserveBoundary name="field-boundary">
 							<input name="field" aria-label="Field" defaultValue="" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -116,9 +116,9 @@ describe('PersistBoundary', () => {
 					}
 				>
 					{show && (
-						<PersistBoundary name="field-boundary">
+						<PreserveBoundary name="field-boundary">
 							<input name="field" aria-label="Field" defaultValue="default" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -163,9 +163,9 @@ describe('PersistBoundary', () => {
 					}
 				>
 					{show && (
-						<PersistBoundary name="field-boundary">
+						<PreserveBoundary name="field-boundary">
 							<input name="field" aria-label="Field" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -216,7 +216,7 @@ describe('PersistBoundary', () => {
 					}
 				>
 					{show && (
-						<PersistBoundary name="all-fields">
+						<PreserveBoundary name="all-fields">
 							<label>
 								Name
 								<input name="name" aria-label="Name" defaultValue="" />
@@ -285,7 +285,7 @@ describe('PersistBoundary', () => {
 									Notifications
 								</label>
 							</fieldset>
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -374,11 +374,11 @@ describe('PersistBoundary', () => {
 					>
 						<button type="submit">Submit</button>
 					</form>
-					{/* PersistBoundary outside the form, linked via form prop */}
+					{/* PreserveBoundary outside the form, linked via form prop */}
 					{show && (
-						<PersistBoundary name="external-field" form="my-form">
+						<PreserveBoundary name="external-field" form="my-form">
 							<input name="field" aria-label="Field" defaultValue="" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -427,9 +427,9 @@ describe('PersistBoundary', () => {
 					}}
 				>
 					{show && (
-						<PersistBoundary name="file-boundary">
+						<PreserveBoundary name="file-boundary">
 							<input type="file" name="file" aria-label="File" multiple />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -505,13 +505,13 @@ describe('PersistBoundary', () => {
 					}}
 				>
 					{step === 1 ? (
-						<PersistBoundary name="step-1">
+						<PreserveBoundary name="step-1">
 							<input name="name" aria-label="Name" defaultValue="" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					) : (
-						<PersistBoundary name="step-2">
+						<PreserveBoundary name="step-2">
 							<input name="address" aria-label="Address" defaultValue="" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setStep(step === 1 ? 2 : 1)}>
 						Toggle Step
@@ -559,7 +559,7 @@ describe('PersistBoundary', () => {
 
 	it('integrates with useFormData without duplicates or flashing', async () => {
 		// Track all values seen by useFormData to verify no intermediate/incorrect states.
-		// This works because PersistBoundary uses useLayoutEffect, ensuring cleanup
+		// This works because PreserveBoundary uses useLayoutEffect, ensuring cleanup
 		// happens BEFORE useFormData reads the form state.
 		const valuesHistory: string[][] = [];
 
@@ -580,9 +580,9 @@ describe('PersistBoundary', () => {
 			return (
 				<form ref={formRef}>
 					{show && (
-						<PersistBoundary name="field-boundary">
+						<PreserveBoundary name="field-boundary">
 							<input name="field" aria-label="Field" defaultValue="" />
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setShow(!show)}>
 						Toggle
@@ -645,7 +645,7 @@ describe('PersistBoundary', () => {
 					}}
 				>
 					{step === 1 ? (
-						<PersistBoundary name="step-1">
+						<PreserveBoundary name="step-1">
 							<select
 								name="accountType"
 								aria-label="Account Type"
@@ -657,13 +657,13 @@ describe('PersistBoundary', () => {
 								<option value="personal">Personal</option>
 								<option value="business">Business</option>
 							</select>
-						</PersistBoundary>
+						</PreserveBoundary>
 					) : (
-						<PersistBoundary name="step-2">
+						<PreserveBoundary name="step-2">
 							{accountType === 'business' ? (
 								<input name="companyName" aria-label="Company Name" />
 							) : null}
-						</PersistBoundary>
+						</PreserveBoundary>
 					)}
 					<button type="button" onClick={() => setStep(step === 1 ? 2 : 1)}>
 						Toggle Step

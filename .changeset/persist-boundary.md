@@ -2,22 +2,22 @@
 '@conform-to/react': minor
 ---
 
-Add `PersistBoundary` component for persisting form values when fields are unmounted for rendering or navigation reasons (e.g., multi-step wizards, virtualized lists).
+Add `PreserveBoundary` component for preserving form values when fields are unmounted during client-side navigation (e.g., multi-step wizards, form dialogs, virtualized lists).
 
 ```tsx
-import { PersistBoundary } from '@conform-to/react/future';
+import { PreserveBoundary } from '@conform-to/react/future';
 
 {
   step === 1 ? (
-    <PersistBoundary>
+    <PreserveBoundary name="step-1">
       <input name="name" />
       <input name="email" />
-    </PersistBoundary>
+    </PreserveBoundary>
   ) : step === 2 ? (
-    <PersistBoundary>
+    <PreserveBoundary name="step-2">
       <input name="address" />
       <input name="city" />
-    </PersistBoundary>
+    </PreserveBoundary>
   ) : null;
 }
 ```

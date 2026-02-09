@@ -78,8 +78,8 @@ import {
 	initializeField,
 	updateFormValue,
 	resetFormValue,
-	cleanupPersistedInputs,
-	persistInputs,
+	cleanupPreservedInputs,
+	preserveInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
 
@@ -124,12 +124,12 @@ export function FormProvider(props: {
  * Preserves form field values when its contents are unmounted.
  * Useful for multi-step forms and virtualized lists.
  *
- * @see https://conform.guide/api/react/future/PersistBoundary
+ * @see https://conform.guide/api/react/future/PreserveBoundary
  */
-export function PersistBoundary(props: {
+export function PreserveBoundary(props: {
 	/**
 	 * A unique name for the boundary within the form. Used to ensure proper
-	 * unmount/remount behavior and to isolate persisted inputs between boundaries.
+	 * unmount/remount behavior and to isolate preserved inputs between boundaries.
 	 */
 	name: string;
 	/**
@@ -139,11 +139,14 @@ export function PersistBoundary(props: {
 	form?: string;
 	children: React.ReactNode;
 }): React.ReactElement {
-	// Use name as key to ensure proper unmount/remount when name changes
-	return <PersistBoundaryImpl key={props.name} {...props} />;
+	// name is used as key so React properly unmounts/remounts when switching
+	// between boundaries. Without it, both sides of a ternary share
+	// key={undefined} and React reuses the instance (useId and key prop
+	// can't help here). This is why name is required.
+	return <PreserveBoundaryImpl key={props.name} {...props} />;
 }
 
-function PersistBoundaryImpl(props: {
+function PreserveBoundaryImpl(props: {
 	name: string;
 	form?: string;
 	children: React.ReactNode;
@@ -160,12 +163,12 @@ function PersistBoundaryImpl(props: {
 
 		const form = fieldset.form;
 
-		// On mount: restore values from persisted inputs
-		cleanupPersistedInputs(fieldset, form, props.name);
+		// On mount: restore values from preserved inputs
+		cleanupPreservedInputs(fieldset, form, props.name);
 
 		return () => {
-			// On unmount: persist input values
-			persistInputs(
+			// On unmount: preserve input values
+			preserveInputs(
 				fieldset.querySelectorAll<
 					HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 				>('input,select,textarea'),

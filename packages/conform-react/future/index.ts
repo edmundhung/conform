@@ -35,7 +35,7 @@ export type {
 } from './types';
 export { configureForms } from './forms';
 export {
-	PersistBoundary,
+	PreserveBoundary,
 	FormProvider,
 	FormOptionsProvider,
 	useControl,

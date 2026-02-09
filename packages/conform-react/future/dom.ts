@@ -350,10 +350,10 @@ function getPersistContainer(form: HTMLFormElement): HTMLDivElement {
 }
 
 /**
- * Restores values from persisted inputs and removes them.
- * Called when PersistBoundary mounts.
+ * Restores values from preserved inputs and removes them.
+ * Called when PreserveBoundary mounts.
  */
-export function cleanupPersistedInputs(
+export function cleanupPreservedInputs(
 	boundary: HTMLElement,
 	form: HTMLFormElement,
 	name?: string,
@@ -429,9 +429,9 @@ export function cleanupPersistedInputs(
 
 /**
  * Clones inputs as hidden elements to preserve their values.
- * Called when PersistBoundary unmounts.
+ * Called when PreserveBoundary unmounts.
  */
-export function persistInputs(
+export function preserveInputs(
 	inputs: Iterable<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
 	form: HTMLFormElement,
 	name?: string,

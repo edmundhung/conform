@@ -1,23 +1,23 @@
-# PersistBoundary
+# PreserveBoundary
 
-> The `PersistBoundary` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
+> The `PreserveBoundary` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
 A React component that preserves form field values during client-side navigation when React unmounts its contents. Useful for multi-step wizards, form dialogs, and virtualized lists where fields are temporarily hidden but should still be included in form submission.
 
 ```tsx
-import { PersistBoundary } from '@conform-to/react/future';
+import { PreserveBoundary } from '@conform-to/react/future';
 
 {
   step === 1 ? (
-    <PersistBoundary name="step-1">
+    <PreserveBoundary name="step-1">
       <input name="name" />
       <input name="email" />
-    </PersistBoundary>
+    </PreserveBoundary>
   ) : step === 2 ? (
-    <PersistBoundary name="step-2">
+    <PreserveBoundary name="step-2">
       <input name="address" />
       <input name="city" />
-    </PersistBoundary>
+    </PreserveBoundary>
   ) : null;
 }
 ```
@@ -29,9 +29,7 @@ import { PersistBoundary } from '@conform-to/react/future';
 A unique name for the boundary within the form. This is used to:
 
 1. Ensure proper unmount/remount behavior when switching between boundaries in conditional rendering
-2. Isolate persisted inputs so they don't conflict with inputs from other boundaries
-
-When the boundary remounts, any persisted inputs with that name are automatically cleaned up, even if there's no matching field to restore to. This handles scenarios where the fields inside a boundary can change based on external state:
+2. Isolate preserved inputs so they don't conflict with inputs from other boundaries
 
 ### `form?: string`
 
@@ -41,51 +39,20 @@ The id of the form to associate with. Only needed when the boundary is rendered 
 <form id="my-form">
   <button type="submit">Submit</button>
 </form>;
-
 {
   /* Boundary outside the form */
 }
-<PersistBoundary name="external" form="my-form">
+<PreserveBoundary name="external" form="my-form">
   <input name="field" />
-</PersistBoundary>;
+</PreserveBoundary>;
 ```
-
-## Conditional fields
-
-```tsx
-{
-  step === 1 ? (
-    // Step 1: Account type selection
-    <PersistBoundary name="step-1">
-      <select name="accountType">
-        <option value="personal">Personal</option>
-        <option value="business">Business</option>
-      </select>
-    </PersistBoundary>
-  ) : step === 2 ? (
-    // Step 2: Fields depend on account type from step 1
-    <PersistBoundary name="step-2">
-      {accountType === 'personal' ? (
-        <input name="dateOfBirth" type="date" />
-      ) : accountType === 'business' ? (
-        <>
-          <input name="companyName" />
-          <input name="jobTitle" />
-        </>
-      ) : null}
-    </PersistBoundary>
-  ) : null;
-}
-```
-
-If the user fills in `companyName`/`jobTitle`, goes back to step 1, and switches to "personal", the persisted business fields are automatically removed when step 2 remounts. They won't be submitted with the form.
 
 ## Examples
 
 ### Multi-step form
 
 ```tsx
-import { useForm, PersistBoundary } from '@conform-to/react/future';
+import { useForm, PreserveBoundary } from '@conform-to/react/future';
 import { useState } from 'react';
 
 function MultiStepForm() {
@@ -95,7 +62,7 @@ function MultiStepForm() {
   return (
     <form {...form.props}>
       {step === 1 ? (
-        <PersistBoundary name="step-1">
+        <PreserveBoundary name="step-1">
           <label>
             Name
             <input
@@ -110,9 +77,9 @@ function MultiStepForm() {
               defaultValue={fields.email.defaultValue}
             />
           </label>
-        </PersistBoundary>
+        </PreserveBoundary>
       ) : step === 2 ? (
-        <PersistBoundary name="step-2">
+        <PreserveBoundary name="step-2">
           <label>
             Address
             <input
@@ -127,7 +94,7 @@ function MultiStepForm() {
               defaultValue={fields.city.defaultValue}
             />
           </label>
-        </PersistBoundary>
+        </PreserveBoundary>
       ) : null}
 
       <div>
@@ -154,7 +121,7 @@ function MultiStepForm() {
 For virtualized lists, each item should use `name` with a stable identifier to ensure values are correctly associated with their items:
 
 ```tsx
-import { useForm, PersistBoundary } from '@conform-to/react/future';
+import { useForm, PreserveBoundary } from '@conform-to/react/future';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 function VirtualizedItemList({ items }) {
@@ -188,12 +155,12 @@ function VirtualizedItemList({ items }) {
                   height: virtualRow.size,
                 }}
               >
-                <PersistBoundary name={`item-${virtualRow.index}`}>
+                <PreserveBoundary name={`item-${virtualRow.index}`}>
                   <input
                     name={itemField.name}
                     defaultValue={itemField.defaultValue}
                   />
-                </PersistBoundary>
+                </PreserveBoundary>
               </div>
             );
           })}
@@ -207,22 +174,50 @@ function VirtualizedItemList({ items }) {
 
 ## Tips
 
-### Not for optional fields
+### Only use for navigational conditions
 
-Do not use `PersistBoundary` for optional fields that users choose to exclude. When a user unchecks a box to hide a field, they typically want that field excluded from submission:
+The condition that unmounts a `PreserveBoundary` should be navigational (step changes, dialog open/close), not when the user is intentionally excluding data from the submission. Otherwise, the preserved values will still be submitted even when the user hides the field:
 
 ```tsx
-// Don't do this - the discount code will still be submitted even when hidden
+// Don't do this: the discount code will still be submitted even when hidden
 {
   hasDiscountCode && (
-    <PersistBoundary name="discount">
+    <PreserveBoundary name="discount">
       <input name="discountCode" />
-    </PersistBoundary>
+    </PreserveBoundary>
   );
 }
 
-// Do this instead - let the field unmount normally
+// Do this instead: let the field unmount normally
 {
   hasDiscountCode && <input name="discountCode" />;
+}
+```
+
+### Stale values are cleaned up automatically
+
+When the fields inside a boundary change based on external state, stale preserved values are automatically removed on remount. For example, if the user fills in `companyName`/`jobTitle` on step 2, goes back to step 1, and switches account type to "personal", the preserved business fields are removed when step 2 remounts:
+
+```tsx
+{
+  step === 1 ? (
+    <PreserveBoundary name="step-1">
+      <select name="accountType">
+        <option value="personal">Personal</option>
+        <option value="business">Business</option>
+      </select>
+    </PreserveBoundary>
+  ) : step === 2 ? (
+    <PreserveBoundary name="step-2">
+      {accountType === 'personal' ? (
+        <input name="dateOfBirth" type="date" />
+      ) : accountType === 'business' ? (
+        <>
+          <input name="companyName" />
+          <input name="jobTitle" />
+        </>
+      ) : null}
+    </PreserveBoundary>
+  ) : null;
 }
 ```
