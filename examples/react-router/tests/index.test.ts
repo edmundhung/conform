@@ -178,7 +178,7 @@ test.describe('react-router', () => {
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
 
 			// After successful submission, the data should persist on reload
-			await page.reload({ waitUntil: 'networkidle' });
+			await page.reload();
 			await expect(form.title).toHaveValue('My Todo List');
 			await expect(page.getByLabel('Task #1')).toHaveValue('Task C');
 			await expect(page.getByLabel('Task #2')).toHaveValue('Task B');
