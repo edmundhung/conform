@@ -578,7 +578,7 @@ export interface IntentDispatcher<
 	/**
 	 * Insert a new item into an array field.
 	 */
-	insert<FieldShape extends Array<any>>(options: {
+	insert<FieldShape extends Array<any> | null | undefined>(options: {
 		/**
 		 * The name of the array field to insert into.
 		 */
@@ -591,23 +591,50 @@ export interface IntentDispatcher<
 		/**
 		 * The default value for the new item.
 		 */
-		defaultValue?: FieldShape extends Array<infer ItemShape>
+		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
 			? DefaultValue<ItemShape>
 			: never;
+		/**
+		 * The name of a field to read the value from.
+		 * When specified, the value is read from this field, validated,
+		 * and if valid, inserted into the array and the source field is cleared.
+		 * If validation fails, the error is shown on the source field instead.
+		 * Requires the validation error to be available synchronously.
+		 */
+		from?: string;
+		/**
+		 * What to do when the insert causes a validation error on the array.
+		 * - 'revert': Don't insert, keep original array state.
+		 * Requires the validation error to be available synchronously.
+		 */
+		onInvalid?: 'revert';
 	}): void;
 
 	/**
 	 * Remove an item from an array field.
 	 */
-	remove(options: {
+	remove<FieldShape extends Array<any> | null | undefined>(options: {
 		/**
 		 * The name of the array field to remove from.
 		 */
-		name: FieldName<Array<any>>;
+		name: FieldName<FieldShape>;
 		/**
 		 * The index of the item to remove.
 		 */
 		index: number;
+		/**
+		 * What to do when the remove causes a validation error on the array.
+		 * - 'revert': Don't remove, keep original item as-is.
+		 * - 'insert': Remove the item but insert a new blank item at the end.
+		 * Requires the validation error to be available synchronously.
+		 */
+		onInvalid?: 'revert' | 'insert';
+		/**
+		 * The default value for the new item when onInvalid is 'insert'.
+		 */
+		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
+			? DefaultValue<ItemShape>
+			: never;
 	}): void;
 
 	/**
@@ -632,15 +659,19 @@ export type FormIntent<Dispatcher extends IntentDispatcher = IntentDispatcher> =
 			: never;
 	}[keyof Dispatcher];
 
-export type ActionHandler<
+export type IntentHandler<
 	Signature extends (payload: any) => void = (payload: any) => void,
 > = {
-	validatePayload?(...args: UnknownArgs<Parameters<Signature>>): boolean;
-	onApply?(
+	validate?(...args: UnknownArgs<Parameters<Signature>>): boolean;
+	resolve?(
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | undefined;
-	onUpdate?<ErrorShape extends BaseErrorShape>(
+	apply?<ErrorShape extends BaseErrorShape>(
+		result: SubmissionResult<ErrorShape>,
+		...args: Parameters<Signature>
+	): SubmissionResult<ErrorShape>;
+	update?<ErrorShape extends BaseErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
@@ -654,6 +685,7 @@ export type ActionHandler<
 				reset: (
 					defaultValue?: Record<string, unknown> | null,
 				) => FormState<ErrorShape>;
+				cancelled?: boolean;
 			}
 		>,
 	): FormState<ErrorShape>;

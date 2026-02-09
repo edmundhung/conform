@@ -11,7 +11,7 @@
 		"test": "pnpm run \"/^test:.*/\"",
 		"test:future": "vitest --project='conform-*'",
 		"test:api": "vitest --project=browser --project=node",
-		"test:e2e": "playwright test --ui",
+		"test:e2e": "playwright test",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
 		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",
 		"prepare": "husky install"

@@ -36,6 +36,8 @@ describe.each(testCases)(
 		type Schema = {
 			title: string;
 			description: string;
+			tags: string[];
+			newTag: string;
 		};
 
 		function ValidateButton(props: {
@@ -75,7 +77,7 @@ describe.each(testCases)(
 		}
 
 		function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
-			const { form, fields } = useForm({
+			const { form, fields, intent } = useForm({
 				onValidate({ payload, error }) {
 					if (!payload.title) {
 						error.fieldErrors.title = ['Title is required'];
@@ -83,6 +85,20 @@ describe.each(testCases)(
 
 					if (!payload.description) {
 						error.fieldErrors.description = ['Description is required'];
+					}
+
+					if (Array.isArray(payload.tags)) {
+						if (payload.tags.length > 2) {
+							error.fieldErrors.tags = ['Maximum 2 tags allowed'];
+						} else if (payload.tags.length < 1) {
+							error.fieldErrors.tags = ['At least 1 tag required'];
+						}
+						for (let i = 0; i < payload.tags.length; i++) {
+							const tag = payload.tags[i];
+							if (typeof tag !== 'string' || tag.trim() === '') {
+								error.fieldErrors[`tags[${i}]`] = ['Tag is required'];
+							}
+						}
 					}
 
 					return error;
@@ -96,6 +112,9 @@ describe.each(testCases)(
 			return (
 				<div>
 					<form {...form.props}>
+						<div id={form.errorId} data-testid="form-error">
+							{form.errors}
+						</div>
 						<input
 							name={fields.title.name}
 							defaultValue={fields.title.defaultValue}
@@ -120,6 +139,77 @@ describe.each(testCases)(
 						<div id={fields.description.errorId}>
 							{fields.description.errors?.join(', ') ?? 'n/a'}
 						</div>
+						<input
+							name={fields.newTag.name}
+							defaultValue={fields.newTag.defaultValue}
+							aria-label="New Tag"
+						/>
+						<div data-testid="newTag-error">
+							{fields.newTag.errors?.join(', ') ?? 'n/a'}
+						</div>
+						<div data-testid="tags-count">
+							{fields.tags.getFieldList().length}
+						</div>
+						<div data-testid="tags-error">
+							{fields.tags.errors?.join(', ') ?? 'n/a'}
+						</div>
+						{fields.tags.getFieldList().map((tag, index) => (
+							<div key={tag.key}>
+								<input
+									data-testid={`tag-${index}`}
+									name={tag.name}
+									defaultValue={tag.defaultValue}
+								/>
+								<button
+									type="button"
+									onClick={() =>
+										intent.remove({
+											name: fields.tags.name,
+											index,
+											onInvalid: 'revert',
+										})
+									}
+								>
+									Remove Tag {index + 1}
+								</button>
+								<button
+									type="button"
+									onClick={() =>
+										intent.remove({
+											name: fields.tags.name,
+											index,
+											onInvalid: 'insert',
+											defaultValue: '',
+										})
+									}
+								>
+									Clear Tag {index + 1}
+								</button>
+							</div>
+						))}
+						<button
+							type="button"
+							onClick={() =>
+								intent.insert({
+									name: fields.tags.name,
+									from: fields.newTag.name,
+								})
+							}
+						>
+							Insert Tag from Input
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								intent.insert({
+									name: fields.tags.name,
+									from: fields.newTag.name,
+									onInvalid: 'revert',
+								})
+							}
+						>
+							Insert Tag with Revert
+						</button>
 						<button>Submit</button>
 						<ValidateButton>Validate Form</ValidateButton>
 						<ValidateButton field={fields.description.name}>
@@ -135,6 +225,7 @@ describe.each(testCases)(
 			return {
 				title: screen.getByLabelText('Title'),
 				description: screen.getByLabelText('Description'),
+				newTag: screen.getByLabelText('New Tag'),
 				submitButton: screen.getByRole('button', { name: 'Submit' }),
 				resetButton: screen.getByRole('button', { name: 'Reset' }),
 				validateFormButton: screen.getByRole('button', {
@@ -145,6 +236,12 @@ describe.each(testCases)(
 				}),
 				updateDescriptionButton: screen.getByRole('button', {
 					name: 'Update Description',
+				}),
+				insertTagFromInputButton: screen.getByRole('button', {
+					name: 'Insert Tag from Input',
+				}),
+				insertTagWithRevertButton: screen.getByRole('button', {
+					name: 'Insert Tag with Revert',
 				}),
 			};
 		}
@@ -204,6 +301,133 @@ describe.each(testCases)(
 			await userEvent.click(form.resetButton);
 			await expect.element(form.title).toHaveValue('example');
 			await expect.element(form.description).toHaveValue('hello world');
+		});
+
+		test('array intents', async () => {
+			const screen = render(<Form defaultValue={{ tags: ['tag1'] }} />);
+			const form = getForm(screen);
+			const tagsCount = screen.getByTestId('tags-count');
+			const tagsError = screen.getByTestId('tags-error');
+			const newTagError = screen.getByTestId('newTag-error');
+
+			await expect.element(tagsCount).toHaveTextContent('1');
+
+			// Insert with from - invalid value (error on staging field)
+			await userEvent.type(form.newTag, '   ');
+			await userEvent.click(form.insertTagFromInputButton);
+			await expect.element(newTagError).toHaveTextContent('Tag is required');
+			await expect.element(tagsCount).toHaveTextContent('1');
+
+			// Insert with from - valid value (succeeds, clears staging)
+			await userEvent.clear(form.newTag);
+			await userEvent.type(form.newTag, 'tag2');
+			await userEvent.click(form.insertTagFromInputButton);
+			await expect.element(form.newTag).toHaveValue('');
+			await expect.element(tagsCount).toHaveTextContent('2');
+
+			// Insert with from + revertIfInvalid - valid but exceeds max (error on array, not staging)
+			await userEvent.type(form.newTag, 'tag3');
+			await userEvent.click(form.insertTagWithRevertButton);
+			await expect
+				.element(tagsError)
+				.toHaveTextContent('Maximum 2 tags allowed');
+			await expect.element(newTagError).toHaveTextContent('n/a');
+			await expect.element(tagsCount).toHaveTextContent('2');
+			await expect.element(form.newTag).toHaveValue('tag3');
+
+			// Remove with revertIfInvalid - succeeds down to min
+			await userEvent.click(
+				screen.getByRole('button', { name: 'Remove Tag 1' }),
+			);
+			await expect.element(tagsCount).toHaveTextContent('1');
+
+			// Remove with ifInvalid: 'revert' - would go below min (reverted, error on array)
+			await userEvent.click(
+				screen.getByRole('button', { name: 'Remove Tag 1' }),
+			);
+			await expect
+				.element(tagsError)
+				.toHaveTextContent('At least 1 tag required');
+			await expect.element(tagsCount).toHaveTextContent('1');
+			// Value should be unchanged (reverted)
+			await expect.element(screen.getByTestId('tag-0')).toHaveValue('tag2');
+
+			// Remove with ifInvalid: 'insert' - would go below min (clears to blank instead)
+			await userEvent.click(
+				screen.getByRole('button', { name: 'Clear Tag 1' }),
+			);
+			await expect
+				.element(tagsError)
+				.toHaveTextContent('At least 1 tag required');
+			await expect.element(tagsCount).toHaveTextContent('1');
+			// Value should be cleared (new blank item inserted)
+			await expect.element(screen.getByTestId('tag-0')).toHaveValue('');
+		});
+
+		test('array intents with sync validation and async onValidate', async () => {
+			// Test that onInvalid works when onValidate returns [syncResult, asyncPromise]
+			// The sync result provides array errors, async adds other checks
+			const screen = render(
+				<Form
+					defaultValue={{ tags: ['tag1'] }}
+					onValidate={({ payload }) => {
+						// Sync validation for array constraints
+						const syncError: {
+							formErrors: string[];
+							fieldErrors: Record<string, string[]>;
+						} = {
+							formErrors: [],
+							fieldErrors: {},
+						};
+
+						if (Array.isArray(payload.tags)) {
+							if (payload.tags.length > 2) {
+								syncError.fieldErrors.tags = ['Maximum 2 tags allowed'];
+							} else if (payload.tags.length < 1) {
+								syncError.fieldErrors.tags = ['At least 1 tag required'];
+							}
+							for (let i = 0; i < payload.tags.length; i++) {
+								const tag = payload.tags[i];
+								if (typeof tag !== 'string' || tag.trim() === '') {
+									syncError.fieldErrors[`tags[${i}]`] = ['Tag is required'];
+								}
+							}
+						}
+
+						// Async validation for other things (e.g., uniqueness check)
+						const asyncResult = Promise.resolve({
+							formErrors: ['Something went wrong'],
+							fieldErrors: syncError.fieldErrors,
+						});
+
+						return [syncError, asyncResult];
+					}}
+				/>,
+			);
+			const formError = screen.getByTestId('form-error');
+			const tagsCount = screen.getByTestId('tags-count');
+			const tagsError = screen.getByTestId('tags-error');
+
+			await expect.element(tagsCount).toHaveTextContent('1');
+
+			await userEvent.click(
+				screen.getByRole('button', { name: 'Remove Tag 1' }),
+			);
+			await expect.element(tagsCount).toHaveTextContent('1');
+			await expect
+				.element(tagsError)
+				.toHaveTextContent('At least 1 tag required');
+			await expect.element(screen.getByTestId('tag-0')).toHaveValue('tag1');
+
+			// Wait for async validation to complete
+			await expect.element(formError).toHaveTextContent('Something went wrong');
+
+			// Check if the rest of the form state remains the same
+			await expect.element(tagsCount).toHaveTextContent('1');
+			await expect
+				.element(tagsError)
+				.toHaveTextContent('At least 1 tag required');
+			await expect.element(screen.getByTestId('tag-0')).toHaveValue('tag1');
 		});
 	},
 );

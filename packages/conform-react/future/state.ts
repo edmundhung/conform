@@ -18,7 +18,7 @@ import type {
 	FormState,
 	FormAction,
 	UnknownIntent,
-	ActionHandler,
+	IntentHandler,
 	BaseFieldMetadata,
 	BaseFormMetadata,
 	DefineConditionalField,
@@ -53,7 +53,8 @@ export function updateState<ErrorShape>(
 		ErrorShape,
 		UnknownIntent | null,
 		{
-			handlers: Record<string, ActionHandler>;
+			handlers: Record<string, IntentHandler>;
+			cancelled: boolean;
 			reset: (
 				defaultValue?: Record<string, unknown> | null | undefined,
 			) => FormState<ErrorShape>;
@@ -111,12 +112,13 @@ export function updateState<ErrorShape>(
 	const intent = action.intent ?? { type: 'validate' };
 	const handler = action.ctx.handlers?.[intent.type];
 
-	if (typeof handler?.onUpdate === 'function') {
-		if (handler.validatePayload?.(intent.payload) ?? true) {
-			return handler.onUpdate(state, {
+	if (typeof handler?.update === 'function') {
+		if (handler.validate?.(intent.payload) ?? true) {
+			return handler.update(state, {
 				...action,
 				ctx: {
 					reset: action.ctx.reset,
+					cancelled: action.ctx.cancelled,
 				},
 				intent: {
 					type: intent.type,
