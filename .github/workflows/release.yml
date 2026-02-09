@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+permissions:
+  id-token: write
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
@@ -19,7 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm i
       - name: Creating .npmrc
@@ -33,11 +35,10 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          title: 'release: bump packages version'
-          commit: 'release: bump packages version'
+          title: "release: bump packages version"
+          commit: "release: bump packages version"
           version: pnpm run version
           publish: pnpm publish -r
           createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
