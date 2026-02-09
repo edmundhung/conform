@@ -1,7 +1,7 @@
 /// <reference types="@vitest/browser/matchers" />
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import { useControl, useFormData } from '@conform-to/react/future';
 import { useForm } from '@conform-to/react';
 import { useRef, useState } from 'react';

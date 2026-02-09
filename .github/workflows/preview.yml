@@ -29,6 +29,6 @@ jobs:
   validate:
     name: Validate Preview
     needs: [release]
-    uses: edmundhung/conform/.github/workflows/validate.yml@main
+    uses: ./.github/workflows/validate.yml
     with:
       preview: ${{ github.event.pull_request.number || github.sha }}

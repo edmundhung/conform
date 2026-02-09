@@ -15,7 +15,7 @@ import {
 import { FormAction } from '../future/types';
 import { initializeState } from '../future/state';
 import { expect } from 'vitest';
-import { Locator } from '@vitest/browser/context';
+import { Locator } from 'vitest/browser';
 
 export function serverRenderHook<Result>(renderCallback: () => Result): Result {
 	let called = false;

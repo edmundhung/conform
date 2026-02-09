@@ -1,6 +1,11 @@
 import { defineConfig, TestProjectInlineConfiguration } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 
+const defaultBrowsers = ['chromium', 'firefox', 'webkit'] as const;
+const browsers = process.env.BROWSER
+	? [process.env.BROWSER as (typeof defaultBrowsers)[number]]
+	: [...defaultBrowsers];
+
 export default defineConfig({
 	test: {
 		projects: [
@@ -41,7 +46,7 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					enabled: true,
 					headless: true,
 					provider: playwright(),
-					instances: [{ browser: 'chromium' }],
+					instances: browsers.map((browser) => ({ browser })),
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
 				include: [`packages/${packageName}/**/tests/**/*.test.{ts,tsx}`],
