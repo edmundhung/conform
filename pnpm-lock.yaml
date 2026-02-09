@@ -40,7 +40,7 @@ importers:
         version: 7.11.0(eslint@8.57.0)(typescript@5.8.3)
       '@vitest/browser':
         specifier: ^4.0.3
-        version: 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
+        version: 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0))
       '@vitest/browser-playwright':
         specifier: ^4.0.3
         version: 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(playwright@1.49.1)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
@@ -79,7 +79,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: ^4.0.3
-        version: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
+        version: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
       yup:
         specifier: ^0.32.11
         version: 0.32.11
@@ -93,10 +93,10 @@ importers:
         specifier: ^2.4.2
         version: 2.8.2(@emotion/react@11.11.1(@types/react@18.3.23)(react@18.3.1))(@emotion/styled@11.11.0(@emotion/react@11.11.1(@types/react@18.3.23)(react@18.3.1))(@types/react@18.3.23)(react@18.3.1))(@types/react@18.3.23)(framer-motion@7.10.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@emotion/react':
         specifier: ^11.10.5
@@ -154,10 +154,10 @@ importers:
   examples/headless-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@headlessui/react':
         specifier: ^1.7.13
@@ -224,10 +224,10 @@ importers:
   examples/material-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@emotion/react':
         specifier: ^11.14.0
@@ -285,10 +285,10 @@ importers:
   examples/nextjs:
     dependencies:
       '@conform-to/react':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-zod
       next:
         specifier: 15.5.2
@@ -322,10 +322,10 @@ importers:
   examples/radix-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@radix-ui/react-icons':
         specifier: ^1.3.2
@@ -392,10 +392,10 @@ importers:
   examples/react-aria:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@internationalized/date':
         specifier: ^3.8.0
@@ -453,10 +453,10 @@ importers:
   examples/react-router:
     dependencies:
       '@conform-to/react':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-zod
       '@react-router/node':
         specifier: ^7.8.2
@@ -508,10 +508,10 @@ importers:
   examples/react-spa:
     dependencies:
       '@conform-to/react':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-zod
       react:
         specifier: ^19.1.1
@@ -563,10 +563,10 @@ importers:
   examples/remix:
     dependencies:
       '@conform-to/react':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: 1.16.0
+        specifier: 1.17.0
         version: link:../../packages/conform-zod
       '@remix-run/node':
         specifier: ^1.19.3
@@ -618,10 +618,10 @@ importers:
   examples/shadcn-ui:
     dependencies:
       '@conform-to/react':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-react
       '@conform-to/zod':
-        specifier: ^1.16.0
+        specifier: ^1.17.0
         version: link:../../packages/conform-zod
       '@radix-ui/react-checkbox':
         specifier: ^1.0.4
@@ -880,7 +880,7 @@ importers:
         version: 5.8.3
       vitest-browser-react:
         specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.0.3)
+        version: 1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0))
 
   packages/conform-valibot:
     dependencies:
@@ -1061,7 +1061,7 @@ importers:
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.9.1
-        version: 2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@remix-run/serve@2.9.1(typescript@5.4.5))(@types/node@24.9.1)(terser@5.44.0)(typescript@5.4.5)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(wrangler@3.53.1(@cloudflare/workers-types@4.20240502.0))
+        version: 2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@remix-run/serve@2.9.1(typescript@5.4.5))(@types/node@24.9.1)(terser@5.44.0)(typescript@5.4.5)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(wrangler@3.53.1)
       '@tailwindcss/forms':
         specifier: ^0.5.2
         version: 0.5.7(tailwindcss@3.4.3)
@@ -8659,19 +8659,21 @@ packages:
   glob@10.3.10:
     resolution: {integrity: sha512-fa46+tv1Ak0UPK1TOy/pZrIybNNt4HCv7SDzwyfiOZkvZLEbjsZkJBPtDHVshZjbecAoAGSC20MjLDG/qr679g==}
     engines: {node: '>=16 || 14 >=14.17'}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@10.4.5:
     resolution: {integrity: sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@7.1.6:
     resolution: {integrity: sha512-LwaxwyZ72Lk7vZINtNNrywX0ZuLyStrdDtabefZKAY5ZGJhVtgdznluResxNmPitE0SAO+O26sWTHeKSI2wMBA==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   globals@11.12.0:
     resolution: {integrity: sha512-WOBp/EEGUiIsJSp7wcv/y6MO+lV9UoncWqxuFfm8eBwzWNgyfBd6Gz+IeKQ9jCmyhoH99g15M3T+QaVHFjizVA==}
@@ -11370,7 +11372,7 @@ packages:
   tar@6.2.0:
     resolution: {integrity: sha512-/Wo7DcT0u5HUV486xg675HtjNd3BXZ6xDbzsCUZPt5iw8bTQ63bP0Raut3mvro9u+CUyq7YQd8Cx55fsZXxqLQ==}
     engines: {node: '>=10'}
-    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
@@ -14313,9 +14315,7 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
     optional: true
 
-  '@csstools/css-syntax-patches-for-csstree@1.0.14(postcss@8.5.6)':
-    dependencies:
-      postcss: 8.5.6
+  '@csstools/css-syntax-patches-for-csstree@1.0.14':
     optional: true
 
   '@csstools/css-tokenizer@3.0.4':
@@ -18346,7 +18346,7 @@ snapshots:
       - ts-node
       - utf-8-validate
 
-  '@remix-run/dev@2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@remix-run/serve@2.9.1(typescript@5.4.5))(@types/node@24.9.1)(terser@5.44.0)(typescript@5.4.5)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(wrangler@3.53.1(@cloudflare/workers-types@4.20240502.0))':
+  '@remix-run/dev@2.9.1(@remix-run/react@2.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5))(@remix-run/serve@2.9.1(typescript@5.4.5))(@types/node@24.9.1)(terser@5.44.0)(typescript@5.4.5)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(wrangler@3.53.1)':
     dependencies:
       '@babel/core': 7.23.5
       '@babel/generator': 7.23.5
@@ -18431,8 +18431,8 @@ snapshots:
       '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@4.9.5)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.7
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0))(eslint@8.57.0)
-      eslint-plugin-import: 2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0)(eslint@8.57.0)
+      eslint-plugin-import: 2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
       eslint-plugin-jest: 26.9.0(@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint@8.57.0)(typescript@4.9.5))(eslint@8.57.0)(typescript@4.9.5)
       eslint-plugin-jest-dom: 4.0.3(eslint@8.57.0)
       eslint-plugin-jsx-a11y: 6.8.0(eslint@8.57.0)
@@ -19387,11 +19387,11 @@ snapshots:
 
   '@vitest/browser-playwright@4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(playwright@1.49.1)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)':
     dependencies:
-      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
+      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0))
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))
       playwright: 1.49.1
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
+      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -19400,11 +19400,11 @@ snapshots:
 
   '@vitest/browser-playwright@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(playwright@1.49.1)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)':
     dependencies:
-      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
+      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0))
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))
       playwright: 1.49.1
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
+      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -19412,7 +19412,7 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/browser@4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)':
+  '@vitest/browser@4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0))':
     dependencies:
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))
       '@vitest/utils': 4.0.3
@@ -19421,7 +19421,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
+      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0)
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -19429,7 +19429,7 @@ snapshots:
       - utf-8-validate
       - vite
 
-  '@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)':
+  '@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0))':
     dependencies:
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))
       '@vitest/utils': 4.0.3
@@ -19438,7 +19438,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
+      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -20333,10 +20333,10 @@ snapshots:
 
   cssesc@3.0.0: {}
 
-  cssstyle@5.3.1(postcss@8.5.6):
+  cssstyle@5.3.1:
     dependencies:
       '@asamuzakjp/css-color': 4.0.5
-      '@csstools/css-syntax-patches-for-csstree': 1.0.14(postcss@8.5.6)
+      '@csstools/css-syntax-patches-for-csstree': 1.0.14
       css-tree: 3.1.0
     transitivePeerDependencies:
       - postcss
@@ -20982,13 +20982,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0))(eslint@8.57.0):
+  eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0)(eslint@8.57.0):
     dependencies:
       debug: 4.3.4
       enhanced-resolve: 5.15.0
       eslint: 8.57.0
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
-      eslint-plugin-import: 2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0)(eslint@8.57.0))(eslint@8.57.0)
+      eslint-plugin-import: 2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
       fast-glob: 3.3.2
       get-tsconfig: 4.7.2
       is-core-module: 2.13.1
@@ -21004,7 +21004,7 @@ snapshots:
       debug: 4.3.4
       enhanced-resolve: 5.15.0
       eslint: 8.57.0
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
       eslint-plugin-import: 2.29.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
       fast-glob: 3.3.2
       get-tsconfig: 4.7.2
@@ -21016,18 +21016,18 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0)(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 5.62.0(eslint@8.57.0)(typescript@4.9.5)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.7
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.7)(eslint-plugin-import@2.29.0)(eslint@8.57.0)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -21038,23 +21038,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0):
+  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 7.11.0(eslint@8.57.0)(typescript@5.8.3)
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  eslint-module-utils@2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0):
-    dependencies:
-      debug: 3.2.7
-    optionalDependencies:
-      '@typescript-eslint/parser': 7.11.0(eslint@8.57.0)(typescript@5.8.3)
-      eslint: 8.57.0
       eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0)
     transitivePeerDependencies:
       - supports-color
@@ -21065,7 +21055,7 @@ snapshots:
       eslint-utils: 2.1.0
       regexpp: 3.2.0
 
-  eslint-plugin-import@2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0):
+  eslint-plugin-import@2.29.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0):
     dependencies:
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.3
@@ -21075,7 +21065,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@5.62.0(eslint@8.57.0)(typescript@4.9.5))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
       hasown: 2.0.0
       is-core-module: 2.13.1
       is-glob: 4.0.3
@@ -21102,7 +21092,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
+      eslint-module-utils: 2.8.0(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1(@typescript-eslint/parser@7.11.0(eslint@8.57.0)(typescript@5.8.3))(eslint-plugin-import@2.29.1)(eslint@8.57.0))(eslint@8.57.0)
       hasown: 2.0.0
       is-core-module: 2.13.1
       is-glob: 4.0.3
@@ -22411,10 +22401,10 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsdom@27.0.1(postcss@8.5.6):
+  jsdom@27.0.1:
     dependencies:
       '@asamuzakjp/dom-selector': 6.7.3
-      cssstyle: 5.3.1(postcss@8.5.6)
+      cssstyle: 5.3.1
       data-urls: 6.0.0
       decimal.js: 10.6.0
       html-encoding-sniffer: 4.0.0
@@ -25828,17 +25818,17 @@ snapshots:
     optionalDependencies:
       vite: 6.3.5(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0)
 
-  vitest-browser-react@1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.0.3):
+  vitest-browser-react@1.0.1(@types/react-dom@18.3.7(@types/react@18.3.1))(@types/react@18.3.1)(@vitest/browser@4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)):
     dependencies:
-      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
+      '@vitest/browser': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0))
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
+      vitest: 4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0)
     optionalDependencies:
       '@types/react': 18.3.1
       '@types/react-dom': 18.3.7(@types/react@18.3.1)
 
-  vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0):
+  vitest@4.0.3(@types/debug@4.1.12)(@types/node@20.11.20)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(terser@5.44.0):
     dependencies:
       '@vitest/expect': 4.0.3
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))
@@ -25864,7 +25854,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 20.11.20
       '@vitest/browser-playwright': 4.0.3(msw@2.11.6(@types/node@20.11.20)(typescript@5.8.3))(playwright@1.49.1)(vite@7.1.12(@types/node@20.11.20)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
-      jsdom: 27.0.1(postcss@8.5.6)
+      jsdom: 27.0.1
     transitivePeerDependencies:
       - jiti
       - less
@@ -25879,7 +25869,7 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1(postcss@8.5.6))(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0):
+  vitest@4.0.3(@types/debug@4.1.12)(@types/node@24.9.1)(@vitest/browser-playwright@4.0.3)(jiti@2.6.1)(jsdom@27.0.1)(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(terser@5.44.0):
     dependencies:
       '@vitest/expect': 4.0.3
       '@vitest/mocker': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))
@@ -25905,7 +25895,7 @@ snapshots:
       '@types/debug': 4.1.12
       '@types/node': 24.9.1
       '@vitest/browser-playwright': 4.0.3(msw@2.11.6(@types/node@24.9.1)(typescript@5.8.3))(playwright@1.49.1)(vite@7.1.12(@types/node@24.9.1)(jiti@2.6.1)(terser@5.44.0))(vitest@4.0.3)
-      jsdom: 27.0.1(postcss@8.5.6)
+      jsdom: 27.0.1
     transitivePeerDependencies:
       - jiti
       - less
