@@ -55,7 +55,12 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					`**/node_modules/**`,
 					`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`,
 				],
-				testTimeout: process.env.CI ? 10_000 : 5_000,
+				testTimeout: process.env.CI ? 30_000 : 5_000,
+				expect: {
+					poll: {
+						timeout: process.env.CI ? 10_000 : 1_000,
+					},
+				},
 			},
 		},
 		{
