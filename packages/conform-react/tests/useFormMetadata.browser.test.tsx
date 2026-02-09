@@ -8,7 +8,7 @@ import {
 } from '../future';
 import { render } from 'vitest-browser-react';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 
 const configured = configureForms();
 

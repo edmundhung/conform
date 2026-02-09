@@ -1,7 +1,7 @@
 /// <reference types="@vitest/browser/matchers" />
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { Locator, userEvent } from '@vitest/browser/context';
+import { Locator, userEvent } from 'vitest/browser';
 import {
 	type FormValue,
 	type FormError,

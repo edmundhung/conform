@@ -1,7 +1,7 @@
 /// <reference types="@vitest/browser/matchers" />
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { Locator, userEvent } from '@vitest/browser/context';
+import { Locator, userEvent } from 'vitest/browser';
 import { useControl } from '../future';
 import { createFileList } from '@conform-to/dom';
 import { useEffect } from 'react';
