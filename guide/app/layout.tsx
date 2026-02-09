@@ -66,6 +66,10 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
 				{
+					title: 'PreserveBoundary',
+					to: '/api/react/future/PreserveBoundary',
+				},
+				{
 					title: 'FormOptionsProvider',
 					to: '/api/react/future/FormOptionsProvider',
 				},

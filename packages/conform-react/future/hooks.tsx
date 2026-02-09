@@ -78,6 +78,8 @@ import {
 	initializeField,
 	updateFormValue,
 	resetFormValue,
+	cleanupPreservedInputs,
+	preserveInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
 
@@ -115,6 +117,75 @@ export function FormProvider(props: {
 		<FormContextContext.Provider value={value}>
 			{props.children}
 		</FormContextContext.Provider>
+	);
+}
+
+/**
+ * Preserves form field values when its contents are unmounted.
+ * Useful for multi-step forms and virtualized lists.
+ *
+ * @see https://conform.guide/api/react/future/PreserveBoundary
+ */
+export function PreserveBoundary(props: {
+	/**
+	 * A unique name for the boundary within the form. Used to ensure proper
+	 * unmount/remount behavior and to isolate preserved inputs between boundaries.
+	 */
+	name: string;
+	/**
+	 * The id of the form to associate with. Only needed when the boundary
+	 * is rendered outside the form element.
+	 */
+	form?: string;
+	children: React.ReactNode;
+}): React.ReactElement {
+	// name is used as key so React properly unmounts/remounts when switching
+	// between boundaries. Without it, both sides of a ternary share
+	// key={undefined} and React reuses the instance (useId and key prop
+	// can't help here). This is why name is required.
+	return <PreserveBoundaryImpl key={props.name} {...props} />;
+}
+
+function PreserveBoundaryImpl(props: {
+	name: string;
+	form?: string;
+	children: React.ReactNode;
+}): React.ReactElement {
+	const fieldsetRef = useRef<HTMLFieldSetElement>(null);
+
+	// useLayoutEffect to restore values before paint, avoiding flash of default values
+	useSafeLayoutEffect(() => {
+		const fieldset = fieldsetRef.current;
+
+		if (!fieldset || !fieldset.form) {
+			return;
+		}
+
+		const form = fieldset.form;
+
+		// On mount: restore values from preserved inputs
+		cleanupPreservedInputs(fieldset, form, props.name);
+
+		return () => {
+			// On unmount: preserve input values
+			preserveInputs(
+				fieldset.querySelectorAll<
+					HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+				>('input,select,textarea'),
+				form,
+				props.name,
+			);
+		};
+	}, [props.name]);
+
+	return (
+		<fieldset
+			ref={fieldsetRef}
+			form={props.form}
+			style={{ display: 'contents' }}
+		>
+			{props.children}
+		</fieldset>
 	);
 }
 
