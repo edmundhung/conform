@@ -21,7 +21,7 @@ describe('coercion', () => {
 			expect(getResult(coerceFormValue(schema).safeParse({ a: '' }))).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input'],
+					a: ['Invalid input: expected nonoptional, received undefined'],
 				},
 			});
 			expect(
@@ -29,7 +29,7 @@ describe('coercion', () => {
 			).toEqual({
 				success: false,
 				error: {
-					a: ['Invalid input'],
+					a: ['Invalid input: expected nonoptional, received undefined'],
 				},
 			});
 			expect(

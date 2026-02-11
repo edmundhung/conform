@@ -3,8 +3,11 @@ import type {
 	$ZodObjectDef,
 	$ZodType,
 	$ZodTypes,
+	input,
+	output,
 } from 'zod/v4/core';
-import { lazy, pipe, transform } from 'zod/v4-mini';
+import { lazy, pipe, transform } from 'zod/v4';
+import type { ZodType } from 'zod/v4';
 
 /**
  * Helpers for coercing string value
@@ -416,7 +419,7 @@ export function coerceFormValue<Schema extends $ZodType>(
 		};
 		customize?: (type: $ZodType) => CoercionFunction | null;
 	},
-): Schema {
+): ZodType<output<Schema>, input<Schema>> {
 	const getCoercion = (
 		type: DefaultCoercionType,
 		fallbackCoercion?: CoercionFunction,
@@ -471,5 +474,5 @@ export function coerceFormValue<Schema extends $ZodType>(
 
 			return coercion;
 		},
-	}) as Schema;
+	}) as ZodType<output<Schema>, input<Schema>>;
 }
