@@ -21,11 +21,20 @@ const keys: Array<keyof Constraint> = [
 ];
 
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
+	const processing = new Set<$ZodType>();
+
 	function updateConstraint(
 		schema: $ZodType,
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
+		// Detect re-entrant calls caused by getter-based recursive schemas
+		if (processing.has(schema)) {
+			return;
+		}
+
+		processing.add(schema);
+
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
 		const def = (schema as unknown as $ZodTypes)._zod.def;
 
@@ -146,6 +155,8 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 		} else if (def.type === 'lazy') {
 			// FIXME: If you are interested in this, feel free to create a PR
 		}
+
+		processing.delete(schema);
 	}
 
 	const result: Record<string, Constraint> = {};
