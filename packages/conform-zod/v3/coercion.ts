@@ -19,7 +19,11 @@ import type {
 	ZodDiscriminatedUnionOption,
 	ZodFirstPartySchemaTypes,
 	ZodLiteral,
+	ZodType,
+	ZodTypeDef,
 	ZodTypeAny,
+	input,
+	output,
 } from 'zod/v3';
 
 /**
@@ -446,7 +450,7 @@ export function coerceFormValue<Schema extends ZodTypeAny>(
 		};
 		customize?: (type: ZodTypeAny) => CoercionFunction | null;
 	},
-): Schema {
+): ZodType<output<Schema>, ZodTypeDef, input<Schema>> {
 	const getCoercion = (
 		type: DefaultCoercionType,
 		fallbackCoercion?: CoercionFunction,
@@ -501,5 +505,5 @@ export function coerceFormValue<Schema extends ZodTypeAny>(
 
 			return coercion;
 		},
-	}) as Schema;
+	}) as ZodType<output<Schema>, ZodTypeDef, input<Schema>>;
 }
