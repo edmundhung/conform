@@ -248,6 +248,66 @@ describe('constraint', () => {
 			qux: { required: true, minLength: 1 },
 		});
 
+		// Getter-based recursive schema should not cause infinite recursion
+		const ConditionNodeSchema = z.object({
+			type: z.literal('condition'),
+			value: z.string(),
+		});
+
+		const LogicalGroupNodeSchema = z.object({
+			type: z.literal('group'),
+			operator: z.enum(['AND', 'OR']),
+			get children(): z.ZodArray<
+				z.ZodDiscriminatedUnion<
+					[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
+				>
+			> {
+				return z.array(
+					z.discriminatedUnion('type', [
+						LogicalGroupNodeSchema,
+						ConditionNodeSchema,
+					]),
+				);
+			},
+		});
+
+		expect(
+			getZodConstraint(
+				z.object({
+					filter: LogicalGroupNodeSchema,
+				}),
+			),
+		).toEqual({
+			filter: {
+				required: true,
+			},
+			'filter.type': {
+				required: true,
+			},
+			'filter.operator': {
+				required: true,
+				pattern: 'AND|OR',
+			},
+			'filter.children': {
+				required: true,
+				multiple: true,
+			},
+			// The discriminatedUnion options are traversed for the first level,
+			// but the recursive reference (LogicalGroupNodeSchema) is skipped
+			// by the processing Set, so only ConditionNodeSchema fields appear
+			'filter.children[]': {
+				required: false,
+			},
+			'filter.children[].type': {
+				required: false,
+			},
+			'filter.children[].value': {
+				required: false,
+				minLength: undefined,
+				maxLength: undefined,
+			},
+		});
+
 		// // Recursive schema should be supported too
 		// const baseCategorySchema = z.object({
 		// 	name: z.string(),

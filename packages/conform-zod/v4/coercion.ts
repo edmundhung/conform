@@ -174,6 +174,7 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 	type: Schema,
 	options: {
 		cache: Map<$ZodType, $ZodType>;
+		processing: Set<$ZodType>;
 		coerce: (type: $ZodType) => CoercionFunction | null;
 		stripEmptyValue: CoercionFunction;
 	},
@@ -185,6 +186,16 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 	if (result) {
 		return result;
 	}
+
+	// Detect re-entrant calls caused by getter-based recursive schemas
+	// (Zod v4's recommended pattern for recursive types).
+	// Return a lazy wrapper to break the recursion; the inner call is
+	// deferred to parse time, by which point the schema will be cached.
+	if (options.processing.has(type)) {
+		return lazy(() => enableTypeCoercion(type, options));
+	}
+
+	options.processing.add(type);
 
 	let schema: $ZodType = type;
 	const zod = (type as unknown as $ZodTypes)._zod;
@@ -346,6 +357,8 @@ export function enableTypeCoercion<Schema extends $ZodType>(
 		schema = lazy(() => enableTypeCoercion(inner, options));
 	}
 
+	options.processing.delete(type);
+
 	if (type !== schema) {
 		options.cache.set(type, schema);
 	}
@@ -464,6 +477,7 @@ export function coerceFormValue<Schema extends $ZodType>(
 
 	return enableTypeCoercion(type, {
 		cache: new Map<$ZodType, $ZodType>(),
+		processing: new Set<$ZodType>(),
 		stripEmptyValue: compose(defaultCoercion.string, defaultCoercion.file),
 		coerce: (type) => {
 			let coercion = options?.customize?.(type) ?? null;

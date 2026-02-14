@@ -157,6 +157,88 @@ describe('coercion', () => {
 			});
 		});
 
+		test('getter-based recursive schema', () => {
+			const ConditionNodeSchema = z.object({
+				type: z.literal('condition'),
+				value: z.string(),
+			});
+
+			const LogicalGroupNodeSchema = z.object({
+				type: z.literal('group'),
+				operator: z.enum(['AND', 'OR']),
+				get children(): z.ZodArray<
+					z.ZodDiscriminatedUnion<
+						[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
+					>
+				> {
+					return z.array(
+						z.discriminatedUnion('type', [
+							LogicalGroupNodeSchema,
+							ConditionNodeSchema,
+						]),
+					);
+				},
+			});
+
+			const schema = coerceFormValue(
+				z.object({
+					filter: LogicalGroupNodeSchema,
+				}),
+			);
+
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'AND',
+							children: [
+								{ type: 'condition', value: 'test' },
+								{
+									type: 'group',
+									operator: 'OR',
+									children: [{ type: 'condition', value: 'nested' }],
+								},
+							],
+						},
+					}),
+				),
+			).toEqual({
+				success: true,
+				data: {
+					filter: {
+						type: 'group',
+						operator: 'AND',
+						children: [
+							{ type: 'condition', value: 'test' },
+							{
+								type: 'group',
+								operator: 'OR',
+								children: [{ type: 'condition', value: 'nested' }],
+							},
+						],
+					},
+				},
+			});
+
+			expect(
+				getResult(
+					schema.safeParse({
+						filter: {
+							type: 'group',
+							operator: 'AND',
+							children: [{ type: 'condition', value: '' }],
+						},
+					}),
+				),
+			).toEqual({
+				success: false,
+				error: {
+					'filter.children[0].value': expect.any(Array),
+				},
+			});
+		});
+
 		test('customize coercion', () => {
 			const Payment = z.object({
 				count: z.number({
