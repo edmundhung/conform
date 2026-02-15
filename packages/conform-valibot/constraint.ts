@@ -1,4 +1,5 @@
 import type { Constraint } from '@conform-to/dom';
+import { getPaths, formatPaths } from '@conform-to/dom';
 import type { GenericSchema, GenericSchemaAsync } from 'valibot';
 
 const keys: Array<keyof Constraint> = [
@@ -16,6 +17,9 @@ const keys: Array<keyof Constraint> = [
 export function getValibotConstraint<
 	T extends GenericSchema | GenericSchemaAsync,
 >(schema: T): Record<string, Constraint> {
+	const result: Record<string, Constraint> = {};
+	const cache: Record<string, Constraint | undefined> = {};
+
 	function updateConstraint(
 		schema: T,
 
@@ -180,9 +184,44 @@ export function getValibotConstraint<
 		}
 	}
 
-	const result: Record<string, Constraint> = {};
+	function resolve(
+		nameOrSegments: string | Array<string | number>,
+	): Constraint | undefined {
+		const name =
+			typeof nameOrSegments === 'string'
+				? nameOrSegments
+				: formatPaths(nameOrSegments);
+
+		if (name in result) {
+			return result[name];
+		}
+
+		const segments =
+			typeof nameOrSegments === 'string'
+				? getPaths(nameOrSegments)
+				: nameOrSegments;
+
+		for (let i = segments.length - 1; i >= 0; i--) {
+			if (typeof segments[i] === 'number') {
+				segments[i] = '';
+				return resolve(segments);
+			}
+		}
+	}
 
 	updateConstraint(schema, result);
 
-	return result;
+	return new Proxy(result, {
+		get(target, name, receiver) {
+			if (typeof name !== 'string') {
+				return Reflect.get(target, name, receiver);
+			}
+
+			if (name in cache) {
+				return cache[name];
+			}
+
+			return (cache[name] = resolve(name));
+		},
+	});
 }
