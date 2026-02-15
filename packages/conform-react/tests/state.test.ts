@@ -18,7 +18,6 @@ import {
 	updateState,
 	isDefaultChecked,
 	getDefaultListKey,
-	getConstraint,
 	getFormMetadata,
 	getField,
 	getFieldset,
@@ -1397,45 +1396,6 @@ test('getDefaultListKey', () => {
 
 	// Test non-existent field
 	expect(getDefaultListKey(prefix, initialValue, 'missing')).toEqual([]);
-});
-
-test('getConstraint', () => {
-	const context = createContext({
-		constraint: {
-			username: { required: true, minLength: 3 },
-			'items[]': { required: true },
-			'items[].subitems[].name': { maxLength: 50 },
-			avatar: { accept: 'image/*' },
-		},
-	});
-
-	// Test direct constraint match
-	expect(getConstraint(context, 'username')).toEqual({
-		required: true,
-		minLength: 3,
-	});
-
-	// Test array fallback: items[0] should fall back to items[]
-	expect(getConstraint(context, 'items[0]')).toEqual({ required: true });
-
-	// Test nested array fallback: items[0].subitems[].name should fall back toitems[].subitems[].name
-	expect(getConstraint(context, 'items[0].subitems[].name')).toEqual({
-		maxLength: 50,
-	});
-
-	// Test nested array fallback: items[0].subitems[1].name should fall back toitems[].subitems[].name as well
-	expect(getConstraint(context, 'items[0].subitems[1].name')).toEqual({
-		maxLength: 50,
-	});
-
-	// Test no fallback available
-	expect(getConstraint(context, 'missing')).toBe(undefined);
-
-	// Test accept constraint
-	expect(getConstraint(context, 'avatar')).toEqual({ accept: 'image/*' });
-
-	// Test no constraints defined
-	expect(getConstraint(createContext(), 'any')).toBe(undefined);
 });
 
 test('getFormMetadata', () => {

@@ -1,5 +1,6 @@
 ---
 '@conform-to/zod': minor
+'@conform-to/react': minor
 '@conform-to/dom': minor
 ---
 
