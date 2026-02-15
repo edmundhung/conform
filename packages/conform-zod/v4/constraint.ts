@@ -1,4 +1,9 @@
 import type { Constraint } from '@conform-to/dom';
+import {
+	getPathSegments,
+	formatPathSegments,
+	getRelativePath,
+} from '@conform-to/dom/future';
 
 import {
 	$ZodType,
@@ -21,7 +26,13 @@ const keys: Array<keyof Constraint> = [
 ];
 
 export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
-	const processing = new Set<$ZodType>();
+	const processingPaths = new Map<$ZodType, string>();
+	const aliases: Array<{
+		from: Array<string | number>;
+		to: Array<string | number>;
+	}> = [];
+	const result: Record<string, Constraint> = {};
+	const cache: Record<string, Constraint | undefined> = {};
 
 	function updateConstraint(
 		schema: $ZodType,
@@ -29,11 +40,17 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 		name = '',
 	): void {
 		// Detect re-entrant calls caused by getter-based recursive schemas
-		if (processing.has(schema)) {
+		const processingPath = processingPaths.get(schema);
+
+		if (typeof processingPath !== 'undefined') {
+			aliases.push({
+				from: getPathSegments(name),
+				to: getPathSegments(processingPath),
+			});
 			return;
 		}
 
-		processing.add(schema);
+		processingPaths.set(schema, name);
 
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
 		const def = (schema as unknown as $ZodTypes)._zod.def;
@@ -113,10 +130,10 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			updateConstraint(def.element, data, `${name}[]`);
 		} else if (def.type === 'string') {
 			const _schema = schema as $ZodString;
-			if (_schema._zod.bag.minimum !== null) {
-				constraint.minLength = _schema._zod.bag.minimum ?? undefined;
+			if (_schema._zod.bag.minimum != null) {
+				constraint.minLength = _schema._zod.bag.minimum;
 			}
-			if (_schema._zod.bag.maximum !== null) {
+			if (_schema._zod.bag.maximum != null) {
 				constraint.maxLength = _schema._zod.bag.maximum;
 			}
 		} else if (def.type === 'optional') {
@@ -129,10 +146,10 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			updateConstraint(def.innerType, data, name);
 		} else if (def.type === 'number') {
 			const _schema = schema as $ZodNumber;
-			if (_schema._zod.bag.minimum !== null) {
+			if (_schema._zod.bag.minimum != null) {
 				constraint.min = _schema._zod.bag.minimum;
 			}
-			if (_schema._zod.bag.maximum !== null) {
+			if (_schema._zod.bag.maximum != null) {
 				constraint.max = _schema._zod.bag.maximum;
 			}
 		} else if (def.type === 'enum') {
@@ -153,15 +170,64 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 				constraint.accept = _schema._zod.bag.mime.join();
 			}
 		} else if (def.type === 'lazy') {
-			// FIXME: If you are interested in this, feel free to create a PR
+			const inner = def.getter();
+			updateConstraint(inner, data, name);
 		}
 
-		processing.delete(schema);
+		processingPaths.delete(schema);
 	}
 
-	const result: Record<string, Constraint> = {};
+	function resolve(
+		nameOrSegments: string | Array<string | number>,
+	): Constraint | undefined {
+		const name =
+			typeof nameOrSegments === 'string'
+				? nameOrSegments
+				: formatPathSegments(nameOrSegments);
+
+		if (name in result) {
+			return result[name];
+		}
+
+		const segments =
+			typeof nameOrSegments === 'string'
+				? getPathSegments(nameOrSegments)
+				: nameOrSegments;
+
+		// Alias collapse first to handle tuple indices
+		// like branch[0] before normalization would erase them
+		for (const alias of aliases) {
+			const tail = getRelativePath(segments, alias.from);
+
+			if (tail !== null && tail.length > 0) {
+				return resolve([...alias.to, ...tail]);
+			}
+		}
+
+		for (let i = segments.length - 1; i >= 0; i--) {
+			if (typeof segments[i] === 'number') {
+				// Normalizing indices by replacing rightmost numeric index with "[]"
+				segments[i] = '';
+				return resolve(segments);
+			}
+		}
+
+		return undefined;
+	}
 
 	updateConstraint(schema, result);
 
-	return result;
+	return new Proxy(result, {
+		get(target, name, receiver) {
+			if (typeof name !== 'string') {
+				return Reflect.get(target, name, receiver);
+			}
+
+			if (name in cache) {
+				return cache[name];
+			}
+
+			return (cache[name] = resolve(name));
+		},
+	});
 }
