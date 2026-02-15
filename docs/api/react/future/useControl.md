@@ -62,6 +62,19 @@ const control = useControl({
 });
 ```
 
+### `preserveOptionsOrder?: boolean`
+
+When `true`, preserves the order of values passed to `control.change()` for multi-select inputs. By default, `<select multiple>` returns selected values in DOM order. With this option enabled, `control.options` reflects the order you specified, and form reset restores the `defaultValue` order.
+
+```ts
+const control = useControl({
+  defaultValue: ['c', 'a', 'b'],
+  preserveOptionsOrder: true,
+});
+
+// control.options returns ['c', 'a', 'b'] instead of DOM order ['a', 'b', 'c']
+```
+
 ## Returns
 
 A control object. This gives you access to the state of the input with helpers to emulate native form events.
@@ -88,7 +101,7 @@ Registers the base input element(s). Accepts a single input or an array for grou
 
 ### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
 
-Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events. For multi-select inputs, duplicate values in the array are ignored since each option can only be selected once.
 
 ### `blur(): void`
 
