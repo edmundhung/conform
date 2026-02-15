@@ -5,6 +5,8 @@ on:
       - main
 permissions:
   id-token: write
+  contents: write
+  pull-requests: write
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
