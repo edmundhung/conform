@@ -1,6 +1,5 @@
 import {
 	type FieldName,
-	type ValidationAttributes,
 	type Serialize,
 	appendPathSegment,
 	formatPathSegments,
@@ -346,41 +345,6 @@ export function isValid(state: FormState<any>, name?: string): boolean {
 	return true;
 }
 
-/**
- * Gets validation constraint for a field, with fallback to parent array patterns.
- * e.g. "array[0].key" falls back to "array[].key" if specific constraint not found.
- */
-export function getConstraint(
-	context: FormContext<any>,
-	name: string,
-): ValidationAttributes | undefined {
-	let constraint = context.constraint?.[name];
-
-	if (!constraint) {
-		const path = getPathSegments(name);
-
-		for (let i = path.length - 1; i >= 0; i--) {
-			const segment = path[i];
-			// Try searching a less specific path for the constraint
-			// e.g. `array[0].anotherArray[1].key` -> `array[0].anotherArray[].key` -> `array[].anotherArray[].key`
-			if (typeof segment === 'number') {
-				// This overrides the current number segment with an empty string
-				// which will be treated as an empty bracket
-				path[i] = '';
-				break;
-			}
-		}
-
-		const alternative = formatPathSegments(path);
-
-		if (name !== alternative) {
-			constraint = getConstraint(context, alternative);
-		}
-	}
-
-	return constraint;
-}
-
 export function getFormMetadata<
 	ErrorShape,
 	CustomFormMetadata extends Record<string, unknown> = {},
@@ -500,7 +464,7 @@ export function getField<
 		}),
 	} = options;
 	const id = `${context.formId}-field-${name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-	const constraint = getConstraint(context, name);
+	const constraint = context.constraint?.[name];
 	const metadata: BaseFieldMetadata<FieldShape, ErrorShape> = {
 		key,
 		name,
