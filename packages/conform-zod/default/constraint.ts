@@ -1,9 +1,5 @@
 import type { Constraint } from '@conform-to/dom';
-import {
-	getPathSegments,
-	formatPathSegments,
-	getRelativePath,
-} from '@conform-to/dom/future';
+import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
 import type {
 	ZodTypeAny,
 	ZodFirstPartySchemaTypes,
@@ -42,8 +38,8 @@ export function getZodConstraint(
 
 		if (typeof processingPath !== 'undefined') {
 			aliases.push({
-				from: getPathSegments(name),
-				to: getPathSegments(processingPath),
+				from: getPaths(name),
+				to: getPaths(processingPath),
 			});
 			return;
 		}
@@ -174,7 +170,7 @@ export function getZodConstraint(
 		const name =
 			typeof nameOrSegments === 'string'
 				? nameOrSegments
-				: formatPathSegments(nameOrSegments);
+				: formatPaths(nameOrSegments);
 
 		if (name in result) {
 			return result[name];
@@ -182,7 +178,7 @@ export function getZodConstraint(
 
 		const segments =
 			typeof nameOrSegments === 'string'
-				? getPathSegments(nameOrSegments)
+				? getPaths(nameOrSegments)
 				: nameOrSegments;
 
 		for (const alias of aliases) {
