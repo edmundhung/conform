@@ -64,14 +64,9 @@ export type DefaultValue<Schema> = Schema extends
 						| undefined
 				: string | null | undefined;
 
-export type FormValue<Schema> = Schema extends
-	| string
-	| number
-	| boolean
-	| Date
-	| bigint
-	| null
-	| undefined
+export type FormValue<Schema> = Schema extends string
+	? Schema | undefined
+	: Schema extends number | boolean | Date | bigint | null | undefined
 	? string | undefined
 	: Schema extends File
 		? File | undefined
