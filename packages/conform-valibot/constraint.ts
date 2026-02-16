@@ -1,4 +1,5 @@
 import type { Constraint } from '@conform-to/dom';
+import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
 import type { GenericSchema, GenericSchemaAsync } from 'valibot';
 
 const keys: Array<keyof Constraint> = [
@@ -16,16 +17,42 @@ const keys: Array<keyof Constraint> = [
 export function getValibotConstraint<
 	T extends GenericSchema | GenericSchemaAsync,
 >(schema: T): Record<string, Constraint> {
+	const processingPaths = new Map<T, string>();
+	const aliases: Array<{
+		from: Array<string | number>;
+		to: Array<string | number>;
+	}> = [];
+	const result: Record<string, Constraint> = {};
+	const cache: Record<string, Constraint | undefined> = {};
+
 	function updateConstraint(
 		schema: T,
-
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
-		if (name !== '' && !data[name]) {
-			data[name] = { required: true };
+		const processingPath = processingPaths.get(schema);
+
+		if (typeof processingPath !== 'undefined') {
+			aliases.push({
+				from: getPaths(name),
+				to: getPaths(processingPath),
+			});
+			return;
 		}
-		const constraint = name !== '' ? (data[name] as Constraint) : {};
+
+		processingPaths.set(schema, name);
+
+		// Handle lazy before creating the data entry — lazy is transparent,
+		// it delegates to the inner schema which creates the entry instead.
+		if (schema.type === 'lazy') {
+			// @ts-expect-error
+			const inner = schema.getter(undefined);
+			updateConstraint(inner, data, name);
+			processingPaths.delete(schema);
+			return;
+		}
+
+		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
 
 		if (
 			schema.type === 'object' ||
@@ -175,14 +202,58 @@ export function getValibotConstraint<
 				const requirement = mimeTypeValidation.requirement as string[];
 				constraint.accept = requirement.join();
 			}
-		} else {
-			// FIXME: If you are interested in this, feel free to create a PR
+		}
+
+		processingPaths.delete(schema);
+	}
+
+	function resolve(
+		nameOrSegments: string | Array<string | number>,
+	): Constraint | undefined {
+		const name =
+			typeof nameOrSegments === 'string'
+				? nameOrSegments
+				: formatPaths(nameOrSegments);
+
+		if (name in result) {
+			return result[name];
+		}
+
+		const segments =
+			typeof nameOrSegments === 'string'
+				? getPaths(nameOrSegments)
+				: nameOrSegments;
+
+		// Alias collapse (before index normalization so tuple indices match)
+		for (const alias of aliases) {
+			const tail = getRelativePath(segments, alias.from);
+
+			if (tail !== null && tail.length > 0) {
+				return resolve([...alias.to, ...tail]);
+			}
+		}
+
+		for (let i = segments.length - 1; i >= 0; i--) {
+			if (typeof segments[i] === 'number') {
+				segments[i] = '';
+				return resolve(segments);
+			}
 		}
 	}
 
-	const result: Record<string, Constraint> = {};
-
 	updateConstraint(schema, result);
 
-	return result;
+	return new Proxy(result, {
+		get(target, name, receiver) {
+			if (typeof name !== 'string') {
+				return Reflect.get(target, name, receiver);
+			}
+
+			if (name in cache) {
+				return cache[name];
+			}
+
+			return (cache[name] = resolve(name));
+		},
+	});
 }

@@ -1,5 +1,5 @@
 import type { Constraint } from '@conform-to/dom';
-
+import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
 import type {
 	ZodTypeAny,
 	ZodFirstPartySchemaTypes,
@@ -21,11 +21,31 @@ const keys: Array<keyof Constraint> = [
 export function getZodConstraint(
 	schema: ZodTypeAny,
 ): Record<string, Constraint> {
+	const processingPaths = new Map<ZodTypeAny, string>();
+	const aliases: Array<{
+		from: Array<string | number>;
+		to: Array<string | number>;
+	}> = [];
+	const result: Record<string, Constraint> = {};
+	const cache: Record<string, Constraint | undefined> = {};
+
 	function updateConstraint(
 		schema: ZodTypeAny,
 		data: Record<string, Constraint>,
 		name = '',
 	): void {
+		const processingPath = processingPaths.get(schema);
+
+		if (typeof processingPath !== 'undefined') {
+			aliases.push({
+				from: getPaths(name),
+				to: getPaths(processingPath),
+			});
+			return;
+		}
+
+		processingPaths.set(schema, name);
+
 		const constraint = name !== '' ? (data[name] ??= { required: true }) : {};
 		const def = (schema as ZodFirstPartySchemaTypes)['_def'];
 
@@ -137,13 +157,61 @@ export function getZodConstraint(
 				updateConstraint(def.items[i], data, `${name}[${i}]`);
 			}
 		} else if (def.typeName === 'ZodLazy') {
-			// FIXME: If you are interested in this, feel free to create a PR
+			const inner = def.getter();
+			updateConstraint(inner, data, name);
 		}
+
+		processingPaths.delete(schema);
 	}
 
-	const result: Record<string, Constraint> = {};
+	function resolve(
+		nameOrSegments: string | Array<string | number>,
+	): Constraint | undefined {
+		const name =
+			typeof nameOrSegments === 'string'
+				? nameOrSegments
+				: formatPaths(nameOrSegments);
+
+		if (name in result) {
+			return result[name];
+		}
+
+		const segments =
+			typeof nameOrSegments === 'string'
+				? getPaths(nameOrSegments)
+				: nameOrSegments;
+
+		for (const alias of aliases) {
+			const tail = getRelativePath(segments, alias.from);
+
+			if (tail !== null && tail.length > 0) {
+				return resolve([...alias.to, ...tail]);
+			}
+		}
+
+		for (let i = segments.length - 1; i >= 0; i--) {
+			if (typeof segments[i] === 'number') {
+				segments[i] = '';
+				return resolve(segments);
+			}
+		}
+
+		return undefined;
+	}
 
 	updateConstraint(schema, result);
 
-	return result;
+	return new Proxy(result, {
+		get(target, name, receiver) {
+			if (typeof name !== 'string') {
+				return Reflect.get(target, name, receiver);
+			}
+
+			if (name in cache) {
+				return cache[name];
+			}
+
+			return (cache[name] = resolve(name));
+		},
+	});
 }

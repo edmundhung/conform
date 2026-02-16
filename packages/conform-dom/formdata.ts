@@ -192,10 +192,13 @@ export function isPrefix(name: string, prefix: string) {
  * ```
  */
 export function getRelativePath(
-	name: string,
+	nameOrSegments: string | Array<string | number>,
 	basePath: Array<string | number>,
 ): Array<string | number> | null {
-	const fullPath = getPathSegments(name);
+	const fullPath =
+		typeof nameOrSegments === 'string'
+			? getPathSegments(nameOrSegments)
+			: nameOrSegments;
 
 	// if full is at least as long *and* starts with the base…
 	if (

@@ -6,6 +6,7 @@ import {
 	type SchemaWithPipe,
 	type SchemaWithPipeAsync,
 	type TransformAction,
+	lazy,
 	pipe,
 	pipeAsync,
 	transform as vTransform,
@@ -343,6 +344,14 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 		case 'file':
 		case 'blob': {
 			return coerce(type, options.defaultCoercion.file);
+		}
+		case 'lazy': {
+			// @ts-expect-error
+			const inner = type.getter(undefined);
+			return {
+				transformAction: undefined,
+				schema: lazy(() => enableTypeCoercion(inner, options).schema),
+			};
 		}
 		case 'array': {
 			const arraySchema = {
