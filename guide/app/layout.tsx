@@ -80,6 +80,11 @@ const menus: { [code: string]: Menu[] } = {
 			title: 'Future APIs (Zod Schema)',
 			links: [
 				{ title: 'coerceFormValue', to: '/api/zod/future/coerceFormValue' },
+				{ title: 'coerceStructure', to: '/api/zod/future/coerceStructure' },
+				{
+					title: 'configureCoercion',
+					to: '/api/zod/future/configureCoercion',
+				},
 				{ title: 'formatResult', to: '/api/zod/future/formatResult' },
 				{ title: 'getConstraints', to: '/api/zod/future/getConstraints' },
 				{ title: 'isSchema', to: '/api/zod/future/isSchema' },
