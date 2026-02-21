@@ -26,27 +26,49 @@ import type {
 	output,
 } from 'zod/v3';
 
-/**
- * Helpers for coercing string value
- * Modify the value only if it's a string, otherwise return the value as-is
- */
-function stripEmptyString(value: unknown) {
+type CoercionFunction = (value: unknown) => unknown;
+
+type CoercionKey = 'string' | 'file' | 'number' | 'boolean' | 'date' | 'bigint';
+
+function defaultConvertNumber(text: string): number {
+	return text.trim() === '' ? NaN : Number(text);
+}
+
+function defaultConvertBoolean(text: string): boolean {
+	if (text === 'on') {
+		return true;
+	}
+
+	throw new Error('Not a boolean');
+}
+
+function defaultConvertDate(text: string): Date {
+	const date = new Date(text);
+
+	if (isNaN(date.getTime())) {
+		throw new Error('Invalid date');
+	}
+
+	return date;
+}
+
+function defaultConvertBigInt(text: string): bigint {
+	if (text.trim() === '') {
+		throw new Error('Empty bigint');
+	}
+
+	return BigInt(text);
+}
+
+function coerceString(value: unknown, fn: (text: string) => unknown): unknown {
 	if (typeof value !== 'string') {
 		return value;
 	}
 
-	if (value === '') {
-		return undefined;
-	}
-
-	return value;
+	return fn(value);
 }
 
-/**
- * Helpers for coercing file
- * Modify the value only if it's a file, otherwise return the value as-is
- */
-function stripEmptyFile(file: unknown) {
+function coerceFile(file: unknown): unknown {
 	if (
 		typeof File !== 'undefined' &&
 		file instanceof File &&
@@ -59,53 +81,44 @@ function stripEmptyFile(file: unknown) {
 	return file;
 }
 
-function coerceNumber(value: unknown) {
-	if (typeof value !== 'string') {
-		return value;
-	}
+/**
+ * strip → undefined stops, else convert, catch → original string
+ */
+function createValidationCoercion(
+	strip: (value: string) => string | undefined,
+	convert: (text: string) => unknown,
+): CoercionFunction {
+	return (value) =>
+		coerceString(value, (text) => {
+			const stripped = strip(text);
 
-	return value.trim() === '' ? value : Number(value);
+			if (stripped === undefined) {
+				return undefined;
+			}
+
+			try {
+				return convert(stripped);
+			} catch {
+				return stripped;
+			}
+		});
 }
 
-function coerceBoolean(value: unknown) {
-	if (typeof value !== 'string') {
-		return value;
-	}
-
-	return value === 'on' ? true : value;
-}
-
-function coerceDate(value: unknown) {
-	if (typeof value !== 'string') {
-		return value;
-	}
-
-	const date = new Date(value);
-
-	// z.date() does not expose a quick way to set invalid_date error
-	// This gets around it by returning the original string if it's invalid
-	// See https://github.com/colinhacks/zod/issues/1526
-	if (isNaN(date.getTime())) {
-		return value;
-	}
-
-	return date;
-}
-
-function coerceBigInt(value: unknown) {
-	if (typeof value !== 'string') {
-		return value;
-	}
-
-	if (value.trim() === '') {
-		return value;
-	}
-
-	try {
-		return BigInt(value);
-	} catch {
-		return value;
-	}
+/**
+ * On error returns the sentinel (e.g. NaN, false) so typeCheckTransform accepts it.
+ */
+function createStructuralCoercion(
+	convert: (text: string) => unknown,
+	emptySentinel: unknown,
+): CoercionFunction {
+	return (value) =>
+		coerceString(value, (text) => {
+			try {
+				return convert(text);
+			} catch {
+				return emptySentinel;
+			}
+		});
 }
 
 /**
@@ -127,42 +140,65 @@ function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 }
 
 /**
- * @deprecated Conform strip empty string to undefined by default
+ * Constrained types (enum, literal, nativeEnum) should still be validated in
+ * structural mode because their values come from constrained UI (select, radio,
+ * hidden input) and an invalid value indicates a developer error.
  */
-export function ifNonEmptyString(fn: (text: string) => unknown) {
-	return (value: unknown) => {
-		let result = stripEmptyString(value);
+function isConstrainedType(type: ZodTypeAny): boolean {
+	const def = (type as ZodFirstPartySchemaTypes)._def;
+	return (
+		def.typeName === 'ZodEnum' ||
+		def.typeName === 'ZodLiteral' ||
+		def.typeName === 'ZodNativeEnum'
+	);
+}
 
-		if (typeof result === 'string') {
-			result = fn(result);
+/**
+ * Accepts sentinel values like NaN and Invalid Date since
+ * `typeof NaN === 'number'` and `Invalid Date instanceof Date`.
+ */
+function createTypeCheckTransform(
+	expectedType: 'string' | 'number' | 'boolean' | 'date' | 'bigint',
+): ZodTypeAny {
+	const check =
+		expectedType === 'date'
+			? (value: unknown): value is Date => value instanceof Date
+			: (value: unknown) => typeof value === expectedType;
+
+	return any().superRefine((value, ctx) => {
+		if (!check(value)) {
+			ctx.addIssue({
+				code: 'invalid_type',
+				expected: expectedType,
+				received: typeof value,
+				message: `Invalid input: expected ${expectedType}, received ${typeof value}`,
+			});
 		}
-
-		return result;
-	};
+	});
 }
 
-export type DefaultCoercionType =
-	| 'string'
-	| 'file'
-	| 'number'
-	| 'boolean'
-	| 'date'
-	| 'bigint';
-
-export type CoercionFunction = (value: unknown) => unknown;
-
-function compose(
-	a: CoercionFunction,
-	b: CoercionFunction,
-	c: CoercionFunction = (i) => i,
-): CoercionFunction {
-	return (value) => c(b(a(value)));
+function getTypeCheckTarget(type: ZodTypeAny): ZodTypeAny {
+	const def = (type as ZodFirstPartySchemaTypes)._def;
+	switch (def.typeName) {
+		case 'ZodString':
+			return createTypeCheckTransform('string');
+		case 'ZodNumber':
+			return createTypeCheckTransform('number');
+		case 'ZodBoolean':
+			return createTypeCheckTransform('boolean');
+		case 'ZodDate':
+			return createTypeCheckTransform('date');
+		case 'ZodBigInt':
+			return createTypeCheckTransform('bigint');
+		default:
+			return type;
+	}
 }
 
-function selectDefaultCoercion(
+function selectCoercion(
 	type: ZodTypeAny,
-	defaultCoercion: Record<DefaultCoercionType, CoercionFunction>,
-): CoercionFunction | null {
+	defaultCoercion: Partial<Record<CoercionKey, CoercionFunction>>,
+): CoercionFunction | undefined {
 	const def = (type as ZodFirstPartySchemaTypes)._def;
 
 	if (
@@ -198,65 +234,83 @@ function selectDefaultCoercion(
 	} else if (def.typeName === 'ZodBigInt') {
 		return defaultCoercion.bigint;
 	}
-
-	return null;
 }
 
 /**
  * Reconstruct the provided schema with additional preprocessing steps
  * This strips empty values to undefined and coerces string to the correct type
  */
-export function enableTypeCoercion<Schema extends ZodTypeAny>(
+export function coerceType<Schema extends ZodTypeAny>(
 	type: Schema,
 	options: {
-		cache: Map<ZodTypeAny, ZodTypeAny>;
+		/** Map of original schema to its coerced version. Prevents re-processing and infinite recursion from z.lazy(). */
+		resolved: Map<ZodTypeAny, ZodTypeAny>;
+		/** Returns a coercion function for the given schema type, or null to skip. */
 		coerce: (type: ZodTypeAny) => CoercionFunction | null;
-		stripEmptyValue: CoercionFunction;
+		/** Strip function for optional/default/array. `undefined` = no stripping. */
+		stripEmptyValue?: CoercionFunction;
+		/** Whether to replace the original schema with a type check for non-constrained leaves. */
+		skipValidation?: boolean;
+		/** Whether to skip default wrappers (recurse into inner). */
+		skipDefaults?: boolean;
+		/** Whether to skip transforms in pipe and effects. */
+		skipTransforms?: boolean;
 	},
 ): ZodTypeAny {
-	const result = options.cache.get(type);
+	const result = options.resolved.get(type);
 
-	// Return the cached schema if it's already processed
-	// This is to prevent infinite recursion caused by z.lazy()
 	if (result) {
+		// Prevent infinite recursion from z.lazy()
 		return result;
 	}
 
 	let schema: ZodTypeAny = type;
 	const def = (type as ZodFirstPartySchemaTypes)._def;
 	const coercion = options.coerce(type);
+	const target =
+		options.skipValidation && !isConstrainedType(type)
+			? getTypeCheckTarget(type)
+			: type;
 
 	if (coercion) {
-		schema = any().transform(coercion).pipe(type);
+		schema = any().transform(coercion).pipe(target);
+	} else if (target !== type) {
+		schema = target;
 	} else if (def.typeName === 'ZodArray') {
+		const arrayDef = options.skipValidation
+			? { ...def, minLength: null, maxLength: null, exactLength: null }
+			: def;
+
 		schema = any()
 			.transform((value) => {
-				// No preprocess needed if the value is already an array
 				if (Array.isArray(value)) {
 					return value;
 				}
 
 				if (
 					typeof value === 'undefined' ||
-					typeof options.stripEmptyValue(value) === 'undefined'
+					(options.stripEmptyValue &&
+						typeof options.stripEmptyValue(value) === 'undefined')
 				) {
 					return [];
 				}
 
-				// Wrap it in an array otherwise
 				return [value];
 			})
 			.pipe(
 				new ZodArray({
-					...def,
-					type: enableTypeCoercion(def.type, options),
+					...arrayDef,
+					type: coerceType(def.type, options),
 				}),
 			);
 	} else if (def.typeName === 'ZodObject') {
+		const objectDef = options.skipValidation
+			? { ...def, unknownKeys: 'strip' }
+			: def;
+
 		schema = any()
 			.transform((value) => {
 				if (typeof value === 'undefined') {
-					// Defaults it to an empty object
 					return {};
 				}
 
@@ -264,67 +318,75 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 			})
 			.pipe(
 				new ZodObject({
-					...def,
+					...objectDef,
 					shape: () =>
 						Object.fromEntries(
 							Object.entries(def.shape()).map(([key, def]) => [
 								key,
-								// @ts-expect-error see message above
-								enableTypeCoercion(def, options),
+								// @ts-expect-error ZodTypeAny vs shape value type mismatch
+								coerceType(def, options),
 							]),
 						),
 				}),
 			);
 	} else if (def.typeName === 'ZodEffects') {
-		schema = new ZodEffects({
-			...def,
-			schema: enableTypeCoercion(def.schema, options),
-		});
+		if (
+			(options.skipTransforms &&
+				(def.effect.type === 'transform' ||
+					def.effect.type === 'preprocess')) ||
+			(options.skipValidation && def.effect.type === 'refinement')
+		) {
+			schema = coerceType(def.schema, options);
+		} else {
+			schema = new ZodEffects({
+				...def,
+				schema: coerceType(def.schema, options),
+			});
+		}
 	} else if (def.typeName === 'ZodOptional') {
-		schema = any()
-			.transform(options.stripEmptyValue)
-			.pipe(
-				new ZodOptional({
-					...def,
-					innerType: enableTypeCoercion(def.innerType, options),
-				}),
-			);
+		const innerType = coerceType(def.innerType, options);
+		const wrapped = new ZodOptional({ ...def, innerType });
+
+		schema = options.stripEmptyValue
+			? any().transform(options.stripEmptyValue).pipe(wrapped)
+			: wrapped;
 	} else if (def.typeName === 'ZodDefault') {
-		const defaultValue = def.defaultValue();
-		schema = any()
-			.transform(options.stripEmptyValue)
-			.pipe(
-				new ZodDefault({
-					...def,
-					innerType:
-						defaultValue !== ''
-							? enableTypeCoercion(def.innerType, options)
-							: def.innerType,
-				}),
-			);
+		if (options.skipDefaults) {
+			schema = coerceType(def.innerType, options).optional();
+		} else {
+			const defaultValue = def.defaultValue();
+			const innerType =
+				defaultValue !== '' // Don't strip the empty string that IS the default
+					? coerceType(def.innerType, options)
+					: def.innerType;
+			const wrapped = new ZodDefault({ ...def, innerType });
+
+			schema = options.stripEmptyValue
+				? any().transform(options.stripEmptyValue).pipe(wrapped)
+				: wrapped;
+		}
 	} else if (def.typeName === 'ZodCatch') {
 		schema = new ZodCatch({
 			...def,
-			innerType: enableTypeCoercion(def.innerType, options),
+			innerType: coerceType(def.innerType, options),
 		});
 	} else if (def.typeName === 'ZodIntersection') {
 		schema = new ZodIntersection({
 			...def,
-			left: enableTypeCoercion(def.left, options),
-			right: enableTypeCoercion(def.right, options),
+			left: coerceType(def.left, options),
+			right: coerceType(def.right, options),
 		});
 	} else if (def.typeName === 'ZodUnion') {
 		schema = new ZodUnion({
 			...def,
 			options: def.options.map((option: ZodTypeAny) =>
-				enableTypeCoercion(option, options),
+				coerceType(option, options),
 			),
 		});
 	} else if (def.typeName === 'ZodDiscriminatedUnion') {
 		schema = any()
 			.transform((value) => {
 				if (typeof value === 'undefined') {
-					// Defaults it to an empty object
 					return {};
 				}
 
@@ -334,16 +396,13 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 				new ZodDiscriminatedUnion({
 					...def,
 					options: def.options.map((option: ZodTypeAny) =>
-						enableTypeCoercion(option, options),
+						coerceType(option, options),
 					),
 					optionsMap: new Map(
 						Array.from(def.optionsMap.entries()).map(
 							([discriminator, option]) => [
 								discriminator,
-								enableTypeCoercion(
-									option,
-									options,
-								) as ZodDiscriminatedUnionOption<any>,
+								coerceType(option, options) as ZodDiscriminatedUnionOption<any>,
 							],
 						),
 					),
@@ -352,158 +411,214 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 	} else if (def.typeName === 'ZodBranded') {
 		schema = new ZodBranded({
 			...def,
-			type: enableTypeCoercion(def.type, options),
+			type: coerceType(def.type, options),
 		});
 	} else if (def.typeName === 'ZodTuple') {
 		schema = new ZodTuple({
 			...def,
-			items: def.items.map((item: ZodTypeAny) =>
-				enableTypeCoercion(item, options),
-			),
+			items: def.items.map((item: ZodTypeAny) => coerceType(item, options)),
 		});
 	} else if (def.typeName === 'ZodNullable') {
 		schema = new ZodNullable({
 			...def,
-			innerType: enableTypeCoercion(def.innerType, options),
+			innerType: coerceType(def.innerType, options),
 		});
 	} else if (def.typeName === 'ZodPipeline') {
-		schema = new ZodPipeline({
-			...def,
-			in: enableTypeCoercion(def.in, options),
-			out: enableTypeCoercion(def.out, options),
-		});
+		if (options.skipTransforms) {
+			schema = coerceType(def.in, options);
+		} else {
+			schema = new ZodPipeline({
+				...def,
+				in: coerceType(def.in, options),
+				out: coerceType(def.out, options),
+			});
+		}
 	} else if (def.typeName === 'ZodLazy') {
 		const inner = def.getter();
-		schema = lazy(() => enableTypeCoercion(inner, options));
+		schema = lazy(() => coerceType(inner, options));
 	}
 
 	if (type !== schema) {
-		options.cache.set(type, schema);
+		options.resolved.set(type, schema);
 	}
 
 	return schema;
 }
 
 /**
- * A helper that enhance the zod schema to strip empty value and coerce form value to the expected type with option to customize type coercion.
+ * Creates configured coercion functions for form value parsing.
+ *
  * @example
  *
  * ```tsx
- * import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.
- * import { z } from 'zod/v3';
+ * import { configureCoercion } from '@conform-to/zod/v3/future';
+ * import { z } from 'zod';
  *
- * // Coerce the form value with default behaviour
- * const schema = coerceFormValue(
- *   z.object({
- *     // ...
- *   })
- * );
- *
- * // Coerce the form value with default coercion overrided
- * const schema = coerceFormValue(
- *   z.object({
- *     ref: z.number()
- *     date: z.date(),
- *     amount: z.number(),
- *     confirm: z.boolean(),
- *   }),
- *   {
- *     // Trim the value for all string-based fields
- *     // e.g. `z.string()`, `z.number()` or `z.boolean()`
- *     string: (value) => {
- *       if (typeof value !== 'string') {
- *          return value;
- *       }
- *
- *       const result = value.trim();
- *
- *       // Treat it as `undefined` if the value is empty
- *       if (result === '') {
- *         return undefined;
- *       }
- *
- *       return result;
- *     },
- *
- *     // Override the default coercion with `z.number()`
- *     number: (value) => {
- *       // Pass the value as is if it's not a string
- *       if (typeof value !== 'string') {
- *         return value;
- *       }
- *
- *       // Trim and remove commas before casting it to number
- *       return Number(value.trim().replace(/,/g, ''));
- *     },
- *
- *     // Disable coercion for `z.boolean()`
- *     boolean: false,
+ * const { coerceFormValue, coerceStructure } = configureCoercion({
+ *   // Trim whitespace and treat whitespace-only as empty
+ *   stripEmptyString: (value) => {
+ *     const trimmed = value.trim();
+ *     return trimmed === '' ? undefined : trimmed;
  *   },
- * );
+ *   type: {
+ *     // Strip commas from numbers like "1,000" before converting
+ *     number: (text) => Number(text.replace(/,/g, '')),
+ *   },
+ * });
+ *
+ * const schema = z.object({ age: z.number(), name: z.string() });
+ * const validationSchema = coerceFormValue(schema);
+ * const structuralSchema = coerceStructure(schema);
  * ```
  */
-export function coerceFormValue<Schema extends ZodTypeAny>(
-	type: Schema,
-	options?: {
-		defaultCoercion?: {
-			[key in DefaultCoercionType]?: CoercionFunction | boolean;
-		};
-		customize?: (type: ZodTypeAny) => CoercionFunction | null;
-	},
-): ZodType<output<Schema>, ZodTypeDef, input<Schema>> {
-	const getCoercion = (
-		type: DefaultCoercionType,
-		fallbackCoercion?: CoercionFunction,
-	): CoercionFunction => {
-		const providedCoercion = options?.defaultCoercion?.[type];
+export function configureCoercion(config?: {
+	/**
+	 * Determines what string values are "empty" → undefined.
+	 * Receives a raw string and returns the string (possibly transformed) or
+	 * `undefined` to indicate empty.
+	 *
+	 * @default (value) => value === '' ? undefined : value
+	 * @example Treat whitespace-only strings as empty:
+	 *
+	 * ```ts
+	 * stripEmptyString: (value) => {
+	 *   const trimmed = value.trim();
+	 *   return trimmed === '' ? undefined : trimmed;
+	 * }
+	 * ```
+	 */
+	stripEmptyString?: (value: string) => string | undefined;
 
-		if (typeof providedCoercion === 'function') {
-			return providedCoercion;
-		}
-
-		// If the user explicitly disabled the coercion or no fallback coercion, return a noop function
-		if (providedCoercion === false || !fallbackCoercion) {
-			return (value: unknown) => value;
-		}
-
-		return fallbackCoercion;
-	};
-	const defaultCoercion = {
-		string: compose(stripEmptyString, getCoercion('string')),
-		file: compose(stripEmptyFile, getCoercion('file')),
-		number: compose(
-			stripEmptyString,
-			getCoercion('string'),
-			getCoercion('number', coerceNumber),
-		),
-		boolean: compose(
-			stripEmptyString,
-			getCoercion('string'),
-			getCoercion('boolean', coerceBoolean),
-		),
-		date: compose(
-			stripEmptyString,
-			getCoercion('string'),
-			getCoercion('date', coerceDate),
-		),
-		bigint: compose(
-			stripEmptyString,
-			getCoercion('string'),
-			getCoercion('bigint', coerceBigInt),
-		),
+	/**
+	 * Type-specific string → typed value conversion functions.
+	 * Shared between validation and structural modes. The system handles
+	 * non-string passthrough and per-mode empty handling.
+	 *
+	 * Defaults: number via `Number()`, boolean checks `'on'`, date via
+	 * `new Date()`, bigint via `BigInt()` (not overridable here, use
+	 * `customize` instead).
+	 */
+	type?: {
+		number?: (text: string) => number;
+		boolean?: (text: string) => boolean;
+		date?: (text: string) => Date;
 	};
 
-	return enableTypeCoercion(type, {
-		cache: new Map<ZodTypeAny, ZodTypeAny>(),
-		stripEmptyValue: compose(defaultCoercion.string, defaultCoercion.file),
-		coerce: (type) => {
-			let coercion = options?.customize?.(type) ?? null;
+	/**
+	 * Per-schema escape hatch. Return a coercion function to override
+	 * the default for a specific schema, or `null` to use the default.
+	 * Unlike `type`, `stripEmptyString` is not applied automatically.
+	 */
+	customize?: (type: ZodTypeAny) => ((text: string) => unknown) | null;
+}) {
+	const stripEmptyString: (value: string) => string | undefined =
+		config?.stripEmptyString ?? ((value) => (value === '' ? undefined : value));
+	const convertNumber = config?.type?.number ?? defaultConvertNumber;
+	const convertBoolean = config?.type?.boolean ?? defaultConvertBoolean;
+	const convertDate = config?.type?.date ?? defaultConvertDate;
+	const validationMap: Record<CoercionKey, CoercionFunction> = {
+		string: (value) => coerceString(value, stripEmptyString),
+		file: coerceFile,
+		number: createValidationCoercion(stripEmptyString, convertNumber),
+		boolean: createValidationCoercion(stripEmptyString, convertBoolean),
+		date: createValidationCoercion(stripEmptyString, convertDate),
+		bigint: createValidationCoercion(stripEmptyString, defaultConvertBigInt),
+	};
+	const structuralMap: Partial<Record<CoercionKey, CoercionFunction>> = {
+		number: createStructuralCoercion(convertNumber, NaN),
+		boolean: createStructuralCoercion(convertBoolean, false),
+		date: createStructuralCoercion(convertDate, new Date('')),
+		bigint: createStructuralCoercion(defaultConvertBigInt, 0n),
+	};
 
-			if (coercion === null) {
-				coercion = selectDefaultCoercion(type, defaultCoercion);
+	const coerce = (
+		type: ZodTypeAny,
+		coercionMap: Partial<Record<CoercionKey, CoercionFunction>>,
+	): CoercionFunction | null => {
+		if (config?.customize) {
+			const customFn = config.customize(type);
+
+			if (customFn !== null) {
+				return (value) => coerceString(value, customFn);
+			}
+		}
+
+		return selectCoercion(type, coercionMap) ?? null;
+	};
+
+	const validationCache = new WeakMap<ZodTypeAny, ZodTypeAny>();
+	const structureCache = new WeakMap<ZodTypeAny, ZodTypeAny>();
+
+	return {
+		/**
+		 * A helper that enhance the zod schema to strip empty value and coerce
+		 * form value to the expected type with option to customize type coercion.
+		 *
+		 * @example
+		 *
+		 * ```tsx
+		 * import { coerceFormValue } from '@conform-to/zod/v3/future';
+		 * import { z } from 'zod';
+		 *
+		 * const schema = coerceFormValue(
+		 *   z.object({
+		 *     // ...
+		 *   })
+		 * );
+		 * ```
+		 */
+		coerceFormValue<Schema extends ZodTypeAny>(
+			type: Schema,
+		): ZodType<output<Schema>, ZodTypeDef, input<Schema>> {
+			let result = validationCache.get(type);
+
+			if (!result) {
+				result = coerceType(type, {
+					resolved: new Map<ZodTypeAny, ZodTypeAny>(),
+					stripEmptyValue(value) {
+						return coerceFile(coerceString(value, stripEmptyString));
+					},
+					coerce(type) {
+						return coerce(type, validationMap);
+					},
+				});
+				validationCache.set(type, result);
 			}
 
-			return coercion;
+			return result as ZodType<output<Schema>, ZodTypeDef, input<Schema>>;
 		},
-	}) as ZodType<output<Schema>, ZodTypeDef, input<Schema>>;
+
+		/**
+		 * Enhances a schema to convert form string values to their typed
+		 * equivalents without validation. Useful for reading current form values
+		 * as typed data.
+		 *
+		 * Skips schema validation (min/max/regex/etc.), defaults, transforms,
+		 * and refinements. Empty strings are preserved (not stripped).
+		 *
+		 * Results are cached per schema, so this can be called inline.
+		 */
+		coerceStructure<Schema extends ZodTypeAny>(
+			type: Schema,
+		): ZodType<input<Schema>, ZodTypeDef, input<Schema>> {
+			let result = structureCache.get(type);
+
+			if (!result) {
+				result = coerceType(type, {
+					resolved: new Map<ZodTypeAny, ZodTypeAny>(),
+					coerce(type) {
+						return coerce(type, structuralMap);
+					},
+					skipValidation: true,
+					skipDefaults: true,
+					skipTransforms: true,
+				});
+				structureCache.set(type, result);
+			}
+
+			return result as ZodType<input<Schema>, ZodTypeDef, input<Schema>>;
+		},
+	};
 }
+
+export const { coerceFormValue, coerceStructure } = configureCoercion();
