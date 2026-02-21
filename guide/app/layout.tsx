@@ -94,6 +94,11 @@ const menus: { [code: string]: Menu[] } = {
 			title: 'Future APIs (Valibot Schema)',
 			links: [
 				{ title: 'coerceFormValue', to: '/api/valibot/future/coerceFormValue' },
+				{ title: 'coerceStructure', to: '/api/valibot/future/coerceStructure' },
+				{
+					title: 'configureCoercion',
+					to: '/api/valibot/future/configureCoercion',
+				},
 				{ title: 'formatResult', to: '/api/valibot/future/formatResult' },
 				{ title: 'getConstraints', to: '/api/valibot/future/getConstraints' },
 				{ title: 'isSchema', to: '/api/valibot/future/isSchema' },
