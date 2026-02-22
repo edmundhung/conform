@@ -549,7 +549,7 @@ describe('parseSubmission', () => {
 		});
 	});
 
-	it('strips empty values from the submission payload by default', () => {
+	it('strips empty values when stripEmptyValues is true', () => {
 		const emptyFile = new File([], '');
 		const nonEmptyFile = new File(['content'], 'example.txt');
 
@@ -561,6 +561,7 @@ describe('parseSubmission', () => {
 					['email', 'test@example.com'],
 					['description', ''],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -580,6 +581,7 @@ describe('parseSubmission', () => {
 					['avatar', emptyFile],
 					['document', nonEmptyFile],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -600,6 +602,7 @@ describe('parseSubmission', () => {
 					['categories', 'frontend'],
 					['categories', 'backend'],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -617,6 +620,7 @@ describe('parseSubmission', () => {
 					['items', ''],
 					['items', 'valid'],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -636,6 +640,7 @@ describe('parseSubmission', () => {
 					['metadata.created', ''],
 					['metadata.updated', '2024-01-01'],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -667,6 +672,7 @@ describe('parseSubmission', () => {
 					['todos[]', ''],
 					['todos[]', 'Walk dog'],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -684,6 +690,7 @@ describe('parseSubmission', () => {
 					['email', ''],
 					['avatar', emptyFile],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -702,6 +709,7 @@ describe('parseSubmission', () => {
 					['tags[]', ''],
 					['tags[]', ''],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -722,6 +730,7 @@ describe('parseSubmission', () => {
 					['files[]', emptyFile],
 					['files[]', file2],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -738,6 +747,7 @@ describe('parseSubmission', () => {
 					['emptyFiles[]', emptyFile],
 					['emptyFiles[]', emptyFile],
 				]),
+				{ stripEmptyValues: true },
 			),
 		).toEqual({
 			payload: {
@@ -748,7 +758,7 @@ describe('parseSubmission', () => {
 		});
 	});
 
-	it('preserves empty values when stripEmptyValues is false', () => {
+	it('preserves empty values by default', () => {
 		const emptyFile = new File([], '');
 		const nonEmptyFile = new File(['content'], 'example.txt');
 
@@ -760,7 +770,6 @@ describe('parseSubmission', () => {
 					['email', 'test@example.com'],
 					['description', ''],
 				]),
-				{ stripEmptyValues: false },
 			),
 		).toEqual({
 			payload: {
@@ -780,7 +789,6 @@ describe('parseSubmission', () => {
 					['avatar', emptyFile],
 					['document', nonEmptyFile],
 				]),
-				{ stripEmptyValues: false },
 			),
 		).toEqual({
 			payload: {
@@ -799,7 +807,6 @@ describe('parseSubmission', () => {
 					['tags', ''],
 					['tags', ''],
 				]),
-				{ stripEmptyValues: false },
 			),
 		).toEqual({
 			payload: {
@@ -817,7 +824,6 @@ describe('parseSubmission', () => {
 					['user.bio', ''],
 					['metadata.created', ''],
 				]),
-				{ stripEmptyValues: false },
 			),
 		).toEqual({
 			payload: {
