@@ -5,7 +5,7 @@ import type {
 	InferOutput,
 	SafeParseResult,
 } from 'valibot';
-import { appendPathSegment, type FormError } from '@conform-to/dom/future';
+import { appendPath, type FormError } from '@conform-to/dom/future';
 
 export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
 	result: SafeParseResult<Schema>,
@@ -81,7 +81,7 @@ export function formatResult<
 						`Only string or numeric path segment schemes are supported. Received segment: ${segment.key}`,
 					);
 				}
-				return appendPathSegment(name, segment.key);
+				return appendPath(name, segment.key);
 			}, '');
 
 			errorByName[name] ??= [];

@@ -4,15 +4,15 @@ import type {
 	SubmissionResult,
 } from '@conform-to/dom/future';
 import {
-	getPathSegments,
-	getValueAtPath,
+	parsePath,
+	getPathValue,
 	isPlainObject,
-	appendPathSegment,
+	appendPath,
 	getRelativePath,
 } from '@conform-to/dom/future';
 import {
 	createPathIndexUpdater,
-	getArrayAtPath,
+	getPathArray,
 	generateUniqueKey,
 	isUndefined,
 	isOptional,
@@ -21,7 +21,7 @@ import {
 	appendUniqueItem,
 	compactMap,
 	merge,
-	updateValueAtPath,
+	updatePathValue,
 	transformKeys,
 	isNullable,
 } from './util';
@@ -148,7 +148,7 @@ export function updateListKeys(
 	keyToBeRemoved: string,
 	updateKey?: (key: string) => string | null,
 ): Record<string, string[]> {
-	const basePath = getPathSegments(keyToBeRemoved);
+	const basePath = parsePath(keyToBeRemoved);
 	return transformKeys(keys, (field) =>
 		getRelativePath(field, basePath) !== null
 			? null
@@ -198,7 +198,7 @@ export const intentHandlers: {
 		},
 		update(state, { submission, intent, error }) {
 			const name = intent.payload ?? '';
-			const basePath = getPathSegments(name);
+			const basePath = parsePath(name);
 			const allFields = error
 				? // Consider fields / fieldset with errors as touched too
 					submission.fields.concat(Object.keys(error.fieldErrors))
@@ -228,8 +228,8 @@ export const intentHandlers: {
 			);
 		},
 		resolve(value, options) {
-			const name = appendPathSegment(options.name, options.index);
-			return updateValueAtPath(
+			const name = appendPath(options.name, options.index);
+			return updatePathValue(
 				value,
 				name,
 				options.value ?? (name === '' ? {} : null),
@@ -245,15 +245,12 @@ export const intentHandlers: {
 			// Update the keys only for client updates to avoid double updates if there is no client validation
 			if (type === 'client') {
 				// TODO: Do we really need to update the keys here?
-				const name = appendPathSegment(
-					intent.payload.name,
-					intent.payload.index,
-				);
+				const name = appendPath(intent.payload.name, intent.payload.index);
 				// Remove all child keys
 				listKeys = name === '' ? {} : updateListKeys(state.listKeys, name);
 			}
 
-			const basePath = getPathSegments(intent.payload.name);
+			const basePath = parsePath(intent.payload.name);
 			let touchedFields = state.touchedFields;
 
 			for (const field of submission.fields) {
@@ -287,13 +284,13 @@ export const intentHandlers: {
 			let itemValue = options.defaultValue;
 
 			if (options.from !== undefined) {
-				itemValue = getValueAtPath(result, options.from);
-				result = updateValueAtPath(result, options.from, '');
+				itemValue = getPathValue(result, options.from);
+				result = updatePathValue(result, options.from, '');
 			}
 
-			const list = Array.from(getArrayAtPath(result, options.name));
+			const list = Array.from(getPathArray(result, options.name));
 			insertItem(list, itemValue, options.index ?? list.length);
-			return updateValueAtPath(result, options.name, list);
+			return updatePathValue(result, options.name, list);
 		},
 		apply(result, options) {
 			// Warn if validation result is not yet available
@@ -321,8 +318,8 @@ export const intentHandlers: {
 			if (options.from !== undefined) {
 				const index =
 					options.index ??
-					getArrayAtPath(result.submission.payload, options.name).length;
-				const insertedItemPath = appendPathSegment(options.name, index);
+					getPathArray(result.submission.payload, options.name).length;
+				const insertedItemPath = appendPath(options.name, index);
 				const insertedItemErrors = result.error?.fieldErrors[insertedItemPath];
 
 				if (insertedItemErrors?.length) {
@@ -353,7 +350,7 @@ export const intentHandlers: {
 			const from = intent.payload.from;
 			const index =
 				intent.payload.index ??
-				getArrayAtPath(submission.payload, intent.payload.name).length;
+				getPathArray(submission.payload, intent.payload.name).length;
 			const updateListIndex = createPathIndexUpdater(
 				intent.payload.name,
 				(currentIndex) =>
@@ -383,7 +380,7 @@ export const intentHandlers: {
 						// Remove all child keys
 						...updateListKeys(
 							state.listKeys,
-							appendPathSegment(intent.payload.name, index),
+							appendPath(intent.payload.name, index),
 							updateListIndex,
 						),
 						// Update existing list keys
@@ -415,9 +412,9 @@ export const intentHandlers: {
 			);
 		},
 		resolve(value, options) {
-			const list = Array.from(getArrayAtPath(value, options.name));
+			const list = Array.from(getPathArray(value, options.name));
 			removeItem(list, options.index);
-			return updateValueAtPath(value, options.name, list);
+			return updatePathValue(value, options.name, list);
 		},
 		apply(result, options) {
 			// Warn if validation result is not yet available
@@ -441,12 +438,12 @@ export const intentHandlers: {
 						};
 					case 'insert': {
 						const list = Array.from(
-							getArrayAtPath(result.targetValue, options.name),
+							getPathArray(result.targetValue, options.name),
 						);
 						insertItem(list, options.defaultValue, list.length);
 						return {
 							...result,
-							targetValue: updateValueAtPath(
+							targetValue: updatePathValue(
 								result.targetValue,
 								options.name,
 								list,
@@ -501,7 +498,7 @@ export const intentHandlers: {
 						// Remove all child keys
 						...updateListKeys(
 							state.listKeys,
-							appendPathSegment(intent.payload.name, intent.payload.index),
+							appendPath(intent.payload.name, intent.payload.index),
 							updateListIndex,
 						),
 						// Update existing list keys
@@ -517,7 +514,7 @@ export const intentHandlers: {
 							// Remove all child keys
 							...updateListKeys(
 								state.listKeys,
-								appendPathSegment(intent.payload.name, index),
+								appendPath(intent.payload.name, index),
 								updateListIndex,
 							),
 							// Update existing list keys
@@ -546,9 +543,9 @@ export const intentHandlers: {
 			);
 		},
 		resolve(value, options) {
-			const list = Array.from(getArrayAtPath(value, options.name));
+			const list = Array.from(getPathArray(value, options.name));
 			reorderItems(list, options.from, options.to);
-			return updateValueAtPath(value, options.name, list);
+			return updatePathValue(value, options.name, list);
 		},
 		update(state, { type, submission, intent }) {
 			if (type === 'server') {
@@ -604,7 +601,7 @@ export const intentHandlers: {
 					// Remove all child keys
 					...updateListKeys(
 						state.listKeys,
-						appendPathSegment(intent.payload.name, intent.payload.from),
+						appendPath(intent.payload.name, intent.payload.from),
 						updateListIndex,
 					),
 					// Update existing list keys

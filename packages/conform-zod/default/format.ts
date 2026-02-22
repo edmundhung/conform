@@ -1,6 +1,6 @@
 import type { SafeParseReturnType, ZodIssue } from 'zod';
 import type { FormError } from '@conform-to/dom/future';
-import { formatPathSegments } from '@conform-to/dom/future';
+import { formatPath } from '@conform-to/dom/future';
 
 /**
  * Transforms Zod validation results into Conform's error format.
@@ -63,7 +63,7 @@ export function formatResult<Output, Input, ErrorShape>(
 		const errorByName: Record<string, ZodIssue[]> = {};
 
 		for (const issue of result.error.issues) {
-			const name = formatPathSegments(issue.path);
+			const name = formatPath(issue.path);
 
 			errorByName[name] ??= [];
 			errorByName[name].push(issue);

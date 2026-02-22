@@ -1,6 +1,6 @@
 import type { ZodSafeParseResult, core } from 'zod/v4';
 import type { FormError } from '@conform-to/dom/future';
-import { appendPathSegment } from '@conform-to/dom/future';
+import { appendPath } from '@conform-to/dom/future';
 
 /**
  * Transforms Zod validation results into Conform's error format.
@@ -71,7 +71,7 @@ export function formatResult<Output, ErrorShape = string>(
 					);
 				}
 
-				return appendPathSegment(name, segment);
+				return appendPath(name, segment);
 			}, '');
 
 			errorByName[name] ??= [];

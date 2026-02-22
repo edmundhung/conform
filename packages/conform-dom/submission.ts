@@ -1,10 +1,10 @@
 import { isGlobalInstance } from './dom';
 import type { DefaultValue, FieldName, FormValue } from './form';
 import {
-	isPrefix,
-	getValueAtPath,
-	setValueAtPath,
-	appendPathSegment,
+	isPathPrefix,
+	getPathValue,
+	setPathValue,
+	appendPath,
 } from './formdata';
 import { invariant, isPlainObject } from './util';
 
@@ -97,7 +97,7 @@ export function getSubmissionContext(
 		}
 
 		context.fields.add(name);
-		setValueAtPath(
+		setPathValue(
 			context.payload,
 			name,
 			(prev: unknown) => {
@@ -175,15 +175,12 @@ export function parse<FormValue, FormError>(
 	if (intent) {
 		switch (intent.type) {
 			case 'update': {
-				const name = appendPathSegment(
-					intent.payload.name,
-					intent.payload.index,
-				);
+				const name = appendPath(intent.payload.name, intent.payload.index);
 				const value = intent.payload.value;
 
 				if (typeof intent.payload.value !== 'undefined') {
 					if (name) {
-						setValueAtPath(context.payload, name, () => value);
+						setPathValue(context.payload, name, () => value);
 					} else {
 						context.payload = value;
 					}
@@ -191,13 +188,10 @@ export function parse<FormValue, FormError>(
 				break;
 			}
 			case 'reset': {
-				const name = appendPathSegment(
-					intent.payload.name,
-					intent.payload.index,
-				);
+				const name = appendPath(intent.payload.name, intent.payload.index);
 
 				if (name) {
-					setValueAtPath(context.payload, name, () => undefined);
+					setPathValue(context.payload, name, () => undefined);
 				} else {
 					context.payload = {};
 				}
@@ -267,10 +261,10 @@ export function replySubmission<FormError>(
 
 	if ('hideFields' in options && options.hideFields) {
 		for (const name of options.hideFields) {
-			const value = getValueAtPath(context.payload, name);
+			const value = getPathValue(context.payload, name);
 
 			if (typeof value !== 'undefined') {
-				setValueAtPath(context.payload, name, () => undefined);
+				setPathValue(context.payload, name, () => undefined);
 			}
 		}
 	}
@@ -459,7 +453,7 @@ export function setListValue(
 	data: Record<string, unknown>,
 	intent: InsertIntent | RemoveIntent | ReorderIntent,
 ): void {
-	setValueAtPath(data, intent.payload.name, (value: unknown) => {
+	setPathValue(data, intent.payload.name, (value: unknown) => {
 		const list = value ?? [];
 
 		updateList(list, intent);
@@ -487,8 +481,8 @@ export function setState(
 	for (const key of keys) {
 		const value = state[key];
 
-		if (isPrefix(key, name) && key !== name) {
-			setValueAtPath(target, key, (currentValue: unknown) => {
+		if (isPathPrefix(key, name) && key !== name) {
+			setPathValue(target, key, (currentValue: unknown) => {
 				if (typeof currentValue === 'undefined') {
 					return value;
 				}
@@ -507,7 +501,7 @@ export function setState(
 		}
 	}
 
-	const result = valueFn(getValueAtPath(target, name));
+	const result = valueFn(getPathValue(target, name));
 
 	Object.assign(
 		state,

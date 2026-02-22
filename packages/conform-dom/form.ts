@@ -1,12 +1,12 @@
 import {
 	getFormData,
-	getPathSegments,
-	formatPathSegments,
-	getValueAtPath,
-	setValueAtPath,
+	parsePath,
+	formatPath,
+	getPathValue,
+	setPathValue,
 	getRelativePath,
-	isPrefix,
-	appendPathSegment,
+	isPathPrefix,
+	appendPath,
 } from './formdata';
 import {
 	type FieldElement,
@@ -308,7 +308,7 @@ function getDefaultKey(
 	>((result, [key, value]) => {
 		if (Array.isArray(value)) {
 			for (let i = 0; i < value.length; i++) {
-				result[appendPathSegment(key, i)] = generateId();
+				result[appendPath(key, i)] = generateId();
 			}
 		}
 
@@ -347,7 +347,7 @@ function handleIntent<Error>(
 		}
 		case 'update': {
 			const { validated, value } = intent.payload;
-			const name = appendPathSegment(intent.payload.name, intent.payload.index);
+			const name = appendPath(intent.payload.name, intent.payload.index);
 
 			if (typeof value !== 'undefined') {
 				updateValue(meta, name ?? '', value);
@@ -382,8 +382,8 @@ function handleIntent<Error>(
 			break;
 		}
 		case 'reset': {
-			const name = appendPathSegment(intent.payload.name, intent.payload.index);
-			const value = getValueAtPath(meta.defaultValue, name);
+			const name = appendPath(intent.payload.name, intent.payload.index);
+			const value = getPathValue(meta.defaultValue, name);
 
 			updateValue(meta, name, value);
 
@@ -426,7 +426,7 @@ function handleIntent<Error>(
 		(result, [name, error]) => {
 			if (
 				meta.validated[name] ||
-				validatedFields.some((field) => isPrefix(name, field))
+				validatedFields.some((field) => isPathPrefix(name, field))
 			) {
 				result[name] = error;
 			}
@@ -456,8 +456,8 @@ function updateValue<Error>(
 	meta.value = clone(meta.value);
 	meta.key = clone(meta.key);
 
-	setValueAtPath(meta.initialValue, name, () => value);
-	setValueAtPath(meta.value, name, () => value);
+	setPathValue(meta.initialValue, name, () => value);
+	setPathValue(meta.value, name, () => value);
 
 	if (isPlainObject(value) || Array.isArray(value)) {
 		setState(meta.key, name, () => undefined);
@@ -492,12 +492,12 @@ function createValueProxy(
 			return val;
 		}
 
-		const path = getPathSegments(name);
-		const basename = formatPathSegments(path.slice(0, -1));
-		const key = formatPathSegments(path.slice(-1));
+		const path = parsePath(name);
+		const basename = formatPath(path.slice(0, -1));
+		const key = formatPath(path.slice(-1));
 		const parentValue = proxy[basename];
 
-		return getValueAtPath(parentValue, key);
+		return getPathValue(parentValue, key);
 	});
 }
 
@@ -508,7 +508,7 @@ function createConstraintProxy(
 		let result = constraint[name];
 
 		if (!result) {
-			const path = getPathSegments(name);
+			const path = parsePath(name);
 
 			for (let i = path.length - 1; i >= 0; i--) {
 				const segment = path[i];
@@ -523,7 +523,7 @@ function createConstraintProxy(
 				}
 			}
 
-			const alternative = formatPathSegments(path);
+			const alternative = formatPath(path);
 
 			if (name !== alternative) {
 				result = proxy[alternative];
@@ -539,13 +539,13 @@ function createKeyProxy(
 ): Record<string, string | undefined> {
 	return createStateProxy((name, proxy) => {
 		const currentKey = key[name];
-		const segments = getPathSegments(name);
+		const segments = parsePath(name);
 
 		if (segments.length === 0) {
 			return currentKey;
 		}
 
-		const parentKey = proxy[formatPathSegments(segments.slice(0, -1))];
+		const parentKey = proxy[formatPath(segments.slice(0, -1))];
 
 		if (typeof parentKey === 'undefined') {
 			return currentKey;
@@ -566,7 +566,7 @@ function createValidProxy<FormError>(
 		}
 
 		for (const key of keys) {
-			if (isPrefix(key, name) && typeof error[key] !== 'undefined') {
+			if (isPathPrefix(key, name) && typeof error[key] !== 'undefined') {
 				return false;
 			}
 		}
@@ -623,7 +623,7 @@ function shouldNotify<Schema>(
 			if (
 				prefixes.length === 0 ||
 				names.includes(name) ||
-				prefixes.some((prefix) => isPrefix(name, prefix))
+				prefixes.some((prefix) => isPathPrefix(name, prefix))
 			) {
 				cache[name] ??= compareFn(prev[name], next[name]);
 
@@ -1114,18 +1114,15 @@ export function createFormContext<
 		for (const intent of intents) {
 			switch (intent.type) {
 				case 'update': {
-					const name = appendPathSegment(
-						intent.payload.name,
-						intent.payload.index,
-					);
-					const baseSegments = getPathSegments(name);
+					const name = appendPath(intent.payload.name, intent.payload.index);
+					const baseSegments = parsePath(name);
 
 					for (const element of formElement.elements) {
 						if (isFieldElement(element)) {
 							const paths = getRelativePath(element.name, baseSegments);
 
 							if (paths) {
-								const value = getValueAtPath(intent.payload.value, paths);
+								const value = getPathValue(intent.payload.value, paths);
 								const inputValue =
 									typeof value === 'string' ||
 									(Array.isArray(value) &&
@@ -1150,17 +1147,14 @@ export function createFormContext<
 					break;
 				}
 				case 'reset': {
-					const prefix = appendPathSegment(
-						intent.payload.name,
-						intent.payload.index,
-					);
+					const prefix = appendPath(intent.payload.name, intent.payload.index);
 					for (const element of formElement.elements) {
 						if (
 							isFieldElement(element) &&
 							element.name &&
-							isPrefix(element.name, prefix)
+							isPathPrefix(element.name, prefix)
 						) {
-							const value = getValueAtPath(meta.defaultValue, element.name);
+							const value = getPathValue(meta.defaultValue, element.name);
 							const defaultValue =
 								typeof value === 'string' ||
 								(Array.isArray(value) &&

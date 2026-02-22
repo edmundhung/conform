@@ -4,8 +4,8 @@ import {
 	isString,
 	isNumber,
 	isOptional,
-	getArrayAtPath,
-	updateValueAtPath,
+	getPathArray,
+	updatePathValue,
 	createPathIndexUpdater,
 	normalizeFormError,
 	normalizeValidateResult,
@@ -56,7 +56,7 @@ test('isOptional', () => {
 	expect(isOptional('123', isNumber)).toBe(false);
 });
 
-test('getArrayAtPath', () => {
+test('getPathArray', () => {
 	const formValue = {
 		items: [1, 2, 3],
 		nested: {
@@ -65,38 +65,38 @@ test('getArrayAtPath', () => {
 		empty: [],
 	};
 
-	expect(getArrayAtPath(formValue, 'items')).toEqual([1, 2, 3]);
-	expect(getArrayAtPath(formValue, 'nested.list')).toEqual(['a', 'b']);
-	expect(getArrayAtPath(formValue, 'empty')).toEqual([]);
-	expect(getArrayAtPath(formValue, 'nonexistent')).toEqual([]);
-	expect(getArrayAtPath(null, 'items')).toEqual([]);
+	expect(getPathArray(formValue, 'items')).toEqual([1, 2, 3]);
+	expect(getPathArray(formValue, 'nested.list')).toEqual(['a', 'b']);
+	expect(getPathArray(formValue, 'empty')).toEqual([]);
+	expect(getPathArray(formValue, 'nonexistent')).toEqual([]);
+	expect(getPathArray(null, 'items')).toEqual([]);
 
 	// Test error case
 	const invalidValue = { notArray: 'string' };
-	expect(() => getArrayAtPath(invalidValue, 'notArray')).toThrow(
+	expect(() => getPathArray(invalidValue, 'notArray')).toThrow(
 		'The value of "notArray" is not an array',
 	);
 });
 
-test('updateValueAtPath', () => {
+test('updatePathValue', () => {
 	const data = { a: 1, b: { c: 2 } };
 
 	// Test updating nested value
-	const result1 = updateValueAtPath(data, 'b.c', 3);
+	const result1 = updatePathValue(data, 'b.c', 3);
 	expect(result1).toEqual({ a: 1, b: { c: 3 } });
 	expect(result1).not.toBe(data); // Should be immutable
 
 	// Test updating root value
-	const result2 = updateValueAtPath(data, 'a', 5);
+	const result2 = updatePathValue(data, 'a', 5);
 	expect(result2).toEqual({ a: 5, b: { c: 2 } });
 
 	// Test empty path (replace entire object)
 	const newData = { x: 10, y: 20 };
-	const result3 = updateValueAtPath(data, '', newData);
+	const result3 = updatePathValue(data, '', newData);
 	expect(result3).toEqual(newData);
 
 	// Test error case with empty path and non-object value
-	expect(() => updateValueAtPath(data, '', 'string' as any)).toThrow(
+	expect(() => updatePathValue(data, '', 'string' as any)).toThrow(
 		'The value must be an object',
 	);
 });

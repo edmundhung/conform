@@ -1,11 +1,11 @@
 import {
 	type FieldName,
 	type Serialize,
-	appendPathSegment,
-	formatPathSegments,
-	getPathSegments,
+	appendPath,
+	formatPath,
+	parsePath,
 	getRelativePath,
-	getValueAtPath,
+	getPathValue,
 	serialize as defaultSerialize,
 	deepEqual,
 } from '@conform-to/dom/future';
@@ -22,7 +22,7 @@ import type {
 	BaseFormMetadata,
 	DefineConditionalField,
 } from './types';
-import { generateUniqueKey, getArrayAtPath, merge, when } from './util';
+import { generateUniqueKey, getPathArray, merge, when } from './util';
 
 export function initializeState<ErrorShape>(options?: {
 	defaultValue?: Record<string, unknown> | null | undefined;
@@ -141,7 +141,7 @@ export function pruneListKeys(
 	let result = listKeys;
 
 	for (const [name, keys] of Object.entries(listKeys)) {
-		const list = getArrayAtPath(targetValue, name);
+		const list = getPathArray(targetValue, name);
 
 		// Reset list keys only if the length has changed
 		// to minimize potential UI state loss due to key changes
@@ -164,7 +164,7 @@ export function getDefaultValue(
 	name: string,
 	serialize: Serialize = defaultSerialize,
 ): string {
-	const value = getValueAtPath(
+	const value = getPathValue(
 		context.state.serverValue ??
 			context.state.targetValue ??
 			context.state.defaultValue,
@@ -184,7 +184,7 @@ export function getDefaultOptions(
 	name: string,
 	serialize: Serialize = defaultSerialize,
 ): string[] {
-	const value = getValueAtPath(
+	const value = getPathValue(
 		context.state.serverValue ??
 			context.state.targetValue ??
 			context.state.defaultValue,
@@ -211,7 +211,7 @@ export function isDefaultChecked(
 	name: string,
 	serialize: Serialize = defaultSerialize,
 ): boolean {
-	const value = getValueAtPath(
+	const value = getPathValue(
 		context.state.serverValue ??
 			context.state.targetValue ??
 			context.state.defaultValue,
@@ -237,7 +237,7 @@ export function isTouched(state: FormState<any>, name = '') {
 		return true;
 	}
 
-	const paths = getPathSegments(name);
+	const paths = parsePath(name);
 
 	return state.touchedFields.some(
 		(field) => field !== name && getRelativePath(field, paths) !== null,
@@ -249,8 +249,8 @@ export function getDefaultListKey(
 	initialValue: Record<string, unknown> | null,
 	name: string,
 ): string[] {
-	return getArrayAtPath(initialValue, name).map(
-		(_, index) => `${prefix}-${appendPathSegment(name, index)}`,
+	return getPathArray(initialValue, name).map(
+		(_, index) => `${prefix}-${appendPath(name, index)}`,
 	);
 }
 
@@ -292,7 +292,7 @@ export function getFieldErrors<ErrorShape>(
 	const error = state.serverError ?? state.clientError;
 
 	if (error) {
-		const basePath = getPathSegments(name);
+		const basePath = parsePath(name);
 
 		for (const field of Object.keys(error.fieldErrors)) {
 			const relativePath = getRelativePath(field, basePath);
@@ -305,7 +305,7 @@ export function getFieldErrors<ErrorShape>(
 			const error = getErrors(state, field);
 
 			if (typeof error !== 'undefined') {
-				result[formatPathSegments(relativePath)] = error;
+				result[formatPath(relativePath)] = error;
 			}
 		}
 	}
@@ -321,7 +321,7 @@ export function isValid(state: FormState<any>, name?: string): boolean {
 		return true;
 	}
 
-	const basePath = getPathSegments(name);
+	const basePath = parsePath(name);
 
 	for (const field of Object.keys(error.fieldErrors)) {
 		// When checking a specific field, only check that field and its children
@@ -570,7 +570,7 @@ export function getFieldset<
 				});
 
 				return getField(context, {
-					name: appendPathSegment(options?.name, name),
+					name: appendPath(options?.name, name),
 					serialize: options.serialize,
 					extendFieldMetadata: options.extendFieldMetadata,
 					form: options.form,
@@ -621,7 +621,7 @@ export function getFieldList<
 			ErrorShape,
 			CustomFieldMetadata
 		>(context, {
-			name: appendPathSegment(options.name, index),
+			name: appendPath(options.name, index),
 			serialize: options.serialize,
 			extendFieldMetadata: options.extendFieldMetadata,
 			key,

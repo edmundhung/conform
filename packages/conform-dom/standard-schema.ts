@@ -1,5 +1,5 @@
 import type { FormError } from './types';
-import { formatPathSegments } from './formdata';
+import { formatPath } from './formdata';
 import { isPlainObject } from './util';
 
 /**
@@ -37,7 +37,7 @@ export function formatIssues(
 
 				return path;
 			}) ?? [];
-		const name = formatPathSegments(segments ?? []);
+		const name = formatPath(segments ?? []);
 
 		if (!name) {
 			error.formErrors.push(issue.message);
