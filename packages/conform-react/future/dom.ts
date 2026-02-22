@@ -1,6 +1,6 @@
 import {
 	change,
-	getValueAtPath,
+	getPathValue,
 	isFieldElement,
 	isGlobalInstance,
 	requestIntent,
@@ -243,7 +243,7 @@ export function updateFormValue(
 ): void {
 	for (const element of form.elements) {
 		if (isFieldElement(element) && element.name && element.type !== 'hidden') {
-			const fieldValue = getValueAtPath(targetValue, element.name);
+			const fieldValue = getPathValue(targetValue, element.name);
 
 			if (element.type === 'file' && fieldValue === undefined) {
 				// Do not update file inputs unless there's a target value
@@ -272,7 +272,7 @@ export function resetFormValue(
 			element.type !== 'hidden' &&
 			element.type !== 'file'
 		) {
-			const fieldValue = getValueAtPath(defaultValue, element.name);
+			const fieldValue = getPathValue(defaultValue, element.name);
 			const value = serialize(fieldValue);
 
 			updateField(element, {

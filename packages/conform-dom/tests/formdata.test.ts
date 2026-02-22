@@ -1,12 +1,12 @@
 import { describe, it, expect, test } from 'vitest';
 import {
-	getValueAtPath,
-	setValueAtPath,
+	getPathValue,
+	setPathValue,
 	getRelativePath,
-	getPathSegments,
-	formatPathSegments,
+	parsePath,
+	formatPath,
 	isDirty,
-	isPrefix,
+	isPathPrefix,
 	parseSubmission,
 	report,
 	DEFAULT_INTENT_NAME,
@@ -26,85 +26,77 @@ function createFormData(
 	return formData;
 }
 
-test('getPathSegments', () => {
-	expect(getPathSegments(undefined)).toEqual([]);
-	expect(getPathSegments('')).toEqual([]);
-	expect(getPathSegments('title')).toEqual(['title']);
-	expect(getPathSegments('123')).toEqual(['123']);
-	expect(getPathSegments('amount.currency')).toEqual(['amount', 'currency']);
-	expect(getPathSegments('[0]')).toEqual([0]);
-	expect(getPathSegments('tasks[0]')).toEqual(['tasks', 0]);
-	expect(getPathSegments('tasks[1].completed')).toEqual([
-		'tasks',
-		1,
-		'completed',
-	]);
-	expect(getPathSegments('multiple[0][1][2]')).toEqual(['multiple', 0, 1, 2]);
-	expect(getPathSegments('books[0].chapters[1]')).toEqual([
+test('parsePath', () => {
+	expect(parsePath(undefined)).toEqual([]);
+	expect(parsePath('')).toEqual([]);
+	expect(parsePath('title')).toEqual(['title']);
+	expect(parsePath('123')).toEqual(['123']);
+	expect(parsePath('amount.currency')).toEqual(['amount', 'currency']);
+	expect(parsePath('[0]')).toEqual([0]);
+	expect(parsePath('tasks[0]')).toEqual(['tasks', 0]);
+	expect(parsePath('tasks[1].completed')).toEqual(['tasks', 1, 'completed']);
+	expect(parsePath('multiple[0][1][2]')).toEqual(['multiple', 0, 1, 2]);
+	expect(parsePath('books[0].chapters[1]')).toEqual([
 		'books',
 		0,
 		'chapters',
 		1,
 	]);
-	expect(getPathSegments('[].array[].prop')).toEqual(['', 'array', '', 'prop']);
-	expect(() => getPathSegments('a.b..c...d')).toThrow(
+	expect(parsePath('[].array[].prop')).toEqual(['', 'array', '', 'prop']);
+	expect(() => parsePath('a.b..c...d')).toThrow(
 		'Invalid path syntax at position 3 in "a.b..c...d"',
 	);
-	expect(() => getPathSegments('.')).toThrow(
+	expect(() => parsePath('.')).toThrow(
 		'Invalid path syntax at position 0 in "."',
 	);
-	expect(() => getPathSegments('a[b]')).toThrow(
+	expect(() => parsePath('a[b]')).toThrow(
 		'Invalid path syntax at position 1 in "a[b]"',
 	);
-	expect(() => getPathSegments('[a.b]')).toThrow(
+	expect(() => parsePath('[a.b]')).toThrow(
 		'Invalid path syntax at position 0 in "[a.b]"',
 	);
-	expect(() => getPathSegments('a[b].b')).toThrow(
+	expect(() => parsePath('a[b].b')).toThrow(
 		'Invalid path syntax at position 1 in "a[b].b"',
 	);
-	expect(() => getPathSegments('a[[]]')).toThrow(
+	expect(() => parsePath('a[[]]')).toThrow(
 		'Invalid path syntax at position 1 in "a[[]]"',
 	);
 });
 
-test('formatPathSegments', () => {
-	expect(formatPathSegments([])).toEqual('');
-	expect(formatPathSegments([0])).toEqual('[0]');
-	expect(formatPathSegments(['title'])).toEqual('title');
-	expect(formatPathSegments(['amount', 'currency'])).toEqual('amount.currency');
-	expect(formatPathSegments(['tasks', 0])).toEqual('tasks[0]');
-	expect(formatPathSegments(['tasks', 1, 'completed'])).toEqual(
-		'tasks[1].completed',
-	);
-	expect(formatPathSegments([''])).toEqual('[]');
-	expect(formatPathSegments(['array', ''])).toEqual('array[]');
-	expect(formatPathSegments(['a', 'b', 2, 'c', '', 'd'])).toEqual(
-		'a.b[2].c[].d',
-	);
-	expect(formatPathSegments(['', '', ''])).toEqual('[][][]');
+test('formatPath', () => {
+	expect(formatPath([])).toEqual('');
+	expect(formatPath([0])).toEqual('[0]');
+	expect(formatPath(['title'])).toEqual('title');
+	expect(formatPath(['amount', 'currency'])).toEqual('amount.currency');
+	expect(formatPath(['tasks', 0])).toEqual('tasks[0]');
+	expect(formatPath(['tasks', 1, 'completed'])).toEqual('tasks[1].completed');
+	expect(formatPath([''])).toEqual('[]');
+	expect(formatPath(['array', ''])).toEqual('array[]');
+	expect(formatPath(['a', 'b', 2, 'c', '', 'd'])).toEqual('a.b[2].c[].d');
+	expect(formatPath(['', '', ''])).toEqual('[][][]');
 });
 
-test('isPrefix', () => {
-	expect(isPrefix('', '')).toBe(true);
-	expect(isPrefix('address', '')).toBe(true);
-	expect(isPrefix('address', 'address')).toBe(true);
-	expect(isPrefix('address', 'address.city')).toBe(false);
-	expect(isPrefix('address.city', '')).toBe(true);
-	expect(isPrefix('address.city', 'address')).toBe(true);
-	expect(isPrefix('address.city', 'address.city')).toBe(true);
-	expect(isPrefix('address.city', 'address.street')).toBe(false);
-	expect(isPrefix('address.city.zipcode', '')).toBe(true);
-	expect(isPrefix('address.city.zipcode', 'address.city')).toBe(true);
-	expect(isPrefix('tasks[0]', '')).toBe(true);
-	expect(isPrefix('tasks[0]', 'tasks')).toBe(true);
-	expect(isPrefix('tasks[0]', 'tasks[0]')).toBe(true);
-	expect(isPrefix('tasks[0]', 'tasks[1]')).toBe(false);
-	expect(isPrefix('tasks[0].content', '')).toBe(true);
-	expect(isPrefix('tasks[0].content', 'tasks')).toBe(true);
-	expect(isPrefix('tasks[0].content', 'tasks[0]')).toBe(true);
-	expect(isPrefix('tasks[0].content', 'tasks[0].content')).toBe(true);
-	expect(isPrefix('tasks[0].content', 'tasks[1].content')).toBe(false);
-	expect(isPrefix('tasks[0].content', 'tasks[0].completed')).toBe(false);
+test('isPathPrefix', () => {
+	expect(isPathPrefix('', '')).toBe(true);
+	expect(isPathPrefix('address', '')).toBe(true);
+	expect(isPathPrefix('address', 'address')).toBe(true);
+	expect(isPathPrefix('address', 'address.city')).toBe(false);
+	expect(isPathPrefix('address.city', '')).toBe(true);
+	expect(isPathPrefix('address.city', 'address')).toBe(true);
+	expect(isPathPrefix('address.city', 'address.city')).toBe(true);
+	expect(isPathPrefix('address.city', 'address.street')).toBe(false);
+	expect(isPathPrefix('address.city.zipcode', '')).toBe(true);
+	expect(isPathPrefix('address.city.zipcode', 'address.city')).toBe(true);
+	expect(isPathPrefix('tasks[0]', '')).toBe(true);
+	expect(isPathPrefix('tasks[0]', 'tasks')).toBe(true);
+	expect(isPathPrefix('tasks[0]', 'tasks[0]')).toBe(true);
+	expect(isPathPrefix('tasks[0]', 'tasks[1]')).toBe(false);
+	expect(isPathPrefix('tasks[0].content', '')).toBe(true);
+	expect(isPathPrefix('tasks[0].content', 'tasks')).toBe(true);
+	expect(isPathPrefix('tasks[0].content', 'tasks[0]')).toBe(true);
+	expect(isPathPrefix('tasks[0].content', 'tasks[0].content')).toBe(true);
+	expect(isPathPrefix('tasks[0].content', 'tasks[1].content')).toBe(false);
+	expect(isPathPrefix('tasks[0].content', 'tasks[0].completed')).toBe(false);
 });
 
 test('getRelativePath', () => {
@@ -128,7 +120,7 @@ test('getRelativePath', () => {
 	expect(getRelativePath('', [])).toEqual([]);
 });
 
-test('getValueAtPath', () => {
+test('getPathValue', () => {
 	const target = {
 		foo: {
 			bar: [
@@ -142,26 +134,26 @@ test('getValueAtPath', () => {
 		},
 	};
 
-	expect(getValueAtPath(target, '')).toBe(target);
-	expect(getValueAtPath(target, 'foo')).toBe(target.foo);
-	expect(getValueAtPath(target, ['foo', 'bar'])).toBe(target.foo.bar);
-	expect(getValueAtPath(target, 'foo.bar[0]')).toBe(target.foo.bar[0]);
-	expect(getValueAtPath(target, ['foo', 'bar', 1])).toBe(target.foo.bar[1]);
-	expect(getValueAtPath(target, 'foo.bar[0].baz')).toBe(target.foo.bar[0]?.baz);
-	expect(getValueAtPath(target, ['foo', 'bar', 1, 'baz'])).toBe(
+	expect(getPathValue(target, '')).toBe(target);
+	expect(getPathValue(target, 'foo')).toBe(target.foo);
+	expect(getPathValue(target, ['foo', 'bar'])).toBe(target.foo.bar);
+	expect(getPathValue(target, 'foo.bar[0]')).toBe(target.foo.bar[0]);
+	expect(getPathValue(target, ['foo', 'bar', 1])).toBe(target.foo.bar[1]);
+	expect(getPathValue(target, 'foo.bar[0].baz')).toBe(target.foo.bar[0]?.baz);
+	expect(getPathValue(target, ['foo', 'bar', 1, 'baz'])).toBe(
 		target.foo.bar[1]?.baz,
 	);
-	expect(getValueAtPath(target, 'foo.bar[2]')).toBe(undefined);
-	expect(getValueAtPath(target, 'test')).toBe(undefined);
-	expect(getValueAtPath(target, 'any')).toBe(undefined);
-	expect(getValueAtPath(target, ['bar'])).toBe(undefined);
-	expect(getValueAtPath(target, 'baz')).toBe(undefined);
-	expect(getValueAtPath(target, ['bar', 0, 'baz'])).toBe(undefined);
+	expect(getPathValue(target, 'foo.bar[2]')).toBe(undefined);
+	expect(getPathValue(target, 'test')).toBe(undefined);
+	expect(getPathValue(target, 'any')).toBe(undefined);
+	expect(getPathValue(target, ['bar'])).toBe(undefined);
+	expect(getPathValue(target, 'baz')).toBe(undefined);
+	expect(getPathValue(target, ['bar', 0, 'baz'])).toBe(undefined);
 
-	expect(() => getValueAtPath(target, 'foo.bar[]')).toThrowError();
+	expect(() => getPathValue(target, 'foo.bar[]')).toThrowError();
 });
 
-describe('setValueAtPath', () => {
+describe('setPathValue', () => {
 	it('mutates the target object and sets a value at a given path by default', () => {
 		const target: Record<string, any> = {
 			foo: {
@@ -173,7 +165,7 @@ describe('setValueAtPath', () => {
 			},
 		};
 
-		const result = setValueAtPath(target, 'example', 'test');
+		const result = setPathValue(target, 'example', 'test');
 
 		expect(result).toBe(target);
 		expect(result).toEqual({
@@ -187,7 +179,7 @@ describe('setValueAtPath', () => {
 			example: 'test',
 		});
 
-		const result2 = setValueAtPath(target, 'foo.bar[0].baz', 'new value');
+		const result2 = setPathValue(target, 'foo.bar[0].baz', 'new value');
 
 		expect(result2).toBe(target);
 		expect(result2).toEqual({
@@ -201,7 +193,7 @@ describe('setValueAtPath', () => {
 			example: 'test',
 		});
 
-		const result3 = setValueAtPath(
+		const result3 = setPathValue(
 			target,
 			['foo', 'bar', 1, 'baz'],
 			'another value',
@@ -222,7 +214,7 @@ describe('setValueAtPath', () => {
 			example: 'test',
 		});
 
-		const result4 = setValueAtPath(target, 'foo.test', 'test value');
+		const result4 = setPathValue(target, 'foo.test', 'test value');
 
 		expect(result4).toBe(target);
 		expect(result4).toEqual({
@@ -240,7 +232,7 @@ describe('setValueAtPath', () => {
 			example: 'test',
 		});
 
-		const result5 = setValueAtPath(target, 'foo.bar[0].baz.qux', 'hello world');
+		const result5 = setPathValue(target, 'foo.bar[0].baz.qux', 'hello world');
 
 		expect(result5).toBe(target);
 		expect(result5).toEqual({
@@ -272,13 +264,13 @@ describe('setValueAtPath', () => {
 			},
 		};
 
-		const result = setValueAtPath(target, 'example', 'test', { clone: true });
+		const result = setPathValue(target, 'example', 'test', { clone: true });
 
 		expect(result).not.toBe(target);
 		expect(result.example).toBe('test');
 		expect(result.foo).toBe(target.foo);
 
-		const result2 = setValueAtPath(target, 'foo.bar[1]', 'new value', {
+		const result2 = setPathValue(target, 'foo.bar[1]', 'new value', {
 			clone: true,
 		});
 
@@ -288,7 +280,7 @@ describe('setValueAtPath', () => {
 		expect(result2.foo.bar[0]).toBe(target.foo.bar[0]);
 		expect(result2.foo.bar[1]).toBe('new value');
 
-		const result3 = setValueAtPath(target, 'foo.bar[]', 'another value', {
+		const result3 = setPathValue(target, 'foo.bar[]', 'another value', {
 			clone: true,
 		});
 
@@ -298,14 +290,9 @@ describe('setValueAtPath', () => {
 		expect(result3.foo.bar[0]).toBe(target.foo.bar[0]);
 		expect(result3.foo.bar[1]).toBe('another value');
 
-		const result4 = setValueAtPath(
-			target,
-			'foo.bar[0].baz.qux',
-			'hello world',
-			{
-				clone: true,
-			},
-		);
+		const result4 = setPathValue(target, 'foo.bar[0].baz.qux', 'hello world', {
+			clone: true,
+		});
 
 		expect(result4).not.toBe(target);
 		expect(result4.foo).not.toBe(target.foo);
@@ -326,19 +313,17 @@ describe('setValueAtPath', () => {
 			},
 		};
 
-		expect(() => setValueAtPath(target, '', 'test')).toThrowError();
+		expect(() => setPathValue(target, '', 'test')).toThrowError();
 		expect(() =>
-			setValueAtPath(target, '', 'test', { silent: true }),
+			setPathValue(target, '', 'test', { silent: true }),
 		).not.toThrowError();
-		expect(() => setValueAtPath(target, 'foo..bar', 'test')).toThrowError();
+		expect(() => setPathValue(target, 'foo..bar', 'test')).toThrowError();
 		expect(() =>
-			setValueAtPath(target, 'foo..bar', 'test', { silent: true }),
+			setPathValue(target, 'foo..bar', 'test', { silent: true }),
 		).not.toThrowError();
+		expect(() => setPathValue(target, 'foo.bar[].baz', 'test')).toThrowError();
 		expect(() =>
-			setValueAtPath(target, 'foo.bar[].baz', 'test'),
-		).toThrowError();
-		expect(() =>
-			setValueAtPath(target, 'foo.bar[].baz', 'test', { silent: true }),
+			setPathValue(target, 'foo.bar[].baz', 'test', { silent: true }),
 		).not.toThrowError();
 	});
 });

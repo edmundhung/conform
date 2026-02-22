@@ -54,14 +54,12 @@ export function getFormData(
  *
  * @example
  * ```js
- * getPathSegments("object.key");       // → ['object', 'key']
- * getPathSegments("array[0].content"); // → ['array', 0, 'content']
- * getPathSegments("todos[]");          // → ['todos', '']
+ * parsePath("object.key");       // → ['object', 'key']
+ * parsePath("array[0].content"); // → ['array', 0, 'content']
+ * parsePath("todos[]");          // → ['todos', '']
  * ```
  */
-export function getPathSegments(
-	path: string | undefined,
-): Array<string | number> {
+export function parsePath(path: string | undefined): Array<string | number> {
 	if (!path) return [];
 
 	const tokenRegex = /([^.[\]]+)|\[(\d*)\]/g;
@@ -115,16 +113,14 @@ export function getPathSegments(
  *
  * @example
  * ```js
- * formatPathSegments(['object', 'key']); // → "object.key"
- * formatPathSegments(['array', 0, 'content']); // → "array[0].content"
- * formatPathSegments(['todos', '']); // → "todos[]"
+ * formatPath(['object', 'key']); // → "object.key"
+ * formatPath(['array', 0, 'content']); // → "array[0].content"
+ * formatPath(['todos', '']); // → "todos[]"
  * ```
  */
-export function formatPathSegments(
-	segments: Readonly<Array<string | number>>,
-): string {
+export function formatPath(segments: Readonly<Array<string | number>>): string {
 	return segments.reduce<string>(
-		(path, segment) => appendPathSegment(path, segment),
+		(path, segment) => appendPath(path, segment),
 		'',
 	);
 }
@@ -137,7 +133,7 @@ export function formatPathSegments(
  * - segment = `number`     ⇒ bracket notation "[n]"
  * - segment = `string`     ⇒ dot-notation ".prop"
  */
-export function appendPathSegment(
+export function appendPath(
 	path: string | undefined,
 	segment: string | number | undefined,
 ): string {
@@ -166,23 +162,23 @@ export function appendPathSegment(
  *
  * @example
  * ```js
- * isPrefix("foo.bar.baz", "foo.bar")        // → true
- * isPrefix("foo.bar[3].baz", "foo.bar[3]")  // → true
- * isPrefix("foo.bar[3].baz", "foo.bar")     // → true
- * isPrefix("foo.bar[3].baz", "foo.baz")     // → false
- * isPrefix("foo", "foo.bar")                // → false
+ * isPathPrefix("foo.bar.baz", "foo.bar")        // → true
+ * isPathPrefix("foo.bar[3].baz", "foo.bar[3]")  // → true
+ * isPathPrefix("foo.bar[3].baz", "foo.bar")     // → true
+ * isPathPrefix("foo.bar[3].baz", "foo.baz")     // → false
+ * isPathPrefix("foo", "foo.bar")                // → false
  * ```
  */
-export function isPrefix(name: string, prefix: string) {
-	return getRelativePath(name, getPathSegments(prefix)) !== null;
+export function isPathPrefix(name: string, prefix: string) {
+	return getRelativePath(name, parsePath(prefix)) !== null;
 }
 
 /**
- * Return the segments of `fullPathStr` that come after the `baseSegments` prefix.
+ * Return the segments of `fullPath` that come after the `basePath` prefix.
  *
- * @param fullPathStr     Full path as a dot/bracket string
- * @param basePath    Base path, already parsed into segments
- * @returns               The “tail” segments, or `null` if `fullPathStr` isn’t nested under `baseSegments`
+ * @param fullPath     Full path as a dot/bracket string or array of segments
+ * @param basePath     Base path as a dot/bracket string or array of segments
+ * @returns               The “tail” segments, or `null` if `fullPath` isn’t nested under `basePath`
  *
  * @example
  * ```js
@@ -192,20 +188,20 @@ export function isPrefix(name: string, prefix: string) {
  * ```
  */
 export function getRelativePath(
-	nameOrSegments: string | Array<string | number>,
-	basePath: Array<string | number>,
+	fullPath: string | Array<string | number>,
+	basePath: string | Array<string | number>,
 ): Array<string | number> | null {
-	const fullPath =
-		typeof nameOrSegments === 'string'
-			? getPathSegments(nameOrSegments)
-			: nameOrSegments;
+	const fullPathSegments =
+		typeof fullPath === 'string' ? parsePath(fullPath) : fullPath;
+	const basePathSegments =
+		typeof basePath === 'string' ? parsePath(basePath) : basePath;
 
 	// if full is at least as long *and* starts with the base…
 	if (
-		fullPath.length >= basePath.length &&
-		basePath.every((segment, i) => segment === fullPath[i])
+		fullPathSegments.length >= basePathSegments.length &&
+		basePathSegments.every((segment, i) => segment === fullPathSegments[i])
 	) {
-		return fullPath.slice(basePath.length);
+		return fullPathSegments.slice(basePathSegments.length);
 	}
 
 	return null;
@@ -214,7 +210,7 @@ export function getRelativePath(
 /**
  * Assign a value to a target object by following the path segments.
  */
-export function setValueAtPath<T extends Record<string, any>>(
+export function setPathValue<T extends Record<string, any>>(
 	target: T,
 	pathOrSegments: string | Array<string | number>,
 	valueOrFn: unknown | ((current: unknown) => unknown),
@@ -224,7 +220,7 @@ export function setValueAtPath<T extends Record<string, any>>(
 		// 1) normalize + validate path
 		const segments: Array<string | number> =
 			typeof pathOrSegments === 'string'
-				? getPathSegments(pathOrSegments)
+				? parsePath(pathOrSegments)
 				: pathOrSegments;
 
 		if (segments.length === 0) {
@@ -289,7 +285,7 @@ export function setValueAtPath<T extends Record<string, any>>(
 /**
  * Retrive the value from a target object by following the path segments.
  */
-export function getValueAtPath(
+export function getPathValue(
 	target: unknown,
 	pathOrSegments: string | Array<string | number>,
 ): unknown {
@@ -297,7 +293,7 @@ export function getValueAtPath(
 
 	const segments =
 		typeof pathOrSegments === 'string'
-			? getPathSegments(pathOrSegments)
+			? parsePath(pathOrSegments)
 			: pathOrSegments;
 
 	for (const segment of segments) {
@@ -412,7 +408,7 @@ export function parseSubmission(
 		if (name !== intentName && !options?.skipEntry?.(name)) {
 			let value: FormDataEntryValue | FormDataEntryValue[] | undefined =
 				formData.getAll(name);
-			const segments = getPathSegments(name);
+			const segments = parsePath(name);
 
 			// If the name ends with [], remove the empty segment and keep the full array
 			// Otherwise, unwrap single values
@@ -435,7 +431,7 @@ export function parseSubmission(
 				}
 			}
 
-			setValueAtPath(submission.payload, segments, value, {
+			setPathValue(submission.payload, segments, value, {
 				silent: true, // Avoid errors if the path is invalid
 			});
 			submission.fields.push(name);
@@ -615,11 +611,11 @@ export function report<ErrorShape = string>(
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {
-			const path = getPathSegments(name);
+			const path = parsePath(name);
 
-			setValueAtPath(submission.payload, path, undefined);
+			setPathValue(submission.payload, path, undefined);
 			if (targetValue) {
-				setValueAtPath(targetValue, path, undefined);
+				setPathValue(targetValue, path, undefined);
 			}
 		}
 	}
@@ -1004,9 +1000,9 @@ export function getFieldValue<FieldShape>(
 		// Get value based on array option
 		value = array ? formData.getAll(name) : formData.get(name);
 	} else {
-		// Parse formData and use getValueAtPath
+		// Parse formData and use getPathValue
 		const submission = parseSubmission(formData);
-		value = getValueAtPath(submission.payload, name);
+		value = getPathValue(submission.payload, name);
 	}
 
 	// If optional and value is undefined, skip validation and return early

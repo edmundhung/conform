@@ -1,11 +1,11 @@
 import type { FormError } from '@conform-to/dom/future';
 import {
 	formatIssues,
-	formatPathSegments,
-	getPathSegments,
-	getValueAtPath,
+	formatPath,
+	parsePath,
+	getPathValue,
 	isPlainObject,
-	setValueAtPath,
+	setPathValue,
 } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
 import {
@@ -41,11 +41,11 @@ export function isOptional<T>(
 	return isUndefined(value) || typeGuard(value);
 }
 
-export function getArrayAtPath<Type>(
+export function getPathArray<Type>(
 	formValue: Record<string, Type> | null,
 	name: string,
 ): Array<Type> {
-	const value = getValueAtPath(formValue, name) ?? [];
+	const value = getPathValue(formValue, name) ?? [];
 
 	if (!Array.isArray(value)) {
 		throw new Error(`The value of "${name}" is not an array`);
@@ -58,7 +58,7 @@ export function getArrayAtPath<Type>(
  * Immutably updates a value at the specified path.
  * Empty path replaces the entire object.
  */
-export function updateValueAtPath<Data>(
+export function updatePathValue<Data>(
 	data: Record<string, Data>,
 	name: string,
 	value: Data | Record<string, Data>,
@@ -71,7 +71,7 @@ export function updateValueAtPath<Data>(
 		return value;
 	}
 
-	return setValueAtPath(data, getPathSegments(name), value, { clone: true });
+	return setPathValue(data, parsePath(name), value, { clone: true });
 }
 
 /**
@@ -82,10 +82,10 @@ export function createPathIndexUpdater(
 	listName: string,
 	update: (index: number) => number | null,
 ): (name: string) => string | null {
-	const listPaths = getPathSegments(listName);
+	const listPaths = parsePath(listName);
 
 	return (name: string) => {
-		const paths = getPathSegments(name);
+		const paths = parsePath(name);
 
 		if (
 			paths.length > listPaths.length &&
@@ -105,7 +105,7 @@ export function createPathIndexUpdater(
 					// Replace the index
 					paths.splice(listPaths.length, 1, newIndex);
 
-					return formatPathSegments(paths);
+					return formatPath(paths);
 				}
 			}
 		}

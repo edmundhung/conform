@@ -31,8 +31,8 @@ export {
 } from './submission';
 export {
 	getFormData,
-	getPathSegments as getPaths,
-	formatPathSegments as formatPaths,
+	parsePath as getPaths,
+	formatPath as formatPaths,
+	isPathPrefix as isPrefix,
 	getRelativePath,
-	isPrefix,
 } from './formdata';
