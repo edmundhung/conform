@@ -85,6 +85,20 @@ describe('wrap', () => {
 		});
 	});
 
+	test('should coerce fields inside optional object', () => {
+		const schema = object({
+			nested: optional(object({ num: number() })),
+		});
+
+		const output = parseWithValibot(createFormData('nested.num', '42'), {
+			schema,
+		});
+		expect(output).toMatchObject({
+			status: 'success',
+			value: { nested: { num: 42 } },
+		});
+	});
+
 	test('should pass wrapped union', () => {
 		const schema = object({
 			union: optional(union([number(), literal('test')])),

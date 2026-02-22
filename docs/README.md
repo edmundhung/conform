@@ -68,6 +68,8 @@
     - [isSchema](./api/zod/future/isSchema.md)
   - @conform-to/valibot
     - [coerceFormValue](./api/valibot/future/coerceFormValue.md)
+    - [coerceStructure](./api/valibot/future/coerceStructure.md)
+    - [configureCoercion](./api/valibot/future/configureCoercion.md)
     - [formatResult](./api/valibot/future/formatResult.md)
     - [getConstraints](./api/valibot/future/getConstraints.md)
     - [isSchema](./api/valibot/future/isSchema.md)

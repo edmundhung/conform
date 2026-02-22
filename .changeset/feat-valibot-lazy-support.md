@@ -4,7 +4,7 @@
 
 feat: add coercion support for `v.lazy()`
 
-`coerceFormValue` now correctly traverse `v.lazy()` schemas. Previously, schemas inside `v.lazy()` were skipped, so coercion (e.g. string to number) was not applied to recursive types.
+`coerceFormValue` now correctly traverses `v.lazy()` schemas. Previously, schemas inside `v.lazy()` were skipped, so coercion (e.g. string to number) was not applied to recursive types.
 
 ```ts
 const treeSchema = v.object({

@@ -313,7 +313,7 @@ describe('coercion', () => {
 					.pipe(z.number().min(5)),
 			);
 
-			expect(coerceStructure(stringToNumber).parse('3')).toBe('3');
+			expect(stringToNumber.parse('3')).toBe('3');
 		});
 
 		test('default', () => {
@@ -613,7 +613,13 @@ describe('coercion', () => {
 					configureCoercion({
 						customize(type) {
 							if (type === Payment) {
-								return (text) => JSON.parse(text);
+								return (value) => {
+									if (typeof value !== 'string') {
+										throw new Error('Expected string input for payment');
+									}
+
+									return JSON.parse(value);
+								};
 							}
 
 							return null;

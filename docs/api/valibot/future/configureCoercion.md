@@ -31,31 +31,29 @@ stripEmptyString: (value) => {
 
 ### `config.type`
 
+```ts
+type?: {
+  number?: (text: string) => number,
+  boolean?: (text: string) => boolean,
+  date?: (text: string) => Date,
+}
+```
+
 Optional. Type-specific string-to-typed-value conversion functions shared between validation and structural modes. Each function takes a string and returns the converted value.
 
 - `number`: default uses `Number()` with empty-string guard (returns `NaN` for empty)
 - `boolean`: default returns `true` for `'on'`, rejects otherwise
 - `date`: default uses `new Date()` with invalid date check
 
-`bigint` is not configurable here because it has no NaN-like sentinel for structural mode. Use `customize` for custom bigint coercion.
+### `config.customize`
 
 ```ts
-type: {
-  number: (text) => Number(text),
-  boolean: (text) => boolean,
-  date: (text) => Date,
-}
+customize?: (type: Schema) => ((value: unknown) => unknown) | null;
 ```
-
-### `config.customize`
 
 Optional. A per-schema escape hatch. Called for every schema encountered during traversal. Return a coercion function to override the default for that schema, or `null` to use the default.
 
-Unlike `type`, `stripEmptyString` is **not** applied automatically when using `customize`: you handle the raw string value directly.
-
-```ts
-customize: (type) => ((text: string) => unknown) | null;
-```
+The coercion function receives the raw form value directly. This could be a `string`, `File`, an array of values for repeated fields, or any other value depending on the schema structure. Empty values are not stripped automatically.
 
 ## Returns
 
@@ -117,7 +115,13 @@ const metadata = v.object({
 const { coerceFormValue } = configureCoercion({
   customize(type) {
     if (type === metadata) {
-      return (text) => JSON.parse(text);
+      return (value) => {
+        if (typeof value !== 'string') {
+          throw new Error('Expected a string value for metadata');
+        }
+
+        return JSON.parse(value);
+      };
     }
 
     return null;

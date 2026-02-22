@@ -471,9 +471,11 @@ export function configureCoercion(config?: {
 	/**
 	 * Per-schema escape hatch. Return a coercion function to override
 	 * the default for a specific schema, or `null` to use the default.
-	 * Unlike `type`, `stripEmptyString` is not applied automatically.
+	 * The coercion function receives the raw form value (string, File,
+	 * array, etc.) and neither `stripEmptyString` nor `coerceString`
+	 * is applied automatically.
 	 */
-	customize?: (type: $ZodType) => ((text: string) => unknown) | null;
+	customize?: (type: $ZodType) => ((value: unknown) => unknown) | null;
 }) {
 	const stripEmptyString: (value: string) => string | undefined =
 		config?.stripEmptyString ?? ((value) => (value === '' ? undefined : value));
@@ -503,7 +505,7 @@ export function configureCoercion(config?: {
 			const customFn = config.customize(type);
 
 			if (customFn !== null) {
-				return (value) => coerceString(value, customFn);
+				return customFn;
 			}
 		}
 

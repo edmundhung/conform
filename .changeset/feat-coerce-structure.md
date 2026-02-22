@@ -10,7 +10,7 @@ feat: add `coerceStructure` future APIs for zod and valibot
 ```ts
 import { coerceStructure } from '@conform-to/zod/v4/future';
 // For zod v3, import from '@conform-to/zod/v3/future';
-// For valibot v4, import from '@conform-to/valibot/v4/future';
+// For valibot, import from '@conform-to/valibot/future';
 
 const schema = z.object({
   age: z.number().min(0).max(120),

@@ -312,10 +312,12 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 	// `expects` is required to generate error messages for `TupleSchema`, so it is passed to `UnknownSchema` for coercion.
 	const unknown = { ...valibotUnknown(), expects: type.expects };
 	const default_ = 'default' in type ? type.default : undefined;
+	const wrappedSchema = { ...type, wrapped: wrapSchema };
+
 	if (transformAction) {
-		const schema = type.async
-			? pipeAsync(unknown, transformAction, type)
-			: pipe(unknown, transformAction, type);
+		const schema = wrappedSchema.async
+			? pipeAsync(unknown, transformAction, wrappedSchema)
+			: pipe(unknown, transformAction, wrappedSchema);
 
 		if (rewrap) {
 			return {
@@ -327,10 +329,6 @@ function generateWrappedSchema<T extends GenericSchema | GenericSchemaAsync>(
 		return { transformAction, schema };
 	}
 
-	const wrappedSchema = {
-		...type,
-		wrapped: wrapSchema,
-	};
 	const stripTransform = vTransform(options.stripEmptyValue);
 	const schema = wrappedSchema.async
 		? pipeAsync(unknown, stripTransform, wrappedSchema)
@@ -657,11 +655,13 @@ export function configureCoercion(config?: {
 	/**
 	 * Per-schema escape hatch. Return a coercion function to override
 	 * the default for a specific schema, or `null` to use the default.
-	 * Unlike `type`, `stripEmptyString` is not applied automatically.
+	 * The coercion function receives the raw form value (string, File,
+	 * array, etc.) and neither `stripEmptyString` nor `coerceString`
+	 * is applied automatically.
 	 */
 	customize?: (
 		type: GenericSchema | GenericSchemaAsync,
-	) => ((text: string) => unknown) | null;
+	) => ((value: unknown) => unknown) | null;
 }) {
 	const stripEmptyString: (value: string) => string | undefined =
 		config?.stripEmptyString ?? ((value) => (value === '' ? undefined : value));
@@ -691,7 +691,7 @@ export function configureCoercion(config?: {
 			const customFn = config.customize(type);
 
 			if (customFn !== null) {
-				return (value) => coerceString(value, customFn);
+				return customFn;
 			}
 		}
 
@@ -762,7 +762,17 @@ export function configureCoercion(config?: {
 		 */
 		coerceStructure<Schema extends GenericSchema | GenericSchemaAsync>(
 			type: Schema,
-		): GenericSchema<InferInput<Schema>, InferInput<Schema>> {
+		): Schema extends GenericSchemaAsync
+			? GenericSchemaAsync<
+					InferInput<Schema>,
+					InferInput<Schema>,
+					BaseIssue<unknown>
+				>
+			: GenericSchema<
+					InferInput<Schema>,
+					InferInput<Schema>,
+					BaseIssue<unknown>
+				> {
 			let result = structureCache.get(type);
 
 			if (!result) {
@@ -778,7 +788,17 @@ export function configureCoercion(config?: {
 				structureCache.set(type, result);
 			}
 
-			return result as GenericSchema<InferInput<Schema>, InferInput<Schema>>;
+			return result as Schema extends GenericSchemaAsync
+				? GenericSchemaAsync<
+						InferInput<Schema>,
+						InferInput<Schema>,
+						BaseIssue<unknown>
+					>
+				: GenericSchema<
+						InferInput<Schema>,
+						InferInput<Schema>,
+						BaseIssue<unknown>
+					>;
 		},
 	};
 }
