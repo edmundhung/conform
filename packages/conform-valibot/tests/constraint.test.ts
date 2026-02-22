@@ -1,4 +1,5 @@
 import {
+	type GenericSchema,
 	array,
 	bigint,
 	boolean,
@@ -9,6 +10,7 @@ import {
 	file,
 	instance,
 	intersect,
+	lazy,
 	literal,
 	looseObject,
 	maxLength,
@@ -289,5 +291,87 @@ describe('constraint', () => {
 			baz: { required: true, minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
+	});
+
+	test('lazy() based recursive schema', () => {
+		type Category = {
+			name: string;
+			subcategories: Category[];
+		};
+
+		const categorySchema: GenericSchema<Category> = object({
+			name: string(),
+			subcategories: array(lazy(() => categorySchema)),
+		});
+
+		const constraint = getValibotConstraint(categorySchema);
+
+		// Static keys
+		expect(constraint).toEqual({
+			name: { required: true },
+			subcategories: { required: true, multiple: true },
+		});
+
+		// Recursive alias collapse
+		expect(constraint['subcategories[0].name']).toEqual({ required: true });
+		expect(constraint['subcategories[0].subcategories']).toEqual({
+			required: true,
+			multiple: true,
+		});
+		expect(constraint['subcategories[0].subcategories[1].name']).toEqual({
+			required: true,
+		});
+		expect(
+			constraint['subcategories[0].subcategories[1].subcategories[2].name'],
+		).toEqual({ required: true });
+	});
+
+	test('lazy() with variant (discriminated union)', () => {
+		type Condition =
+			| { type: 'filter' }
+			| { type: 'group'; conditions: Condition[] };
+
+		const conditionSchema: GenericSchema<Condition> = variant('type', [
+			object({
+				type: literal('filter'),
+			}),
+			object({
+				type: literal('group'),
+				conditions: array(lazy(() => conditionSchema)),
+			}),
+		]);
+
+		const filterSchema = object({
+			type: literal('group'),
+			conditions: array(conditionSchema),
+		});
+
+		const constraint = getValibotConstraint(filterSchema);
+
+		// Static keys — both variant options are traversed; recursion is
+		// caught when lazy() re-encounters conditionSchema.
+		// conditions[].conditions only exists in "group", so required: false.
+		expect(constraint).toEqual({
+			type: { required: true },
+			conditions: { required: true, multiple: true },
+			'conditions[]': { required: true },
+			'conditions[].type': { required: true },
+			'conditions[].conditions': { required: false, multiple: true },
+		});
+
+		// Index normalization
+		expect(constraint['conditions[0].type']).toEqual({ required: true });
+		expect(constraint['conditions[0].conditions']).toEqual({
+			required: false,
+			multiple: true,
+		});
+
+		// Recursive alias collapse
+		expect(constraint['conditions[0].conditions[1].type']).toEqual({
+			required: true,
+		});
+		expect(
+			constraint['conditions[0].conditions[1].conditions[2].type'],
+		).toEqual({ required: true });
 	});
 });
