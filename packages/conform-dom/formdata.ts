@@ -392,8 +392,11 @@ export function parseSubmission(
 		skipEntry?: (name: string) => boolean;
 		/**
 		 * Whether to strip empty values (empty strings, empty files, arrays with all empty values)
-		 * from the submission payload. Defaults to `true`.
-		 * Set to `false` to preserve empty values in the payload.
+		 * from the submission payload. Defaults to `false`.
+		 *
+		 * @deprecated This option will be removed in a future minor release.
+		 * If you are using a schema library like Zod or Valibot, our integration
+		 * already strips empty values for you. There is no need to use this option.
 		 */
 		stripEmptyValues?: boolean;
 	},
@@ -419,8 +422,7 @@ export function parseSubmission(
 				value = value.length > 1 ? value : value[0];
 			}
 
-			// Check if the value is empty and should be skipped (defaults to true)
-			const stripEmptyValues = options?.stripEmptyValues ?? true;
+			const stripEmptyValues = options?.stripEmptyValues ?? false;
 
 			if (stripEmptyValues) {
 				// For arrays, filter out individual empty items
@@ -1003,9 +1005,7 @@ export function getFieldValue<FieldShape>(
 		value = array ? formData.getAll(name) : formData.get(name);
 	} else {
 		// Parse formData and use getValueAtPath
-		const submission = parseSubmission(formData, {
-			stripEmptyValues: false,
-		});
+		const submission = parseSubmission(formData);
 		value = getValueAtPath(submission.payload, name);
 	}
 
