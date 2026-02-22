@@ -2,8 +2,8 @@ import { describe, test, expect } from 'vitest';
 import { getZodConstraint } from '../constraint';
 import { z } from 'zod-v4';
 
-describe('constraint', () => {
-	test('getZodConstraint', () => {
+describe('getZodConstraint', () => {
+	test('basic constraints', () => {
 		const schema = z
 			.object({
 				text: z
@@ -76,7 +76,8 @@ describe('constraint', () => {
 				stringbool: z.stringbool(),
 			})
 			.refine(() => false, 'refine');
-		const constraint = {
+
+		expect(getZodConstraint(schema)).toEqual({
 			text: {
 				required: true,
 				minLength: 10,
@@ -168,29 +169,67 @@ describe('constraint', () => {
 			stringbool: {
 				required: true,
 			},
-		};
+		});
+	});
 
-		expect(getZodConstraint(schema)).toEqual(constraint);
+	test('index normalization', () => {
+		const schema = z.object({
+			options: z.array(z.enum(['a', 'b', 'c'])),
+			list: z.array(z.object({ key: z.string() })),
+			tuple: z.tuple([
+				z.string().min(3, 'min'),
+				z.number().max(100, 'max').optional(),
+			]),
+			files: z.array(z.file().mime(['image/*', 'video/*'])),
+		});
+		const constraint = getZodConstraint(schema);
 
-		// Non-object schemas will throw an error
+		expect(constraint['options[0]']).toEqual({
+			required: true,
+			pattern: 'a|b|c',
+		});
+		expect(constraint['list[0]']).toEqual({ required: true });
+		expect(constraint['list[0].key']).toEqual({ required: true });
+		expect(constraint['list[5].key']).toEqual({ required: true });
+		expect(constraint['tuple[0]']).toEqual({ required: true, minLength: 3 });
+		expect(constraint['tuple[1]']).toEqual({ required: false, max: 100 });
+		expect(constraint['files[2]']).toEqual({
+			required: true,
+			accept: 'image/*,video/*',
+		});
+
+		// No match returns undefined
+		expect(constraint['nonexistent']).toBeUndefined();
+		expect(constraint['list[0].missing']).toBeUndefined();
+	});
+
+	test('non-object schemas', () => {
 		expect(() => getZodConstraint(z.string())).toThrow();
 		expect(() => getZodConstraint(z.array(z.string()))).toThrow();
+	});
 
-		// Intersection is supported
+	test('intersection', () => {
+		const schema = z.object({
+			text: z.string().min(10, 'min').max(100, 'max'),
+			number: z.number().min(1, 'min').max(10, 'max'),
+		});
+
 		expect(
 			getZodConstraint(
 				schema.extend({ text: z.string().optional(), something: z.string() }),
 			),
 		).toEqual({
-			...constraint,
 			text: { required: false },
+			number: { required: true, min: 1, max: 10 },
 			something: { required: true },
 		});
+	});
 
-		// Union is supported
+	test('union', () => {
 		const baseSchema = z.object({
 			qux: z.string().min(1, 'min'),
 		});
+
 		expect(
 			getZodConstraint(
 				z.union([
@@ -202,24 +241,24 @@ describe('constraint', () => {
 					baseSchema.extend({
 						type: z.literal('b'),
 						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min').optional(),
 					}),
 				]),
-				// .and(
-				// 	z.object({
-				// 		qux: z.string().min(1, 'min'),
-				// 	}),
-				// ),
 			),
 		).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
-			baz: { required: true, minLength: 1 },
+			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
+	});
 
-		// Discriminated union is also supported
+	test('discriminated union', () => {
+		const baseSchema = z.object({
+			qux: z.string().min(1, 'min'),
+		});
+
 		expect(
 			getZodConstraint(
 				z.discriminatedUnion('type', [
@@ -231,167 +270,191 @@ describe('constraint', () => {
 					baseSchema.extend({
 						type: z.literal('b'),
 						bar: z.string().min(1, 'min'),
-						baz: z.string().min(1, 'min'),
+						baz: z.string().min(1, 'min').optional(),
 					}),
 				]),
-				// .and(
-				// 	z.object({
-				// 		qux: z.string().min(1, 'min'),
-				// 	}),
-				// ),
 			),
 		).toEqual({
 			type: { required: true },
 			foo: { required: false, minLength: 1 },
 			bar: { required: false, minLength: 1 },
-			baz: { required: true, minLength: 1 },
+			baz: { minLength: 1 },
 			qux: { required: true, minLength: 1 },
 		});
+	});
 
-		// Getter-based recursive schema should not cause infinite recursion
-		const ConditionNodeSchema = z.object({
-			type: z.literal('condition'),
-			value: z.string(),
-		});
-
-		const LogicalGroupNodeSchema = z.object({
-			type: z.literal('group'),
-			operator: z.enum(['AND', 'OR']),
-			get children(): z.ZodArray<
-				z.ZodDiscriminatedUnion<
-					[typeof LogicalGroupNodeSchema, typeof ConditionNodeSchema]
-				>
-			> {
-				return z.array(
-					z.discriminatedUnion('type', [
-						LogicalGroupNodeSchema,
-						ConditionNodeSchema,
-					]),
-				);
+	test('getter-based recursive schema', () => {
+		// Binary tree — two recursive fields exercising multiple aliases
+		const TreeNode = z.object({
+			value: z.string().min(1),
+			get left(): z.ZodOptional<typeof TreeNode> {
+				return TreeNode.optional();
+			},
+			get right(): z.ZodOptional<typeof TreeNode> {
+				return TreeNode.optional();
 			},
 		});
 
+		const constraint = getZodConstraint(z.object({ root: TreeNode }));
+
+		// Static keys — left and right are optional recursive fields,
+		// so only the root-level entries are materialized
+		expect(constraint).toEqual({
+			root: { required: true },
+			'root.value': { required: true, minLength: 1 },
+			'root.left': { required: false },
+			'root.right': { required: false },
+		});
+
+		// Recursive resolution via left
+		expect(constraint['root.left.value']).toEqual({
+			required: true,
+			minLength: 1,
+		});
+		expect(constraint['root.left.left']).toEqual({ required: false });
+		expect(constraint['root.left.right']).toEqual({ required: false });
+
+		// Recursive resolution via right
+		expect(constraint['root.right.value']).toEqual({
+			required: true,
+			minLength: 1,
+		});
+
+		// Cross-branch recursion
+		expect(constraint['root.left.right.value']).toEqual({
+			required: true,
+			minLength: 1,
+		});
+		expect(constraint['root.right.left.value']).toEqual({
+			required: true,
+			minLength: 1,
+		});
+
+		// Multiple levels of recursion across both branches
+		expect(constraint['root.left.left.right.right.value']).toEqual({
+			required: true,
+			minLength: 1,
+		});
+
+		// No match
+		expect(constraint['root.nonexistent']).toBeUndefined();
+	});
+
+	test('z.lazy() based recursive schema', () => {
+		const baseCategorySchema = z.object({
+			name: z.string(),
+		});
+
+		type Category = z.infer<typeof baseCategorySchema> & {
+			subcategories: Category[];
+		};
+
+		const categorySchema: z.ZodType<Category> = baseCategorySchema.extend({
+			subcategories: z.lazy(() => categorySchema.array()),
+		});
+
+		const constraint = getZodConstraint(categorySchema);
+
+		// Static keys
+		expect(constraint).toEqual({
+			name: { required: true },
+			subcategories: { required: true, multiple: true },
+		});
+
+		// Recursive alias collapse
+		expect(constraint['subcategories[0].name']).toEqual({ required: true });
+		expect(constraint['subcategories[0].subcategories']).toEqual({
+			required: true,
+			multiple: true,
+		});
+		expect(constraint['subcategories[0].subcategories[1].name']).toEqual({
+			required: true,
+		});
 		expect(
-			getZodConstraint(
-				z.object({
-					filter: LogicalGroupNodeSchema,
-				}),
-			),
-		).toEqual({
-			filter: {
-				required: true,
-			},
-			'filter.type': {
-				required: true,
-			},
-			'filter.operator': {
-				required: true,
-				pattern: 'AND|OR',
-			},
-			'filter.children': {
-				required: true,
-				multiple: true,
-			},
-			// The discriminatedUnion options are traversed for the first level,
-			// but the recursive reference (LogicalGroupNodeSchema) is skipped
-			// by the processing Set, so only ConditionNodeSchema fields appear
-			'filter.children[]': {
-				required: false,
-			},
-			'filter.children[].type': {
-				required: false,
-			},
-			'filter.children[].value': {
-				required: false,
-				minLength: undefined,
-				maxLength: undefined,
+			constraint['subcategories[0].subcategories[1].subcategories[2].name'],
+		).toEqual({ required: true });
+	});
+
+	test('z.lazy() with discriminated union', () => {
+		type Condition =
+			| { type: 'filter' }
+			| { type: 'group'; conditions: Condition[] };
+
+		const ConditionSchema: z.ZodType<Condition> = z.discriminatedUnion('type', [
+			z.object({
+				type: z.literal('filter'),
+			}),
+			z.object({
+				type: z.literal('group'),
+				conditions: z.lazy(() => ConditionSchema.array()),
+			}),
+		]);
+
+		const FilterSchema = z.object({
+			type: z.literal('group'),
+			conditions: ConditionSchema.array(),
+		});
+
+		const constraint = getZodConstraint(FilterSchema);
+
+		// Static keys — both union options are traversed; recursion is
+		// caught when z.lazy() re-encounters ConditionSchema.
+		// conditions[].conditions only exists in "group", so required: false.
+		expect(constraint).toEqual({
+			type: { required: true },
+			conditions: { required: true, multiple: true },
+			'conditions[]': { required: true },
+			'conditions[].type': { required: true },
+			'conditions[].conditions': { required: false, multiple: true },
+		});
+
+		// Index normalization
+		expect(constraint['conditions[0].type']).toEqual({ required: true });
+		expect(constraint['conditions[0].conditions']).toEqual({
+			required: false,
+			multiple: true,
+		});
+
+		// Recursive alias collapse
+		expect(constraint['conditions[0].conditions[1].type']).toEqual({
+			required: true,
+		});
+		expect(
+			constraint['conditions[0].conditions[1].conditions[2].type'],
+		).toEqual({ required: true });
+	});
+
+	test('tuple with recursive element', () => {
+		const TreeNode = z.object({
+			value: z.string(),
+			get branch(): z.ZodTuple<[typeof TreeNode, z.ZodString]> {
+				return z.tuple([TreeNode, z.string()]);
 			},
 		});
 
-		// // Recursive schema should be supported too
-		// const baseCategorySchema = z.object({
-		// 	name: z.string(),
-		//   });
+		const constraint = getZodConstraint(z.object({ root: TreeNode }));
 
-		// type Category = z.infer<typeof baseCategorySchema> & {
-		// 	subcategories: Category[];
-		// };
+		// Static keys — branch[0] is the recursive TreeNode (no static entry),
+		// branch[1] is a plain string
+		expect(constraint).toEqual({
+			root: { required: true },
+			'root.value': { required: true },
+			'root.branch': { required: true },
+			'root.branch[1]': { required: true },
+		});
 
-		// const categorySchema: z.ZodType<Category> = baseCategorySchema.extend({
-		// 	subcategories: z.lazy(() => categorySchema.array()),
-		// });
+		// Alias collapse through tuple index
+		expect(constraint['root.branch[0].value']).toEqual({ required: true });
+		expect(constraint['root.branch[0].branch[1]']).toEqual({
+			required: true,
+		});
 
-		// expect(
-		// 	getZodConstraint(categorySchema),
-		// ).toEqual({
-		// 	name: {
-		// 		required: true,
-		// 	},
-		// 	subcategories: {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'subcategories[].name': {
-		// 		required: true,
-		// 	},
-		// 	'subcategories[].subcategories': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'subcategories[].subcategories[].name': {
-		// 		required: true,
-		// 	},
-		// 	'subcategories[].subcategories[].subcategories': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-		// });
-
-		// type Condition = { type: 'filter' } | { type: 'group', conditions: Condition[] }
-
-		// const ConditionSchema: z.ZodType<Condition> = z.discriminatedUnion('type', [
-		// 	z.object({
-		// 		type: z.literal('filter')
-		// 	}),
-		// 	z.object({
-		// 		type: z.literal('group'),
-		// 		conditions: z.lazy(() => ConditionSchema.array()),
-		// 	}),
-		// ]);
-
-		// const FilterSchema = z.object({
-		// 	type: z.literal('group'),
-		// 	conditions: ConditionSchema.array(),
-		// })
-
-		// expect(
-		// 	getZodConstraint(FilterSchema),
-		// ).toEqual({
-		// 	type: {
-		// 		required: true,
-		// 	},
-		// 	conditions: {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'conditions[].type': {
-		// 		required: true,
-		// 	},
-		// 	'conditions[].conditions': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-
-		// 	'conditions[].conditions[].type': {
-		// 		required: true,
-		// 	},
-		// 	'conditions[].conditions[].conditions': {
-		// 		required: true,
-		// 		multiple: true,
-		// 	},
-		// });
+		// Deeper recursion through tuple
+		expect(constraint['root.branch[0].branch[0].value']).toEqual({
+			required: true,
+		});
+		expect(constraint['root.branch[0].branch[0].branch[0].value']).toEqual({
+			required: true,
+		});
 	});
 });

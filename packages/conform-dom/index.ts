@@ -33,5 +33,6 @@ export {
 	getFormData,
 	getPathSegments as getPaths,
 	formatPathSegments as formatPaths,
+	getRelativePath,
 	isPrefix,
 } from './formdata';
