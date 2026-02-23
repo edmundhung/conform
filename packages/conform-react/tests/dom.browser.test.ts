@@ -3,7 +3,6 @@ import {
 	getFormElement,
 	getSubmitEvent,
 	initializeField,
-	makeInputFocusable,
 	getRadioGroupValue,
 	getCheckboxGroupValue,
 	getInputSnapshot,
@@ -86,35 +85,6 @@ test('initializeField', () => {
 	const input2 = document.createElement('input');
 	initializeField(input2, { defaultChecked: false });
 	expect(input2.value).toBe('');
-});
-
-test('makeInputFocusable', () => {
-	// Test with hidden input
-	const hiddenInput = document.createElement('input');
-	hiddenInput.type = 'hidden';
-	makeInputFocusable(hiddenInput);
-
-	expect(hiddenInput.style.position).toBe('absolute');
-	expect(hiddenInput.style.width).toBe('1px');
-	expect(hiddenInput.style.height).toBe('1px');
-	expect(hiddenInput.getAttribute('aria-hidden')).toBe('true');
-	expect(hiddenInput.tabIndex).toBe(-1);
-	expect(hiddenInput.type).toBe('text');
-
-	// Test with hidden element
-	const hiddenElement = document.createElement('input');
-	hiddenElement.hidden = true;
-	makeInputFocusable(hiddenElement);
-
-	expect(hiddenElement.hidden).toBe(false);
-	expect(hiddenElement.style.position).toBe('absolute');
-
-	// Test with visible element (should do nothing)
-	const visibleInput = document.createElement('input');
-	visibleInput.type = 'text';
-	const originalStyle = visibleInput.style.cssText;
-	makeInputFocusable(visibleInput);
-	expect(visibleInput.style.cssText).toBe(originalStyle);
 });
 
 test('getRadioGroupValue', () => {

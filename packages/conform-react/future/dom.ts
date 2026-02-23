@@ -1,5 +1,6 @@
 import {
 	change,
+	focus,
 	getPathValue,
 	isFieldElement,
 	isGlobalInstance,
@@ -77,43 +78,6 @@ export function initializeField(
 	updateField(element, { defaultValue });
 
 	element.dataset.conform = 'initialized';
-}
-
-/**
- * Makes hidden form inputs focusable with visually hidden styles
- */
-export function makeInputFocusable(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (!element.hidden && element.type !== 'hidden') {
-		return;
-	}
-
-	// Style the element to be visually hidden
-	element.style.position = 'absolute';
-	element.style.width = '1px';
-	element.style.height = '1px';
-	element.style.padding = '0';
-	element.style.margin = '-1px';
-	element.style.overflow = 'hidden';
-	element.style.clip = 'rect(0,0,0,0)';
-	element.style.whiteSpace = 'nowrap';
-	element.style.border = '0';
-
-	// Hide the element from screen readers
-	element.setAttribute('aria-hidden', 'true');
-
-	// Make sure people won't tab to this element
-	element.tabIndex = -1;
-
-	// Set the element to be visible again so it can be focused
-	if (element.hidden) {
-		element.hidden = false;
-	}
-
-	if (element.type === 'hidden') {
-		element.setAttribute('type', 'text');
-	}
 }
 
 export function getRadioGroupValue(
@@ -230,7 +194,11 @@ export function focusFirstInvalidField<ErrorShape>(
 			isFieldElement(element) &&
 			ctx.error.fieldErrors[element.name]?.length
 		) {
-			element.focus();
+			if (element.hidden || element.type === 'hidden') {
+				focus(element);
+			} else {
+				element.focus();
+			}
 			break;
 		}
 	}
