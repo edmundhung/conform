@@ -32,6 +32,7 @@ export type {
 	InferBaseErrorShape,
 	InferCustomFormMetadata,
 	InferCustomFieldMetadata,
+	UseControlOptions,
 } from './types';
 export { configureForms } from './forms';
 export {

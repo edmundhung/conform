@@ -48,6 +48,7 @@ export function initializeField(
 				defaultValue?: string | string[] | File | File[] | null | undefined;
 				defaultChecked?: boolean | undefined;
 				value?: string | undefined;
+				preserveOptionsOrder?: boolean | undefined;
 		  }
 		| undefined,
 ): void {
@@ -70,6 +71,7 @@ export function initializeField(
 		change(element, defaultValue, {
 			// To avoid triggering validation on initialization
 			preventDefault: true,
+			preserveOptionsOrder: options?.preserveOptionsOrder,
 		});
 	}
 

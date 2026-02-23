@@ -251,6 +251,136 @@ describe('updateField', () => {
 		expect(changed6).toBe(false);
 	});
 
+	it('supports preserveOptionsOrder for multi-select', () => {
+		const select = document.createElement('select');
+		select.multiple = true;
+
+		// Add options in alphabetical order
+		for (const value of ['a', 'b', 'c']) {
+			const option = document.createElement('option');
+			option.value = value;
+			select.appendChild(option);
+		}
+
+		// Set values in non-alphabetical order with preserveOptionsOrder
+		const changed1 = updateField(select, {
+			value: ['c', 'a'],
+			preserveOptionsOrder: true,
+		});
+
+		// selectedOptions should be in the specified order
+		const selectedValues1 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues1).toEqual(['c', 'a']);
+		expect(changed1).toBe(true);
+
+		// Change the order again
+		const changed2 = updateField(select, {
+			value: ['a', 'b', 'c'],
+			preserveOptionsOrder: true,
+		});
+
+		const selectedValues2 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues2).toEqual(['a', 'b', 'c']);
+		expect(changed2).toBe(true);
+
+		// Test with values that don't exist in DOM yet
+		const changed3 = updateField(select, {
+			value: ['d', 'a'],
+			preserveOptionsOrder: true,
+		});
+
+		const selectedValues3 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues3).toEqual(['d', 'a']);
+		expect(changed3).toBe(true);
+
+		// Test with empty array
+		const changed4 = updateField(select, {
+			value: [],
+			preserveOptionsOrder: true,
+		});
+
+		const selectedValues4 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues4).toEqual([]);
+		expect(changed4).toBe(true);
+	});
+
+	it('does not reorder options when preserveOptionsOrder is false', () => {
+		const select = document.createElement('select');
+		select.multiple = true;
+
+		// Add options in alphabetical order
+		for (const value of ['a', 'b', 'c']) {
+			const option = document.createElement('option');
+			option.value = value;
+			select.appendChild(option);
+		}
+
+		// Set values in non-alphabetical order without preserveOptionsOrder
+		updateField(select, {
+			value: ['c', 'a'],
+			preserveOptionsOrder: false,
+		});
+
+		// selectedOptions should be in DOM order (alphabetical), not specified order
+		const selectedValues = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues).toEqual(['a', 'c']);
+	});
+
+	it('returns isChanged=true when only the order changes with preserveOptionsOrder', () => {
+		const select = document.createElement('select');
+		select.multiple = true;
+
+		// Add options
+		for (const value of ['a', 'b', 'c']) {
+			const option = document.createElement('option');
+			option.value = value;
+			select.appendChild(option);
+		}
+
+		// Set initial values in one order
+		const changed1 = updateField(select, {
+			value: ['a', 'b'],
+			preserveOptionsOrder: true,
+		});
+		expect(changed1).toBe(true);
+
+		const selectedValues1 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues1).toEqual(['a', 'b']);
+
+		// Change to the same values but in different order
+		const changed2 = updateField(select, {
+			value: ['b', 'a'],
+			preserveOptionsOrder: true,
+		});
+
+		// Should return true because order changed, even though same values are selected
+		expect(changed2).toBe(true);
+
+		const selectedValues2 = Array.from(select.selectedOptions).map(
+			(o) => o.value,
+		);
+		expect(selectedValues2).toEqual(['b', 'a']);
+
+		// Calling again with same order should return false
+		const changed3 = updateField(select, {
+			value: ['b', 'a'],
+			preserveOptionsOrder: true,
+		});
+		expect(changed3).toBe(false);
+	});
+
 	it('supports textarea', () => {
 		const textarea = document.createElement('textarea');
 
