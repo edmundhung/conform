@@ -39,13 +39,13 @@ export type Control = {
 	 */
 	value: string | undefined;
 	/**
-	 * Selected options of the base input. Defined only when the registered input
-	 * is a multi-select or checkbox group.
+	 * Checked state of the base input. Defined only when the registered input
+	 * is a single checkbox or radio input.
 	 */
 	checked: boolean | undefined;
 	/**
-	 * Checked state of the base input. Defined only when the registered input
-	 * is a single checkbox or radio input.
+	 * Selected options of the base input. Defined only when the registered input
+	 * is a multi-select or checkbox group.
 	 */
 	options: string[] | undefined;
 	/**
