@@ -71,7 +71,6 @@ import {
 	applyIntent,
 } from './intent';
 import {
-	makeInputFocusable,
 	focusFirstInvalidField,
 	getCheckboxGroupValue,
 	createDefaultSnapshot,
@@ -1072,9 +1071,6 @@ export function useControl(options?: {
 		optionsRef.current = options;
 	});
 
-	// This is necessary to ensure that input is re-registered
-	// if the onFocus handler changes
-	const shouldHandleFocus = typeof options?.onFocus === 'function';
 	const snapshot = useSyncExternalStore(
 		useCallback(
 			(callback) =>
@@ -1158,63 +1154,52 @@ export function useControl(options?: {
 		options: snapshot.options,
 		files: snapshot.files,
 		formRef,
-		register: useCallback(
-			(element) => {
-				if (!element) {
-					inputRef.current = null;
-				} else if (isFieldElement(element)) {
-					inputRef.current = element;
+		register: useCallback((element) => {
+			if (!element) {
+				inputRef.current = null;
+			} else if (isFieldElement(element)) {
+				inputRef.current = element;
 
-					// Conform excludes hidden type inputs by default when updating form values
-					// Fix that by using the hidden attribute instead
-					if (element.type === 'hidden') {
-						element.hidden = true;
-						element.removeAttribute('type');
-					}
-
-					if (shouldHandleFocus) {
-						makeInputFocusable(element);
-					}
-
-					if (element.type === 'checkbox' || element.type === 'radio') {
-						// React set the value as empty string incorrectly when the value is undefined
-						// This make sure the checkbox value falls back to the default value "on" properly
-						// @see https://github.com/facebook/react/issues/17590
-						element.value = optionsRef.current?.value ?? 'on';
-					}
-
-					initializeField(element, optionsRef.current);
-				} else {
-					const inputs = Array.from(element);
-					const name = inputs[0]?.name ?? '';
-					const type = inputs[0]?.type ?? '';
-
-					if (
-						!name ||
-						!(type === 'checkbox' || type === 'radio') ||
-						!inputs.every((input) => input.name === name && input.type === type)
-					) {
-						throw new Error(
-							'You can only register a checkbox or radio group with the same name',
-						);
-					}
-
-					inputRef.current = inputs;
-
-					for (const input of inputs) {
-						if (shouldHandleFocus) {
-							makeInputFocusable(input);
-						}
-
-						initializeField(input, {
-							// We will not be uitlizing defaultChecked / value on checkbox / radio group
-							defaultValue: optionsRef.current?.defaultValue,
-						});
-					}
+				// Conform excludes hidden type inputs by default when updating form values
+				// Fix that by using the hidden attribute instead
+				if (element.type === 'hidden') {
+					element.hidden = true;
+					element.removeAttribute('type');
 				}
-			},
-			[shouldHandleFocus],
-		),
+
+				if (element.type === 'checkbox' || element.type === 'radio') {
+					// React set the value as empty string incorrectly when the value is undefined
+					// This make sure the checkbox value falls back to the default value "on" properly
+					// @see https://github.com/facebook/react/issues/17590
+					element.value = optionsRef.current?.value ?? 'on';
+				}
+
+				initializeField(element, optionsRef.current);
+			} else {
+				const inputs = Array.from(element);
+				const name = inputs[0]?.name ?? '';
+				const type = inputs[0]?.type ?? '';
+
+				if (
+					!name ||
+					!(type === 'checkbox' || type === 'radio') ||
+					!inputs.every((input) => input.name === name && input.type === type)
+				) {
+					throw new Error(
+						'You can only register a checkbox or radio group with the same name',
+					);
+				}
+
+				inputRef.current = inputs;
+
+				for (const input of inputs) {
+					initializeField(input, {
+						// We will not be uitlizing defaultChecked / value on checkbox / radio group
+						defaultValue: optionsRef.current?.defaultValue,
+					});
+				}
+			}
+		}, []),
 		change: useCallback((value) => {
 			if (!eventDispatched.current.change) {
 				const element = Array.isArray(inputRef.current)
