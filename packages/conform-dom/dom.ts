@@ -1,3 +1,4 @@
+import { formatPath, getPathValue, getRelativePath } from './formdata';
 import { invariant } from './util';
 
 /**
@@ -420,16 +421,37 @@ export function createGlobalFormsObserver() {
  * Dispatches both `input` and `change` events only if the value is changed.
  */
 export function change(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-	value: string | string[] | File | File[] | FileList | null,
+	element:
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| HTMLFieldSetElement,
+	value: unknown,
 	options?: {
 		preventDefault?: boolean;
 	},
 ): void {
-	// The value should be set to the element before dispatching the event
-	const isChanged = updateField(element, {
-		value,
-	});
+	let isChanged = false;
+
+	if (element instanceof HTMLFieldSetElement) {
+		for (const input of element.elements) {
+			if (isFieldElement(input)) {
+				const path = getRelativePath(input.name, element.name);
+
+				if (path) {
+					isChanged ||= updateField(input, {
+						value: getPathValue(value, formatPath(path)),
+					});
+				}
+			}
+		}
+	} else {
+		// The value should be set to the element before dispatching the event
+		isChanged = updateField(element, {
+			value:
+				typeof value === 'boolean' ? (value ? element.value : null) : value,
+		});
+	}
 
 	if (isChanged) {
 		const inputEvent = new InputEvent('input', {
@@ -456,9 +478,7 @@ export function change(
 /**
  * Dispatches focus and focusin events on the given element.
  */
-export function focus(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
+export function focus(element: Element): void {
 	// Only focusin event will be bubbled
 	element.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
 	element.dispatchEvent(new FocusEvent('focus'));
@@ -467,9 +487,7 @@ export function focus(
 /**
  * Dispatches blur and focusout events on the given element.
  */
-export function blur(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
+export function blur(element: Element): void {
 	// Only focusout event will be bubbled
 	element.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
 	element.dispatchEvent(new FocusEvent('blur'));

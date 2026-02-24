@@ -8,6 +8,7 @@ describe('future export: useControl', () => {
 		options: undefined,
 		files: undefined,
 		checked: undefined,
+		payload: undefined,
 		formRef: { current: null },
 		register: expect.any(Function),
 		change: expect.any(Function),
@@ -47,6 +48,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			value: 'hello world',
+			payload: 'hello world',
 		});
 
 		expect(
@@ -58,6 +60,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			options: ['foo', 'bar'],
+			payload: ['foo', 'bar'],
 		});
 
 		expect(
@@ -70,6 +73,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
+			payload: 'on',
 		});
 
 		expect(
@@ -83,6 +87,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
+			payload: null,
 		});
 
 		expect(
@@ -94,6 +99,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			files: [txtFile],
+			payload: [txtFile],
 		});
 
 		expect(
@@ -105,6 +111,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			files: [sqlFile, txtFile],
+			payload: [sqlFile, txtFile],
 		});
 	});
 
@@ -137,6 +144,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			value: 'hello world',
+			payload: 'hello world',
 		});
 
 		expect(
@@ -148,6 +156,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			options: ['foo', 'bar'],
+			payload: ['foo', 'bar'],
 		});
 
 		expect(
@@ -160,6 +169,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
+			payload: 'on',
 		});
 
 		expect(
@@ -173,6 +183,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
+			payload: null,
 		});
 	});
 });

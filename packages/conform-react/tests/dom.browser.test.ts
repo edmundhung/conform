@@ -142,7 +142,10 @@ test('getInputSnapshot', () => {
 		writable: false,
 	});
 
-	expect(getInputSnapshot(fileInput)).toEqual({ files: [file] });
+	expect(getInputSnapshot(fileInput)).toEqual({
+		files: [file],
+		payload: [file],
+	});
 
 	// Test radio input
 	const radioInput = document.createElement('input');
@@ -153,6 +156,7 @@ test('getInputSnapshot', () => {
 	expect(getInputSnapshot(radioInput)).toEqual({
 		value: 'test',
 		checked: true,
+		payload: 'test',
 	});
 
 	// Test checkbox input
@@ -164,6 +168,7 @@ test('getInputSnapshot', () => {
 	expect(getInputSnapshot(checkboxInput)).toEqual({
 		value: 'test',
 		checked: false,
+		payload: null,
 	});
 
 	// Test select multiple
@@ -178,19 +183,28 @@ test('getInputSnapshot', () => {
 	selectMultiple.appendChild(option1);
 	selectMultiple.appendChild(option2);
 
-	expect(getInputSnapshot(selectMultiple)).toEqual({ options: ['option1'] });
+	expect(getInputSnapshot(selectMultiple)).toEqual({
+		options: ['option1'],
+		payload: ['option1'],
+	});
 
 	// Test regular input
 	const textInput = document.createElement('input');
 	textInput.value = 'test value';
 
-	expect(getInputSnapshot(textInput)).toEqual({ value: 'test value' });
+	expect(getInputSnapshot(textInput)).toEqual({
+		value: 'test value',
+		payload: 'test value',
+	});
 
 	// Test textarea
 	const textarea = document.createElement('textarea');
 	textarea.value = 'textarea value';
 
-	expect(getInputSnapshot(textarea)).toEqual({ value: 'textarea value' });
+	expect(getInputSnapshot(textarea)).toEqual({
+		value: 'textarea value',
+		payload: 'textarea value',
+	});
 });
 
 test('createDefaultSnapshot', () => {
@@ -198,33 +212,41 @@ test('createDefaultSnapshot', () => {
 	expect(createDefaultSnapshot(undefined, true, 'custom')).toEqual({
 		value: 'custom',
 		checked: true,
+		payload: 'custom',
 	});
 	expect(createDefaultSnapshot(undefined, false, undefined)).toEqual({
 		value: 'on',
 		checked: false,
+		payload: null,
 	});
 
 	// Test string defaultValue
 	expect(createDefaultSnapshot('test string', undefined, undefined)).toEqual({
 		value: 'test string',
+		payload: 'test string',
 	});
 
 	// Test string array (for select multiple)
 	expect(
 		createDefaultSnapshot(['option1', 'option2'], undefined, undefined),
-	).toEqual({ options: ['option1', 'option2'] });
+	).toEqual({
+		options: ['option1', 'option2'],
+		payload: ['option1', 'option2'],
+	});
 
 	// Test File array
 	const file1 = new File(['test1'], 'test1.txt');
 	const file2 = new File(['test2'], 'test2.txt');
 	expect(createDefaultSnapshot([file1, file2], undefined, undefined)).toEqual({
 		files: [file1, file2],
+		payload: [file1, file2],
 	});
 
 	// Test single File
 	const file = new File(['test'], 'test.txt');
 	expect(createDefaultSnapshot(file, undefined, undefined)).toEqual({
 		files: [file],
+		payload: [file],
 	});
 
 	// Test FileList - skip this test as FileList is hard to mock properly
