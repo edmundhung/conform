@@ -339,7 +339,10 @@ export function configureForms<
 				handleSubmit,
 				handleInput(event) {
 					if (
-						!isFieldElement(event.target) ||
+						!(
+							isFieldElement(event.target) ||
+							event.target instanceof HTMLFieldSetElement
+						) ||
 						event.target.name === '' ||
 						event.target.form === null ||
 						event.target.form !== getFormElement(formId)
@@ -374,7 +377,10 @@ export function configureForms<
 				},
 				handleBlur(event) {
 					if (
-						!isFieldElement(event.target) ||
+						!(
+							isFieldElement(event.target) ||
+							event.target instanceof HTMLFieldSetElement
+						) ||
 						event.target.name === '' ||
 						event.target.form === null ||
 						event.target.form !== getFormElement(formId)

@@ -30,6 +30,7 @@ export type InputSnapshot = {
 	options?: string[] | undefined;
 	checked?: boolean | undefined;
 	files?: File[] | undefined;
+	payload?: unknown;
 };
 
 export type Control = {
@@ -54,6 +55,10 @@ export type Control = {
 	 */
 	files: File[] | undefined;
 	/**
+	 * TODO
+	 */
+	payload: unknown;
+	/**
 	 * Registers the base input element(s). Accepts a single input or an array for groups.
 	 */
 	register: (
@@ -61,6 +66,7 @@ export type Control = {
 			| HTMLInputElement
 			| HTMLSelectElement
 			| HTMLTextAreaElement
+			| HTMLFieldSetElement
 			| HTMLCollectionOf<HTMLInputElement>
 			| NodeListOf<HTMLInputElement>
 			| null
@@ -998,14 +1004,24 @@ export type ValidateHandler<ErrorShape, Value, SchemaValue = undefined> = (
 export interface FormInputEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export interface FormFocusEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	relatedTarget: EventTarget | null;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export type ErrorContext<ErrorShape> = {
