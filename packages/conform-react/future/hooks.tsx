@@ -1045,6 +1045,7 @@ export function useControl(options?: {
 		| HTMLInputElement
 		| HTMLSelectElement
 		| HTMLTextAreaElement
+		| HTMLFieldSetElement
 		| Array<HTMLInputElement>
 		| null
 	>(null);
@@ -1160,6 +1161,7 @@ export function useControl(options?: {
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
+		payload: snapshot.payload,
 		formRef,
 		register: useCallback((element) => {
 			if (!element) {
@@ -1182,6 +1184,8 @@ export function useControl(options?: {
 				}
 
 				initializeField(element, optionsRef.current);
+			} else if (element instanceof HTMLFieldSetElement) {
+				// ...
 			} else {
 				const inputs = Array.from(element);
 				const name = inputs[0]?.name ?? '';
@@ -1232,10 +1236,7 @@ export function useControl(options?: {
 					: inputRef.current;
 
 				if (element) {
-					change(
-						element,
-						typeof value === 'boolean' ? (value ? element.value : null) : value,
-					);
+					change(element, value);
 				}
 			}
 

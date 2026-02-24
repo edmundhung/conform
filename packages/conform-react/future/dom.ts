@@ -6,6 +6,7 @@ import {
 	isGlobalInstance,
 	requestIntent,
 	Serialize,
+	setPathValue,
 	updateField,
 } from '@conform-to/dom/future';
 import type {
@@ -108,29 +109,55 @@ export function getCheckboxGroupValue(
 }
 
 export function getInputSnapshot(
-	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	input:
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| HTMLFieldSetElement,
 ): InputSnapshot {
 	if (input instanceof HTMLInputElement) {
 		switch (input.type) {
-			case 'file':
+			case 'file': {
+				const files = input.files ? Array.from(input.files) : undefined;
+
 				return {
-					files: input.files ? Array.from(input.files) : undefined,
+					files,
+					payload: files,
 				};
+			}
 			case 'radio':
 			case 'checkbox':
 				return {
 					value: input.value,
 					checked: input.checked,
+					payload: input.checked ? input.value : null,
 				};
 		}
 	} else if (input instanceof HTMLSelectElement && input.multiple) {
+		const options = Array.from(input.selectedOptions).map(
+			(option) => option.value,
+		);
 		return {
-			options: Array.from(input.selectedOptions).map((option) => option.value),
+			options,
+			payload: options,
+		};
+	} else if (input instanceof HTMLFieldSetElement) {
+		const result = {};
+
+		for (const element of input.elements) {
+			if (isFieldElement(element) && !element.disabled) {
+				setPathValue(result, element.name, getInputSnapshot(element).payload);
+			}
+		}
+
+		return {
+			payload: getPathValue(result, input.name),
 		};
 	}
 
 	return {
 		value: input.value,
+		payload: input.value,
 	};
 }
 
@@ -150,29 +177,32 @@ export function createDefaultSnapshot(
 		return {
 			value: value ?? 'on',
 			checked: defaultChecked,
+			payload: defaultChecked ? value ?? 'on' : null,
 		};
 	}
 
 	if (typeof defaultValue === 'string') {
-		return { value: defaultValue };
+		return { value: defaultValue, payload: defaultValue };
 	}
 
 	if (Array.isArray(defaultValue)) {
 		if (
 			defaultValue.every((item): item is string => typeof item === 'string')
 		) {
-			return { options: defaultValue };
+			return { options: defaultValue, payload: defaultValue };
 		} else {
-			return { files: defaultValue };
+			return { files: defaultValue, payload: defaultValue };
 		}
 	}
 
 	if (isGlobalInstance(defaultValue, 'File')) {
-		return { files: [defaultValue] };
+		const files = [defaultValue];
+		return { files, payload: files };
 	}
 
 	if (isGlobalInstance(defaultValue, 'FileList')) {
-		return { files: Array.from(defaultValue) };
+		const files = Array.from(defaultValue);
+		return { files, payload: files };
 	}
 
 	return {};
