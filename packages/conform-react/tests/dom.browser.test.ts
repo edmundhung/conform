@@ -156,7 +156,7 @@ test('getInputSnapshot', () => {
 	expect(getInputSnapshot(radioInput)).toEqual({
 		value: 'test',
 		checked: true,
-		payload: 'test',
+		payload: true,
 	});
 
 	// Test checkbox input
@@ -168,7 +168,7 @@ test('getInputSnapshot', () => {
 	expect(getInputSnapshot(checkboxInput)).toEqual({
 		value: 'test',
 		checked: false,
-		payload: null,
+		payload: false,
 	});
 
 	// Test select multiple
@@ -209,26 +209,28 @@ test('getInputSnapshot', () => {
 
 test('createDefaultSnapshot', () => {
 	// Test checkbox/radio with value and defaultChecked
-	expect(createDefaultSnapshot(undefined, true, 'custom')).toEqual({
+	expect(
+		createDefaultSnapshot({ defaultChecked: true, value: 'custom' }),
+	).toEqual({
 		value: 'custom',
 		checked: true,
-		payload: 'custom',
+		payload: true,
 	});
-	expect(createDefaultSnapshot(undefined, false, undefined)).toEqual({
+	expect(createDefaultSnapshot({ defaultChecked: false })).toEqual({
 		value: 'on',
 		checked: false,
-		payload: null,
+		payload: false,
 	});
 
 	// Test string defaultValue
-	expect(createDefaultSnapshot('test string', undefined, undefined)).toEqual({
+	expect(createDefaultSnapshot({ defaultValue: 'test string' })).toEqual({
 		value: 'test string',
 		payload: 'test string',
 	});
 
 	// Test string array (for select multiple)
 	expect(
-		createDefaultSnapshot(['option1', 'option2'], undefined, undefined),
+		createDefaultSnapshot({ defaultValue: ['option1', 'option2'] }),
 	).toEqual({
 		options: ['option1', 'option2'],
 		payload: ['option1', 'option2'],
@@ -237,24 +239,27 @@ test('createDefaultSnapshot', () => {
 	// Test File array
 	const file1 = new File(['test1'], 'test1.txt');
 	const file2 = new File(['test2'], 'test2.txt');
-	expect(createDefaultSnapshot([file1, file2], undefined, undefined)).toEqual({
+	expect(createDefaultSnapshot({ defaultValue: [file1, file2] })).toEqual({
 		files: [file1, file2],
 		payload: [file1, file2],
 	});
 
 	// Test single File
 	const file = new File(['test'], 'test.txt');
-	expect(createDefaultSnapshot(file, undefined, undefined)).toEqual({
+	expect(createDefaultSnapshot({ defaultValue: file })).toEqual({
 		files: [file],
 		payload: [file],
 	});
 
-	// Test FileList - skip this test as FileList is hard to mock properly
-	// expect(createDefaultSnapshot(fileList, undefined, undefined)).toEqual({ files: [file1, file2] });
+	// Test defaultPayload (complex objects)
+	const payload = [{ id: '1', name: 'Alice' }];
+	expect(createDefaultSnapshot({ defaultPayload: payload })).toEqual({
+		payload,
+	});
 
 	// Test null/undefined
-	expect(createDefaultSnapshot(null, undefined, undefined)).toEqual({});
-	expect(createDefaultSnapshot(undefined, undefined, undefined)).toEqual({});
+	expect(createDefaultSnapshot({ defaultValue: null })).toEqual({});
+	expect(createDefaultSnapshot(undefined)).toEqual({});
 });
 
 test('updateFormValue', () => {

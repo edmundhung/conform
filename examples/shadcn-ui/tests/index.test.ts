@@ -27,6 +27,9 @@ test.describe('shadcn-ui', () => {
 				.locator('form')
 				.getByRole('group', { name: 'Categories' }),
 			interests: page.locator('form').getByRole('group', { name: 'Interests' }),
+			members: page
+				.locator('form')
+				.getByRole('combobox', { name: 'Team Members' }),
 			code: page.locator('form').getByLabel('Code'),
 		};
 	}
@@ -101,6 +104,13 @@ test.describe('shadcn-ui', () => {
 		await form.container.press('Tab');
 		await form.container.press('Space');
 
+		// Select a team member before submitting
+		// (The hidden fieldset can't receive focus when empty,
+		// so we fill this before the next submit)
+		await form.members.click();
+		await page.getByText('Alice Chen').click();
+		await form.members.press('Escape');
+
 		await form.submitButton.click();
 		await expect(form.code).toBeFocused();
 		await form.code.pressSequentially('123456');
@@ -120,6 +130,14 @@ test.describe('shadcn-ui', () => {
 			accountType: 'personal',
 			categories: ['blog'],
 			interests: ['react', 'angular', 'next'],
+			members: [
+				{
+					id: '1',
+					name: 'Alice Chen',
+					email: 'alice@example.com',
+					role: 'developer',
+				},
+			],
 			code: '123456',
 		});
 	});
@@ -214,6 +232,14 @@ test.describe('shadcn-ui', () => {
 			form.interests.getByRole('checkbox').last(),
 		).toHaveAccessibleDescription('Array must contain at least 3 element(s)');
 
+		await form.members.click();
+		await expect(form.members).toHaveAccessibleDescription('');
+		await form.members.press('Escape');
+		await form.heading.click();
+		await expect(form.members).toHaveAccessibleDescription(
+			'Array must contain at least 1 element(s)',
+		);
+
 		// await form.code.click();
 		// await expect(form.code).toHaveAccessibleDescription('');
 		// await form.heading.click();
@@ -252,6 +278,9 @@ test.describe('shadcn-ui', () => {
 		await form.interests.getByRole('checkbox', { name: 'React' }).click();
 		await form.interests.getByRole('checkbox', { name: 'Vue' }).click();
 		await form.interests.getByRole('checkbox', { name: 'Angular' }).click();
+		await form.members.click();
+		await page.getByText('Alice Chen').click();
+		await form.members.press('Escape');
 		await form.code.click();
 		await form.code.press('Backspace');
 		await form.code.press('Backspace');
@@ -278,6 +307,7 @@ test.describe('shadcn-ui', () => {
 		await expect(
 			form.interests.getByRole('checkbox').first(),
 		).toHaveAccessibleDescription('');
+		await expect(form.members).toHaveAccessibleDescription('');
 		await expect(form.code).toHaveAccessibleDescription('');
 
 		await form.resetButton.click();
@@ -302,6 +332,9 @@ test.describe('shadcn-ui', () => {
 		await expect(
 			form.interests.getByRole('checkbox').first(),
 		).toHaveAccessibleDescription('Array must contain at least 3 element(s)');
+		await expect(form.members).toHaveAccessibleDescription(
+			'Array must contain at least 1 element(s)',
+		);
 		await expect(form.code).toHaveAccessibleDescription('Required');
 	});
 
@@ -325,6 +358,10 @@ test.describe('shadcn-ui', () => {
 			['interests', 'react'],
 			['interests', 'next'],
 			['interests', 'glimmer'],
+			['members[0].id', '2'],
+			['members[0].name', 'Bob Smith'],
+			['members[0].email', 'bob@example.com'],
+			['members[0].role', 'designer'],
 			['code', '543210'],
 		]);
 		const form = await getForm(page, searchParams);
@@ -341,6 +378,14 @@ test.describe('shadcn-ui', () => {
 			accountType: 'personal',
 			categories: ['guide', 'tutorial'],
 			interests: ['react', 'next', 'glimmer'],
+			members: [
+				{
+					id: '2',
+					name: 'Bob Smith',
+					email: 'bob@example.com',
+					role: 'designer',
+				},
+			],
 			code: '543210',
 		};
 
@@ -368,6 +413,9 @@ test.describe('shadcn-ui', () => {
 		await form.interests.getByRole('checkbox', { name: 'React' }).click();
 		await form.interests.getByRole('checkbox', { name: 'Vue' }).click();
 		await form.interests.getByRole('checkbox', { name: 'Angular' }).click();
+		await form.members.click();
+		await page.getByText('Alice Chen').click();
+		await form.members.press('Escape');
 		await form.code.click();
 		await form.code.press('Backspace');
 		await form.code.press('Backspace');

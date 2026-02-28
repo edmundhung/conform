@@ -430,7 +430,7 @@ export function change(
 	options?: {
 		preventDefault?: boolean;
 	},
-): void {
+): boolean {
 	let isChanged = false;
 
 	if (element instanceof HTMLFieldSetElement) {
@@ -439,9 +439,15 @@ export function change(
 				const path = getRelativePath(input.name, element.name);
 
 				if (path) {
-					isChanged ||= updateField(input, {
-						value: getPathValue(value, formatPath(path)),
-					});
+					const isInputChanged = change(
+						input,
+						getPathValue(value, formatPath(path)),
+						{
+							preventDefault: true,
+						},
+					);
+
+					isChanged ||= isInputChanged;
 				}
 			}
 		}
@@ -473,6 +479,8 @@ export function change(
 		// Dispatch change event (necessary for select to update the selected option)
 		element.dispatchEvent(changeEvent);
 	}
+
+	return isChanged;
 }
 
 /**

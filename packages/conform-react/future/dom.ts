@@ -10,12 +10,14 @@ import {
 	updateField,
 } from '@conform-to/dom/future';
 import type {
+	ControlOptions,
 	ErrorContext,
 	FormRef,
 	InputSnapshot,
 	IntentDispatcher,
 } from './types';
 import { serializeIntent } from './intent';
+import { hasFieldError } from './state';
 
 export function getFormElement(
 	formRef: FormRef | undefined,
@@ -130,7 +132,7 @@ export function getInputSnapshot(
 				return {
 					value: input.value,
 					checked: input.checked,
-					payload: input.checked ? input.value : null,
+					payload: input.checked,
 				};
 		}
 	} else if (input instanceof HTMLSelectElement && input.multiple) {
@@ -169,43 +171,43 @@ export function getInputSnapshot(
  * - others: defaultValue is string
  */
 export function createDefaultSnapshot(
-	defaultValue: string | string[] | File | File[] | FileList | null | undefined,
-	defaultChecked: boolean | undefined,
-	value: string | undefined,
+	options: ControlOptions | undefined,
 ): InputSnapshot {
-	if (typeof value === 'string' || typeof defaultChecked === 'boolean') {
+	if (
+		typeof options?.value === 'string' ||
+		typeof options?.defaultChecked === 'boolean'
+	) {
 		return {
-			value: value ?? 'on',
-			checked: defaultChecked,
-			payload: defaultChecked ? value ?? 'on' : null,
+			value: options?.value ?? 'on',
+			checked: options?.defaultChecked,
+			payload: options?.defaultChecked,
 		};
 	}
 
-	if (typeof defaultValue === 'string') {
-		return { value: defaultValue, payload: defaultValue };
+	if (typeof options?.defaultValue === 'string') {
+		return { value: options.defaultValue, payload: options.defaultValue };
 	}
 
-	if (Array.isArray(defaultValue)) {
+	if (Array.isArray(options?.defaultValue)) {
 		if (
-			defaultValue.every((item): item is string => typeof item === 'string')
+			options.defaultValue.every(
+				(item): item is string => typeof item === 'string',
+			)
 		) {
-			return { options: defaultValue, payload: defaultValue };
+			return { options: options.defaultValue, payload: options.defaultValue };
 		} else {
-			return { files: defaultValue, payload: defaultValue };
+			return { files: options.defaultValue, payload: options.defaultValue };
 		}
 	}
 
-	if (isGlobalInstance(defaultValue, 'File')) {
-		const files = [defaultValue];
+	if (isGlobalInstance(options?.defaultValue, 'File')) {
+		const files = [options.defaultValue];
 		return { files, payload: files };
 	}
 
-	if (isGlobalInstance(defaultValue, 'FileList')) {
-		const files = Array.from(defaultValue);
-		return { files, payload: files };
-	}
-
-	return {};
+	return {
+		payload: options?.defaultPayload,
+	};
 }
 
 /**
@@ -221,16 +223,18 @@ export function focusFirstInvalidField<ErrorShape>(
 
 	for (const element of ctx.formElement.elements) {
 		if (
-			isFieldElement(element) &&
-			ctx.error.fieldErrors[element.name]?.length
+			!(isFieldElement(element) || element instanceof HTMLFieldSetElement) ||
+			!hasFieldError(ctx.error, element.name)
 		) {
-			if (element.hidden || element.type === 'hidden') {
-				focus(element);
-			} else {
-				element.focus();
-			}
-			break;
+			continue;
 		}
+
+		if (element.hidden || element.type === 'hidden') {
+			focus(element);
+		} else {
+			element.focus();
+		}
+		break;
 	}
 }
 

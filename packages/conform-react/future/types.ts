@@ -33,7 +33,9 @@ export type InputSnapshot = {
 	payload?: unknown;
 };
 
-export type Control = {
+export type Control<
+	Payload = string | string[] | boolean | File | File[] | FileList,
+> = {
 	/**
 	 * Current value of the base input. Undefined if the registered input
 	 * is a multi-select, file input, or checkbox group.
@@ -57,7 +59,11 @@ export type Control = {
 	/**
 	 * TODO
 	 */
-	payload: unknown;
+	defaultPayload: Payload | undefined;
+	/**
+	 * TODO
+	 */
+	payload: Payload | undefined;
 	/**
 	 * Registers the base input element(s). Accepts a single input or an array for groups.
 	 */
@@ -82,9 +88,7 @@ export type Control = {
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
-	change: (
-		value: string | string[] | boolean | File | File[] | FileList | null,
-	) => void;
+	change: (value: Payload | null) => void;
 	/**
 	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
 	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
@@ -796,6 +800,10 @@ export type FieldMetadata<
 			 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
 			 */
 			defaultChecked: boolean;
+			/**
+			 * TODO
+			 */
+			defaultPayload: unknown;
 			/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
 			touched: boolean;
 			/** Whether this field currently has no validation errors. */
@@ -1137,3 +1145,50 @@ export type MakeConditional<
 };
 
 export type MaybePromise<T> = T | Promise<T>;
+
+export type HiddenInputProps = {
+	type?: string;
+	/**
+	 * The name attribute for the input element(s).
+	 */
+	name: string;
+	/**
+	 * The default value to render.
+	 */
+	defaultValue: unknown;
+	/**
+	 * The id of the form element this input belongs to.
+	 */
+	form?: string;
+};
+
+export type ControlOptions<Shape = unknown> = {
+	/**
+	 * The initial value of the base input. It will be used to set the value
+	 * when the input is first registered.
+	 */
+	defaultValue?: string | string[] | File | File[] | null | undefined;
+	/**
+	 * TODO
+	 */
+	defaultPayload?: unknown;
+	/**
+	 * Whether the base input should be checked by default. It will be applied
+	 * when the input is first registered.
+	 */
+	defaultChecked?: boolean | undefined;
+	/**
+	 * The value of a checkbox or radio input when checked. This sets the
+	 * value attribute of the base input.
+	 */
+	value?: string;
+	/**
+	 * TODO
+	 */
+	resolve?: (payload: unknown) => Shape;
+	/**
+	 * A callback function that is triggered when the base input is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+};

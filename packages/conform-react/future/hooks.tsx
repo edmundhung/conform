@@ -15,6 +15,7 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	isPlainObject,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -27,6 +28,7 @@ import {
 	createContext,
 	useState,
 	useLayoutEffect,
+	forwardRef,
 } from 'react';
 import {
 	appendUniqueItem,
@@ -63,6 +65,8 @@ import type {
 	BaseSchemaType,
 	InferInput,
 	InferOutput,
+	ControlOptions,
+	HiddenInputProps,
 } from './types';
 import {
 	intentHandlers,
@@ -86,6 +90,7 @@ import {
 	preserveInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
+import { flushSync } from 'react-dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -1011,28 +1016,9 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl(options?: {
-	/**
-	 * The initial value of the base input. It will be used to set the value
-	 * when the input is first registered.
-	 */
-	defaultValue?: string | string[] | File | File[] | null | undefined;
-	/**
-	 * Whether the base input should be checked by default. It will be applied
-	 * when the input is first registered.
-	 */
-	defaultChecked?: boolean | undefined;
-	/**
-	 * The value of a checkbox or radio input when checked. This sets the
-	 * value attribute of the base input.
-	 */
-	value?: string;
-	/**
-	 * A callback function that is triggered when the base input is focused.
-	 * Use this to delegate focus to a custom input.
-	 */
-	onFocus?: () => void;
-}): Control {
+export function useControl<Shape>(
+	options?: ControlOptions<Shape>,
+): Control<Shape> {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
@@ -1054,17 +1040,23 @@ export function useControl(options?: {
 		}),
 		[],
 	);
+	const [defaultPayloadOption, setDefaultPayloadOption] = useState(
+		options?.defaultPayload,
+	);
+	const [defaultPayload, setDefaultPayload] = useState(defaultPayloadOption);
+
+	if (options?.defaultPayload !== defaultPayloadOption) {
+		setDefaultPayloadOption(options?.defaultPayload);
+		setDefaultPayload(options?.defaultPayload);
+	}
+
 	const eventDispatched = useRef<{
 		change?: number;
 		focus?: number;
 		blur?: number;
 	}>({});
 
-	const defaultSnapshot = createDefaultSnapshot(
-		options?.defaultValue,
-		options?.defaultChecked,
-		options?.value,
-	);
+	const defaultSnapshot = createDefaultSnapshot(options);
 	const snapshotRef = useRef(defaultSnapshot);
 	const optionsRef = useRef(options);
 
@@ -1081,7 +1073,7 @@ export function useControl(options?: {
 					if (
 						Array.isArray(inputRef.current)
 							? inputRef.current.some((item) => item === input)
-							: inputRef.current === input
+							: inputRef.current?.contains(input)
 					) {
 						callback();
 					}
@@ -1116,7 +1108,9 @@ export function useControl(options?: {
 				if (
 					Array.isArray(inputRef.current)
 						? inputRef.current.some((item) => item === event.target)
-						: inputRef.current === event.target
+						: event.target instanceof Node
+							? inputRef.current?.contains(event.target)
+							: false
 				) {
 					const timer = eventDispatched.current[listener];
 
@@ -1154,7 +1148,16 @@ export function useControl(options?: {
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
-		payload: snapshot.payload,
+		// @ts-expect-error FIXME
+		defaultPayload:
+			defaultPayload !== undefined && options?.resolve
+				? options.resolve(defaultPayload)
+				: defaultPayload,
+		// @ts-expect-error FIXME
+		payload:
+			snapshot.payload !== undefined && options?.resolve
+				? options.resolve(snapshot.payload)
+				: snapshot.payload,
 		formRef,
 		register: useCallback((element) => {
 			if (!element) {
@@ -1178,7 +1181,7 @@ export function useControl(options?: {
 
 				initializeField(element, optionsRef.current);
 			} else if (element instanceof HTMLFieldSetElement) {
-				// ...
+				inputRef.current = element;
 			} else {
 				const inputs = Array.from(element);
 				const name = inputs[0]?.name ?? '';
@@ -1227,6 +1230,12 @@ export function useControl(options?: {
 							}
 						})
 					: inputRef.current;
+
+				if (element?.type === 'fieldset') {
+					flushSync(() => {
+						setDefaultPayload(value);
+					});
+				}
 
 				if (element) {
 					change(element, value);
@@ -1423,3 +1432,124 @@ export function useLatest<Value>(value: Value) {
 
 	return ref;
 }
+
+/**
+ * A component that renders hidden input(s) based on the shape of defaultValue.
+ * Used with useControl's data mode to sync complex values with form data.
+ *
+ * @example
+ * ```tsx
+ * function isStringArray(value: unknown): value is string[] {
+ *   return Array.isArray(value) && value.every((v) => typeof v === 'string');
+ * }
+ *
+ * const control = useControl({
+ *   defaultData: ['en', 'es'],
+ *   type: isStringArray,
+ * });
+ *
+ * <HiddenInput
+ *   ref={control.register}
+ *   name="languages"
+ *   defaultValue={control.defaultValue}
+ * />
+ * ```
+ */
+export const HiddenInput = forwardRef<
+	| HTMLInputElement
+	| HTMLSelectElement
+	| HTMLTextAreaElement
+	| HTMLFieldSetElement,
+	HiddenInputProps
+>(function HiddenInput({ type, name, defaultValue, form }, ref) {
+	function formatValue(value: unknown): string {
+		const serialized = serialize(value);
+
+		if (typeof serialized === 'string') {
+			return serialized;
+		}
+
+		// null, undefined, File, or array - fallback to empty string
+		return '';
+	}
+
+	function renderInput(
+		name: string,
+		value: unknown,
+		form: string | undefined,
+	): React.ReactNode {
+		if (Array.isArray(value)) {
+			return value.map((item, index) =>
+				renderInput(`${name}[${index}]`, item, form),
+			);
+		}
+
+		if (isPlainObject(value)) {
+			return Object.entries(value).map(([key, val]) =>
+				renderInput(`${name}.${key}`, val, form),
+			);
+		}
+
+		return (
+			<input
+				key={name}
+				name={name}
+				defaultValue={formatValue(value)}
+				form={form}
+			/>
+		);
+	}
+
+	if (type === 'fieldset') {
+		return (
+			<fieldset
+				ref={ref as React.ForwardedRef<HTMLFieldSetElement>}
+				name={name}
+				form={form}
+				hidden
+			>
+				{defaultValue !== undefined
+					? renderInput(name, defaultValue, form)
+					: null}
+			</fieldset>
+		);
+	}
+
+	if (type === 'select') {
+		const multiple = Array.isArray(defaultValue);
+		return (
+			<select
+				ref={ref as React.ForwardedRef<HTMLSelectElement>}
+				name={name}
+				defaultValue={
+					multiple ? defaultValue.map(formatValue) : formatValue(defaultValue)
+				}
+				multiple={multiple}
+				form={form}
+				hidden
+			></select>
+		);
+	}
+
+	if (type === 'textarea') {
+		return (
+			<textarea
+				ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+				name={name}
+				defaultValue={formatValue(defaultValue)}
+				form={form}
+				hidden
+			/>
+		);
+	}
+
+	return (
+		<input
+			ref={ref as React.ForwardedRef<HTMLInputElement>}
+			name={name}
+			defaultValue={formatValue(defaultValue)}
+			form={form}
+			hidden
+		/>
+	);
+});

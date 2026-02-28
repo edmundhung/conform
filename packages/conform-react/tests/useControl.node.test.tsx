@@ -8,6 +8,7 @@ describe('future export: useControl', () => {
 		options: undefined,
 		files: undefined,
 		checked: undefined,
+		defaultPayload: undefined,
 		payload: undefined,
 		formRef: { current: null },
 		register: expect.any(Function),
@@ -73,7 +74,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
-			payload: 'on',
+			payload: true,
 		});
 
 		expect(
@@ -87,7 +88,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
-			payload: null,
+			payload: false,
 		});
 
 		expect(
@@ -169,7 +170,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
-			payload: 'on',
+			payload: true,
 		});
 
 		expect(
@@ -183,7 +184,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
-			payload: null,
+			payload: false,
 		});
 	});
 });

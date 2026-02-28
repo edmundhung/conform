@@ -717,78 +717,14 @@ export function isDirty(
 				}).payload
 			: formData;
 	const defaultValue = options?.defaultValue;
-	const serializeData = (value: unknown) => {
-		if (options?.serialize) {
-			return options.serialize(value, serialize);
-		}
+	const serializeValue: Serialize = options?.serialize
+		? (value) => options.serialize!(value, serialize)
+		: serialize;
 
-		return serialize(value);
-	};
-
-	function normalize(data: unknown): unknown {
-		let value: unknown = serializeData(data);
-
-		if (typeof value === 'undefined') {
-			value = data;
-		}
-
-		// Removes empty strings, so that both empty string, empty file, null and undefined are treated as the same
-		if (value === '' || value === null) {
-			return undefined;
-		}
-
-		if (isGlobalInstance(value, 'File')) {
-			// Remove empty File as well, which happens if no File was selected
-			if (value.name === '' && value.size === 0) {
-				return undefined;
-			}
-
-			// If the value is a File, no need to serialize it
-			return value;
-		}
-
-		if (Array.isArray(value)) {
-			if (value.length === 0) {
-				return undefined;
-			}
-
-			const array = value.map(normalize);
-
-			if (
-				array.length === 1 &&
-				(typeof array[0] === 'string' || array[0] === undefined)
-			) {
-				return array[0];
-			}
-
-			return array;
-		}
-
-		if (isPlainObject(value)) {
-			const entries = Object.entries(value).reduce<Array<[string, unknown]>>(
-				(list, [key, value]) => {
-					const normalizedValue = normalize(value);
-
-					if (typeof normalizedValue !== 'undefined') {
-						list.push([key, normalizedValue]);
-					}
-
-					return list;
-				},
-				[],
-			);
-
-			if (entries.length === 0) {
-				return undefined;
-			}
-
-			return Object.fromEntries(entries);
-		}
-
-		return value;
-	}
-
-	return !deepEqual(normalize(formValue), normalize(defaultValue));
+	return !deepEqual(
+		normalize(formValue, serializeValue),
+		normalize(defaultValue, serializeValue),
+	);
 }
 
 /**
@@ -874,6 +810,80 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
 	}
 
 	return serializePrimitive(value);
+}
+
+/**
+ * Recursively serializes a value using the provided serialize function,
+ * collapsing empty leaves (`null`, `''`, empty files) to `undefined`
+ * and removing empty containers (objects with no remaining keys, empty arrays).
+ *
+ * When serialize returns `undefined` for a value (i.e. it can't be represented
+ * as form data), the raw value is kept and recursed into if it's an object or array.
+ *
+ * Single-element arrays where the element is a string or undefined are unwrapped
+ * to handle the case where a multi-value field (e.g. checkboxes) has only one value.
+ */
+export function normalize(
+	value: unknown,
+	serializeValue: Serialize = serialize,
+): unknown {
+	let data: unknown = serializeValue(value);
+
+	if (typeof data === 'undefined') {
+		data = value;
+	}
+
+	if (data === '' || data === null) {
+		return undefined;
+	}
+
+	if (isGlobalInstance(data, 'File')) {
+		if (data.name === '' && data.size === 0) {
+			return undefined;
+		}
+
+		return data;
+	}
+
+	if (Array.isArray(data)) {
+		if (data.length === 0) {
+			return undefined;
+		}
+
+		const array = data.map((item) => normalize(item, serializeValue));
+
+		if (
+			array.length === 1 &&
+			(typeof array[0] === 'string' || array[0] === undefined)
+		) {
+			return array[0];
+		}
+
+		return array;
+	}
+
+	if (isPlainObject(data)) {
+		const entries = Object.entries(data).reduce<Array<[string, unknown]>>(
+			(list, [key, value]) => {
+				const normalizedValue = normalize(value, serializeValue);
+
+				if (typeof normalizedValue !== 'undefined') {
+					list.push([key, normalizedValue]);
+				}
+
+				return list;
+			},
+			[],
+		);
+
+		if (entries.length === 0) {
+			return undefined;
+		}
+
+		return Object.fromEntries(entries);
+	}
+
+	return data;
 }
 
 /**
