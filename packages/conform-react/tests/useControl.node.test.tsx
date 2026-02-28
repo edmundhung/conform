@@ -8,6 +8,7 @@ describe('future export: useControl', () => {
 		options: undefined,
 		files: undefined,
 		checked: undefined,
+		defaultValue: undefined,
 		payload: undefined,
 		formRef: { current: null },
 		register: expect.any(Function),
@@ -37,7 +38,15 @@ describe('future export: useControl', () => {
 					defaultValue: null,
 				}),
 			),
-		).toEqual(defaultResult);
+		).toEqual({
+			...defaultResult,
+			checked: false,
+			defaultValue: null,
+			payload: null,
+			value: '',
+			options: [],
+			files: [],
+		});
 
 		expect(
 			serverRenderHook(() =>
@@ -47,6 +56,8 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			checked: undefined,
+			defaultValue: 'hello world',
 			value: 'hello world',
 			payload: 'hello world',
 		});
@@ -59,6 +70,8 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			checked: undefined,
+			defaultValue: ['foo', 'bar'],
 			options: ['foo', 'bar'],
 			payload: ['foo', 'bar'],
 		});
@@ -71,6 +84,7 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			defaultValue: 'on',
 			value: 'on',
 			checked: true,
 			payload: 'on',
@@ -85,9 +99,12 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
-			value: 'yes',
 			checked: false,
+			defaultValue: null,
 			payload: null,
+			value: '',
+			options: [],
+			files: [],
 		});
 
 		expect(
@@ -98,8 +115,9 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
-			files: [txtFile],
-			payload: [txtFile],
+			checked: undefined,
+			defaultValue: txtFile,
+			payload: txtFile,
 		});
 
 		expect(
@@ -110,9 +128,41 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			checked: undefined,
+			defaultValue: [sqlFile, txtFile],
 			files: [sqlFile, txtFile],
 			payload: [sqlFile, txtFile],
 		});
+	});
+
+	it('treats null as a cleared payload for convenience accessors', () => {
+		const control = serverRenderHook(() =>
+			useControl({
+				defaultValue: null,
+			}),
+		);
+
+		expect(control.defaultValue).toBeNull();
+		expect(control.payload).toBeNull();
+		expect(control.checked).toBe(false);
+		expect(control.value).toBe('');
+		expect(control.options).toEqual([]);
+		expect(control.files).toEqual([]);
+	});
+
+	it('treats empty arrays as both options and files views', () => {
+		const control = serverRenderHook(() =>
+			useControl({
+				defaultValue: [],
+			}),
+		);
+
+		expect(control.defaultValue).toEqual([]);
+		expect(control.payload).toEqual([]);
+		expect(control.value).toBeUndefined();
+		expect(control.checked).toBeUndefined();
+		expect(control.options).toEqual([]);
+		expect(control.files).toEqual([]);
 	});
 
 	it('works if the File or FileList class is not available on global', async () => {
@@ -133,7 +183,15 @@ describe('future export: useControl', () => {
 					defaultValue: null,
 				}),
 			),
-		).toEqual(defaultResult);
+		).toEqual({
+			...defaultResult,
+			checked: false,
+			defaultValue: null,
+			payload: null,
+			value: '',
+			options: [],
+			files: [],
+		});
 
 		expect(
 			serverRenderHook(() =>
@@ -143,6 +201,8 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			checked: undefined,
+			defaultValue: 'hello world',
 			value: 'hello world',
 			payload: 'hello world',
 		});
@@ -155,6 +215,8 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			checked: undefined,
+			defaultValue: ['foo', 'bar'],
 			options: ['foo', 'bar'],
 			payload: ['foo', 'bar'],
 		});
@@ -167,6 +229,7 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
+			defaultValue: 'on',
 			value: 'on',
 			checked: true,
 			payload: 'on',
@@ -181,9 +244,29 @@ describe('future export: useControl', () => {
 			),
 		).toEqual({
 			...defaultResult,
-			value: 'yes',
 			checked: false,
+			defaultValue: null,
 			payload: null,
+			value: '',
+			options: [],
+			files: [],
 		});
+	});
+
+	it('throws contextual error when parse fails', () => {
+		expect(() => {
+			const control = serverRenderHook(() =>
+				useControl({
+					defaultValue: {
+						members: [{ id: '1' }],
+					},
+					parse() {
+						throw new Error('Expected members array');
+					},
+				}),
+			);
+
+			return control.defaultValue;
+		}).toThrowError(/Failed to parse defaultValue for control\. Received/);
 	});
 });

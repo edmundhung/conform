@@ -15,6 +15,12 @@ export type FieldElement =
  */
 export type Submitter = HTMLInputElement | HTMLButtonElement;
 
+const CONFORM_INTERNAL_EVENT = 'conform:internal';
+
+export function dispatchInternalUpdateEvent(form: HTMLFormElement): void {
+	form.dispatchEvent(new Event(CONFORM_INTERNAL_EVENT));
+}
+
 export function isInputElement(element: Element): element is HTMLInputElement {
 	return element.tagName === 'INPUT';
 }
@@ -215,9 +221,16 @@ type FormCallback = (event: {
 	submitter?: HTMLInputElement | HTMLButtonElement | null;
 }) => void;
 
+type InternalUpdateEvent = {
+	target: HTMLFormElement;
+};
+
+type InternalCallback = (event: InternalUpdateEvent) => void;
+
 export function createGlobalFormsObserver() {
 	const inputListeners = new Set<InputCallback>();
 	const formListeners = new Set<FormCallback>();
+	const internalListeners = new Set<InternalCallback>();
 
 	let cleanup: (() => void) | null = null;
 
@@ -233,11 +246,17 @@ export function createGlobalFormsObserver() {
 
 		document.addEventListener('input', handleInput);
 		document.addEventListener('reset', handleReset);
+		document.addEventListener(CONFORM_INTERNAL_EVENT, handleInternal, true);
 		document.addEventListener('submit', handleSubmit, true);
 
 		return () => {
 			document.removeEventListener('input', handleInput);
 			document.removeEventListener('reset', handleReset);
+			document.removeEventListener(
+				CONFORM_INTERNAL_EVENT,
+				handleInternal,
+				true,
+			);
 			document.removeEventListener('submit', handleSubmit, true);
 			observer.disconnect();
 		};
@@ -284,6 +303,14 @@ export function createGlobalFormsObserver() {
 			formListeners.forEach((callback) =>
 				callback({ type: 'submit', target, submitter }),
 			);
+		}
+	}
+
+	function handleInternal(event: Event) {
+		const target = event.target;
+
+		if (target instanceof HTMLFormElement) {
+			internalListeners.forEach((callback) => callback({ target }));
 		}
 	}
 
@@ -409,13 +436,40 @@ export function createGlobalFormsObserver() {
 				formListeners.delete(callback);
 			};
 		},
+		onInternalUpdate(callback: InternalCallback) {
+			cleanup = cleanup ?? initialize();
+			internalListeners.add(callback);
+			return () => {
+				internalListeners.delete(callback);
+			};
+		},
 		dispose() {
 			cleanup?.();
 			cleanup = null;
 			inputListeners.clear();
 			formListeners.clear();
+			internalListeners.clear();
 		},
 	};
+}
+
+export function isCheckboxGroup(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): boolean {
+	if (element.type === 'checkbox') {
+		for (const input of element.form?.elements ?? []) {
+			if (
+				input instanceof HTMLInputElement &&
+				input !== element &&
+				input.type === 'checkbox' &&
+				input.name === element.name
+			) {
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 /**
@@ -427,23 +481,49 @@ export function change(
 		| HTMLInputElement
 		| HTMLSelectElement
 		| HTMLTextAreaElement
-		| HTMLFieldSetElement,
+		| HTMLFieldSetElement
+		| Array<HTMLInputElement>,
 	value: unknown,
 	options?: {
 		preventDefault?: boolean;
+		forceDispatch?: boolean;
 	},
-): void {
+): boolean {
 	let isChanged = false;
 
-	if (element instanceof HTMLFieldSetElement) {
-		for (const input of element.elements) {
+	if (element instanceof HTMLFieldSetElement || Array.isArray(element)) {
+		let baseName: string;
+		let inputs: Element[];
+		let preventDefault: boolean;
+
+		if (Array.isArray(element)) {
+			baseName = element[0]?.name ?? '';
+			inputs = element;
+			preventDefault = false;
+		} else {
+			baseName = element.name;
+			inputs = Array.from(element.elements);
+			preventDefault = true;
+		}
+
+		for (const input of inputs) {
 			if (isFieldElement(input)) {
-				const path = getRelativePath(input.name, element.name);
+				const path = getRelativePath(input.name, baseName);
 
 				if (path) {
-					isChanged ||= updateField(input, {
-						value: getPathValue(value, formatPath(path)),
-					});
+					const name = formatPath(path);
+					const pathValue = value === null ? value : getPathValue(value, name);
+					const isInputChanged = change(
+						input,
+						isCheckboxGroup(input) && Array.isArray(pathValue)
+							? pathValue.includes(input.value)
+							: pathValue,
+						{
+							preventDefault,
+						},
+					);
+
+					isChanged ||= isInputChanged;
 				}
 			}
 		}
@@ -455,7 +535,7 @@ export function change(
 		});
 	}
 
-	if (isChanged) {
+	if (element instanceof Element && (isChanged || options?.forceDispatch)) {
 		const inputEvent = new InputEvent('input', {
 			bubbles: true,
 			cancelable: true,
@@ -475,6 +555,8 @@ export function change(
 		// Dispatch change event (necessary for select to update the selected option)
 		element.dispatchEvent(changeEvent);
 	}
+
+	return isChanged;
 }
 
 /**
@@ -560,11 +642,12 @@ export function updateField(
 				if (value) {
 					const checked = value.includes(element.value);
 
-					if (
-						element.type === 'checkbox' ? checked !== element.checked : checked
-					) {
-						// Simulate a click to update the checked state
-						element.click();
+					if (checked !== element.checked) {
+						if (element.type === 'checkbox' || checked) {
+							// Simulate a click to update the checked state
+							element.click();
+						}
+
 						isChanged = true;
 					}
 

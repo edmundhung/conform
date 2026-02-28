@@ -3,8 +3,9 @@ import {
 	Calendar as CalendarIcon,
 	Check as CheckIcon,
 	ChevronsUpDown as ChevronsUpDownIcon,
+	X as XIcon,
 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -41,10 +42,12 @@ import { Switch as ShadcnSwitch } from './ui/switch';
 import { Slider as ShadcnSlider } from './ui/slider';
 import { Checkbox as ShadcnCheckbox } from './ui/checkbox';
 import { cn } from '../lib/utils';
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { z } from 'zod';
+import { coerceStructure } from '@conform-to/zod/v3/future';
 
 type FieldProps = {
 	children: React.ReactNode;
@@ -305,7 +308,9 @@ function Checkbox({ name, value, defaultChecked, ...props }: CheckboxProps) {
 				{...props}
 				ref={checkboxRef}
 				checked={control.checked}
-				onCheckedChange={(checked) => control.change(checked)}
+				onCheckedChange={(checked) =>
+					control.change(checked === 'indeterminate' ? false : checked)
+				}
 				onBlur={() => control.blur()}
 				className="focus:ring-stone-950 focus:ring-2 focus:ring-offset-2"
 			/>
@@ -591,6 +596,155 @@ function InputOTP({
 	);
 }
 
+export const memberSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	email: z.string(),
+	role: z.enum(['developer', 'designer', 'manager']),
+});
+
+export type Member = z.infer<typeof memberSchema>;
+
+export type TeamMemberSelectProps = {
+	name: string;
+	defaultValue?: unknown;
+	members: Member[];
+	'aria-labelledby'?: string;
+	'aria-describedby'?: string;
+};
+
+const membersSchema = z.array(memberSchema);
+
+function TeamMemberSelect({
+	name,
+	members,
+	defaultValue,
+	...props
+}: TeamMemberSelectProps) {
+	const [open, setOpen] = useState(false);
+	const triggerRef = useRef<HTMLDivElement>(null);
+	const control = useControl({
+		defaultValue,
+		parse(payload) {
+			return coerceStructure(membersSchema).parse(payload);
+		},
+		onFocus() {
+			triggerRef.current?.focus();
+		},
+	});
+
+	const selected: Member[] = control.payload ?? [];
+
+	function toggle(member: Member) {
+		const exists = selected.some((m) => m.id === member.id);
+		const next = exists
+			? selected.filter((m) => m.id !== member.id)
+			: [...selected, member];
+		control.change(next);
+	}
+
+	function remove(memberId: string) {
+		control.change(selected.filter((m) => m.id !== memberId));
+	}
+
+	return (
+		<>
+			<BaseControl
+				type="fieldset"
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue}
+			/>
+			<Popover
+				open={open}
+				onOpenChange={(isOpen) => {
+					setOpen(isOpen);
+					if (isOpen) {
+						control.focus();
+					} else {
+						control.blur();
+					}
+				}}
+			>
+				<PopoverTrigger asChild>
+					<div
+						{...props}
+						ref={triggerRef}
+						role="combobox"
+						tabIndex={0}
+						aria-expanded={open}
+						className={cn(
+							'flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer',
+							'focus:outline-none focus:ring-2 focus:ring-stone-950 focus:ring-offset-2',
+							selected.length === 0 && 'text-muted-foreground',
+						)}
+					>
+						{selected.length === 0 ? (
+							<span>Select team members</span>
+						) : (
+							<div className="flex flex-wrap gap-1">
+								{selected.map((member) => (
+									<span
+										key={member.id}
+										className="inline-flex items-center gap-1 rounded bg-stone-100 px-2 py-0.5 text-xs text-foreground"
+									>
+										{member.name}
+										<button
+											type="button"
+											className="hover:bg-stone-200 rounded-sm"
+											onClick={(e) => {
+												e.stopPropagation();
+												remove(member.id);
+											}}
+											aria-label={`Remove ${member.name}`}
+										>
+											<XIcon className="h-3 w-3" />
+										</button>
+									</span>
+								))}
+							</div>
+						)}
+						<ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					</div>
+				</PopoverTrigger>
+				<PopoverContent className="w-[320px] p-0">
+					<Command>
+						<CommandInput placeholder="Search members..." />
+						<CommandList>
+							<CommandEmpty>No members found.</CommandEmpty>
+							<CommandGroup>
+								{members.map((member) => {
+									const isSelected = selected.some((m) => m.id === member.id);
+									return (
+										<CommandItem
+											key={member.id}
+											value={member.name}
+											onSelect={() => toggle(member)}
+										>
+											<CheckIcon
+												className={cn(
+													'mr-2 h-4 w-4',
+													isSelected ? 'opacity-100' : 'opacity-0',
+												)}
+											/>
+											<div className="flex flex-col">
+												<span>{member.name}</span>
+												<span className="text-xs text-muted-foreground">
+													{member.email} &middot; {member.role}
+												</span>
+											</div>
+										</CommandItem>
+									);
+								})}
+							</CommandGroup>
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
+		</>
+	);
+}
+
 export {
 	Field,
 	FieldError,
@@ -608,4 +762,5 @@ export {
 	SingleToggleGroup,
 	MultiToggleGroup,
 	InputOTP,
+	TeamMemberSelect,
 };

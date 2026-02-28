@@ -1,5 +1,6 @@
 import { assertType, expectTypeOf, test } from 'vitest';
 import type {
+	BaseControlProps,
 	Control,
 	DefaultValue,
 	FieldMetadata,
@@ -248,10 +249,63 @@ test('Control', () => {
 	assertType<void>(control.register(null));
 	assertType<void>(control.change('text'));
 	assertType<void>(control.change(['option1', 'option2']));
-	assertType<void>(control.change(true));
 	assertType<void>(control.change(null));
 	assertType<void>(control.focus());
 	assertType<void>(control.blur());
+});
+
+test('BaseControl', () => {
+	assertType<BaseControlProps>({
+		name: 'title',
+		defaultValue: 'Hello world',
+		id: 'title-field',
+		disabled: true,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'checkbox',
+		name: 'newsletter',
+		value: 'yes',
+		defaultChecked: true,
+		required: true,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'radio',
+		name: 'theme',
+		value: 'dark',
+		defaultChecked: true,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'select',
+		name: 'tags',
+		defaultValue: ['a', 'b'],
+		multiple: true,
+		required: true,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'textarea',
+		name: 'notes',
+		defaultValue: 'hello',
+		rows: 4,
+		maxLength: 100,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'fieldset',
+		name: 'range',
+		defaultValue: { start: '2026-01-01', end: '2026-01-07' },
+		disabled: true,
+	});
+
+	assertType<BaseControlProps>({
+		type: 'text',
+		name: 'title',
+		// @ts-expect-error text base controls should use defaultValue instead of value
+		value: 'Hello world',
+	});
 });
 
 test('useFormData', () => {

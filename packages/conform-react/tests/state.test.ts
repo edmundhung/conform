@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
 import {
+	getDefaultPayload,
 	getDefaultOptions,
 	getDefaultValue,
 	getErrors,
@@ -1227,13 +1228,14 @@ describe('form state', () => {
 				],
 				targetValue: {
 					title: 'My Tasks',
-					tasks: ['Final 1', 'Final 2'],
+					tasks: ['Final 1'],
 				},
 			}),
 		);
 
-		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]', '0-tasks[1]']);
-		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1', 'Final 2']);
+		expect(getListKey(context, 'tasks')).toEqual(['0-tasks[0]']);
+		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1']);
+		expect(getDefaultPayload(context, 'tasks')).toBe('Final 1');
 		expect(isTouched(context.state)).toBe(true);
 	});
 

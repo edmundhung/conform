@@ -35,7 +35,7 @@ export function TextField({
 
 	return (
 		<>
-			{/* The base input is used to make sure the TextField could reset to the latest default value */}
+			{/* The base control ensures the TextField can reset to the latest default value */}
 			<input ref={control.register} name={name} hidden />
 			<AriaTextField
 				{...props}
