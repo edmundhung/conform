@@ -11,6 +11,7 @@ export {
 	DEFAULT_INTENT_NAME,
 	getFormData,
 	isDirty,
+	normalize,
 	parseSubmission,
 	parsePath,
 	formatPath,

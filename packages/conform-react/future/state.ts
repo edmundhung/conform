@@ -6,8 +6,10 @@ import {
 	parsePath,
 	getRelativePath,
 	getPathValue,
+	normalize,
 	serialize as defaultSerialize,
 	deepEqual,
+	FormError,
 } from '@conform-to/dom/future';
 import type {
 	FieldMetadata,
@@ -159,6 +161,21 @@ export function pruneListKeys(
 	return result;
 }
 
+export function getDefaultPayload(
+	context: FormContext<any>,
+	name: string,
+	serialize: Serialize = defaultSerialize,
+): unknown {
+	const value = getPathValue(
+		context.state.serverValue ??
+			context.state.targetValue ??
+			context.state.defaultValue,
+		name,
+	);
+
+	return normalize(value, serialize);
+}
+
 export function getDefaultValue(
 	context: FormContext<any>,
 	name: string,
@@ -220,7 +237,7 @@ export function isDefaultChecked(
 	const serializedValue = serialize(value);
 
 	if (typeof serializedValue === 'string') {
-		return serializedValue === 'on';
+		return serializedValue === serialize(true);
 	}
 
 	return false;
@@ -311,6 +328,19 @@ export function getFieldErrors<ErrorShape>(
 	}
 
 	return result;
+}
+
+/**
+ * Checks if fieldErrors contains any errors at the given name or any child path.
+ */
+export function hasFieldError(error: FormError<any>, name: string): boolean {
+	const basePath = parsePath(name);
+
+	return Object.keys(error.fieldErrors).some(
+		(field) =>
+			getRelativePath(field, basePath) !== null &&
+			error.fieldErrors[field]?.length,
+	);
 }
 
 export function isValid(state: FormState<any>, name?: string): boolean {
@@ -489,6 +519,9 @@ export function getField<
 		},
 		get defaultChecked() {
 			return isDefaultChecked(context, name, serialize);
+		},
+		get defaultPayload() {
+			return getDefaultPayload(context, name, serialize);
 		},
 		get touched() {
 			return isTouched(context.state, name);

@@ -38,6 +38,7 @@ export {
 	PreserveBoundary,
 	FormProvider,
 	FormOptionsProvider,
+	HiddenInput,
 	useControl,
 	useField,
 	useForm,
