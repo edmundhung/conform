@@ -30,22 +30,31 @@ export type InputSnapshot = {
 	options?: string[] | undefined;
 	checked?: boolean | undefined;
 	files?: File[] | undefined;
+	payload?: unknown;
 };
 
-export type Control = {
+export type NativeControlPayload =
+	| string
+	| string[]
+	| boolean
+	| File
+	| File[]
+	| FileList;
+
+export type Control<Payload = NativeControlPayload> = {
 	/**
 	 * Current value of the base input. Undefined if the registered input
 	 * is a multi-select, file input, or checkbox group.
 	 */
 	value: string | undefined;
 	/**
-	 * Selected options of the base input. Defined only when the registered input
-	 * is a multi-select or checkbox group.
+	 * Checked state of the base input. Defined only when the registered input
+	 * is a single checkbox or radio input.
 	 */
 	checked: boolean | undefined;
 	/**
-	 * Checked state of the base input. Defined only when the registered input
-	 * is a single checkbox or radio input.
+	 * Selected options of the base input. Defined only when the registered input
+	 * is a multi-select or checkbox group.
 	 */
 	options: string[] | undefined;
 	/**
@@ -54,6 +63,21 @@ export type Control = {
 	 */
 	files: File[] | undefined;
 	/**
+	 * The rendered payload used as the source for hidden base input(s).
+	 *
+	 * For simple native controls, this mirrors `defaultValue` / `defaultChecked`.
+	 * For structural controls (e.g. fieldset mode), this is the latest payload
+	 * snapshot that drives which hidden inputs are rendered.
+	 */
+	defaultPayload: Payload | undefined;
+	/**
+	 * Current payload snapshot derived from the registered base input(s).
+	 *
+	 * For structural controls (e.g. fieldset mode), this is reconstructed from
+	 * descendant fields under the registered fieldset name.
+	 */
+	payload: Payload | undefined;
+	/**
 	 * Registers the base input element(s). Accepts a single input or an array for groups.
 	 */
 	register: (
@@ -61,6 +85,7 @@ export type Control = {
 			| HTMLInputElement
 			| HTMLSelectElement
 			| HTMLTextAreaElement
+			| HTMLFieldSetElement
 			| HTMLCollectionOf<HTMLInputElement>
 			| NodeListOf<HTMLInputElement>
 			| null
@@ -76,9 +101,7 @@ export type Control = {
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
-	change: (
-		value: string | string[] | boolean | File | File[] | FileList | null,
-	) => void;
+	change: (value: Payload | null) => void;
 	/**
 	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
 	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
@@ -790,6 +813,13 @@ export type FieldMetadata<
 			 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
 			 */
 			defaultChecked: boolean;
+			/**
+			 * The normalized default payload at this field path.
+			 *
+			 * This is useful for non-native field shapes that need to render a set of
+			 * hidden inputs before user interaction.
+			 */
+			defaultPayload: unknown;
 			/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
 			touched: boolean;
 			/** Whether this field currently has no validation errors. */
@@ -998,14 +1028,24 @@ export type ValidateHandler<ErrorShape, Value, SchemaValue = undefined> = (
 export interface FormInputEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export interface FormFocusEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	relatedTarget: EventTarget | null;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export type ErrorContext<ErrorShape> = {
@@ -1121,3 +1161,64 @@ export type MakeConditional<
 };
 
 export type MaybePromise<T> = T | Promise<T>;
+
+export type HiddenInputProps = {
+	/**
+	 * Which hidden base control to render.
+	 *
+	 * - `fieldset` renders nested hidden `<input>` elements from `defaultValue`
+	 * - `select` renders a hidden `<select>`
+	 * - `textarea` renders a hidden `<textarea>`
+	 * - any input type renders a hidden `<input type="...">`
+	 */
+	type?: React.HTMLInputTypeAttribute | 'select' | 'textarea' | 'fieldset';
+	/**
+	 * The name attribute for the input element(s).
+	 */
+	name: string;
+	/**
+	 * The default value to render.
+	 */
+	defaultValue: unknown;
+	/**
+	 * The id of the form element this input belongs to.
+	 */
+	form?: string;
+};
+
+export type ControlOptions<Shape = NativeControlPayload> = {
+	/**
+	 * The initial value of the base input. It will be used to set the value
+	 * when the input is first registered.
+	 */
+	defaultValue?: string | string[] | File | File[] | null | undefined;
+	/**
+	 * Initial payload snapshot for hidden base input rendering.
+	 *
+	 * This is primarily for structural controls where the hidden inputs are
+	 * generated from a complex shape.
+	 */
+	defaultPayload?: Shape | undefined;
+	/**
+	 * Whether the base input should be checked by default. It will be applied
+	 * when the input is first registered.
+	 */
+	defaultChecked?: boolean | undefined;
+	/**
+	 * The value of a checkbox or radio input when checked. This sets the
+	 * value attribute of the base input.
+	 */
+	value?: string;
+	/**
+	 * Optional payload parser applied to `payload` and `defaultPayload`.
+	 *
+	 * Use this to coerce unknown DOM-derived data into a typed shape.
+	 * Any thrown error is surfaced to the caller.
+	 */
+	parse?: (payload: unknown) => Shape;
+	/**
+	 * A callback function that is triggered when the base input is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+};

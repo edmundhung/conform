@@ -15,6 +15,7 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	isPlainObject,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -27,6 +28,7 @@ import {
 	createContext,
 	useState,
 	useLayoutEffect,
+	forwardRef,
 } from 'react';
 import {
 	appendUniqueItem,
@@ -63,6 +65,9 @@ import type {
 	BaseSchemaType,
 	InferInput,
 	InferOutput,
+	ControlOptions,
+	HiddenInputProps,
+	NativeControlPayload,
 } from './types';
 import {
 	intentHandlers,
@@ -71,7 +76,6 @@ import {
 	applyIntent,
 } from './intent';
 import {
-	makeInputFocusable,
 	focusFirstInvalidField,
 	getCheckboxGroupValue,
 	createDefaultSnapshot,
@@ -87,6 +91,7 @@ import {
 	preserveInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
+import { flushSync } from 'react-dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -1012,33 +1017,15 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl(options?: {
-	/**
-	 * The initial value of the base input. It will be used to set the value
-	 * when the input is first registered.
-	 */
-	defaultValue?: string | string[] | File | File[] | null | undefined;
-	/**
-	 * Whether the base input should be checked by default. It will be applied
-	 * when the input is first registered.
-	 */
-	defaultChecked?: boolean | undefined;
-	/**
-	 * The value of a checkbox or radio input when checked. This sets the
-	 * value attribute of the base input.
-	 */
-	value?: string;
-	/**
-	 * A callback function that is triggered when the base input is focused.
-	 * Use this to delegate focus to a custom input.
-	 */
-	onFocus?: () => void;
-}): Control {
+export function useControl<Shape = NativeControlPayload>(
+	options?: ControlOptions<Shape>,
+): Control<Shape> {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
 		| HTMLTextAreaElement
+		| HTMLFieldSetElement
 		| Array<HTMLInputElement>
 		| null
 	>(null);
@@ -1054,17 +1041,26 @@ export function useControl(options?: {
 		}),
 		[],
 	);
+	const [defaultPayload, setDefaultPayload] = useState(options?.defaultPayload);
+	const defaultPayloadOptionRef = useRef(options?.defaultPayload);
+
+	/**
+	 * Keep defaultPayload in sync with external option updates during render.
+	 * This is required for structural controls where hidden descendants must be
+	 * rendered in the same cycle as form state updates (e.g. update intents).
+	 */
+	if (!deepEqual(defaultPayloadOptionRef.current, options?.defaultPayload)) {
+		defaultPayloadOptionRef.current = options?.defaultPayload;
+		setDefaultPayload(options?.defaultPayload);
+	}
+
 	const eventDispatched = useRef<{
 		change?: number;
 		focus?: number;
 		blur?: number;
 	}>({});
 
-	const defaultSnapshot = createDefaultSnapshot(
-		options?.defaultValue,
-		options?.defaultChecked,
-		options?.value,
-	);
+	const defaultSnapshot = createDefaultSnapshot(options);
 	const snapshotRef = useRef(defaultSnapshot);
 	const optionsRef = useRef(options);
 
@@ -1072,9 +1068,6 @@ export function useControl(options?: {
 		optionsRef.current = options;
 	});
 
-	// This is necessary to ensure that input is re-registered
-	// if the onFocus handler changes
-	const shouldHandleFocus = typeof options?.onFocus === 'function';
 	const snapshot = useSyncExternalStore(
 		useCallback(
 			(callback) =>
@@ -1084,7 +1077,7 @@ export function useControl(options?: {
 					if (
 						Array.isArray(inputRef.current)
 							? inputRef.current.some((item) => item === input)
-							: inputRef.current === input
+							: inputRef.current?.contains(input)
 					) {
 						callback();
 					}
@@ -1119,7 +1112,9 @@ export function useControl(options?: {
 				if (
 					Array.isArray(inputRef.current)
 						? inputRef.current.some((item) => item === event.target)
-						: inputRef.current === event.target
+						: event.target instanceof Node
+							? inputRef.current?.contains(event.target)
+							: false
 				) {
 					const timer = eventDispatched.current[listener];
 
@@ -1152,69 +1147,84 @@ export function useControl(options?: {
 		};
 	}, []);
 
+	const parsePayload = (
+		kind: 'payload' | 'defaultPayload',
+		payload: unknown,
+	): Shape | undefined => {
+		if (typeof payload === 'undefined') {
+			return undefined;
+		}
+
+		if (!options?.parse) {
+			return payload as Shape;
+		}
+
+		try {
+			return options.parse(payload);
+		} catch (error) {
+			throw new Error(
+				`Failed to parse ${kind} for control. Received ${JSON.stringify(payload, null, 2)}.`,
+				{ cause: error },
+			);
+		}
+	};
+
 	return {
 		value: snapshot.value,
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
+		defaultPayload: parsePayload('defaultPayload', defaultPayload),
+		payload: parsePayload('payload', snapshot.payload),
 		formRef,
-		register: useCallback(
-			(element) => {
-				if (!element) {
-					inputRef.current = null;
-				} else if (isFieldElement(element)) {
-					inputRef.current = element;
+		register: useCallback((element) => {
+			if (!element) {
+				inputRef.current = null;
+			} else if (isFieldElement(element)) {
+				inputRef.current = element;
 
-					// Conform excludes hidden type inputs by default when updating form values
-					// Fix that by using the hidden attribute instead
-					if (element.type === 'hidden') {
-						element.hidden = true;
-						element.removeAttribute('type');
-					}
-
-					if (shouldHandleFocus) {
-						makeInputFocusable(element);
-					}
-
-					if (element.type === 'checkbox' || element.type === 'radio') {
-						// React set the value as empty string incorrectly when the value is undefined
-						// This make sure the checkbox value falls back to the default value "on" properly
-						// @see https://github.com/facebook/react/issues/17590
-						element.value = optionsRef.current?.value ?? 'on';
-					}
-
-					initializeField(element, optionsRef.current);
-				} else {
-					const inputs = Array.from(element);
-					const name = inputs[0]?.name ?? '';
-					const type = inputs[0]?.type ?? '';
-
-					if (
-						!name ||
-						!(type === 'checkbox' || type === 'radio') ||
-						!inputs.every((input) => input.name === name && input.type === type)
-					) {
-						throw new Error(
-							'You can only register a checkbox or radio group with the same name',
-						);
-					}
-
-					inputRef.current = inputs;
-
-					for (const input of inputs) {
-						if (shouldHandleFocus) {
-							makeInputFocusable(input);
-						}
-
-						initializeField(input, {
-							// We will not be uitlizing defaultChecked / value on checkbox / radio group
-							defaultValue: optionsRef.current?.defaultValue,
-						});
-					}
+				// Conform excludes hidden type inputs by default when updating form values
+				// Fix that by using the hidden attribute instead
+				if (element.type === 'hidden') {
+					element.hidden = true;
+					element.removeAttribute('type');
 				}
-			},
-			[shouldHandleFocus],
-		),
+
+				if (element.type === 'checkbox' || element.type === 'radio') {
+					// React set the value as empty string incorrectly when the value is undefined
+					// This make sure the checkbox value falls back to the default value "on" properly
+					// @see https://github.com/facebook/react/issues/17590
+					element.value = optionsRef.current?.value ?? 'on';
+				}
+
+				initializeField(element, optionsRef.current);
+			} else if (element instanceof HTMLFieldSetElement) {
+				inputRef.current = element;
+			} else {
+				const inputs = Array.from(element);
+				const name = inputs[0]?.name ?? '';
+				const type = inputs[0]?.type ?? '';
+
+				if (
+					!name ||
+					!(type === 'checkbox' || type === 'radio') ||
+					!inputs.every((input) => input.name === name && input.type === type)
+				) {
+					throw new Error(
+						'You can only register a checkbox or radio group with the same name',
+					);
+				}
+
+				inputRef.current = inputs;
+
+				for (const input of inputs) {
+					initializeField(input, {
+						// We will not be uitlizing defaultChecked / value on checkbox / radio group
+						defaultValue: optionsRef.current?.defaultValue,
+					});
+				}
+			}
+		}, []),
 		change: useCallback((value) => {
 			if (!eventDispatched.current.change) {
 				const element = Array.isArray(inputRef.current)
@@ -1239,11 +1249,17 @@ export function useControl(options?: {
 						})
 					: inputRef.current;
 
+				if (element instanceof HTMLFieldSetElement) {
+					// Fieldset mode renders hidden descendant inputs from defaultPayload.
+					// Flush this update before dispatching events so listeners see the
+					// latest form structure in the same input/change cycle.
+					flushSync(() => {
+						setDefaultPayload(value === null ? undefined : value);
+					});
+				}
+
 				if (element) {
-					change(
-						element,
-						typeof value === 'boolean' ? (value ? element.value : null) : value,
-					);
+					change(element, value);
 				}
 			}
 
@@ -1437,3 +1453,133 @@ export function useLatest<Value>(value: Value) {
 
 	return ref;
 }
+
+/**
+ * A component that renders hidden input(s) based on the shape of defaultValue.
+ * Used with useControl's data mode to sync complex values with form data.
+ *
+ * @example
+ * ```tsx
+ * function isStringArray(value: unknown): value is string[] {
+ *   return Array.isArray(value) && value.every((v) => typeof v === 'string');
+ * }
+ *
+ * const control = useControl({
+ *   defaultData: ['en', 'es'],
+ *   type: isStringArray,
+ * });
+ *
+ * <HiddenInput
+ *   ref={control.register}
+ *   name="languages"
+ *   defaultValue={control.defaultValue}
+ * />
+ * ```
+ */
+export const HiddenInput = forwardRef<
+	| HTMLInputElement
+	| HTMLSelectElement
+	| HTMLTextAreaElement
+	| HTMLFieldSetElement,
+	HiddenInputProps
+>(function HiddenInput({ type, name, defaultValue, form }, ref) {
+	function formatValue(value: unknown): string {
+		const serialized = serialize(value);
+
+		if (typeof serialized === 'string') {
+			return serialized;
+		}
+
+		// null, undefined, File, or array - fallback to empty string
+		return '';
+	}
+
+	function renderInput(
+		name: string,
+		value: unknown,
+		form: string | undefined,
+	): React.ReactNode {
+		if (Array.isArray(value)) {
+			return value.map((item, index) =>
+				renderInput(`${name}[${index}]`, item, form),
+			);
+		}
+
+		if (isPlainObject(value)) {
+			return Object.entries(value).map(([key, val]) =>
+				renderInput(`${name}.${key}`, val, form),
+			);
+		}
+
+		return (
+			<input
+				key={name}
+				name={name}
+				defaultValue={formatValue(value)}
+				form={form}
+			/>
+		);
+	}
+
+	if (type === 'fieldset') {
+		return (
+			<fieldset
+				ref={ref as React.ForwardedRef<HTMLFieldSetElement>}
+				name={name}
+				form={form}
+				hidden
+			>
+				{defaultValue !== undefined
+					? renderInput(name, defaultValue, form)
+					: null}
+			</fieldset>
+		);
+	}
+
+	if (type === 'select') {
+		const multiple = Array.isArray(defaultValue);
+		const options = multiple
+			? defaultValue.map(formatValue)
+			: [formatValue(defaultValue)];
+
+		return (
+			<select
+				ref={ref as React.ForwardedRef<HTMLSelectElement>}
+				name={name}
+				defaultValue={options}
+				multiple={multiple}
+				form={form}
+				hidden
+			>
+				{options.map((option, index) => (
+					<option key={index} value={option}>
+						{option}
+					</option>
+				))}
+			</select>
+		);
+	}
+
+	if (type === 'textarea') {
+		return (
+			<textarea
+				ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+				name={name}
+				defaultValue={formatValue(defaultValue)}
+				form={form}
+				hidden
+			/>
+		);
+	}
+
+	return (
+		<input
+			ref={ref as React.ForwardedRef<HTMLInputElement>}
+			type={type}
+			name={name}
+			defaultValue={formatValue(defaultValue)}
+			form={form}
+			hidden
+		/>
+	);
+});

@@ -19,6 +19,7 @@ import {
 	MultiToggleGroup,
 	InputOTP,
 } from './components/form';
+import { TeamMemberSelect, memberSchema } from './components/TeamMemberSelect';
 import { useForm } from './forms';
 
 const schema = coerceFormValue(
@@ -36,6 +37,7 @@ const schema = coerceFormValue(
 		categories: z.array(z.enum(['blog', 'guide', 'tutorial'])).min(1),
 		interests: z.array(z.string()).min(3),
 		code: z.string().length(6),
+		members: z.array(memberSchema).min(1),
 	}),
 );
 
@@ -46,6 +48,16 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
+	const membersDefault: Array<Record<string, string | null>> = [];
+	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
+		membersDefault.push({
+			id: searchParams.get(`members[${i}].id`),
+			name: searchParams.get(`members[${i}].name`),
+			email: searchParams.get(`members[${i}].email`),
+			role: searchParams.get(`members[${i}].role`),
+		});
+	}
+
 	const { form, fields, intent } = useForm(schema, {
 		defaultValue: {
 			name: searchParams.get('name'),
@@ -60,6 +72,7 @@ export default function App() {
 			accountType: searchParams.get('accountType'),
 			categories: searchParams.getAll('categories'),
 			interests: searchParams.getAll('interests'),
+			members: membersDefault.length > 0 ? membersDefault : undefined,
 			code: searchParams.get('code'),
 		},
 		onSubmit(event, { formData, value }) {
@@ -296,6 +309,13 @@ export default function App() {
 					))}
 					<FieldError id={fields.interests.errorId}>
 						{fields.interests.errors}
+					</FieldError>
+				</Field>
+				<Field>
+					<Label id={fields.members.id}>Team Members</Label>
+					<TeamMemberSelect {...fields.members.teamMemberSelectProps} />
+					<FieldError id={fields.members.errorId}>
+						{fields.members.errors}
 					</FieldError>
 				</Field>
 				<Field>
