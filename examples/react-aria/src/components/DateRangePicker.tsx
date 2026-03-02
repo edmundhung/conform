@@ -53,7 +53,7 @@ export function DateRangePicker({
 	const labelRef = useRef<HTMLLabelElement>(null);
 	const control = useControl({
 		defaultPayload: defaultValue,
-		resolve(payload) {
+		parse(payload) {
 			return coerceStructure(dateRangeSchema).parse(payload);
 		},
 		onFocus() {

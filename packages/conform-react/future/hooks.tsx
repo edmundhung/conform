@@ -67,6 +67,7 @@ import type {
 	InferOutput,
 	ControlOptions,
 	HiddenInputProps,
+	NativeControlPayload,
 } from './types';
 import {
 	intentHandlers,
@@ -1016,7 +1017,7 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl<Shape>(
+export function useControl<Shape = NativeControlPayload>(
 	options?: ControlOptions<Shape>,
 ): Control<Shape> {
 	const { observer } = useContext(GlobalFormOptionsContext);
@@ -1040,13 +1041,16 @@ export function useControl<Shape>(
 		}),
 		[],
 	);
-	const [defaultPayloadOption, setDefaultPayloadOption] = useState(
-		options?.defaultPayload,
-	);
-	const [defaultPayload, setDefaultPayload] = useState(defaultPayloadOption);
+	const [defaultPayload, setDefaultPayload] = useState(options?.defaultPayload);
+	const defaultPayloadOptionRef = useRef(options?.defaultPayload);
 
-	if (options?.defaultPayload !== defaultPayloadOption) {
-		setDefaultPayloadOption(options?.defaultPayload);
+	/**
+	 * Keep defaultPayload in sync with external option updates during render.
+	 * This is required for structural controls where hidden descendants must be
+	 * rendered in the same cycle as form state updates (e.g. update intents).
+	 */
+	if (!deepEqual(defaultPayloadOptionRef.current, options?.defaultPayload)) {
+		defaultPayloadOptionRef.current = options?.defaultPayload;
 		setDefaultPayload(options?.defaultPayload);
 	}
 
@@ -1143,21 +1147,35 @@ export function useControl<Shape>(
 		};
 	}, []);
 
+	const parsePayload = (
+		kind: 'payload' | 'defaultPayload',
+		payload: unknown,
+	): Shape | undefined => {
+		if (typeof payload === 'undefined') {
+			return undefined;
+		}
+
+		if (!options?.parse) {
+			return payload as Shape;
+		}
+
+		try {
+			return options.parse(payload);
+		} catch (error) {
+			throw new Error(
+				`Failed to parse ${kind} for control. Received ${JSON.stringify(payload, null, 2)}.`,
+				{ cause: error },
+			);
+		}
+	};
+
 	return {
 		value: snapshot.value,
 		checked: snapshot.checked,
 		options: snapshot.options,
 		files: snapshot.files,
-		// @ts-expect-error FIXME
-		defaultPayload:
-			defaultPayload !== undefined && options?.resolve
-				? options.resolve(defaultPayload)
-				: defaultPayload,
-		// @ts-expect-error FIXME
-		payload:
-			snapshot.payload !== undefined && options?.resolve
-				? options.resolve(snapshot.payload)
-				: snapshot.payload,
+		defaultPayload: parsePayload('defaultPayload', defaultPayload),
+		payload: parsePayload('payload', snapshot.payload),
 		formRef,
 		register: useCallback((element) => {
 			if (!element) {
@@ -1231,9 +1249,12 @@ export function useControl<Shape>(
 						})
 					: inputRef.current;
 
-				if (element?.type === 'fieldset') {
+				if (element instanceof HTMLFieldSetElement) {
+					// Fieldset mode renders hidden descendant inputs from defaultPayload.
+					// Flush this update before dispatching events so listeners see the
+					// latest form structure in the same input/change cycle.
 					flushSync(() => {
-						setDefaultPayload(value);
+						setDefaultPayload(value === null ? undefined : value);
 					});
 				}
 
@@ -1517,17 +1538,25 @@ export const HiddenInput = forwardRef<
 
 	if (type === 'select') {
 		const multiple = Array.isArray(defaultValue);
+		const options = multiple
+			? defaultValue.map(formatValue)
+			: [formatValue(defaultValue)];
+
 		return (
 			<select
 				ref={ref as React.ForwardedRef<HTMLSelectElement>}
 				name={name}
-				defaultValue={
-					multiple ? defaultValue.map(formatValue) : formatValue(defaultValue)
-				}
+				defaultValue={options}
 				multiple={multiple}
 				form={form}
 				hidden
-			></select>
+			>
+				{options.map((option, index) => (
+					<option key={index} value={option}>
+						{option}
+					</option>
+				))}
+			</select>
 		);
 	}
 
@@ -1546,6 +1575,7 @@ export const HiddenInput = forwardRef<
 	return (
 		<input
 			ref={ref as React.ForwardedRef<HTMLInputElement>}
+			type={type}
 			name={name}
 			defaultValue={formatValue(defaultValue)}
 			form={form}

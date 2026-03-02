@@ -187,4 +187,19 @@ describe('future export: useControl', () => {
 			payload: false,
 		});
 	});
+
+	it('throws contextual error when parse fails', () => {
+		expect(() =>
+			serverRenderHook(() =>
+				useControl({
+					defaultPayload: {
+						members: [{ id: '1' }],
+					},
+					parse() {
+						throw new Error('Expected members array');
+					},
+				}),
+			),
+		).toThrowError('Failed to parse defaultPayload for control.');
+	});
 });

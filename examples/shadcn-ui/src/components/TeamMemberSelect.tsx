@@ -60,7 +60,7 @@ export function TeamMemberSelect({
 	const triggerRef = useRef<HTMLDivElement>(null);
 	const control = useControl({
 		defaultPayload,
-		resolve(payload) {
+		parse(payload) {
 			return coerceStructure(membersSchema).parse(payload);
 		},
 		onFocus() {

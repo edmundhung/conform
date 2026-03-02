@@ -435,7 +435,7 @@ export function change(
 
 	if (element instanceof HTMLFieldSetElement) {
 		for (const input of element.elements) {
-			if (isFieldElement(input)) {
+			if (isFieldElement(input) && !input.disabled) {
 				const path = getRelativePath(input.name, element.name);
 
 				if (path) {

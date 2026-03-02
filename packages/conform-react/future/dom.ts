@@ -171,7 +171,7 @@ export function getInputSnapshot(
  * - others: defaultValue is string
  */
 export function createDefaultSnapshot(
-	options: ControlOptions | undefined,
+	options: ControlOptions<unknown> | undefined,
 ): InputSnapshot {
 	if (
 		typeof options?.value === 'string' ||
