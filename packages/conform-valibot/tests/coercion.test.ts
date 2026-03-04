@@ -5,6 +5,7 @@ import {
 	coerceStructure,
 	configureCoercion,
 } from '../coercion';
+import * as future from '../future';
 import { getResult } from './helpers/valibot';
 
 describe('coercion', () => {
@@ -550,5 +551,57 @@ describe('coercion', () => {
 				},
 			});
 		});
+	});
+});
+
+describe('future export: coercion', () => {
+	test('coerceFormValue parses timezone-less datetime as UTC by default', () => {
+		const schema = future.coerceFormValue(v.date());
+		const date = v.parse(schema, '2026-01-01T12:00:00.000');
+
+		expect(date.toISOString()).toBe('2026-01-01T12:00:00.000Z');
+	});
+
+	test('coerceFormValue preserves explicit timezone offsets', () => {
+		const schema = future.coerceFormValue(v.date());
+		const date = v.parse(schema, '2026-01-01T12:00:00+08:00');
+
+		expect(date.toISOString()).toBe('2026-01-01T04:00:00.000Z');
+	});
+
+	test.skipIf(typeof document === 'undefined')(
+		'coerceFormValue parses datetime-local input as UTC by default',
+		() => {
+			const form = document.createElement('form');
+			const input = document.createElement('input');
+
+			input.type = 'datetime-local';
+			input.name = 'startsAt';
+			input.value = '2026-01-01T12:34';
+			form.append(input);
+
+			const value = new FormData(form).get('startsAt');
+
+			expect(value).toBe('2026-01-01T12:34');
+			expect(v.parse(future.coerceFormValue(v.date()), value)).toEqual(
+				new Date('2026-01-01T12:34:00.000Z'),
+			);
+		},
+	);
+
+	test('configureCoercion supports overriding date coercion', () => {
+		const fixedDate = new Date('2020-01-02T03:04:05.006Z');
+		const { coerceFormValue, coerceStructure } = future.configureCoercion({
+			type: {
+				date: () => fixedDate,
+			},
+		});
+
+		expect(
+			v.parse(coerceFormValue(v.date()), '2026-01-01T12:00:00.000'),
+		).toEqual(fixedDate);
+		expect(
+			v.parse(coerceStructure(v.date()), '2026-01-01T12:00:00.000'),
+		).toEqual(fixedDate);
 	});
 });

@@ -24,7 +24,7 @@ The current form data to compare. It can be:
 
 An object representing the default values of the form to compare against. Defaults to an empty object if not provided.
 
-### `options.serialize?: (value: unknown) => string | File | undefined`
+### `options.serialize?: (value: unknown, defaultSerialize: Serialize) => string | string[] | File | File[] | null | undefined`
 
 A function to serialize values in defaultValue before comparing them to the form data. If not provided, a default serializer is used that behaves as follows:
 
@@ -32,7 +32,7 @@ A function to serialize values in defaultValue before comparing them to the form
   - true → 'on'
   - false → undefined
 - Date:
-  - Converted to ISO string (`.toISOString()`)
+  - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 - number / bigint:
   - Converted to string using `.toString()`
 - string / File:
