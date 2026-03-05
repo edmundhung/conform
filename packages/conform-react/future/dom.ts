@@ -1,19 +1,23 @@
 import {
 	change,
+	focus,
 	getPathValue,
 	isFieldElement,
 	isGlobalInstance,
 	requestIntent,
 	Serialize,
+	setPathValue,
 	updateField,
 } from '@conform-to/dom/future';
 import type {
+	ControlOptions,
 	ErrorContext,
 	FormRef,
 	InputSnapshot,
 	IntentDispatcher,
 } from './types';
 import { serializeIntent } from './intent';
+import { hasFieldError } from './state';
 
 export function getFormElement(
 	formRef: FormRef | undefined,
@@ -79,43 +83,6 @@ export function initializeField(
 	element.dataset.conform = 'initialized';
 }
 
-/**
- * Makes hidden form inputs focusable with visually hidden styles
- */
-export function makeInputFocusable(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (!element.hidden && element.type !== 'hidden') {
-		return;
-	}
-
-	// Style the element to be visually hidden
-	element.style.position = 'absolute';
-	element.style.width = '1px';
-	element.style.height = '1px';
-	element.style.padding = '0';
-	element.style.margin = '-1px';
-	element.style.overflow = 'hidden';
-	element.style.clip = 'rect(0,0,0,0)';
-	element.style.whiteSpace = 'nowrap';
-	element.style.border = '0';
-
-	// Hide the element from screen readers
-	element.setAttribute('aria-hidden', 'true');
-
-	// Make sure people won't tab to this element
-	element.tabIndex = -1;
-
-	// Set the element to be visible again so it can be focused
-	if (element.hidden) {
-		element.hidden = false;
-	}
-
-	if (element.type === 'hidden') {
-		element.setAttribute('type', 'text');
-	}
-}
-
 export function getRadioGroupValue(
 	inputs: Array<HTMLInputElement>,
 ): string | undefined {
@@ -144,29 +111,55 @@ export function getCheckboxGroupValue(
 }
 
 export function getInputSnapshot(
-	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+	input:
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| HTMLFieldSetElement,
 ): InputSnapshot {
 	if (input instanceof HTMLInputElement) {
 		switch (input.type) {
-			case 'file':
+			case 'file': {
+				const files = input.files ? Array.from(input.files) : undefined;
+
 				return {
-					files: input.files ? Array.from(input.files) : undefined,
+					files,
+					payload: files,
 				};
+			}
 			case 'radio':
 			case 'checkbox':
 				return {
 					value: input.value,
 					checked: input.checked,
+					payload: input.checked,
 				};
 		}
 	} else if (input instanceof HTMLSelectElement && input.multiple) {
+		const options = Array.from(input.selectedOptions).map(
+			(option) => option.value,
+		);
 		return {
-			options: Array.from(input.selectedOptions).map((option) => option.value),
+			options,
+			payload: options,
+		};
+	} else if (input instanceof HTMLFieldSetElement) {
+		const result = {};
+
+		for (const element of input.elements) {
+			if (isFieldElement(element) && !element.disabled) {
+				setPathValue(result, element.name, getInputSnapshot(element).payload);
+			}
+		}
+
+		return {
+			payload: getPathValue(result, input.name),
 		};
 	}
 
 	return {
 		value: input.value,
+		payload: input.value,
 	};
 }
 
@@ -178,40 +171,43 @@ export function getInputSnapshot(
  * - others: defaultValue is string
  */
 export function createDefaultSnapshot(
-	defaultValue: string | string[] | File | File[] | FileList | null | undefined,
-	defaultChecked: boolean | undefined,
-	value: string | undefined,
+	options: ControlOptions<unknown> | undefined,
 ): InputSnapshot {
-	if (typeof value === 'string' || typeof defaultChecked === 'boolean') {
+	if (
+		typeof options?.value === 'string' ||
+		typeof options?.defaultChecked === 'boolean'
+	) {
 		return {
-			value: value ?? 'on',
-			checked: defaultChecked,
+			value: options?.value ?? 'on',
+			checked: options?.defaultChecked,
+			payload: options?.defaultChecked,
 		};
 	}
 
-	if (typeof defaultValue === 'string') {
-		return { value: defaultValue };
+	if (typeof options?.defaultValue === 'string') {
+		return { value: options.defaultValue, payload: options.defaultValue };
 	}
 
-	if (Array.isArray(defaultValue)) {
+	if (Array.isArray(options?.defaultValue)) {
 		if (
-			defaultValue.every((item): item is string => typeof item === 'string')
+			options.defaultValue.every(
+				(item): item is string => typeof item === 'string',
+			)
 		) {
-			return { options: defaultValue };
+			return { options: options.defaultValue, payload: options.defaultValue };
 		} else {
-			return { files: defaultValue };
+			return { files: options.defaultValue, payload: options.defaultValue };
 		}
 	}
 
-	if (isGlobalInstance(defaultValue, 'File')) {
-		return { files: [defaultValue] };
+	if (isGlobalInstance(options?.defaultValue, 'File')) {
+		const files = [options.defaultValue];
+		return { files, payload: files };
 	}
 
-	if (isGlobalInstance(defaultValue, 'FileList')) {
-		return { files: Array.from(defaultValue) };
-	}
-
-	return {};
+	return {
+		payload: options?.defaultPayload,
+	};
 }
 
 /**
@@ -227,12 +223,18 @@ export function focusFirstInvalidField<ErrorShape>(
 
 	for (const element of ctx.formElement.elements) {
 		if (
-			isFieldElement(element) &&
-			ctx.error.fieldErrors[element.name]?.length
+			!(isFieldElement(element) || element instanceof HTMLFieldSetElement) ||
+			!hasFieldError(ctx.error, element.name)
 		) {
-			element.focus();
-			break;
+			continue;
 		}
+
+		if (element.hidden || element.type === 'hidden') {
+			focus(element);
+		} else {
+			element.focus();
+		}
+		break;
 	}
 }
 

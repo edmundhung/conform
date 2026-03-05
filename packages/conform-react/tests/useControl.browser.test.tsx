@@ -2,9 +2,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Locator, userEvent, server } from 'vitest/browser';
-import { useControl } from '../future';
+import { HiddenInput, useControl } from '../future';
 import { createFileList } from '@conform-to/dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 describe('future export: useControl', () => {
 	function Form(props: { id?: string; children: React.ReactNode }) {
@@ -666,6 +667,173 @@ describe('future export: useControl', () => {
 		input.dataset.conform = 'test';
 		await expect.element(baseInput).toHaveValue('hello world');
 		await expect.element(controlInput).toHaveValue('hello world');
+	});
+
+	it('updates fieldset structure before dispatching input events', async () => {
+		function StructuredControl() {
+			const [capturedEntries, setCapturedEntries] = useState<
+				Array<[string, string]>
+			>([]);
+			const control = useControl({
+				defaultPayload: [{ id: '1', role: 'developer' }],
+			});
+
+			return (
+				<div
+					onInput={() => {
+						const form = control.formRef.current;
+
+						if (form) {
+							setCapturedEntries(
+								Array.from(new FormData(form).entries()).map(
+									([name, value]) => [name, value.toString()],
+								),
+							);
+						}
+					}}
+				>
+					<HiddenInput
+						type="fieldset"
+						name="members"
+						ref={control.register}
+						defaultValue={control.defaultPayload}
+					/>
+					<button
+						type="button"
+						onClick={() =>
+							control.change([
+								{ id: '2', role: 'designer' },
+								{ id: '3', role: 'manager' },
+							])
+						}
+					>
+						Update members
+					</button>
+					<output aria-label="captured entries">
+						{JSON.stringify(capturedEntries)}
+					</output>
+				</div>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<StructuredControl />
+			</Form>,
+		);
+
+		await userEvent.click(screen.getByText('Update members'));
+
+		await expect
+			.poll(() => {
+				const inputNames = Array.from(
+					document.querySelectorAll<HTMLInputElement>(
+						'input[name^="members["]',
+					),
+				).map((input) => input.name);
+
+				return inputNames;
+			})
+			.toEqual([
+				'members[0].id',
+				'members[0].role',
+				'members[1].id',
+				'members[1].role',
+			]);
+
+		await expect
+			.poll(() => {
+				const output = getElement(
+					screen.getByLabelText('captured entries'),
+					HTMLOutputElement,
+				);
+
+				return JSON.parse(output.textContent ?? '[]');
+			})
+			.toEqual([
+				['members[0].id', '2'],
+				['members[0].role', 'designer'],
+				['members[1].id', '3'],
+				['members[1].role', 'manager'],
+			]);
+	});
+
+	it('supports external payload updates before structural control changes', async () => {
+		function StructuredControl() {
+			const [sourcePayload, setSourcePayload] = useState([
+				{ id: '1', role: 'developer' },
+			]);
+			const [capturedEntries, setCapturedEntries] = useState<
+				Array<[string, string]>
+			>([]);
+			const control = useControl({
+				defaultPayload: sourcePayload,
+			});
+
+			return (
+				<form>
+					<HiddenInput
+						type="fieldset"
+						name="members"
+						ref={control.register}
+						defaultValue={control.defaultPayload}
+					/>
+					<button
+						type="button"
+						onClick={() => {
+							flushSync(() => {
+								setSourcePayload([
+									{ id: '2', role: 'designer' },
+									{ id: '3', role: 'manager' },
+								]);
+							});
+
+							control.change([
+								{ id: '4', role: 'lead' },
+								{ id: '5', role: 'qa' },
+							]);
+
+							const form = control.formRef.current;
+
+							if (form) {
+								setCapturedEntries(
+									Array.from(new FormData(form).entries()).map(
+										([name, value]) => [name, value.toString()],
+									),
+								);
+							}
+						}}
+					>
+						Update then change
+					</button>
+					<output aria-label="captured entries from update">
+						{JSON.stringify(capturedEntries)}
+					</output>
+				</form>
+			);
+		}
+
+		const screen = render(<StructuredControl />);
+
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Update then change' }),
+		);
+
+		await expect
+			.poll(() => {
+				const output = getElement(
+					screen.getByLabelText('captured entries from update'),
+					HTMLOutputElement,
+				);
+
+				return JSON.parse(output.textContent ?? '[]');
+			})
+			.toEqual([
+				['members[0].id', '4'],
+				['members[0].role', 'lead'],
+				['members[1].id', '5'],
+				['members[1].role', 'qa'],
+			]);
 	});
 
 	it('supports resetting the input after initialized with a different default value', async () => {

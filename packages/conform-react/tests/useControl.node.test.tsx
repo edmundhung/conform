@@ -8,6 +8,8 @@ describe('future export: useControl', () => {
 		options: undefined,
 		files: undefined,
 		checked: undefined,
+		defaultPayload: undefined,
+		payload: undefined,
 		formRef: { current: null },
 		register: expect.any(Function),
 		change: expect.any(Function),
@@ -47,6 +49,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			value: 'hello world',
+			payload: 'hello world',
 		});
 
 		expect(
@@ -58,6 +61,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			options: ['foo', 'bar'],
+			payload: ['foo', 'bar'],
 		});
 
 		expect(
@@ -70,6 +74,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
+			payload: true,
 		});
 
 		expect(
@@ -83,6 +88,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
+			payload: false,
 		});
 
 		expect(
@@ -94,6 +100,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			files: [txtFile],
+			payload: [txtFile],
 		});
 
 		expect(
@@ -105,6 +112,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			files: [sqlFile, txtFile],
+			payload: [sqlFile, txtFile],
 		});
 	});
 
@@ -137,6 +145,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			value: 'hello world',
+			payload: 'hello world',
 		});
 
 		expect(
@@ -148,6 +157,7 @@ describe('future export: useControl', () => {
 		).toEqual({
 			...defaultResult,
 			options: ['foo', 'bar'],
+			payload: ['foo', 'bar'],
 		});
 
 		expect(
@@ -160,6 +170,7 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'on',
 			checked: true,
+			payload: true,
 		});
 
 		expect(
@@ -173,6 +184,22 @@ describe('future export: useControl', () => {
 			...defaultResult,
 			value: 'yes',
 			checked: false,
+			payload: false,
 		});
+	});
+
+	it('throws contextual error when parse fails', () => {
+		expect(() =>
+			serverRenderHook(() =>
+				useControl({
+					defaultPayload: {
+						members: [{ id: '1' }],
+					},
+					parse() {
+						throw new Error('Expected members array');
+					},
+				}),
+			),
+		).toThrowError('Failed to parse defaultPayload for control.');
 	});
 });

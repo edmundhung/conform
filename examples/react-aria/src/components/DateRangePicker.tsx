@@ -1,4 +1,5 @@
-import { useControl } from '@conform-to/react/future';
+import { HiddenInput, useControl } from '@conform-to/react/future';
+import { coerceStructure } from '@conform-to/zod/v3/future';
 import { CalendarDate, parseDate } from '@internationalized/date';
 import {
 	Button,
@@ -21,6 +22,12 @@ import {
 import { useRef } from 'react';
 
 import './DateRangePicker.css';
+import z from 'zod';
+
+export const dateRangeSchema = z.object({
+	start: z.string(),
+	end: z.string(),
+});
 
 export interface DateRangePickerProps<T extends DateValue>
 	extends Omit<
@@ -28,10 +35,8 @@ export interface DateRangePickerProps<T extends DateValue>
 		'defaultValue' | 'value' | 'onChange'
 	> {
 	label?: string;
-	defaultValue?: {
-		start?: string | undefined;
-		end?: string | undefined;
-	};
+	name: string;
+	defaultValue?: z.infer<typeof dateRangeSchema> | unknown;
 	description?: string;
 	errors?: string[];
 }
@@ -41,20 +46,16 @@ export function DateRangePicker({
 	description,
 	errors,
 	firstDayOfWeek,
-	startName,
-	endName,
+	name,
 	defaultValue,
 	...props
 }: DateRangePickerProps<CalendarDate>) {
 	const labelRef = useRef<HTMLLabelElement>(null);
-	const startControl = useControl({
-		defaultValue: defaultValue?.start ?? defaultValue?.end,
-		onFocus() {
-			labelRef.current?.click();
+	const control = useControl({
+		defaultPayload: defaultValue,
+		parse(payload) {
+			return coerceStructure(dateRangeSchema).parse(payload);
 		},
-	});
-	const endControl = useControl({
-		defaultValue: defaultValue?.end ?? defaultValue?.start,
 		onFocus() {
 			labelRef.current?.click();
 		},
@@ -62,25 +63,30 @@ export function DateRangePicker({
 
 	return (
 		<>
-			<input ref={startControl.register} name={startName} hidden />
-			<input ref={endControl.register} name={endName} hidden />
+			<HiddenInput
+				type="fieldset"
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultPayload}
+			/>
 			<AriaDateRangePicker
 				{...props}
 				value={
-					startControl.value && endControl.value
+					control.payload?.start && control.payload?.end
 						? {
-								start: parseDate(startControl.value),
-								end: parseDate(endControl.value),
+								start: parseDate(control.payload.start),
+								end: parseDate(control.payload.end),
 							}
 						: null
 				}
 				onChange={(value) => {
-					startControl.change(value?.start.toString() ?? '');
-					endControl.change(value?.end.toString() ?? '');
+					control.change({
+						start: value?.start.toString() ?? '',
+						end: value?.end.toString() ?? '',
+					});
 				}}
 				onBlur={() => {
-					startControl.blur();
-					endControl.blur();
+					control.blur();
 				}}
 			>
 				<Label ref={labelRef}>{label}</Label>

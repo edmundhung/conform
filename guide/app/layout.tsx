@@ -64,6 +64,7 @@ const menus: { [code: string]: Menu[] } = {
 				{ title: 'getFieldValue', to: '/api/react/future/getFieldValue' },
 				{ title: 'configureForms', to: '/api/react/future/configureForms' },
 				{ title: 'isDirty', to: '/api/react/future/isDirty' },
+				{ title: 'HiddenInput', to: '/api/react/future/HiddenInput' },
 				{ title: 'FormProvider', to: '/api/react/future/FormProvider' },
 				{
 					title: 'PreserveBoundary',

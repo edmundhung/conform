@@ -711,6 +711,28 @@ describe('change', () => {
 		expect(handler).toHaveBeenNthCalledWith(2, 'change', 'example', true);
 		expect(input.value).toBe('example');
 	});
+
+	it('ignores disabled descendants when changing a fieldset', () => {
+		const fieldset = document.createElement('fieldset');
+		fieldset.name = 'members';
+
+		const enabledInput = document.createElement('input');
+		enabledInput.name = 'members[0].id';
+		enabledInput.value = '1';
+
+		const disabledInput = document.createElement('input');
+		disabledInput.name = 'members[0].role';
+		disabledInput.value = 'developer';
+		disabledInput.disabled = true;
+
+		fieldset.append(enabledInput, disabledInput);
+
+		const changed = change(fieldset, [{ id: '2', role: 'designer' }]);
+
+		expect(changed).toBe(true);
+		expect(enabledInput.value).toBe('2');
+		expect(disabledInput.value).toBe('developer');
+	});
 });
 
 describe('focus', () => {
