@@ -25,6 +25,18 @@ This is an advanced option. You typically don't need to change this unless you h
 
 A custom serialization function for converting form data.
 
+If not provided, Conform uses a default serializer with the following behavior:
+
+- boolean:
+  - true → 'on'
+  - false → undefined
+- Date:
+  - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
+- number / bigint:
+  - Converted to string using `.toString()`
+- string / File:
+  - Returned as-is
+
 This is an advanced option. You typically don't need to change this unless you have special serialization requirements.
 
 ### `shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput'`

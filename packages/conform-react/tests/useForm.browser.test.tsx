@@ -9,6 +9,7 @@ import {
 	useForm as useFormDefault,
 	report,
 	parseSubmission,
+	isDirty,
 	configureForms,
 } from '../future';
 import { expectErrorMessage, expectNoErrorMessages } from './helpers';
@@ -1327,6 +1328,53 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 			await expect.element(task2.content).toHaveValue('');
 			await expect.element(task3.content).not.toBeInTheDocument();
 		});
+	});
+
+	test('default value serialization', async () => {
+		const date = new Date('2026-01-01T12:34:56.789Z');
+
+		function DateForm() {
+			const { form, fields } = useForm<{
+				date: Date;
+			}>({
+				defaultValue: {
+					date,
+				},
+				onValidate() {
+					return { error: null };
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<input
+						type="datetime-local"
+						name={fields.date.name}
+						defaultValue={fields.date.defaultValue}
+						aria-label="Date"
+					/>
+				</form>
+			);
+		}
+
+		const screen = render(<DateForm />);
+		const input = screen.getByLabelText('Date');
+
+		await expect.element(input).toHaveValue('2026-01-01T12:34:56.789');
+
+		const formElement = screen.container.querySelector('form');
+
+		if (!formElement) {
+			throw new Error('Form element not found');
+		}
+
+		const formData = new FormData(formElement);
+
+		expect(formData.get('date')).toBe('2026-01-01T12:34:56.789');
+		expect(isDirty(formData, { defaultValue: { date } })).toBe(false);
 	});
 
 	describe('async validation', () => {

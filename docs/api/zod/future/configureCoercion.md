@@ -43,7 +43,7 @@ Optional. Type-specific string-to-typed-value conversion functions shared betwee
 
 - `number`: default uses `Number()` with empty-string guard (returns `NaN` for empty)
 - `boolean`: default returns `true` for `'on'`, rejects otherwise
-- `date`: default uses `new Date()` with invalid date check
+- `date`: default uses `new Date()` with invalid date check, and interprets timezone-less datetime strings (e.g. `2026-01-01T12:00:00.000`) as UTC
 
 `bigint` is not configurable here because it has no NaN-like sentinel for structural mode. Use `customize` for custom bigint coercion.
 

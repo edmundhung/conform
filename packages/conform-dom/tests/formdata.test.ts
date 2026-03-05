@@ -1468,7 +1468,7 @@ describe('isDirty', () => {
 			}),
 		).toBe(false);
 		expect(
-			isDirty(createFormData([['datetime', '1970-01-01T00:00:00.000Z']]), {
+			isDirty(createFormData([['datetime', '1970-01-01T00:00:00.000']]), {
 				defaultValue: {
 					datetime: new Date(0),
 				},
@@ -1515,7 +1515,9 @@ test('serialize', () => {
 	expect(serialize(false)).toBe('');
 	expect(serialize(123)).toBe('123');
 	expect(serialize(987654321n)).toBe('987654321');
-	expect(serialize(new Date(12345))).toBe(new Date(12345).toISOString());
+	expect(serialize(new Date(12345))).toBe(
+		new Date(12345).toISOString().slice(0, -1),
+	);
 	expect(serialize(new Map())).toBeUndefined();
 	expect(serialize(new Set())).toBeUndefined();
 	expect(serialize(txtFile)).toBe(txtFile);

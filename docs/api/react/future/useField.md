@@ -51,6 +51,8 @@ The field's default value as a string. Returns an empty string `''` when:
 - No default value is set (field value is `null` or `undefined`)
 - The field value cannot be serialized to a string (e.g., objects or arrays)
 
+For Date values, Conform serializes to a UTC datetime string without trailing `Z` (for example, `2026-01-01T12:00:00.000`).
+
 ### `defaultOptions: string[]`
 
 Default selected options for multi-select fields or checkbox group. Returns an empty array `[]` when:

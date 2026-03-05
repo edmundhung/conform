@@ -684,7 +684,7 @@ export function isDirty(
 		 * - number / bigint:
 		 *   - Converted to string using `.toString()`
 		 * - Date:
-		 *   - Converted to ISO string using `.toISOString()`
+		 *   - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 		 */
 		serialize?: (
 			value: unknown,
@@ -800,7 +800,7 @@ export function isDirty(
  * - null -> '' (empty string)
  * - boolean -> 'on' | '' (checked semantics)
  * - number | bigint -> value.toString()
- * - Date -> value.toISOString()
+ * - Date -> value.toISOString() without trailing `Z`
  * - File -> File
  * - FileList -> File[]
  * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined
@@ -823,7 +823,7 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
 		}
 
 		if (value instanceof Date) {
-			return value.toISOString();
+			return value.toISOString().slice(0, -1);
 		}
 
 		if (isGlobalInstance(value, 'File')) {
