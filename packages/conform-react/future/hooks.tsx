@@ -1087,14 +1087,20 @@ export function useControl<Shape = NativeControlPayload>(
 		() => {
 			const input = inputRef.current;
 			const prev = snapshotRef.current;
-			const next = !input
-				? defaultSnapshot
-				: Array.isArray(input)
-					? {
-							value: getRadioGroupValue(input),
-							options: getCheckboxGroupValue(input),
-						}
-					: getInputSnapshot(input);
+			let next = defaultSnapshot;
+
+			if (Array.isArray(input)) {
+				const value = getRadioGroupValue(input);
+				const options = getCheckboxGroupValue(input);
+
+				next = {
+					value,
+					options,
+					payload: value ?? options,
+				};
+			} else if (input) {
+				next = getInputSnapshot(input);
+			}
 
 			if (deepEqual(prev, next)) {
 				return prev;
