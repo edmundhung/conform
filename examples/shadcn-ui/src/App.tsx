@@ -48,14 +48,17 @@ export default function App() {
 	const [searchParams, setSearchParams] = useState(
 		() => new URLSearchParams(window.location.search),
 	);
-	const membersDefault: Array<Record<string, string | null>> = [];
+	const membersDefault: Array<Record<string, string>> = [];
+
 	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
-		membersDefault.push({
-			id: searchParams.get(`members[${i}].id`),
-			name: searchParams.get(`members[${i}].name`),
-			email: searchParams.get(`members[${i}].email`),
-			role: searchParams.get(`members[${i}].role`),
-		});
+		const id = searchParams.get(`members[${i}].id`);
+		const name = searchParams.get(`members[${i}].name`);
+		const email = searchParams.get(`members[${i}].email`);
+		const role = searchParams.get(`members[${i}].role`);
+
+		if (id && name && email && role) {
+			membersDefault.push({ id, name, email, role });
+		}
 	}
 
 	const { form, fields, intent } = useForm(schema, {

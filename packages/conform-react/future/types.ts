@@ -25,15 +25,7 @@ export type FormRef =
 	  >
 	| string;
 
-export type InputSnapshot = {
-	value?: string | undefined;
-	options?: string[] | undefined;
-	checked?: boolean | undefined;
-	files?: File[] | undefined;
-	payload?: unknown;
-};
-
-export type NativeControlPayload =
+export type DefaultControlPayload =
 	| string
 	| string[]
 	| boolean
@@ -41,7 +33,7 @@ export type NativeControlPayload =
 	| File[]
 	| FileList;
 
-export type Control<Payload = NativeControlPayload> = {
+export type Control<Payload = DefaultControlPayload> = {
 	/**
 	 * Current value of the base input. Undefined if the registered input
 	 * is a multi-select, file input, or checkbox group.
@@ -78,7 +70,9 @@ export type Control<Payload = NativeControlPayload> = {
 	 */
 	payload: Payload | undefined;
 	/**
-	 * Registers the base input element(s). Accepts a single input or an array for groups.
+	 * Registers the base input element.
+	 *
+	 * Accepts `<input>`, `<select>`, `<textarea>`, `<fieldset>`.
 	 */
 	register: (
 		element:
@@ -86,8 +80,6 @@ export type Control<Payload = NativeControlPayload> = {
 			| HTMLSelectElement
 			| HTMLTextAreaElement
 			| HTMLFieldSetElement
-			| HTMLCollectionOf<HTMLInputElement>
-			| NodeListOf<HTMLInputElement>
 			| null
 			| undefined,
 	) => void;
@@ -1186,7 +1178,7 @@ export type HiddenInputProps = {
 	form?: string;
 };
 
-export type ControlOptions<Shape = NativeControlPayload> = {
+export type ControlOptions<Shape = DefaultControlPayload> = {
 	/**
 	 * The initial value of the base input. It will be used to set the value
 	 * when the input is first registered.
@@ -1198,7 +1190,7 @@ export type ControlOptions<Shape = NativeControlPayload> = {
 	 * This is primarily for structural controls where the hidden inputs are
 	 * generated from a complex shape.
 	 */
-	defaultPayload?: Shape | undefined;
+	defaultPayload?: unknown;
 	/**
 	 * Whether the base input should be checked by default. It will be applied
 	 * when the input is first registered.

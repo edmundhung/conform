@@ -416,6 +416,25 @@ export function createGlobalFormsObserver() {
 	};
 }
 
+export function isCheckboxGroup(
+	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+): boolean {
+	if (element.type === 'checkbox') {
+		for (const input of element.form?.elements ?? []) {
+			if (
+				input instanceof HTMLInputElement &&
+				input !== element &&
+				input.type === 'checkbox' &&
+				input.name === element.name
+			) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 /**
  * Change the value of the given field element.
  * Dispatches both `input` and `change` events only if the value is changed.
@@ -429,19 +448,24 @@ export function change(
 	value: unknown,
 	options?: {
 		preventDefault?: boolean;
+		forceDispatch?: boolean;
 	},
 ): boolean {
 	let isChanged = false;
 
 	if (element instanceof HTMLFieldSetElement) {
 		for (const input of element.elements) {
-			if (isFieldElement(input) && !input.disabled) {
+			if (isFieldElement(input)) {
 				const path = getRelativePath(input.name, element.name);
 
 				if (path) {
+					const name = formatPath(path);
+					const pathValue = getPathValue(value, name);
 					const isInputChanged = change(
 						input,
-						getPathValue(value, formatPath(path)),
+						isCheckboxGroup(input) && Array.isArray(pathValue)
+							? pathValue.includes(input.value)
+							: pathValue,
 						{
 							preventDefault: true,
 						},
@@ -459,7 +483,7 @@ export function change(
 		});
 	}
 
-	if (isChanged) {
+	if (isChanged || options?.forceDispatch) {
 		const inputEvent = new InputEvent('input', {
 			bubbles: true,
 			cancelable: true,
@@ -566,11 +590,12 @@ export function updateField(
 				if (value) {
 					const checked = value.includes(element.value);
 
-					if (
-						element.type === 'checkbox' ? checked !== element.checked : checked
-					) {
-						// Simulate a click to update the checked state
-						element.click();
+					if (checked !== element.checked) {
+						if (element.type === 'checkbox' || checked) {
+							// Simulate a click to update the checked state
+							element.click();
+						}
+
 						isChanged = true;
 					}
 

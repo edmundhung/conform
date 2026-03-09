@@ -4,7 +4,7 @@ import { render } from 'vitest-browser-react';
 import { Locator, userEvent, server } from 'vitest/browser';
 import { HiddenInput, useControl } from '../future';
 import { createFileList } from '@conform-to/dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 describe('future export: useControl', () => {
@@ -385,91 +385,71 @@ describe('future export: useControl', () => {
 	});
 
 	it('updates payload for checkbox and radio groups', async () => {
-		function GroupControl(props: {
+		function InputGroup(props: {
 			type: 'checkbox' | 'radio';
 			name: string;
-			payloadLabel: string;
+			label: string;
+			defaultValue?: string | string[];
 		}) {
-			const control = useControl();
-			const register = control.register;
-			const containerRef = useRef<HTMLDivElement>(null);
-
-			useEffect(() => {
-				const container = containerRef.current;
-
-				if (container) {
-					register(
-						container.querySelectorAll<HTMLInputElement>(
-							`input[name="${props.name}"]`,
-						),
-					);
-				}
-
-				return () => {
-					register(null);
-				};
-			}, [register, props.name]);
+			const control = useControl({ defaultValue: props.defaultValue });
 
 			return (
-				<div ref={containerRef}>
+				<fieldset name={props.name} ref={control.register}>
 					<label>
-						<input type={props.type} name={props.name} value="a" />A
+						<input type={props.type} name={props.name} value="a" /> A
 					</label>
 					<label>
-						<input type={props.type} name={props.name} value="b" />B
+						<input type={props.type} name={props.name} value="b" /> B
 					</label>
-					<output aria-label={props.payloadLabel}>
+					<output aria-label={props.label}>
 						{JSON.stringify(control.payload)}
 					</output>
-				</div>
+					{props.type === 'checkbox' ? (
+						<button
+							type="button"
+							onClick={() => {
+								control.change(null);
+							}}
+						>
+							Clear {props.label}
+						</button>
+					) : null}
+				</fieldset>
 			);
 		}
 
 		const screen = render(
-			<>
-				<Form>
-					<GroupControl
-						type="checkbox"
-						name="interests"
-						payloadLabel="checkbox payload"
-					/>
-				</Form>
-				<Form>
-					<GroupControl
-						type="radio"
-						name="choice"
-						payloadLabel="radio payload"
-					/>
-				</Form>
-			</>,
+			<Form>
+				<InputGroup type="checkbox" name="interests" label="checkbox payload" />
+				<InputGroup type="radio" name="choice" label="radio payload" />
+			</Form>,
 		);
 
 		await userEvent.click(screen.getByRole('checkbox', { name: 'A' }));
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify(['a']));
+
 		await userEvent.click(screen.getByRole('checkbox', { name: 'B' }));
 
 		await expect
-			.poll(() => {
-				const output = getElement(
-					screen.getByLabelText('checkbox payload'),
-					HTMLOutputElement,
-				);
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify(['a', 'b']));
 
-				return JSON.parse(output.textContent ?? 'null');
-			})
-			.toEqual(['a', 'b']);
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Clear checkbox payload' }),
+		);
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify([]));
 
 		await userEvent.click(screen.getByRole('radio', { name: 'B' }));
 
 		await expect
-			.poll(() => {
-				const output = getElement(
-					screen.getByLabelText('radio payload'),
-					HTMLOutputElement,
-				);
-
-				return JSON.parse(output.textContent ?? 'null');
-			})
-			.toEqual('b');
+			.element(screen.getByLabelText('radio payload'))
+			.toHaveTextContent(JSON.stringify('b'));
 	});
 
 	it('supports emulating a select', async () => {

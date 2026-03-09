@@ -123,12 +123,19 @@ const forms = configureForms({
 				return when(
 					metadata,
 					shape<{ start: string; end: string }>(),
-					(field) => {
+					(fieldset) => {
 						return {
-							name: field.name,
-							defaultValue: field.defaultPayload,
-							isInvalid: !field.valid,
-							errors: field.fieldErrors.start ?? field.fieldErrors.end,
+							name: fieldset.name,
+							defaultValue: fieldset.defaultPayload,
+							isInvalid: !fieldset.valid,
+							errors: [
+								...new Set(
+									(fieldset.errors ?? []).concat(
+										fieldset.fieldErrors.start ?? [],
+										fieldset.fieldErrors.end ?? [],
+									),
+								),
+							],
 						} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
 					},
 				);

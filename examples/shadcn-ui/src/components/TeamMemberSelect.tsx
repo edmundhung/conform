@@ -58,7 +58,7 @@ export function TeamMemberSelect({
 }: TeamMemberSelectProps) {
 	const [open, setOpen] = useState(false);
 	const triggerRef = useRef<HTMLDivElement>(null);
-	const control = useControl({
+	const control = useControl<Member[]>({
 		defaultPayload,
 		parse(payload) {
 			return coerceStructure(membersSchema).parse(payload);
@@ -94,7 +94,9 @@ export function TeamMemberSelect({
 				open={open}
 				onOpenChange={(isOpen) => {
 					setOpen(isOpen);
-					if (!isOpen) {
+					if (isOpen) {
+						control.focus();
+					} else {
 						control.blur();
 					}
 				}}

@@ -3,7 +3,6 @@ import {
 	focus,
 	getPathValue,
 	isFieldElement,
-	isGlobalInstance,
 	requestIntent,
 	Serialize,
 	setPathValue,
@@ -13,7 +12,6 @@ import type {
 	ControlOptions,
 	ErrorContext,
 	FormRef,
-	InputSnapshot,
 	IntentDispatcher,
 } from './types';
 import { serializeIntent } from './intent';
@@ -110,104 +108,83 @@ export function getCheckboxGroupValue(
 	return values;
 }
 
-export function getInputSnapshot(
+export function resolveControlPayload(
 	input:
 		| HTMLInputElement
 		| HTMLSelectElement
 		| HTMLTextAreaElement
 		| HTMLFieldSetElement,
-): InputSnapshot {
+): unknown {
 	if (input instanceof HTMLInputElement) {
 		switch (input.type) {
 			case 'file': {
-				const files = input.files ? Array.from(input.files) : undefined;
-
-				return {
-					files,
-					payload: files,
-				};
+				return input.files ? Array.from(input.files) : [];
 			}
 			case 'radio':
 			case 'checkbox':
-				return {
-					value: input.value,
-					checked: input.checked,
-					payload: input.checked,
-				};
+				return input.checked ? input.value : null;
 		}
 	} else if (input instanceof HTMLSelectElement && input.multiple) {
-		const options = Array.from(input.selectedOptions).map(
-			(option) => option.value,
-		);
-		return {
-			options,
-			payload: options,
-		};
+		return Array.from(input.selectedOptions).map((option) => option.value);
 	} else if (input instanceof HTMLFieldSetElement) {
 		const result = {};
+		const entries: Map<string, unknown> = new Map();
 
 		for (const element of input.elements) {
-			if (isFieldElement(element) && !element.disabled) {
-				setPathValue(result, element.name, getInputSnapshot(element).payload);
+			if (isFieldElement(element)) {
+				const payload = resolveControlPayload(element);
+				const value = entries.get(element.name);
+
+				if (element.type === 'checkbox') {
+					entries.set(
+						element.name,
+						value === undefined
+							? payload
+							: (Array.isArray(value)
+									? [...value, payload]
+									: [value, payload]
+								).filter((v) => v !== null),
+					);
+				} else if (element.type === 'radio') {
+					entries.set(
+						element.name,
+						value == null ? payload : payload === null ? value : payload,
+					);
+				} else {
+					entries.set(
+						element.name,
+						value === undefined
+							? payload
+							: Array.isArray(value)
+								? [...value, payload]
+								: [value, payload],
+					);
+				}
 			}
 		}
 
-		return {
-			payload: getPathValue(result, input.name),
-		};
+		for (const [name, value] of entries) {
+			setPathValue(result, name, value);
+		}
+
+		return getPathValue(result, input.name);
 	}
 
-	return {
-		value: input.value,
-		payload: input.value,
-	};
+	return input.value;
 }
 
-/**
- * Creates an InputSnapshot based on the provided options:
- * - checkbox/radio: value / defaultChecked
- * - file inputs: defaultValue is File or FileList
- * - select multiple: defaultValue is string array
- * - others: defaultValue is string
- */
-export function createDefaultSnapshot(
-	options: ControlOptions<unknown> | undefined,
-): InputSnapshot {
-	if (
-		typeof options?.value === 'string' ||
-		typeof options?.defaultChecked === 'boolean'
-	) {
-		return {
-			value: options?.value ?? 'on',
-			checked: options?.defaultChecked,
-			payload: options?.defaultChecked,
-		};
+export function createDefaultPayload(
+	options: ControlOptions<unknown> = {},
+): unknown {
+	if (typeof options.defaultChecked === 'boolean') {
+		return options.defaultChecked ? options.value ?? 'on' : null;
 	}
 
-	if (typeof options?.defaultValue === 'string') {
-		return { value: options.defaultValue, payload: options.defaultValue };
+	if (typeof options.defaultValue !== 'undefined') {
+		return options.defaultValue;
 	}
 
-	if (Array.isArray(options?.defaultValue)) {
-		if (
-			options.defaultValue.every(
-				(item): item is string => typeof item === 'string',
-			)
-		) {
-			return { options: options.defaultValue, payload: options.defaultValue };
-		} else {
-			return { files: options.defaultValue, payload: options.defaultValue };
-		}
-	}
-
-	if (isGlobalInstance(options?.defaultValue, 'File')) {
-		const files = [options.defaultValue];
-		return { files, payload: files };
-	}
-
-	return {
-		payload: options?.defaultPayload,
-	};
+	return options.defaultPayload;
 }
 
 /**
@@ -224,12 +201,22 @@ export function focusFirstInvalidField<ErrorShape>(
 	for (const element of ctx.formElement.elements) {
 		if (
 			!(isFieldElement(element) || element instanceof HTMLFieldSetElement) ||
+			element.name === '' ||
 			!hasFieldError(ctx.error, element.name)
 		) {
 			continue;
 		}
 
-		if (element.hidden || element.type === 'hidden') {
+		// Treat fieldset as a focusable field only if it is hidden
+		if (element.type === 'fieldset' && !element.hidden) {
+			continue;
+		}
+
+		if (
+			element.hidden ||
+			element.type === 'hidden' ||
+			element.type === 'fieldset'
+		) {
 			focus(element);
 		} else {
 			element.focus();

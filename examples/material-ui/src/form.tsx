@@ -118,6 +118,13 @@ export type RadioGroupProps = {
 	children: React.ReactNode;
 };
 
+const fieldsetResetStyle: React.CSSProperties = {
+	border: 0,
+	margin: 0,
+	padding: 0,
+	minInlineSize: 0,
+};
+
 export function RadioGroup({ name, defaultValue, children }: RadioGroupProps) {
 	const firstLabelRef = useRef<HTMLLabelElement | null>(null);
 	const control = useControl({
@@ -128,25 +135,23 @@ export function RadioGroup({ name, defaultValue, children }: RadioGroupProps) {
 	});
 
 	return (
-		<MuiRadioGroup
-			ref={(element) => {
-				control.register(
-					element instanceof HTMLElement
-						? element.querySelectorAll('input')
-						: null,
-				);
-				firstLabelRef.current =
-					element instanceof HTMLElement
-						? element.querySelector('label')
-						: null;
-			}}
+		<fieldset
 			name={name}
-			value={control.value ? control.value : null}
-			onChange={(event) => control.change(event.target.value)}
-			onBlur={() => control.blur()}
+			ref={(element) => {
+				control.register(element);
+				firstLabelRef.current = element?.querySelector('label') ?? null;
+			}}
+			style={fieldsetResetStyle}
 		>
-			{children}
-		</MuiRadioGroup>
+			<MuiRadioGroup
+				name={name}
+				value={control.value ?? null}
+				onChange={(event) => control.change(event.target.value)}
+				onBlur={() => control.blur()}
+			>
+				{children}
+			</MuiRadioGroup>
+		</fieldset>
 	);
 }
 

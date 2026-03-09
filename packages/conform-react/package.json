@@ -73,6 +73,11 @@
 		"react": ">=18",
 		"react-dom": ">=18"
 	},
+	"peerDependenciesMeta": {
+		"react-dom": {
+			"optional": true
+		}
+	},
 	"keywords": [
 		"constraint-validation",
 		"form",

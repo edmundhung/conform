@@ -113,6 +113,13 @@ export type ExampleRadioGroupProps = {
 	children: React.ReactNode;
 };
 
+const fieldsetResetStyle: React.CSSProperties = {
+	border: 0,
+	margin: 0,
+	padding: 0,
+	minInlineSize: 0,
+};
+
 export function ExampleRadioGroup({
 	name,
 	defaultValue,
@@ -121,15 +128,16 @@ export function ExampleRadioGroup({
 	const control = useControl({ defaultValue });
 
 	return (
-		<RadioGroup
-			name={name}
-			ref={(wrapper) => control.register(wrapper?.querySelectorAll('input'))}
-			value={control.value ?? ''}
-			onChange={(value) => control.change(value)}
-			onBlur={() => control.blur()}
-		>
-			{children}
-		</RadioGroup>
+		<fieldset name={name} ref={control.register} style={fieldsetResetStyle}>
+			<RadioGroup
+				name={name}
+				value={control.value ?? ''}
+				onChange={(value) => control.change(value)}
+				onBlur={() => control.blur()}
+			>
+				{children}
+			</RadioGroup>
+		</fieldset>
 	);
 }
 

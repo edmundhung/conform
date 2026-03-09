@@ -69,8 +69,6 @@ const control = useControl({
 
 Optional parser for coercing `payload` / `defaultPayload` into a typed shape.
 
-If the parser throws, `useControl` rethrows with additional context (field name and payload preview) to make debugging easier.
-
 ```ts
 const control = useControl<{ start: string; end: string }>({
   defaultPayload: { start: '2026-01-01', end: '2026-01-07' },
@@ -124,9 +122,9 @@ Current payload snapshot derived from the registered base input(s).
 
 For structural controls, this is reconstructed from descendant fields under the registered fieldset name.
 
-### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLFieldSetElement | HTMLCollectionOf<HTMLInputElement> | NodeListOf<HTMLInputElement>) => void`
+### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLFieldSetElement | HTMLFieldsetElement) => void`
 
-Registers the base input element(s). Accepts a single input or an array for groups.
+Registers the base input element. Accepts `<input>`, `<select>`, `<textarea>` or `<fieldset>`.
 
 ### `change(value: Payload | null): void`
 

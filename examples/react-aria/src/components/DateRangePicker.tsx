@@ -22,7 +22,7 @@ import {
 import { useRef } from 'react';
 
 import './DateRangePicker.css';
-import z from 'zod';
+import { z } from 'zod';
 
 export const dateRangeSchema = z.object({
 	start: z.string(),
@@ -36,7 +36,7 @@ export interface DateRangePickerProps<T extends DateValue>
 	> {
 	label?: string;
 	name: string;
-	defaultValue?: z.infer<typeof dateRangeSchema> | unknown;
+	defaultValue?: unknown;
 	description?: string;
 	errors?: string[];
 }
@@ -51,7 +51,7 @@ export function DateRangePicker({
 	...props
 }: DateRangePickerProps<CalendarDate>) {
 	const labelRef = useRef<HTMLLabelElement>(null);
-	const control = useControl({
+	const control = useControl<z.infer<typeof dateRangeSchema>>({
 		defaultPayload: defaultValue,
 		parse(payload) {
 			return coerceStructure(dateRangeSchema).parse(payload);
