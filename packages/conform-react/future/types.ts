@@ -112,6 +112,34 @@ export type UseFormDataOptions<Value = undefined> = {
 	fallback?: Value;
 };
 
+export type UseControlOptions = {
+	/**
+	 * The initial value of the base input. It will be used to set the value
+	 * when the input is first registered.
+	 */
+	defaultValue?: string | string[] | File | File[] | null | undefined;
+	/**
+	 * Whether the base input should be checked by default. It will be applied
+	 * when the input is first registered.
+	 */
+	defaultChecked?: boolean | undefined;
+	/**
+	 * The value of a checkbox or radio input when checked. This sets the
+	 * value attribute of the base input.
+	 */
+	value?: string;
+	/**
+	 * A callback function that is triggered when the base input is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+	/**
+	 * When true, reorders <option> elements in a multi-select to match
+	 * the order passed to change(). Useful for ordered multi-value inputs.
+	 */
+	preserveOptionsOrder?: boolean;
+};
+
 export type DefaultValue<Shape> =
 	Shape extends Record<string, any>
 		? { [Key in keyof Shape]?: DefaultValue<Shape[Key]> } | null | undefined

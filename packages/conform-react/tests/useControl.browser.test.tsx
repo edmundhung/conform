@@ -30,6 +30,7 @@ describe('future export: useControl', () => {
 		onFocus?: () => void;
 		options?: string[];
 		multiple?: boolean;
+		preserveOptionsOrder?: boolean;
 	}) {
 		const baseName = `${props.name}-base`;
 		const baseId = `${baseName}-${props.value}`;
@@ -39,6 +40,7 @@ describe('future export: useControl', () => {
 			defaultValue: props.defaultValue,
 			defaultChecked: props.defaultChecked,
 			value: props.value,
+			preserveOptionsOrder: props.preserveOptionsOrder,
 		});
 		const onRender = props.onRender;
 
@@ -83,6 +85,9 @@ describe('future export: useControl', () => {
 						onBlur={props.onBlur}
 						onFocus={props.onFocus}
 						multiple={props.multiple}
+						data-options={
+							props.multiple ? control.options?.join(',') : undefined
+						}
 					>
 						<option value="">Select an option</option>
 					</select>
@@ -620,6 +625,10 @@ describe('future export: useControl', () => {
 		baseElement.dataset.conform = 'test';
 		await expect.element(baseInput).toHaveValue(['foo', 'baz']);
 		await expect.element(controlInput).toHaveValue(['foo', 'baz']);
+
+		// Verify values are returned in DOM order, not selection order
+		// (selecting 'baz' then 'bar' should still return ['bar', 'baz'])
+		await expect.element(baseInput).toHaveAttribute('data-options', 'foo,baz');
 	});
 
 	it('supports emulating a textarea', async () => {
@@ -759,5 +768,35 @@ describe('future export: useControl', () => {
 
 		await expect.element(baseInput).toHaveValue('Hello World');
 		await expect.element(controlInput).toHaveValue('Hello World');
+	});
+
+	it('supports preserveOptionsOrder for multi-select', async () => {
+		const screen = render(
+			<Form>
+				<Input
+					type="select"
+					defaultValue={['c', 'a', 'b']}
+					options={['a', 'b', 'c']}
+					multiple
+					preserveOptionsOrder
+				/>
+			</Form>,
+		);
+
+		const baseInput = screen.getByLabelText('Base');
+		const controlInput = screen.getByLabelText('Control');
+		const controlElement = getElement(controlInput, HTMLSelectElement);
+		const resetButton = screen.getByText('Reset');
+
+		// Initial order should be preserved (not DOM order ['a', 'b', 'c'])
+		await expect.element(baseInput).toHaveAttribute('data-options', 'c,a,b');
+
+		// Change order via control select - order follows the value array passed to change()
+		await userEvent.selectOptions(controlElement, ['b', 'c']);
+		await expect.element(baseInput).toHaveAttribute('data-options', 'b,c');
+
+		// After reset, order should be restored to defaultValue order
+		await userEvent.click(resetButton);
+		await expect.element(baseInput).toHaveAttribute('data-options', 'c,a,b');
 	});
 });
