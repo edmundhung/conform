@@ -760,6 +760,8 @@ export type FieldMetadata<
 			key: string | undefined;
 			/** The field name path exactly as provided. */
 			name: FieldName<FieldShape>;
+			/** The field name cast as a string */
+			nameForJSON: FieldName<string>;
 			/** The field's unique identifier, automatically generated as {formId}-field-{fieldName}. */
 			id: string;
 			/** Auto-generated ID for associating field descriptions via aria-describedby. */
@@ -776,6 +778,11 @@ export type FieldMetadata<
 			 * - The field value cannot be serialized to a string (e.g., objects or arrays)
 			 */
 			defaultValue: string;
+			/**
+			 * The field's default value as a string.
+			 * Return the object value serialized into a string
+			 */
+			defaultJSON: string;
 			/**
 			 * Default selected options for multi-select fields or checkbox group.
 			 *

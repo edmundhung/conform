@@ -179,6 +179,20 @@ export function getDefaultValue(
 	return '';
 }
 
+export function getDefaultJSON(
+	context: FormContext<any>,
+	name: string,
+): string {
+	const value = getPathValue(
+		context.state.serverValue ??
+			context.state.targetValue ??
+			context.state.defaultValue,
+		name,
+	);
+
+	return JSON.stringify(value) ?? 'null';
+}
+
 export function getDefaultOptions(
 	context: FormContext<any>,
 	name: string,
@@ -468,6 +482,7 @@ export function getField<
 	const metadata: BaseFieldMetadata<FieldShape, ErrorShape> = {
 		key,
 		name,
+		nameForJSON: name as FieldName<string>,
 		id,
 		descriptionId: `${id}-description`,
 		errorId: `${id}-error`,
@@ -483,6 +498,9 @@ export function getField<
 		accept: constraint?.accept,
 		get defaultValue() {
 			return getDefaultValue(context, name, serialize);
+		},
+		get defaultJSON() {
+			return getDefaultJSON(context, name);
 		},
 		get defaultOptions() {
 			return getDefaultOptions(context, name, serialize);

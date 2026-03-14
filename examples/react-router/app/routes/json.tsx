@@ -1,0 +1,126 @@
+import {
+	isDirty,
+	parseSubmission,
+	report,
+	useForm,
+	useFormData,
+} from '@conform-to/react/future';
+import { configureCoercion } from '@conform-to/zod/v4/future';
+import { z } from 'zod/v4';
+import { createInMemoryStore } from '~/store';
+import type { Route } from './+types/json';
+import { Form } from 'react-router';
+
+const mediaSchema = z.object({
+	type: z.literal('media'),
+	path: z.string(),
+});
+
+const userSchema = z.object({
+	firstName: z.string(),
+	media: mediaSchema,
+});
+
+const { coerceFormValue } = configureCoercion({
+	customize(type) {
+		if (type === mediaSchema) {
+			return (value) => {
+				if (typeof value !== 'string') {
+					return value;
+				}
+				return JSON.parse(value);
+			};
+		}
+		return null;
+	},
+});
+
+const schema = coerceFormValue(userSchema);
+
+const store = createInMemoryStore<z.infer<typeof schema>>();
+
+export async function loader() {
+	const user = await store.getValue();
+	return {
+		user,
+	};
+}
+
+export async function action({ request }: Route.ActionArgs) {
+	const formData = await request.formData();
+	const submission = parseSubmission(formData);
+	const result = schema.safeParse(submission.payload);
+
+	if (!result.success) {
+		return {
+			result: report(submission, {
+				error: {
+					issues: result.error.issues,
+				},
+			}),
+		};
+	}
+
+	await store.setValue(result.data);
+
+	return {
+		result: report(submission, {
+			reset: true,
+			value: result.data,
+		}),
+	};
+}
+
+export default function Component({
+	loaderData,
+	actionData,
+}: Route.ComponentProps) {
+	const { form, fields } = useForm(schema, {
+		lastResult: actionData?.result,
+		defaultValue: loaderData.user,
+	});
+
+	const dirty = useFormData(
+		form.id,
+		(formData) =>
+			isDirty(formData, {
+				defaultValue: form.defaultValue,
+				serialize: (value, defaultSerialize) => {
+					if (
+						value instanceof Object &&
+						'type' in value &&
+						value.type === 'media'
+					) {
+						return JSON.stringify(value);
+					}
+					return defaultSerialize(value);
+				},
+			}) ?? false,
+	);
+
+	return (
+		<div>
+			<Form {...form.props} method="post">
+				<div>
+					<label>Title</label>
+					<input
+						type="text"
+						defaultValue={fields.firstName.defaultValue}
+						name={fields.firstName.name}
+					/>
+					<div>{fields.firstName.errors}</div>
+				</div>
+				<div>
+					<label>Media</label>
+					<input
+						type="text"
+						defaultValue={fields.media.defaultJSON}
+						name={fields.media.nameForJSON}
+					/>
+					<div>{fields.media.errors}</div>
+				</div>
+				<button disabled={!dirty}>Save</button>
+			</Form>
+		</div>
+	);
+}

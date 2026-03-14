@@ -8,5 +8,6 @@ export default [
 	route('signup-async-schema', 'routes/signup-async-schema.tsx'),
 	route('signup-server-validation', 'routes/signup-server-validation.tsx'),
 	route('todos', 'routes/todos.tsx'),
+	route('json', 'routes/json.tsx'),
 	route('file-upload', 'routes/file-upload.tsx'),
 ] satisfies RouteConfig;
