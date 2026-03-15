@@ -21,6 +21,10 @@ const userSchema = z.object({
 	media: mediaSchema,
 });
 
+// not ideal, performance issues ?
+const isMediaValue = (value: unknown): value is z.infer<typeof mediaSchema> =>
+	mediaSchema.safeParse(value).success;
+
 const { coerceFormValue } = configureCoercion({
 	customize(type) {
 		if (type === mediaSchema) {
@@ -91,11 +95,7 @@ export default function Component({
 			isDirty(formData, {
 				defaultValue: form.defaultValue,
 				serialize: (value, defaultSerialize) => {
-					if (
-						value instanceof Object &&
-						'type' in value &&
-						value.type === 'media'
-					) {
+					if (isMediaValue(value)) {
 						return JSON.stringify(value);
 					}
 					return defaultSerialize(value);
