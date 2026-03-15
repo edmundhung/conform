@@ -59,7 +59,7 @@ export default function App() {
 					<Link to="todos">Dynamic form with data persistence</Link>
 				</li>
 				<li>
-					<Link to="date">Json</Link>
+					<Link to="json">Json</Link>
 				</li>
 			</ul>
 

@@ -190,7 +190,11 @@ export function getDefaultJSON(
 		name,
 	);
 
-	return JSON.stringify(value) ?? 'null';
+	try {
+		return JSON.stringify(value) ?? '';
+	} catch (err) {
+		return '';
+	}
 }
 
 export function getDefaultOptions(

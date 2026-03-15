@@ -28,7 +28,12 @@ const { coerceFormValue } = configureCoercion({
 				if (typeof value !== 'string') {
 					return value;
 				}
-				return JSON.parse(value);
+				try {
+					return JSON.parse(value);
+				} catch (err) {
+					// Keep raw input so schema validation can surface a normal field error
+					return value;
+				}
 			};
 		}
 		return null;
@@ -102,8 +107,9 @@ export default function Component({
 		<div>
 			<Form {...form.props} method="post">
 				<div>
-					<label>Title</label>
+					<label htmlFor={fields.firstName.id}>Title</label>
 					<input
+						id={fields.firstName.id}
 						type="text"
 						defaultValue={fields.firstName.defaultValue}
 						name={fields.firstName.name}
@@ -111,15 +117,18 @@ export default function Component({
 					<div>{fields.firstName.errors}</div>
 				</div>
 				<div>
-					<label>Media</label>
+					<label htmlFor={fields.media.id}>Media</label>
 					<input
+						id={fields.media.id}
 						type="text"
 						defaultValue={fields.media.defaultJSON}
 						name={fields.media.nameForJSON}
 					/>
 					<div>{fields.media.errors}</div>
 				</div>
-				<button disabled={!dirty}>Save</button>
+				<button type="submit" disabled={!dirty}>
+					Save
+				</button>
 			</Form>
 		</div>
 	);
