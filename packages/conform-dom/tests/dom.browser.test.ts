@@ -126,11 +126,10 @@ describe('updateField', () => {
 		expect(input.defaultChecked).toBe(true);
 		expect(changed2).toBe(true);
 
-		// Unchecking a radio button doesn't report as changed
 		const changed3 = updateField(input, { value: null });
 		expect(input.checked).toBe(false);
 		expect(input.defaultChecked).toBe(true);
-		expect(changed3).toBe(false);
+		expect(changed3).toBe(true);
 
 		const changed4 = updateField(input, { value: '' });
 		expect(input.checked).toBe(false);
@@ -710,6 +709,111 @@ describe('change', () => {
 		expect(handler).toHaveBeenNthCalledWith(1, 'input', 'example', true);
 		expect(handler).toHaveBeenNthCalledWith(2, 'change', 'example', true);
 		expect(input.value).toBe('example');
+	});
+
+	it('dispatches events when forceDispatch is enabled', (ctx) => {
+		const input = document.createElement('input');
+		const handleChange = vi.fn();
+		const handleInput = vi.fn();
+
+		input.addEventListener('change', handleChange);
+		input.addEventListener('input', handleInput);
+		ctx.onTestFinished(() => input.removeEventListener('change', handleChange));
+		ctx.onTestFinished(() => input.removeEventListener('input', handleInput));
+
+		input.value = 'example';
+
+		const changed = change(input, 'example', { forceDispatch: true });
+
+		expect(changed).toBe(false);
+		expect(input.value).toBe('example');
+		expect(handleInput).toBeCalled();
+		expect(handleChange).toBeCalled();
+	});
+
+	it('dispatches fieldset events when forceDispatch is enabled', (ctx) => {
+		const fieldset = document.createElement('fieldset');
+		fieldset.name = 'members';
+
+		const memberId = document.createElement('input');
+		memberId.name = 'members[0].id';
+		memberId.value = '1';
+
+		fieldset.append(memberId);
+
+		const handler = vi.fn();
+		const handleEvent = (event: Event) => {
+			if (event.target === fieldset) {
+				handler(event.type, event.bubbles);
+			}
+		};
+
+		fieldset.addEventListener('input', handleEvent);
+		fieldset.addEventListener('change', handleEvent);
+		ctx.onTestFinished(() =>
+			fieldset.removeEventListener('input', handleEvent),
+		);
+		ctx.onTestFinished(() =>
+			fieldset.removeEventListener('change', handleEvent),
+		);
+
+		const changed = change(
+			fieldset,
+			[
+				{
+					id: '1',
+				},
+			],
+			{ forceDispatch: true },
+		);
+
+		expect(changed).toBe(false);
+		expect(handler).toHaveBeenNthCalledWith(1, 'input', true);
+		expect(handler).toHaveBeenNthCalledWith(2, 'change', true);
+	});
+
+	it('dispatches group events when clearing a fieldset radio selection', (ctx) => {
+		const form = document.createElement('form');
+		const fieldset = document.createElement('fieldset');
+		fieldset.name = 'choice';
+
+		const radioA = document.createElement('input');
+		radioA.type = 'radio';
+		radioA.name = 'choice';
+		radioA.value = 'a';
+
+		const radioB = document.createElement('input');
+		radioB.type = 'radio';
+		radioB.name = 'choice';
+		radioB.value = 'b';
+		radioB.checked = true;
+
+		fieldset.append(radioA, radioB);
+		form.append(fieldset);
+
+		const handler = vi.fn();
+		const handleEvent = (event: Event) => {
+			if (event.target === fieldset) {
+				handler(event.type, event.bubbles);
+			}
+		};
+
+		fieldset.addEventListener('input', handleEvent);
+		fieldset.addEventListener('change', handleEvent);
+		ctx.onTestFinished(() =>
+			fieldset.removeEventListener('input', handleEvent),
+		);
+		ctx.onTestFinished(() =>
+			fieldset.removeEventListener('change', handleEvent),
+		);
+
+		const changed = change(fieldset, null);
+
+		expect(changed).toBe(true);
+		expect(radioA.checked).toBe(false);
+		expect(radioB.checked).toBe(false);
+		expect(handler).toHaveBeenNthCalledWith(1, 'input', true);
+		expect(handler).toHaveBeenNthCalledWith(2, 'change', true);
 	});
 });
 

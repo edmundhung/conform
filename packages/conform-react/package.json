@@ -70,7 +70,13 @@
 		"vitest-browser-react": "^1.0.1"
 	},
 	"peerDependencies": {
-		"react": ">=18"
+		"react": ">=18",
+		"react-dom": ">=18"
+	},
+	"peerDependenciesMeta": {
+		"react-dom": {
+			"optional": true
+		}
 	},
 	"keywords": [
 		"constraint-validation",

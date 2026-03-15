@@ -50,6 +50,34 @@ const control = useControl({
 });
 ```
 
+### `defaultPayload?: Shape`
+
+Initial payload snapshot for structural controls (for example, controls that render a hidden `fieldset` with nested inputs).
+
+Use this when a single logical field maps to multiple hidden inputs and the structure may change.
+
+```ts
+const control = useControl({
+  defaultPayload: {
+    start: '2026-01-01',
+    end: '2026-01-07',
+  },
+});
+```
+
+### `parse?: (payload: unknown) => Shape`
+
+Optional parser for coercing `payload` / `defaultPayload` into a typed shape.
+
+```ts
+const control = useControl<{ start: string; end: string }>({
+  defaultPayload: { start: '2026-01-01', end: '2026-01-07' },
+  parse(payload) {
+    return DateRangeSchema.parse(payload);
+  },
+});
+```
+
 ### `onFocus?: () => void`
 
 A callback function that is triggered when the base input is focused. Use this to delegate focus to a custom input.
@@ -82,11 +110,23 @@ Checked state of the base input. Defined only when the registered input is a sin
 
 Selected files of the base input. Defined only when the registered input is a file input.
 
-### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
+### `defaultPayload: Payload | undefined`
 
-Registers the base input element(s). Accepts a single input or an array for groups.
+Rendered payload used as the source for hidden base input(s).
 
-### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
+For simple native controls, this mirrors `defaultValue` / `defaultChecked`. For structural controls, this tracks the latest rendered payload shape.
+
+### `payload: Payload | undefined`
+
+Current payload snapshot derived from the registered base input(s).
+
+For structural controls, this is reconstructed from descendant fields under the registered fieldset name.
+
+### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLFieldSetElement | HTMLFieldsetElement) => void`
+
+Registers the base input element. Accepts `<input>`, `<select>`, `<textarea>` or `<fieldset>`.
+
+### `change(value: Payload | null): void`
 
 Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 
@@ -151,7 +191,7 @@ function Example() {
     },
   });
   const control = useControl({
-    defualtValue: fields.categories.defaultOptions,
+    defaultValue: fields.categories.defaultOptions,
   });
 
   return (
@@ -190,13 +230,44 @@ function Example() {
     <>
       <input
         type="file"
-        name={fields.attachements.name}
+        name={fields.attachments.name}
         ref={control.register}
         hidden
       />
       <DropZone
         files={control.files}
         onChange={(files) => control.change(files)}
+        onBlur={() => control.blur()}
+      />
+    </>
+  );
+}
+```
+
+### Structural field (fieldset)
+
+```tsx
+import { HiddenInput, useControl } from '@conform-to/react/future';
+
+function DateRangeField(props: { name: string; defaultPayload: unknown }) {
+  const control = useControl<{ start: string; end: string }>({
+    defaultPayload: props.defaultPayload,
+    parse(payload) {
+      return DateRangeSchema.parse(payload);
+    },
+  });
+
+  return (
+    <>
+      <HiddenInput
+        type="fieldset"
+        name={props.name}
+        ref={control.register}
+        defaultValue={control.defaultPayload}
+      />
+      <CustomDateRangePicker
+        value={control.payload}
+        onChange={(value) => control.change(value)}
         onBlur={() => control.blur()}
       />
     </>

@@ -3,11 +3,10 @@ import {
 	getFormElement,
 	getSubmitEvent,
 	initializeField,
-	makeInputFocusable,
 	getRadioGroupValue,
 	getCheckboxGroupValue,
-	getInputSnapshot,
-	createDefaultSnapshot,
+	resolveControlPayload,
+	createDefaultPayload,
 	updateFormValue,
 	createIntentDispatcher,
 } from '../future/dom';
@@ -88,35 +87,6 @@ test('initializeField', () => {
 	expect(input2.value).toBe('');
 });
 
-test('makeInputFocusable', () => {
-	// Test with hidden input
-	const hiddenInput = document.createElement('input');
-	hiddenInput.type = 'hidden';
-	makeInputFocusable(hiddenInput);
-
-	expect(hiddenInput.style.position).toBe('absolute');
-	expect(hiddenInput.style.width).toBe('1px');
-	expect(hiddenInput.style.height).toBe('1px');
-	expect(hiddenInput.getAttribute('aria-hidden')).toBe('true');
-	expect(hiddenInput.tabIndex).toBe(-1);
-	expect(hiddenInput.type).toBe('text');
-
-	// Test with hidden element
-	const hiddenElement = document.createElement('input');
-	hiddenElement.hidden = true;
-	makeInputFocusable(hiddenElement);
-
-	expect(hiddenElement.hidden).toBe(false);
-	expect(hiddenElement.style.position).toBe('absolute');
-
-	// Test with visible element (should do nothing)
-	const visibleInput = document.createElement('input');
-	visibleInput.type = 'text';
-	const originalStyle = visibleInput.style.cssText;
-	makeInputFocusable(visibleInput);
-	expect(visibleInput.style.cssText).toBe(originalStyle);
-});
-
 test('getRadioGroupValue', () => {
 	const radio1 = document.createElement('input');
 	radio1.type = 'radio';
@@ -162,7 +132,7 @@ test('getCheckboxGroupValue', () => {
 	expect(getCheckboxGroupValue([])).toBeUndefined();
 });
 
-test('getInputSnapshot', () => {
+test('resolveControlPayload', () => {
 	// Test file input
 	const fileInput = document.createElement('input');
 	fileInput.type = 'file';
@@ -172,7 +142,7 @@ test('getInputSnapshot', () => {
 		writable: false,
 	});
 
-	expect(getInputSnapshot(fileInput)).toEqual({ files: [file] });
+	expect(resolveControlPayload(fileInput)).toEqual([file]);
 
 	// Test radio input
 	const radioInput = document.createElement('input');
@@ -180,10 +150,7 @@ test('getInputSnapshot', () => {
 	radioInput.value = 'test';
 	radioInput.checked = true;
 
-	expect(getInputSnapshot(radioInput)).toEqual({
-		value: 'test',
-		checked: true,
-	});
+	expect(resolveControlPayload(radioInput)).toBe('test');
 
 	// Test checkbox input
 	const checkboxInput = document.createElement('input');
@@ -191,10 +158,7 @@ test('getInputSnapshot', () => {
 	checkboxInput.value = 'test';
 	checkboxInput.checked = false;
 
-	expect(getInputSnapshot(checkboxInput)).toEqual({
-		value: 'test',
-		checked: false,
-	});
+	expect(resolveControlPayload(checkboxInput)).toBe(null);
 
 	// Test select multiple
 	const selectMultiple = document.createElement('select');
@@ -208,61 +172,118 @@ test('getInputSnapshot', () => {
 	selectMultiple.appendChild(option1);
 	selectMultiple.appendChild(option2);
 
-	expect(getInputSnapshot(selectMultiple)).toEqual({ options: ['option1'] });
+	expect(resolveControlPayload(selectMultiple)).toEqual(['option1']);
 
 	// Test regular input
 	const textInput = document.createElement('input');
 	textInput.value = 'test value';
 
-	expect(getInputSnapshot(textInput)).toEqual({ value: 'test value' });
+	expect(resolveControlPayload(textInput)).toBe('test value');
 
 	// Test textarea
 	const textarea = document.createElement('textarea');
 	textarea.value = 'textarea value';
 
-	expect(getInputSnapshot(textarea)).toEqual({ value: 'textarea value' });
+	expect(resolveControlPayload(textarea)).toBe('textarea value');
+
+	// Test fieldset checkbox group
+	const checkboxFieldset = document.createElement('fieldset');
+	checkboxFieldset.name = 'topics';
+	const checkboxA = document.createElement('input');
+	checkboxA.type = 'checkbox';
+	checkboxA.name = 'topics';
+	checkboxA.value = 'a';
+	checkboxA.checked = true;
+	const checkboxB = document.createElement('input');
+	checkboxB.type = 'checkbox';
+	checkboxB.name = 'topics';
+	checkboxB.value = 'b';
+	checkboxB.checked = false;
+	checkboxFieldset.append(checkboxA, checkboxB);
+
+	expect(resolveControlPayload(checkboxFieldset)).toEqual(['a']);
+	checkboxA.checked = false;
+	checkboxB.checked = true;
+	expect(resolveControlPayload(checkboxFieldset)).toEqual(['b']);
+	checkboxA.checked = false;
+	checkboxB.checked = false;
+	expect(resolveControlPayload(checkboxFieldset)).toEqual([]);
+
+	// Test fieldset radio group
+	const radioFieldset = document.createElement('fieldset');
+	radioFieldset.name = 'choice';
+	const radioA = document.createElement('input');
+	radioA.type = 'radio';
+	radioA.name = 'choice';
+	radioA.value = 'a';
+	radioA.checked = false;
+	const radioB = document.createElement('input');
+	radioB.type = 'radio';
+	radioB.name = 'choice';
+	radioB.value = 'b';
+	radioB.checked = true;
+	radioFieldset.append(radioA, radioB);
+
+	expect(resolveControlPayload(radioFieldset)).toEqual('b');
+	radioA.checked = true;
+	radioB.checked = false;
+	expect(resolveControlPayload(radioFieldset)).toEqual('a');
+	radioA.checked = false;
+	radioB.checked = false;
+	expect(resolveControlPayload(radioFieldset)).toBeNull();
+
+	// Test fieldset with structured names
+	const structuredFieldset = document.createElement('fieldset');
+	structuredFieldset.name = 'members';
+	const memberId = document.createElement('input');
+	memberId.name = 'members[0].id';
+	memberId.value = '1';
+	const memberRole = document.createElement('input');
+	memberRole.name = 'members[0].role';
+	memberRole.value = 'developer';
+	structuredFieldset.append(memberId, memberRole);
+
+	expect(resolveControlPayload(structuredFieldset)).toEqual([
+		{ id: '1', role: 'developer' },
+	]);
 });
 
-test('createDefaultSnapshot', () => {
+test('createDefaultPayload', () => {
 	// Test checkbox/radio with value and defaultChecked
-	expect(createDefaultSnapshot(undefined, true, 'custom')).toEqual({
-		value: 'custom',
-		checked: true,
-	});
-	expect(createDefaultSnapshot(undefined, false, undefined)).toEqual({
-		value: 'on',
-		checked: false,
-	});
+	expect(createDefaultPayload({ defaultChecked: true, value: 'custom' })).toBe(
+		'custom',
+	);
+	expect(createDefaultPayload({ defaultChecked: false })).toBe(null);
 
 	// Test string defaultValue
-	expect(createDefaultSnapshot('test string', undefined, undefined)).toEqual({
-		value: 'test string',
-	});
+	expect(createDefaultPayload({ defaultValue: 'test string' })).toBe(
+		'test string',
+	);
 
 	// Test string array (for select multiple)
 	expect(
-		createDefaultSnapshot(['option1', 'option2'], undefined, undefined),
-	).toEqual({ options: ['option1', 'option2'] });
+		createDefaultPayload({ defaultValue: ['option1', 'option2'] }),
+	).toEqual(['option1', 'option2']);
 
 	// Test File array
 	const file1 = new File(['test1'], 'test1.txt');
 	const file2 = new File(['test2'], 'test2.txt');
-	expect(createDefaultSnapshot([file1, file2], undefined, undefined)).toEqual({
-		files: [file1, file2],
-	});
+	expect(createDefaultPayload({ defaultValue: [file1, file2] })).toEqual([
+		file1,
+		file2,
+	]);
 
 	// Test single File
 	const file = new File(['test'], 'test.txt');
-	expect(createDefaultSnapshot(file, undefined, undefined)).toEqual({
-		files: [file],
-	});
+	expect(createDefaultPayload({ defaultValue: file })).toEqual(file);
 
-	// Test FileList - skip this test as FileList is hard to mock properly
-	// expect(createDefaultSnapshot(fileList, undefined, undefined)).toEqual({ files: [file1, file2] });
+	// Test defaultPayload (complex objects)
+	const payload = [{ id: '1', name: 'Alice' }];
+	expect(createDefaultPayload({ defaultPayload: payload })).toEqual(payload);
 
 	// Test null/undefined
-	expect(createDefaultSnapshot(null, undefined, undefined)).toEqual({});
-	expect(createDefaultSnapshot(undefined, undefined, undefined)).toEqual({});
+	expect(createDefaultPayload({ defaultValue: null })).toBeNull();
+	expect(createDefaultPayload(undefined)).toBeUndefined();
 });
 
 test('updateFormValue', () => {

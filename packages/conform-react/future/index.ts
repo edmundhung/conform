@@ -13,6 +13,7 @@ export {
 } from '@conform-to/dom/future';
 export type {
 	Control,
+	ControlOptions,
 	DefaultValue,
 	BaseMetadata,
 	BaseFieldMetadata,
@@ -38,6 +39,7 @@ export {
 	PreserveBoundary,
 	FormProvider,
 	FormOptionsProvider,
+	HiddenInput,
 	useControl,
 	useField,
 	useForm,

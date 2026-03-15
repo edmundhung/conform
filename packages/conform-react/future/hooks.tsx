@@ -15,6 +15,8 @@ import {
 	parseSubmission,
 	report,
 	serialize,
+	isPlainObject,
+	isGlobalInstance,
 } from '@conform-to/dom/future';
 import {
 	useEffect,
@@ -27,6 +29,7 @@ import {
 	createContext,
 	useState,
 	useLayoutEffect,
+	forwardRef,
 } from 'react';
 import {
 	appendUniqueItem,
@@ -63,6 +66,8 @@ import type {
 	BaseSchemaType,
 	InferInput,
 	InferOutput,
+	ControlOptions,
+	HiddenInputProps,
 } from './types';
 import {
 	intentHandlers,
@@ -71,14 +76,11 @@ import {
 	applyIntent,
 } from './intent';
 import {
-	makeInputFocusable,
 	focusFirstInvalidField,
-	getCheckboxGroupValue,
-	createDefaultSnapshot,
+	createDefaultPayload,
 	createIntentDispatcher,
 	getFormElement,
-	getInputSnapshot,
-	getRadioGroupValue,
+	resolveControlPayload,
 	getSubmitEvent,
 	initializeField,
 	updateFormValue,
@@ -87,6 +89,7 @@ import {
 	preserveInputs,
 } from './dom';
 import { StandardSchemaV1 } from './standard-schema';
+import { flushSync } from 'react-dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
@@ -1012,70 +1015,53 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl(options?: {
-	/**
-	 * The initial value of the base input. It will be used to set the value
-	 * when the input is first registered.
-	 */
-	defaultValue?: string | string[] | File | File[] | null | undefined;
-	/**
-	 * Whether the base input should be checked by default. It will be applied
-	 * when the input is first registered.
-	 */
-	defaultChecked?: boolean | undefined;
-	/**
-	 * The value of a checkbox or radio input when checked. This sets the
-	 * value attribute of the base input.
-	 */
-	value?: string;
-	/**
-	 * A callback function that is triggered when the base input is focused.
-	 * Use this to delegate focus to a custom input.
-	 */
-	onFocus?: () => void;
-}): Control {
+export function useControl<Shape>(
+	options?: ControlOptions<Shape>,
+): Control<Shape> {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
 		| HTMLTextAreaElement
-		| Array<HTMLInputElement>
+		| HTMLFieldSetElement
 		| null
 	>(null);
 	const formRef = useMemo(
 		() => ({
 			get current() {
-				const input = inputRef.current;
-				if (!input) {
-					return null;
-				}
-				return Array.isArray(input) ? input[0]?.form ?? null : input.form;
+				return inputRef.current?.form ?? null;
 			},
 		}),
 		[],
 	);
+	const defaultPayload = createDefaultPayload(options);
+	const [defaultPayloadState, setDefaultPayload] = useState(defaultPayload);
+	const defaultPayloadRef = useRef(defaultPayload);
+
+	/**
+	 * Keep defaultPayload in sync with external option updates during render.
+	 * This is required for structural controls where hidden descendants must be
+	 * rendered in the same cycle as form state updates (e.g. update intents).
+	 */
+	if (!deepEqual(defaultPayloadRef.current, defaultPayload)) {
+		defaultPayloadRef.current = defaultPayload;
+		setDefaultPayload(defaultPayload);
+	}
+
 	const eventDispatched = useRef<{
 		change?: number;
 		focus?: number;
 		blur?: number;
 	}>({});
 
-	const defaultSnapshot = createDefaultSnapshot(
-		options?.defaultValue,
-		options?.defaultChecked,
-		options?.value,
-	);
-	const snapshotRef = useRef(defaultSnapshot);
+	const snapshotRef = useRef(defaultPayloadState);
 	const optionsRef = useRef(options);
 
 	useEffect(() => {
 		optionsRef.current = options;
 	});
 
-	// This is necessary to ensure that input is re-registered
-	// if the onFocus handler changes
-	const shouldHandleFocus = typeof options?.onFocus === 'function';
-	const snapshot = useSyncExternalStore(
+	const payloadSnapshot = useSyncExternalStore(
 		useCallback(
 			(callback) =>
 				observer.onFieldUpdate((event) => {
@@ -1084,7 +1070,7 @@ export function useControl(options?: {
 					if (
 						Array.isArray(inputRef.current)
 							? inputRef.current.some((item) => item === input)
-							: inputRef.current === input
+							: inputRef.current?.contains(input)
 					) {
 						callback();
 					}
@@ -1094,14 +1080,7 @@ export function useControl(options?: {
 		() => {
 			const input = inputRef.current;
 			const prev = snapshotRef.current;
-			const next = !input
-				? defaultSnapshot
-				: Array.isArray(input)
-					? {
-							value: getRadioGroupValue(input),
-							options: getCheckboxGroupValue(input),
-						}
-					: getInputSnapshot(input);
+			const next = input ? resolveControlPayload(input) : defaultPayloadState;
 
 			if (deepEqual(prev, next)) {
 				return prev;
@@ -1119,7 +1098,9 @@ export function useControl(options?: {
 				if (
 					Array.isArray(inputRef.current)
 						? inputRef.current.some((item) => item === event.target)
-						: inputRef.current === event.target
+						: event.target instanceof Node
+							? inputRef.current?.contains(event.target)
+							: false
 				) {
 					const timer = eventDispatched.current[listener];
 
@@ -1152,98 +1133,122 @@ export function useControl(options?: {
 		};
 	}, []);
 
+	const parsePayload = (
+		kind: 'payload' | 'defaultPayload',
+		payload: unknown,
+	): Shape | undefined => {
+		if (typeof payload === 'undefined') {
+			return undefined;
+		}
+
+		if (!options?.parse) {
+			return payload as Shape;
+		}
+
+		try {
+			return options.parse(payload);
+		} catch (error) {
+			let payloadText = '';
+
+			try {
+				payloadText = JSON.stringify(payload, null, 2);
+			} catch {
+				payloadText = '<unserializable payload>';
+			}
+
+			throw new Error(
+				`Failed to parse ${kind} for control. Received ${payloadText}.`,
+				{ cause: error },
+			);
+		}
+	};
+
 	return {
-		value: snapshot.value,
-		checked: snapshot.checked,
-		options: snapshot.options,
-		files: snapshot.files,
+		get defaultPayload() {
+			return parsePayload('defaultPayload', defaultPayloadState);
+		},
+		get payload() {
+			return parsePayload('payload', payloadSnapshot);
+		},
+		get value() {
+			if (typeof payloadSnapshot === 'string') {
+				return payloadSnapshot;
+			}
+
+			return undefined;
+		},
+		get checked() {
+			const value = options?.value ?? 'on';
+			if (payloadSnapshot === value) {
+				return true;
+			}
+			if (payloadSnapshot === null) {
+				return false;
+			}
+
+			return undefined;
+		},
+		get options() {
+			if (
+				Array.isArray(payloadSnapshot) &&
+				payloadSnapshot.every((item) => typeof item === 'string')
+			) {
+				return payloadSnapshot;
+			}
+
+			return undefined;
+		},
+		get files() {
+			if (
+				Array.isArray(payloadSnapshot) &&
+				payloadSnapshot.every((item) => isGlobalInstance(item, 'File'))
+			) {
+				return payloadSnapshot;
+			}
+
+			return undefined;
+		},
 		formRef,
-		register: useCallback(
-			(element) => {
-				if (!element) {
-					inputRef.current = null;
-				} else if (isFieldElement(element)) {
-					inputRef.current = element;
+		register: useCallback((element) => {
+			inputRef.current = element ?? null;
 
-					// Conform excludes hidden type inputs by default when updating form values
-					// Fix that by using the hidden attribute instead
-					if (element.type === 'hidden') {
-						element.hidden = true;
-						element.removeAttribute('type');
-					}
-
-					if (shouldHandleFocus) {
-						makeInputFocusable(element);
-					}
-
-					if (element.type === 'checkbox' || element.type === 'radio') {
-						// React set the value as empty string incorrectly when the value is undefined
-						// This make sure the checkbox value falls back to the default value "on" properly
-						// @see https://github.com/facebook/react/issues/17590
-						element.value = optionsRef.current?.value ?? 'on';
-					}
-
-					initializeField(element, optionsRef.current);
-				} else {
-					const inputs = Array.from(element);
-					const name = inputs[0]?.name ?? '';
-					const type = inputs[0]?.type ?? '';
-
-					if (
-						!name ||
-						!(type === 'checkbox' || type === 'radio') ||
-						!inputs.every((input) => input.name === name && input.type === type)
-					) {
-						throw new Error(
-							'You can only register a checkbox or radio group with the same name',
-						);
-					}
-
-					inputRef.current = inputs;
-
-					for (const input of inputs) {
-						if (shouldHandleFocus) {
-							makeInputFocusable(input);
-						}
-
-						initializeField(input, {
-							// We will not be uitlizing defaultChecked / value on checkbox / radio group
-							defaultValue: optionsRef.current?.defaultValue,
-						});
-					}
+			if (isFieldElement(element)) {
+				// Conform excludes hidden type inputs by default when updating form values
+				// Fix that by using the hidden attribute instead
+				if (element.type === 'hidden') {
+					element.hidden = true;
+					element.removeAttribute('type');
 				}
-			},
-			[shouldHandleFocus],
-		),
+
+				if (element.type === 'checkbox' || element.type === 'radio') {
+					// React set the value as empty string incorrectly when the value is undefined
+					// This make sure the checkbox value falls back to the default value "on" properly
+					// @see https://github.com/facebook/react/issues/17590
+					element.value = optionsRef.current?.value ?? 'on';
+				}
+
+				initializeField(element, optionsRef.current);
+			}
+		}, []),
 		change: useCallback((value) => {
 			if (!eventDispatched.current.change) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current?.find((input) => {
-							const wasChecked = input.checked;
-							const isChecked = Array.isArray(value)
-								? value.some((item) => item === input.value)
-								: input.value === value;
+				const element = inputRef.current;
 
-							switch (input.type) {
-								case 'checkbox':
-									// We assume that only one checkbox can be checked at a time
-									// So we will pick the first element with checked state changed
-									return wasChecked !== isChecked;
-								case 'radio':
-									// We cannot uncheck a radio button
-									// So we will pick the first element that should be checked
-									return isChecked;
-								default:
-									return false;
-							}
-						})
-					: inputRef.current;
+				if (element instanceof HTMLFieldSetElement) {
+					// Fieldset mode renders hidden descendant inputs from defaultPayload.
+					// Flush this update before dispatching events so listeners see the
+					// latest form structure in the same input/change cycle.
+					flushSync(() => {
+						setDefaultPayload(value === null ? undefined : value);
+					});
+				}
 
 				if (element) {
-					change(
-						element,
-						typeof value === 'boolean' ? (value ? element.value : null) : value,
-					);
+					change(element, value, {
+						// Sometimes no change is made on the inputs but done through DOM mutation.
+						// But we still want to dispatch the event to notify listeners.
+						forceDispatch: element.type === 'fieldset',
+					});
 				}
 			}
 
@@ -1255,9 +1260,7 @@ export function useControl(options?: {
 		}, []),
 		focus: useCallback(() => {
 			if (!eventDispatched.current.focus) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current[0]
-					: inputRef.current;
+				const element = inputRef.current;
 
 				if (element) {
 					focus(element);
@@ -1272,9 +1275,7 @@ export function useControl(options?: {
 		}, []),
 		blur: useCallback(() => {
 			if (!eventDispatched.current.blur) {
-				const element = Array.isArray(inputRef.current)
-					? inputRef.current[0]
-					: inputRef.current;
+				const element = inputRef.current;
 
 				if (element) {
 					blur(element);
@@ -1437,3 +1438,155 @@ export function useLatest<Value>(value: Value) {
 
 	return ref;
 }
+
+/**
+ * A component that renders hidden input(s) based on the shape of defaultValue.
+ * Used with useControl to sync complex values with form data.
+ *
+ * @example
+ * ```tsx
+ * const control = useControl<string[]>({
+ *   defaultPayload: ['en', 'es'],
+ *   parse(payload) {
+ * 	   if (Array.isArray(payload) && payload.every((value) => typeof value === 'string')) {
+ *       return payload;
+ *     }
+ *
+ *     throw new Error('Expected a string array payload');
+ *   },
+ * });
+ *
+ * <HiddenInput
+ *   type="fieldset"
+ *   name="languages"
+ *   ref={control.register}
+ *   defaultValue={control.defaultPayload}
+ * />
+ * ```
+ */
+export const HiddenInput = forwardRef<
+	| HTMLInputElement
+	| HTMLSelectElement
+	| HTMLTextAreaElement
+	| HTMLFieldSetElement,
+	HiddenInputProps
+>(function HiddenInput({ type, name, defaultValue, form }, ref) {
+	function formatValue(value: unknown): string {
+		const serialized = serialize(value);
+
+		if (typeof serialized === 'string') {
+			return serialized;
+		}
+
+		// null, undefined, File, or array - fallback to empty string
+		return '';
+	}
+
+	function renderInput(
+		name: string,
+		value: unknown,
+		form: string | undefined,
+	): React.ReactNode {
+		if (Array.isArray(value)) {
+			return value.map((item, index) =>
+				renderInput(`${name}[${index}]`, item, form),
+			);
+		}
+
+		if (isPlainObject(value)) {
+			return Object.entries(value).map(([key, val]) =>
+				renderInput(`${name}.${key}`, val, form),
+			);
+		}
+
+		return (
+			<input
+				key={name}
+				name={name}
+				defaultValue={formatValue(value)}
+				form={form}
+			/>
+		);
+	}
+
+	if (type === 'fieldset') {
+		return (
+			<fieldset
+				ref={ref as React.ForwardedRef<HTMLFieldSetElement>}
+				name={name}
+				form={form}
+				hidden
+			>
+				{defaultValue !== undefined
+					? renderInput(name, defaultValue, form)
+					: null}
+			</fieldset>
+		);
+	}
+
+	if (type === 'select') {
+		const multiple = Array.isArray(defaultValue);
+
+		if (multiple) {
+			const defaultOptions = defaultValue.map(formatValue);
+
+			return (
+				<select
+					ref={ref as React.ForwardedRef<HTMLSelectElement>}
+					name={name}
+					defaultValue={defaultOptions}
+					multiple
+					form={form}
+					hidden
+				>
+					{defaultOptions.map((option, index) => (
+						<option key={index} value={option}>
+							{option}
+						</option>
+					))}
+				</select>
+			);
+		}
+
+		const defaultOption = formatValue(defaultValue);
+
+		return (
+			<select
+				ref={ref as React.ForwardedRef<HTMLSelectElement>}
+				name={name}
+				defaultValue={defaultOption}
+				form={form}
+				hidden
+			>
+				{[defaultOption].map((option, index) => (
+					<option key={index} value={option}>
+						{option}
+					</option>
+				))}
+			</select>
+		);
+	}
+
+	if (type === 'textarea') {
+		return (
+			<textarea
+				ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+				name={name}
+				defaultValue={formatValue(defaultValue)}
+				form={form}
+				hidden
+			/>
+		);
+	}
+
+	return (
+		<input
+			ref={ref as React.ForwardedRef<HTMLInputElement>}
+			type={type}
+			name={name}
+			defaultValue={formatValue(defaultValue)}
+			form={form}
+			hidden
+		/>
+	);
+});
