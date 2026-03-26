@@ -6,6 +6,7 @@ import {
 	change,
 	focus,
 	blur,
+	requestSubmit,
 	createFileList,
 	isFieldElement,
 	isGlobalInstance,
@@ -758,6 +759,117 @@ describe('blur', () => {
 
 		expect(handler).toHaveBeenNthCalledWith(1, 'focusout', true);
 		expect(handler).toHaveBeenNthCalledWith(2, 'blur', false);
+	});
+});
+
+describe('requestSubmit', () => {
+	it('dispatches a submit event with the provided submitter', (ctx) => {
+		const form = document.createElement('form');
+		const submitter = document.createElement('button');
+		const handleSubmit = vi.fn();
+		const submitEventListener = (event: SubmitEvent) => {
+			event.preventDefault();
+			handleSubmit(event.target, event.submitter);
+		};
+
+		form.appendChild(submitter);
+		document.body.appendChild(form);
+
+		form.addEventListener('submit', submitEventListener);
+		ctx.onTestFinished(() => {
+			form.removeEventListener('submit', submitEventListener);
+			document.body.removeChild(form);
+		});
+
+		requestSubmit(form, submitter);
+
+		expect(handleSubmit).toBeCalledTimes(1);
+		expect(handleSubmit).toBeCalledWith(form, submitter);
+	});
+
+	it('clicks the provided connected submitter when requestSubmit is unavailable', (ctx) => {
+		const form = document.createElement('form');
+		const submitter = document.createElement('button');
+		const handleSubmit = vi.fn();
+		const submitEventListener = (event: SubmitEvent) => {
+			event.preventDefault();
+			handleSubmit(event.target, event.submitter);
+		};
+
+		form.addEventListener('submit', submitEventListener);
+		form.appendChild(submitter);
+		document.body.appendChild(form);
+		Object.defineProperty(form, 'requestSubmit', {
+			value: undefined,
+			configurable: true,
+		});
+
+		ctx.onTestFinished(() => {
+			form.removeEventListener('submit', submitEventListener);
+			document.body.removeChild(form);
+		});
+
+		requestSubmit(form, submitter);
+
+		expect(handleSubmit).toBeCalledTimes(1);
+		expect(handleSubmit).toBeCalledWith(form, submitter);
+	});
+
+	it('throws when submitter is not associated with the form', () => {
+		const form = document.createElement('form');
+		const submitter = document.createElement('button');
+
+		expect(() => requestSubmit(form, submitter)).toThrow(
+			'Submitter must be associated with the form.',
+		);
+	});
+
+	it('creates a temporary submitter when requestSubmit is unavailable and submitter is null', (ctx) => {
+		const form = document.createElement('form');
+		const handleSubmit = vi.fn();
+		const submitEventListener = (event: SubmitEvent) => {
+			event.preventDefault();
+			handleSubmit(event.target, event.submitter);
+		};
+
+		document.body.appendChild(form);
+		Object.defineProperty(form, 'requestSubmit', {
+			value: undefined,
+			configurable: true,
+		});
+
+		form.addEventListener('submit', submitEventListener);
+		ctx.onTestFinished(() =>
+			form.removeEventListener('submit', submitEventListener),
+		);
+		ctx.onTestFinished(() => {
+			document.body.removeChild(form);
+		});
+
+		requestSubmit(form, null);
+
+		expect(handleSubmit).toBeCalledTimes(1);
+		expect(handleSubmit).toBeCalledWith(form, expect.any(HTMLButtonElement));
+
+		for (const [, submitter] of handleSubmit.mock.calls) {
+			expect(submitter.hidden).toBe(true);
+			expect(submitter.isConnected).toBe(false);
+		}
+	});
+
+	it('throws when form is missing', () => {
+		expect(() => requestSubmit(null, null)).toThrow(
+			'Form element is required to trigger submission.',
+		);
+	});
+
+	it('throws when submitter is not a button or input element', () => {
+		const form = document.createElement('form');
+		const submitter = document.createElement('div');
+
+		expect(() => requestSubmit(form, submitter)).toThrow(
+			'Submitter must be a button or input element or null.',
+		);
 	});
 });
 

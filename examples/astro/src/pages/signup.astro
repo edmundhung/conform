@@ -1,0 +1,30 @@
+---
+import { actions } from 'astro:actions';
+import { SignupForm } from '../features/signup';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const actionResult = Astro.getActionResult(actions.signup);
+const formAction = new URL(Astro.url);
+const searchParams = new URLSearchParams(actions.signup.queryString);
+
+for (const [key, value] of searchParams) {
+	formAction.searchParams.append(key, value);
+}
+
+if (actionResult && !actionResult.error && 'redirectTo' in actionResult.data) {
+	return Astro.redirect(actionResult.data.redirectTo);
+}
+
+const lastResult =
+	actionResult && !actionResult.error && 'result' in actionResult.data
+		? actionResult.data.result
+		: null;
+---
+
+<BaseLayout title="Conform / Astro Signup Example">
+	<SignupForm
+		client:load
+		action={formAction.toString()}
+		lastResult={lastResult}
+	/>
+</BaseLayout>

@@ -5,7 +5,7 @@ export default async function Index({
 }) {
 	const { value } = await searchParams;
 
-	if (!value) {
+	if (typeof value === 'undefined') {
 		return null;
 	}
 

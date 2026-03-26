@@ -1,47 +1,70 @@
 import {
+	isDirty,
 	parseSubmission,
 	report,
-	isDirty,
 	useForm,
 	useFormData,
+	type SubmissionResult,
 } from '@conform-to/react/future';
 import { coerceFormValue } from '@conform-to/zod/v3/future';
-import { Form } from 'react-router';
 import { z } from 'zod';
-import { createInMemoryStore } from '~/store';
-import type { Route } from './+types/todos';
+
+type TodosValue = z.infer<typeof todosSchema>;
+
+type TodosFormProps = {
+	action: string;
+	id?: string;
+	defaultValue: TodosValue | null;
+	lastResult?: SubmissionResult | null;
+};
 
 const taskSchema = z.object({
 	content: z.string(),
 	completed: z.boolean().default(false),
 });
 
-const todosSchema = z.object({
-	title: z.string(),
-	tasks: z.array(taskSchema).nonempty(),
-});
+const todosSchema = coerceFormValue(
+	z.object({
+		title: z.string(),
+		tasks: z.array(taskSchema).nonempty(),
+	}),
+);
 
-const schema = coerceFormValue(todosSchema);
-const todos = createInMemoryStore<z.infer<typeof schema>>();
-
-export async function loader({ request }: Route.LoaderArgs) {
-	const url = new URL(request.url);
-	const id = url.searchParams.get('id') ?? undefined;
+function createInMemoryStore<Type>() {
+	const stores: Record<string, Type | null> = {};
 
 	return {
-		id,
-		todos: await todos.getValue(id),
+		async getValue(id?: string) {
+			await new Promise((resolve) => {
+				setTimeout(resolve, Math.random() * 150);
+			});
+
+			return stores[id ?? ''] ?? null;
+		},
+		async setValue(value: Type, id?: string) {
+			await new Promise((resolve) => {
+				setTimeout(resolve, Math.random() * 1000);
+			});
+
+			stores[id ?? ''] = value;
+		},
 	};
 }
 
-export async function action({ request }: Route.ActionArgs) {
-	const formData = await request.formData();
+const todosStore = createInMemoryStore<TodosValue>();
+
+export async function getTodos(id?: string) {
+	return todosStore.getValue(id);
+}
+
+export async function submitTodos(formData: FormData) {
 	const id = formData.get('id')?.toString() || undefined;
 	const submission = parseSubmission(formData);
-	const result = schema.safeParse(submission.payload);
+	const result = todosSchema.safeParse(submission.payload);
 
 	if (!result.success) {
 		return {
+			success: false as const,
 			result: report(submission, {
 				error: {
 					issues: result.error.issues,
@@ -50,9 +73,10 @@ export async function action({ request }: Route.ActionArgs) {
 		};
 	}
 
-	await todos.setValue(result.data, id);
+	await todosStore.setValue(result.data, id);
 
 	return {
+		success: true as const,
 		result: report(submission, {
 			reset: true,
 			value: result.data,
@@ -60,13 +84,15 @@ export async function action({ request }: Route.ActionArgs) {
 	};
 }
 
-export default function Example({
-	loaderData,
-	actionData,
-}: Route.ComponentProps) {
-	const { form, fields, intent } = useForm(schema, {
-		lastResult: actionData?.result,
-		defaultValue: loaderData.todos,
+export function TodosForm({
+	action,
+	id,
+	defaultValue,
+	lastResult,
+}: TodosFormProps) {
+	const { form, fields, intent } = useForm(todosSchema, {
+		lastResult,
+		defaultValue,
 		shouldValidate: 'onBlur',
 	});
 	const dirty = useFormData(form.id, (formData) =>
@@ -80,10 +106,8 @@ export default function Example({
 	const tasks = fields.tasks.getFieldList();
 
 	return (
-		<Form {...form.props} method="post">
-			{loaderData.id ? (
-				<input type="hidden" name="id" value={loaderData.id} />
-			) : null}
+		<form {...form.props} method="post" action={action}>
+			{id ? <input type="hidden" name="id" value={id} /> : null}
 			<div>
 				<label htmlFor={fields.title.id}>Title</label>
 				<input
@@ -184,6 +208,6 @@ export default function Example({
 			>
 				Clear
 			</button>
-		</Form>
+		</form>
 	);
 }

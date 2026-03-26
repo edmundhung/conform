@@ -9,10 +9,10 @@ import {
 	focus,
 	blur,
 	createGlobalFormsObserver,
-	createSubmitEvent,
 	getFormData,
 	isFieldElement,
 	parseSubmission,
+	requestSubmit,
 	report,
 	serialize,
 } from '@conform-to/dom/future';
@@ -297,9 +297,7 @@ export function useConform<
 	const lastResultRef = useRef(lastResult);
 	const pendingValueRef = useRef<Record<string, FormValue> | undefined>();
 	const lastAsyncResultRef = useRef<{
-		event: SubmitEvent;
 		result: SubmissionResult<ErrorShape>;
-		formData: FormData;
 		resolvedValue: Value | undefined;
 	} | null>(null);
 	const abortControllerRef = useRef<AbortController | null>(null);
@@ -411,45 +409,49 @@ export function useConform<
 			abortControllerRef.current?.abort('A new submission is made');
 			abortControllerRef.current = abortController;
 
-			let formData: FormData;
 			let result: SubmissionResult<ErrorShape> | undefined;
 			let resolvedValue: Value | undefined;
 
-			// The form might be re-submitted manually if there was an async validation
-			if (event.nativeEvent === lastAsyncResultRef.current?.event) {
-				formData = lastAsyncResultRef.current.formData;
-				result = lastAsyncResultRef.current.result;
-				resolvedValue = lastAsyncResultRef.current.resolvedValue;
+			const formElement = event.currentTarget;
+			const submitEvent = getSubmitEvent(event);
+			const formData = getFormData(formElement, submitEvent.submitter);
+			const submission = parseSubmission(formData, {
+				intentName: optionsRef.current.intentName,
+			});
+
+			// Patch missing fields in the submission object
+			for (const element of formElement.elements) {
+				if (isFieldElement(element) && element.name) {
+					submission.fields = appendUniqueItem(submission.fields, element.name);
+				}
+			}
+
+			// Override submission value if the pending value is not applied yet (i.e. batch updates)
+			if (pendingValueRef.current !== undefined) {
+				submission.payload = pendingValueRef.current;
+			}
+
+			const lastAsyncResult = lastAsyncResultRef.current;
+
+			// Clear the last async result so it won't affect the next submission
+			lastAsyncResultRef.current = null;
+
+			if (
+				lastAsyncResult &&
+				// Only default submission will be re-submitted after async validation
+				!submission.intent &&
+				// Ensure the submission payload is the same as the one being validated
+				deepEqual(submission.payload, lastAsyncResult.result.submission.payload)
+			) {
+				result = lastAsyncResult.result;
+				resolvedValue = lastAsyncResult.resolvedValue;
 			} else {
-				const formElement = event.currentTarget;
-				const submitEvent = getSubmitEvent(event);
-
-				formData = getFormData(formElement, submitEvent.submitter);
-
-				const submission = parseSubmission(formData, {
-					intentName: optionsRef.current.intentName,
-				});
-
-				// Patch missing fields in the submission object
-				for (const element of formElement.elements) {
-					if (isFieldElement(element) && element.name) {
-						submission.fields = appendUniqueItem(
-							submission.fields,
-							element.name,
-						);
-					}
-				}
-
-				// Override submission value if the pending value is not applied yet (i.e. batch updates)
-				if (pendingValueRef.current !== undefined) {
-					submission.payload = pendingValueRef.current;
-				}
-
 				const value = resolveIntent(submission);
 				const submissionResult = report<ErrorShape>(submission, {
 					keepFiles: true,
 					value,
 				});
+
 				const validateResult =
 					// Skip validation on form reset
 					value !== undefined
@@ -489,16 +491,21 @@ export function useConform<
 
 							// If the form is meant to be submitted and there is no error
 							if (submissionResult.error === null && !submission.intent) {
-								const event = createSubmitEvent(submitEvent.submitter);
+								// Keep track of the validated payload and resume submission on the next task.
+								// Calling requestSubmit() directly from the async callback, or from a
+								// microtask, can still be ignored before the native submission lifecycle
+								// has fully settled.
+								setTimeout(() => {
+									if (abortController.signal.aborted) {
+										return;
+									}
 
-								// Keep track of the submit event so we can skip validation on the next submit
-								lastAsyncResultRef.current = {
-									event,
-									formData,
-									resolvedValue: value,
-									result: submissionResult,
-								};
-								formElement.dispatchEvent(event);
+									lastAsyncResultRef.current = {
+										resolvedValue: value,
+										result: submissionResult,
+									};
+									requestSubmit(formElement, submitEvent.submitter);
+								}, 0);
 							}
 						}
 					});

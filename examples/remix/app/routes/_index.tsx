@@ -14,7 +14,7 @@ export function loader({ request }: LoaderArgs) {
 export default function Index() {
 	const { value } = useLoaderData<typeof loader>();
 
-	if (!value) {
+	if (typeof value === 'undefined') {
 		return null;
 	}
 
