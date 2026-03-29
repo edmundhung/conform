@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+function parseJson(value: string | null): unknown {
+	if (value === null) {
+		return null;
+	}
+
+	try {
+		return JSON.parse(value);
+	} catch {
+		return null;
+	}
+}
+
+const value = parseJson(Astro.url.searchParams.get('value'));
+---
+
+<BaseLayout title="Conform / Astro Example">
+	{
+		value !== null ? (
+			<div>
+				Submitted the following value:
+				<pre>{JSON.stringify(value, null, 2)}</pre>
+			</div>
+		) : null
+	}
+</BaseLayout>

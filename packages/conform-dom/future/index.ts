@@ -28,7 +28,6 @@ export {
 	isGlobalInstance,
 	updateField,
 	createFileList,
-	createSubmitEvent,
 	createGlobalFormsObserver,
 	focus,
 	change,

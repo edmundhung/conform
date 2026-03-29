@@ -1,0 +1,34 @@
+---
+import { actions } from 'astro:actions';
+import { getTodos, TodosForm } from '../features/todos';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const actionResult = Astro.getActionResult(actions.todos);
+const formAction = new URL(Astro.url);
+const searchParams = new URLSearchParams(actions.todos.queryString);
+
+for (const [key, value] of searchParams) {
+	formAction.searchParams.append(key, value);
+}
+
+if (actionResult && !actionResult.error && 'redirectTo' in actionResult.data) {
+	return Astro.redirect(actionResult.data.redirectTo);
+}
+
+const id = Astro.url.searchParams.get('id') ?? undefined;
+const todos = await getTodos(id);
+const lastResult =
+	actionResult && !actionResult.error && 'result' in actionResult.data
+		? actionResult.data.result
+		: null;
+---
+
+<BaseLayout title="Conform / Astro Todos Example">
+	<TodosForm
+		client:load
+		action={formAction.toString()}
+		id={id}
+		defaultValue={todos}
+		lastResult={lastResult}
+	/>
+</BaseLayout>

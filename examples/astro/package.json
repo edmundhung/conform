@@ -1,0 +1,30 @@
+{
+	"name": "astro-example",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"check": "astro check",
+		"test": "playwright test"
+	},
+	"dependencies": {
+		"@astrojs/node": "^10.0.0",
+		"@astrojs/react": "^5.0.0",
+		"@conform-to/react": "workspace:*",
+		"@conform-to/zod": "workspace:*",
+		"astro": "^6.0.0",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0",
+		"zod": "^3.25.75"
+	},
+	"devDependencies": {
+		"@astrojs/check": "^0.9.8",
+		"@playwright/test": "^1.49.1",
+		"@types/node": "^25.5.0",
+		"@types/react": "^18.3.18",
+		"@types/react-dom": "^18.3.5",
+		"typescript": "^5.8.3"
+	}
+}

@@ -136,33 +136,35 @@ export function getFormMethod(
 }
 
 /**
- * Creates a submit event that behaves like a real form submission.
- */
-export function createSubmitEvent(submitter?: HTMLElement | null): SubmitEvent {
-	return new SubmitEvent('submit', {
-		bubbles: true,
-		cancelable: true,
-		submitter,
-	});
-}
-
-/**
  * Trigger a form submit event with an optional submitter.
  * If the submitter is not mounted, it will be appended to the form and removed after submission.
  */
 export function requestSubmit(
 	form: HTMLFormElement | null | undefined,
-	submitter: Submitter | null,
+	submitter: HTMLElement | null,
 ): void {
+	invariant(form != null, 'Form element is required to trigger submission.');
 	invariant(
-		!!form,
-		'Failed to submit the form. The element provided is null or undefined.',
+		submitter === null || isSubmitter(submitter),
+		'Submitter must be a button or input element or null.',
+	);
+	invariant(
+		submitter === null || submitter.form === form,
+		'Submitter must be associated with the form.',
 	);
 
 	if (typeof form.requestSubmit === 'function') {
 		form.requestSubmit(submitter);
+	} else if (submitter) {
+		submitter.click();
 	} else {
-		form.dispatchEvent(createSubmitEvent(submitter));
+		const submitButton = document.createElement('button');
+
+		submitButton.hidden = true;
+
+		form.appendChild(submitButton);
+		submitButton.click();
+		form.removeChild(submitButton);
 	}
 }
 

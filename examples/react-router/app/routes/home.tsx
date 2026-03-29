@@ -1,8 +1,12 @@
 import { useSearchParams } from 'react-router';
 
 function parseJson(value: string | null): unknown {
+	if (value === null) {
+		return null;
+	}
+
 	try {
-		return value ? JSON.parse(value) : null;
+		return JSON.parse(value);
 	} catch {
 		return null;
 	}
@@ -12,7 +16,7 @@ export default function Index() {
 	const [searchParams] = useSearchParams();
 	const value = parseJson(searchParams.get('value'));
 
-	if (!value) {
+	if (value === null) {
 		return null;
 	}
 
