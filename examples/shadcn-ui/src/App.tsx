@@ -42,14 +42,8 @@ const schema = coerceFormValue(
 	}),
 );
 
-export default function App() {
-	const [submittedValue, setSubmittedValue] = useState<z.output<
-		typeof schema
-	> | null>(null);
-	const [searchParams, setSearchParams] = useState(
-		() => new URLSearchParams(window.location.search),
-	);
-	const membersDefault: Array<Record<string, string>> = [];
+function getDefaultMembers(searchParams: URLSearchParams) {
+	const defaultMembers: Array<Record<string, string>> = [];
 
 	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
 		const id = searchParams.get(`members[${i}].id`);
@@ -58,10 +52,20 @@ export default function App() {
 		const role = searchParams.get(`members[${i}].role`);
 
 		if (id && name && email && role) {
-			membersDefault.push({ id, name, email, role });
+			defaultMembers.push({ id, name, email, role });
 		}
 	}
 
+	return defaultMembers;
+}
+
+export default function App() {
+	const [submittedValue, setSubmittedValue] = useState<z.output<
+		typeof schema
+	> | null>(null);
+	const [searchParams, setSearchParams] = useState(
+		() => new URLSearchParams(window.location.search),
+	);
 	const { form, fields, intent } = useForm(schema, {
 		defaultValue: {
 			name: searchParams.get('name'),
@@ -76,8 +80,8 @@ export default function App() {
 			accountType: searchParams.get('accountType'),
 			categories: searchParams.getAll('categories'),
 			interests: searchParams.getAll('interests'),
-			members: membersDefault.length > 0 ? membersDefault : undefined,
 			code: searchParams.get('code'),
+			members: getDefaultMembers(searchParams),
 		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
@@ -319,6 +323,11 @@ export default function App() {
 					<Label id={fields.members.id}>Team Members</Label>
 					<TeamMemberSelect
 						{...fields.members.teamMemberSelectProps}
+						// Equivalent to:
+						// name={fields.members.name}
+						// defaultValue={fields.members.defaultPayload}
+						// aria-labelledby={fields.members.id}
+						// aria-describedby={fields.members.ariaDescribedBy}
 						members={[
 							{
 								id: '1',

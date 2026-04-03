@@ -48,6 +48,7 @@ export function DateRangePicker({
 	firstDayOfWeek,
 	name,
 	defaultValue,
+	onBlur,
 	...props
 }: DateRangePickerProps<CalendarDate>) {
 	const labelRef = useRef<HTMLLabelElement>(null);
@@ -88,8 +89,9 @@ export function DateRangePicker({
 				{...props}
 				value={control.payload ?? null}
 				onChange={(value) => control.change(value)}
-				onBlur={() => {
+				onBlur={(event) => {
 					control.blur();
+					onBlur?.(event);
 				}}
 			>
 				<Label ref={labelRef}>{label}</Label>

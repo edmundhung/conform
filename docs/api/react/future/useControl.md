@@ -35,6 +35,9 @@ const control = useControl({
     start: '2026-01-01',
     end: '2026-01-07',
   },
+  parse(payload) {
+    return DateRangeSchema.parse(payload);
+  },
 });
 ```
 
