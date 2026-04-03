@@ -4,6 +4,7 @@ import { render } from 'vitest-browser-react';
 import { Locator, userEvent, server } from 'vitest/browser';
 import { BaseControl, useControl, useForm } from '../future';
 import { createFileList } from '@conform-to/dom';
+import type { FormValue } from '@conform-to/dom/future';
 import { useEffect } from 'react';
 
 describe('future export: useControl', () => {
@@ -237,11 +238,13 @@ describe('future export: useControl', () => {
 		name: string;
 		defaultValue: unknown;
 		parse: (payload: unknown) => Payload;
+		serialize?: (value: Payload) => FormValue;
 		changeButtonValue?: Payload;
 	}) {
 		const control = useControl({
 			defaultValue: props.defaultValue,
 			parse: props.parse,
+			serialize: props.serialize,
 		});
 
 		return (
@@ -994,6 +997,21 @@ describe('future export: useControl', () => {
 	});
 
 	it('updates fieldset value on form update and reset', async () => {
+		class Address {
+			details: {
+				street: string;
+				city: string;
+			};
+
+			constructor(street: string, city: string) {
+				this.details = { street, city };
+			}
+
+			toString() {
+				return [this.details.street, this.details.city].join(', ');
+			}
+		}
+
 		const fieldset = (
 			<Fieldset
 				name="address"
@@ -1011,12 +1029,15 @@ describe('future export: useControl', () => {
 						throw new Error('Invalid payload');
 					}
 
-					return value;
+					return new Address(value.street, value.city);
 				}}
-				changeButtonValue={{
-					street: '123 Main St',
-					city: 'Anytown',
+				serialize={(value: Address) => {
+					const address = value.toString();
+					const [street = '', city = ''] = address.split(', ');
+
+					return { street, city };
 				}}
+				changeButtonValue={new Address('123 Main St', 'Anytown')}
 			/>
 		);
 		const screen = render(

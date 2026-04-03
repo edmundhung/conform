@@ -2,7 +2,7 @@
 
 > The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that syncs custom UI components with Conform by bridging them to a hidden native base control. Use it when integrating components like date pickers, rich selects, or toggles from UI libraries.
+A React hook that syncs custom UI components with Conform by bridging them to a hidden base control. Use it when integrating components like date pickers, rich selects, or toggles from UI libraries.
 
 For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
 
@@ -17,8 +17,6 @@ const control = useControl(options);
 ### `defaultValue?: string | string[] | File | File[] | Shape | null`
 
 Initial value for the control.
-
-For structured controls, this can be an object or array payload.
 
 ```ts
 // e.g. Text input
@@ -63,15 +61,37 @@ const control = useControl({
 
 ### `parse?: (payload: unknown) => Shape`
 
-Optional parser for coercing structured `defaultValue` / `payload` into a typed shape.
+Optional parser for coercing the current payload snapshot into a typed shape.
 
 Use this when the payload needs a stricter shape than the normalized value provides.
 
 ```ts
-const control = useControl<{ start: string; end: string }>({
+const control = useControl({
   defaultValue: { start: '2026-01-01', end: '2026-01-07' },
   parse(payload) {
     return DateRangeSchema.parse(payload);
+  },
+});
+```
+
+### `serialize?: (value: Shape) => FormValue`
+
+Optional serializer for converting value passed to `change()` back into form values for the base control.
+
+```ts
+const control = useControl({
+  defaultValue: { start: '2026-01-01', end: '2026-01-07' },
+  parse(payload) {
+    return {
+      start: parseDate(payload.start),
+      end: parseDate(payload.end),
+    };
+  },
+  serialize(value) {
+    return {
+      start: value.start.toString(),
+      end: value.end.toString(),
+    };
   },
 });
 ```
@@ -108,17 +128,15 @@ Checked state derived from the control payload.
 
 Current file array derived from the control payload.
 
-### `defaultValue: Payload | null | undefined`
+### `defaultValue: DefaultValue | null | undefined`
 
 Current default value for the base control.
 
-For structured controls, this is the value you typically pass to [`BaseControl`](./BaseControl).
-
 ### `payload: Payload | null | undefined`
 
-Current logical value derived from the registered base control(s).
+Current value derived from the registered base control(s).
 
-For simple text-like inputs, this often matches `value`. For structural controls, this is reconstructed from descendant fields under the registered fieldset name.
+For native form controls, this often matches the element's `value`. For structural controls, this is reconstructed from descendant fields under the registered `<fieldset>` name and then parsed if `parse` is provided.
 
 ### `formRef: React.RefObject<HTMLFormElement | null>`
 
@@ -126,11 +144,15 @@ Ref object for the form associated with the registered base control.
 
 ### `register(element): void`
 
-Registers the base control element. Accepts `<input>`, `<select>`, `<textarea>`, `<fieldset>`, or a collection of checkbox / radio inputs with the same name.
+Registers the base control element. Accepts `<input>`, `<select>`, `<textarea>`, `<fieldset>`, or a collection of checkbox / radio inputs sharing the same name.
 
-### `change(value: Payload | null): void`
+### `change(value: Value | null): void`
 
 Programmatically updates the control value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+
+- For **standard controls**, it expects a value that matches the same type as the `defaultValue` (e.g. `string`, `string[]`, `File[]`).
+- For **checked controls**, it expects a `boolean`.
+- For **custom controls**, it expects a value that matches the custom `Shape`. If you provide `serialize`, the value is converted back to a form value before updating the base control.
 
 ### `blur(): void`
 

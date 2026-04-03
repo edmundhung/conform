@@ -188,8 +188,6 @@ export function deriveDefaultPayload(options: ControlOptions): unknown {
 	if ('defaultValue' in options) {
 		return options.defaultValue;
 	}
-
-	return undefined;
 }
 
 /**

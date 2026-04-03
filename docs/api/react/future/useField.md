@@ -66,9 +66,7 @@ Default checked state for checkbox inputs. Returns `true` if the field value is 
 
 ### `defaultPayload: unknown`
 
-Normalized default payload at this field path.
-
-Useful for structured controls.
+Normalized default payload at this field path. Useful for structured controls.
 
 ### `touched: boolean`
 

@@ -266,7 +266,7 @@ describe('future export: useControl', () => {
 				}),
 			);
 
-			return control.defaultValue;
-		}).toThrowError(/Failed to parse defaultValue for control\. Received/);
+			return control.payload;
+		}).toThrowError(/Failed to parse the payload\. Received/);
 	});
 });

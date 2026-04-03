@@ -25,14 +25,13 @@ export type FormRef =
 	  >
 	| string;
 
-export type DefaultControlPayload =
-	| string
-	| string[]
-	| File
-	| File[]
-	| FileList;
+export type DefaultControlValue = string | string[] | File | File[] | FileList;
 
-export type Control<Value = DefaultControlPayload, Payload = unknown> = {
+export type Control<
+	Value = DefaultControlValue,
+	DefaultValue = Value,
+	Payload = unknown,
+> = {
 	/**
 	 * Current string value derived from the control payload.
 	 */
@@ -56,9 +55,7 @@ export type Control<Value = DefaultControlPayload, Payload = unknown> = {
 	 * For structural controls (i.e. `<fieldset>`), this is the latest payload
 	 * snapshot that drives which hidden inputs are rendered.
 	 */
-	defaultValue: Value extends boolean
-		? string | null | undefined
-		: Value | null | undefined;
+	defaultValue: DefaultValue | null | undefined;
 	/**
 	 * Current payload snapshot derived from the registered base control(s).
 	 *
@@ -113,7 +110,7 @@ export type Control<Value = DefaultControlPayload, Payload = unknown> = {
 };
 
 export type StandardControlOptions<
-	Value extends DefaultControlPayload = DefaultControlPayload,
+	Value extends DefaultControlValue = DefaultControlValue,
 > = {
 	/**
 	 * The initial value of the base control.
@@ -142,19 +139,23 @@ export type CheckedControlOptions = {
 	onFocus?: () => void;
 };
 
-export type ComplexControlOptions<Payload = unknown> = {
+export type CustomControlOptions<Value = unknown, DefaultValue = Value> = {
 	/**
 	 * Initial value used to seed the control.
 	 * For structural controls, this is the payload used to render hidden inputs.
 	 */
-	defaultValue?: Payload | unknown | null | undefined;
+	defaultValue?: DefaultValue | null | undefined;
 	/**
-	 * Optional payload parser applied to `payload` and `defaultValue`.
+	 * Payload parser applied to the current payload snapshot.
 	 *
 	 * Use this to coerce unknown DOM-derived data into a typed shape.
 	 * Any thrown error is surfaced to the caller.
 	 */
-	parse: (payload: unknown) => Payload;
+	parse: (payload: unknown) => Value | null | undefined;
+	/**
+	 * Optional serializer to convert the parsed payload back to a form value for populating the base control(s).
+	 */
+	serialize?: (value: Value) => FormValue;
 	/**
 	 * A callback function that is triggered when the base control is focused.
 	 * Use this to delegate focus to a custom input.
@@ -165,7 +166,7 @@ export type ComplexControlOptions<Payload = unknown> = {
 export type ControlOptions =
 	| StandardControlOptions
 	| CheckedControlOptions
-	| ComplexControlOptions;
+	| CustomControlOptions;
 
 export type Selector<FormValue, Result> = (
 	formData: FormValue,

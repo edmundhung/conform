@@ -2,7 +2,7 @@
 
 > The `BaseControl` component is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React component that renders hidden native form controls. It is commonly used with [`useControl`](./useControl) to bridge custom UI components back to standard form submission.
+A React component that renders hidden native form controls. It could be used with [`useControl`](./useControl) to bridge custom UI components back to standard form submission.
 
 ```tsx
 import { BaseControl, useControl } from '@conform-to/react/future';
@@ -28,8 +28,6 @@ Name used for the rendered hidden control(s).
 
 Default value used to render the hidden control(s).
 
-When used with `useControl`, pass `control.defaultValue`.
-
 ### `type?: 'text' | 'file' | 'fieldset' | 'select' | 'textarea' | ...`
 
 Controls which hidden element is rendered:
@@ -38,8 +36,6 @@ Controls which hidden element is rendered:
 - `select`: renders a hidden `<select>`
 - `textarea`: renders a hidden `<textarea>`
 - otherwise: renders a hidden `<input type={type}>`
-
-When omitted, it renders a hidden `<input>`.
 
 ### `form?: string`
 
@@ -74,7 +70,7 @@ return (
 
 For `type="fieldset"`, object and array shapes are expanded into nested names like `range.start` and `members[0].id`.
 
-`control.defaultValue` drives the hidden inputs that get rendered, while `control.payload` is the current logical value exposed to your custom component.
+`control.defaultValue` drives the hidden inputs that are rendered, while `control.payload` is the current logical value exposed to your custom component.
 
 ```tsx
 const control = useControl({
@@ -96,8 +92,8 @@ return (
       This renders a hidden fieldset with nested inputs:
       
       <fieldset name="range" hidden>
-        <input name="range.start" value={control.defaultValue.start} hidden />
-        <input name="range.end" value={control.defaultValue.end} hidden />
+        <input name="range.start" value={control.defaultValue.start} />
+        <input name="range.end" value={control.defaultValue.end} />
       </fieldset>
 
     */}

@@ -54,7 +54,22 @@ export function DateRangePicker({
 	const control = useControl({
 		defaultValue,
 		parse(payload) {
-			return coerceStructure(dateRangeSchema).parse(payload);
+			try {
+				const range = coerceStructure(dateRangeSchema).parse(payload);
+
+				return {
+					start: parseDate(range.start),
+					end: parseDate(range.end),
+				};
+			} catch {
+				return;
+			}
+		},
+		serialize(value) {
+			return {
+				start: value.start.toString(),
+				end: value.end.toString(),
+			};
 		},
 		onFocus() {
 			labelRef.current?.click();
@@ -71,20 +86,8 @@ export function DateRangePicker({
 			/>
 			<AriaDateRangePicker
 				{...props}
-				value={
-					control.payload?.start && control.payload?.end
-						? {
-								start: parseDate(control.payload.start),
-								end: parseDate(control.payload.end),
-							}
-						: null
-				}
-				onChange={(value) => {
-					control.change({
-						start: value?.start.toString() ?? '',
-						end: value?.end.toString() ?? '',
-					});
-				}}
+				value={control.payload ?? null}
+				onChange={(value) => control.change(value)}
 				onBlur={() => {
 					control.blur();
 				}}

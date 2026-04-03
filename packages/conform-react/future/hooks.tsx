@@ -69,9 +69,9 @@ import type {
 	InferOutput,
 	BaseControlProps,
 	StandardControlOptions,
-	DefaultControlPayload,
+	DefaultControlValue,
 	CheckedControlOptions,
-	ComplexControlOptions,
+	CustomControlOptions,
 	ControlOptions,
 } from './types';
 import {
@@ -1039,13 +1039,15 @@ export function useIntent<FormShape extends Record<string, any>>(
  * const control = useControl(options);
  * ```
  */
-export function useControl<Payload>(
-	options: ComplexControlOptions<Payload>,
-): Control<Payload, Payload>;
-export function useControl<Value extends DefaultControlPayload>(
+export function useControl<Value, DefaultValue>(
+	options: CustomControlOptions<Value, DefaultValue>,
+): Control<Value, DefaultValue, Value>;
+export function useControl<Value extends DefaultControlValue>(
 	options?: StandardControlOptions<Value>,
 ): Control<Value>;
-export function useControl(options: CheckedControlOptions): Control<boolean>;
+export function useControl(
+	options: CheckedControlOptions,
+): Control<boolean, string>;
 export function useControl(options: ControlOptions = {}): Control<any> {
 	const { observer } = useContext(GlobalFormOptionsContext);
 	const inputRef = useRef<
@@ -1068,8 +1070,9 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 		}),
 		[],
 	);
-	const defaultPayload = deriveDefaultPayload(options);
-	const [defaultValue, setDefaultValue] = useState(defaultPayload);
+	const [defaultValue, setDefaultValue] = useState(() =>
+		deriveDefaultPayload(options),
+	);
 	const pendingDefaultValueSyncRef = useRef(false);
 
 	/**
@@ -1083,7 +1086,7 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 		isGlobalInstance(inputRef.current, 'HTMLFieldSetElement')
 	) {
 		pendingDefaultValueSyncRef.current = false;
-		setDefaultValue(defaultPayload);
+		setDefaultValue(() => deriveDefaultPayload(options));
 	}
 
 	const eventDispatched = useRef<{
@@ -1186,39 +1189,29 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 		};
 	}, []);
 
-	const parsePayload = (kind: 'payload' | 'defaultValue', payload: unknown) => {
-		if (payload == null) {
-			return payload;
-		}
-
-		if ('parse' in options) {
-			try {
-				return options.parse(payload);
-			} catch (error) {
-				let payloadText = '';
-
-				try {
-					payloadText = JSON.stringify(payload, null, 2);
-				} catch {
-					payloadText = '<unserializable payload>';
-				}
-
-				throw new Error(
-					`Failed to parse ${kind} for control. Received ${payloadText}.`,
-					{ cause: error },
-				);
-			}
-		}
-
-		return payload;
-	};
-
 	return {
-		get defaultValue() {
-			return parsePayload('defaultValue', defaultValue);
-		},
+		defaultValue,
 		get payload() {
-			return parsePayload('payload', payloadSnapshot);
+			if (payloadSnapshot != null && 'parse' in options) {
+				try {
+					return options.parse(payloadSnapshot);
+				} catch (error) {
+					let payloadText = '';
+
+					try {
+						payloadText = JSON.stringify(payloadSnapshot, null, 2);
+					} catch {
+						payloadText = '<unserializable payload>';
+					}
+
+					throw new Error(
+						`Failed to parse the payload. Received ${payloadText}.`,
+						{ cause: error },
+					);
+				}
+			}
+
+			return payloadSnapshot;
 		},
 		get value() {
 			if (payloadSnapshot === null) {
@@ -1332,18 +1325,24 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 			if (!eventDispatched.current.change) {
 				const element = inputRef.current;
 				const isFieldset = element instanceof HTMLFieldSetElement;
+				const serializedValue =
+					value == null
+						? value
+						: 'serialize' in optionsRef.current && optionsRef.current.serialize
+							? optionsRef.current.serialize(value)
+							: value;
 
 				if (isFieldset) {
 					// Fieldset mode renders hidden descendant inputs from defaultValue.
 					// Flush this update before dispatching events so listeners see the
 					// latest form structure in the same input/change cycle.
 					flushSync(() => {
-						setDefaultValue(value);
+						setDefaultValue(serializedValue);
 					});
 				}
 
 				if (element) {
-					change(element, value, {
+					change(element, serializedValue, {
 						// Sometimes no change is made on the inputs but done through DOM mutation.
 						// But we still want to dispatch the event to notify listeners.
 						forceDispatch: isFieldset,
@@ -1596,17 +1595,16 @@ export const BaseControl = forwardRef<
 		name: string,
 		value: unknown,
 		form: string | undefined,
-		hidden: boolean,
 	): React.ReactNode {
 		if (Array.isArray(value)) {
 			return value.map((item, index) =>
-				renderInput(`${name}[${index}]`, item, form, hidden),
+				renderInput(`${name}[${index}]`, item, form),
 			);
 		}
 
 		if (isPlainObject(value)) {
 			return Object.entries(value).map(([key, val]) =>
-				renderInput(`${name}.${key}`, val, form, hidden),
+				renderInput(`${name}.${key}`, val, form),
 			);
 		}
 
@@ -1616,7 +1614,6 @@ export const BaseControl = forwardRef<
 				name={name}
 				defaultValue={formatValue(value)}
 				form={form}
-				hidden={hidden}
 			/>
 		);
 	}
@@ -1632,9 +1629,7 @@ export const BaseControl = forwardRef<
 				form={form}
 				hidden={hidden}
 			>
-				{defaultValue != null
-					? renderInput(name, defaultValue, form, hidden)
-					: null}
+				{defaultValue != null ? renderInput(name, defaultValue, form) : null}
 			</fieldset>
 		);
 	}
