@@ -561,10 +561,6 @@ export function configureCoercion(config?: {
 		 * @example
 		 *
 		 * ```tsx
-		 * import { configureCoercion } from '@conform-to/zod/v3/future';
-		 * import { z } from 'zod';
-		 *
-		 * const { coerceFormValue } = configureCoercion();
 		 * const schema = coerceFormValue(z.object({
 		 *   age: z.number().optional(),
 		 *   subscribe: z.boolean(),
@@ -607,10 +603,6 @@ export function configureCoercion(config?: {
 		 * @example
 		 *
 		 * ```tsx
-		 * import { configureCoercion } from '@conform-to/zod/v3/future';
-		 * import { z } from 'zod';
-		 *
-		 * const { coerceStructure } = configureCoercion();
 		 * const schema = coerceStructure(z.object({
 		 *   age: z.number().min(10),
 		 * }));

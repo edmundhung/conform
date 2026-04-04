@@ -717,10 +717,6 @@ export function configureCoercion(config?: {
 		 * @example
 		 *
 		 * ```tsx
-		 * import { configureCoercion } from '@conform-to/valibot/future';
-		 * import * as v from 'valibot';
-		 *
-		 * const { coerceFormValue } = configureCoercion();
 		 * const schema = coerceFormValue(v.object({
 		 *   age: v.optional(v.number()),
 		 *   subscribe: v.boolean(),
@@ -767,10 +763,6 @@ export function configureCoercion(config?: {
 		 * @example
 		 *
 		 * ```tsx
-		 * import { configureCoercion } from '@conform-to/valibot/future';
-		 * import * as v from 'valibot';
-		 *
-		 * const { coerceStructure } = configureCoercion();
 		 * const schema = coerceStructure(v.object({
 		 *   age: v.pipe(v.number(), v.minValue(10)),
 		 * }));
