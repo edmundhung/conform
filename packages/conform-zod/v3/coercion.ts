@@ -553,20 +553,21 @@ export function configureCoercion(config?: {
 
 	return {
 		/**
-		 * A helper that enhance the zod schema to strip empty value and coerce
-		 * form value to the expected type with option to customize type coercion.
+		 * Enhances a schema to coerce form values and strip empty values before validation.
+		 * This configured helper uses the options passed to `configureCoercion`.
+		 *
+		 * Results are cached per schema, so this can be called inline.
 		 *
 		 * @example
 		 *
 		 * ```tsx
-		 * import { coerceFormValue } from '@conform-to/zod/v3/future';
-		 * import { z } from 'zod';
+		 * const schema = coerceFormValue(z.object({
+		 *   age: z.number().optional(),
+		 *   subscribe: z.boolean(),
+		 * }));
 		 *
-		 * const schema = coerceFormValue(
-		 *   z.object({
-		 *     // ...
-		 *   })
-		 * );
+		 * schema.parse({ age: '', subscribe: 'on' });
+		 * // { age: undefined, subscribe: true }
 		 * ```
 		 */
 		coerceFormValue<Schema extends ZodTypeAny>(
@@ -591,14 +592,32 @@ export function configureCoercion(config?: {
 		},
 
 		/**
-		 * Enhances a schema to convert form string values to their typed
-		 * equivalents without validation. Useful for reading current form values
-		 * as typed data.
+		 * Enhances a schema to coerce form values without running validation.
+		 * This configured helper is useful for reading current form values as typed data.
 		 *
-		 * Skips schema validation (min/max/regex/etc.), defaults, transforms,
-		 * and refinements. Empty strings are preserved (not stripped).
+		 * It skips validation, defaults, transforms, and refinements, and does not strip
+		 * empty strings to `undefined`.
+		 *
+		 * For number, boolean, date, and bigint schemas, empty strings and other failed
+		 * string coercions still become fallback values:
+		 *
+		 * - `z.number()` -> `NaN`
+		 * - `z.boolean()` -> `false`
+		 * - `z.date()` -> `Invalid Date`
+		 * - `z.bigint()` -> `0n`
 		 *
 		 * Results are cached per schema, so this can be called inline.
+		 *
+		 * @example
+		 *
+		 * ```tsx
+		 * const schema = coerceStructure(z.object({
+		 *   age: z.number().min(10),
+		 * }));
+		 *
+		 * schema.parse({ age: '3' });
+		 * // { age: 3 }
+		 * ```
 		 */
 		coerceStructure<Schema extends ZodTypeAny>(
 			type: Schema,
