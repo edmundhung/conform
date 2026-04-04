@@ -1,34 +1,43 @@
 import {
 	change,
+	focus,
 	getPathValue,
 	isFieldElement,
 	isGlobalInstance,
 	requestIntent,
 	Serialize,
+	setPathValue,
 	updateField,
 } from '@conform-to/dom/future';
 import type {
+	ControlOptions,
 	ErrorContext,
 	FormRef,
-	InputSnapshot,
 	IntentDispatcher,
 } from './types';
 import { serializeIntent } from './intent';
+import { hasFieldError } from './state';
 
 export function getFormElement(
 	formRef: FormRef | undefined,
 ): HTMLFormElement | null {
-	if (typeof formRef === 'string') {
-		return document.forms.namedItem(formRef);
+	if (typeof formRef === 'undefined') {
+		return null;
 	}
 
-	const element = formRef?.current;
+	if (typeof formRef !== 'string') {
+		const element = formRef.current;
 
-	if (element instanceof HTMLFormElement) {
-		return element;
+		if (!element) {
+			return null;
+		}
+
+		return isGlobalInstance(element, 'HTMLFormElement')
+			? element
+			: element.form;
 	}
 
-	return element?.form ?? null;
+	return document.forms.namedItem(formRef);
 }
 
 export function getSubmitEvent(
@@ -45,7 +54,7 @@ export function initializeField(
 	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
 	options:
 		| {
-				defaultValue?: string | string[] | File | File[] | null | undefined;
+				defaultValue?: unknown;
 				defaultChecked?: boolean | undefined;
 				value?: string | undefined;
 		  }
@@ -79,139 +88,106 @@ export function initializeField(
 	element.dataset.conform = 'initialized';
 }
 
-/**
- * Makes hidden form inputs focusable with visually hidden styles
- */
-export function makeInputFocusable(
-	element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): void {
-	if (!element.hidden && element.type !== 'hidden') {
-		return;
-	}
+export function resolveControlPayload(
+	input:
+		| HTMLInputElement
+		| HTMLSelectElement
+		| HTMLTextAreaElement
+		| HTMLFieldSetElement
+		| Array<HTMLInputElement>,
+): unknown {
+	if (Array.isArray(input)) {
+		let options: string[] | undefined;
 
-	// Style the element to be visually hidden
-	element.style.position = 'absolute';
-	element.style.width = '1px';
-	element.style.height = '1px';
-	element.style.padding = '0';
-	element.style.margin = '-1px';
-	element.style.overflow = 'hidden';
-	element.style.clip = 'rect(0,0,0,0)';
-	element.style.whiteSpace = 'nowrap';
-	element.style.border = '0';
+		for (const element of input) {
+			if (element.type === 'radio' && element.checked) {
+				return element.value;
+			}
 
-	// Hide the element from screen readers
-	element.setAttribute('aria-hidden', 'true');
-
-	// Make sure people won't tab to this element
-	element.tabIndex = -1;
-
-	// Set the element to be visible again so it can be focused
-	if (element.hidden) {
-		element.hidden = false;
-	}
-
-	if (element.type === 'hidden') {
-		element.setAttribute('type', 'text');
-	}
-}
-
-export function getRadioGroupValue(
-	inputs: Array<HTMLInputElement>,
-): string | undefined {
-	for (const input of inputs) {
-		if (input.type === 'radio' && input.checked) {
-			return input.value;
-		}
-	}
-}
-
-export function getCheckboxGroupValue(
-	inputs: Array<HTMLInputElement>,
-): string[] | undefined {
-	let values: string[] | undefined;
-
-	for (const input of inputs) {
-		if (input.type === 'checkbox') {
-			values ??= [];
-			if (input.checked) {
-				values.push(input.value);
+			if (element.type === 'checkbox') {
+				options ??= [];
+				if (element.checked) {
+					options.push(element.value);
+				}
 			}
 		}
+
+		return options;
 	}
 
-	return values;
-}
-
-export function getInputSnapshot(
-	input: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
-): InputSnapshot {
 	if (input instanceof HTMLInputElement) {
 		switch (input.type) {
-			case 'file':
-				return {
-					files: input.files ? Array.from(input.files) : undefined,
-				};
+			case 'file': {
+				return input.files ? Array.from(input.files) : [];
+			}
 			case 'radio':
 			case 'checkbox':
-				return {
-					value: input.value,
-					checked: input.checked,
-				};
+				return input.checked ? input.value : null;
 		}
 	} else if (input instanceof HTMLSelectElement && input.multiple) {
-		return {
-			options: Array.from(input.selectedOptions).map((option) => option.value),
-		};
+		return Array.from(input.selectedOptions).map((option) => option.value);
+	} else if (input instanceof HTMLFieldSetElement) {
+		if (input.elements.length === 0) {
+			return null;
+		}
+
+		const result = {};
+		const entries: Map<string, unknown> = new Map();
+
+		for (const element of input.elements) {
+			if (isFieldElement(element)) {
+				const payload = resolveControlPayload(element);
+				const value = entries.get(element.name);
+
+				if (element.type === 'checkbox') {
+					entries.set(
+						element.name,
+						value === undefined
+							? payload
+							: (Array.isArray(value)
+									? [...value, payload]
+									: [value, payload]
+								).filter((v) => v !== null),
+					);
+				} else if (element.type === 'radio') {
+					entries.set(
+						element.name,
+						value == null ? payload : payload === null ? value : payload,
+					);
+				} else {
+					entries.set(
+						element.name,
+						value === undefined
+							? payload
+							: Array.isArray(value)
+								? [...value, payload]
+								: [value, payload],
+					);
+				}
+			}
+		}
+
+		for (const [name, value] of entries) {
+			setPathValue(result, name, value);
+		}
+
+		return getPathValue(result, input.name);
 	}
 
-	return {
-		value: input.value,
-	};
+	return input.value;
 }
 
-/**
- * Creates an InputSnapshot based on the provided options:
- * - checkbox/radio: value / defaultChecked
- * - file inputs: defaultValue is File or FileList
- * - select multiple: defaultValue is string array
- * - others: defaultValue is string
- */
-export function createDefaultSnapshot(
-	defaultValue: string | string[] | File | File[] | FileList | null | undefined,
-	defaultChecked: boolean | undefined,
-	value: string | undefined,
-): InputSnapshot {
-	if (typeof value === 'string' || typeof defaultChecked === 'boolean') {
-		return {
-			value: value ?? 'on',
-			checked: defaultChecked,
-		};
+export function deriveDefaultPayload(options: ControlOptions): unknown {
+	if (
+		'defaultChecked' in options &&
+		typeof options.defaultChecked === 'boolean'
+	) {
+		return options.defaultChecked ? options.value ?? 'on' : null;
 	}
 
-	if (typeof defaultValue === 'string') {
-		return { value: defaultValue };
+	if ('defaultValue' in options) {
+		return options.defaultValue;
 	}
-
-	if (Array.isArray(defaultValue)) {
-		if (
-			defaultValue.every((item): item is string => typeof item === 'string')
-		) {
-			return { options: defaultValue };
-		} else {
-			return { files: defaultValue };
-		}
-	}
-
-	if (isGlobalInstance(defaultValue, 'File')) {
-		return { files: [defaultValue] };
-	}
-
-	if (isGlobalInstance(defaultValue, 'FileList')) {
-		return { files: Array.from(defaultValue) };
-	}
-
-	return {};
 }
 
 /**
@@ -227,12 +203,28 @@ export function focusFirstInvalidField<ErrorShape>(
 
 	for (const element of ctx.formElement.elements) {
 		if (
-			isFieldElement(element) &&
-			ctx.error.fieldErrors[element.name]?.length
+			!(isFieldElement(element) || element instanceof HTMLFieldSetElement) ||
+			element.name === '' ||
+			!hasFieldError(ctx.error, element.name)
 		) {
-			element.focus();
-			break;
+			continue;
 		}
+
+		// Treat fieldset as a focusable field only if it is hidden
+		if (element.type === 'fieldset' && !element.hidden) {
+			continue;
+		}
+
+		if (
+			element.hidden ||
+			element.type === 'hidden' ||
+			element.type === 'fieldset'
+		) {
+			focus(element);
+		} else {
+			element.focus();
+		}
+		break;
 	}
 }
 

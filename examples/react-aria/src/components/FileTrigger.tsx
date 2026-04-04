@@ -49,7 +49,7 @@ export function FileTrigger({
 		>
 			<AriaFileTrigger
 				{...props}
-				onSelect={(files) => control.change(files ?? [])}
+				onSelect={(files) => control.change(files ? Array.from(files) : [])}
 			>
 				<Label htmlFor={`${id}-button`}>{label}</Label>
 				<div>

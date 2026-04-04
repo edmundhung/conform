@@ -24,6 +24,8 @@ export function RadioGroup({
 	errors,
 	children,
 	defaultValue,
+	onBlur,
+	onChange,
 	...props
 }: RadioGroupProps) {
 	const control = useControl({ defaultValue });
@@ -33,10 +35,16 @@ export function RadioGroup({
 			{...props}
 			ref={(wrapper) => control.register(wrapper?.querySelectorAll('input'))}
 			value={control.value ?? null}
-			onChange={control.change}
-			onBlur={control.blur}
+			onChange={(value) => {
+				control.change(value);
+				onChange?.(value);
+			}}
+			onBlur={(event) => {
+				control.blur();
+				onBlur?.(event);
+			}}
 		>
-			<Label>{label}</Label>
+			{label ? <Label>{label}</Label> : null}
 			{children}
 			{description && <Text slot="description">{description}</Text>}
 			<FieldError>{errors}</FieldError>

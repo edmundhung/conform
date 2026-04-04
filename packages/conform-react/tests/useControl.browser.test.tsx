@@ -2,8 +2,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Locator, userEvent, server } from 'vitest/browser';
-import { useControl } from '../future';
+import { BaseControl, useControl, useForm } from '../future';
 import { createFileList } from '@conform-to/dom';
+import type { FormValue } from '@conform-to/dom/future';
 import { useEffect } from 'react';
 
 describe('future export: useControl', () => {
@@ -13,6 +14,49 @@ describe('future export: useControl', () => {
 				{props.children}
 				<button type="submit">Submit</button>
 				<button type="reset">Reset</button>
+			</form>
+		);
+	}
+
+	function ConformForm(props: {
+		id?: string;
+		updateButton?: {
+			action: string;
+			name?: string;
+			value: unknown;
+		};
+		formKey?: string;
+		children: React.ReactNode;
+	}) {
+		const { form, intent } = useForm({
+			id: props.id,
+			key: props.formKey,
+			onValidate({ error }) {
+				return error;
+			},
+			onSubmit(event) {
+				event.preventDefault();
+			},
+		});
+
+		return (
+			<form {...form.props}>
+				{props.children}
+				<button type="submit">Submit</button>
+				<button
+					type="button"
+					onClick={() =>
+						intent.update({
+							name: props.updateButton?.name,
+							value: props.updateButton?.value ?? null,
+						})
+					}
+				>
+					{props.updateButton?.action ?? 'Clear'}
+				</button>
+				<button type="button" onClick={() => intent.reset()}>
+					Reset
+				</button>
 			</form>
 		);
 	}
@@ -35,6 +79,7 @@ describe('future export: useControl', () => {
 		const baseId = `${baseName}-${props.value}`;
 		const controlName = `${props.name}-control`;
 		const controlId = `${controlName}-${props.value}`;
+		// @ts-expect-error - We know what we're doing with the control type here
 		const control = useControl({
 			defaultValue: props.defaultValue,
 			defaultChecked: props.defaultChecked,
@@ -188,6 +233,51 @@ describe('future export: useControl', () => {
 		);
 	}
 
+	function Fieldset<Payload>(props: {
+		label?: string;
+		name: string;
+		defaultValue: unknown;
+		parse: (payload: unknown) => Payload;
+		serialize?: (value: Payload) => FormValue;
+		changeButtonValue?: Payload;
+	}) {
+		const control = useControl({
+			defaultValue: props.defaultValue,
+			parse: props.parse,
+			serialize: props.serialize,
+		});
+
+		return (
+			<>
+				<BaseControl
+					type="fieldset"
+					name={props.name}
+					ref={control.register}
+					defaultValue={control.defaultValue}
+				/>
+				<button
+					type="button"
+					onClick={() => control.change(props.changeButtonValue ?? null)}
+					onFocus={() => control.focus()}
+					onBlur={() => control.blur()}
+				>
+					Change
+				</button>
+				<button
+					type="button"
+					onClick={() => control.change(null)}
+					onFocus={() => control.focus()}
+					onBlur={() => control.blur()}
+				>
+					Clear
+				</button>
+				<output aria-label={props.label}>
+					{JSON.stringify(control.payload)}
+				</output>
+			</>
+		);
+	}
+
 	function getElement<C>(locator: Locator, ctor: new () => C): C {
 		const element = locator.query();
 
@@ -206,6 +296,14 @@ describe('future export: useControl', () => {
 		}
 
 		throw new Error('Element not found');
+	}
+
+	function formatOutput(value: unknown): string {
+		if (typeof value === 'undefined') {
+			return 'undefined';
+		}
+
+		return JSON.stringify(value);
 	}
 
 	// TODO: focus/blur event emulation fires inconsistently on firefox
@@ -323,6 +421,44 @@ describe('future export: useControl', () => {
 		await expect.element(controlInput).not.toBeChecked();
 	});
 
+	it('treats unchecked checkboxes as cleared payloads', async () => {
+		function CheckboxAccessorProbe() {
+			const control = useControl({
+				value: 'yes',
+			});
+
+			return (
+				<>
+					<input
+						type="checkbox"
+						name="newsletter"
+						value="yes"
+						ref={control.register}
+					/>
+					<output aria-label="checkbox payload">
+						{formatOutput(control.payload)}
+					</output>
+					<output aria-label="checkbox checked">
+						{formatOutput(control.checked)}
+					</output>
+				</>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<CheckboxAccessorProbe />
+			</Form>,
+		);
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent('null');
+		await expect
+			.element(screen.getByLabelText('checkbox checked'))
+			.toHaveTextContent('false');
+	});
+
 	it('supports emulating a radio button', async () => {
 		const changeHandler = vi.fn();
 		const screen = render(
@@ -381,6 +517,72 @@ describe('future export: useControl', () => {
 		await expect.element(noBaseInput).not.toBeChecked();
 		await expect.element(yesControlInput).toBeChecked();
 		await expect.element(noControlInput).not.toBeChecked();
+	});
+
+	it('updates payload for checkbox and radio groups', async () => {
+		function InputGroup(props: {
+			type: 'checkbox' | 'radio';
+			name: string;
+			label: string;
+		}) {
+			const control = useControl();
+
+			return (
+				<div
+					ref={(wrapper) =>
+						control.register(wrapper?.querySelectorAll('input'))
+					}
+				>
+					<label>
+						<input type={props.type} name={props.name} value="a" /> A
+					</label>
+					<label>
+						<input type={props.type} name={props.name} value="b" /> B
+					</label>
+					<output aria-label={props.label}>
+						{JSON.stringify(control.payload)}
+					</output>
+					{props.type === 'checkbox' ? (
+						<button type="button" onClick={() => control.change(null)}>
+							Clear {props.label}
+						</button>
+					) : null}
+				</div>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<InputGroup type="checkbox" name="interests" label="checkbox payload" />
+				<InputGroup type="radio" name="choice" label="radio payload" />
+			</Form>,
+		);
+
+		await userEvent.click(screen.getByRole('checkbox', { name: 'A' }));
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify(['a']));
+
+		await userEvent.click(screen.getByRole('checkbox', { name: 'B' }));
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify(['a', 'b']));
+
+		await userEvent.click(
+			screen.getByRole('button', { name: 'Clear checkbox payload' }),
+		);
+
+		await expect
+			.element(screen.getByLabelText('checkbox payload'))
+			.toHaveTextContent(JSON.stringify([]));
+
+		await userEvent.click(screen.getByRole('radio', { name: 'B' }));
+
+		await expect
+			.element(screen.getByLabelText('radio payload'))
+			.toHaveTextContent(JSON.stringify('b'));
 	});
 
 	it('supports emulating a select', async () => {
@@ -622,6 +824,70 @@ describe('future export: useControl', () => {
 		await expect.element(controlInput).toHaveValue(['foo', 'baz']);
 	});
 
+	it('treats cleared array payloads as both options and files views', async () => {
+		function EmptyArrayAccessorProbe() {
+			const control = useControl({
+				defaultValue: ['foo'],
+			});
+
+			return (
+				<>
+					<select
+						multiple
+						name="tags"
+						ref={control.register}
+						defaultValue={['foo']}
+					>
+						<option value="foo">Foo</option>
+						<option value="bar">Bar</option>
+					</select>
+					<button type="button" onClick={() => control.change([])}>
+						Clear tags
+					</button>
+					<output aria-label="array payload">
+						{formatOutput(control.payload)}
+					</output>
+					<output aria-label="array options">
+						{formatOutput(control.options)}
+					</output>
+					<output aria-label="array files">
+						{formatOutput(
+							control.files?.map((file) => file.name) ?? control.files,
+						)}
+					</output>
+				</>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<EmptyArrayAccessorProbe />
+			</Form>,
+		);
+
+		await expect
+			.element(screen.getByLabelText('array payload'))
+			.toHaveTextContent('["foo"]');
+		await expect
+			.element(screen.getByLabelText('array options'))
+			.toHaveTextContent('["foo"]');
+		await expect
+			.element(screen.getByLabelText('array files'))
+			.toHaveTextContent('undefined');
+
+		await userEvent.click(screen.getByRole('button', { name: 'Clear tags' }));
+
+		await expect
+			.element(screen.getByLabelText('array payload'))
+			.toHaveTextContent('[]');
+		await expect
+			.element(screen.getByLabelText('array options'))
+			.toHaveTextContent('[]');
+		await expect
+			.element(screen.getByLabelText('array files'))
+			.toHaveTextContent('[]');
+	});
+
 	it('supports emulating a textarea', async () => {
 		const changeHandler = vi.fn();
 		const screen = render(
@@ -668,6 +934,224 @@ describe('future export: useControl', () => {
 		await expect.element(controlInput).toHaveValue('hello world');
 	});
 
+	it('supports emulating a fieldset', async () => {
+		const screen = render(
+			<Form>
+				<Fieldset
+					name="nested.list"
+					label="List value"
+					defaultValue={[{ key: '', value: '' }]}
+					parse={(value) => {
+						if (
+							!Array.isArray(value) ||
+							!value.every(
+								(item): item is { key: string; value: string } =>
+									typeof item === 'object' &&
+									item !== null &&
+									'key' in item &&
+									'value' in item,
+							)
+						) {
+							throw new Error('Invalid payload');
+						}
+
+						return value;
+					}}
+					changeButtonValue={[
+						{ key: 'a', value: 'apple' },
+						{ key: 'b', value: 'banana' },
+					]}
+				/>
+			</Form>,
+		);
+		const formElement = screen.container.querySelector('form');
+		const listValue = screen.getByLabelText('List value');
+		const changeButton = screen.getByText('Change');
+		const clearButton = screen.getByText('Clear');
+
+		await expect
+			.element(listValue)
+			.toHaveTextContent(JSON.stringify([{ key: '', value: '' }]));
+		await expect.element(formElement).toHaveFormValues({
+			'nested.list[0].key': '',
+			'nested.list[0].value': '',
+		});
+
+		await userEvent.click(changeButton);
+		await expect.element(listValue).toHaveTextContent(
+			JSON.stringify([
+				{ key: 'a', value: 'apple' },
+				{ key: 'b', value: 'banana' },
+			]),
+		);
+		await expect.element(formElement).toHaveFormValues({
+			'nested.list[0].key': 'a',
+			'nested.list[0].value': 'apple',
+			'nested.list[1].key': 'b',
+			'nested.list[1].value': 'banana',
+		});
+
+		await userEvent.click(clearButton);
+		await expect.element(listValue).toHaveTextContent('null');
+		await expect.element(formElement).toHaveFormValues({});
+	});
+
+	it('updates fieldset value on form update and reset', async () => {
+		class Address {
+			details: {
+				street: string;
+				city: string;
+			};
+
+			constructor(street: string, city: string) {
+				this.details = { street, city };
+			}
+
+			toString() {
+				return [this.details.street, this.details.city].join(', ');
+			}
+		}
+
+		const fieldset = (
+			<Fieldset
+				name="address"
+				label="Address value"
+				defaultValue={{ street: '', city: '' }}
+				parse={(value) => {
+					if (
+						typeof value !== 'object' ||
+						value === null ||
+						!('street' in value) ||
+						!('city' in value) ||
+						typeof value.street !== 'string' ||
+						typeof value.city !== 'string'
+					) {
+						throw new Error('Invalid payload');
+					}
+
+					return new Address(value.street, value.city);
+				}}
+				serialize={(value: Address) => {
+					const address = value.toString();
+					const [street = '', city = ''] = address.split(', ');
+
+					return { street, city };
+				}}
+				changeButtonValue={new Address('123 Main St', 'Anytown')}
+			/>
+		);
+		const screen = render(
+			<ConformForm
+				formKey="foo"
+				updateButton={{
+					action: 'Use default address',
+					name: 'address',
+					value: { street: '456 Elm St', city: 'Othertown' },
+				}}
+			>
+				{fieldset}
+			</ConformForm>,
+		);
+		const formElement = screen.container.querySelector('form');
+		const addressValue = screen.getByLabelText('Address value');
+		const changeButton = screen.getByText('Change');
+		const defaultAddressButton = screen.getByText('Use default address');
+		const resetButton = screen.getByText('Reset');
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(JSON.stringify({ street: '', city: '' }));
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '',
+			'address.city': '',
+		});
+
+		await userEvent.click(changeButton);
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(
+				JSON.stringify({ street: '123 Main St', city: 'Anytown' }),
+			);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '123 Main St',
+			'address.city': 'Anytown',
+		});
+
+		await userEvent.click(resetButton);
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(JSON.stringify({ street: '', city: '' }));
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '',
+			'address.city': '',
+		});
+
+		await userEvent.click(defaultAddressButton);
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(
+				JSON.stringify({ street: '456 Elm St', city: 'Othertown' }),
+			);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '456 Elm St',
+			'address.city': 'Othertown',
+		});
+
+		screen.rerender(
+			<ConformForm
+				formKey="bar"
+				updateButton={{
+					action: 'Update others',
+					name: 'others',
+					value: 'some value',
+				}}
+			>
+				<input type="text" name="others" />
+				{fieldset}
+			</ConformForm>,
+		);
+
+		const updateOthersButton = screen.getByText('Update others');
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(JSON.stringify({ street: '', city: '' }));
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '',
+			'address.city': '',
+			others: '',
+		});
+
+		await userEvent.click(changeButton);
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(
+				JSON.stringify({ street: '123 Main St', city: 'Anytown' }),
+			);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '123 Main St',
+			'address.city': 'Anytown',
+			others: '',
+		});
+
+		await userEvent.click(updateOthersButton);
+
+		await expect
+			.element(addressValue)
+			.toHaveTextContent(
+				JSON.stringify({ street: '123 Main St', city: 'Anytown' }),
+			);
+		await expect.element(formElement).toHaveFormValues({
+			'address.street': '123 Main St',
+			'address.city': 'Anytown',
+			others: 'some value',
+		});
+	});
+
 	it('supports resetting the input after initialized with a different default value', async () => {
 		const changeHandler = vi.fn();
 
@@ -680,7 +1164,7 @@ describe('future export: useControl', () => {
 					<button
 						type="button"
 						aria-label="reset button"
-						onClick={() => control.change('')}
+						onClick={() => control.change(null)}
 					>
 						Reset
 					</button>
@@ -709,6 +1193,57 @@ describe('future export: useControl', () => {
 
 		// onChange should have fired
 		expect(changeHandler).toHaveBeenCalled();
+	});
+
+	it('seeds control state from defaults on first client render', async () => {
+		function TestComponent() {
+			const textControl = useControl({
+				defaultValue: 'Hello',
+			});
+			const checkboxControl = useControl({
+				defaultChecked: true,
+			});
+
+			if (textControl.value !== 'Hello') {
+				throw new Error(
+					`Expected text control value to be 'Hello' on first render, received ${String(textControl.value)}`,
+				);
+			}
+
+			if (!checkboxControl.checked) {
+				throw new Error(
+					`Expected checkbox control checked to be true on first render, received ${String(checkboxControl.checked)}`,
+				);
+			}
+
+			return (
+				<>
+					<input
+						aria-label="text input"
+						ref={textControl.register}
+						type="text"
+						defaultValue="Hello"
+					/>
+					<input
+						aria-label="checkbox input"
+						ref={checkboxControl.register}
+						type="checkbox"
+						defaultChecked
+					/>
+				</>
+			);
+		}
+
+		const screen = render(
+			<Form>
+				<TestComponent />
+			</Form>,
+		);
+
+		await expect
+			.element(screen.getByLabelText('text input'))
+			.toHaveValue('Hello');
+		await expect.element(screen.getByLabelText('checkbox input')).toBeChecked();
 	});
 
 	it('provides access to the associated form via formRef', async () => {

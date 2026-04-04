@@ -2,7 +2,7 @@
 
 > The `useControl` hook is part of Conform's future export. These APIs are experimental and may change in minor versions. [Learn more](https://github.com/edmundhung/conform/discussions/954)
 
-A React hook that syncs custom UI components with Conform by bridging them to a hidden native input. Use it when integrating components like date pickers, rich selects, or toggles from UI libraries.
+A React hook that syncs custom UI components with Conform by bridging them to a hidden base control. Use it when integrating components like date pickers, rich selects, or toggles from UI libraries.
 
 For details on when you need this hook, see the [UI Libraries Integration Guide](../../../integration/ui-libraries.md).
 
@@ -14,24 +14,36 @@ const control = useControl(options);
 
 ## Options
 
-### `defaultValue?: string | string[] | File | File[]`
+### `defaultValue?: string | string[] | File | File[] | Shape | null`
 
-The initial value of the base input. It will be used to set the value when the input is first registered.
+Initial value for the control.
 
 ```ts
 // e.g. Text input
 const control = useControl({
   defaultValue: 'my default value',
 });
+
 // e.g. Multi-select
 const control = useControl({
   defaultValue: ['option-1', 'option-3'],
+});
+
+// e.g. Hidden fieldset / structured control
+const control = useControl({
+  defaultValue: {
+    start: '2026-01-01',
+    end: '2026-01-07',
+  },
+  parse(payload) {
+    return DateRangeSchema.parse(payload);
+  },
 });
 ```
 
 ### `defaultChecked?: boolean`
 
-Whether the base input should be checked by default. It will be applied when the input is first registered.
+Whether the base control should be checked by default.
 
 ```ts
 const control = useControl({
@@ -41,7 +53,7 @@ const control = useControl({
 
 ### `value?: string`
 
-The value of a checkbox or radio input when checked. This sets the value attribute of the base input.
+The submitted value of a checkbox or radio control when checked.
 
 ```ts
 const control = useControl({
@@ -50,9 +62,46 @@ const control = useControl({
 });
 ```
 
+### `parse?: (payload: unknown) => Shape`
+
+Optional parser for coercing the current payload snapshot into a typed shape.
+
+Use this when the payload needs a stricter shape than the normalized value provides.
+
+```ts
+const control = useControl({
+  defaultValue: { start: '2026-01-01', end: '2026-01-07' },
+  parse(payload) {
+    return DateRangeSchema.parse(payload);
+  },
+});
+```
+
+### `serialize?: (value: Shape) => FormValue`
+
+Optional serializer for converting value passed to `change()` back into form values for the base control.
+
+```ts
+const control = useControl({
+  defaultValue: { start: '2026-01-01', end: '2026-01-07' },
+  parse(payload) {
+    return {
+      start: parseDate(payload.start),
+      end: parseDate(payload.end),
+    };
+  },
+  serialize(value) {
+    return {
+      start: value.start.toString(),
+      end: value.end.toString(),
+    };
+  },
+});
+```
+
 ### `onFocus?: () => void`
 
-A callback function that is triggered when the base input is focused. Use this to delegate focus to a custom input.
+A callback function that is triggered when the base control is focused. Use this to delegate focus to a custom input.
 
 ```ts
 const control = useControl({
@@ -64,31 +113,49 @@ const control = useControl({
 
 ## Returns
 
-A control object. This gives you access to the state of the input with helpers to emulate native form events.
+A control object. This gives you access to the state of the base control with helpers to emulate native form events.
 
 ### `value: string | undefined`
 
-Current value of the base input. Undefined if the registered input is a multi-select, file input, or checkbox group.
+Current string value derived from the control payload.
 
 ### `options: string[] | undefined`
 
-Selected options of the base input. Defined only when the registered input is a multi-select or checkbox group.
+Current string array derived from the control payload.
 
 ### `checked: boolean | undefined`
 
-Checked state of the base input. Defined only when the registered input is a single checkbox or radio input.
+Checked state derived from the control payload.
 
 ### `files: File[] | undefined`
 
-Selected files of the base input. Defined only when the registered input is a file input.
+Current file array derived from the control payload.
 
-### `register: (element: HTMLInputElement | HTMLSelectElement | HTMLTextareaElement | Array<HTMLInputElement>) => void`
+### `defaultValue: DefaultValue | null | undefined`
 
-Registers the base input element(s). Accepts a single input or an array for groups.
+Current default value for the base control.
 
-### `change(value: string | string[] | boolean | File | File[] | FileList | null): void`
+### `payload: Payload | null | undefined`
 
-Programmatically updates the input value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+Current value derived from the registered base control(s).
+
+For native form controls, this often matches the element's `value`. For structural controls, this is reconstructed from descendant fields under the registered `<fieldset>` name and then parsed if `parse` is provided.
+
+### `formRef: React.RefObject<HTMLFormElement | null>`
+
+Ref object for the form associated with the registered base control.
+
+### `register(element): void`
+
+Registers the base control element. Accepts `<input>`, `<select>`, `<textarea>`, `<fieldset>`, or a collection of checkbox / radio inputs sharing the same name.
+
+### `change(value: Value | null): void`
+
+Programmatically updates the control value and emits both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
+
+- For **standard controls**, it expects a value that matches the same type as the `defaultValue` (e.g. `string`, `string[]`, `File[]`).
+- For **checked controls**, it expects a `boolean`.
+- For **custom controls**, it expects a value that matches the custom `Shape`. If you provide `serialize`, the value is converted back to a form value before updating the base control.
 
 ### `blur(): void`
 
@@ -96,7 +163,7 @@ Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
 
 ### `focus(): void`
 
-Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the input. Use `element.focus()` instead if you want to move focus to the input.
+Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus) and [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events. This does not move the actual keyboard focus to the base control. Use `element.focus()` instead if you want to move focus to it.
 
 ## Example
 
@@ -109,7 +176,7 @@ import { Checkbox } from './custom-checkbox-component';
 
 function Example() {
   const [form, fields] = useForm({
-    defaultValues: {
+    defaultValue: {
       newsletter: true,
     },
   });
@@ -146,12 +213,12 @@ import { Select, Option } from './custom-select-component';
 
 function Example() {
   const [form, fields] = useForm({
-    defaultValues: {
+    defaultValue: {
       categories: ['tutorial', 'blog'],
     },
   });
   const control = useControl({
-    defualtValue: fields.categories.defaultOptions,
+    defaultValue: fields.categories.defaultOptions,
   });
 
   return (
@@ -190,7 +257,7 @@ function Example() {
     <>
       <input
         type="file"
-        name={fields.attachements.name}
+        name={fields.attachments.name}
         ref={control.register}
         hidden
       />
@@ -204,11 +271,43 @@ function Example() {
 }
 ```
 
+### Structural field (fieldset)
+
+```tsx
+import { BaseControl, useControl, useField } from '@conform-to/react/future';
+
+function DateRangeField(props: { name: string }) {
+  const field = useField(props.name);
+  const control = useControl({
+    defaultValue: field.defaultPayload,
+    parse(payload) {
+      return DateRangeSchema.parse(payload);
+    },
+  });
+
+  return (
+    <>
+      <BaseControl
+        type="fieldset"
+        name={field.name}
+        ref={control.register}
+        defaultValue={control.defaultValue}
+      />
+      <CustomDateRangePicker
+        value={control.payload}
+        onChange={(value) => control.change(value)}
+        onBlur={() => control.blur()}
+      />
+    </>
+  );
+}
+```
+
 ## Tips
 
 ### Progressive enhancement
 
-If you care about supporting form submissions before JavaScript loads, set `defaultValue`, `defaultChecked`, or `value` directly on the base input. This ensures correct values are included in the form submission. Otherwise, `useControl` will handle it once the app is hydrated.
+If you care about supporting form submissions before JavaScript loads, set `defaultValue`, `defaultChecked`, or `value` directly on the base control.
 
 ```jsx
 // Input

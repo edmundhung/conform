@@ -25,49 +25,63 @@ export type FormRef =
 	  >
 	| string;
 
-export type InputSnapshot = {
-	value?: string | undefined;
-	options?: string[] | undefined;
-	checked?: boolean | undefined;
-	files?: File[] | undefined;
-};
+export type DefaultControlValue = string | string[] | File | File[] | FileList;
 
-export type Control = {
+export type Control<
+	Value = DefaultControlValue,
+	DefaultValue = Value,
+	Payload = unknown,
+> = {
 	/**
-	 * Current value of the base input. Undefined if the registered input
-	 * is a multi-select, file input, or checkbox group.
+	 * Current string value derived from the control payload.
 	 */
 	value: string | undefined;
 	/**
-	 * Selected options of the base input. Defined only when the registered input
-	 * is a multi-select or checkbox group.
+	 * Checked state derived from the control payload.
 	 */
 	checked: boolean | undefined;
 	/**
-	 * Checked state of the base input. Defined only when the registered input
-	 * is a single checkbox or radio input.
+	 * Current string array derived from the control payload.
 	 */
 	options: string[] | undefined;
 	/**
-	 * Selected files of the base input. Defined only when the registered input
-	 * is a file input.
+	 * Current file array derived from the control payload.
 	 */
 	files: File[] | undefined;
 	/**
-	 * Registers the base input element(s). Accepts a single input or an array for groups.
+	 * The rendered payload used as the source for base control(s).
+	 *
+	 * For simple native controls, this mirrors `defaultValue` / `defaultChecked`.
+	 * For structural controls (i.e. `<fieldset>`), this is the latest payload
+	 * snapshot that drives which hidden inputs are rendered.
+	 */
+	defaultValue: DefaultValue | null | undefined;
+	/**
+	 * Current payload snapshot derived from the registered base control(s).
+	 *
+	 * For structural controls (i.e. `<fieldset>`), this is reconstructed from
+	 * descendant fields under the registered fieldset name.
+	 */
+	payload: Payload | null | undefined;
+	/**
+	 * Registers the base control element.
+	 *
+	 * Accepts `<input>`, `<select>`, `<textarea>`, `<fieldset>`,
+	 * or a collection of checkbox / radio inputs with the same name.
 	 */
 	register: (
 		element:
 			| HTMLInputElement
 			| HTMLSelectElement
 			| HTMLTextAreaElement
+			| HTMLFieldSetElement
 			| HTMLCollectionOf<HTMLInputElement>
 			| NodeListOf<HTMLInputElement>
 			| null
 			| undefined,
 	) => void;
 	/**
-	 * A ref object containing the form element associated with the registered input.
+	 * A ref object containing the form element associated with the registered base control.
 	 * Use this with hooks like useFormData() and useIntent().
 	 */
 	formRef: React.RefObject<HTMLFormElement | null>;
@@ -76,23 +90,83 @@ export type Control = {
 	 * both [change](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event) and
 	 * [input](https://developer.mozilla.org/en-US/docs/Web/API/Element/input_event) events.
 	 */
-	change: (
-		value: string | string[] | boolean | File | File[] | FileList | null,
-	) => void;
-	/**
-	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
-	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
-	 * Does not actually move focus.
-	 */
-	focus: () => void;
+	change: (value: Value | null) => void;
 	/**
 	 * Emits [focus](https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event) and
 	 * [focusin](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event) events.
-	 * This does not move the actual keyboard focus to the input. Use `element.focus()` instead
+	 *
+	 * This does not move the actual keyboard focus to the input.
+	 * Use [HTMLElement.focus()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/focus)
 	 * if you want to move focus to the input.
+	 */
+	focus: () => void;
+	/**
+	 * Emits [blur](https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event) and
+	 * [focusout](https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event) events.
+	 *
+	 * This does not move the actual keyboard focus away from the input.
 	 */
 	blur: () => void;
 };
+
+export type StandardControlOptions<
+	Value extends DefaultControlValue = DefaultControlValue,
+> = {
+	/**
+	 * The initial value of the base control.
+	 */
+	defaultValue?: Value | null | undefined;
+	/**
+	 * A callback function that is triggered when the base control is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+};
+
+export type CheckedControlOptions = {
+	/**
+	 * Whether the base control should be checked by default.
+	 */
+	defaultChecked?: boolean | undefined;
+	/**
+	 * The value of a checkbox or radio control when checked.
+	 */
+	value?: string;
+	/**
+	 * A callback function that is triggered when the base control is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+};
+
+export type CustomControlOptions<Value = unknown, DefaultValue = Value> = {
+	/**
+	 * Initial value used to seed the control.
+	 * For structural controls, this is the payload used to render hidden inputs.
+	 */
+	defaultValue?: DefaultValue | null | undefined;
+	/**
+	 * Payload parser applied to the current payload snapshot.
+	 *
+	 * Use this to coerce unknown DOM-derived data into a typed shape.
+	 * Any thrown error is surfaced to the caller.
+	 */
+	parse: (payload: unknown) => Value | null | undefined;
+	/**
+	 * Optional serializer to convert the parsed payload back to a form value for populating the base control(s).
+	 */
+	serialize?: (value: Value) => FormValue;
+	/**
+	 * A callback function that is triggered when the base control is focused.
+	 * Use this to delegate focus to a custom input.
+	 */
+	onFocus?: () => void;
+};
+
+export type ControlOptions =
+	| StandardControlOptions
+	| CheckedControlOptions
+	| CustomControlOptions;
 
 export type Selector<FormValue, Result> = (
 	formData: FormValue,
@@ -378,7 +452,9 @@ export type NonPartial<T> = {
 };
 
 export type RequireKey<T, K extends keyof T> = Prettify<
-	T & Pick<NonPartial<T>, K>
+	Omit<T, K> & {
+		[P in K]-?: Exclude<T[P], undefined>;
+	}
 >;
 
 export type BaseSchemaType = StandardSchemaV1<any, any>;
@@ -790,6 +866,13 @@ export type FieldMetadata<
 			 * For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
 			 */
 			defaultChecked: boolean;
+			/**
+			 * The normalized default payload at this field path.
+			 *
+			 * This is useful for non-native field shapes that need to render a set of
+			 * hidden inputs before user interaction.
+			 */
+			defaultPayload: unknown;
 			/** Whether this field has been touched (through intent.validate() or the shouldValidate option). */
 			touched: boolean;
 			/** Whether this field currently has no validation errors. */
@@ -998,14 +1081,24 @@ export type ValidateHandler<ErrorShape, Value, SchemaValue = undefined> = (
 export interface FormInputEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export interface FormFocusEvent extends React.FormEvent<HTMLFormElement> {
 	currentTarget: EventTarget & HTMLFormElement;
 	relatedTarget: EventTarget | null;
 	target: EventTarget &
-		(HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+		(
+			| HTMLInputElement
+			| HTMLSelectElement
+			| HTMLTextAreaElement
+			| HTMLFieldSetElement
+		);
 }
 
 export type ErrorContext<ErrorShape> = {
@@ -1121,3 +1214,100 @@ export type MakeConditional<
 };
 
 export type MaybePromise<T> = T | Promise<T>;
+
+type BaseFieldsetProps = RequireKey<
+	Omit<React.ComponentPropsWithoutRef<'fieldset'>, 'children' | 'defaultValue'>,
+	'name'
+> & {
+	/**
+	 * Renders a hidden `<fieldset>` base control with nested hidden `<input>` elements
+	 * derived from `defaultValue`.
+	 */
+	type: 'fieldset';
+	/**
+	 * Structured default value used to render nested hidden inputs.
+	 */
+	defaultValue: unknown;
+};
+
+type BaseSelectProps = RequireKey<
+	Omit<React.ComponentPropsWithoutRef<'select'>, 'children' | 'value'>,
+	'name' | 'defaultValue'
+> & {
+	/**
+	 * Renders a hidden `<select>` base control.
+	 */
+	type: 'select';
+};
+
+type BaseTextareaProps = RequireKey<
+	Omit<React.ComponentPropsWithoutRef<'textarea'>, 'children' | 'value'>,
+	'name' | 'defaultValue'
+> & {
+	/**
+	 * Renders a hidden `<textarea>` base control.
+	 */
+	type: 'textarea';
+};
+
+type BaseCheckedInputProps = RequireKey<
+	Omit<
+		React.ComponentPropsWithoutRef<'input'>,
+		'children' | 'type' | 'checked'
+	>,
+	'name' | 'defaultChecked'
+> & {
+	/**
+	 * Renders a hidden checkbox or radio base control.
+	 */
+	type: 'checkbox' | 'radio';
+};
+
+type BaseFileInputProps = RequireKey<
+	Omit<
+		React.ComponentPropsWithoutRef<'input'>,
+		'children' | 'type' | 'value' | 'checked'
+	>,
+	'name'
+> & {
+	/**
+	 * Renders a hidden `<input type="file">` base control.
+	 */
+	type: 'file';
+};
+
+type BaseInputProps = RequireKey<
+	Omit<
+		React.ComponentPropsWithoutRef<'input'>,
+		'children' | 'type' | 'value' | 'checked'
+	>,
+	'name' | 'defaultValue'
+> & {
+	/**
+	 * Renders a hidden `<input type="...">` base control.
+	 */
+	type?:
+		| 'color'
+		| 'date'
+		| 'datetime-local'
+		| 'email'
+		| 'hidden'
+		| 'month'
+		| 'number'
+		| 'password'
+		| 'range'
+		| 'search'
+		| 'tel'
+		| 'text'
+		| 'time'
+		| 'url'
+		| 'week';
+};
+
+export type BaseControlProps =
+	| BaseFieldsetProps
+	| BaseSelectProps
+	| BaseTextareaProps
+	| BaseCheckedInputProps
+	| BaseFileInputProps
+	| BaseInputProps;

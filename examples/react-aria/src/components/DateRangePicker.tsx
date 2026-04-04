@@ -1,4 +1,5 @@
-import { useControl } from '@conform-to/react/future';
+import { BaseControl, useControl } from '@conform-to/react/future';
+import { coerceStructure } from '@conform-to/zod/v3/future';
 import { CalendarDate, parseDate } from '@internationalized/date';
 import {
 	Button,
@@ -21,6 +22,12 @@ import {
 import { useRef } from 'react';
 
 import './DateRangePicker.css';
+import { z } from 'zod';
+
+export const dateRangeSchema = z.object({
+	start: z.string(),
+	end: z.string(),
+});
 
 export interface DateRangePickerProps<T extends DateValue>
 	extends Omit<
@@ -28,10 +35,8 @@ export interface DateRangePickerProps<T extends DateValue>
 		'defaultValue' | 'value' | 'onChange'
 	> {
 	label?: string;
-	defaultValue?: {
-		start?: string | undefined;
-		end?: string | undefined;
-	};
+	name: string;
+	defaultValue?: unknown;
 	description?: string;
 	errors?: string[];
 }
@@ -41,20 +46,32 @@ export function DateRangePicker({
 	description,
 	errors,
 	firstDayOfWeek,
-	startName,
-	endName,
+	name,
 	defaultValue,
+	onBlur,
 	...props
 }: DateRangePickerProps<CalendarDate>) {
 	const labelRef = useRef<HTMLLabelElement>(null);
-	const startControl = useControl({
-		defaultValue: defaultValue?.start ?? defaultValue?.end,
-		onFocus() {
-			labelRef.current?.click();
+	const control = useControl({
+		defaultValue,
+		parse(payload) {
+			try {
+				const range = coerceStructure(dateRangeSchema).parse(payload);
+
+				return {
+					start: parseDate(range.start),
+					end: parseDate(range.end),
+				};
+			} catch {
+				return;
+			}
 		},
-	});
-	const endControl = useControl({
-		defaultValue: defaultValue?.end ?? defaultValue?.start,
+		serialize(value) {
+			return {
+				start: value.start.toString(),
+				end: value.end.toString(),
+			};
+		},
 		onFocus() {
 			labelRef.current?.click();
 		},
@@ -62,25 +79,19 @@ export function DateRangePicker({
 
 	return (
 		<>
-			<input ref={startControl.register} name={startName} hidden />
-			<input ref={endControl.register} name={endName} hidden />
+			<BaseControl
+				type="fieldset"
+				name={name}
+				ref={control.register}
+				defaultValue={control.defaultValue}
+			/>
 			<AriaDateRangePicker
 				{...props}
-				value={
-					startControl.value && endControl.value
-						? {
-								start: parseDate(startControl.value),
-								end: parseDate(endControl.value),
-							}
-						: null
-				}
-				onChange={(value) => {
-					startControl.change(value?.start.toString() ?? '');
-					endControl.change(value?.end.toString() ?? '');
-				}}
-				onBlur={() => {
-					startControl.blur();
-					endControl.blur();
+				value={control.payload ?? null}
+				onChange={(value) => control.change(value)}
+				onBlur={(event) => {
+					control.blur();
+					onBlur?.(event);
 				}}
 			>
 				<Label ref={labelRef}>{label}</Label>

@@ -40,7 +40,7 @@ export function NumberField({
 
 	return (
 		<>
-			{/* The base input is used to make sure the NumberField could reset to the latest default value */}
+			{/* The base control ensures the NumberField can reset to the latest default value */}
 			<input ref={control.register} name={name} hidden />
 			<AriaNumberField
 				{...props}

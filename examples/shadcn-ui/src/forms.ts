@@ -19,6 +19,7 @@ import type {
 	SingleToggleGroup,
 	MultiToggleGroup,
 	InputOTP,
+	TeamMemberSelect,
 } from './components/form';
 
 const forms = configureForms({
@@ -124,6 +125,14 @@ const forms = configureForms({
 					defaultValue: metadata.defaultValue,
 					'aria-describedby': metadata.ariaDescribedBy,
 				} satisfies Partial<React.ComponentProps<typeof InputOTP>>;
+			},
+			get teamMemberSelectProps() {
+				return {
+					name: metadata.name,
+					defaultValue: metadata.defaultPayload,
+					'aria-labelledby': metadata.id,
+					'aria-describedby': metadata.ariaDescribedBy,
+				} satisfies Partial<React.ComponentProps<typeof TeamMemberSelect>>;
 			},
 		};
 	},

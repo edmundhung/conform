@@ -18,6 +18,8 @@ import {
 	SingleToggleGroup,
 	MultiToggleGroup,
 	InputOTP,
+	TeamMemberSelect,
+	memberSchema,
 } from './components/form';
 import { useForm } from './forms';
 
@@ -36,8 +38,26 @@ const schema = coerceFormValue(
 		categories: z.array(z.enum(['blog', 'guide', 'tutorial'])).min(1),
 		interests: z.array(z.string()).min(3),
 		code: z.string().length(6),
+		members: z.array(memberSchema).min(1),
 	}),
 );
+
+function getDefaultMembers(searchParams: URLSearchParams) {
+	const defaultMembers: Array<Record<string, string>> = [];
+
+	for (let i = 0; searchParams.has(`members[${i}].id`); i++) {
+		const id = searchParams.get(`members[${i}].id`);
+		const name = searchParams.get(`members[${i}].name`);
+		const email = searchParams.get(`members[${i}].email`);
+		const role = searchParams.get(`members[${i}].role`);
+
+		if (id && name && email && role) {
+			defaultMembers.push({ id, name, email, role });
+		}
+	}
+
+	return defaultMembers;
+}
 
 export default function App() {
 	const [submittedValue, setSubmittedValue] = useState<z.output<
@@ -61,6 +81,7 @@ export default function App() {
 			categories: searchParams.getAll('categories'),
 			interests: searchParams.getAll('interests'),
 			code: searchParams.get('code'),
+			members: getDefaultMembers(searchParams),
 		},
 		onSubmit(event, { formData, value }) {
 			event.preventDefault();
@@ -296,6 +317,64 @@ export default function App() {
 					))}
 					<FieldError id={fields.interests.errorId}>
 						{fields.interests.errors}
+					</FieldError>
+				</Field>
+				<Field>
+					<Label id={fields.members.id}>Team Members</Label>
+					<TeamMemberSelect
+						{...fields.members.teamMemberSelectProps}
+						// Equivalent to:
+						// name={fields.members.name}
+						// defaultValue={fields.members.defaultPayload}
+						// aria-labelledby={fields.members.id}
+						// aria-describedby={fields.members.ariaDescribedBy}
+						members={[
+							{
+								id: '1',
+								name: 'Alice Chen',
+								email: 'alice@example.com',
+								role: 'developer',
+							},
+							{
+								id: '2',
+								name: 'Bob Smith',
+								email: 'bob@example.com',
+								role: 'designer',
+							},
+							{
+								id: '3',
+								name: 'Carol Davis',
+								email: 'carol@example.com',
+								role: 'manager',
+							},
+							{
+								id: '4',
+								name: 'Dan Wilson',
+								email: 'dan@example.com',
+								role: 'developer',
+							},
+							{
+								id: '5',
+								name: 'Eva Martinez',
+								email: 'eva@example.com',
+								role: 'designer',
+							},
+							{
+								id: '6',
+								name: 'Frank Lee',
+								email: 'frank@example.com',
+								role: 'developer',
+							},
+							{
+								id: '7',
+								name: 'Grace Kim',
+								email: 'grace@example.com',
+								role: 'manager',
+							},
+						]}
+					/>
+					<FieldError id={fields.members.errorId}>
+						{fields.members.errors}
 					</FieldError>
 				</Field>
 				<Field>

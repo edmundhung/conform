@@ -64,6 +64,10 @@ Default selected options for multi-select fields or checkbox group. Returns an e
 
 Default checked state for checkbox inputs. Returns `true` if the field value is `'on'`. For radio buttons, compare the field's `defaultValue` with the radio button's value attribute instead.
 
+### `defaultPayload: unknown`
+
+Normalized default payload at this field path. Useful for structured controls.
+
 ### `touched: boolean`
 
 Whether this field has been touched (through `intent.validate()` or the `shouldValidate` option).

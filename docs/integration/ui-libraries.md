@@ -8,23 +8,23 @@ Conform supports native inputs out of the box by listening for form events like 
 
 However, more complex inputs like `<Select />`, `<DatePicker />`, or custom file uploaders often involve additional layers of abstraction. These layers interfere with how the browser emits native form events, making it harder for Conform to track user interactions.
 
-To solve this, we provide the [`useControl`](../api/react/useControl.md) hook. It lets you manually connect a hidden base input to a custom UI component and dispatch native events in response to user interaction.
+To solve this, we provide the [`useControl`](../api/react/future/useControl.md) hook. It lets you manually connect a hidden base control to a custom UI component and dispatch native events in response to user interaction.
 
 ## Emulating Native Inputs
 
-There are multiple ways to wire up a base input with `useControl`:
+There are multiple ways to wire up a base control with `useControl`:
 
 - In some cases, you may be able to **re-use an input rendered by the UI library**. This can help with progressive enhancement — for instance, when a user clicks on a styled label that toggles a real hidden checkbox using standard HTML behavior. The form still submits correctly even if JavaScript hasn't loaded.
 
 - But not all custom inputs enable this. Some UI libraries render hidden inputs and update their value via JavaScript after interacting with entirely separate elements. These setups won't work before JavaScript loads and may trigger their event handler in an unexpected order — for example, calling `onChange` before updating the input's value.
 
-- Because `useControl` itself requires JavaScript, the benefits of re-using library-provided inputs are marginal. We recommend **rendering your own base input** unless you're confident it helps with progressive enhancement and behaves as expected.
+- Because `useControl` itself requires JavaScript, the benefits of re-using library-provided inputs are marginal. We recommend **rendering your own base control** unless you're confident it helps with progressive enhancement and behaves as expected.
 
-The `useControl` hook gives you a control object that manages the input value and provides methods to trigger form events. Here are the main steps to integrate it:
+The `useControl` hook gives you a control object that manages the base control value and provides methods to trigger form events. Here are the main steps to integrate it:
 
-1. **Register a base input**
+1. **Register a base control**
 
-   - Render a hidden native input element (e.g. `<input hidden />`) and register it with `control.register()`.
+   - Render a hidden native control element (for example, with `BaseControl` or a native `<input hidden />`) and register it with `control.register()`.
    - This serves as the authoritative source of the value and emits native form events.
 
 2. **Emit form events**
@@ -33,11 +33,12 @@ The `useControl` hook gives you a control object that manages the input value an
 
 3. **Make it controlled**
 
-   - Use `control.value`, `control.options`, `control.checked`, or `control.files` to sync the custom component with the current state.
+   - Use `control.value`, `control.options`, `control.checked`, or `control.files` to sync simple custom components with the current state.
+   - Use `control.payload` when the control can hold structured data.
 
 4. **Delegate focus (optional)**
 
-   - If your base input is hidden, use the `onFocus` callback in `useControl` to forward focus to the custom input for accessibility.
+   - If your base control is hidden, use the `onFocus` callback in `useControl` to forward focus to the custom input for accessibility.
 
 ### Example
 
@@ -74,7 +75,7 @@ Input types contribute to form data in different ways when it comes to form subm
 
 - **Select (single)**: Value is the selected option's `value`. Defaults to the first option.
 - **Select (multiple)**: Represents an array of selected values. If none selected, no entry in `FormData`.
-- **File Inputs**: Yields one or more `File` objects. If empty, `FormData` omits the field.
+- **File Inputs**: Yields one or more `File` objects. When empty, it still contributes an empty `File` object in `FormData`.
 - **Other inputs**: Behave like text inputs. Their `type` adds context but doesn't affect how data is submitted.
 
 ## Examples
