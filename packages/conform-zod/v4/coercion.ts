@@ -560,8 +560,16 @@ export function configureCoercion(config?: {
 		 * Enhances a schema to coerce form values without running validation.
 		 * This configured helper is useful for reading current form values as typed data.
 		 *
-		 * It skips validation, defaults, transforms, and refinements, and preserves
-		 * empty strings.
+		 * It skips validation, defaults, transforms, and refinements, and does not strip
+		 * empty strings to `undefined`.
+		 *
+		 * For number, boolean, date, and bigint schemas, empty strings and other failed
+		 * string coercions still become fallback values:
+		 *
+		 * - `z.number()` -> `NaN`
+		 * - `z.boolean()` -> `false`
+		 * - `z.date()` -> `Invalid Date`
+		 * - `z.bigint()` -> `0n`
 		 *
 		 * Results are cached per schema, so this can be called inline.
 		 *

@@ -78,8 +78,18 @@ export const coerceFormValue = defaultCoercion.coerceFormValue;
  * Enhances a schema to coerce form values without running validation.
  * This is useful for reading current form values as typed data.
  *
- * It skips validation, defaults, transforms, and refinements, and preserves
- * empty strings. Use `configureCoercion` to override type-specific coercion.
+ * It skips validation, defaults, transforms, and refinements, and does not strip
+ * empty strings to `undefined`.
+ *
+ * For number, boolean, date, and bigint schemas, empty strings and other failed
+ * string coercions still become fallback values:
+ *
+ * - `v.number()` -> `NaN`
+ * - `v.boolean()` -> `false`
+ * - `v.date()` -> `Invalid Date`
+ * - `v.bigint()` -> `0n`
+ *
+ * Use `configureCoercion` to override type-specific coercion.
  *
  * Results are cached per schema, so this can be called inline.
  *
