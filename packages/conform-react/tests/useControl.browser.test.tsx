@@ -912,7 +912,7 @@ describe('future export: useControl', () => {
 							: JSON.stringify(value);
 					}
 
-					return context.defaultSerialize(value, context);
+					return context.defaultSerialize(value);
 				},
 				onValidate({ error }) {
 					return error;

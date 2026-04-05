@@ -152,7 +152,7 @@ export type CustomControlOptions<Value = unknown, DefaultValue = Value> = {
 	 * Use this to coerce unknown DOM-derived data into a typed shape.
 	 * Any thrown error is surfaced to the caller.
 	 */
-	parse: (payload: unknown) => Value | null | undefined;
+	parse: (payload: unknown) => Value | null;
 	/**
 	 * Optional serializer to convert the parsed payload back to a form value for populating the base control(s).
 	 */
