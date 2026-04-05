@@ -7,7 +7,6 @@ import {
 	getRelativePath,
 	getPathValue,
 	normalize,
-	serialize as defaultSerialize,
 	deepEqual,
 	FormError,
 } from '@conform-to/dom/future';
@@ -164,7 +163,6 @@ export function pruneListKeys(
 export function getDefaultPayload(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): unknown {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -173,13 +171,12 @@ export function getDefaultPayload(
 		name,
 	);
 
-	return normalize(value, serialize);
+	return normalize(value, context.serialize, name);
 }
 
 export function getDefaultValue(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): string {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -187,7 +184,9 @@ export function getDefaultValue(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, {
+		name,
+	});
 
 	if (typeof serializedValue === 'string') {
 		return serializedValue;
@@ -199,7 +198,6 @@ export function getDefaultValue(
 export function getDefaultOptions(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): string[] {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -207,7 +205,7 @@ export function getDefaultOptions(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, { name });
 
 	if (
 		Array.isArray(serializedValue) &&
@@ -226,7 +224,6 @@ export function getDefaultOptions(
 export function isDefaultChecked(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): boolean {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -234,10 +231,10 @@ export function isDefaultChecked(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, { name });
 
 	if (typeof serializedValue === 'string') {
-		return serializedValue === serialize(true);
+		return serializedValue === context.serialize(true, { name });
 	}
 
 	return false;
@@ -486,7 +483,7 @@ export function getField<
 	const {
 		key,
 		name,
-		serialize = defaultSerialize,
+		serialize,
 		extendFieldMetadata,
 		form = getFormMetadata(context, {
 			serialize,
@@ -512,16 +509,16 @@ export function getField<
 		multiple: constraint?.multiple,
 		accept: constraint?.accept,
 		get defaultValue() {
-			return getDefaultValue(context, name, serialize);
+			return getDefaultValue(context, name);
 		},
 		get defaultOptions() {
-			return getDefaultOptions(context, name, serialize);
+			return getDefaultOptions(context, name);
 		},
 		get defaultChecked() {
-			return isDefaultChecked(context, name, serialize);
+			return isDefaultChecked(context, name);
 		},
 		get defaultPayload() {
-			return getDefaultPayload(context, name, serialize);
+			return getDefaultPayload(context, name);
 		},
 		get touched() {
 			return isTouched(context.state, name);

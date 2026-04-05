@@ -1,5 +1,5 @@
 import { isFieldElement, FieldName } from '@conform-to/dom';
-import { DEFAULT_INTENT_NAME, serialize } from '@conform-to/dom/future';
+import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
 import { useContext, useMemo, useId, createContext } from 'react';
 import {
 	focusFirstInvalidField,
@@ -25,6 +25,7 @@ import {
 import {
 	isStandardSchemaV1,
 	resolveValidateResult,
+	resolveSerialize,
 	validateStandardSchemaV1,
 } from './util';
 
@@ -44,6 +45,11 @@ export function configureForms<
 	> = {},
 ) {
 	/**
+	 * Global serializer that composes the user-provided serializer with the default serializer.
+	 */
+	const globalSerialize = resolveSerialize(config.serialize, defaultSerialize);
+
+	/**
 	 * Global configuration with defaults applied
 	 */
 	const globalConfig: FormsConfig<
@@ -54,7 +60,7 @@ export function configureForms<
 	> = {
 		...config,
 		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
-		serialize: config.serialize ?? serialize,
+		serialize: globalSerialize,
 		shouldValidate: config.shouldValidate ?? 'onSubmit',
 		shouldRevalidate:
 			config.shouldRevalidate ?? config.shouldValidate ?? 'onSubmit',
@@ -257,13 +263,17 @@ export function configureForms<
 			options.constraint ??
 			(schema ? globalConfig.getConstraints?.(schema) : undefined);
 		const optionsRef = useLatest(options);
+		const serialize = useMemo(
+			() => resolveSerialize(options.serialize, globalSerialize),
+			[options.serialize],
+		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
 		const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value, any>(
 			formId,
 			{
 				...options,
-				serialize: globalConfig.serialize,
+				serialize,
 				intentName: globalConfig.intentName,
 				onError: options.onError ?? focusFirstInvalidField,
 				onValidate(ctx) {
@@ -335,6 +345,7 @@ export function configureForms<
 			() => ({
 				formId,
 				state,
+				serialize,
 				constraint: constraint ?? null,
 				handleSubmit,
 				handleInput(event) {
@@ -414,12 +425,11 @@ export function configureForms<
 					}
 				},
 			}),
-			[formId, state, constraint, handleSubmit, intent, optionsRef],
+			[formId, state, serialize, constraint, handleSubmit, intent, optionsRef],
 		);
 		const form = useMemo(
 			() =>
 				getFormMetadata(context, {
-					serialize: globalConfig.serialize,
 					extendFormMetadata: globalConfig.extendFormMetadata,
 					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
@@ -428,7 +438,6 @@ export function configureForms<
 		const fields = useMemo(
 			() =>
 				getFieldset(context, {
-					serialize: globalConfig.serialize,
 					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context],
@@ -468,7 +477,6 @@ export function configureForms<
 		const formMetadata = useMemo(
 			() =>
 				getFormMetadata(context, {
-					serialize: globalConfig.serialize,
 					extendFormMetadata: globalConfig.extendFormMetadata,
 					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
@@ -513,7 +521,6 @@ export function configureForms<
 			() =>
 				getField(context, {
 					name,
-					serialize: globalConfig.serialize,
 					extendFieldMetadata: globalConfig.extendFieldMetadata,
 				}),
 			[context, name],

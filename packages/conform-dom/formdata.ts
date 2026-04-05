@@ -3,11 +3,11 @@ import type {
 	FormValue,
 	FieldName,
 	JsonPrimitive,
-	Serialize,
-	SerializedValue,
+	CustomSerialize,
 	Submission,
 	SubmissionResult,
 	UnknownObject,
+	Serialize,
 } from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
 import { deepEqual, getTypeName, isPlainObject, stripFiles } from './util';
@@ -686,10 +686,7 @@ export function isDirty(
 		 * - Date:
 		 *   - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 		 */
-		serialize?: (
-			value: unknown,
-			defaultSerialize: Serialize,
-		) => SerializedValue | null | undefined;
+		serialize?: CustomSerialize;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -716,14 +713,20 @@ export function isDirty(
 					skipEntry: options?.skipEntry,
 				}).payload
 			: formData;
-	const defaultValue = options?.defaultValue;
-	const serializeValue: Serialize = options?.serialize
-		? (value) => options.serialize!(value, serialize)
-		: serialize;
+	const serialize: Serialize = (value, context) => {
+		if (options?.serialize) {
+			return options.serialize(value, {
+				name: context.name,
+				defaultSerialize: defaultSerialize,
+			});
+		}
+
+		return defaultSerialize(value);
+	};
 
 	return !deepEqual(
-		normalize(formValue, serializeValue),
-		normalize(defaultValue, serializeValue),
+		normalize(formValue, serialize),
+		normalize(options?.defaultValue, serialize),
 	);
 }
 
@@ -742,7 +745,7 @@ export function isDirty(
  * - Array -> string[] or File[] if all items serialize to the same kind; otherwise undefined
  * - anything else -> undefined
  */
-export function serialize(value: unknown): SerializedValue | null | undefined {
+export function defaultSerialize(value: unknown): ReturnType<Serialize> {
 	function serializePrimitive(
 		value: unknown,
 	): string | File | null | undefined {
@@ -825,9 +828,12 @@ export function serialize(value: unknown): SerializedValue | null | undefined {
  */
 export function normalize(
 	value: unknown,
-	serializeValue: Serialize = serialize,
+	serialize: Serialize = defaultSerialize,
+	name?: string,
 ): unknown {
-	let data: unknown = serializeValue(value);
+	let data: unknown = serialize(value, {
+		name,
+	});
 
 	if (typeof data === 'undefined') {
 		data = value;
@@ -850,7 +856,9 @@ export function normalize(
 			return undefined;
 		}
 
-		const array = data.map((item) => normalize(item, serializeValue));
+		const array = data.map((item, index) =>
+			normalize(item, serialize, appendPath(name, index)),
+		);
 
 		if (
 			array.length === 1 &&
@@ -865,7 +873,11 @@ export function normalize(
 	if (isPlainObject(data)) {
 		const entries = Object.entries(data).reduce<Array<[string, unknown]>>(
 			(list, [key, value]) => {
-				const normalizedValue = normalize(value, serializeValue);
+				const normalizedValue = normalize(
+					value,
+					serialize,
+					appendPath(name, key),
+				);
 
 				if (typeof normalizedValue !== 'undefined') {
 					list.push([key, normalizedValue]);

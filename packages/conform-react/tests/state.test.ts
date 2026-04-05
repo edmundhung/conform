@@ -7,7 +7,7 @@ import {
 	afterAll,
 	beforeEach,
 } from 'vitest';
-import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
+import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
 import {
 	getDefaultPayload,
 	getDefaultOptions,
@@ -33,6 +33,7 @@ function createContext(
 ): FormContext<any> {
 	return {
 		formId: 'test-id',
+		serialize: defaultSerialize,
 		constraint: null,
 		state: initializeState(),
 		handleSubmit: vi.fn(),
@@ -1369,6 +1370,33 @@ test('isDefaultChecked', () => {
 
 	// Test with undefined/missing values
 	expect(isDefaultChecked(createContext(), 'missing')).toBe(false);
+});
+
+test('default field serialization receives the field name', () => {
+	const serialize = vi.fn((value, ctx: { name: string | undefined }) => {
+		if (ctx.name === 'json') {
+			return JSON.stringify(value);
+		}
+
+		return value == null ? value : String(value);
+	});
+	const context = createContext({
+		state: initializeState({
+			defaultValue: {
+				json: {
+					foo: 'bar',
+				},
+			},
+		}),
+		serialize,
+	});
+
+	expect(getDefaultValue(context, 'json')).toBe('{"foo":"bar"}');
+	expect(getDefaultPayload(context, 'json')).toBe('{"foo":"bar"}');
+	expect(serialize).toHaveBeenCalledWith(
+		{ foo: 'bar' },
+		expect.objectContaining({ name: 'json' }),
+	);
 });
 
 test('getDefaultListKey', () => {

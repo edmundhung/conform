@@ -10,7 +10,7 @@ import {
 	parseSubmission,
 	report,
 	DEFAULT_INTENT_NAME,
-	serialize,
+	defaultSerialize,
 	getFieldValue,
 } from '../formdata';
 
@@ -1481,12 +1481,30 @@ describe('isDirty', () => {
 				defaultValue: {
 					datetime: new Date(0),
 				},
-				serialize(value, defaultSerialize) {
+				serialize(value, context) {
 					if (value instanceof Date && value.valueOf() === 0) {
 						return '';
 					}
 
-					return defaultSerialize(value);
+					return context.defaultSerialize(value, context);
+				},
+			}),
+		).toBe(false);
+		expect(
+			isDirty(createFormData([['json', '{"foo":"bar"}']]), {
+				defaultValue: {
+					json: {
+						foo: 'bar',
+					},
+				},
+				serialize(value, context) {
+					if (context.name === 'json') {
+						return typeof value === 'string' || value == null
+							? value
+							: JSON.stringify(value);
+					}
+
+					return context.defaultSerialize(value, context);
 				},
 			}),
 		).toBe(false);
@@ -1510,23 +1528,23 @@ test('serialize', () => {
 		type: 'image/svg+xml',
 	});
 
-	expect(serialize('test')).toBe('test');
-	expect(serialize(true)).toBe('on');
-	expect(serialize(false)).toBe('');
-	expect(serialize(123)).toBe('123');
-	expect(serialize(987654321n)).toBe('987654321');
-	expect(serialize(new Date(12345))).toBe(
+	expect(defaultSerialize('test')).toBe('test');
+	expect(defaultSerialize(true)).toBe('on');
+	expect(defaultSerialize(false)).toBe('');
+	expect(defaultSerialize(123)).toBe('123');
+	expect(defaultSerialize(987654321n)).toBe('987654321');
+	expect(defaultSerialize(new Date(12345))).toBe(
 		new Date(12345).toISOString().slice(0, -1),
 	);
-	expect(serialize(new Map())).toBeUndefined();
-	expect(serialize(new Set())).toBeUndefined();
-	expect(serialize(txtFile)).toBe(txtFile);
-	expect(serialize([txtFile, svgFile])).toEqual([txtFile, svgFile]);
-	expect(serialize(null)).toBe(null);
-	expect(serialize(undefined)).toBeUndefined();
-	expect(serialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
-	expect(serialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
-	expect(serialize([{ foo: 'bar' }])).toBeUndefined();
+	expect(defaultSerialize(new Map())).toBeUndefined();
+	expect(defaultSerialize(new Set())).toBeUndefined();
+	expect(defaultSerialize(txtFile)).toBe(txtFile);
+	expect(defaultSerialize([txtFile, svgFile])).toEqual([txtFile, svgFile]);
+	expect(defaultSerialize(null)).toBe(null);
+	expect(defaultSerialize(undefined)).toBeUndefined();
+	expect(defaultSerialize({ a: 1, b: 2, c: 3 })).toBeUndefined();
+	expect(defaultSerialize(['foo', 'bar'])).toEqual(['foo', 'bar']);
+	expect(defaultSerialize([{ foo: 'bar' }])).toBeUndefined();
 });
 
 describe('getFieldValue', () => {

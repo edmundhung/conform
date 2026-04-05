@@ -14,7 +14,7 @@ import {
 	parseSubmission,
 	requestSubmit,
 	report,
-	serialize,
+	defaultSerialize,
 	isPlainObject,
 	isGlobalInstance,
 	dispatchInternalUpdateEvent,
@@ -34,6 +34,7 @@ import {
 } from 'react';
 import {
 	appendUniqueItem,
+	resolveSerialize,
 	resolveStandardSchemaResult,
 	resolveValidateResult,
 } from './util';
@@ -105,7 +106,7 @@ export const GlobalFormOptionsContext = createContext<
 >({
 	intentName: DEFAULT_INTENT_NAME,
 	observer: createGlobalFormsObserver(),
-	serialize,
+	serialize: defaultSerialize,
 	shouldValidate: 'onSubmit',
 });
 
@@ -730,6 +731,10 @@ export function useForm<
 	const globalOptions = useContext(GlobalFormOptionsContext);
 	const optionsRef = useLatest(options);
 	const globalOptionsRef = useLatest(globalOptions);
+	const serialize = useMemo(
+		() => resolveSerialize(options.serialize, globalOptions.serialize),
+		[options.serialize, globalOptions.serialize],
+	);
 	const fallbackId = useId();
 	const formId = id ?? `form-${fallbackId}`;
 	const [state, handleSubmit] = useConform<
@@ -739,7 +744,7 @@ export function useForm<
 		InferOutput<Schema>
 	>(formId, {
 		...options,
-		serialize: globalOptions.serialize,
+		serialize,
 		intentName: globalOptions.intentName,
 		onError: options.onError ?? focusFirstInvalidField,
 		onValidate(ctx) {
@@ -806,6 +811,7 @@ export function useForm<
 		() => ({
 			formId,
 			state,
+			serialize,
 			constraint: constraint ?? null,
 			handleSubmit,
 			handleInput(event) {
@@ -880,6 +886,7 @@ export function useForm<
 		[
 			formId,
 			state,
+			serialize,
 			constraint,
 			handleSubmit,
 			intent,
@@ -890,18 +897,16 @@ export function useForm<
 	const form = useMemo(
 		() =>
 			getFormMetadata(context, {
-				serialize: globalOptions.serialize,
 				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+		[context, globalOptions.defineCustomMetadata],
 	);
 	const fields = useMemo(
 		() =>
 			getFieldset<FormShape, ErrorShape>(context, {
-				serialize: globalOptions.serialize,
 				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+		[context, globalOptions.defineCustomMetadata],
 	);
 
 	return {
@@ -939,10 +944,9 @@ export function useFormMetadata(
 	const formMetadata = useMemo(
 		() =>
 			getFormMetadata(context, {
-				serialize: globalOptions.serialize,
 				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
-		[context, globalOptions.serialize, globalOptions.defineCustomMetadata],
+		[context, globalOptions.defineCustomMetadata],
 	);
 
 	return formMetadata;
@@ -980,15 +984,9 @@ export function useField<FieldShape = any>(
 		() =>
 			getField(context, {
 				name,
-				serialize: globalOptions.serialize,
 				extendFieldMetadata: globalOptions.defineCustomMetadata,
 			}),
-		[
-			context,
-			name,
-			globalOptions.serialize,
-			globalOptions.defineCustomMetadata,
-		],
+		[context, name, globalOptions.defineCustomMetadata],
 	);
 
 	return field;
@@ -1581,7 +1579,7 @@ export const BaseControl = forwardRef<
 	BaseControlProps
 >(function BaseControl(props, ref) {
 	function formatValue(value: unknown): string {
-		const serialized = serialize(value);
+		const serialized = defaultSerialize(value);
 
 		if (typeof serialized === 'string') {
 			return serialized;

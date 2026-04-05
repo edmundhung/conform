@@ -30,6 +30,15 @@ Optional [standard schema](https://standardschema.dev/) for validation (e.g., Zo
 
 Initial form values. Can be a partial object matching your form structure.
 
+### `serialize?: (value, ctx) => string | string[] | File | File[] | null | undefined`
+
+A custom serialization function for converting form values.
+
+- `ctx.name` is the field name being serialized when available.
+- `ctx.defaultSerialize` lets you delegate values you are not customizing to the default serializer.
+
+The default serializer can be configured via [configureForms](./configureForms.md).
+
 ### `constraint?: Record<string, ValidationAttributes>`
 
 HTML validation attributes for fields (`required`, `minLength`, `pattern`, etc.).

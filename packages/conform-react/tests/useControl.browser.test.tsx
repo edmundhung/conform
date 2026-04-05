@@ -18,49 +18,6 @@ describe('future export: useControl', () => {
 		);
 	}
 
-	function ConformForm(props: {
-		id?: string;
-		updateButton?: {
-			action: string;
-			name?: string;
-			value: unknown;
-		};
-		formKey?: string;
-		children: React.ReactNode;
-	}) {
-		const { form, intent } = useForm({
-			id: props.id,
-			key: props.formKey,
-			onValidate({ error }) {
-				return error;
-			},
-			onSubmit(event) {
-				event.preventDefault();
-			},
-		});
-
-		return (
-			<form {...form.props}>
-				{props.children}
-				<button type="submit">Submit</button>
-				<button
-					type="button"
-					onClick={() =>
-						intent.update({
-							name: props.updateButton?.name,
-							value: props.updateButton?.value ?? null,
-						})
-					}
-				>
-					{props.updateButton?.action ?? 'Clear'}
-				</button>
-				<button type="button" onClick={() => intent.reset()}>
-					Reset
-				</button>
-			</form>
-		);
-	}
-
 	function Input(props: {
 		name?: string;
 		type?: string;
@@ -75,10 +32,10 @@ describe('future export: useControl', () => {
 		options?: string[];
 		multiple?: boolean;
 	}) {
-		const baseName = `${props.name}-base`;
-		const baseId = `${baseName}-${props.value}`;
+		const name = `${props.name}-base`;
+		const baseId = `${props.name}-base-${props.value}`;
 		const controlName = `${props.name}-control`;
-		const controlId = `${controlName}-${props.value}`;
+		const controlId = `${props.name}-control-${props.value}`;
 		// @ts-expect-error - We know what we're doing with the control type here
 		const control = useControl({
 			defaultValue: props.defaultValue,
@@ -101,7 +58,7 @@ describe('future export: useControl', () => {
 				{props.type === 'textarea' ? (
 					<textarea
 						id={baseId}
-						name={baseName}
+						name={name}
 						ref={control.register}
 						defaultValue={props.defaultValue}
 						onChange={(event) => props.onChange?.(event.target.value)}
@@ -111,7 +68,7 @@ describe('future export: useControl', () => {
 				) : props.type === 'select' ? (
 					<select
 						id={baseId}
-						name={baseName}
+						name={name}
 						ref={control.register}
 						defaultValue={props.defaultValue}
 						onChange={(event) => {
@@ -135,7 +92,7 @@ describe('future export: useControl', () => {
 					<input
 						id={baseId}
 						type={props.type}
-						name={baseName}
+						name={name}
 						ref={control.register}
 						defaultValue={props.defaultValue}
 						defaultChecked={props.defaultChecked}
@@ -175,7 +132,6 @@ describe('future export: useControl', () => {
 				) : props.type === 'textarea' ? (
 					<textarea
 						id={controlId}
-						name={controlName}
 						value={control.value ?? props.defaultValue}
 						onChange={(event) => control.change(event.target.value)}
 						onBlur={control.blur}
@@ -184,7 +140,6 @@ describe('future export: useControl', () => {
 				) : props.type === 'select' ? (
 					<select
 						id={controlId}
-						name={controlName}
 						value={props.multiple ? control.options ?? [] : control.value ?? ''}
 						onChange={(event) =>
 							control.change(
@@ -209,7 +164,6 @@ describe('future export: useControl', () => {
 				) : (
 					<input
 						id={controlId}
-						name={controlName}
 						type={props.type}
 						value={control.value ?? props.defaultValue}
 						onChange={(event) =>
@@ -233,9 +187,10 @@ describe('future export: useControl', () => {
 		);
 	}
 
-	function Fieldset<Payload>(props: {
+	function CustomControl<Payload>(props: {
 		label?: string;
 		name: string;
+		type?: 'fieldset' | undefined;
 		defaultValue: unknown;
 		parse: (payload: unknown) => Payload;
 		serialize?: (value: Payload) => FormValue;
@@ -249,12 +204,20 @@ describe('future export: useControl', () => {
 
 		return (
 			<>
-				<BaseControl
-					type="fieldset"
-					name={props.name}
-					ref={control.register}
-					defaultValue={control.defaultValue}
-				/>
+				{props.type === 'fieldset' ? (
+					<BaseControl
+						type={props.type}
+						name={props.name}
+						ref={control.register}
+						defaultValue={control.defaultValue}
+					/>
+				) : (
+					<BaseControl
+						name={props.name}
+						ref={control.register}
+						defaultValue={`${control.defaultValue ?? ''}`}
+					/>
+				)}
 				<button
 					type="button"
 					onClick={() => control.change(props.changeButtonValue ?? null)}
@@ -934,10 +897,105 @@ describe('future export: useControl', () => {
 		await expect.element(controlInput).toHaveValue('hello world');
 	});
 
+	it('supports JSON-backed standard controls with form serialization', async () => {
+		function JsonForm() {
+			const { form, fields, intent } = useForm({
+				defaultValue: {
+					json: {
+						foo: 'bar',
+					},
+				},
+				serialize(value, context) {
+					if (context.name === 'json') {
+						return typeof value === 'string' || value == null
+							? value
+							: JSON.stringify(value);
+					}
+
+					return context.defaultSerialize(value, context);
+				},
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
+
+			return (
+				<form {...form.props}>
+					<CustomControl
+						name={fields.json.name}
+						label="JSON payload"
+						defaultValue={fields.json.defaultValue}
+						parse={(payload) => {
+							if (typeof payload !== 'string') {
+								return null;
+							}
+
+							try {
+								return JSON.parse(payload) as { foo: string };
+							} catch {
+								return null;
+							}
+						}}
+						serialize={(value) => JSON.stringify(value)}
+						changeButtonValue={{ foo: 'baz' }}
+					/>
+					<button
+						type="button"
+						onClick={() =>
+							intent.update({
+								name: fields.json.name,
+								value: { foo: 'qux' },
+							})
+						}
+					>
+						Update
+					</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset
+					</button>
+				</form>
+			);
+		}
+
+		const screen = render(<JsonForm />);
+		const formElement = screen.container.querySelector('form');
+		const payload = screen.getByLabelText('JSON payload');
+
+		await expect.element(payload).toHaveTextContent('{"foo":"bar"}');
+		await expect.element(formElement).toHaveFormValues({
+			json: '{"foo":"bar"}',
+		});
+
+		await userEvent.click(screen.getByText('Change'));
+
+		await expect.element(payload).toHaveTextContent('{"foo":"baz"}');
+		await expect.element(formElement).toHaveFormValues({
+			json: '{"foo":"baz"}',
+		});
+
+		await userEvent.click(screen.getByText('Update'));
+
+		await expect.element(payload).toHaveTextContent('{"foo":"qux"}');
+		await expect.element(formElement).toHaveFormValues({
+			json: '{"foo":"qux"}',
+		});
+
+		await userEvent.click(screen.getByText('Reset'));
+
+		await expect.element(payload).toHaveTextContent('{"foo":"bar"}');
+		await expect.element(formElement).toHaveFormValues({
+			json: '{"foo":"bar"}',
+		});
+	});
+
 	it('supports emulating a fieldset', async () => {
 		const screen = render(
 			<Form>
-				<Fieldset
+				<CustomControl
+					type="fieldset"
 					name="nested.list"
 					label="List value"
 					defaultValue={[{ key: '', value: '' }]}
@@ -1012,45 +1070,84 @@ describe('future export: useControl', () => {
 			}
 		}
 
-		const fieldset = (
-			<Fieldset
-				name="address"
-				label="Address value"
-				defaultValue={{ street: '', city: '' }}
-				parse={(value) => {
-					if (
-						typeof value !== 'object' ||
-						value === null ||
-						!('street' in value) ||
-						!('city' in value) ||
-						typeof value.street !== 'string' ||
-						typeof value.city !== 'string'
-					) {
-						throw new Error('Invalid payload');
-					}
+		function AddressForm(props: {
+			id?: string;
+			updateButton?: {
+				action: string;
+				name?: string;
+				value: unknown;
+			};
+			formKey?: string;
+		}) {
+			const { form, intent } = useForm({
+				id: props.id,
+				key: props.formKey,
+				onValidate({ error }) {
+					return error;
+				},
+				onSubmit(event) {
+					event.preventDefault();
+				},
+			});
 
-					return new Address(value.street, value.city);
-				}}
-				serialize={(value: Address) => {
-					const address = value.toString();
-					const [street = '', city = ''] = address.split(', ');
+			return (
+				<form {...form.props}>
+					<input type="text" name="others" />
+					<CustomControl
+						type="fieldset"
+						name="address"
+						label="Address value"
+						defaultValue={{ street: '', city: '' }}
+						parse={(value) => {
+							if (
+								typeof value !== 'object' ||
+								value === null ||
+								!('street' in value) ||
+								!('city' in value) ||
+								typeof value.street !== 'string' ||
+								typeof value.city !== 'string'
+							) {
+								throw new Error('Invalid payload');
+							}
 
-					return { street, city };
-				}}
-				changeButtonValue={new Address('123 Main St', 'Anytown')}
-			/>
-		);
+							return new Address(value.street, value.city);
+						}}
+						serialize={(value: Address) => {
+							const address = value.toString();
+							const [street = '', city = ''] = address.split(', ');
+
+							return { street, city };
+						}}
+						changeButtonValue={new Address('123 Main St', 'Anytown')}
+					/>
+					<button type="submit">Submit</button>
+					<button
+						type="button"
+						onClick={() =>
+							intent.update({
+								name: props.updateButton?.name,
+								value: props.updateButton?.value ?? null,
+							})
+						}
+					>
+						{props.updateButton?.action ?? 'Clear'}
+					</button>
+					<button type="button" onClick={() => intent.reset()}>
+						Reset
+					</button>
+				</form>
+			);
+		}
+
 		const screen = render(
-			<ConformForm
+			<AddressForm
 				formKey="foo"
 				updateButton={{
 					action: 'Use default address',
 					name: 'address',
 					value: { street: '456 Elm St', city: 'Othertown' },
 				}}
-			>
-				{fieldset}
-			</ConformForm>,
+			/>,
 		);
 		const formElement = screen.container.querySelector('form');
 		const addressValue = screen.getByLabelText('Address value');
@@ -1101,17 +1198,14 @@ describe('future export: useControl', () => {
 		});
 
 		screen.rerender(
-			<ConformForm
+			<AddressForm
 				formKey="bar"
 				updateButton={{
 					action: 'Update others',
 					name: 'others',
 					value: 'some value',
 				}}
-			>
-				<input type="text" name="others" />
-				{fieldset}
-			</ConformForm>,
+			/>,
 		);
 
 		const updateOthersButton = screen.getByText('Update others');

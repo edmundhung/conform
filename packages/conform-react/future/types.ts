@@ -1,4 +1,5 @@
 import type {
+	CustomSerialize,
 	FieldName,
 	FormError,
 	FormValue,
@@ -343,9 +344,9 @@ export type FormsConfig<
 	 */
 	intentName: string;
 	/**
-	 * A custom serialization function for converting form data.
+	 * A custom serializer for converting form values.
 	 */
-	serialize: Serialize;
+	serialize: CustomSerialize;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * @default "onSubmit"
@@ -425,7 +426,7 @@ export type GlobalFormOptions = {
 	 */
 	intentName: string;
 	/**
-	 * A custom serialization function for converting form data.
+	 * A field-aware serializer for converting form data.
 	 */
 	serialize: Serialize;
 	/**
@@ -501,6 +502,11 @@ export type BaseFormOptions<
 		| undefined;
 	/** Initial form values. Can be a partial object matching your form structure. */
 	defaultValue?: DefaultValue<FormShape> | undefined;
+	/**
+	 * Override serialization for specific fields on this form and delegate the rest
+	 * to the configured global serializer.
+	 */
+	serialize?: CustomSerialize | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
 	/**
@@ -559,6 +565,8 @@ export interface FormContext<
 	formId: string;
 	/** Internal form state with validation results and field data */
 	state: FormState<ErrorShape>;
+	/** Serializer used to derive field defaults and sync values for this form. */
+	serialize: Serialize;
 	/** HTML validation attributes for fields */
 	constraint: Record<string, ValidationAttributes> | null;
 	/** Form submission event handler */

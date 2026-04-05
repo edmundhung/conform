@@ -1,4 +1,8 @@
-import type { FormError } from '@conform-to/dom/future';
+import type {
+	CustomSerialize,
+	FormError,
+	Serialize,
+} from '@conform-to/dom/future';
 import {
 	formatIssues,
 	formatPath,
@@ -132,6 +136,22 @@ export function normalizeFormError<ErrorShape>(
 	}
 
 	return error;
+}
+
+export function resolveSerialize(
+	customSerialize: CustomSerialize | undefined,
+	defaultSerialize: Serialize,
+): Serialize {
+	if (typeof customSerialize === 'undefined') {
+		return defaultSerialize;
+	}
+
+	return function serializeValue(value, context) {
+		return customSerialize(value, {
+			name: context.name,
+			defaultSerialize,
+		});
+	};
 }
 
 export function normalizeValidateResult<ErrorShape, Value>(

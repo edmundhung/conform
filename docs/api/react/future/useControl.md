@@ -357,3 +357,40 @@ You can register multiple checkbox or radio inputs as a group by passing an arra
 ```
 
 If you don't need to re-use the existing native inputs, you can always represent the group with a single hidden multi-select or text input. For complete examples, see the checkbox and radio group implementations in the [React Aria example](../../../../examples/react-aria/).
+
+### Unknown value shape
+
+If your custom control has a known shape, reach for a fieldset. But, if the shape is not known upfront, serializing the payload as a JSON string is often the simpler option.
+
+Just parse or coerce that JSON string back to the original shape with `JSON.parse()` on the server.
+
+```tsx
+const { form, fields } = useForm({
+  defaultValue: {
+    metadata: { foo: 'bar' },
+  },
+  serialize(value, context) {
+    if (context.name === 'metadata') {
+      return typeof value === 'string' || value == null
+        ? value
+        : JSON.stringify(value);
+    }
+
+    return context.defaultSerialize(value, context);
+  },
+});
+
+const control = useControl({
+  defaultValue: fields.metadata.defaultValue,
+  parse(payload) {
+    if (typeof payload !== 'string') {
+      throw new Error('Expected a string payload');
+    }
+
+    return JSON.parse(payload);
+  },
+  serialize(value) {
+    return JSON.stringify(value);
+  },
+});
+```
