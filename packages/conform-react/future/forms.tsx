@@ -188,34 +188,6 @@ export function configureForms<
 				: never
 		>;
 	};
-	/**
-	 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-	 */
-	function useForm<
-		FormShape extends Record<string, any> = Record<string, any>,
-		ErrorShape extends BaseErrorShape = BaseErrorShape,
-		Value = undefined,
-	>(
-		options: FormOptions<
-			FormShape,
-			ErrorShape,
-			Value,
-			undefined,
-			undefined extends Value ? 'onValidate' : never
-		> & {
-			/**
-			 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-			 *
-			 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
-			 * Removes the need for manual onValidate setup.
-			 */
-			schema: StandardSchemaV1<FormShape, Value>;
-		},
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<FormShape>;
-	};
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
@@ -234,7 +206,6 @@ export function configureForms<
 	>(
 		schemaOrOptions:
 			| BaseSchema
-			| StandardSchemaV1
 			| FormOptions<FormShape, ErrorShape, Value, undefined, any>,
 		maybeOptions?: FormOptions<any, ErrorShape, Value, undefined, any>,
 	): {
@@ -574,3 +545,122 @@ export function configureForms<
 		config: globalConfig,
 	};
 }
+
+const defaultForms = configureForms();
+
+/**
+ * Provides form context to child components.
+ * Stacks contexts to support nested forms, with latest context taking priority.
+ */
+export const FormProvider = defaultForms.FormProvider;
+
+/**
+ * The main React hook for form management. Handles form state, validation, and submission
+ * while providing access to form metadata, field objects, and form actions.
+ *
+ * It can be called in two ways:
+ * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
+ * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
+ *
+ * @see https://conform.guide/api/react/future/useForm
+ * @example Schema first setup with zod:
+ *
+ * ```tsx
+ * const { form, fields } = useForm(zodSchema, {
+ *   lastResult,
+ *   shouldValidate: 'onBlur',
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ *
+ * @example Manual configuration setup with custom validation:
+ *
+ * ```tsx
+ * const { form, fields } = useForm({
+ *    onValidate({ payload, error }) {
+ *     if (!payload.email) {
+ * 		 error.fieldErrors.email = ['Required'];
+ *     }
+ *     return error;
+ *   }
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ */
+export const useForm = defaultForms.useForm;
+
+/**
+ * A React hook that provides access to form-level metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useFormMetadata
+ * @example
+ * ```tsx
+ * function ErrorSummary() {
+ *   const form = useFormMetadata();
+ *
+ *   if (form.valid) return null;
+ *
+ *   return (
+ *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
+ *   );
+ * }
+ * ```
+ */
+export const useFormMetadata = defaultForms.useFormMetadata;
+
+/**
+ * A React hook that provides access to a specific field's metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useField
+ * @example
+ * ```tsx
+ * function FormField({ name, label }) {
+ *   const field = useField(name);
+ *
+ *   return (
+ *     <div>
+ *       <label htmlFor={field.id}>{label}</label>
+ *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
+ *       {field.errors && <div>{field.errors.join(', ')}</div>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const useField = defaultForms.useField;
+
+/**
+ * A React hook that provides an intent dispatcher for programmatic form actions.
+ * Intent dispatchers allow you to trigger form operations like validation, field updates,
+ * and array manipulations without manual form submission.
+ *
+ * @see https://conform.guide/api/react/future/useIntent
+ * @example
+ * ```tsx
+ * function ResetButton() {
+ *   const buttonRef = useRef<HTMLButtonElement>(null);
+ *   const intent = useIntent(buttonRef);
+ *
+ *   return (
+ *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
+ *       Reset Form
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export const useIntent = defaultForms.useIntent;

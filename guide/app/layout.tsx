@@ -70,10 +70,6 @@ const menus: { [code: string]: Menu[] } = {
 					title: 'PreserveBoundary',
 					to: '/api/react/future/PreserveBoundary',
 				},
-				{
-					title: 'FormOptionsProvider',
-					to: '/api/react/future/FormOptionsProvider',
-				},
 				{ title: 'memoize', to: '/api/react/future/memoize' },
 			],
 		},

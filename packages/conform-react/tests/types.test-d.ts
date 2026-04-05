@@ -13,7 +13,12 @@ import type {
 	InferCustomFormMetadata,
 	IntentDispatcher,
 } from '@conform-to/react/future';
-import { useFormData, configureForms, shape } from '@conform-to/react/future';
+import {
+	useForm,
+	useFormData,
+	configureForms,
+	shape,
+} from '@conform-to/react/future';
 import { useRef } from 'react';
 
 test('DefaultValue', () => {
@@ -127,6 +132,57 @@ test('FormOptions', () => {
 	assertType<FormOptions<TestSchema>>({
 		lastResult: null,
 	});
+});
+
+test('useForm', () => {
+	const basicForm = useForm({
+		onValidate({ error }) {
+			return {
+				formErrors: error.formErrors.map((message) => ({ message })),
+				fieldErrors: Object.fromEntries(
+					Object.entries(error.fieldErrors).map(([key, messages]) => [
+						key,
+						messages.map((message) => ({ message })),
+					]),
+				),
+			};
+		},
+	});
+
+	expectTypeOf(basicForm.form).toEqualTypeOf<
+		FormMetadata<{ message: string }>
+	>();
+	expectTypeOf(basicForm.fields).toEqualTypeOf<
+		Fieldset<Record<string, any>, { message: string }>
+	>();
+	expectTypeOf(basicForm.intent).toEqualTypeOf<
+		IntentDispatcher<Record<string, any>>
+	>();
+
+	const schemaFirstForm = useForm(
+		{
+			'~standard': {
+				version: 1 as const,
+				vendor: 'test',
+				validate: () => ({ value: { email: '' } }),
+				types: {} as {
+					input: { email: string };
+					output: { email: string };
+				},
+			},
+		},
+		{
+			lastResult: null,
+		},
+	);
+
+	expectTypeOf(schemaFirstForm.form).toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(schemaFirstForm.fields).toEqualTypeOf<
+		Fieldset<{ email: string }, string>
+	>();
+	expectTypeOf(schemaFirstForm.intent).toEqualTypeOf<
+		IntentDispatcher<{ email: string }>
+	>();
 });
 
 test('IntentDispatcher', () => {

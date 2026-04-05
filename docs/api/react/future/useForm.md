@@ -7,8 +7,24 @@ The main React hook for Conform. It manages validation state (errors, touched, v
 ```ts
 import { useForm } from '@conform-to/react/future';
 
-const { form, fields, intent } = useForm(options);
+const manual = useForm(options);
+const withSchema = useForm(schema, options);
 ```
+
+## Schema
+
+Pass a [standard schema](https://standardschema.dev/) as the first argument with `useForm(schema, options)` to enable schema validation and schema-derived type inference.
+
+When a schema is provided:
+
+- Conform runs schema validation before `onValidate`
+- `onValidate` can still add or replace validation errors
+- `ctx.schemaValue` contains the parsed schema value when validation succeeds
+- `schemaOptions` is forwarded to the configured schema validator
+
+The exported `useForm` function accepts Standard Schema compatible libraries. Use [configureForms](./configureForms.md) to support other schema types.
+
+Use `useForm(options)` when you want manual validation only.
 
 ## Options
 
@@ -21,10 +37,6 @@ Optional form identifier. If not provided, a unique ID is automatically generate
 ### `key?: string`
 
 Optional key for form state reset. When the key changes, the form resets to its initial state.
-
-### `schema?: StandardSchemaV1<FormShape, Value>`
-
-Optional [standard schema](https://standardschema.dev/) for validation (e.g., Zod, Valibot, Yup). Removes the need for manual `onValidate` setup.
 
 ### `defaultValue?: DefaultValue<FormShape>`
 
@@ -43,6 +55,12 @@ The default serializer can be configured via [configureForms](./configureForms.m
 
 HTML validation attributes for fields (`required`, `minLength`, `pattern`, etc.).
 
+### `schemaOptions?: InferOptions<Schema>`
+
+Options forwarded to the configured schema validator when using `useForm(schema, options)`.
+
+The exact shape depends on the schema integration configured through [configureForms](./configureForms.md).
+
 ### `shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput'`
 
 When to start validation. Defaults to `'onSubmit'`.
@@ -57,7 +75,7 @@ Server-side submission result for form state synchronization.
 
 ### `onValidate?: ValidateHandler<ErrorShape, Value>`
 
-Custom validation handler. Can be skipped if using the `schema` property, or combined with schema to customize validation errors.
+Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize validation errors.
 
 ### `onError?: ErrorHandler<ErrorShape>`
 
@@ -141,8 +159,8 @@ const schema = z.object({
 });
 
 function LoginForm() {
-  const { form, fields } = useForm({
-    schema,
+  const { form, fields } = useForm(schema, {
+    shouldValidate: 'onBlur',
   });
 
   return (

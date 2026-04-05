@@ -59,9 +59,7 @@ function Example() {
     [],
   );
 
-  const { form, fields } = useForm({
-    // A standard schema for basic validations
-    schema,
+  const { form, fields } = useForm(schema, {
     async onValidate({ payload, error }) {
       // Validate username uniqueness only if username is provided and has no other errors
       if (payload.username && !error.fieldErrors.username) {

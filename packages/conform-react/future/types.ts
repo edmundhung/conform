@@ -418,36 +418,6 @@ export type FormsConfig<
 	) => CustomFieldMetadata;
 };
 
-export type GlobalFormOptions = {
-	/**
-	 * The name of the submit button field that indicates the submission intent.
-	 *
-	 * @default "__intent__"
-	 */
-	intentName: string;
-	/**
-	 * A field-aware serializer for converting form data.
-	 */
-	serialize: Serialize;
-	/**
-	 * Determines when validation should run for the first time on a field.
-	 *
-	 * @default "onSubmit"
-	 */
-	shouldValidate: 'onSubmit' | 'onBlur' | 'onInput';
-	/**
-	 * Determines when validation should run again after the field has been validated once.
-	 *
-	 * @default Same as shouldValidate
-	 */
-	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput';
-	/**
-	 * A function that defines custom metadata properties for form fields.
-	 * Useful for integrating with UI libraries or custom form components.
-	 */
-	defineCustomMetadata?: CustomMetadataDefinition;
-};
-
 export type NonPartial<T> = {
 	[K in keyof Required<T>]: T[K];
 };
@@ -516,16 +486,16 @@ export type BaseFormOptions<
 	schemaOptions?: InferOptions<Schema>;
 	/**
 	 * Determines when validation should run for the first time on a field.
-	 * Overrides the global default set by FormOptionsProvider if provided.
+	 * Overrides the default configured through `configureForms()` if provided.
 	 *
-	 * @default Inherits from FormOptionsProvider, or "onSubmit" if not configured
+	 * @default Inherits from `configureForms()`, or "onSubmit" if not configured
 	 */
 	shouldValidate?: 'onSubmit' | 'onBlur' | 'onInput' | undefined;
 	/**
 	 * Determines when validation should run again after the field has been validated once.
-	 * Overrides the global default set by FormOptionsProvider if provided.
+	 * Overrides the default configured through `configureForms()` if provided.
 	 *
-	 * @default Inherits from FormOptionsProvider, or same as shouldValidate
+	 * @default Inherits from `configureForms()`, or same as shouldValidate
 	 */
 	shouldRevalidate?: 'onSubmit' | 'onBlur' | 'onInput' | undefined;
 	/** Error handling callback triggered when validation errors occur. By default, it focuses the first invalid field. */
@@ -534,7 +504,7 @@ export type BaseFormOptions<
 	onInput?: InputHandler | undefined;
 	/** Blur event handler for custom focus handling logic. */
 	onBlur?: BlurHandler | undefined;
-	/** Custom validation handler. Can be skipped if using the schema property, or combined with schema to customize validation errors. */
+	/** Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize errors. */
 	onValidate?:
 		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>>
 		| undefined;
@@ -811,32 +781,11 @@ export type SatisfyComponentProps<
 	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
 > = CustomProps;
 
-/**
- * Interface for extending field metadata with additional properties.
- * @deprecated Use `configureForms()` with the `extendFieldMetadata` option for full type inference support.
- */
-export interface CustomMetadata<
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	FieldShape = any,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> {
-	// User-defined properties
-}
-
-export type DefaultCustomMetadata<FieldShape, ErrorShape> =
-	keyof CustomMetadata<FieldShape, ErrorShape> extends never
-		? {}
-		: CustomMetadata<FieldShape, ErrorShape>;
-
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
 export type FieldMetadata<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
-		FieldShape,
-		ErrorShape
-	>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
 	Prettify<
 		ValidationAttributes & {
@@ -924,34 +873,11 @@ export type BaseFieldMetadata<
 	ErrorShape extends BaseErrorShape,
 > = FieldMetadata<FieldShape, ErrorShape, {}>;
 
-/**
- * @deprecated Renamed to `BaseFieldMetadata`. This will be removed in the next minor version.
- */
-export type BaseMetadata<
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
-> = BaseFieldMetadata<FieldShape, ErrorShape>;
-
-/**
- * @deprecated Use `configureForms()` with the `extendFieldMetadata` option instead.
- */
-export type CustomMetadataDefinition = <
-	FieldShape,
-	ErrorShape extends BaseErrorShape,
->(
-	metadata: BaseFieldMetadata<FieldShape, ErrorShape>,
-) => keyof CustomMetadata<FieldShape, ErrorShape> extends never
-	? {}
-	: CustomMetadata<any, any>;
-
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
 	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	CustomFieldMetadata extends Record<string, unknown> = DefaultCustomMetadata<
-		FieldShape,
-		ErrorShape
-	>,
+	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
 		Combine<FieldShape>[Key],

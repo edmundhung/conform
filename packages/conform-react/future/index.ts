@@ -16,10 +16,7 @@ export type {
 	ControlOptions,
 	BaseControlProps,
 	DefaultValue,
-	BaseMetadata,
 	BaseFieldMetadata,
-	CustomMetadata,
-	CustomMetadataDefinition,
 	BaseErrorShape,
 	CustomTypes,
 	CustomSchemaTypes,
@@ -35,18 +32,19 @@ export type {
 	InferCustomFormMetadata,
 	InferCustomFieldMetadata,
 } from './types';
-export { configureForms } from './forms';
+export {
+	configureForms,
+	FormProvider,
+	useForm,
+	useFormMetadata,
+	useField,
+	useIntent,
+} from './forms';
 export {
 	BaseControl,
 	PreserveBoundary,
-	FormProvider,
-	FormOptionsProvider,
 	useControl,
-	useField,
-	useForm,
 	useFormData,
-	useFormMetadata,
-	useIntent,
 } from './hooks';
 export { shape } from './util';
 export { memoize } from './memoize';

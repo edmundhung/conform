@@ -1,9 +1,7 @@
 import {
-	type FieldName,
 	type FormValue,
 	type Serialize,
 	type SubmissionResult,
-	DEFAULT_INTENT_NAME,
 	deepEqual,
 	change,
 	focus,
@@ -26,35 +24,15 @@ import {
 	useCallback,
 	useContext,
 	useMemo,
-	useId,
 	createContext,
 	useState,
 	useLayoutEffect,
 	forwardRef,
 } from 'react';
-import {
-	appendUniqueItem,
-	resolveSerialize,
-	resolveStandardSchemaResult,
-	resolveValidateResult,
-} from './util';
-import {
-	getFormMetadata,
-	isTouched,
-	getFieldset,
-	getField,
-	initializeState,
-	updateState,
-} from './state';
+import { appendUniqueItem, resolveValidateResult } from './util';
+import { initializeState, updateState } from './state';
 import type {
 	FormContext,
-	IntentDispatcher,
-	FormMetadata,
-	Fieldset,
-	ValidateResult,
-	GlobalFormOptions,
-	FormOptions,
-	FieldMetadata,
 	Control,
 	Selector,
 	UseFormDataOptions,
@@ -63,11 +41,6 @@ import type {
 	SubmitHandler,
 	FormState,
 	FormRef,
-	BaseErrorShape,
-	DefaultErrorShape,
-	BaseSchemaType,
-	InferInput,
-	InferOutput,
 	BaseControlProps,
 	StandardControlOptions,
 	DefaultControlValue,
@@ -82,9 +55,7 @@ import {
 	applyIntent,
 } from './intent';
 import {
-	focusFirstInvalidField,
 	deriveDefaultPayload,
-	createIntentDispatcher,
 	getFormElement,
 	resolveControlPayload,
 	getSubmitEvent,
@@ -94,45 +65,17 @@ import {
 	cleanupPreservedInputs,
 	preserveInputs,
 } from './dom';
-import { StandardSchemaV1 } from './standard-schema';
 import { flushSync } from 'react-dom';
 
 // Static reset key for consistent hydration during Next.js prerendering
 // See: https://nextjs.org/docs/messages/next-prerender-current-time-client
 export const INITIAL_KEY = 'INITIAL_KEY';
 
-export const GlobalFormOptionsContext = createContext<
-	GlobalFormOptions & { observer: ReturnType<typeof createGlobalFormsObserver> }
->({
-	intentName: DEFAULT_INTENT_NAME,
-	observer: createGlobalFormsObserver(),
-	serialize: defaultSerialize,
-	shouldValidate: 'onSubmit',
-});
+export const GlobalFormsObserverContext = createContext(
+	createGlobalFormsObserver(),
+);
 
 export const FormContextContext = createContext<FormContext[]>([]);
-
-/**
- * Provides form context to child components.
- * Stacks contexts to support nested forms, with latest context taking priority.
- */
-export function FormProvider(props: {
-	context: FormContext;
-	children: React.ReactNode;
-}): React.ReactElement {
-	const stack = useContext(FormContextContext);
-	const value = useMemo(
-		// Put the latest form context first to ensure that to be the first one found
-		() => [props.context].concat(stack),
-		[stack, props.context],
-	);
-
-	return (
-		<FormContextContext.Provider value={value}>
-			{props.children}
-		</FormContextContext.Provider>
-	);
-}
 
 /**
  * Preserves form field values when its contents are unmounted.
@@ -203,31 +146,6 @@ function PreserveBoundaryImpl(props: {
 	);
 }
 
-/**
- * @deprecated Replaced by the `configureForms` factory API. This will be removed in the next minor version. If you are not ready to migrate, please pin to `v1.16.0`.
- */
-export function FormOptionsProvider(
-	props: Partial<GlobalFormOptions> & {
-		children: React.ReactNode;
-	},
-): React.ReactElement {
-	const { children, ...providedOptions } = props;
-	const defaultOptions = useContext(GlobalFormOptionsContext);
-	const options = useMemo(
-		() => ({
-			...defaultOptions,
-			...providedOptions,
-		}),
-		[defaultOptions, providedOptions],
-	);
-
-	return (
-		<GlobalFormOptionsContext.Provider value={options}>
-			{children}
-		</GlobalFormOptionsContext.Provider>
-	);
-}
-
 export function useFormContext(formId?: string): FormContext {
 	const contexts = useContext(FormContextContext);
 	const context = formId
@@ -236,7 +154,7 @@ export function useFormContext(formId?: string): FormContext {
 
 	if (!context) {
 		throw new Error(
-			'No form context found; Have you render a <FormProvider /> with the corresponding form context?',
+			'No form context found; Have you rendered a <FormProvider /> with the corresponding form context?',
 		);
 	}
 
@@ -585,449 +503,6 @@ export function useConform<
 }
 
 /**
- * The main React hook for form management. Handles form state, validation, and submission
- * while providing access to form metadata, field objects, and form actions.
- *
- * It can be called in two ways:
- * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
- * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
- *
- * @see https://conform.guide/api/react/future/useForm
- * @example Schema first setup with zod:
- *
- * ```tsx
- * const { form, fields } = useForm(zodSchema, {
- *   lastResult,
- *   shouldValidate: 'onBlur',
- * });
- *
- * return (
- *   <form {...form.props}>
- *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
- *     <div>{fields.email.errors}</div>
- *   </form>
- * );
- * ```
- *
- * @example Manual configuration setup with custom validation:
- *
- * ```tsx
- * const { form, fields } = useForm({
- *    onValidate({ payload, error }) {
- *     if (!payload.email) {
- * 		 error.fieldErrors.email = ['Required'];
- *     }
- *     return error;
- *   }
- * });
- *
- * return (
- *   <form {...form.props}>
- *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
- *     <div>{fields.email.errors}</div>
- *   </form>
- * );
- * ```
- */
-export function useForm<
-	Schema extends BaseSchemaType,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = InferOutput<Schema>,
->(
-	schema: Schema,
-	options: FormOptions<
-		InferInput<Schema>,
-		ErrorShape,
-		Value,
-		Schema,
-		string extends ErrorShape ? never : 'onValidate'
-	>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<InferInput<Schema>, ErrorShape>;
-	intent: IntentDispatcher<InferInput<Schema>>;
-};
-/**
- * @deprecated Use `useForm(schema, options)` instead for better type inference.
- */
-export function useForm<
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	options: FormOptions<
-		FormShape,
-		ErrorShape,
-		Value,
-		undefined,
-		undefined extends Value ? 'onValidate' : never
-	> & {
-		/**
-		 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-		 *
-		 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
-		 * Removes the need for manual onValidate setup.
-		 *
-		 */
-		schema: StandardSchemaV1<FormShape, Value>;
-	},
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<FormShape, ErrorShape>;
-	intent: IntentDispatcher<FormShape>;
-};
-export function useForm<
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<FormShape, ErrorShape>;
-	intent: IntentDispatcher<FormShape>;
-};
-export function useForm<
-	Schema extends BaseSchemaType = any,
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-	Value = undefined,
->(
-	schemaOrOptions:
-		| Schema
-		| FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-	maybeOptions?: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>,
-): {
-	form: FormMetadata<ErrorShape>;
-	fields: Fieldset<Record<string, any>, ErrorShape>;
-	intent: IntentDispatcher;
-} {
-	let schema: Schema | undefined;
-	let options: FormOptions<InferInput<Schema>, ErrorShape, Value, Schema>;
-
-	if (maybeOptions) {
-		schema = schemaOrOptions as Schema;
-		options = maybeOptions as FormOptions<
-			InferInput<Schema>,
-			ErrorShape,
-			Value,
-			Schema
-		>;
-	} else {
-		const fullOptions = schemaOrOptions as FormOptions<
-			InferInput<Schema>,
-			ErrorShape,
-			Value,
-			Schema
-		> & {
-			schema?: Schema;
-		};
-
-		options = fullOptions;
-		schema = fullOptions.schema;
-	}
-
-	const { id, constraint } = options;
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const optionsRef = useLatest(options);
-	const globalOptionsRef = useLatest(globalOptions);
-	const serialize = useMemo(
-		() => resolveSerialize(options.serialize, globalOptions.serialize),
-		[options.serialize, globalOptions.serialize],
-	);
-	const fallbackId = useId();
-	const formId = id ?? `form-${fallbackId}`;
-	const [state, handleSubmit] = useConform<
-		FormShape,
-		ErrorShape,
-		Value,
-		InferOutput<Schema>
-	>(formId, {
-		...options,
-		serialize,
-		intentName: globalOptions.intentName,
-		onError: options.onError ?? focusFirstInvalidField,
-		onValidate(ctx) {
-			if (schema) {
-				const standardResult = schema['~standard'].validate(ctx.payload);
-
-				if (standardResult instanceof Promise) {
-					return standardResult.then((actualStandardResult) => {
-						if (typeof options.onValidate === 'function') {
-							throw new Error(
-								'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-							);
-						}
-
-						return resolveStandardSchemaResult(
-							actualStandardResult,
-						) as ValidateResult<ErrorShape, any>;
-					});
-				}
-
-				const resolvedResult = resolveStandardSchemaResult(standardResult);
-
-				if (!options.onValidate) {
-					return resolvedResult as ValidateResult<ErrorShape, Value>;
-				}
-
-				// Update the schema error in the context
-				if (resolvedResult.error) {
-					ctx.error = resolvedResult.error;
-				}
-
-				ctx.schemaValue = resolvedResult.value;
-
-				const validateResult = resolveValidateResult(options.onValidate(ctx));
-
-				if (validateResult.syncResult) {
-					validateResult.syncResult.value ??= resolvedResult.value;
-				}
-
-				if (validateResult.asyncResult) {
-					validateResult.asyncResult = validateResult.asyncResult.then(
-						(result) => {
-							result.value ??= resolvedResult.value;
-							return result;
-						},
-					);
-				}
-
-				return [validateResult.syncResult, validateResult.asyncResult];
-			}
-
-			return (
-				options.onValidate?.(ctx) ?? {
-					// To avoid conform falling back to server validation,
-					// if neither schema nor validation handler is provided,
-					// we just treat it as a valid client submission
-					error: null,
-				}
-			);
-		},
-	});
-	const intent = useIntent<FormShape>(formId);
-	const context = useMemo<FormContext<ErrorShape>>(
-		() => ({
-			formId,
-			state,
-			serialize,
-			constraint: constraint ?? null,
-			handleSubmit,
-			handleInput(event) {
-				if (
-					!isFieldElement(event.target) ||
-					event.target.name === '' ||
-					event.target.form === null ||
-					event.target.form !== getFormElement(formId)
-				) {
-					return;
-				}
-
-				optionsRef.current.onInput?.({
-					...event,
-					target: event.target,
-					currentTarget: event.target.form,
-				});
-
-				if (event.defaultPrevented) {
-					return;
-				}
-
-				const {
-					shouldValidate = globalOptionsRef.current.shouldValidate,
-					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
-						shouldValidate,
-				} = optionsRef.current;
-
-				if (
-					isTouched(state, event.target.name)
-						? shouldRevalidate === 'onInput'
-						: shouldValidate === 'onInput'
-				) {
-					intent.validate(event.target.name);
-				}
-			},
-			handleBlur(event) {
-				if (
-					!isFieldElement(event.target) ||
-					event.target.name === '' ||
-					event.target.form === null ||
-					event.target.form !== getFormElement(formId)
-				) {
-					return;
-				}
-
-				optionsRef.current.onBlur?.({
-					...event,
-					target: event.target,
-					currentTarget: event.target.form,
-				});
-
-				if (event.defaultPrevented) {
-					return;
-				}
-
-				const {
-					shouldValidate = globalOptionsRef.current.shouldValidate,
-					shouldRevalidate = globalOptionsRef.current.shouldRevalidate ??
-						shouldValidate,
-				} = optionsRef.current;
-
-				if (
-					isTouched(state, event.target.name)
-						? shouldRevalidate === 'onBlur'
-						: shouldValidate === 'onBlur'
-				) {
-					intent.validate(event.target.name);
-				}
-			},
-		}),
-		[
-			formId,
-			state,
-			serialize,
-			constraint,
-			handleSubmit,
-			intent,
-			optionsRef,
-			globalOptionsRef,
-		],
-	);
-	const form = useMemo(
-		() =>
-			getFormMetadata(context, {
-				extendFieldMetadata: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.defineCustomMetadata],
-	);
-	const fields = useMemo(
-		() =>
-			getFieldset<FormShape, ErrorShape>(context, {
-				extendFieldMetadata: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.defineCustomMetadata],
-	);
-
-	return {
-		form,
-		fields,
-		intent,
-	};
-}
-
-/**
- * A React hook that provides access to form-level metadata and state.
- * Requires `FormProvider` context when used in child components.
- *
- * @see https://conform.guide/api/react/future/useFormMetadata
- * @example
- * ```tsx
- * function ErrorSummary() {
- *   const form = useFormMetadata();
- *
- *   if (form.valid) return null;
- *
- *   return (
- *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
- *   );
- * }
- * ```
- */
-export function useFormMetadata(
-	options: {
-		formId?: string;
-	} = {},
-): FormMetadata {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const context = useFormContext(options.formId);
-	const formMetadata = useMemo(
-		() =>
-			getFormMetadata(context, {
-				extendFieldMetadata: globalOptions.defineCustomMetadata,
-			}),
-		[context, globalOptions.defineCustomMetadata],
-	);
-
-	return formMetadata;
-}
-
-/**
- * A React hook that provides access to a specific field's metadata and state.
- * Requires `FormProvider` context when used in child components.
- *
- * @see https://conform.guide/api/react/future/useField
- * @example
- * ```tsx
- * function FormField({ name, label }) {
- *   const field = useField(name);
- *
- *   return (
- *     <div>
- *       <label htmlFor={field.id}>{label}</label>
- *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
- *       {field.errors && <div>{field.errors.join(', ')}</div>}
- *     </div>
- *   );
- * }
- * ```
- */
-export function useField<FieldShape = any>(
-	name: FieldName<FieldShape>,
-	options: {
-		formId?: string;
-	} = {},
-): FieldMetadata<FieldShape> {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-	const context = useFormContext(options.formId);
-	const field = useMemo(
-		() =>
-			getField(context, {
-				name,
-				extendFieldMetadata: globalOptions.defineCustomMetadata,
-			}),
-		[context, name, globalOptions.defineCustomMetadata],
-	);
-
-	return field;
-}
-
-/**
- * A React hook that provides an intent dispatcher for programmatic form actions.
- * Intent dispatchers allow you to trigger form operations like validation, field updates,
- * and array manipulations without manual form submission.
- *
- * @see https://conform.guide/api/react/future/useIntent
- * @example
- * ```tsx
- * function ResetButton() {
- *   const buttonRef = useRef<HTMLButtonElement>(null);
- *   const intent = useIntent(buttonRef);
- *
- *   return (
- *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
- *       Reset Form
- *     </button>
- *   );
- * }
- * ```
- */
-export function useIntent<FormShape extends Record<string, any>>(
-	formRef: FormRef,
-): IntentDispatcher<FormShape> {
-	const globalOptions = useContext(GlobalFormOptionsContext);
-
-	return useMemo(
-		() =>
-			createIntentDispatcher(
-				() => getFormElement(formRef),
-				globalOptions.intentName,
-			),
-		[formRef, globalOptions.intentName],
-	);
-}
-
-/**
  * A React hook that lets you sync the state of an input and dispatch native form events from it.
  * This is useful when emulating native input behavior — typically by rendering a hidden base control
  * and syncing it with a custom input.
@@ -1047,7 +522,7 @@ export function useControl(
 	options: CheckedControlOptions,
 ): Control<boolean, string>;
 export function useControl(options: ControlOptions = {}): Control<any> {
-	const { observer } = useContext(GlobalFormOptionsContext);
+	const observer = useContext(GlobalFormsObserverContext);
 	const inputRef = useRef<
 		| HTMLInputElement
 		| HTMLSelectElement
@@ -1450,7 +925,7 @@ export function useFormData<Value>(
 	select: Selector<FormData, Value> | Selector<URLSearchParams, Value>,
 	options?: UseFormDataOptions<Value>,
 ): Value | undefined {
-	const { observer } = useContext(GlobalFormOptionsContext);
+	const observer = useContext(GlobalFormsObserverContext);
 	const valueRef = useRef<Value | undefined>();
 	const formDataRef = useRef<FormData | URLSearchParams | undefined>();
 
