@@ -346,7 +346,7 @@ export type FormsConfig<
 	/**
 	 * A custom serializer for converting form values.
 	 */
-	serialize: CustomSerialize;
+	serialize?: CustomSerialize | undefined;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * @default "onSubmit"

@@ -60,7 +60,6 @@ export function configureForms<
 	> = {
 		...config,
 		intentName: config.intentName ?? DEFAULT_INTENT_NAME,
-		serialize: globalSerialize,
 		shouldValidate: config.shouldValidate ?? 'onSubmit',
 		shouldRevalidate:
 			config.shouldRevalidate ?? config.shouldValidate ?? 'onSubmit',

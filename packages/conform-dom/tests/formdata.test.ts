@@ -1530,7 +1530,7 @@ test('serialize', () => {
 
 	expect(defaultSerialize('test')).toBe('test');
 	expect(defaultSerialize(true)).toBe('on');
-	expect(defaultSerialize(false)).toBe('');
+	expect(defaultSerialize(false)).toBe(null);
 	expect(defaultSerialize(123)).toBe('123');
 	expect(defaultSerialize(987654321n)).toBe('987654321');
 	expect(defaultSerialize(new Date(12345))).toBe(

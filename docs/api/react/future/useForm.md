@@ -30,7 +30,7 @@ Optional [standard schema](https://standardschema.dev/) for validation (e.g., Zo
 
 Initial form values. Can be a partial object matching your form structure.
 
-### `serialize?: (value, ctx) => string | string[] | File | File[] | null | undefined`
+### `serialize?: (value, ctx) => FormValue | null | undefined`
 
 A custom serialization function for converting form values.
 

@@ -680,7 +680,7 @@ export function isDirty(
 		 *   - Returned as-is
 		 * - boolean:
 		 *   - true → 'on'
-		 *   - false → undefined
+		 *   - false → null
 		 * - number / bigint:
 		 *   - Converted to string using `.toString()`
 		 * - Date:
@@ -754,7 +754,7 @@ export function defaultSerialize(value: unknown): ReturnType<Serialize> {
 		}
 
 		if (typeof value === 'boolean') {
-			return value ? 'on' : '';
+			return value ? 'on' : null;
 		}
 
 		if (typeof value === 'number' || typeof value === 'bigint') {

@@ -146,7 +146,7 @@ export type CustomSerialize = (
 	value: unknown,
 	ctx: {
 		name: string | undefined;
-		defaultSerialize: CustomSerialize;
+		defaultSerialize: Serialize;
 	},
 ) => FormValue<FormDataEntryValue> | null | undefined;
 

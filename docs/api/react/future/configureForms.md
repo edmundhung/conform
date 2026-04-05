@@ -21,7 +21,7 @@ The name of the submit button field that indicates the submission intent. Defaul
 
 This is an advanced option. You typically don't need to change this unless you have conflicts with existing field names.
 
-### `serialize?: (value, ctx) => string | string[] | File | File[] | null | undefined`
+### `serialize?: (value, ctx) => FormValue | null | undefined`
 
 A custom serializer for converting form values.
 
@@ -32,7 +32,7 @@ If not provided, Conform uses a default serializer with the following behavior:
 
 - boolean:
   - true → 'on'
-  - false → undefined
+  - false → null
 - Date:
   - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 - number / bigint:
