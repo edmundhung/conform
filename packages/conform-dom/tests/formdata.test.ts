@@ -5,6 +5,7 @@ import {
 	getRelativePath,
 	parsePath,
 	formatPath,
+	appendPath,
 	isDirty,
 	isPathPrefix,
 	parseSubmission,
@@ -74,6 +75,24 @@ test('formatPath', () => {
 	expect(formatPath(['array', ''])).toEqual('array[]');
 	expect(formatPath(['a', 'b', 2, 'c', '', 'd'])).toEqual('a.b[2].c[].d');
 	expect(formatPath(['', '', ''])).toEqual('[][][]');
+});
+
+test('appendPath', () => {
+	expect(appendPath('', undefined)).toBe('');
+	expect(appendPath('tasks', undefined)).toBe('tasks');
+
+	expect(appendPath(undefined, undefined)).toBe('');
+	expect(appendPath('', '')).toBe('[]');
+	expect(appendPath(undefined, '')).toBe('[]');
+	expect(appendPath('tasks', '')).toBe('tasks[]');
+
+	expect(appendPath('', 0)).toBe('[0]');
+	expect(appendPath(undefined, 0)).toBe('[0]');
+	expect(appendPath('tasks', 0)).toBe('tasks[0]');
+
+	expect(appendPath('', 'foo')).toBe('foo');
+	expect(appendPath(undefined, 'foo')).toBe('foo');
+	expect(appendPath('tasks', 'content')).toBe('tasks.content');
 });
 
 test('isPathPrefix', () => {
@@ -1486,7 +1505,7 @@ describe('isDirty', () => {
 						return '';
 					}
 
-					return context.defaultSerialize(value, context);
+					return context.defaultSerialize(value);
 				},
 			}),
 		).toBe(false);
@@ -1504,7 +1523,7 @@ describe('isDirty', () => {
 							: JSON.stringify(value);
 					}
 
-					return context.defaultSerialize(value, context);
+					return context.defaultSerialize(value);
 				},
 			}),
 		).toBe(false);

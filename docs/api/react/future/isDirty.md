@@ -29,7 +29,7 @@ An object representing the default values of the form to compare against. Defaul
 A function to serialize values in defaultValue before comparing them to the form data. If not provided, a default serializer is used that behaves as follows:
 
 - `ctx.name` is the field name being serialized when available.
-- `ctx.defaultSerialize` lets you delegate values you are not customizing to the default serializer.
+- `ctx.defaultSerialize(value)` lets you delegate values you are not customizing to the default serializer.
 
 - boolean:
   - true → 'on'
@@ -40,6 +40,8 @@ A function to serialize values in defaultValue before comparing them to the form
   - Converted to string using `.toString()`
 - string / File:
   - Returned as-is
+
+If you use a custom serializer through [useForm()](./useForm.md) or [configureForms()](./configureForms.md), pass `form.context.serialize` to `isDirty()` so it matches the form's actual serialization behavior.
 
 ### `options.skipEntry?: (name: string) => boolean`
 

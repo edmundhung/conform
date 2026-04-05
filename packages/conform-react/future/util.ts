@@ -149,7 +149,7 @@ export function resolveSerialize(
 	return function serializeValue(value, context) {
 		return customSerialize(value, {
 			name: context.name,
-			defaultSerialize,
+			defaultSerialize: (value) => defaultSerialize(value, context),
 		});
 	};
 }

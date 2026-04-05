@@ -26,7 +26,7 @@ This is an advanced option. You typically don't need to change this unless you h
 A custom serializer for converting form values.
 
 - `ctx.name` is the field name being serialized when available.
-- `ctx.defaultSerialize` lets you delegate values you are not customizing to the default serializer.
+- `ctx.defaultSerialize(value)` lets you delegate values you are not customizing to the default serializer.
 
 If not provided, Conform uses a default serializer with the following behavior:
 

@@ -35,7 +35,7 @@ Initial form values. Can be a partial object matching your form structure.
 A custom serialization function for converting form values.
 
 - `ctx.name` is the field name being serialized when available.
-- `ctx.defaultSerialize` lets you delegate values you are not customizing to the default serializer.
+- `ctx.defaultSerialize(value)` lets you delegate values you are not customizing to the resolved default serializer.
 
 The default serializer can be configured via [configureForms](./configureForms.md).
 

@@ -376,7 +376,7 @@ const { form, fields } = useForm({
         : JSON.stringify(value);
     }
 
-    return context.defaultSerialize(value, context);
+    return context.defaultSerialize(value);
   },
 });
 

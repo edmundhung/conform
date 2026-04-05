@@ -137,24 +137,26 @@ export function appendPath(
 	path: string | undefined,
 	segment: string | number | undefined,
 ): string {
+	const base = path ?? '';
+
 	// 1) nothing to append
 	if (typeof segment === 'undefined') {
-		return path ?? '';
+		return base;
 	}
 
 	// 2) explicit empty-segment => empty bracket
 	if (segment === '') {
 		// even as first segment, "[]" is valid
-		return `${path}[]`;
+		return `${base}[]`;
 	}
 
 	// 3) numeric index => [n]
 	if (typeof segment === 'number') {
-		return `${path}[${segment}]`;
+		return `${base}[${segment}]`;
 	}
 
 	// 4) non-empty string => .prop (no leading dot if no base)
-	return path ? `${path}.${segment}` : segment;
+	return base ? `${base}.${segment}` : segment;
 }
 
 /**
@@ -717,7 +719,7 @@ export function isDirty(
 		if (options?.serialize) {
 			return options.serialize(value, {
 				name: context.name,
-				defaultSerialize: defaultSerialize,
+				defaultSerialize,
 			});
 		}
 
