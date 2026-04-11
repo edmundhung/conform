@@ -7,7 +7,7 @@ import {
 	afterAll,
 	beforeEach,
 } from 'vitest';
-import { DEFAULT_INTENT_NAME } from '@conform-to/dom/future';
+import { DEFAULT_INTENT_NAME, defaultSerialize } from '@conform-to/dom/future';
 import {
 	getDefaultPayload,
 	getDefaultOptions,
@@ -33,6 +33,7 @@ function createContext(
 ): FormContext<any> {
 	return {
 		formId: 'test-id',
+		serialize: defaultSerialize,
 		constraint: null,
 		state: initializeState(),
 		handleSubmit: vi.fn(),
@@ -1237,6 +1238,29 @@ describe('form state', () => {
 		expect(getDefaultOptions(context, 'tasks')).toEqual(['Final 1']);
 		expect(getDefaultPayload(context, 'tasks')).toBe('Final 1');
 		expect(isTouched(context.state)).toBe(true);
+
+		context.state = updateState(
+			context.state,
+			createAction({
+				type: 'server',
+				entries: [
+					['title', 'My Tasks'],
+					['tasks[0]', 'Updated 1'],
+					['tasks[1]', 'Updated 2'],
+					['tasks[2]', 'Updated 3'],
+					['tasks[3]', 'Updated 4'],
+				],
+				targetValue: {
+					title: 'My Tasks',
+					tasks: null,
+				},
+			}),
+		);
+
+		expect(getListKey(context, 'tasks')).toEqual([]);
+		expect(getDefaultOptions(context, 'tasks')).toEqual([]);
+		expect(getDefaultPayload(context, 'tasks')).toBe(null);
+		expect(isTouched(context.state)).toBe(true);
 	});
 
 	test('server reset with list', () => {
@@ -1371,6 +1395,60 @@ test('isDefaultChecked', () => {
 	expect(isDefaultChecked(createContext(), 'missing')).toBe(false);
 });
 
+test('default field serialization receives the field name', () => {
+	const serialize = vi.fn((value, ctx: { name: string | undefined }) => {
+		if (ctx.name === 'json') {
+			return JSON.stringify(value);
+		}
+
+		return value == null ? value : String(value);
+	});
+	const context = createContext({
+		state: initializeState({
+			defaultValue: {
+				json: {
+					foo: 'bar',
+				},
+			},
+		}),
+		serialize,
+	});
+
+	expect(getDefaultValue(context, 'json')).toBe('{"foo":"bar"}');
+	expect(getDefaultPayload(context, 'json')).toBe('{"foo":"bar"}');
+	expect(serialize).toHaveBeenCalledWith(
+		{ foo: 'bar' },
+		expect.objectContaining({ name: 'json' }),
+	);
+});
+
+test('field metadata serialize override updates default values', () => {
+	const context = createContext({
+		state: initializeState({
+			defaultValue: {
+				metadata: {
+					foo: 'bar',
+				},
+			},
+		}),
+		serialize(value, ctx) {
+			if (ctx.name === 'metadata') {
+				return typeof value === 'string' || value == null
+					? value
+					: JSON.stringify(value);
+			}
+
+			return defaultSerialize(value);
+		},
+	});
+	const field = getField(context, {
+		name: 'metadata',
+	});
+
+	expect(field.defaultValue).toBe('{"foo":"bar"}');
+	expect(field.defaultPayload).toBe('{"foo":"bar"}');
+});
+
 test('getDefaultListKey', () => {
 	const prefix = 'test-prefix';
 	const initialValue = {
@@ -1405,6 +1483,7 @@ test('getFormMetadata', () => {
 		state: initializeState({
 			defaultValue: { username: 'test' },
 		}),
+		serialize: (value) => value?.toString(),
 	});
 
 	// Add some touched fields and errors
@@ -1426,9 +1505,7 @@ test('getFormMetadata', () => {
 		}),
 	);
 
-	let metadata = getFormMetadata(context, {
-		serialize: (value) => value?.toString(),
-	});
+	let metadata = getFormMetadata(context);
 
 	// Test basic properties
 	expect(metadata.id).toBe('test-id');
@@ -1468,9 +1545,7 @@ test('getFormMetadata', () => {
 		}),
 	);
 
-	metadata = getFormMetadata(context, {
-		serialize: (value) => value?.toString(),
-	});
+	metadata = getFormMetadata(context);
 
 	expect(metadata.errors).toEqual(['Something went wrong']);
 	expect(metadata.valid).toBe(false);
@@ -1488,9 +1563,7 @@ test('getFormMetadata', () => {
 			error: null,
 		}),
 	);
-	metadata = getFormMetadata(context, {
-		serialize: (value) => value?.toString(),
-	});
+	metadata = getFormMetadata(context);
 
 	expect(metadata.errors).toBe(undefined);
 	expect(metadata.valid).toBe(true);
@@ -1639,11 +1712,11 @@ test('getFieldset', () => {
 				},
 			},
 		}),
+		serialize: (value) => String(value),
 	});
 
 	const fieldset = getFieldset(context, {
 		name: 'profile',
-		serialize: (value) => String(value),
 	});
 
 	// Test dynamic property access via Proxy
@@ -1664,9 +1737,7 @@ test('getFieldset', () => {
 	expect(deepField.defaultValue).toBe('deep');
 
 	// Test root fieldset (no name)
-	const rootFieldset = getFieldset(context, {
-		serialize: (value) => String(value),
-	});
+	const rootFieldset = getFieldset(context, {});
 	const profileField = rootFieldset.profile!;
 	expect(profileField.name).toBe('profile');
 });
@@ -1682,6 +1753,7 @@ test('getFieldList', () => {
 				],
 			},
 		}),
+		serialize: (value) => String(value),
 	});
 
 	// Mock list keys
@@ -1693,7 +1765,6 @@ test('getFieldList', () => {
 	// Test simple array
 	const tagFields = getFieldList(context, {
 		name: 'tags',
-		serialize: (value) => String(value),
 	});
 
 	expect(tagFields).toHaveLength(3);
@@ -1707,7 +1778,6 @@ test('getFieldList', () => {
 	// Test object array
 	const userFields = getFieldList(context, {
 		name: 'users',
-		serialize: (value) => String(value),
 	});
 
 	expect(userFields).toHaveLength(2);

@@ -126,24 +126,29 @@ export type Serializable<T> = T extends File
 			: T;
 
 /**
- * Converts an arbitrary value into a {@link SerializedValue}.
+ * Converts an arbitrary value into a form value.
  *
  * This function is used to prepare field values for submission,
  * ensuring they are compatible with the browser's `FormData` API.
- *
- * @param value - The original value to serialize.
- * @returns A `SerializedValue` if the input can be represented in `FormData`,
- *          or `undefined` if it cannot be serialized.
  */
-export type Serialize = (value: unknown) => SerializedValue | null | undefined;
+export type Serialize = (
+	value: unknown,
+	ctx: {
+		name: string | undefined;
+	},
+) => FormValue<FormDataEntryValue> | null | undefined;
 
 /**
- * A value that can be serialized into `FormData`.
- *
- * - `string` and `File` are supported natively by `FormData`.
- * - Arrays allow representing multi-value fields.
+ * A custom serializer that can override specific values and delegate everything
+ * else back to the default serializer.
  */
-export type SerializedValue = string | string[] | File | File[];
+export type CustomSerialize = (
+	value: unknown,
+	ctx: {
+		name: string | undefined;
+		defaultSerialize: (value: unknown) => ReturnType<Serialize>;
+	},
+) => FormValue<FormDataEntryValue> | null | undefined;
 
 /**
  * Flatten a discriminated union into a single type with all properties.

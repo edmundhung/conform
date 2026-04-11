@@ -24,19 +24,24 @@ The current form data to compare. It can be:
 
 An object representing the default values of the form to compare against. Defaults to an empty object if not provided.
 
-### `options.serialize?: (value: unknown, defaultSerialize: Serialize) => string | string[] | File | File[] | null | undefined`
+### `options.serialize?: (value, ctx) => FormValue | null | undefined`
 
 A function to serialize values in defaultValue before comparing them to the form data. If not provided, a default serializer is used that behaves as follows:
 
+- `ctx.name` is the field name being serialized when available.
+- `ctx.defaultSerialize(value)` lets you delegate values you are not customizing to the default serializer.
+
 - boolean:
   - true → 'on'
-  - false → undefined
+  - false → null
 - Date:
   - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 - number / bigint:
   - Converted to string using `.toString()`
 - string / File:
   - Returned as-is
+
+If you use a custom serializer through [useForm()](./useForm.md) or [configureForms()](./configureForms.md), pass `form.context.serialize` to `isDirty()` so it matches the form's actual serialization behavior.
 
 ### `options.skipEntry?: (name: string) => boolean`
 

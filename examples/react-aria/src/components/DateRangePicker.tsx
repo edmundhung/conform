@@ -63,7 +63,7 @@ export function DateRangePicker({
 					end: parseDate(range.end),
 				};
 			} catch {
-				return;
+				return null;
 			}
 		},
 		serialize(value) {

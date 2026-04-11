@@ -1,13 +1,11 @@
 import {
 	type FieldName,
-	type Serialize,
 	appendPath,
 	formatPath,
 	parsePath,
 	getRelativePath,
 	getPathValue,
 	normalize,
-	serialize as defaultSerialize,
 	deepEqual,
 	FormError,
 } from '@conform-to/dom/future';
@@ -164,7 +162,6 @@ export function pruneListKeys(
 export function getDefaultPayload(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): unknown {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -173,13 +170,16 @@ export function getDefaultPayload(
 		name,
 	);
 
-	return normalize(value, serialize);
+	if (value === null) {
+		return null;
+	}
+
+	return normalize(value, context.serialize, name);
 }
 
 export function getDefaultValue(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): string {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -187,7 +187,9 @@ export function getDefaultValue(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, {
+		name,
+	});
 
 	if (typeof serializedValue === 'string') {
 		return serializedValue;
@@ -199,7 +201,6 @@ export function getDefaultValue(
 export function getDefaultOptions(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): string[] {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -207,7 +208,7 @@ export function getDefaultOptions(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, { name });
 
 	if (
 		Array.isArray(serializedValue) &&
@@ -226,7 +227,6 @@ export function getDefaultOptions(
 export function isDefaultChecked(
 	context: FormContext<any>,
 	name: string,
-	serialize: Serialize = defaultSerialize,
 ): boolean {
 	const value = getPathValue(
 		context.state.serverValue ??
@@ -234,10 +234,10 @@ export function isDefaultChecked(
 			context.state.defaultValue,
 		name,
 	);
-	const serializedValue = serialize(value);
+	const serializedValue = context.serialize(value, { name });
 
 	if (typeof serializedValue === 'string') {
-		return serializedValue === serialize(true);
+		return serializedValue === context.serialize(true, { name });
 	}
 
 	return false;
@@ -382,7 +382,6 @@ export function getFormMetadata<
 >(
 	context: FormContext<ErrorShape>,
 	options?: {
-		serialize?: Serialize | undefined;
 		extendFormMetadata?:
 			| ((metadata: BaseFormMetadata<ErrorShape>) => CustomFormMetadata)
 			| undefined;
@@ -429,21 +428,18 @@ export function getFormMetadata<
 		getField(name) {
 			return getField(context, {
 				name,
-				serialize: options?.serialize,
 				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
 		getFieldset(name) {
 			return getFieldset(context, {
 				name,
-				serialize: options?.serialize,
 				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
 		getFieldList(name) {
 			return getFieldList(context, {
 				name,
-				serialize: options?.serialize,
 				extendFieldMetadata: options?.extendFieldMetadata,
 			});
 		},
@@ -469,7 +465,6 @@ export function getField<
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize?: Serialize | undefined;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
@@ -486,10 +481,8 @@ export function getField<
 	const {
 		key,
 		name,
-		serialize = defaultSerialize,
 		extendFieldMetadata,
 		form = getFormMetadata(context, {
-			serialize,
 			extendFieldMetadata,
 		}),
 	} = options;
@@ -512,16 +505,16 @@ export function getField<
 		multiple: constraint?.multiple,
 		accept: constraint?.accept,
 		get defaultValue() {
-			return getDefaultValue(context, name, serialize);
+			return getDefaultValue(context, name);
 		},
 		get defaultOptions() {
-			return getDefaultOptions(context, name, serialize);
+			return getDefaultOptions(context, name);
 		},
 		get defaultChecked() {
-			return isDefaultChecked(context, name, serialize);
+			return isDefaultChecked(context, name);
 		},
 		get defaultPayload() {
-			return getDefaultPayload(context, name, serialize);
+			return getDefaultPayload(context, name);
 		},
 		get touched() {
 			return isTouched(context.state, name);
@@ -547,7 +540,6 @@ export function getField<
 		getFieldset() {
 			return getFieldset(context, {
 				name: name as string,
-				serialize,
 				extendFieldMetadata,
 			});
 		},
@@ -556,7 +548,6 @@ export function getField<
 		getFieldList() {
 			return getFieldList(context, {
 				name,
-				serialize,
 				extendFieldMetadata,
 			});
 		},
@@ -581,7 +572,6 @@ export function getFieldset<
 	context: FormContext<ErrorShape>,
 	options: {
 		name?: FieldName<FieldShape> | undefined;
-		serialize?: Serialize | undefined;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
@@ -598,13 +588,11 @@ export function getFieldset<
 		get(target, name, receiver) {
 			if (typeof name === 'string') {
 				options.form ??= getFormMetadata(context, {
-					serialize: options?.serialize,
 					extendFieldMetadata: options?.extendFieldMetadata,
 				});
 
 				return getField(context, {
 					name: appendPath(options?.name, name),
-					serialize: options.serialize,
 					extendFieldMetadata: options.extendFieldMetadata,
 					form: options.form,
 				});
@@ -626,7 +614,6 @@ export function getFieldList<
 	context: FormContext<ErrorShape>,
 	options: {
 		name: FieldName<FieldShape>;
-		serialize?: Serialize | undefined;
 		extendFieldMetadata?:
 			| (<F>(
 					metadata: BaseFieldMetadata<F, ErrorShape>,
@@ -655,7 +642,6 @@ export function getFieldList<
 			CustomFieldMetadata
 		>(context, {
 			name: appendPath(options.name, index),
-			serialize: options.serialize,
 			extendFieldMetadata: options.extendFieldMetadata,
 			key,
 		});

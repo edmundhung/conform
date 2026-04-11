@@ -242,7 +242,7 @@ export function updateFormValue(
 				continue;
 			}
 
-			const value = serialize(fieldValue);
+			const value = serialize(fieldValue, { name: element.name });
 
 			// Treat undefined as null to clear the field value
 			change(element, value !== undefined ? value : null, {
@@ -265,7 +265,7 @@ export function resetFormValue(
 			element.type !== 'file'
 		) {
 			const fieldValue = getPathValue(defaultValue, element.name);
-			const value = serialize(fieldValue);
+			const value = serialize(fieldValue, { name: element.name });
 
 			updateField(element, {
 				defaultValue: value !== undefined ? value : null,

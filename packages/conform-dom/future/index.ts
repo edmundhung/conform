@@ -1,5 +1,6 @@
 export type {
 	Serialize,
+	CustomSerialize,
 	FieldName,
 	FormValue,
 	FormError,
@@ -20,7 +21,7 @@ export {
 	getPathValue,
 	setPathValue,
 	report,
-	serialize,
+	defaultSerialize,
 	getFieldValue,
 } from '../formdata';
 export { isPlainObject, deepEqual } from '../util';
