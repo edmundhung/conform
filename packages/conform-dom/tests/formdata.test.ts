@@ -13,6 +13,7 @@ import {
 	DEFAULT_INTENT_NAME,
 	defaultSerialize,
 	getFieldValue,
+	normalizeFormError,
 } from '../formdata';
 
 function createFormData(
@@ -1072,8 +1073,9 @@ describe('report', () => {
 		expect(result).toEqual({
 			submission,
 			targetValue: undefined,
+			reset: undefined,
 			error: {
-				formErrors: [],
+				formErrors: null,
 				fieldErrors: {
 					name: ['Name is required'],
 					email: ['Invalid email format'],
@@ -1213,6 +1215,7 @@ describe('report', () => {
 		expect(result).toEqual({
 			submission,
 			targetValue: undefined,
+			reset: undefined,
 			error: {
 				formErrors: ['Form is invalid'],
 				fieldErrors: {
@@ -1220,29 +1223,36 @@ describe('report', () => {
 				},
 			},
 		});
+	});
 
-		const result2 = report(submission, {
+	it('supports explicit error payloads', () => {
+		const submission = {
+			payload: {
+				name: '',
+				email: '',
+			},
+			fields: ['name', 'email'],
+			intent: null,
+		};
+		const result = report(submission, {
 			error: {
-				issues: [
-					{ path: [], message: 'Form is invalid' },
-					{ path: ['name'], message: 'Name is required' },
-				],
 				formErrors: ['Something went wrong'],
 				fieldErrors: {
-					name: ['Name is too short'],
-					description: ['Description is too short'],
+					name: ['Name is already taken'],
+					email: ['Email is invalid'],
 				},
 			},
 		});
 
-		expect(result2).toEqual({
+		expect(result).toEqual({
 			submission,
 			targetValue: undefined,
+			reset: undefined,
 			error: {
-				formErrors: ['Form is invalid', 'Something went wrong'],
+				formErrors: ['Something went wrong'],
 				fieldErrors: {
-					name: ['Name is required', 'Name is too short'],
-					description: ['Description is too short'],
+					name: ['Name is already taken'],
+					email: ['Email is invalid'],
 				},
 			},
 		});
@@ -1767,5 +1777,59 @@ describe('getFieldValue', () => {
 		expect(() =>
 			getFieldValue(formData, 'email', { type: 'object', optional: true }),
 		).toThrow('Expected field "email" to be an object, but got string');
+	});
+});
+
+test('normalizeFormError', () => {
+	// Test error without messages
+	expect(
+		normalizeFormError({
+			formErrors: [],
+			fieldErrors: { email: [], password: [] },
+		}),
+	).toBeNull();
+	expect(
+		normalizeFormError({
+			formErrors: null,
+			fieldErrors: { email: null, password: [] },
+		}),
+	).toBeNull();
+	expect(
+		normalizeFormError({
+			formErrors: null,
+			fieldErrors: {},
+		}),
+	).toBeNull();
+
+	// Test null error
+	expect(normalizeFormError(null)).toBeNull();
+
+	// Test non-empty error
+	expect(
+		normalizeFormError({
+			formErrors: [],
+			fieldErrors: { email: null, password: ['Required'] },
+		}),
+	).toEqual({
+		formErrors: null,
+		fieldErrors: { password: ['Required'] },
+	});
+	expect(
+		normalizeFormError({
+			formErrors: { message: 'Form error' },
+			fieldErrors: {},
+		}),
+	).toEqual({
+		formErrors: { message: 'Form error' },
+		fieldErrors: {},
+	});
+	expect(
+		normalizeFormError({
+			formErrors: ['Form error'],
+			fieldErrors: { email: ['Required'] },
+		}),
+	).toEqual({
+		formErrors: ['Form error'],
+		fieldErrors: { email: ['Required'] },
 	});
 });

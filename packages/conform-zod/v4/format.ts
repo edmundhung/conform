@@ -13,14 +13,14 @@ import { appendPath } from '@conform-to/dom/future';
  */
 export function formatResult<Output>(
 	result: ZodSafeParseResult<Output>,
-): FormError<string> | null;
-export function formatResult<Output, ErrorShape = string>(
+): FormError<string[]> | null;
+export function formatResult<Output, ErrorShape = string[]>(
 	result: ZodSafeParseResult<Output>,
 	options: {
 		/** Whether to include the parsed value in the returned object */
 		includeValue: true;
 		/** Custom function to format validation issues for each field */
-		formatIssues: (issue: core.$ZodIssue[], name: string) => ErrorShape[];
+		formatIssues: (issue: core.$ZodIssue[], name: string) => ErrorShape;
 	},
 ): {
 	error: FormError<ErrorShape> | null;
@@ -33,30 +33,30 @@ export function formatResult<Output>(
 		formatIssues?: undefined;
 	},
 ): {
-	error: FormError<string> | null;
+	error: FormError<string[]> | null;
 	value: Output | undefined;
 };
-export function formatResult<Output, ErrorShape = string>(
+export function formatResult<Output, ErrorShape = string[]>(
 	result: ZodSafeParseResult<Output>,
 	options: {
 		includeValue?: false;
-		formatIssues: (issue: core.$ZodIssue[], name: string) => ErrorShape[];
+		formatIssues: (issue: core.$ZodIssue[], name: string) => ErrorShape;
 	},
 ): FormError<ErrorShape> | null;
-export function formatResult<Output, ErrorShape = string>(
+export function formatResult<Output, ErrorShape = string[]>(
 	result: ZodSafeParseResult<Output>,
 	options?: {
 		includeValue?: boolean;
-		formatIssues?: (issue: core.$ZodIssue[], name: string) => ErrorShape[];
+		formatIssues?: (issue: core.$ZodIssue[], name: string) => ErrorShape;
 	},
 ):
-	| FormError<string | ErrorShape>
+	| FormError<string[] | ErrorShape>
 	| null
 	| {
-			error: FormError<string | ErrorShape> | null;
+			error: FormError<string[] | ErrorShape> | null;
 			value: Output | undefined;
 	  } {
-	let error: FormError<string | ErrorShape> | null = null;
+	let error: FormError<string[] | ErrorShape> | null = null;
 	let value: Output | undefined = undefined;
 
 	if (!result.success) {
@@ -78,13 +78,15 @@ export function formatResult<Output, ErrorShape = string>(
 			errorByName[name].push(issue);
 		}
 
-		const { '': formErrors = [], ...fieldErrors } = Object.entries(
+		const { '': formErrors = null, ...fieldErrors } = Object.entries(
 			errorByName,
-		).reduce<Record<string, string[] | ErrorShape[]>>(
+		).reduce<Record<string, string[] | ErrorShape>>(
 			(result, [name, issues]) => {
-				result[name] = options?.formatIssues
-					? options.formatIssues(issues, name)
-					: issues.map((issue) => issue.message);
+				if (issues.length > 0) {
+					result[name] = options?.formatIssues
+						? options.formatIssues(issues, name)
+						: issues.map((issue) => issue.message);
+				}
 
 				return result;
 			},

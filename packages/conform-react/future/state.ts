@@ -287,7 +287,7 @@ export function getListKey(context: FormContext<any>, name: string): string[] {
 export function getErrors<ErrorShape>(
 	state: FormState<ErrorShape>,
 	name?: string,
-): ErrorShape[] | undefined {
+): ErrorShape | undefined {
 	const error = state.serverError ?? state.clientError;
 
 	if (!error || !isTouched(state, name)) {
@@ -296,7 +296,7 @@ export function getErrors<ErrorShape>(
 
 	const errors = name ? error.fieldErrors[name] : error.formErrors;
 
-	if (errors && errors.length > 0) {
+	if (errors != null) {
 		return errors;
 	}
 }
@@ -305,7 +305,7 @@ export function getFieldErrors<ErrorShape>(
 	state: FormState<ErrorShape>,
 	name?: string,
 ) {
-	const result: Record<string, ErrorShape[]> = {};
+	const result: Record<string, ErrorShape> = {};
 	const error = state.serverError ?? state.clientError;
 
 	if (error) {
@@ -333,13 +333,15 @@ export function getFieldErrors<ErrorShape>(
 /**
  * Checks if fieldErrors contains any errors at the given name or any child path.
  */
-export function hasFieldError(error: FormError<any>, name: string): boolean {
+export function hasFieldError<ErrorShape>(
+	error: FormError<ErrorShape>,
+	name: string,
+): boolean {
 	const basePath = parsePath(name);
 
-	return Object.keys(error.fieldErrors).some(
-		(field) =>
-			getRelativePath(field, basePath) !== null &&
-			error.fieldErrors[field]?.length,
+	return Object.entries(error.fieldErrors).some(
+		([field, fieldError]) =>
+			getRelativePath(field, basePath) !== null && fieldError !== null,
 	);
 }
 

@@ -141,9 +141,9 @@ test('useForm', () => {
 		},
 	});
 
-	expectTypeOf(basicForm.form).toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(basicForm.form).toEqualTypeOf<FormMetadata<string[]>>();
 	expectTypeOf(basicForm.fields).toEqualTypeOf<
-		Fieldset<Record<string, any>, string>
+		Fieldset<Record<string, any>, string[]>
 	>();
 	expectTypeOf(basicForm.intent).toEqualTypeOf<
 		IntentDispatcher<Record<string, any>>
@@ -152,22 +152,20 @@ test('useForm', () => {
 	const errorShapeInferred = useForm({
 		onValidate({ error }) {
 			return {
-				formErrors: error.formErrors.map((message) => ({ message })),
+				formErrors: error.formErrors?.join(', ') ?? null,
 				fieldErrors: Object.fromEntries(
 					Object.entries(error.fieldErrors).map(([key, messages]) => [
 						key,
-						messages.map((message) => ({ message })),
+						messages?.join(', ') ?? null,
 					]),
 				),
 			};
 		},
 	});
 
-	expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
-		FormMetadata<{ message: string }>
-	>();
+	expectTypeOf(errorShapeInferred.form).toEqualTypeOf<FormMetadata<string>>();
 	expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
-		Fieldset<Record<string, any>, { message: string }>
+		Fieldset<Record<string, any>, string>
 	>();
 	expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
 		IntentDispatcher<Record<string, any>>
@@ -189,9 +187,9 @@ test('useForm', () => {
 		lastResult: null,
 	});
 
-	expectTypeOf(schemaBasedForm.form).toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(schemaBasedForm.form).toEqualTypeOf<FormMetadata<string[]>>();
 	expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
-		Fieldset<{ email: string; password: string }, string>
+		Fieldset<{ email: string; password: string }, string[]>
 	>();
 	expectTypeOf(schemaBasedForm.intent).toEqualTypeOf<
 		IntentDispatcher<{ email: string; password: string }>
@@ -200,11 +198,11 @@ test('useForm', () => {
 	const testSchemaWithCustomErrorShape = useForm(testSchema, {
 		onValidate({ error }) {
 			return {
-				formErrors: error.formErrors.map((message) => ({ message })),
+				formErrors: error.formErrors?.join(', ') ?? null,
 				fieldErrors: Object.fromEntries(
 					Object.entries(error.fieldErrors).map(([key, messages]) => [
 						key,
-						messages.map((message) => ({ message })),
+						messages?.join(', ') ?? null,
 					]),
 				),
 			};
@@ -212,10 +210,10 @@ test('useForm', () => {
 	});
 
 	expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
-		FormMetadata<{ message: string }>
+		FormMetadata<string>
 	>();
 	expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
-		Fieldset<{ email: string; password: string }, { message: string }>
+		Fieldset<{ email: string; password: string }, string>
 	>();
 	expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
 		IntentDispatcher<{ email: string; password: string }>
@@ -256,10 +254,10 @@ describe('configureForms', () => {
 		});
 
 		expectTypeOf(basicForm.form).toEqualTypeOf<
-			FormMetadata<{ message: string }>
+			FormMetadata<{ message: string }[]>
 		>();
 		expectTypeOf(basicForm.fields).toEqualTypeOf<
-			Fieldset<Record<string, any>, { message: string }>
+			Fieldset<Record<string, any>, { message: string }[]>
 		>();
 		expectTypeOf(basicForm.intent).toEqualTypeOf<
 			IntentDispatcher<Record<string, any>>
@@ -268,14 +266,18 @@ describe('configureForms', () => {
 		const errorShapeInferred = custom.useForm({
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((error) => ({
-						...error,
-						type: 'custom',
-					})),
+					formErrors:
+						error.formErrors?.map((error) => ({
+							...error,
+							type: 'custom',
+						})) ?? null,
 					fieldErrors: Object.fromEntries(
 						Object.entries(error.fieldErrors).map(([key, messages]) => [
 							key,
-							messages.map((error) => ({ ...error, type: 'custom' })),
+							messages?.map((error) => ({
+								...error,
+								type: 'custom',
+							})) ?? null,
 						]),
 					),
 				};
@@ -283,10 +285,10 @@ describe('configureForms', () => {
 		});
 
 		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
-			FormMetadata<{ message: string; type: string }>
+			FormMetadata<{ message: string; type: string }[]>
 		>();
 		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
-			Fieldset<Record<string, any>, { message: string; type: string }>
+			Fieldset<Record<string, any>, { message: string; type: string }[]>
 		>();
 		expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
 			IntentDispatcher<Record<string, any>>
@@ -297,10 +299,10 @@ describe('configureForms', () => {
 		});
 
 		expectTypeOf(schemaBasedForm.form).toEqualTypeOf<
-			FormMetadata<{ message: string }>
+			FormMetadata<{ message: string }[]>
 		>();
 		expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
-			Fieldset<{ email: string; password: string }, { message: string }>
+			Fieldset<{ email: string; password: string }, { message: string }[]>
 		>();
 		expectTypeOf(schemaBasedForm.intent).toEqualTypeOf<
 			IntentDispatcher<{ email: string; password: string }>
@@ -309,14 +311,12 @@ describe('configureForms', () => {
 		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((error) => ({
-						...error,
-						type: 'custom',
-					})),
+					formErrors:
+						error.formErrors?.map((error) => error.message).join(', ') ?? null,
 					fieldErrors: Object.fromEntries(
 						Object.entries(error.fieldErrors).map(([key, messages]) => [
 							key,
-							messages.map((error) => ({ ...error, type: 'custom' })),
+							messages?.map((error) => error.message).join(', ') ?? null,
 						]),
 					),
 				};
@@ -324,13 +324,10 @@ describe('configureForms', () => {
 		});
 
 		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
-			FormMetadata<{ message: string; type: string }>
+			FormMetadata<string>
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
-			Fieldset<
-				{ email: string; password: string },
-				{ message: string; type: string }
-			>
+			Fieldset<{ email: string; password: string }, string>
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
 			IntentDispatcher<{ email: string; password: string }>
@@ -352,14 +349,15 @@ describe('configureForms', () => {
 		const errorShapeInferred = custom.useForm({
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((message) => ({
-						message,
-						type: 'custom',
-					})),
+					formErrors: error.formErrors
+						? { message: error.formErrors.join(', '), type: 'custom' }
+						: null,
 					fieldErrors: Object.fromEntries(
 						Object.entries(error.fieldErrors).map(([key, messages]) => [
 							key,
-							messages.map((message) => ({ message, type: 'custom' })),
+							messages
+								? { message: messages.join(', '), type: 'custom' }
+								: null,
 						]),
 					),
 				};
@@ -385,14 +383,15 @@ describe('configureForms', () => {
 		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((message) => ({
-						message,
-						type: 'custom',
-					})),
+					formErrors: error.formErrors
+						? { message: error.formErrors.join(', '), type: 'custom' }
+						: null,
 					fieldErrors: Object.fromEntries(
 						Object.entries(error.fieldErrors).map(([key, messages]) => [
 							key,
-							messages.map((message) => ({ message, type: 'custom' })),
+							messages
+								? { message: messages.join(', '), type: 'custom' }
+								: null,
 						]),
 					),
 				};
@@ -418,9 +417,9 @@ describe('configureForms', () => {
 			validateSchema() {
 				return {
 					error: {
-						formErrors: [{ message: 'Form error' }],
+						formErrors: { message: 'Form error' },
 						fieldErrors: {
-							email: [{ message: 'Email error' }],
+							email: { message: 'Email error' },
 						},
 					},
 				};
@@ -447,14 +446,15 @@ describe('configureForms', () => {
 		const errorShapeInferred = custom.useForm({
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((error) => ({
-						...error,
-						type: 'custom',
-					})),
+					formErrors: error.formErrors
+						? { message: error.formErrors.message, type: 'custom' }
+						: null,
 					fieldErrors: Object.fromEntries(
-						Object.entries(error.fieldErrors).map(([key, messages]) => [
+						Object.entries(error.fieldErrors).map(([key, fieldError]) => [
 							key,
-							messages.map((error) => ({ ...error, type: 'custom' })),
+							fieldError
+								? { message: fieldError.message, type: 'custom' }
+								: null,
 						]),
 					),
 				};
@@ -488,14 +488,15 @@ describe('configureForms', () => {
 		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
 			onValidate({ error }) {
 				return {
-					formErrors: error.formErrors.map((error) => ({
-						...error,
-						type: 'custom',
-					})),
+					formErrors: error.formErrors
+						? { message: error.formErrors.message, type: 'custom' }
+						: null,
 					fieldErrors: Object.fromEntries(
-						Object.entries(error.fieldErrors).map(([key, messages]) => [
+						Object.entries(error.fieldErrors).map(([key, fieldError]) => [
 							key,
-							messages.map((error) => ({ ...error, type: 'custom' })),
+							fieldError
+								? { message: fieldError.message, type: 'custom' }
+								: null,
 						]),
 					),
 				};

@@ -817,10 +817,10 @@ export type FieldMetadata<
 			valid: boolean;
 			/** @deprecated Use `.valid` instead. This was not an intentionl breaking change and would be removed in the next minor version soon  */
 			invalid: boolean;
-			/** Array of validation error messages for this field. */
-			errors: ErrorShape[] | undefined;
-			/** Object containing errors for all touched subfields. */
-			fieldErrors: Record<string, ErrorShape[]>;
+			/** Validation error for this field. */
+			errors: ErrorShape | undefined;
+			/** Object containing validation errors for all touched subfields. */
+			fieldErrors: Record<string, ErrorShape>;
 			/** Boolean value for the `aria-invalid` attribute. Indicates whether the field has validation errors for screen readers. */
 			ariaInvalid: boolean | undefined;
 			/** String value for the `aria-describedby` attribute. Contains the errorId when invalid, undefined otherwise. Merge with descriptionId manually if needed (e.g. `${metadata.descriptionId} ${metadata.ariaDescribedBy}`). */
@@ -889,10 +889,10 @@ export type FormMetadata<
 		valid: boolean;
 		/** @deprecated Use `.valid` instead. This was not an intentional breaking change and would be removed in the next minor version soon  */
 		invalid: boolean;
-		/** Form-level validation errors, if any exist. */
-		errors: ErrorShape[] | undefined;
-		/** Object containing errors for all touched fields. */
-		fieldErrors: Record<string, ErrorShape[]>;
+		/** Form-level validation error, if any exists. */
+		errors: ErrorShape | undefined;
+		/** Object containing validation errors for all touched fields. */
+		fieldErrors: Record<string, ErrorShape>;
 		/** The form's initial default values. */
 		defaultValue: Record<string, unknown>;
 		/** Form props object for spreading onto the <form> element. */

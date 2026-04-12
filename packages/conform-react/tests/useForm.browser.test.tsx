@@ -55,8 +55,8 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 	};
 
 	function validateForm(value: Record<string, FormValue>) {
-		const error: FormError<string> = {
-			formErrors: [],
+		const error: FormError<string[]> = {
+			formErrors: null,
 			fieldErrors: {},
 		};
 
@@ -111,8 +111,8 @@ describe.each(testCases)('future export: $name', ({ useForm }) => {
 		};
 	}
 
-	function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
-		const { form, fields, intent } = useForm<Schema, string, Schema>({
+	function Form(props: Partial<FormOptions<Schema, string[], Schema>>) {
+		const { form, fields, intent } = useForm<Schema, string[], Schema>({
 			onValidate({ payload }) {
 				return validateForm(payload);
 			},
@@ -1455,7 +1455,7 @@ describe('configureForms customization', () => {
 		});
 
 		function Form() {
-			const { form, fields } = customized.useForm<Schema, string>({
+			const { form, fields } = customized.useForm<Schema, string[]>({
 				onValidate({ payload, error }) {
 					if (!payload.title) {
 						error.fieldErrors.title = ['Title is required'];
@@ -1513,7 +1513,7 @@ describe('configureForms customization', () => {
 		});
 
 		function Form() {
-			const { form, fields } = customized.useForm<Schema, string>({
+			const { form, fields } = customized.useForm<Schema, string[]>({
 				onValidate({ payload, error }) {
 					if (!payload.title) {
 						error.fieldErrors.title = ['Title is required'];
@@ -1562,7 +1562,7 @@ describe('configureForms customization', () => {
 		});
 
 		function Form() {
-			const { form, fields } = customized.useForm<Schema, string>({
+			const { form, fields } = customized.useForm<Schema, string[]>({
 				shouldValidate: 'onSubmit',
 				shouldRevalidate: 'onBlur',
 				onValidate({ payload, error }) {
@@ -1634,7 +1634,7 @@ describe('configureForms customization', () => {
 		});
 
 		function Form() {
-			const { form, fields } = customized.useForm<Schema, string>({
+			const { form, fields } = customized.useForm<Schema, string[]>({
 				onValidate({ payload, error }) {
 					if (!payload.title) {
 						error.fieldErrors.title = ['Title is required'];
@@ -1692,7 +1692,7 @@ describe('configureForms customization', () => {
 		});
 
 		function Form() {
-			const { form, fields } = customized.useForm<Schema, string>({
+			const { form, fields } = customized.useForm<Schema, string[]>({
 				id: 'test-form',
 				onValidate({ payload, error }) {
 					if (!payload.title) {
@@ -1752,7 +1752,7 @@ describe('configureForms customization', () => {
 			},
 		};
 
-		const customized = configureForms<string, MockSchema>({
+		const customized = configureForms<string[], MockSchema>({
 			isSchema(value): value is MockSchema {
 				return (
 					typeof value === 'object' &&
@@ -1781,7 +1781,7 @@ describe('configureForms customization', () => {
 
 				const hasErrors = Object.keys(errors).length > 0;
 				return {
-					error: hasErrors ? { formErrors: [], fieldErrors: errors } : null,
+					error: hasErrors ? { formErrors: null, fieldErrors: errors } : null,
 					value: hasErrors ? undefined : (payload as any),
 				};
 			},

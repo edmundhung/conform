@@ -324,7 +324,7 @@ test('actionHandlers.insert', () => {
 		items: ['a', 'b', 'new'],
 	});
 
-	const validResult: SubmissionResult<string> = {
+	const validResult: SubmissionResult<string[]> = {
 		submission: {
 			intent: null,
 			payload: { items: [], newItem: 'value' },
@@ -340,7 +340,7 @@ test('actionHandlers.insert', () => {
 		}),
 	).toBe(validResult);
 
-	const invalidResult: SubmissionResult<string> = {
+	const invalidResult: SubmissionResult<string[]> = {
 		submission: {
 			intent: null,
 			payload: { items: [], newItem: 'bad' },
@@ -360,13 +360,45 @@ test('actionHandlers.insert', () => {
 		error: {
 			formErrors: [],
 			fieldErrors: {
-				'items[0]': [],
+				'items[0]': null,
 				newItem: ['Invalid'],
 			},
 		},
 	});
 
-	const maxResult: SubmissionResult<string> = {
+	const resultWithFromError: SubmissionResult<string[]> = {
+		submission: {
+			intent: null,
+			payload: { items: [], newItem: 'bad' },
+			fields: [],
+		},
+		targetValue: { items: ['bad'], newItem: '' },
+		error: {
+			formErrors: [],
+			fieldErrors: {
+				'items[0]': ['Invalid'],
+				newItem: ['Existing error'],
+			},
+		},
+	};
+	expect(
+		intentHandlers.insert.apply?.(resultWithFromError, {
+			name: 'items',
+			from: 'newItem',
+		}),
+	).toEqual({
+		...resultWithFromError,
+		targetValue: undefined,
+		error: {
+			formErrors: [],
+			fieldErrors: {
+				'items[0]': null,
+				newItem: ['Existing error'],
+			},
+		},
+	});
+
+	const maxResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a', 'b'] }, fields: [] },
 		targetValue: { items: ['a', 'b', 'c'] },
 		error: { formErrors: [], fieldErrors: { items: ['Max 2 items'] } },
@@ -382,7 +414,7 @@ test('actionHandlers.insert', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Max 2 items'] } },
 	});
 
-	const normalResult: SubmissionResult<string> = {
+	const normalResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
 		targetValue: { items: ['a', 'b'] },
 		error: null,
@@ -409,7 +441,7 @@ test('actionHandlers.remove', () => {
 		items: ['a', 'c'],
 	});
 
-	const minResult: SubmissionResult<string> = {
+	const minResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
 		targetValue: { items: [] },
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
@@ -426,7 +458,7 @@ test('actionHandlers.remove', () => {
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
 	});
 
-	const insertResult: SubmissionResult<string> = {
+	const insertResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
 		targetValue: { items: [] },
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
@@ -443,7 +475,7 @@ test('actionHandlers.remove', () => {
 		targetValue: { items: [''] },
 	});
 
-	const noRevertResult: SubmissionResult<string> = {
+	const noRevertResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a'] }, fields: [] },
 		targetValue: { items: [] },
 		error: { formErrors: [], fieldErrors: { items: ['Min 1 item'] } },
@@ -455,7 +487,7 @@ test('actionHandlers.remove', () => {
 		}),
 	).toBe(noRevertResult);
 
-	const normalResult: SubmissionResult<string> = {
+	const normalResult: SubmissionResult<string[]> = {
 		submission: { intent: null, payload: { items: ['a', 'b'] }, fields: [] },
 		targetValue: { items: ['a'] },
 		error: null,

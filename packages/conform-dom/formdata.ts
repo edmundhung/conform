@@ -8,13 +8,56 @@ import type {
 	SubmissionResult,
 	UnknownObject,
 	Serialize,
+	StandardSchemaError,
+	CustomError,
 } from './types';
 import { isGlobalInstance, isSubmitter } from './dom';
 import { deepEqual, getTypeName, isPlainObject, stripFiles } from './util';
-import type { StandardSchemaIssue } from './standard-schema';
 import { formatIssues } from './standard-schema';
 
 export const DEFAULT_INTENT_NAME = '__INTENT__';
+
+/**
+ * Returns whether an error payload contains a meaningful value.
+ * Empty arrays are treated as no error.
+ */
+export function hasError<ErrorShape>(
+	error: ErrorShape | null | undefined,
+): error is ErrorShape {
+	return error != null && (!Array.isArray(error) || error.length > 0);
+}
+
+/**
+ * Normalizes a form error object by removing empty error payloads.
+ * Returns `null` when no form-level or field-level errors remain.
+ */
+export function normalizeFormError<ErrorShape>(
+	error: CustomError<ErrorShape> | null,
+): FormError<ErrorShape> | null {
+	if (error === null) {
+		return null;
+	}
+
+	const formErrors = hasError(error.formErrors) ? error.formErrors : null;
+	const fieldErrors = Object.entries(error.fieldErrors ?? {}).reduce<
+		Record<string, ErrorShape | null>
+	>((result, [name, value]) => {
+		if (hasError(value)) {
+			result[name] = value;
+		}
+
+		return result;
+	}, {});
+
+	if (formErrors === null && Object.keys(fieldErrors).length === 0) {
+		return null;
+	}
+
+	return {
+		formErrors,
+		fieldErrors,
+	};
+}
 
 /**
  * Construct a form data with the submitter value.
@@ -483,15 +526,11 @@ export function parseSubmission(
  * })
  * ```
  */
-export function report<ErrorShape = string>(
+export function report<ErrorShape>(
 	submission: Submission,
-	options?: {
+	options: {
 		keepFiles?: false;
-		error?: {
-			issues?: undefined;
-			formErrors?: ErrorShape[];
-			fieldErrors?: Record<string, ErrorShape[]>;
-		} | null;
+		error: CustomError<ErrorShape>;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -500,15 +539,11 @@ export function report<ErrorShape = string>(
 	ErrorShape,
 	Exclude<JsonPrimitive | FormDataEntryValue, File>
 >;
-export function report<ErrorShape = string>(
+export function report<ErrorShape>(
 	submission: Submission,
 	options: {
 		keepFiles: true;
-		error?: {
-			issues?: undefined;
-			formErrors?: ErrorShape[];
-			fieldErrors?: Record<string, ErrorShape[]>;
-		} | null;
+		error: CustomError<ErrorShape>;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -516,33 +551,58 @@ export function report<ErrorShape = string>(
 ): SubmissionResult<ErrorShape>;
 export function report(
 	submission: Submission,
-	options?: {
+	options: {
 		keepFiles?: false;
-		error?: {
-			issues: ReadonlyArray<StandardSchemaIssue>;
-			formErrors?: string[];
-			fieldErrors?: Record<string, string[]>;
-		};
+		error: StandardSchemaError;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
-): SubmissionResult<string, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
+): SubmissionResult<
+	string[],
+	Exclude<JsonPrimitive | FormDataEntryValue, File>
+>;
+export function report(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error: StandardSchemaError;
+		value?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<string[]>;
 export function report(
 	submission: Submission,
 	options?: {
-		keepFiles: true;
-		error?: {
-			issues: ReadonlyArray<StandardSchemaIssue>;
-			formErrors?: string[];
-			fieldErrors?: Record<string, string[]>;
-		};
+		keepFiles?: false;
+		error?: null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
 	},
-): SubmissionResult<string>;
-export function report<ErrorShape = string>(
+): SubmissionResult<never, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
+export function report(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error?: null;
+		value?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<never>;
+export function report<ErrorShape>(
+	submission: Submission,
+	options?: {
+		keepFiles?: boolean;
+		error?: CustomError<ErrorShape> | null;
+		value?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<ErrorShape>;
+export function report<ErrorShape>(
 	submission: Submission,
 	options: {
 		/**
@@ -554,11 +614,7 @@ export function report<ErrorShape = string>(
 		 * Error information to include in the result.
 		 * Set to `null` to indicate validation passed with no errors.
 		 */
-		error?: {
-			issues?: ReadonlyArray<StandardSchemaIssue>;
-			formErrors?: string[];
-			fieldErrors?: Record<string, string[]>;
-		} | null;
+		error?: StandardSchemaError | CustomError<ErrorShape> | null;
 		/**
 		 * The form value to set. Use this to update the form or reset it
 		 * to a specific value when combined with `reset: true`.
@@ -574,33 +630,15 @@ export function report<ErrorShape = string>(
 		 */
 		reset?: boolean;
 	} = {},
-): SubmissionResult<string | ErrorShape> {
-	let error: FormError<string | ErrorShape> | null | undefined;
+): SubmissionResult<string[] | ErrorShape | never> {
+	let error: FormError<string[] | ErrorShape> | null | undefined;
 
 	if (options.error == null) {
 		error = options.error;
-	} else {
+	} else if ('issues' in options.error) {
 		error = formatIssues(options.error.issues ?? []);
-
-		if (options.error.formErrors) {
-			error.formErrors.push(...options.error.formErrors);
-		}
-
-		if (options.error.fieldErrors) {
-			for (const [name, messages] of Object.entries(
-				options.error.fieldErrors,
-			)) {
-				if (messages.length === 0) {
-					continue;
-				}
-
-				if (!error.fieldErrors[name]) {
-					error.fieldErrors[name] = messages;
-				} else {
-					error.fieldErrors[name].push(...messages);
-				}
-			}
-		}
+	} else {
+		error = normalizeFormError(options.error);
 	}
 
 	const targetValue =

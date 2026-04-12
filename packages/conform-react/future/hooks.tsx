@@ -12,6 +12,7 @@ import {
 	parseSubmission,
 	requestSubmit,
 	report,
+	normalizeFormError,
 	defaultSerialize,
 	isPlainObject,
 	isGlobalInstance,
@@ -237,10 +238,16 @@ export function useConform<
 			result: SubmissionResult<ErrorShape>,
 			options = optionsRef.current,
 		) => {
+			const normalizedResult = !result.error
+				? result
+				: {
+						...result,
+						error: normalizeFormError(result.error),
+					};
 			const intent = result.submission.intent
 				? deserializeIntent(result.submission.intent)
 				: null;
-			const finalResult = applyIntent(result, intent, {
+			const finalResult = applyIntent(normalizedResult, intent, {
 				handlers: intentHandlers,
 			});
 			const formElement = getFormElement(formRef);
@@ -259,7 +266,7 @@ export function useConform<
 					intent,
 					ctx: {
 						handlers: intentHandlers,
-						cancelled: finalResult !== result,
+						cancelled: finalResult !== normalizedResult,
 						reset(defaultValue) {
 							return initializeState<ErrorShape>({
 								defaultValue: defaultValue ?? options.defaultValue,
@@ -270,10 +277,10 @@ export function useConform<
 			);
 
 			// TODO: move on error handler to a new effect
-			if (formElement && result.error) {
+			if (formElement && finalResult.error) {
 				optionsRef.current.onError?.({
 					formElement,
-					error: result.error,
+					error: finalResult.error,
 					intent,
 				});
 			}
@@ -389,10 +396,13 @@ export function useConform<
 				resolvedValue = lastAsyncResult.resolvedValue;
 			} else {
 				const value = resolveIntent(submission);
-				const submissionResult = report<ErrorShape>(submission, {
-					keepFiles: true,
-					value,
-				});
+				const submissionResult: SubmissionResult<ErrorShape> = report(
+					submission,
+					{
+						keepFiles: true,
+						value,
+					},
+				);
 
 				const validateResult =
 					// Skip validation on form reset
@@ -400,7 +410,7 @@ export function useConform<
 						? optionsRef.current.onValidate?.({
 								payload: value,
 								error: {
-									formErrors: [],
+									formErrors: null,
 									fieldErrors: {},
 								},
 								intent: submission.intent

@@ -23,6 +23,7 @@ export {
 	report,
 	defaultSerialize,
 	getFieldValue,
+	normalizeFormError,
 } from '../formdata';
 export { isPlainObject, deepEqual } from '../util';
 export {

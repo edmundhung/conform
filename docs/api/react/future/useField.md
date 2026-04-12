@@ -82,13 +82,13 @@ Whether this field currently has no validation errors.
 
 Whether this field currently has validation errors. This is equivalent to `!valid`.
 
-### `errors: ErrorShape[] | undefined`
+### `errors: ErrorShape | undefined`
 
-Array of validation error messages for this field.
+Validation error for this field.
 
-### `fieldErrors: Record<string, ErrorShape[]>`
+### `fieldErrors: Record<string, ErrorShape>`
 
-Object containing errors for all touched subfields.
+Object containing validation errors for all touched subfields.
 
 ### `ariaInvalid: boolean | undefined`
 

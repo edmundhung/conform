@@ -50,13 +50,13 @@ Whether the form currently has no validation errors.
 
 Whether the form currently has any validation errors. This is equivalent to `!valid`.
 
-### `errors: ErrorShape[] | undefined`
+### `errors: ErrorShape | undefined`
 
-Form-level validation errors, if any exist.
+Form-level validation error, if any exists.
 
-### `fieldErrors: Record<string, ErrorShape[]>`
+### `fieldErrors: Record<string, ErrorShape>`
 
-Object containing errors for all touched fields.
+Object containing validation errors for all touched fields.
 
 ### `defaultValue: Record<string, unknown>`
 

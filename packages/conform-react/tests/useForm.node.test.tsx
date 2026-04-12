@@ -14,7 +14,7 @@ const testCases: Array<{ name: string; useForm: typeof useFormDefault }> = [
 describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 	test('default state', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: null,
 				onValidate: () => undefined,
 			}),
@@ -28,7 +28,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 		// Test if the form state is stable
 		const secondUseFormResult = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: null,
 				onValidate: () => undefined,
 			}),
@@ -55,7 +55,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with last submission result', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -84,7 +84,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with validate intent', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -120,7 +120,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with update result', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -159,7 +159,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with reset intent', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; description: string }, string>({
+			useForm<{ title: string; description: string }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -197,7 +197,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with insert intent', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; notes: string[] }, string>({
+			useForm<{ title: string; notes: string[] }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -243,7 +243,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with reorder intent', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; notes: string[] }, string>({
+			useForm<{ title: string; notes: string[] }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -300,7 +300,7 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 
 	test('initialize with remove intent', () => {
 		const { form, fields } = serverRenderHook(() =>
-			useForm<{ title: string; notes: string[] }, string>({
+			useForm<{ title: string; notes: string[] }, string[]>({
 				lastResult: createResult(
 					[
 						['title', 'Example'],
@@ -366,7 +366,7 @@ describe('configureForms customization', () => {
 		});
 
 		const { fields } = serverRenderHook(() =>
-			customized.useForm<{ title: string }, string>({
+			customized.useForm<{ title: string }, string[]>({
 				id: 'test',
 				lastResult: createResult([['title', 'Example']], {
 					error: {
@@ -404,7 +404,7 @@ describe('configureForms customization', () => {
 		});
 
 		const { form } = serverRenderHook(() =>
-			customized.useForm<{ title: string }, string>({
+			customized.useForm<{ title: string }, string[]>({
 				id: 'test',
 				lastResult: createResult([['title', 'Example']], {
 					error: {

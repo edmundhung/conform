@@ -55,7 +55,7 @@ describe.each(testCases)(
 		function ExampleForm({
 			children,
 			...options
-		}: Partial<FormOptions<Schema, string, Schema>> & {
+		}: Partial<FormOptions<Schema, string[], Schema>> & {
 			children?: React.ReactNode;
 		}) {
 			const { form, fields, intent } = useForm({

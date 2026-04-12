@@ -16,15 +16,36 @@ export type FormValue<
 /**
  * Form error object that contains both form errors and field errors.
  */
-export type FormError<ErrorShape = string> = {
+export type FormError<ErrorShape = string[]> = {
 	/**
-	 * The error of the form.
+	 * The form-level error payload.
+	 * Set to `null` when there is no form-level error.
 	 */
-	formErrors: ErrorShape[];
+	formErrors: ErrorShape | null;
 	/**
-	 * The field errors based on the field name.
+	 * Field-level error payloads mapped by field name.
+	 * Use `null` to explicitly clear a field error.
 	 */
-	fieldErrors: Record<string, ErrorShape[]>;
+	fieldErrors: Record<string, ErrorShape | null>;
+};
+
+/**
+ * A widened version of `StandardSchemaV1.Issue`.
+ *
+ * The `path` elements and `PropertyKey` fields are loosened to `unknown`
+ * to stay compatible with Valibot's native issue type.
+ */
+export type StandardSchemaIssue = {
+	readonly message: string;
+	readonly path?: ReadonlyArray<unknown | { key: unknown }> | undefined;
+};
+
+export type StandardSchemaError = Partial<Record<keyof FormError, never>> & {
+	issues: ReadonlyArray<StandardSchemaIssue>;
+};
+
+export type CustomError<ErrorShape> = Partial<FormError<ErrorShape>> & {
+	issues?: never;
 };
 
 /**
@@ -69,7 +90,7 @@ export type Submission<
  * The result of a submission.
  */
 export type SubmissionResult<
-	ErrorShape = string,
+	ErrorShape = string[],
 	ValueType extends JsonPrimitive | FormDataEntryValue =
 		| JsonPrimitive
 		| FormDataEntryValue,

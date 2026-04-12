@@ -20,7 +20,7 @@ The Zod validation result to be formatted. This should be the result from `schem
 
 Optional. Set to `true` if you want both the error and the parsed value returned in an object. This is useful when you are parsing the form value manually and still want to access the parsed value in the `onSubmit` handler on the `useForm` hook.
 
-### `options.formatIssues?: (issues: ZodIssue[], name: string) => ErrorShape[]`
+### `options.formatIssues?: (issues: ZodIssue[], name: string) => ErrorShape`
 
 Optional. A function to customize how zod issues are formatted for each field. This is particularly useful if you want to include additional information from the `ZodIssue` object in the error messages, or if you need to support internationalization.
 
@@ -41,14 +41,14 @@ const error = formatResult(result, {
 It returns the formatted error object by default:
 
 ```ts
-FormError<string> | null;
+FormError<string[]> | null;
 ```
 
 If `includeValue` is set to `true`, it returns an object containing both the error and the parsed value instead:
 
 ```ts
 {
-  error: FormError<string> | null;
+  error: FormError<string[]> | null;
   value: Output | undefined;
 }
 ```

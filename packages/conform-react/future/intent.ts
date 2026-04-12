@@ -306,9 +306,9 @@ export const intentHandlers: {
 				return result;
 			}
 
-			const arrayErrors = result.error?.fieldErrors[options.name];
+			const listError = result.error?.fieldErrors[options.name];
 
-			if (options.onInvalid === 'revert' && arrayErrors?.length) {
+			if (options.onInvalid === 'revert' && listError != null) {
 				return {
 					...result,
 					targetValue: undefined,
@@ -320,20 +320,33 @@ export const intentHandlers: {
 					options.index ??
 					getPathArray(result.submission.payload, options.name).length;
 				const insertedItemPath = appendPath(options.name, index);
-				const insertedItemErrors = result.error?.fieldErrors[insertedItemPath];
+				const insertedItemError = result.error?.fieldErrors[insertedItemPath];
+				const fromFieldError = result.error?.fieldErrors[options.from];
 
-				if (insertedItemErrors?.length) {
-					const fromErrors = result.error?.fieldErrors[options.from] ?? [];
-
+				if (fromFieldError != null) {
 					return {
 						...result,
 						targetValue: undefined,
 						error: {
-							formErrors: result.error?.formErrors ?? [],
+							formErrors: result.error?.formErrors ?? null,
 							fieldErrors: {
 								...result.error?.fieldErrors,
-								[options.from]: [...fromErrors, ...insertedItemErrors],
-								[insertedItemPath]: [],
+								[insertedItemPath]: null,
+							},
+						},
+					};
+				}
+
+				if (insertedItemError != null) {
+					return {
+						...result,
+						targetValue: undefined,
+						error: {
+							formErrors: result.error?.formErrors ?? null,
+							fieldErrors: {
+								...result.error?.fieldErrors,
+								[options.from]: insertedItemError,
+								[insertedItemPath]: null,
 							},
 						},
 					};
