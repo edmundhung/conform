@@ -15,12 +15,13 @@ import {
 	FormContext,
 	FormMetadata,
 	FormOptions,
-	Fieldset,
 	FieldMetadata,
 	InferOutput,
-	InferInput,
 	IntentDispatcher,
 	ValidateResult,
+	InferFormShape,
+	RequireKey,
+	FormHandle,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -30,8 +31,9 @@ import {
 } from './util';
 
 export function configureForms<
-	BaseErrorShape = string,
+	BaseErrorShape = any,
 	BaseSchema = StandardSchemaV1,
+	SchemaErrorShape = string,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
@@ -39,6 +41,7 @@ export function configureForms<
 		FormsConfig<
 			BaseErrorShape,
 			BaseSchema,
+			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata
 		>
@@ -55,6 +58,7 @@ export function configureForms<
 	const globalConfig: FormsConfig<
 		BaseErrorShape,
 		BaseSchema,
+		SchemaErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata
 	> = {
@@ -70,6 +74,7 @@ export function configureForms<
 			validateStandardSchemaV1) as FormsConfig<
 			BaseErrorShape,
 			BaseSchema,
+			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata
 		>['validateSchema'],
@@ -166,67 +171,60 @@ export function configureForms<
 	 */
 	function useForm<
 		Schema extends BaseSchema,
-		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		ErrorShape extends BaseErrorShape,
 		Value = InferOutput<Schema>,
 	>(
 		schema: Schema,
-		options: FormOptions<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never,
-			ErrorShape,
-			Value,
-			Schema,
-			string extends ErrorShape ? never : 'onValidate'
+		options: RequireKey<
+			FormOptions<
+				InferFormShape<Schema>,
+				ErrorShape,
+				Value,
+				Schema,
+				SchemaErrorShape
+			>,
+			'onValidate'
 		>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<InferInput<Schema>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never
-		>;
-	};
-	/**
-	 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-	 */
+	): FormHandle<
+		InferFormShape<Schema>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	>;
+	function useForm<
+		Schema extends BaseSchema,
+		ErrorShape extends BaseErrorShape = SchemaErrorShape extends BaseErrorShape
+			? SchemaErrorShape
+			: BaseErrorShape,
+		Value = InferOutput<Schema>,
+	>(
+		schema: Schema,
+		options: RequireKey<
+			FormOptions<
+				InferFormShape<Schema>,
+				ErrorShape,
+				Value,
+				Schema,
+				SchemaErrorShape
+			>,
+			SchemaErrorShape extends BaseErrorShape ? never : 'onValidate'
+		>,
+	): FormHandle<
+		InferFormShape<Schema>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
 	>(
-		options: FormOptions<
-			FormShape,
-			ErrorShape,
-			Value,
-			undefined,
-			undefined extends Value ? 'onValidate' : never
-		> & {
-			/**
-			 * @deprecated Use `useForm(schema, options)` instead for better type inference.
-			 *
-			 * Optional standard schema for validation (e.g., Zod, Valibot, Yup).
-			 * Removes the need for manual onValidate setup.
-			 */
-			schema: StandardSchemaV1<FormShape, Value>;
-		},
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<FormShape>;
-	};
-	function useForm<
-		FormShape extends Record<string, any> = Record<string, any>,
-		ErrorShape extends BaseErrorShape = BaseErrorShape,
-		Value = undefined,
-	>(
-		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<FormShape>;
-	};
+		options: RequireKey<
+			FormOptions<FormShape, ErrorShape, Value, undefined, SchemaErrorShape>,
+			'onValidate'
+		>,
+	): FormHandle<FormShape, ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
@@ -234,14 +232,14 @@ export function configureForms<
 	>(
 		schemaOrOptions:
 			| BaseSchema
-			| StandardSchemaV1
 			| FormOptions<FormShape, ErrorShape, Value, undefined, any>,
 		maybeOptions?: FormOptions<any, ErrorShape, Value, undefined, any>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<Record<string, any>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher;
-	} {
+	): FormHandle<
+		Record<string, any>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	> {
 		let schema: BaseSchema | undefined;
 		let options: FormOptions<any, ErrorShape, Value, undefined, any>;
 
@@ -268,77 +266,80 @@ export function configureForms<
 		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
-		const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value, any>(
-			formId,
-			{
-				...options,
-				serialize,
-				intentName: globalConfig.intentName,
-				onError: options.onError ?? focusFirstInvalidField,
-				onValidate(ctx) {
-					if (schema) {
-						const schemaResult = globalConfig.validateSchema(
-							schema,
-							ctx.payload,
-							options.schemaOptions,
-						);
+		const [state, handleSubmit] = useConform<
+			FormShape,
+			ErrorShape,
+			Value,
+			any,
+			SchemaErrorShape
+		>(formId, {
+			...options,
+			serialize,
+			intentName: globalConfig.intentName,
+			onError: options.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (schema) {
+					const schemaResult = globalConfig.validateSchema(
+						schema,
+						ctx.payload,
+						options.schemaOptions,
+					);
 
-						if (schemaResult instanceof Promise) {
-							return schemaResult.then((resolvedResult) => {
-								if (typeof options.onValidate === 'function') {
-									throw new Error(
-										'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-									);
-								}
+					if (schemaResult instanceof Promise) {
+						return schemaResult.then((resolvedResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
 
-								return resolvedResult as ValidateResult<ErrorShape, any>;
-							});
-						}
-
-						if (!options.onValidate) {
-							return schemaResult as ValidateResult<ErrorShape, Value>;
-						}
-
-						// Update the schema error in the context
-						if (schemaResult.error) {
-							ctx.error = schemaResult.error;
-						}
-
-						const schemaValue = schemaResult.value as Value | undefined;
-
-						ctx.schemaValue = schemaValue;
-
-						const validateResult = resolveValidateResult(
-							options.onValidate(ctx as any),
-						);
-
-						if (validateResult.syncResult) {
-							validateResult.syncResult.value ??= schemaValue;
-						}
-
-						if (validateResult.asyncResult) {
-							validateResult.asyncResult = validateResult.asyncResult.then(
-								(result) => {
-									result.value ??= schemaValue;
-									return result;
-								},
-							);
-						}
-
-						return [validateResult.syncResult, validateResult.asyncResult];
+							return resolvedResult as ValidateResult<ErrorShape, any>;
+						});
 					}
 
-					return (
-						options.onValidate?.(ctx as any) ?? {
-							// To avoid conform falling back to server validation,
-							// if neither schema nor validation handler is provided,
-							// we just treat it as a valid client submission
-							error: null,
-						}
+					if (!options.onValidate) {
+						return schemaResult as ValidateResult<ErrorShape, Value>;
+					}
+
+					// Update the schema error in the context
+					if (schemaResult.error) {
+						ctx.error = schemaResult.error;
+					}
+
+					const schemaValue = schemaResult.value as Value | undefined;
+
+					ctx.schemaValue = schemaValue;
+
+					const validateResult = resolveValidateResult(
+						options.onValidate(ctx as any),
 					);
-				},
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= schemaValue;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= schemaValue;
+								return result;
+							},
+						);
+					}
+
+					return [validateResult.syncResult, validateResult.asyncResult];
+				}
+
+				return (
+					options.onValidate?.(ctx as any) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
 			},
-		);
+		});
 		const intent = useIntent<FormShape>(formId);
 		const context = useMemo<FormContext<ErrorShape>>(
 			() => ({
@@ -574,3 +575,122 @@ export function configureForms<
 		config: globalConfig,
 	};
 }
+
+const defaultForms = configureForms();
+
+/**
+ * Provides form context to child components.
+ * Stacks contexts to support nested forms, with latest context taking priority.
+ */
+export const FormProvider = defaultForms.FormProvider;
+
+/**
+ * The main React hook for form management. Handles form state, validation, and submission
+ * while providing access to form metadata, field objects, and form actions.
+ *
+ * It can be called in two ways:
+ * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
+ * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
+ *
+ * @see https://conform.guide/api/react/future/useForm
+ * @example Schema first setup with zod:
+ *
+ * ```tsx
+ * const { form, fields } = useForm(zodSchema, {
+ *   lastResult,
+ *   shouldValidate: 'onBlur',
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ *
+ * @example Manual configuration setup with custom validation:
+ *
+ * ```tsx
+ * const { form, fields } = useForm({
+ *    onValidate({ payload, error }) {
+ *     if (!payload.email) {
+ * 		 error.fieldErrors.email = ['Required'];
+ *     }
+ *     return error;
+ *   }
+ * });
+ *
+ * return (
+ *   <form {...form.props}>
+ *     <input name={fields.email.name} defaultValue={fields.email.defaultValue} />
+ *     <div>{fields.email.errors}</div>
+ *   </form>
+ * );
+ * ```
+ */
+export const useForm = defaultForms.useForm;
+
+/**
+ * A React hook that provides access to form-level metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useFormMetadata
+ * @example
+ * ```tsx
+ * function ErrorSummary() {
+ *   const form = useFormMetadata();
+ *
+ *   if (form.valid) return null;
+ *
+ *   return (
+ *     <div>Please fix {Object.keys(form.fieldErrors).length} errors</div>
+ *   );
+ * }
+ * ```
+ */
+export const useFormMetadata = defaultForms.useFormMetadata;
+
+/**
+ * A React hook that provides access to a specific field's metadata and state.
+ * Requires `FormProvider` context when used in child components.
+ *
+ * @see https://conform.guide/api/react/future/useField
+ * @example
+ * ```tsx
+ * function FormField({ name, label }) {
+ *   const field = useField(name);
+ *
+ *   return (
+ *     <div>
+ *       <label htmlFor={field.id}>{label}</label>
+ *       <input id={field.id} name={field.name} defaultValue={field.defaultValue} />
+ *       {field.errors && <div>{field.errors.join(', ')}</div>}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export const useField = defaultForms.useField;
+
+/**
+ * A React hook that provides an intent dispatcher for programmatic form actions.
+ * Intent dispatchers allow you to trigger form operations like validation, field updates,
+ * and array manipulations without manual form submission.
+ *
+ * @see https://conform.guide/api/react/future/useIntent
+ * @example
+ * ```tsx
+ * function ResetButton() {
+ *   const buttonRef = useRef<HTMLButtonElement>(null);
+ *   const intent = useIntent(buttonRef);
+ *
+ *   return (
+ *     <button type="button" ref={buttonRef} onClick={() => intent.reset()}>
+ *       Reset Form
+ *     </button>
+ *   );
+ * }
+ * ```
+ */
+export const useIntent = defaultForms.useIntent;

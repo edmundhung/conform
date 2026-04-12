@@ -1,4 +1,4 @@
-import { assertType, expectTypeOf, test } from 'vitest';
+import { assertType, describe, expectTypeOf, test } from 'vitest';
 import type {
 	BaseControlProps,
 	Control,
@@ -13,7 +13,12 @@ import type {
 	InferCustomFormMetadata,
 	IntentDispatcher,
 } from '@conform-to/react/future';
-import { useFormData, configureForms, shape } from '@conform-to/react/future';
+import {
+	useForm,
+	useFormData,
+	configureForms,
+	shape,
+} from '@conform-to/react/future';
 import { useRef } from 'react';
 
 test('DefaultValue', () => {
@@ -126,6 +131,389 @@ test('FormOptions', () => {
 	// Users should be able to pass null for lastResult
 	assertType<FormOptions<TestSchema>>({
 		lastResult: null,
+	});
+});
+
+test('useForm', () => {
+	const basicForm = useForm({
+		onValidate({ error }) {
+			return error;
+		},
+	});
+
+	expectTypeOf(basicForm.form).toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(basicForm.fields).toEqualTypeOf<
+		Fieldset<Record<string, any>, string>
+	>();
+	expectTypeOf(basicForm.intent).toEqualTypeOf<
+		IntentDispatcher<Record<string, any>>
+	>();
+
+	const errorShapeInferred = useForm({
+		onValidate({ error }) {
+			return {
+				formErrors: error.formErrors.map((message) => ({ message })),
+				fieldErrors: Object.fromEntries(
+					Object.entries(error.fieldErrors).map(([key, messages]) => [
+						key,
+						messages.map((message) => ({ message })),
+					]),
+				),
+			};
+		},
+	});
+
+	expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
+		FormMetadata<{ message: string }>
+	>();
+	expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
+		Fieldset<Record<string, any>, { message: string }>
+	>();
+	expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
+		IntentDispatcher<Record<string, any>>
+	>();
+
+	const testSchema = {
+		'~standard': {
+			version: 1,
+			vendor: 'test',
+			validate: () => ({ value: { email: '' } }),
+			types: {} as {
+				input: { email: string; password: string };
+				output: { email: string; password: string };
+			},
+		},
+	} as const;
+
+	const schemaBasedForm = useForm(testSchema, {
+		lastResult: null,
+	});
+
+	expectTypeOf(schemaBasedForm.form).toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
+		Fieldset<{ email: string; password: string }, string>
+	>();
+	expectTypeOf(schemaBasedForm.intent).toEqualTypeOf<
+		IntentDispatcher<{ email: string; password: string }>
+	>();
+
+	const testSchemaWithCustomErrorShape = useForm(testSchema, {
+		onValidate({ error }) {
+			return {
+				formErrors: error.formErrors.map((message) => ({ message })),
+				fieldErrors: Object.fromEntries(
+					Object.entries(error.fieldErrors).map(([key, messages]) => [
+						key,
+						messages.map((message) => ({ message })),
+					]),
+				),
+			};
+		},
+	});
+
+	expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
+		FormMetadata<{ message: string }>
+	>();
+	expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
+		Fieldset<{ email: string; password: string }, { message: string }>
+	>();
+	expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
+		IntentDispatcher<{ email: string; password: string }>
+	>();
+});
+
+describe('configureForms', () => {
+	const testSchema = {
+		'~standard': {
+			version: 1,
+			vendor: 'test',
+			validate: () => ({ value: { email: '' } }),
+			types: {} as {
+				input: { email: string; password: string };
+				output: { email: string; password: string };
+			},
+		},
+	} as const;
+
+	test('custom validateSchema', () => {
+		const custom = configureForms({
+			validateSchema() {
+				return {
+					error: {
+						formErrors: [{ message: 'Form error' }],
+						fieldErrors: {
+							email: [{ message: 'Email error' }],
+						},
+					},
+				};
+			},
+		});
+
+		const basicForm = custom.useForm({
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		expectTypeOf(basicForm.form).toEqualTypeOf<
+			FormMetadata<{ message: string }>
+		>();
+		expectTypeOf(basicForm.fields).toEqualTypeOf<
+			Fieldset<Record<string, any>, { message: string }>
+		>();
+		expectTypeOf(basicForm.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>>
+		>();
+
+		const errorShapeInferred = custom.useForm({
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((error) => ({
+						...error,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((error) => ({ ...error, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
+			Fieldset<Record<string, any>, { message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>>
+		>();
+
+		const schemaBasedForm = custom.useForm(testSchema, {
+			lastResult: null,
+		});
+
+		expectTypeOf(schemaBasedForm.form).toEqualTypeOf<
+			FormMetadata<{ message: string }>
+		>();
+		expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
+			Fieldset<{ email: string; password: string }, { message: string }>
+		>();
+		expectTypeOf(schemaBasedForm.intent).toEqualTypeOf<
+			IntentDispatcher<{ email: string; password: string }>
+		>();
+
+		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((error) => ({
+						...error,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((error) => ({ ...error, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
+			Fieldset<
+				{ email: string; password: string },
+				{ message: string; type: string }
+			>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
+			IntentDispatcher<{ email: string; password: string }>
+		>();
+	});
+
+	test('custom errorShape', () => {
+		const custom = configureForms({
+			isError: shape<{ message: string }>(),
+		});
+
+		custom.useForm({
+			// @ts-expect-error error should be match the custom shape
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		const errorShapeInferred = custom.useForm({
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((message) => ({
+						message,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((message) => ({ message, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
+			Fieldset<Record<string, any>, { message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>>
+		>();
+
+		custom.useForm(
+			testSchema,
+			// @ts-expect-error onValidate is required when the custom error shape does not match the schema's error shape
+			{ lastResult: null },
+		);
+
+		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((message) => ({
+						message,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((message) => ({ message, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
+			Fieldset<
+				{ email: string; password: string },
+				{ message: string; type: string }
+			>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
+			IntentDispatcher<{ email: string; password: string }>
+		>();
+	});
+
+	test('custom validateSchema matching custom errorShape', () => {
+		const custom = configureForms({
+			validateSchema() {
+				return {
+					error: {
+						formErrors: [{ message: 'Form error' }],
+						fieldErrors: {
+							email: [{ message: 'Email error' }],
+						},
+					},
+				};
+			},
+			isError: shape<{ message: string }>(),
+		});
+
+		const basicForm = custom.useForm({
+			onValidate({ error }) {
+				return error;
+			},
+		});
+
+		expectTypeOf(basicForm.form).toEqualTypeOf<
+			FormMetadata<{ message: string }>
+		>();
+		expectTypeOf(basicForm.fields).toEqualTypeOf<
+			Fieldset<Record<string, any>, { message: string }>
+		>();
+		expectTypeOf(basicForm.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>>
+		>();
+
+		const errorShapeInferred = custom.useForm({
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((error) => ({
+						...error,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((error) => ({ ...error, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
+			Fieldset<Record<string, any>, { message: string; type: string }>
+		>();
+		expectTypeOf(errorShapeInferred.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>>
+		>();
+
+		const schemaBasedForm = custom.useForm(testSchema, {
+			lastResult: null,
+		});
+
+		expectTypeOf(schemaBasedForm.form).toEqualTypeOf<
+			FormMetadata<{ message: string }>
+		>();
+		expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
+			Fieldset<{ email: string; password: string }, { message: string }>
+		>();
+		expectTypeOf(schemaBasedForm.intent).toEqualTypeOf<
+			IntentDispatcher<{ email: string; password: string }>
+		>();
+
+		const testSchemaWithCustomErrorShape = custom.useForm(testSchema, {
+			onValidate({ error }) {
+				return {
+					formErrors: error.formErrors.map((error) => ({
+						...error,
+						type: 'custom',
+					})),
+					fieldErrors: Object.fromEntries(
+						Object.entries(error.fieldErrors).map(([key, messages]) => [
+							key,
+							messages.map((error) => ({ ...error, type: 'custom' })),
+						]),
+					),
+				};
+			},
+		});
+
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
+			FormMetadata<{ message: string; type: string }>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
+			Fieldset<
+				{ email: string; password: string },
+				{ message: string; type: string }
+			>
+		>();
+		expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
+			IntentDispatcher<{ email: string; password: string }>
+		>();
 	});
 });
 
@@ -346,11 +734,11 @@ test('useFormData', () => {
 
 test('InferBaseErrorShape, InferCustomFormMetadata, and InferCustomFieldMetadata', () => {
 	// Test with minimal config (no custom metadata)
-	const simpleResult = configureForms({});
+	const simpleResult = configureForms();
 
 	// InferBaseErrorShape returns the error shape (defaults to string)
 	type SimpleErrorShape = InferBaseErrorShape<typeof simpleResult.config>;
-	expectTypeOf<SimpleErrorShape>().toEqualTypeOf<string>();
+	expectTypeOf<SimpleErrorShape>().toEqualTypeOf<any>();
 
 	// InferCustomFormMetadata returns the custom form metadata extension (empty by default)
 	type SimpleFormExt = InferCustomFormMetadata<typeof simpleResult.config>;

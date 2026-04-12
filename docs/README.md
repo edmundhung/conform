@@ -55,9 +55,9 @@
     - [getFieldValue](./api/react/future/getFieldValue.md)
     - [configureForms](./api/react/future/configureForms.md)
     - [isDirty](./api/react/future/isDirty.md)
+    - [BaseControl](./api/react/future/BaseControl.md)
     - [FormProvider](./api/react/future/FormProvider.md)
     - [PreserveBoundary](./api/react/future/PreserveBoundary.md)
-    - [FormOptionsProvider](./api/react/future/FormOptionsProvider.md)
     - [memoize](./api/react/future/memoize.md)
   - @conform-to/zod
     - [coerceFormValue](./api/zod/future/coerceFormValue.md)
