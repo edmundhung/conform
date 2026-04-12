@@ -515,6 +515,24 @@ export type FormOptions<
 		| undefined;
 };
 
+/**
+ * The object returned by `useForm()`, containing form-level metadata,
+ * typed field metadata, and the intent dispatcher for programmatic updates.
+ */
+export type FormHandle<
+	FormShape extends Record<string, any>,
+	ErrorShape,
+	CustomFormMetadata extends Record<string, unknown> = {},
+	CustomFieldMetadata extends Record<string, unknown> = {},
+> = {
+	/** Form-level metadata and helpers. */
+	form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+	/** Field metadata mapped from the form shape. */
+	fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
+	/** Intent dispatcher for validate, reset, insert, remove, reorder, and update actions. */
+	intent: IntentDispatcher<FormShape>;
+};
+
 export interface FormContext<ErrorShape = any> {
 	/** The form's unique identifier */
 	formId: string;

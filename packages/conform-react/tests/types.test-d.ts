@@ -141,7 +141,7 @@ test('useForm', () => {
 		},
 	});
 
-	expectTypeOf(basicForm.form).branded.toEqualTypeOf<FormMetadata<string>>();
+	expectTypeOf(basicForm.form).toEqualTypeOf<FormMetadata<string>>();
 	expectTypeOf(basicForm.fields).toEqualTypeOf<
 		Fieldset<Record<string, any>, string>
 	>();
@@ -163,7 +163,7 @@ test('useForm', () => {
 		},
 	});
 
-	expectTypeOf(errorShapeInferred.form).branded.toEqualTypeOf<
+	expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
 		FormMetadata<{ message: string }>
 	>();
 	expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
@@ -189,9 +189,7 @@ test('useForm', () => {
 		lastResult: null,
 	});
 
-	expectTypeOf(schemaBasedForm.form).branded.toEqualTypeOf<
-		FormMetadata<string>
-	>();
+	expectTypeOf(schemaBasedForm.form).toEqualTypeOf<FormMetadata<string>>();
 	expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
 		Fieldset<{ email: string; password: string }, string>
 	>();
@@ -213,7 +211,7 @@ test('useForm', () => {
 		},
 	});
 
-	expectTypeOf(testSchemaWithCustomErrorShape.form).branded.toEqualTypeOf<
+	expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
 		FormMetadata<{ message: string }>
 	>();
 	expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
@@ -257,7 +255,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(basicForm.form).branded.toEqualTypeOf<
+		expectTypeOf(basicForm.form).toEqualTypeOf<
 			FormMetadata<{ message: string }>
 		>();
 		expectTypeOf(basicForm.fields).toEqualTypeOf<
@@ -284,7 +282,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(errorShapeInferred.form).branded.toEqualTypeOf<
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
@@ -298,7 +296,7 @@ describe('configureForms', () => {
 			lastResult: null,
 		});
 
-		expectTypeOf(schemaBasedForm.form).branded.toEqualTypeOf<
+		expectTypeOf(schemaBasedForm.form).toEqualTypeOf<
 			FormMetadata<{ message: string }>
 		>();
 		expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
@@ -325,7 +323,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(testSchemaWithCustomErrorShape.form).branded.toEqualTypeOf<
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
@@ -368,7 +366,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(errorShapeInferred.form).branded.toEqualTypeOf<
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
@@ -401,7 +399,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(testSchemaWithCustomErrorShape.form).branded.toEqualTypeOf<
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<
@@ -436,7 +434,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(basicForm.form).branded.toEqualTypeOf<
+		expectTypeOf(basicForm.form).toEqualTypeOf<
 			FormMetadata<{ message: string }>
 		>();
 		expectTypeOf(basicForm.fields).toEqualTypeOf<
@@ -463,7 +461,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(errorShapeInferred.form).branded.toEqualTypeOf<
+		expectTypeOf(errorShapeInferred.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(errorShapeInferred.fields).toEqualTypeOf<
@@ -477,7 +475,7 @@ describe('configureForms', () => {
 			lastResult: null,
 		});
 
-		expectTypeOf(schemaBasedForm.form).branded.toEqualTypeOf<
+		expectTypeOf(schemaBasedForm.form).toEqualTypeOf<
 			FormMetadata<{ message: string }>
 		>();
 		expectTypeOf(schemaBasedForm.fields).toEqualTypeOf<
@@ -504,7 +502,7 @@ describe('configureForms', () => {
 			},
 		});
 
-		expectTypeOf(testSchemaWithCustomErrorShape.form).branded.toEqualTypeOf<
+		expectTypeOf(testSchemaWithCustomErrorShape.form).toEqualTypeOf<
 			FormMetadata<{ message: string; type: string }>
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.fields).toEqualTypeOf<

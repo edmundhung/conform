@@ -15,13 +15,13 @@ import {
 	FormContext,
 	FormMetadata,
 	FormOptions,
-	Fieldset,
 	FieldMetadata,
 	InferOutput,
 	IntentDispatcher,
 	ValidateResult,
 	InferFormShape,
 	RequireKey,
+	FormHandle,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -185,11 +185,12 @@ export function configureForms<
 			>,
 			'onValidate'
 		>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<InferFormShape<Schema>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<InferFormShape<Schema>>;
-	};
+	): FormHandle<
+		InferFormShape<Schema>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	>;
 	function useForm<
 		Schema extends BaseSchema,
 		ErrorShape extends BaseErrorShape = SchemaErrorShape extends BaseErrorShape
@@ -208,11 +209,12 @@ export function configureForms<
 			>,
 			SchemaErrorShape extends BaseErrorShape ? never : 'onValidate'
 		>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<InferFormShape<Schema>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<InferFormShape<Schema>>;
-	};
+	): FormHandle<
+		InferFormShape<Schema>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
@@ -222,11 +224,7 @@ export function configureForms<
 			FormOptions<FormShape, ErrorShape, Value, undefined, SchemaErrorShape>,
 			'onValidate'
 		>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<FormShape>;
-	};
+	): FormHandle<FormShape, ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
@@ -236,11 +234,12 @@ export function configureForms<
 			| BaseSchema
 			| FormOptions<FormShape, ErrorShape, Value, undefined, any>,
 		maybeOptions?: FormOptions<any, ErrorShape, Value, undefined, any>,
-	): {
-		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<Record<string, any>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher;
-	} {
+	): FormHandle<
+		Record<string, any>,
+		ErrorShape,
+		CustomFormMetadata,
+		CustomFieldMetadata
+	> {
 		let schema: BaseSchema | undefined;
 		let options: FormOptions<any, ErrorShape, Value, undefined, any>;
 
