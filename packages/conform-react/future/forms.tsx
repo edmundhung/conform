@@ -18,9 +18,10 @@ import {
 	Fieldset,
 	FieldMetadata,
 	InferOutput,
-	InferInput,
 	IntentDispatcher,
 	ValidateResult,
+	InferFormShape,
+	RequireKey,
 } from './types';
 import {
 	isStandardSchemaV1,
@@ -30,8 +31,9 @@ import {
 } from './util';
 
 export function configureForms<
-	BaseErrorShape = string,
+	BaseErrorShape = any,
 	BaseSchema = StandardSchemaV1,
+	SchemaErrorShape = string,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(
@@ -39,6 +41,7 @@ export function configureForms<
 		FormsConfig<
 			BaseErrorShape,
 			BaseSchema,
+			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata
 		>
@@ -55,6 +58,7 @@ export function configureForms<
 	const globalConfig: FormsConfig<
 		BaseErrorShape,
 		BaseSchema,
+		SchemaErrorShape,
 		CustomFormMetadata,
 		CustomFieldMetadata
 	> = {
@@ -70,6 +74,7 @@ export function configureForms<
 			validateStandardSchemaV1) as FormsConfig<
 			BaseErrorShape,
 			BaseSchema,
+			SchemaErrorShape,
 			CustomFormMetadata,
 			CustomFieldMetadata
 		>['validateSchema'],
@@ -166,34 +171,57 @@ export function configureForms<
 	 */
 	function useForm<
 		Schema extends BaseSchema,
-		ErrorShape extends BaseErrorShape = BaseErrorShape,
+		ErrorShape extends BaseErrorShape,
 		Value = InferOutput<Schema>,
 	>(
 		schema: Schema,
-		options: FormOptions<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never,
-			ErrorShape,
-			Value,
-			Schema,
-			string extends ErrorShape ? never : 'onValidate'
+		options: RequireKey<
+			FormOptions<
+				InferFormShape<Schema>,
+				ErrorShape,
+				Value,
+				Schema,
+				SchemaErrorShape
+			>,
+			'onValidate'
 		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
-		fields: Fieldset<InferInput<Schema>, ErrorShape, CustomFieldMetadata>;
-		intent: IntentDispatcher<
-			InferInput<Schema> extends Record<string, any>
-				? InferInput<Schema>
-				: never
-		>;
+		fields: Fieldset<InferFormShape<Schema>, ErrorShape, CustomFieldMetadata>;
+		intent: IntentDispatcher<InferFormShape<Schema>>;
+	};
+	function useForm<
+		Schema extends BaseSchema,
+		ErrorShape extends BaseErrorShape = SchemaErrorShape extends BaseErrorShape
+			? SchemaErrorShape
+			: BaseErrorShape,
+		Value = InferOutput<Schema>,
+	>(
+		schema: Schema,
+		options: RequireKey<
+			FormOptions<
+				InferFormShape<Schema>,
+				ErrorShape,
+				Value,
+				Schema,
+				SchemaErrorShape
+			>,
+			SchemaErrorShape extends BaseErrorShape ? never : 'onValidate'
+		>,
+	): {
+		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
+		fields: Fieldset<InferFormShape<Schema>, ErrorShape, CustomFieldMetadata>;
+		intent: IntentDispatcher<InferFormShape<Schema>>;
 	};
 	function useForm<
 		FormShape extends Record<string, any> = Record<string, any>,
 		ErrorShape extends BaseErrorShape = BaseErrorShape,
 		Value = undefined,
 	>(
-		options: FormOptions<FormShape, ErrorShape, Value, undefined, 'onValidate'>,
+		options: RequireKey<
+			FormOptions<FormShape, ErrorShape, Value, undefined, SchemaErrorShape>,
+			'onValidate'
+		>,
 	): {
 		form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 		fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
@@ -239,77 +267,80 @@ export function configureForms<
 		);
 		const fallbackId = useId();
 		const formId = options.id ?? `form-${fallbackId}`;
-		const [state, handleSubmit] = useConform<FormShape, ErrorShape, Value, any>(
-			formId,
-			{
-				...options,
-				serialize,
-				intentName: globalConfig.intentName,
-				onError: options.onError ?? focusFirstInvalidField,
-				onValidate(ctx) {
-					if (schema) {
-						const schemaResult = globalConfig.validateSchema(
-							schema,
-							ctx.payload,
-							options.schemaOptions,
-						);
+		const [state, handleSubmit] = useConform<
+			FormShape,
+			ErrorShape,
+			Value,
+			any,
+			SchemaErrorShape
+		>(formId, {
+			...options,
+			serialize,
+			intentName: globalConfig.intentName,
+			onError: options.onError ?? focusFirstInvalidField,
+			onValidate(ctx) {
+				if (schema) {
+					const schemaResult = globalConfig.validateSchema(
+						schema,
+						ctx.payload,
+						options.schemaOptions,
+					);
 
-						if (schemaResult instanceof Promise) {
-							return schemaResult.then((resolvedResult) => {
-								if (typeof options.onValidate === 'function') {
-									throw new Error(
-										'The "onValidate" handler is not supported when used with asynchronous schema validation.',
-									);
-								}
+					if (schemaResult instanceof Promise) {
+						return schemaResult.then((resolvedResult) => {
+							if (typeof options.onValidate === 'function') {
+								throw new Error(
+									'The "onValidate" handler is not supported when used with asynchronous schema validation.',
+								);
+							}
 
-								return resolvedResult as ValidateResult<ErrorShape, any>;
-							});
-						}
-
-						if (!options.onValidate) {
-							return schemaResult as ValidateResult<ErrorShape, Value>;
-						}
-
-						// Update the schema error in the context
-						if (schemaResult.error) {
-							ctx.error = schemaResult.error;
-						}
-
-						const schemaValue = schemaResult.value as Value | undefined;
-
-						ctx.schemaValue = schemaValue;
-
-						const validateResult = resolveValidateResult(
-							options.onValidate(ctx as any),
-						);
-
-						if (validateResult.syncResult) {
-							validateResult.syncResult.value ??= schemaValue;
-						}
-
-						if (validateResult.asyncResult) {
-							validateResult.asyncResult = validateResult.asyncResult.then(
-								(result) => {
-									result.value ??= schemaValue;
-									return result;
-								},
-							);
-						}
-
-						return [validateResult.syncResult, validateResult.asyncResult];
+							return resolvedResult as ValidateResult<ErrorShape, any>;
+						});
 					}
 
-					return (
-						options.onValidate?.(ctx as any) ?? {
-							// To avoid conform falling back to server validation,
-							// if neither schema nor validation handler is provided,
-							// we just treat it as a valid client submission
-							error: null,
-						}
+					if (!options.onValidate) {
+						return schemaResult as ValidateResult<ErrorShape, Value>;
+					}
+
+					// Update the schema error in the context
+					if (schemaResult.error) {
+						ctx.error = schemaResult.error;
+					}
+
+					const schemaValue = schemaResult.value as Value | undefined;
+
+					ctx.schemaValue = schemaValue;
+
+					const validateResult = resolveValidateResult(
+						options.onValidate(ctx as any),
 					);
-				},
+
+					if (validateResult.syncResult) {
+						validateResult.syncResult.value ??= schemaValue;
+					}
+
+					if (validateResult.asyncResult) {
+						validateResult.asyncResult = validateResult.asyncResult.then(
+							(result) => {
+								result.value ??= schemaValue;
+								return result;
+							},
+						);
+					}
+
+					return [validateResult.syncResult, validateResult.asyncResult];
+				}
+
+				return (
+					options.onValidate?.(ctx as any) ?? {
+						// To avoid conform falling back to server validation,
+						// if neither schema nor validation handler is provided,
+						// we just treat it as a valid client submission
+						error: null,
+					}
+				);
 			},
-		);
+		});
 		const intent = useIntent<FormShape>(formId);
 		const context = useMemo<FormContext<ErrorShape>>(
 			() => ({

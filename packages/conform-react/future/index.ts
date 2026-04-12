@@ -17,8 +17,6 @@ export type {
 	BaseControlProps,
 	DefaultValue,
 	BaseFieldMetadata,
-	BaseErrorShape,
-	CustomTypes,
 	CustomSchemaTypes,
 	FormsConfig,
 	FormContext,

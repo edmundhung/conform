@@ -170,6 +170,7 @@ export function useConform<
 	ErrorShape,
 	Value = undefined,
 	SchemaValue = undefined,
+	SchemaErrorShape = unknown,
 >(
 	formRef: FormRef,
 	options: {
@@ -178,7 +179,9 @@ export function useConform<
 		serialize: Serialize;
 		intentName: string;
 		lastResult?: SubmissionResult<NoInfer<ErrorShape>> | null | undefined;
-		onValidate?: ValidateHandler<ErrorShape, Value, SchemaValue> | undefined;
+		onValidate?:
+			| ValidateHandler<ErrorShape, Value, SchemaValue, SchemaErrorShape>
+			| undefined;
 		onError?: ErrorHandler<ErrorShape> | undefined;
 		onSubmit?:
 			| SubmitHandler<FormShape, NoInfer<ErrorShape>, NoInfer<Value>>

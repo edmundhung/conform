@@ -196,7 +196,7 @@ export type DefaultValue<Shape> =
 				? null | undefined // We don't support setting default value for file inputs yet
 				: Shape | string | null | undefined;
 
-export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
+export type FormState<ErrorShape = any> = {
 	/** Unique identifier that changes on form reset to trigger reset side effects */
 	resetKey: string;
 	/** Initial form values */
@@ -216,7 +216,7 @@ export type FormState<ErrorShape extends BaseErrorShape = DefaultErrorShape> = {
 };
 
 export type FormAction<
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	Intent extends UnknownIntent | null | undefined = UnknownIntent | null,
 	Context = {},
 > = SubmissionResult<ErrorShape> & {
@@ -335,6 +335,7 @@ export type ExtractFieldConditions<
 export type FormsConfig<
 	BaseErrorShape,
 	BaseSchema,
+	SchemaErrorShape,
 	CustomFormMetadata extends Record<string, unknown>,
 	CustomFieldMetadata extends Record<string, unknown>,
 > = {
@@ -386,7 +387,7 @@ export type FormsConfig<
 		payload: Record<string, FormValue>,
 		options?: InferOptions<Schema>,
 	) => MaybePromise<{
-		error: FormError<string> | null;
+		error: FormError<SchemaErrorShape> | null;
 		value?: InferOutput<Schema>;
 	}>;
 	/**
@@ -441,6 +442,11 @@ export type InferInput<Schema> = Schema extends StandardSchemaV1
 		? T
 		: Record<string, any>;
 
+export type InferFormShape<Schema> =
+	InferInput<Schema> extends Record<string, any>
+		? InferInput<Schema>
+		: Record<string, any>;
+
 /**
  * Infer schema output type.
  * For StandardSchemaV1 schemas (zod, valibot, etc.), uses StandardSchemaV1.InferOutput.
@@ -452,13 +458,12 @@ export type InferOutput<Schema> = Schema extends StandardSchemaV1
 		? T
 		: undefined;
 
-export type BaseFormOptions<
+export type FormOptions<
 	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
-		? string
-		: BaseErrorShape,
+	ErrorShape = any,
 	Value = undefined,
 	Schema = unknown,
+	SchemaErrorShape = ErrorShape,
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -506,31 +511,11 @@ export type BaseFormOptions<
 	onBlur?: BlurHandler | undefined;
 	/** Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize errors. */
 	onValidate?:
-		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>>
+		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>, SchemaErrorShape>
 		| undefined;
 };
 
-export type FormOptions<
-	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = string extends BaseErrorShape
-		? string
-		: BaseErrorShape,
-	Value = undefined,
-	Schema = unknown,
-	RequiredKeys extends keyof BaseFormOptions<
-		FormShape,
-		ErrorShape,
-		Value,
-		Schema
-	> = never,
-> = RequireKey<
-	BaseFormOptions<FormShape, ErrorShape, Value, Schema>,
-	RequiredKeys
->;
-
-export interface FormContext<
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
-> {
+export interface FormContext<ErrorShape = any> {
 	/** The form's unique identifier */
 	formId: string;
 	/** Internal form state with validation results and field data */
@@ -721,11 +706,11 @@ export type IntentHandler<
 		value: Record<string, FormValue>,
 		...args: Parameters<Signature>
 	): Record<string, FormValue> | undefined;
-	apply?<ErrorShape extends BaseErrorShape>(
+	apply?<ErrorShape>(
 		result: SubmissionResult<ErrorShape>,
 		...args: Parameters<Signature>
 	): SubmissionResult<ErrorShape>;
-	update?<ErrorShape extends BaseErrorShape>(
+	update?<ErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
@@ -754,28 +739,6 @@ export type Combine<T> = {
 	[K in keyof BaseCombine<T>]: BaseCombine<T>[K];
 };
 
-/**
- * Extend this interface to define the base error shape for validation.
- *
- * @example
- * ```ts
- * declare module '@conform-to/react/future' {
- *   interface CustomTypes {
- *     errorShape: { message: string; code: string };
- *   }
- * }
- * ```
- */
-export interface CustomTypes {}
-
-export type BaseErrorShape = CustomTypes extends { errorShape: infer Shape }
-	? Shape
-	: unknown;
-
-export type DefaultErrorShape = CustomTypes extends { errorShape: infer Shape }
-	? Shape
-	: string;
-
 export type SatisfyComponentProps<
 	ElementType extends React.ElementType,
 	CustomProps extends React.ComponentPropsWithoutRef<ElementType>,
@@ -784,7 +747,7 @@ export type SatisfyComponentProps<
 /** Field metadata object containing field state, validation attributes, and nested field access methods. */
 export type FieldMetadata<
 	FieldShape,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
 	Prettify<
@@ -868,15 +831,16 @@ export type FieldMetadata<
  * Field metadata without custom extensions. This is the type received in `extendFieldMetadata`.
  * Equivalent to `FieldMetadata<FieldShape, ErrorShape, {}>`.
  */
-export type BaseFieldMetadata<
+export type BaseFieldMetadata<FieldShape, ErrorShape = any> = FieldMetadata<
 	FieldShape,
-	ErrorShape extends BaseErrorShape,
-> = FieldMetadata<FieldShape, ErrorShape, {}>;
+	ErrorShape,
+	{}
+>;
 
 /** Fieldset object containing all form fields as properties with their respective field metadata. */
 export type Fieldset<
 	FieldShape,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = {
 	[Key in keyof Combine<FieldShape>]-?: FieldMetadata<
@@ -888,7 +852,7 @@ export type Fieldset<
 
 /** Form-level metadata and state object containing validation status, errors, and field access methods. */
 export type FormMetadata<
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = Readonly<
@@ -955,7 +919,7 @@ export type FormMetadata<
  * Equivalent to `FormMetadata<ErrorShape, {}, CustomFieldMetadata>`.
  */
 export type BaseFormMetadata<
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	CustomFieldMetadata extends Record<string, unknown> = {},
 > = FormMetadata<ErrorShape, {}, CustomFieldMetadata>;
 
@@ -967,7 +931,7 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
-export type ValidateContext<SchemaValue> = {
+export type ValidateContext<SchemaValue, SchemaErrorShape> = {
 	/**
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` and indexed names like `items[0].id`.
@@ -977,7 +941,7 @@ export type ValidateContext<SchemaValue> = {
 	 * Form error object. Initially empty, but populated with schema validation
 	 * errors when a schema is provided and validation fails.
 	 */
-	error: FormError<string>;
+	error: FormError<SchemaErrorShape>;
 	/**
 	 * The submission intent derived from the button that triggered the form submission.
 	 */
@@ -1001,8 +965,13 @@ export type ValidateContext<SchemaValue> = {
 	schemaValue: SchemaValue;
 };
 
-export type ValidateHandler<ErrorShape, Value, SchemaValue = undefined> = (
-	ctx: ValidateContext<SchemaValue>,
+export type ValidateHandler<
+	ErrorShape,
+	Value,
+	SchemaValue = undefined,
+	SchemaErrorShape = ErrorShape,
+> = (
+	ctx: ValidateContext<SchemaValue, SchemaErrorShape>,
 ) =>
 	| ValidateResult<ErrorShape, Value>
 	| Promise<ValidateResult<ErrorShape, Value>>
@@ -1049,7 +1018,7 @@ export type BlurHandler = (event: FormFocusEvent) => void;
 
 export type SubmitContext<
 	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	Value = undefined,
 > = {
 	formData: FormData;
@@ -1063,7 +1032,7 @@ export type SubmitContext<
 
 export type SubmitHandler<
 	FormShape extends Record<string, any> = Record<string, any>,
-	ErrorShape extends BaseErrorShape = DefaultErrorShape,
+	ErrorShape = any,
 	Value = undefined,
 > = (
 	event: React.FormEvent<HTMLFormElement>,
@@ -1080,7 +1049,7 @@ export type SubmitHandler<
  * ```
  */
 export type InferBaseErrorShape<Config> =
-	Config extends FormsConfig<infer ErrorShape, any, any, any>
+	Config extends FormsConfig<infer ErrorShape, any, any, any, any>
 		? ErrorShape
 		: string;
 
@@ -1101,7 +1070,7 @@ export type InferBaseErrorShape<Config> =
  * ```
  */
 export type InferCustomFormMetadata<Config> =
-	Config extends FormsConfig<any, any, infer CustomFormMetadata, any>
+	Config extends FormsConfig<any, any, any, infer CustomFormMetadata, any>
 		? CustomFormMetadata
 		: {};
 
@@ -1119,7 +1088,7 @@ export type InferCustomFormMetadata<Config> =
  * ```
  */
 export type InferCustomFieldMetadata<Config> =
-	Config extends FormsConfig<any, any, any, infer CustomFieldMetadata>
+	Config extends FormsConfig<any, any, any, any, infer CustomFieldMetadata>
 		? CustomFieldMetadata
 		: {};
 
