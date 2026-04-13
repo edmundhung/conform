@@ -5,9 +5,27 @@ const defaultBrowsers = ['chromium', 'firefox', 'webkit'] as const;
 const browsers = process.env.BROWSER
 	? [process.env.BROWSER as (typeof defaultBrowsers)[number]]
 	: [...defaultBrowsers];
+const runMultipleBrowsers = browsers.length > 1;
+
+if (runMultipleBrowsers) {
+	// Multi-browser runs add enough process listeners through Vitest/Playwright
+	// startup that Node's default limit warns even though this is expected here.
+	process.setMaxListeners(20);
+}
 
 export default defineConfig({
 	test: {
+		deps: {
+			optimizer: {
+				client: {
+					/**
+					 * Prebundle the React dev JSX runtime so Vitest doesn't re-optimize it
+					 * mid-run and reload large browser suites while they are being collected.
+					 */
+					include: ['react/jsx-dev-runtime'],
+				},
+			},
+		},
 		projects: [
 			// legacy setup to be moved into the packages
 			{
@@ -29,15 +47,20 @@ export default defineConfig({
 					environment: 'node',
 				},
 			},
-			...defineTests('conform-dom'),
-			...defineTests('conform-react'),
-			...defineTests('conform-zod'),
-			...defineTests('conform-valibot'),
+			...defineTests('conform-dom', { browserApiPort: 63316 }),
+			...defineTests('conform-react', { browserApiPort: 63317 }),
+			...defineTests('conform-zod', { browserApiPort: 63318 }),
+			...defineTests('conform-valibot', { browserApiPort: 63319 }),
 		],
 	},
 });
 
-function defineTests(packageName: string): TestProjectInlineConfiguration[] {
+function defineTests(
+	packageName: string,
+	options: {
+		browserApiPort: number;
+	},
+): TestProjectInlineConfiguration[] {
 	return [
 		{
 			test: {
@@ -46,7 +69,11 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 				browser: {
 					enabled: true,
 					headless: true,
-					provider: playwright(),
+					provider: playwright(
+						runMultipleBrowsers ? { actionTimeout: 1_000 } : undefined,
+					),
+					api: options.browserApiPort,
+					fileParallelism: !runMultipleBrowsers,
 					instances: browsers.map((browser) => ({ browser })),
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
@@ -55,10 +82,18 @@ function defineTests(packageName: string): TestProjectInlineConfiguration[] {
 					`**/node_modules/**`,
 					`packages/${packageName}/**/tests/**/*.node.test.{ts,tsx}`,
 				],
-				testTimeout: process.env.CI ? 30_000 : 5_000,
+				testTimeout: process.env.CI
+					? 30_000
+					: runMultipleBrowsers
+						? 15_000
+						: 5_000,
 				expect: {
 					poll: {
-						timeout: process.env.CI ? 10_000 : 1_000,
+						timeout: process.env.CI
+							? 10_000
+							: runMultipleBrowsers
+								? 5_000
+								: 1_000,
 					},
 				},
 			},
