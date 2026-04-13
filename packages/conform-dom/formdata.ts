@@ -68,7 +68,7 @@ export function normalizeFormError<ErrorShape>(
  * It utilizes the submitter argument on the FormData constructor from modern browsers
  * with fallback to append the submitter value in case it is not unsupported.
  *
- * @see https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData#parameters
+ * See https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData#parameters
  */
 export function getFormData(
 	form: HTMLFormElement,
@@ -99,7 +99,7 @@ export function getFormData(
 /**
  * Convert a string path into an array of segments.
  *
- * @example
+ * **Example:**
  * ```js
  * parsePath("object.key");       // → ['object', 'key']
  * parsePath("array[0].content"); // → ['array', 0, 'content']
@@ -158,7 +158,7 @@ export function parsePath(path: string | undefined): Array<string | number> {
 /**
  * Returns a formatted name from the path segments based on the dot and bracket notation.
  *
- * @example
+ * **Example:**
  * ```js
  * formatPath(['object', 'key']); // → "object.key"
  * formatPath(['array', 0, 'content']); // → "array[0].content"
@@ -209,7 +209,7 @@ export function appendPath(
 /**
  * Returns true if `prefix` is a valid leading path of `name`.
  *
- * @example
+ * **Example:**
  * ```js
  * isPathPrefix("foo.bar.baz", "foo.bar")        // → true
  * isPathPrefix("foo.bar[3].baz", "foo.bar[3]")  // → true
@@ -229,7 +229,7 @@ export function isPathPrefix(name: string, prefix: string) {
  * @param basePath     Base path as a dot/bracket string or array of segments
  * @returns               The “tail” segments, or `null` if `fullPath` isn’t nested under `basePath`
  *
- * @example
+ * **Example:**
  * ```js
  * getRelativePath("foo.bar[0].qux", ["foo","bar"])  // → [0, "qux"]
  * getRelativePath("a.b.c.d", ["a","b"])             // → ["c","d"]
@@ -397,8 +397,9 @@ function isEmptyValue(
  * This function structures the form values based on the naming convention.
  * It also includes all the field names and extracts the intent from the submission.
  *
- * @see https://conform.guide/api/react/future/parseSubmission
- * @example
+ * See https://conform.guide/api/react/future/parseSubmission
+ *
+ * **Example:**
  * ```ts
  * const formData = new FormData();
  *
@@ -505,8 +506,9 @@ export function parseSubmission(
  * file inputs cannot be initialized with files.
  * You can specify `keepFiles: true` to keep the files if needed.
  *
- * @see https://conform.guide/api/react/future/report
- * @example
+ * See https://conform.guide/api/react/future/report
+ *
+ * **Example:**
  * ```ts
  * // Report the submission with the field errors
  * report(submission, {
@@ -680,8 +682,9 @@ export function report<ErrorShape>(
 /**
  * A utility function that checks whether the current form data differs from the default values.
  *
- * @see https://conform.guide/api/react/future/isDirty
- * @example Enable a submit button only if the form is dirty
+ * See https://conform.guide/api/react/future/isDirty
+ *
+ * **Example: Enable a submit button only if the form is dirty**
  *
  * ```tsx
  * const dirty = useFormData(
@@ -736,7 +739,7 @@ export function isDirty(
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
 		 * (e.g. Next.js uses hidden inputs to support server actions).
 		 *
-		 * @example
+		 * **Example:**
 		 * ```ts
 		 * isDirty(formData, {
 		 *   skipEntry: (name) => name === 'csrf-token',
@@ -945,7 +948,9 @@ export function normalize(
 /**
  * Retrieve a field value from FormData with optional type guards.
  *
- * @example
+ * **Example:**
+ *
+ * ```ts
  * // Basic field access: return `unknown`
  * const email = getFieldValue(formData, 'email');
  * // String type: returns `string`
@@ -960,6 +965,7 @@ export function normalize(
  * const items = getFieldValue<Item[]>(formData, 'items', { type: 'object', array: true });
  * // Optional string type: returns `string | undefined`
  * const bio = getFieldValue(formData, 'bio', { type: 'string', optional: true });
+ * ```
  */
 export function getFieldValue<
 	FieldShape extends Array<Record<string, unknown>>,

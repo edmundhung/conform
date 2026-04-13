@@ -57,7 +57,7 @@ const defaultCoercion = configureCoercion();
  *
  * Results are cached per schema, so this can be called inline.
  *
- * @example
+ * **Example:**
  *
  * ```tsx
  * import { coerceFormValue } from '@conform-to/valibot/future';
@@ -93,7 +93,7 @@ export const coerceFormValue = defaultCoercion.coerceFormValue;
  *
  * Results are cached per schema, so this can be called inline.
  *
- * @example
+ * **Example:**
  *
  * ```tsx
  * import { coerceStructure } from '@conform-to/valibot/future';

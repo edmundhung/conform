@@ -60,7 +60,7 @@ export type Submission<
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` or indexed names like `items[0].id`.
 	 *
-	 * @example
+	 * **Example:**
 	 * ```json
 	 * {
 	 *   "username": "johndoe",
@@ -119,8 +119,9 @@ export type FieldName<FieldShape> = string & {
 };
 
 /**
- * The input attributes related to form field constraints
- * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
+ * The input attributes related to form field constraints.
+ *
+ * See https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation
  */
 export type ValidationAttributes = {
 	required?: boolean | undefined;

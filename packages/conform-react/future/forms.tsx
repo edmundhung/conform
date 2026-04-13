@@ -132,8 +132,9 @@ export function configureForms<
 	 * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
 	 * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
 	 *
-	 * @see https://conform.guide/api/react/future/useForm
-	 * @example Schema first setup with zod:
+	 * See https://conform.guide/api/react/future/useForm
+	 *
+	 * **Schema first setup with zod:**
 	 *
 	 * ```tsx
 	 * const { form, fields } = useForm(zodSchema, {
@@ -149,13 +150,13 @@ export function configureForms<
 	 * );
 	 * ```
 	 *
-	 * @example Manual configuration setup with custom validation:
+	 * **Manual configuration setup with custom validation:**
 	 *
 	 * ```tsx
 	 * const { form, fields } = useForm({
-	 *    onValidate({ payload, error }) {
+	 *   onValidate({ payload, error }) {
 	 *     if (!payload.email) {
-	 * 		 error.fieldErrors.email = ['Required'];
+	 *       error.fieldErrors.email = ['Required'];
 	 *     }
 	 *     return error;
 	 *   }
@@ -454,8 +455,9 @@ export function configureForms<
 	 * A React hook that provides access to form-level metadata and state.
 	 * Requires `FormProvider` context when used in child components.
 	 *
-	 * @see https://conform.guide/api/react/future/useFormMetadata
-	 * @example
+	 * See https://conform.guide/api/react/future/useFormMetadata
+	 *
+	 * **Example:**
 	 * ```tsx
 	 * function ErrorSummary() {
 	 *   const form = useFormMetadata();
@@ -494,8 +496,9 @@ export function configureForms<
 	 * A React hook that provides access to a specific field's metadata and state.
 	 * Requires `FormProvider` context when used in child components.
 	 *
-	 * @see https://conform.guide/api/react/future/useField
-	 * @example
+	 * See https://conform.guide/api/react/future/useField
+	 *
+	 * **Example:**
 	 * ```tsx
 	 * function FormField({ name, label }) {
 	 *   const field = useField(name);
@@ -538,8 +541,9 @@ export function configureForms<
 	 * Intent dispatchers allow you to trigger form operations like validation, field updates,
 	 * and array manipulations without manual form submission.
 	 *
-	 * @see https://conform.guide/api/react/future/useIntent
-	 * @example
+	 * See https://conform.guide/api/react/future/useIntent
+	 *
+	 * **Example:**
 	 * ```tsx
 	 * function ResetButton() {
 	 *   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -592,8 +596,9 @@ export const FormProvider = defaultForms.FormProvider;
  * - **Schema first**: Pass a schema as the first argument for automatic validation with type inference
  * - **Manual configuration**: Pass options with custom `onValidate` handler for manual validation
  *
- * @see https://conform.guide/api/react/future/useForm
- * @example Schema first setup with zod:
+ * See https://conform.guide/api/react/future/useForm
+ *
+ * **Schema first setup with zod:**
  *
  * ```tsx
  * const { form, fields } = useForm(zodSchema, {
@@ -609,13 +614,13 @@ export const FormProvider = defaultForms.FormProvider;
  * );
  * ```
  *
- * @example Manual configuration setup with custom validation:
+ * **Manual configuration setup with custom validation:**
  *
  * ```tsx
  * const { form, fields } = useForm({
- *    onValidate({ payload, error }) {
+ *   onValidate({ payload, error }) {
  *     if (!payload.email) {
- * 		 error.fieldErrors.email = ['Required'];
+ *       error.fieldErrors.email = ['Required'];
  *     }
  *     return error;
  *   }
@@ -635,8 +640,9 @@ export const useForm = defaultForms.useForm;
  * A React hook that provides access to form-level metadata and state.
  * Requires `FormProvider` context when used in child components.
  *
- * @see https://conform.guide/api/react/future/useFormMetadata
- * @example
+ * See https://conform.guide/api/react/future/useFormMetadata
+ *
+ * **Example:**
  * ```tsx
  * function ErrorSummary() {
  *   const form = useFormMetadata();
@@ -655,8 +661,9 @@ export const useFormMetadata = defaultForms.useFormMetadata;
  * A React hook that provides access to a specific field's metadata and state.
  * Requires `FormProvider` context when used in child components.
  *
- * @see https://conform.guide/api/react/future/useField
- * @example
+ * See https://conform.guide/api/react/future/useField
+ *
+ * **Example:**
  * ```tsx
  * function FormField({ name, label }) {
  *   const field = useField(name);
@@ -678,8 +685,9 @@ export const useField = defaultForms.useField;
  * Intent dispatchers allow you to trigger form operations like validation, field updates,
  * and array manipulations without manual form submission.
  *
- * @see https://conform.guide/api/react/future/useIntent
- * @example
+ * See https://conform.guide/api/react/future/useIntent
+ *
+ * **Example:**
  * ```tsx
  * function ResetButton() {
  *   const buttonRef = useRef<HTMLButtonElement>(null);

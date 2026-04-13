@@ -732,8 +732,8 @@ export function updateField(
 			/**
 			 * Triggering react custom change event
 			 * Solution based on dom-testing-library
-			 * @see https://github.com/facebook/react/issues/10135#issuecomment-401496776
-			 * @see https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
+			 * See https://github.com/facebook/react/issues/10135#issuecomment-401496776
+			 * See https://github.com/testing-library/dom-testing-library/blob/main/src/events.js#L104-L123
 			 */
 			const { set: valueSetter } =
 				Object.getOwnPropertyDescriptor(element, 'value') || {};

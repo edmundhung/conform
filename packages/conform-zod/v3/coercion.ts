@@ -124,7 +124,7 @@ function createStructuralCoercion(
 /**
  * A file schema is usually defined with `z.instanceof(File)`
  * which is implemented with `z.custom()` based on ZodAny with a `superRefine` check
- * @see https://github.com/colinhacks/zod/blob/eea05ae3dab628e7a834397414e5145e935e418b/src/types.ts#L5250-L5285
+ * See https://github.com/colinhacks/zod/blob/eea05ae3dab628e7a834397414e5145e935e418b/src/types.ts#L5250-L5285
  */
 function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 	if (typeof File === 'undefined') {
@@ -448,7 +448,7 @@ function coerceType<Schema extends ZodTypeAny>(
 /**
  * Creates configured coercion functions for form value parsing.
  *
- * @example
+ * **Example:**
  *
  * ```tsx
  * import { configureCoercion } from '@conform-to/zod/v3/future';
@@ -478,7 +478,7 @@ export function configureCoercion(config?: {
 	 * `undefined` to indicate empty.
 	 *
 	 * @default (value) => value === '' ? undefined : value
-	 * @example Treat whitespace-only strings as empty:
+	 * **Example: Treat whitespace-only strings as empty**
 	 *
 	 * ```ts
 	 * stripEmptyString: (value) => {
@@ -558,7 +558,7 @@ export function configureCoercion(config?: {
 		 *
 		 * Results are cached per schema, so this can be called inline.
 		 *
-		 * @example
+		 * **Example:**
 		 *
 		 * ```tsx
 		 * const schema = coerceFormValue(z.object({
@@ -608,7 +608,7 @@ export function configureCoercion(config?: {
 		 *
 		 * Results are cached per schema, so this can be called inline.
 		 *
-		 * @example
+		 * **Example:**
 		 *
 		 * ```tsx
 		 * const schema = coerceStructure(z.object({

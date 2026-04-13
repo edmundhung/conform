@@ -111,7 +111,7 @@ function coerceBigInt(value: unknown) {
 /**
  * A file schema is usually defined with `z.instanceof(File)`
  * which is implemented with `z.custom()` based on ZodAny with a `superRefine` check
- * @see https://github.com/colinhacks/zod/blob/eea05ae3dab628e7a834397414e5145e935e418b/src/types.ts#L5250-L5285
+ * See https://github.com/colinhacks/zod/blob/eea05ae3dab628e7a834397414e5145e935e418b/src/types.ts#L5250-L5285
  */
 function isFileSchema(schema: ZodEffects<any, any, any>): boolean {
 	if (typeof File === 'undefined') {
@@ -386,7 +386,7 @@ export function enableTypeCoercion<Schema extends ZodTypeAny>(
 
 /**
  * A helper that enhance the zod schema to strip empty value and coerce form value to the expected type with option to customize type coercion.
- * @example
+ * **Example:**
  *
  * ```tsx
  * import { coerceFormValue } from '@conform-to/zod/v3/future'; // Or import `@conform-to/zod/v4/future`.

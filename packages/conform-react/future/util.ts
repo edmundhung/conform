@@ -288,14 +288,14 @@ export function generateUniqueKey() {
  * - `isError`: Specify the error shape for type inference
  * - `when`: Narrow field metadata to specific shapes for conditional props
  *
- * @example Specify error shape
+ * **Example: Specify error shape**
  * ```ts
  * configureForms({
  *   isError: shape<string[]>(),  // errors are string arrays
  * });
  * ```
  *
- * @example Conditional field metadata
+ * **Example: Conditional field metadata**
  * ```ts
  * extendFieldMetadata(metadata, { when }) {
  *   return {
