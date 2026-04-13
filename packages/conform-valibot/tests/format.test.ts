@@ -32,7 +32,7 @@ describe('formatResult', () => {
 		const error = formatResult(result);
 
 		expect(error).toEqual({
-			formErrors: [],
+			formErrors: null,
 			fieldErrors: {
 				name: ['Name is required'],
 				age: ['Must be at least 18'],
@@ -53,7 +53,7 @@ describe('formatResult', () => {
 		const error = formatResult(result);
 
 		expect(error).toEqual({
-			formErrors: [],
+			formErrors: null,
 			fieldErrors: {
 				'user.name': ['Name is required'],
 				'user.email': ['Invalid email'],
@@ -72,7 +72,7 @@ describe('formatResult', () => {
 		const error = formatResult(result);
 
 		expect(error).toEqual({
-			formErrors: [],
+			formErrors: null,
 			fieldErrors: {
 				'items[0]': ['Item cannot be empty'],
 				'items[2]': ['Item cannot be empty'],
@@ -113,7 +113,7 @@ describe('formatResult', () => {
 
 		expect(formatted).toEqual({
 			error: {
-				formErrors: [],
+				formErrors: null,
 				fieldErrors: {
 					name: ['Name is required'],
 				},
@@ -139,7 +139,7 @@ describe('formatResult', () => {
 		});
 
 		expect(error).toEqual({
-			formErrors: [],
+			formErrors: null,
 			fieldErrors: {
 				name: [
 					{
@@ -172,7 +172,7 @@ describe('formatResult', () => {
 
 		expect(formatted).toEqual({
 			error: {
-				formErrors: [],
+				formErrors: null,
 				fieldErrors: {
 					email: ['"invalid"'],
 				},
@@ -199,7 +199,7 @@ describe('formatResult', () => {
 		});
 
 		expect(error).toEqual({
-			formErrors: [],
+			formErrors: null,
 			fieldErrors: {
 				password: [
 					'password has 3 errors: Too short, Must contain uppercase, Must contain number',

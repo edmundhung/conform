@@ -10,6 +10,7 @@ import {
 	getPathValue,
 	isPlainObject,
 	setPathValue,
+	normalizeFormError,
 } from '@conform-to/dom/future';
 import type { StandardSchemaV1 } from './standard-schema';
 import {
@@ -118,26 +119,6 @@ export function createPathIndexUpdater(
 	};
 }
 
-/**
- * Returns null if error object has no actual error messages,
- * otherwise returns the error as-is.
- */
-export function normalizeFormError<ErrorShape>(
-	error: FormError<ErrorShape> | null,
-): FormError<ErrorShape> | null {
-	if (
-		error &&
-		error.formErrors.length === 0 &&
-		Object.entries(error.fieldErrors).every(([, messages]) =>
-			Array.isArray(messages) ? messages.length === 0 : !messages,
-		)
-	) {
-		return null;
-	}
-
-	return error;
-}
-
 export function resolveSerialize(
 	customSerialize: CustomSerialize | undefined,
 	defaultSerialize: Serialize,
@@ -207,7 +188,7 @@ export function resolveValidateResult<ErrorShape, Value>(
 export function resolveStandardSchemaResult<Value>(
 	result: StandardSchemaV1.Result<Value>,
 ): {
-	error: FormError<string> | null;
+	error: FormError<string[]> | null;
 	value?: Value;
 } {
 	if (!result.issues) {
@@ -310,7 +291,7 @@ export function generateUniqueKey() {
  * @example Specify error shape
  * ```ts
  * configureForms({
- *   isError: shape<string>(),  // errors are strings
+ *   isError: shape<string[]>(),  // errors are string arrays
  * });
  * ```
  *

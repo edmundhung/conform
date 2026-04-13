@@ -76,7 +76,7 @@ describe.each(testCases)(
 			);
 		}
 
-		function Form(props: Partial<FormOptions<Schema, string, Schema>>) {
+		function Form(props: Partial<FormOptions<Schema, string[], Schema>>) {
 			const { form, fields, intent } = useForm({
 				onValidate({ payload, error }) {
 					if (!payload.title) {

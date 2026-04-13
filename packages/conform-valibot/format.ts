@@ -9,17 +9,17 @@ import { appendPath, type FormError } from '@conform-to/dom/future';
 
 export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
 	result: SafeParseResult<Schema>,
-): FormError<string> | null;
+): FormError<string[]> | null;
 export function formatResult<
 	Schema extends GenericSchema | GenericSchemaAsync,
-	ErrorShape = string,
+	ErrorShape = string[],
 >(
 	result: SafeParseResult<Schema>,
 	options: {
 		/** Whether to include the parsed value in the returned object */
 		includeValue: true;
 		/** Custom function to format validation issues for each field */
-		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
+		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape;
 	},
 ): {
 	error: FormError<ErrorShape> | null;
@@ -32,36 +32,36 @@ export function formatResult<Schema extends GenericSchema | GenericSchemaAsync>(
 		formatIssues?: undefined;
 	},
 ): {
-	error: FormError<string> | null;
+	error: FormError<string[]> | null;
 	value: InferOutput<Schema> | undefined;
 };
 export function formatResult<
 	Schema extends GenericSchema | GenericSchemaAsync,
-	ErrorShape = string,
+	ErrorShape = string[],
 >(
 	result: SafeParseResult<Schema>,
 	options: {
 		includeValue?: false;
-		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
+		formatIssues: (issues: InferIssue<Schema>[], name: string) => ErrorShape;
 	},
 ): FormError<ErrorShape> | null;
 export function formatResult<
 	Schema extends GenericSchema | GenericSchemaAsync,
-	ErrorShape = string,
+	ErrorShape = string[],
 >(
 	result: SafeParseResult<Schema>,
 	options?: {
 		includeValue?: boolean;
-		formatIssues?: (issues: InferIssue<Schema>[], name: string) => ErrorShape[];
+		formatIssues?: (issues: InferIssue<Schema>[], name: string) => ErrorShape;
 	},
 ):
-	| FormError<string | ErrorShape>
+	| FormError<string[] | ErrorShape>
 	| {
-			error: FormError<string | ErrorShape> | null;
+			error: FormError<string[] | ErrorShape> | null;
 			value: InferOutput<Schema> | undefined;
 	  }
 	| null {
-	let error: FormError<string | ErrorShape> | null = null;
+	let error: FormError<string[] | ErrorShape> | null = null;
 
 	if (!result.success) {
 		const errorByName: Record<string, InferIssue<Schema>[]> = {};
@@ -88,13 +88,15 @@ export function formatResult<
 			errorByName[name].push(issue);
 		}
 
-		const { '': formErrors = [], ...fieldErrors } = Object.entries(
+		const { '': formErrors = null, ...fieldErrors } = Object.entries(
 			errorByName,
-		).reduce<Record<string, string[] | ErrorShape[]>>(
+		).reduce<Record<string, string[] | ErrorShape>>(
 			(result, [name, issues]) => {
-				result[name] = options?.formatIssues
-					? options.formatIssues(issues, name)
-					: issues.map((issue) => issue.message);
+				if (issues.length > 0) {
+					result[name] = options?.formatIssues
+						? options.formatIssues(issues, name)
+						: issues.map((issue) => issue.message);
+				}
 
 				return result;
 			},

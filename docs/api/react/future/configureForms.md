@@ -62,7 +62,7 @@ Type guard that defines your custom error shape for TypeScript inference. Use th
 import { configureForms, shape } from '@conform-to/react/future';
 
 const { useForm } = configureForms({
-  isError: shape<string>(),
+  isError: shape<string[]>(),
 });
 ```
 

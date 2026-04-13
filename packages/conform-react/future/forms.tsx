@@ -33,7 +33,7 @@ import {
 export function configureForms<
 	BaseErrorShape = any,
 	BaseSchema = StandardSchemaV1,
-	SchemaErrorShape = string,
+	SchemaErrorShape = string[],
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
 >(

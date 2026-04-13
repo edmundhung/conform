@@ -8,24 +8,24 @@ import { Form, redirect } from 'react-router';
 import type { Route } from './+types/login';
 
 function validate(value: Record<string, unknown>) {
-	const error: FormError = {
-		formErrors: [],
+	const error: FormError<string> = {
+		formErrors: null,
 		fieldErrors: {},
 	};
 
 	if (!value.email) {
-		error.fieldErrors.email = ['Email is required'];
+		error.fieldErrors.email = 'Email is required';
 	} else if (typeof value.email !== 'string' || !value.email.includes('@')) {
-		error.fieldErrors.email = ['Email is invalid'];
+		error.fieldErrors.email = 'Email is invalid';
 	}
 
 	if (!value.password) {
-		error.fieldErrors.password = ['Password is required'];
+		error.fieldErrors.password = 'Password is required';
 	}
 
 	if (
-		error.formErrors.length === 0 &&
-		Object.values(error.fieldErrors).every((message) => message.length === 0)
+		error.formErrors === null &&
+		Object.keys(error.fieldErrors).length === 0
 	) {
 		return null;
 	}

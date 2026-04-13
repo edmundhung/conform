@@ -16,15 +16,14 @@ const result = report(submission, options);
 
 The form submission object created by [`parseSubmission(formData)`](./parseSubmission.md). Contains parsed form data with structured payload, field names, and submission intent.
 
-### `options.error?: { issues?: StandardSchemaV1.Issue[]; formErrors?: ErrorShape[]; fieldErrors?: Record<string, ErrorShape[]> } | null`
+### `options.error?: { issues: StandardSchemaV1.Issue[] } | { formErrors?: ErrorShape | null; fieldErrors?: Record<string, ErrorShape | null> } | null`
 
-Error information to include in the result. Can contain:
+Error information to include in the result. Choose one of these shapes:
 
-- `issues?: StandardSchemaV1.Issue[]` - Standard schema issues that will be automatically formatted. Zod and Valibot issues are also compatible.
-- `formErrors?: ErrorShape[]` - Form-level error messages
-- `fieldErrors?: Record<string, ErrorShape[]>` - Field-specific error messages mapped by field name
+- `{ issues: StandardSchemaV1.Issue[] }`: Standard schema issues that will be automatically formatted. Compatible with Zod and Valibot issues.
+- `{ formErrors?: ErrorShape | null; fieldErrors?: Record<string, ErrorShape | null> }`: Explicit form-level and field-level error payloads.
 
-Set to `null` to indicate validation passed with no errors. When both `issues` and `formErrors` / `fieldErrors` are provided, they will be merged together, with `issues` being formatted first.
+Set to `null` to indicate validation passed with no errors. If you need schema issues and additional errors together, append additional issue before calling `report()`, or construct an explicit error payload yourself.
 
 ### `options.value?: Record<string, unknown> | null`
 
@@ -66,6 +65,8 @@ The form value to apply, if different from the submission payload.
 ### `error?: FormError | null`
 
 Validation result, if any was provided in the options.
+
+For schema-based validation, the default error shape is `string[]`.
 
 ### `reset?: boolean`
 

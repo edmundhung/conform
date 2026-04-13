@@ -16,7 +16,7 @@ const forms = configureForms({
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
-	isError: shape<string>(),
+	isError: shape<string[]>(),
 	extendFieldMetadata(metadata) {
 		return {
 			get textFieldProps() {

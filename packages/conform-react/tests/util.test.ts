@@ -7,7 +7,6 @@ import {
 	getPathArray,
 	updatePathValue,
 	createPathIndexUpdater,
-	normalizeFormError,
 	normalizeValidateResult,
 	resolveValidateResult,
 	resolveStandardSchemaResult,
@@ -130,32 +129,6 @@ test('createPathIndexUpdater', () => {
 	expect(nestedUpdater('form.items[0].field')).toBe('form.items[1].field');
 });
 
-test('normalizeFormError', () => {
-	// Test error with messages
-	const errorWithMessages: FormError<string> = {
-		formErrors: ['Form error'],
-		fieldErrors: { email: ['Required'] },
-	};
-	expect(normalizeFormError(errorWithMessages)).toBe(errorWithMessages);
-
-	// Test error without messages
-	const emptyError: FormError<string> = {
-		formErrors: [],
-		fieldErrors: { email: [] },
-	};
-	expect(normalizeFormError(emptyError)).toBeNull();
-
-	// Test null error
-	expect(normalizeFormError(null)).toBeNull();
-
-	// Test mixed empty/non-empty fields
-	const mixedError: FormError<string> = {
-		formErrors: [],
-		fieldErrors: { email: [], password: ['Required'] },
-	};
-	expect(normalizeFormError(mixedError)).toBe(mixedError);
-});
-
 test('normalizeValidateResult', () => {
 	// Test result with error property
 	const resultWithError = {
@@ -168,7 +141,7 @@ test('normalizeValidateResult', () => {
 	});
 
 	// Test direct error result
-	const directError: FormError<string> = {
+	const directError: FormError<string[]> = {
 		formErrors: ['Direct error'],
 		fieldErrors: {},
 	};
@@ -190,7 +163,7 @@ test('resolveValidateResult', () => {
 	expect(resolved1.asyncResult).toBeInstanceOf(Promise);
 
 	// Test Array result [sync, async]
-	const syncError: FormError<string> = {
+	const syncError: FormError<string[]> = {
 		formErrors: ['Sync error'],
 		fieldErrors: {},
 	};
@@ -200,7 +173,7 @@ test('resolveValidateResult', () => {
 	expect(resolved2.asyncResult).toBeInstanceOf(Promise);
 
 	// Test direct result
-	const directError: FormError<string> = {
+	const directError: FormError<string[]> = {
 		formErrors: ['Direct error'],
 		fieldErrors: {},
 	};

@@ -1,23 +1,12 @@
-import type { FormError } from './types';
+import type { FormError, StandardSchemaIssue } from './types';
 import { formatPath } from './formdata';
 import { isPlainObject } from './util';
 
-/**
- * A widened version of `StandardSchemaV1.Issue`.
- *
- * The `path` elements and `PropertyKey` fields are loosened to `unknown`
- * to stay compatible with Valibot's native issue type.
- */
-export type StandardSchemaIssue = {
-	readonly message: string;
-	readonly path?: ReadonlyArray<unknown | { key: unknown }> | undefined;
-};
-
 export function formatIssues(
 	issues: Readonly<StandardSchemaIssue[]>,
-): FormError<string> {
-	const error: FormError<string> = {
-		formErrors: [],
+): FormError<string[]> {
+	const error: FormError<string[]> = {
+		formErrors: null,
 		fieldErrors: {},
 	};
 
@@ -40,6 +29,7 @@ export function formatIssues(
 		const name = formatPath(segments ?? []);
 
 		if (!name) {
+			error.formErrors ??= [];
 			error.formErrors.push(issue.message);
 		} else {
 			error.fieldErrors[name] ??= [];

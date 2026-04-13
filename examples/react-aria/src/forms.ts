@@ -33,7 +33,7 @@ const forms = configureForms({
 	getConstraints,
 	shouldValidate: 'onBlur',
 	shouldRevalidate: 'onInput',
-	isError: shape<string>(),
+	isError: shape<string[]>(),
 	extendFormMetadata(metadata) {
 		return {
 			get props() {
@@ -129,12 +129,11 @@ const forms = configureForms({
 							defaultValue: fieldset.defaultPayload,
 							isInvalid: !fieldset.valid,
 							errors: [
-								...new Set(
-									(fieldset.errors ?? []).concat(
-										fieldset.fieldErrors.start ?? [],
-										fieldset.fieldErrors.end ?? [],
-									),
-								),
+								...new Set<string>([
+									...(fieldset.errors ?? []),
+									...(fieldset.fieldErrors.start ?? []),
+									...(fieldset.fieldErrors.end ?? []),
+								]),
 							],
 						} satisfies Partial<React.ComponentProps<typeof DateRangePicker>>;
 					},
