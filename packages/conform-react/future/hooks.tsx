@@ -82,7 +82,7 @@ export const FormContextContext = createContext<FormContext[]>([]);
  * Preserves form field values when its contents are unmounted.
  * Useful for multi-step forms and virtualized lists.
  *
- * @see https://conform.guide/api/react/future/PreserveBoundary
+ * See https://conform.guide/api/react/future/PreserveBoundary
  */
 export function PreserveBoundary(props: {
 	/**
@@ -520,7 +520,7 @@ export function useConform<
  * This is useful when emulating native input behavior — typically by rendering a hidden base control
  * and syncing it with a custom input.
  *
- * @example
+ * **Example:**
  * ```ts
  * const control = useControl(options);
  * ```
@@ -768,7 +768,7 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 				if (element.type === 'checkbox' || element.type === 'radio') {
 					// React set the value as empty string incorrectly when the value is undefined
 					// This make sure the checkbox value falls back to the default value "on" properly
-					// @see https://github.com/facebook/react/issues/17590
+					// See https://github.com/facebook/react/issues/17590
 					const value =
 						'value' in optionsRef.current && optionsRef.current.value
 							? optionsRef.current.value
@@ -886,8 +886,9 @@ export function useControl(options: ControlOptions = {}): Control<any> {
  * Returns `undefined` when the form element is not available (e.g., on SSR or initial client render),
  * unless a `fallback` is provided.
  *
- * @see https://conform.guide/api/react/future/useFormData
- * @example
+ * See https://conform.guide/api/react/future/useFormData
+ *
+ * **Example:**
  * ```ts
  * const value = useFormData(
  *   formRef,
@@ -1031,7 +1032,7 @@ export function useLatest<Value>(value: Value) {
  * A component that renders hidden base control(s) based on the shape of defaultValue.
  * Used with useControl to sync complex values with form data.
  *
- * @example
+ * **Example:**
  * ```tsx
  * const control = useControl<{ street: string; city: string }>({
  *   defaultValue: { street: '123 Main St', city: 'Anytown' },

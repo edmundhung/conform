@@ -603,7 +603,7 @@ function enableTypeCoercion<T extends GenericSchema | GenericSchemaAsync>(
 /**
  * Creates configured coercion functions for form value parsing.
  *
- * @example
+ * **Example:**
  *
  * ```tsx
  * import { configureCoercion } from '@conform-to/valibot/future';
@@ -714,7 +714,7 @@ export function configureCoercion(config?: {
 		 *
 		 * Results are cached per schema, so this can be called inline.
 		 *
-		 * @example
+		 * **Example:**
 		 *
 		 * ```tsx
 		 * const schema = coerceFormValue(v.object({
@@ -768,7 +768,7 @@ export function configureCoercion(config?: {
 		 *
 		 * Results are cached per schema, so this can be called inline.
 		 *
-		 * @example
+		 * **Example:**
 		 *
 		 * ```tsx
 		 * const schema = coerceStructure(v.object({

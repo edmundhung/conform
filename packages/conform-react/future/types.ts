@@ -228,7 +228,7 @@ export type FormAction<
 /**
  * Augment this interface to customize schema type inference for your schema library.
  *
- * @example
+ * **Example:**
  * ```ts
  * import type { ZodTypeAny, input, output } from 'zod';
  * import type { ZodSchemaOptions } from '@conform-to/zod/v3/future';
@@ -362,7 +362,7 @@ export type FormsConfig<
 	 * Runtime type guard to check if a value is a schema.
 	 * Used to determine if the first argument to useForm is a schema or options object.
 	 *
-	 * @example
+	 * **Example:**
 	 * ```ts
 	 * import { configureForms } from '@conform-to/react/future';
 	 * import {
@@ -572,7 +572,7 @@ export interface IntentDispatcher<
 	 *
 	 * @param options.defaultValue - The value to reset the form to. Pass `null` to clear all fields, or omit to reset to the initial default value from `useForm`.
 	 *
-	 * @example
+	 * **Example:**
 	 * ```tsx
 	 * // Reset to initial default value
 	 * intent.reset()
@@ -1060,7 +1060,7 @@ export type SubmitHandler<
 /**
  * Infer the base error shape from a FormsConfig.
  *
- * @example
+ * **Example:**
  * ```ts
  * const { config } = configureForms({ isError: shape<{ message: string }>() });
  * type ErrorShape = InferBaseErrorShape<typeof config>; // { message: string }
@@ -1075,7 +1075,7 @@ export type InferBaseErrorShape<Config> =
  * Infer the custom form metadata extension from a FormsConfig.
  * Use this to compose with FormMetadata, FieldMetadata, or Fieldset types.
  *
- * @example
+ * **Example:**
  * ```ts
  * const { config } = configureForms({
  *   extendFormMetadata: (meta) => ({ customProp: meta.id })
@@ -1096,7 +1096,7 @@ export type InferCustomFormMetadata<Config> =
  * Infer the custom field metadata extension from a FormsConfig.
  * Use this to compose with FieldMetadata or Fieldset types.
  *
- * @example
+ * **Example:**
  * ```ts
  * const { config } = configureForms({
  *   extendFieldMetadata: (meta) => ({ inputProps: { name: meta.name } })
@@ -1115,7 +1115,7 @@ export type InferCustomFieldMetadata<Config> =
  * Keys in ConditionalKeys will only be present when FieldShape extends the specified type.
  * Uses ConditionalFieldMetadata wrapper that RestoreFieldShape will detect and evaluate.
  *
- * @example
+ * **Example:**
  * ```ts
  * type Result = MakeConditional<
  *   { textFieldProps: {...}, dateRangePickerProps: {...} },

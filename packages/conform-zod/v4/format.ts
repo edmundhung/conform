@@ -5,7 +5,7 @@ import { appendPath } from '@conform-to/dom/future';
 /**
  * Transforms Zod validation results into Conform's error format.
  *
- * @example
+ * **Example:**
  * ```ts
  * const result = schema.safeParse(formData);
  * const error = formatResult(result);

@@ -38,7 +38,7 @@ export function defaultEqualityCheck(prevArgs: any[], nextArgs: any[]) {
  * @param isEqual - Custom equality function to compare arguments (defaults to shallow comparison)
  * @returns Memoized function with cache clearing capability
  *
- * @example
+ * **Example:**
  * ```ts
  * // Async validation with API call
  * const validateUsername = useMemo(
