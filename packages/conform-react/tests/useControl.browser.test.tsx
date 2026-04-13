@@ -1,7 +1,7 @@
 /// <reference types="@vitest/browser/matchers" />
 import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { Locator, userEvent, server } from 'vitest/browser';
+import { Locator, userEvent } from 'vitest/browser';
 import { BaseControl, useControl, useForm } from '../future';
 import { createFileList } from '@conform-to/dom';
 import type { FormValue } from '@conform-to/dom/future';
@@ -269,37 +269,33 @@ describe('future export: useControl', () => {
 		return JSON.stringify(value);
 	}
 
-	// TODO: focus/blur event emulation fires inconsistently on firefox
-	it.skipIf(server.browser === 'firefox')(
-		'supports emulating focus and blur events',
-		async () => {
-			const focusHandler = vi.fn();
-			const blurHandler = vi.fn();
-			const screen = render(
-				<Form>
-					<Input
-						type="text"
-						defaultValue=""
-						onFocus={focusHandler}
-						onBlur={blurHandler}
-					/>
-				</Form>,
-			);
+	it('supports emulating focus and blur events', async () => {
+		const focusHandler = vi.fn();
+		const blurHandler = vi.fn();
+		const screen = render(
+			<Form>
+				<Input
+					type="text"
+					defaultValue=""
+					onFocus={focusHandler}
+					onBlur={blurHandler}
+				/>
+			</Form>,
+		);
 
-			const controlInput = screen.getByLabelText('Control');
+		const controlInput = screen.getByLabelText('Control');
 
-			expect(focusHandler).toBeCalledTimes(0);
-			expect(blurHandler).toBeCalledTimes(0);
+		expect(focusHandler).toBeCalledTimes(0);
+		expect(blurHandler).toBeCalledTimes(0);
 
-			await userEvent.click(controlInput);
-			expect(focusHandler).toBeCalledTimes(1);
-			expect(blurHandler).toBeCalledTimes(0);
+		await userEvent.click(controlInput);
+		expect(focusHandler).toBeCalledTimes(1);
+		expect(blurHandler).toBeCalledTimes(0);
 
-			await userEvent.click(document.body);
-			expect(focusHandler).toBeCalledTimes(1);
-			expect(blurHandler).toBeCalledTimes(1);
-		},
-	);
+		await userEvent.click(document.body);
+		expect(focusHandler).toBeCalledTimes(1);
+		expect(blurHandler).toBeCalledTimes(1);
+	});
 
 	it('supports emulating a text input', async () => {
 		const changeHandler = vi.fn();
