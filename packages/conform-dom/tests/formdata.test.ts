@@ -1800,6 +1800,12 @@ test('normalizeFormError', () => {
 			fieldErrors: {},
 		}),
 	).toBeNull();
+	expect(
+		normalizeFormError({
+			formErrors: '',
+			fieldErrors: { email: '', password: null },
+		}),
+	).toBeNull();
 
 	// Test null error
 	expect(normalizeFormError(null)).toBeNull();
@@ -1831,5 +1837,14 @@ test('normalizeFormError', () => {
 	).toEqual({
 		formErrors: ['Form error'],
 		fieldErrors: { email: ['Required'] },
+	});
+	expect(
+		normalizeFormError({
+			formErrors: '',
+			fieldErrors: { email: '', password: 'Required' },
+		}),
+	).toEqual({
+		formErrors: null,
+		fieldErrors: { password: 'Required' },
 	});
 });

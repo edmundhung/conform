@@ -19,16 +19,20 @@ export const DEFAULT_INTENT_NAME = '__INTENT__';
 
 /**
  * Returns whether an error payload contains a meaningful value.
- * Empty arrays are treated as no error.
+ * Empty strings and empty arrays are treated as no error.
  */
 export function hasError<ErrorShape>(
 	error: ErrorShape | null | undefined,
 ): error is ErrorShape {
-	return error != null && (!Array.isArray(error) || error.length > 0);
+	return (
+		error != null && error !== '' && (!Array.isArray(error) || error.length > 0)
+	);
 }
 
 /**
- * Normalizes a form error object by removing empty error payloads.
+ * Normalizes a form error object by removing empty error payloads such as
+ * empty strings and empty arrays.
+ *
  * Returns `null` when no form-level or field-level errors remain.
  */
 export function normalizeFormError<ErrorShape>(
