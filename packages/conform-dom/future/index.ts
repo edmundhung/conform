@@ -25,7 +25,7 @@ export {
 	getFieldValue,
 	normalizeFormError,
 } from '../formdata';
-export { isPlainObject, deepEqual } from '../util';
+export { isPlainObject, deepEqual, combinePatterns } from '../util';
 export {
 	isFieldElement,
 	isGlobalInstance,

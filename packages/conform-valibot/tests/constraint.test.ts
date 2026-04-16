@@ -24,6 +24,7 @@ import {
 	objectWithRest,
 	optional,
 	pipe,
+	regex,
 	strictObject,
 	string,
 	tuple,
@@ -373,5 +374,31 @@ describe('constraint', () => {
 		expect(
 			constraint['conditions[0].conditions[1].conditions[2].type'],
 		).toEqual({ required: true });
+	});
+
+	test('regex patterns', () => {
+		const schema = object({
+			empty: string(),
+			single: pipe(string(), regex(/^[A-Z]+$/)),
+			multiple: pipe(
+				string(),
+				regex(/[A-Z]/, 'uppercase'),
+				regex(/[0-9]/, 'digit'),
+			),
+		});
+
+		expect(getValibotConstraint(schema)).toEqual({
+			empty: {
+				required: true,
+			},
+			single: {
+				required: true,
+				pattern: '^(?=.*(?:^[A-Z]+$)).*$',
+			},
+			multiple: {
+				required: true,
+				pattern: '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
+			},
+		});
 	});
 });

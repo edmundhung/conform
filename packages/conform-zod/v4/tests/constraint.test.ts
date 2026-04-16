@@ -457,4 +457,26 @@ describe('getZodConstraint', () => {
 			required: true,
 		});
 	});
+
+	test('regex patterns', () => {
+		const schema = z.object({
+			empty: z.string(),
+			single: z.string().regex(/^[A-Z]+$/),
+			multiple: z.string().regex(/[A-Z]/, 'uppercase').regex(/[0-9]/, 'digit'),
+		});
+
+		expect(getZodConstraint(schema)).toEqual({
+			empty: {
+				required: true,
+			},
+			single: {
+				required: true,
+				pattern: '^(?=.*(?:^[A-Z]+$)).*$',
+			},
+			multiple: {
+				required: true,
+				pattern: '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
+			},
+		});
+	});
 });

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { deepEqual } from '../util';
+import { combinePatterns, deepEqual } from '../util';
 
 test('deepEqual', () => {
 	expect(deepEqual(null, null)).toBe(true);
@@ -21,4 +21,42 @@ test('deepEqual', () => {
 	expect(deepEqual(new File([], 'example'), new File([], 'example'))).toBe(
 		false,
 	);
+});
+
+test('combinePatterns', () => {
+	// Empty pattern
+	expect(combinePatterns([])).toBeUndefined();
+
+	// Single pattern
+	expect(combinePatterns([/[A-Z]/])).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(combinePatterns([/^[A-Z]+$/])).toBe('^(?=.*(?:^[A-Z]+$)).*$');
+
+	// Multiple patterns without flags
+	expect(combinePatterns([/[A-Z]/, /[0-9]/])).toBe(
+		'^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
+	);
+
+	// Unsupported flags
+	expect(combinePatterns([/[A-Z]/g])).toBeUndefined();
+	expect(combinePatterns([/[A-Z]/, /[0-9]/i])).toBeUndefined();
+
+	// Supported flags
+	expect(combinePatterns([/[A-Z]/u])).toBe('^(?=.*(?:[A-Z])).*$');
+
+	// Semantic validation: single pattern (uppercase-only)
+	const single = combinePatterns([/^[A-Z]+$/]);
+	expect(single).toBeDefined();
+	const singleRegex = new RegExp(single || '');
+	expect(singleRegex.test('ABC')).toBe(true);
+	expect(singleRegex.test('abc')).toBe(false);
+	expect(singleRegex.test('ABC123')).toBe(false);
+
+	// Semantic validation: multiple patterns (uppercase AND digit)
+	const multi = combinePatterns([/[A-Z]/, /[0-9]/]);
+	expect(multi).toBeDefined();
+	const multiRegex = new RegExp(multi || '');
+	expect(multiRegex.test('ABC')).toBe(false);
+	expect(multiRegex.test('123')).toBe(false);
+	expect(multiRegex.test('ABC123')).toBe(true);
+	expect(multiRegex.test('abc123')).toBe(false);
 });

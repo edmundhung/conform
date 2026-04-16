@@ -113,3 +113,25 @@ export function getTypeName(value: unknown): string {
 	}
 	return typeof value;
 }
+
+/**
+ * Combines multiple regex patterns into a single HTML pattern attribute.
+ *
+ * This is done by putting each input pattern into a lookahead assertion.
+ *
+ * HTML pattern attributes implicitly run with the `v` flag, so `u` and `v` flags are
+ * silently stripped. Returns undefined if any pattern has other flags (e.g., `g`, `i`).
+ *
+ * Example: [/[A-Z]/, /[0-9]/] -> '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$'
+ */
+export function combinePatterns(patterns: RegExp[]): string | undefined {
+	if (patterns.length === 0) {
+		return undefined;
+	}
+
+	if (patterns.some((p) => p.flags.replace(/[uv]/g, ''))) {
+		return undefined;
+	}
+
+	return `^${patterns.map((p) => `(?=.*(?:${p.source}))`).join('')}.*$`;
+}
