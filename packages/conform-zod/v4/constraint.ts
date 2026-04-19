@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
-import { combinePatterns } from '@conform-to/dom/future';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import {
 	$ZodType,
 	$ZodTypes,
@@ -133,7 +133,7 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 				constraint.maxLength = _schema._zod.bag.maximum;
 			}
 			if (_schema._zod.bag.patterns?.size) {
-				const pattern = combinePatterns([..._schema._zod.bag.patterns]);
+				const pattern = serializeHtmlPattern([..._schema._zod.bag.patterns]);
 				if (pattern) {
 					constraint.pattern = pattern;
 				}

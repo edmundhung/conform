@@ -124,7 +124,11 @@ export function getTypeName(value: unknown): string {
  *
  * Example: [/[A-Z]/, /[0-9]/] -> '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$'
  */
-export function combinePatterns(patterns: RegExp[]): string | undefined {
+export function serializeHtmlPattern(
+	pattern: RegExp | RegExp[],
+): string | undefined {
+	const patterns = Array.isArray(pattern) ? pattern : [pattern];
+
 	if (patterns.length === 0) {
 		return undefined;
 	}

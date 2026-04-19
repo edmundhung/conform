@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
-import { combinePatterns } from '@conform-to/dom/future';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import type {
 	ZodTypeAny,
 	ZodFirstPartySchemaTypes,
@@ -136,7 +136,7 @@ export function getZodConstraint(
 					check.kind === 'regex',
 			);
 			if (regexChecks.length > 0) {
-				const pattern = combinePatterns(regexChecks.map((c) => c.regex));
+				const pattern = serializeHtmlPattern(regexChecks.map((c) => c.regex));
 				if (pattern) {
 					constraint.pattern = pattern;
 				}

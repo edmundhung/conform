@@ -1,6 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
-import { combinePatterns } from '@conform-to/dom/future';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import type { GenericSchema, GenericSchemaAsync } from 'valibot';
 
 const keys: Array<keyof Constraint> = [
@@ -156,10 +156,10 @@ export function getValibotConstraint<
 				(v) => 'type' in v && v.type === 'regex',
 			);
 			if (regexValidators?.length) {
-				const pattern = combinePatterns(
+				const pattern = serializeHtmlPattern(
 					regexValidators.map(
 						// @ts-expect-error
-						(v) => (v as { requirement: RegExp }).requirement,
+						(v) => v.requirement,
 					),
 				);
 				if (pattern) {

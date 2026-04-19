@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { combinePatterns, deepEqual } from '../util';
+import { serializeHtmlPattern, deepEqual } from '../util';
 
 test('deepEqual', () => {
 	expect(deepEqual(null, null)).toBe(true);
@@ -23,28 +23,32 @@ test('deepEqual', () => {
 	);
 });
 
-test('combinePatterns', () => {
-	// Empty pattern
-	expect(combinePatterns([])).toBeUndefined();
+test('serializeHtmlPattern', () => {
+	// Empty array
+	expect(serializeHtmlPattern([])).toBeUndefined();
 
-	// Single pattern
-	expect(combinePatterns([/[A-Z]/])).toBe('^(?=.*(?:[A-Z])).*$');
-	expect(combinePatterns([/^[A-Z]+$/])).toBe('^(?=.*(?:^[A-Z]+$)).*$');
+	// Single RegExp
+	expect(serializeHtmlPattern(/[A-Z]/)).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(serializeHtmlPattern(/^[A-Z]+$/)).toBe('^(?=.*(?:^[A-Z]+$)).*$');
+
+	// Single pattern in array
+	expect(serializeHtmlPattern([/[A-Z]/])).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(serializeHtmlPattern([/^[A-Z]+$/])).toBe('^(?=.*(?:^[A-Z]+$)).*$');
 
 	// Multiple patterns without flags
-	expect(combinePatterns([/[A-Z]/, /[0-9]/])).toBe(
+	expect(serializeHtmlPattern([/[A-Z]/, /[0-9]/])).toBe(
 		'^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
 	);
 
 	// Unsupported flags
-	expect(combinePatterns([/[A-Z]/g])).toBeUndefined();
-	expect(combinePatterns([/[A-Z]/, /[0-9]/i])).toBeUndefined();
+	expect(serializeHtmlPattern([/[A-Z]/g])).toBeUndefined();
+	expect(serializeHtmlPattern([/[A-Z]/, /[0-9]/i])).toBeUndefined();
 
 	// Supported flags
-	expect(combinePatterns([/[A-Z]/u])).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(serializeHtmlPattern([/[A-Z]/u])).toBe('^(?=.*(?:[A-Z])).*$');
 
 	// Semantic validation: single pattern (uppercase-only)
-	const single = combinePatterns([/^[A-Z]+$/]);
+	const single = serializeHtmlPattern([/^[A-Z]+$/]);
 	expect(single).toBeDefined();
 	const singleRegex = new RegExp(single || '');
 	expect(singleRegex.test('ABC')).toBe(true);
@@ -52,7 +56,7 @@ test('combinePatterns', () => {
 	expect(singleRegex.test('ABC123')).toBe(false);
 
 	// Semantic validation: multiple patterns (uppercase AND digit)
-	const multi = combinePatterns([/[A-Z]/, /[0-9]/]);
+	const multi = serializeHtmlPattern([/[A-Z]/, /[0-9]/]);
 	expect(multi).toBeDefined();
 	const multiRegex = new RegExp(multi || '');
 	expect(multiRegex.test('ABC')).toBe(false);
