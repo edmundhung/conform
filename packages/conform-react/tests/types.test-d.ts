@@ -18,6 +18,7 @@ import {
 	useFormData,
 	configureForms,
 	shape,
+	defineIntent,
 } from '@conform-to/react/future';
 import { useRef } from 'react';
 
@@ -217,6 +218,40 @@ test('useForm', () => {
 	>();
 	expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
 		IntentDispatcher<{ email: string; password: string }>
+	>();
+
+	const goToStep = defineIntent<{ step: number }>({
+		validate(payload) {
+			return (
+				typeof payload === 'object' &&
+				payload !== null &&
+				'step' in payload &&
+				typeof payload?.step === 'number'
+			);
+		},
+	});
+	const intentInferred = useForm({
+		intents: {
+			goToStep,
+		},
+		onValidate({ intent, error }) {
+			if (intent.type === 'goToStep') {
+				assertType<number>(intent.payload.step);
+			}
+
+			return error;
+		},
+	});
+
+	expectTypeOf(intentInferred.form).toEqualTypeOf<FormMetadata<string[]>>();
+	expectTypeOf(intentInferred.fields).toEqualTypeOf<
+		Fieldset<Record<string, any>, string[]>
+	>();
+	expectTypeOf(intentInferred.intent).toEqualTypeOf<
+		IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+	>();
+	expectTypeOf(intentInferred.intent.goToStep).toEqualTypeOf<
+		(payload: { step: number }) => void
 	>();
 });
 
@@ -514,6 +549,78 @@ describe('configureForms', () => {
 		>();
 		expectTypeOf(testSchemaWithCustomErrorShape.intent).toEqualTypeOf<
 			IntentDispatcher<{ email: string; password: string }>
+		>();
+	});
+
+	test('custom intents', () => {
+		const goToStep = defineIntent<{ step: number }>({
+			validate(payload) {
+				return (
+					typeof payload === 'object' &&
+					payload !== null &&
+					'step' in payload &&
+					typeof payload?.step === 'number'
+				);
+			},
+		});
+		const custom = configureForms({
+			intents: {
+				goToStep,
+			},
+		});
+
+		const globalIntentSetup = custom.useForm({
+			onValidate({ intent, error }) {
+				if (intent.type === 'goToStep') {
+					assertType<number>(intent.payload.step);
+				}
+
+				return error;
+			},
+		});
+
+		expectTypeOf(globalIntentSetup.intent).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+		>();
+		expectTypeOf(globalIntentSetup.intent.goToStep).toEqualTypeOf<
+			(payload: { step: number }) => void
+		>();
+		expectTypeOf(custom.useIntent('form-id')).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
+		>();
+
+		const confirm = defineIntent<string>({
+			validate(payload) {
+				return typeof payload === 'string';
+			},
+		});
+
+		const inlineIntentSetup = custom.useForm({
+			intents: {
+				confirm,
+			},
+			onValidate({ intent, error }) {
+				if (intent.type === 'confirm') {
+					assertType<string>(intent.payload);
+				} else if (intent.type === 'goToStep') {
+					assertType<number>(intent.payload.step);
+				}
+
+				return error;
+			},
+		});
+
+		expectTypeOf(inlineIntentSetup.intent).toEqualTypeOf<
+			IntentDispatcher<
+				Record<string, any>,
+				{ goToStep: typeof goToStep; confirm: typeof confirm }
+			>
+		>();
+		expectTypeOf(inlineIntentSetup.intent.confirm).toEqualTypeOf<
+			(payload: string) => void
+		>();
+		expectTypeOf(custom.useIntent('form-id')).toEqualTypeOf<
+			IntentDispatcher<Record<string, any>, { goToStep: typeof goToStep }>
 		>();
 	});
 });
