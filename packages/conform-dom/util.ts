@@ -117,10 +117,11 @@ export function getTypeName(value: unknown): string {
 /**
  * Combines multiple regex patterns into a single HTML pattern attribute.
  *
- * This is done by putting each input pattern into a lookahead assertion.
+ * This is done by putting each input pattern into a lookahead assertion
+ * and stripping all flags.
  *
- * HTML pattern attributes implicitly run with the `v` flag, so `u` and `v` flags are
- * silently stripped. Returns undefined if any pattern has other flags (e.g., `g`, `i`).
+ * Returns undefined if any pattern is case-insensitive, since transforming
+ * it to a case-sensitive pattern is a non-trivial operation.
  *
  * Example: [/[A-Z]/, /[0-9]/] -> '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$'
  */
@@ -129,11 +130,7 @@ export function serializeHtmlPattern(
 ): string | undefined {
 	const patterns = Array.isArray(pattern) ? pattern : [pattern];
 
-	if (patterns.length === 0) {
-		return undefined;
-	}
-
-	if (patterns.some((p) => p.flags.replace(/[uv]/g, ''))) {
+	if (patterns.length === 0 || patterns.some((p) => p.flags.includes('i'))) {
 		return undefined;
 	}
 

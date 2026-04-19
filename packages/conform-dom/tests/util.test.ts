@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { serializeHtmlPattern, deepEqual } from '../util';
+import { deepEqual, serializeHtmlPattern } from '../util';
 
 test('deepEqual', () => {
 	expect(deepEqual(null, null)).toBe(true);
@@ -41,13 +41,16 @@ test('serializeHtmlPattern', () => {
 	);
 
 	// Unsupported flags
-	expect(serializeHtmlPattern([/[A-Z]/g])).toBeUndefined();
+	expect(serializeHtmlPattern([/[A-Z]/i])).toBeUndefined();
 	expect(serializeHtmlPattern([/[A-Z]/, /[0-9]/i])).toBeUndefined();
 
-	// Supported flags
+	// Other flags
+	expect(serializeHtmlPattern([/[A-Z]/g])).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(serializeHtmlPattern([/[A-Z]/m])).toBe('^(?=.*(?:[A-Z])).*$');
+	expect(serializeHtmlPattern([/[A-Z]/s])).toBe('^(?=.*(?:[A-Z])).*$');
 	expect(serializeHtmlPattern([/[A-Z]/u])).toBe('^(?=.*(?:[A-Z])).*$');
 
-	// Semantic validation: single pattern (uppercase-only)
+	// Semantic validation: single pattern (uppercase)
 	const single = serializeHtmlPattern([/^[A-Z]+$/]);
 	expect(single).toBeDefined();
 	const singleRegex = new RegExp(single || '');
@@ -55,7 +58,7 @@ test('serializeHtmlPattern', () => {
 	expect(singleRegex.test('abc')).toBe(false);
 	expect(singleRegex.test('ABC123')).toBe(false);
 
-	// Semantic validation: multiple patterns (uppercase AND digit)
+	// Semantic validation: multiple patterns (uppercase and digit)
 	const multi = serializeHtmlPattern([/[A-Z]/, /[0-9]/]);
 	expect(multi).toBeDefined();
 	const multiRegex = new RegExp(multi || '');
