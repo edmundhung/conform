@@ -338,6 +338,7 @@ export type FormsConfig<
 	SchemaErrorShape,
 	CustomFormMetadata extends Record<string, unknown>,
 	CustomFieldMetadata extends Record<string, unknown>,
+	CustomIntentHandlers extends Record<string, IntentHandler>,
 > = {
 	/**
 	 * The name of the submit button field that indicates the submission intent.
@@ -348,6 +349,10 @@ export type FormsConfig<
 	 * A custom serializer for converting form values.
 	 */
 	serialize?: CustomSerialize | undefined;
+	/**
+	 * Intent handlers available to every form created by this factory.
+	 */
+	intents?: CustomIntentHandlers;
 	/**
 	 * Determines when validation should run for the first time on a field.
 	 * @default "onSubmit"
@@ -464,6 +469,8 @@ export type FormOptions<
 	Value = undefined,
 	Schema = unknown,
 	SchemaErrorShape = ErrorShape,
+	CustomIntentHandlers extends Record<string, IntentHandler> = {},
+	GlobalIntentHandlers extends Record<string, IntentHandler> = {},
 > = {
 	/** Optional form identifier. If not provided, a unique ID is automatically generated. */
 	id?: string | undefined;
@@ -482,6 +489,10 @@ export type FormOptions<
 	 * to the configured global serializer.
 	 */
 	serialize?: CustomSerialize | undefined;
+	/**
+	 * Custom intent handlers available only to this form instance.
+	 */
+	intents?: CustomIntentHandlers | undefined;
 	/** HTML validation attributes for fields (required, minLength, pattern, etc.). */
 	constraint?: Record<string, ValidationAttributes> | undefined;
 	/**
@@ -511,7 +522,16 @@ export type FormOptions<
 	onBlur?: BlurHandler | undefined;
 	/** Custom validation handler. Can be skipped when a schema is passed as the first argument, or combined with schema validation to customize errors. */
 	onValidate?:
-		| ValidateHandler<ErrorShape, Value, InferOutput<Schema>, SchemaErrorShape>
+		| ValidateHandler<
+				ErrorShape,
+				Value,
+				InferOutput<Schema>,
+				SchemaErrorShape,
+				FormIntent<
+					FormShape,
+					DefaultIntentHandlers & GlobalIntentHandlers & CustomIntentHandlers
+				>
+		  >
 		| undefined;
 };
 
@@ -524,13 +544,14 @@ export type FormHandle<
 	ErrorShape,
 	CustomFormMetadata extends Record<string, unknown> = {},
 	CustomFieldMetadata extends Record<string, unknown> = {},
+	CustomIntentHandlers extends Record<string, IntentHandler> = {},
 > = {
 	/** Form-level metadata and helpers. */
 	form: FormMetadata<ErrorShape, CustomFormMetadata, CustomFieldMetadata>;
 	/** Field metadata mapped from the form shape. */
 	fields: Fieldset<FormShape, ErrorShape, CustomFieldMetadata>;
 	/** Intent dispatcher for validate, reset, insert, remove, reorder, and update actions. */
-	intent: IntentDispatcher<FormShape>;
+	intent: IntentDispatcher<FormShape, CustomIntentHandlers>;
 };
 
 export interface FormContext<ErrorShape = any> {
@@ -559,71 +580,74 @@ export type UnknownArgs<Args extends any[]> = {
 	[Key in keyof Args]: unknown;
 };
 
-export interface IntentDispatcher<
-	FormShape extends Record<string, any> = Record<string, any>,
-> {
-	/**
-	 * Validate the whole form or a specific field?
-	 */
-	validate(name?: string): void;
+export interface TypedIntentDefinition {
+	readonly FormShape: unknown;
+	dispatch(...args: any[]): void;
+}
 
-	/**
-	 * Reset the form to a specific default value.
-	 *
-	 * @param options.defaultValue - The value to reset the form to. Pass `null` to clear all fields, or omit to reset to the initial default value from `useForm`.
-	 *
-	 * **Example:**
-	 * ```tsx
-	 * // Reset to initial default value
-	 * intent.reset()
-	 *
-	 * // Clear all fields
-	 * intent.reset({ defaultValue: null })
-	 *
-	 * // Restore to a specific snapshot
-	 * intent.reset({ defaultValue: snapshotValue })
-	 * ```
-	 */
-	reset(options?: {
-		/**
-		 * The value to reset the form to. If not provided, resets to the default value from `useForm`. Pass `null` to clear all fields instead.
-		 */
+export type IntentDefinition =
+	| ((...args: any[]) => void)
+	| TypedIntentDefinition;
+
+export type ExtractDispatchSignature<
+	Intent extends IntentDefinition,
+	FormShape extends Record<string, any>,
+> = Intent extends (...args: any[]) => void
+	? Intent
+	: Intent extends TypedIntentDefinition
+		? (Intent & { readonly FormShape: FormShape })['dispatch']
+		: never;
+
+export type IntentPayload<
+	Intent extends IntentDefinition,
+	FormShape extends Record<string, any> = Record<string, any>,
+> =
+	Parameters<ExtractDispatchSignature<Intent, FormShape>> extends [
+		infer Payload,
+	]
+		? Payload
+		: undefined;
+
+export type NormalizeIntentType<T> = T extends IntentDefinition
+	? T
+	: (payload: T) => void;
+
+export interface EmptyIntent extends TypedIntentDefinition {
+	dispatch(): void;
+}
+
+export interface SubmitIntent extends TypedIntentDefinition {
+	dispatch(): void;
+}
+
+export interface ResetIntent extends TypedIntentDefinition {
+	dispatch<
+		FormShape extends Record<string, any> = this['FormShape'] extends Record<
+			string,
+			any
+		>
+			? this['FormShape']
+			: never,
+	>(options?: {
 		defaultValue?: DefaultValue<FormShape>;
 	}): void;
+}
 
-	/**
-	 * Update a field or a fieldset.
-	 * If you provide a fieldset name, it will update all fields within that fieldset
-	 */
-	update<FieldShape = FormShape>(
+export interface ValidateIntent extends TypedIntentDefinition {
+	dispatch(name?: string): void;
+}
+
+export interface UpdateIntent extends TypedIntentDefinition {
+	dispatch<FieldShape = this['FormShape']>(
 		options:
 			| {
-					/**
-					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
-					 */
 					name?: FieldName<FieldShape>;
-					/**
-					 * Specify the index of the item to update if the field is an array.
-					 */
 					index?: undefined;
-					/**
-					 * The new value for the field or fieldset.
-					 */
 					value: DefaultValue<FieldShape>;
 			  }
 			| {
-					/**
-					 * The name of the field. If you provide a fieldset name, it will update all fields within that fieldset.
-					 */
 					name: FieldName<FieldShape>;
-					/**
-					 * Specify the index of the item to update if the field is an array.
-					 */
 					index: number;
-					/**
-					 * The new value for the field or fieldset.
-					 * When index is specified, this should be the item type, not the array type.
-					 */
 					value: unknown extends FieldShape
 						? any
 						: FieldShape extends Array<infer ItemShape>
@@ -631,112 +655,107 @@ export interface IntentDispatcher<
 							: any;
 			  },
 	): void;
+}
 
-	/**
-	 * Insert a new item into an array field.
-	 */
-	insert<FieldShape extends Array<any> | null | undefined>(options: {
-		/**
-		 * The name of the array field to insert into.
-		 */
+export interface InsertIntent extends TypedIntentDefinition {
+	dispatch<FieldShape extends Array<any> | null | undefined>(options: {
 		name: FieldName<FieldShape>;
-		/**
-		 * The index at which to insert the new item.
-		 * If not provided, it will be added to the end of the array.
-		 */
 		index?: number;
-		/**
-		 * The default value for the new item.
-		 */
 		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
 			? DefaultValue<ItemShape>
 			: never;
-		/**
-		 * The name of a field to read the value from.
-		 * When specified, the value is read from this field, validated,
-		 * and if valid, inserted into the array and the source field is cleared.
-		 * If validation fails, the error is shown on the source field instead.
-		 * Requires the validation error to be available synchronously.
-		 */
 		from?: string;
-		/**
-		 * What to do when the insert causes a validation error on the array.
-		 * - 'revert': Don't insert, keep original array state.
-		 * Requires the validation error to be available synchronously.
-		 */
 		onInvalid?: 'revert';
 	}): void;
+}
 
-	/**
-	 * Remove an item from an array field.
-	 */
-	remove<FieldShape extends Array<any> | null | undefined>(options: {
-		/**
-		 * The name of the array field to remove from.
-		 */
+export interface RemoveIntent extends TypedIntentDefinition {
+	dispatch<FieldShape extends Array<any> | null | undefined>(options: {
 		name: FieldName<FieldShape>;
-		/**
-		 * The index of the item to remove.
-		 */
 		index: number;
-		/**
-		 * What to do when the remove causes a validation error on the array.
-		 * - 'revert': Don't remove, keep original item as-is.
-		 * - 'insert': Remove the item but insert a new blank item at the end.
-		 * Requires the validation error to be available synchronously.
-		 */
 		onInvalid?: 'revert' | 'insert';
-		/**
-		 * The default value for the new item when onInvalid is 'insert'.
-		 */
 		defaultValue?: NonNullable<FieldShape> extends Array<infer ItemShape>
 			? DefaultValue<ItemShape>
 			: never;
 	}): void;
+}
 
-	/**
-	 * Reorder items in an array field.
-	 */
-	reorder(options: {
+export interface ReorderIntent extends TypedIntentDefinition {
+	dispatch(options: {
 		name: FieldName<Array<any>>;
 		from: number;
 		to: number;
 	}): void;
 }
 
-export type FormIntent<Dispatcher extends IntentDispatcher = IntentDispatcher> =
-	{
-		[Type in keyof Dispatcher]: Dispatcher[Type] extends (
-			...args: infer Args
-		) => void
-			? {
-					type: Type;
-					payload: Args extends [infer Payload] ? Payload : undefined;
-				}
-			: never;
-	}[keyof Dispatcher];
+export type DefaultIntentHandlers = {
+	submit: IntentHandler<SubmitIntent>;
+	reset: IntentHandler<ResetIntent>;
+	validate: IntentHandler<ValidateIntent>;
+	update: IntentHandler<UpdateIntent>;
+	insert: IntentHandler<InsertIntent>;
+	remove: IntentHandler<RemoveIntent>;
+	reorder: IntentHandler<ReorderIntent>;
+};
 
-export type IntentHandler<
-	Signature extends (payload: any) => void = (payload: any) => void,
+export type IntentDispatcher<
+	FormShape extends Record<string, any>,
+	CustomIntentHandlers extends Record<string, IntentHandler> = {},
 > = {
-	validate?(...args: UnknownArgs<Parameters<Signature>>): boolean;
-	resolve?(
+	[Type in keyof (DefaultIntentHandlers &
+		([CustomIntentHandlers] extends [never]
+			? {}
+			: CustomIntentHandlers))]: (DefaultIntentHandlers &
+		([CustomIntentHandlers] extends [never]
+			? {}
+			: CustomIntentHandlers))[Type] extends IntentHandler<infer Definition>
+		? ExtractDispatchSignature<NormalizeIntentType<Definition>, FormShape>
+		: never;
+};
+
+export type FormIntent<
+	FormShape extends Record<string, any>,
+	Handlers extends Record<string, IntentHandler>,
+> = {
+	[K in keyof ([Handlers] extends [never] ? {} : Handlers)]: ([
+		Handlers,
+	] extends [never]
+		? {}
+		: Handlers)[K] extends IntentHandler<infer Definition>
+		? {
+				type: K & string;
+				payload: IntentPayload<NormalizeIntentType<Definition>, FormShape>;
+			}
+		: never;
+}[keyof ([Handlers] extends [never] ? {} : Handlers)];
+
+export type IntentHandler<TIntent = (payload: unknown) => void> = {
+	validate?<FormShape extends Record<string, any>>(
+		...args: UnknownArgs<
+			Parameters<
+				ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
+			>
+		>
+	): boolean;
+	resolve?<FormShape extends Record<string, any>>(
 		value: Record<string, FormValue>,
-		...args: Parameters<Signature>
+		...args: Parameters<
+			ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
+		>
 	): Record<string, FormValue> | undefined;
-	apply?<ErrorShape>(
+	apply?<FormShape extends Record<string, any>, ErrorShape>(
 		result: SubmissionResult<ErrorShape>,
-		...args: Parameters<Signature>
+		...args: Parameters<
+			ExtractDispatchSignature<NormalizeIntentType<TIntent>, FormShape>
+		>
 	): SubmissionResult<ErrorShape>;
-	update?<ErrorShape>(
+	update?<FormShape extends Record<string, any>, ErrorShape>(
 		state: FormState<ErrorShape>,
 		action: FormAction<
 			ErrorShape,
 			{
 				type: string;
-				payload: Signature extends (payload: infer Payload) => void
-					? Payload
-					: undefined;
+				payload: IntentPayload<NormalizeIntentType<TIntent>, FormShape>;
 			},
 			{
 				reset: (
@@ -949,7 +968,11 @@ export type ValidateResult<ErrorShape, Value> =
 			value?: Value;
 	  };
 
-export type ValidateContext<SchemaValue, SchemaErrorShape> = {
+export type ValidateContext<
+	SchemaValue,
+	SchemaErrorShape,
+	Intent extends UnknownIntent = UnknownIntent,
+> = {
 	/**
 	 * The submitted values mapped by field name.
 	 * Supports nested names like `user.email` and indexed names like `items[0].id`.
@@ -963,7 +986,7 @@ export type ValidateContext<SchemaValue, SchemaErrorShape> = {
 	/**
 	 * The submission intent derived from the button that triggered the form submission.
 	 */
-	intent: UnknownIntent | null;
+	intent: Intent;
 	/**
 	 * The raw FormData object of the submission.
 	 */
@@ -988,8 +1011,9 @@ export type ValidateHandler<
 	Value,
 	SchemaValue = undefined,
 	SchemaErrorShape = ErrorShape,
+	Intent extends UnknownIntent = UnknownIntent,
 > = (
-	ctx: ValidateContext<SchemaValue, SchemaErrorShape>,
+	ctx: ValidateContext<SchemaValue, SchemaErrorShape, Intent>,
 ) =>
 	| ValidateResult<ErrorShape, Value>
 	| Promise<ValidateResult<ErrorShape, Value>>
@@ -1025,7 +1049,7 @@ export interface FormFocusEvent extends React.FormEvent<HTMLFormElement> {
 export type ErrorContext<ErrorShape> = {
 	formElement: HTMLFormElement;
 	error: FormError<ErrorShape>;
-	intent: UnknownIntent | null;
+	intent: UnknownIntent;
 };
 
 export type ErrorHandler<ErrorShape> = (ctx: ErrorContext<ErrorShape>) => void;
@@ -1067,7 +1091,7 @@ export type SubmitHandler<
  * ```
  */
 export type InferBaseErrorShape<Config> =
-	Config extends FormsConfig<infer ErrorShape, any, any, any, any>
+	Config extends FormsConfig<infer ErrorShape, any, any, any, any, any>
 		? ErrorShape
 		: string;
 
@@ -1088,7 +1112,7 @@ export type InferBaseErrorShape<Config> =
  * ```
  */
 export type InferCustomFormMetadata<Config> =
-	Config extends FormsConfig<any, any, any, infer CustomFormMetadata, any>
+	Config extends FormsConfig<any, any, any, infer CustomFormMetadata, any, any>
 		? CustomFormMetadata
 		: {};
 
@@ -1106,7 +1130,7 @@ export type InferCustomFormMetadata<Config> =
  * ```
  */
 export type InferCustomFieldMetadata<Config> =
-	Config extends FormsConfig<any, any, any, any, infer CustomFieldMetadata>
+	Config extends FormsConfig<any, any, any, any, infer CustomFieldMetadata, any>
 		? CustomFieldMetadata
 		: {};
 

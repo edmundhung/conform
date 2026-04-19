@@ -195,6 +195,41 @@ describe.each(testCases)('future export: useForm - $name', ({ useForm }) => {
 		expect(fields.description.errors).toBe(undefined);
 	});
 
+	test('initialize with submit intent', () => {
+		const { form, fields } = serverRenderHook(() =>
+			useForm<{ title: string; description: string }, string>({
+				lastResult: createResult(
+					[
+						['title', 'Example'],
+						['description', 'Hello World'],
+						[
+							DEFAULT_INTENT_NAME,
+							serializeIntent({
+								type: 'submit',
+							}),
+						],
+					],
+					{
+						error: {
+							formErrors: ['Form error'],
+							fieldErrors: {
+								title: ['Title error'],
+								description: ['Description error'],
+							},
+						},
+					},
+				),
+				onValidate: () => undefined,
+			}),
+		);
+
+		expect(form.errors).toEqual(['Form error']);
+		expect(fields.title.defaultValue).toBe('Example');
+		expect(fields.title.errors).toEqual(['Title error']);
+		expect(fields.description.defaultValue).toBe('Hello World');
+		expect(fields.description.errors).toEqual(['Description error']);
+	});
+
 	test('initialize with insert intent', () => {
 		const { form, fields } = serverRenderHook(() =>
 			useForm<{ title: string; notes: string[] }, string[]>({

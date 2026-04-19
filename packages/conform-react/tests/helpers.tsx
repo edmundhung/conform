@@ -9,7 +9,7 @@ import {
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
 	resolveIntent,
-	intentHandlers,
+	defaultIntentHandlers,
 	deserializeIntent,
 	applyIntent,
 } from '../future/intent';
@@ -93,14 +93,16 @@ export function createAction(options: {
 	const intent = submission.intent
 		? deserializeIntent(submission.intent)
 		: null;
-	const finalResult = applyIntent(result, intent, { handlers: intentHandlers });
+	const finalResult = applyIntent(result, intent, {
+		handlers: defaultIntentHandlers,
+	});
 
 	return {
 		...finalResult,
 		type: options.type,
 		intent,
 		ctx: {
-			handlers: intentHandlers,
+			handlers: defaultIntentHandlers,
 			cancelled: finalResult !== result,
 			reset(defaultValue?: Record<string, unknown> | null) {
 				return initializeState({

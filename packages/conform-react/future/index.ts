@@ -25,6 +25,8 @@ export type {
 	FormRef,
 	FieldMetadata,
 	Fieldset,
+	FormIntent,
+	IntentHandler,
 	IntentDispatcher,
 	InferBaseErrorShape,
 	InferCustomFormMetadata,
@@ -38,6 +40,7 @@ export {
 	useField,
 	useIntent,
 } from './forms';
+export { defineIntent } from './intent';
 export {
 	BaseControl,
 	PreserveBoundary,
