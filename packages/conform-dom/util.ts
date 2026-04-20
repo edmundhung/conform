@@ -134,5 +134,13 @@ export function serializeHtmlPattern(
 		return undefined;
 	}
 
-	return `^${patterns.map((p) => `(?=.*(?:${p.source}))`).join('')}.*$`;
+	const serializedPattern = `^${patterns.map((p) => `(?=.*(?:${p.source}))`).join('')}.*$`;
+
+	try {
+		new RegExp(serializedPattern, 'v');
+	} catch {
+		return undefined;
+	}
+
+	return serializedPattern;
 }
