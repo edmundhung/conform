@@ -1,5 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import type { GenericSchema, GenericSchemaAsync } from 'valibot';
 
 const keys: Array<keyof Constraint> = [
@@ -148,6 +149,22 @@ export function getValibotConstraint<
 			);
 			if (maxLength && 'requirement' in maxLength) {
 				constraint.maxLength = maxLength.requirement as number;
+			}
+			// @ts-expect-error
+			const regexValidators = schema.pipe?.filter(
+				// @ts-expect-error
+				(v) => 'type' in v && v.type === 'regex',
+			);
+			if (regexValidators?.length) {
+				const pattern = serializeHtmlPattern(
+					regexValidators.map(
+						// @ts-expect-error
+						(v) => v.requirement,
+					),
+				);
+				if (pattern) {
+					constraint.pattern = pattern;
+				}
 			}
 		} else if (
 			schema.type === 'optional' ||

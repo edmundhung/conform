@@ -1,10 +1,12 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import type {
 	ZodTypeAny,
 	ZodFirstPartySchemaTypes,
 	ZodNumber,
 	ZodString,
+	ZodStringCheck,
 } from 'zod';
 
 const keys: Array<keyof Constraint> = [
@@ -128,6 +130,16 @@ export function getZodConstraint(
 			}
 			if (_schema.maxLength !== null) {
 				constraint.maxLength = _schema.maxLength;
+			}
+			const regexChecks = def.checks.filter(
+				(check): check is ZodStringCheck & { kind: 'regex' } =>
+					check.kind === 'regex',
+			);
+			if (regexChecks.length > 0) {
+				const pattern = serializeHtmlPattern(regexChecks.map((c) => c.regex));
+				if (pattern) {
+					constraint.pattern = pattern;
+				}
 			}
 		} else if (def.typeName === 'ZodOptional') {
 			constraint.required = false;

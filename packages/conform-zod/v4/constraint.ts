@@ -1,5 +1,6 @@
 import type { Constraint } from '@conform-to/dom';
 import { getPaths, formatPaths, getRelativePath } from '@conform-to/dom';
+import { serializeHtmlPattern } from '@conform-to/dom/future';
 import {
 	$ZodType,
 	$ZodTypes,
@@ -130,6 +131,12 @@ export function getZodConstraint(schema: $ZodType): Record<string, Constraint> {
 			}
 			if (_schema._zod.bag.maximum != null) {
 				constraint.maxLength = _schema._zod.bag.maximum;
+			}
+			if (_schema._zod.bag.patterns?.size) {
+				const pattern = serializeHtmlPattern([..._schema._zod.bag.patterns]);
+				if (pattern) {
+					constraint.pattern = pattern;
+				}
 			}
 		} else if (def.type === 'optional') {
 			constraint.required = false;
