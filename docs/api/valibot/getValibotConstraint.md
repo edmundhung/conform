@@ -32,3 +32,35 @@ function Example() {
   // ...
 }
 ```
+
+## Pattern constraint
+
+The `getValibotConstraint` helper also extracts regex constraints into the HTML5 `pattern` attribute. This enables native browser validation alongside Valibot validation.
+
+### Using `enumType()`
+
+Enum values become a pattern matching any valid option:
+
+```tsx
+import { enumType } from 'valibot';
+
+const schema = object({
+  status: enumType(['pending', 'approved', 'rejected']),
+});
+// Generates pattern: "pending|approved|rejected"
+```
+
+### Using `regex()`
+
+```tsx
+import { regex } from 'valibot';
+
+const schema = object({
+  otpCode: pipe(string(), regex(/^\d{4}$/, 'Must be 4 digits')),
+});
+```
+
+### Limitations
+
+- **Regex flags**: The `i` (case-insensitive) flag is **not supported** — HTML5 `pattern` doesn't support case-insensitive matching.
+- **Backreferences**: Numbered backreferences (`\1`, `\2`, etc.) may break across multiple fields in your schema. Named backreferences (`\k<name>`) are more reliable, but require each field's regexes to have unique group names.
