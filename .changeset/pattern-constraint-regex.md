@@ -5,15 +5,12 @@
 '@conform-to/zod': minor
 ---
 
-# Enable browser-native regex validation
+`getZodConstraint`, `getValibotConstraint`, and the future `getConstraints` helpers can now derive HTML `pattern` constraints from Zod and Valibot schemas. When a field uses multiple regex validators, Conform combines them into a single `pattern` when possible.
 
-Constructing `pattern` constraints from regex-refined string schemas allows for pattern-based validation without requiring client-side JavaScript.
-
-This allows your schemas to directly influence `:valid` and `:invalid` pseudo-classes.
+Pattern generation is best-effort. Case-insensitive regexes and regexes that serialize to an invalid HTML `pattern` are skipped, and backreferences may behave differently when multiple regex validators are combined.
 
 ```tsx
-import { configureForms } from '@conform-to/react/future';
-import { getConstraints } from '@conform-to/zod/v4/future';
+import { getZodConstraint } from '@conform-to/zod/v4';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -25,19 +22,7 @@ const schema = z.object({
     .regex(/[!@#$%^&*]/), // special
 });
 
-const configuredForms = configureForms({
-  extendFieldMetadata(metadata) {
-    return {
-      get inputProps() {
-        return {
-          // all of uppercase, digit, and special must match
-          // '^(?=.*(?:[A-Z]))(?=.*(?:[0-9]))(?=.*(?:[!@#$%^&*])).*$'
-          pattern: metadata.pattern,
-          // ...
-        };
-      },
-    };
-  },
-  getConstraints,
-});
+const constraint = getZodConstraint(schema);
+console.log(constraint.password.pattern);
+// ^? '^(?=.*(?:[A-Z]))(?=.*(?:[0-9]))(?=.*(?:[!@#$%^&*])).*$'
 ```

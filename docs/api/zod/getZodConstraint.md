@@ -15,7 +15,6 @@ The zod schema to be introspected.
 ## Example
 
 ```tsx
-import { useForm } from '@conform-to/react';
 import { getZodConstraint } from '@conform-to/zod';
 // If you are using Zod v4, update the imports:
 // import { getZodConstraint } from '@conform-to/zod/v4';
@@ -24,41 +23,27 @@ import { z } from 'zod';
 const schema = z.object({
   title: z.string().min(5).max(20),
   description: z.string().min(100).max(1000).optional(),
+  password: z
+    .string()
+    .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    .regex(/[0-9]/, 'Must contain a number'),
 });
-
-function Example() {
-  const [form, fields] = useForm({
-    constraint: getZodConstraint(schema),
-  });
-
-  // ...
-}
+const constraint = getZodConstraint(schema);
+// {
+//   title: { required: true, minLength: 5, maxLength: 20 },
+//   description: { required: false, minLength: 100, maxLength: 1000 },
+//   password: {
+//     required: true,
+//     pattern: '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
+//   },
+// }
 ```
 
-## Pattern constraint
+## Tips
 
-The `getZodConstraint` helper also extracts regex constraints into the HTML5 `pattern` attribute. This enables native browser validation alongside Zod validation.
+### Pattern limitations
 
-### Using `z.enum()`
+The `pattern` generation is best-effort with the following limitations:
 
-Enum values become a pattern matching any valid option:
-
-```tsx
-const schema = z.object({
-  status: z.enum(['pending', 'approved', 'rejected']),
-});
-// Generates pattern: "pending|approved|rejected"
-```
-
-### Using `z.string().regex()`
-
-```tsx
-const schema = z.object({
-  otpCode: z.string().regex(/^\d{4}$/, 'Must be 4 digits'),
-});
-```
-
-### Limitations
-
-- **Regex flags**: The `i` (case-insensitive) flag is **not supported** — HTML5 `pattern` doesn't support case-insensitive matching.
-- **Backreferences**: Numbered backreferences (`\1`, `\2`, etc.) may break across multiple fields in your schema. Named backreferences (`\k<name>`) are more reliable, but require each field's regexes to have unique group names.
+- **Regex flags**: The `i` (case-insensitive) flag is **not supported**. No `pattern` is generated for case-insensitive regexes or when the serialized regex is not a valid HTML `pattern` under the browser's `v` flag.
+- **Backreferences**: Numbered backreferences (`\1`, `\2`, etc.) may break when multiple regex validators for the same field are combined into one `pattern`. Named backreferences (`\k<name>`) are more reliable, but each regex combined into the same `pattern` must use unique group names.

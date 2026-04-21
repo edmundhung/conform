@@ -16,51 +16,41 @@ The valibot schema to be introspected.
 
 ```tsx
 import { getValibotConstraint } from '@conform-to/valibot';
-import { useForm } from '@conform-to/react';
-import { object, pipe, string, minLength, optional } from 'valibot';
+import {
+  maxLength,
+  minLength,
+  object,
+  optional,
+  pipe,
+  regex,
+  string,
+} from 'valibot';
 
 const schema = object({
   title: pipe(string(), minLength(5), maxLength(20)),
   description: optional(pipe(string(), minLength(100), maxLength(1000))),
+  password: pipe(
+    string(),
+    regex(/[A-Z]/, 'Must contain an uppercase letter'),
+    regex(/[0-9]/, 'Must contain a number'),
+  ),
 });
-
-function Example() {
-  const [form, fields] = useForm({
-    constraint: getValibotConstraint(schema),
-  });
-
-  // ...
-}
+const constraint = getValibotConstraint(schema);
+// {
+//   title: { required: true, minLength: 5, maxLength: 20 },
+//   description: { required: false, minLength: 100, maxLength: 1000 },
+//   password: {
+//     required: true,
+//     pattern: '^(?=.*(?:[A-Z]))(?=.*(?:[0-9])).*$',
+//   },
+// }
 ```
 
-## Pattern constraint
+## Tips
 
-The `getValibotConstraint` helper also extracts regex constraints into the HTML5 `pattern` attribute. This enables native browser validation alongside Valibot validation.
+### Pattern limitations
 
-### Using `enumType()`
+The `pattern` generation is best-effort with the following limitations:
 
-Enum values become a pattern matching any valid option:
-
-```tsx
-import { enumType } from 'valibot';
-
-const schema = object({
-  status: enumType(['pending', 'approved', 'rejected']),
-});
-// Generates pattern: "pending|approved|rejected"
-```
-
-### Using `regex()`
-
-```tsx
-import { regex } from 'valibot';
-
-const schema = object({
-  otpCode: pipe(string(), regex(/^\d{4}$/, 'Must be 4 digits')),
-});
-```
-
-### Limitations
-
-- **Regex flags**: The `i` (case-insensitive) flag is **not supported** — HTML5 `pattern` doesn't support case-insensitive matching.
-- **Backreferences**: Numbered backreferences (`\1`, `\2`, etc.) may break across multiple fields in your schema. Named backreferences (`\k<name>`) are more reliable, but require each field's regexes to have unique group names.
+- **Regex flags**: The `i` (case-insensitive) flag is **not supported**. No `pattern` is generated for case-insensitive regexes or when the serialized regex is not a valid HTML `pattern` under the browser's `v` flag.
+- **Backreferences**: Numbered backreferences (`\1`, `\2`, etc.) may break when multiple regex validators for the same field are combined into one `pattern`. Named backreferences (`\k<name>`) are more reliable, but each regex combined into the same `pattern` must use unique group names.
