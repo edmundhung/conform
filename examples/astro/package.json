@@ -14,7 +14,7 @@
 		"@astrojs/react": "^5.0.0",
 		"@conform-to/react": "workspace:*",
 		"@conform-to/zod": "workspace:*",
-		"astro": "^6.0.0",
+		"astro": "^6.1.6",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"zod": "^3.25.75"

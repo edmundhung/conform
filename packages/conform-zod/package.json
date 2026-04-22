@@ -79,7 +79,7 @@
 		"@babel/preset-typescript": "^7.20.2",
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
-		"rollup": "^2.79.1",
+		"rollup": "^2.80.0",
 		"rollup-plugin-copy": "^3.4.0",
 		"zod": "^3.25.75",
 		"zod-v4": "npm:zod@^4.0.0"

@@ -14,7 +14,7 @@
 		"@markdoc/markdoc": "^0.4.0",
 		"@remix-run/cloudflare": "^2.5.1",
 		"@remix-run/cloudflare-pages": "^2.5.1",
-		"@remix-run/react": "^2.5.1",
+		"@remix-run/react": "^2.17.4",
 		"cross-env": "^7.0.3",
 		"isbot": "^3",
 		"react": "^18.2.0",
@@ -33,7 +33,7 @@
 		"replace-in-file": "^8.3.0",
 		"tailwindcss": "^3.4.0",
 		"typescript": "^5.3.3",
-		"wrangler": "^3.28.2"
+		"wrangler": "^3.114.17"
 	},
 	"engines": {
 		"node": "20.x"

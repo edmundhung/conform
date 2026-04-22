@@ -59,9 +59,9 @@
 		"@rollup/plugin-babel": "^5.3.1",
 		"@rollup/plugin-node-resolve": "^13.3.0",
 		"rollup-plugin-copy": "^3.4.0",
-		"rollup": "^2.79.1",
+		"rollup": "^2.80.0",
 		"typescript": "^5.8.3",
-		"valibot": "^1.0.0"
+		"valibot": "^1.2.0"
 	},
 	"keywords": [
 		"constraint-validation",
