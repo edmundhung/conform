@@ -57,7 +57,7 @@ test.describe('shadcn-ui', () => {
 
 		await form.submitButton.click();
 		await expect(form.gender.getByRole('radio').first()).toBeFocused();
-		await form.container.press('ArrowRight');
+		await form.gender.getByRole('radio').first().press('Space');
 
 		await form.submitButton.click();
 		await expect(form.agreeToTerms).toBeFocused();
@@ -65,9 +65,8 @@ test.describe('shadcn-ui', () => {
 
 		await form.submitButton.click();
 		await expect(form.job).toBeFocused();
-		await form.container.press('Space');
-		await form.container.press('ArrowDown');
-		await form.container.press('Enter');
+		await form.job.press('Space');
+		await page.getByRole('option', { name: 'Designer' }).click();
 
 		await form.submitButton.click();
 		await expect(form.age).toBeFocused();
@@ -120,7 +119,7 @@ test.describe('shadcn-ui', () => {
 			name: 'Example',
 			dateOfBirth: `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
 			country: 'AX',
-			gender: 'female',
+			gender: 'male',
 			agreeToTerms: true,
 			job: 'designer',
 			age: 18,
