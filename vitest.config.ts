@@ -14,18 +14,14 @@ if (runMultipleBrowsers) {
 }
 
 export default defineConfig({
+	optimizeDeps: {
+		/**
+		 * Prebundle the React dev JSX runtime so Vitest doesn't re-optimize it
+		 * mid-run and reload large browser suites while they are being collected.
+		 */
+		include: ['react/jsx-dev-runtime'],
+	},
 	test: {
-		deps: {
-			optimizer: {
-				client: {
-					/**
-					 * Prebundle the React dev JSX runtime so Vitest doesn't re-optimize it
-					 * mid-run and reload large browser suites while they are being collected.
-					 */
-					include: ['react/jsx-dev-runtime'],
-				},
-			},
-		},
 		projects: [
 			// legacy setup to be moved into the packages
 			{
@@ -73,7 +69,7 @@ function defineTests(
 						runMultipleBrowsers ? { actionTimeout: 1_000 } : undefined,
 					),
 					api: options.browserApiPort,
-					fileParallelism: !runMultipleBrowsers,
+					fileParallelism: false,
 					instances: browsers.map((browser) => ({ browser })),
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
