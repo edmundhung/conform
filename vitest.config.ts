@@ -73,7 +73,6 @@ function defineTests(
 						runMultipleBrowsers ? { actionTimeout: 1_000 } : undefined,
 					),
 					api: options.browserApiPort,
-					fileParallelism: !runMultipleBrowsers,
 					instances: browsers.map((browser) => ({ browser })),
 				},
 				// This covers both .browser.test.ts/tsx and .test.ts/tsx files
