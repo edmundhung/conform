@@ -21,7 +21,7 @@
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.8",
-		"@playwright/test": "^1.49.1",
+		"@playwright/test": "^1.59.1",
 		"@types/node": "^25.5.0",
 		"@types/react": "^18.3.18",
 		"@types/react-dom": "^18.3.5",
