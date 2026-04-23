@@ -139,7 +139,7 @@ test.describe('react-aria', () => {
 		await expect(form.author).toHaveAccessibleDescription('Required');
 
 		await form.profile.click();
-		await expect(form.profile).toHaveAccessibleDescription('');
+		await expect(form.profile).not.toHaveAccessibleDescription(/.+/);
 		await form.heading.click();
 		await expect(form.profile).toHaveAccessibleDescription('Required');
 
@@ -177,7 +177,7 @@ test.describe('react-aria', () => {
 		await expect(form.range).toHaveAccessibleDescription('');
 		await expect(form.category).toHaveAccessibleDescription('');
 		await expect(form.author).toHaveAccessibleDescription('');
-		await expect(form.profile).toHaveAccessibleDescription('');
+		await expect(form.profile).not.toHaveAccessibleDescription(/.+/);
 		await expect(form.acceptTerms).not.toHaveAttribute('aria-invalid', 'true');
 
 		await form.resetButton.click();
@@ -220,7 +220,7 @@ test.describe('react-aria', () => {
 			buffer: Buffer.from('Hello World'),
 			mimeType: 'text/plain',
 		});
-		await expect(form.profile).toHaveAccessibleDescription('');
+		await expect(form.profile).not.toHaveAccessibleDescription(/.+/);
 
 		await form.submitButton.click();
 		await expect.poll(form.submittedValue).toEqual({
