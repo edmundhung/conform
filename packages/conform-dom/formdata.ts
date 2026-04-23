@@ -385,8 +385,8 @@ function isEmptyValue(
 	}
 
 	if (Array.isArray(value)) {
-		// If array is empty or all items are empty, consider it empty
-		return value.length === 0 || value.every((item) => isEmptyValue(item));
+		// If all items are empty, consider it empty
+		return value.every((item) => isEmptyValue(item));
 	}
 
 	return false;

@@ -148,18 +148,19 @@ export function useInputEvent(
 	});
 
 	useEffect(() => {
-		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
-			return (event: Event) => {
-				const element = ref.current;
+		const createEventListener = (
+			listener: 'change' | 'focus' | 'blur',
+			event: Event,
+		) => {
+			const element = ref.current;
 
-				if (element && event.target === element) {
-					eventDispatched.current[listener] = true;
-				}
-			};
+			if (element && event.target === element) {
+				eventDispatched.current[listener] = true;
+			}
 		};
-		const inputHandler = createEventListener('change');
-		const focusHandler = createEventListener('focus');
-		const blurHandler = createEventListener('blur');
+		const inputHandler = createEventListener.bind(null, 'change');
+		const focusHandler = createEventListener.bind(null, 'focus');
+		const blurHandler = createEventListener.bind(null, 'blur');
 
 		document.addEventListener('input', inputHandler, true);
 		document.addEventListener('focusin', focusHandler, true);

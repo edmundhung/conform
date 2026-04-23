@@ -636,33 +636,34 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 	);
 
 	useEffect(() => {
-		const createEventListener = (listener: 'change' | 'focus' | 'blur') => {
-			return (event: Event) => {
-				if (
-					Array.isArray(inputRef.current)
-						? inputRef.current.some((item) => item === event.target)
-						: event.target instanceof Node &&
-							inputRef.current?.contains(event.target)
-				) {
-					const timer = eventDispatched.current[listener];
+		const createEventListener = (
+			listener: 'change' | 'focus' | 'blur',
+			event: Event,
+		) => {
+			if (
+				Array.isArray(inputRef.current)
+					? inputRef.current.some((item) => item === event.target)
+					: event.target instanceof Node &&
+						inputRef.current?.contains(event.target)
+			) {
+				const timer = eventDispatched.current[listener];
 
-					if (timer) {
-						clearTimeout(timer);
-					}
-
-					eventDispatched.current[listener] = window.setTimeout(() => {
-						eventDispatched.current[listener] = undefined;
-					});
-
-					if (listener === 'focus') {
-						optionsRef.current?.onFocus?.();
-					}
+				if (timer) {
+					clearTimeout(timer);
 				}
-			};
+
+				eventDispatched.current[listener] = window.setTimeout(() => {
+					eventDispatched.current[listener] = undefined;
+				});
+
+				if (listener === 'focus') {
+					optionsRef.current?.onFocus?.();
+				}
+			}
 		};
-		const inputHandler = createEventListener('change');
-		const focusHandler = createEventListener('focus');
-		const blurHandler = createEventListener('blur');
+		const inputHandler = createEventListener.bind(null, 'change');
+		const focusHandler = createEventListener.bind(null, 'focus');
+		const blurHandler = createEventListener.bind(null, 'blur');
 
 		document.addEventListener('input', inputHandler, true);
 		document.addEventListener('focusin', focusHandler, true);
