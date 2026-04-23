@@ -11,8 +11,9 @@ import {
 
 import './Calendar.css';
 
-export interface CalendarProps<T extends DateValue>
-	extends AriaCalendarProps<T> {
+export interface CalendarProps<
+	T extends DateValue,
+> extends AriaCalendarProps<T> {
 	errorMessage?: string;
 }
 

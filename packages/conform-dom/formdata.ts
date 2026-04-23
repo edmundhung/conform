@@ -653,7 +653,7 @@ export function report<ErrorShape>(
 			? undefined
 			: options.value && !options.keepFiles
 				? stripFiles(options.value)
-				: options.value ?? {};
+				: (options.value ?? {});
 
 	if (options.hideFields) {
 		for (const name of options.hideFields) {

@@ -9,8 +9,10 @@ import {
 
 import './RadioGroup.css';
 
-export interface RadioGroupProps
-	extends Omit<AriaRadioGroupProps, 'children' | 'defaultValue'> {
+export interface RadioGroupProps extends Omit<
+	AriaRadioGroupProps,
+	'children' | 'defaultValue'
+> {
 	children?: React.ReactNode;
 	label?: string;
 	defaultValue?: string | undefined;

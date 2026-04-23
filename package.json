@@ -14,6 +14,7 @@
 		"test:e2e": "playwright test",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
 		"lint": "oxlint .",
+		"format": "oxfmt .",
 		"prepare": "husky install"
 	},
 	"devDependencies": {
@@ -30,8 +31,8 @@
 		"husky": "^8.0.3",
 		"lint-staged": "^13.1.2",
 		"oxlint": "^1.61.0",
+		"oxfmt": "^0.46.0",
 		"pkg-pr-new": "^0.0.20",
-		"prettier": "^3.2.5",
 		"typescript": "^5.8.3",
 		"vitest": "^4.1.5",
 		"yup": "^0.32.11",
@@ -40,6 +41,6 @@
 	"packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": "oxlint --fix",
-		"*.{js,jsx,ts,tsx,css,json,yaml,md}": "prettier --write"
+		"*.{js,jsx,ts,tsx,css,json,yaml,md}": "oxfmt"
 	}
 }

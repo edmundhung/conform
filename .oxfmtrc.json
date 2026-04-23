@@ -1,0 +1,47 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"singleQuote": true,
+	"useTabs": true,
+	"trailingComma": "all",
+	"printWidth": 80,
+	"sortPackageJson": false,
+	"ignorePatterns": [
+		"*.log",
+		"logs",
+		"npm-debug.log*",
+		"yarn-debug.log*",
+		"yarn-error.log*",
+		"report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json",
+		"*.pid",
+		"*.pid.lock",
+		"*.seed",
+		"pids",
+		"build/",
+		"*.tsbuildinfo",
+		"node_modules/",
+		".npm",
+		".eslintcache",
+		"*.tgz",
+		"/playwright-report/",
+		"/playwright/.cache/",
+		"/test-results/",
+		".DS_Store",
+		"README.md",
+		"pnpm-lock.yaml",
+		".cache/",
+		".wrangler/",
+		"!rollup.config.js",
+		"/packages/**/*.js",
+		"/packages/**/*.mjs",
+		"/guide/functions/"
+	],
+	"overrides": [
+		{
+			"files": ["*.md", "**/*.md"],
+			"options": {
+				"useTabs": false,
+				"tabWidth": 2
+			}
+		}
+	]
+}

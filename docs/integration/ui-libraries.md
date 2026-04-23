@@ -23,21 +23,17 @@ There are multiple ways to wire up a base control with `useControl`:
 The `useControl` hook gives you a control object that manages the base control value and provides methods to trigger form events. Here are the main steps to integrate it:
 
 1. **Register a base control**
-
    - Render a hidden native control element (for example, with `BaseControl` or a native `<input hidden />`) and register it with `control.register()`.
    - This serves as the authoritative source of the value and emits native form events.
 
 2. **Emit form events**
-
    - Use `control.change()` and `control.blur()` in your custom component's `onChange` and `onBlur` handlers.
 
 3. **Make it controlled**
-
    - Use `control.value`, `control.options`, `control.checked`, or `control.files` to sync simple custom components with the current state.
    - Use `control.payload` when the control can hold structured data.
 
 4. **Delegate focus (optional)**
-
    - If your base control is hidden, use the `onFocus` callback in `useControl` to forward focus to the custom input for accessibility.
 
 ### Example
@@ -69,7 +65,6 @@ Input types contribute to form data in different ways when it comes to form subm
 
 - **Text Inputs**: Straightforward. When empty, the value is an empty string.
 - **Checkboxes / Radios**:
-
   - Default value is `'on'` unless `value` is specified.
   - If checked, the value is submitted; if unchecked, it's omitted.
 

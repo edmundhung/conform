@@ -23,16 +23,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
       - name: Install dependencies
         run: pnpm i
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          title: "release: bump packages version"
-          commit: "release: bump packages version"
+          title: 'release: bump packages version'
+          commit: 'release: bump packages version'
           version: pnpm run version
           publish: pnpm publish -r
           createGithubReleases: false

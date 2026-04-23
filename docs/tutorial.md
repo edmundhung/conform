@@ -253,69 +253,69 @@ import { sendMessage } from '~/message';
 import { getUser } from '~/session';
 
 const schema = z.object({
-	// ...
+  // ...
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-	// ...
+  // ...
 }
 
 export default function ContactUs() {
-	const lastResult = useActionData<typeof action>();
-	// The useForm hook will return all the metadata we need to render the form
-	// and put focus on the first invalid field when the form is submitted
-	const [form, fields] = useForm({
-		// This not only syncs the error from the server
-		// But is also used as the default value of the form
-		// in case the document is reloaded for progressive enhancement
-		lastResult,
+  const lastResult = useActionData<typeof action>();
+  // The useForm hook will return all the metadata we need to render the form
+  // and put focus on the first invalid field when the form is submitted
+  const [form, fields] = useForm({
+    // This not only syncs the error from the server
+    // But is also used as the default value of the form
+    // in case the document is reloaded for progressive enhancement
+    lastResult,
 
-		// To derive all validation attributes
-		constraint: getZodConstraint(schema),
-	});
+    // To derive all validation attributes
+    constraint: getZodConstraint(schema),
+  });
 
-	return (
-		<Form
-			method="post"
+  return (
+    <Form
+      method="post"
       {/* The only additional attribute you need is the `id` attribute */}
-			id={form.id}
-			aria-describedby={form.errors ? form.errorId : undefined}
-		>
-			<div id={form.errorId}>{form.errors}</div>
-			<div>
-				<label htmlFor={fields.email.id}>Email</label>
-				<input
-					id={fields.email.id}
-					type="email"
-					name={fields.email.name}
-					defaultValue={fields.email.initialValue}
-					required={fields.email.required}
-					aria-invalid={fields.email.errors ? true : undefined}
-					aria-describedby={
-						fields.email.errors ? fields.email.errorId : undefined
-					}
-				/>
-				<div id={fields.email.errorId}>{fields.email.errors}</div>
-			</div>
-			<div>
-				<label htmlFor={fields.message.id}>Message</label>
-				<textarea
-					id={fields.message.id}
-					name={fields.message.name}
-					defaultValue={fields.message.initialValue}
-					required={fields.message.required}
-					minLength={fields.message.minLength}
-					maxLength={fields.message.maxLength}
-					aria-invalid={fields.message.errors ? true : undefined}
-					aria-describedby={
-						fields.message.errors ? fields.message.errorId : undefined
-					}
-				/>
-				<div id={fields.message.errorId}>{fields.message.errors}</div>
-			</div>
-			<button>Send</button>
-		</Form>
-	);
+      id={form.id}
+      aria-describedby={form.errors ? form.errorId : undefined}
+    >
+      <div id={form.errorId}>{form.errors}</div>
+      <div>
+        <label htmlFor={fields.email.id}>Email</label>
+        <input
+          id={fields.email.id}
+          type="email"
+          name={fields.email.name}
+          defaultValue={fields.email.initialValue}
+          required={fields.email.required}
+          aria-invalid={fields.email.errors ? true : undefined}
+          aria-describedby={
+            fields.email.errors ? fields.email.errorId : undefined
+          }
+        />
+        <div id={fields.email.errorId}>{fields.email.errors}</div>
+      </div>
+      <div>
+        <label htmlFor={fields.message.id}>Message</label>
+        <textarea
+          id={fields.message.id}
+          name={fields.message.name}
+          defaultValue={fields.message.initialValue}
+          required={fields.message.required}
+          minLength={fields.message.minLength}
+          maxLength={fields.message.maxLength}
+          aria-invalid={fields.message.errors ? true : undefined}
+          aria-describedby={
+            fields.message.errors ? fields.message.errorId : undefined
+          }
+        />
+        <div id={fields.message.errorId}>{fields.message.errors}</div>
+      </div>
+      <button>Send</button>
+    </Form>
+  );
 }
 ```
 
@@ -376,32 +376,32 @@ import { sendMessage } from '~/message';
 import { getUser } from '~/session';
 
 const schema = z.object({
-	// ...
+  // ...
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-	// ...
+  // ...
 }
 
 export default function ContactUs() {
-	const user = useLoaderData<typeof loader>();
-	const lastResult = useActionData<typeof action>();
-	const [form, fields] = useForm({
-		// ... previous config
+  const user = useLoaderData<typeof loader>();
+  const lastResult = useActionData<typeof action>();
+  const [form, fields] = useForm({
+    // ... previous config
 
-		// Run the same validation logic on client
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema });
-		},
-	});
+    // Run the same validation logic on client
+    onValidate({ formData }) {
+      return parseWithZod(formData, { schema });
+    },
+  });
 
-	return (
+  return (
     <Form
       method="post"
-			id={form.id}
+      id={form.id}
       {/* The `onSubmit` handler is required for client validation */}
       onSubmit={form.onSubmit}
-			aria-describedby={form.errors ? form.errorId : undefined}
+      aria-describedby={form.errors ? form.errorId : undefined}
     >
       {/* ... */}
     </Form>

@@ -551,7 +551,7 @@ export function useControl(options: ControlOptions = {}): Control<any> {
 				if (!input) {
 					return null;
 				}
-				return Array.isArray(input) ? input[0]?.form ?? null : input.form;
+				return Array.isArray(input) ? (input[0]?.form ?? null) : input.form;
 			},
 		}),
 		[],

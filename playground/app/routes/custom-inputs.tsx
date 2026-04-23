@@ -170,7 +170,7 @@ function OldCustomSelect({
 		formId: field.formId,
 	});
 	const value =
-		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+		typeof control.value === 'string' ? [control.value] : (control.value ?? []);
 
 	// Added to make sure the value type matches the expected type
 	if (
@@ -300,7 +300,7 @@ function OldCustomMultipleCheckbox({
 		formId: field.formId,
 	});
 	const value =
-		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+		typeof control.value === 'string' ? [control.value] : (control.value ?? []);
 
 	// Added to make sure the value type matches the expected type
 	if (typeof control.value === 'string') {
@@ -361,7 +361,7 @@ function Select({
 		initialValue: field.initialValue,
 	});
 	const value =
-		typeof control.value === 'string' ? [control.value] : control.value ?? [];
+		typeof control.value === 'string' ? [control.value] : (control.value ?? []);
 
 	// Added to make sure the value type matches the expected type
 	if (
@@ -502,7 +502,7 @@ function CheckboxGroup({
 	const initialValue =
 		typeof field.initialValue === 'string'
 			? [field.initialValue]
-			: field.initialValue ?? [];
+			: (field.initialValue ?? []);
 
 	return (
 		<div className="py-2 space-y-4">
