@@ -138,7 +138,7 @@ test.describe('react-aria', () => {
 		await form.heading.click();
 		await expect(form.author).toHaveAccessibleDescription('Required');
 
-		await form.profile.click();
+		await form.profile.focus();
 		await expect(form.profile).not.toHaveAccessibleDescription(/.+/);
 		await form.heading.click();
 		await expect(form.profile).toHaveAccessibleDescription('Required');
