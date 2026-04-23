@@ -22,8 +22,10 @@ import {
 import './DatePicker.css';
 import { useRef } from 'react';
 
-export interface DatePickerProps<T extends DateValue>
-	extends Omit<AriaDatePickerProps<T>, 'defaultValue' | 'value' | 'onChange'> {
+export interface DatePickerProps<T extends DateValue> extends Omit<
+	AriaDatePickerProps<T>,
+	'defaultValue' | 'value' | 'onChange'
+> {
 	label?: string;
 	description?: string;
 	defaultValue?: string | undefined;

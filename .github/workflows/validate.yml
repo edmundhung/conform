@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       preview:
-        description: "Commit SHA / PR Number"
+        description: 'Commit SHA / PR Number'
         type: string
         required: true
   workflow_call:
     inputs:
       preview:
-        description: "Commit SHA / PR Number"
+        description: 'Commit SHA / PR Number'
         type: string
         required: true
 
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
+          cache: 'pnpm'
       - name: Install dependencies
         run: pnpm i
       - name: Install pre-release

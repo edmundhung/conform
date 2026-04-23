@@ -140,7 +140,9 @@ describe('future export: useControl', () => {
 				) : props.type === 'select' ? (
 					<select
 						id={controlId}
-						value={props.multiple ? control.options ?? [] : control.value ?? ''}
+						value={
+							props.multiple ? (control.options ?? []) : (control.value ?? '')
+						}
 						onChange={(event) =>
 							control.change(
 								props.multiple

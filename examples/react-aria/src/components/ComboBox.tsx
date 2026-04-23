@@ -16,8 +16,10 @@ import {
 import './ComboBox.css';
 import { useRef } from 'react';
 
-export interface ComboBoxProps<T extends object>
-	extends Omit<AriaComboBoxProps<T>, 'children'> {
+export interface ComboBoxProps<T extends object> extends Omit<
+	AriaComboBoxProps<T>,
+	'children'
+> {
 	label?: string;
 	description?: string | null;
 	defaultValue?: string;

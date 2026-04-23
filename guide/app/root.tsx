@@ -39,7 +39,7 @@ export function ErrorBoundary() {
 				<h1 className="text-3xl font-medium tracking-wider">
 					{isRouteErrorResponse(error)
 						? `${error.status} ${error.statusText}`
-						: error?.toString() ?? 'Unknown error'}
+						: (error?.toString() ?? 'Unknown error')}
 				</h1>
 			</div>
 		</Document>

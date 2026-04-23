@@ -152,7 +152,7 @@ export function updateListKeys(
 	return transformKeys(keys, (field) =>
 		getRelativePath(field, basePath) !== null
 			? null
-			: updateKey?.(field) ?? field,
+			: (updateKey?.(field) ?? field),
 	);
 }
 

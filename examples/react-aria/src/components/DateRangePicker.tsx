@@ -29,11 +29,10 @@ export const dateRangeSchema = z.object({
 	end: z.string(),
 });
 
-export interface DateRangePickerProps<T extends DateValue>
-	extends Omit<
-		AriaDateRangePickerProps<T>,
-		'defaultValue' | 'value' | 'onChange'
-	> {
+export interface DateRangePickerProps<T extends DateValue> extends Omit<
+	AriaDateRangePickerProps<T>,
+	'defaultValue' | 'value' | 'onChange'
+> {
 	label?: string;
 	name: string;
 	defaultValue?: unknown;

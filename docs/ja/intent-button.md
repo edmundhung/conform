@@ -136,8 +136,8 @@ export default function Tasks() {
 
 ```tsx
 import { useForm } from '@conform-to/react';
-import { parseWithZod } from "@conform-to/zod";
-import { z } from "zod";
+import { parseWithZod } from '@conform-to/zod';
+import { z } from 'zod';
 
 const todosSchema = z.object({
   title: z.string(),
@@ -149,7 +149,7 @@ export default function Tasks() {
     onValidate({ formData }) {
       return parseWithZod(formData, { schema: todosSchema });
     },
-    shouldValidate: "onBlur",
+    shouldValidate: 'onBlur',
   });
   const tasks = fields.tasks.getFieldList();
 

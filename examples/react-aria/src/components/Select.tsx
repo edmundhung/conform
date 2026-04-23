@@ -16,11 +16,10 @@ import {
 import './Select.css';
 import { useRef } from 'react';
 
-export interface SelectProps<T extends object>
-	extends Omit<
-		AriaSelectProps<T>,
-		'children' | 'defaultSelectedKey' | 'selectedKey'
-	> {
+export interface SelectProps<T extends object> extends Omit<
+	AriaSelectProps<T>,
+	'children' | 'defaultSelectedKey' | 'selectedKey'
+> {
 	label?: string;
 	description?: string;
 	defaultValue?: string;

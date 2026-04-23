@@ -68,7 +68,7 @@ export function initializeField(
 		typeof options?.value === 'string' ||
 		typeof options?.defaultChecked === 'boolean'
 			? options.defaultChecked
-				? options.value ?? 'on'
+				? (options.value ?? 'on')
 				: null
 			: options?.defaultValue;
 
@@ -182,7 +182,7 @@ export function deriveDefaultPayload(options: ControlOptions): unknown {
 		'defaultChecked' in options &&
 		typeof options.defaultChecked === 'boolean'
 	) {
-		return options.defaultChecked ? options.value ?? 'on' : null;
+		return options.defaultChecked ? (options.value ?? 'on') : null;
 	}
 
 	if ('defaultValue' in options) {

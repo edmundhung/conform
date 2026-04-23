@@ -13,8 +13,10 @@ import {
 
 import './NumberField.css';
 
-export interface NumberFieldProps
-	extends Omit<AriaNumberFieldProps, 'defaultValue' | 'value' | 'onChange'> {
+export interface NumberFieldProps extends Omit<
+	AriaNumberFieldProps,
+	'defaultValue' | 'value' | 'onChange'
+> {
 	label?: string;
 	description?: string;
 	defaultValue?: string;

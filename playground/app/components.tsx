@@ -94,7 +94,7 @@ export function Field({
 	const errors =
 		meta && allErrors
 			? Object.values(meta.allErrors).flat()
-			: meta?.errors ?? [];
+			: (meta?.errors ?? []);
 
 	return (
 		<div className="mb-4">

@@ -134,37 +134,37 @@ function createSchema(
 }
 
 export function action() {
-	const formData = await request.formData();
-	const submission = await parseWithZod(formData, {
-		// create the zod schema with `isEmailUnique()` implemented
-		schema: createSchema({
-			async isEmailUnique(email) {
-				// ...
-			},
-		}),
+  const formData = await request.formData();
+  const submission = await parseWithZod(formData, {
+    // create the zod schema with `isEmailUnique()` implemented
+    schema: createSchema({
+      async isEmailUnique(email) {
+        // ...
+      },
+    }),
 
-		// Enable async validation on the server
+    // Enable async validation on the server
     // We won't set `async: true` on the client
     // as client validation must be synchronous
-		async: true,
-	});
+    async: true,
+  });
 
-	// ...
+  // ...
 }
 
 export default function Signup() {
-	const lastResult = useActionData();
-	const [form] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, {
-				// Create the schema without implementing `isEmailUnique()`
-				schema: createSchema(),
-			});
-		},
-	});
+  const lastResult = useActionData();
+  const [form] = useForm({
+    lastResult,
+    onValidate({ formData }) {
+      return parseWithZod(formData, {
+        // Create the schema without implementing `isEmailUnique()`
+        schema: createSchema(),
+      });
+    },
+  });
 
-	// ...
+  // ...
 }
 ```
 
@@ -227,34 +227,34 @@ function createSchema(
 }
 
 export async function action({ request }: ActionArgs) {
-	const formData = await request.formData();
-	const submission = await parseWithZod(formData, {
-		// Retrieve the intent by providing a function instead
-		schema: (intent) =>
-			createSchema(intent, {
-				async isEmailUnique(email) {
-					// ...
-				},
-			}),
+  const formData = await request.formData();
+  const submission = await parseWithZod(formData, {
+    // Retrieve the intent by providing a function instead
+    schema: (intent) =>
+      createSchema(intent, {
+        async isEmailUnique(email) {
+          // ...
+        },
+      }),
 
-		async: true,
-	});
+    async: true,
+  });
 
-	// ...
+  // ...
 }
 
 export default function Signup() {
-	const lastResult = useActionData();
-	const [form] = useForm({
-		lastResult,
-		onValidate({ formData }) {
-			return parseWithZod(formData, {
-				// Similar to the action above
-				schema: (intent) => createSchema(intent),
-			});
-		},
-	});
+  const lastResult = useActionData();
+  const [form] = useForm({
+    lastResult,
+    onValidate({ formData }) {
+      return parseWithZod(formData, {
+        // Similar to the action above
+        schema: (intent) => createSchema(intent),
+      });
+    },
+  });
 
-	// ...
+  // ...
 }
 ```
