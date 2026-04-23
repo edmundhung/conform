@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"ignorePatterns": ["node_modules/", "**/*.d.ts"],
+	"rules": {
+		"no-console": "error"
+	},
+	"overrides": [
+		{
+			"files": ["**/*.{cjs,cts}"],
+			"env": {
+				"commonjs": true
+			}
+		},
+		{
+			"files": ["**/*.{ts,tsx}"],
+			"plugins": ["typescript", "import"]
+		},
+		{
+			"files": ["packages/conform-react/**/*.{js,jsx,ts,tsx}"],
+			"plugins": ["react", "jsx-a11y"]
+		}
+	]
+}

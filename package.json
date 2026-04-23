@@ -13,7 +13,7 @@
 		"test:api": "vitest --project=browser --project=node",
 		"test:e2e": "playwright test",
 		"version": "changeset version && pnpm install --lockfile-only && .github/version.sh",
-		"lint": "eslint --cache --ext .js,.jsx,.ts,.tsx .",
+		"lint": "oxlint .",
 		"prepare": "husky install"
 	},
 	"devDependencies": {
@@ -25,18 +25,11 @@
 		"@conform-to/zod": "workspace:*",
 		"@playwright/test": "^1.49.1",
 		"@types/node": "^20.10.4",
-		"@typescript-eslint/eslint-plugin": "^7.11.0",
-		"@typescript-eslint/parser": "^7.11.0",
 		"@vitest/browser": "^4.1.5",
 		"@vitest/browser-playwright": "^4.1.5",
-		"eslint": "^8.57.0",
-		"eslint-import-resolver-typescript": "^3.6.1",
-		"eslint-plugin-import": "^2.29.1",
-		"eslint-plugin-jsx-a11y": "^6.8.0",
-		"eslint-plugin-react": "^7.34.2",
-		"eslint-plugin-react-hooks": "^4.6.2",
 		"husky": "^8.0.3",
 		"lint-staged": "^13.1.2",
+		"oxlint": "^1.61.0",
 		"pkg-pr-new": "^0.0.20",
 		"prettier": "^3.2.5",
 		"typescript": "^5.8.3",
@@ -46,7 +39,7 @@
 	},
 	"packageManager": "pnpm@9.1.0+sha256.22e36fba7f4880ecf749a5ca128b8435da085ecd49575e7fb9e64d6bf4fad394",
 	"lint-staged": {
-		"*.{js,jsx,ts,tsx}": "eslint --ignore-path .gitignore --cache --ext .js,.jsx,.ts,.tsx",
+		"*.{js,jsx,ts,tsx}": "oxlint --fix",
 		"*.{js,jsx,ts,tsx,css,json,yaml,md}": "prettier --write"
 	}
 }
