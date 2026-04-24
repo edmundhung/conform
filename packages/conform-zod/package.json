@@ -49,11 +49,9 @@
 		"./dist/**/*.d.ts"
 	],
 	"scripts": {
-		"build:js": "rollup -c",
-		"build:ts": "tsc --project ./tsconfig.build.json",
+		"build:js": "tsdown",
 		"build": "pnpm run \"/^build:.*/\"",
-		"dev:js": "pnpm run build:js --watch",
-		"dev:ts": "pnpm run build:ts --watch",
+		"dev:js": "tsdown --watch",
 		"dev": "pnpm run \"/^dev:.*/\"",
 		"test": "vitest",
 		"typecheck": "tsc",
@@ -74,13 +72,6 @@
 		"zod": "^3.21.0 || ^4.0.0"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.17.8",
-		"@babel/preset-env": "^7.20.2",
-		"@babel/preset-typescript": "^7.20.2",
-		"@rollup/plugin-babel": "^5.3.1",
-		"@rollup/plugin-node-resolve": "^13.3.0",
-		"rollup": "^2.79.1",
-		"rollup-plugin-copy": "^3.4.0",
 		"zod": "^3.25.75",
 		"zod-v4": "npm:zod@^4.0.0"
 	},
