@@ -13,7 +13,7 @@
 		"@conform-to/zod": "1.19.0",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
-		"react-router": "^7.8.2",
+		"react-router": "^7.14.2",
 		"zod": "^3.25.75"
 	},
 	"devDependencies": {
