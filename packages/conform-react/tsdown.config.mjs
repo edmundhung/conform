@@ -2,12 +2,22 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { defineConfig } from 'tsdown';
 
-const useClientEntries = new Set([
-	'future/forms.mjs',
-	'future/forms.js',
-	'future/hooks.mjs',
-	'future/hooks.js',
-]);
+const formats = ['esm', 'cjs'];
+const useClientEntryBases = ['future/forms', 'future/hooks'];
+
+function outExtensions({ format }) {
+	return {
+		js: format === 'esm' || format === 'es' ? '.mjs' : '.js',
+	};
+}
+
+const useClientEntries = new Set(
+	formats.flatMap((format) => {
+		const { js = '.js' } = outExtensions({ format });
+
+		return useClientEntryBases.map((entry) => `${entry}${js}`);
+	}),
+);
 
 async function prependUseClient(filePath) {
 	const content = await fs.readFile(filePath, 'utf8');
@@ -22,7 +32,7 @@ async function prependUseClient(filePath) {
 export default defineConfig({
 	entry: ['index.ts', 'future/index.ts'],
 	unbundle: true,
-	format: ['esm', 'cjs'],
+	format: formats,
 	platform: 'neutral',
 	target: 'node16',
 	report: false,
@@ -33,11 +43,7 @@ export default defineConfig({
 		{ from: '../../LICENSE', to: '.' },
 		{ from: '../../README.md', to: '.' },
 	],
-	outExtensions({ format }) {
-		return {
-			js: format === 'esm' || format === 'es' ? '.mjs' : '.js',
-		};
-	},
+	outExtensions,
 	hooks: {
 		async 'build:done'({ chunks }) {
 			for (const chunk of chunks) {
