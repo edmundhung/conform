@@ -23,13 +23,13 @@
 		"@playwright/test": "^1.49.1",
 		"@types/react": "^18.3.18",
 		"@types/react-dom": "^18.3.5",
-		"@vitejs/plugin-react": "^4.3.4",
+		"@vitejs/plugin-react": "^5.2.0",
 		"eslint": "^9.17.0",
 		"eslint-plugin-react-hooks": "^5.0.0",
 		"eslint-plugin-react-refresh": "^0.4.16",
 		"globals": "^15.14.0",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.18.2",
-		"vite": "^6.4.2"
+		"vite": "^7.3.2"
 	}
 }
