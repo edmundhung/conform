@@ -303,7 +303,9 @@ export function ExampleCheckbox({
 			<RadixCheckbox.Root
 				ref={checkboxRef}
 				checked={control.checked}
-				onCheckedChange={(checked) => control.change(checked)}
+				onCheckedChange={(checked) =>
+					control.change(checked === 'indeterminate' ? false : checked)
+				}
 				onBlur={() => control.blur()}
 				className="hover:bg-neutral-50 flex size-5 appearance-none items-center justify-center rounded-md bg-white outline-none border focus:ring-neutral-500 focus:ring-2"
 			>
