@@ -1,17 +1,48 @@
+import { formatPaths, parse } from '@conform-to/dom';
 import { getFormProps, getInputProps, useForm } from '@conform-to/react';
 import { parseWithZod } from '@conform-to/zod';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
-import { z } from 'zod';
+import { z, type ZodIssue } from 'zod';
 import { Playground, Field, Alert } from '~/components';
 
 const JsonFile = z
-	.instanceof(File, { message: 'File is required' })
+	.instanceof(Blob, { message: 'File is required' })
 	.refine(
 		(file) => file.type === 'application/json',
 		'Only JSON file is accepted',
 	);
+
+function isEmptyFile(value: unknown) {
+	if (value instanceof File) {
+		return value.name === '' && value.size === 0;
+	}
+
+	return (
+		value instanceof Blob &&
+		value.type === 'application/octet-stream' &&
+		value.size === 0
+	);
+}
+
+function normalizeFile(value: unknown) {
+	if (isEmptyFile(value)) {
+		return undefined;
+	}
+
+	return value;
+}
+
+function normalizeFiles(value: unknown) {
+	const files = Array.isArray(value)
+		? value
+		: typeof value !== 'undefined'
+			? [value]
+			: [];
+
+	return files.filter((file) => !isEmptyFile(file));
+}
 
 const schema = z.object({
 	file: JsonFile,
@@ -24,6 +55,35 @@ const schema = z.object({
 		),
 });
 
+function getError(issues: Array<ZodIssue>) {
+	const result: Record<string, string[]> = {};
+
+	for (const issue of issues) {
+		const name = formatPaths(issue.path);
+		const current = result[name];
+
+		result[name] = current ? current.concat(issue.message) : [issue.message];
+	}
+
+	return result;
+}
+
+function parseFileUpload(payload: FormData) {
+	return parse(payload, {
+		resolve(payload) {
+			const result = schema.safeParse({
+				file: normalizeFile(payload.file),
+				files: normalizeFiles(payload.files),
+			});
+
+			return {
+				value: result.success ? result.data : undefined,
+				error: result.success ? undefined : getError(result.error.issues),
+			};
+		},
+	});
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
 	const url = new URL(request.url);
 
@@ -34,7 +94,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData();
-	const submission = parseWithZod(formData, { schema });
+	const submission = parseFileUpload(formData);
 
 	return json(submission.reply());
 }
