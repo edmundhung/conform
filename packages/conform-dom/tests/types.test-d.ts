@@ -1,6 +1,13 @@
 import { assertType, test, expectTypeOf } from 'vitest';
-import type { FieldName, ValidationAttributes } from '@conform-to/dom/future';
-import { getFieldValue } from '@conform-to/dom/future';
+import type {
+	FieldName,
+	FormError,
+	FormValue,
+	Submission,
+	SubmissionResult,
+	ValidationAttributes,
+} from '../future';
+import { getFieldValue, isDirty, parseSubmission, report } from '../future';
 
 test('ValidationAttributes', () => {
 	assertType<ValidationAttributes>({});
@@ -137,4 +144,138 @@ test('getFieldValue', () => {
 			optional: true,
 		}),
 	).toEqualTypeOf<string[] | undefined>();
+});
+
+test('parseSubmission', () => {
+	expectTypeOf(
+		parseSubmission(new FormData(), {
+			intentName: undefined,
+			skipEntry: undefined,
+			stripEmptyValues: undefined,
+		}),
+	).toEqualTypeOf<Submission>();
+});
+
+test('isDirty', () => {
+	expectTypeOf(
+		isDirty(new FormData(), {
+			defaultValue: undefined,
+			intentName: undefined,
+			serialize: undefined,
+			skipEntry: undefined,
+		}),
+	).toEqualTypeOf<boolean | undefined>();
+});
+
+const submission = {
+	payload: {
+		lorem: '',
+		file: new File(['content'], 'test.txt'),
+	},
+	fields: ['lorem', 'file'],
+	intent: null,
+};
+
+const updatedValue = {
+	lorem: 'ipsum',
+	file: new File(['updated'], 'updated.txt'),
+};
+
+test('report', () => {
+	/** Default behavior strips files from the submission payload and target value. */
+	const defaultResult = report(submission);
+	const explicitStripResult = report(submission, { keepFiles: false });
+	const defaultResultWithValue = report(submission, { value: updatedValue });
+
+	expectTypeOf(defaultResult).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | null>
+	>();
+	expectTypeOf(explicitStripResult).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | null>
+	>();
+	expectTypeOf(defaultResult.submission.payload.file).toEqualTypeOf<
+		FormValue<string | number | boolean | null> | undefined
+	>();
+	expectTypeOf(defaultResultWithValue.targetValue).toEqualTypeOf<
+		Record<string, FormValue<string | number | boolean | null>> | undefined
+	>();
+
+	/** `keepFiles: true` preserves file values in both payload and target value. */
+	const keepFilesResult = report(submission, {
+		keepFiles: true,
+		value: updatedValue,
+	});
+
+	expectTypeOf(keepFilesResult).toEqualTypeOf<SubmissionResult<never>>();
+	expectTypeOf(keepFilesResult.submission.payload.file).toEqualTypeOf<
+		FormValue<string | number | boolean | File | null> | undefined
+	>();
+	expectTypeOf(keepFilesResult.targetValue).toEqualTypeOf<
+		| Record<string, FormValue<string | number | boolean | File | null>>
+		| undefined
+	>();
+
+	/** Literal `null` should keep the dedicated `SubmissionResult<never>` overload. */
+	expectTypeOf(report(submission, { error: null })).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | null>
+	>();
+	expectTypeOf(
+		report(submission, { keepFiles: true, error: null }),
+	).toEqualTypeOf<SubmissionResult<never>>();
+
+	/** Custom errors should infer the provided error shape. */
+	const stringResult = report(submission, {
+		error: {
+			fieldErrors: {
+				lorem: 'Required',
+			},
+		},
+	});
+	const objectResult = report(submission, {
+		keepFiles: true,
+		error: {
+			formErrors: { message: 'Invalid' },
+			fieldErrors: {
+				lorem: { message: 'Required' },
+			},
+		},
+	});
+
+	expectTypeOf(stringResult).toEqualTypeOf<
+		SubmissionResult<string, string | number | boolean | null>
+	>();
+	expectTypeOf(objectResult).toEqualTypeOf<
+		SubmissionResult<{ message: string }>
+	>();
+
+	/** Standard schema issues should normalize to `string[]` errors. */
+	const standardSchemaResult = report(submission, {
+		error: {
+			issues: [{ path: ['lorem'], message: 'Required' }],
+		},
+	});
+
+	expectTypeOf(standardSchemaResult).toEqualTypeOf<
+		SubmissionResult<string[], string | number | boolean | null>
+	>();
+
+	/** Nullable normalized form errors should still use the file-stripping overloads. */
+	const error: FormError<string[]> | null =
+		Math.random() > 0.5
+			? {
+					formErrors: null,
+					fieldErrors: {
+						lorem: ['Required'],
+					},
+				}
+			: null;
+	expectTypeOf(report(submission, { error })).toEqualTypeOf<
+		SubmissionResult<string[], string | number | boolean | null>
+	>();
+	expectTypeOf(
+		report(submission, {
+			keepFiles: true,
+			error,
+		}),
+	).toEqualTypeOf<SubmissionResult<string[]>>();
 });

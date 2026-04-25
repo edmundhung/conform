@@ -430,12 +430,12 @@ export function parseSubmission(
 		 * The name of the submit button field that indicates the submission intent.
 		 * Defaults to `__INTENT__`.
 		 */
-		intentName?: string;
+		intentName?: string | undefined;
 		/**
 		 * A function to exclude specific form fields from being parsed.
 		 * Return `true` to skip the entry.
 		 */
-		skipEntry?: (name: string) => boolean;
+		skipEntry?: ((name: string) => boolean) | undefined;
 		/**
 		 * Whether to strip empty values (empty strings, empty files, arrays with all empty values)
 		 * from the submission payload. Defaults to `false`.
@@ -444,7 +444,7 @@ export function parseSubmission(
 		 * If you are using a schema library like Zod or Valibot, our integration
 		 * already strips empty values for you. There is no need to use this option.
 		 */
-		stripEmptyValues?: boolean;
+		stripEmptyValues?: boolean | undefined;
 	},
 ): Submission {
 	const intentName = options?.intentName ?? DEFAULT_INTENT_NAME;
@@ -532,11 +532,31 @@ export function parseSubmission(
  * })
  * ```
  */
+export function report(
+	submission: Submission,
+	options?: {
+		keepFiles?: false;
+		error?: null;
+		value?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<never, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
+export function report(
+	submission: Submission,
+	options: {
+		keepFiles: true;
+		error?: null;
+		value?: Record<string, FormValue> | null;
+		hideFields?: string[];
+		reset?: boolean;
+	},
+): SubmissionResult<never>;
 export function report<ErrorShape>(
 	submission: Submission,
 	options: {
 		keepFiles?: false;
-		error: CustomError<ErrorShape>;
+		error: CustomError<ErrorShape> | null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -549,7 +569,7 @@ export function report<ErrorShape>(
 	submission: Submission,
 	options: {
 		keepFiles: true;
-		error: CustomError<ErrorShape>;
+		error: CustomError<ErrorShape> | null;
 		value?: Record<string, FormValue> | null;
 		hideFields?: string[];
 		reset?: boolean;
@@ -578,26 +598,6 @@ export function report(
 		reset?: boolean;
 	},
 ): SubmissionResult<string[]>;
-export function report(
-	submission: Submission,
-	options?: {
-		keepFiles?: false;
-		error?: null;
-		value?: Record<string, FormValue> | null;
-		hideFields?: string[];
-		reset?: boolean;
-	},
-): SubmissionResult<never, Exclude<JsonPrimitive | FormDataEntryValue, File>>;
-export function report(
-	submission: Submission,
-	options: {
-		keepFiles: true;
-		error?: null;
-		value?: Record<string, FormValue> | null;
-		hideFields?: string[];
-		reset?: boolean;
-	},
-): SubmissionResult<never>;
 export function report<ErrorShape>(
 	submission: Submission,
 	options?: {
@@ -713,12 +713,12 @@ export function isDirty(
 		 * An object representing the default values of the form to compare against.
 		 * Defaults to an empty object if not provided.
 		 */
-		defaultValue?: unknown;
+		defaultValue?: unknown | undefined;
 		/**
 		 * The name of the submit button that triggered the submission.
 		 * It will be excluded from the dirty comparison.
 		 */
-		intentName?: string;
+		intentName?: string | undefined;
 		/**
 		 * A function to serialize values in defaultValue before comparing them to the form data.
 		 * If not provided, a default serializer is used that behaves as follows:
@@ -733,7 +733,7 @@ export function isDirty(
 		 * - Date:
 		 *   - Converted to UTC datetime string without trailing `Z` (e.g. `2026-01-01T12:00:00.000`)
 		 */
-		serialize?: CustomSerialize;
+		serialize?: CustomSerialize | undefined;
 		/**
 		 * A function to exclude specific fields from the comparison.
 		 * Useful for ignoring hidden inputs like CSRF tokens or internal fields added by frameworks
@@ -746,7 +746,7 @@ export function isDirty(
 		 * });
 		 * ```
 		 */
-		skipEntry?: (name: string) => boolean;
+		skipEntry?: ((name: string) => boolean) | undefined;
 	},
 ): boolean | undefined {
 	if (!formData) {

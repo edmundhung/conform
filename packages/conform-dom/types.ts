@@ -102,15 +102,15 @@ export type SubmissionResult<
 	/**
 	 * The target value of the submission. Defined only when the target value is different from the submitted value.
 	 */
-	targetValue?: Record<string, FormValue<ValueType>>;
+	targetValue?: Record<string, FormValue<ValueType>> | undefined;
 	/**
 	 * Validation errors for `targetValue` when present, otherwise for the original payload.
 	 */
-	error?: FormError<ErrorShape> | null;
+	error?: FormError<ErrorShape> | null | undefined;
 	/**
 	 * Indicates whether the form should be reset to its initial state.
 	 */
-	reset?: boolean;
+	reset?: boolean | undefined;
 };
 
 /** The name of an input field with type information for TypeScript inference. */
