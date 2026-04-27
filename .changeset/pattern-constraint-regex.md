@@ -1,8 +1,8 @@
 ---
-'@conform-to/dom': minor
-'@conform-to/react': minor
-'@conform-to/valibot': minor
-'@conform-to/zod': minor
+'@conform-to/dom': patch
+'@conform-to/react': patch
+'@conform-to/valibot': patch
+'@conform-to/zod': patch
 ---
 
 `getZodConstraint`, `getValibotConstraint`, and the future `getConstraints` helpers can now derive HTML `pattern` constraints from Zod and Valibot schemas. When a field uses multiple regex validators, Conform combines them into a single `pattern` when possible.
