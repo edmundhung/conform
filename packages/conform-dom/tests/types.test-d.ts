@@ -206,7 +206,9 @@ test('report', () => {
 		value: updatedValue,
 	});
 
-	expectTypeOf(keepFilesResult).toEqualTypeOf<SubmissionResult<never>>();
+	expectTypeOf(keepFilesResult).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | File | null>
+	>();
 	expectTypeOf(keepFilesResult.submission.payload.file).toEqualTypeOf<
 		FormValue<string | number | boolean | File | null> | undefined
 	>();
@@ -221,7 +223,9 @@ test('report', () => {
 	>();
 	expectTypeOf(
 		report(submission, { keepFiles: true, error: null }),
-	).toEqualTypeOf<SubmissionResult<never>>();
+	).toEqualTypeOf<
+		SubmissionResult<never, string | number | boolean | File | null>
+	>();
 
 	/** Custom errors should infer the provided error shape. */
 	const stringResult = report(submission, {
@@ -245,7 +249,10 @@ test('report', () => {
 		SubmissionResult<string, string | number | boolean | null>
 	>();
 	expectTypeOf(objectResult).toEqualTypeOf<
-		SubmissionResult<{ message: string }>
+		SubmissionResult<
+			{ message: string },
+			string | number | boolean | File | null
+		>
 	>();
 
 	/** Standard schema issues should normalize to `string[]` errors. */
@@ -277,5 +284,7 @@ test('report', () => {
 			keepFiles: true,
 			error,
 		}),
-	).toEqualTypeOf<SubmissionResult<string[]>>();
+	).toEqualTypeOf<
+		SubmissionResult<string[], string | number | boolean | File | null>
+	>();
 });
