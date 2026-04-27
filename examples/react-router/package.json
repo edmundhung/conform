@@ -10,8 +10,8 @@
 		"typecheck": "react-router typegen && tsc"
 	},
 	"dependencies": {
-		"@conform-to/react": "1.19.0",
-		"@conform-to/zod": "1.19.0",
+		"@conform-to/react": "1.19.1",
+		"@conform-to/zod": "1.19.1",
 		"@react-router/node": "^7.14.2",
 		"@react-router/serve": "^7.14.2",
 		"isbot": "^5.1.30",
