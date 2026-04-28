@@ -14,5 +14,5 @@
 		"noEmit": true,
 		"skipLibCheck": true
 	},
-	"exclude": ["dist"]
+	"exclude": ["**/tests", "dist"]
 }
